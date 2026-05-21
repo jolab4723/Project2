@@ -35,7 +35,7 @@ public class CustomNetworkManager : NetworkManager
         if (player != null)
         {
             player.PlayerName = $"User_{conn.connectionId}";
-            // 데이터 매니저에서 기본 스탯 테이블을 제네リック하게 읽어와 세팅하는 타이밍입니다.
+            // 데이터 매니저에서 기본 스탯 테이블을 제네릭하게 읽어와 세팅하는 타이밍입니다.
             // DataManager.Instance.GetStat<CharacterStat>(1); 
         }
 
@@ -50,7 +50,7 @@ public class CustomNetworkManager : NetworkManager
         // 관리 중이던 딕셔너리에서 제거 및 서버 데이터 저장 로직 연계
         if (ConnectedPlayers.TryGetValue(conn, out GameObject playerObj))
         {
-            // [데이터 드리븐 연동 팁] 나가지 전에 플레이어의 최종 위치, 레벨 등의 데이터를 JSON/DB에 저장
+            // [데이터 드리븐 연동 팁] 나가기 전에 플레이어의 최종 위치, 레벨 등의 데이터를 JSON/DB에 저장
             // SavePlayerData(playerObj.GetComponent<PlayerController>());
 
             ConnectedPlayers.Remove(conn);
