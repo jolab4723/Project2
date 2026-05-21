@@ -11,7 +11,7 @@ public class PlayerController : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        Log.Print("[Client] 내가 서버에 정상적으로 조인되었습니다!");
+        Log.Print("[Client] 서버에 정상적으로 조인되었습니다!");
 
         // 메인 카메라가 나를 따라오도록 설정하는 등의 로직을 여기에 작성합니다.
         // Camera.main.GetComponent<FollowCamera>().Target = this.transform;
