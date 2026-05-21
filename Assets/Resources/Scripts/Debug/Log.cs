@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using UnityEngine;
 
+// 에디터 콘솔에 로그를 기록하는 스크립트 입니다.
+// [Conditional("UNITY_EDITOR")] 메서드는 에디터 상태에서만 동작합니다.
+
 public static class Log
 {
     [Conditional("UNITY_EDITOR")]

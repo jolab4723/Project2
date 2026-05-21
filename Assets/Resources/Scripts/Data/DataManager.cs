@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 
+// JSON파일을 제네릭 리스트 형태로 불러오는 스크립트 입니다.
+
 public class DataManager : MonoBehaviour
 {
     public List<T> LoadGameData<T>(string resourcePath)

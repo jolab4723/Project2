@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
+// 엑셀파일을 JSON파일로 변환시키는 스크립트 입니다.
+
 public class ExcelToJsonConverter
 {
     [MenuItem("Tools/Convert Excel to JSON")]
