@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// T는 반드시 MonoBehaviour를 상속받은 클래스여야 합니다.
 public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T _instance;
@@ -44,6 +43,7 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
+    // 씬에 오브젝트가 없다면 생성한 클래스를 유지하고, 있다면 스스로 파괴합니다.
     protected virtual void Awake()
     {
         if (_instance == null)
@@ -53,7 +53,6 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         }
         else if (_instance != this)
         {
-            // 중복 생성된 매니저가 있다면 파괴
             Destroy(gameObject);
         }
     }
