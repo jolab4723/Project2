@@ -1,5 +1,22 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "hash": "dccecd689072dce4c319e15c812006005c68ad0b"
+    },
     "com.projectdawn.navigation": {
       "version": "file:com.projectdawn.navigation",
       "depth": 0,
@@ -53,11 +70,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.cinemachine": {
-      "version": "2.10.5",
+      "version": "3.1.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.test-framework": "1.1.31"
+        "com.unity.splines": "2.0.0",
+        "com.unity.modules.imgui": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
@@ -361,6 +379,15 @@
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
+      }
+    },
+    "com.unity.visualeffectgraph": {
+      "version": "17.3.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.shadergraph": "17.3.0",
+        "com.unity.render-pipelines.core": "17.3.0"
       }
     },
     "com.unity.visualscripting": {
