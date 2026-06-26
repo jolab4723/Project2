@@ -9,12 +9,18 @@ public class CameraOcclusionFader : MonoBehaviour
     [Range(0f, 1f)] public float fadedAlpha = 0.3f;
     public float fadeSpeed = 5f;
 
-    [Header("투명화 전용 머티리얼 (Inspector에서 할당)")]
+    [Header("투명화 전용 머티리얼")]
     [Tooltip("에디터에서 미리 생성한 Surface Type: Transparent 머티리얼을 넣어주세요.")]
     public Material transparentMaterialTemplate;
 
     private Dictionary<Renderer, OcclusionData> currentlyOccluding = new Dictionary<Renderer, OcclusionData>();
     private List<Renderer> toRestore = new List<Renderer>();
+
+    // 최적화: RaycastNonAlloc을 위한 배열 (최대 10개의 장애물 동시 감지)
+    private RaycastHit[] hitResults = new RaycastHit[10];
+    
+    // 최적화: 셰이더 프로퍼티 ID 캐싱 (매 프레임 무거운 문자열 검색 방지)
+    private readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
     private class OcclusionData
     {
@@ -23,19 +29,22 @@ public class CameraOcclusionFader : MonoBehaviour
         public float currentAlpha = 1f;
     }
 
-    void Update()
+    // 최적화: FixedUpdate(물리 프레임) 대신 LateUpdate(렌더링 직전) 사용
+    void LateUpdate()
     {
         if (target == null || transparentMaterialTemplate == null) return;
 
         Vector3 direction = target.position - transform.position;
         float distance = direction.magnitude;
 
-        RaycastHit[] hits = Physics.RaycastAll(transform.position, direction.normalized, distance, obstacleLayer);
+        // 최적화: 매 프레임 가비지를 생성하는 RaycastAll 대신 RaycastNonAlloc 사용
+        int hitCount = Physics.RaycastNonAlloc(transform.position, direction.normalized, hitResults, distance, obstacleLayer);
+        
         List<Renderer> currentHits = new List<Renderer>();
 
-        foreach (RaycastHit hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
-            Renderer hitRenderer = hit.collider.GetComponent<Renderer>();
+            Renderer hitRenderer = hitResults[i].collider.GetComponent<Renderer>();
             if (hitRenderer != null)
             {
                 currentHits.Add(hitRenderer);
@@ -53,15 +62,15 @@ public class CameraOcclusionFader : MonoBehaviour
                     currentlyOccluding[hitRenderer] = data;
                 }
 
-                // 알파값 조절 (URP Lit 셰이더의 _BaseColor 사용)
+                // 알파값 조절
                 OcclusionData occData = currentlyOccluding[hitRenderer];
                 occData.currentAlpha = Mathf.Lerp(occData.currentAlpha, fadedAlpha, Time.deltaTime * fadeSpeed);
 
-                if (occData.fadeMaterial.HasProperty("_BaseColor"))
+                if (occData.fadeMaterial.HasProperty(baseColorID))
                 {
-                    Color color = occData.fadeMaterial.GetColor("_BaseColor");
+                    Color color = occData.fadeMaterial.GetColor(baseColorID);
                     color.a = occData.currentAlpha;
-                    occData.fadeMaterial.SetColor("_BaseColor", color);
+                    occData.fadeMaterial.SetColor(baseColorID, color);
                 }
             }
         }
@@ -74,11 +83,11 @@ public class CameraOcclusionFader : MonoBehaviour
             {
                 pair.Value.currentAlpha = Mathf.Lerp(pair.Value.currentAlpha, 1f, Time.deltaTime * fadeSpeed);
 
-                if (pair.Value.fadeMaterial.HasProperty("_BaseColor"))
+                if (pair.Value.fadeMaterial.HasProperty(baseColorID))
                 {
-                    Color color = pair.Value.fadeMaterial.GetColor("_BaseColor");
+                    Color color = pair.Value.fadeMaterial.GetColor(baseColorID);
                     color.a = pair.Value.currentAlpha;
-                    pair.Value.fadeMaterial.SetColor("_BaseColor", color);
+                    pair.Value.fadeMaterial.SetColor(baseColorID, color);
                 }
 
                 // 복구가 끝나면 원래(Opaque) 머티리얼로 완벽 복귀
