@@ -1261,7 +1261,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2139267389}
   m_SourcePrefab: {fileID: 100100000, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
 --- !u!4 &1869368043 stripped
 Transform:
@@ -1305,6 +1308,7 @@ MonoBehaviour:
   dodgeDistance: 5
   dodgeDuration: 0.2
   dodgeCooltime: 6
+  stateMachine: {fileID: 0}
 --- !u!136 &1937734893
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1492,6 +1496,23 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
+--- !u!1 &2139267383 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8874953783023553297, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
+  m_PrefabInstance: {fileID: 1869368035}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2139267389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2139267383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f85b2dc654955964f827cbc1cbee69a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStateMachine
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -11,12 +11,11 @@ public class T_PlayerController : MonoBehaviour
     [SerializeField] private float dodgeDuration = 0.5f;
     [SerializeField] private float dodgeCooltime = 6f;
 
+    [SerializeField] private WBH_PlayerStateMachine stateMachine;
+
     private Camera mainCamera;
 
-    public bool isDodging { get; private set; }
-    public bool isMoving { get; private set; }
-    public bool canMoving { get; private set; } = true;
-    public bool canDodge { get; private set; } = true;
+    public bool canDodge => currentDodgeCooltime <= 0f;
     public Vector3 lookDir { get; private set; }
     private Animator animator;
     public float currentDodgeCooltime { get; private set; }
@@ -25,6 +24,7 @@ public class T_PlayerController : MonoBehaviour
     {
         mainCamera = Camera.main;
         animator = GetComponent<Animator>();
+        stateMachine = GetComponent<WBH_PlayerStateMachine>();
 
         //agent.updateRotation = false;
         agent.autoBraking = true;
@@ -34,16 +34,6 @@ public class T_PlayerController : MonoBehaviour
     {
         // 회피 쿨타임 체크
         CheckDodge();
-
-        if (isDodging || !canMoving ) return;
-
-        // 캐릭터 마우스 커서 주시, 해당 방향 lookDir 로 반환
-        //PlayerViewDir();
-
-        float moveSpeed = agent.velocity.magnitude / agent.speed;
-        if (moveSpeed < 0.05f)
-            moveSpeed = 0f;
-        animator.SetFloat("MoveSpeed", moveSpeed);
     }
 
 
@@ -57,7 +47,6 @@ public class T_PlayerController : MonoBehaviour
         if (currentDodgeCooltime <= 0f)
         {
             currentDodgeCooltime = 0f;
-            canDodge = true;
         }
     }
 
@@ -91,10 +80,9 @@ public class T_PlayerController : MonoBehaviour
     // 회피 코루틴
     private System.Collections.IEnumerator Dodge(Vector3 dir)
     {
-        isDodging = true;
+        stateMachine.ChangeState(PlayerState.Dodge);
 
         agent.enabled = false;
-        canMoving = false;
 
         Vector3 startPos = transform.position;
         Vector3 endPos = startPos + dir * dodgeDistance;
@@ -115,20 +103,17 @@ public class T_PlayerController : MonoBehaviour
         }
 
         agent.enabled = true;
-        canMoving = true;
 
-        isDodging = false;
+        stateMachine.ChangeState(PlayerState.Idle);
     }
 
      public void MoveCommand(Vector3 destination)
     {
-        if (isDodging || !canMoving)
+        if (stateMachine.Is(PlayerState.Dodge))
             return;
 
         agent.SetDestination(destination);
     }
-
-
 
     public void TryDodge()
     {
@@ -142,17 +127,13 @@ public class T_PlayerController : MonoBehaviour
 
         StartCoroutine(Dodge(dodgeDir));
 
-        canDodge = false;
         currentDodgeCooltime = dodgeCooltime;
     }
-
-
-
 
     // --- combat.cs 에서 활용할 이동처리
     public void MoveToTarget(Vector3 position, float attackRange)
     {
-        if (isDodging)
+        if (stateMachine.Is(PlayerState.Dodge))
             return;
 
         agent.stoppingDistance = attackRange;

@@ -13,6 +13,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     [SerializeField] private GunnerWeaponType currentWeapon;
     // 차후 무기 데이터에 폭발반경 포함되면 변수 삭제 및 GunnerAttack 메서드에서 해당 변수 내용 수정 필요
     [SerializeField] private float explosionRadius = 3f;
+    [SerializeField] private WBH_PlayerStateMachine stateMachine;
+
+    private const float attackTolerance = 0.25f;
 
     private float maxHp = 100f;
 
@@ -25,12 +28,10 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     private Animator animator;
 
     public float CurrentHp { get; private set; }
-    public PlayerState CurrentState { get; private set; }
-    public bool IsDead => CurrentState == PlayerState.Dead;
+    public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
 
     [SerializeField] private PlayerClass playerClass;
     private Transform attackTarget;
-    private bool isChasingTarget;
     private T_PlayerController controller;
 
     private float CurrentAttackRange
@@ -53,34 +54,36 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     {
         animator = GetComponent<Animator>();
         controller = GetComponent<T_PlayerController>();
+        stateMachine = GetComponent<WBH_PlayerStateMachine>();
 
         CurrentHp = maxHp;
-        CurrentState = PlayerState.Idle;
     }
+
+    private void OnEable()
+    {
+        stateMachine.OnExitState += HandleExitState;
+    }
+
+    private void OnDisable()
+    {
+        stateMachine.OnExitState -= HandleExitState;
+    }
+    
+
 
     private void Update()
     {
-        if (CurrentState == PlayerState.Dead)
+        if (IsDead)
             return;
 
-            CheckAttackDistance();
+            HandleChase();
 
         TestMultiple();
     }
 
-    private void UpdateState() // 상태 변경 추후 매개변수에 State 들어가도록 수정 필요
-    {
-        if (CurrentState == PlayerState.Attack || CurrentState == PlayerState.Hit)
-            return;
-
-        CurrentState = PlayerState.Idle;
-    }
-
-
-
     public void NormalAttack()
     {
-        if (CurrentState == PlayerState.Dead) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
+        if (IsDead) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
             return;
 
         if(attackTarget != null)
@@ -90,12 +93,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
             transform.forward = lookDir.normalized;
         }
 
-        CurrentState = PlayerState.Attack;
+        stateMachine.ChangeState(PlayerState.Attack);
 
-        animator.SetTrigger("Attack"); // 애니메이션 추가 시 코드 확정
         print("일반공격 실행");
-
-        
     }
 
     private void FighterAttack()
@@ -147,9 +147,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
         CurrentHp -= damage;
 
-        //animator.SetTrigger("Hit"); // 애니메이션 추가 시
-
-        CurrentState = PlayerState.Hit;
+        stateMachine.ChangeState(PlayerState.Hit);
 
         if (CurrentHp <= 0)
             Die();
@@ -159,28 +157,24 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     {
         CurrentHp = 0;
 
-        CurrentState = PlayerState.Dead;
-
-        //animator.SetBool("Dead", true); // 애니메이션 추가
+        stateMachine.ChangeState(PlayerState.Dead);
     }
 
-    private void CheckAttackDistance()
+    private void HandleChase()
     {
-        //if (!isChasingTarget)
-        //    return;
+        if (!stateMachine.Is(PlayerState.Chase))
+            return;
 
         if (attackTarget == null)
         {
-            isChasingTarget = false;
+            stateMachine.ChangeState(PlayerState.Idle);
             return;
         }
 
         float distance = Vector3.Distance(transform.position, attackTarget.position);
 
-        if (distance <= CurrentAttackRange)
+        if (distance <= CurrentAttackRange + attackTolerance)
         {
-            isChasingTarget = false;
-
             controller.ResetStoppingDistance();
 
             NormalAttack();
@@ -214,7 +208,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     public void CancelChase()
     {
-        isChasingTarget = false;
+        stateMachine.ChangeState(PlayerState.Idle);
         attackTarget = null;
         controller.ResetStoppingDistance();
     }
@@ -238,11 +232,21 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         }
     }
 
+    private void HandleExitState(PlayerState state)
+    {
+        if (state != PlayerState.Attack)
+            return;
+
+        attackTarget = null;
+
+        controller.ResetStoppingDistance();
+    }
+
     // -- 입력 시스템 호출용 메서드
     // 적 클릭 시, 공격 사거리 안이면 공격, 밖이면 사거리까지 이동 후 공격
     public void TryAttackTarget(Transform target)
     {
-        if (CurrentState == PlayerState.Dead)
+        if (stateMachine.Is(PlayerState.Dead))
             return;
 
         attackTarget = target;
@@ -257,7 +261,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
         else
         {
-            isChasingTarget = true;
+            stateMachine.ChangeState(PlayerState.Chase);
 
             controller.MoveToTarget(target.position, CurrentAttackRange);
         }
@@ -277,17 +281,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         }
     }
 
-    public void EndAttack()
-    {
-        if (CurrentState == PlayerState.Attack)
-            CurrentState = PlayerState.Idle;
-        attackTarget = null;
-    }
-    public void EndHit()
-    {
-        if (CurrentState == PlayerState.Hit)
-            CurrentState = PlayerState.Idle;
-    }
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
