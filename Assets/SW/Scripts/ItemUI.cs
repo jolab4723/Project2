@@ -206,6 +206,13 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             return;
         }
 
+        if (ShopController.Instance != null &&
+    originalGrid == ShopController.Instance.ShopGrid &&
+    targetEquipSlot != null)
+        {
+            ReturnToOriginalPosition();
+            return;
+        }
         if (targetEquipSlot != null && targetEquipSlot.CanAccept(inventoryItem.itemData))
         {
             EquipDirectly(targetEquipSlot);
@@ -480,7 +487,6 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             inventoryItem.isRotated = originalRotated;
             UpdateRotationUI();
         }
-
 
         currentGrid = originalGrid;
         transform.SetParent(currentGrid.ItemsContainer, false);

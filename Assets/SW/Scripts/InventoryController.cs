@@ -5,7 +5,7 @@ using UnityEngine.UI;
 public class InventoryController : MonoBehaviour
 {
     public static InventoryController Instance { get; private set; }
-    
+    [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private PlayerData playerData;
     [SerializeField] private RectTransform dragLayer;
@@ -25,8 +25,17 @@ public class InventoryController : MonoBehaviour
     void Awake()
     {
         Instance=this;
-        playerData.gold = 1000;
-        RefreshGoldText();
+        RefreshGoldText(playerWallet.Gold);
+    }
+    private void OnEnable()
+    {
+        playerWallet.OnGoldChanged += RefreshGoldText;
+        RefreshGoldText(playerWallet.Gold);
+    }
+
+    private void OnDisable()
+    {
+        playerWallet.OnGoldChanged -= RefreshGoldText;
     }
 
     public bool AddItem(ItemData itemData)
@@ -93,8 +102,8 @@ public class InventoryController : MonoBehaviour
         }
     }
 
-    public void RefreshGoldText()
+    public void RefreshGoldText(int gold)
     {
-        goldText.text = playerData.gold.ToString();
+        goldText.text = gold.ToString();
     }
 }

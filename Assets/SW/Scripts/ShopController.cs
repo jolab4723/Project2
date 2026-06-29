@@ -5,10 +5,9 @@ using UnityEngine.UI;
 public class ShopController : MonoBehaviour
 {
     public static ShopController Instance { get; private set; }
-
+    [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private InventoryGrid shopGrid;
-    [SerializeField] private PlayerData playerData;
     [SerializeField] private TextMeshProUGUI logText;
     [SerializeField] private InventoryController inventoryController;
     [SerializeField] private RectTransform highlightRect;
@@ -41,7 +40,10 @@ public class ShopController : MonoBehaviour
             if (!IsTradingToPlayer(fromGrid, itemUI))
                 return false;
             Vector2Int cell = itemUI.GetCellFromItemRect(playerGrid);
-            RequestBuy(itemUI, cell.x, cell.y);
+            bool success = RequestBuy(itemUI, cell.x, cell.y);
+
+            if (!success)
+                itemUI.ReturnToOriginalPosition();
             return true;
         }
 
@@ -69,20 +71,17 @@ public class ShopController : MonoBehaviour
     {
         InventoryItem item = itemUI.Item;
         
-        if (!(playerData.gold >= item.itemData.buyPrice))
-        {
-            itemUI.ReturnToOriginalPosition();
-            return false;
-        }
-
         if (!playerGrid.CanPlaceItem(targetX,targetY,item.CurrentWidth, item.CurrentHeight))
         {
-            itemUI.ReturnToOriginalPosition();
             return false;
         }
 
-        SpendGold(item.itemData.buyPrice, item.itemData.itemName);
+        if (!SpendGold(itemUI, item.itemData.buyPrice, item.itemData.itemName))
+        {
+            return false;
+        }
 
+        shopGrid.RemoveItem(itemUI.Item);
         playerGrid.PlaceItem(item, targetX, targetY);
         itemUI.SetGridPosition(playerGrid, targetX, targetY);
 
@@ -122,34 +121,37 @@ public class ShopController : MonoBehaviour
     }
     private void AddGold (int amount, string name)
     {
-        playerData.gold += amount;
+        playerWallet.AddGold(amount);
         logText.text = $"{name}을 판매했습니다.";
-        InventoryController.Instance.RefreshGoldText();
         
     }
 
-    private void SpendGold(int amount, string name)
+    private bool SpendGold(ItemUI itemUI, int amount, string name)
     {
-        playerData.gold -= amount;
+        if (!playerWallet.TrySpendGold(amount))
+        {
+            logText.text = $"골드가 부족해 {name} 구매에 실패했습니다.";
+            return false;
+        }
+
         logText.text = $"{name}을 구매했습니다.";
-        InventoryController.Instance.RefreshGoldText();
+        return true;
     }
 
     public bool TryRightClick(ItemUI itemUI)
     {
-        if (itemUI.CurrentGrid == shopGrid)
-        {
-            if (!playerGrid.FindEmptySpace(itemUI.Item.CurrentWidth, itemUI.Item.CurrentHeight, out int x, out int y))
-            {
-                itemUI.ReturnToOriginalPosition();
-                return false;
-            }
+        if (itemUI.CurrentGrid != shopGrid)
+            return false;
 
-            shopGrid.RemoveItem(itemUI.Item);
-            return RequestBuy(itemUI, x, y);
+        if (!playerGrid.FindEmptySpace(itemUI.Item.CurrentWidth, itemUI.Item.CurrentHeight, out int x, out int y))
+        {
+            logText.text = "인벤토리에 공간이 없습니다.";
+            return true;
         }
 
-        return false;
+        RequestBuy(itemUI, x, y);
+        return true;
+        
     }
 
     public void ShowHighlight(int width, int height, float cellSize, float spacing)

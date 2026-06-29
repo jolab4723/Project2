@@ -4,6 +4,8 @@ using UnityEngine;
 public class InventoryItem
 {
     public ItemData itemData { get; private set; }
+    public int itemInstanceID;
+    public int upgradeLevel;
 
     public int x;
     public int y;
