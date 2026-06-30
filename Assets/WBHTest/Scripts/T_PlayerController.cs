@@ -36,7 +36,6 @@ public class T_PlayerController : MonoBehaviour
         CheckDodge();
     }
 
-
     private void CheckDodge()
     {
         if (canDodge)
@@ -107,7 +106,7 @@ public class T_PlayerController : MonoBehaviour
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
-     public void MoveCommand(Vector3 destination)
+    public void MoveCommand(Vector3 destination)
     {
         if (stateMachine.Is(PlayerState.Dodge))
             return;

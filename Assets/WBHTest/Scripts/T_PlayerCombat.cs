@@ -25,6 +25,11 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     private float gunnerAttackDamage = 10f;
     private float gunnerBulletSpeed = 10f;
 
+    private bool CanAttack => !stateMachine.IsAnyState(PlayerState.Hit,
+                                                       PlayerState.Skill,
+                                                       PlayerState.Dodge,
+                                                       PlayerState.Dead);
+
     private Animator animator;
 
     public float CurrentHp { get; private set; }
@@ -59,7 +64,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         CurrentHp = maxHp;
     }
 
-    private void OnEable()
+    private void OnEnable()
     {
         stateMachine.OnExitState += HandleExitState;
     }
@@ -83,7 +88,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     public void NormalAttack()
     {
-        if (IsDead) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
+        if (IsDead || !CanAttack) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
             return;
 
         if(attackTarget != null)
@@ -246,7 +251,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     // 적 클릭 시, 공격 사거리 안이면 공격, 밖이면 사거리까지 이동 후 공격
     public void TryAttackTarget(Transform target)
     {
-        if (stateMachine.Is(PlayerState.Dead))
+        if (!CanAttack) 
             return;
 
         attackTarget = target;

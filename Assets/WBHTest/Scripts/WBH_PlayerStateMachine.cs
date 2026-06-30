@@ -34,4 +34,16 @@ public class WBH_PlayerStateMachine : MonoBehaviour
 
         OnStateChanged?.Invoke(previous, CurrentState);
     }
+
+    // 현재 상태가 매개변수의 상태배열에 포함되는 상태인지 검사 
+    public bool IsAnyState(params PlayerState[] states)
+    {
+        foreach (PlayerState state in states)
+        {
+            if (CurrentState == state)
+                return true;
+        }
+
+        return false;
+    }
 }
