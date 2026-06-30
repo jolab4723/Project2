@@ -4,7 +4,6 @@ using UnityEngine;
 public class YJ_LightBlink : MonoBehaviour
 {
     private Light blinkLight;
-    private Transform panel;
     private Material panelMaterial;
     private Color originalEmission;
 
@@ -17,7 +16,7 @@ public class YJ_LightBlink : MonoBehaviour
     void Start()
     {
         blinkLight = GetComponentInChildren<Light>();
-        panel = gameObject.transform.Find("Panel");
+        Transform panel = transform.Find("Panel");
 
         Renderer panelRenderer = panel != null ? panel.GetComponent<Renderer>() : null;
 
