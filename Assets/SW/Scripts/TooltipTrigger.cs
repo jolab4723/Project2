@@ -1,11 +1,12 @@
+using ItemSystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    private ItemData itemData;
+    private ItemInstance itemData;
 
-    public void Setup(ItemData data)
+    public void Setup(ItemInstance data)
     {
         itemData = data;
     }
@@ -15,11 +16,11 @@ public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (itemData == null)
             return;
 
-        TooltipManager.Instance.ShowTooltip(itemData);
+        TooltipManagerTest.Instance.ShowTooltip(itemData);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        TooltipManager.Instance.HideTooltip();
+        TooltipManagerTest.Instance.HideTooltip();
     }
 }
