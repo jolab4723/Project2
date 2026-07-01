@@ -130,7 +130,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
     {
         currentScreenPosition = eventData.position;
         isDragging = true;
-        TooltipManagerTest.Instance.HideTooltip();
+        TooltipManager.Instance.HideTooltip();
         bool wasEquipped = IsEquipped;
         itemIcon.color = new Color(1f, 1f, 1f, 0.8f);
 
