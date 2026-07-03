@@ -35,6 +35,7 @@ public struct StatSet
     public float cdrFlat;        // 플랫 합연산 전용 (Percent 레이어 미적용)
     public float mpRegenFlat;
     public float mpRegenPercent;
+    public float maxManaFlat;    // PlayerStatManager 작업 때 추가 (StatType.mpMaxFlat 대응). 단순 합산이라 Percent 없음.
 
     // 관통/범위
     public float penFlat;
@@ -81,6 +82,7 @@ public struct StatSet
             cdrFlat = a.cdrFlat + b.cdrFlat,
             mpRegenFlat = a.mpRegenFlat + b.mpRegenFlat,
             mpRegenPercent = a.mpRegenPercent + b.mpRegenPercent,
+            maxManaFlat = a.maxManaFlat + b.maxManaFlat,
 
             penFlat = a.penFlat + b.penFlat,
             penPercent = a.penPercent + b.penPercent,

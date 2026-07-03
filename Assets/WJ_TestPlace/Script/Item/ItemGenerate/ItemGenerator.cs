@@ -13,6 +13,9 @@ public class ItemGenerator : MonoBehaviour
     [Tooltip("ItemDataStorage 컴포넌트가 붙어있는 프리팹")]
     public GameObject itemPickupPrefab;
 
+    /// <summary>가장 최근 Drop()으로 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
+    public GameObject LastSpawnedPickup { get; private set; }
+
     // Test Input
     private void Update()
     {
@@ -75,5 +78,6 @@ public class ItemGenerator : MonoBehaviour
         }
 
         storage.Init(instance);
+        LastSpawnedPickup = obj;
     }
 }
