@@ -58,8 +58,8 @@ public class UpgradeController : MonoBehaviour
     private int GetUpgradeCost(ItemInstance item)
     {
         // 추후 연동
-
-        return fixedUpgradeCost;
+        int upgradeCost = Mathf.CeilToInt(500 * Mathf.Pow(1.15f, item.upgradeLevel) / 10)  * 10;
+        return upgradeCost;
     }
 
     private float GetMainOptionValue(ItemInstance item, int previewUpgradeLevel)
@@ -92,8 +92,14 @@ public class UpgradeController : MonoBehaviour
     {
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            ItemInstance instance = ItemOptionRoller.Generate(testItemDefinition);
-            SetItem(instance);
+            //ItemInstance instance = ItemOptionRoller.Generate(testItemDefinition);
+            //SetItem(instance);
+        }
+
+        if (Keyboard.current.cKey.wasPressedThisFrame)
+        {
+            playerWallet.AddGold(999999999);
+
         }
     }
 }
