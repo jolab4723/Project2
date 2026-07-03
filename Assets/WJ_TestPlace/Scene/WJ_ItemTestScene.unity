@@ -1641,8 +1641,6 @@ MonoBehaviour:
   shopGrid: {fileID: 758122726}
   logText: {fileID: 1828702822}
   inventoryController: {fileID: 0}
-  highlightRect: {fileID: 657836327}
-  highlightImage: {fileID: 657836325}
 --- !u!1 &154704871
 GameObject:
   m_ObjectHideFlags: 0
@@ -2824,6 +2822,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 218490383}
+  - component: {fileID: 218490384}
   m_Layer: 0
   m_Name: ItemsContainer
   m_TagString: Untagged
@@ -2851,6 +2850,20 @@ RectTransform:
   m_AnchoredPosition: {x: -290, y: 220}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &218490384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 218490382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
+  highlightRect: {fileID: 734509815}
+  highlightImage: {fileID: 734509816}
 --- !u!1 &220129237
 GameObject:
   m_ObjectHideFlags: 0
@@ -4377,6 +4390,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 400116192}
+  - component: {fileID: 400116193}
   m_Layer: 5
   m_Name: ItemTooltip_AutoSize
   m_TagString: Untagged
@@ -4409,6 +4423,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -300}
   m_SizeDelta: {x: 400, y: 600}
   m_Pivot: {x: 0, y: 0}
+--- !u!225 &400116193
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400116191}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &404285376
 GameObject:
   m_ObjectHideFlags: 0
@@ -9773,6 +9799,7 @@ MonoBehaviour:
   gridHeight: 12
   cellSize: 70
   cellSpacing: 3
+  highlightUI: {fileID: 1467233015}
 --- !u!1 &768854270
 GameObject:
   m_ObjectHideFlags: 0
@@ -12071,8 +12098,6 @@ MonoBehaviour:
   - {fileID: 335978104}
   - {fileID: 1889729567}
   itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
-  highlightRect: {fileID: 734509815}
-  highlightImage: {fileID: 734509816}
   goldText: {fileID: 1839677529}
 --- !u!224 &947507942
 RectTransform:
@@ -18445,6 +18470,7 @@ MonoBehaviour:
   gridHeight: 6
   cellSize: 70
   cellSpacing: 3
+  highlightUI: {fileID: 218490384}
 --- !u!4 &1397707685
 Transform:
   m_ObjectHideFlags: 0
@@ -19062,6 +19088,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1467233014}
+  - component: {fileID: 1467233015}
   m_Layer: 0
   m_Name: ItemsContainer
   m_TagString: Untagged
@@ -19089,6 +19116,20 @@ RectTransform:
   m_AnchoredPosition: {x: -290, y: 600}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &1467233015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1467233013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
+  highlightRect: {fileID: 657836327}
+  highlightImage: {fileID: 657836325}
 --- !u!1 &1471175934
 GameObject:
   m_ObjectHideFlags: 0
