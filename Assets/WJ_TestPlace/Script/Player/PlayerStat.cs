@@ -63,15 +63,15 @@ public class PlayerStat
     /// </summary>
     public void Recalculate(StatSet character, StatSet equipment, StatSet buff)
     {
-        maxHealth = Mathf.RoundToInt(CalcFinal(
+        maxHealth = Mathf.CeilToInt(CalcFinal(
             character.maxHealthFlat, equipment.maxHealthFlat, equipment.maxHealthPercent,
             buff.maxHealthPercent, buff.maxHealthFlat));
 
-        attackPower = Mathf.RoundToInt(CalcFinal(
+        attackPower = Mathf.CeilToInt(CalcFinal(
             character.attackPowerFlat, equipment.attackPowerFlat, equipment.attackPowerPercent,
             buff.attackPowerPercent, buff.attackPowerFlat));
 
-        defensePower = Mathf.RoundToInt(CalcFinal(
+        defensePower = Mathf.CeilToInt(CalcFinal(
             character.defensePowerFlat, equipment.defensePowerFlat, equipment.defensePowerPercent,
             buff.defensePowerPercent, buff.defensePowerFlat));
 
@@ -101,9 +101,9 @@ public class PlayerStat
             buff.mpRegenPercent, buff.mpRegenFlat);
 
         // maxMana: 3단 공식 미적용. mpMaxFlat 계열은 단순 합산.
-        maxMana = Mathf.RoundToInt(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat);
+        maxMana = Mathf.CeilToInt(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat);
 
-        pen = Mathf.RoundToInt(CalcFinal(
+        pen = Mathf.CeilToInt(CalcFinal(
             character.penFlat, equipment.penFlat, equipment.penPercent,
             buff.penPercent, buff.penFlat));
 
@@ -134,10 +134,14 @@ public class PlayerStat
         OnStatChanged?.Invoke();
     }
 
-    /// <summary>3단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) + 버프고정</summary>
+    /// <summary>
+    /// 3단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) + 버프고정
+    /// !! equipPercent/buffPercent는 "3"이 오면 3%를 의미하는 퍼센트 숫자 그대로다
+    /// (0.03 같은 소수 분수가 아님 - 아이템 서브옵션/툴팁 표시와 동일한 스케일). 그래서 여기서 100으로 나눈다.
+    /// </summary>
     private static float CalcFinal(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat)
     {
-        return (characterFlat + equipFlat) * (1f + equipPercent) * (1f + buffPercent) + buffFlat;
+        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) + buffFlat;
     }
 
     // ----- 구독용 핸들러 예시 (실제 매니저 이벤트 시그니처에 맞춰 연결 필요) -----
