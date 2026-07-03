@@ -39,7 +39,7 @@ namespace ItemSystem
     }
 
     // category가 Armor일 때만 사용
-    public enum ArmorType { Helmet, Armor, Boots }
+    public enum ArmorType { Helmet, Armor, Boots, None }
 
     public enum SubStatSlotType { Combat, Utility, Either }
 

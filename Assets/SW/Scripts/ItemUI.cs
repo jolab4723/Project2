@@ -307,15 +307,27 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
     private void Equip()
     {
+        EquipSlotUI swapSlot = null;
+
         foreach (EquipSlotUI slot in InventoryController.Instance.allEquipSlots)
         {
-            if (slot.CanAccept(inventoryItem.itemData))
+            if (slot == null || !slot.CanAcceptType(inventoryItem.itemData))
+                continue;
+
+            if (slot.IsEmpty)
             {
                 currentGrid.RemoveItem(inventoryItem);
                 EquipDirectly(slot);
                 return;
             }
+
+            if (swapSlot == null)
+                swapSlot = slot;
         }
+
+        if (TryRightClickSwapWithEquipSlot(swapSlot))
+            return;
+
         InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
     }
 
@@ -629,6 +641,47 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         // A를 장비칸에 장착
         EquipDirectly(slot);
 
+        return true;
+    }
+
+    private bool TryRightClickSwapWithEquipSlot(EquipSlotUI slot)
+    {
+        if (slot == null || slot.IsEmpty)
+            return false;
+
+        if (!slot.CanAcceptType(inventoryItem.itemData))
+            return false;
+
+        if (currentGrid == null)
+            return false;
+
+        ItemUI equippedUI = slot.equipItemUI;
+        if (equippedUI == null || equippedUI.Item == null)
+            return false;
+
+        InventoryItem equippedItem = equippedUI.Item;
+        int targetX = inventoryItem.x;
+        int targetY = inventoryItem.y;
+
+        currentGrid.RemoveItem(inventoryItem);
+
+        if (!currentGrid.CanPlaceItem(
+                targetX,
+                targetY,
+                equippedItem.CurrentWidth,
+                equippedItem.CurrentHeight))
+        {
+            currentGrid.PlaceItem(inventoryItem, targetX, targetY);
+            return false;
+        }
+
+        slot.equipItemUI = null;
+        equippedUI.currentEquipSlot = null;
+
+        currentGrid.PlaceItem(equippedItem, targetX, targetY);
+        equippedUI.SetGridPosition(currentGrid, targetX, targetY);
+
+        EquipDirectly(slot);
         return true;
     }
 }
