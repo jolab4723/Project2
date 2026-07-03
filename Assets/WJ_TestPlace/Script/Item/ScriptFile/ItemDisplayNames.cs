@@ -9,22 +9,22 @@ namespace ItemSystem
     /// </summary>
     public static class ItemDisplayNames
     {
-        public static readonly Dictionary<ItemGrade, string> GradeNames = new Dictionary<ItemGrade, string>
+        public static readonly Dictionary<ItemRarity, string> GradeNames = new Dictionary<ItemRarity, string>
         {
-            { ItemGrade.Common, "일반" },
-            { ItemGrade.Advanced, "고급" },
-            { ItemGrade.Rare, "희귀" },
-            { ItemGrade.Unique, "유일" },
-            { ItemGrade.Legendary, "전설" },
+            { ItemRarity.Common, "일반" },
+            { ItemRarity.Advanced, "고급" },
+            { ItemRarity.Rare, "희귀" },
+            { ItemRarity.Unique, "유일" },
+            { ItemRarity.Legendary, "전설" },
         };
 
-        public static readonly Dictionary<ItemGrade, string> GradeColorHex = new Dictionary<ItemGrade, string>
+        public static readonly Dictionary<ItemRarity, string> GradeColorHex = new Dictionary<ItemRarity, string>
         {
-            { ItemGrade.Common, "#FFFFFF" },
-            { ItemGrade.Advanced, "#B7E1CD" },
-            { ItemGrade.Rare, "#9FC5E8" },
-            { ItemGrade.Unique, "#C27BA0" },
-            { ItemGrade.Legendary, "#FFE599" },
+            { ItemRarity.Common, "#FFFFFF" },
+            { ItemRarity.Advanced, "#B7E1CD" },
+            { ItemRarity.Rare, "#9FC5E8" },
+            { ItemRarity.Unique, "#C27BA0" },
+            { ItemRarity.Legendary, "#FFE599" },
         };
 
         public static readonly Dictionary<ElementType, string> ElementNames = new Dictionary<ElementType, string>

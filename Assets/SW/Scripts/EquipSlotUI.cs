@@ -1,18 +1,20 @@
+using ItemSystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    public EquipItem allowedType;
+    public ArmorType allowedType;
 
     [HideInInspector]
     public ItemUI equipItemUI;
 
     public bool IsEmpty => equipItemUI == null;
 
-    public bool CanAccept(ItemData data)
+    public bool CanAccept(ItemInstance data)
     {
-        return IsEmpty && data.equipItem == allowedType;
+        // 무기 부분 별도 관리
+        return IsEmpty && data.definition.armorType == allowedType;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
