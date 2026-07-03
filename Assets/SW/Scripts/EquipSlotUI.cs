@@ -4,6 +4,10 @@ using UnityEngine.EventSystems;
 
 public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
+    [Tooltip("이 슬롯이 받는 아이템 카테고리. Armor면 아래 allowedType으로 부위까지 추가 검증한다.")]
+    public ItemCategory requiredCategory = ItemCategory.Armor;
+
+    [Tooltip("requiredCategory가 Armor일 때만 사용 (투구/갑옷/부츠 구분)")]
     public ArmorType allowedType;
 
     [HideInInspector]
@@ -11,18 +15,24 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public bool IsEmpty => equipItemUI == null;
 
-    public bool CanAccept(ItemInstance data)
-    {    // 무기 부분 별도 관리
-        return IsEmpty && data.definition.armorType == allowedType;
-    }
-    public bool CanAcceptType(ItemInstance data)
-    {
-        return data.definition.armorType == allowedType;
-    }
 
-    public bool CanEquipToEmpty(ItemInstance data)
+    public bool CanAccept(ItemInstance data)
     {
         return IsEmpty && CanAcceptType(data);
+    }
+
+    public bool CanAcceptType(ItemInstance data)
+    {
+        if (data == null || data.definition == null)
+            return false;
+
+        if (data.definition.category != requiredCategory)
+            return false;
+
+        if (requiredCategory == ItemCategory.Armor)
+            return data.definition.armorType == allowedType;
+
+        return true;
     }
 
     public bool CanSwap(ItemUI incomingItem)
