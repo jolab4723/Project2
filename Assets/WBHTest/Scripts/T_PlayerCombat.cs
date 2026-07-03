@@ -1,5 +1,6 @@
+using NUnit.Framework.Internal;
+using System.Data;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 public enum PlayerClass { Fighter, gunner }
@@ -38,6 +39,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     [SerializeField] private PlayerClass playerClass;
     private Transform attackTarget;
     private T_PlayerController controller;
+    private WBH_PlayerEffect effect;
 
     private float CurrentAttackRange
     {
@@ -60,6 +62,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         animator = GetComponent<Animator>();
         controller = GetComponent<T_PlayerController>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
+        effect = GetComponent<WBH_PlayerEffect>();
 
         CurrentHp = maxHp;
     }
@@ -81,7 +84,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         if (IsDead)
             return;
 
-            HandleChase();
+        UpdateStats();
+
+        HandleChase();
 
         TestMultiple();
     }
@@ -124,6 +129,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
             case GunnerWeaponType.Shotgun:
                 {
                     SectorAttack(gunnerAttackRange, 90f, gunnerAttackDamage);
+                    effect.ShotGunEffect();
                 }
                 break;
             case GunnerWeaponType.GrenadeLauncher:
@@ -218,25 +224,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         controller.ResetStoppingDistance();
     }
 
-    // -- 작동 테스트용 메서드
-    public void TestMultiple()
-    {
-        if(Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            Vector3 targetPos = transform.position + transform.forward * 8f;
-
-            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward,gunnerAttackDamage,gunnerBulletSpeed,gunnerAttackRange,enemyLayer,5,30);
-        }
-
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            if(Physics.Raycast(ray, out RaycastHit hit))
-            projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
-        }
-    }
-
     private void HandleExitState(PlayerState state)
     {
         if (state != PlayerState.Attack)
@@ -283,6 +270,41 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
             case PlayerClass.gunner:
                 GunnerAttack();
                 break;
+        }
+    }
+
+    private void UpdateStats()
+    {
+        switch (currentWeapon)
+        {
+            case GunnerWeaponType.Rifle:
+                gunnerAttackRange = 10f;
+                break;
+            case GunnerWeaponType.Shotgun:
+                gunnerAttackRange = 4f;
+                break;
+            case GunnerWeaponType.GrenadeLauncher:
+                gunnerAttackRange = 7f;
+                break;
+        }
+    }
+
+    // -- 작동 테스트용 메서드
+    public void TestMultiple()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Vector3 targetPos = transform.position + transform.forward * 8f;
+
+            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out RaycastHit hit))
+                projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
         }
     }
 

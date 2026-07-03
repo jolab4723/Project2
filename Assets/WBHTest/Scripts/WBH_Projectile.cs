@@ -127,6 +127,9 @@ public class WBH_Projectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log($"투사체 충돌 :{other.name}");
+        Debug.Log($"{name} 충돌");
+        Debug.Log($"상대 : {other.name}");
+        Debug.Log($"Layer : {LayerMask.LayerToName(other.gameObject.layer)}");
         // 충돌레이어가 타겟레이어에 포함되지 않으면 관통
         if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
         {

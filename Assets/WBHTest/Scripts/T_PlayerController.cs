@@ -4,7 +4,7 @@ using UnityEngine.AI;
 public class T_PlayerController : MonoBehaviour
 {
     [Header("Move")]
-    [SerializeField] private NavMeshAgent agent;
+    [SerializeField] public NavMeshAgent agent;
 
     [Header("Dodge")]
     [SerializeField] private float dodgeDistance = 5f;
@@ -13,27 +13,79 @@ public class T_PlayerController : MonoBehaviour
 
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    private Camera mainCamera;
-
     public bool canDodge => currentDodgeCooltime <= 0f;
     public Vector3 lookDir { get; private set; }
-    private Animator animator;
     public float currentDodgeCooltime { get; private set; }
+
+    private Camera mainCamera;
+    private Animator animator;
+    private WBH_PlayerIndicator indicator;
+    private Vector3 dodgeDir;
+
 
     private void Awake()
     {
         mainCamera = Camera.main;
         animator = GetComponent<Animator>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
+        indicator = GetComponent<WBH_PlayerIndicator>();
 
-        //agent.updateRotation = false;
         agent.autoBraking = true;
+        //agent.updateRotation = false;
+    }
+
+    private void OnEnable()
+    {
+        stateMachine.OnEnterState += HandleEnterState;
+        stateMachine.OnExitState += HandleExitState;
+    }
+    private void OnDisable()
+    {
+        stateMachine.OnEnterState -= HandleEnterState;
+        stateMachine.OnExitState -= HandleExitState;
     }
 
     private void Update()
     {
         // 회피 쿨타임 체크
         CheckDodge();
+        // 이동 종료 시, Idle 상태로 변환
+        UpdateMoveState();
+    }
+
+    // 상태 진입 행동
+    private void HandleEnterState(PlayerState state)
+    {
+        if(state == PlayerState.Dodge)
+        {
+            StartCoroutine(Dodge(dodgeDir));
+        }
+        switch (state)
+        {
+            case PlayerState.Attack:
+            case PlayerState.Skill:
+                agent.isStopped = true;
+                agent.ResetPath();
+                agent.velocity = Vector3.zero;
+                break;
+        }
+        if (state == PlayerState.Dead)
+        {
+            indicator.Hide();
+            animator.SetTrigger("Dead");
+        }
+    }
+
+    // 상태 나감 행동
+    private void HandleExitState(PlayerState state)
+    {
+        switch (state)
+        {
+            case PlayerState.Attack:
+            case PlayerState.Skill:
+                agent.isStopped = false;
+                break;
+        }
     }
 
     private void CheckDodge()
@@ -46,18 +98,6 @@ public class T_PlayerController : MonoBehaviour
         if (currentDodgeCooltime <= 0f)
         {
             currentDodgeCooltime = 0f;
-        }
-    }
-
-    // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
-    private void PlayerViewDir()
-    {
-        Vector3 dir = GetMouseDirection();
-
-        if(dir != Vector3.zero)
-        { 
-            lookDir = dir;
-            transform.forward = lookDir;
         }
     }
 
@@ -79,8 +119,6 @@ public class T_PlayerController : MonoBehaviour
     // 회피 코루틴
     private System.Collections.IEnumerator Dodge(Vector3 dir)
     {
-        stateMachine.ChangeState(PlayerState.Dodge);
-
         agent.enabled = false;
 
         Vector3 startPos = transform.position;
@@ -108,7 +146,7 @@ public class T_PlayerController : MonoBehaviour
 
     public void MoveCommand(Vector3 destination)
     {
-        if (stateMachine.Is(PlayerState.Dodge))
+        if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
             return;
 
         agent.SetDestination(destination);
@@ -119,14 +157,22 @@ public class T_PlayerController : MonoBehaviour
         if (!canDodge)
             return;
 
-        Vector3 dodgeDir = GetMouseDirection();
+        dodgeDir = GetMouseDirection();
 
         if (dodgeDir == Vector3.zero)
             return;
 
-        StartCoroutine(Dodge(dodgeDir));
-
         currentDodgeCooltime = dodgeCooltime;
+
+        stateMachine.ChangeState(PlayerState.Dodge);
+    }
+
+    private void UpdateMoveState()
+    {
+        if (!stateMachine.Is(PlayerState.Move) || agent.pathPending || agent.remainingDistance > agent.stoppingDistance || agent.velocity.sqrMagnitude > 0.01f)
+            return;
+
+        stateMachine.ChangeState(PlayerState.Idle);
     }
 
     // --- combat.cs 에서 활용할 이동처리
@@ -144,4 +190,16 @@ public class T_PlayerController : MonoBehaviour
     {
         agent.stoppingDistance = 0f;
     }
+
+    // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
+    //private void PlayerViewDir()
+    //{
+    //    Vector3 dir = GetMouseDirection();
+
+    //    if (dir != Vector3.zero)
+    //    {
+    //        lookDir = dir;
+    //        transform.forward = lookDir;
+    //    }
+    //}
 }

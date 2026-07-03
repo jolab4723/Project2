@@ -8,6 +8,8 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private T_PlayerCombat combat;
     private T_PlayerController controller;
     private NavMeshAgent agent;
+    private WBH_PlayerEffect effect;
+
 
     void Awake()
     {
@@ -16,6 +18,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         combat = GetComponent<T_PlayerCombat>();
         controller = GetComponent<T_PlayerController>();
+        effect = GetComponent<WBH_PlayerEffect>();
     }
 
     private void OnEnable()
@@ -81,17 +84,26 @@ public class WBH_PlayerAnimation : MonoBehaviour
     }
 
 
-    // --- 애니메이션 클립 이벤트
+    // --- 애니메이션 클립 이벤트 (상태 및 인게임에 영향)
     public void AniEvent_ExecuteAttack()
     {
         combat.ExecuteAttack();
     }
     public void AniEvent_EndAttack()
     {
+        Debug.Log($"EndAttack 호출 / 현재 상태 : {stateMachine.CurrentState}");
         stateMachine.ChangeState(PlayerState.Idle);
     }
     public void AniEvent_HitEnd()
     {
         stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+
+
+    //--- (이펙트)
+    public void AniEvent_FighterAttack()
+    {
+        effect.FighterAttackEffect();
     }
 }
