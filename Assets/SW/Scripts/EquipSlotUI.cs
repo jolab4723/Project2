@@ -15,19 +15,29 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public bool IsEmpty => equipItemUI == null;
 
+
     public bool CanAccept(ItemInstance data)
     {
-        if (!IsEmpty || data == null || data.definition == null)
+        return IsEmpty && CanAcceptType(data);
+    }
+
+    public bool CanAcceptType(ItemInstance data)
+    {
+        if (data == null || data.definition == null)
             return false;
 
         if (data.definition.category != requiredCategory)
             return false;
 
-        // Armor 슬롯(투구/갑옷/부츠)만 부위까지 추가로 맞는지 확인. 무기/포션은 카테고리 일치만으로 충분.
         if (requiredCategory == ItemCategory.Armor)
             return data.definition.armorType == allowedType;
 
         return true;
+    }
+
+    public bool CanSwap(ItemUI incomingItem)
+    {
+        return !IsEmpty && CanAcceptType(incomingItem.Item.itemData);
     }
 
     public void OnPointerEnter(PointerEventData eventData)

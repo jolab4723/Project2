@@ -12,7 +12,9 @@ public class InventoryGrid : MonoBehaviour
     [SerializeField] private int gridHeight = 6;
     [SerializeField] private float cellSize = 70f;
     [SerializeField] private float cellSpacing = 3f;
+    [SerializeField] private GridHighlightUI highlightUI;
 
+    public GridHighlightUI Highlight => highlightUI;
     public RectTransform GridRect => gridRect;
     public RectTransform ItemsContainer => itemsContainer;
     public float CellSize => cellSize;
@@ -90,5 +92,47 @@ public class InventoryGrid : MonoBehaviour
         }
         foundX = -1; foundY = -1;
         return false;
+    }
+    public InventoryItem GetItemAt(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
+            return null;
+
+        return grid[x, y];
+    }
+
+    public bool TryGetItemInArea(
+    int startX,
+    int startY,
+    int width,
+    int height,
+    out InventoryItem foundItem)
+    {
+        foundItem = null;
+
+        if (startX < 0 || startY < 0 || startX + width > gridWidth || startY + height > gridHeight)
+            return false;
+
+        for (int x = startX; x < startX + width; x++)
+        {
+            for (int y = startY; y < startY + height; y++)
+            {
+                InventoryItem item = grid[x, y];
+
+                if (item == null)
+                    continue;
+
+                if (foundItem == null)
+                {
+                    foundItem = item;
+                }
+                else if (foundItem != item)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return foundItem != null;
     }
 }
