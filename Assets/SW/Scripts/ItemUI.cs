@@ -91,7 +91,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         itemIcon = transform.GetChild(0).GetComponent<Image>();
         itemTransform = itemIcon.transform;
         itemIcon.color = Color.white;
-        itemIcon.sprite = inventoryItem.itemData.itemIcon;
+        itemIcon.sprite = inventoryItem.itemData.definition.icon;
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
     }

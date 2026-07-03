@@ -76,7 +76,7 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        if (!SpendGold(itemUI, item.itemData.buyPrice, item.itemData.itemName))
+        if (!SpendGold(itemUI, item.itemData.definition.sellPrice, item.itemData.definition.itemName))
         {
             return false;
         }
@@ -107,7 +107,7 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        AddGold(item.itemData.sellPrice, item.itemData.itemName);
+        AddGold(item.itemData.definition.sellPrice, item.itemData.definition.itemName);
 
         shopGrid.PlaceItem(item, targetX, targetY);
         itemUI.SetGridPosition(shopGrid, targetX, targetY);
