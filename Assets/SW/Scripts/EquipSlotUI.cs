@@ -4,6 +4,9 @@ using UnityEngine.EventSystems;
 
 public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
+
+    [SerializeField] private EquipSlotType slotType;
+    public EquipSlotType SlotType => slotType;
     [Tooltip("이 슬롯이 받는 아이템 카테고리. Armor면 아래 allowedType으로 부위까지 추가 검증한다.")]
     public ItemCategory requiredCategory = ItemCategory.Armor;
 
@@ -26,13 +29,15 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (data == null || data.definition == null)
             return false;
 
-        if (data.definition.category != requiredCategory)
-            return false;
+        return data.definition.allowedEquipSlots.Contains(slotType);
 
-        if (requiredCategory == ItemCategory.Armor)
-            return data.definition.armorType == allowedType;
+        //if (data.definition.category != requiredCategory)
+        //    return false;
 
-        return true;
+        //if (requiredCategory == ItemCategory.Armor)
+        //    return data.definition.armorType == allowedType;
+
+        //return true;
     }
 
     public bool CanSwap(ItemUI incomingItem)
