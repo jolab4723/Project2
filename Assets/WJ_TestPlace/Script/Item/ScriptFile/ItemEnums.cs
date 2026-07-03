@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace ItemSystem
 {
-    public enum ItemGrade { Common, Advanced, Rare, Unique, Legendary }
+    public enum ItemRarity { Common, Advanced, Rare, Unique, Legendary }
 
     // 유물/포션 분기는 아직 미확정이라 우선 무기/방어구만 다룸
     public enum ItemCategory { Weapon, Armor, Relic, Potion }
@@ -53,17 +53,17 @@ namespace ItemSystem
     /// </summary>
     public static class ItemGradeSlotTable
     {
-        public static readonly Dictionary<ItemGrade, List<SubStatSlotType>> SlotsByGrade =
-            new Dictionary<ItemGrade, List<SubStatSlotType>>
+        public static readonly Dictionary<ItemRarity, List<SubStatSlotType>> SlotsByGrade =
+            new Dictionary<ItemRarity, List<SubStatSlotType>>
             {
-                { ItemGrade.Common, new List<SubStatSlotType>() },
-                { ItemGrade.Advanced, new List<SubStatSlotType> { SubStatSlotType.Combat } },
-                { ItemGrade.Rare, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Utility } },
-                { ItemGrade.Unique, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Utility, SubStatSlotType.Either } },
-                { ItemGrade.Legendary, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Utility, SubStatSlotType.Combat, SubStatSlotType.Either } },
+                { ItemRarity.Common, new List<SubStatSlotType>() },
+                { ItemRarity.Advanced, new List<SubStatSlotType> { SubStatSlotType.Combat } },
+                { ItemRarity.Rare, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Utility } },
+                { ItemRarity.Unique, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Either, SubStatSlotType.Utility } },
+                { ItemRarity.Legendary, new List<SubStatSlotType> { SubStatSlotType.Combat, SubStatSlotType.Combat, SubStatSlotType.Either, SubStatSlotType.Utility } },
             };
 
         // 속성 보너스/공격력% 슬롯은 Rare 이상부터 활성화
-        public static bool HasElementalBonusSlot(ItemGrade grade) => grade >= ItemGrade.Rare;
+        public static bool HasElementalBonusSlot(ItemRarity grade) => grade >= ItemRarity.Rare;
     }
 }

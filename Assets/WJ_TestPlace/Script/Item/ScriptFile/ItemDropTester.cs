@@ -46,7 +46,7 @@ namespace ItemSystem
                 return;
             }
 
-            ItemInstance instance = ItemOptionRoller.Generate(def);
+            ItemInstance instance = ItemDataCreator.Generate(def);
             instance.upgradeLevel = testUpgradeLevel;
 
             SpawnPickup(instance);
@@ -94,7 +94,7 @@ namespace ItemSystem
             sb.AppendLine("===== 아이템 드랍 결과 =====");
             sb.AppendLine($"이름 : {def.itemName}");
             sb.AppendLine($"분류 : {def.category}");
-            sb.AppendLine($"등급 : {def.grade}");
+            sb.AppendLine($"등급 : {def.rarity}");
             sb.AppendLine($"강화 수치 : +{instance.upgradeLevel}");
 
             sb.AppendLine("--- 메인 옵션 (강화 적용) ---");

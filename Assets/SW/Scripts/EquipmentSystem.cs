@@ -27,10 +27,10 @@ public class EquipmentSystem : MonoBehaviour
         {
             InventoryItem item = equippedItems[i];
 
-            infos[i] = new EquippedItemInfo(
-                item.itemData.itemID,
-                item.upgradeLevel
-            );
+            //infos[i] = new EquippedItemInfo(
+            //    item.itemData.itemID,
+            //    item.upgradeLevel
+            //);
         }
 
         OnEquipmentChanged?.Invoke(infos);

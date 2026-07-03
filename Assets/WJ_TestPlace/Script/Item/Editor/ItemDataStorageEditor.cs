@@ -35,7 +35,7 @@ namespace ItemSystem.EditorScripts
             EditorGUILayout.LabelField("아이템 정보", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("이름", def.itemName);
             EditorGUILayout.LabelField("분류", def.category.ToString());
-            EditorGUILayout.LabelField("등급", def.grade.ToString());
+            EditorGUILayout.LabelField("등급", def.rarity.ToString());
             EditorGUILayout.LabelField("강화 수치", $"+{item.upgradeLevel}");
 
             EditorGUILayout.Space();
