@@ -21,7 +21,7 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
         foreach (var slot in InventoryController.Instance.allEquipSlots)
         {
             // 포션 슬롯은 스탯에 영향 없음 (소비 로직은 다른 곳에서 처리)
-            if (slot == null || slot.requiredCategory == ItemCategory.Potion)
+            if (slot == null || slot.SlotType == EquipSlotType.Potion)
                 continue;
 
             var invItem = slot.equipItemUI != null ? slot.equipItemUI.Item : null;
