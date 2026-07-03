@@ -13,12 +13,15 @@ using UnityEngine;
 ///   3) 구독 방식은 아직 실제 이벤트 소스(장비/레벨/버프 매니저)를 몰라서,
 ///      외부에서 Recalculate()를 호출해주는 형태로 작성. 실제 매니저 클래스가 정해지면
 ///      그 클래스의 이벤트에 OnEquipmentChanged 등을 연결하면 됨.
+///   4) maxMana는 PlayerStatManager 작업 때 추가함 (StatType.mpMaxFlat 대응, 단순 합산).
+///      currentMana 변수는 있지만 소모/재생(스킬 사용, 시간 경과 회복 등) 로직은 아직 없음.
 /// </summary>
 [Serializable]
 public class PlayerStat
 {
     // ----- 기본 (직접값, 공식 미적용) -----
     public int currentHealth;
+    public int currentMana;
     public int currentLevel;
     public float currentExp;
 
@@ -32,6 +35,7 @@ public class PlayerStat
     public float critMult;
     public float cdr;        // 플랫 합연산 전용, 0~70 클램프
     public float mpRegen;
+    public int maxMana;
     public int pen;
     public float skillRange;
     public float fireBonus;
@@ -96,6 +100,9 @@ public class PlayerStat
             character.mpRegenFlat, equipment.mpRegenFlat, equipment.mpRegenPercent,
             buff.mpRegenPercent, buff.mpRegenFlat);
 
+        // maxMana: 3단 공식 미적용. mpMaxFlat 계열은 단순 합산.
+        maxMana = Mathf.RoundToInt(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat);
+
         pen = Mathf.RoundToInt(CalcFinal(
             character.penFlat, equipment.penFlat, equipment.penPercent,
             buff.penPercent, buff.penFlat));
@@ -119,6 +126,10 @@ public class PlayerStat
         // maxHealth가 줄어들어 currentHealth가 초과 상태가 되지 않도록 보정
         if (currentHealth > maxHealth)
             currentHealth = maxHealth;
+
+        // maxMana가 줄어들어 currentMana가 초과 상태가 되지 않도록 보정
+        if (currentMana > maxMana)
+            currentMana = maxMana;
 
         OnStatChanged?.Invoke();
     }
@@ -150,5 +161,16 @@ public class PlayerStat
     {
         currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
         OnStatChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// mpRegen 스탯에 따라 마나를 회복시키는 처리.
+    /// TODO: 실제 회복 로직(틱 주기, 소수점 누적 등) 아직 미구현. 자리만 잡아둠.
+    /// 아직 어디서도 호출 안 함 - 호출 방식(매 프레임 Time.deltaTime? 고정 틱?) 정해지면
+    /// PlayerStatManager 쪽에서 이 메서드를 불러주면 됨.
+    /// </summary>
+    public void RegenerateMana(float deltaTime)
+    {
+        // TODO: mpRegen 기반 마나 회복 로직 구현 예정
     }
 }

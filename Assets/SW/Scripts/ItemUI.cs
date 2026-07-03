@@ -224,9 +224,14 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
             if (canPlace)
             {
+                bool wasEquippedBeforeDrop = IsEquipped;
+
                 currentGrid.PlaceItem(inventoryItem, targetX, targetY);
                 rect.anchoredPosition = new Vector2(targetX * step, -targetY * step);
                 currentEquipSlot = null;
+
+                if (wasEquippedBeforeDrop && PlayerStatManager.Instance != null)
+                    PlayerStatManager.Instance.Recalculate();
             }
             else
             {
@@ -282,6 +287,9 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         RectTransform slotRect = slot.transform as RectTransform;
         rect.sizeDelta = slotRect.sizeDelta;
         (itemTransform as RectTransform).sizeDelta = slotRect.sizeDelta;
+
+        if (PlayerStatManager.Instance != null)
+            PlayerStatManager.Instance.Recalculate();
     }
 
     private void Equip()
@@ -312,6 +320,9 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             rect.anchoredPosition = new Vector2(foundX * step, -foundY * step);
 
             RestoreGridSettings();
+
+            if (PlayerStatManager.Instance != null)
+                PlayerStatManager.Instance.Recalculate();
         }
         else if(currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
         {
@@ -327,6 +338,9 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
             RestoreGridSettings();
             InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
+
+            if (PlayerStatManager.Instance != null)
+                PlayerStatManager.Instance.Recalculate();
         }
         else
         {
