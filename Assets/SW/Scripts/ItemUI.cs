@@ -238,6 +238,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
                 currentEquipSlot = null;
 
                 if (wasEquippedBeforeDrop && PlayerStatManager.Instance != null)
+                    inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
                     PlayerStatManager.Instance.Recalculate();
             }
             else
@@ -302,6 +303,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         (itemTransform as RectTransform).sizeDelta = slotRect.sizeDelta;
 
         if (PlayerStatManager.Instance != null)
+            inventoryItem.itemData.definition.uniqueEffect?.OnEquip(inventoryItem.itemData);
             PlayerStatManager.Instance.Recalculate();
     }
 
@@ -347,6 +349,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             RestoreGridSettings();
 
             if (PlayerStatManager.Instance != null)
+                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
                 PlayerStatManager.Instance.Recalculate();
         }
         else if(currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
@@ -365,6 +368,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
 
             if (PlayerStatManager.Instance != null)
+                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
                 PlayerStatManager.Instance.Recalculate();
         }
         else
@@ -634,6 +638,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         // B를 인벤토리로 내림
         slot.equipItemUI = null;
         equippedUI.currentEquipSlot = null;
+        equippedItem.itemData.definition.uniqueEffect?.OnUnequip(equippedItem.itemData);
 
         originalGrid.PlaceItem(equippedItem, originalX, originalY);
         equippedUI.SetGridPosition(originalGrid, originalX, originalY);
