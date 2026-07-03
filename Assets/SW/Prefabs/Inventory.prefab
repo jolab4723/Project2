@@ -225,6 +225,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fcabd762b3b6ca4a81c7884044e63e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryController
+  playerWallet: {fileID: 0}
+  playerGrid: {fileID: 0}
+  playerData: {fileID: 0}
+  dragLayer: {fileID: 0}
   logText: {fileID: 4015576974339263706}
   hoveredEquipSlot: {fileID: 0}
   allEquipSlots:
@@ -234,11 +238,9 @@ MonoBehaviour:
   - {fileID: 7726404350700362040}
   - {fileID: 630024168999469604}
   itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
-  itemsContainer: {fileID: 340979492293886953}
   highlightRect: {fileID: 3034646199790691714}
   highlightImage: {fileID: 6335973906073794232}
-  cellSize: 70
-  cellSpacing: 3
+  goldText: {fileID: 0}
 --- !u!1 &498729900308747150
 GameObject:
   m_ObjectHideFlags: 0
@@ -2108,8 +2110,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4e3dec0682008044b9d0fe07b3284ddb, type: 2}
-  m_sharedMaterial: {fileID: 8681240877994506547, guid: 4e3dec0682008044b9d0fe07b3284ddb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3162,8 +3164,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uD68C\uC804"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4e3dec0682008044b9d0fe07b3284ddb, type: 2}
-  m_sharedMaterial: {fileID: 8681240877994506547, guid: 4e3dec0682008044b9d0fe07b3284ddb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d29f3211fbf36e3438822ac17bc57d47, type: 2}
+  m_sharedMaterial: {fileID: 8681240877994506547, guid: d29f3211fbf36e3438822ac17bc57d47, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
