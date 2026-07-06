@@ -79,8 +79,9 @@ public class WBH_Effect : MonoBehaviour
         {
             particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
-        effectData = null;
 
         poolManager.ReturnEffect(this);
+
+        effectData = null;
     }
 }

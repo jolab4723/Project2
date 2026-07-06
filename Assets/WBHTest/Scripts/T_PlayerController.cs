@@ -48,11 +48,6 @@ public class T_PlayerController : MonoBehaviour
 
     private void Update()
     {
-        var stat = PlayerStatManager.Instance.Stat;
-        speed = stat.moveSpeed;
-
-
-
         // 회피 쿨타임 체크
         CheckDodge();
         // 이동 종료 시, Idle 상태로 변환
