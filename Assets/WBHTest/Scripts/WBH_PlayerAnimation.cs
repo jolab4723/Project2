@@ -3,13 +3,24 @@ using UnityEngine.AI;
 
 public class WBH_PlayerAnimation : MonoBehaviour
 {
+    [Header("EffectRoot")]
+    [SerializeField] private Transform fighterEffectRoot;
+    [SerializeField] private Transform gunnerEffectRoot;
+
+
+    [Header("Attack")]
+    [SerializeField] private WBH_EffectData Eff_fighterAtk;
+    [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
+
+    [SerializeField] private WBH_EffectSpawner effectSpawner;
+
     private Animator animator;
     private WBH_PlayerStateMachine stateMachine;
     private T_PlayerCombat combat;
     private T_PlayerController controller;
     private NavMeshAgent agent;
     private WBH_PlayerEffect effect;
-
+    
 
     void Awake()
     {
@@ -100,10 +111,15 @@ public class WBH_PlayerAnimation : MonoBehaviour
     }
 
 
-
     //--- (이펙트)
-    public void AniEvent_FighterAttack()
+    public void AniEvent_FighterAttackEvent()
     {
-        effect.FighterAttackEffect();
+        effectSpawner.SpawnEffect(Eff_fighterAtk, fighterEffectRoot);
+    }
+
+    public void AniEvent_GunnerAttackEvent()
+    {
+        if (combat.currentWeapon == GunnerWeaponType.Shotgun)
+            effectSpawner.SpawnEffect(Eff_gunnerShotgunAtk, gunnerEffectRoot);
     }
 }

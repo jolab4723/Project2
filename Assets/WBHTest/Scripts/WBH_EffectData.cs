@@ -9,7 +9,7 @@ public enum EffectAttachType
 
 [CreateAssetMenu(fileName = "EffectData",
                  menuName = "WBH/Effect Data")]
-public class WBH_EffectData : MonoBehaviour
+public class WBH_EffectData : ScriptableObject
 {
     [Header("Effect")]
     public WBH_Effect effectPrefab;
@@ -20,10 +20,9 @@ public class WBH_EffectData : MonoBehaviour
 
     [Header("Play Option")]
     public EffectAttachType attachType;
-
+    public bool useParticleDuration = true;
+    public bool autoReturn = true;
     public float autoReturnTime = 1f;
-
     public Vector3 localPos;
-
     public Vector3 localRot;
 }

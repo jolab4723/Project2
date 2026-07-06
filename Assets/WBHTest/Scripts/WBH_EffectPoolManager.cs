@@ -58,6 +58,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
 
     public void ReturnEffect(WBH_Effect effect)
     {
+        effect.transform.SetParent(transform, false);
         effect.gameObject.SetActive(false);
 
         effectPools[effect.Data].Enqueue(effect);

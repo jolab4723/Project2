@@ -17,6 +17,8 @@ public class WBH_Projectile : MonoBehaviour
 
     private ProjectileType projectileType;
     private WBH_ProjectilePoolManager poolManager;
+    private WBH_EffectSpawner effectSpawner;
+    private WBH_EffectData hitEffectData;
 
     private bool isInitialized;
 
@@ -27,28 +29,36 @@ public class WBH_Projectile : MonoBehaviour
     private float currentTime;
 
     // 투사체에 각 변수 할당
-    public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer)
+    public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
+                           WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
         this.damage = damage;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
 
+        this.effectSpawner = spawner;
+        this.hitEffectData = data;
+
         movedirection = direction.normalized;
         startPosition = transform.position;
 
+        isExplosion = false;
         isInitialized = true;
     }
 
     // 유탄용 변수 할당
     public void InitializeGrenade(float damage, float speed, float maxDistance, 
-                                  LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f)
+                                  LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f,
+                                   WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
         this.damage = damage;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
         this.explosionRadius = explosionRadius;
+        this.effectSpawner = spawner;
+        this.hitEffectData = data;
 
         startPosition = transform.position;
         Vector3 direction = (targetPosition - startPosition).normalized;
@@ -153,6 +163,11 @@ public class WBH_Projectile : MonoBehaviour
 
     private void Explode()
     {
+        if(effectSpawner != null && hitEffectData != null)
+        {
+            effectSpawner.SpawnEffect(hitEffectData, targetPosition);
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);
 
         foreach(Collider hit in hits)

@@ -34,11 +34,17 @@ public class WBH_Effect : MonoBehaviour
 
         foreach (ParticleSystem particle in particles)
         {
+            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             particle.Clear(true);
             particle.Play(true);
         }
 
-        returnCoroutine = StartCoroutine(AutoReturn());
+        if (effectData.autoReturn)
+        {
+            float returnTime = GetReturnTime();
+
+            returnCoroutine = StartCoroutine(AutoReturn(returnTime));
+        }
     }
 
     public void Stop()
@@ -49,19 +55,38 @@ public class WBH_Effect : MonoBehaviour
             returnCoroutine = null;
         }
 
-        foreach (ParticleSystem particle in particles)
-        {
-            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
+        ReturnToPool();
+    }
+
+    private IEnumerator AutoReturn(float time)
+    {
+        yield return new WaitForSeconds(time);
 
         ReturnToPool();
     }
 
-    private IEnumerator AutoReturn()
+    private float GetReturnTime()
     {
-        yield return new WaitForSeconds(effectData.autoReturnTime);
+        if (!effectData.useParticleDuration)
+            return effectData.autoReturnTime;
 
-        ReturnToPool();
+        float maxDuration = 0f;
+
+        foreach(ParticleSystem particle in particles)
+        {
+            ParticleSystem.MainModule main = particle.main;
+
+            if (main.loop)
+                continue;
+
+            float total = main.startDelay.constantMax + main.duration + main.startLifetime.constantMax;
+
+            maxDuration = Mathf.Max(maxDuration, total);
+        }
+        if (maxDuration <= 0f)
+            return effectData.autoReturnTime;
+
+        return maxDuration;
     }
 
     private void ReturnToPool()
@@ -81,8 +106,6 @@ public class WBH_Effect : MonoBehaviour
         {
             particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
-
-        effectData = null;
 
         poolManager.ReturnEffect(this);
     }

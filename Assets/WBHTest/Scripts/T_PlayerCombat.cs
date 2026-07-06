@@ -11,7 +11,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
     [SerializeField] private Transform firePoint;
-    [SerializeField] private GunnerWeaponType currentWeapon;
+    [SerializeField] public GunnerWeaponType currentWeapon;
     // 차후 무기 데이터에 폭발반경 포함되면 변수 삭제 및 GunnerAttack 메서드에서 해당 변수 내용 수정 필요
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
@@ -129,7 +129,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
             case GunnerWeaponType.Shotgun:
                 {
                     SectorAttack(gunnerAttackRange, 90f, gunnerAttackDamage);
-                    effect.ShotGunEffect();
+                    //effect.ShotGunEffect();
                 }
                 break;
             case GunnerWeaponType.GrenadeLauncher:

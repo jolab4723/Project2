@@ -1,9 +1,11 @@
-using Mirror.BouncyCastle.Security;
 using UnityEngine;
 
 public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
+
+    
+
 
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
     {
@@ -24,9 +26,9 @@ public class WBH_EffectSpawner : MonoBehaviour
                     Debug.LogWarning($"{data.name} : Local / Follow 타입은 attachTarget 이 필요합니다.");
                     return;
                 }
-                effect.transform.SetParent(attachTarget);
-                effect.transform.position = attachTarget.position + data.localPos;
-                effect.transform.rotation = attachTarget.rotation * Quaternion.Euler(data.localRot);
+                effect.transform.SetParent(attachTarget, false);
+                effect.transform.localPosition = data.localPos;
+                effect.transform.localRotation = Quaternion.Euler(data.localRot);
                 break;
         }
         effect.Play(data);
