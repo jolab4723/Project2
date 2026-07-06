@@ -1,26 +1,34 @@
-//using ItemSystem;
-//using UnityEngine;
-//using UnityEngine.EventSystems;
+using ItemSystem;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
-//public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
-//{
-//    private ItemInstance itemData;
+public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    [SerializeField] private ItemUI itemUI;
+    [SerializeField] private ItemDragHandler dragHandler;
+    private void Awake()
+    {
+        if (itemUI == null)
+            itemUI = GetComponent<ItemUI>();
+    }
+    public void Setup(ItemInstance item)
+    {
+ 
+    }
 
-//    public void Setup(ItemInstance data)
-//    {
-//        itemData = data;
-//    }
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (dragHandler != null && dragHandler.IsDragging)
+            return;
 
-//    public void OnPointerEnter(PointerEventData eventData)
-//    {
-//        if (itemData == null)
-//            return;
+        if (itemUI == null || itemUI.Item == null)
+            return;
 
-//        TooltipManagerTest.Instance.ShowTooltip(itemData);
-//    }
+        TooltipManager.Instance.ShowTooltip(itemUI.Item.itemData);
+    }
 
-//    public void OnPointerExit(PointerEventData eventData)
-//    {
-//        TooltipManagerTest.Instance.HideTooltip();
-//    }
-//}
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        TooltipManager.Instance.HideTooltip();
+    }
+}

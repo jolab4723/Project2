@@ -9,9 +9,8 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private PlayerData playerData;
-    [SerializeField] private RectTransform dragLayer;
-
-
+    [SerializeField] private EquipmentSystem equipmentSystem;
+    public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
 
     public TextMeshProUGUI logText;
@@ -19,8 +18,6 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public EquipSlotUI[] allEquipSlots;
     public GameObject itemUIPrefab;
 
-    public RectTransform highlightRect;
-    public Image highlightImage;
     public TextMeshProUGUI goldText;
 
     void Awake()
@@ -96,37 +93,6 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         // 3. 데이터를 넘겨주어 스스로 크기와 위치를 맞추게 합니다.
         ui.Setup(itemData, playerGrid);
         return true;
-    }
-
-    public void ShowHighlight(int width, int height, float cellSize, float spacing)
-    {
-        highlightRect.gameObject.SetActive(true);
-
-        float w = (width * cellSize) + ((width - 1) * spacing);
-        float h = (height * cellSize) + ((height - 1) * spacing);
-        highlightRect.sizeDelta = new Vector2(w, h);
-
-        highlightRect.SetAsFirstSibling();
-    }
-
-    public void MoveHighlight(int gridX, int gridY, bool isValid, float cellSize, float spacing)
-    {
-        float step = cellSize + spacing;
-
-        highlightRect.anchoredPosition = new Vector2(gridX * step, -gridY * step);
-        highlightImage.color = isValid ? new Color(0, 1, 0, 0.6f) : new Color(1, 0, 0, 0.6f);
-    }
-    public void HideHighlight()
-    {
-        highlightRect.gameObject.SetActive(false);
-    }
-
-    public void SetHighlightActive(bool isActive)
-    {
-        if (highlightRect.gameObject.activeSelf != isActive)
-        {
-            highlightRect.gameObject.SetActive(isActive);
-        }
     }
 
     public void PrintLog(string message)

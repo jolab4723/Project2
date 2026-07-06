@@ -9,7 +9,9 @@ using ItemSystem;
 public class TooltipManager : MonoBehaviour
 {
     public static TooltipManager Instance;
-
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private RectTransform canvasRect;
+    [SerializeField] private RectTransform tooltipRect;
     [Header("패널 / 배경")]
     [SerializeField] private GameObject tooltipPanel;
     [SerializeField] private Image borderImage;
@@ -37,7 +39,7 @@ public class TooltipManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI itemPriceText;
     [SerializeField] private TextMeshProUGUI itemSizeText;
 
-    [SerializeField] private Vector3 offset = new Vector3(15, 15, 0);
+    [SerializeField] private Vector2 offset = new Vector2(15f, 15f);
 
     [Header("섹션 레이아웃 (사이즈 자동 조정)")]
     [SerializeField] private RectTransform section1;
@@ -60,8 +62,20 @@ public class TooltipManager : MonoBehaviour
     private float section2BaseHeight;
     private float section3BaseHeight;
     private float section4BaseHeight;
+    private float uniqueEffectDescriptionBaseHeight;
 
     private TextMeshProUGUI[] subStatTexts;
+
+    private RectTransform ActiveTooltipRect
+    {
+        get
+        {
+            if (tooltipRect != null)
+                return tooltipRect;
+
+            return tooltipPanel != null ? tooltipPanel.GetComponent<RectTransform>() : null;
+        }
+    }
 
     private void Awake()
     {
@@ -74,6 +88,7 @@ public class TooltipManager : MonoBehaviour
         section2BaseHeight = GetRectHeight(section2);
         section3BaseHeight = GetRectHeight(section3);
         section4BaseHeight = GetRectHeight(section4);
+        uniqueEffectDescriptionBaseHeight = uniqueEffectDescriptionText != null ? GetRectHeight(uniqueEffectDescriptionText.rectTransform) : 0f;
 
         HideTooltip(); // 게임 시작 시 무조건 숨김
     }
@@ -82,8 +97,7 @@ public class TooltipManager : MonoBehaviour
     {
         if (tooltipPanel != null && tooltipPanel.activeSelf && Mouse.current != null)
         {
-            Vector3 mousePos = Mouse.current.position.ReadValue();
-            tooltipPanel.transform.position = mousePos + offset;
+            MoveTooltip(Mouse.current.position.ReadValue());
         }
     }
 
@@ -102,12 +116,6 @@ public class TooltipManager : MonoBehaviour
         }
 
         tooltipPanel.SetActive(true);
-
-        if (Mouse.current != null)
-        {
-            Vector3 mousePos = Mouse.current.position.ReadValue();
-            tooltipPanel.transform.position = mousePos + offset;
-        }
 
         var def = itemData.definition;
 
@@ -142,12 +150,80 @@ public class TooltipManager : MonoBehaviour
         ApplyLayout(def.uniqueEffect != null);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipPanel.GetComponent<RectTransform>());
+
+        if (Mouse.current != null)
+            MoveTooltip(Mouse.current.position.ReadValue());
     }
 
     public void HideTooltip()
     {
         if (tooltipPanel != null)
             tooltipPanel.SetActive(false);
+    }
+
+    private void MoveTooltip(Vector2 screenPosition)
+    {
+        RectTransform targetTooltipRect = ActiveTooltipRect;
+        RectTransform targetCanvasRect = canvasRect != null
+            ? canvasRect
+            : canvas != null ? canvas.transform as RectTransform : null;
+
+        if (targetTooltipRect == null || targetCanvasRect == null)
+            return;
+
+        Camera eventCamera = GetCanvasCamera();
+        Vector2 targetScreenPosition = screenPosition + offset;
+
+        if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            targetTooltipRect.position = new Vector3(
+                targetScreenPosition.x,
+                targetScreenPosition.y,
+                targetTooltipRect.position.z);
+        }
+        else if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                     targetCanvasRect,
+                     targetScreenPosition,
+                     eventCamera,
+                     out Vector3 worldPoint))
+        {
+            targetTooltipRect.position = worldPoint;
+        }
+
+        ClampTooltipInsideCanvas(targetTooltipRect, targetCanvasRect);
+    }
+
+    private Camera GetCanvasCamera()
+    {
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            return null;
+
+        return canvas.worldCamera;
+    }
+
+
+    // 툴팁이 화면 바깥을 벗어난 경우 벗어나지 않도록 화면 안쪽으로 밀어주는 메서드입니다.
+    private void ClampTooltipInsideCanvas(RectTransform targetTooltipRect, RectTransform targetCanvasRect)
+    {
+        Vector3[] tooltipCorners = new Vector3[4];
+        Vector3[] canvasCorners = new Vector3[4];
+
+        targetTooltipRect.GetWorldCorners(tooltipCorners);
+        targetCanvasRect.GetWorldCorners(canvasCorners);
+
+        Vector3 correction = Vector3.zero;
+
+        if (tooltipCorners[2].x > canvasCorners[2].x)
+            correction.x = canvasCorners[2].x - tooltipCorners[2].x;
+        else if (tooltipCorners[0].x < canvasCorners[0].x)
+            correction.x = canvasCorners[0].x - tooltipCorners[0].x;
+
+        if (tooltipCorners[2].y > canvasCorners[2].y)
+            correction.y = canvasCorners[2].y - tooltipCorners[2].y;
+        else if (tooltipCorners[0].y < canvasCorners[0].y)
+            correction.y = canvasCorners[0].y - tooltipCorners[0].y;
+
+        targetTooltipRect.position += correction;
     }
 
     public void ApplyColor(ItemInstance itemData)
@@ -286,7 +362,7 @@ public class TooltipManager : MonoBehaviour
         {
             uniqueEffectNameText.gameObject.SetActive(hasEffect);
             if (hasEffect)
-                uniqueEffectNameText.text = def.uniqueEffect.name;
+                uniqueEffectNameText.text = def.uniqueEffect.EffectName;
         }
 
         if (uniqueEffectDescriptionText != null)
@@ -294,6 +370,7 @@ public class TooltipManager : MonoBehaviour
             uniqueEffectDescriptionText.gameObject.SetActive(hasEffect);
             if (hasEffect)
                 uniqueEffectDescriptionText.text = def.uniqueEffect.EffectDescription;
+                uniqueEffectDescriptionText.ForceMeshUpdate(); // 설정 즉시 preferredHeight를 정확하게 읽기 위함
         }
     }
 
@@ -321,7 +398,34 @@ public class TooltipManager : MonoBehaviour
 
         float h1 = section1BaseHeight;
         float h2 = Mathf.Max(0f, section2BaseHeight - hidden);
-        float h3 = hasUniqueEffect ? section3BaseHeight : 0f;
+        // Section3: 고유효과가 있으면 "고정 부분(이름등) + 설명 실제 높이"로 계산. 설명이 짧을수록 전체 높이도 줌든다.
+        float h3 = 0f;
+        if (hasUniqueEffect)
+        {
+            float descHeight = uniqueEffectDescriptionBaseHeight;
+            if (uniqueEffectDescriptionText != null)
+            {
+                descHeight = Mathf.Clamp(uniqueEffectDescriptionText.preferredHeight, 0f, uniqueEffectDescriptionBaseHeight);
+                var descRect = uniqueEffectDescriptionText.rectTransform;
+
+                // pivot을 top으로 강제로 바꾸면 anchoredPosition 기준이 바뀌면서 시각적 위치가 튀다.
+                // 그래서 pivot 변경 전에 현재 위쪽 가장자리 위치를 먼저 계산해두고, pivot을 top으로 바꿔 그 위치로 재설정해서 보정한다.
+                float oldPivotY = descRect.pivot.y;
+                float oldHeight = descRect.sizeDelta.y;
+                float oldAnchoredY = descRect.anchoredPosition.y;
+                float preservedTopY = oldAnchoredY + (1f - oldPivotY) * oldHeight;
+
+                descRect.anchorMin = new Vector2(descRect.anchorMin.x, 1f);
+                descRect.anchorMax = new Vector2(descRect.anchorMax.x, 1f);
+                descRect.pivot = new Vector2(descRect.pivot.x, 1f);
+                descRect.anchoredPosition = new Vector2(descRect.anchoredPosition.x, preservedTopY);
+
+                SetHeight(descRect, descHeight);
+            }
+
+            float fixedPart = section3BaseHeight - uniqueEffectDescriptionBaseHeight;
+            h3 = fixedPart + descHeight;
+        }
         float h4 = section4BaseHeight;
 
         // Section3: 고유 효과 없으면 비활성화 (높이 0으로 취급되어 배치에서 빠짐)
@@ -329,6 +433,7 @@ public class TooltipManager : MonoBehaviour
             section3.gameObject.SetActive(hasUniqueEffect);
 
         SetHeight(section2, h2);
+        SetHeight(section3, h3); // section3는 고유효과 유무에 따라 높이가 바뀌는데 PlaceSection은 위치만 잡고 높이는 안 설정해서 따로 불러줘야 함
 
         // 활성 섹션을 위에서부터 순서대로 배치
         float y = topPadding;
