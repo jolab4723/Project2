@@ -8,7 +8,7 @@ public enum EffectAttachType
 }
 
 [CreateAssetMenu(fileName = "EffectData",
-                 menuName = "WBH/Effect Data")]
+[CreateAssetMenu(fileName = "EffectData", menuName = "WBH/Effect Data")]
 public class WBH_EffectData : ScriptableObject
 {
     [Header("Effect")]
@@ -19,10 +19,8 @@ public class WBH_EffectData : ScriptableObject
     public int poolSize = 3;
 
     [Header("Play Option")]
-    public EffectAttachType attachType;
-    public bool useParticleDuration = true;
-    public bool autoReturn = true;
     public float autoReturnTime = 1f;
+    public EffectAttachType attachType;
     public Vector3 localPos;
     public Vector3 localRot;
 }

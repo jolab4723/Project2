@@ -4,9 +4,6 @@ public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
 
-    
-
-
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
     {
         WBH_Effect effect = poolManager.GetEffect(data);
@@ -14,19 +11,23 @@ public class WBH_EffectSpawner : MonoBehaviour
         if (effect == null)
             return;
 
-        switch (data.attachType)
+        switch(data.attachType)
         {
             case EffectAttachType.World:
-                Debug.LogWarning($"{data.name} : World 타입은 Vector3 오버로드를 사용해주세요.");
+                if(attachTarget == null)
+                {
+                    Debug.LogWarning($"{data.name} : World 타입은 Vector3 오버로드를 사용하세요.");
+                    return;
+                }
                 break;
             case EffectAttachType.Local:
             case EffectAttachType.Follow:
-                if(attachTarget == null)
+                if (attachTarget == null)
                 {
                     Debug.LogWarning($"{data.name} : Local / Follow 타입은 attachTarget 이 필요합니다.");
                     return;
                 }
-                effect.transform.SetParent(attachTarget, false);
+                effect.transform.SetParent(attachTarget);
                 effect.transform.localPosition = data.localPos;
                 effect.transform.localRotation = Quaternion.Euler(data.localRot);
                 break;
@@ -39,7 +40,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         SpawnEffect(data, position, Quaternion.identity);
     }
 
-    public void SpawnEffect(WBH_EffectData data, Vector3 position, Quaternion rotation)
+    public void SpawnEffect (WBH_EffectData data, Vector3 position, Quaternion rotation)
     {
         WBH_Effect effect = poolManager.GetEffect(data);
 
@@ -47,10 +48,10 @@ public class WBH_EffectSpawner : MonoBehaviour
             return;
 
         effect.transform.SetParent(null);
+
         effect.transform.position = position;
         effect.transform.rotation = rotation;
 
         effect.Play(data);
     }
-
 }

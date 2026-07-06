@@ -4,23 +4,21 @@ using UnityEngine;
 public class WBH_Effect : MonoBehaviour
 {
     public WBH_EffectData Data => effectData;
-    public bool IsPlaying { get; private set; }
-
-    private ParticleSystem[] particles;
 
     private WBH_EffectPoolManager poolManager;
     private WBH_EffectData effectData;
-
     private Coroutine returnCoroutine;
+    private ParticleSystem[] particles;
+
 
     private void Awake()
     {
         particles = GetComponentsInChildren<ParticleSystem>(true);
     }
 
-    public void Initialize(WBH_EffectPoolManager manager)
+    public void Initialize(WBH_EffectPoolManager poolManager)
     {
-        poolManager = manager;
+        this.poolManager = poolManager;
     }
 
     public void Play(WBH_EffectData data)
@@ -32,71 +30,45 @@ public class WBH_Effect : MonoBehaviour
         if (returnCoroutine != null)
             StopCoroutine(returnCoroutine);
 
-        foreach (ParticleSystem particle in particles)
+        foreach(ParticleSystem particle in particles)
         {
-            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             particle.Clear(true);
             particle.Play(true);
         }
 
-        if (effectData.autoReturn)
         {
-            float returnTime = GetReturnTime();
-
-            returnCoroutine = StartCoroutine(AutoReturn(returnTime));
-        }
+        returnCoroutine = StartCoroutine(AutoReturn());
     }
 
-    public void Stop()
+    public void StopEffect()
     {
-        if (returnCoroutine != null)
         {
             StopCoroutine(returnCoroutine);
             returnCoroutine = null;
         }
-
-        ReturnToPool();
-    }
-
-    private IEnumerator AutoReturn(float time)
-    {
-        yield return new WaitForSeconds(time);
-
-        ReturnToPool();
-    }
-
-    private float GetReturnTime()
-    {
-        if (!effectData.useParticleDuration)
-            return effectData.autoReturnTime;
-
-        float maxDuration = 0f;
-
         foreach(ParticleSystem particle in particles)
         {
-            ParticleSystem.MainModule main = particle.main;
-
-            if (main.loop)
-                continue;
-
-            float total = main.startDelay.constantMax + main.duration + main.startLifetime.constantMax;
-
-            maxDuration = Mathf.Max(maxDuration, total);
+            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
-        if (maxDuration <= 0f)
-            return effectData.autoReturnTime;
 
-        return maxDuration;
+        ReturnToPool();
     }
 
-    private void ReturnToPool()
+    private IEnumerator AutoReturn()
+    {
+        yield return new WaitForSeconds(effectData.autoReturnTime);
+
+        ReturnToPool();
+    }
+
+    public void ReturnToPool()
     {
         if (!IsPlaying)
             return;
 
         IsPlaying = false;
 
-        if (returnCoroutine != null)
+        if(returnCoroutine != null)
         {
             StopCoroutine(returnCoroutine);
             returnCoroutine = null;
@@ -106,6 +78,7 @@ public class WBH_Effect : MonoBehaviour
         {
             particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+        effectData = null;
 
         poolManager.ReturnEffect(this);
     }

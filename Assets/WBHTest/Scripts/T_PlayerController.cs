@@ -22,6 +22,7 @@ public class T_PlayerController : MonoBehaviour
     private WBH_PlayerIndicator indicator;
     private Vector3 dodgeDir;
 
+    private float speed;
 
     private void Awake()
     {
@@ -47,6 +48,11 @@ public class T_PlayerController : MonoBehaviour
 
     private void Update()
     {
+        var stat = PlayerStatManager.Instance.Stat;
+        speed = stat.moveSpeed;
+
+
+
         // 회피 쿨타임 체크
         CheckDodge();
         // 이동 종료 시, Idle 상태로 변환
