@@ -7,7 +7,6 @@ public enum EffectAttachType
     Follow
 }
 
-[CreateAssetMenu(fileName = "EffectData",
 [CreateAssetMenu(fileName = "EffectData", menuName = "WBH/Effect Data")]
 public class WBH_EffectData : ScriptableObject
 {

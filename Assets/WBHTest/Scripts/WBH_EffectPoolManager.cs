@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public class WBH_EffectPoolManager : MonoBehaviour
 {
     [SerializeField] WBH_EffectData[] effectDatas;
@@ -25,6 +27,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
             {
                 pool.Enqueue(CreateEffect(data));
             }
+
             effectPools.Add(data, pool);
         }
     }
@@ -46,7 +49,9 @@ public class WBH_EffectPoolManager : MonoBehaviour
             effect = CreateEffect(data);
         }
         else
+        {
             effect = pool.Dequeue();
+        }
 
         effect.gameObject.SetActive(true);
 
@@ -55,6 +60,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
 
     public void ReturnEffect(WBH_Effect effect)
     {
+        effect.transform.SetParent(transform, false);
         effect.gameObject.SetActive(false);
 
         effectPools[effect.Data].Enqueue(effect);

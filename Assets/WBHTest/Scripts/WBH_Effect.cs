@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class WBH_Effect : MonoBehaviour
 {
+    public bool IsPlaying { get; private set;}
     public WBH_EffectData Data => effectData;
 
     private WBH_EffectPoolManager poolManager;
@@ -36,12 +37,12 @@ public class WBH_Effect : MonoBehaviour
             particle.Play(true);
         }
 
-        {
         returnCoroutine = StartCoroutine(AutoReturn());
     }
 
     public void StopEffect()
     {
+        if(returnCoroutine != null)
         {
             StopCoroutine(returnCoroutine);
             returnCoroutine = null;
