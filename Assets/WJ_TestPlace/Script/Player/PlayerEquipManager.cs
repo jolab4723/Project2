@@ -21,7 +21,7 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
         foreach (var slot in InventoryController.Instance.allEquipSlots)
         {
             // 포션 슬롯은 스탯에 영향 없음 (소비 로직은 다른 곳에서 처리)
-            if (slot == null || slot.requiredCategory == ItemCategory.Potion)
+            if (slot == null || slot.SlotType == EquipSlotType.Potion)
                 continue;
 
             var invItem = slot.equipItemUI != null ? slot.equipItemUI.Item : null;
@@ -41,49 +41,11 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
         StatSet result = StatSet.Zero;
 
         foreach (var opt in itemData.GetEffectiveMainOptions())
-            AddStat(ref result, opt.statType, opt.value);
+            StatSetMapper.AddStat(ref result, opt.statType, opt.value);
 
         foreach (var sub in itemData.rolledSubStats)
-            AddStat(ref result, sub.statType, sub.value);
+            StatSetMapper.AddStat(ref result, sub.statType, sub.value);
 
         return result;
-    }
-
-    /// <summary>
-    /// StatType 하나를 StatSet의 대응 필드에 더한다.
-    /// !! StatType과 StatSet 필드 이름이 완전히 1:1은 아니라서 PlayerStatManager와 동일하게 명시적으로 매핑함:
-    ///    - healthFlat/Percent -> maxHealthFlat/Percent (이름만 다름)
-    ///    - penetrationFlat -> penFlat (StatType엔 Percent 버전이 없음)
-    ///    - mpMaxFlat -> maxManaFlat (StatSet에 원래 없어서 PlayerStatManager 작업 때 추가함)
-    /// </summary>
-    private static void AddStat(ref StatSet s, StatType type, float value)
-    {
-        switch (type)
-        {
-            case StatType.healthFlat: s.maxHealthFlat += value; break;
-            case StatType.healthPercent: s.maxHealthPercent += value; break;
-            case StatType.attackPowerFlat: s.attackPowerFlat += value; break;
-            case StatType.attackPowerPercent: s.attackPowerPercent += value; break;
-            case StatType.defensePowerFlat: s.defensePowerFlat += value; break;
-            case StatType.defensePowerPercent: s.defensePowerPercent += value; break;
-            case StatType.moveSpeedFlat: s.moveSpeedFlat += value; break;
-            case StatType.moveSpeedPercent: s.moveSpeedPercent += value; break;
-            case StatType.attackSpeedFlat: s.attackSpeedFlat += value; break;
-            case StatType.attackSpeedPercent: s.attackSpeedPercent += value; break;
-            case StatType.critRateFlat: s.critRateFlat += value; break;
-            case StatType.critMultFlat: s.critMultFlat += value; break;
-            case StatType.cdrFlat: s.cdrFlat += value; break;
-            case StatType.mpRegenFlat: s.mpRegenFlat += value; break;
-            case StatType.mpRegenPercent: s.mpRegenPercent += value; break;
-            case StatType.mpMaxFlat: s.maxManaFlat += value; break;
-            case StatType.penetrationFlat: s.penFlat += value; break;
-            case StatType.skillRangeFlat: s.skillRangeFlat += value; break;
-            case StatType.fireBonusFlat: s.fireBonusFlat += value; break;
-            case StatType.iceBonusFlat: s.iceBonusFlat += value; break;
-            case StatType.electricBonusFlat: s.electricBonusFlat += value; break;
-            default:
-                Debug.LogWarning($"[PlayerEquipManager] 매핑되지 않은 StatType: {type}");
-                break;
-        }
     }
 }

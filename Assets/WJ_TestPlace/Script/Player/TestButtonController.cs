@@ -32,6 +32,9 @@ public class TestButtonController : MonoBehaviour
     [Tooltip("총 공격력 실시간 표시용 텍스트")]
     [SerializeField] private TextMeshProUGUI AttackText;
 
+    [Header("Key Mapping")]
+
+
     private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
     private ItemInstance lastDropped;
