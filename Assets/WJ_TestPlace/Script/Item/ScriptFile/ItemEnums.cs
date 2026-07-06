@@ -23,7 +23,17 @@ namespace ItemSystem
         Shotgun,
         Rifle,
     }
-    
+
+    public enum EquipSlotType
+    {
+        Weapon = 0,
+        Helmet = 1,
+        Chest = 2,
+        Boots = 3,
+        Potion = 4,
+        None = 5
+    }
+
     /// <summary>
     /// 클래스별로 어떤 WeaponType이 유효한지 정의하는 테이블.
     /// 새 클래스가 추가되면 여기에 한 줄만 추가하면 인스펙터 드롭다운에도 자동 반영됨.

@@ -19,10 +19,6 @@ namespace ItemSystem
         [Tooltip("category가 Armor일 때만 사용")]
         public ArmorType armorType;
 
-
-        [Header("장착 슬롯")]
-        public List<EquipSlotType> allowedEquipSlots = new List<EquipSlotType>();
-
         public int sellPrice;
         public Sprite icon;
 
