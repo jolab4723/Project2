@@ -11,6 +11,11 @@ GameObject:
   - component: {fileID: 8072859101212088154}
   - component: {fileID: 2730970511351222063}
   - component: {fileID: 5434128822730348650}
+  - component: {fileID: 7753398857122753146}
+  - component: {fileID: 4852067951923359685}
+  - component: {fileID: 8030706282173326386}
+  - component: {fileID: 5608404260266348828}
+  - component: {fileID: 1577491266636183422}
   m_Layer: 5
   m_Name: ItemPrefab
   m_TagString: Untagged
@@ -58,7 +63,73 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0800c3ebf77c2bf46b678dafb86cd6fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemUI
+  equipmentHandler: {fileID: 1577491266636183422}
   currentEquipSlot: {fileID: 0}
+--- !u!114 &7753398857122753146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bf4faf0eda38c94cad55eb2c24cd668, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipTrigger
+  itemUI: {fileID: 5434128822730348650}
+  dragHandler: {fileID: 4852067951923359685}
+--- !u!114 &4852067951923359685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a0723c41a920554dbb20a5487f7319f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDragHandler
+  itemUI: {fileID: 5434128822730348650}
+--- !u!114 &8030706282173326386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e94fec7fe0f8fc4c8e805582d84e21b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDragVisual
+--- !u!114 &5608404260266348828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f31a50efee7b9747a2180a5084f740d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDragHighlighter
+  itemUI: {fileID: 5434128822730348650}
+--- !u!114 &1577491266636183422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b893275eb6f38bb46a56e14761334507, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemEquipHandler
+  itemUI: {fileID: 5434128822730348650}
 --- !u!1 &9018524217975816275
 GameObject:
   m_ObjectHideFlags: 0

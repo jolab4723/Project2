@@ -8,6 +8,11 @@ public class EquipmentSystem : MonoBehaviour
 
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
 
+    public IEnumerable<KeyValuePair<EquipSlotType, InventoryItem>> GetEquippedItems()
+    {
+        return equippedItems;
+    }
+
     public void Equip(EquipSlotType slotType, InventoryItem item)
     {
         equippedItems[slotType] = item;
@@ -36,5 +41,94 @@ public class EquipmentSystem : MonoBehaviour
 
 
         OnEquipmentChanged?.Invoke(infos);
+    }
+
+    public bool IsSlotEmpty(EquipSlotType slotType)
+    {
+        return !equippedItems.ContainsKey(slotType);
+    }
+
+    public bool CanEquip(InventoryItem item, EquipSlotType slotType)
+    {
+        if (item == null || item.itemData == null || item.itemData.definition == null)
+            return false;
+
+        if (!IsSlotEmpty(slotType))
+            return false;
+
+        return EquipSlotRules.CanEquipTo(item.itemData.definition, slotType);
+    }
+
+    public bool TryEquip(EquipSlotType slotType, InventoryItem item)
+    {
+        if (!CanEquip(item, slotType))
+            return false;
+
+        equippedItems[slotType] = item;
+        EquipmentChanged();
+        return true;
+    }
+
+    public bool CanSwapEquip(
+    EquipSlotType slotType,
+    InventoryItem incomingItem,
+    InventoryGrid returnGrid,
+    int returnX,
+    int returnY)
+    {
+        if (incomingItem == null || incomingItem.itemData == null)
+            return false;
+
+        if (!equippedItems.TryGetValue(slotType, out InventoryItem equippedItem))
+            return false;
+
+        if (!EquipSlotRules.CanEquipTo(incomingItem.itemData.definition, slotType))
+            return false;
+
+        if (returnGrid == null)
+            return false;
+
+        return returnGrid.CanPlaceItem(
+            returnX,
+            returnY,
+            equippedItem.CurrentWidth,
+            equippedItem.CurrentHeight
+        );
+    }
+
+    public bool TrySwapEquip(
+    EquipSlotType slotType,
+    InventoryItem incomingItem,
+    InventoryGrid returnGrid,
+    int returnX,
+    int returnY,
+    out InventoryItem outgoingItem)
+    {
+        outgoingItem = null;
+
+        if (!CanSwapEquip(slotType, incomingItem, returnGrid, returnX, returnY))
+            return false;
+
+        outgoingItem = equippedItems[slotType];
+        equippedItems[slotType] = incomingItem;
+
+        EquipmentChanged();
+        return true;
+    }
+
+    public bool TryUnequip(EquipSlotType slotType, InventoryItem item)
+    {
+        if (item == null)
+            return false;
+
+        if (!equippedItems.TryGetValue(slotType, out InventoryItem equippedItem))
+            return false;
+
+        if (equippedItem != item)
+            return false;
+
+        equippedItems.Remove(slotType);
+        EquipmentChanged();
+        return true;
     }
 }

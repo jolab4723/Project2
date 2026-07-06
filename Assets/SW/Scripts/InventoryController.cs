@@ -9,8 +9,8 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private PlayerData playerData;
-    [SerializeField] private RectTransform dragLayer;
-
+    [SerializeField] private EquipmentSystem equipmentSystem;
+    public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
 
     public TextMeshProUGUI logText;

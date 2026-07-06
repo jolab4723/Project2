@@ -27,12 +27,31 @@ public class PlayerStatManager : MonoBehaviour
     [Header("초기값")]
     [SerializeField] private int startLevel = 1;
 
+    [Header("Equipment System")]
+    [SerializeField] private EquipmentSystem equipmentSystem;
+
     private IStatSetProvider EquipProvider => equipManagerBehaviour as IStatSetProvider;
     private IStatSetProvider BuffProvider => buffManagerBehaviour as IStatSetProvider;
 
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
 
+    private void OnEnable()
+    {
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] infos)
+    {
+        Recalculate();
+    }
     private void Awake()
     {
         if (Instance != null && Instance != this)
