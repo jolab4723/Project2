@@ -1,3 +1,5 @@
+using ItemSystem;
+
 [System.Serializable]
 public struct EquippedItemInfo
 {
