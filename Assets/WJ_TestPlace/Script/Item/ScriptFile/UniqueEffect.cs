@@ -8,9 +8,16 @@ namespace ItemSystem
     /// - OnEquip/OnUnequip: 장착/해제 시 ItemUI에서 자동으로 호출됨.
     /// - OnTrigger: 특정 조건(치명타, 피격 등)을 만족했을 때 외부(전투 시스템 등)에서 직접 호출해야 함.
     ///   (언제 발동할지의 조건 판정 자체는 이 시스템 범위 밖)
+    /// !! 이 인터페이스를 구현하는 구체 ScriptableObject는 반드시 클래스명과 동일한 파일명으로 분리해야 함!
+    ///   (Unity가 ScriptableObject를 실제 에셋트로 직렬화할 때 파일당 대표 타입 기준으로 인식하기 때문임.
+    ///   한 파일에 여러 서브클래스를 두면 m_Script 참조가 깨져서 저장됨.)
     /// </summary>
     public interface IUniqueEffect
     {
+        /// <summary>툴팁 등에 표시할 고유 효과 이름 (에셋 파일명과 별개).</summary>
+        string EffectName { get; }
+
+        /// <summary>coefficients가 대입되어 완성된 최종 설명 문구.</summary>
         string EffectDescription { get; }
 
         /// <summary>장착 시 호출 (상시 효과용). 조건부 효과는 비워두면 됨.</summary>
@@ -25,71 +32,45 @@ namespace ItemSystem
 
     public abstract class UniqueEffectSO : ScriptableObject, IUniqueEffect
     {
-        [TextArea] public string effectDescription;
-        public string EffectDescription => effectDescription;
+        [Header("표시 정보")]
+        [Tooltip("툴팁에 표시할 고유 효과 이름")]
+        public string effectName;
+
+        [TextArea]
+        [Tooltip("설명 템플릿. {0}, {1}... 자리에 아래 coefficients 값이 순서대로 대입됨.\n예: \"이동 속도가 {0} 증가합니다.\" + coefficients=[1.0] -> \"이동 속도가 1 증가합니다.\"")]
+        public string effectDescription;
+
+        [Tooltip("effectDescription의 {0}, {1}... 자리에 들어갈 실제 수치")]
+        public float[] coefficients;
+
+        public string EffectName => effectName;
+
+        public string EffectDescription
+        {
+            get
+            {
+                if (coefficients == null || coefficients.Length == 0)
+                    return effectDescription;
+
+                object[] args = new object[coefficients.Length];
+                for (int i = 0; i < coefficients.Length; i++)
+                    args[i] = coefficients[i];
+
+                try
+                {
+                    return string.Format(effectDescription, args);
+                }
+                catch (System.FormatException)
+                {
+                    Debug.LogWarning($"[{name}] effectDescription 템플릿과 coefficients 개수가 맞지 않습니다.");
+                    return effectDescription;
+                }
+            }
+        }
 
         // 기본값은 전부 아무것도 안 함 - 서브클래스는 필요한 것만 오버라이드
         public virtual void OnEquip(ItemInstance ownerItem) { }
         public virtual void OnUnequip(ItemInstance ownerItem) { }
         public virtual void OnTrigger(ItemInstance ownerItem) { }
-    }
-
-    /// <summary>
-    /// 장착하면 상시 적용되는 고유 효과. 지정된 버프를 장착 시 ApplyBuff, 해제 시 RemoveBuff 한다.
-    /// buffToApply.duration을 0 이하로 두면 영구 지속(해제 전까지 유지)로 동작함.
-    /// </summary>
-    [CreateAssetMenu(menuName = "Item/UniqueEffect/PassiveBuff")]
-    public class PassiveBuffUniqueEffectSO : UniqueEffectSO
-    {
-        [Tooltip("장착 중 상시 적용될 버프. duration을 0 이하로 두면 영구 지속.")]
-        public BuffDefinitionSO buffToApply;
-
-        public override void OnEquip(ItemInstance ownerItem)
-        {
-            if (buffToApply == null)
-                return;
-
-            if (PlayerBuffManager.Instance == null)
-            {
-                Debug.LogWarning("[PassiveBuffUniqueEffectSO] PlayerBuffManager.Instance가 없습니다.");
-                return;
-            }
-
-            PlayerBuffManager.Instance.ApplyBuff(buffToApply);
-        }
-
-        public override void OnUnequip(ItemInstance ownerItem)
-        {
-            if (buffToApply == null || PlayerBuffManager.Instance == null)
-                return;
-
-            PlayerBuffManager.Instance.RemoveBuff(buffToApply);
-        }
-    }
-
-    /// <summary>
-    /// 특정 조건을 만족했을 때(OnTrigger 호출 시)만 적용되는 고유 효과.
-    /// 보통 지속시간이 있는 임시 버프를 연결해서 쓴다.
-    /// 언제 OnTrigger를 부를지(치명타 시, 피격 시 등)는 전투 시스템 쪽 책임.
-    /// </summary>
-    [CreateAssetMenu(menuName = "Item/UniqueEffect/TriggeredBuff")]
-    public class TriggeredBuffUniqueEffectSO : UniqueEffectSO
-    {
-        [Tooltip("조건 만족 시 적용될 버프")]
-        public BuffDefinitionSO buffToApply;
-
-        public override void OnTrigger(ItemInstance ownerItem)
-        {
-            if (buffToApply == null)
-                return;
-
-            if (PlayerBuffManager.Instance == null)
-            {
-                Debug.LogWarning("[TriggeredBuffUniqueEffectSO] PlayerBuffManager.Instance가 없습니다.");
-                return;
-            }
-
-            PlayerBuffManager.Instance.ApplyBuff(buffToApply);
-        }
     }
 }
