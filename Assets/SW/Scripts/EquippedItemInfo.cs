@@ -1,12 +1,18 @@
+using ItemSystem;
+
 [System.Serializable]
 public struct EquippedItemInfo
 {
-    public int itemID;
+    public EquipSlotType slotType;
+    public string instanceId;
+    public string itemId;
     public int upgradeLevel;
 
-    public EquippedItemInfo(int itemID, int upgradeLevel)
+    public EquippedItemInfo(EquipSlotType slotType, InventoryItem item)
     {
-        this.itemID = itemID;
-        this.upgradeLevel = upgradeLevel;
+        this.slotType = slotType;
+        instanceId = item.itemData.instanceId;
+        itemId = item.itemData.definition.itemId;
+        upgradeLevel = item.itemData.upgradeLevel;
     }
 }

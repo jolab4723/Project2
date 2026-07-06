@@ -12,6 +12,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
     private InventoryGrid currentGrid;
     private InventoryGrid originalGrid;
+    private InventoryGrid activeHighlightGrid;
     private RectTransform rect;
     private CanvasGroup canvasGroup;
 
@@ -164,10 +165,8 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
         RaiseForDrag();
 
-        if (ShopController.Instance != null && CurrentGrid == ShopController.Instance.ShopGrid)
-            ShopController.Instance.ShowHighlight(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, cellSize, cellSpacing);
-        else
-            InventoryController.Instance.ShowHighlight(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, cellSize, cellSpacing);
+        activeHighlightGrid = null;
+        RefreshHighlight();
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -192,10 +191,7 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         canvasGroup.blocksRaycasts = true;
         itemIcon.color = Color.white;
 
-        if (ShopController.Instance != null)
-            ShopController.Instance.HideHighlight();
-
-        InventoryController.Instance.HideHighlight();
+        HideActiveHighlight();
 
         RestoreSorting();
 
@@ -213,9 +209,20 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             ReturnToOriginalPosition();
             return;
         }
-        if (targetEquipSlot != null && targetEquipSlot.CanAccept(inventoryItem.itemData))
+
+        if (targetEquipSlot != null)
         {
-            EquipDirectly(targetEquipSlot);
+            if (targetEquipSlot.CanAccept(inventoryItem.itemData))
+            {
+                EquipDirectly(targetEquipSlot);
+                return;
+            }
+
+            if (TrySwapWithEquipSlot(targetEquipSlot))
+            {
+                return;
+            }
+            ReturnToOriginalPosition();
         }
         else
         {
@@ -224,12 +231,24 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
             if (canPlace)
             {
+                bool wasEquippedBeforeDrop = IsEquipped;
+
                 currentGrid.PlaceItem(inventoryItem, targetX, targetY);
                 rect.anchoredPosition = new Vector2(targetX * step, -targetY * step);
                 currentEquipSlot = null;
+
+                if (wasEquippedBeforeDrop && PlayerStatManager.Instance != null)
+                    inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
+                    PlayerStatManager.Instance.Recalculate();
             }
             else
             {
+                if (!IsEquipped && TrySwapItem(targetX, targetY))
+                {
+                    currentEquipSlot = null;
+                    return;
+                }
+
                 if (IsEquipped)
                     EquipDirectly(currentEquipSlot);
                 else
@@ -282,19 +301,35 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         RectTransform slotRect = slot.transform as RectTransform;
         rect.sizeDelta = slotRect.sizeDelta;
         (itemTransform as RectTransform).sizeDelta = slotRect.sizeDelta;
+
+        if (PlayerStatManager.Instance != null)
+            inventoryItem.itemData.definition.uniqueEffect?.OnEquip(inventoryItem.itemData);
+            PlayerStatManager.Instance.Recalculate();
     }
 
     private void Equip()
     {
+        EquipSlotUI swapSlot = null;
+
         foreach (EquipSlotUI slot in InventoryController.Instance.allEquipSlots)
         {
-            if (slot.CanAccept(inventoryItem.itemData))
+            if (slot == null || !slot.CanAcceptType(inventoryItem.itemData))
+                continue;
+
+            if (slot.IsEmpty)
             {
                 currentGrid.RemoveItem(inventoryItem);
                 EquipDirectly(slot);
                 return;
             }
+
+            if (swapSlot == null)
+                swapSlot = slot;
         }
+
+        if (TryRightClickSwapWithEquipSlot(swapSlot))
+            return;
+
         InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
     }
 
@@ -312,6 +347,10 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
             rect.anchoredPosition = new Vector2(foundX * step, -foundY * step);
 
             RestoreGridSettings();
+
+            if (PlayerStatManager.Instance != null)
+                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
+                PlayerStatManager.Instance.Recalculate();
         }
         else if(currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
         {
@@ -327,6 +366,10 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
             RestoreGridSettings();
             InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
+
+            if (PlayerStatManager.Instance != null)
+                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
+                PlayerStatManager.Instance.Recalculate();
         }
         else
         {
@@ -348,109 +391,91 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
     void RefreshHighlight()
     {
-        if (ShopController.Instance != null &&
-        ShopController.Instance.IsTradingToShop(originalGrid, this))
+        InventoryGrid targetGrid = GetHighlightTargetGrid();
+
+        if (targetGrid == null || !IsItemOverGrid(targetGrid))
         {
-            InventoryController.Instance.SetHighlightActive(false);
-
-            
-            InventoryGrid shopGrid = ShopController.Instance.ShopGrid;
-            Vector2Int cell = GetCellFromItemRect(shopGrid);
-
-            bool canPlace = shopGrid.CanPlaceItem(
-                cell.x,
-                cell.y,
-                inventoryItem.CurrentWidth,
-                inventoryItem.CurrentHeight
-            );
-
-            ShopController.Instance.ShowHighlight(
-        inventoryItem.CurrentWidth,
-        inventoryItem.CurrentHeight,
-        shopGrid.CellSize,
-        shopGrid.CellSpacing
-    );
-            ShopController.Instance.MoveHighlight(
-                cell.x,
-                cell.y,
-                canPlace,
-                shopGrid.CellSize,
-                shopGrid.CellSpacing
-            );
-
+            HideActiveHighlight();
             return;
         }
 
-        if (ShopController.Instance != null &&
-        ShopController.Instance.IsTradingToPlayer(originalGrid, this))
-        {
-            ShopController.Instance.SetHighlightActive(false);
+        Vector2Int cell = GetCellFromItemRect(targetGrid);
+        bool canPlace = targetGrid.CanPlaceItem(
+            cell.x,
+            cell.y,
+            inventoryItem.CurrentWidth,
+            inventoryItem.CurrentHeight
+        );
 
-            
-            InventoryGrid playerGrid = ShopController.Instance.PlayerGrid;
-            Vector2Int cell = GetCellFromItemRect(playerGrid);
+        ShowHighlightOnGrid(targetGrid, cell, canPlace);
+    }
 
-            bool canPlace = playerGrid.CanPlaceItem(
-                cell.x,
-                cell.y,
-                inventoryItem.CurrentWidth,
-                inventoryItem.CurrentHeight
-            );
-
-            InventoryController.Instance.ShowHighlight(
-        inventoryItem.CurrentWidth,
-        inventoryItem.CurrentHeight,
-        playerGrid.CellSize,
-        playerGrid.CellSpacing
-    );
-            InventoryController.Instance.MoveHighlight(
-                cell.x,
-                cell.y,
-                canPlace,
-                playerGrid.CellSize,
-                playerGrid.CellSpacing
-            );
-
-            return;
-        }
-
+    private InventoryGrid GetHighlightTargetGrid()
+    {
         if (ShopController.Instance != null)
         {
-            ShopController.Instance.SetHighlightActive(false);
+            InventoryGrid playerGrid = ShopController.Instance.PlayerGrid;
+            InventoryGrid shopGrid = ShopController.Instance.ShopGrid;
+
+            if (originalGrid == playerGrid && IsItemOverGrid(shopGrid))
+                return shopGrid;
+
+            if (originalGrid == shopGrid && IsItemOverGrid(playerGrid))
+                return playerGrid;
         }
-        Vector2Int targetCell = GetCellFromItemRect(currentGrid);
-        int targetX = targetCell.x;
-        int targetY = targetCell.y;
 
+        return currentGrid;
+    }
 
-        if (targetX + inventoryItem.CurrentWidth <= 0 ||  
-        targetX >= currentGrid.GridWidth ||
-        targetY + inventoryItem.CurrentHeight <= 0 ||
-        targetY >= currentGrid.GridHeight)
+    private bool IsItemOverGrid(InventoryGrid grid)
+    {
+        if (grid == null)
+            return false;
+
+        Vector2Int cell = GetCellFromItemRect(grid);
+
+        return cell.x + inventoryItem.CurrentWidth > 0 &&
+               cell.y + inventoryItem.CurrentHeight > 0 &&
+               cell.x < grid.GridWidth &&
+               cell.y < grid.GridHeight;
+    }
+
+    private void ShowHighlightOnGrid(InventoryGrid grid, Vector2Int cell, bool canPlace)
+    {
+        if (grid == null || grid.Highlight == null)
+            return;
+
+        if (activeHighlightGrid != null &&
+            activeHighlightGrid != grid &&
+            activeHighlightGrid.Highlight != null)
         {
-            if (ShopController.Instance != null && CurrentGrid == ShopController.Instance.ShopGrid)
-                ShopController.Instance.SetHighlightActive(false);
-            else
-                InventoryController.Instance.SetHighlightActive(false);
+            activeHighlightGrid.Highlight.HideHighlight();
         }
-        else
-        {
-            if(ShopController.Instance != null && CurrentGrid == ShopController.Instance.ShopGrid)
-            {
-                ShopController.Instance.SetHighlightActive(true);
-                bool canPlace = currentGrid.CanPlaceItem(targetX, targetY, inventoryItem.CurrentWidth, inventoryItem.CurrentHeight);
 
-                ShopController.Instance.MoveHighlight(targetX, targetY, canPlace, cellSize, cellSpacing);
-            }
-            else
-            {
-                InventoryController.Instance.SetHighlightActive(true);
-                bool canPlace = currentGrid.CanPlaceItem(targetX, targetY, inventoryItem.CurrentWidth, inventoryItem.CurrentHeight);
+        activeHighlightGrid = grid;
 
-                InventoryController.Instance.MoveHighlight(targetX, targetY, canPlace, cellSize, cellSpacing);
-            }
-                
-        }
+        grid.Highlight.ShowHighlight(
+            inventoryItem.CurrentWidth,
+            inventoryItem.CurrentHeight,
+            grid.CellSize,
+            grid.CellSpacing
+        );
+
+        grid.Highlight.MoveHighlight(
+            cell.x,
+            cell.y,
+            canPlace,
+            grid.CellSize,
+            grid.CellSpacing
+        );
+    }
+
+    private void HideActiveHighlight()
+    {
+        if (activeHighlightGrid != null && activeHighlightGrid.Highlight != null)
+            activeHighlightGrid.Highlight.HideHighlight();
+
+        activeHighlightGrid = null;
     }
 
     private void RestoreGridSettings()
@@ -503,6 +528,9 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
         transform.SetParent(grid.ItemsContainer, false);
         transform.SetAsLastSibling();
+
+
+        RestoreGridSettings();
         float step = grid.Step;
         rect.anchoredPosition = new Vector2(x * step, -y * step);
 
@@ -522,6 +550,145 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         return new Vector2Int(x, y);
     }
 
+    private bool TrySwapItem(int targetX, int targetY)
+    {
+        if (!currentGrid.TryGetItemInArea(
+                targetX,
+                targetY,
+                inventoryItem.CurrentWidth,
+                inventoryItem.CurrentHeight,
+                out InventoryItem otherItem))
+        {
+            return false;
+        }
+
+        if (targetX != otherItem.x || targetY != otherItem.y)
+            return false;
+
+        // B를 잠깐 제거
+        currentGrid.RemoveItem(otherItem);
+
+        bool canPlaceA = currentGrid.CanPlaceItem(
+            targetX,
+            targetY,
+            inventoryItem.CurrentWidth,
+            inventoryItem.CurrentHeight
+        );
+
+        bool canPlaceB = currentGrid.CanPlaceItem(
+            originalX,
+            originalY,
+            otherItem.CurrentWidth,
+            otherItem.CurrentHeight
+        );
+
+        if (!canPlaceA || !canPlaceB)
+        {
+            currentGrid.PlaceItem(otherItem, otherItem.x, otherItem.y);
+            return false;
+        }
+
+        ItemUI otherUI = FindItemUI(otherItem);
+
+        currentGrid.PlaceItem(inventoryItem, targetX, targetY);
+        rect.anchoredPosition = new Vector2(targetX * currentGrid.Step, -targetY * currentGrid.Step);
+
+        currentGrid.PlaceItem(otherItem, originalX, originalY);
+        otherUI.SetGridPosition(currentGrid, originalX, originalY);
+
+        return true;
+    }
+    private ItemUI FindItemUI(InventoryItem item)
+    {
+        foreach (Transform child in currentGrid.ItemsContainer)
+        {
+            ItemUI ui = child.GetComponent<ItemUI>();
+
+            if (ui != null && ui.Item == item)
+                return ui;
+        }
+
+        return null;
+    }
+
+    private bool TrySwapWithEquipSlot(EquipSlotUI slot)
+    {
+        if (slot == null)
+            return false;
+
+        if (slot.IsEmpty)
+            return false;
+
+        if (!slot.CanAcceptType(inventoryItem.itemData))
+            return false;
+
+        ItemUI equippedUI = slot.equipItemUI;
+        InventoryItem equippedItem = equippedUI.Item;
+
+        // B가 A의 원래 위치에 들어갈 수 있는지 확인
+        if (!originalGrid.CanPlaceItem(
+                originalX,
+                originalY,
+                equippedItem.CurrentWidth,
+                equippedItem.CurrentHeight))
+        {
+            return false;
+        }
+
+        // B를 인벤토리로 내림
+        slot.equipItemUI = null;
+        equippedUI.currentEquipSlot = null;
+        equippedItem.itemData.definition.uniqueEffect?.OnUnequip(equippedItem.itemData);
+
+        originalGrid.PlaceItem(equippedItem, originalX, originalY);
+        equippedUI.SetGridPosition(originalGrid, originalX, originalY);
+
+        // A를 장비칸에 장착
+        EquipDirectly(slot);
+
+        return true;
+    }
+
+    private bool TryRightClickSwapWithEquipSlot(EquipSlotUI slot)
+    {
+        if (slot == null || slot.IsEmpty)
+            return false;
+
+        if (!slot.CanAcceptType(inventoryItem.itemData))
+            return false;
+
+        if (currentGrid == null)
+            return false;
+
+        ItemUI equippedUI = slot.equipItemUI;
+        if (equippedUI == null || equippedUI.Item == null)
+            return false;
+
+        InventoryItem equippedItem = equippedUI.Item;
+        int targetX = inventoryItem.x;
+        int targetY = inventoryItem.y;
+
+        currentGrid.RemoveItem(inventoryItem);
+
+        if (!currentGrid.CanPlaceItem(
+                targetX,
+                targetY,
+                equippedItem.CurrentWidth,
+                equippedItem.CurrentHeight))
+        {
+            currentGrid.PlaceItem(inventoryItem, targetX, targetY);
+            return false;
+        }
+
+        slot.equipItemUI = null;
+        equippedUI.currentEquipSlot = null;
+
+        currentGrid.PlaceItem(equippedItem, targetX, targetY);
+        equippedUI.SetGridPosition(currentGrid, targetX, targetY);
+
+        EquipDirectly(slot);
+        return true;
+    }
 }
 
 

@@ -9,7 +9,9 @@ using ItemSystem;
 public class TooltipManager : MonoBehaviour
 {
     public static TooltipManager Instance;
-
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private RectTransform canvasRect;
+    [SerializeField] private RectTransform tooltipRect;
     [Header("패널 / 배경")]
     [SerializeField] private GameObject tooltipPanel;
     [SerializeField] private Image borderImage;
@@ -37,7 +39,7 @@ public class TooltipManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI itemPriceText;
     [SerializeField] private TextMeshProUGUI itemSizeText;
 
-    [SerializeField] private Vector3 offset = new Vector3(15, 15, 0);
+    [SerializeField] private Vector2 offset = new Vector2(15f, 15f);
 
     [Header("섹션 레이아웃 (사이즈 자동 조정)")]
     [SerializeField] private RectTransform section1;
@@ -63,6 +65,17 @@ public class TooltipManager : MonoBehaviour
 
     private TextMeshProUGUI[] subStatTexts;
 
+    private RectTransform ActiveTooltipRect
+    {
+        get
+        {
+            if (tooltipRect != null)
+                return tooltipRect;
+
+            return tooltipPanel != null ? tooltipPanel.GetComponent<RectTransform>() : null;
+        }
+    }
+
     private void Awake()
     {
         Instance = this;
@@ -82,8 +95,7 @@ public class TooltipManager : MonoBehaviour
     {
         if (tooltipPanel != null && tooltipPanel.activeSelf && Mouse.current != null)
         {
-            Vector3 mousePos = Mouse.current.position.ReadValue();
-            tooltipPanel.transform.position = mousePos + offset;
+            MoveTooltip(Mouse.current.position.ReadValue());
         }
     }
 
@@ -102,12 +114,6 @@ public class TooltipManager : MonoBehaviour
         }
 
         tooltipPanel.SetActive(true);
-
-        if (Mouse.current != null)
-        {
-            Vector3 mousePos = Mouse.current.position.ReadValue();
-            tooltipPanel.transform.position = mousePos + offset;
-        }
 
         var def = itemData.definition;
 
@@ -142,12 +148,80 @@ public class TooltipManager : MonoBehaviour
         ApplyLayout(def.uniqueEffect != null);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipPanel.GetComponent<RectTransform>());
+
+        if (Mouse.current != null)
+            MoveTooltip(Mouse.current.position.ReadValue());
     }
 
     public void HideTooltip()
     {
         if (tooltipPanel != null)
             tooltipPanel.SetActive(false);
+    }
+
+    private void MoveTooltip(Vector2 screenPosition)
+    {
+        RectTransform targetTooltipRect = ActiveTooltipRect;
+        RectTransform targetCanvasRect = canvasRect != null
+            ? canvasRect
+            : canvas != null ? canvas.transform as RectTransform : null;
+
+        if (targetTooltipRect == null || targetCanvasRect == null)
+            return;
+
+        Camera eventCamera = GetCanvasCamera();
+        Vector2 targetScreenPosition = screenPosition + offset;
+
+        if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            targetTooltipRect.position = new Vector3(
+                targetScreenPosition.x,
+                targetScreenPosition.y,
+                targetTooltipRect.position.z);
+        }
+        else if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                     targetCanvasRect,
+                     targetScreenPosition,
+                     eventCamera,
+                     out Vector3 worldPoint))
+        {
+            targetTooltipRect.position = worldPoint;
+        }
+
+        ClampTooltipInsideCanvas(targetTooltipRect, targetCanvasRect);
+    }
+
+    private Camera GetCanvasCamera()
+    {
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            return null;
+
+        return canvas.worldCamera;
+    }
+
+
+    // 툴팁이 화면 바깥을 벗어난 경우 벗어나지 않도록 화면 안쪽으로 밀어주는 메서드입니다.
+    private void ClampTooltipInsideCanvas(RectTransform targetTooltipRect, RectTransform targetCanvasRect)
+    {
+        Vector3[] tooltipCorners = new Vector3[4];
+        Vector3[] canvasCorners = new Vector3[4];
+
+        targetTooltipRect.GetWorldCorners(tooltipCorners);
+        targetCanvasRect.GetWorldCorners(canvasCorners);
+
+        Vector3 correction = Vector3.zero;
+
+        if (tooltipCorners[2].x > canvasCorners[2].x)
+            correction.x = canvasCorners[2].x - tooltipCorners[2].x;
+        else if (tooltipCorners[0].x < canvasCorners[0].x)
+            correction.x = canvasCorners[0].x - tooltipCorners[0].x;
+
+        if (tooltipCorners[2].y > canvasCorners[2].y)
+            correction.y = canvasCorners[2].y - tooltipCorners[2].y;
+        else if (tooltipCorners[0].y < canvasCorners[0].y)
+            correction.y = canvasCorners[0].y - tooltipCorners[0].y;
+
+        targetTooltipRect.position += correction;
     }
 
     public void ApplyColor(ItemInstance itemData)

@@ -13,12 +13,15 @@ using UnityEngine;
 ///   3) 구독 방식은 아직 실제 이벤트 소스(장비/레벨/버프 매니저)를 몰라서,
 ///      외부에서 Recalculate()를 호출해주는 형태로 작성. 실제 매니저 클래스가 정해지면
 ///      그 클래스의 이벤트에 OnEquipmentChanged 등을 연결하면 됨.
+///   4) maxMana는 PlayerStatManager 작업 때 추가함 (StatType.mpMaxFlat 대응, 단순 합산).
+///      currentMana 변수는 있지만 소모/재생(스킬 사용, 시간 경과 회복 등) 로직은 아직 없음.
 /// </summary>
 [Serializable]
 public class PlayerStat
 {
     // ----- 기본 (직접값, 공식 미적용) -----
     public int currentHealth;
+    public int currentMana;
     public int currentLevel;
     public float currentExp;
 
@@ -32,6 +35,7 @@ public class PlayerStat
     public float critMult;
     public float cdr;        // 플랫 합연산 전용, 0~70 클램프
     public float mpRegen;
+    public int maxMana;
     public int pen;
     public float skillRange;
     public float fireBonus;
@@ -59,15 +63,15 @@ public class PlayerStat
     /// </summary>
     public void Recalculate(StatSet character, StatSet equipment, StatSet buff)
     {
-        maxHealth = Mathf.RoundToInt(CalcFinal(
+        maxHealth = Mathf.CeilToInt(CalcFinal(
             character.maxHealthFlat, equipment.maxHealthFlat, equipment.maxHealthPercent,
             buff.maxHealthPercent, buff.maxHealthFlat));
 
-        attackPower = Mathf.RoundToInt(CalcFinal(
+        attackPower = Mathf.CeilToInt(CalcFinal(
             character.attackPowerFlat, equipment.attackPowerFlat, equipment.attackPowerPercent,
             buff.attackPowerPercent, buff.attackPowerFlat));
 
-        defensePower = Mathf.RoundToInt(CalcFinal(
+        defensePower = Mathf.CeilToInt(CalcFinal(
             character.defensePowerFlat, equipment.defensePowerFlat, equipment.defensePowerPercent,
             buff.defensePowerPercent, buff.defensePowerFlat));
 
@@ -96,7 +100,10 @@ public class PlayerStat
             character.mpRegenFlat, equipment.mpRegenFlat, equipment.mpRegenPercent,
             buff.mpRegenPercent, buff.mpRegenFlat);
 
-        pen = Mathf.RoundToInt(CalcFinal(
+        // maxMana: 3단 공식 미적용. mpMaxFlat 계열은 단순 합산.
+        maxMana = Mathf.CeilToInt(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat);
+
+        pen = Mathf.CeilToInt(CalcFinal(
             character.penFlat, equipment.penFlat, equipment.penPercent,
             buff.penPercent, buff.penFlat));
 
@@ -120,13 +127,21 @@ public class PlayerStat
         if (currentHealth > maxHealth)
             currentHealth = maxHealth;
 
+        // maxMana가 줄어들어 currentMana가 초과 상태가 되지 않도록 보정
+        if (currentMana > maxMana)
+            currentMana = maxMana;
+
         OnStatChanged?.Invoke();
     }
 
-    /// <summary>3단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) + 버프고정</summary>
+    /// <summary>
+    /// 3단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) + 버프고정
+    /// !! equipPercent/buffPercent는 "3"이 오면 3%를 의미하는 퍼센트 숫자 그대로다
+    /// (0.03 같은 소수 분수가 아님 - 아이템 서브옵션/툴팁 표시와 동일한 스케일). 그래서 여기서 100으로 나눈다.
+    /// </summary>
     private static float CalcFinal(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat)
     {
-        return (characterFlat + equipFlat) * (1f + equipPercent) * (1f + buffPercent) + buffFlat;
+        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) + buffFlat;
     }
 
     // ----- 구독용 핸들러 예시 (실제 매니저 이벤트 시그니처에 맞춰 연결 필요) -----
@@ -150,5 +165,16 @@ public class PlayerStat
     {
         currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
         OnStatChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// mpRegen 스탯에 따라 마나를 회복시키는 처리.
+    /// TODO: 실제 회복 로직(틱 주기, 소수점 누적 등) 아직 미구현. 자리만 잡아둠.
+    /// 아직 어디서도 호출 안 함 - 호출 방식(매 프레임 Time.deltaTime? 고정 틱?) 정해지면
+    /// PlayerStatManager 쪽에서 이 메서드를 불러주면 됨.
+    /// </summary>
+    public void RegenerateMana(float deltaTime)
+    {
+        // TODO: mpRegen 기반 마나 회복 로직 구현 예정
     }
 }
