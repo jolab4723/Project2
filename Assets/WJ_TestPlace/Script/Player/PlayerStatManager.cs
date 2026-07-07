@@ -71,14 +71,10 @@ public class PlayerStatManager : MonoBehaviour
         Stat = new PlayerStat(startLevel);
         Recalculate();
 
-        // 초기 스폰 시 0/max로 시작하지 않도록 풀피/풀마나로 세팅.
-        // 이후 데미지/힐, 마나 소모/회복은 PlayerStat 쪽 메서드로 개별 관리
-        // (마나 회복은 RegenerateMana가 자리만 잡혀있고 아직 내용/호출부 없음)
+        // 초기 스폰 시 0으로 시작하지 않도록 풀피로 세팅.
+        // 마나는 PlayerManaManager가 자체적으로 Start()에서 풀충전 처리함.
         if (Stat.currentHealth <= 0)
             Stat.currentHealth = Stat.maxHealth;
-
-        if (Stat.currentMana <= 0)
-            Stat.currentMana = Stat.maxMana;
     }
 
     private void Update()
@@ -121,7 +117,6 @@ public class PlayerStatManager : MonoBehaviour
         Recalculate();
 
         Stat.currentHealth = Stat.maxHealth;
-        Stat.currentMana = Stat.maxMana;
         Recalculate();
     }
 

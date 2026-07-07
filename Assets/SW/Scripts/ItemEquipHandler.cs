@@ -75,6 +75,8 @@ public class ItemEquipHandler : MonoBehaviour
         grid.PlaceItem(itemUI.Item, foundX, foundY);
         itemUI.SetGridPosition(grid, foundX, foundY);
 
+        NotifyUnequipped(itemUI.Item);
+
         return true;
     }
     
@@ -131,6 +133,28 @@ public class ItemEquipHandler : MonoBehaviour
 
         itemRect.sizeDelta = slotRect.sizeDelta;
         iconRect.sizeDelta = slotRect.sizeDelta;
+
+        NotifyEquipped(itemUI.Item);
+    }
+
+    /// <summary>장착 성공 시 고유효과 OnEquip 호출 + 스탯 재계산.</summary>
+    private void NotifyEquipped(InventoryItem item)
+    {
+        if (item?.itemData?.definition?.uniqueEffect != null)
+            item.itemData.definition.uniqueEffect.OnEquip(item.itemData);
+
+        if (PlayerStatManager.Instance != null)
+            PlayerStatManager.Instance.Recalculate();
+    }
+
+    /// <summary>해제 성공 시 고유효과 OnUnequip 호출 + 스탯 재계산.</summary>
+    private void NotifyUnequipped(InventoryItem item)
+    {
+        if (item?.itemData?.definition?.uniqueEffect != null)
+            item.itemData.definition.uniqueEffect.OnUnequip(item.itemData);
+
+        if (PlayerStatManager.Instance != null)
+            PlayerStatManager.Instance.Recalculate();
     }
 
     private bool TrySwapWithEquipSlot(EquipSlotUI slot)
@@ -173,6 +197,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         itemUI.OriginalGrid.PlaceItem(outgoingItem, itemUI.OriginalX, itemUI.OriginalY);
         equippedUI.SetGridPosition(itemUI.OriginalGrid, itemUI.OriginalX, itemUI.OriginalY);
+        NotifyUnequipped(outgoingItem);
 
         // A를 장비칸에 장착
         SetEquipSlotVisual(slot);
@@ -224,6 +249,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         grid.PlaceItem(outgoingItem, targetX, targetY);
         equippedUI.SetGridPosition(grid, targetX, targetY);
+        NotifyUnequipped(outgoingItem);
 
         SetEquipSlotVisual(slot);
         return true;
@@ -265,6 +291,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         grid.PlaceItem(itemUI.Item, targetX, targetY);
         itemUI.SetGridPosition(grid, targetX, targetY);
+        NotifyUnequipped(itemUI.Item);
 
         return true;
     }
