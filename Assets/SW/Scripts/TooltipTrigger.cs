@@ -10,12 +10,10 @@ public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         if (itemUI == null)
             itemUI = GetComponent<ItemUI>();
-    }
-    public void Setup(ItemInstance item)
-    {
- 
-    }
 
+        if (dragHandler == null)
+            dragHandler = GetComponent<ItemDragHandler>();
+    }
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (dragHandler != null && dragHandler.IsDragging)

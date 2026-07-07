@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8030706282173326386}
   - component: {fileID: 5608404260266348828}
   - component: {fileID: 1577491266636183422}
+  - component: {fileID: 3080761427540107553}
   m_Layer: 5
   m_Name: ItemPrefab
   m_TagString: Untagged
@@ -64,7 +65,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemUI
   equipmentHandler: {fileID: 1577491266636183422}
-  currentEquipSlot: {fileID: 0}
 --- !u!114 &7753398857122753146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,6 +94,7 @@ MonoBehaviour:
   itemUI: {fileID: 5434128822730348650}
   dragVisual: {fileID: 8030706282173326386}
   dragHighlighter: {fileID: 5608404260266348828}
+  dropHandler: {fileID: 3080761427540107553}
 --- !u!114 &8030706282173326386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,6 +133,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemEquipHandler
   itemUI: {fileID: 5434128822730348650}
+--- !u!114 &3080761427540107553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1388205904292028024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 646e40313fc73c144a4df43e4ddb13e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDropHandler
+  itemUI: {fileID: 5434128822730348650}
+  equipHandler: {fileID: 1577491266636183422}
 --- !u!1 &9018524217975816275
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using static PLAYERTWO.ARPGProject.InventorySerializer;
 public class ItemDragVisual : MonoBehaviour
 {
     private Canvas itemCanvas;
@@ -26,8 +25,6 @@ public class ItemDragVisual : MonoBehaviour
         originalSortingOrder = itemCanvas.sortingOrder;
 
         if(itemIcon== null) itemIcon = transform.GetChild(0).GetComponent<Image>();
-
-
     }
     public void RaiseForDrag()
     {

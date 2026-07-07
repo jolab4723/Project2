@@ -7,15 +7,16 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private ItemEquipHandler equipmentHandler;
     private InventoryGrid currentGrid;
     private InventoryGrid originalGrid;
+    public bool OriginalRotated => originalRotated;
 
     public EquipSlotUI CurrentEquipSlot => currentEquipSlot;
-    public InventoryGrid OriginalGrid => originalGrid;
-    private RectTransform rect;
 
-    private ItemDragVisual dragVisual;
-    private ItemDragHighlighter dragHighlighter;
 
     public RectTransform Rect => rect;
+    public Vector2 SizeDelta => rect.sizeDelta;
+    public InventoryGrid OriginalGrid => originalGrid;
+    private RectTransform rect;
+    
     public Transform ItemTransform => itemTransform;
 
     private InventoryItem inventoryItem;
@@ -30,59 +31,17 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     private float cellSpacing;
 
     private Transform itemTransform;
-    public EquipSlotUI currentEquipSlot = null;
+    private EquipSlotUI currentEquipSlot = null;
     public bool IsEquipped => currentEquipSlot != null;
     public InventoryGrid CurrentGrid => currentGrid;
     public InventoryItem Item => inventoryItem;
     private Image itemIcon;
     
-    public void EndDrag(PointerEventData eventData)
-    {
-        Vector2Int targetCell = GetCellFromItemRect(currentGrid);
-        int targetX = targetCell.x;
-        int targetY = targetCell.y;
-
-        dragVisual.EndDragVisual();
-
-        dragHighlighter.HideActiveHighlight();
-
-        EquipSlotUI targetEquipSlot = InventoryController.Instance.hoveredEquipSlot;
-
-        if (ShopController.Instance != null && ShopController.Instance.TradeItem(this, originalGrid))
-        {
-            return;
-        }
-
-        if (ShopController.Instance != null &&
-    originalGrid == ShopController.Instance.ShopGrid &&
-    targetEquipSlot != null)
-        {
-            ReturnToOriginalPosition();
-            return;
-        }
-
-        if (targetEquipSlot != null)
-        {
-            equipmentHandler.TryHandleDropToEquipSlot(targetEquipSlot);
-            return;
-        }
-
-        if (IsEquipped)
-        {
-            equipmentHandler.TryHandleDropFromEquipSlotToGrid(targetX, targetY);
-            return;
-        }
-        InventoryMoveService.HandleGridDrop(this, targetX, targetY); 
-    }
     private void Awake()
     {
         rect = GetComponent<RectTransform>();
-        dragVisual = GetComponent<ItemDragVisual>();
-        dragHighlighter = GetComponent<ItemDragHighlighter>();
         equipmentHandler = GetComponent<ItemEquipHandler>();
     }
-
-    
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
         inventoryItem = item;
@@ -121,10 +80,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
             return;
 
         equipmentHandler.TryHandleRightClick();
-   
     }
-
-    private void RestoreGridSettings()
+    public void RestoreGridSettings()
     {
         rect.pivot = new Vector2(0, 1);
         rect.anchorMin = new Vector2(0, 1);
@@ -248,12 +205,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         inventoryItem.isRotated = !inventoryItem.isRotated;
         UpdateRotationUI();
     }
-
-    public void RefreshDragHighlight()
-    {
-        dragHighlighter.RefreshHighlight();
-    }
-
     public void SaveOriginalState()
     {
         originalPosition = rect.anchoredPosition;
@@ -291,16 +242,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
         return localPoint;
     }
-
-    public void RestoreGridVisualSettings()
-    {
-        RestoreGridSettings();
-    }
-
     public void SetAnchoredPosition(Vector2 position)
     {
         rect.anchoredPosition = position;
     }
-
-    public Vector2 SizeDelta => rect.sizeDelta;
 }
