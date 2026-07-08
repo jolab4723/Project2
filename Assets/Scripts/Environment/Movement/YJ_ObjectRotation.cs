@@ -1,15 +1,8 @@
 using UnityEngine;
 
-public enum Direction
-{
-    Up,
-    Forward,
-    Right
-}
-
 public class YJ_ObjectRotation : MonoBehaviour
 {
-    public Direction direction = Direction.Up;
+    public Direction direction = Direction.Y;
     private Vector3 rotationAxis;
 
     [SerializeField] private float rotateSpeed = 30f;
@@ -18,16 +11,16 @@ public class YJ_ObjectRotation : MonoBehaviour
     {
         switch (direction)
         {
-            case Direction.Up:
+            case Direction.X:
+            rotationAxis = Vector3.right;
+            break;
+
+            case Direction.Y:
             rotationAxis = Vector3.up;
             break;
 
-            case Direction.Forward:
+            case Direction.Z:
             rotationAxis = Vector3.forward;
-            break;
-
-            case Direction.Right:
-            rotationAxis = Vector3.right;
             break;
         }
     }
