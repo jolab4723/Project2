@@ -12,16 +12,16 @@ public class YJ_ObjectRotation : MonoBehaviour
         switch (direction)
         {
             case Direction.X:
-            rotationAxis = Vector3.right;
-            break;
+                rotationAxis = Vector3.right;
+                break;
 
             case Direction.Y:
-            rotationAxis = Vector3.up;
-            break;
+                rotationAxis = Vector3.up;
+                break;
 
             case Direction.Z:
-            rotationAxis = Vector3.forward;
-            break;
+                rotationAxis = Vector3.forward;
+                break;
         }
     }
 

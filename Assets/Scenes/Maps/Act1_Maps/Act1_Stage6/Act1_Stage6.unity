@@ -2369,6 +2369,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9173817059781561921, guid: 0047b184edb929b45929d6281517f50d, type: 3}
   m_PrefabInstance: {fileID: 939341916}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &979332009 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4582095332074100656, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
+  m_PrefabInstance: {fileID: 1950051395}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1034240133
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2546,7 +2551,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 15.373
+      value: 15.3
       objectReference: {fileID: 0}
     - target: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2583,13 +2588,37 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4582095332074100656, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1074090223}
   m_SourcePrefab: {fileID: 100100000, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
 --- !u!4 &1074090221 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
   m_PrefabInstance: {fileID: 1074090220}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1074090222 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4582095332074100656, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
+  m_PrefabInstance: {fileID: 1074090220}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1074090223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1074090222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52449af7705644348b7aa4275f6628ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LightBreath
+  shaderReference: 1
+  breathSpeed: 5
+  minIntensity: 0
+  maxIntensity: 2
 --- !u!4 &1135519602 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2492878649651428515, guid: d9708448ce2baa947b04d0bb6636db82, type: 3}
@@ -5917,11 +5946,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 15.812
+      value: 15.77
       objectReference: {fileID: 0}
     - target: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.408
+      value: 3.5
       objectReference: {fileID: 0}
     - target: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5962,13 +5991,32 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4582095332074100656, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1950051400}
   m_SourcePrefab: {fileID: 100100000, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
 --- !u!4 &1950051396 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2218011276041952657, guid: 8668b0bdc74e3e446986fdfba9d3bdfb, type: 3}
   m_PrefabInstance: {fileID: 1950051395}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1950051400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 979332009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52449af7705644348b7aa4275f6628ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LightBreath
+  shaderReference: 1
+  breathSpeed: 5
+  minIntensity: 0
+  maxIntensity: 2
 --- !u!1001 &1960929494
 PrefabInstance:
   m_ObjectHideFlags: 0
