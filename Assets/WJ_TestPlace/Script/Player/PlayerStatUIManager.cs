@@ -59,11 +59,13 @@ public class PlayerStatUIManager : MonoBehaviour
         if (Stat == null)
             return;
 
+        int currentHealth = PlayerHealthManager.Instance != null ? PlayerHealthManager.Instance.CurrentHealth : 0;
+
         if (healthSlider != null)
-            healthSlider.value = Stat.maxHealth > 0 ? (float)Stat.currentHealth / Stat.maxHealth : 0f;
+            healthSlider.value = Stat.maxHealth > 0 ? (float)currentHealth / Stat.maxHealth : 0f;
 
         if (healthText != null)
-            healthText.text = $"{Stat.currentHealth} / {Stat.maxHealth}";
+            healthText.text = $"{currentHealth} / {Stat.maxHealth}";
 
         if (levelText != null)
             levelText.text = $"Lv. {Stat.currentLevel}";

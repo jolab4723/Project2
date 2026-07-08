@@ -7,8 +7,8 @@ using ItemSystem;
 
 /// <summary>
 /// 레벨에 따른 캐릭터(파이터) 기본 스탯을 JSON에서 읽어와 StatType 형식으로 변환해주는 매니저.
-/// 임시 JSON 스키마(HP/MP/Damage/Defence/MoveSpeed/AttackSpeed)를 StatType enum에 매핑한다.
-/// JSON에 대응하는 필드가 없는 StatType은 전부 0으로 채워진다.
+/// JSON 스키마(level/maxHP/maxMP/baseATK/baseDEF/baseCritRate/baseCritMult/baseMS/baseAS/baseCDR/baseMPRegen/basePen)를
+/// StatType enum에 매핑한다. JSON에 대응하는 필드가 없는 StatType은 전부 0으로 채워진다.
 /// </summary>
 public class PlayerLevelManager : MonoBehaviour
 {
@@ -21,17 +21,21 @@ public class PlayerLevelManager : MonoBehaviour
 
     /// <summary>
     /// JSON 필드 이름 -> StatType 매핑.
-    /// 지금은 임시 스키마라 감으로 매핑함.
-    /// 실제 데이터 스키마가 확정되면 이 딜셔너리만 고치면 됨.
+    /// 실제 데이터 스키마가 바뀜면 이 딜셔너리만 고치면 됨.
     /// </summary>
     private static readonly Dictionary<string, StatType> JsonFieldToStatType = new Dictionary<string, StatType>
     {
-        { "HP", StatType.healthFlat },
-        { "Damage", StatType.attackPowerFlat },
-        { "Defence", StatType.defensePowerFlat },
-        { "MP", StatType.mpMaxFlat },
-        { "MoveSpeed", StatType.moveSpeedFlat },
-        { "AttackSpeed", StatType.attackSpeedFlat },
+        { "maxHP", StatType.healthFlat },
+        { "maxMP", StatType.mpMaxFlat },
+        { "baseATK", StatType.attackPowerFlat },
+        { "baseDEF", StatType.defensePowerFlat },
+        { "baseCritRate", StatType.critRateFlat },
+        { "baseCritMult", StatType.critMultFlat },
+        { "baseMS", StatType.moveSpeedFlat },
+        { "baseAS", StatType.attackSpeedFlat },
+        { "baseCDR", StatType.cdrFlat },
+        { "baseMPRegen", StatType.mpRegenFlat },
+        { "basePen", StatType.penetrationFlat },
     };
 
     private List<FighterLevelStatData> levelStatList;
@@ -79,12 +83,17 @@ public class PlayerLevelManager : MonoBehaviour
         if (row == null)
             return result;
 
-        ApplyField(result, "HP", row.HP);
-        ApplyField(result, "MP", row.MP);
-        ApplyField(result, "Damage", row.Damage);
-        ApplyField(result, "Defence", row.Defence);
-        ApplyField(result, "MoveSpeed", row.MoveSpeed);
-        ApplyField(result, "AttackSpeed", row.AttackSpeed);
+        ApplyField(result, "maxHP", row.maxHP);
+        ApplyField(result, "maxMP", row.maxMP);
+        ApplyField(result, "baseATK", row.baseATK);
+        ApplyField(result, "baseDEF", row.baseDEF);
+        ApplyField(result, "baseCritRate", row.baseCritRate);
+        ApplyField(result, "baseCritMult", row.baseCritMult);
+        ApplyField(result, "baseMS", row.baseMS);
+        ApplyField(result, "baseAS", row.baseAS);
+        ApplyField(result, "baseCDR", row.baseCDR);
+        ApplyField(result, "baseMPRegen", row.baseMPRegen);
+        ApplyField(result, "basePen", row.basePen);
 
         return result;
     }
@@ -108,16 +117,16 @@ public class PlayerLevelManager : MonoBehaviour
 
         foreach (var row in levelStatList)
         {
-            if (row.Level == level)
+            if (row.level == level)
                 return row;
         }
 
         FighterLevelStatData closest = levelStatList[0];
-        int closestDiff = Mathf.Abs(closest.Level - level);
+        int closestDiff = Mathf.Abs(closest.level - level);
 
         foreach (var row in levelStatList)
         {
-            int diff = Mathf.Abs(row.Level - level);
+            int diff = Mathf.Abs(row.level - level);
             if (diff < closestDiff)
             {
                 closest = row;
@@ -125,7 +134,7 @@ public class PlayerLevelManager : MonoBehaviour
             }
         }
 
-        Debug.LogWarning($"[PlayerLevelManager] 레벨 {level}에 해당하는 데이터가 없습니다. 가장 가까운 레벨 {closest.Level}로 대체합니다.");
+        Debug.LogWarning($"[PlayerLevelManager] 레벨 {level}에 해당하는 데이터가 없습니다. 가장 가까운 레벨 {closest.level}로 대체합니다.");
         return closest;
     }
 
@@ -148,13 +157,18 @@ public class PlayerLevelManager : MonoBehaviour
 [Serializable]
 public class FighterLevelStatData
 {
-    public int Level;
-    public float HP;
-    public float MP;
-    public float Damage;
-    public float Defence;
-    public float MoveSpeed;
-    public float AttackSpeed;
+    public int level;
+    public float maxHP;
+    public float maxMP;
+    public float baseATK;
+    public float baseDEF;
+    public float baseCritRate;
+    public float baseCritMult;
+    public float baseMS;
+    public float baseAS;
+    public float baseCDR;
+    public float baseMPRegen;
+    public float basePen;
 }
 
 /// <summary>JsonUtility로 최상위 배열 JSON을 파싱하기 위한 래퍼.</summary>
@@ -163,3 +177,4 @@ internal class FighterLevelStatDataListWrapper
 {
     public List<FighterLevelStatData> items;
 }
+
