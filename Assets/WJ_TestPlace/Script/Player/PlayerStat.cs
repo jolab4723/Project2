@@ -13,15 +13,13 @@ using UnityEngine;
 ///   3) 구독 방식은 아직 실제 이벤트 소스(장비/레벨/버프 매니저)를 몰라서,
 ///      외부에서 Recalculate()를 호출해주는 형태로 작성. 실제 매니저 클래스가 정해지면
 ///      그 클래스의 이벤트에 OnEquipmentChanged 등을 연결하면 됨.
-///   4) maxMana는 PlayerStatManager 작업 때 추가함 (StatType.mpMaxFlat 대응, 단순 합산).
-///      currentMana(실시간 리소스)와 회복 로직은 PlayerManaManager로 분리함 - 여기 남는 maxMana는
-///      "파생된 스탯값"만 담당. (체력도 나중에 같은 방식으로 분리 예정)
+///   4) maxMana/maxHealth는 "파생된 스탯값"만 담당한다. currentMana/currentHealth(실시간 리소스)와
+///      회복/피해 로직은 각각 PlayerManaManager/PlayerHealthManager로 분리했다.
 /// </summary>
 [Serializable]
 public class PlayerStat
 {
     // ----- 기본 (직접값, 공식 미적용) -----
-    public int currentHealth;
     public int currentLevel;
     public float currentExp;
 
@@ -50,10 +48,9 @@ public class PlayerStat
     /// <summary>스탯이 갱신될 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event Action OnStatChanged;
 
-    public PlayerStat(int startLevel = 1, int startHealth = 0, float startExp = 0f)
+    public PlayerStat(int startLevel = 1, float startExp = 0f)
     {
         currentLevel = startLevel;
-        currentHealth = startHealth;
         currentExp = startExp;
     }
 
@@ -123,10 +120,6 @@ public class PlayerStat
             character.electricBonusFlat, equipment.electricBonusFlat, equipment.electricBonusPercent,
             buff.electricBonusPercent, buff.electricBonusFlat);
 
-        // maxHealth가 줄어들어 currentHealth가 초과 상태가 되지 않도록 보정
-        if (currentHealth > maxHealth)
-            currentHealth = maxHealth;
-
         OnStatChanged?.Invoke();
     }
 
@@ -150,16 +143,5 @@ public class PlayerStat
         currentExp += amount;
         OnStatChanged?.Invoke();
     }
-
-    public void TakeDamage(int amount)
-    {
-        currentHealth = Mathf.Max(0, currentHealth - amount);
-        OnStatChanged?.Invoke();
-    }
-
-    public void Heal(int amount)
-    {
-        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
-        OnStatChanged?.Invoke();
-    }
 }
+

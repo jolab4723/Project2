@@ -71,10 +71,7 @@ public class PlayerStatManager : MonoBehaviour
         Stat = new PlayerStat(startLevel);
         Recalculate();
 
-        // 초기 스폰 시 0으로 시작하지 않도록 풀피로 세팅.
-        // 마나는 PlayerManaManager가 자체적으로 Start()에서 풀충전 처리함.
-        if (Stat.currentHealth <= 0)
-            Stat.currentHealth = Stat.maxHealth;
+        // 초기 스폰 시 체력/마나는 PlayerHealthManager/PlayerManaManager가 각각 자체적으로 Start()에서 풀충전 처리함.
     }
 
     private void Update()
@@ -106,17 +103,14 @@ public class PlayerStatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 레벨을 1로 초기화하고 풀피/풀마나로 리셋한다. (테스트 버튼용)
-    /// Recalculate를 두 번 부르는 이유: 첫 호출로 레벨1 기준 maxHealth/maxMana를 먼저 확정하고,
-    /// 그 다음 currentHealth/currentMana를 채운 뒤 OnStatChanged를 다시 발행해 UI에 반영시키기 위함.
+    /// 레벨을 1로 초기화하고 재계산한다. (테스트 버튼용)
+    /// 현재 체력/마나는 PlayerHealthManager/PlayerManaManager가 maxHealth/maxMana 변화를 자체 감지해서
+    /// clamp/보정을 알아서 처리하므로 여기서는 따로 건드리지 않음.
     /// </summary>
     [ContextMenu("레벨 초기화 테스트")]
     public void ResetLevel()
     {
         Stat.currentLevel = 1;
-        Recalculate();
-
-        Stat.currentHealth = Stat.maxHealth;
         Recalculate();
     }
 
