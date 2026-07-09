@@ -30,7 +30,8 @@ public class WBH_EnemySpawner : MonoBehaviour
             return null;
         }
 
-        WBH_EnemyController enemy = poolManager.Get(enemyID); // !@
+        WBH_EnemyController enemy = GetComponent<WBH_EnemyController>(); 
+            //= poolManager.Get(enemyID); // !@
 
         if (enemy == null)
             return null;
