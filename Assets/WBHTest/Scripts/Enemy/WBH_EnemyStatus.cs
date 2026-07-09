@@ -16,6 +16,7 @@ public class WBH_EnemyStatus : MonoBehaviour
     public float Defense => defense;
     public float MoveSpeed => moveSpeed;
     public float AttackSpeed => attackSpeed;
+    public float ProjectileSpeed => projectileSpeed;
     public bool IsDead => currentHp <= 0;
 
     private float maxHp;
@@ -24,6 +25,7 @@ public class WBH_EnemyStatus : MonoBehaviour
     private float defense;
     private float moveSpeed;
     private float attackSpeed;
+    private float projectileSpeed;
     private float minDamage = 1f;
 
 
@@ -42,6 +44,7 @@ public class WBH_EnemyStatus : MonoBehaviour
         defense = info.defense;
         moveSpeed = info.moveSpeed;
         attackSpeed = info.attackSpeed;
+        projectileSpeed = info.projectileSpeed;
     }
 
     public void ApplyDamage(float damage)

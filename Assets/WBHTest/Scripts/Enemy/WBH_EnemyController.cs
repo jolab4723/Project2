@@ -51,4 +51,9 @@ public class WBH_EnemyController : MonoBehaviour, T_IDamageable
 
         }
     }
+
+    public void SetTarget(Transform target)
+    {
+        pattern.SetTarget(target);
+    }
 }

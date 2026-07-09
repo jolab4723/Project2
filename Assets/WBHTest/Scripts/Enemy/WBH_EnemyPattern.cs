@@ -1,5 +1,11 @@
 using UnityEngine;
 
+[RequireComponent(typeof(WBH_EnemyMovement))]
+[RequireComponent(typeof(WBH_EnemyCombat))]
+[RequireComponent(typeof(WBH_EnemyStatus))]
+[RequireComponent(typeof(WBH_EnemyAnimation))]
+[RequireComponent(typeof(WBH_EffectSpawner))]
+[RequireComponent(typeof(WBH_ProjectileSpawner))]
 public class WBH_EnemyPattern : MonoBehaviour
 {
     [SerializeField] private LayerMask playerLayer;
@@ -20,7 +26,6 @@ public class WBH_EnemyPattern : MonoBehaviour
     private Transform target;
 
     private float distance = 0;
-    private float projectileSpeed = 0;
 
     public virtual void Initialize(WBH_EnemyController controller)
     {
@@ -29,6 +34,8 @@ public class WBH_EnemyPattern : MonoBehaviour
         combat = GetComponent<WBH_EnemyCombat>();
         status = GetComponent<WBH_EnemyStatus>();
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
+        effectSpawner = GetComponent<WBH_EffectSpawner>();
+        projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
     }
 
     protected virtual void Update()
@@ -95,22 +102,23 @@ public class WBH_EnemyPattern : MonoBehaviour
         }
     }
 
-    private void MeleeAttack()
+    protected virtual void MeleeAttack()
     {
         SectorAttack(combat.AttackRange, 120f, status.Attack);
         effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint);
     }
 
-    private void RangedAttack()
+    protected virtual void RangedAttack()
     {
         Vector3 targetPos = target.position + Vector3.up;
 
         Vector3 direction = (targetPos - firePoint.position).normalized;
 
-        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, status.Attack, projectileSpeed, combat.AttackRange, playerLayer);
+        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, status.Attack, status.ProjectileSpeed, combat.AttackRange, playerLayer);
     }
 
     // player 공격 코드 재활용
+    // 전방 부채꼴 범위 공격
     private void SectorAttack(float range, float angle, float damage)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, playerLayer);

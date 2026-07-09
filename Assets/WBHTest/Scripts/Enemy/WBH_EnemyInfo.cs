@@ -19,6 +19,7 @@ public class WBH_EnemyInfo
     public float attackRange;
     public float attackCoolTime;
     public float attackSpeed;
+    public float projectileSpeed;
 
     // 보상
     public int exp;
