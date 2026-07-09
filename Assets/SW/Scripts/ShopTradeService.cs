@@ -26,7 +26,7 @@ public class ShopTradeService
             return TradeResult.NotEnoughGold;
 
         shopGrid.RemoveItem(item);
-        playerGrid.PlaceItem(item, targetX, targetY);
+        playerGrid.TryPlaceItem(item, targetX, targetY);
 
         return TradeResult.Success;
     }
@@ -49,7 +49,7 @@ public class ShopTradeService
         playerWallet.AddGold(price);
 
         playerGrid.RemoveItem(item);
-        shopGrid.PlaceItem(item, targetX, targetY);
+        shopGrid.TryPlaceItem(item, targetX, targetY);
 
         return TradeResult.Success;
     }

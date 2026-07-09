@@ -107,7 +107,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
             return InventoryAddResultData.Failed(InventoryAddResult.NoSpace);
 
         InventoryItem item = new InventoryItem(itemData);
-        playerGrid.PlaceItem(item, x, y);
+        playerGrid.TryPlaceItem(item, x, y);
 
         return InventoryAddResultData.Success(item, x, y);
     }

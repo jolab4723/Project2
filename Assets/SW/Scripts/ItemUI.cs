@@ -119,7 +119,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         currentGrid = originalGrid;
         transform.SetParent(currentGrid.ItemsContainer, false);
         transform.SetAsLastSibling();
-        currentGrid.PlaceItem(inventoryItem, originalX, originalY);
+        currentGrid.TryPlaceItem(inventoryItem, originalX, originalY);
         rect.anchoredPosition = originalPosition;
     }
 

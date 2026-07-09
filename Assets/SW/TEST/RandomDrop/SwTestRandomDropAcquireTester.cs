@@ -23,7 +23,7 @@ namespace SW.Test.RandomDrop
         [SerializeField] private Button getItemButton;
         [SerializeField] private string dropButtonName = "btn_DropItem";
         [SerializeField] private string getItemButtonName = "btn_GetItem";
-        [SerializeField] private bool bindButtonsOnEnable = true;
+        [SerializeField] private bool bindButtonsOnEnable = false;
 
         [Header("랜덤 드랍 설정")]
         [SerializeField] private SwTestEquipmentDropTableSO dropTable;
@@ -43,7 +43,9 @@ namespace SW.Test.RandomDrop
         private GameObject lastSpawnedPickup;
         private bool buttonsBound;
 
-        private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
+        
+        public bool HasLastDroppedItem => lastDropped != null;
+private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
         private void Awake()
         {

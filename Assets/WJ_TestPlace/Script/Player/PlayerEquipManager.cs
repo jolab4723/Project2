@@ -15,12 +15,6 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
     {
         StatSet total = StatSet.Zero;
 
-        if (InventoryController.Instance == null || InventoryController.Instance.allEquipSlots == null)
-        {
-            Debug.LogWarning("[PlayerEquipManager] InventoryController.allEquipSlots를 찾을 수 없습니다.");
-            return total;
-        }
-
         if (equipmentSystem == null)
         {
             Debug.LogWarning("[PlayerEquipManager] EquipmentSystem이 연결되지 않았습니다.");

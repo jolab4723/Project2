@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ItemDropHandler : MonoBehaviour
 {
@@ -46,7 +46,7 @@ public class ItemDropHandler : MonoBehaviour
             return;
         }
 
-        InventoryMoveResultData result = InventoryMoveService.HandleGridDrop(
+        InventoryMoveResultData result = InventoryMoveService.TryMoveOnGrid(
             itemUI.CurrentGrid, itemUI.Item, targetX, targetY, itemUI.OriginalX, itemUI.OriginalY, itemUI.OriginalRotated);
         HandleInventoryMoveResult(result);
     }
@@ -68,9 +68,10 @@ public class ItemDropHandler : MonoBehaviour
                     swappedUI.SetGridPosition(itemUI.CurrentGrid, result.SwappedX, result.SwappedY);
                 break;
             case InventoryMoveResult.Failed:
-                InventoryController.Instance.PrintLog("드래그 도중 인벤토리가 가득 차 넣을 수 없어서 파괴되었습니다.");
+                InventoryController.Instance.PrintLog("?쒕옒洹??꾩쨷 ?몃깽?좊━媛 媛??李??ｌ쓣 ???놁뼱???뚭눼?섏뿀?듬땲??");
                 Destroy(itemUI.gameObject);
                 return;
         }
     }
 }
+

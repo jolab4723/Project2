@@ -50,12 +50,30 @@ public class InventoryGrid : MonoBehaviour
         return true;
     }
 
+    public bool TryPlaceItem(InventoryItem item, int startX, int startY)
+    {
+        if (!CanPlaceItem(startX, startY, item.CurrentWidth, item.CurrentHeight))
+            return false;
+
+        PlaceItem(item, startX, startY);
+        return true;
+    }
     public void PlaceItem(InventoryItem item, int startX, int startY)
     {
         for (int x = startX; x < startX + item.CurrentWidth; x++)
         {
             for (int y = startY; y < startY + item.CurrentHeight; y++)
             {
+                if (grid[x, y] != null && grid[x, y] != item)
+                {
+                    Debug.LogError(
+                        $"[InventoryGrid] PlaceItem 겹침 발생. " +
+                        $"place={item.itemData.definition.itemName}, " +
+                        $"cellOwner={grid[x, y].itemData.definition.itemName}, " +
+                        $"cell=({x},{y})"
+                    );
+                }
+
                 grid[x, y] = item;
             }
         }
@@ -70,7 +88,18 @@ public class InventoryGrid : MonoBehaviour
         {
             for (int y = item.y; y < item.y + item.CurrentHeight; y++)
             {
-                grid[x, y] = null;
+                if (grid[x, y] == item)
+                {
+                    grid[x, y] = null;
+                }
+                else if (grid[x, y] != null)
+                {
+                    Debug.LogError(
+                    $"[InventoryGrid] RemoveItem이 다른 아이템 칸을 지우려고 함. " +
+                    $"remove={item.itemData.definition.itemName}, " +
+                    $"cellOwner={grid[x, y].itemData.definition.itemName}, " +
+                    $"cell=({x},{y})");
+                }
             }
         }
     }

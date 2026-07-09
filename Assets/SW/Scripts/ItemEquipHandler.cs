@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 public class ItemEquipHandler : MonoBehaviour
 {
@@ -72,7 +73,11 @@ public class ItemEquipHandler : MonoBehaviour
         itemUI.ClearCurrentEquipSlot();
 
         InventoryGrid grid = itemUI.CurrentGrid;
-        grid.PlaceItem(itemUI.Item, foundX, foundY);
+        if (!grid.TryPlaceItem(itemUI.Item, foundX, foundY))
+        {
+            InventoryController.Instance.PrintLog(GetEquipMessage(EquipResult.Failed));
+            return false;
+        }
         itemUI.SetGridPosition(grid, foundX, foundY);
 
         NotifyUnequipped(itemUI.Item);
@@ -142,9 +147,6 @@ public class ItemEquipHandler : MonoBehaviour
     {
         if (item?.itemData?.definition?.uniqueEffect != null)
             item.itemData.definition.uniqueEffect.OnEquip(item.itemData);
-
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.Recalculate();
     }
 
     /// <summary>해제 성공 시 고유효과 OnUnequip 호출 + 스탯 재계산.</summary>
@@ -152,15 +154,10 @@ public class ItemEquipHandler : MonoBehaviour
     {
         if (item?.itemData?.definition?.uniqueEffect != null)
             item.itemData.definition.uniqueEffect.OnUnequip(item.itemData);
-
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.Recalculate();
     }
 
     private bool TrySwapWithEquipSlot(EquipSlotUI slot)
     {
-        // 기존 TrySwapWithEquipSlot 내용
-        // 단 itemUI.Item, itemUI.OriginalGrid, itemUI.OriginalX 같은 식으로 접근
         if (slot == null)
             return false;
 
@@ -174,13 +171,28 @@ public class ItemEquipHandler : MonoBehaviour
         if (!slot.CanAcceptType(itemUI.Item.itemData))
             return false;
 
+        InventoryGrid returnGrid = itemUI.OriginalGrid;
+        int preferredX = itemUI.OriginalX;
+        int preferredY = itemUI.OriginalY;
+
+        if (!TryFindReturnSpaceForEquippedItem(
+            returnGrid,
+            equippedUI.Item,
+            preferredX,
+            preferredY,
+            out int returnX,
+            out int returnY))
+        {
+            InventoryController.Instance.PrintLog(GetEquipMessage(EquipResult.NoReturnSpace));
+            return false;
+        }
         // B가 A의 원래 위치에 들어갈 수 있는지 확인
         EquipResultData result = equipmentSystem.TrySwapEquip(
         slot.SlotType,
         itemUI.Item,
-        itemUI.OriginalGrid,
-        itemUI.OriginalX,
-        itemUI.OriginalY
+        returnGrid,
+        returnX,
+        returnY
 );
 
         if (result.Result != EquipResult.Swapped)
@@ -195,8 +207,8 @@ public class ItemEquipHandler : MonoBehaviour
         slot.ClearItemUI();
         equippedUI.ClearCurrentEquipSlot();
 
-        itemUI.OriginalGrid.PlaceItem(outgoingItem, itemUI.OriginalX, itemUI.OriginalY);
-        equippedUI.SetGridPosition(itemUI.OriginalGrid, itemUI.OriginalX, itemUI.OriginalY);
+        returnGrid.TryPlaceItem(outgoingItem, returnX, returnY);
+        equippedUI.SetGridPosition(returnGrid, returnX, returnY);
         NotifyUnequipped(outgoingItem);
 
         // A를 장비칸에 장착
@@ -227,17 +239,29 @@ public class ItemEquipHandler : MonoBehaviour
 
         grid.RemoveItem(itemUI.Item);
 
+        if (!TryFindReturnSpaceForEquippedItem(
+            grid,
+            equippedItem,
+            targetX,
+            targetY,
+            out int returnX,
+            out int returnY))
+        {
+            grid.TryPlaceItem(itemUI.Item, targetX, targetY);
+            InventoryController.Instance.PrintLog(GetEquipMessage(EquipResult.NoReturnSpace));
+            return false;
+        }
         EquipResultData result = equipmentSystem.TrySwapEquip(
             slot.SlotType,
             itemUI.Item,
             grid,
-            targetX,
-            targetY
+            returnX,
+            returnY
         );
 
         if (result.Result != EquipResult.Swapped)
         {
-            grid.PlaceItem(itemUI.Item, targetX, targetY);
+            grid.TryPlaceItem(itemUI.Item, targetX, targetY);
             InventoryController.Instance.PrintLog(GetEquipMessage(result.Result));
             return false;
         }
@@ -247,14 +271,45 @@ public class ItemEquipHandler : MonoBehaviour
         slot.ClearItemUI();
         equippedUI.ClearCurrentEquipSlot();
 
-        grid.PlaceItem(outgoingItem, targetX, targetY);
-        equippedUI.SetGridPosition(grid, targetX, targetY);
+        grid.TryPlaceItem(outgoingItem, returnX, returnY);
+        equippedUI.SetGridPosition(grid, returnX, returnY);
         NotifyUnequipped(outgoingItem);
 
         SetEquipSlotVisual(slot);
         return true;
     }
 
+    private bool TryFindReturnSpaceForEquippedItem(
+    InventoryGrid grid,
+    InventoryItem outgoingItem,
+    int preferredX,
+    int preferredY,
+    out int returnX,
+    out int returnY)
+    {
+        returnX = preferredX;
+        returnY = preferredY;
+
+        if (grid.CanPlaceItem(
+            preferredX,
+            preferredY,
+            outgoingItem.CurrentWidth,
+            outgoingItem.CurrentHeight))
+        {
+            return true;
+        }
+
+        if (grid.FindEmptySpace(
+            outgoingItem.CurrentWidth,
+            outgoingItem.CurrentHeight,
+            out returnX,
+            out returnY))
+        {
+            return true;
+        }
+
+        return false;
+    }
     public bool TryHandleDropFromEquipSlotToGrid(int targetX, int targetY)
     {
         if (!itemUI.IsEquipped)
@@ -289,7 +344,11 @@ public class ItemEquipHandler : MonoBehaviour
         previousSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        grid.PlaceItem(itemUI.Item, targetX, targetY);
+        if (!grid.TryPlaceItem(itemUI.Item, targetX, targetY))
+        {
+            InventoryController.Instance.PrintLog(GetEquipMessage(EquipResult.Failed));
+            return false;
+        }
         itemUI.SetGridPosition(grid, targetX, targetY);
         NotifyUnequipped(itemUI.Item);
 
@@ -348,7 +407,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (result.Result != EquipResult.Swapped)
         {
-            grid.PlaceItem(gridItem, gridItemOriginalX, gridItemOriginalY);
+            grid.TryPlaceItem(gridItem, gridItemOriginalX, gridItemOriginalY);
             InventoryController.Instance.PrintLog(GetEquipMessage(result.Result));
             return false;
         }
@@ -358,7 +417,7 @@ public class ItemEquipHandler : MonoBehaviour
         previousSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        grid.PlaceItem(outgoingItem, targetX, targetY);
+        grid.TryPlaceItem(outgoingItem, targetX, targetY);
         itemUI.SetGridPosition(grid, targetX, targetY);
 
         gridItemEquipHandler.SetEquipSlotVisual(previousSlot);
