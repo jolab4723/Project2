@@ -4,7 +4,6 @@ public class WBH_Projectile : MonoBehaviour
 {
     [SerializeField] private bool isExplosion;
     [SerializeField] private float explosionRadius;
-    [SerializeField] private float grenadeTravelTime;
 
     private float damage;
     private float speed;
@@ -17,49 +16,68 @@ public class WBH_Projectile : MonoBehaviour
 
     private ProjectileType projectileType;
     private WBH_ProjectilePoolManager poolManager;
+    private WBH_EffectSpawner effectSpawner;
+    private WBH_EffectData hitEffectData;
 
     private bool isInitialized;
 
     // 유탄용 변수
+    private float minArcHeight = 1f;
+    private float maxArcHeight = 3f;
     private Vector3 targetPosition;
     private float arcHeight;
     private float travelTime;
     private float currentTime;
+    private float minFlightTime = 1f;
+    private Vector3 previousPos;
 
     // 투사체에 각 변수 할당
-    public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer)
+    public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
+                           WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
         this.damage = damage;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
 
+        this.effectSpawner = spawner;
+        this.hitEffectData = data;
+
         movedirection = direction.normalized;
         startPosition = transform.position;
 
+        isExplosion = false;
         isInitialized = true;
     }
 
     // 유탄용 변수 할당
     public void InitializeGrenade(float damage, float speed, float maxDistance, 
-                                  LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f)
+                                  LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f,
+                                   WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
         this.damage = damage;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
         this.explosionRadius = explosionRadius;
+        this.effectSpawner = spawner;
+        this.hitEffectData = data;
 
         startPosition = transform.position;
+        previousPos = startPosition;
         Vector3 direction = (targetPosition - startPosition).normalized;
         float targetDistance = Vector3.Distance(startPosition, targetPosition);
         float clampDistance = Mathf.Min(targetDistance, maxDistance);
 
         this.targetPosition = startPosition + direction * clampDistance;
+
+        float ratio = clampDistance / maxDistance;
+        ratio = ratio * ratio;
+        arcHeight = Mathf.Lerp(minArcHeight, maxArcHeight, ratio);
+        
         this.arcHeight = arcHeight;
 
-        // travelTime = clampDistance / speed; // 테스트해보고 아래 코드와 이 코드 중 자연스러운 것으로.
-        travelTime = grenadeTravelTime;
+        travelTime = Mathf.Max(minFlightTime, clampDistance / speed); 
 
         currentTime = 0f;
 
@@ -103,7 +121,17 @@ public class WBH_Projectile : MonoBehaviour
 
         position.y += arcHeight * 4f * t * (1f - t);
 
+        Vector3 moveDir = position - previousPos;
+
+        if(moveDir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 15f * Time.deltaTime);
+        }
+
         transform.position = position;
+        previousPos = position;
 
         if (t >= 1f)
             Explode();
@@ -111,6 +139,9 @@ public class WBH_Projectile : MonoBehaviour
 
     private void CheckDistance()
     {
+        if (isExplosion)
+            return;
+
         float distance = Vector3.Distance(startPosition, transform.position);
 
         if (distance >= maxDistance)
@@ -130,16 +161,18 @@ public class WBH_Projectile : MonoBehaviour
         Debug.Log($"{name} 충돌");
         Debug.Log($"상대 : {other.name}");
         Debug.Log($"Layer : {LayerMask.LayerToName(other.gameObject.layer)}");
+
+        if(isExplosion)
+        {
+            Debug.Log("유탄 폭발");
+            Explode();
+            return;
+        }
+
         // 충돌레이어가 타겟레이어에 포함되지 않으면 관통
         if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
         {
             ReturnToPool();
-            return;
-        }
-
-        if(isExplosion)
-        {
-            Explode();
             return;
         }
 
@@ -153,6 +186,11 @@ public class WBH_Projectile : MonoBehaviour
 
     private void Explode()
     {
+        if(effectSpawner != null && hitEffectData != null)
+        {
+            effectSpawner.SpawnEffect(hitEffectData, targetPosition);
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);
 
         foreach(Collider hit in hits)
