@@ -75,6 +75,16 @@ public class PlayerHealthManager : MonoBehaviour
         OnHealthChanged?.Invoke();
     }
 
+    /// <summary>
+    /// 세이브 데이터 로드 등 외부에서 정확한 값으로 직접 설정할 때 사용. 0~MaxHealth로 clamp된다.
+    /// TakeDamage/Heal과 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름.
+    /// </summary>
+    public void SetCurrentHealth(int value)
+    {
+        CurrentHealth = Mathf.Clamp(value, 0, MaxHealth);
+        OnHealthChanged?.Invoke();
+    }
+
     /// <summary>amount만큼 데미지를 받는다. 0 밑으로는 안 내려가며, 0이 되면 OnDeath를 발행한다.</summary>
     public void TakeDamage(int amount)
     {

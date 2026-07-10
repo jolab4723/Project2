@@ -10,6 +10,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     [SerializeField] private EquipmentSystem equipmentSystem;
     public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
+    public PlayerWallet PlayerWallet => playerWallet;
 
     public TextMeshProUGUI logText;
     public EquipSlotUI hoveredEquipSlot;
