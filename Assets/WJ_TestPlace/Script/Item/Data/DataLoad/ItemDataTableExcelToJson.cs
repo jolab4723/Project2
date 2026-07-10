@@ -8,21 +8,21 @@ using DataSystem.Excel;
 
 namespace DataSystem
 {
-    public static class ItemTableExcelToJson
+    public static class ItemDataTableExcelToJson
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/JSONFile";
 
-        [MenuItem("DataLoader/Item Table/1. Convert Excel To JSON")]
+        [MenuItem("DataLoader/Item Data Table/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
         {
-            string excelPath = EditorUtility.OpenFilePanel("Select structured item table", Application.dataPath, "xlsx");
+            string excelPath = EditorUtility.OpenFilePanel("Select item data table", Application.dataPath, "xlsx");
             if (string.IsNullOrEmpty(excelPath))
                 return;
 
             EnsureAssetFolder(DefaultJsonFolder);
             string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
             string suggestedJsonFileName = Path.GetFileNameWithoutExtension(excelPath) + ".json";
-            string jsonPath = EditorUtility.SaveFilePanel("Save item table JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
+            string jsonPath = EditorUtility.SaveFilePanel("Save item data table JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
@@ -33,11 +33,11 @@ namespace DataSystem
         {
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogError($"[ItemTable] Excel file not found: {excelAbsolutePath}");
+                Debug.LogError($"[ItemDataTable] Excel file not found: {excelAbsolutePath}");
                 return;
             }
 
-            ItemTableJsonData data = new ItemTableJsonData();
+            ItemDataTableJsonData data = new ItemDataTableJsonData();
 
             using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
@@ -51,8 +51,6 @@ namespace DataSystem
                 while (reader.NextResult());
             }
 
-            ApplyMaxValueFallback(data);
-
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -61,38 +59,34 @@ namespace DataSystem
             File.WriteAllText(jsonAbsolutePath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"[ItemTable] JSON generated: {jsonAbsolutePath}\n" +
-                      $"SubStatPools: {data.subStatPools.Count}, ElementalBonusConfig: {(data.elementalBonusConfig != null ? "있음" : "없음")}");
+            Debug.Log($"[ItemDataTable] JSON generated: {jsonAbsolutePath}\n" +
+                      $"Armor: {data.armorDefinitions.Count}, Weapon: {data.weaponDefinitions.Count}, Potion: {data.potionDefinitions.Count}");
         }
 
-        private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, ItemTableJsonData data)
+        private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, ItemDataTableJsonData data)
         {
             switch (sheetName)
             {
-                case "SubStatPools":
-                    data.subStatPools = ExcelSheetReader.MapRows<SubStatPoolRow>(rows);
+                case "ArmorDefinitions":
+                    data.armorDefinitions = ExcelSheetReader.MapRows<ArmorDefinitionRow>(rows);
                     break;
 
-                case "ElementalBonusConfigs":
-                    List<ElementalBonusConfigRow> configs = ExcelSheetReader.MapRows<ElementalBonusConfigRow>(rows);
-                    if (configs.Count > 1)
-                        Debug.LogWarning($"[ItemTable] ElementalBonusConfigs는 전역 설정 하나만 써야 하는데 {configs.Count}개 행이 있습니다. 첫 번째 행만 사용합니다.");
-                    data.elementalBonusConfig = configs.Count > 0 ? configs[0] : null;
+                case "WeaponDefinitions":
+                    data.weaponDefinitions = ExcelSheetReader.MapRows<WeaponDefinitionRow>(rows);
+                    break;
+
+                case "PotionDefinitions":
+                    data.potionDefinitions = ExcelSheetReader.MapRows<PotionDefinitionRow>(rows);
+                    break;
+
+                case "RelicDefinitions":
+                case "ComboBox":
+                    // 아직 빈 시트 - 나중에 내용 채워지면 케이스 추가
                     break;
 
                 default:
-                    Debug.LogWarning($"[ItemTable] 알 수 없는 시트라 건너뜁니다: {sheetName}");
+                    Debug.LogWarning($"[ItemDataTable] 알 수 없는 시트라 건너뜁니다: {sheetName}");
                     break;
-            }
-        }
-
-        /// <summary>maxValue가 minValue보다 작으면(비어서 0으로 들어온 경우 포함) minValue로 채운다.</summary>
-        private static void ApplyMaxValueFallback(ItemTableJsonData data)
-        {
-            foreach (SubStatPoolRow row in data.subStatPools)
-            {
-                if (row.maxValue < row.minValue)
-                    row.maxValue = row.minValue;
             }
         }
 

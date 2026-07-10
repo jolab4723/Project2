@@ -48,6 +48,7 @@ public class PlayerStatManager : MonoBehaviour
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
     }
 
+   
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
     {
         Recalculate();

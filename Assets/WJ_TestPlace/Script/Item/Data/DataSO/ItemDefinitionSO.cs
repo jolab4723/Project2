@@ -12,6 +12,9 @@ namespace ItemSystem
         public ItemCategory category;
         public ItemRarity rarity;
 
+        [TextArea]
+        public string description;
+
         [Tooltip("category가 Weapon일 때만 사용")]
         public CharacterClass characterClass;
         [Tooltip("category가 Weapon일 때만 사용 (characterClass에 따라 선택 가능한 목록이 달라짐)")]
