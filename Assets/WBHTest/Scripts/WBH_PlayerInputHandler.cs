@@ -1,4 +1,3 @@
-using Mirror.Examples.AdditiveLevels;
 using UnityEngine;
 
 public class WBH_PlayerInputHandler : MonoBehaviour
@@ -56,6 +55,10 @@ public class WBH_PlayerInputHandler : MonoBehaviour
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        //Plane plane = new Plane(Vector3.up, Vector3.zero);
+
+        //if(plane.R)
 
         if(Physics.Raycast(ray, out RaycastHit hit))
         {
