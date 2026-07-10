@@ -4,7 +4,6 @@ public class WBH_Projectile : MonoBehaviour
 {
     [SerializeField] private bool isExplosion;
     [SerializeField] private float explosionRadius;
-    [SerializeField] private float grenadeTravelTime;
 
     private float damage;
     private float speed;
@@ -23,10 +22,13 @@ public class WBH_Projectile : MonoBehaviour
     private bool isInitialized;
 
     // 유탄용 변수
+    [SerializeField] private float minArcHeight = 1f;
+    [SerializeField] private float maxArcHeight = 3f;
     private Vector3 targetPosition;
     private float arcHeight;
     private float travelTime;
     private float currentTime;
+    [SerializeField] private float minFlightTime = 1f;
 
     // 투사체에 각 변수 할당
     public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
@@ -66,10 +68,14 @@ public class WBH_Projectile : MonoBehaviour
         float clampDistance = Mathf.Min(targetDistance, maxDistance);
 
         this.targetPosition = startPosition + direction * clampDistance;
+
+        float ratio = clampDistance / maxDistance;
+        ratio = ratio * ratio;
+        arcHeight = Mathf.Lerp(minArcHeight, maxArcHeight, ratio);
+        
         this.arcHeight = arcHeight;
 
-        // travelTime = clampDistance / speed; // 테스트해보고 아래 코드와 이 코드 중 자연스러운 것으로.
-        travelTime = grenadeTravelTime;
+        travelTime = Mathf.Max(minFlightTime, clampDistance / speed); 
 
         currentTime = 0f;
 
@@ -121,6 +127,9 @@ public class WBH_Projectile : MonoBehaviour
 
     private void CheckDistance()
     {
+        if (isExplosion)
+            return;
+
         float distance = Vector3.Distance(startPosition, transform.position);
 
         if (distance >= maxDistance)
@@ -140,16 +149,18 @@ public class WBH_Projectile : MonoBehaviour
         Debug.Log($"{name} 충돌");
         Debug.Log($"상대 : {other.name}");
         Debug.Log($"Layer : {LayerMask.LayerToName(other.gameObject.layer)}");
+
+        if(isExplosion)
+        {
+            Debug.Log("유탄 폭발");
+            Explode();
+            return;
+        }
+
         // 충돌레이어가 타겟레이어에 포함되지 않으면 관통
         if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
         {
             ReturnToPool();
-            return;
-        }
-
-        if(isExplosion)
-        {
-            Explode();
             return;
         }
 

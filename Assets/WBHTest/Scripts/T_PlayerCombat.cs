@@ -36,9 +36,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
 
     [SerializeField] private PlayerClass playerClass;
-    private Transform attackTarget;
     private T_PlayerController controller;
     private WBH_PlayerEffect effect;
+    private Vector3 grenadePoint;
 
     private float CurrentAttackRange
     {
@@ -66,26 +66,12 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         CurrentHp = maxHp;
     }
 
-    private void OnEnable()
-    {
-        stateMachine.OnExitState += HandleExitState;
-    }
-
-    private void OnDisable()
-    {
-        stateMachine.OnExitState -= HandleExitState;
-    }
-    
-
-
     private void Update()
     {
         if (IsDead)
             return;
 
         UpdateStats();
-
-        HandleChase();
 
         TestMultiple();
     }
@@ -95,16 +81,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         if (IsDead || !CanAttack) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
             return;
 
-        if(attackTarget != null)
-        {
-            Vector3 lookDir = attackTarget.position - transform.position;
-            lookDir.y = 0f;
-            transform.forward = lookDir.normalized;
-        }
-
         stateMachine.ChangeState(PlayerState.Attack);
-
-        print("일반공격 실행");
     }
 
     private void FighterAttack()
@@ -113,12 +90,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     }
     private void GunnerAttack()
     {
-        if (attackTarget == null)
-            return;
-
-        Vector3 targetPos = attackTarget.position + Vector3.up;
-
-        Vector3 direction = (targetPos - firePoint.position).normalized;
+        Vector3 direction = transform.forward;
 
         switch(currentWeapon)
         {
@@ -133,7 +105,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
                 break;
             case GunnerWeaponType.GrenadeLauncher:
                 {
-                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, attackTarget.position, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
+                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, grenadePoint, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
                 }
                 break;
         }
@@ -170,32 +142,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         stateMachine.ChangeState(PlayerState.Dead);
     }
 
-    private void HandleChase()
-    {
-        if (!stateMachine.Is(PlayerState.Chase))
-            return;
-
-        if (attackTarget == null)
-        {
-            stateMachine.ChangeState(PlayerState.Idle);
-            return;
-        }
-
-        float distance = Vector3.Distance(transform.position, attackTarget.position);
-
-        if (distance <= CurrentAttackRange + attackTolerance)
-        {
-            controller.ResetStoppingDistance();
-
-            NormalAttack();
-        }
-        else
-        {
-            controller.MoveToTarget(attackTarget.position, CurrentAttackRange);
-            return;
-        }
-    }
-
     private void SectorAttack( float range, float angle, float damage)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, enemyLayer);
@@ -219,43 +165,29 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     public void CancelChase()
     {
         stateMachine.ChangeState(PlayerState.Idle);
-        attackTarget = null;
-        controller.ResetStoppingDistance();
-    }
-
-    private void HandleExitState(PlayerState state)
-    {
-        if (state != PlayerState.Attack)
-            return;
-
-        attackTarget = null;
-
         controller.ResetStoppingDistance();
     }
 
     // -- 입력 시스템 호출용 메서드
     // 적 클릭 시, 공격 사거리 안이면 공격, 밖이면 사거리까지 이동 후 공격
-    public void TryAttackTarget(Transform target)
+    public void TryAttack(Vector3 targetPos)
     {
         if (!CanAttack) 
             return;
 
-        attackTarget = target;
+        grenadePoint = targetPos;
 
-        float distance = Vector3.Distance(transform.position, attackTarget.position);
+        CancelChase();
 
-        if(distance <= CurrentAttackRange)
-        {
-            transform.forward = (target.position - transform.position).normalized;
-            NormalAttack();
-        }
+        Vector3 lookDir = targetPos - transform.position;
+        lookDir.y = 0f;
 
-        else
-        {
-            stateMachine.ChangeState(PlayerState.Chase);
+        if (lookDir.sqrMagnitude < 0.001f)
+            return;
 
-            controller.MoveToTarget(target.position, CurrentAttackRange);
-        }
+        transform.forward = lookDir.normalized;
+
+        NormalAttack();
     }
 
     // -- 애니메이터 호출용 메서드
