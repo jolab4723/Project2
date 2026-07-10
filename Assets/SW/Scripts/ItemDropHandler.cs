@@ -16,6 +16,14 @@ public class ItemDropHandler : MonoBehaviour
 
     public void ResolveDrop()
     {
+        ResolveDrop(Vector2.zero, null, default);
+    }
+
+    public void ResolveDrop(
+        Vector2 screenPosition,
+        Camera eventCamera,
+        InventorySwapPlan previewPlan)
+    {
         Vector2Int targetCell = itemUI.GetCellFromItemRect(itemUI.CurrentGrid);
         int targetX = targetCell.x;
         int targetY = targetCell.y;
@@ -47,7 +55,12 @@ public class ItemDropHandler : MonoBehaviour
         }
 
         InventoryMoveResultData result = InventoryMoveService.TryMoveOnGrid(
-            itemUI.CurrentGrid, itemUI.Item, targetX, targetY, itemUI.OriginalX, itemUI.OriginalY, itemUI.OriginalRotated);
+            itemUI.CurrentGrid,
+            itemUI.Item,
+            targetX,
+            targetY,
+            itemUI.OriginalPlacement,
+            previewPlan);
         HandleInventoryMoveResult(result);
     }
 
@@ -61,15 +74,26 @@ public class ItemDropHandler : MonoBehaviour
                 itemUI.SetGridPosition(itemUI.CurrentGrid, result.MovedX, result.MovedY);
                 break;
             case InventoryMoveResult.Swapped:
-                itemUI.SetGridPosition(itemUI.CurrentGrid, result.MovedX, result.MovedY);
+                itemUI.SetGridPositionAnimated(
+                    itemUI.CurrentGrid,
+                    result.MovedX,
+                    result.MovedY);
 
                 ItemUI swappedUI = ItemUIFinder.FindInGrid(itemUI.CurrentGrid, result.SwappedItem);
                 if (swappedUI != null)
-                    swappedUI.SetGridPosition(itemUI.CurrentGrid, result.SwappedX, result.SwappedY);
+                {
+                    swappedUI.SetGridPositionAnimated(
+                        itemUI.CurrentGrid,
+                        result.SwappedX,
+                        result.SwappedY);
+                }
                 break;
             case InventoryMoveResult.Failed:
-                InventoryController.Instance.PrintLog("?쒕옒洹??꾩쨷 ?몃깽?좊━媛 媛??李??ｌ쓣 ???놁뼱???뚭눼?섏뿀?듬땲??");
-                Destroy(itemUI.gameObject);
+                if (!itemUI.TryReturnToOriginalPosition())
+                {
+                    Debug.LogError(
+                        "[ItemDropHandler] 드롭 실패 후 아이템을 원래 위치에 복구하지 못했습니다.");
+                }
                 return;
         }
     }

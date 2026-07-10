@@ -9,6 +9,7 @@ public struct InventoryMoveResultData
     public InventoryItem SwappedItem;
     public int SwappedX;
     public int SwappedY;
+    public InventorySwapMode SwapMode;
 
     public static InventoryMoveResultData Success(
         InventoryItem movedItem,
@@ -38,7 +39,8 @@ public struct InventoryMoveResultData
     int movedY,
     InventoryItem swappedItem,
     int swappedX,
-    int swappedY)
+    int swappedY,
+    InventorySwapMode swapMode = InventorySwapMode.None)
     {
         return new InventoryMoveResultData
         {
@@ -48,7 +50,8 @@ public struct InventoryMoveResultData
             MovedY = movedY,
             SwappedItem = swappedItem,
             SwappedX = swappedX,
-            SwappedY = swappedY
+            SwappedY = swappedY,
+            SwapMode = swapMode
         };
     }
 

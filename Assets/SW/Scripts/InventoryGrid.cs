@@ -42,7 +42,6 @@ public class InventoryGrid : MonoBehaviour
             {
                 if (grid[x, y] != null)
                 {
-                    text.text = $"해당 위치 {x},{y} 에 이미 아이템이 있습니다.";
                     return false;
                 }
             }

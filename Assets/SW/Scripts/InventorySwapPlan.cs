@@ -1,0 +1,284 @@
+using System;
+using UnityEngine;
+
+[Flags]
+public enum InventoryGridEdgeFlags
+{
+    None = 0,
+    Left = 1 << 0,
+    Right = 1 << 1,
+    Top = 1 << 2,
+    Bottom = 1 << 3
+}
+
+public enum InventorySwapMode
+{
+    None,
+    Direct,
+    StackHorizontal,
+    StackVertical,
+    EdgeAnchored,
+    Clamped,
+    Adjusted
+}
+
+public enum InventorySwapFailReason
+{
+    None,
+    InvalidInput,
+    NoTarget,
+    IntentNotConfirmed,
+    CannotFit,
+    Occupied,
+    StalePlan
+}
+
+public readonly struct InventoryCellRect
+{
+    public int X { get; }
+    public int Y { get; }
+    public int Width { get; }
+    public int Height { get; }
+
+    public int Right => X + Width;
+    public int Bottom => Y + Height;
+    public int Area => Width > 0 && Height > 0 ? Width * Height : 0;
+    public bool IsValid => Width > 0 && Height > 0;
+
+    public InventoryCellRect(int x, int y, int width, int height)
+    {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
+
+    public bool IsInside(InventoryGrid grid)
+    {
+        return grid != null &&
+               X >= 0 &&
+               Y >= 0 &&
+               Right <= grid.GridWidth &&
+               Bottom <= grid.GridHeight;
+    }
+
+    public bool ContainsCell(int x, int y)
+    {
+        return x >= X && x < Right && y >= Y && y < Bottom;
+    }
+
+    public bool Overlaps(InventoryCellRect other)
+    {
+        return X < other.Right &&
+               Right > other.X &&
+               Y < other.Bottom &&
+               Bottom > other.Y;
+    }
+
+    public int IntersectionArea(InventoryCellRect other)
+    {
+        int width = Mathf.Max(0, Mathf.Min(Right, other.Right) - Mathf.Max(X, other.X));
+        int height = Mathf.Max(0, Mathf.Min(Bottom, other.Bottom) - Mathf.Max(Y, other.Y));
+        return width * height;
+    }
+
+    public override string ToString()
+    {
+        return $"({X},{Y}) {Width}x{Height}";
+    }
+}
+
+public readonly struct InventoryPlacementSnapshot
+{
+    public InventoryCellRect Rect { get; }
+    public bool IsRotated { get; }
+    public InventoryGridEdgeFlags Edges { get; }
+
+    public bool IsValid => Rect.IsValid;
+
+    public InventoryPlacementSnapshot(
+        InventoryCellRect rect,
+        bool isRotated,
+        InventoryGridEdgeFlags edges)
+    {
+        Rect = rect;
+        IsRotated = isRotated;
+        Edges = edges;
+    }
+
+    public static InventoryPlacementSnapshot Capture(InventoryGrid grid, InventoryItem item)
+    {
+        if (grid == null || item == null)
+            return default;
+
+        return Create(
+            grid,
+            item.x,
+            item.y,
+            item.CurrentWidth,
+            item.CurrentHeight,
+            item.isRotated);
+    }
+
+    public static InventoryPlacementSnapshot FromOriginalState(
+        InventoryGrid grid,
+        InventoryItem item,
+        int x,
+        int y,
+        bool isRotated)
+    {
+        if (grid == null || item?.itemData?.definition == null)
+            return default;
+
+        int width = isRotated
+            ? item.itemData.definition.itemHeight
+            : item.itemData.definition.itemWidth;
+        int height = isRotated
+            ? item.itemData.definition.itemWidth
+            : item.itemData.definition.itemHeight;
+
+        return Create(grid, x, y, width, height, isRotated);
+    }
+
+    private static InventoryPlacementSnapshot Create(
+        InventoryGrid grid,
+        int x,
+        int y,
+        int width,
+        int height,
+        bool isRotated)
+    {
+        InventoryGridEdgeFlags edges = InventoryGridEdgeFlags.None;
+
+        if (x == 0)
+            edges |= InventoryGridEdgeFlags.Left;
+        if (x + width == grid.GridWidth)
+            edges |= InventoryGridEdgeFlags.Right;
+        if (y == 0)
+            edges |= InventoryGridEdgeFlags.Top;
+        if (y + height == grid.GridHeight)
+            edges |= InventoryGridEdgeFlags.Bottom;
+
+        return new InventoryPlacementSnapshot(
+            new InventoryCellRect(x, y, width, height),
+            isRotated,
+            edges);
+    }
+}
+
+public readonly struct InventorySwapPlan
+{
+    public bool IsEvaluated { get; }
+    public bool IsValid { get; }
+    public InventorySwapMode Mode { get; }
+    public InventorySwapFailReason FailReason { get; }
+
+    public InventoryGrid Grid { get; }
+    public InventoryItem MovingItem { get; }
+    public InventoryItem OtherItem { get; }
+
+    public InventoryPlacementSnapshot MovingOriginal { get; }
+    public InventoryPlacementSnapshot OtherOriginal { get; }
+    public InventoryCellRect MovingTo { get; }
+    public InventoryCellRect OtherTo { get; }
+    public Vector2Int RequestedCell { get; }
+
+    public int CorrectionDistance =>
+        Mathf.Abs(MovingTo.X - RequestedCell.x) +
+        Mathf.Abs(MovingTo.Y - RequestedCell.y);
+
+    private InventorySwapPlan(
+        bool isEvaluated,
+        bool isValid,
+        InventorySwapMode mode,
+        InventorySwapFailReason failReason,
+        InventoryGrid grid,
+        InventoryItem movingItem,
+        InventoryItem otherItem,
+        InventoryPlacementSnapshot movingOriginal,
+        InventoryPlacementSnapshot otherOriginal,
+        InventoryCellRect movingTo,
+        InventoryCellRect otherTo,
+        Vector2Int requestedCell)
+    {
+        IsEvaluated = isEvaluated;
+        IsValid = isValid;
+        Mode = mode;
+        FailReason = failReason;
+        Grid = grid;
+        MovingItem = movingItem;
+        OtherItem = otherItem;
+        MovingOriginal = movingOriginal;
+        OtherOriginal = otherOriginal;
+        MovingTo = movingTo;
+        OtherTo = otherTo;
+        RequestedCell = requestedCell;
+    }
+
+    public static InventorySwapPlan Valid(
+        InventorySwapMode mode,
+        InventoryGrid grid,
+        InventoryItem movingItem,
+        InventoryItem otherItem,
+        InventoryPlacementSnapshot movingOriginal,
+        InventoryPlacementSnapshot otherOriginal,
+        InventoryCellRect movingTo,
+        InventoryCellRect otherTo,
+        Vector2Int requestedCell)
+    {
+        return new InventorySwapPlan(
+            true,
+            true,
+            mode,
+            InventorySwapFailReason.None,
+            grid,
+            movingItem,
+            otherItem,
+            movingOriginal,
+            otherOriginal,
+            movingTo,
+            otherTo,
+            requestedCell);
+    }
+
+    public static InventorySwapPlan Invalid(
+        InventoryGrid grid,
+        InventoryItem movingItem,
+        InventoryPlacementSnapshot movingOriginal,
+        Vector2Int requestedCell,
+        InventorySwapFailReason failReason,
+        InventoryItem otherItem = null)
+    {
+        return new InventorySwapPlan(
+            true,
+            false,
+            InventorySwapMode.None,
+            failReason,
+            grid,
+            movingItem,
+            otherItem,
+            movingOriginal,
+            default,
+            default,
+            default,
+            requestedCell);
+    }
+
+    public bool MatchesCurrentState()
+    {
+        if (!IsValid || Grid == null || MovingItem == null || OtherItem == null)
+            return false;
+
+        if (MovingItem.CurrentWidth != MovingTo.Width ||
+            MovingItem.CurrentHeight != MovingTo.Height)
+        {
+            return false;
+        }
+
+        return OtherItem.x == OtherOriginal.Rect.X &&
+               OtherItem.y == OtherOriginal.Rect.Y &&
+               OtherItem.CurrentWidth == OtherOriginal.Rect.Width &&
+               OtherItem.CurrentHeight == OtherOriginal.Rect.Height &&
+               OtherItem.isRotated == OtherOriginal.IsRotated;
+    }
+}

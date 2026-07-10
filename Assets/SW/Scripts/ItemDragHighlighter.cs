@@ -1,13 +1,30 @@
 using UnityEngine;
+
 public class ItemDragHighlighter : MonoBehaviour
 {
     [SerializeField] private ItemUI itemUI;
+
     private InventoryGrid activeHighlightGrid;
+    private bool hasPointerContext;
+    private Vector2 lastScreenPosition;
+    private Camera lastEventCamera;
+
+    public InventorySwapPlan CurrentSwapPlan { get; private set; }
 
     private void Awake()
     {
         if (itemUI == null)
             itemUI = GetComponent<ItemUI>();
+    }
+
+    public void RefreshHighlight(
+        Vector2 screenPosition,
+        Camera eventCamera)
+    {
+        hasPointerContext = true;
+        lastScreenPosition = screenPosition;
+        lastEventCamera = eventCamera;
+        RefreshHighlight();
     }
 
     public void RefreshHighlight()
@@ -21,16 +38,70 @@ public class ItemDragHighlighter : MonoBehaviour
         }
 
         InventoryItem item = itemUI.Item;
-        Vector2Int cell = itemUI.GetCellFromItemRect(targetGrid);
-
-        bool canPlace = targetGrid.CanPlaceItem(
-            cell.x,
-            cell.y,
+        Vector2Int requestedCell = itemUI.GetCellFromItemRect(targetGrid);
+        InventoryCellRect requestedRect = new InventoryCellRect(
+            requestedCell.x,
+            requestedCell.y,
             item.CurrentWidth,
-            item.CurrentHeight
-        );
+            item.CurrentHeight);
 
-        ShowHighlightOnGrid(targetGrid, cell, canPlace);
+        if (targetGrid.CanPlaceItem(
+                requestedCell.x,
+                requestedCell.y,
+                item.CurrentWidth,
+                item.CurrentHeight))
+        {
+            CurrentSwapPlan = default;
+            ShowMovePreview(targetGrid, requestedRect);
+            return;
+        }
+
+        if (targetGrid != itemUI.OriginalGrid || itemUI.OriginalWasEquipped)
+        {
+            CurrentSwapPlan = default;
+            ShowInvalidPreview(targetGrid, requestedRect);
+            return;
+        }
+
+        Vector2Int? pointerCell = hasPointerContext
+            ? itemUI.GetCellFromScreenPoint(
+                targetGrid,
+                lastScreenPosition,
+                lastEventCamera)
+            : null;
+
+        if (!InventorySwapTargetResolver.TryResolveTarget(
+                targetGrid,
+                item,
+                requestedCell,
+                pointerCell,
+                out InventoryItem otherItem))
+        {
+            CurrentSwapPlan = InventorySwapPlan.Invalid(
+                targetGrid,
+                item,
+                itemUI.OriginalPlacement,
+                requestedCell,
+                InventorySwapFailReason.IntentNotConfirmed);
+            ShowInvalidPreview(targetGrid, requestedRect);
+            return;
+        }
+
+        CurrentSwapPlan = InventorySwapService.BuildPlan(
+            targetGrid,
+            item,
+            itemUI.OriginalPlacement,
+            requestedCell,
+            otherItem);
+
+        if (CurrentSwapPlan.IsValid)
+        {
+            ShowSwapPreview(targetGrid, CurrentSwapPlan);
+        }
+        else
+        {
+            ShowInvalidPreview(targetGrid, requestedRect);
+        }
     }
 
     public void HideActiveHighlight()
@@ -39,6 +110,7 @@ public class ItemDragHighlighter : MonoBehaviour
             activeHighlightGrid.Highlight.HideHighlight();
 
         activeHighlightGrid = null;
+        CurrentSwapPlan = default;
     }
 
     private InventoryGrid GetHighlightTargetGrid()
@@ -75,10 +147,49 @@ public class ItemDragHighlighter : MonoBehaviour
                cell.y < grid.GridHeight;
     }
 
-    private void ShowHighlightOnGrid(InventoryGrid grid, Vector2Int cell, bool canPlace)
+    private void ShowMovePreview(
+        InventoryGrid grid,
+        InventoryCellRect rect)
+    {
+        if (!TrySetActiveGrid(grid))
+            return;
+
+        grid.Highlight.ShowMovePreview(
+            rect,
+            grid.CellSize,
+            grid.CellSpacing);
+    }
+
+    private void ShowInvalidPreview(
+        InventoryGrid grid,
+        InventoryCellRect rect)
+    {
+        if (!TrySetActiveGrid(grid))
+            return;
+
+        grid.Highlight.ShowInvalidPreview(
+            rect,
+            grid.CellSize,
+            grid.CellSpacing);
+    }
+
+    private void ShowSwapPreview(
+        InventoryGrid grid,
+        InventorySwapPlan plan)
+    {
+        if (!TrySetActiveGrid(grid))
+            return;
+
+        grid.Highlight.ShowSwapPreview(
+            plan,
+            grid.CellSize,
+            grid.CellSpacing);
+    }
+
+    private bool TrySetActiveGrid(InventoryGrid grid)
     {
         if (grid == null || grid.Highlight == null)
-            return;
+            return false;
 
         if (activeHighlightGrid != null &&
             activeHighlightGrid != grid &&
@@ -88,22 +199,6 @@ public class ItemDragHighlighter : MonoBehaviour
         }
 
         activeHighlightGrid = grid;
-
-        InventoryItem item = itemUI.Item;
-
-        grid.Highlight.ShowHighlight(
-            item.CurrentWidth,
-            item.CurrentHeight,
-            grid.CellSize,
-            grid.CellSpacing
-        );
-
-        grid.Highlight.MoveHighlight(
-            cell.x,
-            cell.y,
-            canPlace,
-            grid.CellSize,
-            grid.CellSpacing
-        );
+        return true;
     }
 }

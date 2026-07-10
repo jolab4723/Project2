@@ -10,6 +10,9 @@ public class ItemDragHandler : MonoBehaviour,
     [SerializeField] private ItemDragHighlighter dragHighlighter;
     [SerializeField] private ItemDropHandler dropHandler;
 
+    private Vector2 lastPointerPosition;
+    private Camera lastEventCamera;
+
     public bool IsDragging { get; private set; }
 
     private void Awake()
@@ -27,12 +30,15 @@ public class ItemDragHandler : MonoBehaviour,
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
         {
             itemUI.RotateDraggingItem();
-            dragHighlighter.RefreshHighlight();
+            dragHighlighter.RefreshHighlight(
+                lastPointerPosition,
+                lastEventCamera);
         }
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
         IsDragging = true;
+        UpdatePointerContext(eventData);
 
         TooltipManager.Instance.HideTooltip();
 
@@ -53,20 +59,43 @@ public class ItemDragHandler : MonoBehaviour,
         }
 
         dragVisual.BeginDragVisual();
-        dragHighlighter.RefreshHighlight();
+        dragHighlighter.RefreshHighlight(
+            lastPointerPosition,
+            lastEventCamera);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        UpdatePointerContext(eventData);
         itemUI.MoveByDelta(eventData.delta);
-        dragHighlighter.RefreshHighlight();
+        dragHighlighter.RefreshHighlight(
+            lastPointerPosition,
+            lastEventCamera);
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        UpdatePointerContext(eventData);
+        dragHighlighter.RefreshHighlight(
+            lastPointerPosition,
+            lastEventCamera);
+
+        InventorySwapPlan previewPlan = dragHighlighter.CurrentSwapPlan;
+        dropHandler.ResolveDrop(
+            lastPointerPosition,
+            lastEventCamera,
+            previewPlan);
         dragHighlighter.HideActiveHighlight();
-        dropHandler.ResolveDrop();
         dragVisual.EndDragVisual();
         IsDragging = false;
+    }
+
+    private void UpdatePointerContext(PointerEventData eventData)
+    {
+        if (eventData == null)
+            return;
+
+        lastPointerPosition = eventData.position;
+        lastEventCamera = eventData.pressEventCamera;
     }
 }

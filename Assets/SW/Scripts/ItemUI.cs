@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -27,14 +28,22 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     public int OriginalX => originalX;
     public int OriginalY => originalY;
     private bool originalRotated;
+    private bool originalWasEquipped;
+    private InventoryPlacementSnapshot originalPlacement;
     private float cellSize;
     private float cellSpacing;
+    [SerializeField, Min(0f)] private float swapMoveDuration = 0.14f;
+
+    private Coroutine gridPositionAnimation;
+    private Vector2 gridPositionAnimationTarget;
 
     private Transform itemTransform;
     private EquipSlotUI currentEquipSlot = null;
     public bool IsEquipped => currentEquipSlot != null;
     public InventoryGrid CurrentGrid => currentGrid;
     public InventoryItem Item => inventoryItem;
+    public bool OriginalWasEquipped => originalWasEquipped;
+    public InventoryPlacementSnapshot OriginalPlacement => originalPlacement;
     private Image itemIcon;
     
     private void Awake()
@@ -110,20 +119,65 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
     public void ReturnToOriginalPosition()
     {
+        TryReturnToOriginalPosition();
+    }
+
+    public bool TryReturnToOriginalPosition()
+    {
         if (inventoryItem.isRotated != originalRotated)
         {
             inventoryItem.isRotated = originalRotated;
             UpdateRotationUI();
         }
 
+        if (originalGrid == null ||
+            !originalGrid.TryPlaceItem(inventoryItem, originalX, originalY))
+        {
+            return false;
+        }
+
         currentGrid = originalGrid;
-        transform.SetParent(currentGrid.ItemsContainer, false);
+        transform.SetParent(originalGrid.ItemsContainer, false);
         transform.SetAsLastSibling();
-        currentGrid.TryPlaceItem(inventoryItem, originalX, originalY);
         rect.anchoredPosition = originalPosition;
+        return true;
     }
 
     public void SetGridPosition(InventoryGrid grid, int x, int y)
+    {
+        StopGridPositionAnimation(false);
+        PrepareGridPosition(grid);
+
+        float step = grid.Step;
+        rect.anchoredPosition = new Vector2(x * step, -y * step);
+    }
+
+    public void SetGridPositionAnimated(InventoryGrid grid, int x, int y)
+    {
+        StopGridPositionAnimation(false);
+        PrepareGridPosition(grid);
+
+        Vector2 startPosition = rect.anchoredPosition;
+        float step = grid.Step;
+        Vector2 targetPosition = new Vector2(x * step, -y * step);
+
+        if (!isActiveAndEnabled ||
+            swapMoveDuration <= 0f ||
+            startPosition == targetPosition)
+        {
+            rect.anchoredPosition = targetPosition;
+            return;
+        }
+
+        gridPositionAnimationTarget = targetPosition;
+        gridPositionAnimation = StartCoroutine(
+            AnimateGridPosition(
+                startPosition,
+                targetPosition,
+                swapMoveDuration));
+    }
+
+    private void PrepareGridPosition(InventoryGrid grid)
     {
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -134,10 +188,42 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
 
         RestoreGridSettings();
-        float step = grid.Step;
-        rect.anchoredPosition = new Vector2(x * step, -y * step);
-
         currentEquipSlot = null;
+    }
+
+    private IEnumerator AnimateGridPosition(
+        Vector2 startPosition,
+        Vector2 targetPosition,
+        float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            rect.anchoredPosition = Vector2.LerpUnclamped(
+                startPosition,
+                targetPosition,
+                easedT);
+            yield return null;
+        }
+
+        rect.anchoredPosition = targetPosition;
+        gridPositionAnimation = null;
+    }
+
+    private void StopGridPositionAnimation(bool snapToTarget)
+    {
+        if (gridPositionAnimation == null)
+            return;
+
+        StopCoroutine(gridPositionAnimation);
+        gridPositionAnimation = null;
+
+        if (snapToTarget)
+            rect.anchoredPosition = gridPositionAnimationTarget;
     }
 
     public Vector2Int GetCellFromItemRect(InventoryGrid grid)
@@ -150,6 +236,28 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         int x = Mathf.RoundToInt(localPos.x / grid.Step);
         int y = Mathf.RoundToInt(-localPos.y / grid.Step);
 
+        return new Vector2Int(x, y);
+    }
+
+    public Vector2Int GetCellFromScreenPoint(
+        InventoryGrid grid,
+        Vector2 screenPosition,
+        Camera eventCamera)
+    {
+        if (grid == null || grid.ItemsContainer == null)
+            return new Vector2Int(int.MinValue, int.MinValue);
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                grid.ItemsContainer,
+                screenPosition,
+                eventCamera,
+                out Vector2 localPoint))
+        {
+            return new Vector2Int(int.MinValue, int.MinValue);
+        }
+
+        int x = Mathf.FloorToInt(localPoint.x / grid.Step);
+        int y = Mathf.FloorToInt(-localPoint.y / grid.Step);
         return new Vector2Int(x, y);
     }
 
@@ -207,11 +315,16 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     }
     public void SaveOriginalState()
     {
+        StopGridPositionAnimation(true);
         originalPosition = rect.anchoredPosition;
         originalX = inventoryItem.x;
         originalY = inventoryItem.y;
         originalRotated = inventoryItem.isRotated;
+        originalWasEquipped = IsEquipped;
         originalGrid = currentGrid;
+        originalPlacement = InventoryPlacementSnapshot.Capture(
+            currentGrid,
+            inventoryItem);
     }
 
     public void DetachFromCurrentSlotOrGrid()
