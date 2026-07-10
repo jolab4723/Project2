@@ -1,10 +1,18 @@
 using UnityEngine;
 using System.Collections;
 
+public enum SlideType
+{
+    Lerp,
+    MoveTowards
+}
+
 public class KY_SlideAnimator : MonoBehaviour
 {
     public float slideSpeed = 10f;
     public float hiddenOffsetX = 0f;
+    public SlideType inslideType = SlideType.Lerp;
+    public SlideType outslideType = SlideType.Lerp;
 
     private RectTransform rectTransform;
     private Vector2 originalPosition;
@@ -39,11 +47,22 @@ public class KY_SlideAnimator : MonoBehaviour
     {
         while (Vector2.Distance(rectTransform.anchoredPosition, originalPosition) > 0.1f)
         {
-            rectTransform.anchoredPosition = Vector2.Lerp(
-                rectTransform.anchoredPosition,
-                originalPosition,
-                Time.deltaTime * slideSpeed
-            );
+            if (inslideType == SlideType.Lerp)
+            {
+                rectTransform.anchoredPosition = Vector2.Lerp(
+                    rectTransform.anchoredPosition,
+                    originalPosition,
+                    Time.unscaledDeltaTime * slideSpeed
+                );
+            }
+            else
+            {
+                rectTransform.anchoredPosition = Vector2.MoveTowards(
+                    rectTransform.anchoredPosition,
+                    originalPosition,
+                    slideSpeed * 300 * Time.unscaledDeltaTime
+                );
+            }
             yield return null;
         }
         rectTransform.anchoredPosition = originalPosition;
@@ -53,11 +72,22 @@ public class KY_SlideAnimator : MonoBehaviour
     {
         while (Vector2.Distance(rectTransform.anchoredPosition, hiddenPosition) > 0.1f)
         {
-            rectTransform.anchoredPosition = Vector2.Lerp(
-                rectTransform.anchoredPosition,
-                hiddenPosition,
-                Time.deltaTime * slideSpeed
-            );
+            if (outslideType == SlideType.Lerp)
+            {
+                rectTransform.anchoredPosition = Vector2.Lerp(
+                    rectTransform.anchoredPosition,
+                    hiddenPosition,
+                    Time.unscaledDeltaTime * slideSpeed
+                );
+            }
+            else
+            {
+                rectTransform.anchoredPosition = Vector2.MoveTowards(
+                    rectTransform.anchoredPosition,
+                    hiddenPosition,
+                    slideSpeed * 300 * Time.unscaledDeltaTime
+                );
+            }
             yield return null;
         }
         rectTransform.anchoredPosition = hiddenPosition;

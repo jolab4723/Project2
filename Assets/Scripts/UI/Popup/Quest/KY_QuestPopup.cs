@@ -47,8 +47,8 @@ public class KY_QuestPopup : KY_PopupBase
         {
             new KY_QuestData
             {
-                questName = "고장난 로봇의 부품",
-                description = "공장 지대에 고장난 로봇들이 돌아다니고 있다. 그 로봇들에게서 면도기 모터를 가져다 달라.",
+                questName = "면도기 모터가 필요해",
+                description = "어우, 오랬동안 면도를 못했네. 로봇들에게서 면도기 모터로 쓸만한 작은 모터를 좀 가져와줘.",
                 conditions = new KY_QuestConditionData[]
                 {
                     new KY_QuestConditionData { description = "고장난 로봇 처치", current = 0, required = 5 },

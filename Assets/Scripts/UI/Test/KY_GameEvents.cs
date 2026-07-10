@@ -83,4 +83,12 @@ public static class KY_GameEvents
     {
         OnStatusDataProvided?.Invoke(data);
     }
+
+    // 키바인딩 용
+    public static event Action OnKeyBindingChanged;
+
+    public static void KeyBindingChanged()
+    {
+        OnKeyBindingChanged?.Invoke();
+    }
 }

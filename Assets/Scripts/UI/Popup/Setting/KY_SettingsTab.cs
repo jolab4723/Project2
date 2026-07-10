@@ -6,30 +6,33 @@ public class KY_SettingsTab : MonoBehaviour
 {
     public GameObject panel;
     public TextMeshProUGUI label;
-    public Image background;
 
-    private Color activeTextColor;
-    private Color inactiveTextColor;
-    private Color activeBgColor;
-    private Color inactiveBgColor;
+    public Color activeTextColor = Color.black;
+    public Color inactiveTextColor = Color.white;
+    public Color activeBgColor = Color.white;
+    public Color inactiveBgColor = Color.gray;
 
     private Toggle toggle;
 
     void Awake()
     {
-        ColorUtility.TryParseHtmlString("#000000", out activeTextColor);
-        ColorUtility.TryParseHtmlString("#FFFFFF", out inactiveTextColor);
-        ColorUtility.TryParseHtmlString("#FFFFFF", out activeBgColor);
-        ColorUtility.TryParseHtmlString("#7D7D7D", out inactiveBgColor);
-
         toggle = GetComponent<Toggle>();
         toggle.onValueChanged.AddListener(OnToggleChanged);
     }
 
     void OnToggleChanged(bool isOn)
     {
-        panel.SetActive(isOn);
+        if (panel != null)
+            panel.SetActive(isOn);
+
         label.color = isOn ? activeTextColor : inactiveTextColor;
-        background.color = isOn ? activeBgColor : inactiveBgColor;
+        label.fontStyle = isOn ? FontStyles.Bold : FontStyles.Normal;
     }
+
+    public void RefreshVisual()
+{
+    bool isOn = toggle.isOn;
+    label.color = isOn ? activeTextColor : inactiveTextColor;
+    label.fontStyle = isOn ? FontStyles.Bold : FontStyles.Normal;
+}
 }

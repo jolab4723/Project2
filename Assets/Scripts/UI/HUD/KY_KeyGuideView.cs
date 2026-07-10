@@ -11,20 +11,22 @@ public class KY_KeyGuideView : MonoBehaviour
 
     private GameInputActions inputActions;
 
-    void Awake()
-    {
-        inputActions = new GameInputActions();
-        inputActions.Enable();
-    }
-
     void Start()
     {
+        Debug.Log(KY_RebindManager.Instance);
+        inputActions = KY_RebindManager.Instance.GetInputActions();
         RefreshAllKeyTexts();
+    }
+
+    void OnEnable()
+    {
+        KY_GameEvents.OnKeyBindingChanged += RefreshAllKeyTexts;
     }
 
     void OnDisable()
     {
-        inputActions.Disable();
+        KY_GameEvents.OnKeyBindingChanged -= RefreshAllKeyTexts;
+        //inputActions.Disable();
     }
 
     void RefreshAllKeyTexts()

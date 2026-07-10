@@ -90,16 +90,19 @@ public class KY_PopupManager : MonoBehaviour
 
     void OnEscPressed()
     {
+        if (popupStack.Count > 0)
+        {
+            Hide();
+            return;
+        }
+
         if (currentSidePopup != null)
         {
             HideSidePopup();
             return;
         }
 
-        if (popupStack.Count == 0)
-            Show(PopupType.Pause);
-        else
-            Hide();
+        Show(PopupType.Pause);
     }
 
     void OnStatusRequested()
