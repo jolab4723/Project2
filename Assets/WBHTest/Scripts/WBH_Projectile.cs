@@ -22,13 +22,14 @@ public class WBH_Projectile : MonoBehaviour
     private bool isInitialized;
 
     // 유탄용 변수
-    [SerializeField] private float minArcHeight = 1f;
-    [SerializeField] private float maxArcHeight = 3f;
+    private float minArcHeight = 1f;
+    private float maxArcHeight = 3f;
     private Vector3 targetPosition;
     private float arcHeight;
     private float travelTime;
     private float currentTime;
-    [SerializeField] private float minFlightTime = 1f;
+    private float minFlightTime = 1f;
+    private Vector3 previousPos;
 
     // 투사체에 각 변수 할당
     public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
@@ -63,6 +64,7 @@ public class WBH_Projectile : MonoBehaviour
         this.hitEffectData = data;
 
         startPosition = transform.position;
+        previousPos = startPosition;
         Vector3 direction = (targetPosition - startPosition).normalized;
         float targetDistance = Vector3.Distance(startPosition, targetPosition);
         float clampDistance = Mathf.Min(targetDistance, maxDistance);
@@ -119,7 +121,17 @@ public class WBH_Projectile : MonoBehaviour
 
         position.y += arcHeight * 4f * t * (1f - t);
 
+        Vector3 moveDir = position - previousPos;
+
+        if(moveDir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 15f * Time.deltaTime);
+        }
+
         transform.position = position;
+        previousPos = position;
 
         if (t >= 1f)
             Explode();

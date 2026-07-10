@@ -10,7 +10,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         public int eliteCount;
     }
 
-    [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; //!@ 자동으로 불러오게끔
+    [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
     [SerializeField] private Transform player;
 
     [SerializeField] private WaveData[] waves;
@@ -25,6 +25,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     {
         poolManager = GetComponent<WBH_EnemyPoolManager>();
         spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
+        player = FindAnyObjectByType<T_PlayerController>().transform;
     }
 
     private void Start()

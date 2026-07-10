@@ -5,7 +5,7 @@ using UnityEngine;
 public class WBH_EnemySpawnArea : MonoBehaviour
 {
     [Header("Spawn Setting")]
-    [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private Transform[] spawnPoints; //!@ find - inchildren 을 사용해서 자동처리
     [SerializeField] private int[] normalEnemyIDs;
     [SerializeField] private int[] eliteEnemyIDs;
 
@@ -53,7 +53,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
 
             int enemyID = enemyIDs[Random.Range(0, enemyIDs.Length)];
 
-            // enemySpawner.Spawn(enemyID, spawnPoint)
+            enemySpawner.Spawn(enemyID, spawnPoint);
         }
     }
 

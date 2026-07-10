@@ -30,13 +30,15 @@ public class WBH_EnemyController : MonoBehaviour, T_IDamageable
     {
         this.info = info;
         
-        //status.Initialize(info);
+        status.Initialize(info);
 
         movement.Initialize(info);
-        //combat.Initialize(info);
-        //enemyAnimation.Initialize();
+        combat.Initialize(info);
+        enemyAnimation.Initialize();
 
-        //pattern.Initialize(this);
+        pattern.Initialize(this);
+
+        Debug.Log(info.enemyName);
     }
 
     public void TakeDamage(float damage)

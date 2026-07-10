@@ -10,12 +10,6 @@ public class WBH_EnemySpawner : MonoBehaviour
 
     private Transform target;
 
-    private void Awake()
-    {
-        poolManager = GetComponent<WBH_EnemyPoolManager>();
-        //!@ 참조 방식
-    }
-
     public void Initialize(WBH_EnemyPoolManager poolManager, Transform target)
     {
         this.poolManager = poolManager;
@@ -30,8 +24,7 @@ public class WBH_EnemySpawner : MonoBehaviour
             return null;
         }
 
-        WBH_EnemyController enemy = GetComponent<WBH_EnemyController>(); 
-            //= poolManager.Get(enemyID); // !@
+        WBH_EnemyController enemy = poolManager.Get(enemyID);
 
         if (enemy == null)
             return null;
