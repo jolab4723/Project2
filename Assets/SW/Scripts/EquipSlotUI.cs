@@ -14,8 +14,8 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     //public ArmorType allowedType;
 
     [HideInInspector]
-    public ItemUI equipItemUI;
-
+    private ItemUI equipItemUI;
+    public ItemUI EquippedItemUI => equipItemUI;
     public bool IsEmpty => equipItemUI == null;
 
 
@@ -55,5 +55,15 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         if (InventoryController.Instance.hoveredEquipSlot == this)
             InventoryController.Instance.hoveredEquipSlot = null;
+    }
+
+    public void SetItemUI(ItemUI itemUI)
+    {
+        equipItemUI = itemUI;
+    }
+
+    public void ClearItemUI()
+    {
+        equipItemUI = null;
     }
 }

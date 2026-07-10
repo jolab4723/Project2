@@ -2222,7 +2222,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &6268346913070323338
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2252,16 +2252,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e10a2f6db29c23b4f90701206d0a21a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
+  canvas: {fileID: 0}
+  canvasRect: {fileID: 0}
+  tooltipRect: {fileID: 0}
   tooltipPanel: {fileID: 1576321029975683468}
   borderImage: {fileID: 2959416407626864905}
   overlayImage: {fileID: 6582380771913597999}
   itemImage: {fileID: 3361865287730685913}
-  itemName: {fileID: 1790138696324003373}
-  itemType: {fileID: 7021254832067140760}
-  gradeText: {fileID: 8213110759527864691}
-  statText: {fileID: 4175573937254303780}
-  itemSize: {fileID: 671418042973875842}
-  offset: {x: 15, y: 15, z: 0}
+  itemNameText: {fileID: 0}
+  itemRarityText: {fileID: 0}
+  itemCategoryText: {fileID: 0}
+  mainStatText: {fileID: 0}
+  subStat1Text: {fileID: 0}
+  subStat2Text: {fileID: 0}
+  subStat3Text: {fileID: 0}
+  subStat4Text: {fileID: 0}
+  elementBonusText: {fileID: 0}
+  uniqueEffectNameText: {fileID: 0}
+  uniqueEffectDescriptionText: {fileID: 0}
+  itemPriceText: {fileID: 0}
+  itemSizeText: {fileID: 0}
+  offset: {x: 15, y: 15}
+  section1: {fileID: 0}
+  section2: {fileID: 0}
+  section3: {fileID: 0}
+  section4: {fileID: 0}
+  backgroundRect: {fileID: 0}
+  sectionSpacing: 5
+  topPadding: 10
+  bottomPadding: 10
 --- !u!225 &469670283845861
 CanvasGroup:
   m_ObjectHideFlags: 0

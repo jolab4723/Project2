@@ -1,7 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-
 public class ShopController : MonoBehaviour
 {
     public static ShopController Instance { get; private set; }
@@ -12,14 +10,13 @@ public class ShopController : MonoBehaviour
     [SerializeField] private InventoryController inventoryController;
     public InventoryGrid ShopGrid => shopGrid;
     public InventoryGrid PlayerGrid => playerGrid;
-
-
+    private ShopTradeService tradeService;
 
     private void Awake()
     {
         Instance = this;
+        tradeService = new ShopTradeService(playerWallet);
     }
-
 
     public bool TradeItem(ItemUI itemUI, InventoryGrid fromGrid)
     {
@@ -28,7 +25,11 @@ public class ShopController : MonoBehaviour
             if (!IsTradingToShop(fromGrid, itemUI))
                 return false;
             Vector2Int cell = itemUI.GetCellFromItemRect(shopGrid);
-            RequestSell(itemUI, cell.x, cell.y);
+            bool success = RequestSell(itemUI, cell.x, cell.y);
+
+            if (!success)
+                itemUI.ReturnToOriginalPosition();
+
             return true;
         }
 
@@ -67,21 +68,23 @@ public class ShopController : MonoBehaviour
     public bool ConfirmBuy(ItemUI itemUI, int targetX, int targetY)
     {
         InventoryItem item = itemUI.Item;
-        
-        if (!playerGrid.CanPlaceItem(targetX,targetY,item.CurrentWidth, item.CurrentHeight))
+
+        TradeResult result = tradeService.TryBuy(
+            item,
+            shopGrid,
+            playerGrid,
+            targetX,
+            targetY
+        );
+
+        if (result != TradeResult.Success)
         {
+            logText.text = GetTradeMessage(result, item);
             return false;
         }
 
-        if (!SpendGold(itemUI, item.itemData.definition.sellPrice, item.itemData.definition.itemName))
-        {
-            return false;
-        }
-
-        shopGrid.RemoveItem(itemUI.Item);
-        playerGrid.PlaceItem(item, targetX, targetY);
         itemUI.SetGridPosition(playerGrid, targetX, targetY);
-
+        logText.text = $"{item.itemData.definition.itemName}을 구매했습니다.";
         return true;
     }
 
@@ -98,41 +101,28 @@ public class ShopController : MonoBehaviour
     {
         InventoryItem item = itemUI.Item;
 
-        if (!shopGrid.CanPlaceItem(targetX, targetY, item.CurrentWidth, item.CurrentHeight))
+        TradeResult result = tradeService.TrySell(
+            item,
+            playerGrid,
+            shopGrid,
+            targetX,
+            targetY
+        );
+
+        if (result != TradeResult.Success)
         {
-            itemUI.ReturnToOriginalPosition();
+            logText.text = GetTradeMessage(result, item);
             return false;
         }
 
-        AddGold(item.itemData.definition.sellPrice, item.itemData.definition.itemName);
-
-        shopGrid.PlaceItem(item, targetX, targetY);
         itemUI.SetGridPosition(shopGrid, targetX, targetY);
-
+        logText.text = $"{item.itemData.definition.itemName}을 판매했습니다.";
         return true;
     }
 
     public void CancelSell(ItemUI itemUI)
     {
 
-    }
-    private void AddGold (int amount, string name)
-    {
-        playerWallet.AddGold(amount);
-        logText.text = $"{name}을 판매했습니다.";
-        
-    }
-
-    private bool SpendGold(ItemUI itemUI, int amount, string name)
-    {
-        if (!playerWallet.TrySpendGold(amount))
-        {
-            logText.text = $"골드가 부족해 {name} 구매에 실패했습니다.";
-            return false;
-        }
-
-        logText.text = $"{name}을 구매했습니다.";
-        return true;
     }
 
     public bool TryRightClick(ItemUI itemUI)
@@ -147,10 +137,8 @@ public class ShopController : MonoBehaviour
         }
 
         RequestBuy(itemUI, x, y);
-        return true;
-        
+        return true;   
     }
-
 
     public bool IsTradingToShop(InventoryGrid fromGrid, ItemUI itemUI)
     {
@@ -179,5 +167,25 @@ public class ShopController : MonoBehaviour
                cell.y + item.CurrentHeight > 0 &&
                cell.x < grid.GridWidth &&
                cell.y < grid.GridHeight;
+    }
+
+    private string GetTradeMessage(TradeResult result, InventoryItem item)
+    {
+        string itemName = item != null ? item.itemData.definition.itemName : "아이템";
+
+        switch (result)
+        {
+            case TradeResult.NoSpace:
+                return "인벤토리에 공간이 없습니다.";
+
+            case TradeResult.NotEnoughGold:
+                return $"골드가 부족해 {itemName} 구매에 실패했습니다.";
+
+            case TradeResult.InvalidItem:
+                return "유효하지 않은 아이템입니다.";
+
+            default:
+                return "거래에 실패했습니다.";
+        }
     }
 }

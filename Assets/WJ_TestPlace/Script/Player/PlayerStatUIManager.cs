@@ -59,11 +59,13 @@ public class PlayerStatUIManager : MonoBehaviour
         if (Stat == null)
             return;
 
+        int currentHealth = PlayerHealthManager.Instance != null ? PlayerHealthManager.Instance.CurrentHealth : 0;
+
         if (healthSlider != null)
-            healthSlider.value = Stat.maxHealth > 0 ? (float)Stat.currentHealth / Stat.maxHealth : 0f;
+            healthSlider.value = Stat.maxHealth > 0 ? (float)currentHealth / Stat.maxHealth : 0f;
 
         if (healthText != null)
-            healthText.text = $"{Stat.currentHealth} / {Stat.maxHealth}";
+            healthText.text = $"{currentHealth} / {Stat.maxHealth}";
 
         if (levelText != null)
             levelText.text = $"Lv. {Stat.currentLevel}";
@@ -86,7 +88,7 @@ public class PlayerStatUIManager : MonoBehaviour
         sb.AppendLine($"치명타 피해 {Stat.critMult:F2}");
         sb.AppendLine($"쿨타임 감소 {Stat.cdr:F1}%");
         sb.AppendLine($"마나 재생 {Stat.mpRegen:F1}");
-        sb.AppendLine($"마나 {Stat.currentMana} / {Stat.maxMana}");
+        sb.AppendLine($"마나 {(PlayerManaManager.Instance != null ? PlayerManaManager.Instance.CurrentMana.ToString("F0") : "?")} / {Stat.maxMana}");
         sb.AppendLine($"관통력 {Stat.pen}");
         sb.AppendLine($"스킬 사거리 {Stat.skillRange:F1}");
         sb.AppendLine($"화염 피해 {Stat.fireBonus:F1}");

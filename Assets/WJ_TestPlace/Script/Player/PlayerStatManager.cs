@@ -27,12 +27,31 @@ public class PlayerStatManager : MonoBehaviour
     [Header("초기값")]
     [SerializeField] private int startLevel = 1;
 
+    [Header("Equipment System")]
+    [SerializeField] private EquipmentSystem equipmentSystem;
+
     private IStatSetProvider EquipProvider => equipManagerBehaviour as IStatSetProvider;
     private IStatSetProvider BuffProvider => buffManagerBehaviour as IStatSetProvider;
 
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
 
+    private void OnEnable()
+    {
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] infos)
+    {
+        Recalculate();
+    }
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -52,14 +71,7 @@ public class PlayerStatManager : MonoBehaviour
         Stat = new PlayerStat(startLevel);
         Recalculate();
 
-        // 초기 스폰 시 0/max로 시작하지 않도록 풀피/풀마나로 세팅.
-        // 이후 데미지/힐, 마나 소모/회복은 PlayerStat 쪽 메서드로 개별 관리
-        // (마나 회복은 RegenerateMana가 자리만 잡혀있고 아직 내용/호출부 없음)
-        if (Stat.currentHealth <= 0)
-            Stat.currentHealth = Stat.maxHealth;
-
-        if (Stat.currentMana <= 0)
-            Stat.currentMana = Stat.maxMana;
+        // 초기 스폰 시 체력/마나는 PlayerHealthManager/PlayerManaManager가 각각 자체적으로 Start()에서 풀충전 처리함.
     }
 
     private void Update()
@@ -91,18 +103,14 @@ public class PlayerStatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 레벨을 1로 초기화하고 풀피/풀마나로 리셋한다. (테스트 버튼용)
-    /// Recalculate를 두 번 부르는 이유: 첫 호출로 레벨1 기준 maxHealth/maxMana를 먼저 확정하고,
-    /// 그 다음 currentHealth/currentMana를 채운 뒤 OnStatChanged를 다시 발행해 UI에 반영시키기 위함.
+    /// 레벨을 1로 초기화하고 재계산한다. (테스트 버튼용)
+    /// 현재 체력/마나는 PlayerHealthManager/PlayerManaManager가 maxHealth/maxMana 변화를 자체 감지해서
+    /// clamp/보정을 알아서 처리하므로 여기서는 따로 건드리지 않음.
     /// </summary>
     [ContextMenu("레벨 초기화 테스트")]
     public void ResetLevel()
     {
         Stat.currentLevel = 1;
-        Recalculate();
-
-        Stat.currentHealth = Stat.maxHealth;
-        Stat.currentMana = Stat.maxMana;
         Recalculate();
     }
 

@@ -1,16 +1,14 @@
 using ItemSystem;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
-    [SerializeField] private PlayerData playerData;
-    [SerializeField] private RectTransform dragLayer;
-
+    [SerializeField] private EquipmentSystem equipmentSystem;
+    public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
 
     public TextMeshProUGUI logText;
@@ -38,31 +36,23 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     public bool AddItem(ItemInstance itemData)
     {
-        if (itemData == null || itemData.definition == null)
+        InventoryAddResultData result = TryAddItemData(itemData);
+        
+        if (result.Result != InventoryAddResult.Success)
         {
-            Debug.LogWarning("[InventoryController] AddItem에 유효하지 않은 itemData가 전달되었습니다.");
+            PrintLog(GetAddItemFailMessage(result.Result));
             return false;
         }
-
-        var data = itemData.definition;
-        if (!playerGrid.FindEmptySpace(data.itemWidth, data.itemHeight, out int x, out int y))
-        {
-            PrintLog("인벤토리가 꽉 찼습니다!");
-            return false;
-        }
-
-        InventoryItem item = new InventoryItem(itemData);
-        playerGrid.PlaceItem(item, x, y);
-
-        if (!SpawnItemUI(item))
+        var data = result.Item.itemData.definition;
+        if (!SpawnItemUI(result.Item))
         {
             // UI 생성이 실패했으면 그리드 데이터도 되돌려서 데이터-화면 불일치를 막는다.
-            playerGrid.RemoveItem(item);
+            playerGrid.RemoveItem(result.Item);
             PrintLog($"{data.itemName} 아이템 UI 생성에 실패했습니다.");
             return false;
         }
 
-        PrintLog($"{data.itemName} 아이템을 획득했습니다. 위치 : {x}, {y}");
+        PrintLog($"{data.itemName} 아이템을 획득했습니다. 위치 : {result.X}, {result.Y}");
         return true;
     }
 
@@ -102,9 +92,38 @@ public class InventoryController : MonoBehaviour, IItemReceiver
             logText.text = message;
         }
     }
-
     public void RefreshGoldText(int gold)
     {
         goldText.text = gold.ToString();
+    }
+    public InventoryAddResultData TryAddItemData(ItemInstance itemData)
+    {
+        if (itemData == null || itemData.definition == null)
+            return InventoryAddResultData.Failed(InventoryAddResult.InvalidItem);
+
+        var data = itemData.definition;
+
+        if (!playerGrid.FindEmptySpace(data.itemWidth, data.itemHeight, out int x, out int y))
+            return InventoryAddResultData.Failed(InventoryAddResult.NoSpace);
+
+        InventoryItem item = new InventoryItem(itemData);
+        playerGrid.PlaceItem(item, x, y);
+
+        return InventoryAddResultData.Success(item, x, y);
+    }
+
+    private string GetAddItemFailMessage(InventoryAddResult result)
+    {
+        switch (result)
+        {
+            case InventoryAddResult.InvalidItem:
+                return "[InventoryController] AddItem에 유효하지 않은 itemData가 전달되었습니다.";
+
+            case InventoryAddResult.NoSpace:
+                return "인벤토리가 꽉 찼습니다!";
+
+            default:
+                return "아이템 획득에 실패했습니다.";
+        }
     }
 }

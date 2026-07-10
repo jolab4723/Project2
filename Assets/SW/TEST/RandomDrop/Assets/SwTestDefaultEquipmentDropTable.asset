@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4c4fce93f5541e4abdd394bf7ffc837, type: 3}
+  m_Name: SwTestDefaultEquipmentDropTable
+  m_EditorClassIdentifier: Assembly-CSharp::SW.Test.RandomDrop.SwTestEquipmentDropTableSO
+  monsterDropRates:
+  - monsterGrade: 0
+    itemDropChance: 25
+    rarityChances:
+    - rarity: 0
+      weight: 85
+    - rarity: 1
+      weight: 10
+    - rarity: 2
+      weight: 3
+    - rarity: 3
+      weight: 1.5
+    - rarity: 4
+      weight: 0.5
+  - monsterGrade: 1
+    itemDropChance: 55
+    rarityChances:
+    - rarity: 0
+      weight: 55
+    - rarity: 1
+      weight: 25
+    - rarity: 2
+      weight: 13
+    - rarity: 3
+      weight: 5
+    - rarity: 4
+      weight: 2
+  - monsterGrade: 2
+    itemDropChance: 100
+    rarityChances:
+    - rarity: 0
+      weight: 10
+    - rarity: 1
+      weight: 20
+    - rarity: 2
+      weight: 30
+    - rarity: 3
+      weight: 30
+    - rarity: 4
+      weight: 10
+  - monsterGrade: 3
+    itemDropChance: 100
+    rarityChances:
+    - rarity: 0
+      weight: 0
+    - rarity: 1
+      weight: 0
+    - rarity: 2
+      weight: 35
+    - rarity: 3
+      weight: 35
+    - rarity: 4
+      weight: 30
+  itemKindChances:
+  - itemKind: 0
+    weight: 38
+  - itemKind: 1
+    weight: 20
+  - itemKind: 2
+    weight: 20
+  - itemKind: 3
+    weight: 20
+  - itemKind: 4
+    weight: 2
