@@ -22,6 +22,7 @@ public class T_PlayerController : MonoBehaviour
     private WBH_PlayerIndicator indicator;
     private Vector3 dodgeDir;
 
+    private float speed;
 
     private void Awake()
     {

@@ -3,6 +3,9 @@ using UnityEngine;
 public class WBH_ProjectileSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_ProjectilePoolManager poolManager;
+    [SerializeField] private WBH_EffectSpawner effectSpawner;
+    [SerializeField] private WBH_EffectData effectData;
+
 
     public void FireProjectile(ProjectileType projectileType, 
                                Vector3 spawnPosition, Vector3 direction, 
@@ -33,7 +36,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
         projectile.transform.position = spawnPosition;
 
-        projectile.InitializeGrenade(damage, speed, maxDistance, targetLayer, targetPosition, explosionRadius);
+        projectile.InitializeGrenade(damage, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, effectData);
     }
 
     public void FireMultipleProjectile(ProjectileType projectileType,

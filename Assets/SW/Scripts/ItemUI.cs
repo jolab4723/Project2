@@ -1,74 +1,58 @@
-using TMPro;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+public class ItemUI : MonoBehaviour, IPointerClickHandler
 {
-    private Canvas itemCanvas;
-    private bool originalOverrideSorting;
-    private int originalSortingOrder;
-
+    [SerializeField] private ItemEquipHandler equipmentHandler;
     private InventoryGrid currentGrid;
     private InventoryGrid originalGrid;
-    private InventoryGrid activeHighlightGrid;
+    public bool OriginalRotated => originalRotated;
+
+    public EquipSlotUI CurrentEquipSlot => currentEquipSlot;
+
+
+    public RectTransform Rect => rect;
+    public Vector2 SizeDelta => rect.sizeDelta;
+    public InventoryGrid OriginalGrid => originalGrid;
     private RectTransform rect;
-    private CanvasGroup canvasGroup;
+    
+    public Transform ItemTransform => itemTransform;
 
     private InventoryItem inventoryItem;
 
     private Vector2 originalPosition;
     private int originalX;
     private int originalY;
+    public int OriginalX => originalX;
+    public int OriginalY => originalY;
     private bool originalRotated;
-    private Vector2 currentScreenPosition;
+    private bool originalWasEquipped;
+    private InventoryPlacementSnapshot originalPlacement;
     private float cellSize;
     private float cellSpacing;
+    [SerializeField, Min(0f)] private float swapMoveDuration = 0.14f;
 
-    private Image itemIcon;
+    private Coroutine gridPositionAnimation;
+    private Vector2 gridPositionAnimationTarget;
+
     private Transform itemTransform;
-    private bool isDragging = false;
-    
-    public EquipSlotUI currentEquipSlot = null;
+    private EquipSlotUI currentEquipSlot = null;
     public bool IsEquipped => currentEquipSlot != null;
     public InventoryGrid CurrentGrid => currentGrid;
     public InventoryItem Item => inventoryItem;
-
-
+    public bool OriginalWasEquipped => originalWasEquipped;
+    public InventoryPlacementSnapshot OriginalPlacement => originalPlacement;
+    private Image itemIcon;
+    
     private void Awake()
     {
         rect = GetComponent<RectTransform>();
-        itemCanvas = GetComponent<Canvas>();
-
-        if (itemCanvas == null)
-        {
-            itemCanvas = gameObject.AddComponent<Canvas>();
-            gameObject.AddComponent<GraphicRaycaster>();
-        }
-            
-
-        originalOverrideSorting = itemCanvas.overrideSorting;
-        originalSortingOrder = itemCanvas.sortingOrder;
-    }
-
-    private void RaiseForDrag()
-    {
-        itemCanvas.overrideSorting = true;
-        itemCanvas.sortingOrder = 1000;
-        transform.SetAsLastSibling();
-    }
-
-    private void RestoreSorting()
-    {
-        itemCanvas.overrideSorting = originalOverrideSorting;
-        itemCanvas.sortingOrder = originalSortingOrder;
+        equipmentHandler = GetComponent<ItemEquipHandler>();
     }
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
-        canvasGroup = GetComponent<CanvasGroup>();
-        if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
-
         inventoryItem = item;
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -91,394 +75,22 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
         itemIcon = transform.GetChild(0).GetComponent<Image>();
         itemTransform = itemIcon.transform;
-        itemIcon.color = Color.white;
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
     }
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        Debug.Log("마우스가 아이템에 닿았습니다!");
-        // 드래그 중이 아닐 때만 툴팁을 켭니다.
-        if (!isDragging)
-        {
-            TooltipManager.Instance.ShowTooltip(inventoryItem.itemData);
-        }
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        TooltipManager.Instance.HideTooltip();
-    }
-
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button == PointerEventData.InputButton.Right)
-        {
-            if (ShopController.Instance != null && ShopController.Instance.TryRightClick(this))
-            {
-                return;
-            }
-            if (IsEquipped)
-                UnEquip();
-            else
-                Equip();              
-        }
-    }
-
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        currentScreenPosition = eventData.position;
-        isDragging = true;
-        TooltipManager.Instance.HideTooltip();
-        bool wasEquipped = IsEquipped;
-        itemIcon.color = new Color(1f, 1f, 1f, 0.8f);
-
-        canvasGroup.blocksRaycasts = false;
-
-        originalPosition = rect.anchoredPosition;
-        originalX = inventoryItem.x;
-        originalY = inventoryItem.y;
-        originalRotated = inventoryItem.isRotated;
-        originalGrid = currentGrid;
-
-        if (wasEquipped)
-            currentEquipSlot.equipItemUI = null;
-        else
-            currentGrid.RemoveItem(inventoryItem);
-
-        transform.SetParent(currentGrid.ItemsContainer, true);
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-        currentGrid.ItemsContainer as RectTransform,
-        eventData.position,
-        eventData.pressEventCamera,
-        out Vector2 localPoint);
-
-        if (wasEquipped)
-        {
-            RestoreGridSettings();
-            // 피벗이 좌측 상단이므로, 마우스 위치에서 크기의 절반만큼 올려줘야 마우스가 아이템 중앙에 옵니다.
-            rect.anchoredPosition = localPoint + new Vector2(-rect.sizeDelta.x / 2f, rect.sizeDelta.y / 2f);
-        }
-
-        RaiseForDrag();
-
-        activeHighlightGrid = null;
-        RefreshHighlight();
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        currentScreenPosition = eventData.position;
-        rect.anchoredPosition += eventData.delta;
-        RefreshHighlight();
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        Vector2Int targetCell = GetCellFromItemRect(currentGrid);
-        int targetX = targetCell.x;
-        int targetY = targetCell.y;
-
-        float step = currentGrid.Step;
-        //float step = cellSize + cellSpacing;
-        //int targetX = Mathf.RoundToInt(rect.anchoredPosition.x / step);
-        //int targetY = Mathf.RoundToInt(-rect.anchoredPosition.y / step);
-        
-        isDragging = false;
-        canvasGroup.blocksRaycasts = true;
-        itemIcon.color = Color.white;
-
-        HideActiveHighlight();
-
-        RestoreSorting();
-
-        EquipSlotUI targetEquipSlot = InventoryController.Instance.hoveredEquipSlot;
-
-        if (ShopController.Instance != null && ShopController.Instance.TradeItem(this, originalGrid))
-        {
-            return;
-        }
-
-        if (ShopController.Instance != null &&
-    originalGrid == ShopController.Instance.ShopGrid &&
-    targetEquipSlot != null)
-        {
-            ReturnToOriginalPosition();
-            return;
-        }
-
-        if (targetEquipSlot != null)
-        {
-            if (targetEquipSlot.CanAccept(inventoryItem.itemData))
-            {
-                EquipDirectly(targetEquipSlot);
-                return;
-            }
-
-            if (TrySwapWithEquipSlot(targetEquipSlot))
-            {
-                return;
-            }
-            ReturnToOriginalPosition();
-        }
-        else
-        {
-                
-            bool canPlace = currentGrid.CanPlaceItem(targetX, targetY, inventoryItem.CurrentWidth, inventoryItem.CurrentHeight);
-
-            if (canPlace)
-            {
-                bool wasEquippedBeforeDrop = IsEquipped;
-
-                currentGrid.PlaceItem(inventoryItem, targetX, targetY);
-                rect.anchoredPosition = new Vector2(targetX * step, -targetY * step);
-                currentEquipSlot = null;
-
-                if (wasEquippedBeforeDrop && PlayerStatManager.Instance != null)
-                    inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
-                    PlayerStatManager.Instance.Recalculate();
-            }
-            else
-            {
-                if (!IsEquipped && TrySwapItem(targetX, targetY))
-                {
-                    currentEquipSlot = null;
-                    return;
-                }
-
-                if (IsEquipped)
-                    EquipDirectly(currentEquipSlot);
-                else
-                {
-                    if (inventoryItem.isRotated != originalRotated)
-                    {
-                        inventoryItem.isRotated = originalRotated;
-                        UpdateRotationUI();
-                    }
-
-                    canPlace = currentGrid.CanPlaceItem(originalX, originalY, inventoryItem.CurrentWidth, inventoryItem.CurrentHeight);
-
-                    if (canPlace)
-                    {
-                        currentGrid.PlaceItem(inventoryItem, originalX, originalY);
-                        rect.anchoredPosition = originalPosition;
-                    }
-                    else
-                    {
-                        if (currentGrid.FindEmptySpace(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, out int foundX, out int foundY))
-                        {
-                            currentGrid.PlaceItem(inventoryItem, foundX, foundY);
-                            rect.anchoredPosition = new Vector2(foundX * step, -foundY * step);
-                        }
-                        else
-                        {
-                            InventoryController.Instance.PrintLog("드래그 도중 인벤토리가 가득 차 넣을 수 없어서 파괴되었습니다.");
-                            Destroy(gameObject);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void EquipDirectly(EquipSlotUI slot)
-    {
-        slot.equipItemUI = this;
-        currentEquipSlot = slot;
-
-        if (inventoryItem.isRotated)
-        {
-            inventoryItem.isRotated = false;
-            itemTransform.localRotation = Quaternion.Euler(0, 0, 0);
-            rect.sizeDelta = new Vector2(inventoryItem.CurrentWidth * cellSize, inventoryItem.CurrentHeight * cellSize);
-        }
-
-        transform.SetParent(slot.transform);
-        transform.position = slot.transform.position;
-        RectTransform slotRect = slot.transform as RectTransform;
-        rect.sizeDelta = slotRect.sizeDelta;
-        (itemTransform as RectTransform).sizeDelta = slotRect.sizeDelta;
-
-        if (PlayerStatManager.Instance != null)
-            inventoryItem.itemData.definition.uniqueEffect?.OnEquip(inventoryItem.itemData);
-            PlayerStatManager.Instance.Recalculate();
-    }
-
-    private void Equip()
-    {
-        EquipSlotUI swapSlot = null;
-
-        foreach (EquipSlotUI slot in InventoryController.Instance.allEquipSlots)
-        {
-            if (slot == null || !slot.CanAcceptType(inventoryItem.itemData))
-                continue;
-
-            if (slot.IsEmpty)
-            {
-                currentGrid.RemoveItem(inventoryItem);
-                EquipDirectly(slot);
-                return;
-            }
-
-            if (swapSlot == null)
-                swapSlot = slot;
-        }
-
-        if (TryRightClickSwapWithEquipSlot(swapSlot))
+        if (eventData.button != PointerEventData.InputButton.Right)
             return;
 
-        InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
-    }
-
-    private void UnEquip()
-    {
-        if (currentGrid.FindEmptySpace(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, out int foundX, out int foundY))
-        {
-            currentEquipSlot.equipItemUI = null;
-            currentEquipSlot = null;
-
-            transform.SetParent(currentGrid.ItemsContainer);
-            currentGrid.PlaceItem(inventoryItem, foundX, foundY);
-
-            float step = cellSize + cellSpacing;
-            rect.anchoredPosition = new Vector2(foundX * step, -foundY * step);
-
-            RestoreGridSettings();
-
-            if (PlayerStatManager.Instance != null)
-                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
-                PlayerStatManager.Instance.Recalculate();
-        }
-        else if(currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
-        {
-            inventoryItem.isRotated = !inventoryItem.isRotated;
-            currentEquipSlot.equipItemUI = null;
-            currentEquipSlot = null;
-
-            transform.SetParent(currentGrid.ItemsContainer);
-            currentGrid.PlaceItem(inventoryItem, foundX, foundY);
-
-            float step = cellSize + cellSpacing;
-            rect.anchoredPosition = new Vector2(foundX * step, -foundY * step);
-
-            RestoreGridSettings();
-            InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
-
-            if (PlayerStatManager.Instance != null)
-                inventoryItem.itemData.definition.uniqueEffect?.OnUnequip(inventoryItem.itemData);
-                PlayerStatManager.Instance.Recalculate();
-        }
-        else
-        {
-            InventoryController.Instance.PrintLog("인벤토리가 꽉 찼습니다!");
-        }
-            
-    }
-
-    private void Update()
-    {
-        if (isDragging && Keyboard.current.rKey.wasPressedThisFrame)
-        {
-            inventoryItem.isRotated = !inventoryItem.isRotated;
-
-            UpdateRotationUI();
-            RefreshHighlight();
-        }
-    }
-
-    void RefreshHighlight()
-    {
-        InventoryGrid targetGrid = GetHighlightTargetGrid();
-
-        if (targetGrid == null || !IsItemOverGrid(targetGrid))
-        {
-            HideActiveHighlight();
-            return;
-        }
-
-        Vector2Int cell = GetCellFromItemRect(targetGrid);
-        bool canPlace = targetGrid.CanPlaceItem(
-            cell.x,
-            cell.y,
-            inventoryItem.CurrentWidth,
-            inventoryItem.CurrentHeight
-        );
-
-        ShowHighlightOnGrid(targetGrid, cell, canPlace);
-    }
-
-    private InventoryGrid GetHighlightTargetGrid()
-    {
-        if (ShopController.Instance != null)
-        {
-            InventoryGrid playerGrid = ShopController.Instance.PlayerGrid;
-            InventoryGrid shopGrid = ShopController.Instance.ShopGrid;
-
-            if (originalGrid == playerGrid && IsItemOverGrid(shopGrid))
-                return shopGrid;
-
-            if (originalGrid == shopGrid && IsItemOverGrid(playerGrid))
-                return playerGrid;
-        }
-
-        return currentGrid;
-    }
-
-    private bool IsItemOverGrid(InventoryGrid grid)
-    {
-        if (grid == null)
-            return false;
-
-        Vector2Int cell = GetCellFromItemRect(grid);
-
-        return cell.x + inventoryItem.CurrentWidth > 0 &&
-               cell.y + inventoryItem.CurrentHeight > 0 &&
-               cell.x < grid.GridWidth &&
-               cell.y < grid.GridHeight;
-    }
-
-    private void ShowHighlightOnGrid(InventoryGrid grid, Vector2Int cell, bool canPlace)
-    {
-        if (grid == null || grid.Highlight == null)
+        if (ShopController.Instance != null && ShopController.Instance.TryRightClick(this))
             return;
 
-        if (activeHighlightGrid != null &&
-            activeHighlightGrid != grid &&
-            activeHighlightGrid.Highlight != null)
-        {
-            activeHighlightGrid.Highlight.HideHighlight();
-        }
-
-        activeHighlightGrid = grid;
-
-        grid.Highlight.ShowHighlight(
-            inventoryItem.CurrentWidth,
-            inventoryItem.CurrentHeight,
-            grid.CellSize,
-            grid.CellSpacing
-        );
-
-        grid.Highlight.MoveHighlight(
-            cell.x,
-            cell.y,
-            canPlace,
-            grid.CellSize,
-            grid.CellSpacing
-        );
+        equipmentHandler.TryHandleRightClick();
     }
-
-    private void HideActiveHighlight()
-    {
-        if (activeHighlightGrid != null && activeHighlightGrid.Highlight != null)
-            activeHighlightGrid.Highlight.HideHighlight();
-
-        activeHighlightGrid = null;
-    }
-
-    private void RestoreGridSettings()
+    public void RestoreGridSettings()
     {
         rect.pivot = new Vector2(0, 1);
         rect.anchorMin = new Vector2(0, 1);
@@ -507,20 +119,65 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
     public void ReturnToOriginalPosition()
     {
+        TryReturnToOriginalPosition();
+    }
+
+    public bool TryReturnToOriginalPosition()
+    {
         if (inventoryItem.isRotated != originalRotated)
         {
             inventoryItem.isRotated = originalRotated;
             UpdateRotationUI();
         }
 
+        if (originalGrid == null ||
+            !originalGrid.TryPlaceItem(inventoryItem, originalX, originalY))
+        {
+            return false;
+        }
+
         currentGrid = originalGrid;
-        transform.SetParent(currentGrid.ItemsContainer, false);
+        transform.SetParent(originalGrid.ItemsContainer, false);
         transform.SetAsLastSibling();
-        currentGrid.PlaceItem(inventoryItem, originalX, originalY);
         rect.anchoredPosition = originalPosition;
+        return true;
     }
 
     public void SetGridPosition(InventoryGrid grid, int x, int y)
+    {
+        StopGridPositionAnimation(false);
+        PrepareGridPosition(grid);
+
+        float step = grid.Step;
+        rect.anchoredPosition = new Vector2(x * step, -y * step);
+    }
+
+    public void SetGridPositionAnimated(InventoryGrid grid, int x, int y)
+    {
+        StopGridPositionAnimation(false);
+        PrepareGridPosition(grid);
+
+        Vector2 startPosition = rect.anchoredPosition;
+        float step = grid.Step;
+        Vector2 targetPosition = new Vector2(x * step, -y * step);
+
+        if (!isActiveAndEnabled ||
+            swapMoveDuration <= 0f ||
+            startPosition == targetPosition)
+        {
+            rect.anchoredPosition = targetPosition;
+            return;
+        }
+
+        gridPositionAnimationTarget = targetPosition;
+        gridPositionAnimation = StartCoroutine(
+            AnimateGridPosition(
+                startPosition,
+                targetPosition,
+                swapMoveDuration));
+    }
+
+    private void PrepareGridPosition(InventoryGrid grid)
     {
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -531,10 +188,42 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
 
 
         RestoreGridSettings();
-        float step = grid.Step;
-        rect.anchoredPosition = new Vector2(x * step, -y * step);
-
         currentEquipSlot = null;
+    }
+
+    private IEnumerator AnimateGridPosition(
+        Vector2 startPosition,
+        Vector2 targetPosition,
+        float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            rect.anchoredPosition = Vector2.LerpUnclamped(
+                startPosition,
+                targetPosition,
+                easedT);
+            yield return null;
+        }
+
+        rect.anchoredPosition = targetPosition;
+        gridPositionAnimation = null;
+    }
+
+    private void StopGridPositionAnimation(bool snapToTarget)
+    {
+        if (gridPositionAnimation == null)
+            return;
+
+        StopCoroutine(gridPositionAnimation);
+        gridPositionAnimation = null;
+
+        if (snapToTarget)
+            rect.anchoredPosition = gridPositionAnimationTarget;
     }
 
     public Vector2Int GetCellFromItemRect(InventoryGrid grid)
@@ -550,146 +239,124 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
         return new Vector2Int(x, y);
     }
 
-    private bool TrySwapItem(int targetX, int targetY)
+    public Vector2Int GetCellFromScreenPoint(
+        InventoryGrid grid,
+        Vector2 screenPosition,
+        Camera eventCamera)
     {
-        if (!currentGrid.TryGetItemInArea(
-                targetX,
-                targetY,
-                inventoryItem.CurrentWidth,
-                inventoryItem.CurrentHeight,
-                out InventoryItem otherItem))
+        if (grid == null || grid.ItemsContainer == null)
+            return new Vector2Int(int.MinValue, int.MinValue);
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                grid.ItemsContainer,
+                screenPosition,
+                eventCamera,
+                out Vector2 localPoint))
         {
-            return false;
+            return new Vector2Int(int.MinValue, int.MinValue);
         }
 
-        if (targetX != otherItem.x || targetY != otherItem.y)
-            return false;
+        int x = Mathf.FloorToInt(localPoint.x / grid.Step);
+        int y = Mathf.FloorToInt(-localPoint.y / grid.Step);
+        return new Vector2Int(x, y);
+    }
 
-        // B를 잠깐 제거
-        currentGrid.RemoveItem(otherItem);
+    public void SetCurrentEquipSlot(EquipSlotUI slot)
+    {
+        currentEquipSlot = slot;
+    }
 
-        bool canPlaceA = currentGrid.CanPlaceItem(
-            targetX,
-            targetY,
-            inventoryItem.CurrentWidth,
-            inventoryItem.CurrentHeight
+    public void ClearCurrentEquipSlot()
+    {
+        currentEquipSlot = null;
+    }
+
+    public bool TryFindUnequipSpace(out int foundX, out int foundY)
+    {
+        if (currentGrid.FindEmptySpace(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, out foundX, out foundY))
+            return true;
+
+        if (currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
+        {
+            inventoryItem.isRotated = !inventoryItem.isRotated;
+            InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
+            return true;
+        }
+
+        return false;
+    }
+
+    public void ResetRotationForEquipSlot()
+    {
+        if (!inventoryItem.isRotated)
+            return;
+
+        inventoryItem.isRotated = false;
+        itemTransform.localRotation = Quaternion.Euler(0, 0, 0);
+        rect.sizeDelta = new Vector2(
+            inventoryItem.CurrentWidth * cellSize,
+            inventoryItem.CurrentHeight * cellSize
         );
-
-        bool canPlaceB = currentGrid.CanPlaceItem(
-            originalX,
-            originalY,
-            otherItem.CurrentWidth,
-            otherItem.CurrentHeight
-        );
-
-        if (!canPlaceA || !canPlaceB)
-        {
-            currentGrid.PlaceItem(otherItem, otherItem.x, otherItem.y);
-            return false;
-        }
-
-        ItemUI otherUI = FindItemUI(otherItem);
-
-        currentGrid.PlaceItem(inventoryItem, targetX, targetY);
-        rect.anchoredPosition = new Vector2(targetX * currentGrid.Step, -targetY * currentGrid.Step);
-
-        currentGrid.PlaceItem(otherItem, originalX, originalY);
-        otherUI.SetGridPosition(currentGrid, originalX, originalY);
-
-        return true;
-    }
-    private ItemUI FindItemUI(InventoryItem item)
-    {
-        foreach (Transform child in currentGrid.ItemsContainer)
-        {
-            ItemUI ui = child.GetComponent<ItemUI>();
-
-            if (ui != null && ui.Item == item)
-                return ui;
-        }
-
-        return null;
     }
 
-    private bool TrySwapWithEquipSlot(EquipSlotUI slot)
+    public void RestoreRotationToOriginal()
     {
-        if (slot == null)
-            return false;
-
-        if (slot.IsEmpty)
-            return false;
-
-        if (!slot.CanAcceptType(inventoryItem.itemData))
-            return false;
-
-        ItemUI equippedUI = slot.equipItemUI;
-        InventoryItem equippedItem = equippedUI.Item;
-
-        // B가 A의 원래 위치에 들어갈 수 있는지 확인
-        if (!originalGrid.CanPlaceItem(
-                originalX,
-                originalY,
-                equippedItem.CurrentWidth,
-                equippedItem.CurrentHeight))
+        if (inventoryItem.isRotated != originalRotated)
         {
-            return false;
+            inventoryItem.isRotated = originalRotated;
+            UpdateRotationUI();
         }
-
-        // B를 인벤토리로 내림
-        slot.equipItemUI = null;
-        equippedUI.currentEquipSlot = null;
-        equippedItem.itemData.definition.uniqueEffect?.OnUnequip(equippedItem.itemData);
-
-        originalGrid.PlaceItem(equippedItem, originalX, originalY);
-        equippedUI.SetGridPosition(originalGrid, originalX, originalY);
-
-        // A를 장비칸에 장착
-        EquipDirectly(slot);
-
-        return true;
     }
 
-    private bool TryRightClickSwapWithEquipSlot(EquipSlotUI slot)
+    public void RotateDraggingItem()
     {
-        if (slot == null || slot.IsEmpty)
-            return false;
+        inventoryItem.isRotated = !inventoryItem.isRotated;
+        UpdateRotationUI();
+    }
+    public void SaveOriginalState()
+    {
+        StopGridPositionAnimation(true);
+        originalPosition = rect.anchoredPosition;
+        originalX = inventoryItem.x;
+        originalY = inventoryItem.y;
+        originalRotated = inventoryItem.isRotated;
+        originalWasEquipped = IsEquipped;
+        originalGrid = currentGrid;
+        originalPlacement = InventoryPlacementSnapshot.Capture(
+            currentGrid,
+            inventoryItem);
+    }
 
-        if (!slot.CanAcceptType(inventoryItem.itemData))
-            return false;
+    public void DetachFromCurrentSlotOrGrid()
+    {
+        if (IsEquipped)
+            currentEquipSlot.ClearItemUI();
+        else
+            currentGrid.RemoveItem(inventoryItem);
+    }
 
-        if (currentGrid == null)
-            return false;
+    public void MoveByDelta(Vector2 delta)
+    {
+        rect.anchoredPosition += delta;
+    }
 
-        ItemUI equippedUI = slot.equipItemUI;
-        if (equippedUI == null || equippedUI.Item == null)
-            return false;
+    public void SetParentToCurrentGrid(bool worldPositionStays)
+    {
+        transform.SetParent(currentGrid.ItemsContainer, worldPositionStays);
+    }
 
-        InventoryItem equippedItem = equippedUI.Item;
-        int targetX = inventoryItem.x;
-        int targetY = inventoryItem.y;
+    public Vector2 ScreenToCurrentGridLocalPoint(PointerEventData eventData)
+    {
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            currentGrid.ItemsContainer as RectTransform,
+            eventData.position,
+            eventData.pressEventCamera,
+            out Vector2 localPoint);
 
-        currentGrid.RemoveItem(inventoryItem);
-
-        if (!currentGrid.CanPlaceItem(
-                targetX,
-                targetY,
-                equippedItem.CurrentWidth,
-                equippedItem.CurrentHeight))
-        {
-            currentGrid.PlaceItem(inventoryItem, targetX, targetY);
-            return false;
-        }
-
-        slot.equipItemUI = null;
-        equippedUI.currentEquipSlot = null;
-
-        currentGrid.PlaceItem(equippedItem, targetX, targetY);
-        equippedUI.SetGridPosition(currentGrid, targetX, targetY);
-
-        EquipDirectly(slot);
-        return true;
+        return localPoint;
+    }
+    public void SetAnchoredPosition(Vector2 position)
+    {
+        rect.anchoredPosition = position;
     }
 }
-
-
-

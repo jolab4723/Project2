@@ -8,28 +8,31 @@ using ItemSystem;
 /// </summary>
 public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
 {
+    [SerializeField] private EquipmentSystem equipmentSystem;
+
+
     public StatSet GetStatSet()
     {
         StatSet total = StatSet.Zero;
 
-        if (InventoryController.Instance == null || InventoryController.Instance.allEquipSlots == null)
+        if (equipmentSystem == null)
         {
-            Debug.LogWarning("[PlayerEquipManager] InventoryController.allEquipSlots를 찾을 수 없습니다.");
+            Debug.LogWarning("[PlayerEquipManager] EquipmentSystem이 연결되지 않았습니다.");
             return total;
         }
 
-        foreach (var slot in InventoryController.Instance.allEquipSlots)
+        foreach (var pair in equipmentSystem.GetEquippedItems())
         {
-            // 포션 슬롯은 스탯에 영향 없음 (소비 로직은 다른 곳에서 처리)
-            if (slot == null || slot.SlotType == EquipSlotType.Potion)
+            EquipSlotType slotType = pair.Key;
+            InventoryItem invItem = pair.Value;
+
+            if (slotType == EquipSlotType.Potion)
                 continue;
 
-            var invItem = slot.equipItemUI != null ? slot.equipItemUI.Item : null;
-            var itemData = invItem != null ? invItem.itemData : null;
-            if (itemData == null)
+            if (invItem == null || invItem.itemData == null)
                 continue;
 
-            total += ToStatSet(itemData);
+            total += ToStatSet(invItem.itemData);
         }
 
         return total;

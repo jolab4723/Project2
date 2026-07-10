@@ -1,4 +1,3 @@
-using Mirror.Examples.AdditiveLevels;
 using UnityEngine;
 
 public class WBH_PlayerInputHandler : MonoBehaviour
@@ -57,12 +56,13 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if(Physics.Raycast(ray, out RaycastHit hit))
+        Plane plane = new Plane(Vector3.up, Vector3.zero);
+
+        if(plane.Raycast(ray, out float distance))
         {
-            if(((1 << hit.collider.gameObject.layer) & enemyLayer) != 0)
-            {
-                combat.TryAttackTarget(hit.transform);
-            }
+            Vector3 mousePos = ray.GetPoint(distance);
+
+            combat.TryAttack(mousePos);
         }
     }
 

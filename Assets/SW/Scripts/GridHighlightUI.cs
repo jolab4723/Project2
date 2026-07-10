@@ -3,40 +3,200 @@ using UnityEngine.UI;
 
 public class GridHighlightUI : MonoBehaviour
 {
-
     public RectTransform highlightRect;
     public Image highlightImage;
+    [SerializeField] private RectTransform secondaryHighlightRect;
+    [SerializeField] private Image secondaryHighlightImage;
 
+    private static readonly Color MoveColor = new Color(0f, 1f, 0f, 0.45f);
+    private static readonly Color InvalidColor = new Color(1f, 0f, 0f, 0.55f);
+    private static readonly Color SwapMovingColor = new Color(0f, 0.75f, 1f, 0.45f);
+    private static readonly Color SwapOtherColor = new Color(1f, 0.65f, 0f, 0.4f);
 
     public void ShowHighlight(int width, int height, float cellSize, float spacing)
     {
-        highlightRect.gameObject.SetActive(true);
-
-        float w = (width * cellSize) + ((width - 1) * spacing);
-        float h = (height * cellSize) + ((height - 1) * spacing);
-        highlightRect.sizeDelta = new Vector2(w, h);
-
-        highlightRect.SetAsFirstSibling();
+        ShowRect(
+            highlightRect,
+            highlightImage,
+            0,
+            0,
+            width,
+            height,
+            MoveColor,
+            cellSize,
+            spacing);
     }
 
     public void MoveHighlight(int gridX, int gridY, bool isValid, float cellSize, float spacing)
     {
-        float step = cellSize + spacing;
+        MoveRect(
+            highlightRect,
+            highlightImage,
+            gridX,
+            gridY,
+            isValid ? MoveColor : InvalidColor,
+            cellSize,
+            spacing);
+        HideSecondaryHighlight();
+    }
 
-        highlightRect.anchoredPosition = new Vector2(gridX * step, -gridY * step);
-        highlightImage.color = isValid ? new Color(0, 1, 0, 0.6f) : new Color(1, 0, 0, 0.6f);
+    public void ShowMovePreview(
+        InventoryCellRect rect,
+        float cellSize,
+        float spacing)
+    {
+        ShowRect(
+            highlightRect,
+            highlightImage,
+            rect.X,
+            rect.Y,
+            rect.Width,
+            rect.Height,
+            MoveColor,
+            cellSize,
+            spacing);
+        HideSecondaryHighlight();
+    }
+
+    public void ShowInvalidPreview(
+        InventoryCellRect rect,
+        float cellSize,
+        float spacing)
+    {
+        ShowRect(
+            highlightRect,
+            highlightImage,
+            rect.X,
+            rect.Y,
+            rect.Width,
+            rect.Height,
+            InvalidColor,
+            cellSize,
+            spacing);
+        HideSecondaryHighlight();
+    }
+
+    public void ShowSwapPreview(
+        InventorySwapPlan plan,
+        float cellSize,
+        float spacing)
+    {
+        EnsureSecondaryHighlight();
+
+        ShowRect(
+            highlightRect,
+            highlightImage,
+            plan.MovingTo.X,
+            plan.MovingTo.Y,
+            plan.MovingTo.Width,
+            plan.MovingTo.Height,
+            SwapMovingColor,
+            cellSize,
+            spacing);
+
+        ShowRect(
+            secondaryHighlightRect,
+            secondaryHighlightImage,
+            plan.OtherTo.X,
+            plan.OtherTo.Y,
+            plan.OtherTo.Width,
+            plan.OtherTo.Height,
+            SwapOtherColor,
+            cellSize,
+            spacing);
     }
 
     public void HideHighlight()
     {
-        highlightRect.gameObject.SetActive(false);
+        if (highlightRect != null)
+            highlightRect.gameObject.SetActive(false);
+
+        HideSecondaryHighlight();
     }
 
     public void SetHighlightActive(bool isActive)
     {
-        if (highlightRect.gameObject.activeSelf != isActive)
+        if (highlightRect != null && highlightRect.gameObject.activeSelf != isActive)
         {
             highlightRect.gameObject.SetActive(isActive);
         }
+
+        if (!isActive)
+            HideSecondaryHighlight();
+    }
+
+    private void EnsureSecondaryHighlight()
+    {
+        if (secondaryHighlightRect != null && secondaryHighlightImage != null)
+            return;
+
+        if (highlightRect == null)
+            return;
+
+        secondaryHighlightRect = Instantiate(
+            highlightRect,
+            highlightRect.parent);
+        secondaryHighlightRect.name = $"{highlightRect.name}_SwapOther";
+
+        secondaryHighlightImage = secondaryHighlightRect.GetComponent<Image>();
+        if (secondaryHighlightImage == null)
+            secondaryHighlightImage = secondaryHighlightRect.GetComponentInChildren<Image>();
+
+        if (secondaryHighlightImage != null)
+            secondaryHighlightImage.raycastTarget = false;
+
+        secondaryHighlightRect.gameObject.SetActive(false);
+    }
+
+    private void HideSecondaryHighlight()
+    {
+        if (secondaryHighlightRect != null)
+            secondaryHighlightRect.gameObject.SetActive(false);
+    }
+
+    private static void ShowRect(
+        RectTransform rect,
+        Image image,
+        int gridX,
+        int gridY,
+        int width,
+        int height,
+        Color color,
+        float cellSize,
+        float spacing)
+    {
+        if (rect == null || image == null)
+            return;
+
+        float rectWidth = (width * cellSize) + ((width - 1) * spacing);
+        float rectHeight = (height * cellSize) + ((height - 1) * spacing);
+
+        rect.gameObject.SetActive(true);
+        rect.sizeDelta = new Vector2(rectWidth, rectHeight);
+        rect.anchoredPosition = new Vector2(
+            gridX * (cellSize + spacing),
+            -gridY * (cellSize + spacing));
+        image.color = color;
+        image.raycastTarget = false;
+        rect.SetAsLastSibling();
+    }
+
+    private static void MoveRect(
+        RectTransform rect,
+        Image image,
+        int gridX,
+        int gridY,
+        Color color,
+        float cellSize,
+        float spacing)
+    {
+        if (rect == null || image == null)
+            return;
+
+        float step = cellSize + spacing;
+        rect.anchoredPosition = new Vector2(gridX * step, -gridY * step);
+        image.color = color;
+        image.raycastTarget = false;
+        rect.SetAsLastSibling();
     }
 }

@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8353135309055871693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7603633145334238222}
+  - component: {fileID: 5158649887417844896}
+  m_Layer: 0
+  m_Name: SW_TEST_RandomDropAcquireTester
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7603633145334238222
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8353135309055871693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5158649887417844896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8353135309055871693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c980a43596d9c4348b251ea2b95926c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SW.Test.RandomDrop.SwTestRandomDropAcquireTester
+  dropItemButton: {fileID: 0}
+  getItemButton: {fileID: 0}
+  dropButtonName: btn_DropItem
+  getItemButtonName: btn_GetItem
+  bindButtonsOnEnable: 0
+  dropTable: {fileID: 11400000, guid: 34e1de55a7f581946a9ca1655c8d3a76, type: 2}
+  monsterGrade: 0
+  itemDefinitions: []
+  generatedItemFolder: Assets/SW/TEST/ItemTablePipeline/GeneratedAssets/Items
+  itemGenerator: {fileID: 0}
+  itemPickupPrefabOverride: {fileID: 8883981134098272347, guid: 600459e1c0b9c004f80f45064323f463, type: 3}
+  receiverBehaviour: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  testUpgradeLevel: 0
+  destroyPickupAfterAcquire: 1
