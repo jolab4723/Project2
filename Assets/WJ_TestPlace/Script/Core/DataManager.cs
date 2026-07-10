@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using ItemSystem;
-using Mirror.BouncyCastle.Asn1.BC;
 
 namespace Core
 {
@@ -50,6 +49,7 @@ namespace Core
         // 아이템 데이터 로드
         private void LoadItemData()
         {
+            // SO 생성 -> 이미지 서치 후 삽입 -> 고유 효과 서치 후 삽입 ->
             // 1. 아이템 데이터 Excel (또는 FireBase) -> Json 변환
             DataSystem.ItemTableExcelToJson.ConvertExcelToJsonFromMenu();
 
