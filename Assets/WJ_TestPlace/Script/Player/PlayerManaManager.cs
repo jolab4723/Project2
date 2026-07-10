@@ -109,6 +109,16 @@ public class PlayerManaManager : MonoBehaviour
         OnManaChanged?.Invoke();
     }
 
+    /// <summary>
+    /// 세이브 데이터 로드 등 외부에서 정확한 값으로 직접 설정할 때 사용. 0~MaxMana로 clamp된다.
+    /// UseMana/RestoreMana와 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름.
+    /// </summary>
+    public void SetCurrentMana(float value)
+    {
+        CurrentMana = Mathf.Clamp(value, 0f, MaxMana);
+        OnManaChanged?.Invoke();
+    }
+
     /// <summary>amount만큼 마나가 있는지 미리 확인 (실제로 깎지 않음). 스킬 사용 가능 여부 체크용.</summary>
     public bool HasEnoughMana(float amount)
     {

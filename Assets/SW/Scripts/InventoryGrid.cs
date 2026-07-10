@@ -129,6 +129,27 @@ public class InventoryGrid : MonoBehaviour
         return grid[x, y];
     }
 
+    /// <summary>
+    /// 그리드에 배치된 모든 아이템을 중복 없이 반환한다 (세이브용). 여러 칸을 차지하는 아이템은 grid 배열에 여러 번 들어있어서 HashSet으로 거른다.
+    /// </summary>
+    public System.Collections.Generic.List<InventoryItem> GetAllItems()
+    {
+        var seen = new System.Collections.Generic.HashSet<InventoryItem>();
+        var result = new System.Collections.Generic.List<InventoryItem>();
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                var item = grid[x, y];
+                if (item != null && seen.Add(item))
+                    result.Add(item);
+            }
+        }
+
+        return result;
+    }
+
     public bool TryGetItemInArea(
     int startX,
     int startY,
