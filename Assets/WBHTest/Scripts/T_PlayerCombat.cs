@@ -15,10 +15,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    private const float attackTolerance = 0.25f;
-
-    private float maxHp = 100f;
-
     private float fighterAttackRange = 2f;
     private float gunnerAttackRange = 10f;
     private float fighterAttackDamage = 15f;
@@ -31,8 +27,8 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
                                                        PlayerState.Dead);
 
     private Animator animator;
+    private WBH_PlayerStatus status;
 
-    public float CurrentHp { get; private set; }
     public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
 
     [SerializeField] private PlayerClass playerClass;
@@ -62,8 +58,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         controller = GetComponent<T_PlayerController>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         effect = GetComponent<WBH_PlayerEffect>();
-
-        CurrentHp = maxHp;
+        status = GetComponent<WBH_PlayerStatus>();
     }
 
     private void Update()
@@ -127,17 +122,13 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         if (IsDead)
             return;
 
-        CurrentHp -= damage;
+        status.ApplyDamage(damage);
 
         stateMachine.ChangeState(PlayerState.Hit);
-
-        if (CurrentHp <= 0)
-            Die();
     }
 
-    private void Die()
+    private void Die() //!@ 이벤트 구독으로 리팩토링
     {
-        CurrentHp = 0;
 
         stateMachine.ChangeState(PlayerState.Dead);
     }
@@ -193,6 +184,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     // -- 애니메이터 호출용 메서드
     public void ExecuteAttack()
     {
+        if (!stateMachine.Is(PlayerState.Attack))
+            return;
+
         switch (playerClass)
         {
             case PlayerClass.Fighter:
