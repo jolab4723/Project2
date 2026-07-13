@@ -18,18 +18,17 @@ namespace DataSystem
     /// </summary>
     public static class ItemDataTableSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/JSONFile";
-        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/ItemData/GeneratedAssets/Items";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
+        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/Items";
 
         private const string ItemDatabasePath = "Assets/WJ_TestPlace/Script/Item/Data/ItemData/AllItems.asset";
 
-        private const string CombatPoolPath = "Assets/Resources/DataFiles/ItemData/GeneratedAssets/CombatStatPool.asset";
-        private const string UtilityPoolPath = "Assets/Resources/DataFiles/ItemData/GeneratedAssets/UtilityStatPool.asset";
-        private const string ElementalConfigPath = "Assets/Resources/DataFiles/ItemData/GeneratedAssets/ElementBonusConfig.asset";
+        private const string CombatPoolPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData/CombatStatPool.asset";
+        private const string UtilityPoolPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData/UtilityStatPool.asset";
+        private const string ElementalConfigPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData/ElementBonusConfig.asset";
 
-        // TODO: 아이콘/고유효과 폴더 경로가 정해지면 채우고 InsertItemIcons/InsertUniqueEffects를 구현할 것.
-        private const string IconFolder = "";
-        private const string UniqueEffectFolder = "";
+        private const string IconFolder = "Assets/Resources/Images/Item";
+        private const string UniqueEffectFolder = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/UniqueEffectPool";
 
         [MenuItem("DataLoader/Item Data Table/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -96,7 +95,7 @@ namespace DataSystem
                 ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Armor,
                     row.rarity, row.description, row.itemPrice, row.itemWidth, row.itemHeight,
                     row.mainStat1Type, row.mainStat1Value, row.mainStat2Type, row.mainStat2Value,
-                    combatPool, utilityPool, elementalConfig);
+                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
                 if (asset == null)
                     continue;
 
@@ -121,7 +120,7 @@ namespace DataSystem
                 ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Weapon,
                     row.rarity, row.description, row.sellPrice, row.itemWidth, row.itemHeight,
                     row.mainStat1Type, row.mainStat1Value, row.mainStat2Type, row.mainStat2Value,
-                    combatPool, utilityPool, elementalConfig);
+                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
                 if (asset == null)
                     continue;
 
@@ -148,7 +147,7 @@ namespace DataSystem
                 ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Potion,
                     row.rarity, row.description, row.itemPrice, row.itemWidth, row.itemHeight,
                     null, 0f, null, 0f,
-                    combatPool, utilityPool, elementalConfig);
+                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
                 if (asset == null)
                     continue;
 
@@ -173,6 +172,7 @@ namespace DataSystem
             string outputFolder, int itemId, string itemName, ItemCategory category,
             string rarityText, string description, int price, int width, int height,
             string mainStat1Type, float mainStat1Value, string mainStat2Type, float mainStat2Value,
+            string uniqueEffectId,
             SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig)
         {
             string idText = itemId.ToString();
@@ -189,6 +189,7 @@ namespace DataSystem
             asset.sellPrice = price;
             asset.itemWidth = Mathf.Max(1, width);
             asset.itemHeight = Mathf.Max(1, height);
+            asset.uniqueEffectId = uniqueEffectId;
 
             List<FixedStatValue> mainOptions = new List<FixedStatValue>();
             AddMainOption(mainOptions, mainStat1Type, mainStat1Value);
@@ -227,29 +228,113 @@ namespace DataSystem
             list.Add(new FixedStatValue { statType = statType, value = value });
         }
 
-        [MenuItem("DataLoader/Item Data Table/3. Insert Icons (TODO)")]
+        /// <summary>
+        /// itemId와 파일명(확장자 제외)이 정확히 일치하는 스프라이트를 아이콘으로 연결한다.
+        /// (느슨한 이름 검색이 아니라 경로 정확 매칭이라 오검색 위험이 없음.)
+        /// </summary>
+        [MenuItem("DataLoader/Item Data Table/3. Insert Icons")]
         public static void InsertItemIcons()
         {
-            if (string.IsNullOrEmpty(IconFolder))
+            ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(ItemDatabasePath);
+            if (database == null)
             {
-                Debug.Log("[ItemDataTable] InsertItemIcons - IconFolder가 아직 안 정해져서 비활성 상태입니다.");
+                Debug.LogWarning($"[ItemDataTable] ItemDatabaseSO를 찾을 수 없습니다: {ItemDatabasePath}");
                 return;
             }
 
-            // TODO: ItemDatabaseSO.allItems를 순회하며
-            // AssetDatabase.LoadAssetAtPath<Sprite>($"{IconFolder}/{asset.itemId}.png")로 연결.
+            int matched = 0;
+            int missing = 0;
+
+            foreach (ItemDefinitionSO asset in database.allItems)
+            {
+                if (asset == null)
+                    continue;
+
+                Sprite icon = LoadIconSprite(asset.itemId);
+                if (icon == null)
+                {
+                    missing++;
+                    continue;
+                }
+
+                asset.icon = icon;
+                EditorUtility.SetDirty(asset);
+                matched++;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ItemDataTable] 아이콘 연결 완료. 성공 {matched}, 실패 {missing}");
         }
 
-        [MenuItem("DataLoader/Item Data Table/4. Insert Unique Effects (TODO)")]
+        /// <summary>png/jpg 순서로 시도. 파일은 있는데 Sprite로 안 읽히면(Texture Type 설정 문제) 별도 경고.</summary>
+        private static Sprite LoadIconSprite(string itemId)
+        {
+            string[] extensions = { "png", "jpg", "jpeg" };
+
+            foreach (string ext in extensions)
+            {
+                string iconPath = CombineAssetPath(IconFolder, itemId + "." + ext);
+                Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
+                if (sprite != null)
+                    return sprite;
+
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(iconPath);
+                if (texture != null)
+                {
+                    Debug.LogWarning($"[ItemDataTable] {iconPath} 파일은 있는데 Sprite로 못 읽었습니다. Texture Type을 'Sprite (2D and UI)'로 바꿔주세요.");
+                    return null;
+                }
+            }
+
+            Debug.LogWarning($"[ItemDataTable] 아이콘을 못 찾았습니다: {IconFolder}/{itemId}.(png|jpg|jpeg)");
+            return null;
+        }
+
+        /// <summary>
+        /// ItemDefinitionSO.uniqueEffectId 기준으로, 같은 이름(확장자 제외)의 UniqueEffectSO를 찾아 연결한다.
+        /// </summary>
+        [MenuItem("DataLoader/Item Data Table/4. Insert Unique Effects")]
         public static void InsertUniqueEffects()
         {
-            if (string.IsNullOrEmpty(UniqueEffectFolder))
+            ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(ItemDatabasePath);
+            if (database == null)
             {
-                Debug.Log("[ItemDataTable] InsertUniqueEffects - UniqueEffectFolder가 아직 안 정해져서 비활성 상태입니다.");
+                Debug.LogWarning($"[ItemDataTable] ItemDatabaseSO를 찾을 수 없습니다: {ItemDatabasePath}");
                 return;
             }
 
-            // TODO: uniqueEffectId 기준으로 AssetDatabase.LoadAssetAtPath<UniqueEffectSO>($"{UniqueEffectFolder}/{uniqueEffectId}.asset")로 연결.
+            int matched = 0;
+            int missing = 0;
+            int skipped = 0;
+
+            foreach (ItemDefinitionSO asset in database.allItems)
+            {
+                if (asset == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(asset.uniqueEffectId))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                string effectPath = CombineAssetPath(UniqueEffectFolder, asset.uniqueEffectId + ".asset");
+                UniqueEffectSO effect = AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(effectPath);
+
+                if (effect == null)
+                {
+                    Debug.LogWarning($"[ItemDataTable] 고유효과를 못 찾았습니다: {effectPath} ({asset.itemName})");
+                    missing++;
+                    continue;
+                }
+
+                asset.uniqueEffect = effect;
+                EditorUtility.SetDirty(asset);
+                matched++;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ItemDataTable] 고유효과 연결 완료. 성공 {matched}, 실패 {missing}, 대상 없음(스킵) {skipped}");
         }
 
         [MenuItem("DataLoader/Item Data Table/0. Run All Steps")]
@@ -268,14 +353,16 @@ namespace DataSystem
 
             Debug.Log("[ItemDataTable] ===== 통합 실행 시작 =====");
 
-            Debug.Log("[ItemDataTable] 1/3: Excel -> JSON 변환 중...");
+            Debug.Log("[ItemDataTable] 1/4: Excel -> JSON 변환 중...");
             ItemDataTableExcelToJson.Convert(excelPath, jsonPath);
 
-            Debug.Log("[ItemDataTable] 2/3: JSON -> SO 생성/갱신 중...");
+            Debug.Log("[ItemDataTable] 2/4: JSON -> SO 생성/갱신 중...");
             GenerateAllFromJson(jsonPath, DefaultOutputRoot);
 
-            Debug.Log("[ItemDataTable] 3/3: 아이콘/고유효과 연결 중... (둘 다 아직 비활성)");
+            Debug.Log("[ItemDataTable] 3/4: 아이콘 연결 중...");
             InsertItemIcons();
+
+            Debug.Log("[ItemDataTable] 4/4: 고유효과 연결 중...");
             InsertUniqueEffects();
 
             Debug.Log("[ItemDataTable] ===== 통합 실행 완료 =====");

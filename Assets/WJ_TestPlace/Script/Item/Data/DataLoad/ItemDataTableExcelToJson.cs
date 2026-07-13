@@ -10,12 +10,13 @@ namespace DataSystem
 {
     public static class ItemDataTableExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/JSONFile";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/ItemData/1. ExcelFile/ItemDataTable.xlsx";
 
         [MenuItem("DataLoader/Item Data Table/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
         {
-            string excelPath = EditorUtility.OpenFilePanel("Select item data table", Application.dataPath, "xlsx");
+            string excelPath = ResolveExcelPath();
             if (string.IsNullOrEmpty(excelPath))
                 return;
 
@@ -27,6 +28,19 @@ namespace DataSystem
                 return;
 
             Convert(excelPath, jsonPath);
+        }
+
+        /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
+        private static string ResolveExcelPath()
+        {
+            string defaultAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
+            if (File.Exists(defaultAbsolutePath))
+            {
+                Debug.Log("[ItemDataTable] 사전 설정된 엑셀 파일을 사용합니다: " + DefaultExcelPath);
+                return defaultAbsolutePath;
+            }
+
+            return EditorUtility.OpenFilePanel("Select item data table", Application.dataPath, "xlsx");
         }
 
         public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
