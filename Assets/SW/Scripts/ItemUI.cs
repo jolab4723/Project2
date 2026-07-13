@@ -271,15 +271,32 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         currentEquipSlot = null;
     }
 
-    public bool TryFindUnequipSpace(out int foundX, out int foundY)
+    public bool TryFindUnequipSpace(
+    out int foundX,
+    out int foundY,
+    out bool targetRotated)
     {
-        if (currentGrid.FindEmptySpace(inventoryItem.CurrentWidth, inventoryItem.CurrentHeight, out foundX, out foundY))
-            return true;
+        targetRotated = inventoryItem.isRotated;
 
-        if (currentGrid.FindEmptySpace(inventoryItem.CurrentHeight, inventoryItem.CurrentWidth, out foundX, out foundY))
+        if (currentGrid.FindEmptySpace(
+                inventoryItem.CurrentWidth,
+                inventoryItem.CurrentHeight,
+                out foundX,
+                out foundY))
         {
-            inventoryItem.isRotated = !inventoryItem.isRotated;
-            InventoryController.Instance.PrintLog("자리가 부족해 아이템을 회전하여 보관했습니다.");
+            return true;
+        }
+
+        int rotatedWidth = inventoryItem.CurrentHeight;
+        int rotatedHeight = inventoryItem.CurrentWidth;
+
+        if (currentGrid.FindEmptySpace(
+                rotatedWidth,
+                rotatedHeight,
+                out foundX,
+                out foundY))
+        {
+            targetRotated = !inventoryItem.isRotated;
             return true;
         }
 
