@@ -36,6 +36,7 @@ public class ItemEquipHandler : MonoBehaviour
             {
                 itemUI.CurrentGrid.RemoveItem(itemUI.Item);
                 SetEquipSlotVisual(slot);
+                NotifyEquipped(itemUI.Item);
                 return true;
             }
 
@@ -90,6 +91,19 @@ public class ItemEquipHandler : MonoBehaviour
         if (targetSlot == null)
             return false;
 
+        if (itemUI.OriginalWasEquipped)
+        {
+            EquipSlotUI originalSlot = itemUI.CurrentEquipSlot;
+
+            if (targetSlot == originalSlot)
+            {
+                SetEquipSlotVisual(originalSlot);
+                return true;
+            }
+            SetEquipSlotVisual(originalSlot);
+            return true;
+        }
+
         if (itemUI.OriginalGrid == ShopController.Instance?.ShopGrid)
         {
             itemUI.ReturnToOriginalPosition();
@@ -102,6 +116,7 @@ public class ItemEquipHandler : MonoBehaviour
         if (result.Result == EquipResult.Success)
         {
             SetEquipSlotVisual(targetSlot);
+            NotifyEquipped(itemUI.Item);
             return true;
         }
         if (result.Result != EquipResult.SlotOccupied)
@@ -138,8 +153,6 @@ public class ItemEquipHandler : MonoBehaviour
 
         itemRect.sizeDelta = slotRect.sizeDelta;
         iconRect.sizeDelta = slotRect.sizeDelta;
-
-        NotifyEquipped(itemUI.Item);
     }
 
     /// <summary>장착 성공 시 고유효과 OnEquip 호출 + 스탯 재계산.</summary>
@@ -213,6 +226,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         // A를 장비칸에 장착
         SetEquipSlotVisual(slot);
+        NotifyEquipped(itemUI.Item);
         return true;
     }
 
@@ -276,6 +290,7 @@ public class ItemEquipHandler : MonoBehaviour
         NotifyUnequipped(outgoingItem);
 
         SetEquipSlotVisual(slot);
+        NotifyEquipped(itemUI.Item);
         return true;
     }
 
@@ -419,8 +434,10 @@ public class ItemEquipHandler : MonoBehaviour
 
         grid.TryPlaceItem(outgoingItem, targetX, targetY);
         itemUI.SetGridPosition(grid, targetX, targetY);
+        NotifyUnequipped(outgoingItem);
 
         gridItemEquipHandler.SetEquipSlotVisual(previousSlot);
+        gridItemEquipHandler.NotifyEquipped(gridItem);
 
         return true;
     }
