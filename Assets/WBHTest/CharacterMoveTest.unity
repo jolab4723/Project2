@@ -859,6 +859,9 @@ MonoBehaviour:
   - projectileType: 1
     poolSize: 10
     projectilePrefab: {fileID: 3710108442046792887, guid: 67b87ea7c73f8534fb52bd2d19ec4d2b, type: 3}
+  - projectileType: 3
+    poolSize: 30
+    projectilePrefab: {fileID: 6822293629243769860, guid: a98dcf4ff3dcd04478705b6c26b9400b, type: 3}
 --- !u!4 &395296270
 Transform:
   m_ObjectHideFlags: 0
@@ -1001,118 +1004,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &609829059
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 609829063}
-  - component: {fileID: 609829062}
-  - component: {fileID: 609829061}
-  - component: {fileID: 609829060}
-  m_Layer: 0
-  m_Name: Cube
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!65 &609829060
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 609829059}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &609829061
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 609829059}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &609829062
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 609829059}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &609829063
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 609829059}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: 4.4}
-  m_LocalScale: {x: 3, y: 3, z: 3}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &763348909 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 823235165253883103, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
@@ -1168,6 +1059,31 @@ CapsuleCollider:
   m_Height: 1.45
   m_Direction: 1
   m_Center: {x: 0, y: 0.71, z: 0}
+--- !u!114 &763348921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763348909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
+  maxHp: 100
+  attackPower: 5
+  defensePower: 3
+  attackSpeed: 1
+  moveSpeed: 1
+  dodgeDistance: 5
+  dodgeDuration: 0.5
+  dodgeCooltime: 6
+  fighterAttackRange: 2
+  gunnerAttackRange: 10
+  fighterAttackDamage: 15
+  gunnerAttackDamage: 10
+  gunnerBulletSpeed: 10
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1611,6 +1527,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
   - {fileID: 11400000, guid: 0749a5a78135aa34db0f417ddb3c8a92, type: 2}
   - {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
+  - {fileID: 11400000, guid: 08a9d8ae06c3471458c9581cc26eb5ef, type: 2}
 --- !u!114 &1630218758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1877,6 +1794,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1869368052}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1869368054}
   m_SourcePrefab: {fileID: 100100000, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
 --- !u!4 &1869368043 stripped
 Transform:
@@ -1933,6 +1853,31 @@ CapsuleCollider:
   m_Height: 1.45
   m_Direction: 1
   m_Center: {x: 0, y: 0.71, z: 0}
+--- !u!114 &1869368054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470665423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
+  maxHp: 100
+  attackPower: 5
+  defensePower: 3
+  attackSpeed: 1
+  moveSpeed: 1
+  dodgeDistance: 5
+  dodgeDuration: 0.5
+  dodgeCooltime: 6
+  fighterAttackRange: 2
+  gunnerAttackRange: 10
+  fighterAttackDamage: 15
+  gunnerAttackDamage: 10
+  gunnerBulletSpeed: 10
 --- !u!1 &1937734891
 GameObject:
   m_ObjectHideFlags: 0
@@ -2180,6 +2125,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 823235165253883103, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 763348919}
+    - targetCorrespondingSourceObject: {fileID: 823235165253883103, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 763348921}
   m_SourcePrefab: {fileID: 100100000, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
 --- !u!1 &2054820304
 GameObject:
@@ -2261,4 +2209,3 @@ SceneRoots:
   - {fileID: 1630218759}
   - {fileID: 75300524}
   - {fileID: 359309592}
-  - {fileID: 609829063}

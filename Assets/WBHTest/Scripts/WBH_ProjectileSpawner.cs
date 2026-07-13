@@ -3,6 +3,8 @@ using UnityEngine;
 public class WBH_ProjectileSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_ProjectilePoolManager poolManager;
+
+    [Header("explode Effect")]
     [SerializeField] private WBH_EffectSpawner effectSpawner;
     [SerializeField] private WBH_EffectData effectData;
 
@@ -83,6 +85,10 @@ public class WBH_ProjectileSpawner : MonoBehaviour
         }
     }
 
+    public void Initialize(WBH_ProjectilePoolManager projectilePool)
+    {
+        this.poolManager = projectilePool;
+    }
 
     // ------ 예비 코드
 

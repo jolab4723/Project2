@@ -15,7 +15,9 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     [SerializeField] private WaveData[] waves;
 
-    private WBH_EnemyPoolManager poolManager;
+    private WBH_EnemyPoolManager enemyPool;
+    private WBH_EffectPoolManager effectPool;
+    private WBH_ProjectilePoolManager projectilePool;
 
     private int currentWave = -1;
     private int aliveEnemyCount;
@@ -23,7 +25,11 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     private void Awake()
     {
-        poolManager = GetComponent<WBH_EnemyPoolManager>();
+        enemyPool = GetComponent<WBH_EnemyPoolManager>();
+
+        effectPool = FindFirstObjectByType<WBH_EffectPoolManager>();
+        projectilePool = FindFirstObjectByType<WBH_ProjectilePoolManager>();
+
         spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
         player = FindAnyObjectByType<T_PlayerController>().transform;
     }
@@ -34,11 +40,11 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         SpawnNextWave();
     }
 
-    private void InitializeSpawnAreas()
+    private void InitializeSpawnAreas() //!@
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(poolManager, player);
+            area.Initialize(enemyPool, effectPool, projectilePool, player);
         }
     }
 

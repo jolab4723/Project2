@@ -23,7 +23,7 @@ public class T_PlayerController : MonoBehaviour
         mainCamera = Camera.main;
         animator = GetComponent<Animator>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
-        indicator = GetComponent<WBH_PlayerIndicator>();
+        indicator = GetComponentInChildren<WBH_PlayerIndicator>();
         status = GetComponent<WBH_PlayerStatus>();
 
         agent.autoBraking = false;
@@ -187,6 +187,11 @@ public class T_PlayerController : MonoBehaviour
             return;
 
         stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+    public void Die() //!@ 사망처리. 이벤트 구독으로 리팩토링.
+    {
+        stateMachine.ChangeState(PlayerState.Dead);
     }
 
     // --- combat.cs 에서 활용할 이동처리

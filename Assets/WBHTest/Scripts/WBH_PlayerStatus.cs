@@ -19,6 +19,7 @@ public class WBH_PlayerStatus : MonoBehaviour
     [SerializeField] private float fighterAttackDamage = 15f;
     [SerializeField] private float gunnerAttackDamage = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
+    //---
 
     private T_PlayerController playerController;
     private float currentHp;
@@ -55,6 +56,11 @@ public class WBH_PlayerStatus : MonoBehaviour
         currentHp -= damage;
 
         currentHp = Mathf.Max(currentHp, 0);
+
+        if(IsDead)
+        {
+            playerController.Die();
+        }
     }
 
     public void Heal(float amount)

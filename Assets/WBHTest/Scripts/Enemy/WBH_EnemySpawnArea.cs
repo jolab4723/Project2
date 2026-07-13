@@ -16,9 +16,9 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         enemySpawner = GetComponent<WBH_EnemySpawner>();
     }
 
-    public void Initialize(WBH_EnemyPoolManager poolManager, Transform target)
+    public void Initialize(WBH_EnemyPoolManager enemyPool, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target)
     {
-        enemySpawner.Initialize(poolManager, target);
+        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target);
     }
 
     public void SpawnNormal(int count)

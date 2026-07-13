@@ -127,12 +127,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         stateMachine.ChangeState(PlayerState.Hit);
     }
 
-    private void Die() //!@ 이벤트 구독으로 리팩토링
-    {
-
-        stateMachine.ChangeState(PlayerState.Dead);
-    }
-
     private void SectorAttack( float range, float angle, float damage)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, enemyLayer);

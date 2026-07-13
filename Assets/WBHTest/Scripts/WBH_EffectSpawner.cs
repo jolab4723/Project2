@@ -54,4 +54,9 @@ public class WBH_EffectSpawner : MonoBehaviour
 
         effect.Play(data);
     }
+
+    public void Initialize(WBH_EffectPoolManager effectPool)
+    {
+        this.poolManager = effectPool;
+    }
 }
