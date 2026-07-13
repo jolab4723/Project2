@@ -60,30 +60,31 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     /// <summary>
     /// itemUIPrefab을 생성해 화면에 표시. 성공 여부를 반환한다.
     /// </summary>
-    public bool SpawnItemUI(InventoryItem itemData)
+    public ItemUI SpawnItemUIAndGet(InventoryItem itemData)
     {
         if (itemUIPrefab == null)
         {
             Debug.LogWarning("[InventoryController] itemUIPrefab이 비어있습니다. 인스펙터에서 연결해주세요.");
-            return false;
+            return null;
         }
 
-        // 1. 바탕화면(itemsContainer)의 자식으로 프리팹(그림)을 생성합니다.
         GameObject newObj = Instantiate(itemUIPrefab, playerGrid.ItemsContainer);
-
-        // 2. 방금 만든 그림의 ItemUI 스크립트를 가져옵니다.
         ItemUI ui = newObj.GetComponent<ItemUI>();
 
         if (ui == null)
         {
             Debug.LogWarning("[InventoryController] itemUIPrefab에 ItemUI 컴포넌트가 없습니다.");
             Destroy(newObj);
-            return false;
+            return null;
         }
 
-        // 3. 데이터를 넘겨주어 스스로 크기와 위치를 맞추게 합니다.
         ui.Setup(itemData, playerGrid);
-        return true;
+        return ui;
+    }
+
+    public bool SpawnItemUI(InventoryItem itemData)
+    {
+        return SpawnItemUIAndGet(itemData) != null;
     }
 
     public void PrintLog(string message)
