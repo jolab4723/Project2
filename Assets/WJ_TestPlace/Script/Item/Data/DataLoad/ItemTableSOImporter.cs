@@ -16,8 +16,8 @@ namespace DataSystem
     /// </summary>
     public static class ItemTableSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/JSONFile";
-        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/ItemData/GeneratedAssets";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
+        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData";
 
         private const string CombatPoolAssetName = "CombatStatPool";
         private const string UtilityPoolAssetName = "UtilityStatPool";
