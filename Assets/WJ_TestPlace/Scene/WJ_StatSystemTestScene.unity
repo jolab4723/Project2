@@ -1367,6 +1367,7 @@ GameObject:
   - component: {fileID: 905915403}
   - component: {fileID: 905915410}
   - component: {fileID: 905915411}
+  - component: {fileID: 905915412}
   m_Layer: 0
   m_Name: PlayerStatManager
   m_TagString: Untagged
@@ -1499,6 +1500,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d752456487066be4caeaac8611d815b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealthManager
+--- !u!114 &905915412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905915402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ba6bf62a64393d4b9b0a9c2728fad10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemTriggerManager
 --- !u!1 &929501863
 GameObject:
   m_ObjectHideFlags: 0

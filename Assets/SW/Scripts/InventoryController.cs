@@ -1,10 +1,18 @@
+using System.Collections.Generic;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"의 인벤토리만 가리킨다 (PlayerHealthManager와 동일 패턴).
+/// </summary>
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
+    public static readonly List<InventoryController> All = new List<InventoryController>();
+
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private EquipmentSystem equipmentSystem;
@@ -21,9 +29,30 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     void Awake()
     {
+        All.Add(this);
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[InventoryController] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
+
         RefreshGoldText(playerWallet.Gold);
     }
+
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
+    }
+
     private void OnEnable()
     {
         playerWallet.OnGoldChanged += RefreshGoldText;
@@ -38,7 +67,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public bool AddItem(ItemInstance itemData)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
-        
+
         if (result.Result != InventoryAddResult.Success)
         {
             PrintLog(GetAddItemFailMessage(result.Result));
@@ -58,7 +87,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     }
 
     /// <summary>
-    /// itemUIPrefab을 생성해 화면에 표시. 성공 여부를 반환한다.
+    /// itemUIPrefab을 생성해 화면에 표시. 생성된 ItemUI를 반환한다 (실패 시 null).
     /// </summary>
     public ItemUI SpawnItemUIAndGet(InventoryItem itemData)
     {

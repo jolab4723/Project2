@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -9,10 +10,20 @@ using UnityEngine;
 ///    TakeDamage(소모성)는 Mathf.Floor, Heal(증가성)는 Mathf.Ceil로 amount를 보정해서 적용한다
 ///    (둘 다 플레이어에게 불리하지 않은 방향으로 반올림).
 ///    SetCurrentHealth(세이브 로드 등 절대값 지정)는 보정 없이 그대로 clamp만 한다.
+///
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (Mirror NetworkIdentity가 있고
+///    isLocalPlayer가 false면 Instance로 등록 안 함). NetworkIdentity가 아예 없으면
+///    (지금처럼 싱글플레이 테스트 중이면) 항상 등록되어 기존과 동일하게 동작한다.
+///    다른 캐릭터(다른 플레이어)의 체력을 보고 싶을 때는 All 목록에서 찾으면 됨.
+///    PlayerStatManager도 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로
+///    찾아서 쓴다 (안 그러면 남의 캐릭터 체력이 내 스탯을 참조하게 됨).
 /// </summary>
 public class PlayerHealthManager : MonoBehaviour
 {
     public static PlayerHealthManager Instance { get; private set; }
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 체력 매니저 (나 + 다른 플레이어). 헬스바 등 조회용.</summary>
+    public static readonly List<PlayerHealthManager> All = new List<PlayerHealthManager>();
 
     /// <summary>PlayerStatManager.Stat.maxHealth를 그대로 따라가는 값. 외부에서 직접 바꿀 수 없음.</summary>
     public float MaxHealth { get; private set; }
@@ -26,8 +37,20 @@ public class PlayerHealthManager : MonoBehaviour
     /// <summary>체력이 0이 됐을 때 한 번만 발행. 전투 시스템에서 사망 처리에 사용하면 됨.</summary>
     public event System.Action OnDeath;
 
+    /// <summary>데미지를 받을 때마다 발행 (보정된 실제 데미지량 전달). 회복와 구별해서 발행되기 때문에 "피격 시" 발동 조건에 쓸 수 있음.</summary>
+    public event System.Action<float> OnDamageTaken;
+
+    private PlayerStatManager statManager;
+
     private void Awake()
     {
+        All.Add(this);
+        statManager = GetComponent<PlayerStatManager>();
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[PlayerHealthManager] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
@@ -35,6 +58,13 @@ public class PlayerHealthManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()
@@ -55,7 +85,7 @@ public class PlayerHealthManager : MonoBehaviour
     /// </summary>
     private void RefreshMaxHealth()
     {
-        float newMax = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.maxHealth : 0f;
+        float newMax = statManager != null ? statManager.Stat.maxHealth : 0f;
         if (newMax == MaxHealth)
             return;
 
@@ -98,6 +128,7 @@ public class PlayerHealthManager : MonoBehaviour
         bool wasAlive = CurrentHealth > 0f;
         CurrentHealth = Mathf.Max(0f, CurrentHealth - dmg);
         OnHealthChanged?.Invoke();
+        OnDamageTaken?.Invoke(dmg);
 
         if (wasAlive && CurrentHealth <= 0f)
             OnDeath?.Invoke();

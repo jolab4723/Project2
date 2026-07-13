@@ -13,6 +13,9 @@ namespace ItemSystem
         [Tooltip("조건 만족 시 적용될 버프")]
         public BuffDefinitionSO buffToApply;
 
+        [Tooltip("이 효과가 반응하는 발동 조건. ItemTriggerManager가 이 값과 일치하는 실제 게임 이벤트가 발생했을 때 OnTrigger를 불러준다.")]
+        public TriggerCondition triggerCondition = TriggerCondition.None;
+
         public override void OnTrigger(ItemInstance ownerItem)
         {
             if (buffToApply == null)
