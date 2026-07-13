@@ -10,10 +10,15 @@ using ItemSystem;
 /// PlayerEquipManager/PlayerBuffManager는 아직 구현 전이라, IStatSetProvider 인터페이스만
 /// 정의해두고 비어있으면 StatSet.Zero로 취급한다. 나중에 두 매니저를 구현할 때
 /// IStatSetProvider만 구현하면 이 클래스는 손대지 않아도 자동으로 연결된다.
+///
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
 /// </summary>
 public class PlayerStatManager : MonoBehaviour
 {
     public static PlayerStatManager Instance { get; private set; }
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 스탯 매니저 (나 + 다른 플레이어).</summary>
+    public static readonly List<PlayerStatManager> All = new List<PlayerStatManager>();
 
     [Header("레이어 소스")]
     [SerializeField] private PlayerLevelManager levelManager;
@@ -48,13 +53,24 @@ public class PlayerStatManager : MonoBehaviour
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
     }
 
-   
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
     {
         Recalculate();
     }
+
     private void Awake()
     {
+        All.Add(this);
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+        {
+            // 다른 플레이어의 스탯도 계산 자체는 필요하니 Stat은 만들어두되, Instance로는 등록 안 함.
+            Stat = new PlayerStat(startLevel);
+            Recalculate();
+            return;
+        }
+
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[PlayerStatManager] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
@@ -75,10 +91,17 @@ public class PlayerStatManager : MonoBehaviour
         // 초기 스폰 시 체력/마나는 PlayerHealthManager/PlayerManaManager가 각각 자체적으로 Start()에서 풀충전 처리함.
     }
 
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
+    }
+
     private void Update()
     {
         // 테스트용: K키로 레벨업 트리거 (L키는 PlayerLevelManager 테스트 출력에서 이미 쓰고 있어서 다른 키로 배치)
-        if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
+        if (Instance == this && Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
             LevelUp();
     }
 

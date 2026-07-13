@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -8,10 +9,16 @@ using UnityEngine;
 /// !! MaxMana를 int에서 float로 전환함 (CurrentMana는 원래부터 float).
 ///    UseMana(소모성)는 Mathf.Floor, RestoreMana(증가성)는 Mathf.Ceil로 amount를 보정해서 적용한다.
 ///    SetCurrentMana(세이브 로드 등 절대값 지정)는 보정 없이 그대로 clamp만 한다.
+///
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
+///    PlayerStatManager도 GetComponent로 같은 캐릭터 것만 찾아서 쓴다.
 /// </summary>
 public class PlayerManaManager : MonoBehaviour
 {
     public static PlayerManaManager Instance { get; private set; }
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 마나 매니저 (나 + 다른 플레이어).</summary>
+    public static readonly List<PlayerManaManager> All = new List<PlayerManaManager>();
 
     [Tooltip("마나 회복 틱 간격(초). 기본 1초 = mpRegen 스탯값만큼 1초마다 회복.")]
     [SerializeField] private float regenTickInterval = 1f;
@@ -40,9 +47,17 @@ public class PlayerManaManager : MonoBehaviour
     public event System.Action OnManaChanged;
 
     private float regenTimer;
+    private PlayerStatManager statManager;
 
     private void Awake()
     {
+        All.Add(this);
+        statManager = GetComponent<PlayerStatManager>();
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[PlayerManaManager] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
@@ -50,6 +65,13 @@ public class PlayerManaManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()
@@ -79,7 +101,7 @@ public class PlayerManaManager : MonoBehaviour
 
     private float GetMpRegen()
     {
-        return PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.mpRegen : 0f;
+        return statManager != null ? statManager.Stat.mpRegen : 0f;
     }
 
     /// <summary>
@@ -88,7 +110,7 @@ public class PlayerManaManager : MonoBehaviour
     /// </summary>
     private void RefreshMaxMana()
     {
-        float newMax = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.maxMana : 0f;
+        float newMax = statManager != null ? statManager.Stat.maxMana : 0f;
         if (newMax == MaxMana)
             return;
 
