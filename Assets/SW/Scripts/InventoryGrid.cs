@@ -25,12 +25,14 @@ public class InventoryGrid : MonoBehaviour
     public int GridHeight => gridHeight;
 
 
+
     private void Awake()
     {
         // Instance = this;
         grid = new InventoryItem[gridWidth, gridHeight];
     }
     
+
     public bool CanPlaceItem(int startX, int startY, int width, int height)
     {
         if (startX < 0 || startY < 0 || startX + width > gridWidth || startY + height > gridHeight)
@@ -183,5 +185,64 @@ public class InventoryGrid : MonoBehaviour
         }
 
         return foundItem != null;
+    }
+
+    public bool ContainsItem(InventoryItem item)
+    {
+        if (item == null || grid == null)
+            return false;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == item)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+    public bool TryRemoveItem(InventoryItem item)
+    {
+        if (item == null || grid == null)
+            return false;
+
+        int occupiedCellCount = 0;
+
+        // 먼저 상태를 검사한다. 검사 중에는 그리드를 변경하지 않는다.
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == item)
+                    occupiedCellCount++;
+            }
+        }
+
+        if (occupiedCellCount == 0)
+            return false;
+
+        int requiredCellCount = item.CurrentWidth * item.CurrentHeight;
+
+        if (occupiedCellCount != requiredCellCount)
+        {
+            Debug.LogError(
+                $"[InventoryGrid] 아이템 점유 칸이 올바르지 않습니다. " +
+                $"expected={requiredCellCount}, actual={occupiedCellCount}");
+            return false;
+        }
+
+        // 검사가 끝난 뒤 한 번에 제거한다.
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == item)
+                    grid[x, y] = null;
+            }
+        }
+
+        return true;
     }
 }
