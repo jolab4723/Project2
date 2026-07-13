@@ -13,17 +13,6 @@ public class EquipmentSystem : MonoBehaviour
         return equippedItems;
     }
 
-    public void Equip(EquipSlotType slotType, InventoryItem item)
-    {
-        equippedItems[slotType] = item;
-        EquipmentChanged();
-    }
-
-    public void Unequip(EquipSlotType slotType, InventoryItem item)
-    {
-        equippedItems.Remove(slotType);
-        EquipmentChanged();
-    }
     public bool TryGetEquippedItem(EquipSlotType slotType, out InventoryItem item)
     {
         return equippedItems.TryGetValue(slotType, out item);
@@ -39,24 +28,7 @@ public class EquipmentSystem : MonoBehaviour
             index++;
         }
 
-
         OnEquipmentChanged?.Invoke(infos);
-    }
-
-    public bool IsSlotEmpty(EquipSlotType slotType)
-    {
-        return !equippedItems.ContainsKey(slotType);
-    }
-
-    public bool CanEquip(InventoryItem item, EquipSlotType slotType)
-    {
-        if (item == null || item.itemData == null || item.itemData.definition == null)
-            return false;
-
-        if (!IsSlotEmpty(slotType))
-            return false;
-
-        return EquipSlotRules.CanEquipTo(item.itemData.definition, slotType);
     }
 
     public EquipResultData TryEquip(InventoryItem item, EquipSlotType slotType)
@@ -85,28 +57,6 @@ public class EquipmentSystem : MonoBehaviour
             return EquipResult.InvalidSlot;
 
         return EquipResult.Success;
-    }
-
-    public EquipResultData TryReplaceEquip(InventoryItem newItem, EquipSlotType slotType)
-    {
-        EquipResult validation = ValidateEquip(newItem, slotType);
-        if (validation != EquipResult.Success)
-            return EquipResultData.Failed(validation, slotType, newItem);
-
-        equippedItems.TryGetValue(slotType, out InventoryItem previousItem);
-
-        equippedItems[slotType] = newItem;
-        newItem.isEquipped = true;
-
-        if (previousItem != null)
-            previousItem.isEquipped = false;
-
-        EquipmentChanged();
-
-        if (previousItem != null)
-            return EquipResultData.Swapped(slotType, newItem, previousItem);
-
-        return EquipResultData.Success(slotType, newItem);
     }
 
     private EquipResult ValidateSwapEquip(
