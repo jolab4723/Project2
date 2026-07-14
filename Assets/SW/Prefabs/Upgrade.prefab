@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 170, y: -80}
+  m_AnchoredPosition: {x: 180, y: -80}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2659590419331544347
@@ -670,7 +670,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2632599528792731861}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -760,6 +760,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeController
   playerWallet: {fileID: 0}
   fixedUpgradeCost: 500
+  equipmentSystem: {fileID: 0}
   upgradeLevelText: {fileID: 2369349683292081418}
   costText: {fileID: 7501237734391614693}
   logText: {fileID: 6206823160035949771}
@@ -1338,6 +1339,7 @@ GameObject:
   - component: {fileID: 6765843865101071427}
   - component: {fileID: 8159264745617553482}
   - component: {fileID: 229676437084945738}
+  - component: {fileID: 4709874754478657474}
   m_Layer: 5
   m_Name: UpgradeSlot
   m_TagString: Untagged
@@ -1402,6 +1404,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 20
+--- !u!114 &4709874754478657474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5438213254029020247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90f0de602212f274590286275daaf33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeDropSlot
+  upgradeController: {fileID: 1534040421828869439}
 --- !u!1 &6716676015912870493
 GameObject:
   m_ObjectHideFlags: 0

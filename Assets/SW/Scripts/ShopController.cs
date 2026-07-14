@@ -76,18 +76,16 @@ public class ShopController : MonoBehaviour
             shopGrid,
             playerGrid,
             targetX,
-            targetY
-        );
+            targetY);
 
-        if (result != TradeResult.Success)
+        if (result == TradeResult.Success)
         {
-            logText.text = GetTradeMessage(result, item);
-            return false;
+            itemUI.SetGridPosition(playerGrid, targetX, targetY);
         }
 
-        itemUI.SetGridPosition(playerGrid, targetX, targetY);
-        logText.text = $"{item.itemData.definition.itemName}을 구매했습니다.";
-        return true;
+        ShowTradeMessage(result, item, true);
+
+        return result == TradeResult.Success;
     }
 
     public void CancelBuy(ItemUI itemUI)
@@ -108,20 +106,17 @@ public class ShopController : MonoBehaviour
             playerGrid,
             shopGrid,
             targetX,
-            targetY
-        );
+            targetY);
 
-        if (result != TradeResult.Success)
+        if (result == TradeResult.Success)
         {
-            logText.text = GetTradeMessage(result, item);
-            return false;
+            itemUI.SetGridPosition(shopGrid, targetX, targetY);
         }
 
-        itemUI.SetGridPosition(shopGrid, targetX, targetY);
-        logText.text = $"{item.itemData.definition.itemName}을 판매했습니다.";
-        return true;
-    }
+        ShowTradeMessage(result, item, false);
 
+        return result == TradeResult.Success;
+    }
     public void CancelSell(ItemUI itemUI)
     {
 
@@ -129,12 +124,20 @@ public class ShopController : MonoBehaviour
 
     public bool TryRightClick(ItemUI itemUI)
     {
-        if (itemUI.CurrentGrid != shopGrid)
+        if (itemUI == null || itemUI.CurrentGrid != shopGrid)
             return false;
 
-        if (!playerGrid.FindEmptySpace(itemUI.Item.CurrentWidth, itemUI.Item.CurrentHeight, out int x, out int y))
+        if (!playerGrid.FindEmptySpace(
+        itemUI.Item.CurrentWidth,
+        itemUI.Item.CurrentHeight,
+        out int x,
+        out int y))
         {
-            logText.text = "인벤토리에 공간이 없습니다.";
+            ShowTradeMessage(
+                TradeResult.NoSpace,
+                itemUI.Item,
+                true);
+
             return true;
         }
 
@@ -171,27 +174,23 @@ public class ShopController : MonoBehaviour
                cell.y < grid.GridHeight;
     }
 
-    private string GetTradeMessage(TradeResult result, InventoryItem item)
+    private void ShowTradeMessage(
+    TradeResult result,
+    InventoryItem item,
+    bool isBuying)
     {
+        if (logText == null)
+            return;
+
         string itemName =
-        item?.itemData?.definition != null ? item.itemData.definition.itemName : "아이템";
+            item?.itemData?.definition != null
+                ? item.itemData.definition.itemName
+                : "아이템";
 
-        switch (result)
-        {
-            case TradeResult.NoSpace:
-                return "인벤토리에 공간이 없습니다.";
-
-            case TradeResult.NotEnoughGold:
-                return $"골드가 부족해 {itemName} 구매에 실패했습니다.";
-
-            case TradeResult.InvalidItem:
-                return "유효하지 않은 아이템입니다.";
-
-            case TradeResult.TransferFailed:
-                return $"{itemName} 이동 처리 중 거래에 실패했습니다.";
-            default:
-                return "거래에 실패했습니다.";
-        }
+        logText.text = ShopMessageMapper.GetMessage(
+            result,
+            itemName,
+            isBuying);
     }
 
     private void RestoreItemAfterFailedTrade(ItemUI itemUI)

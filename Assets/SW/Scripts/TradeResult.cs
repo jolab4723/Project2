@@ -1,8 +1,8 @@
-public enum TradeResult
+public enum TradeResult : byte
 {
-    Success,
-    InvalidItem,
-    NotEnoughGold,
-    NoSpace,
-    TransferFailed
+    Success = 0,
+    InvalidItem = 1,
+    NotEnoughGold = 2,
+    NoSpace = 3,
+    TransferFailed = 4
 }

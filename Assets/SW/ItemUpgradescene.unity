@@ -305,17 +305,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2632599528792731861, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
   m_PrefabInstance: {fileID: 694716636653710231}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &484583213 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1534040421828869439, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
-  m_PrefabInstance: {fileID: 694716636653710231}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 484583212}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9d31cf9ccd14534497f8d36b57bba03, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeController
 --- !u!1 &522844783
 GameObject:
   m_ObjectHideFlags: 0
@@ -4249,24 +4238,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 966692090}
   m_CullTransparentMesh: 1
---- !u!1 &980643226 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5438213254029020247, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
-  m_PrefabInstance: {fileID: 694716636653710231}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &980643230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 980643226}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90f0de602212f274590286275daaf33c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeDropSlot
-  upgradeController: {fileID: 484583213}
 --- !u!114 &1174598105 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7305469578912423222, guid: c2916ac814702f64d941589d47f42fbf, type: 3}
@@ -4908,13 +4879,13 @@ PrefabInstance:
       propertyPath: playerWallet
       value: 
       objectReference: {fileID: 1174598105}
+    - target: {fileID: 1534040421828869439, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 682742649}
     - target: {fileID: 2632599528792731861, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
       propertyPath: m_Name
       value: Upgrade
-      objectReference: {fileID: 0}
-    - target: {fileID: 4437652828473134249, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 6206823160035949771, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
       propertyPath: m_fontMaterial
@@ -5023,10 +4994,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5438213254029020247, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 980643230}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b6d66e4689b4bb419223eac5308031c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

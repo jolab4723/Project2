@@ -56,7 +56,7 @@ public class UpgradeController : MonoBehaviour
     {
         if (selectedItem == null)
         {
-            logText.text = "강화할 아이템을 선택하세요.";
+            ShowMessage(UpgradeMessageMapper.SelectionRequired);
             return;
         }
 
@@ -65,35 +65,46 @@ public class UpgradeController : MonoBehaviour
         UpgradeResult result =
             upgradeService.TryUpgrade(selectedItem, cost);
 
-        switch (result)
+        if (result == UpgradeResult.Success)
         {
-            case UpgradeResult.Success:
-                equipmentSystem?.NotifyEquippedItemChanged(selectedItem);
-
-                logText.text =
-                    $"+{selectedItem.upgradeLevel} 강화 성공";
-
-                RefreshUI();
-                break;
-
-            case UpgradeResult.NotEnoughGold:
-                logText.text = "골드가 부족합니다.";
-                break;
-
-            case UpgradeResult.InvalidItem:
-                logText.text = "강화할 수 없는 아이템입니다.";
-                break;
-
-            case UpgradeResult.InvalidCost:
-                logText.text = "강화 비용 설정이 올바르지 않습니다.";
-                break;
-
-            case UpgradeResult.WalletUnavailable:
-                logText.text = "플레이어 지갑이 연결되지 않았습니다.";
-                break;
+            equipmentSystem?.NotifyEquippedItemChanged(selectedItem);
+            RefreshUI();
         }
+
+        if (result == UpgradeResult.WalletUnavailable)
+        {
+            Debug.LogError(
+                "[UpgradeController] PlayerWallet이 연결되지 않아 강화할 수 없습니다.");
+        }
+
+        ShowUpgradeMessage(result);
+    }
+    private void ShowUpgradeMessage(UpgradeResult result)
+    {
+        string itemName =
+            selectedItem?.definition != null
+                ? selectedItem.definition.itemName
+                : "아이템";
+
+        int upgradeLevel =
+            selectedItem != null
+                ? selectedItem.upgradeLevel
+                : 0;
+
+        ShowMessage(
+            UpgradeMessageMapper.GetMessage(
+                result,
+                itemName,
+                upgradeLevel));
     }
 
+    private void ShowMessage(string message)
+    {
+        if (logText != null)
+        {
+            logText.text = message;
+        }
+    }
     private int GetUpgradeCost(ItemInstance item)
     {
         // 추후 연동
@@ -151,7 +162,9 @@ public class UpgradeController : MonoBehaviour
             upgradeLevelText.text = "-";
 
         if (currentStatText != null)
-            currentStatText.text = "강화할 아이템을 선택하세요.";
+        {
+            currentStatText.text = UpgradeMessageMapper.SelectionRequired;
+        }
 
         if (nextStatText != null)
             nextStatText.text = string.Empty;

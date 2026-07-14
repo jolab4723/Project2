@@ -1,8 +1,8 @@
-public enum UpgradeResult
+public enum UpgradeResult : byte
 {
-    Success,
-    InvalidItem,
-    InvalidCost,
-    WalletUnavailable,
-    NotEnoughGold
+    Success = 0,
+    InvalidItem = 1,
+    InvalidCost = 2,
+    WalletUnavailable = 3,
+    NotEnoughGold = 4
 }
