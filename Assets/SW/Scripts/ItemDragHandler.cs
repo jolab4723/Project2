@@ -37,7 +37,6 @@ public class ItemDragHandler : MonoBehaviour,
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-        IsDragging = true;
         UpdatePointerContext(eventData);
 
         TooltipManager.Instance.HideTooltip();
@@ -45,7 +44,14 @@ public class ItemDragHandler : MonoBehaviour,
         bool wasEquipped = itemUI.IsEquipped;
 
         itemUI.SaveOriginalState();
-        itemUI.DetachFromCurrentSlotOrGrid();
+        if (!itemUI.TryDetachFromCurrentSlotOrGrid())
+        {
+            Debug.LogError(
+                "[ItemDragHandler] 드래그 시작 전 아이템을 기존 위치에서 분리하지 못했습니다.");
+            return;
+        }
+
+        IsDragging = true;
         itemUI.SetParentToCurrentGrid(true);
 
         Vector2 localPoint = itemUI.ScreenToCurrentGridLocalPoint(eventData);
@@ -66,6 +72,9 @@ public class ItemDragHandler : MonoBehaviour,
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (!IsDragging)
+            return;
+
         UpdatePointerContext(eventData);
         itemUI.MoveByDelta(eventData.delta);
         dragHighlighter.RefreshHighlight(
@@ -75,6 +84,9 @@ public class ItemDragHandler : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (!IsDragging)
+            return;
+
         UpdatePointerContext(eventData);
         dragHighlighter.RefreshHighlight(
             lastPointerPosition,
@@ -84,7 +96,8 @@ public class ItemDragHandler : MonoBehaviour,
         dropHandler.ResolveDrop(
             lastPointerPosition,
             lastEventCamera,
-            previewPlan);
+            previewPlan,
+            eventData.pointerCurrentRaycast.gameObject);
         dragHighlighter.HideActiveHighlight();
         dragVisual.EndDragVisual();
         IsDragging = false;

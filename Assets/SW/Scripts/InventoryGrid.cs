@@ -25,18 +25,34 @@ public class InventoryGrid : MonoBehaviour
     public int GridHeight => gridHeight;
 
 
+
     private void Awake()
     {
         // Instance = this;
         grid = new InventoryItem[gridWidth, gridHeight];
     }
-    
-    public bool CanPlaceItem(int startX, int startY, int width, int height)
+
+    private bool IsAreaInsideGrid(
+        int startX,
+        int startY,
+        int width,
+        int height)
     {
-        if (startX < 0 || startY < 0 || startX + width > gridWidth || startY + height > gridHeight)
+        if (grid == null || width <= 0 || height <= 0)
             return false;
 
-        for( int x = startX; x < startX + width; x++)
+        return startX >= 0 &&
+               startY >= 0 &&
+               startX <= gridWidth - width &&
+               startY <= gridHeight - height;
+    }
+
+    public bool CanPlaceItem(int startX, int startY, int width, int height)
+    {
+        if (!IsAreaInsideGrid(startX, startY, width, height))
+            return false;
+
+        for ( int x = startX; x < startX + width; x++)
         {
             for(int y = startY; y < startY + height; y++)
             {
@@ -49,33 +65,40 @@ public class InventoryGrid : MonoBehaviour
         return true;
     }
 
-    public bool TryPlaceItem(InventoryItem item, int startX, int startY)
+
+    public bool TryPlaceItem(
+        InventoryItem item,
+        int startX,
+        int startY)
     {
-        if (!CanPlaceItem(startX, startY, item.CurrentWidth, item.CurrentHeight))
+        if (item?.itemData?.definition == null || grid == null)
             return false;
 
-        PlaceItem(item, startX, startY);
+        if (!CanPlaceItem(
+                startX,
+                startY,
+                item.CurrentWidth,
+                item.CurrentHeight))
+        {
+            return false;
+        }
+
+        PlaceItemUnchecked(item, startX, startY);
         return true;
     }
-    public void PlaceItem(InventoryItem item, int startX, int startY)
+    private void PlaceItemUnchecked(
+        InventoryItem item,
+        int startX,
+        int startY)
     {
         for (int x = startX; x < startX + item.CurrentWidth; x++)
         {
             for (int y = startY; y < startY + item.CurrentHeight; y++)
             {
-                if (grid[x, y] != null && grid[x, y] != item)
-                {
-                    Debug.LogError(
-                        $"[InventoryGrid] PlaceItem 겹침 발생. " +
-                        $"place={item.itemData.definition.itemName}, " +
-                        $"cellOwner={grid[x, y].itemData.definition.itemName}, " +
-                        $"cell=({x},{y})"
-                    );
-                }
-
                 grid[x, y] = item;
             }
         }
+
         item.x = startX;
         item.y = startY;
         item.isEquipped = false;
@@ -83,23 +106,11 @@ public class InventoryGrid : MonoBehaviour
 
     public void RemoveItem(InventoryItem item)
     {
-        for (int x = item.x; x < item.x + item.CurrentWidth; x++)
+        if (!TryRemoveItem(item))
         {
-            for (int y = item.y; y < item.y + item.CurrentHeight; y++)
-            {
-                if (grid[x, y] == item)
-                {
-                    grid[x, y] = null;
-                }
-                else if (grid[x, y] != null)
-                {
-                    Debug.LogError(
-                    $"[InventoryGrid] RemoveItem이 다른 아이템 칸을 지우려고 함. " +
-                    $"remove={item.itemData.definition.itemName}, " +
-                    $"cellOwner={grid[x, y].itemData.definition.itemName}, " +
-                    $"cell=({x},{y})");
-                }
-            }
+            Debug.LogError(
+                "[InventoryGrid] RemoveItem 호출이 실패했습니다. " +
+                "호출부를 TryRemoveItem으로 전환해야 합니다.");
         }
     }
     
@@ -183,5 +194,81 @@ public class InventoryGrid : MonoBehaviour
         }
 
         return foundItem != null;
+    }
+
+    public bool ContainsItem(InventoryItem item)
+    {
+        if (item == null || grid == null)
+            return false;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (grid[x, y] == item)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+    public bool TryRemoveItem(InventoryItem item)
+    {
+        if (item?.itemData?.definition == null || grid == null)
+            return false;
+
+        int startX = item.x;
+        int startY = item.y;
+        int width = item.CurrentWidth;
+        int height = item.CurrentHeight;
+
+        if (!IsAreaInsideGrid(startX, startY, width, height))
+        {
+            Debug.LogError(
+                $"[InventoryGrid] 제거할 아이템의 위치가 Grid 범위를 벗어났습니다. " +
+                $"item={item.itemData.definition.itemName}, " +
+                $"position=({startX},{startY}), size={width}x{height}");
+
+            return false;
+        }
+
+        // 예상 사각형 전체가 정확히 item으로 채워져 있고,
+        // 사각형 밖에는 같은 item 참조가 없는지 검사한다.
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                bool shouldContainItem =
+                    x >= startX &&
+                    x < startX + width &&
+                    y >= startY &&
+                    y < startY + height;
+
+                bool actuallyContainsItem = grid[x, y] == item;
+
+                if (shouldContainItem != actuallyContainsItem)
+                {
+                    Debug.LogError(
+                        $"[InventoryGrid] 아이템 점유 상태가 올바르지 않습니다. " +
+                        $"item={item.itemData.definition.itemName}, " +
+                        $"cell=({x},{y}), " +
+                        $"expected={shouldContainItem}, " +
+                        $"actual={actuallyContainsItem}");
+
+                    return false;
+                }
+            }
+        }
+
+        // 검사가 모두 성공한 후에만 변경한다.
+        for (int x = startX; x < startX + width; x++)
+        {
+            for (int y = startY; y < startY + height; y++)
+            {
+                grid[x, y] = null;
+            }
+        }
+
+        return true;
     }
 }
