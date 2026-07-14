@@ -147,20 +147,25 @@ namespace Core
         }
 
         /// <summary>
-        /// 저장된 아이템들을 복원한다. 그리드 아이템은 그대로 배치+UI 생성,
-        /// 장착 아이템은 EquipmentSystem 데이터를 먼저 복원한 뒤, ItemEquipHandler.SetEquipSlotVisual을
-        /// 그대로 재사용해서 승로이터 배치/사이즈 및 고유효과 OnEquip까지 한번에 처리한다.
+        /// 저장된 아이템들을 런타임 상태로 복원한다.
+        /// 일반 아이템은 InventoryGrid.TryPlaceItem으로 배치하고,
+        /// 장착 아이템은 EquipmentTransaction을 통해 장비 상태와
+        /// 관련 이벤트를 복원한 뒤 장비 슬롯 UI를 배치한다.
         /// </summary>
         private void ApplyInventorySaveData(InventorySaveData data)
         {
             if (data == null)
                 return;
 
-            if (InventoryController.Instance == null || itemDatabase == null)
+            InventoryController controller = InventoryController.Instance;
+
+            if (controller == null || itemDatabase == null ||controller.PlayerGrid == null || controller.EquipmentSystem == null)
             {
-                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 itemDatabase가 없음).");
+                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 itemDatabase, EquipmentSystem이 없음).");
                 return;
             }
+
+            EquipmentTransaction equipmentTransaction = new EquipmentTransaction(controller.EquipmentSystem);
 
             int equippedRestoredCount = 0;
 
@@ -182,71 +187,152 @@ namespace Core
 
                 if (saved.isEquipped)
                 {
-                    if (RestoreEquippedItemVisual(invItem, saved.equippedSlotType))
+                    if (RestoreEquippedItemVisual(
+                            controller,
+                            equipmentTransaction,
+                            invItem,
+                            saved.equippedSlotType))
+                    {
                         equippedRestoredCount++;
+                    }
                 }
                 else
                 {
-                    InventoryController.Instance.PlayerGrid.PlaceItem(invItem, saved.gridX, saved.gridY);
-                    InventoryController.Instance.SpawnItemUI(invItem);
+                    InventoryGrid playerGrid = controller.PlayerGrid;
+
+                    bool placed = playerGrid.TryPlaceItem(
+                        invItem,
+                        saved.gridX,
+                        saved.gridY);
+
+                    if (!placed)
+                    {
+                        Debug.LogWarning(
+                            $"[DataManager] 인벤토리 아이템 복원 실패: " +
+                            $"{definition.itemName}, " +
+                            $"position=({saved.gridX}, {saved.gridY})");
+
+                        continue;
+                    }
+
+                    bool uiSpawned = controller.SpawnItemUI(invItem);
+
+                    if (!uiSpawned)
+                    {
+                        bool rollbackSucceeded = playerGrid.TryRemoveItem(invItem);
+
+                        if (!rollbackSucceeded)
+                        {
+                            Debug.LogError(
+                                "[DataManager] 아이템 UI 생성 실패 후 " +
+                                "그리드 상태 복구에도 실패했습니다.");
+                        }
+
+                        continue;
+                    }
                 }
             }
-
-            // 장착 아이템은 SetEquipSlotVisual이 OnEquip만 부르고 Recalculate는 안 불러줘서 여기서 한번 정리.
-            if (equippedRestoredCount > 0)
-                PlayerStatManager.Instance?.Recalculate();
 
             Debug.Log("[DataManager] 인벤토리 복원 완료 (" + data.items.Count + "개 아이템, 장착 " + equippedRestoredCount + "개)");
         }
 
         /// <summary>
-        /// 저장된 장착 아이템 하나를 데이터+시각 모두 복원한다.
-        /// EquipmentSystem.Equip으로 데이터를 먼저 반영한 뒤, 그리드 아이템과 같은 프리파뱹으로 ItemUI를 생성하고,
-        /// 그 오브젝트의 ItemEquipHandler.SetEquipSlotVisual을 호출해서 장비 슬롯 UI에 실제로 배치한다
-        /// (이 호출 안에서 고유효과 OnEquip도 같이 적용됨).
+        /// 저장된 장착 아이템 하나를 런타임 장비 상태로 복원한다.
+        /// ItemUI와 ItemEquipHandler를 먼저 확인한 뒤
+        /// EquipmentTransaction을 통해 장비 상태와 이벤트를 반영하고,
+        /// 성공한 경우 장비 슬롯 UI에 배치한다.
         /// </summary>
-        private bool RestoreEquippedItemVisual(InventoryItem invItem, EquipSlotType slotType)
+        private bool RestoreEquippedItemVisual(InventoryController controller, EquipmentTransaction transaction, InventoryItem invItem, EquipSlotType slotType)
         {
-            if (InventoryController.Instance.EquipmentSystem == null)
-                return false;
-
-            EquipSlotUI targetSlot = FindEquipSlot(slotType);
-            if (targetSlot == null)
+            if (controller == null || transaction == null || invItem?.itemData?.definition == null)
             {
-                Debug.LogWarning("[DataManager] " + slotType + " 슬롯을 찾지 못해 장착 아이템 UI를 복원하지 못했습니다: " + invItem.itemData.definition.itemName);
                 return false;
             }
 
-            invItem.isEquipped = true;
-            InventoryController.Instance.EquipmentSystem.Equip(slotType, invItem);
+            EquipSlotUI targetSlot = FindEquipSlot(controller, slotType);
 
-            ItemUI spawnedUI = InventoryController.Instance.SpawnItemUIAndGet(invItem);
+            if (targetSlot == null)
+            {
+                Debug.LogWarning(
+                    $"[DataManager] {slotType} 슬롯을 찾지 못해 " +
+                    $"장비를 복원하지 못했습니다: " +
+                    $"{invItem.itemData.definition.itemName}");
+
+                return false;
+            }
+
+            // 슬롯 점유 여부와 장착 가능한 아이템 종류를
+            // 상태 변경 전에 먼저 확인한다.
+            if (!targetSlot.CanAccept(invItem.itemData))
+            {
+                Debug.LogWarning(
+                    $"[DataManager] {slotType} 슬롯에 장착할 수 없거나 " +
+                    $"이미 UI가 존재합니다: " +
+                    $"{invItem.itemData.definition.itemName}");
+
+                return false;
+            }
+
+            // 장비 상태를 바꾸기 전에 UI 생성 가능 여부부터 확인한다.
+            ItemUI spawnedUI = controller.SpawnItemUIAndGet(invItem);
+
             if (spawnedUI == null)
             {
-                Debug.LogWarning("[DataManager] 장착 아이템 UI 생성 실패: " + invItem.itemData.definition.itemName);
+                Debug.LogWarning(
+                    "[DataManager] 장착 아이템 UI 생성 실패: " +
+                    invItem.itemData.definition.itemName);
+
                 return false;
             }
 
             ItemEquipHandler equipHandler = spawnedUI.GetComponent<ItemEquipHandler>();
+
             if (equipHandler == null)
             {
-                Debug.LogWarning("[DataManager] 생성된 ItemUI에 ItemEquipHandler가 없습니다: " + invItem.itemData.definition.itemName);
+                Destroy(spawnedUI.gameObject);
+
+                Debug.LogWarning(
+                    "[DataManager] 생성된 ItemUI에 " +
+                    "ItemEquipHandler가 없습니다: " +
+                    invItem.itemData.definition.itemName);
+
                 return false;
             }
 
+            EquipmentTransactionResult result = transaction.TryRestoreEquippedItem(invItem, slotType);
+
+            if (!result.IsSuccess)
+            {
+                Destroy(spawnedUI.gameObject);
+
+                Debug.LogWarning(
+                    $"[DataManager] 장비 복원 실패: " +
+                    $"{invItem.itemData.definition.itemName}, " +
+                    $"result={result.EquipmentResult.Result}");
+
+                return false;
+            }
+
+            // 상태 복원 성공 후 화면에 배치한다.
             equipHandler.SetEquipSlotVisual(targetSlot);
+
             return true;
         }
 
-        private static EquipSlotUI FindEquipSlot(EquipSlotType slotType)
+        private static EquipSlotUI FindEquipSlot(InventoryController controller, EquipSlotType slotType)
         {
-            if (InventoryController.Instance == null || InventoryController.Instance.allEquipSlots == null)
-                return null;
-
-            foreach (var slot in InventoryController.Instance.allEquipSlots)
+            if (controller == null || controller.allEquipSlots == null)
             {
-                if (slot != null && slot.SlotType == slotType)
+                return null;
+            }
+
+            foreach (EquipSlotUI slot in controller.allEquipSlots)
+            {
+                if (slot != null &&
+                    slot.SlotType == slotType)
+                {
                     return slot;
+                }
             }
 
             return null;

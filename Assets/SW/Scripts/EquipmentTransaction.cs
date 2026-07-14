@@ -456,14 +456,52 @@ public class EquipmentTransaction
             placement.Rect.Y);
     }
 
+    public EquipmentTransactionResult TryRestoreEquippedItem(
+    InventoryItem item,
+    EquipSlotType targetSlot)
+    {
+        if (equipmentSystem == null ||
+            item?.itemData?.definition == null)
+        {
+            return EquipmentTransactionResult.Failed(
+                EquipResultData.Failed(
+                    EquipResult.InvalidItem,
+                    targetSlot,
+                    item));
+        }
 
-    /// <summary>장착 성공 시 고유효과 OnEquip 호출 + 스탯 재계산.</summary>
+        EquipResultData equipmentResult = equipmentSystem.TryEquipState(item, targetSlot);
+
+        if (!equipmentResult.IsSuccess)
+        {
+            return EquipmentTransactionResult.Failed(
+                equipmentResult);
+        }
+
+        // 장비 슬롯에서는 회전하지 않은 상태로 통일한다.
+        item.isRotated = false;
+
+        equipmentSystem.PublishChanged();
+        NotifyEquipped(item);
+
+        return new EquipmentTransactionResult(
+            equipmentResult,
+            item,
+            null,
+            null,
+            default,
+            true);
+    }
+
+    /// <summary>장착 성공 시 고유효과 OnEquip 호출</summary>
+    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
     private static void NotifyEquipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?
             .OnEquip(item.itemData);
     }
-    /// <summary>해제 성공 시 고유효과 OnUnequip 호출 + 스탯 재계산.</summary>
+    /// <summary>해제 성공 시 고유효과 OnUnequip 호출</summary>
+    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
     private static void NotifyUnequipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?
