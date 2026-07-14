@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class UpgradeController : MonoBehaviour
 {
     [SerializeField] private PlayerWallet playerWallet;
-    [SerializeField] private int fixedUpgradeCost = 500;
+    [SerializeField] private float upgradeCostMultiplier = 1.15f;
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private TextMeshProUGUI upgradeLevelText;
     [SerializeField] private TextMeshProUGUI costText;
@@ -27,6 +27,12 @@ public class UpgradeController : MonoBehaviour
     {
         upgradeService = new UpgradeService(playerWallet);
     }
+
+    private void OnDisable()
+    {
+        ClearItem();
+    }
+
     public bool TrySetItem(ItemInstance item)
     {
         if (item?.definition?.mainOptions == null ||
@@ -38,8 +44,16 @@ public class UpgradeController : MonoBehaviour
             return false;
         }
 
+        bool isDifferentItem =
+        !ReferenceEquals(selectedItem, item);
+
         selectedItem = item;
         mainOptions = item.definition.mainOptions[0];
+
+        if (isDifferentItem)
+        {
+            ShowMessage(string.Empty);
+        }
 
         RefreshUI();
         return true;
@@ -49,6 +63,7 @@ public class UpgradeController : MonoBehaviour
     {
         selectedItem = null;
         mainOptions = default;
+        ShowMessage(string.Empty);
         RefreshUI();
     }
 
@@ -108,7 +123,7 @@ public class UpgradeController : MonoBehaviour
     private int GetUpgradeCost(ItemInstance item)
     {
         // 추후 연동
-        int upgradeCost = Mathf.CeilToInt(500 * Mathf.Pow(1.15f, item.upgradeLevel) / 10)  * 10;
+        int upgradeCost = Mathf.CeilToInt(500 * Mathf.Pow(upgradeCostMultiplier, item.upgradeLevel) / 10)  * 10;
         return upgradeCost;
     }
 
@@ -143,7 +158,6 @@ public class UpgradeController : MonoBehaviour
         float currentValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel);
         float nextValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel + 1);
 
-        itemImage.sprite = selectedItem.definition.icon;
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel.ToString()}";
         currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOptions.statType]} + {currentValue:0.#}";
         nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOptions.statType]} + {nextValue:0.#}";
@@ -159,7 +173,7 @@ public class UpgradeController : MonoBehaviour
         }
 
         if (upgradeLevelText != null)
-            upgradeLevelText.text = "-";
+            upgradeLevelText.text = "";
 
         if (currentStatText != null)
         {
