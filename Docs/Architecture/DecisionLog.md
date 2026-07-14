@@ -164,12 +164,26 @@
 - 커밋 완료: `InventoryController.Instance`는 메서드 시작 시 지역 변수 `controller`에 한 번 저장하고 보조 메서드에도 전달해 같은 플레이어의 인벤토리를 끝까지 사용하도록 했다.
 - 적용 이유: 지역 변수는 새 인스턴스가 아니라 동일한 객체 참조이며, 반복적인 전역 조회를 줄이고 null 검사·의존성 확인·향후 플레이어별 상태 분리를 명확하게 한다.
 
-### 6.4 문서 변경 이력
+### 6.4 인벤토리 모델·Item UI 생성 경계 구현 메모 (2026-07-14)
+
+- 구현 및 현재 씬 검증 완료: `InventoryGrid.RemoveItem()` 직접 변경 경로를 제거하고, 제거·배치·이동 결과는 `TryRemoveItem()`과 `TryPlaceItem()`의 실제 성공 여부를 확인하도록 통일했다.
+- 구현 및 현재 씬 검증 완료: `InventoryAddResult`와 `InventoryMoveResult`는 기존 의미를 유지한 명시적 `byte` 코드로 고정하고, 인벤토리 획득 문구는 `InventoryMessageMapper`에서 변환한다.
+- 구현 및 현재 씬 검증 완료: `InventoryController.TryAddItemAt()`을 일반 획득과 저장 불러오기의 공통 배치 경계로 사용하고, 성공 후 `OnItemAdded`를 한 번 발행한다.
+- 구현 및 현재 씬 검증 완료: Item UI prefab 생성과 `ItemUI.Setup()` 책임은 `InventoryItemUISpawner`로 이동했다. 일반 아이템은 `OnItemAdded` 구독으로, 장착 아이템 불러오기는 `DataManager`가 같은 Spawner를 명시적으로 사용해 UI를 생성한다.
+- 씬 적용 범위: 현재 `ItemUpgradescene`의 언팩된 `InventoryController` 오브젝트에만 `InventoryItemUISpawner`를 배치하고 `ItemPrefab.prefab`을 연결했다. 원본 `StatTestPrefeb.prefab` 적용 여부는 팀 회의 전까지 확정하지 않는다.
+- 확인 결과: 현재 씬에서 `InventoryController`와 `InventoryItemUISpawner`가 동일 GameObject에 각각 1개 존재하고, Item UI prefab 참조가 연결되어 있다. Unity 컴파일 완료 및 Console 오류·경고 0개를 확인했다.
+- 후속 확인: 일반 획득, 회전 아이템 저장·불러오기, 장착 아이템 불러오기에서 Item UI가 한 번만 생성되는지 플레이 모드로 확인한다.
+- 후속 정리: `DataManager`의 Spawner 누락 경고 문구에 남아 있는 이전 명칭 `InventoryItemPresenter`를 `InventoryItemUISpawner`로 통일한다.
+- 결정 상태: CAND-006의 구현 검증 단계이며 팀 승인 ADR은 아니다. Mirror 요청·응답, 서버 권한 및 네트워크 동기화 방식도 아직 결정하거나 구현하지 않았다.
+- 기록 상태: 구현 및 Editor 검증 완료, Git 커밋 전.
+
+### 6.5 문서 변경 이력
 
 | 날짜 | 변경 내용 | 작성자 |
 |---|---|---|
 | 2026-07-13 | Decision Log 초기 생성. 승인된 결정 없음. 아키텍처 리뷰의 권장안을 검토 대기 후보로 등록. | Codex |
 | 2026-07-14 | 2026-07-13 이후 Git 커밋과 상점·강화 작업을 구현 이력으로 추가. Git 계정의 작성자 표기를 팀원 이름 `김성우`로 통일하고, 강화 UI 및 인벤토리·장비 저장 복원 작업을 커밋 완료 상태로 기록. 구현 반영과 팀 승인 ADR을 분리해 기록. | 김성우 / Codex |
+| 2026-07-14 | 인벤토리 `Try*` 결과 경계, 추가·불러오기 경로 통합, `InventoryItemUISpawner` UI 생성 분리 및 `ItemUpgradescene` 한정 적용 상태를 구현 메모로 추가. | 김성우 / Codex |
 
 ---
 

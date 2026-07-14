@@ -147,10 +147,10 @@ namespace Core
         }
 
         /// <summary>
-        /// 저장된 아이템들을 런타임 상태로 복원한다.
-        /// 일반 아이템은 InventoryGrid.TryPlaceItem으로 배치하고,
-        /// 장착 아이템은 EquipmentTransaction을 통해 장비 상태와
-        /// 관련 이벤트를 복원한 뒤 장비 슬롯 UI를 배치한다.
+        /// 저장된 아이템을 런타임 상태로 불러온다.
+        /// 일반 아이템은 InventoryController.TryAddItemAt을 통해
+        /// 저장된 좌표에 배치하고 Item UI 생성 이벤트를 발행한다.
+        /// 장착 아이템은 EquipmentTransaction을 통해 장비 상태로 복원한다.
         /// </summary>
         private void ApplyInventorySaveData(InventorySaveData data)
         {
@@ -165,6 +165,16 @@ namespace Core
                 return;
             }
 
+            InventoryItemUISpawner itemUISpawner = controller.GetComponent<InventoryItemUISpawner>();
+
+            if (itemUISpawner == null)
+            {
+                Debug.LogWarning(
+                    "[DataManager] InventoryItemUISpawner가 없어 " +
+                    "인벤토리 UI를 불러올 수 없습니다.");
+
+                return;
+            }
             EquipmentTransaction equipmentTransaction = new EquipmentTransaction(controller.EquipmentSystem);
 
             int equippedRestoredCount = 0;
@@ -189,6 +199,7 @@ namespace Core
                 {
                     if (RestoreEquippedItemVisual(
                             controller,
+                            itemUISpawner,
                             equipmentTransaction,
                             invItem,
                             saved.equippedSlotType))
@@ -198,35 +209,16 @@ namespace Core
                 }
                 else
                 {
-                    InventoryGrid playerGrid = controller.PlayerGrid;
+                    InventoryAddResultData loadResult =
+                        controller.TryAddItemAt(invItem, saved.gridX, saved.gridY);
 
-                    bool placed = playerGrid.TryPlaceItem(
-                        invItem,
-                        saved.gridX,
-                        saved.gridY);
-
-                    if (!placed)
+                    if (loadResult.Result != InventoryAddResult.Success)
                     {
                         Debug.LogWarning(
-                            $"[DataManager] 인벤토리 아이템 복원 실패: " +
+                            $"[DataManager] 인벤토리 아이템 불러오기 실패: " +
                             $"{definition.itemName}, " +
-                            $"position=({saved.gridX}, {saved.gridY})");
-
-                        continue;
-                    }
-
-                    bool uiSpawned = controller.SpawnItemUI(invItem);
-
-                    if (!uiSpawned)
-                    {
-                        bool rollbackSucceeded = playerGrid.TryRemoveItem(invItem);
-
-                        if (!rollbackSucceeded)
-                        {
-                            Debug.LogError(
-                                "[DataManager] 아이템 UI 생성 실패 후 " +
-                                "그리드 상태 복구에도 실패했습니다.");
-                        }
+                            $"position=({saved.gridX}, {saved.gridY}), " +
+                            $"result={loadResult.Result}");
 
                         continue;
                     }
@@ -242,9 +234,10 @@ namespace Core
         /// EquipmentTransaction을 통해 장비 상태와 이벤트를 반영하고,
         /// 성공한 경우 장비 슬롯 UI에 배치한다.
         /// </summary>
-        private bool RestoreEquippedItemVisual(InventoryController controller, EquipmentTransaction transaction, InventoryItem invItem, EquipSlotType slotType)
+        private bool RestoreEquippedItemVisual(InventoryController controller, InventoryItemUISpawner itemUISpawner,
+            EquipmentTransaction transaction, InventoryItem invItem, EquipSlotType slotType)
         {
-            if (controller == null || transaction == null || invItem?.itemData?.definition == null)
+            if (controller == null || itemUISpawner == null || transaction == null || invItem?.itemData?.definition == null)
             {
                 return false;
             }
@@ -274,7 +267,7 @@ namespace Core
             }
 
             // 장비 상태를 바꾸기 전에 UI 생성 가능 여부부터 확인한다.
-            ItemUI spawnedUI = controller.SpawnItemUIAndGet(invItem);
+            ItemUI spawnedUI = itemUISpawner.SpawnItemUIAndGet(invItem);
 
             if (spawnedUI == null)
             {
