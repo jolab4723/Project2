@@ -16,20 +16,56 @@ public class ItemDropHandler : MonoBehaviour
 
     public void ResolveDrop()
     {
-        ResolveDrop(Vector2.zero, null, default);
+        ResolveDrop(Vector2.zero, null, default, null);
     }
 
     public void ResolveDrop(
         Vector2 screenPosition,
         Camera eventCamera,
-        InventorySwapPlan previewPlan)
+        InventorySwapPlan previewPlan,
+        GameObject target)
     {
+        ShopController shop = ShopController.Instance;
+
+        UpgradeDropSlot upgradeDropSlot =
+            target != null ? target.GetComponentInParent<UpgradeDropSlot>() : null;
+
+        if (upgradeDropSlot != null)
+        {
+            // 상점 아이템은 구매 전이므로 강화 대상으로 선택하지 않는다.
+            if (shop != null && itemUI.OriginalGrid == shop.ShopGrid)
+            {
+                itemUI.TryReturnToOriginalPosition();
+                return;
+            }
+
+            bool restored;
+
+            if (itemUI.OriginalWasEquipped)
+            {
+                restored = equipHandler.TryHandleDropToEquipSlot(
+                    itemUI.CurrentEquipSlot);
+            }
+            else
+            {
+                restored = itemUI.TryReturnToOriginalPosition();
+            }
+
+            if (!restored)
+            {
+                Debug.LogError(
+                    "[ItemDropHandler] 강화창 드롭 후 원래 위치 복구에 실패했습니다.");
+                return;
+            }
+
+            upgradeDropSlot.TrySelectItem(itemUI);
+            return;
+        }
         Vector2Int targetCell = itemUI.GetCellFromItemRect(itemUI.CurrentGrid);
         int targetX = targetCell.x;
         int targetY = targetCell.y;
 
         EquipSlotUI targetEquipSlot = InventoryController.Instance.hoveredEquipSlot;
-        ShopController shop = ShopController.Instance;
 
         if (shop != null && shop.TradeItem(itemUI, itemUI.OriginalGrid))
             return;

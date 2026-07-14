@@ -96,7 +96,8 @@ public class ItemDragHandler : MonoBehaviour,
         dropHandler.ResolveDrop(
             lastPointerPosition,
             lastEventCamera,
-            previewPlan);
+            previewPlan,
+            eventData.pointerCurrentRaycast.gameObject);
         dragHighlighter.HideActiveHighlight();
         dragVisual.EndDragVisual();
         IsDragging = false;

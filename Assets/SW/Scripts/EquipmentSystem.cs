@@ -130,6 +130,25 @@ public class EquipmentSystem : MonoBehaviour
         OnEquipmentChanged?.Invoke(infos);
     }
 
+    public bool NotifyEquippedItemChanged(ItemInstance changedItem)
+    {
+        if (changedItem == null)
+            return false;
+
+        foreach (InventoryItem equippedItem
+                 in equippedItems.Values)
+        {
+            if (ReferenceEquals(
+                    equippedItem?.itemData,
+                    changedItem))
+            {
+                PublishChanged();
+                return true;
+            }
+        }
+        return false;
+    }
+
     private EquipResult ValidateEquip(InventoryItem item, EquipSlotType slotType)
     {
         if (item == null || item.itemData == null || item.itemData.definition == null)
