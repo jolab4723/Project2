@@ -36,27 +36,50 @@ public static class InventorySwapService
             return InventoryMoveResultData.Failed();
         }
 
-        grid.RemoveItem(otherItem);
+        if (!grid.TryRemoveItem(otherItem))
+        {
+            Debug.LogError(
+                "[InventorySwapService] 교환 대상 아이템을 Grid에서 제거하지 못했습니다.");
+
+            return InventoryMoveResultData.Failed();
+        }
 
         if (!grid.TryPlaceItem(
                 movingItem,
                 plan.MovingTo.X,
                 plan.MovingTo.Y))
         {
-            RestoreOtherItem(plan);
+            if (!RestoreOtherItem(plan))
+            {
+                Debug.LogError(
+                    "[InventorySwapService] 이동 아이템 배치 실패 후 교환 대상 아이템을 복구하지 못했습니다.");
+            }
+
             return InventoryMoveResultData.Failed();
         }
 
         if (!grid.TryPlaceItem(
-                otherItem,
-                plan.OtherTo.X,
-                plan.OtherTo.Y))
+        otherItem,
+        plan.OtherTo.X,
+        plan.OtherTo.Y))
         {
-            grid.RemoveItem(movingItem);
-            RestoreOtherItem(plan);
+            bool movingItemRemoved =
+                grid.TryRemoveItem(movingItem);
+
+            bool otherItemRestored =
+                movingItemRemoved &&
+                RestoreOtherItem(plan);
+
+            if (!movingItemRemoved || !otherItemRestored)
+            {
+                Debug.LogError(
+                    "[InventorySwapService] 교환 실패 후 Grid 상태를 복구하지 못했습니다.");
+            }
+
             return InventoryMoveResultData.Failed();
         }
 
+        // 두 배치가 모두 성공했을 때만 여기까지 온다.
         return InventoryMoveResultData.Swapped(
             movingItem,
             plan.MovingTo.X,
@@ -115,17 +138,19 @@ public static class InventorySwapService
         return TryCommitPlan(plan);
     }
 
-    private static void RestoreOtherItem(InventorySwapPlan plan)
+    private static bool RestoreOtherItem(InventorySwapPlan plan)
     {
-        if (plan.Grid.TryPlaceItem(
-                plan.OtherItem,
-                plan.OtherOriginal.Rect.X,
-                plan.OtherOriginal.Rect.Y))
-        {
-            return;
-        }
+        InventoryItem otherItem = plan.OtherItem;
 
-        Debug.LogError(
-            "[InventorySwapService] 스왑 롤백 중 대상 아이템을 원래 위치에 복구하지 못했습니다.");
+        if (otherItem == null || plan.Grid == null)
+            return false;
+
+        otherItem.isRotated =
+            plan.OtherOriginal.IsRotated;
+
+        return plan.Grid.TryPlaceItem(
+            otherItem,
+            plan.OtherOriginal.Rect.X,
+            plan.OtherOriginal.Rect.Y);
     }
 }

@@ -344,12 +344,22 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
             inventoryItem);
     }
 
-    public void DetachFromCurrentSlotOrGrid()
+    public bool TryDetachFromCurrentSlotOrGrid()
     {
+        if (inventoryItem == null)
+            return false;
+
         if (IsEquipped)
+        {
+            if (currentEquipSlot == null)
+                return false;
+
             currentEquipSlot.ClearItemUI();
-        else
-            currentGrid.RemoveItem(inventoryItem);
+            return true;
+        }
+
+        return currentGrid != null &&
+               currentGrid.TryRemoveItem(inventoryItem);
     }
 
     public void MoveByDelta(Vector2 delta)
