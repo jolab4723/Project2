@@ -20,6 +20,8 @@ public class ShopController : MonoBehaviour
 
     public bool TradeItem(ItemUI itemUI, InventoryGrid fromGrid)
     {
+        if (itemUI == null || fromGrid == null)
+            return false;
         if (fromGrid == playerGrid)
         {
             if (!IsTradingToShop(fromGrid, itemUI))
@@ -28,7 +30,7 @@ public class ShopController : MonoBehaviour
             bool success = RequestSell(itemUI, cell.x, cell.y);
 
             if (!success)
-                itemUI.ReturnToOriginalPosition();
+                RestoreItemAfterFailedTrade(itemUI);
 
             return true;
         }
@@ -41,7 +43,7 @@ public class ShopController : MonoBehaviour
             bool success = RequestBuy(itemUI, cell.x, cell.y);
 
             if (!success)
-                itemUI.ReturnToOriginalPosition();
+                RestoreItemAfterFailedTrade(itemUI);
             return true;
         }
 
@@ -67,7 +69,7 @@ public class ShopController : MonoBehaviour
 
     public bool ConfirmBuy(ItemUI itemUI, int targetX, int targetY)
     {
-        InventoryItem item = itemUI.Item;
+        InventoryItem item = itemUI?.Item;
 
         TradeResult result = tradeService.TryBuy(
             item,
@@ -99,7 +101,7 @@ public class ShopController : MonoBehaviour
 
     public bool ConfirmSell(ItemUI itemUI, int targetX, int targetY)
     {
-        InventoryItem item = itemUI.Item;
+        InventoryItem item = itemUI?.Item;
 
         TradeResult result = tradeService.TrySell(
             item,
@@ -171,7 +173,8 @@ public class ShopController : MonoBehaviour
 
     private string GetTradeMessage(TradeResult result, InventoryItem item)
     {
-        string itemName = item != null ? item.itemData.definition.itemName : "아이템";
+        string itemName =
+        item?.itemData?.definition != null ? item.itemData.definition.itemName : "아이템";
 
         switch (result)
         {
@@ -184,8 +187,22 @@ public class ShopController : MonoBehaviour
             case TradeResult.InvalidItem:
                 return "유효하지 않은 아이템입니다.";
 
+            case TradeResult.TransferFailed:
+                return $"{itemName} 이동 처리 중 거래에 실패했습니다.";
             default:
                 return "거래에 실패했습니다.";
         }
+    }
+
+    private void RestoreItemAfterFailedTrade(ItemUI itemUI)
+    {
+        if (itemUI != null &&
+            itemUI.TryReturnToOriginalPosition())
+        {
+            return;
+        }
+
+        Debug.LogError(
+            "[ShopController] 거래 실패 후 아이템을 원래 위치로 복구하지 못했습니다.");
     }
 }
