@@ -1,34 +1,46 @@
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Reflection;
 using ExcelDataReader;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using DataSystem.Excel;
 
 namespace DataSystem
 {
     public static class ItemTableExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/JSONFile";
-        private const string DefaultJsonFileName = "item_table_structured.json";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/ItemData/1. ExcelFile/ItemSubStatData.xlsx";
 
         [MenuItem("DataLoader/Item Table/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
         {
-            string excelPath = EditorUtility.OpenFilePanel("Select structured item table", Application.dataPath, "xlsx");
+            string excelPath = ResolveExcelPath();
             if (string.IsNullOrEmpty(excelPath))
                 return;
 
             EnsureAssetFolder(DefaultJsonFolder);
             string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
-            string jsonPath = EditorUtility.SaveFilePanel("Save item table JSON", defaultAbsoluteFolder, DefaultJsonFileName, "json");
+            string suggestedJsonFileName = Path.GetFileNameWithoutExtension(excelPath) + ".json";
+            string jsonPath = EditorUtility.SaveFilePanel("Save item table JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
             Convert(excelPath, jsonPath);
+        }
+
+        /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
+        private static string ResolveExcelPath()
+        {
+            string defaultAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
+            if (File.Exists(defaultAbsolutePath))
+            {
+                Debug.Log("[ItemTable] 사전 설정된 엑셀 파일을 사용합니다: " + DefaultExcelPath);
+                return defaultAbsolutePath;
+            }
+
+            return EditorUtility.OpenFilePanel("Select structured item table", Application.dataPath, "xlsx");
         }
 
         public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
@@ -47,11 +59,13 @@ namespace DataSystem
                 do
                 {
                     string sheetName = reader.Name;
-                    List<Dictionary<string, string>> rows = ReadSheetRows(reader);
+                    List<Dictionary<string, string>> rows = ExcelSheetReader.ReadSheetRows(reader);
                     ApplyRowsToData(sheetName, rows, data);
                 }
                 while (reader.NextResult());
             }
+
+            ApplyMaxValueFallback(data);
 
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
@@ -62,172 +76,38 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[ItemTable] JSON generated: {jsonAbsolutePath}\n" +
-                      $"Items: {data.itemDefinitions.Count}, Weapons: {data.weaponDefinitions.Count}, Armors: {data.armorDefinitions.Count}, Options: {data.optionDefinitions.Count}");
-        }
-
-        private static List<Dictionary<string, string>> ReadSheetRows(IExcelDataReader reader)
-        {
-            List<Dictionary<string, string>> result = new List<Dictionary<string, string>>();
-            List<string> headers = new List<string>();
-            bool headerRead = false;
-
-            while (reader.Read())
-            {
-                if (!headerRead)
-                {
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        string header = CellToString(reader.GetValue(i));
-                        headers.Add(header);
-                    }
-
-                    headerRead = true;
-                    continue;
-                }
-
-                Dictionary<string, string> row = new Dictionary<string, string>();
-                bool hasData = false;
-
-                for (int i = 0; i < reader.FieldCount && i < headers.Count; i++)
-                {
-                    string header = headers[i];
-                    if (string.IsNullOrWhiteSpace(header))
-                        continue;
-
-                    string value = CellToString(reader.GetValue(i));
-                    if (!string.IsNullOrWhiteSpace(value))
-                        hasData = true;
-
-                    row[header] = value;
-                }
-
-                if (hasData)
-                    result.Add(row);
-            }
-
-            return result;
+                      $"SubStatPools: {data.subStatPools.Count}, ElementalBonusConfig: {(data.elementalBonusConfig != null ? "있음" : "없음")}");
         }
 
         private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, ItemTableJsonData data)
         {
             switch (sheetName)
             {
-                case "ItemDefinitions":
-                    data.itemDefinitions = MapRows<ItemDefinitionRow>(rows);
-                    break;
-                case "EquipmentDefinitions":
-                    data.equipmentDefinitions = MapRows<EquipmentDefinitionRow>(rows);
-                    break;
-                case "WeaponDefinitions":
-                    data.weaponDefinitions = MapRows<WeaponDefinitionRow>(rows);
-                    break;
-                case "ArmorDefinitions":
-                    data.armorDefinitions = MapRows<ArmorDefinitionRow>(rows);
-                    break;
-                case "PotionDefinitions":
-                    data.potionDefinitions = MapRows<PotionDefinitionRow>(rows);
-                    break;
-                case "RelicDefinitions":
-                    data.relicDefinitions = MapRows<RelicDefinitionRow>(rows);
-                    break;
-                case "OptionDefinitions":
-                    data.optionDefinitions = MapRows<OptionDefinitionRow>(rows);
-                    break;
                 case "SubStatPools":
-                    data.subStatPools = MapRows<SubStatPoolRow>(rows);
+                    data.subStatPools = ExcelSheetReader.MapRows<SubStatPoolRow>(rows);
                     break;
-                case "RarityOptionRules":
-                    data.rarityOptionRules = MapRows<RarityOptionRuleRow>(rows);
-                    break;
+
                 case "ElementalBonusConfigs":
-                    data.elementalBonusConfigs = MapRows<ElementalBonusConfigRow>(rows);
+                    List<ElementalBonusConfigRow> configs = ExcelSheetReader.MapRows<ElementalBonusConfigRow>(rows);
+                    if (configs.Count > 1)
+                        Debug.LogWarning($"[ItemTable] ElementalBonusConfigs는 전역 설정 하나만 써야 하는데 {configs.Count}개 행이 있습니다. 첫 번째 행만 사용합니다.");
+                    data.elementalBonusConfig = configs.Count > 0 ? configs[0] : null;
                     break;
-                case "BuffDefinitions":
-                    data.buffDefinitions = MapRows<BuffDefinitionRow>(rows);
-                    break;
-                case "UniqueEffectDefinitions":
-                    data.uniqueEffectDefinitions = MapRows<UniqueEffectDefinitionRow>(rows);
-                    break;
-                case "DisplayNames":
-                    data.displayNames = MapRows<DisplayNameRow>(rows);
-                    break;
-                case "DraftSourceRows":
-                    data.draftSourceRows = MapRows<DraftSourceRow>(rows);
+
+                default:
+                    Debug.LogWarning($"[ItemTable] 알 수 없는 시트라 건너뜁니다: {sheetName}");
                     break;
             }
         }
 
-        private static List<T> MapRows<T>(List<Dictionary<string, string>> rows) where T : new()
+        /// <summary>maxValue가 minValue보다 작으면(비어서 0으로 들어온 경우 포함) minValue로 채운다.</summary>
+        private static void ApplyMaxValueFallback(ItemTableJsonData data)
         {
-            List<T> result = new List<T>();
-            FieldInfo[] fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (Dictionary<string, string> row in rows)
+            foreach (SubStatPoolRow row in data.subStatPools)
             {
-                T item = new T();
-
-                foreach (FieldInfo field in fields)
-                {
-                    if (!row.TryGetValue(field.Name, out string value))
-                        continue;
-
-                    field.SetValue(item, ConvertValue(value, field.FieldType));
-                }
-
-                result.Add(item);
+                if (row.maxValue < row.minValue)
+                    row.maxValue = row.minValue;
             }
-
-            return result;
-        }
-
-        private static object ConvertValue(string value, Type targetType)
-        {
-            if (targetType == typeof(string))
-                return value ?? string.Empty;
-
-            if (targetType == typeof(int))
-            {
-                if (int.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out int intValue))
-                    return intValue;
-                if (float.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out float floatValue))
-                    return Mathf.RoundToInt(floatValue);
-                return 0;
-            }
-
-            if (targetType == typeof(float))
-            {
-                if (float.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out float floatValue))
-                    return floatValue;
-                return 0f;
-            }
-
-            if (targetType == typeof(bool))
-            {
-                string lower = (value ?? string.Empty).Trim().ToLowerInvariant();
-                return lower == "true" || lower == "1" || lower == "yes" || lower == "y" || lower == "o" || lower == "체크";
-            }
-
-            return null;
-        }
-
-        private static string CellToString(object value)
-        {
-            if (value == null)
-                return string.Empty;
-
-            if (value is double doubleValue)
-                return doubleValue.ToString(CultureInfo.InvariantCulture);
-
-            if (value is float floatValue)
-                return floatValue.ToString(CultureInfo.InvariantCulture);
-
-            if (value is int intValue)
-                return intValue.ToString(CultureInfo.InvariantCulture);
-
-            if (value is bool boolValue)
-                return boolValue ? "true" : "false";
-
-            return value.ToString().Trim();
         }
 
         private static void EnsureAssetFolder(string assetFolder)

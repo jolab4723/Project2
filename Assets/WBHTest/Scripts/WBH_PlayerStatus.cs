@@ -47,6 +47,7 @@ public class WBH_PlayerStatus : MonoBehaviour
     public void Initialize(T_PlayerController playerController)
     {
         this.playerController = playerController;
+        currentHp = maxHp;
     }
 
     public void ApplyDamage(float damage)
@@ -54,6 +55,8 @@ public class WBH_PlayerStatus : MonoBehaviour
         damage = Mathf.Max(minDamage, damage - defensePower);
 
         currentHp -= damage;
+
+        Debug.Log($"현재 체력 {currentHp}");
 
         currentHp = Mathf.Max(currentHp, 0);
 

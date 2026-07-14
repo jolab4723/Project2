@@ -53,6 +53,8 @@ public class WBH_EnemyStatus : MonoBehaviour
 
         currentHp -= damage;
 
+        Debug.Log($"남은 체력 {currentHp}");
+
         currentHp = Mathf.Max(currentHp, 0);
     }
 

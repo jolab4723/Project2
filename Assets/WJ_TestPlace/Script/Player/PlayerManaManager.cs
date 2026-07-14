@@ -5,10 +5,9 @@ using UnityEngine;
 /// 최대 마나(MaxMana)는 PlayerStatManager가 계산한 캐릭터+장비+버프 합산 결과를 그대로 따라가고,
 /// 현재 마나(CurrentMana)는 여기서 독립적으로 들고 관리한다.
 ///
-/// !! PlayerStat에 있던 currentMana/RegenerateMana를 이쪽으로 옮겨왔습니다.
-///    (예전에 "체력도 나중에 별도 클래스로 분리할 예정"이라고 하신 것과 같은 방향으로,
-///    마나를 리소스 관리 클래스로 먼저 분리했습니다. maxMana 자체는 여전히 PlayerStat 소관입니다 -
-///    "파생된 스탯값"이라 스탯 시스템에 두는 게 맞다고 판단했습니다.)
+/// !! MaxMana를 int에서 float로 전환함 (CurrentMana는 원래부터 float).
+///    UseMana(소모성)는 Mathf.Floor, RestoreMana(증가성)는 Mathf.Ceil로 amount를 보정해서 적용한다.
+///    SetCurrentMana(세이브 로드 등 절대값 지정)는 보정 없이 그대로 clamp만 한다.
 /// </summary>
 public class PlayerManaManager : MonoBehaviour
 {
@@ -32,9 +31,9 @@ public class PlayerManaManager : MonoBehaviour
     }
 
     /// <summary>PlayerStatManager.Stat.maxMana를 그대로 따라가는 값. 외부에서 직접 바꿀 수 없음.</summary>
-    public int MaxMana { get; private set; }
+    public float MaxMana { get; private set; }
 
-    /// <summary>현재 마나. 소수점 회복(mpRegen이 소수일 때)을 위해 float로 관리.</summary>
+    /// <summary>현재 마나.</summary>
     public float CurrentMana { get; private set; }
 
     /// <summary>마나가 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
@@ -89,7 +88,7 @@ public class PlayerManaManager : MonoBehaviour
     /// </summary>
     private void RefreshMaxMana()
     {
-        int newMax = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.maxMana : 0;
+        float newMax = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.maxMana : 0f;
         if (newMax == MaxMana)
             return;
 
@@ -111,7 +110,7 @@ public class PlayerManaManager : MonoBehaviour
 
     /// <summary>
     /// 세이브 데이터 로드 등 외부에서 정확한 값으로 직접 설정할 때 사용. 0~MaxMana로 clamp된다.
-    /// UseMana/RestoreMana와 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름.
+    /// UseMana/RestoreMana와 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름 (올림/버림 보정 없음).
     /// </summary>
     public void SetCurrentMana(float value)
     {
@@ -126,29 +125,31 @@ public class PlayerManaManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 마나를 amount만큼 소모한다. 부족하면 아무 것도 깎지 않고 false를 반환한다.
-    /// (스킬 시전 실패 처리 등에 사용. 무조건 깎이길 원하면 필요할 때 별도 메서드로 추가하면 됨)
+    /// 마나를 amount만큼 소모한다. 소모성 처리라 amount는 Mathf.Floor로 버림 처리한 뒤 적용한다.
+    /// 부족하면 아무 것도 깎지 않고 false를 반환한다.
     /// </summary>
     public bool UseMana(float amount)
     {
-        if (amount <= 0f)
+        float cost = Mathf.Floor(amount);
+        if (cost <= 0f)
             return true;
 
-        if (CurrentMana < amount)
+        if (CurrentMana < cost)
             return false;
 
-        CurrentMana -= amount;
+        CurrentMana -= cost;
         OnManaChanged?.Invoke();
         return true;
     }
 
-    /// <summary>마나를 amount만큼 회복한다 (최대치를 넘지 않음).</summary>
+    /// <summary>마나를 amount만큼 회복한다 (최대치를 넘지 않음). 증가성 처리라 amount는 Mathf.Ceil로 올림 처리한 뒤 적용한다.</summary>
     public void RestoreMana(float amount)
     {
-        if (amount <= 0f)
+        float restoreAmount = Mathf.Ceil(amount);
+        if (restoreAmount <= 0f)
             return;
 
-        CurrentMana = Mathf.Min(MaxMana, CurrentMana + amount);
+        CurrentMana = Mathf.Min(MaxMana, CurrentMana + restoreAmount);
         OnManaChanged?.Invoke();
     }
 }

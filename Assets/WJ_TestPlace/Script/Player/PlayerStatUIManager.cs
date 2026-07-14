@@ -59,7 +59,7 @@ public class PlayerStatUIManager : MonoBehaviour
         if (Stat == null)
             return;
 
-        int currentHealth = PlayerHealthManager.Instance != null ? PlayerHealthManager.Instance.CurrentHealth : 0;
+        float currentHealth = PlayerHealthManager.Instance != null ? PlayerHealthManager.Instance.CurrentHealth : 0f;
 
         if (healthSlider != null)
             healthSlider.value = Stat.maxHealth > 0 ? (float)currentHealth / Stat.maxHealth : 0f;

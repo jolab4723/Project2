@@ -63,7 +63,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     private void Update()
     {
-        if (IsDead)
+        if (status.IsDead)
             return;
 
         UpdateStats();
@@ -73,7 +73,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     public void NormalAttack()
     {
-        if (IsDead || !CanAttack) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
+        if (status.IsDead || !CanAttack) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
             return;
 
         stateMachine.ChangeState(PlayerState.Attack);
@@ -119,10 +119,10 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     public void TakeDamage(float damage)
     {
-        if (IsDead)
-            return;
-
         status.ApplyDamage(damage);
+
+        if (status.IsDead)
+            return;
 
         stateMachine.ChangeState(PlayerState.Hit);
     }

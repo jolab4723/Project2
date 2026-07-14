@@ -8,7 +8,7 @@ namespace Core
     {
         public int playerLevel;
         public float playerExp;
-        public int currentHealth;
+        public float currentHealth;
         public float currentMana;
         public int gold;
     }
