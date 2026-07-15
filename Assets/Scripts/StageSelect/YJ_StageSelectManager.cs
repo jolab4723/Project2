@@ -5,9 +5,14 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
+/// <summary>
+/// Act 규칙에 맞는 노드 맵 생성, 노드 선택 진행, 경로 활성화와 자동 스크롤을 총괄합니다.
+/// </summary>
 public class YJ_StageSelectManager : MonoBehaviour
 {
+    // 노드 프리팹을 Resources.Load로 불러올 때 사용하는 공통 폴더 경로입니다.
     private const string PrefabPath = "Prefabs/Map/StageNode/";
+    // 확률에 따라 생성될 수 있는 일반 중간층 노드 종류 목록입니다.
     private static readonly StageNodeType[] MiddleNodeTypes =
     {
         StageNodeType.Battle,
@@ -15,55 +20,89 @@ public class YJ_StageSelectManager : MonoBehaviour
         StageNodeType.Camp,
         StageNodeType.Event
     };
+    // Act 1의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act1Rules =
         new(11, new[] { 6 }, 40f, 10f, 35f, 15f);
+    // Act 2의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act2Rules =
         new(12, new[] { 5, 9 }, 40f, 10f, 30f, 20f);
+    // Act 3의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act3Rules =
         new(13, new[] { 4, 7, 10 }, 30f, 10f, 35f, 25f);
 
     [Header("Act")]
+    // 현재 생성하고 진행할 Act입니다.
     [SerializeField] private StageActType currentAct = StageActType.Act1;
+    // 완료된 가장 높은 층 번호이며 다음 선택 가능 층 계산에 사용합니다.
     [SerializeField, Min(0)] private int clearedFloor;
+    // 마지막으로 실제 선택하여 클리어한 노드의 ID입니다.
     [SerializeField] private string lastClearedNodeId;
+    // 0이 아니면 동일한 노드 배치를 재현하는 고정 Seed로 사용합니다.
     [SerializeField] private int mapSeed;
 
     [Header("Progression Test")]
+    // 테스트 중 클릭 즉시 노드를 완료 처리하고 다음 층을 활성화할지 결정합니다.
     [SerializeField] private bool completeNodeOnClick = true;
 
     [Header("Scroll Focus")]
+    // 노드 선택 후 다음 층을 ScrollRect 중앙으로 자동 이동할지 결정합니다.
     [FormerlySerializedAs("centerSelectedNode")]
     [SerializeField] private bool centerNextFloor = true;
+    // 다음 층이 ScrollRect 중앙까지 이동하는 데 걸리는 시간입니다.
     [FormerlySerializedAs("nodeCenterDuration")]
     [SerializeField, Min(0f)] private float floorCenterDuration = 0.25f;
 
     [Header("Map References")]
+    // 맵 Content의 세로 스크롤 위치를 제어할 ScrollRect입니다.
     [SerializeField] private ScrollRect mapScrollRect;
+    // 층별 노드 개수와 위치를 계산하는 컨트롤러입니다.
     [SerializeField] private YJ_StageNodeLayoutController nodeLayoutController;
+    // 노드 연결 그래프와 라인 UI를 생성하는 컨트롤러입니다.
     [SerializeField] private YJ_StageNodeLineController nodeLineController;
 
+    // 현재 맵에 생성된 모든 노드 UI 컴포넌트 목록입니다.
     private readonly List<YJ_StageNodeHover> generatedNodes = new();
+    // 층 인덱스별로 생성된 노드 데이터를 묶어 보관합니다.
     private readonly List<List<YJ_StageNodeData>> generatedFloors = new();
+    // 노드 종류별로 Resources에서 불러온 프리팹을 캐싱합니다.
     private readonly Dictionary<StageNodeType, GameObject> nodePrefabs = new();
+    // 노드 ID로 데이터를 빠르게 찾기 위한 런타임 조회 사전입니다.
     private readonly Dictionary<string, YJ_StageNodeData> nodesById = new();
+    // 마지막 클리어 노드에서 도달 가능한 노드 ID를 재사용해 저장합니다.
     private readonly HashSet<string> reachableNodeIds = new();
+    // 도달 가능한 노드를 너비 우선 탐색할 때 재사용하는 큐입니다.
     private readonly Queue<YJ_StageNodeData> nodesToVisit = new();
 
+    // 현재 맵 생성에서 노드 종류와 연결을 결정할 난수 생성기입니다.
     private System.Random random;
+    // 현재 Act에 대응하는 층 수와 노드 생성 규칙입니다.
     private ActRules currentRules;
+    // 다음 층 중앙 이동을 실행 중인 코루틴입니다.
     private Coroutine floorCenterRoutine;
 
+    // 노드 UI가 현재 씬의 스테이지 선택 매니저를 찾을 때 사용하는 Singleton 참조입니다.
     public static YJ_StageSelectManager Instance { get; private set; }
+    // 현재 사용자가 클릭하여 선택한 노드 UI입니다.
     public YJ_StageNodeHover SelectedNode { get; private set; }
+    // 외부 시스템에서 현재 Act를 읽을 때 사용합니다.
     public StageActType CurrentAct => currentAct;
+    // 현재 Act 규칙의 전체 층 수를 반환합니다.
     public int TotalFloors => currentRules.floorCount;
+    // 현재까지 완료된 가장 높은 층을 반환합니다.
     public int ClearedFloor => clearedFloor;
+    // 마지막으로 실제 클리어한 노드 ID를 저장 또는 조회할 때 사용합니다.
     public string LastClearedNodeId => lastClearedNodeId;
+    // 현재 플레이어가 선택할 수 있는 다음 층 번호를 반환합니다.
     public int CurrentSelectableFloor => clearedFloor >= TotalFloors ? 0 : clearedFloor + 1;
+    // 이번 맵 생성에 실제로 사용된 Seed를 반환합니다.
     public int GeneratedSeed { get; private set; }
 
+    // 노드가 유효하게 선택된 직후 해당 노드 데이터를 외부 시스템에 전달합니다.
     public event Action<YJ_StageNodeData> NodeSelected;
 
+    /// <summary>
+    /// Singleton 중복을 방지하고 현재 Act 규칙 및 필수 컴포넌트 참조를 준비합니다.
+    /// </summary>
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -78,17 +117,26 @@ public class YJ_StageSelectManager : MonoBehaviour
         FindReferences();
     }
 
+    /// <summary>
+    /// 씬 시작 시 현재 설정을 사용해 전체 노드 맵을 생성합니다.
+    /// </summary>
     private void Start()
     {
         GenerateMap();
     }
 
+    /// <summary>
+    /// 매니저가 파괴될 때 Singleton 참조를 안전하게 해제합니다.
+    /// </summary>
     private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
     }
 
+    /// <summary>
+    /// Act 규칙에 따라 모든 층의 노드와 라인을 새로 만들고 진행 상태를 반영합니다.
+    /// </summary>
     public void GenerateMap()
     {
         currentRules = GetRules(currentAct);
@@ -123,6 +171,10 @@ public class YJ_StageSelectManager : MonoBehaviour
             mapScrollRect.verticalNormalizedPosition = 0f;
     }
 
+    // 노드를 선택했을때 호출되는 메서드
+    /// <summary>
+    /// 클릭된 노드가 현재 선택 가능한지 검증하고 단일 선택 상태 및 선택 이벤트를 처리합니다.
+    /// </summary>
     public bool SelectNode(YJ_StageNodeHover node)
     {
         if (node == null || !node.IsInteractable)
@@ -148,9 +200,14 @@ public class YJ_StageSelectManager : MonoBehaviour
         if (completeNodeOnClick)
             CompleteSelectedNode();
 
+        print("노드 선택");
+
         return true;
     }
 
+    /// <summary>
+    /// 현재 선택 노드를 클리어 처리하고 다음 층 노드와 라인 도달 상태를 갱신합니다.
+    /// </summary>
     public void CompleteSelectedNode()
     {
         if (SelectedNode == null || SelectedNode.NodeData == null)
@@ -164,6 +221,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         RefreshNodeAvailability();
     }
 
+    /// <summary>
+    /// 저장 데이터나 디버그 입력으로 클리어 층을 직접 변경하고 노드 상태를 다시 계산합니다.
+    /// </summary>
     public void SetClearedFloor(int floor)
     {
         clearedFloor = Mathf.Clamp(floor, 0, TotalFloors);
@@ -176,6 +236,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         RefreshNodeAvailability();
     }
 
+    /// <summary>
+    /// 현재 선택 노드의 선택 표현을 해제하고 선택 참조를 비웁니다.
+    /// </summary>
     public void ClearSelection()
     {
         if (SelectedNode == null)
@@ -185,12 +248,18 @@ public class YJ_StageSelectManager : MonoBehaviour
         SelectedNode = null;
     }
 
+    /// <summary>
+    /// 선택 중인 노드가 비활성화될 때 남아 있는 선택 참조를 정리합니다.
+    /// </summary>
     public void NotifyNodeDisabled(YJ_StageNodeHover node)
     {
         if (SelectedNode == node)
             SelectedNode = null;
     }
 
+    /// <summary>
+    /// 지정한 층이 유효하면 기존 이동을 교체하고 세로 중앙 스크롤을 시작합니다.
+    /// </summary>
     private void CenterFloorVertically(int floor)
     {
         if (mapScrollRect == null || mapScrollRect.content == null ||
@@ -203,6 +272,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         floorCenterRoutine = StartCoroutine(CenterFloorVerticallyRoutine(floor));
     }
 
+    /// <summary>
+    /// 지정한 층 전체 노드의 세로 중심을 계산해 ScrollRect를 부드럽게 이동시킵니다.
+    /// </summary>
     private IEnumerator CenterFloorVerticallyRoutine(int floor)
     {
         yield return null;
@@ -283,6 +355,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         floorCenterRoutine = null;
     }
 
+    /// <summary>
+    /// 한 층의 노드 개수와 종류 및 위치를 결정하고 프리팹 인스턴스를 초기화합니다.
+    /// </summary>
     private void GenerateFloor(int floor, RectTransform nodesLayer)
     {
         int nodeCount = nodeLayoutController.GetNodeCount(
@@ -345,6 +420,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 시작, 보스, 캠프, 고정 엘리트 규칙을 우선 적용하고 나머지는 확률 종류를 반환합니다.
+    /// </summary>
     private StageNodeType GetNodeType(int floor)
     {
         if (floor == 1)
@@ -362,6 +440,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         return GetRandomMiddleNodeType();
     }
 
+    /// <summary>
+    /// 현재 Act 가중치와 실제 존재하는 프리팹을 기준으로 중간층 노드 종류를 추첨합니다.
+    /// </summary>
     private StageNodeType GetRandomMiddleNodeType()
     {
         float totalWeight = 0f;
@@ -390,6 +471,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         return fallback;
     }
 
+    /// <summary>
+    /// 해당 종류의 프리팹이 있을 때만 Act 규칙에 정의된 음수가 아닌 가중치를 반환합니다.
+    /// </summary>
     private float GetAvailableNodeWeight(StageNodeType type)
     {
         if (GetPrefab(type) == null)
@@ -407,6 +491,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         return Mathf.Max(0f, weight);
     }
 
+    /// <summary>
+    /// 클리어 층과 마지막 노드의 연결 그래프를 기준으로 모든 노드 및 라인 상태를 갱신합니다.
+    /// </summary>
     private void RefreshNodeAvailability()
     {
         int selectableFloor = CurrentSelectableFloor;
@@ -440,6 +527,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         nodeLineController?.RefreshReachability(reachableIds, restrictToConnectedNodes);
     }
 
+    /// <summary>
+    /// 시작 노드의 nextNodeIds를 너비 우선 탐색하여 앞으로 도달 가능한 모든 노드를 찾습니다.
+    /// </summary>
     private HashSet<string> FindReachableNodeIds(YJ_StageNodeData startNode)
     {
         reachableNodeIds.Clear();
@@ -462,6 +552,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         return reachableNodeIds;
     }
 
+    /// <summary>
+    /// 생성된 노드 중 지정한 ID와 일치하는 데이터를 사전에서 조회합니다.
+    /// </summary>
     private YJ_StageNodeData FindGeneratedNodeData(string nodeId)
     {
         return !string.IsNullOrEmpty(nodeId) && nodesById.TryGetValue(nodeId, out YJ_StageNodeData node)
@@ -469,6 +562,9 @@ public class YJ_StageSelectManager : MonoBehaviour
             : null;
     }
 
+    /// <summary>
+    /// 맵 재생성 전에 스크롤 효과, 선택 상태, 노드 캐시와 기존 노드 오브젝트를 정리합니다.
+    /// </summary>
     private void ClearGeneratedNodes()
     {
         if (floorCenterRoutine != null)
@@ -486,6 +582,9 @@ public class YJ_StageSelectManager : MonoBehaviour
         nodeLayoutController?.ClearNodes();
     }
 
+    /// <summary>
+    /// 일반 노드 프리팹과 현재 Act 보스 프리팹을 Resources에서 불러옵니다.
+    /// </summary>
     private void LoadPrefabs()
     {
         nodePrefabs.Clear();
@@ -505,6 +604,9 @@ public class YJ_StageSelectManager : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 지정한 Resources 이름의 프리팹을 노드 종류별 캐시에 등록합니다.
+    /// </summary>
     private void LoadPrefab(StageNodeType type, string prefabName, bool logError = true)
     {
         GameObject prefab = Resources.Load<GameObject>(PrefabPath + prefabName);
@@ -514,12 +616,18 @@ public class YJ_StageSelectManager : MonoBehaviour
             Debug.LogError($"Could not load {PrefabPath}{prefabName}.", this);
     }
 
+    /// <summary>
+    /// 노드 종류에 대응하는 캐시된 프리팹을 반환합니다.
+    /// </summary>
     private GameObject GetPrefab(StageNodeType type)
     {
         nodePrefabs.TryGetValue(type, out GameObject prefab);
         return prefab;
     }
 
+    /// <summary>
+    /// 레이아웃, ScrollRect, 라인 컨트롤러 참조를 찾고 필요한 컴포넌트가 없으면 추가합니다.
+    /// </summary>
     private void FindReferences()
     {
         if (nodeLayoutController == null)
@@ -538,6 +646,9 @@ public class YJ_StageSelectManager : MonoBehaviour
             nodeLineController = gameObject.AddComponent<YJ_StageNodeLineController>();
     }
 
+    /// <summary>
+    /// 요청한 Act에 대응하는 고정 생성 규칙을 반환합니다.
+    /// </summary>
     private static ActRules GetRules(StageActType act)
     {
         return act switch
@@ -549,15 +660,27 @@ public class YJ_StageSelectManager : MonoBehaviour
         };
     }
 
+    /// <summary>
+    /// 한 Act의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치를 묶는 불변 규칙입니다.
+    /// </summary>
     private readonly struct ActRules
     {
+        // Act의 보스층을 포함한 전체 층 수입니다.
         public readonly int floorCount;
+        // 무작위 종류 대신 엘리트로 고정할 층 번호 목록입니다.
         public readonly int[] eliteFloors;
+        // 일반 전투 노드가 선택될 상대 가중치입니다.
         public readonly float battleWeight;
+        // 엘리트 전투 노드가 선택될 상대 가중치입니다.
         public readonly float eliteWeight;
+        // 캠프 노드가 선택될 상대 가중치입니다.
         public readonly float campWeight;
+        // 이벤트 노드가 선택될 상대 가중치입니다.
         public readonly float eventWeight;
 
+        /// <summary>
+        /// Act의 전체 맵 생성 규칙 값을 초기화합니다.
+        /// </summary>
         public ActRules(
             int floorCount,
             int[] eliteFloors,

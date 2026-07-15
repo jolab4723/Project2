@@ -2,37 +2,57 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 인접한 층의 노드 연결 규칙을 만들고 NodeLine UI를 생성하며 경로별 알파를 관리합니다.
+/// </summary>
 [DisallowMultipleComponent]
 public class YJ_StageNodeLineController : MonoBehaviour
 {
+    // Inspector에 프리팹이 없을 때 NodeLine을 불러올 Resources 경로입니다.
     private const string NodeLinePrefabPath = "Prefabs/Map/StageNode/NodeLine";
 
     [Header("References")]
+    // 생성된 모든 연결선을 배치할 UI 레이어입니다.
     [SerializeField] private RectTransform linesLayer;
+    // 두 노드 사이의 선을 표현할 UI 프리팹입니다.
     [SerializeField] private GameObject nodeLinePrefab;
 
     [Header("Connections")]
+    // 일반적인 인접 층 연결 후보로 허용할 최대 노드 거리입니다.
     [SerializeField, Min(0f)] private float maximumConnectionDistance = 600f;
 
     [Header("Reachability")]
+    // 도달할 수 없는 노드와 연결된 선에 곱할 알파 비율입니다.
     [SerializeField, Range(0f, 1f)] private float unreachableLineAlpha = 0.15f;
 
+    // 현재 맵에서 최종 채택된 시작 노드와 도착 노드 연결 목록입니다.
     private readonly List<NodeConnection> generatedConnections = new();
+    // 생성된 선의 연결 정보와 CanvasGroup을 함께 보관하는 목록입니다.
     private readonly List<ConnectionLineVisual> generatedLineVisuals = new();
+    // 라인 프리팹 하위 Graphic 검색 시 배열 할당을 줄이기 위해 재사용하는 목록입니다.
     private readonly List<Graphic> lineGraphics = new();
 
+    /// <summary>
+    /// 런타임 시작 시 LinesLayer 참조와 NodeLine 프리팹을 준비합니다.
+    /// </summary>
     private void Awake()
     {
         FindReferences();
         LoadPrefab();
     }
 
+    /// <summary>
+    /// Inspector 입력값이 유효한 거리 및 알파 범위를 벗어나지 않도록 보정합니다.
+    /// </summary>
     private void OnValidate()
     {
         maximumConnectionDistance = Mathf.Max(0f, maximumConnectionDistance);
         unreachableLineAlpha = Mathf.Clamp01(unreachableLineAlpha);
     }
 
+    /// <summary>
+    /// 기존 라인을 제거한 뒤 층별 연결 그래프를 다시 만들고 실제 UI 라인을 생성합니다.
+    /// </summary>
     public void Rebuild(
         IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
         System.Random random)
@@ -58,6 +78,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         GenerateConnectionLines();
     }
 
+    /// <summary>
+    /// 저장된 연결 및 시각 정보와 LinesLayer 아래의 기존 라인 오브젝트를 제거합니다.
+    /// </summary>
     public void ClearLines()
     {
         generatedConnections.Clear();
@@ -75,6 +98,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 현재 선택 경로에 포함되지 않는 노드와 연결된 라인의 알파를 낮춥니다.
+    /// </summary>
     public void RefreshReachability(ISet<string> reachableNodeIds, bool restrictToReachableNodes)
     {
         foreach (ConnectionLineVisual lineVisual in generatedLineVisuals)
@@ -90,12 +116,18 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 노드가 이미 클리어되었거나 현재 노드에서 앞으로 도달 가능한 경로인지 확인합니다.
+    /// </summary>
     private static bool IsOnActivePath(YJ_StageNodeData node, ISet<string> reachableNodeIds)
     {
         return node != null &&
                (node.cleared || reachableNodeIds != null && reachableNodeIds.Contains(node.id));
     }
 
+    /// <summary>
+    /// 모든 인접 층에 대해 필수 연결과 확률 기반 선택 연결을 만들고 nextNodeIds를 기록합니다.
+    /// </summary>
     private void BuildFloorConnections(
         IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
         System.Random random)
@@ -106,6 +138,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 node.nextNodeIds.Clear();
         }
 
+        // 아래 컬렉션은 층마다 Clear하여 재사용하므로 층 수만큼 반복 할당되지 않습니다.
         List<NodeConnection> candidates = new();
         List<NodeConnection> acceptedConnections = new();
         Dictionary<YJ_StageNodeData, int> candidateCounts = new();
@@ -175,6 +208,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 모든 현재 층 노드에 출구가 있고 모든 다음 층 노드에 입구가 생기도록
+    /// X 좌표 순서를 유지하는 교차 없는 필수 연결을 추가합니다.
+    /// </summary>
     private static void AddMandatoryConnections(
         List<YJ_StageNodeData> currentFloorNodes,
         List<YJ_StageNodeData> nextFloorNodes,
@@ -240,6 +277,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 동일한 시작 및 도착 노드 연결이 이미 목록에 있는지 확인합니다.
+    /// </summary>
     private static bool ContainsConnection(
         List<NodeConnection> connections,
         NodeConnection candidate)
@@ -256,6 +296,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 후보 연결이 현재까지 채택된 연결 중 하나와 교차하는지 확인합니다.
+    /// </summary>
     private static bool CrossesAnyLine(
         NodeConnection candidate,
         List<NodeConnection> acceptedConnections)
@@ -269,6 +312,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 선택 연결의 검사 순서가 편향되지 않도록 Fisher-Yates 방식으로 후보를 섞습니다.
+    /// </summary>
     private static void Shuffle(List<NodeConnection> connections, System.Random random)
     {
         for (int i = connections.Count - 1; i > 0; i--)
@@ -278,6 +324,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 끝점을 공유하지 않는 두 선분이 2차원 좌표상에서 서로 교차하는지 계산합니다.
+    /// </summary>
     private static bool LinesCross(NodeConnection first, NodeConnection second)
     {
         if (first.startNode == second.startNode ||
@@ -302,6 +351,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
                HaveOppositeSigns(firstStartSide, firstEndSide);
     }
 
+    /// <summary>
+    /// 부동소수점 오차 허용 범위를 적용해 두 외적값의 부호가 반대인지 확인합니다.
+    /// </summary>
     private static bool HaveOppositeSigns(float first, float second)
     {
         const float epsilon = 0.001f;
@@ -309,17 +361,26 @@ public class YJ_StageNodeLineController : MonoBehaviour
                (first < -epsilon && second > epsilon);
     }
 
+    /// <summary>
+    /// 두 2차원 벡터의 외적 스칼라값을 반환합니다.
+    /// </summary>
     private static float Cross(Vector2 first, Vector2 second)
     {
         return first.x * second.y - first.y * second.x;
     }
 
+    /// <summary>
+    /// 채택된 모든 연결 정보를 실제 NodeLine 프리팹 인스턴스로 변환합니다.
+    /// </summary>
     private void GenerateConnectionLines()
     {
         foreach (NodeConnection connection in generatedConnections)
             CreateConnectionLine(connection);
     }
 
+    /// <summary>
+    /// 한 연결의 중점, 길이와 각도를 계산해 두 노드 사이에 UI 라인을 배치합니다.
+    /// </summary>
     private void CreateConnectionLine(NodeConnection connection)
     {
         YJ_StageNodeData startNode = connection.startNode;
@@ -364,6 +425,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
             canvasGroup.alpha));
     }
 
+    /// <summary>
+    /// LinesLayer가 Content 전체를 덮도록 Stretch 기준값을 설정합니다.
+    /// </summary>
     private void PrepareLayer()
     {
         linesLayer.anchorMin = Vector2.zero;
@@ -373,6 +437,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         linesLayer.pivot = new Vector2(0.5f, 0.5f);
     }
 
+    /// <summary>
+    /// Inspector 참조가 없을 때 씬에서 LinesLayer를 찾아 캐싱합니다.
+    /// </summary>
     private void FindReferences()
     {
         if (linesLayer != null)
@@ -383,17 +450,28 @@ public class YJ_StageNodeLineController : MonoBehaviour
             linesLayer = linesLayerObject.GetComponent<RectTransform>();
     }
 
+    /// <summary>
+    /// Inspector에 NodeLine 프리팹이 없을 때 Resources에서 불러옵니다.
+    /// </summary>
     private void LoadPrefab()
     {
         if (nodeLinePrefab == null)
             nodeLinePrefab = Resources.Load<GameObject>(NodeLinePrefabPath);
     }
 
+    /// <summary>
+    /// 하나의 방향성 연결을 구성하는 시작 노드와 다음 층 도착 노드를 묶습니다.
+    /// </summary>
     private readonly struct NodeConnection
     {
+        // 라인이 출발하는 현재 층 노드입니다.
         public readonly YJ_StageNodeData startNode;
+        // 라인이 도착하는 다음 층 노드입니다.
         public readonly YJ_StageNodeData endNode;
 
+        /// <summary>
+        /// 시작 노드와 도착 노드로 연결 데이터를 생성합니다.
+        /// </summary>
         public NodeConnection(YJ_StageNodeData startNode, YJ_StageNodeData endNode)
         {
             this.startNode = startNode;
@@ -401,12 +479,21 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 생성된 라인의 경로 정보와 알파 제어 정보를 함께 보관합니다.
+    /// </summary>
     private readonly struct ConnectionLineVisual
     {
+        // 이 UI 라인이 표현하는 시작 및 도착 노드 연결입니다.
         public readonly NodeConnection connection;
+        // 경로 도달 가능 여부에 따라 전체 라인 알파를 변경할 CanvasGroup입니다.
         public readonly CanvasGroup canvasGroup;
+        // 도달 가능한 상태로 돌아갈 때 복원할 프리팹 원본 알파입니다.
         public readonly float originalAlpha;
 
+        /// <summary>
+        /// 연결 데이터와 해당 라인의 CanvasGroup 및 기준 알파를 묶어 저장합니다.
+        /// </summary>
         public ConnectionLineVisual(
             NodeConnection connection,
             CanvasGroup canvasGroup,
