@@ -110,6 +110,46 @@ namespace Core
             return true;
         }
 
+        // ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
+        // PassiveSkillManager는 런타임 상태(CurrentProfile)만 들고 있고, 실제 파일 입출력은
+        // 여기서 전담한다. 싱글플레이 슬롯(profile_singleplayer.json)을 그대로 재사용한다.
+
+        [ContextMenu("패시브 데이터 저장")]
+        public void SavePassiveData()
+        {
+            if (PassiveSkillManager.Instance == null || PassiveSkillManager.Instance.CurrentProfile == null)
+            {
+                Debug.LogWarning("[DataManager] SavePassiveData - PassiveSkillManager 또는 CurrentProfile이 없습니다.");
+                return;
+            }
+
+            SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = PassiveSkillManager.Instance.CurrentProfile });
+        }
+
+        /// <summary>
+        /// 싱글플레이 슬롯에서 프로필을 불러와 PassiveSkillManager에 활성 프로필로 설정한다.
+        /// 저장된 슬롯이 없으면 새 프로필을 만들어서 설정하고 false를 반환한다(진짜 첫 실행 여부 판단용).
+        /// </summary>
+        [ContextMenu("패시브 데이터 불러오기")]
+        public bool LoadPassiveData()
+        {
+            if (PassiveSkillManager.Instance == null)
+            {
+                Debug.LogWarning("[DataManager] LoadPassiveData - PassiveSkillManager.Instance가 없습니다.");
+                return false;
+            }
+
+            var slot = LoadSinglePlayerSlot();
+            if (slot != null && slot.profile != null)
+            {
+                PassiveSkillManager.Instance.SetActiveProfile(slot.profile);
+                return true;
+            }
+
+            PassiveSkillManager.Instance.SetActiveProfile(new PlayerProfileData { playerId = GenerateNewPlayerId() });
+            return false;
+        }
+
         /// <summary>
         /// 런 종료 시 호출. 현재 인벤토리의 골드(PlayerWallet.Gold)를 profile의 영구 골드에 더하고,
         /// 인게임 골드는 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.

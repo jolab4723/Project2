@@ -49,88 +49,89 @@ public class PlayerStat
     }
 
     /// <summary>
-    /// 장비 변경 / 레벨 업 / 버프 발생 시 외부에서 호출.
-    /// character: 캐릭터 기본 스탯(Flat만 사용), equipment: 장비 레이어 합산값, buff: 버프 레이어 합산값
+    /// 장비 변경 / 레벨 업 / 버프 발생 / 패시브 스킬 변경 시 외부에서 호출.
+    /// character: 캐릭터 기본 스탯(Flat만 사용), equipment: 장비 레이어 합산값, buff: 버프 레이어 합산값,
+    /// passive: 패시브 스킬트리 레이어 합산값(PassiveSkillManager.GetStatSet())
     /// </summary>
-    public void Recalculate(StatSet character, StatSet equipment, StatSet buff)
+    public void Recalculate(StatSet character, StatSet equipment, StatSet buff, StatSet passive)
     {
-        maxHealth = Mathf.Ceil(CalcFinal(
+        maxHealth = Mathf.Max(0f, Mathf.Ceil(CalcFinal(
             character.maxHealthFlat, equipment.maxHealthFlat, equipment.maxHealthPercent,
-            buff.maxHealthPercent, buff.maxHealthFlat));
+            buff.maxHealthPercent, buff.maxHealthFlat, passive.maxHealthPercent, passive.maxHealthFlat)));
 
-        attackPower = Mathf.Ceil(CalcFinal(
+        attackPower = Mathf.Max(0f, Mathf.Ceil(CalcFinal(
             character.attackPowerFlat, equipment.attackPowerFlat, equipment.attackPowerPercent,
-            buff.attackPowerPercent, buff.attackPowerFlat));
+            buff.attackPowerPercent, buff.attackPowerFlat, passive.attackPowerPercent, passive.attackPowerFlat)));
 
-        defensePower = Mathf.Ceil(CalcFinal(
+        defensePower = Mathf.Max(0f, Mathf.Ceil(CalcFinal(
             character.defensePowerFlat, equipment.defensePowerFlat, equipment.defensePowerPercent,
-            buff.defensePowerPercent, buff.defensePowerFlat));
+            buff.defensePowerPercent, buff.defensePowerFlat, passive.defensePowerPercent, passive.defensePowerFlat)));
 
-        moveSpeed = CalcFinal(
+        moveSpeed = Mathf.Max(0f, CalcFinal(
             character.moveSpeedFlat, equipment.moveSpeedFlat, equipment.moveSpeedPercent,
-            buff.moveSpeedPercent, buff.moveSpeedFlat);
+            buff.moveSpeedPercent, buff.moveSpeedFlat, passive.moveSpeedPercent, passive.moveSpeedFlat));
 
-        attackSpeed = CalcFinal(
+        attackSpeed = Mathf.Max(0f, CalcFinal(
             character.attackSpeedFlat, equipment.attackSpeedFlat, equipment.attackSpeedPercent,
-            buff.attackSpeedPercent, buff.attackSpeedFlat);
+            buff.attackSpeedPercent, buff.attackSpeedFlat, passive.attackSpeedPercent, passive.attackSpeedFlat));
 
         // critRate, cdr: 3단 공식 미적용. 모든 소스의 Flat을 단순 합산 후 클램프.
         critRate = Mathf.Clamp(
-            character.critRateFlat + equipment.critRateFlat + buff.critRateFlat,
+            character.critRateFlat + equipment.critRateFlat + buff.critRateFlat + passive.critRateFlat,
             CritRateMin, CritRateMax);
 
         cdr = Mathf.Clamp(
-            character.cdrFlat + equipment.cdrFlat + buff.cdrFlat,
+            character.cdrFlat + equipment.cdrFlat + buff.cdrFlat + passive.cdrFlat,
             CdrMin, CdrMax);
 
-        critMult = CalcFinal(
+        critMult = Mathf.Max(0f, CalcFinal(
             character.critMultFlat, equipment.critMultFlat, equipment.critMultPercent,
-            buff.critMultPercent, buff.critMultFlat);
+            buff.critMultPercent, buff.critMultFlat, passive.critMultPercent, passive.critMultFlat));
 
-        mpRegen = CalcFinal(
+        mpRegen = Mathf.Max(0f, CalcFinal(
             character.mpRegenFlat, equipment.mpRegenFlat, equipment.mpRegenPercent,
-            buff.mpRegenPercent, buff.mpRegenFlat);
+            buff.mpRegenPercent, buff.mpRegenFlat, passive.mpRegenPercent, passive.mpRegenFlat));
 
         // maxMana: 3단 공식 미적용. mpMaxFlat 계열은 단순 합산.
-        maxMana = Mathf.Ceil(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat);
+        maxMana = Mathf.Max(0f, Mathf.Ceil(character.maxManaFlat + equipment.maxManaFlat + buff.maxManaFlat + passive.maxManaFlat));
 
-        pen = Mathf.Ceil(CalcFinal(
+        pen = Mathf.Max(0f, Mathf.Ceil(CalcFinal(
             character.penFlat, equipment.penFlat, equipment.penPercent,
-            buff.penPercent, buff.penFlat));
+            buff.penPercent, buff.penFlat, passive.penPercent, passive.penFlat)));
 
-        skillRange = CalcFinal(
+        skillRange = Mathf.Max(0f, CalcFinal(
             character.skillRangeFlat, equipment.skillRangeFlat, equipment.skillRangePercent,
-            buff.skillRangePercent, buff.skillRangeFlat);
+            buff.skillRangePercent, buff.skillRangeFlat, passive.skillRangePercent, passive.skillRangeFlat));
 
-        fireBonus = CalcFinal(
+        fireBonus = Mathf.Max(0f, CalcFinal(
             character.fireBonusFlat, equipment.fireBonusFlat, equipment.fireBonusPercent,
-            buff.fireBonusPercent, buff.fireBonusFlat);
+            buff.fireBonusPercent, buff.fireBonusFlat, passive.fireBonusPercent, passive.fireBonusFlat));
 
-        iceBonus = CalcFinal(
+        iceBonus = Mathf.Max(0f, CalcFinal(
             character.iceBonusFlat, equipment.iceBonusFlat, equipment.iceBonusPercent,
-            buff.iceBonusPercent, buff.iceBonusFlat);
+            buff.iceBonusPercent, buff.iceBonusFlat, passive.iceBonusPercent, passive.iceBonusFlat));
 
-        electricBonus = CalcFinal(
+        electricBonus = Mathf.Max(0f, CalcFinal(
             character.electricBonusFlat, equipment.electricBonusFlat, equipment.electricBonusPercent,
-            buff.electricBonusPercent, buff.electricBonusFlat);
+            buff.electricBonusPercent, buff.electricBonusFlat, passive.electricBonusPercent, passive.electricBonusFlat));
 
         OnStatChanged?.Invoke();
     }
 
     /// <summary>
-    /// 3단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) + 버프고정
-    /// !! equipPercent/buffPercent는 "3"이 오면 3%를 의미하는 퍼센트 숫자 그대로다
+    /// 4단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) × (1+패시브%) + 버프고정 + 패시브고정
+    /// !! equipPercent/buffPercent/passivePercent는 "3"이 오면 3%를 의미하는 퍼센트 숫자 그대로다
     /// (0.03 같은 소수 분수가 아님 - 아이템 서브옵션/툴팁 표시와 동일한 스케일). 그래서 여기서 100으로 나눈다.
     /// </summary>
-    private static float CalcFinal(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat)
+    private static float CalcFinal(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
     {
-        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) + buffFlat;
+        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) * (1f + passivePercent / 100f) + buffFlat + passiveFlat;
     }
 
     // ----- 구독용 핸들러 예시 (실제 매니저 이벤트 시그니처에 맞춰 연결 필요) -----
-    public void OnEquipmentChanged(StatSet character, StatSet equipment, StatSet buff) => Recalculate(character, equipment, buff);
-    public void OnLevelUp(StatSet character, StatSet equipment, StatSet buff) => Recalculate(character, equipment, buff);
-    public void OnBuffApplied(StatSet character, StatSet equipment, StatSet buff) => Recalculate(character, equipment, buff);
+    public void OnEquipmentChanged(StatSet character, StatSet equipment, StatSet buff, StatSet passive) => Recalculate(character, equipment, buff, passive);
+    public void OnLevelUp(StatSet character, StatSet equipment, StatSet buff, StatSet passive) => Recalculate(character, equipment, buff, passive);
+    public void OnBuffApplied(StatSet character, StatSet equipment, StatSet buff, StatSet passive) => Recalculate(character, equipment, buff, passive);
 
     public void GainExp(float amount)
     {
