@@ -978,6 +978,7 @@ GameObject:
   - component: {fileID: -4878034140046804760}
   - component: {fileID: -5431423992665652879}
   - component: {fileID: 1932562817314288795}
+  - component: {fileID: 5025398194320583428}
   m_Layer: 10
   m_Name: Droid_01 1
   m_TagString: Untagged
@@ -1157,6 +1158,29 @@ MonoBehaviour:
   useAttackAni: 0
   useHitAni: 0
   useDieAni: 0
+--- !u!136 &5025398194320583428
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0

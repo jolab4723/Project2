@@ -5,7 +5,7 @@ using UnityEngine;
 public enum PlayerClass { Fighter, gunner }
 public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 
-public class T_PlayerCombat : MonoBehaviour, T_IDamageable
+public class T_PlayerCombat : MonoBehaviour
 {
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
@@ -17,9 +17,9 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     private float fighterAttackRange = 2f;
     private float gunnerAttackRange = 10f;
-    private float fighterAttackDamage = 15f;
-    private float gunnerAttackDamage = 10f;
     private float gunnerBulletSpeed = 10f;
+    private float basicAttackMult = 1f;
+
 
     private bool CanAttack => !stateMachine.IsAnyState(PlayerState.Hit,
                                                        PlayerState.Skill,
@@ -36,21 +36,6 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     private WBH_PlayerEffect effect;
     private Vector3 grenadePoint;
 
-    private float CurrentAttackRange
-    {
-        get
-        {
-            switch (playerClass)
-            {
-                case PlayerClass.Fighter:
-                    return fighterAttackRange;
-                case PlayerClass.gunner:
-                    return gunnerAttackRange;
-                default:
-                    return fighterAttackRange;
-            }
-        }
-    }
 
     private void Awake()
     {
@@ -81,26 +66,29 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
     private void FighterAttack()
     {
-        SectorAttack(fighterAttackRange, 230f, fighterAttackDamage);
+        SectorAttack(fighterAttackRange, 230f);
     }
     private void GunnerAttack()
     {
         Vector3 direction = transform.forward;
 
+        // 투사체용 데미지 요청 생성.
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+
         switch(currentWeapon)
         {
             case GunnerWeaponType.Rifle:
-                projectileSpawner.FireProjectile(ProjectileType.Normal, firePoint.position, direction, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, enemyLayer);
+                projectileSpawner.FireProjectile(ProjectileType.Normal, firePoint.position, direction, request, status.GunnerBulletSpeed, status.GunnerAttackRange, enemyLayer);
                 break;
             case GunnerWeaponType.Shotgun:
                 {
-                    SectorAttack(gunnerAttackRange, 90f, gunnerAttackDamage);
+                    SectorAttack(status.GunnerAttackRange, 90f);
                     //effect.ShotGunEffect();
                 }
                 break;
             case GunnerWeaponType.GrenadeLauncher:
                 {
-                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, grenadePoint, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
+                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, grenadePoint, request, status.GunnerBulletSpeed, status.GunnerAttackRange, explosionRadius, enemyLayer);
                 }
                 break;
         }
@@ -117,17 +105,8 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
         //}
     }
 
-    public void TakeDamage(float damage)
-    {
-        status.ApplyDamage(damage);
 
-        if (status.IsDead)
-            return;
-
-        stateMachine.ChangeState(PlayerState.Hit);
-    }
-
-    private void SectorAttack( float range, float angle, float damage)
+    private void SectorAttack(float range, float angle)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, enemyLayer);
 
@@ -137,14 +116,35 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
 
             dirToTarget.y = 0;
             float targetAngle = Vector3.Angle(transform.forward, dirToTarget);
-            if(targetAngle <= angle * 0.5f)
-            {
-                if(target.TryGetComponent<T_IDamageable> (out var damageable))
-                    {
-                    damageable.TakeDamage(damage);
-                    }
-            }
+
+            if (targetAngle > angle * 0.5f)
+                continue;
+
+            if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult));
+
+            //if (targetAngle <= angle * 0.5f)
+            //{
+            //    if (target.TryGetComponent<T_IDamageable>(out var damageable))
+            //    {
+            //        damageable.TakeDamage(damage);
+            //    }
+            //}
         }
+    }
+
+    // 투사체 외
+    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    {
+        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult);
+    }
+
+    // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
+    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    {
+        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
     }
 
     public void CancelChase()
@@ -211,11 +211,13 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
     // -- 작동 테스트용 메서드
     public void TestMultiple()
     {
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             Vector3 targetPos = transform.position + transform.forward * 8f;
 
-            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
+            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, request, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
@@ -223,7 +225,7 @@ public class T_PlayerCombat : MonoBehaviour, T_IDamageable
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             if (Physics.Raycast(ray, out RaycastHit hit))
-                projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, gunnerAttackDamage, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
+                projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, request, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
         }
     }
 

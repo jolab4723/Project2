@@ -1,33 +1,52 @@
+using ItemSystem;
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
-public class WBH_EnemyStatus : MonoBehaviour
+public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
 {
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;
     private WBH_EnemyCombat combat;
 
-    public float MaxHp => maxHp;
-    public float CurrentHp => currentHp;
-    public float Attack => attack;
-    public float Defense => defense;
-    public float MoveSpeed => moveSpeed;
-    public float AttackSpeed => attackSpeed;
-    public float ProjectileSpeed => projectileSpeed;
-    public bool IsDead => currentHp <= 0;
-
     private float maxHp;
     private float currentHp;
-    private float attack;
-    private float defense;
+    private float attackPower;
+    private float defensePower;
+    private float criticalChance;
+    private float criticalMultiplier;
+    private float fireBonus;
+    private float iceBonus;
+    private float electricBonus;
     private float moveSpeed;
     private float attackSpeed;
     private float projectileSpeed;
     private float minDamage = 1f;
 
+    //-- 이벤트
+    public event Action<float, float> OnHpChanged;
+    public event Action OnDead;
+
+    //-- 인터페이스 구현
+    public float MaxHealth => maxHp;
+    public float CurrentHp => currentHp;
+    public float AttackPower => attackPower;
+    public float DefensePower => defensePower;
+    public float CritRate => criticalChance;
+    public float CritMult => criticalMultiplier;
+    public float FireBonus => fireBonus;
+    public float IceBonus => iceBonus;
+    public float ElectricBonus => electricBonus;
+
+    // -- 외부 사용을 위한 프로퍼티
+    public float MoveSpeed => moveSpeed;
+    public float AttackSpeed => attackSpeed;
+    public float ProjectileSpeed => projectileSpeed;
+    public bool IsDead => currentHp <= 0;
 
     private void Awake()
     {
@@ -40,28 +59,36 @@ public class WBH_EnemyStatus : MonoBehaviour
     {
         maxHp = info.maxHP;
         currentHp = maxHp;
-        attack = info.attack;
-        defense = info.defense;
+        attackPower = info.attack;
+        defensePower = info.defense;
         moveSpeed = info.moveSpeed;
         attackSpeed = info.attackSpeed;
         projectileSpeed = info.projectileSpeed;
     }
 
-    public void ApplyDamage(float damage)
+    public void TakeDamage(WBH_DamageResult result)
     {
-        damage = Mathf.Max(minDamage, damage - defense);
-
-        currentHp -= damage;
-
-        Debug.Log($"남은 체력 {currentHp}");
-
+        currentHp -= result.FinalDamage;
         currentHp = Mathf.Max(currentHp, 0);
+
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
+        Debug.Log($"남은 체력 {currentHp}");
+        if (currentHp == 0)
+        {
+            OnDead?.Invoke();
+        }
+    }
+    
+    void Update()
+    {
+        //Debug.Log(currentHp);
     }
 
     public void Heal (float amount)
     {
         currentHp += amount;
         currentHp = Mathf.Min(currentHp, maxHp);
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
 
@@ -77,6 +104,6 @@ public class WBH_EnemyStatus : MonoBehaviour
     }
     public void MultiplyAttack(float multiplier)
     {
-        attack *= multiplier;
+        attackPower *= multiplier;
     }
 }

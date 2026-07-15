@@ -1,6 +1,7 @@
+using System;
 using UnityEngine;
 
-public class WBH_PlayerStatus : MonoBehaviour
+public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 {
     [Header("Test Stat")]
     [SerializeField] private float maxHp = 100;
@@ -8,8 +9,13 @@ public class WBH_PlayerStatus : MonoBehaviour
     [SerializeField] private float defensePower = 3;
     [SerializeField] private float attackSpeed = 1;
     [SerializeField] private float moveSpeed = 1;
+    [SerializeField] private float criticalChance = 1;
+    [SerializeField] private float criticalMultiplier = 1;
+    [SerializeField] private float fireBonus = 1;
+    [SerializeField] private float iceBonus = 1;
+    [SerializeField] private float electricBonus = 1;
 
-    //--- 추가 필요.
+    //--- 플레이어 속성에 추가 필요 .
     [SerializeField] private float dodgeDistance = 5f;
     [SerializeField] private float dodgeDuration = 0.5f;
     [SerializeField] private float dodgeCooltime = 6f;
@@ -24,10 +30,21 @@ public class WBH_PlayerStatus : MonoBehaviour
     private T_PlayerController playerController;
     private float currentHp;
 
-    public float MaxHp => maxHp;
+    public event Action<float, float> OnHpChanged;
+    public event Action OnDead;
+
+    // -- combatManager 계산을 위한 인터페이스
+    public float MaxHealth => maxHp;
     public float CurrentHp => currentHp;
     public float AttackPower => attackPower;
     public float DefensePower => defensePower;
+    public float CritRate => criticalChance;
+    public float CritMult => criticalMultiplier;
+    public float FireBonus => fireBonus;
+    public float IceBonus => iceBonus;
+    public float ElectricBonus => electricBonus;
+    
+    //-- 외부 사용을 위한 프로퍼티
     public float AttackSpeed => attackSpeed;
     public float MoveSpeed => moveSpeed;
     public float DodgeDistance => dodgeDistance;
@@ -50,19 +67,16 @@ public class WBH_PlayerStatus : MonoBehaviour
         currentHp = maxHp;
     }
 
-    public void ApplyDamage(float damage)
+    public void TakeDamage(WBH_DamageResult result)
     {
-        damage = Mathf.Max(minDamage, damage - defensePower);
-
-        currentHp -= damage;
-
-        Debug.Log($"현재 체력 {currentHp}");
-
+        currentHp -= result.FinalDamage;
         currentHp = Mathf.Max(currentHp, 0);
 
-        if(IsDead)
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
+        Debug.Log(currentHp);
+        if(currentHp == 0)
         {
-            playerController.Die();
+            OnDead?.Invoke();
         }
     }
 
@@ -70,6 +84,7 @@ public class WBH_PlayerStatus : MonoBehaviour
     {
         currentHp += amount;
         currentHp = Mathf.Min(currentHp, maxHp);
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
     public void MultiplyMoveSpeed(float multiplier)

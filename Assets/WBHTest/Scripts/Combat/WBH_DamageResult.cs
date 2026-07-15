@@ -1,3 +1,4 @@
+using ItemSystem;
 using UnityEngine;
 
 public readonly struct WBH_DamageResult
@@ -8,16 +9,16 @@ public readonly struct WBH_DamageResult
 
     // -- 차후 넉백, 고정데미지 등 추가
     //-- 아직 미활용 상태이상 적용 시 활용하면 될 것
-    public readonly WBH_ElementalType ElementalType;
+    public readonly ElementType ElementType;
 
     public WBH_DamageResult(WBH_ICombat attacker,
                             float finalDamage,
                             bool isCritical,
-                            WBH_ElementalType elementalType)
+                            ElementType elementType)
     {
         Attacker = attacker;
         FinalDamage = finalDamage;
         IsCritical = isCritical;
-        ElementalType = elementalType;
+        ElementType = elementType;
     }
 }

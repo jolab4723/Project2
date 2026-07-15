@@ -1,3 +1,4 @@
+using ItemSystem;
 using UnityEngine;
 
 public class WBH_CombatManager
@@ -12,14 +13,14 @@ public class WBH_CombatManager
         float damage = CalculateBaseDamage(attackerStat, request); // 1차 데미지 계산
 
         // 속성 데미지 계산
-        damage = CalculateElementDamage(damage, attackerStat, request.ElementalType);
+        damage = CalculateElementDamage(damage, attackerStat, request.ElementType);
 
         // 크리티컬 여부
         bool isCritical = CalculateCritical(attackerStat);
 
         // 크리티컬 데미지 적용
         if(isCritical)
-            damage *= attackerStat.CriticalMultiplier;
+            damage *= attackerStat.CritMult;
 
         // 타겟 방어력 적용
         damage = CalculateDefense(damage, targetStat);
@@ -28,7 +29,7 @@ public class WBH_CombatManager
         damage = Mathf.Max(1f, damage);
 
         // 데미지 결과 구조체 생성
-        WBH_DamageResult result = new WBH_DamageResult(request.Attacker, damage, isCritical, request.ElementalType);
+        WBH_DamageResult result = new WBH_DamageResult(request.Attacker, damage, isCritical, request.ElementType);
 
         request.Target.TakeDamage(result);
     }
@@ -36,25 +37,25 @@ public class WBH_CombatManager
 
     private static float CalculateBaseDamage(WBH_ICombatStatus attackerStat, WBH_DamageRequest request)
     {
-        return attackerStat.Attack * request.DamageMultiplier;
+        return attackerStat.AttackPower * request.DamageMultiplier;
     }
 
-    private static float CalculateElementDamage(float damage, WBH_ICombatStatus attackerStat, WBH_ElementalType elementalType)
+    private static float CalculateElementDamage(float damage, WBH_ICombatStatus attackerStat, ElementType elementType)
     {
-        float bonus = GetElementBonus(attackerStat, elementalType);
+        float bonus = GetElementBonus(attackerStat, elementType);
 
         return damage * (1f + bonus);
     }
 
-    private static float GetElementBonus(WBH_ICombatStatus attackerStat, WBH_ElementalType elementalType)
+    private static float GetElementBonus(WBH_ICombatStatus attackerStat, ElementType elementType)
     {
-        switch(elementalType)
+        switch(elementType)
         {
-            case WBH_ElementalType.Fire:
+            case ElementType.Fire:
                 return attackerStat.FireBonus;
-            case WBH_ElementalType.Ice:
+            case ElementType.Ice:
                 return attackerStat.IceBonus;
-            case WBH_ElementalType.Electric:
+            case ElementType.Electric:
                 return attackerStat.ElectricBonus;
             default:
                 return 0f;
@@ -63,11 +64,11 @@ public class WBH_CombatManager
 
     private static bool CalculateCritical(WBH_ICombatStatus attackerStat)
     {
-        return Random.value <= attackerStat.CriticalChace;
+        return Random.value <= attackerStat.CritRate;
     }
 
     private static float CalculateDefense(float damage, WBH_ICombatStatus targetStat)
     {
-        return damage - targetStat.Defense;
+        return damage - targetStat.DefensePower;
     }
 }

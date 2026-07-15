@@ -126,7 +126,7 @@ namespace DataSystem
 
                 asset.characterClass = ParseEnumOrDefault(row.characterClass, CharacterClass.Fighter);
                 asset.weaponType = ParseEnumOrDefault(row.weaponType, WeaponType.Greatsword);
-                asset.weaponEnchantElement = ParseEnumOrDefault(row.EnchantedElement, ElementType.None);
+                asset.weaponEnchantElement = ParseEnumOrDefault(row.EnchantedElement, ItemSystem.ElementType.None);
                 FinalizeAsset(asset, database, ref registeredCount);
                 count++;
             }

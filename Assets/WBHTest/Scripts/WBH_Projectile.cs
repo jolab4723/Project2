@@ -5,7 +5,7 @@ public class WBH_Projectile : MonoBehaviour
     [SerializeField] private bool isExplosion;
     [SerializeField] private float explosionRadius;
 
-    private float damage;
+    private WBH_DamageRequest request;
     private float speed;
     private float maxDistance;
 
@@ -32,10 +32,10 @@ public class WBH_Projectile : MonoBehaviour
     private Vector3 previousPos;
 
     // 투사체에 각 변수 할당
-    public void Initialize(float damage, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
+    public void Initialize(WBH_DamageRequest request, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
                            WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
-        this.damage = damage;
+        this.request = request;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
@@ -51,11 +51,11 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // 유탄용 변수 할당
-    public void InitializeGrenade(float damage, float speed, float maxDistance, 
+    public void InitializeGrenade(WBH_DamageRequest request, float speed, float maxDistance, 
                                   LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f,
                                    WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
     {
-        this.damage = damage;
+        this.request = request;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
@@ -176,9 +176,9 @@ public class WBH_Projectile : MonoBehaviour
             return;
         }
 
-        if (other.TryGetComponent<T_IDamageable>(out var damageable))
+        if (other.TryGetComponent<WBH_ICombat>(out var combatTarget))
         {
-            damageable.TakeDamage(damage);
+            ProcessHit(combatTarget);
         }
 
         ReturnToPool();
@@ -195,10 +195,22 @@ public class WBH_Projectile : MonoBehaviour
 
         foreach(Collider hit in hits)
         {
-            if(hit.TryGetComponent<T_IDamageable>(out var damageable))
-                damageable.TakeDamage(damage);
+            if (!hit.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                continue;
+
+            ProcessHit(combatTarget);
         }
         ReturnToPool();
+    }
+
+    private void ProcessHit(WBH_ICombat target)
+    {
+        WBH_DamageRequest hitRequest = new WBH_DamageRequest(request.Attacker,
+                                                                 target,
+                                                                 request.AttackType,
+                                                                 request.ElementType,
+                                                                 request.DamageMultiplier);
+        WBH_CombatManager.ProcessDamage(hitRequest);
     }
 
     private void ReturnToPool()

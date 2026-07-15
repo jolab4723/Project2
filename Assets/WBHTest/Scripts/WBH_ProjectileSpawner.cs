@@ -11,7 +11,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
     public void FireProjectile(ProjectileType projectileType, 
                                Vector3 spawnPosition, Vector3 direction, 
-                               float damage, float speed, float maxDistance, 
+                               WBH_DamageRequest request, float speed, float maxDistance, 
                                LayerMask targetLayer)
     {
         WBH_Projectile projectile = poolManager.GetProjectile(projectileType);
@@ -22,13 +22,13 @@ public class WBH_ProjectileSpawner : MonoBehaviour
         projectile.transform.position = spawnPosition;
         projectile.transform.rotation = Quaternion.LookRotation(direction);
 
-        projectile.Initialize(damage, speed, maxDistance, direction, targetLayer);
+        projectile.Initialize(request, speed, maxDistance, direction, targetLayer);
     }
 
     // 유탄 발사 메서드
     public void FireGrenade(ProjectileType projectileType,
                             Vector3 spawnPosition, Vector3 targetPosition,
-                               float damage, float speed, float maxDistance, float explosionRadius,
+                               WBH_DamageRequest request, float speed, float maxDistance, float explosionRadius,
                                LayerMask targetLayer)
     {
         WBH_Projectile projectile = poolManager.GetProjectile(projectileType);
@@ -38,18 +38,18 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
         projectile.transform.position = spawnPosition;
 
-        projectile.InitializeGrenade(damage, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, effectData);
+        projectile.InitializeGrenade(request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, effectData);
     }
 
     public void FireMultipleProjectile(ProjectileType projectileType,
                                        Vector3 spawnPos, Vector3 direction,
-                                       float damage, float speed, float maxDistance,
+                                       WBH_DamageRequest request, float speed, float maxDistance,
                                        LayerMask targetLayer, 
                                        int projectileCount, float spreadAngle)
     {
         if(projectileCount <= 1)
         {
-            FireProjectile(projectileType, spawnPos, direction, damage, speed, maxDistance, targetLayer);
+            FireProjectile(projectileType, spawnPos, direction, request, speed, maxDistance, targetLayer);
             return;
         }
 
@@ -63,13 +63,13 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
             Vector3 fireDir = Quaternion.Euler(0f, currentAngle, 0f) * direction;
 
-            FireProjectile(projectileType, spawnPos, fireDir, damage, speed, maxDistance, targetLayer);
+            FireProjectile(projectileType, spawnPos, fireDir, request, speed, maxDistance, targetLayer);
         }
     }
 
     public void FireMultipleGrenade(ProjectileType projectileType, 
                                     Vector3 spawnPos, Vector3 targetPos, 
-                                    int projectileCount, float spreadAngle, float damage, float speed, float maxDistance, float explosionRadius, 
+                                    int projectileCount, float spreadAngle, WBH_DamageRequest request, float speed, float maxDistance, float explosionRadius, 
                                     LayerMask targetLayer)
     {
         for(int i = 0; i < projectileCount; i++)
@@ -80,7 +80,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
             Vector3 spreadTarget = spawnPos + direction * Vector3.Distance(spawnPos, targetPos);
 
-            FireGrenade(projectileType, spawnPos, spreadTarget, damage, speed, maxDistance, explosionRadius, targetLayer);
+            FireGrenade(projectileType, spawnPos, spreadTarget, request, speed, maxDistance, explosionRadius, targetLayer);
             
         }
     }

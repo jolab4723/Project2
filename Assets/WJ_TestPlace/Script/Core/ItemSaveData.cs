@@ -16,7 +16,7 @@ namespace Core
         public string instanceId;
         public string itemId;
         public List<RolledSubStat> rolledSubStats;
-        public ElementType rolledElement;
+        public ItemSystem.ElementType rolledElement;
         public int upgradeLevel;
 
         [Header("그리드 위치 (장착 중이면 의미 없음)")]

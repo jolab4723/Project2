@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public class T_PlayerController : MonoBehaviour
+public class T_PlayerController : MonoBehaviour, WBH_ICombat
 {
+
     [Header("Move")]
     [SerializeField] public NavMeshAgent agent;
 
@@ -17,6 +18,8 @@ public class T_PlayerController : MonoBehaviour
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
     private Vector3 dodgeDir;
+
+    public WBH_ICombatStatus Status => status;
 
     private void Awake()
     {
@@ -213,6 +216,16 @@ public class T_PlayerController : MonoBehaviour
     public void SetMoveSpeed(float moveSpeed)
     {
         agent.speed = moveSpeed;
+    }
+
+    public void TakeDamage(WBH_DamageResult result)
+    {
+        status.TakeDamage(result);
+
+        // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
+        //stateMachine.ChangeState(PlayerState.Hit);
+        // 사망 처리 OnDead 이벤트 구독
+
     }
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드

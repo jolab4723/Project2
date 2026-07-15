@@ -1076,6 +1076,11 @@ MonoBehaviour:
   defensePower: 3
   attackSpeed: 1
   moveSpeed: 1
+  criticalChance: 1
+  criticalMultiplier: 1
+  fireBonus: 1
+  iceBonus: 1
+  electricBonus: 1
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
@@ -1778,7 +1783,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8874953783023553297, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9168128714396232285, guid: c8161ff08a031f34b9626d5d28a03e14, type: 3}
       propertyPath: m_AutoBraking
@@ -1870,6 +1875,11 @@ MonoBehaviour:
   defensePower: 3
   attackSpeed: 1
   moveSpeed: 1
+  criticalChance: 1
+  criticalMultiplier: 1
+  fireBonus: 1
+  iceBonus: 1
+  electricBonus: 1
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
@@ -2085,12 +2095,24 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 823235165253883103, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2557919493310347781, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.825
       objectReference: {fileID: 0}
     - target: {fileID: 5757573665065218218, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
       propertyPath: effectSpawner
       value: 
       objectReference: {fileID: 1630218758}
+    - target: {fileID: 5942414700178285225, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
+      propertyPath: currentWeapon
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5942414700178285225, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
+      propertyPath: enemyLayer.m_Bits
+      value: 1024
+      objectReference: {fileID: 0}
     - target: {fileID: 5942414700178285225, guid: 5db8688290921d44290f7a3baa78e28f, type: 3}
       propertyPath: projectileSpawner
       value: 
