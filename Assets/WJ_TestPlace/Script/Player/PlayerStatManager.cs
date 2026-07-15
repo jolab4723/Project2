@@ -45,12 +45,18 @@ public class PlayerStatManager : MonoBehaviour
     {
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
+
+        if (PassiveSkillManager.Instance != null)
+            PassiveSkillManager.Instance.OnProfileChanged += Recalculate;
     }
 
     private void OnDisable()
     {
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+
+        if (PassiveSkillManager.Instance != null)
+            PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
     }
 
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
@@ -99,16 +105,19 @@ public class PlayerStatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 세 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
-    /// 장비 착용/해제, 레벨업, 버프 적용/해제 시 호출.
+    /// 네 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
+    /// 장비 착용/해제, 레벨업, 버프 적용/해제, 패시브 스킬 변경 시 호출.
+    /// !! 패시브 스킬은 캐릭터별 컴포넌트가 아니라 전역 PassiveSkillManager.Instance를 직접 참조한다
+    ///    (equip/buff처럼 Inspector에 캐릭터별로 꽂아주는 방식이 아님 - DataManager 참조 방식과 동일).
     /// </summary>
     public void Recalculate()
     {
         StatSet character = GetCharacterStatSet();
         StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
         StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
+        StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
 
-        Stat.Recalculate(character, equipment, buff);
+        Stat.Recalculate(character, equipment, buff, passive);
     }
 
     /// <summary>레벨을 올리고 전체 재계산까지 한 번에 처리.</summary>
