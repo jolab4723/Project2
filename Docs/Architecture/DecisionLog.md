@@ -130,7 +130,7 @@
 - [개인 구현 로그 운영 규칙](ImplementationLogs/README.md)
 - [김성우 구현 로그](ImplementationLogs/김성우.md)
 
-새 팀원 로그가 필요하면 `ImplementationLogs/팀원이름.md` 파일을 만들고 본인 파일만 수정한다. 개인 구현이 팀의 공식 결정이 되면 해당 내용을 이 문서의 ADR로 별도 등록한다.
+새 팀원 로그가 필요하면 `ImplementationLogs/TEMPLATE.md`를 복사해 `ImplementationLogs/팀원이름.md` 파일을 만들고 본인 파일만 수정한다. 개인 구현 내용이 팀의 공식 결정이 되면 팀 회의 후 이 문서에 별도로 기록한다.
 
 ---
 
