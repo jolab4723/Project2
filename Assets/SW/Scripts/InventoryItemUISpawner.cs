@@ -5,8 +5,8 @@ using UnityEngine;
 
 public sealed class InventoryItemUISpawner : MonoBehaviour
 {
-    [SerializeField]
-    private GameObject itemUIPrefab;
+    [SerializeField] private GameObject itemUIPrefab;
+    [SerializeField] private WorldItemDropService worldItemDropService;
 
     private InventoryController inventoryController;
     private InventoryGrid playerGrid;
@@ -14,6 +14,10 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
     private void Awake()
     {
         inventoryController = GetComponent<InventoryController>();
+        if (worldItemDropService == null)
+        {
+            worldItemDropService = GetComponentInParent<WorldItemDropService>();
+        }
 
         playerGrid = inventoryController != null ? inventoryController.PlayerGrid : null;
 
@@ -100,6 +104,12 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
         }
 
         itemUI.Setup(item, playerGrid);
+        ItemDropHandler dropHandler = newObject.GetComponent<ItemDropHandler>();
+
+        if (dropHandler != null)
+        {
+            dropHandler.Bind(worldItemDropService);
+        }
         return itemUI;
     }
 }

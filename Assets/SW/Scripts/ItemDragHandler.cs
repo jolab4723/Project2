@@ -39,7 +39,7 @@ public class ItemDragHandler : MonoBehaviour,
     {
         UpdatePointerContext(eventData);
 
-        TooltipManager.Instance.HideTooltip();
+        TooltipManager.Instance?.HideTooltip();
 
         bool wasEquipped = itemUI.IsEquipped;
 

@@ -22,11 +22,11 @@ public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (itemUI == null || itemUI.Item == null)
             return;
 
-        TooltipManager.Instance.ShowTooltip(itemUI.Item.itemData);
+        TooltipManager.Instance?.ShowTooltip(itemUI.Item.itemData);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        TooltipManager.Instance.HideTooltip();
+        TooltipManager.Instance?.HideTooltip();
     }
 }

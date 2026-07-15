@@ -142,6 +142,7 @@
 | 2026-07-14 14:07 | `1d08941f` | 김성우 | 상점·강화 결과 enum을 `byte` 기반 명시 값으로 고정하고, `ShopMessageMapper`·`UpgradeMessageMapper`를 통해 컨트롤러의 사용자 메시지 출력을 분리 | 상점·강화 네트워크 응답 준비 | 구현 반영, ADR 미승인 |
 | 2026-07-14 | 본 문서 반영 커밋 | 김성우 | 강화창을 닫거나 선택 아이템이 바뀔 때 선택 상태와 결과 메시지를 초기화하고, 강화 비용 증가 배율을 Inspector 필드로 분리. `UpgradeSlot`의 드롭 판정, 슬롯 테두리, 아이템 미리보기 이미지를 분리하고 `UpgradeDropSlot`을 하나로 정리 | CAND-008, CAND-010, 강화 UI 수명주기 및 표시 책임 | 커밋 완료, ADR 미승인 |
 | 2026-07-14 | 본 문서 반영 커밋 | 김성우 | 저장 데이터의 인벤토리·장비 복원을 `Try*` API와 `EquipmentTransaction` 경계로 전환하고, 실패 시 모델과 UI를 복구하도록 정리 | CAND-005, CAND-007, 플레이어별 상태 경계 | 커밋 완료, ADR 미승인 |
+| 2026-07-15 | 본 문서 반영 커밋 | 김성우 | 인벤토리 아이템의 월드 드롭·복구 경계를 `WorldItemDropService`로 통합하고, 월드 아이템 등급 표시·근거리 툴팁·범위 내 클릭 획득·빈자리 탐색을 구현. 테스트 Drop 버튼도 같은 서비스 경로를 사용하도록 정리 | CAND-006, CAND-010, 월드 아이템 드롭·획득 경계 | 커밋 완료, ADR 미승인 |
 
 두 2026-07-14 상점·강화 항목 모두 구현 및 커밋이 완료되었다. 다만 Mirror 요청·응답, 서버 권한 판정, 네트워크 DTO 및 상태 동기화 방식을 구현하거나 확정한 결정은 아니다.
 
@@ -188,7 +189,24 @@
 - 확인 결과: 기존 `GetEquipMessage()` 제거, Mapper 호출 교체 및 새 스크립트의 Unity `.meta` 생성까지 코드 검사로 확인했다. Unity 컴파일과 장착·해제·교환 플레이 검증은 추가 확인 대상으로 남아 있다.
 - 기록 상태: 구현 완료. 팀 승인 ADR은 아니다.
 
-### 6.6 문서 변경 이력
+### 6.6 월드 아이템 드롭·획득 구현 메모 (2026-07-15)
+
+- 커밋 완료: `PlayerItemDropOrigin`이 플레이어의 드롭 기준점을 제공하고, `WorldItemDropService`가 월드 픽업 생성과 `ItemInstance` 전달을 담당하도록 경계를 정리했다.
+- 커밋 완료: 인벤토리 밖으로 드래그하면 `ItemDropHandler`가 `WorldItemDropService.TryDrop()`을 호출한다. 성공 시 Item UI를 제거하고, 생성 실패 또는 빈자리 부족 시 기존 인벤토리 위치로 복구한다.
+- 커밋 완료: `WorldItemDropResult`를 명시적인 `byte` 값으로 구성하고 `InvalidItem`, `DropOriginUnavailable`, `PickupPrefabUnavailable`, `SpawnFailed`, `NoAvailablePosition`을 구분했다. 기존 코드 값은 유지한 채 빈자리 부족 결과를 마지막에 추가했다.
+- 커밋 완료: 월드 픽업은 `TemporaryWorldItemCube`의 `ItemDataStorage`에 기존 `ItemInstance`를 그대로 보관한다. 따라서 강화 수치 등 런타임 데이터가 인벤토리 획득과 재드롭을 거쳐도 같은 인스턴스에 유지된다.
+- 커밋 완료: `WorldItemRarityColorView`가 아이템 등급에 따라 큐브와 Loot 빔 이펙트의 색상을 적용하도록 했다.
+- 커밋 완료: `WorldItemTooltipScanner`, `WorldItemTooltipView`, `WorldItemPickupInteractor`를 통해 플레이어 감지 범위 안의 가장 가까운 아이템에 이름·종류·등급 툴팁을 표시하고, 현재 감지 대상으로 확인된 큐브만 클릭 획득할 수 있도록 했다.
+- 커밋 완료: `WorldItem` 전용 레이어를 추가하고, 픽업 프리팹 루트와 스캐너·클릭 획득 마스크를 해당 레이어로 통일했다.
+- 커밋 완료: 테스트 Drop 버튼의 기존 `ItemGenerator.Drop()` 직접 생성 경로를 제거하고 `WorldItemDropService`를 사용하도록 변경했다. 버튼을 반복해서 눌러도 기존 픽업을 지우지 않고 새로운 픽업을 누적 생성한다.
+- 커밋 완료: `WorldItemDropService`는 플레이어 드롭 기준점 주변 0.9~2.2 범위에서 최대 20회 후보 위치를 찾고, 반경 0.6의 `Physics.CheckSphere` 검사로 `WorldItem`, `Wall`, `Prop`, `Player`와 겹치는 위치를 제외한다. `Ground`와 `Terrain`은 바닥 자체가 장애물로 판정되지 않도록 검사 마스크에서 제외했다.
+- 실패 처리: 빈자리를 찾지 못하면 `NoAvailablePosition`을 반환한다. 인벤토리 드래그는 아이템을 원래 위치로 복구하고, 테스트 버튼은 실패 결과를 로그로 알리며 새 픽업을 생성하지 않는다.
+- 씬 연결 확인: `Act1_DropTest`에서 테스트 드롭 스크립트의 `WorldItemDropService` 참조, 스캐너·클릭 획득의 `WorldItem` 마스크, 드롭 서비스의 충돌 마스크가 직렬화되어 있다.
+- 현재 범위: `Act1_DropTest`를 중심으로 월드 드롭·획득의 기본 구조를 구현한 단계다. 최종 본편 플레이어 입력 연결, 실제 맵별 배치 규칙, 픽업 풀링 및 시각 에셋 확정은 이후 통합 범위다.
+- 멀티플레이 관련 범위: 향후 서버가 드롭 결과와 생성 위치를 결정할 수 있는 단일 서비스 경계는 마련했지만, Mirror 서버 권한 실행, 픽업 동기화 및 네트워크 생성은 아직 구현하거나 팀 결정으로 확정하지 않았다.
+- 기록 상태: 구현 및 커밋 완료. 팀 승인 ADR은 아니다.
+
+### 6.7 문서 변경 이력
 
 | 날짜 | 변경 내용 | 작성자 |
 |---|---|---|
@@ -196,6 +214,7 @@
 | 2026-07-14 | 2026-07-13 이후 Git 커밋과 상점·강화 작업을 구현 이력으로 추가. Git 계정의 작성자 표기를 팀원 이름 `김성우`로 통일하고, 강화 UI 및 인벤토리·장비 저장 복원 작업을 커밋 완료 상태로 기록. 구현 반영과 팀 승인 ADR을 분리해 기록. | 김성우 / Codex |
 | 2026-07-14 | 인벤토리 `Try*` 결과 경계, 추가·불러오기 경로 통합, `InventoryItemUISpawner` UI 생성 분리 및 `ItemUpgradescene` 한정 적용 상태를 구현 메모로 추가. | 김성우 / Codex |
 | 2026-07-15 | `EquipResult` 명시적 `byte` 코드 고정과 `EquipMessageMapper` 분리·적용 내용을 구현 메모로 추가. 구현 범위와 추가 검증 항목을 구분해 기록. | 김성우 / Codex |
+| 2026-07-15 | 월드 아이템 드롭 서비스, `ItemInstance` 유지, 등급별 큐브·빔 표시, 근거리 툴팁과 클릭 획득, `WorldItem` 레이어 및 `Physics.CheckSphere` 빈자리 탐색 구현 내용을 추가. 구현 완료 범위와 Mirror·본편 통합의 미확정 범위를 구분해 기록. | 김성우 / Codex |
 
 ---
 
