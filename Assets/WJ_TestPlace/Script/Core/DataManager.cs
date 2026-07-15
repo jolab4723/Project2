@@ -20,8 +20,12 @@ namespace Core
         private const string PlayerStatusSaveFileName = "playerstatus.json";
         private const string SkillTreeSaveFileName = "skilltree.json";
         private const string StageSaveFileName = "stage.json";
-        private const string ProfileSaveFileName = "profile.json";
         private const string OptionsSaveFileName = "options.json";
+
+        private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
+        private const int MultiplayerSlotCount = 3;
+
+        private static string MultiplayerSlotFileName(int slotIndex) => "profile_multiplayer_" + slotIndex + ".json";
 
         private static string GetSavePath(string fileName)
         {
@@ -43,23 +47,96 @@ namespace Core
             Debug.Log("[DataManager] 활성화 완료 (itemDatabase 연결됨, 아이템 " + itemDatabase.allItems.Count + "개)");
         }
 
-        // ===================== 2. 플레이어 프로필 =====================
+        // ===================== 2. 플레이어 프로필 (세이브 슬롯) =====================
+        // 싱글플레이 슬롯 1개 + 멀티플레이 슬롯 3개(다크소울 스타일, 서로 독립).
+        // 멀티플레이 슬롯은 공유 파티 세이브 - 게스트 프로필도 전부 호스트 슬롯 안에 통째로 저장된다.
 
-        public void SavePlayerProfile(PlayerProfileData data)
+        /// <summary>새 플레이어 프로필용 고유 ID를 생성한다 (기기 로컬 GUID, 계정 시스템 없음).</summary>
+        public static string GenerateNewPlayerId()
         {
-            if (data == null)
+            return System.Guid.NewGuid().ToString();
+        }
+
+        [ContextMenu("싱글플레이 슬롯 저장")]
+        public void SaveSinglePlayerSlot(SinglePlayerSlotData data)
+        {
+            if (data == null || data.profile == null)
             {
-                Debug.LogWarning("[DataManager] SavePlayerProfile - data가 null입니다.");
+                Debug.LogWarning("[DataManager] SaveSinglePlayerSlot - data 또는 profile이 null입니다.");
                 return;
             }
 
-            data.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
-            WriteJson(GetSavePath(ProfileSaveFileName), data);
+            data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
+            WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
         }
 
-        public PlayerProfileData LoadPlayerProfile()
+        public SinglePlayerSlotData LoadSinglePlayerSlot()
         {
-            return ReadJson<PlayerProfileData>(GetSavePath(ProfileSaveFileName));
+            return ReadJson<SinglePlayerSlotData>(GetSavePath(SinglePlayerSlotFileName));
+        }
+
+        /// <summary>slotIndex: 0~2 (멀티플레이 슬롯 3개 중 하나). 호스트가 참가자 전원의 데이터를 이 한 번의 호출로 저장한다.</summary>
+        public void SaveMultiplayerSlot(int slotIndex, MultiplayerSlotData data)
+        {
+            if (!IsValidMultiplayerSlotIndex(slotIndex))
+                return;
+
+            if (data == null || data.hostProfile == null)
+            {
+                Debug.LogWarning("[DataManager] SaveMultiplayerSlot - data 또는 hostProfile이 null입니다.");
+                return;
+            }
+
+            data.hostProfile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
+            WriteJson(GetSavePath(MultiplayerSlotFileName(slotIndex)), data);
+        }
+
+        public MultiplayerSlotData LoadMultiplayerSlot(int slotIndex)
+        {
+            if (!IsValidMultiplayerSlotIndex(slotIndex))
+                return null;
+
+            return ReadJson<MultiplayerSlotData>(GetSavePath(MultiplayerSlotFileName(slotIndex)));
+        }
+
+        private static bool IsValidMultiplayerSlotIndex(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= MultiplayerSlotCount)
+            {
+                Debug.LogWarning($"[DataManager] 멀티플레이 슬롯 인덱스는 0~{MultiplayerSlotCount - 1}만 유효합니다: {slotIndex}");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 런 종료 시 호출. 현재 인벤토리의 골드(PlayerWallet.Gold)를 profile의 영구 골드에 더하고,
+        /// 인게임 골드는 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.
+        /// 여기서는 이전만 하고 파일 저장은 안 함 - 필요하면 호출부에서 SaveSinglePlayerSlot/SaveMultiplayerSlot을 이어서 불러야 함.
+        /// </summary>
+        public void TransferRunGoldToProfile(PlayerProfileData profile)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - profile이 null입니다.");
+                return;
+            }
+
+            if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
+            {
+                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 골드를 이전하지 못했습니다.");
+                return;
+            }
+
+            int runGold = InventoryController.Instance.PlayerWallet.Gold;
+            if (runGold <= 0)
+                return;
+
+            profile.gold += runGold;
+            InventoryController.Instance.PlayerWallet.SetGold(0);
+
+            Debug.Log("[DataManager] 런 골드 " + runGold + " 이전 완료. 프로필 영구 골드 = " + profile.gold);
         }
 
         // ===================== 3. 게임플레이 데이터 (전체 묶음) =====================

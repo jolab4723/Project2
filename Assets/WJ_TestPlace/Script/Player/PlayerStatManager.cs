@@ -98,13 +98,6 @@ public class PlayerStatManager : MonoBehaviour
             Instance = null;
     }
 
-    private void Update()
-    {
-        // 테스트용: K키로 레벨업 트리거 (L키는 PlayerLevelManager 테스트 출력에서 이미 쓰고 있어서 다른 키로 배치)
-        if (Instance == this && Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
-            LevelUp();
-    }
-
     /// <summary>
     /// 세 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
     /// 장비 착용/해제, 레벨업, 버프 적용/해제 시 호출.
