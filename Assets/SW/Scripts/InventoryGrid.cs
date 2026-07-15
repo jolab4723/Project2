@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class InventoryGrid : MonoBehaviour
 {
-    //public static InventoryGrid Instance;
     private InventoryItem[,] grid;
     [SerializeField] private RectTransform gridRect;
     [SerializeField] private TextMeshProUGUI text;
@@ -24,11 +23,8 @@ public class InventoryGrid : MonoBehaviour
     public int GridWidth => gridWidth;
     public int GridHeight => gridHeight;
 
-
-
     private void Awake()
     {
-        // Instance = this;
         grid = new InventoryItem[gridWidth, gridHeight];
     }
 
