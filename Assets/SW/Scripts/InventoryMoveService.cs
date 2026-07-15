@@ -51,9 +51,10 @@
         InventoryPlacementSnapshot movingOriginal,
         InventorySwapPlan previewPlan)
     {
-        if (grid.CanPlaceItem(targetX, targetY, item.CurrentWidth, item.CurrentHeight))
+        if (grid.CanPlaceItem(targetX, targetY,
+        item.CurrentWidth, item.CurrentHeight) &&
+        grid.TryPlaceItem(item,targetX,targetY))
         {
-            grid.TryPlaceItem(item, targetX, targetY);
             return InventoryMoveResultData.Success(item, targetX, targetY);
         }
 
@@ -79,25 +80,21 @@
 
         item.isRotated = movingOriginal.IsRotated;
 
-        if (grid.CanPlaceItem(
-                movingOriginal.Rect.X,
-                movingOriginal.Rect.Y,
-                item.CurrentWidth,
-                item.CurrentHeight))
+        if (grid.CanPlaceItem(movingOriginal.Rect.X, movingOriginal.Rect.Y,
+            item.CurrentWidth, item.CurrentHeight) &&
+            grid.TryPlaceItem(item, movingOriginal.Rect.X, movingOriginal.Rect.Y))
         {
-            grid.TryPlaceItem(
-                item,
-                movingOriginal.Rect.X,
-                movingOriginal.Rect.Y);
             return InventoryMoveResultData.ReturnedToOriginal(
                 item,
                 movingOriginal.Rect.X,
                 movingOriginal.Rect.Y);
         }
 
-        if (grid.FindEmptySpace(item.CurrentWidth, item.CurrentHeight, out int foundX, out int foundY))
+        if (grid.FindEmptySpace(
+            item.CurrentWidth,item.CurrentHeight,
+            out int foundX, out int foundY) &&
+            grid.TryPlaceItem(item, foundX, foundY))
         {
-            grid.TryPlaceItem(item, foundX, foundY);
             return InventoryMoveResultData.MovedToEmptySpace(
                 item,
                 foundX,

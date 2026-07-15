@@ -100,17 +100,6 @@ public class InventoryGrid : MonoBehaviour
         item.isEquipped = false;
     }
 
-    public void RemoveItem(InventoryItem item)
-    {
-        if (!TryRemoveItem(item))
-        {
-            Debug.LogError(
-                "[InventoryGrid] RemoveItem 호출이 실패했습니다. " +
-                "호출부를 TryRemoveItem으로 전환해야 합니다.");
-        }
-    }
-    
-
     public bool FindEmptySpace(int width, int height, out int foundX, out int foundY)
     {
         for (int y = 0; y <= gridHeight - height; y++)
