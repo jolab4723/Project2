@@ -20,7 +20,12 @@ public class WBH_EffectSpawner : MonoBehaviour
                     return;
                 }
                 break;
-            case EffectAttachType.Local:
+            case EffectAttachType.AttachOnce:
+                effect.transform.SetParent(attachTarget);
+                effect.transform.localPosition = data.localPos;
+                effect.transform.localRotation = Quaternion.Euler(data.localRot);
+                effect.transform.SetParent(null, true);
+                break;
             case EffectAttachType.Follow:
                 if (attachTarget == null)
                 {

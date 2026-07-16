@@ -29,6 +29,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
 
     //-- 이벤트
     public event Action<float, float> OnHpChanged;
+    public event Action <WBH_DamageResult> OnDamaged; // 구독중 : WBH_EnemyView
     public event Action OnDead;
 
     //-- 인터페이스 구현
@@ -72,6 +73,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
         currentHp = Mathf.Max(currentHp, 0);
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
+        OnDamaged?.Invoke(result); 
         Debug.Log($"남은 체력 {currentHp}");
         if (currentHp == 0)
         {

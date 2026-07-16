@@ -124,14 +124,6 @@ public class T_PlayerCombat : MonoBehaviour
                 continue;
 
             WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult));
-
-            //if (targetAngle <= angle * 0.5f)
-            //{
-            //    if (target.TryGetComponent<T_IDamageable>(out var damageable))
-            //    {
-            //        damageable.TakeDamage(damage);
-            //    }
-            //}
         }
     }
 
@@ -154,7 +146,6 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
     // -- 입력 시스템 호출용 메서드
-    // 적 클릭 시, 공격 사거리 안이면 공격, 밖이면 사거리까지 이동 후 공격
     public void TryAttack(Vector3 targetPos)
     {
         if (!CanAttack) 
