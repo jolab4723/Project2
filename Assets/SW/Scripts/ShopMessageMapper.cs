@@ -24,6 +24,9 @@ public static class ShopMessageMapper
             case TradeResult.TransferFailed:
                 return $"{itemName} 이동 중 거래에 실패했습니다.";
 
+            case TradeResult.StockUpdateFailed:
+                return $"{itemName} 재고 처리에 실패했습니다.";
+
             default:
                 return "거래 처리에 실패했습니다.";
         }

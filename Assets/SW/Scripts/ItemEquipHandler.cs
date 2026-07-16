@@ -369,6 +369,82 @@ public class ItemEquipHandler : MonoBehaviour
         return true;
     }
 
+    public bool TryHandleSellEquippedItem(ShopController shop)
+    {
+        if (shop == null || itemUI == null || !itemUI.OriginalWasEquipped)
+            return false;
+
+        EquipSlotUI previousSlot = itemUI.CurrentEquipSlot;
+
+        if (previousSlot == null)
+        {
+            Debug.LogError(
+                "[ItemEquipHandler] 판매할 장착 아이템의 기존 장비 슬롯을 찾지 못했습니다.");
+
+            return true;
+        }
+
+        if (!shop.IsTradingToShop(itemUI.OriginalGrid, itemUI))
+            return false;
+
+        Vector2Int targetCell = shop.GetShopCell(itemUI);
+
+        EquipmentTransactionResult unequipResult =
+            equipmentTransaction.TryUnequipForTransfer(
+                previousSlot.SlotType,
+                itemUI.Item);
+
+        if (!unequipResult.IsSuccess)
+        {
+            InventoryController.Instance.PrintLog(
+                EquipMessageMapper.GetMessage(
+                    unequipResult.EquipmentResult.Result));
+
+            // 드래그 시작 시 비워진 장비 슬롯 UI 복구
+            SetEquipSlotVisual(previousSlot);
+
+            return true;
+        }
+
+        // 실제 EquipmentSystem 해제가 성공했으므로 UI 상태도 해제한다.
+        previousSlot.ClearItemUI();
+        itemUI.ClearCurrentEquipSlot();
+
+        bool sold = shop.ConfirmSell(
+            itemUI,
+            targetCell.x,
+            targetCell.y);
+
+        if (sold)
+            return true;
+
+        // 판매 실패 후 혹시 상점 Grid에 남은 아이템이 있으면 제거한다.
+        if (shop.ShopGrid.ContainsItem(itemUI.Item) && !shop.ShopGrid.TryRemoveItem(itemUI.Item))
+        {
+            Debug.LogError(
+                "[ItemEquipHandler] 판매 실패 후 상점 Grid에서 아이템을 제거하지 못했습니다.");
+
+            // 같은 아이템을 장비와 상점 Grid에 동시에 넣지 않도록
+            // 이 경우에는 장비 복구를 진행하지 않는다.
+            return true;
+        }
+
+        EquipmentTransactionResult restoreResult =
+            equipmentTransaction.TryRestoreEquippedItem(
+                itemUI.Item,
+                previousSlot.SlotType);
+
+        if (!restoreResult.IsSuccess)
+        {
+            Debug.LogError(
+                "[ItemEquipHandler] 판매 실패 후 원래 장비 슬롯으로 복구하지 못했습니다.");
+
+            return true;
+        }
+
+        SetEquipSlotVisual(previousSlot);
+        return true;
+    }
     public bool TryHandleDropFromEquipSlotToGrid(int targetX, int targetY)
     {
         if (!itemUI.IsEquipped)

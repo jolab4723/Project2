@@ -2,10 +2,12 @@ using UnityEngine;
 public class ShopTradeService
 {
     private readonly PlayerWallet playerWallet;
+    private readonly ShopStockService stockService;
 
-    public ShopTradeService(PlayerWallet playerWallet)
+    public ShopTradeService(PlayerWallet playerWallet, ShopStockService stockService)
     {
         this.playerWallet = playerWallet;
+        this.stockService = stockService;
     }
 
     public TradeResult TryBuy(
@@ -18,9 +20,20 @@ public class ShopTradeService
         if (item?.itemData?.definition == null ||
             shopGrid == null ||
             playerGrid == null ||
-            playerWallet == null)
+            playerWallet == null ||
+            stockService == null)
         {
             return TradeResult.InvalidItem;
+        }
+
+        string instanceId = item.itemData.instanceId;
+
+        // 상점 그리드에 보이더라도 재고 서비스에 등록되지 않은 아이템은 구매할 수 없다.
+        if (string.IsNullOrWhiteSpace(instanceId) ||
+            !stockService.TryGetEntry(instanceId, out ShopStockEntry stockEntry) ||
+            stockEntry.Item != item)
+        {
+            return TradeResult.StockUpdateFailed;
         }
 
         if (!playerGrid.CanPlaceItem(
@@ -37,6 +50,13 @@ public class ShopTradeService
         if (!playerWallet.TrySpendGold(price))
             return TradeResult.NotEnoughGold;
 
+        // 이동 전에 재고에서 제거한다.
+        if (!stockService.RemoveStock(instanceId))
+        {
+            playerWallet.AddGold(price);
+            return TradeResult.StockUpdateFailed;
+        }
+
         if (!TryTransferItem(
                 item,
                 shopGrid,
@@ -46,6 +66,15 @@ public class ShopTradeService
         {
             // 아이템 이동에 실패했으므로 차감한 골드를 되돌린다.
             playerWallet.AddGold(price);
+
+            // 제거했던 재고 항목도 원래 출처 그대로 복구
+            if (!TryRestoreStock(stockEntry))
+            {
+                Debug.LogError(
+                    "[ShopTradeService] 구매 실패 후 상점 재고 복구에도 실패했습니다.");
+
+                return TradeResult.StockUpdateFailed;
+            }
             return TradeResult.TransferFailed;
         }
 
@@ -62,7 +91,8 @@ public class ShopTradeService
         if (item?.itemData?.definition == null ||
             playerGrid == null ||
             shopGrid == null ||
-            playerWallet == null)
+            playerWallet == null ||
+            stockService == null)
         {
             return TradeResult.InvalidItem;
         }
@@ -74,6 +104,15 @@ public class ShopTradeService
                 item.CurrentHeight))
         {
             return TradeResult.NoSpace;
+        }
+
+        string instanceId = item.itemData.instanceId;
+
+        // ID가 없거나 이미 등록된 아이템이면 거래를 시작하지 않는다.
+        if (string.IsNullOrWhiteSpace(instanceId) ||
+            stockService.TryGetEntry(instanceId, out _))
+        {
+            return TradeResult.StockUpdateFailed;
         }
 
         int price = item.itemData.definition.sellPrice;
@@ -88,12 +127,45 @@ public class ShopTradeService
             return TradeResult.TransferFailed;
         }
 
-        // 아이템 이동이 확정된 후에만 골드를 지급한다.
+        // 아이템 이동 후 재고 등록
+        if (!stockService.RegisterPlayerSoldItem(item, price))
+        {
+            // 상점 그리드에서 다시 제거해야
+            // ShopController가 원래 인벤토리 위치로 복구할 수 있다.
+            if (!shopGrid.TryRemoveItem(item))
+            {
+                Debug.LogError(
+                    "[ShopTradeService] 재고 등록 실패 후 상점 Grid에서도 아이템을 제거하지 못했습니다.");
+            }
+
+            return TradeResult.StockUpdateFailed;
+        }
+
+        // 아이템 이동과 재고 등록이 모두 성공한 뒤에만 지급한다.
         playerWallet.AddGold(price);
 
         return TradeResult.Success;
     }
 
+    private bool TryRestoreStock(ShopStockEntry entry)
+    {
+        if (entry == null || stockService == null)
+            return false;
+
+        switch (entry.Source)
+        {
+            case ShopItemSource.Generated:
+                return stockService.RegisterGeneratedItem(entry.Item);
+
+            case ShopItemSource.PlayerSold:
+                return stockService.RegisterPlayerSoldItem(
+                    entry.Item,
+                    entry.PricePaidToPlayer);
+
+            default:
+                return false;
+        }
+    }
     private static bool TryTransferItem(
         InventoryItem item,
         InventoryGrid sourceGrid,
@@ -127,7 +199,7 @@ public class ShopTradeService
         // 서비스가 직접 제거한 경우에만 서비스가 복구한다.
         // 드래그 중 이미 제거된 경우에는 ItemUI가 원래 위치로 복구한다.
         if (removedByService &&
-            !TryRestoreItem(
+            !TryRestoreGridPlacement(
                 item,
                 sourceGrid,
                 sourcePlacement))
@@ -139,7 +211,7 @@ public class ShopTradeService
         return false;
     }
 
-    private static bool TryRestoreItem(
+    private static bool TryRestoreGridPlacement(
         InventoryItem item,
         InventoryGrid sourceGrid,
         InventoryPlacementSnapshot sourcePlacement)

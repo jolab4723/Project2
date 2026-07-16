@@ -73,6 +73,16 @@ public class ItemDropHandler : MonoBehaviour
 
         EquipSlotUI targetEquipSlot = InventoryController.Instance.hoveredEquipSlot;
 
+        // 장착 중인 아이템을 상점으로 직접 판매하는 전용 경로.
+        // 반드시 일반 ShopController.TradeItem보다 먼저 처리한다.
+        if (shop != null &&
+            equipHandler != null &&
+            itemUI.OriginalWasEquipped &&
+            equipHandler.TryHandleSellEquippedItem(shop))
+        {
+            return;
+        }
+
         if (shop != null && shop.TradeItem(itemUI, itemUI.OriginalGrid))
             return;
 

@@ -236,6 +236,53 @@ public class EquipmentTransaction
             true);
     }
 
+    public EquipmentTransactionResult TryUnequipForTransfer(
+    EquipSlotType sourceSlot,
+    InventoryItem expectedItem)
+    {
+        if (equipmentSystem == null || expectedItem?.itemData?.definition == null)
+        {
+            return EquipmentTransactionResult.Failed(
+                EquipResultData.Failed(
+                    EquipResult.InvalidItem,
+                    sourceSlot,
+                    expectedItem));
+        }
+
+        if (!equipmentSystem.TryGetEquippedItem(sourceSlot, out InventoryItem equippedItem) ||
+            equippedItem == null ||
+            !ReferenceEquals(equippedItem, expectedItem))
+        {
+            return EquipmentTransactionResult.Failed(
+                EquipResultData.Failed(
+                    EquipResult.NotEquipped,
+                    sourceSlot,
+                    expectedItem));
+        }
+
+        EquipResultData equipmentResult =
+            equipmentSystem.TryUnequipState(sourceSlot);
+
+        if (!equipmentResult.IsSuccess)
+        {
+            return EquipmentTransactionResult.Failed(
+                equipmentResult);
+        }
+
+        expectedItem.isRotated = false;
+
+        equipmentSystem.PublishChanged();
+        NotifyUnequipped(expectedItem);
+
+        return new EquipmentTransactionResult(
+            equipmentResult,
+            null,
+            expectedItem,
+            null,
+            default,
+            true);
+    }
+
     public EquipmentTransactionResult TrySwap(
     EquipSlotType targetSlot,
     InventoryItem incomingItem,

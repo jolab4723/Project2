@@ -4,5 +4,6 @@ public enum TradeResult : byte
     InvalidItem = 1,
     NotEnoughGold = 2,
     NoSpace = 3,
-    TransferFailed = 4
+    TransferFailed = 4,
+    StockUpdateFailed = 5
 }

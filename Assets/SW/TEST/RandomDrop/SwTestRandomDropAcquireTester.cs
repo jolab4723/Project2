@@ -175,8 +175,41 @@ private void OnEnable()
         public void SetMonsterGradeChampion() => monsterGrade = SwTestMonsterDropGrade.Champion;
         public void SetMonsterGradeElite() => monsterGrade = SwTestMonsterDropGrade.Elite;
         public void SetMonsterGradeBoss() => monsterGrade = SwTestMonsterDropGrade.Boss;
+        public void PrepareRandomItemData()
+        {
+            if (!TryRollRandomItem(
+                    out SwTestEquipmentDropResult result))
+            {
+                RefreshGetItemButton();
+                return;
+            }
 
-private void BindButtons()
+            ItemInstance instance =
+                CreateItemInstance(result.itemDefinition);
+
+            if (instance == null)
+            {
+                Debug.LogWarning(
+                    "[SW TEST 랜덤 드랍] 아이템 데이터 생성에 실패했습니다.");
+
+                RefreshGetItemButton();
+                return;
+            }
+
+            instance.upgradeLevel = testUpgradeLevel;
+
+            lastDropped = instance;
+            lastSpawnedPickup = null;
+
+            RefreshGetItemButton();
+
+            Debug.Log(
+                BuildResultLog(
+                    "아이템 데이터 생성",
+                    result,
+                    lastDropped));
+        }
+        private void BindButtons()
         {
             if (buttonsBound)
                 return;
@@ -374,7 +407,7 @@ private void EnsureItemGeneratorPickupPrefab()
         private void RefreshGetItemButton()
         {
             if (getItemButton != null)
-                getItemButton.interactable = worldItemScanner != null;
+                getItemButton.interactable = lastDropped != null || worldItemScanner != null;
         }
 }
 }

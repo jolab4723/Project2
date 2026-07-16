@@ -59,57 +59,56 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
             $"[InventoryItemUISpawner] {itemName}의 " +
             "모델 추가는 성공했지만 Item UI 생성에 실패했습니다.");
     }
-
     public ItemUI SpawnItemUIAndGet(InventoryItem item)
+    {
+        return SpawnItemUIAndGet(item, playerGrid);
+    }
+
+    public ItemUI SpawnItemUIAndGet(InventoryItem item, InventoryGrid targetGrid)
     {
         if (item?.itemData?.definition == null)
         {
             Debug.LogWarning(
-                "[InventoryItemUISpawner] " +
-                "유효하지 않은 InventoryItem입니다.");
-
+                "[InventoryItemUISpawner] 유효하지 않은 InventoryItem입니다.");
             return null;
         }
 
-        if (playerGrid == null || playerGrid.ItemsContainer == null)
+        if (targetGrid == null || targetGrid.ItemsContainer == null)
         {
             Debug.LogWarning(
-                "[InventoryItemUISpawner] " +
-                "PlayerGrid 또는 ItemsContainer가 없습니다.");
-
+                "[InventoryItemUISpawner] 대상 Grid 또는 ItemsContainer가 없습니다.");
             return null;
         }
 
         if (itemUIPrefab == null)
         {
             Debug.LogWarning(
-                "[InventoryItemUISpawner] " +
-                "itemUIPrefab이 연결되지 않았습니다.");
-
+                "[InventoryItemUISpawner] itemUIPrefab이 연결되지 않았습니다.");
             return null;
         }
 
-        GameObject newObject = Instantiate(itemUIPrefab, playerGrid.ItemsContainer);
+        GameObject newObject = Instantiate(itemUIPrefab, targetGrid.ItemsContainer);
 
         ItemUI itemUI = newObject.GetComponent<ItemUI>();
 
         if (itemUI == null)
         {
             Debug.LogWarning(
-                "[InventoryItemUISpawner] " +
-                "itemUIPrefab에 ItemUI 컴포넌트가 없습니다.");
+                "[InventoryItemUISpawner] itemUIPrefab에 ItemUI가 없습니다.");
 
             Destroy(newObject);
             return null;
         }
 
-        itemUI.Setup(item, playerGrid);
+        itemUI.Setup(item, targetGrid);
+
         ItemDropHandler dropHandler = newObject.GetComponent<ItemDropHandler>();
 
         if (dropHandler != null)
         {
             dropHandler.Bind(worldItemDropService);
         }
+
         return itemUI;
     }
 }
