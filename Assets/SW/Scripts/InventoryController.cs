@@ -1,10 +1,19 @@
+using System.Collections.Generic;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"의 인벤토리만 가리킨다 (PlayerHealthManager와 동일 패턴).
+/// </summary>
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
+    public event System.Action<InventoryItem> OnItemAdded;
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
+    public static readonly List<InventoryController> All = new List<InventoryController>();
+
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
     [SerializeField] private EquipmentSystem equipmentSystem;
@@ -15,15 +24,35 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public TextMeshProUGUI logText;
     public EquipSlotUI hoveredEquipSlot;
     public EquipSlotUI[] allEquipSlots;
-    public GameObject itemUIPrefab;
 
     public TextMeshProUGUI goldText;
 
     void Awake()
     {
+        All.Add(this);
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[InventoryController] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
+
         RefreshGoldText(playerWallet.Gold);
     }
+
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
+    }
+
     private void OnEnable()
     {
         playerWallet.OnGoldChanged += RefreshGoldText;
@@ -34,56 +63,21 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     {
         playerWallet.OnGoldChanged -= RefreshGoldText;
     }
-
+    
     public bool AddItem(ItemInstance itemData)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
-        
-        if (result.Result != InventoryAddResult.Success)
-        {
-            PrintLog(GetAddItemFailMessage(result.Result));
-            return false;
-        }
-        var data = result.Item.itemData.definition;
-        if (!SpawnItemUI(result.Item))
-        {
-            // UI 생성이 실패했으면 그리드 데이터도 되돌려서 데이터-화면 불일치를 막는다.
-            playerGrid.RemoveItem(result.Item);
-            PrintLog($"{data.itemName} 아이템 UI 생성에 실패했습니다.");
-            return false;
-        }
 
-        PrintLog($"{data.itemName} 아이템을 획득했습니다. 위치 : {result.X}, {result.Y}");
-        return true;
-    }
+        string itemName = itemData?.definition?.itemName ?? "아이템";
 
-    /// <summary>
-    /// itemUIPrefab을 생성해 화면에 표시. 성공 여부를 반환한다.
-    /// </summary>
-    public bool SpawnItemUI(InventoryItem itemData)
-    {
-        if (itemUIPrefab == null)
-        {
-            Debug.LogWarning("[InventoryController] itemUIPrefab이 비어있습니다. 인스펙터에서 연결해주세요.");
-            return false;
-        }
+        PrintLog(
+            InventoryMessageMapper.GetMessage(
+                result.Result,
+                itemName,
+                result.X,
+                result.Y));
 
-        // 1. 바탕화면(itemsContainer)의 자식으로 프리팹(그림)을 생성합니다.
-        GameObject newObj = Instantiate(itemUIPrefab, playerGrid.ItemsContainer);
-
-        // 2. 방금 만든 그림의 ItemUI 스크립트를 가져옵니다.
-        ItemUI ui = newObj.GetComponent<ItemUI>();
-
-        if (ui == null)
-        {
-            Debug.LogWarning("[InventoryController] itemUIPrefab에 ItemUI 컴포넌트가 없습니다.");
-            Destroy(newObj);
-            return false;
-        }
-
-        // 3. 데이터를 넘겨주어 스스로 크기와 위치를 맞추게 합니다.
-        ui.Setup(itemData, playerGrid);
-        return true;
+        return result.Result == InventoryAddResult.Success;
     }
 
     public void PrintLog(string message)
@@ -92,6 +86,34 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         {
             logText.text = message;
         }
+    }
+
+    public InventoryAddResultData TryAddItemAt(InventoryItem item, int x, int y)
+    {
+        if (item?.itemData?.definition == null)
+        {
+            return InventoryAddResultData.Failed(
+                InventoryAddResult.InvalidItem);
+        }
+
+        if (playerGrid == null)
+        {
+            return InventoryAddResultData.Failed(
+                InventoryAddResult.GridUnavailable);
+        }
+
+        if (!playerGrid.TryPlaceItem(item, x, y))
+        {
+            return InventoryAddResultData.Failed(
+                InventoryAddResult.PlacementFailed);
+        }
+
+        InventoryAddResultData result =
+            InventoryAddResultData.Success(item, x, y);
+
+        OnItemAdded?.Invoke(item);
+
+        return result;
     }
     public void RefreshGoldText(int gold)
     {
@@ -102,29 +124,26 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         if (itemData == null || itemData.definition == null)
             return InventoryAddResultData.Failed(InventoryAddResult.InvalidItem);
 
-        var data = itemData.definition;
+        if (playerGrid == null)
+        {
+            return InventoryAddResultData.Failed(
+                InventoryAddResult.GridUnavailable);
+        }
 
-        if (!playerGrid.FindEmptySpace(data.itemWidth, data.itemHeight, out int x, out int y))
-            return InventoryAddResultData.Failed(InventoryAddResult.NoSpace);
+        var definition = itemData.definition;
+
+        if (!playerGrid.FindEmptySpace(
+                definition.itemWidth,
+                definition.itemHeight,
+                out int x,
+                out int y))
+        {
+            return InventoryAddResultData.Failed(
+                InventoryAddResult.NoSpace);
+        }
 
         InventoryItem item = new InventoryItem(itemData);
-        playerGrid.TryPlaceItem(item, x, y);
 
-        return InventoryAddResultData.Success(item, x, y);
-    }
-
-    private string GetAddItemFailMessage(InventoryAddResult result)
-    {
-        switch (result)
-        {
-            case InventoryAddResult.InvalidItem:
-                return "[InventoryController] AddItem에 유효하지 않은 itemData가 전달되었습니다.";
-
-            case InventoryAddResult.NoSpace:
-                return "인벤토리가 꽉 찼습니다!";
-
-            default:
-                return "아이템 획득에 실패했습니다.";
-        }
+        return TryAddItemAt(item, x, y);
     }
 }

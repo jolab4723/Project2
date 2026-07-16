@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -5,20 +6,30 @@ using UnityEngine;
 /// 최대 체력(MaxHealth)은 PlayerStatManager가 계산한 캐릭터+장비+버프 합산 결과를 그대로 따라가고,
 /// 현재 체력(CurrentHealth)은 여기서 독립적으로 들고 관리한다.
 ///
-/// !! PlayerStat에 있던 currentHealth/TakeDamage/Heal을 이쪽으로 옮겨왔습니다.
-///    maxHealth 자체는 여전히 PlayerStat 소관입니다 - "파생된 스탯값"이라 스탯 시스템에 두는 게 맞다고 판단했습니다.
-///    (지금은 체력 자동 재생 스탯이 없어서 PlayerManaManager와 달리 Update()에 회복 틱은 없습니다.
-///    나중에 체력 재생 스탯이 생기면 PlayerManaManager의 regenTimer 패턴을 그대로 가져오면 됨.)
+/// !! MaxHealth/CurrentHealth를 int에서 float로 전환함.
+///    TakeDamage(소모성)는 Mathf.Floor, Heal(증가성)는 Mathf.Ceil로 amount를 보정해서 적용한다
+///    (둘 다 플레이어에게 불리하지 않은 방향으로 반올림).
+///    SetCurrentHealth(세이브 로드 등 절대값 지정)는 보정 없이 그대로 clamp만 한다.
+///
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (Mirror NetworkIdentity가 있고
+///    isLocalPlayer가 false면 Instance로 등록 안 함). NetworkIdentity가 아예 없으면
+///    (지금처럼 싱글플레이 테스트 중이면) 항상 등록되어 기존과 동일하게 동작한다.
+///    다른 캐릭터(다른 플레이어)의 체력을 보고 싶을 때는 All 목록에서 찾으면 됨.
+///    PlayerStatManager도 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로
+///    찾아서 쓴다 (안 그러면 남의 캐릭터 체력이 내 스탯을 참조하게 됨).
 /// </summary>
 public class PlayerHealthManager : MonoBehaviour
 {
     public static PlayerHealthManager Instance { get; private set; }
 
+    /// <summary>씬에 존재하는 모든 캐릭터의 체력 매니저 (나 + 다른 플레이어). 헬스바 등 조회용.</summary>
+    public static readonly List<PlayerHealthManager> All = new List<PlayerHealthManager>();
+
     /// <summary>PlayerStatManager.Stat.maxHealth를 그대로 따라가는 값. 외부에서 직접 바꿀 수 없음.</summary>
-    public int MaxHealth { get; private set; }
+    public float MaxHealth { get; private set; }
 
     /// <summary>현재 체력.</summary>
-    public int CurrentHealth { get; private set; }
+    public float CurrentHealth { get; private set; }
 
     /// <summary>체력이 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event System.Action OnHealthChanged;
@@ -26,8 +37,20 @@ public class PlayerHealthManager : MonoBehaviour
     /// <summary>체력이 0이 됐을 때 한 번만 발행. 전투 시스템에서 사망 처리에 사용하면 됨.</summary>
     public event System.Action OnDeath;
 
+    /// <summary>데미지를 받을 때마다 발행 (보정된 실제 데미지량 전달). 회복와 구별해서 발행되기 때문에 "피격 시" 발동 조건에 쓸 수 있음.</summary>
+    public event System.Action<float> OnDamageTaken;
+
+    private PlayerStatManager statManager;
+
     private void Awake()
     {
+        All.Add(this);
+        statManager = GetComponent<PlayerStatManager>();
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[PlayerHealthManager] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
@@ -35,6 +58,13 @@ public class PlayerHealthManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()
@@ -55,7 +85,7 @@ public class PlayerHealthManager : MonoBehaviour
     /// </summary>
     private void RefreshMaxHealth()
     {
-        int newMax = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat.maxHealth : 0;
+        float newMax = statManager != null ? statManager.Stat.maxHealth : 0f;
         if (newMax == MaxHealth)
             return;
 
@@ -77,35 +107,41 @@ public class PlayerHealthManager : MonoBehaviour
 
     /// <summary>
     /// 세이브 데이터 로드 등 외부에서 정확한 값으로 직접 설정할 때 사용. 0~MaxHealth로 clamp된다.
-    /// TakeDamage/Heal과 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름.
+    /// TakeDamage/Heal과 달리 증감량이 아니라 절대값을 그대로 받는다는 점이 다름 (올림/버림 보정 없음).
     /// </summary>
-    public void SetCurrentHealth(int value)
+    public void SetCurrentHealth(float value)
     {
-        CurrentHealth = Mathf.Clamp(value, 0, MaxHealth);
+        CurrentHealth = Mathf.Clamp(value, 0f, MaxHealth);
         OnHealthChanged?.Invoke();
     }
 
-    /// <summary>amount만큼 데미지를 받는다. 0 밑으로는 안 내려가며, 0이 되면 OnDeath를 발행한다.</summary>
-    public void TakeDamage(int amount)
+    /// <summary>
+    /// amount만큼 데미지를 받는다. 소모성 처리라 amount는 Mathf.Floor로 버림 처리한 뒤 적용한다.
+    /// 0 밑으로는 안 내려가며, 0이 되면 OnDeath를 발행한다.
+    /// </summary>
+    public void TakeDamage(float amount)
     {
-        if (amount <= 0)
+        float dmg = Mathf.Floor(amount);
+        if (dmg <= 0f)
             return;
 
-        bool wasAlive = CurrentHealth > 0;
-        CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+        bool wasAlive = CurrentHealth > 0f;
+        CurrentHealth = Mathf.Max(0f, CurrentHealth - dmg);
         OnHealthChanged?.Invoke();
+        OnDamageTaken?.Invoke(dmg);
 
-        if (wasAlive && CurrentHealth <= 0)
+        if (wasAlive && CurrentHealth <= 0f)
             OnDeath?.Invoke();
     }
 
-    /// <summary>amount만큼 체력을 회복한다 (최대치를 넘지 않음).</summary>
-    public void Heal(int amount)
+    /// <summary>amount만큼 체력을 회복한다 (최대치를 넘지 않음). 증가성 처리라 amount는 Mathf.Ceil로 올림 처리한 뒤 적용한다.</summary>
+    public void Heal(float amount)
     {
-        if (amount <= 0)
+        float healAmount = Mathf.Ceil(amount);
+        if (healAmount <= 0f)
             return;
 
-        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + healAmount);
         OnHealthChanged?.Invoke();
     }
 }

@@ -10,10 +10,15 @@ using ItemSystem;
 /// PlayerEquipManager/PlayerBuffManager는 아직 구현 전이라, IStatSetProvider 인터페이스만
 /// 정의해두고 비어있으면 StatSet.Zero로 취급한다. 나중에 두 매니저를 구현할 때
 /// IStatSetProvider만 구현하면 이 클래스는 손대지 않아도 자동으로 연결된다.
+///
+/// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
 /// </summary>
 public class PlayerStatManager : MonoBehaviour
 {
     public static PlayerStatManager Instance { get; private set; }
+
+    /// <summary>씬에 존재하는 모든 캐릭터의 스탯 매니저 (나 + 다른 플레이어).</summary>
+    public static readonly List<PlayerStatManager> All = new List<PlayerStatManager>();
 
     [Header("레이어 소스")]
     [SerializeField] private PlayerLevelManager levelManager;
@@ -40,20 +45,38 @@ public class PlayerStatManager : MonoBehaviour
     {
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
+
+        if (PassiveSkillManager.Instance != null)
+            PassiveSkillManager.Instance.OnProfileChanged += Recalculate;
     }
 
     private void OnDisable()
     {
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+
+        if (PassiveSkillManager.Instance != null)
+            PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
     }
 
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
     {
         Recalculate();
     }
+
     private void Awake()
     {
+        All.Add(this);
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+        {
+            // 다른 플레이어의 스탯도 계산 자체는 필요하니 Stat은 만들어두되, Instance로는 등록 안 함.
+            Stat = new PlayerStat(startLevel);
+            Recalculate();
+            return;
+        }
+
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("[PlayerStatManager] 이미 인스턴스가 존재해서 중복 오브젝트를 제거합니다.");
@@ -74,24 +97,27 @@ public class PlayerStatManager : MonoBehaviour
         // 초기 스폰 시 체력/마나는 PlayerHealthManager/PlayerManaManager가 각각 자체적으로 Start()에서 풀충전 처리함.
     }
 
-    private void Update()
+    private void OnDestroy()
     {
-        // 테스트용: K키로 레벨업 트리거 (L키는 PlayerLevelManager 테스트 출력에서 이미 쓰고 있어서 다른 키로 배치)
-        if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
-            LevelUp();
+        All.Remove(this);
+        if (Instance == this)
+            Instance = null;
     }
 
     /// <summary>
-    /// 세 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
-    /// 장비 착용/해제, 레벨업, 버프 적용/해제 시 호출.
+    /// 네 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
+    /// 장비 착용/해제, 레벨업, 버프 적용/해제, 패시브 스킬 변경 시 호출.
+    /// !! 패시브 스킬은 캐릭터별 컴포넌트가 아니라 전역 PassiveSkillManager.Instance를 직접 참조한다
+    ///    (equip/buff처럼 Inspector에 캐릭터별로 꽂아주는 방식이 아님 - DataManager 참조 방식과 동일).
     /// </summary>
     public void Recalculate()
     {
         StatSet character = GetCharacterStatSet();
         StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
         StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
+        StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
 
-        Stat.Recalculate(character, equipment, buff);
+        Stat.Recalculate(character, equipment, buff, passive);
     }
 
     /// <summary>레벨을 올리고 전체 재계산까지 한 번에 처리.</summary>

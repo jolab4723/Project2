@@ -12,6 +12,9 @@ namespace ItemSystem
         public ItemCategory category;
         public ItemRarity rarity;
 
+        [TextArea]
+        public string description;
+
         [Tooltip("category가 Weapon일 때만 사용")]
         public CharacterClass characterClass;
         [Tooltip("category가 Weapon일 때만 사용 (characterClass에 따라 선택 가능한 목록이 달라짐)")]
@@ -46,6 +49,8 @@ namespace ItemSystem
 
         [Header("고유 효과 (등급 무관, 아이템별 개별 설정 — 비워두면 없음)")]
         public UniqueEffectSO uniqueEffect;
+        [Tooltip("고유효과 자동 연결(SOImporter)용 소스 ID. uniqueEffect 자체가 바뀌어도 이 값으로 다시 찾을 수 있음.")]
+        public string uniqueEffectId;
 
         public List<SubStatSlotType> GetSubStatSlots() => ItemGradeSlotTable.SlotsByGrade[rarity];
 

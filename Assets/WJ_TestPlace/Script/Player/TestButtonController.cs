@@ -10,11 +10,14 @@ using static Mirror.NetworkRuntimeProfiler;
 /// </summary>
 public class TestButtonController : MonoBehaviour
 {
-    [Header("1. 인벤토리 팝업")]
+    [Header("인벤토리 팝업")]
     [Tooltip("켰다 껐다 할 인벤토리 UI 루트 오브젝트")]
     [SerializeField] private GameObject inventoryPopup;
 
-    [Header("4~5. 아이템 드랍 / 획득")]
+    [Header("패시브 팝업")]
+    [SerializeField] private GameObject passivePopup;
+
+    [Header("아이템 드랍 / 획득")]
     [SerializeField] private ItemGenerator itemGenerator;
 
     [Tooltip("드랍 테스트에 사용할 아이템 정의")]
@@ -49,7 +52,7 @@ public class TestButtonController : MonoBehaviour
         var stat = PlayerStatManager.Instance.Stat;
     }
 
-    /// <summary>1. inventoryPopupBtn - 인벤토리 UI 활성화/비활성화 토글</summary>
+    
     public void OnClickInventoryPopup()
     {
         if (inventoryPopup == null)
@@ -59,6 +62,17 @@ public class TestButtonController : MonoBehaviour
         }
 
         inventoryPopup.SetActive(!inventoryPopup.activeSelf);
+    }
+
+    public void OnClickPassivePopup()
+    {
+        if (passivePopup == null)
+        {
+            Debug.LogWarning("[TestButtonController] passivePopup이 연결되지 않았습니다.");
+            return;
+        }
+
+        passivePopup.SetActive(!passivePopup.activeSelf);
     }
 
     /// <summary>2. levelUpBtn - 캐릭터 레벨업</summary>

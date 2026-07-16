@@ -18,6 +18,8 @@ namespace SW.Test.RandomDrop
         private const string DefaultDropTablePath = "Assets/SW/TEST/RandomDrop/Assets/SwTestDefaultEquipmentDropTable.asset";
         private const string DefaultGeneratedItemFolder = "Assets/SW/TEST/ItemTablePipeline/GeneratedAssets/Items";
 
+        [SerializeField] private WorldItemTooltipScanner worldItemScanner;
+
         [Header("버튼 연결")]
         [SerializeField] private Button dropItemButton;
         [SerializeField] private Button getItemButton;
@@ -32,6 +34,7 @@ namespace SW.Test.RandomDrop
         [SerializeField] private string generatedItemFolder = DefaultGeneratedItemFolder;
 
         [Header("기존 아이템 시스템 연결")]
+        [SerializeField]private WorldItemDropService worldItemDropService;
         [SerializeField] private ItemGenerator itemGenerator;
         [SerializeField] private GameObject itemPickupPrefabOverride;
         [SerializeField] private MonoBehaviour receiverBehaviour;
@@ -82,28 +85,44 @@ private void OnEnable()
                 return;
             }
 
-            if (lastSpawnedPickup != null)
-                Destroy(lastSpawnedPickup);
-            else if (itemGenerator.LastSpawnedPickup != null)
-                Destroy(itemGenerator.LastSpawnedPickup);
+            
 
-            Vector3 position = spawnPoint != null ? spawnPoint.position : transform.position;
-            Quaternion rotation = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+            ItemInstance instance = CreateItemInstance(result.itemDefinition);
 
-            EnsureItemGeneratorPickupPrefab();
-            lastDropped = itemGenerator.Drop(result.itemDefinition, position, rotation);
-            lastSpawnedPickup = itemGenerator.LastSpawnedPickup;
-
-            if (lastDropped == null)
+            if (instance == null)
             {
-                Debug.LogWarning("[SW TEST 랜덤 드랍] 아이템 인스턴스 생성에 실패했습니다.");
+                Debug.LogWarning(
+                    "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
+
                 RefreshGetItemButton();
                 return;
             }
 
-            lastDropped.upgradeLevel = testUpgradeLevel;
+            instance.upgradeLevel = testUpgradeLevel;
+
+            WorldItemDropResult dropResult =
+                worldItemDropService.TryDrop(
+                    instance,
+                    out ItemDataStorage spawnedPickup);
+
+            if (dropResult != WorldItemDropResult.Success)
+            {
+                Debug.LogWarning(
+                    $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}");
+
+                RefreshGetItemButton();
+                return;
+            }
+
+            lastDropped = instance;
+            lastSpawnedPickup = spawnedPickup.gameObject;
+
             RefreshGetItemButton();
-            Debug.Log(BuildResultLog("필드 드랍", result, lastDropped));
+            Debug.Log(
+                BuildResultLog(
+                    "필드 드랍",
+                    result,
+                    lastDropped));
         }
 
         [ContextMenu("SW TEST/랜덤 아이템 인벤토리 추가")]
@@ -202,7 +221,12 @@ private void UnbindButtons()
             if (getItemButton == null)
                 getItemButton = FindButtonByName(getItemButtonName);
 
-            
+            if (worldItemScanner == null)
+            {
+                worldItemScanner =
+                    Object.FindFirstObjectByType<WorldItemTooltipScanner>();
+            }
+
             if (itemPickupPrefabOverride == null)
             {
                 ItemDropTester legacyDropTester = Object.FindFirstObjectByType<ItemDropTester>(FindObjectsInactive.Include);
@@ -309,19 +333,48 @@ if (itemGenerator == null)
     
 
 private void EnsureItemGeneratorPickupPrefab()
-        {
-            if (itemGenerator == null || itemGenerator.itemPickupPrefab != null)
+{
+            if (itemGenerator == null || itemPickupPrefabOverride == null)
                 return;
 
-            if (itemPickupPrefabOverride != null)
-                itemGenerator.itemPickupPrefab = itemPickupPrefabOverride;
+            itemGenerator.itemPickupPrefab = itemPickupPrefabOverride;
+ }
+
+        public void AcquireNearestWorldItem()
+        {
+            if (worldItemScanner == null ||
+                !worldItemScanner.TryGetCurrentTarget(
+                    out ItemDataStorage pickup))
+            {
+                Debug.LogWarning(
+                    "[SW TEST 획득] 감지 범위 안에 아이템이 없습니다.");
+                return;
+            }
+
+            ItemInstance item = pickup.Item;
+
+            if (!ItemAcquisition.Acquire(item, Receiver))
+                return;
+
+            bool wasLastSpawned =
+                pickup.gameObject == lastSpawnedPickup;
+
+            Destroy(pickup.gameObject);
+
+            if (wasLastSpawned)
+            {
+                lastDropped = null;
+                lastSpawnedPickup = null;
+            }
+
+            RefreshGetItemButton();
         }
 
 
-private void RefreshGetItemButton()
+        private void RefreshGetItemButton()
         {
             if (getItemButton != null)
-                getItemButton.interactable = lastDropped != null;
+                getItemButton.interactable = worldItemScanner != null;
         }
 }
 }

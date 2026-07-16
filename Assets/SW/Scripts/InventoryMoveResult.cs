@@ -1,8 +1,8 @@
-public enum InventoryMoveResult
+public enum InventoryMoveResult : byte
 {
-    Success,
-    Swapped,
-    ReturnedToOriginal,
-    MovedToEmptySpace,
-    Failed
+    Success = 0,
+    Swapped = 1,
+    ReturnedToOriginal = 2,
+    MovedToEmptySpace = 3,
+    Failed = 4
 }
