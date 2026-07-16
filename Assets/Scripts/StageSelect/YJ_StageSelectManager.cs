@@ -180,6 +180,38 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 테스트 버튼에서 새 Seed와 초기 진행 상태로 전체 노드 배치 및 연결을 다시 생성합니다.
+    /// 기존 JSON 저장 파일에는 영향을 주지 않습니다.
+    /// </summary>
+    public void RerollMapForTesting()
+    {
+        mapSeed = CreateRerollSeed();
+        clearedFloor = 0;
+        lastClearedNodeId = string.Empty;
+
+        nodeReticle?.Hide();
+        mapScrollRect?.StopMovement();
+        GenerateMap();
+
+        Debug.Log($"Stage map re-rolled for testing. Seed: {GeneratedSeed}", this);
+    }
+
+    /// <summary>
+    /// 현재 생성 Seed와 중복되지 않는 0 이외의 새 테스트용 Seed를 만듭니다.
+    /// </summary>
+    private int CreateRerollSeed()
+    {
+        int newSeed;
+        do
+        {
+            newSeed = Guid.NewGuid().GetHashCode();
+        }
+        while (newSeed == 0 || newSeed == GeneratedSeed);
+
+        return newSeed;
+    }
+
+    /// <summary>
     /// 현재 생성된 노드 배치, 연결 정보와 진행 상태를 JSON 저장용 순수 데이터로 변환합니다.
     /// </summary>
     public StageMapSaveData CaptureSaveData()

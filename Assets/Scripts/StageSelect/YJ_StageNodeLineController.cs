@@ -23,6 +23,8 @@ public class YJ_StageNodeLineController : MonoBehaviour
     [SerializeField, Min(0f)] private float maximumConnectionDistance = 600f;
     // 거리 내 다음 노드 후보가 2개 이상일 때 선택 연결을 허용할 확률입니다.
     [SerializeField, Range(0f, 1f)] private float optionalConnectionChance = 0.3f;
+    // 한 노드로 들어오는 두 번째 이후 라인을 최종 연결 목록에 남겨둘 확률입니다.
+    [SerializeField, Range(0f, 1f)] private float extraIncomingConnectionKeepChance = 0.5f;
 
     [Header("Reachability")]
     // 도달할 수 없는 노드와 연결된 선에 곱할 알파 비율입니다.
@@ -57,6 +59,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
     {
         maximumConnectionDistance = Mathf.Max(0f, maximumConnectionDistance);
         optionalConnectionChance = Mathf.Clamp01(optionalConnectionChance);
+        extraIncomingConnectionKeepChance = Mathf.Clamp01(extraIncomingConnectionKeepChance);
         unreachableLineAlpha = Mathf.Clamp01(unreachableLineAlpha);
         tintTransitionDuration = Mathf.Max(0f, tintTransitionDuration);
     }
@@ -280,6 +283,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
         Dictionary<YJ_StageNodeData, bool> allowOptionalConnections = new();
         List<YJ_StageNodeData> orderedCurrentNodes = new();
         List<YJ_StageNodeData> orderedNextNodes = new();
+        List<NodeConnection> extraIncomingCandidates = new();
+        Dictionary<YJ_StageNodeData, int> incomingConnectionCounts = new();
+        Dictionary<YJ_StageNodeData, int> outgoingConnectionCounts = new();
+        HashSet<YJ_StageNodeData> nodesWithProtectedIncoming = new();
         float maximumDistanceSquared = maximumConnectionDistance * maximumConnectionDistance;
 
         for (int floorIndex = 0; floorIndex < generatedFloors.Count - 1; floorIndex++)
@@ -337,11 +344,67 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 acceptedConnections.Add(candidate);
             }
 
+            PruneExtraIncomingConnections(
+                acceptedConnections,
+                extraIncomingCandidates,
+                incomingConnectionCounts,
+                outgoingConnectionCounts,
+                nodesWithProtectedIncoming,
+                random);
+
             foreach (NodeConnection accepted in acceptedConnections)
             {
                 accepted.startNode.nextNodeIds.Add(accepted.endNode.id);
                 generatedConnections.Add(accepted);
             }
+        }
+    }
+
+    /// <summary>
+    /// 각 도착 노드의 첫 유입 라인은 보존하고 두 번째 이후 라인은 확률적으로 제거합니다.
+    /// 출발 노드의 마지막 출구와 도착 노드의 마지막 입구는 삭제하지 않습니다.
+    /// </summary>
+    private void PruneExtraIncomingConnections(
+        List<NodeConnection> acceptedConnections,
+        List<NodeConnection> extraIncomingCandidates,
+        Dictionary<YJ_StageNodeData, int> incomingConnectionCounts,
+        Dictionary<YJ_StageNodeData, int> outgoingConnectionCounts,
+        HashSet<YJ_StageNodeData> nodesWithProtectedIncoming,
+        System.Random random)
+    {
+        extraIncomingCandidates.Clear();
+        incomingConnectionCounts.Clear();
+        outgoingConnectionCounts.Clear();
+        nodesWithProtectedIncoming.Clear();
+
+        foreach (NodeConnection connection in acceptedConnections)
+        {
+            incomingConnectionCounts.TryGetValue(connection.endNode, out int incomingCount);
+            incomingConnectionCounts[connection.endNode] = incomingCount + 1;
+
+            outgoingConnectionCounts.TryGetValue(connection.startNode, out int outgoingCount);
+            outgoingConnectionCounts[connection.startNode] = outgoingCount + 1;
+
+            if (!nodesWithProtectedIncoming.Add(connection.endNode))
+                extraIncomingCandidates.Add(connection);
+        }
+
+        Shuffle(extraIncomingCandidates, random);
+
+        foreach (NodeConnection candidate in extraIncomingCandidates)
+        {
+            if (random.NextDouble() < extraIncomingConnectionKeepChance ||
+                incomingConnectionCounts[candidate.endNode] <= 1 ||
+                outgoingConnectionCounts[candidate.startNode] <= 1)
+            {
+                continue;
+            }
+
+            if (!acceptedConnections.Remove(candidate))
+                continue;
+
+            incomingConnectionCounts[candidate.endNode]--;
+            outgoingConnectionCounts[candidate.startNode]--;
         }
     }
 
