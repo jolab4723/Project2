@@ -12,6 +12,8 @@ public class YJ_StageSelectManager : MonoBehaviour
 {
     // 노드 프리팹을 Resources.Load로 불러올 때 사용하는 공통 폴더 경로입니다.
     private const string PrefabPath = "Prefabs/Map/StageNode/";
+    // 분기 분리 조건을 만족하는 전체 맵 배치를 찾기 위해 허용할 최대 생성 횟수입니다.
+    private const int MaximumMapGenerationAttempts = 32;
     // 확률에 따라 생성될 수 있는 일반 중간층 노드 종류 목록입니다.
     private static readonly StageNodeType[] MiddleNodeTypes =
     {
@@ -160,17 +162,61 @@ public class YJ_StageSelectManager : MonoBehaviour
         }
 
         LoadPrefabs();
-        nodeLineController?.ClearLines();
-        ClearGeneratedNodes();
-        nodeLayoutController.PrepareMapRect(currentRules.floorCount);
 
-        GeneratedSeed = mapSeed != 0 ? mapSeed : Environment.TickCount;
-        random = new System.Random(GeneratedSeed);
+        int initialSeed = mapSeed != 0 ? mapSeed : Environment.TickCount;
+        if (initialSeed == 0)
+            initialSeed = 1;
 
-        for (int floor = 1; floor <= currentRules.floorCount; floor++)
-            GenerateFloor(floor, nodesLayer);
+        bool mapGenerated = false;
+        for (int attempt = 0; attempt < MaximumMapGenerationAttempts; attempt++)
+        {
+            nodeLineController?.ClearLines();
+            ClearGeneratedNodes();
+            nodeLayoutController.PrepareMapRect(currentRules.floorCount);
 
-        nodeLineController?.Rebuild(generatedFloors, random);
+            GeneratedSeed = GetGenerationAttemptSeed(initialSeed, attempt);
+            random = new System.Random(GeneratedSeed);
+
+            for (int floor = 1; floor <= currentRules.floorCount; floor++)
+                GenerateFloor(floor, nodesLayer);
+
+            mapGenerated = nodeLineController == null ||
+                           nodeLineController.Rebuild(generatedFloors, random);
+            if (!mapGenerated)
+                continue;
+
+            if (attempt > 0)
+            {
+                Debug.Log(
+                    $"Stage map branch separation succeeded after {attempt + 1} attempts. " +
+                    $"Seed: {GeneratedSeed}",
+                    this);
+            }
+
+            break;
+        }
+
+        if (!mapGenerated)
+        {
+            bool fallbackGenerated = nodeLineController == null ||
+                                     nodeLineController.Rebuild(
+                                         generatedFloors,
+                                         random,
+                                         false);
+            if (fallbackGenerated)
+            {
+                Debug.LogWarning(
+                    $"Could not satisfy branch separation after " +
+                    $"{MaximumMapGenerationAttempts} attempts. " +
+                    $"A connected fallback map was generated with Seed {GeneratedSeed}.",
+                    this);
+            }
+            else
+            {
+                Debug.LogError("Stage map line generation failed.", this);
+            }
+        }
+
         clearedFloor = Mathf.Clamp(clearedFloor, 0, currentRules.floorCount);
         RefreshNodeAvailability();
 
@@ -209,6 +255,22 @@ public class YJ_StageSelectManager : MonoBehaviour
         while (newSeed == 0 || newSeed == GeneratedSeed);
 
         return newSeed;
+    }
+
+    /// <summary>
+    /// 같은 최초 Seed에서 생성 재시도 순번별로 재현 가능한 파생 Seed를 반환합니다.
+    /// </summary>
+    private static int GetGenerationAttemptSeed(int initialSeed, int attempt)
+    {
+        if (attempt == 0)
+            return initialSeed;
+
+        unchecked
+        {
+            int derivedSeed = initialSeed ^ attempt * -1640531527;
+            derivedSeed ^= derivedSeed >> 16;
+            return derivedSeed != 0 ? derivedSeed : attempt;
+        }
     }
 
     /// <summary>
