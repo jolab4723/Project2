@@ -208,7 +208,7 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!isInteractable || eventData.button != PointerEventData.InputButton.Left)
+        if (!isInteractable || isSelected || eventData.button != PointerEventData.InputButton.Left)
             return;
 
         if (stageSelectManager == null)
@@ -542,6 +542,9 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     private bool SetSelectedWithoutManager()
     {
+        if (isSelected)
+            return false;
+
         SetSelected(true);
         return true;
     }

@@ -919,7 +919,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 595e01f8505dbb643b48847ac8575efb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_StageSelectManager
-  currentAct: 1
+  currentAct: 3
   clearedFloor: 0
   lastClearedNodeId: 
   mapSeed: 0
@@ -930,6 +930,7 @@ MonoBehaviour:
   mapScrollRect: {fileID: 307648886}
   nodeLayoutController: {fileID: 463139085}
   nodeLineController: {fileID: 463139084}
+  nodeReticle: {fileID: 0}
 --- !u!114 &463139084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -944,7 +945,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_StageNodeLineController
   linesLayer: {fileID: 165850906}
   nodeLinePrefab: {fileID: 1751537399120242531, guid: bd3d1313684f0994aab20f562a3472b1, type: 3}
-  maximumConnectionDistance: 1000
+  maximumConnectionDistance: 1500
+  optionalConnectionChance: 0.3
   unreachableLineAlpha: 0.05
 --- !u!114 &463139085
 MonoBehaviour:
@@ -1072,6 +1074,18 @@ PrefabInstance:
     - target: {fileID: 6269990153639832385, guid: 74a1567f4e2e9fa4eb80ff958c9579fe, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6713185745898432275, guid: 74a1567f4e2e9fa4eb80ff958c9579fe, type: 3}
+      propertyPath: outwardDistance
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6713185745898432275, guid: 74a1567f4e2e9fa4eb80ff958c9579fe, type: 3}
+      propertyPath: bossInwardDistance
+      value: -100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6713185745898432275, guid: 74a1567f4e2e9fa4eb80ff958c9579fe, type: 3}
+      propertyPath: bossOutwardDistance
+      value: 200
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

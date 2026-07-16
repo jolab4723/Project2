@@ -347,7 +347,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             return false;
 
         if (SelectedNode == node)
-            return true;
+            return false;
 
         if (SelectedNode != null)
             SelectedNode.SetSelected(false);

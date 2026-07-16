@@ -20,6 +20,8 @@ public class YJ_StageNodeLineController : MonoBehaviour
     [Header("Connections")]
     // 일반적인 인접 층 연결 후보로 허용할 최대 노드 거리입니다.
     [SerializeField, Min(0f)] private float maximumConnectionDistance = 600f;
+    // 거리 내 다음 노드 후보가 2개 이상일 때 선택 연결을 허용할 확률입니다.
+    [SerializeField, Range(0f, 1f)] private float optionalConnectionChance = 0.3f;
 
     [Header("Reachability")]
     // 도달할 수 없는 노드와 연결된 선에 곱할 알파 비율입니다.
@@ -47,6 +49,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
     private void OnValidate()
     {
         maximumConnectionDistance = Mathf.Max(0f, maximumConnectionDistance);
+        optionalConnectionChance = Mathf.Clamp01(optionalConnectionChance);
         unreachableLineAlpha = Mathf.Clamp01(unreachableLineAlpha);
     }
 
@@ -240,11 +243,13 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 nextFloorNodes,
                 acceptedConnections,
                 orderedCurrentNodes,
-                orderedNextNodes);
+                orderedNextNodes,
+                random);
 
             foreach (KeyValuePair<YJ_StageNodeData, int> pair in candidateCounts)
             {
-                allowOptionalConnections[pair.Key] = pair.Value < 2 || random.NextDouble() < 0.5;
+                allowOptionalConnections[pair.Key] =
+                    pair.Value < 2 || random.NextDouble() < optionalConnectionChance;
             }
 
             Shuffle(candidates, random);
@@ -279,7 +284,8 @@ public class YJ_StageNodeLineController : MonoBehaviour
         List<YJ_StageNodeData> nextFloorNodes,
         List<NodeConnection> acceptedConnections,
         List<YJ_StageNodeData> orderedCurrentNodes,
-        List<YJ_StageNodeData> orderedNextNodes)
+        List<YJ_StageNodeData> orderedNextNodes,
+        System.Random random)
     {
         orderedCurrentNodes.Clear();
         orderedNextNodes.Clear();
@@ -287,6 +293,13 @@ public class YJ_StageNodeLineController : MonoBehaviour
         orderedNextNodes.AddRange(nextFloorNodes);
         orderedCurrentNodes.Sort((first, second) => first.position.x.CompareTo(second.position.x));
         orderedNextNodes.Sort((first, second) => first.position.x.CompareTo(second.position.x));
+
+        // 층마다 진행 방향을 반전해 노드 수가 다른 층에서 한쪽 끝에 연결이 치우치는 현상을 줄입니다.
+        if (random.NextDouble() < 0.5)
+        {
+            orderedCurrentNodes.Reverse();
+            orderedNextNodes.Reverse();
+        }
 
         if (orderedCurrentNodes.Count == 0 || orderedNextNodes.Count == 0)
             return;

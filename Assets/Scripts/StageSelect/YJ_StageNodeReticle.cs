@@ -20,8 +20,14 @@ public class YJ_StageNodeReticle : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
 
     [Header("Approach Effect")]
-    // 각 Bracket이 기준 위치보다 바깥쪽에서 출발하는 거리입니다.
-    [SerializeField, Min(0f)] private float outwardDistance = 120f;
+    // 일반 노드에서 각 Bracket이 기준 위치보다 바깥쪽에서 출발하는 거리입니다.
+    [SerializeField] private float outwardDistance = 120f;
+    // 보스 노드에서 각 Bracket이 기준 위치보다 바깥쪽에서 출발하는 거리입니다.
+    [SerializeField] private float bossOutwardDistance = 180f;
+    // 일반 노드에서 각 Bracket이 기본 위치보다 중앙 쪽에서 정지하는 거리입니다.
+    [SerializeField] private float inwardDistance;
+    // 보스 노드에서 각 Bracket이 기본 위치보다 중앙 쪽에서 정지하는 거리입니다.
+    [SerializeField] private float bossInwardDistance;
     // Bracket이 바깥 위치에서 기준 위치까지 도달하는 시간입니다.
     [SerializeField, Min(0.01f)] private float approachDuration = 0.2f;
     // 게임 일시정지 중에도 UI 효과를 재생할지 결정합니다.
@@ -153,8 +159,9 @@ public class YJ_StageNodeReticle : MonoBehaviour
         }
 
         targetNode = nodeData;
-        leftBracket.anchoredPosition = leftRestPosition;
-        rightBracket.anchoredPosition = rightRestPosition;
+        GetTargetBracketPositions(out Vector2 leftTargetPosition, out Vector2 rightTargetPosition);
+        leftBracket.anchoredPosition = leftTargetPosition;
+        rightBracket.anchoredPosition = rightTargetPosition;
         FollowTarget();
         SetVisible(true);
     }
@@ -190,8 +197,12 @@ public class YJ_StageNodeReticle : MonoBehaviour
     /// </summary>
     private IEnumerator PlayApproachRoutine()
     {
-        Vector2 leftStartPosition = leftRestPosition + Vector2.left * outwardDistance;
-        Vector2 rightStartPosition = rightRestPosition + Vector2.right * outwardDistance;
+        bool isBossNode = targetNode != null && targetNode.type == StageNodeType.Boss;
+        float selectedOutwardDistance = isBossNode ? bossOutwardDistance : outwardDistance;
+        GetTargetBracketPositions(out Vector2 leftTargetPosition, out Vector2 rightTargetPosition);
+
+        Vector2 leftStartPosition = leftTargetPosition + Vector2.left * selectedOutwardDistance;
+        Vector2 rightStartPosition = rightTargetPosition + Vector2.right * selectedOutwardDistance;
         leftBracket.anchoredPosition = leftStartPosition;
         rightBracket.anchoredPosition = rightStartPosition;
         SetVisible(true, 0f);
@@ -205,24 +216,38 @@ public class YJ_StageNodeReticle : MonoBehaviour
 
             leftBracket.anchoredPosition = Vector2.LerpUnclamped(
                 leftStartPosition,
-                leftRestPosition,
+                leftTargetPosition,
                 easedT);
             rightBracket.anchoredPosition = Vector2.LerpUnclamped(
                 rightStartPosition,
-                rightRestPosition,
+                rightTargetPosition,
                 easedT);
             canvasGroup.alpha = easedT;
 
             yield return null;
         }
 
-        leftBracket.anchoredPosition = leftRestPosition;
-        rightBracket.anchoredPosition = rightRestPosition;
+        leftBracket.anchoredPosition = leftTargetPosition;
+        rightBracket.anchoredPosition = rightTargetPosition;
         SetVisible(true);
         approachRoutine = null;
 
         // Reticle이 완전히 좁혀진 뒤 테스트 완료 또는 실제 씬 전환 흐름을 요청합니다.
         stageSelectManager?.NotifyReticleAnimationCompleted(targetNode);
+    }
+
+    /// <summary>
+    /// 현재 대상 노드 종류에 맞춰 좌우 Bracket이 접근을 마친 뒤 정지할 위치를 계산합니다.
+    /// </summary>
+    private void GetTargetBracketPositions(
+        out Vector2 leftTargetPosition,
+        out Vector2 rightTargetPosition)
+    {
+        bool isBossNode = targetNode != null && targetNode.type == StageNodeType.Boss;
+        float selectedInwardDistance = isBossNode ? bossInwardDistance : inwardDistance;
+
+        leftTargetPosition = leftRestPosition + Vector2.right * selectedInwardDistance;
+        rightTargetPosition = rightRestPosition + Vector2.left * selectedInwardDistance;
     }
 
     /// <summary>
