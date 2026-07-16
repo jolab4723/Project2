@@ -64,6 +64,8 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     [SerializeField] private Color clearedTint = new Color(0.45f, 0.45f, 0.45f, 1f);
     // 현재 경로에서 앞으로 도달 가능하지만 아직 선택 차례가 아닌 노드에 적용할 색상입니다.
     [SerializeField] private Color unclearedTint = new Color(0.3f, 0.3f, 0.3f, 1f);
+    // 원본 색상과 비활성 Tint 사이를 부드럽게 전환하는 시간입니다.
+    [SerializeField, Min(0f)] private float tintTransitionDuration = 0.5f;
 
     // Background가 확대되지 않은 상태의 기준 크기입니다.
     private Vector3 normalScale;
@@ -89,6 +91,8 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private Coroutine clickRoutine;
     // Icon Hover 부유 효과를 실행 중인 코루틴입니다.
     private Coroutine hoverFloatRoutine;
+    // 노드 Icon과 Background의 Tint 전환을 실행 중인 코루틴입니다.
+    private Coroutine tintTransitionRoutine;
 
     // 외부에서 현재 선택 상태를 읽을 때 사용합니다.
     public bool IsSelected => isSelected;
@@ -155,6 +159,12 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
         {
             StopCoroutine(hoverFloatRoutine);
             hoverFloatRoutine = null;
+        }
+
+        if (tintTransitionRoutine != null)
+        {
+            StopCoroutine(tintTransitionRoutine);
+            tintTransitionRoutine = null;
         }
 
         if (stageSelectManager != null)
@@ -575,19 +585,75 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
             ? clearedTint
             : unclearedTint;
 
+        Color targetBackgroundColor = useDisabledTint
+            ? disabledTint
+            : originalBackgroundColor;
+        Color targetIconColor = useDisabledTint
+            ? disabledTint
+            : originalIconColor;
+
         if (backgroundImage != null)
-        {
-            Color color = useDisabledTint ? disabledTint : originalBackgroundColor;
-            color.a = backgroundImage.color.a;
-            backgroundImage.color = color;
-        }
+            targetBackgroundColor.a = backgroundImage.color.a;
 
         if (iconImage != null)
+            targetIconColor.a = originalIconColor.a;
+
+        if (tintTransitionRoutine != null)
         {
-            Color color = useDisabledTint ? disabledTint : originalIconColor;
-            color.a = originalIconColor.a;
-            iconImage.color = color;
+            StopCoroutine(tintTransitionRoutine);
+            tintTransitionRoutine = null;
         }
 
+        if (!isActiveAndEnabled || tintTransitionDuration <= Mathf.Epsilon)
+        {
+            SetTintColors(targetBackgroundColor, targetIconColor);
+            return;
+        }
+
+        tintTransitionRoutine = StartCoroutine(
+            TintTransitionRoutine(targetBackgroundColor, targetIconColor));
+    }
+
+    /// <summary>
+    /// 현재 노드 색상에서 목표 Tint까지 지정된 시간 동안 부드럽게 보간합니다.
+    /// </summary>
+    private IEnumerator TintTransitionRoutine(
+        Color targetBackgroundColor,
+        Color targetIconColor)
+    {
+        Color startBackgroundColor = backgroundImage != null
+            ? backgroundImage.color
+            : targetBackgroundColor;
+        Color startIconColor = iconImage != null
+            ? iconImage.color
+            : targetIconColor;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < tintTransitionDuration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsedTime / tintTransitionDuration);
+            float easedT = Mathf.SmoothStep(0f, 1f, t);
+
+            SetTintColors(
+                Color.LerpUnclamped(startBackgroundColor, targetBackgroundColor, easedT),
+                Color.LerpUnclamped(startIconColor, targetIconColor, easedT));
+            yield return null;
+        }
+
+        SetTintColors(targetBackgroundColor, targetIconColor);
+        tintTransitionRoutine = null;
+    }
+
+    /// <summary>
+    /// 계산된 Background와 Icon 색상을 존재하는 UI 참조에 즉시 적용합니다.
+    /// </summary>
+    private void SetTintColors(Color backgroundColor, Color iconColor)
+    {
+        if (backgroundImage != null)
+            backgroundImage.color = backgroundColor;
+
+        if (iconImage != null)
+            iconImage.color = iconColor;
     }
 }

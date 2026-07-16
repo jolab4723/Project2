@@ -355,9 +355,8 @@ public class YJ_StageSelectManager : MonoBehaviour
         SelectedNode = node;
         SelectedNode.SetSelected(true);
         DisableAlternativeNodesOnFloor(data.floor, node);
+        RefreshPathStateForSelectedNode(data);
         NodeSelected?.Invoke(data);
-
-        print("노드 선택");
 
         return true;
     }
@@ -381,6 +380,34 @@ public class YJ_StageSelectManager : MonoBehaviour
                 true,
                 false);
         }
+    }
+
+    /// <summary>
+    /// 선택 노드에서 도달 가능한 미래 노드와 라인을 계산하고 나머지 경로를 비활성 상태로 표시합니다.
+    /// </summary>
+    private void RefreshPathStateForSelectedNode(YJ_StageNodeData selectedNode)
+    {
+        if (selectedNode == null)
+            return;
+
+        HashSet<string> reachableFromSelection = FindReachableNodeIds(selectedNode);
+        reachableFromSelection.Add(selectedNode.id);
+
+        foreach (YJ_StageNodeHover node in generatedNodes)
+        {
+            if (node == null || node.NodeData == null ||
+                node.NodeData.floor <= selectedNode.floor)
+            {
+                continue;
+            }
+
+            YJ_StageNodeData data = node.NodeData;
+            bool pathBlocked = !reachableFromSelection.Contains(data.id);
+            data.available = false;
+            node.ApplyState(data.cleared, false, pathBlocked, false);
+        }
+
+        nodeLineController?.RefreshReachability(reachableFromSelection, true);
     }
 
     /// <summary>
@@ -718,6 +745,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             SelectedNode = node;
             SelectedNode.SetSelected(true);
             DisableAlternativeNodesOnFloor(node.NodeData.floor, node);
+            RefreshPathStateForSelectedNode(node.NodeData);
             return;
         }
     }
