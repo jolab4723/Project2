@@ -45,6 +45,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     [Header("Progression Test")]
     // 테스트 중 클릭 즉시 노드를 완료 처리하고 다음 층을 활성화할지 결정합니다.
     [SerializeField] private bool completeNodeOnClick = true;
+    // 테스트 모드에서 Reticle 애니메이션이 끝난 뒤 완료 및 스크롤까지 기다릴 시간입니다.
+    [SerializeField, Min(0f)] private float testCompletionDelay = 1f;
 
     [Header("Scroll Focus")]
     // 노드 선택 후 다음 층을 ScrollRect 중앙으로 자동 이동할지 결정합니다.
@@ -61,6 +63,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     [SerializeField] private YJ_StageNodeLayoutController nodeLayoutController;
     // 노드 연결 그래프와 라인 UI를 생성하는 컨트롤러입니다.
     [SerializeField] private YJ_StageNodeLineController nodeLineController;
+    // 맵 로드 후 마지막 클리어 노드의 위치를 표시할 HUD Reticle입니다.
+    [SerializeField] private YJ_StageNodeReticle nodeReticle;
 
     // 현재 맵에 생성된 모든 노드 UI 컴포넌트 목록입니다.
     private readonly List<YJ_StageNodeHover> generatedNodes = new();
@@ -81,6 +85,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     private ActRules currentRules;
     // 다음 층 중앙 이동을 실행 중인 코루틴입니다.
     private Coroutine floorCenterRoutine;
+    // 테스트 모드에서 Reticle 종료 후 노드 완료를 지연하는 코루틴입니다.
+    private Coroutine testCompletionRoutine;
 
     // 노드 UI가 현재 씬의 스테이지 선택 매니저를 찾을 때 사용하는 Singleton 참조입니다.
     public static YJ_StageSelectManager Instance { get; private set; }
@@ -307,8 +313,24 @@ public class YJ_StageSelectManager : MonoBehaviour
             ? SelectedNode.NodeData.floor + 1
             : CurrentSelectableFloor;
         CenterFloorVertically(focusFloor);
+        RestoreReticleToLastClearedNode();
 
         return true;
+    }
+
+    /// <summary>
+    /// 로드된 마지막 클리어 노드에 Reticle을 애니메이션 없이 즉시 배치합니다.
+    /// </summary>
+    private void RestoreReticleToLastClearedNode()
+    {
+        if (nodeReticle == null)
+            return;
+
+        YJ_StageNodeData lastClearedNode = FindGeneratedNodeData(lastClearedNodeId);
+        if (lastClearedNode != null)
+            nodeReticle.ShowAt(lastClearedNode);
+        else
+            nodeReticle.Hide();
     }
 
     // 노드를 선택했을때 호출되는 메서드
@@ -334,12 +356,6 @@ public class YJ_StageSelectManager : MonoBehaviour
         SelectedNode.SetSelected(true);
         DisableAlternativeNodesOnFloor(data.floor, node);
         NodeSelected?.Invoke(data);
-
-        if (centerNextFloor)
-            CenterFloorVertically(data.floor + 1);
-
-        if (completeNodeOnClick)
-            CompleteSelectedNode();
 
         print("노드 선택");
 
@@ -372,6 +388,12 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     public void CompleteSelectedNode()
     {
+        if (testCompletionRoutine != null)
+        {
+            StopCoroutine(testCompletionRoutine);
+            testCompletionRoutine = null;
+        }
+
         if (SelectedNode == null || SelectedNode.NodeData == null)
             return;
 
@@ -381,6 +403,55 @@ public class YJ_StageSelectManager : MonoBehaviour
         clearedFloor = Mathf.Clamp(completedNode.floor, 0, TotalFloors);
         ClearSelection();
         RefreshNodeAvailability();
+
+        if (centerNextFloor)
+            CenterFloorVertically(completedNode.floor + 1);
+    }
+
+    /// <summary>
+    /// Reticle 선택 애니메이션이 끝난 뒤 선택한 노드의 전투 또는 이벤트 씬으로 전환합니다.
+    /// 실제 씬 로딩 시스템이 정해지면 nodeData.sceneName을 사용해 전환 로직을 구현합니다.
+    /// </summary>
+    public void TransitionToSelectedNodeScene(YJ_StageNodeData nodeData)
+    {
+        // TODO: 선택 노드와 현재 진행 상태를 저장한 뒤 nodeData.sceneName에 해당하는 씬으로 전환합니다.
+    }
+
+    /// <summary>
+    /// Reticle 애니메이션 종료 후 테스트 모드에서는 지연 완료를, 실제 모드에서는 씬 전환을 시작합니다.
+    /// </summary>
+    public void NotifyReticleAnimationCompleted(YJ_StageNodeData nodeData)
+    {
+        if (nodeData == null)
+            return;
+
+        if (!completeNodeOnClick)
+        {
+            TransitionToSelectedNodeScene(nodeData);
+            return;
+        }
+
+        if (testCompletionRoutine != null)
+            StopCoroutine(testCompletionRoutine);
+
+        testCompletionRoutine = StartCoroutine(
+            CompleteNodeAfterReticleDelay(nodeData));
+    }
+
+    /// <summary>
+    /// 테스트 모드에서 지정 시간만큼 기다린 뒤 선택 노드를 완료하고 다음 층으로 스크롤합니다.
+    /// </summary>
+    private IEnumerator CompleteNodeAfterReticleDelay(YJ_StageNodeData expectedNode)
+    {
+        if (testCompletionDelay > 0f)
+            yield return new WaitForSecondsRealtime(testCompletionDelay);
+
+        testCompletionRoutine = null;
+
+        if (SelectedNode == null || SelectedNode.NodeData != expectedNode)
+            yield break;
+
+        CompleteSelectedNode();
     }
 
     /// <summary>
@@ -901,6 +972,12 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     private void ClearGeneratedNodes()
     {
+        if (testCompletionRoutine != null)
+        {
+            StopCoroutine(testCompletionRoutine);
+            testCompletionRoutine = null;
+        }
+
         if (floorCenterRoutine != null)
         {
             StopCoroutine(floorCenterRoutine);
@@ -978,6 +1055,9 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         if (nodeLineController == null)
             nodeLineController = gameObject.AddComponent<YJ_StageNodeLineController>();
+
+        if (nodeReticle == null)
+            nodeReticle = FindFirstObjectByType<YJ_StageNodeReticle>();
     }
 
     /// <summary>

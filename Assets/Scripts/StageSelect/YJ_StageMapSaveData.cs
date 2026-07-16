@@ -6,7 +6,7 @@ public class StageMapSaveData
 {
     public int saveVersion = 1; // 향후 저장 방식 변경 대응
 
-    public StageActType act;
+    public StageActType act; // 현재 Act
     public int mapSeed; // 디버깅과 맵 식별용
 
     public int clearedFloor; // 실제 클리어한 노드
