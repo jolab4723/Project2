@@ -173,6 +173,144 @@ public class YJ_StageSelectManager : MonoBehaviour
             mapScrollRect.verticalNormalizedPosition = 0f;
     }
 
+    /// <summary>
+    /// 현재 생성된 노드 배치, 연결 정보와 진행 상태를 JSON 저장용 순수 데이터로 변환합니다.
+    /// </summary>
+    public StageMapSaveData CaptureSaveData()
+    {
+        StageMapSaveData saveData = new()
+        {
+            act = currentAct,
+            mapSeed = GeneratedSeed,
+            clearedFloor = clearedFloor,
+            lastClearedNodeId = lastClearedNodeId ?? string.Empty,
+            pendingNodeId = SelectedNode != null && SelectedNode.NodeData != null
+                ? SelectedNode.NodeData.id
+                : string.Empty
+        };
+
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            foreach (YJ_StageNodeData node in floorNodes)
+            {
+                if (node == null)
+                    continue;
+
+                StageNodeSaveData nodeSaveData = new()
+                {
+                    id = node.id,
+                    floor = node.floor,
+                    nodeIndex = node.nodeIndex,
+                    type = node.type,
+                    sceneName = node.sceneName,
+                    positionX = node.position.x,
+                    positionY = node.position.y,
+                    nextNodeIds = new List<string>(node.nextNodeIds)
+                };
+
+                saveData.nodes.Add(nodeSaveData);
+
+                if (!node.cleared)
+                    continue;
+
+                saveData.clearedNodeIds.Add(node.id);
+                saveData.visitedNodeIds.Add(node.id);
+            }
+        }
+
+        return saveData;
+    }
+
+    /// <summary>
+    /// JSON에서 읽은 스냅샷을 이용해 노드와 라인을 새로 만들고 진행 상태를 복원합니다.
+    /// </summary>
+    public bool RestoreMap(StageMapSaveData saveData)
+    {
+        if (!ValidateSaveData(saveData, out string validationError))
+        {
+            Debug.LogError($"Invalid stage map save data: {validationError}", this);
+            return false;
+        }
+
+        currentAct = saveData.act;
+        currentRules = GetRules(currentAct);
+        FindReferences();
+
+        RectTransform nodesLayer = nodeLayoutController != null
+            ? nodeLayoutController.NodesLayer
+            : null;
+        if (nodesLayer == null)
+        {
+            Debug.LogError("NodesLayer was not found.", this);
+            return false;
+        }
+
+        LoadPrefabs();
+        foreach (StageNodeSaveData nodeSaveData in saveData.nodes)
+        {
+            if (GetPrefab(nodeSaveData.type) != null)
+                continue;
+
+            Debug.LogError($"No prefab is available for saved node type {nodeSaveData.type}.", this);
+            return false;
+        }
+
+        nodeLineController?.ClearLines();
+        ClearGeneratedNodes();
+        nodeLayoutController.PrepareMapRect(currentRules.floorCount);
+
+        GeneratedSeed = saveData.mapSeed;
+        random = new System.Random(GeneratedSeed);
+
+        for (int floor = 0; floor < currentRules.floorCount; floor++)
+            generatedFloors.Add(new List<YJ_StageNodeData>());
+
+        HashSet<string> clearedNodeIds = saveData.clearedNodeIds != null
+            ? new HashSet<string>(saveData.clearedNodeIds)
+            : new HashSet<string>();
+        List<StageNodeSaveData> orderedNodes = new(saveData.nodes);
+        orderedNodes.Sort((first, second) =>
+        {
+            int floorComparison = first.floor.CompareTo(second.floor);
+            return floorComparison != 0
+                ? floorComparison
+                : first.nodeIndex.CompareTo(second.nodeIndex);
+        });
+
+        foreach (StageNodeSaveData nodeSaveData in orderedNodes)
+            CreateNodeFromSaveData(nodeSaveData, clearedNodeIds, nodesLayer);
+
+        foreach (StageNodeSaveData nodeSaveData in orderedNodes)
+        {
+            YJ_StageNodeData node = nodesById[nodeSaveData.id];
+            node.nextNodeIds.Clear();
+
+            if (nodeSaveData.nextNodeIds == null)
+                continue;
+
+            foreach (string nextNodeId in nodeSaveData.nextNodeIds)
+            {
+                if (!node.nextNodeIds.Contains(nextNodeId))
+                    node.nextNodeIds.Add(nextNodeId);
+            }
+        }
+
+        clearedFloor = Mathf.Clamp(saveData.clearedFloor, 0, currentRules.floorCount);
+        lastClearedNodeId = saveData.lastClearedNodeId ?? string.Empty;
+
+        nodeLineController?.RebuildFromSavedConnections(generatedFloors);
+        RefreshNodeAvailability();
+        RestorePendingSelection(saveData.pendingNodeId);
+
+        Canvas.ForceUpdateCanvases();
+        int focusFloor = SelectedNode != null && SelectedNode.NodeData != null
+            ? SelectedNode.NodeData.floor + 1
+            : CurrentSelectableFloor;
+        CenterFloorVertically(focusFloor);
+
+        return true;
+    }
+
     // 노드를 선택했을때 호출되는 메서드
     /// <summary>
     /// 클릭된 노드가 현재 선택 가능한지 검증하고 단일 선택 상태 및 선택 이벤트를 처리합니다.
@@ -442,6 +580,179 @@ public class YJ_StageSelectManager : MonoBehaviour
 
             floorNodes.Add(data);
         }
+    }
+
+    /// <summary>
+    /// 저장된 노드 한 개를 대응하는 프리팹으로 생성하고 런타임 조회 컬렉션에 등록합니다.
+    /// </summary>
+    private void CreateNodeFromSaveData(
+        StageNodeSaveData nodeSaveData,
+        ISet<string> clearedNodeIds,
+        RectTransform nodesLayer)
+    {
+        GameObject prefab = GetPrefab(nodeSaveData.type);
+        GameObject instance = Instantiate(prefab, nodesLayer, false);
+        instance.name = $"{nodeSaveData.id}_{nodeSaveData.type}";
+
+        RectTransform nodeRect = instance.GetComponent<RectTransform>();
+        Vector2 position = new(nodeSaveData.positionX, nodeSaveData.positionY);
+        nodeRect.anchorMin = new Vector2(0.5f, 0.5f);
+        nodeRect.anchorMax = new Vector2(0.5f, 0.5f);
+        nodeRect.anchoredPosition = position;
+
+        YJ_StageNodeData data = instance.GetComponent<YJ_StageNodeData>();
+        if (data == null)
+            data = instance.AddComponent<YJ_StageNodeData>();
+
+        data.Initialize(
+            nodeSaveData.id,
+            currentAct,
+            nodeSaveData.floor,
+            nodeSaveData.nodeIndex,
+            nodeSaveData.type,
+            position);
+        data.sceneName = nodeSaveData.sceneName;
+        data.cleared = clearedNodeIds.Contains(nodeSaveData.id);
+
+        nodesById[data.id] = data;
+        generatedFloors[data.floor - 1].Add(data);
+
+        YJ_StageNodeHover node = instance.GetComponent<YJ_StageNodeHover>();
+        if (node == null)
+            return;
+
+        node.Initialize(data, this);
+        generatedNodes.Add(node);
+    }
+
+    /// <summary>
+    /// 저장 당시 선택했지만 아직 완료하지 않은 노드를 선택 상태로 복구합니다.
+    /// </summary>
+    private void RestorePendingSelection(string pendingNodeId)
+    {
+        if (string.IsNullOrEmpty(pendingNodeId))
+            return;
+
+        foreach (YJ_StageNodeHover node in generatedNodes)
+        {
+            if (node == null || node.NodeData == null || node.NodeData.id != pendingNodeId)
+                continue;
+
+            if (!node.IsInteractable)
+            {
+                Debug.LogWarning($"Saved pending node is not currently selectable: {pendingNodeId}", this);
+                return;
+            }
+
+            SelectedNode = node;
+            SelectedNode.SetSelected(true);
+            DisableAlternativeNodesOnFloor(node.NodeData.floor, node);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 저장 버전, 노드 ID, 층 범위와 모든 연결 대상이 복원 가능한지 검사합니다.
+    /// </summary>
+    private static bool ValidateSaveData(StageMapSaveData saveData, out string error)
+    {
+        if (saveData == null)
+        {
+            error = "Save data is null.";
+            return false;
+        }
+
+        if (saveData.saveVersion != 1)
+        {
+            error = $"Unsupported save version {saveData.saveVersion}.";
+            return false;
+        }
+
+        if (!Enum.IsDefined(typeof(StageActType), saveData.act))
+        {
+            error = $"Unknown Act value {saveData.act}.";
+            return false;
+        }
+
+        if (saveData.nodes == null || saveData.nodes.Count == 0)
+        {
+            error = "No nodes were saved.";
+            return false;
+        }
+
+        ActRules rules = GetRules(saveData.act);
+        HashSet<string> nodeIds = new();
+        bool[] floorsWithNodes = new bool[rules.floorCount];
+
+        foreach (StageNodeSaveData node in saveData.nodes)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(node.id))
+            {
+                error = "A saved node has no ID.";
+                return false;
+            }
+
+            if (!nodeIds.Add(node.id))
+            {
+                error = $"Duplicate node ID {node.id}.";
+                return false;
+            }
+
+            if (node.floor < 1 || node.floor > rules.floorCount)
+            {
+                error = $"Node {node.id} has invalid floor {node.floor}.";
+                return false;
+            }
+
+            if (!Enum.IsDefined(typeof(StageNodeType), node.type))
+            {
+                error = $"Node {node.id} has unknown type {node.type}.";
+                return false;
+            }
+
+            floorsWithNodes[node.floor - 1] = true;
+        }
+
+        for (int floorIndex = 0; floorIndex < floorsWithNodes.Length; floorIndex++)
+        {
+            if (floorsWithNodes[floorIndex])
+                continue;
+
+            error = $"Floor {floorIndex + 1} has no saved nodes.";
+            return false;
+        }
+
+        foreach (StageNodeSaveData node in saveData.nodes)
+        {
+            if (node.nextNodeIds == null)
+                continue;
+
+            foreach (string nextNodeId in node.nextNodeIds)
+            {
+                if (nodeIds.Contains(nextNodeId))
+                    continue;
+
+                error = $"Node {node.id} points to missing node {nextNodeId}.";
+                return false;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(saveData.lastClearedNodeId) &&
+            !nodeIds.Contains(saveData.lastClearedNodeId))
+        {
+            error = $"Last cleared node {saveData.lastClearedNodeId} does not exist.";
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(saveData.pendingNodeId) &&
+            !nodeIds.Contains(saveData.pendingNodeId))
+        {
+            error = $"Pending node {saveData.pendingNodeId} does not exist.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     /// <summary>

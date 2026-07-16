@@ -79,6 +79,68 @@ public class YJ_StageNodeLineController : MonoBehaviour
     }
 
     /// <summary>
+    /// JSON에서 복원된 nextNodeIds를 변경하지 않고 동일한 연결선 UI를 다시 생성합니다.
+    /// </summary>
+    public void RebuildFromSavedConnections(
+        IReadOnlyList<List<YJ_StageNodeData>> generatedFloors)
+    {
+        FindReferences();
+        LoadPrefab();
+        ClearLines();
+
+        if (linesLayer == null)
+        {
+            Debug.LogError("LinesLayer was not found.", this);
+            return;
+        }
+
+        if (nodeLinePrefab == null)
+        {
+            Debug.LogError($"Could not load {NodeLinePrefabPath}.", this);
+            return;
+        }
+
+        PrepareLayer();
+
+        Dictionary<string, YJ_StageNodeData> nodesById = new();
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            foreach (YJ_StageNodeData node in floorNodes)
+            {
+                if (node != null && !string.IsNullOrEmpty(node.id))
+                    nodesById[node.id] = node;
+            }
+        }
+
+        HashSet<string> connectionKeys = new();
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            foreach (YJ_StageNodeData startNode in floorNodes)
+            {
+                if (startNode == null)
+                    continue;
+
+                foreach (string nextNodeId in startNode.nextNodeIds)
+                {
+                    if (!nodesById.TryGetValue(nextNodeId, out YJ_StageNodeData endNode))
+                    {
+                        Debug.LogWarning(
+                            $"Saved connection target was not found: {startNode.id} -> {nextNodeId}",
+                            this);
+                        continue;
+                    }
+
+                    string connectionKey = $"{startNode.id}>{endNode.id}";
+                    if (connectionKeys.Add(connectionKey))
+                        generatedConnections.Add(new NodeConnection(startNode, endNode));
+                }
+            }
+        }
+
+        GenerateConnectionLines();
+    }
+
+    /// <summary>
     /// 저장된 연결 및 시각 정보와 LinesLayer 아래의 기존 라인 오브젝트를 제거합니다.
     /// </summary>
     public void ClearLines()
