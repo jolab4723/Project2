@@ -20,12 +20,14 @@ public class YJ_StageSelectManager : MonoBehaviour
         StageNodeType.Camp,
         StageNodeType.Event
     };
+
+    // (일반, 엘리트, 캠프, 미지) 스테이지 출현 확률
     // Act 1의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act1Rules =
-        new(11, new[] { 6 }, 40f, 10f, 35f, 15f);
+        new(11, new[] { 6 }, 50f, 10f, 25f, 15f);
     // Act 2의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act2Rules =
-        new(12, new[] { 5, 9 }, 40f, 10f, 30f, 20f);
+        new(12, new[] { 5, 9 }, 45f, 15f, 20f, 20f);
     // Act 3의 층 수, 고정 엘리트 층과 중간 노드 생성 가중치입니다.
     private static readonly ActRules Act3Rules =
         new(13, new[] { 4, 7, 10 }, 30f, 10f, 35f, 25f);
@@ -192,6 +194,7 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         SelectedNode = node;
         SelectedNode.SetSelected(true);
+        DisableAlternativeNodesOnFloor(data.floor, node);
         NodeSelected?.Invoke(data);
 
         if (centerNextFloor)
@@ -203,6 +206,27 @@ public class YJ_StageSelectManager : MonoBehaviour
         print("노드 선택");
 
         return true;
+    }
+
+    /// <summary>
+    /// 노드를 선택한 순간 같은 층의 나머지 노드를 경로에서 제외하고 Cleared Tint 상태로 전환합니다.
+    /// </summary>
+    private void DisableAlternativeNodesOnFloor(int floor, YJ_StageNodeHover selectedNode)
+    {
+        foreach (YJ_StageNodeHover node in generatedNodes)
+        {
+            if (node == null || node == selectedNode || node.NodeData == null ||
+                node.NodeData.floor != floor)
+                continue;
+
+            YJ_StageNodeData data = node.NodeData;
+            data.available = false;
+            node.ApplyState(
+                data.cleared,
+                data.floor <= clearedFloor,
+                true,
+                false);
+        }
     }
 
     /// <summary>
@@ -514,14 +538,13 @@ public class YJ_StageSelectManager : MonoBehaviour
             bool reachableFromLastNode = !restrictToConnectedNodes ||
                                          reachableIds.Contains(data.id);
             bool available = onSelectableFloor && reachableFromLastNode;
-            bool isFutureNodeBeforeBoss = data.floor > clearedFloor &&
-                                          data.floor < TotalFloors;
+            bool isFutureNode = data.floor > clearedFloor;
             bool pathBlocked = restrictToConnectedNodes &&
-                               isFutureNodeBeforeBoss &&
+                               isFutureNode &&
                                !reachableFromLastNode;
             bool floorCleared = data.floor <= clearedFloor;
             data.available = available;
-            node.ApplyState(floorCleared, pathBlocked, available);
+            node.ApplyState(data.cleared, floorCleared, pathBlocked, available);
         }
 
         nodeLineController?.RefreshReachability(reachableIds, restrictToConnectedNodes);

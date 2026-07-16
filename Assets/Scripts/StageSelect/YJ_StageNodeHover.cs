@@ -18,7 +18,7 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     [Header("Icon")]
     // 클릭 축소와 Hover 부유 효과를 적용할 Icon의 RectTransform입니다.
     [SerializeField] private RectTransform iconRect;
-    // 클리어 또는 경로 차단 상태에서 회색 Tint를 적용할 Icon 이미지입니다.
+    // 현재 선택할 수 없는 상태에서 회색 Tint를 적용할 Icon 이미지입니다.
     [SerializeField] private Image iconImage;
 
     [Header("Hover Effect")]
@@ -59,13 +59,11 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     // 현재 노드가 선택된 상태인지 나타냅니다.
     [SerializeField] private bool isSelected;
 
-    [Header("Locked State")]
-    // 아직 선택할 수 없지만 경로 차단은 아닌 노드의 Background 알파입니다.
-    [SerializeField, Range(0f, 1f)] private float lockedAlpha = 0.02f;
-
-    [Header("Cleared Floor")]
-    // 클리어되었거나 도달할 수 없는 노드에 적용할 회색 색상입니다.
+    [Header("Disabled Tint")]
+    // 선택하지 않은 과거 노드와 현재 경로에서 도달할 수 없는 미래 노드에 적용할 색상입니다.
     [SerializeField] private Color clearedTint = new Color(0.45f, 0.45f, 0.45f, 1f);
+    // 현재 경로에서 앞으로 도달 가능하지만 아직 선택 차례가 아닌 노드에 적용할 색상입니다.
+    [SerializeField] private Color unclearedTint = new Color(0.3f, 0.3f, 0.3f, 1f);
 
     // Background가 확대되지 않은 상태의 기준 크기입니다.
     private Vector3 normalScale;
@@ -79,6 +77,8 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private Color originalIconColor;
     // 현재 커서가 노드 위에 있는지 나타냅니다.
     private bool isPointerInside;
+    // 플레이어가 실제로 선택하여 클리어한 경로의 노드인지 나타냅니다.
+    private bool isClearedNode;
     // 현재 노드가 클리어된 층에 포함되는지 나타냅니다.
     private bool isClearedFloor;
     // 현재 진행 경로에서 이 노드에 도달할 수 없는지 나타냅니다.
@@ -162,6 +162,8 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
         isPointerInside = false;
         isSelected = false;
+        isInteractable = true;
+        isClearedNode = false;
         isClearedFloor = false;
         isPathBlocked = false;
         ApplyDisabledTint();
@@ -235,7 +237,15 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void SetInteractable(bool interactable)
     {
-        ApplyState(isClearedFloor, isPathBlocked, interactable);
+        ApplyState(isClearedNode, isClearedFloor, isPathBlocked, interactable);
+    }
+
+    /// <summary>
+    /// 플레이어가 실제로 선택하여 클리어한 경로 노드인지 변경합니다.
+    /// </summary>
+    public void SetNodeCleared(bool cleared)
+    {
+        ApplyState(cleared, isClearedFloor, isPathBlocked, isInteractable);
     }
 
     /// <summary>
@@ -243,7 +253,7 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void SetFloorCleared(bool cleared)
     {
-        ApplyState(cleared, isPathBlocked, isInteractable);
+        ApplyState(isClearedNode, cleared, isPathBlocked, isInteractable);
     }
 
     /// <summary>
@@ -251,21 +261,30 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void SetPathBlocked(bool blocked)
     {
-        ApplyState(isClearedFloor, blocked, isInteractable);
+        ApplyState(isClearedNode, isClearedFloor, blocked, isInteractable);
     }
 
     /// <summary>
-    /// 클리어, 경로 차단, 입력 가능 상태를 한 번에 적용하여 중복 UI 전환을 방지합니다.
+    /// 선택 경로, 클리어 층, 경로 차단 및 입력 가능 상태를 한 번에 적용합니다.
     /// </summary>
-    public void ApplyState(bool floorCleared, bool pathBlocked, bool interactable)
+    public void ApplyState(
+        bool nodeCleared,
+        bool floorCleared,
+        bool pathBlocked,
+        bool interactable)
     {
-        bool disabledStateChanged = isClearedFloor != floorCleared ||
-                                    isPathBlocked != pathBlocked;
+        bool wasVisuallyDisabled = IsVisuallyDisabled();
+        bool wasUsingClearedTint = UsesClearedTint();
+        bool clearedNodeChanged = isClearedNode != nodeCleared;
+        bool stateChanged = clearedNodeChanged ||
+                            isClearedFloor != floorCleared ||
+                            isPathBlocked != pathBlocked;
         bool interactionChanged = isInteractable != interactable;
 
-        if (!disabledStateChanged && !interactionChanged)
+        if (!stateChanged && !interactionChanged)
             return;
 
+        isClearedNode = nodeCleared;
         isClearedFloor = floorCleared;
         isPathBlocked = pathBlocked;
         isInteractable = interactable;
@@ -276,14 +295,17 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
             isSelected = false;
         }
 
-        if (disabledStateChanged)
+        bool disabledVisualChanged = wasVisuallyDisabled != IsVisuallyDisabled() ||
+                                     wasUsingClearedTint != UsesClearedTint();
+
+        if (clearedNodeChanged || disabledVisualChanged)
             RefreshDisabledState();
         else
             RefreshBackgroundVisual();
     }
 
     /// <summary>
-    /// 클리어 또는 경로 차단 여부에 따라 Tint와 Background 활성 상태를 갱신합니다.
+    /// 현재 선택 가능 여부에 따라 Tint와 Background 활성 상태를 갱신합니다.
     /// </summary>
     private void RefreshDisabledState()
     {
@@ -324,11 +346,9 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
         if (IsVisuallyDisabled() || backgroundRect == null || !backgroundRect.gameObject.activeSelf)
             return;
 
-        float targetAlpha = !isInteractable
-            ? lockedAlpha
-            : isSelected
-                ? selectedAlpha
-                : isPointerInside ? hoverAlpha : normalAlpha;
+        float targetAlpha = isSelected
+            ? selectedAlpha
+            : isPointerInside ? hoverAlpha : normalAlpha;
 
         Vector3 targetScale = isInteractable && isPointerInside
             ? normalScale * hoverScale
@@ -527,30 +547,41 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     }
 
     /// <summary>
-    /// 클리어 또는 경로 차단 때문에 회색 비활성 표현이 필요한지 반환합니다.
+    /// 클리어, 경로 차단 또는 현재 선택 불가 때문에 비활성 표현이 필요한지 반환합니다.
     /// </summary>
     private bool IsVisuallyDisabled()
+    {
+        return isClearedFloor || isPathBlocked || !isInteractable;
+    }
+
+    /// <summary>
+    /// 과거 층이거나 현재 경로에서 차단되어 Cleared Tint를 사용해야 하는지 반환합니다.
+    /// </summary>
+    private bool UsesClearedTint()
     {
         return isClearedFloor || isPathBlocked;
     }
 
     /// <summary>
-    /// 비활성 상태에는 회색 Tint를, 활성 상태에는 저장한 원본 색상을 적용합니다.
+    /// 선택하지 않은 비활성 노드에는 층 진행 상태에 맞는 Tint를 적용하고 지나온 노드는 원본 색상을 유지합니다.
     /// </summary>
     private void ApplyDisabledTint()
     {
-        bool useDisabledTint = IsVisuallyDisabled();
+        bool useDisabledTint = IsVisuallyDisabled() && !isClearedNode;
+        Color disabledTint = UsesClearedTint()
+            ? clearedTint
+            : unclearedTint;
 
         if (backgroundImage != null)
         {
-            Color color = useDisabledTint ? clearedTint : originalBackgroundColor;
+            Color color = useDisabledTint ? disabledTint : originalBackgroundColor;
             color.a = backgroundImage.color.a;
             backgroundImage.color = color;
         }
 
         if (iconImage != null)
         {
-            Color color = useDisabledTint ? clearedTint : originalIconColor;
+            Color color = useDisabledTint ? disabledTint : originalIconColor;
             color.a = originalIconColor.a;
             iconImage.color = color;
         }
