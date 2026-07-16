@@ -8,22 +8,110 @@ public class EquipmentSystem : MonoBehaviour
 
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
 
+    internal EquipResultData TryEquipState(
+    InventoryItem item,
+    EquipSlotType slotType)
+    {
+        EquipResult validation = ValidateEquip(item, slotType);
+
+        if (validation != EquipResult.Success)
+            return EquipResultData.Failed(validation, slotType, item);
+
+        if (equippedItems.TryGetValue(
+                slotType,
+                out InventoryItem currentItem) &&
+            currentItem != null)
+        {
+            return EquipResultData.Failed(
+                EquipResult.SlotOccupied,
+                slotType,
+                item);
+        }
+
+        equippedItems[slotType] = item;
+        item.isEquipped = true;
+
+        // 여기서는 EquipmentChanged를 호출하지 않는다.
+        return EquipResultData.Success(slotType, item);
+    }
+
+    internal EquipResultData TryUnequipState(
+        EquipSlotType slotType)
+    {
+
+        if (!equippedItems.TryGetValue(
+            slotType,
+            out InventoryItem item) ||
+        item == null)
+        {
+            return EquipResultData.Failed(
+                EquipResult.NotEquipped,
+                slotType);
+        }
+
+        equippedItems.Remove(slotType);
+        item.isEquipped = false;
+
+        // 여기서는 EquipmentChanged를 호출하지 않는다.
+        return EquipResultData.Success(slotType, item);
+    }
+
+    internal EquipResultData TrySwapState(
+        EquipSlotType slotType,
+        InventoryItem incomingItem)
+    {
+        EquipResult validation =
+        ValidateEquip(incomingItem, slotType);
+
+        if (validation != EquipResult.Success)
+        {
+            return EquipResultData.Failed(
+                validation,
+                slotType,
+                incomingItem);
+        }
+
+        if (!equippedItems.TryGetValue(
+                slotType,
+                out InventoryItem outgoingItem) ||
+            outgoingItem == null)
+        {
+            return EquipResultData.Failed(
+                EquipResult.NotEquipped,
+                slotType,
+                incomingItem);
+        }
+
+        if (outgoingItem == incomingItem)
+        {
+            return EquipResultData.Failed(
+                EquipResult.Failed,
+                slotType,
+                incomingItem);
+        }
+
+        equippedItems[slotType] = incomingItem;
+
+        outgoingItem.isEquipped = false;
+        incomingItem.isEquipped = true;
+
+        // 여기서는 EquipmentChanged를 호출하지 않는다.
+        return EquipResultData.Swapped(
+            slotType,
+            incomingItem,
+            outgoingItem);
+
+    }
+
+    internal void PublishChanged()
+    {
+        EquipmentChanged();
+    }
     public IEnumerable<KeyValuePair<EquipSlotType, InventoryItem>> GetEquippedItems()
     {
         return equippedItems;
     }
 
-    public void Equip(EquipSlotType slotType, InventoryItem item)
-    {
-        equippedItems[slotType] = item;
-        EquipmentChanged();
-    }
-
-    public void Unequip(EquipSlotType slotType, InventoryItem item)
-    {
-        equippedItems.Remove(slotType);
-        EquipmentChanged();
-    }
     public bool TryGetEquippedItem(EquipSlotType slotType, out InventoryItem item)
     {
         return equippedItems.TryGetValue(slotType, out item);
@@ -39,41 +127,26 @@ public class EquipmentSystem : MonoBehaviour
             index++;
         }
 
-
         OnEquipmentChanged?.Invoke(infos);
     }
 
-    public bool IsSlotEmpty(EquipSlotType slotType)
+    public bool NotifyEquippedItemChanged(ItemInstance changedItem)
     {
-        return !equippedItems.ContainsKey(slotType);
-    }
-
-    public bool CanEquip(InventoryItem item, EquipSlotType slotType)
-    {
-        if (item == null || item.itemData == null || item.itemData.definition == null)
+        if (changedItem == null)
             return false;
 
-        if (!IsSlotEmpty(slotType))
-            return false;
-
-        return EquipSlotRules.CanEquipTo(item.itemData.definition, slotType);
-    }
-
-    public EquipResultData TryEquip(InventoryItem item, EquipSlotType slotType)
-    {
-        EquipResult validation = ValidateEquip(item, slotType);
-        if (validation != EquipResult.Success)
-            return EquipResultData.Failed(validation, slotType, item);
-
-        if (equippedItems.TryGetValue(slotType, out InventoryItem currentItem) && currentItem != null)
-            return EquipResultData.Failed(EquipResult.SlotOccupied, slotType, item);
-
-        equippedItems[slotType] = item;
-        item.isEquipped = true;
-
-        EquipmentChanged();
-
-        return EquipResultData.Success(slotType, item);
+        foreach (InventoryItem equippedItem
+                 in equippedItems.Values)
+        {
+            if (ReferenceEquals(
+                    equippedItem?.itemData,
+                    changedItem))
+            {
+                PublishChanged();
+                return true;
+            }
+        }
+        return false;
     }
 
     private EquipResult ValidateEquip(InventoryItem item, EquipSlotType slotType)
@@ -85,98 +158,5 @@ public class EquipmentSystem : MonoBehaviour
             return EquipResult.InvalidSlot;
 
         return EquipResult.Success;
-    }
-
-    public EquipResultData TryReplaceEquip(InventoryItem newItem, EquipSlotType slotType)
-    {
-        EquipResult validation = ValidateEquip(newItem, slotType);
-        if (validation != EquipResult.Success)
-            return EquipResultData.Failed(validation, slotType, newItem);
-
-        equippedItems.TryGetValue(slotType, out InventoryItem previousItem);
-
-        equippedItems[slotType] = newItem;
-        newItem.isEquipped = true;
-
-        if (previousItem != null)
-            previousItem.isEquipped = false;
-
-        EquipmentChanged();
-
-        if (previousItem != null)
-            return EquipResultData.Swapped(slotType, newItem, previousItem);
-
-        return EquipResultData.Success(slotType, newItem);
-    }
-
-    private EquipResult ValidateSwapEquip(
-    EquipSlotType slotType,
-    InventoryItem incomingItem,
-    InventoryGrid returnGrid,
-    int returnX,
-    int returnY)
-    {
-        EquipResult validation = ValidateEquip(incomingItem, slotType);
-        if (validation != EquipResult.Success)
-            return validation;
-
-        if (!equippedItems.TryGetValue(slotType, out InventoryItem outgoingItem) || outgoingItem == null)
-            return EquipResult.NotEquipped;
-
-        if (returnGrid == null)
-            return EquipResult.NoReturnSpace;
-
-        if (!returnGrid.CanPlaceItem(
-            returnX,
-            returnY,
-            outgoingItem.CurrentWidth,
-            outgoingItem.CurrentHeight))
-        {
-            return EquipResult.NoReturnSpace;
-        }
-
-        return EquipResult.Success;
-    }
-
-    public EquipResultData TrySwapEquip(
-        EquipSlotType slotType,
-        InventoryItem incomingItem,
-        InventoryGrid returnGrid,
-        int returnX,
-        int returnY)
-    {
-        EquipResult validation = ValidateSwapEquip(
-            slotType,
-            incomingItem,
-            returnGrid,
-            returnX,
-            returnY);
-
-        if (validation != EquipResult.Success)
-            return EquipResultData.Failed(validation, slotType, incomingItem);
-
-        InventoryItem outgoingItem = equippedItems[slotType];
-
-        equippedItems[slotType] = incomingItem;
-
-        incomingItem.isEquipped = true;
-        outgoingItem.isEquipped = false;
-
-        EquipmentChanged();
-
-        return EquipResultData.Swapped(slotType, incomingItem, outgoingItem);
-    }
-
-    public EquipResultData TryUnequip(EquipSlotType slotType)
-    {
-        if (!equippedItems.TryGetValue(slotType, out InventoryItem item) || item == null)
-            return EquipResultData.Failed(EquipResult.NotEquipped, slotType);
-
-        equippedItems.Remove(slotType);
-        item.isEquipped = false;
-
-        EquipmentChanged();
-
-        return EquipResultData.Success(slotType, item);
     }
 }

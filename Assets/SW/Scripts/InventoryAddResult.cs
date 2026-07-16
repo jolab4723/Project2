@@ -1,6 +1,8 @@
-public enum InventoryAddResult
+public enum InventoryAddResult : byte
 {
-    Success,
-    InvalidItem,
-    NoSpace
+    Success = 0,
+    InvalidItem = 1,
+    NoSpace = 2,
+    GridUnavailable = 3,
+    PlacementFailed = 4
 }

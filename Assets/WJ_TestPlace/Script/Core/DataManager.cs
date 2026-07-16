@@ -20,8 +20,12 @@ namespace Core
         private const string PlayerStatusSaveFileName = "playerstatus.json";
         private const string SkillTreeSaveFileName = "skilltree.json";
         private const string StageSaveFileName = "stage.json";
-        private const string ProfileSaveFileName = "profile.json";
         private const string OptionsSaveFileName = "options.json";
+
+        private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
+        private const int MultiplayerSlotCount = 3;
+
+        private static string MultiplayerSlotFileName(int slotIndex) => "profile_multiplayer_" + slotIndex + ".json";
 
         private static string GetSavePath(string fileName)
         {
@@ -43,23 +47,136 @@ namespace Core
             Debug.Log("[DataManager] 활성화 완료 (itemDatabase 연결됨, 아이템 " + itemDatabase.allItems.Count + "개)");
         }
 
-        // ===================== 2. 플레이어 프로필 =====================
+        // ===================== 2. 플레이어 프로필 (세이브 슬롯) =====================
+        // 싱글플레이 슬롯 1개 + 멀티플레이 슬롯 3개(다크소울 스타일, 서로 독립).
+        // 멀티플레이 슬롯은 공유 파티 세이브 - 게스트 프로필도 전부 호스트 슬롯 안에 통째로 저장된다.
 
-        public void SavePlayerProfile(PlayerProfileData data)
+        /// <summary>새 플레이어 프로필용 고유 ID를 생성한다 (기기 로컬 GUID, 계정 시스템 없음).</summary>
+        public static string GenerateNewPlayerId()
         {
-            if (data == null)
+            return System.Guid.NewGuid().ToString();
+        }
+
+        [ContextMenu("싱글플레이 슬롯 저장")]
+        public void SaveSinglePlayerSlot(SinglePlayerSlotData data)
+        {
+            if (data == null || data.profile == null)
             {
-                Debug.LogWarning("[DataManager] SavePlayerProfile - data가 null입니다.");
+                Debug.LogWarning("[DataManager] SaveSinglePlayerSlot - data 또는 profile이 null입니다.");
                 return;
             }
 
-            data.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
-            WriteJson(GetSavePath(ProfileSaveFileName), data);
+            data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
+            WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
         }
 
-        public PlayerProfileData LoadPlayerProfile()
+        public SinglePlayerSlotData LoadSinglePlayerSlot()
         {
-            return ReadJson<PlayerProfileData>(GetSavePath(ProfileSaveFileName));
+            return ReadJson<SinglePlayerSlotData>(GetSavePath(SinglePlayerSlotFileName));
+        }
+
+        /// <summary>slotIndex: 0~2 (멀티플레이 슬롯 3개 중 하나). 호스트가 참가자 전원의 데이터를 이 한 번의 호출로 저장한다.</summary>
+        public void SaveMultiplayerSlot(int slotIndex, MultiplayerSlotData data)
+        {
+            if (!IsValidMultiplayerSlotIndex(slotIndex))
+                return;
+
+            if (data == null || data.hostProfile == null)
+            {
+                Debug.LogWarning("[DataManager] SaveMultiplayerSlot - data 또는 hostProfile이 null입니다.");
+                return;
+            }
+
+            data.hostProfile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
+            WriteJson(GetSavePath(MultiplayerSlotFileName(slotIndex)), data);
+        }
+
+        public MultiplayerSlotData LoadMultiplayerSlot(int slotIndex)
+        {
+            if (!IsValidMultiplayerSlotIndex(slotIndex))
+                return null;
+
+            return ReadJson<MultiplayerSlotData>(GetSavePath(MultiplayerSlotFileName(slotIndex)));
+        }
+
+        private static bool IsValidMultiplayerSlotIndex(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= MultiplayerSlotCount)
+            {
+                Debug.LogWarning($"[DataManager] 멀티플레이 슬롯 인덱스는 0~{MultiplayerSlotCount - 1}만 유효합니다: {slotIndex}");
+                return false;
+            }
+
+            return true;
+        }
+
+        // ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
+        // PassiveSkillManager는 런타임 상태(CurrentProfile)만 들고 있고, 실제 파일 입출력은
+        // 여기서 전담한다. 싱글플레이 슬롯(profile_singleplayer.json)을 그대로 재사용한다.
+
+        [ContextMenu("패시브 데이터 저장")]
+        public void SavePassiveData()
+        {
+            if (PassiveSkillManager.Instance == null || PassiveSkillManager.Instance.CurrentProfile == null)
+            {
+                Debug.LogWarning("[DataManager] SavePassiveData - PassiveSkillManager 또는 CurrentProfile이 없습니다.");
+                return;
+            }
+
+            SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = PassiveSkillManager.Instance.CurrentProfile });
+        }
+
+        /// <summary>
+        /// 싱글플레이 슬롯에서 프로필을 불러와 PassiveSkillManager에 활성 프로필로 설정한다.
+        /// 저장된 슬롯이 없으면 새 프로필을 만들어서 설정하고 false를 반환한다(진짜 첫 실행 여부 판단용).
+        /// </summary>
+        [ContextMenu("패시브 데이터 불러오기")]
+        public bool LoadPassiveData()
+        {
+            if (PassiveSkillManager.Instance == null)
+            {
+                Debug.LogWarning("[DataManager] LoadPassiveData - PassiveSkillManager.Instance가 없습니다.");
+                return false;
+            }
+
+            var slot = LoadSinglePlayerSlot();
+            if (slot != null && slot.profile != null)
+            {
+                PassiveSkillManager.Instance.SetActiveProfile(slot.profile);
+                return true;
+            }
+
+            PassiveSkillManager.Instance.SetActiveProfile(new PlayerProfileData { playerId = GenerateNewPlayerId() });
+            return false;
+        }
+
+        /// <summary>
+        /// 런 종료 시 호출. 현재 인벤토리의 골드(PlayerWallet.Gold)를 profile의 영구 골드에 더하고,
+        /// 인게임 골드는 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.
+        /// 여기서는 이전만 하고 파일 저장은 안 함 - 필요하면 호출부에서 SaveSinglePlayerSlot/SaveMultiplayerSlot을 이어서 불러야 함.
+        /// </summary>
+        public void TransferRunGoldToProfile(PlayerProfileData profile)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - profile이 null입니다.");
+                return;
+            }
+
+            if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
+            {
+                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 골드를 이전하지 못했습니다.");
+                return;
+            }
+
+            int runGold = InventoryController.Instance.PlayerWallet.Gold;
+            if (runGold <= 0)
+                return;
+
+            profile.gold += runGold;
+            InventoryController.Instance.PlayerWallet.SetGold(0);
+
+            Debug.Log("[DataManager] 런 골드 " + runGold + " 이전 완료. 프로필 영구 골드 = " + profile.gold);
         }
 
         // ===================== 3. 게임플레이 데이터 (전체 묶음) =====================
@@ -147,20 +264,35 @@ namespace Core
         }
 
         /// <summary>
-        /// 저장된 아이템들을 복원한다. 그리드 아이템은 그대로 배치+UI 생성,
-        /// 장착 아이템은 EquipmentSystem 데이터를 먼저 복원한 뒤, ItemEquipHandler.SetEquipSlotVisual을
-        /// 그대로 재사용해서 승로이터 배치/사이즈 및 고유효과 OnEquip까지 한번에 처리한다.
+        /// 저장된 아이템을 런타임 상태로 불러온다.
+        /// 일반 아이템은 InventoryController.TryAddItemAt을 통해
+        /// 저장된 좌표에 배치하고 Item UI 생성 이벤트를 발행한다.
+        /// 장착 아이템은 EquipmentTransaction을 통해 장비 상태로 복원한다.
         /// </summary>
         private void ApplyInventorySaveData(InventorySaveData data)
         {
             if (data == null)
                 return;
 
-            if (InventoryController.Instance == null || itemDatabase == null)
+            InventoryController controller = InventoryController.Instance;
+
+            if (controller == null || itemDatabase == null ||controller.PlayerGrid == null || controller.EquipmentSystem == null)
             {
-                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 itemDatabase가 없음).");
+                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 itemDatabase, EquipmentSystem이 없음).");
                 return;
             }
+
+            InventoryItemUISpawner itemUISpawner = controller.GetComponent<InventoryItemUISpawner>();
+
+            if (itemUISpawner == null)
+            {
+                Debug.LogWarning(
+                    "[DataManager] InventoryItemUISpawner가 없어 " +
+                    "인벤토리 UI를 불러올 수 없습니다.");
+
+                return;
+            }
+            EquipmentTransaction equipmentTransaction = new EquipmentTransaction(controller.EquipmentSystem);
 
             int equippedRestoredCount = 0;
 
@@ -182,71 +314,135 @@ namespace Core
 
                 if (saved.isEquipped)
                 {
-                    if (RestoreEquippedItemVisual(invItem, saved.equippedSlotType))
+                    if (RestoreEquippedItemVisual(
+                            controller,
+                            itemUISpawner,
+                            equipmentTransaction,
+                            invItem,
+                            saved.equippedSlotType))
+                    {
                         equippedRestoredCount++;
+                    }
                 }
                 else
                 {
-                    InventoryController.Instance.PlayerGrid.PlaceItem(invItem, saved.gridX, saved.gridY);
-                    InventoryController.Instance.SpawnItemUI(invItem);
+                    InventoryAddResultData loadResult =
+                        controller.TryAddItemAt(invItem, saved.gridX, saved.gridY);
+
+                    if (loadResult.Result != InventoryAddResult.Success)
+                    {
+                        Debug.LogWarning(
+                            $"[DataManager] 인벤토리 아이템 불러오기 실패: " +
+                            $"{definition.itemName}, " +
+                            $"position=({saved.gridX}, {saved.gridY}), " +
+                            $"result={loadResult.Result}");
+
+                        continue;
+                    }
                 }
             }
-
-            // 장착 아이템은 SetEquipSlotVisual이 OnEquip만 부르고 Recalculate는 안 불러줘서 여기서 한번 정리.
-            if (equippedRestoredCount > 0)
-                PlayerStatManager.Instance?.Recalculate();
 
             Debug.Log("[DataManager] 인벤토리 복원 완료 (" + data.items.Count + "개 아이템, 장착 " + equippedRestoredCount + "개)");
         }
 
         /// <summary>
-        /// 저장된 장착 아이템 하나를 데이터+시각 모두 복원한다.
-        /// EquipmentSystem.Equip으로 데이터를 먼저 반영한 뒤, 그리드 아이템과 같은 프리파뱹으로 ItemUI를 생성하고,
-        /// 그 오브젝트의 ItemEquipHandler.SetEquipSlotVisual을 호출해서 장비 슬롯 UI에 실제로 배치한다
-        /// (이 호출 안에서 고유효과 OnEquip도 같이 적용됨).
+        /// 저장된 장착 아이템 하나를 런타임 장비 상태로 복원한다.
+        /// ItemUI와 ItemEquipHandler를 먼저 확인한 뒤
+        /// EquipmentTransaction을 통해 장비 상태와 이벤트를 반영하고,
+        /// 성공한 경우 장비 슬롯 UI에 배치한다.
         /// </summary>
-        private bool RestoreEquippedItemVisual(InventoryItem invItem, EquipSlotType slotType)
+        private bool RestoreEquippedItemVisual(InventoryController controller, InventoryItemUISpawner itemUISpawner,
+            EquipmentTransaction transaction, InventoryItem invItem, EquipSlotType slotType)
         {
-            if (InventoryController.Instance.EquipmentSystem == null)
-                return false;
-
-            EquipSlotUI targetSlot = FindEquipSlot(slotType);
-            if (targetSlot == null)
+            if (controller == null || itemUISpawner == null || transaction == null || invItem?.itemData?.definition == null)
             {
-                Debug.LogWarning("[DataManager] " + slotType + " 슬롯을 찾지 못해 장착 아이템 UI를 복원하지 못했습니다: " + invItem.itemData.definition.itemName);
                 return false;
             }
 
-            invItem.isEquipped = true;
-            InventoryController.Instance.EquipmentSystem.Equip(slotType, invItem);
+            EquipSlotUI targetSlot = FindEquipSlot(controller, slotType);
 
-            ItemUI spawnedUI = InventoryController.Instance.SpawnItemUIAndGet(invItem);
+            if (targetSlot == null)
+            {
+                Debug.LogWarning(
+                    $"[DataManager] {slotType} 슬롯을 찾지 못해 " +
+                    $"장비를 복원하지 못했습니다: " +
+                    $"{invItem.itemData.definition.itemName}");
+
+                return false;
+            }
+
+            // 슬롯 점유 여부와 장착 가능한 아이템 종류를
+            // 상태 변경 전에 먼저 확인한다.
+            if (!targetSlot.CanAccept(invItem.itemData))
+            {
+                Debug.LogWarning(
+                    $"[DataManager] {slotType} 슬롯에 장착할 수 없거나 " +
+                    $"이미 UI가 존재합니다: " +
+                    $"{invItem.itemData.definition.itemName}");
+
+                return false;
+            }
+
+            // 장비 상태를 바꾸기 전에 UI 생성 가능 여부부터 확인한다.
+            ItemUI spawnedUI = itemUISpawner.SpawnItemUIAndGet(invItem);
+
             if (spawnedUI == null)
             {
-                Debug.LogWarning("[DataManager] 장착 아이템 UI 생성 실패: " + invItem.itemData.definition.itemName);
+                Debug.LogWarning(
+                    "[DataManager] 장착 아이템 UI 생성 실패: " +
+                    invItem.itemData.definition.itemName);
+
                 return false;
             }
 
             ItemEquipHandler equipHandler = spawnedUI.GetComponent<ItemEquipHandler>();
+
             if (equipHandler == null)
             {
-                Debug.LogWarning("[DataManager] 생성된 ItemUI에 ItemEquipHandler가 없습니다: " + invItem.itemData.definition.itemName);
+                Destroy(spawnedUI.gameObject);
+
+                Debug.LogWarning(
+                    "[DataManager] 생성된 ItemUI에 " +
+                    "ItemEquipHandler가 없습니다: " +
+                    invItem.itemData.definition.itemName);
+
                 return false;
             }
 
+            EquipmentTransactionResult result = transaction.TryRestoreEquippedItem(invItem, slotType);
+
+            if (!result.IsSuccess)
+            {
+                Destroy(spawnedUI.gameObject);
+
+                Debug.LogWarning(
+                    $"[DataManager] 장비 복원 실패: " +
+                    $"{invItem.itemData.definition.itemName}, " +
+                    $"result={result.EquipmentResult.Result}");
+
+                return false;
+            }
+
+            // 상태 복원 성공 후 화면에 배치한다.
             equipHandler.SetEquipSlotVisual(targetSlot);
+
             return true;
         }
 
-        private static EquipSlotUI FindEquipSlot(EquipSlotType slotType)
+        private static EquipSlotUI FindEquipSlot(InventoryController controller, EquipSlotType slotType)
         {
-            if (InventoryController.Instance == null || InventoryController.Instance.allEquipSlots == null)
-                return null;
-
-            foreach (var slot in InventoryController.Instance.allEquipSlots)
+            if (controller == null || controller.allEquipSlots == null)
             {
-                if (slot != null && slot.SlotType == slotType)
+                return null;
+            }
+
+            foreach (EquipSlotUI slot in controller.allEquipSlots)
+            {
+                if (slot != null &&
+                    slot.SlotType == slotType)
+                {
                     return slot;
+                }
             }
 
             return null;

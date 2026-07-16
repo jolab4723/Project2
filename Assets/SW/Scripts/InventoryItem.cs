@@ -6,7 +6,6 @@ using ItemSystem;
 public class InventoryItem
 {
     public ItemInstance itemData { get; private set; }
-    public int upgradeLevel;
 
     public int x;
     public int y;
