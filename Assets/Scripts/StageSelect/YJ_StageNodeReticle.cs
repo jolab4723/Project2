@@ -33,14 +33,24 @@ public class YJ_StageNodeReticle : MonoBehaviour
     // 게임 일시정지 중에도 UI 효과를 재생할지 결정합니다.
     [SerializeField] private bool useUnscaledTime = true;
 
+    [Header("Idle Motion")]
+    // 좁혀짐 완료 후 Bracket 간격을 기준으로 좌우 왕복할 비율입니다.
+    [SerializeField, Range(0f, 0.5f)] private float idleMovementRatio = 0.05f;
+    // 바깥 방향 또는 원위치까지 한 번 이동하는 데 걸리는 시간입니다.
+    [SerializeField, Min(0.01f)] private float idleHalfCycleDuration = 0.35f;
+
     // 왼쪽 Bracket이 접근을 마친 뒤 유지할 프리팹 기준 위치입니다.
     private Vector2 leftRestPosition;
     // 오른쪽 Bracket이 접근을 마친 뒤 유지할 프리팹 기준 위치입니다.
     private Vector2 rightRestPosition;
     // 현재 Reticle이 화면에서 계속 따라갈 선택 노드입니다.
     private YJ_StageNodeData targetNode;
+    // 매 프레임 Transform을 다시 변환하지 않도록 현재 대상의 RectTransform을 캐시합니다.
+    private RectTransform targetRect;
     // 현재 실행 중인 Bracket 접근 애니메이션입니다.
     private Coroutine approachRoutine;
+    // 접근 완료 후 좌우 Bracket을 반대 방향으로 왕복시키는 애니메이션입니다.
+    private Coroutine idleMotionRoutine;
     // 이벤트 중복 등록을 방지하기 위해 실제 구독 중인 매니저를 보관합니다.
     private YJ_StageSelectManager subscribedManager;
 
@@ -97,6 +107,8 @@ public class YJ_StageNodeReticle : MonoBehaviour
             StopCoroutine(approachRoutine);
             approachRoutine = null;
         }
+
+        StopIdleMotion();
     }
 
     /// <summary>
@@ -132,7 +144,15 @@ public class YJ_StageNodeReticle : MonoBehaviour
         if (nodeData == null || reticleRoot == null || leftBracket == null || rightBracket == null)
             return;
 
+        StopIdleMotion();
         targetNode = nodeData;
+        targetRect = nodeData.transform as RectTransform;
+        if (targetRect == null)
+        {
+            Hide();
+            return;
+        }
+
         FollowTarget();
 
         if (approachRoutine != null)
@@ -159,11 +179,19 @@ public class YJ_StageNodeReticle : MonoBehaviour
         }
 
         targetNode = nodeData;
+        targetRect = nodeData.transform as RectTransform;
+        if (targetRect == null)
+        {
+            Hide();
+            return;
+        }
+
         GetTargetBracketPositions(out Vector2 leftTargetPosition, out Vector2 rightTargetPosition);
         leftBracket.anchoredPosition = leftTargetPosition;
         rightBracket.anchoredPosition = rightTargetPosition;
         FollowTarget();
         SetVisible(true);
+        StartIdleMotion();
     }
 
     /// <summary>
@@ -172,12 +200,15 @@ public class YJ_StageNodeReticle : MonoBehaviour
     public void Hide()
     {
         targetNode = null;
+        targetRect = null;
 
         if (approachRoutine != null)
         {
             StopCoroutine(approachRoutine);
             approachRoutine = null;
         }
+
+        StopIdleMotion();
 
         leftBracket.anchoredPosition = leftRestPosition;
         rightBracket.anchoredPosition = rightRestPosition;
@@ -231,9 +262,68 @@ public class YJ_StageNodeReticle : MonoBehaviour
         rightBracket.anchoredPosition = rightTargetPosition;
         SetVisible(true);
         approachRoutine = null;
+        StartIdleMotion();
 
         // Reticle이 완전히 좁혀진 뒤 테스트 완료 또는 실제 씬 전환 흐름을 요청합니다.
         stageSelectManager?.NotifyReticleAnimationCompleted(targetNode);
+    }
+
+    /// <summary>
+    /// 접근 완료 위치를 기준으로 좌우 Bracket의 반복 왕복 애니메이션을 시작합니다.
+    /// </summary>
+    private void StartIdleMotion()
+    {
+        StopIdleMotion();
+
+        if (targetNode == null || idleMovementRatio <= 0f || !isActiveAndEnabled)
+            return;
+
+        idleMotionRoutine = StartCoroutine(IdleMotionRoutine());
+    }
+
+    /// <summary>
+    /// 실행 중인 Bracket 왕복 애니메이션을 중지합니다.
+    /// </summary>
+    private void StopIdleMotion()
+    {
+        if (idleMotionRoutine == null)
+            return;
+
+        StopCoroutine(idleMotionRoutine);
+        idleMotionRoutine = null;
+    }
+
+    /// <summary>
+    /// 왼쪽 Bracket은 좌우로, 오른쪽 Bracket은 우좌로 최종 간격의 일정 비율만큼 반복 이동합니다.
+    /// </summary>
+    private IEnumerator IdleMotionRoutine()
+    {
+        GetTargetBracketPositions(out Vector2 leftTargetPosition, out Vector2 rightTargetPosition);
+        float movementDistance = Mathf.Abs(rightTargetPosition.x - leftTargetPosition.x) *
+                                 idleMovementRatio;
+        Vector2 leftOutwardPosition = leftTargetPosition + Vector2.left * movementDistance;
+        Vector2 rightOutwardPosition = rightTargetPosition + Vector2.right * movementDistance;
+        float elapsedTime = 0f;
+
+        while (targetNode != null && targetRect != null)
+        {
+            elapsedTime += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            float pingPongT = Mathf.PingPong(elapsedTime / idleHalfCycleDuration, 1f);
+            float easedT = Mathf.SmoothStep(0f, 1f, pingPongT);
+
+            leftBracket.anchoredPosition = Vector2.LerpUnclamped(
+                leftTargetPosition,
+                leftOutwardPosition,
+                easedT);
+            rightBracket.anchoredPosition = Vector2.LerpUnclamped(
+                rightTargetPosition,
+                rightOutwardPosition,
+                easedT);
+
+            yield return null;
+        }
+
+        idleMotionRoutine = null;
     }
 
     /// <summary>
@@ -255,9 +345,6 @@ public class YJ_StageNodeReticle : MonoBehaviour
     /// </summary>
     private void FollowTarget()
     {
-        RectTransform targetRect = targetNode != null
-            ? targetNode.transform as RectTransform
-            : null;
         if (targetRect == null)
             return;
 

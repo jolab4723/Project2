@@ -180,6 +180,38 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 테스트 버튼에서 새 Seed와 초기 진행 상태로 전체 노드 배치 및 연결을 다시 생성합니다.
+    /// 기존 JSON 저장 파일에는 영향을 주지 않습니다.
+    /// </summary>
+    public void RerollMapForTesting()
+    {
+        mapSeed = CreateRerollSeed();
+        clearedFloor = 0;
+        lastClearedNodeId = string.Empty;
+
+        nodeReticle?.Hide();
+        mapScrollRect?.StopMovement();
+        GenerateMap();
+
+        Debug.Log($"Stage map re-rolled for testing. Seed: {GeneratedSeed}", this);
+    }
+
+    /// <summary>
+    /// 현재 생성 Seed와 중복되지 않는 0 이외의 새 테스트용 Seed를 만듭니다.
+    /// </summary>
+    private int CreateRerollSeed()
+    {
+        int newSeed;
+        do
+        {
+            newSeed = Guid.NewGuid().GetHashCode();
+        }
+        while (newSeed == 0 || newSeed == GeneratedSeed);
+
+        return newSeed;
+    }
+
+    /// <summary>
     /// 현재 생성된 노드 배치, 연결 정보와 진행 상태를 JSON 저장용 순수 데이터로 변환합니다.
     /// </summary>
     public StageMapSaveData CaptureSaveData()
@@ -355,9 +387,8 @@ public class YJ_StageSelectManager : MonoBehaviour
         SelectedNode = node;
         SelectedNode.SetSelected(true);
         DisableAlternativeNodesOnFloor(data.floor, node);
+        RefreshPathStateForSelectedNode(data);
         NodeSelected?.Invoke(data);
-
-        print("노드 선택");
 
         return true;
     }
@@ -381,6 +412,34 @@ public class YJ_StageSelectManager : MonoBehaviour
                 true,
                 false);
         }
+    }
+
+    /// <summary>
+    /// 선택 노드에서 도달 가능한 미래 노드와 라인을 계산하고 나머지 경로를 비활성 상태로 표시합니다.
+    /// </summary>
+    private void RefreshPathStateForSelectedNode(YJ_StageNodeData selectedNode)
+    {
+        if (selectedNode == null)
+            return;
+
+        HashSet<string> reachableFromSelection = FindReachableNodeIds(selectedNode);
+        reachableFromSelection.Add(selectedNode.id);
+
+        foreach (YJ_StageNodeHover node in generatedNodes)
+        {
+            if (node == null || node.NodeData == null ||
+                node.NodeData.floor <= selectedNode.floor)
+            {
+                continue;
+            }
+
+            YJ_StageNodeData data = node.NodeData;
+            bool pathBlocked = !reachableFromSelection.Contains(data.id);
+            data.available = false;
+            node.ApplyState(data.cleared, false, pathBlocked, false);
+        }
+
+        nodeLineController?.RefreshReachability(reachableFromSelection, true);
     }
 
     /// <summary>
@@ -718,6 +777,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             SelectedNode = node;
             SelectedNode.SetSelected(true);
             DisableAlternativeNodesOnFloor(node.NodeData.floor, node);
+            RefreshPathStateForSelectedNode(node.NodeData);
             return;
         }
     }

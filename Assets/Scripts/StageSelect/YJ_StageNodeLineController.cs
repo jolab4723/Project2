@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,10 +23,16 @@ public class YJ_StageNodeLineController : MonoBehaviour
     [SerializeField, Min(0f)] private float maximumConnectionDistance = 600f;
     // 거리 내 다음 노드 후보가 2개 이상일 때 선택 연결을 허용할 확률입니다.
     [SerializeField, Range(0f, 1f)] private float optionalConnectionChance = 0.3f;
+    // 한 노드로 들어오는 두 번째 이후 라인을 최종 연결 목록에 남겨둘 확률입니다.
+    [SerializeField, Range(0f, 1f)] private float extraIncomingConnectionKeepChance = 0.5f;
 
     [Header("Reachability")]
     // 도달할 수 없는 노드와 연결된 선에 곱할 알파 비율입니다.
     [SerializeField, Range(0f, 1f)] private float unreachableLineAlpha = 0.15f;
+    // 지나온 경로가 아니거나 현재 선택 노드에서 도달할 수 없는 라인에 적용할 색상입니다.
+    [SerializeField] private Color unreachableLineTint = Color.gray;
+    // 원본 색상과 비활성 Tint 사이를 부드럽게 전환하는 시간입니다.
+    [SerializeField, Min(0f)] private float tintTransitionDuration = 0.5f;
 
     // 현재 맵에서 최종 채택된 시작 노드와 도착 노드 연결 목록입니다.
     private readonly List<NodeConnection> generatedConnections = new();
@@ -33,6 +40,8 @@ public class YJ_StageNodeLineController : MonoBehaviour
     private readonly List<ConnectionLineVisual> generatedLineVisuals = new();
     // 라인 프리팹 하위 Graphic 검색 시 배열 할당을 줄이기 위해 재사용하는 목록입니다.
     private readonly List<Graphic> lineGraphics = new();
+    // 모든 라인의 Tint 및 알파 전환을 함께 실행하는 코루틴입니다.
+    private Coroutine tintTransitionRoutine;
 
     /// <summary>
     /// 런타임 시작 시 LinesLayer 참조와 NodeLine 프리팹을 준비합니다.
@@ -50,7 +59,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
     {
         maximumConnectionDistance = Mathf.Max(0f, maximumConnectionDistance);
         optionalConnectionChance = Mathf.Clamp01(optionalConnectionChance);
+        extraIncomingConnectionKeepChance = Mathf.Clamp01(extraIncomingConnectionKeepChance);
         unreachableLineAlpha = Mathf.Clamp01(unreachableLineAlpha);
+        tintTransitionDuration = Mathf.Max(0f, tintTransitionDuration);
     }
 
     /// <summary>
@@ -148,6 +159,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
     /// </summary>
     public void ClearLines()
     {
+        StopTintTransition();
         generatedConnections.Clear();
         generatedLineVisuals.Clear();
         lineGraphics.Clear();
@@ -168,6 +180,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
     /// </summary>
     public void RefreshReachability(ISet<string> reachableNodeIds, bool restrictToReachableNodes)
     {
+        StopTintTransition();
+
+        bool requiresTransition = false;
         foreach (ConnectionLineVisual lineVisual in generatedLineVisuals)
         {
             if (lineVisual.canvasGroup == null)
@@ -176,9 +191,67 @@ public class YJ_StageNodeLineController : MonoBehaviour
             bool connectionIsReachable = !restrictToReachableNodes ||
                                          IsOnActivePath(lineVisual.connection.startNode, reachableNodeIds) &&
                                          IsOnActivePath(lineVisual.connection.endNode, reachableNodeIds);
-            lineVisual.canvasGroup.alpha = lineVisual.originalAlpha *
-                                           (connectionIsReachable ? 1f : unreachableLineAlpha);
+            requiresTransition |= lineVisual.PrepareTransition(
+                connectionIsReachable,
+                unreachableLineAlpha,
+                unreachableLineTint);
         }
+
+        if (!requiresTransition)
+            return;
+
+        if (!isActiveAndEnabled || tintTransitionDuration <= Mathf.Epsilon)
+        {
+            ApplyTintTransition(1f);
+            return;
+        }
+
+        tintTransitionRoutine = StartCoroutine(TintTransitionRoutine());
+    }
+
+    /// <summary>
+    /// 모든 라인의 현재 색상과 알파를 목표 상태까지 지정된 시간 동안 보간합니다.
+    /// </summary>
+    private IEnumerator TintTransitionRoutine()
+    {
+        float elapsedTime = 0f;
+
+        while (elapsedTime < tintTransitionDuration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float normalizedTime = Mathf.Clamp01(elapsedTime / tintTransitionDuration);
+            ApplyTintTransition(Mathf.SmoothStep(0f, 1f, normalizedTime));
+            yield return null;
+        }
+
+        ApplyTintTransition(1f);
+        tintTransitionRoutine = null;
+    }
+
+    /// <summary>
+    /// 준비된 모든 라인 전환에 동일한 보간 진행률을 적용합니다.
+    /// </summary>
+    private void ApplyTintTransition(float normalizedTime)
+    {
+        foreach (ConnectionLineVisual lineVisual in generatedLineVisuals)
+        {
+            lineVisual.ApplyTransition(
+                normalizedTime,
+                unreachableLineAlpha,
+                unreachableLineTint);
+        }
+    }
+
+    /// <summary>
+    /// 진행 중인 라인 전환을 중지하며 현재 화면 색상은 그대로 유지합니다.
+    /// </summary>
+    private void StopTintTransition()
+    {
+        if (tintTransitionRoutine == null)
+            return;
+
+        StopCoroutine(tintTransitionRoutine);
+        tintTransitionRoutine = null;
     }
 
     /// <summary>
@@ -210,6 +283,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
         Dictionary<YJ_StageNodeData, bool> allowOptionalConnections = new();
         List<YJ_StageNodeData> orderedCurrentNodes = new();
         List<YJ_StageNodeData> orderedNextNodes = new();
+        List<NodeConnection> extraIncomingCandidates = new();
+        Dictionary<YJ_StageNodeData, int> incomingConnectionCounts = new();
+        Dictionary<YJ_StageNodeData, int> outgoingConnectionCounts = new();
+        HashSet<YJ_StageNodeData> nodesWithProtectedIncoming = new();
         float maximumDistanceSquared = maximumConnectionDistance * maximumConnectionDistance;
 
         for (int floorIndex = 0; floorIndex < generatedFloors.Count - 1; floorIndex++)
@@ -267,11 +344,67 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 acceptedConnections.Add(candidate);
             }
 
+            PruneExtraIncomingConnections(
+                acceptedConnections,
+                extraIncomingCandidates,
+                incomingConnectionCounts,
+                outgoingConnectionCounts,
+                nodesWithProtectedIncoming,
+                random);
+
             foreach (NodeConnection accepted in acceptedConnections)
             {
                 accepted.startNode.nextNodeIds.Add(accepted.endNode.id);
                 generatedConnections.Add(accepted);
             }
+        }
+    }
+
+    /// <summary>
+    /// 각 도착 노드의 첫 유입 라인은 보존하고 두 번째 이후 라인은 확률적으로 제거합니다.
+    /// 출발 노드의 마지막 출구와 도착 노드의 마지막 입구는 삭제하지 않습니다.
+    /// </summary>
+    private void PruneExtraIncomingConnections(
+        List<NodeConnection> acceptedConnections,
+        List<NodeConnection> extraIncomingCandidates,
+        Dictionary<YJ_StageNodeData, int> incomingConnectionCounts,
+        Dictionary<YJ_StageNodeData, int> outgoingConnectionCounts,
+        HashSet<YJ_StageNodeData> nodesWithProtectedIncoming,
+        System.Random random)
+    {
+        extraIncomingCandidates.Clear();
+        incomingConnectionCounts.Clear();
+        outgoingConnectionCounts.Clear();
+        nodesWithProtectedIncoming.Clear();
+
+        foreach (NodeConnection connection in acceptedConnections)
+        {
+            incomingConnectionCounts.TryGetValue(connection.endNode, out int incomingCount);
+            incomingConnectionCounts[connection.endNode] = incomingCount + 1;
+
+            outgoingConnectionCounts.TryGetValue(connection.startNode, out int outgoingCount);
+            outgoingConnectionCounts[connection.startNode] = outgoingCount + 1;
+
+            if (!nodesWithProtectedIncoming.Add(connection.endNode))
+                extraIncomingCandidates.Add(connection);
+        }
+
+        Shuffle(extraIncomingCandidates, random);
+
+        foreach (NodeConnection candidate in extraIncomingCandidates)
+        {
+            if (random.NextDouble() < extraIncomingConnectionKeepChance ||
+                incomingConnectionCounts[candidate.endNode] <= 1 ||
+                outgoingConnectionCounts[candidate.startNode] <= 1)
+            {
+                continue;
+            }
+
+            if (!acceptedConnections.Remove(candidate))
+                continue;
+
+            incomingConnectionCounts[candidate.endNode]--;
+            outgoingConnectionCounts[candidate.startNode]--;
         }
     }
 
@@ -490,6 +623,11 @@ public class YJ_StageNodeLineController : MonoBehaviour
         foreach (Graphic graphic in lineGraphics)
             graphic.raycastTarget = false;
 
+        Graphic[] graphics = lineGraphics.ToArray();
+        Color[] originalColors = new Color[graphics.Length];
+        for (int i = 0; i < graphics.Length; i++)
+            originalColors[i] = graphics[i] != null ? graphics[i].color : Color.white;
+
         CanvasGroup canvasGroup = line.GetComponent<CanvasGroup>();
         if (canvasGroup == null)
             canvasGroup = line.AddComponent<CanvasGroup>();
@@ -497,7 +635,9 @@ public class YJ_StageNodeLineController : MonoBehaviour
         generatedLineVisuals.Add(new ConnectionLineVisual(
             connection,
             canvasGroup,
-            canvasGroup.alpha));
+            canvasGroup.alpha,
+            graphics,
+            originalColors));
     }
 
     /// <summary>
@@ -557,7 +697,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
     /// <summary>
     /// 생성된 라인의 경로 정보와 알파 제어 정보를 함께 보관합니다.
     /// </summary>
-    private readonly struct ConnectionLineVisual
+    private sealed class ConnectionLineVisual
     {
         // 이 UI 라인이 표현하는 시작 및 도착 노드 연결입니다.
         public readonly NodeConnection connection;
@@ -565,6 +705,18 @@ public class YJ_StageNodeLineController : MonoBehaviour
         public readonly CanvasGroup canvasGroup;
         // 도달 가능한 상태로 돌아갈 때 복원할 프리팹 원본 알파입니다.
         public readonly float originalAlpha;
+        // 라인을 구성하는 모든 UI Graphic입니다.
+        private readonly Graphic[] graphics;
+        // 활성 상태로 복원할 각 Graphic의 프리팹 원본 색상입니다.
+        private readonly Color[] originalColors;
+        // 새 전환이 시작될 때 각 Graphic이 가지고 있던 색상입니다.
+        private readonly Color[] transitionStartColors;
+        // 새 전환이 시작될 때 CanvasGroup이 가지고 있던 알파입니다.
+        private float transitionStartAlpha;
+        // 이번 전환이 도달 가능한 원본 상태를 목표로 하는지 나타냅니다.
+        private bool targetActive;
+        // 현재 라인이 실제로 전환할 색상 또는 알파 차이를 가지고 있는지 나타냅니다.
+        private bool requiresTransition;
 
         /// <summary>
         /// 연결 데이터와 해당 라인의 CanvasGroup 및 기준 알파를 묶어 저장합니다.
@@ -572,11 +724,93 @@ public class YJ_StageNodeLineController : MonoBehaviour
         public ConnectionLineVisual(
             NodeConnection connection,
             CanvasGroup canvasGroup,
-            float originalAlpha)
+            float originalAlpha,
+            Graphic[] graphics,
+            Color[] originalColors)
         {
             this.connection = connection;
             this.canvasGroup = canvasGroup;
             this.originalAlpha = originalAlpha;
+            this.graphics = graphics;
+            this.originalColors = originalColors;
+            transitionStartColors = new Color[graphics.Length];
+        }
+
+        /// <summary>
+        /// 현재 표시값을 시작점으로 저장하고 목표 상태와 차이가 있는지 확인합니다.
+        /// </summary>
+        public bool PrepareTransition(bool active, float inactiveAlpha, Color inactiveTint)
+        {
+            targetActive = active;
+            transitionStartAlpha = canvasGroup.alpha;
+            requiresTransition = !Mathf.Approximately(
+                transitionStartAlpha,
+                GetTargetAlpha(inactiveAlpha));
+
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (graphic == null)
+                    continue;
+
+                transitionStartColors[i] = graphic.color;
+                requiresTransition |= graphic.color != GetTargetColor(i, inactiveTint);
+            }
+
+            return requiresTransition;
+        }
+
+        /// <summary>
+        /// 저장된 시작값에서 현재 목표 알파와 Tint까지 지정된 진행률만큼 보간합니다.
+        /// </summary>
+        public void ApplyTransition(float normalizedTime, float inactiveAlpha, Color inactiveTint)
+        {
+            if (!requiresTransition)
+                return;
+
+            canvasGroup.alpha = Mathf.LerpUnclamped(
+                transitionStartAlpha,
+                GetTargetAlpha(inactiveAlpha),
+                normalizedTime);
+
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                Graphic graphic = graphics[i];
+                if (graphic == null)
+                    continue;
+
+                graphic.color = Color.LerpUnclamped(
+                    transitionStartColors[i],
+                    GetTargetColor(i, inactiveTint),
+                    normalizedTime);
+            }
+
+            if (normalizedTime >= 1f)
+                requiresTransition = false;
+        }
+
+        /// <summary>
+        /// 현재 목표 상태에 맞는 CanvasGroup 알파를 반환합니다.
+        /// </summary>
+        private float GetTargetAlpha(float inactiveAlpha)
+        {
+            return originalAlpha * (targetActive ? 1f : inactiveAlpha);
+        }
+
+        /// <summary>
+        /// 현재 목표 상태에 맞는 Graphic 색상을 반환합니다.
+        /// </summary>
+        private Color GetTargetColor(int index, Color inactiveTint)
+        {
+            Color originalColor = originalColors[index];
+
+            return targetActive
+                ? originalColor
+                : new Color(
+                    inactiveTint.r,
+                    inactiveTint.g,
+                    inactiveTint.b,
+                    originalColor.a);
         }
     }
 }
