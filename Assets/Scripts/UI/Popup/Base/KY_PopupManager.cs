@@ -78,6 +78,7 @@ public class KY_PopupManager : MonoBehaviour
 
         currentSidePopup = popup;
         popup.Open();
+        KY_GameEvents.SidePopupOpened();
     }
 
     public void HideSidePopup()
@@ -86,6 +87,7 @@ public class KY_PopupManager : MonoBehaviour
 
         currentSidePopup.Close();
         currentSidePopup = null;
+        KY_GameEvents.SidePopupClosed();
     }
 
     void OnEscPressed()
