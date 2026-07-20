@@ -1,5 +1,3 @@
-using PLAYERTWO.ARPGProject;
-using TMPro;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -103,12 +101,11 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
         float height = rect.rect.height * rect.lossyScale.y;
 
         Rect safeArea = Screen.safeArea;
-        float margin = 10f;
 
-        float minX = safeArea.xMin + width * rect.pivot.x + margin;
-        float maxX = safeArea.xMax - width * (1f - rect.pivot.x) - margin;
-        float minY = safeArea.yMin + height * rect.pivot.y + margin;
-        float maxY = safeArea.yMax - height * (1f - rect.pivot.y) - margin;
+        float minX = safeArea.xMin + width * rect.pivot.x;
+        float maxX = safeArea.xMax - width * (1f - rect.pivot.x);
+        float minY = safeArea.yMin + height * rect.pivot.y;
+        float maxY = safeArea.yMax - height * (1f - rect.pivot.y);
 
         screenPosition.x = Mathf.Clamp(screenPosition.x, minX, maxX);
         screenPosition.y = Mathf.Clamp(screenPosition.y, minY, maxY);
