@@ -3732,6 +3732,71 @@ MonoBehaviour:
   highlightImage: {fileID: 1681020403013865002}
   secondaryHighlightRect: {fileID: 0}
   secondaryHighlightImage: {fileID: 0}
+--- !u!1001 &738139594
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: itemGenerator
+      value: 
+      objectReference: {fileID: 3067193876446413051}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: receiverBehaviour
+      value: 
+      objectReference: {fileID: 69723871576222033}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 527.6267
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 682.022
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -154.45287
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8353135309055871693, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: m_Name
+      value: SW_TEST_RandomDropAcquireTester
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
 --- !u!1 &744513687
 GameObject:
   m_ObjectHideFlags: 0
@@ -7750,6 +7815,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1236428851}
   m_CullTransparentMesh: 1
+--- !u!114 &1276910012 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+  m_PrefabInstance: {fileID: 738139594}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c980a43596d9c4348b251ea2b95926c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SW.Test.RandomDrop.SwTestRandomDropAcquireTester
 --- !u!1 &1279309861
 GameObject:
   m_ObjectHideFlags: 0
@@ -21158,9 +21234,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 7358094001818320183}
-        m_TargetAssemblyTypeName: TestButtonController, Assembly-CSharp
-        m_MethodName: OnClickGetItem
+      - m_Target: {fileID: 1276910012}
+        m_TargetAssemblyTypeName: SW.Test.RandomDrop.SwTestRandomDropAcquireTester,
+          Assembly-CSharp
+        m_MethodName: AcquireLastDroppedItem
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -25714,9 +25791,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 7358094001818320183}
-        m_TargetAssemblyTypeName: TestButtonController, Assembly-CSharp
-        m_MethodName: OnClickDropItem
+      - m_Target: {fileID: 1276910012}
+        m_TargetAssemblyTypeName: SW.Test.RandomDrop.SwTestRandomDropAcquireTester,
+          Assembly-CSharp
+        m_MethodName: PrepareRandomItemData
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -34648,3 +34726,4 @@ SceneRoots:
   - {fileID: 1889983087}
   - {fileID: 1316122953}
   - {fileID: 1651220822}
+  - {fileID: 738139594}
