@@ -26,6 +26,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
     // 한 노드로 들어오는 두 번째 이후 라인을 최종 연결 목록에 남겨둘 확률입니다.
     [SerializeField, Range(0f, 1f)] private float extraIncomingConnectionKeepChance = 0.5f;
 
+    [Header("Route Diversity")]
+    // 한 노드에서 갈라진 경로가 다시 같은 노드로 합류하지 않아야 하는 최소 층 수입니다.
+    [SerializeField, Range(0, 4)] private int minimumBranchSeparationFloors = 2;
+
     [Header("Reachability")]
     // 도달할 수 없는 노드와 연결된 선에 곱할 알파 비율입니다.
     [SerializeField, Range(0f, 1f)] private float unreachableLineAlpha = 0.15f;
@@ -60,6 +64,7 @@ public class YJ_StageNodeLineController : MonoBehaviour
         maximumConnectionDistance = Mathf.Max(0f, maximumConnectionDistance);
         optionalConnectionChance = Mathf.Clamp01(optionalConnectionChance);
         extraIncomingConnectionKeepChance = Mathf.Clamp01(extraIncomingConnectionKeepChance);
+        minimumBranchSeparationFloors = Mathf.Clamp(minimumBranchSeparationFloors, 0, 4);
         unreachableLineAlpha = Mathf.Clamp01(unreachableLineAlpha);
         tintTransitionDuration = Mathf.Max(0f, tintTransitionDuration);
     }
@@ -67,9 +72,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
     /// <summary>
     /// 기존 라인을 제거한 뒤 층별 연결 그래프를 다시 만들고 실제 UI 라인을 생성합니다.
     /// </summary>
-    public void Rebuild(
+    public bool Rebuild(
         IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
-        System.Random random)
+        System.Random random,
+        bool enforceBranchSeparation = true)
     {
         FindReferences();
         LoadPrefab();
@@ -78,18 +84,27 @@ public class YJ_StageNodeLineController : MonoBehaviour
         if (linesLayer == null)
         {
             Debug.LogError("LinesLayer was not found.", this);
-            return;
+            return false;
         }
 
         if (nodeLinePrefab == null)
         {
             Debug.LogError($"Could not load {NodeLinePrefabPath}.", this);
-            return;
+            return false;
         }
 
         PrepareLayer();
-        BuildFloorConnections(generatedFloors, random ?? new System.Random());
+        if (!BuildFloorConnections(
+                generatedFloors,
+                random ?? new System.Random(),
+                enforceBranchSeparation))
+        {
+            ClearLines();
+            return false;
+        }
+
         GenerateConnectionLines();
+        return true;
     }
 
     /// <summary>
@@ -266,9 +281,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
     /// <summary>
     /// 모든 인접 층에 대해 필수 연결과 확률 기반 선택 연결을 만들고 nextNodeIds를 기록합니다.
     /// </summary>
-    private void BuildFloorConnections(
+    private bool BuildFloorConnections(
         IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
-        System.Random random)
+        System.Random random,
+        bool enforceBranchSeparation)
     {
         foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
         {
@@ -277,17 +293,29 @@ public class YJ_StageNodeLineController : MonoBehaviour
         }
 
         // 아래 컬렉션은 층마다 Clear하여 재사용하므로 층 수만큼 반복 할당되지 않습니다.
+        Dictionary<string, YJ_StageNodeData> nodesById = new();
         List<NodeConnection> candidates = new();
         List<NodeConnection> acceptedConnections = new();
         Dictionary<YJ_StageNodeData, int> candidateCounts = new();
         Dictionary<YJ_StageNodeData, bool> allowOptionalConnections = new();
         List<YJ_StageNodeData> orderedCurrentNodes = new();
         List<YJ_StageNodeData> orderedNextNodes = new();
+        HashSet<NodePair> separatedNodePairs = new();
+        List<int[]> mandatoryPartitions = new();
         List<NodeConnection> extraIncomingCandidates = new();
         Dictionary<YJ_StageNodeData, int> incomingConnectionCounts = new();
         Dictionary<YJ_StageNodeData, int> outgoingConnectionCounts = new();
         HashSet<YJ_StageNodeData> nodesWithProtectedIncoming = new();
         float maximumDistanceSquared = maximumConnectionDistance * maximumConnectionDistance;
+
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            foreach (YJ_StageNodeData node in floorNodes)
+            {
+                if (node != null && !string.IsNullOrEmpty(node.id))
+                    nodesById[node.id] = node;
+            }
+        }
 
         for (int floorIndex = 0; floorIndex < generatedFloors.Count - 1; floorIndex++)
         {
@@ -298,6 +326,20 @@ public class YJ_StageNodeLineController : MonoBehaviour
             acceptedConnections.Clear();
             candidateCounts.Clear();
             allowOptionalConnections.Clear();
+            separatedNodePairs.Clear();
+
+            bool mergesIntoBoss = nextFloorNodes.Count == 1 &&
+                                  nextFloorNodes[0] != null &&
+                                  nextFloorNodes[0].type == StageNodeType.Boss;
+            if (enforceBranchSeparation && !mergesIntoBoss)
+            {
+                BuildSeparatedNodePairs(
+                    currentFloorNodes,
+                    floorIndex,
+                    generatedFloors,
+                    nodesById,
+                    separatedNodePairs);
+            }
 
             foreach (YJ_StageNodeData node in currentFloorNodes)
             {
@@ -315,13 +357,18 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 }
             }
 
-            AddMandatoryConnections(
-                currentFloorNodes,
-                nextFloorNodes,
-                acceptedConnections,
-                orderedCurrentNodes,
-                orderedNextNodes,
-                random);
+            if (!TryAddMandatoryConnections(
+                    currentFloorNodes,
+                    nextFloorNodes,
+                    acceptedConnections,
+                    orderedCurrentNodes,
+                    orderedNextNodes,
+                    separatedNodePairs,
+                    mandatoryPartitions,
+                    random))
+            {
+                return false;
+            }
 
             foreach (KeyValuePair<YJ_StageNodeData, int> pair in candidateCounts)
             {
@@ -336,6 +383,10 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 if (ContainsConnection(acceptedConnections, candidate) ||
                     !allowOptionalConnections.TryGetValue(candidate.startNode, out bool allowOptional) ||
                     !allowOptional ||
+                    WouldMergeSeparatedBranches(
+                        candidate,
+                        acceptedConnections,
+                        separatedNodePairs) ||
                     CrossesAnyLine(candidate, acceptedConnections))
                 {
                     continue;
@@ -358,6 +409,8 @@ public class YJ_StageNodeLineController : MonoBehaviour
                 generatedConnections.Add(accepted);
             }
         }
+
+        return true;
     }
 
     /// <summary>
@@ -409,15 +462,151 @@ public class YJ_StageNodeLineController : MonoBehaviour
     }
 
     /// <summary>
-    /// 모든 현재 층 노드에 출구가 있고 모든 다음 층 노드에 입구가 생기도록
-    /// X 좌표 순서를 유지하는 교차 없는 필수 연결을 추가합니다.
+    /// 최근 여러 층 안에서 같은 노드로부터 서로 다른 갈래로 나뉜 현재 층 노드 쌍을 찾습니다.
     /// </summary>
-    private static void AddMandatoryConnections(
+    private void BuildSeparatedNodePairs(
+        List<YJ_StageNodeData> currentFloorNodes,
+        int floorIndex,
+        IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
+        IReadOnlyDictionary<string, YJ_StageNodeData> nodesById,
+        HashSet<NodePair> separatedNodePairs)
+    {
+        int maximumAncestorDepth = Mathf.Min(minimumBranchSeparationFloors, floorIndex);
+
+        for (int firstIndex = 0; firstIndex < currentFloorNodes.Count - 1; firstIndex++)
+        {
+            for (int secondIndex = firstIndex + 1;
+                 secondIndex < currentFloorNodes.Count;
+                 secondIndex++)
+            {
+                YJ_StageNodeData firstNode = currentFloorNodes[firstIndex];
+                YJ_StageNodeData secondNode = currentFloorNodes[secondIndex];
+
+                if (DivergedFromCommonAncestor(
+                        firstNode,
+                        secondNode,
+                        floorIndex,
+                        maximumAncestorDepth,
+                        generatedFloors,
+                        nodesById))
+                {
+                    separatedNodePairs.Add(new NodePair(firstNode, secondNode));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 두 노드가 지정된 깊이 안의 같은 조상에서 서로 다른 첫 갈래를 통해 도달했는지 확인합니다.
+    /// </summary>
+    private static bool DivergedFromCommonAncestor(
+        YJ_StageNodeData firstNode,
+        YJ_StageNodeData secondNode,
+        int floorIndex,
+        int maximumAncestorDepth,
+        IReadOnlyList<List<YJ_StageNodeData>> generatedFloors,
+        IReadOnlyDictionary<string, YJ_StageNodeData> nodesById)
+    {
+        for (int ancestorDepth = 1;
+             ancestorDepth <= maximumAncestorDepth;
+             ancestorDepth++)
+        {
+            int ancestorFloorIndex = floorIndex - ancestorDepth;
+            int remainingSteps = ancestorDepth - 1;
+
+            foreach (YJ_StageNodeData ancestor in generatedFloors[ancestorFloorIndex])
+            {
+                if (HasDistinctBranchesToTargets(
+                        ancestor,
+                        firstNode,
+                        secondNode,
+                        remainingSteps,
+                        nodesById))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 한 조상의 서로 다른 직계 다음 노드가 두 목표 노드로 각각 이어지는지 확인합니다.
+    /// </summary>
+    private static bool HasDistinctBranchesToTargets(
+        YJ_StageNodeData ancestor,
+        YJ_StageNodeData firstTarget,
+        YJ_StageNodeData secondTarget,
+        int remainingSteps,
+        IReadOnlyDictionary<string, YJ_StageNodeData> nodesById)
+    {
+        for (int firstChildIndex = 0;
+             firstChildIndex < ancestor.nextNodeIds.Count;
+             firstChildIndex++)
+        {
+            string firstChildId = ancestor.nextNodeIds[firstChildIndex];
+            if (!nodesById.TryGetValue(firstChildId, out YJ_StageNodeData firstChild) ||
+                !CanReachInExactSteps(firstChild, firstTarget, remainingSteps, nodesById))
+            {
+                continue;
+            }
+
+            for (int secondChildIndex = 0;
+                 secondChildIndex < ancestor.nextNodeIds.Count;
+                 secondChildIndex++)
+            {
+                if (secondChildIndex == firstChildIndex)
+                    continue;
+
+                string secondChildId = ancestor.nextNodeIds[secondChildIndex];
+                if (nodesById.TryGetValue(secondChildId, out YJ_StageNodeData secondChild) &&
+                    CanReachInExactSteps(secondChild, secondTarget, remainingSteps, nodesById))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 방향성 연결 그래프를 따라 정확히 지정된 단계 수 안에 목표 노드에 도착하는지 확인합니다.
+    /// </summary>
+    private static bool CanReachInExactSteps(
+        YJ_StageNodeData currentNode,
+        YJ_StageNodeData targetNode,
+        int remainingSteps,
+        IReadOnlyDictionary<string, YJ_StageNodeData> nodesById)
+    {
+        if (remainingSteps == 0)
+            return currentNode == targetNode;
+
+        foreach (string nextNodeId in currentNode.nextNodeIds)
+        {
+            if (nodesById.TryGetValue(nextNodeId, out YJ_StageNodeData nextNode) &&
+                CanReachInExactSteps(nextNode, targetNode, remainingSteps - 1, nodesById))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 모든 현재 노드에 출구가 있고 모든 다음 노드에 입구가 생기는 교차 없는 필수 연결을 추가합니다.
+    /// 최근 분기 경로끼리 같은 노드로 합쳐지는 조합은 사용하지 않습니다.
+    /// </summary>
+    private static bool TryAddMandatoryConnections(
         List<YJ_StageNodeData> currentFloorNodes,
         List<YJ_StageNodeData> nextFloorNodes,
         List<NodeConnection> acceptedConnections,
         List<YJ_StageNodeData> orderedCurrentNodes,
         List<YJ_StageNodeData> orderedNextNodes,
+        HashSet<NodePair> separatedNodePairs,
+        List<int[]> mandatoryPartitions,
         System.Random random)
     {
         orderedCurrentNodes.Clear();
@@ -427,62 +616,173 @@ public class YJ_StageNodeLineController : MonoBehaviour
         orderedCurrentNodes.Sort((first, second) => first.position.x.CompareTo(second.position.x));
         orderedNextNodes.Sort((first, second) => first.position.x.CompareTo(second.position.x));
 
-        // 층마다 진행 방향을 반전해 노드 수가 다른 층에서 한쪽 끝에 연결이 치우치는 현상을 줄입니다.
-        if (random.NextDouble() < 0.5)
-        {
-            orderedCurrentNodes.Reverse();
-            orderedNextNodes.Reverse();
-        }
-
         if (orderedCurrentNodes.Count == 0 || orderedNextNodes.Count == 0)
-            return;
+            return false;
 
-        int currentIndex = 0;
-        int nextIndex = 0;
-        acceptedConnections.Add(new NodeConnection(
-            orderedCurrentNodes[currentIndex],
-            orderedNextNodes[nextIndex]));
+        int totalItems = Mathf.Max(orderedCurrentNodes.Count, orderedNextNodes.Count);
+        int groupCount = Mathf.Min(orderedCurrentNodes.Count, orderedNextNodes.Count);
+        int[] workingPartition = new int[groupCount];
+        mandatoryPartitions.Clear();
+        CollectPositivePartitions(
+            totalItems,
+            groupCount,
+            0,
+            workingPartition,
+            mandatoryPartitions);
 
-        while (currentIndex < orderedCurrentNodes.Count - 1 ||
-               nextIndex < orderedNextNodes.Count - 1)
+        if (orderedCurrentNodes.Count >= orderedNextNodes.Count)
         {
-            bool canAdvanceCurrent = currentIndex < orderedCurrentNodes.Count - 1;
-            bool canAdvanceNext = nextIndex < orderedNextNodes.Count - 1;
-
-            if (!canAdvanceCurrent)
+            for (int partitionIndex = mandatoryPartitions.Count - 1;
+                 partitionIndex >= 0;
+                 partitionIndex--)
             {
-                nextIndex++;
-            }
-            else if (!canAdvanceNext)
-            {
-                currentIndex++;
-            }
-            else
-            {
-                float nextCurrentProgress =
-                    (currentIndex + 1f) / (orderedCurrentNodes.Count - 1f);
-                float nextFloorProgress =
-                    (nextIndex + 1f) / (orderedNextNodes.Count - 1f);
-
-                if (Mathf.Approximately(nextCurrentProgress, nextFloorProgress))
+                if (!IsCurrentNodePartitionValid(
+                        orderedCurrentNodes,
+                        mandatoryPartitions[partitionIndex],
+                        separatedNodePairs))
                 {
-                    currentIndex++;
-                    nextIndex++;
-                }
-                else if (nextCurrentProgress < nextFloorProgress)
-                {
-                    currentIndex++;
-                }
-                else
-                {
-                    nextIndex++;
+                    mandatoryPartitions.RemoveAt(partitionIndex);
                 }
             }
-
-            acceptedConnections.Add(new NodeConnection(
-                orderedCurrentNodes[currentIndex],
-                orderedNextNodes[nextIndex]));
         }
+
+        if (mandatoryPartitions.Count == 0)
+            return false;
+
+        int[] selectedPartition = mandatoryPartitions[random.Next(mandatoryPartitions.Count)];
+        AddPartitionConnections(
+            orderedCurrentNodes,
+            orderedNextNodes,
+            selectedPartition,
+            acceptedConnections);
+        return true;
+    }
+
+    /// <summary>
+    /// 합계가 total인 양의 정수 groupCount개 조합을 모두 생성합니다.
+    /// </summary>
+    private static void CollectPositivePartitions(
+        int remainingTotal,
+        int groupCount,
+        int groupIndex,
+        int[] workingPartition,
+        List<int[]> partitions)
+    {
+        if (groupIndex == groupCount - 1)
+        {
+            workingPartition[groupIndex] = remainingTotal;
+            partitions.Add((int[])workingPartition.Clone());
+            return;
+        }
+
+        int remainingGroups = groupCount - groupIndex - 1;
+        int maximumGroupSize = remainingTotal - remainingGroups;
+
+        for (int groupSize = 1; groupSize <= maximumGroupSize; groupSize++)
+        {
+            workingPartition[groupIndex] = groupSize;
+            CollectPositivePartitions(
+                remainingTotal - groupSize,
+                groupCount,
+                groupIndex + 1,
+                workingPartition,
+                partitions);
+        }
+    }
+
+    /// <summary>
+    /// 하나의 도착 노드에 묶이는 현재 노드 그룹 안에 분리 유지 대상 쌍이 없는지 확인합니다.
+    /// </summary>
+    private static bool IsCurrentNodePartitionValid(
+        List<YJ_StageNodeData> orderedCurrentNodes,
+        int[] partition,
+        HashSet<NodePair> separatedNodePairs)
+    {
+        int groupStartIndex = 0;
+
+        foreach (int groupSize in partition)
+        {
+            int groupEndIndex = groupStartIndex + groupSize;
+            for (int firstIndex = groupStartIndex; firstIndex < groupEndIndex - 1; firstIndex++)
+            {
+                for (int secondIndex = firstIndex + 1;
+                     secondIndex < groupEndIndex;
+                     secondIndex++)
+                {
+                    if (separatedNodePairs.Contains(new NodePair(
+                            orderedCurrentNodes[firstIndex],
+                            orderedCurrentNodes[secondIndex])))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            groupStartIndex = groupEndIndex;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 선택된 연속 그룹 크기를 실제 현재 층과 다음 층의 필수 연결로 변환합니다.
+    /// </summary>
+    private static void AddPartitionConnections(
+        List<YJ_StageNodeData> orderedCurrentNodes,
+        List<YJ_StageNodeData> orderedNextNodes,
+        int[] partition,
+        List<NodeConnection> acceptedConnections)
+    {
+        if (orderedCurrentNodes.Count >= orderedNextNodes.Count)
+        {
+            int currentIndex = 0;
+            for (int nextIndex = 0; nextIndex < orderedNextNodes.Count; nextIndex++)
+            {
+                for (int count = 0; count < partition[nextIndex]; count++)
+                {
+                    acceptedConnections.Add(new NodeConnection(
+                        orderedCurrentNodes[currentIndex++],
+                        orderedNextNodes[nextIndex]));
+                }
+            }
+
+            return;
+        }
+
+        int nextNodeIndex = 0;
+        for (int currentNodeIndex = 0;
+             currentNodeIndex < orderedCurrentNodes.Count;
+             currentNodeIndex++)
+        {
+            for (int count = 0; count < partition[currentNodeIndex]; count++)
+            {
+                acceptedConnections.Add(new NodeConnection(
+                    orderedCurrentNodes[currentNodeIndex],
+                    orderedNextNodes[nextNodeIndex++]));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 후보 라인이 같은 도착 노드에서 최근 분리된 다른 경로와 합쳐지는지 확인합니다.
+    /// </summary>
+    private static bool WouldMergeSeparatedBranches(
+        NodeConnection candidate,
+        List<NodeConnection> acceptedConnections,
+        HashSet<NodePair> separatedNodePairs)
+    {
+        foreach (NodeConnection accepted in acceptedConnections)
+        {
+            if (accepted.endNode == candidate.endNode &&
+                separatedNodePairs.Contains(new NodePair(
+                    accepted.startNode,
+                    candidate.startNode)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -691,6 +991,63 @@ public class YJ_StageNodeLineController : MonoBehaviour
         {
             this.startNode = startNode;
             this.endNode = endNode;
+        }
+    }
+
+    /// <summary>
+    /// 합류를 잠시 금지해야 하는 두 노드를 순서와 무관하게 비교하기 위한 키입니다.
+    /// </summary>
+    private readonly struct NodePair : System.IEquatable<NodePair>
+    {
+        // ID 정렬상 앞에 위치한 첫 번째 노드입니다.
+        private readonly YJ_StageNodeData firstNode;
+        // ID 정렬상 뒤에 위치한 두 번째 노드입니다.
+        private readonly YJ_StageNodeData secondNode;
+
+        /// <summary>
+        /// 전달 순서가 달라도 같은 키가 되도록 노드 ID 순서로 정렬해 저장합니다.
+        /// </summary>
+        public NodePair(YJ_StageNodeData firstNode, YJ_StageNodeData secondNode)
+        {
+            if (string.CompareOrdinal(firstNode.id, secondNode.id) <= 0)
+            {
+                this.firstNode = firstNode;
+                this.secondNode = secondNode;
+            }
+            else
+            {
+                this.firstNode = secondNode;
+                this.secondNode = firstNode;
+            }
+        }
+
+        /// <summary>
+        /// 정렬된 두 노드 참조가 모두 같은지 확인합니다.
+        /// </summary>
+        public bool Equals(NodePair other)
+        {
+            return firstNode == other.firstNode && secondNode == other.secondNode;
+        }
+
+        /// <summary>
+        /// 박싱된 객체가 같은 노드 쌍인지 확인합니다.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return obj is NodePair other && Equals(other);
+        }
+
+        /// <summary>
+        /// 두 노드의 Instance ID를 이용해 순서 독립적인 해시값을 반환합니다.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int firstId = firstNode != null ? firstNode.GetInstanceID() : 0;
+                int secondId = secondNode != null ? secondNode.GetInstanceID() : 0;
+                return (firstId * 397) ^ secondId;
+            }
         }
     }
 
