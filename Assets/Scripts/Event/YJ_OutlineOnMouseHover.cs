@@ -29,7 +29,9 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void Start()
     {
         SetOutlineVisible(false);
-        nameTag.Active(false);
+
+        if (nameTag != null)
+            nameTag.Active(false);
     }
 
     private void LateUpdate()
@@ -42,7 +44,9 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     {
         isHovered = false;
         SetOutlineVisible(false);
-        nameTag.Active(false);
+
+        if (nameTag != null)
+            nameTag.Active(false);
     }
 
     private void OnMouseEnter()
@@ -51,14 +55,21 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
         SetOutlineVisible(true);
         nameTag.ChangeText(npcName);
         UpdateNameTagPosition();
-        nameTag.Active(true);
+
+        if (nameTag != null)
+        {
+            nameTag.ChangeText(npcName);
+            nameTag.Active(true);
+        }
     }
 
     private void OnMouseExit()
     {
         isHovered = false;
         SetOutlineVisible(false);
-        nameTag.Active(false);
+
+        if (nameTag != null)
+            nameTag.Active(false);
     }
 
     private void FindTargetOutline()
