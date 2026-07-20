@@ -34,6 +34,7 @@ namespace ItemSystem
 
         ItemInstance lastDropped; // 가장 최근에 드랍된 아이템 (획득 테스트용)
 
+
         void Start()
         {
             // 인스펙터에서 IItemReceiver가 아닌 컴포넌트를 잘못 연결한 경우 조기 경고
