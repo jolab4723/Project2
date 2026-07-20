@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemyStatus))]
 [RequireComponent(typeof(WBH_EnemyAnimation))]
 [RequireComponent(typeof(WBH_EnemyPattern))]
-public class WBH_EnemyController : MonoBehaviour, T_IDamageable
+public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 {
     private WBH_EnemyMovement movement;
     private WBH_EnemyCombat combat;
@@ -16,6 +16,7 @@ public class WBH_EnemyController : MonoBehaviour, T_IDamageable
     private WBH_EnemyInfo info;
 
     public WBH_EnemyInfo Info => info;
+    public WBH_ICombatStatus Status => status;
 
     private void Awake()
     {
@@ -41,18 +42,19 @@ public class WBH_EnemyController : MonoBehaviour, T_IDamageable
         Debug.Log(info.enemyName);
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(WBH_DamageResult result)
     {
-        status.ApplyDamage(damage);
+        status.TakeDamage(result);
 
-        // 애니메이션 피격
+        // 애니메이션 피격 !@
 
         // 사망 처리
-        if(status.IsDead)
+        if (status.IsDead)
         {
 
         }
     }
+
 
     public void SetTarget(Transform target)
     {

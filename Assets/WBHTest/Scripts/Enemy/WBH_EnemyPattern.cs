@@ -26,6 +26,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     private Transform target;
 
     private float distance = 0;
+    private float basicAttackMult = 1f;
+    private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
 
     public virtual void Initialize(WBH_EnemyController controller)
     {
@@ -104,7 +106,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     protected virtual void MeleeAttack()
     {
-        SectorAttack(combat.AttackRange, 120f, status.Attack);
+        SectorAttack(combat.AttackRange, basicMeleeAttackAngle);
         effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint);
     }
 
@@ -114,12 +116,14 @@ public class WBH_EnemyPattern : MonoBehaviour
 
         Vector3 direction = (targetPos - firePoint.position).normalized;
 
-        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, status.Attack, status.ProjectileSpeed, combat.AttackRange, playerLayer);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+
+        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, request, status.ProjectileSpeed, combat.AttackRange, playerLayer);
     }
 
     // player 공격 코드 재활용
     // 전방 부채꼴 범위 공격
-    private void SectorAttack(float range, float angle, float damage)
+    private void SectorAttack(float range, float angle)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, playerLayer);
 
@@ -129,13 +133,22 @@ public class WBH_EnemyPattern : MonoBehaviour
 
             dirToTarget.y = 0;
             float targetAngle = Vector3.Angle(transform.forward, dirToTarget);
-            if (targetAngle <= angle * 0.5f)
-            {
-                if (target.TryGetComponent<T_IDamageable>(out var damageable))
-                {
-                    damageable.TakeDamage(damage);
-                }
-            }
+
+            if (targetAngle > angle * 0.5f)
+                continue;
+
+            if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                continue;
+
+            WBH_CombatManager.ProcessDamage(combat.CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult));
+
+            //if (targetAngle <= angle * 0.5f)
+            //{
+            //    if (target.TryGetComponent<T_IDamageable>(out var damageable))
+            //    {
+            //        damageable.TakeDamage(damage);
+            //    }
+            //}
         }
     }
 

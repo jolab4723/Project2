@@ -4,27 +4,34 @@ public class WBH_EnemySpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EnemyInfo[] testInfos;
 
-    private WBH_EnemyPoolManager poolManager;
+    private WBH_EnemyPoolManager enemyPool;
+    private WBH_EffectPoolManager effectPool;
+    private WBH_ProjectilePoolManager projectilePool;
+    private WBH_DamageTextPoolManager damageTextPool;
+
 
     //!@ 데이터 매니저 연결
 
     private Transform target;
 
-    public void Initialize(WBH_EnemyPoolManager poolManager, Transform target)
+    public void Initialize(WBH_EnemyPoolManager poolManager, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target,WBH_DamageTextPoolManager damageTextPool)
     {
-        this.poolManager = poolManager;
+        this.enemyPool = poolManager;
+        this.effectPool = effectPool;
+        this.projectilePool = projectilePool;
         this.target = target;
+        this.damageTextPool = damageTextPool;
     }
 
     public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint)
     {
-        if(poolManager == null)
+        if(enemyPool == null)
         {
             Debug.LogError("EnemyPoolManager가 초기화 되지 않았습니다.");
             return null;
         }
 
-        WBH_EnemyController enemy = poolManager.Get(enemyID);
+        WBH_EnemyController enemy = enemyPool.Get(enemyID);
 
         if (enemy == null)
             return null;
@@ -38,6 +45,10 @@ public class WBH_EnemySpawner : MonoBehaviour
         {
             Debug.LogError($"EnemyInfo(ID : {enemyID}를 찾을 수 없습니다.)");
         }
+
+        enemy.GetComponent<WBH_EffectSpawner>().Initialize(effectPool);
+        enemy.GetComponent<WBH_ProjectileSpawner>().Initialize(projectilePool);
+        enemy.GetComponent<WBH_EnemyView>().Initialize(damageTextPool);
 
         enemy.Initialize(info);
 
