@@ -19,8 +19,8 @@ public class WBH_EnemySpawnArea : MonoBehaviour
 
     public void Initialize(WBH_EnemyPoolManager enemyPool, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target, WBH_DamageTextPoolManager damagePool)
     {
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target);
-        view.Initialize(damagePool);
+        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target, damagePool);
+        //view.Initialize(damagePool);
     }
 
     public void SpawnNormal(int count)

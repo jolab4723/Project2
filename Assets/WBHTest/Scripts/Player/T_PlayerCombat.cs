@@ -183,7 +183,7 @@ public class T_PlayerCombat : MonoBehaviour
         }
     }
 
-    private void UpdateStats()
+    private void UpdateStats() // !@ 아이템으로 받아올 것.
     {
         switch (currentWeapon)
         {

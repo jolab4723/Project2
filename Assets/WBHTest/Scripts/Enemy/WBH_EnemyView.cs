@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 /*
  * DamageText (★★★★★)
@@ -15,23 +17,46 @@ public class WBH_EnemyView : MonoBehaviour
 {
     [SerializeField] private Transform damageTextRoot;
 
+    [Header("Hp Bar")]
+    [SerializeField] private GameObject hpBarRoot;
+    [SerializeField] private Slider hpBarSlider;
+    [SerializeField] private float hpBarVisibleTime = 2f;
+
     private WBH_DamageTextPoolManager poolManager;
     private WBH_EnemyStatus status;
+    private Camera mainCamera;
+
+    private Coroutine hideHpBarCoroutine;
 
 
-    private void Start()
+    private void Awake()
     {
         status = GetComponent<WBH_EnemyStatus>();
+        mainCamera = Camera.main;
+
+        if(hpBarRoot != null)
+            hpBarRoot.SetActive(false);
     }
 
     private void OnEnable()
     {
         status.OnDamaged += ShowDamageText;
+        status.OnHpChanged += UpdateHpBar;
     }
 
     private void OnDisable()
     {
         status.OnDamaged -= ShowDamageText;
+        status.OnHpChanged -= UpdateHpBar;
+    }
+
+    // 메인카메라를 바라보는 코드
+    private void LateUpdate()
+    {
+        if (hpBarRoot == null || !hpBarRoot.activeSelf || mainCamera == null)
+            return;
+
+        hpBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
     }
 
     public void Initialize(WBH_DamageTextPoolManager poolManager)
@@ -45,5 +70,33 @@ public class WBH_EnemyView : MonoBehaviour
         WBH_DamageText damageText = poolManager.GetDamageText();
 
         damageText.Show(damageTextRoot.position, result);
+    }
+
+    private void UpdateHpBar(float currentHp, float maxHp)
+    {
+        if (hpBarSlider == null || hpBarRoot == null)
+            return;
+
+        hpBarSlider.value = currentHp / maxHp;
+
+        ShowHpBar();
+    }
+
+    private void ShowHpBar()
+    {
+        hpBarRoot.SetActive(true);
+
+        if (hideHpBarCoroutine != null)
+            StopCoroutine(hideHpBarCoroutine);
+
+        hideHpBarCoroutine = StartCoroutine(HideHpBarRoutine());
+    }
+
+    private IEnumerator HideHpBarRoutine()
+    {
+        yield return new WaitForSeconds(hpBarVisibleTime);
+
+        hpBarRoot.SetActive(false);
+        hideHpBarCoroutine = null;
     }
 }

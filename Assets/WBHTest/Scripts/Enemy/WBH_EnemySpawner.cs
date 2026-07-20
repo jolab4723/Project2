@@ -7,17 +7,20 @@ public class WBH_EnemySpawner : MonoBehaviour
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
+    private WBH_DamageTextPoolManager damageTextPool;
+
 
     //!@ 데이터 매니저 연결
 
     private Transform target;
 
-    public void Initialize(WBH_EnemyPoolManager poolManager, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target)
+    public void Initialize(WBH_EnemyPoolManager poolManager, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target,WBH_DamageTextPoolManager damageTextPool)
     {
         this.enemyPool = poolManager;
         this.effectPool = effectPool;
         this.projectilePool = projectilePool;
         this.target = target;
+        this.damageTextPool = damageTextPool;
     }
 
     public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint)
@@ -45,6 +48,7 @@ public class WBH_EnemySpawner : MonoBehaviour
 
         enemy.GetComponent<WBH_EffectSpawner>().Initialize(effectPool);
         enemy.GetComponent<WBH_ProjectileSpawner>().Initialize(projectilePool);
+        enemy.GetComponent<WBH_EnemyView>().Initialize(damageTextPool);
 
         enemy.Initialize(info);
 
