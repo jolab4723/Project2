@@ -32,7 +32,7 @@ namespace Core
             return Path.Combine(Application.persistentDataPath, fileName);
         }
 
-        // ===================== 1. 정적 데이터 =====================
+        #region ===================== 1. 정적 데이터 =====================
 
         public void Activate()
         {
@@ -47,7 +47,9 @@ namespace Core
             Debug.Log("[DataManager] 활성화 완료 (itemDatabase 연결됨, 아이템 " + itemDatabase.allItems.Count + "개)");
         }
 
-        // ===================== 2. 플레이어 프로필 (세이브 슬롯) =====================
+        #endregion
+
+        #region ===================== 2. 플레이어 프로필 (세이브 슬롯) =====================
         // 싱글플레이 슬롯 1개 + 멀티플레이 슬롯 3개(다크소울 스타일, 서로 독립).
         // 멀티플레이 슬롯은 공유 파티 세이브 - 게스트 프로필도 전부 호스트 슬롯 안에 통째로 저장된다.
 
@@ -110,10 +112,9 @@ namespace Core
             return true;
         }
 
-        // ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
-        // PassiveSkillManager는 런타임 상태(CurrentProfile)만 들고 있고, 실제 파일 입출력은
-        // 여기서 전담한다. 싱글플레이 슬롯(profile_singleplayer.json)을 그대로 재사용한다.
+        #endregion
 
+        #region ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
         [ContextMenu("패시브 데이터 저장")]
         public void SavePassiveData()
         {
@@ -130,7 +131,7 @@ namespace Core
         /// 싱글플레이 슬롯에서 프로필을 불러와 PassiveSkillManager에 활성 프로필로 설정한다.
         /// 저장된 슬롯이 없으면 새 프로필을 만들어서 설정하고 false를 반환한다(진짜 첫 실행 여부 판단용).
         /// </summary>
-        [ContextMenu("패시브 데이터 불러오기")]
+        [ContextMenu("패시브 데이터 로드")]
         public bool LoadPassiveData()
         {
             if (PassiveSkillManager.Instance == null)
@@ -179,20 +180,23 @@ namespace Core
             Debug.Log("[DataManager] 런 골드 " + runGold + " 이전 완료. 프로필 영구 골드 = " + profile.gold);
         }
 
-        // ===================== 3. 게임플레이 데이터 (전체 묶음) =====================
+        #endregion
 
-        [ContextMenu("게임플레이 데이터 전체 저장")]
+        #region ===================== 3. 게임플레이 데이터 =====================
+
+        [ContextMenu("게임플레이 데이터 전체 세아브")]
         public void SaveGameplayData()
         {
             var data = new GameSaveData();
             data.status = BuildPlayerStatusData();
             data.inventory = BuildInventorySaveData();
-            // skillTree/stage는 시스템이 아직 없어서 기본값(빈 데이터) 그대로 둠
+            // TODO : 스킬트리 데이터 세이브
+            // TODO : 스테이지 데이터 세이브
 
             WriteJson(GetSavePath(GameplaySaveFileName), data);
         }
 
-        [ContextMenu("게임플레이 데이터 전체 불러오기")]
+        [ContextMenu("게임플레이 데이터 전체 로드")]
         public void LoadGameplayData()
         {
             var data = ReadJson<GameSaveData>(GetSavePath(GameplaySaveFileName));
@@ -201,18 +205,21 @@ namespace Core
 
             ApplyPlayerStatusData(data.status);
             ApplyInventorySaveData(data.inventory);
-            // TODO: 스킬트리/스테이지 시스템이 생기면 여기서 같이 복원
+            // TODO : 스킬트리 데이터 로드
+            // TODO : 스테이지 데이터 로드
         }
 
-        // ===================== 3-1. 인벤토리 =====================
+        #endregion
 
-        [ContextMenu("인벤토리만 저장")]
+        #region ===================== 3-1. 인벤토리 =====================
+
+        [ContextMenu("인벤토리만 세이브")]
         public void SaveInventory()
         {
             WriteJson(GetSavePath(InventorySaveFileName), BuildInventorySaveData());
         }
 
-        [ContextMenu("인벤토리만 불러오기")]
+        [ContextMenu("인벤토리만 로드")]
         public void LoadInventory()
         {
             var data = ReadJson<InventorySaveData>(GetSavePath(InventorySaveFileName));
@@ -448,7 +455,9 @@ namespace Core
             return null;
         }
 
-        // ===================== 3-2. 스킬트리 (자리만 잡아둠) =====================
+        #endregion
+
+        #region ===================== 3-2. 스킬트리 (TODO) =====================
 
         [ContextMenu("스킬트리 저장 (TODO)")]
         public void SaveSkillTree()
@@ -463,15 +472,17 @@ namespace Core
             Debug.Log("[DataManager] LoadSkillTree - 스킬트리 시스템이 아직 없어서 실제로 복원할 데이터가 없습니다.");
         }
 
-        // ===================== 3-3. 플레이어 스테이터스 =====================
+        #endregion
 
-        [ContextMenu("플레이어 스테이터스만 저장")]
+        #region ===================== 3-3. 플레이어 스테이터스 =====================
+
+        [ContextMenu("플레이어 스테이터스만 세이브")]
         public void SavePlayerStatus()
         {
             WriteJson(GetSavePath(PlayerStatusSaveFileName), BuildPlayerStatusData());
         }
 
-        [ContextMenu("플레이어 스테이터스만 불러오기")]
+        [ContextMenu("플레이어 스테이터스만 로드")]
         public void LoadPlayerStatus()
         {
             var data = ReadJson<PlayerStatusData>(GetSavePath(PlayerStatusSaveFileName));
@@ -535,7 +546,9 @@ namespace Core
                 InventoryController.Instance.PlayerWallet.SetGold(data.gold);
         }
 
-        // ===================== 3-4. 스테이지 데이터 (자리만 잡아둠) =====================
+        #endregion
+
+        #region ===================== 3-4. 스테이지 데이터 (TODO) =====================
 
         [ContextMenu("스테이지 데이터 저장 (TODO)")]
         public void SaveStageData()
@@ -550,8 +563,9 @@ namespace Core
             Debug.Log("[DataManager] LoadStageData - 스테이지 시스템이 아직 없어서 실제로 복원할 데이터가 없습니다.");
         }
 
-        // ===================== 4. 시스템 옵션 =====================
+        #endregion
 
+        #region ===================== 4. 시스템 옵션 =====================
         public void SaveSystemOptions(SystemOptionsData data)
         {
             if (data == null)
@@ -570,7 +584,65 @@ namespace Core
             return data != null ? data : new SystemOptionsData();
         }
 
-        // ===================== 공용 JSON 파일 입출력 =====================
+        #endregion
+
+        #region ===================== 5. 전체 데이터 초기화 =====================
+        // !! 플레이어/패시브 초기화는 PassiveSkillManager.CurrentProfile도 같이 갱신해준다.
+        //    안 그러면 초기화 이후 아무 패시브 레벨이나 바꿀 때 자동 저장(SavePassiveData)이
+        //    예전 CurrentProfile을 다시 파일에 덮어써서 초기화가 무효화된다.
+
+        /// <summary> 모든 데이터를 전부 기본값으로 초기화 </summary>
+        [ContextMenu("전체 데이터 초기화")]
+        public void ResetAllData()
+        {
+            ResetPlayerProfile();
+            ResetPassiveData();
+            ResetGameplayData();
+
+            Debug.Log("[DataManager] 전체 데이터를 기본값으로 초기화했습니다.");
+        }
+
+        /// <summary>플레이어 프로필(골드/이름/플레이타임 등, 패시브 트리 포함)을 완전히 새 프로필로 되돌려서 저장한다.</summary>
+        [ContextMenu("플레이어 데이터 초기화")]
+        public void ResetPlayerProfile()
+        {
+            var profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };
+
+            if (PassiveSkillManager.Instance != null)
+                PassiveSkillManager.Instance.SetActiveProfile(profile);
+
+            SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = profile });
+        }
+
+        /// <summary>현재 프로필은 그대로 두고 패시브 스킬트리(해금/적용 레벨)만 기본값(빈 트리)으로 되돌려서 저장한다.</summary>
+        [ContextMenu("패시브 데이터 초기화")]
+        public void ResetPassiveData()
+        {
+            var profile = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.CurrentProfile : null;
+            if (profile == null)
+                profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };
+            else
+                profile.passiveSkillTree = new PassiveSkillTreeData();
+
+            if (PassiveSkillManager.Instance != null)
+                PassiveSkillManager.Instance.SetActiveProfile(profile);
+
+            SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = profile });
+        }
+
+        /// <summary>
+        /// 게임플레이 데이터(인벤토리+스테이터스 묶음, gamesave.json)를 빈 기본값으로 되돌려서 저장한다.
+        /// 현재 씬에서 돌고 있는 인벤토리/스테이터스 자체는 안 건드리고 파일만 초기화한다 (다음 로드 시 반영됨).
+        /// </summary>
+        [ContextMenu("게임플레이 데이터 초기화")]
+        public void ResetGameplayData()
+        {
+            WriteJson(GetSavePath(GameplaySaveFileName), new GameSaveData());
+        }
+
+        #endregion
+
+        #region ===================== 공용 JSON 파일 입출력 =====================
 
         private static void WriteJson<T>(string path, T data)
         {
@@ -590,5 +662,7 @@ namespace Core
             string json = File.ReadAllText(path);
             return JsonUtility.FromJson<T>(json);
         }
+
+        #endregion
     }
 }
