@@ -8,6 +8,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     [SerializeField] private Camera worldCamera;
     [SerializeField] private Vector3 nameTagWorldOffset = new Vector3(0f, 3f, 0f);
     [SerializeField] private string npcName = "";
+    //[SerializeField] private LayerMask layer;
 
     private bool isHovered;
 
