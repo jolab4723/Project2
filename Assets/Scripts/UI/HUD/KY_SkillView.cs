@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+// 스킬 입력 키 안내.
+// 옵션에서 설정한 스킬 키가 반영된다.
 public class KY_SkillView : MonoBehaviour
 {
     public KY_SkillSlot[] slots;
