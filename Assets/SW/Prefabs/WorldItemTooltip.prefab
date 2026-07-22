@@ -284,6 +284,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7856793883276445210}
   - component: {fileID: 6798184219723874282}
+  - component: {fileID: 8508474132555759562}
+  - component: {fileID: 9024924863314403561}
   m_Layer: 5
   m_Name: WorldItemTooltip
   m_TagString: Untagged
@@ -328,11 +330,50 @@ MonoBehaviour:
   itemNameText: {fileID: 4740375651687497117}
   itemCategoryText: {fileID: 5026783540058270276}
   itemRarityText: {fileID: 1542897468108410462}
+  itemImage: {fileID: 0}
   borderImage: {fileID: 5274459834303314012}
   tooltipRect: {fileID: 7856793883276445210}
   canvas: {fileID: 0}
   worldCamera: {fileID: 0}
   worldOffset: {x: 0, y: 1.5, z: 0}
+--- !u!222 &8508474132555759562
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5474350715365418024}
+  m_CullTransparentMesh: 1
+--- !u!114 &9024924863314403561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5474350715365418024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.69803923}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &6343729336808877661
 GameObject:
   m_ObjectHideFlags: 0

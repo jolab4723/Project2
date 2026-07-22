@@ -8,10 +8,10 @@ public class GridHighlightUI : MonoBehaviour
     [SerializeField] private RectTransform secondaryHighlightRect;
     [SerializeField] private Image secondaryHighlightImage;
 
-    private static readonly Color MoveColor = new Color(0f, 1f, 0f, 0.45f);
-    private static readonly Color InvalidColor = new Color(1f, 0f, 0f, 0.55f);
-    private static readonly Color SwapMovingColor = new Color(0f, 0.75f, 1f, 0.45f);
-    private static readonly Color SwapOtherColor = new Color(1f, 0.65f, 0f, 0.4f);
+    private static readonly Color MoveColor = new Color(0f, 1f, 0f, 0.75f);
+    private static readonly Color InvalidColor = new Color(1f, 0f, 0f, 0.65f);
+    private static readonly Color SwapMovingColor = new Color(0f, 0.75f, 1f, 0.75f);
+    private static readonly Color SwapOtherColor = new Color(1f, 0.85f, 0f, 0.75f);
 
     public void ShowHighlight(int width, int height, float cellSize, float spacing)
     {
