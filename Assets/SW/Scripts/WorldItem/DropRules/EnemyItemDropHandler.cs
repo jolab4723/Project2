@@ -64,7 +64,7 @@ public sealed class EnemyItemDropHandler : MonoBehaviour
             return false;
         }
 
-        ItemInstance itemInstance = ItemDataCreator.Generate(rollResult.ItemDefinition);
+        ItemInstance itemInstance = ItemDataCreator.CreateItemData(rollResult.ItemDefinition);
 
         if (itemInstance == null)
         {

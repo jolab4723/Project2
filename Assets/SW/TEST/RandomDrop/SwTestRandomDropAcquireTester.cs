@@ -293,7 +293,7 @@ if (itemGenerator == null)
             if (itemGenerator != null)
                 return itemGenerator.GenerateItem(definition);
 
-            return ItemDataCreator.Generate(definition);
+            return ItemDataCreator.CreateItemData(definition);
         }
 
         private string BuildResultLog(string actionName, SwTestEquipmentDropResult result, ItemInstance instance)

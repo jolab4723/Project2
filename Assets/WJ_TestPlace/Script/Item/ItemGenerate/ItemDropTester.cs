@@ -46,7 +46,7 @@ namespace ItemSystem
                 return;
             }
 
-            ItemInstance instance = ItemDataCreator.Generate(def);
+            ItemInstance instance = ItemDataCreator.CreateItemData(def);
             instance.upgradeLevel = testUpgradeLevel;
 
             SpawnPickup(instance);
