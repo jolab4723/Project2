@@ -21,5 +21,6 @@ public class PassiveSkillTestInit : MonoBehaviour
         bool loadedExisting = DataManager.Instance.LoadPassiveData();
         if (!loadedExisting)
             PassiveSkillManager.Instance.CurrentProfile.gold = testGoldForFreshProfile;
+
     }
 }
