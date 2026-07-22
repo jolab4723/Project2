@@ -14,7 +14,22 @@ using Core;
 /// </summary>
 public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvider
 {
+    [Tooltip("12개 패시브 스킬의 이름/최대레벨/레벨당 수치/해금비용을 담은 에셋")]
+    [SerializeField] private PassiveSkillDatabaseSO database;
+
     public PlayerProfileData CurrentProfile { get; private set; }
+
+    /// <summary>id 스킬의 디자인 데이터(이름/최대레벨/수치/비용)를 조회한다. database가 안 물려있으면 null.</summary>
+    public PassiveSkillDefinition GetDefinition(PassiveSkillId id)
+    {
+        if (database == null)
+        {
+            Debug.LogWarning("[PassiveSkillManager] database(PassiveSkillDatabaseSO)가 연결되지 않았습니다.");
+            return null;
+        }
+
+        return database.Get(id);
+    }
 
     /// <summary>골드/스킬 레벨이 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event System.Action OnProfileChanged;
@@ -45,7 +60,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
     /// </summary>
     public int GetUnlockCostToLevel(PassiveSkillId id, int targetLevel)
     {
-        var definition = PassiveSkillDatabase.Get(id);
+        var definition = GetDefinition(id);
         if (definition == null)
             return 0;
 
@@ -70,7 +85,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
             return false;
         }
 
-        var definition = PassiveSkillDatabase.Get(id);
+        var definition = GetDefinition(id);
         if (definition == null)
         {
             Debug.LogWarning($"[PassiveSkillManager] {id}에 대한 PassiveSkillDefinition이 없습니다.");
@@ -141,7 +156,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
     /// <summary>id 스킬의 현재 적용 레벨 기준 효과 수치를 반환한다 (미습득이면 0).</summary>
     public float GetEffectValue(PassiveSkillId id)
     {
-        var definition = PassiveSkillDatabase.Get(id);
+        var definition = GetDefinition(id);
         return definition != null ? definition.GetValue(GetCurrentLevel(id)) : 0f;
     }
 
@@ -155,7 +170,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
 
     public bool HasShopEnhance => GetCurrentLevel(PassiveSkillId.ShopEnhance) > 0;
     public float ShopDiscountPercent => GetEffectValue(PassiveSkillId.ShopEnhance);
-    public int ShopExtraRerollCount => HasShopEnhance ? PassiveSkillDatabase.Get(PassiveSkillId.ShopEnhance).extraRerollCount : 0;
+    public int ShopExtraRerollCount => HasShopEnhance ? GetDefinition(PassiveSkillId.ShopEnhance).extraRerollCount : 0;
 
     // ===================== IStatSetProvider (8개 스탯형 스킬 합산) =====================
 

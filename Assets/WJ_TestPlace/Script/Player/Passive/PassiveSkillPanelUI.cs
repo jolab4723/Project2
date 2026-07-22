@@ -171,7 +171,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
         if (selectedId == null)
             return;
 
-        var definition = PassiveSkillDatabase.Get(selectedId.Value);
+        var definition = PassiveSkillManager.Instance.GetDefinition(selectedId.Value);
         int maxLevel = definition != null ? definition.maxLevel : 0;
         pendingLevel = Mathf.Min(maxLevel, pendingLevel + 1);
         RefreshDetailPanel();
@@ -224,7 +224,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
             return;
 
         PassiveSkillId id = selectedId.Value;
-        var definition = PassiveSkillDatabase.Get(id);
+        var definition = PassiveSkillManager.Instance.GetDefinition(id);
         if (definition == null)
             return;
 
