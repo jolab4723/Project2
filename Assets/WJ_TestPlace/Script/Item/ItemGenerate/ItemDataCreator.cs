@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 using Random = UnityEngine.Random; // System.Random과의 모호성(CS0104) 해결
 
 namespace ItemSystem
 {
     public static class ItemDataCreator
     {
-        public static ItemInstance Generate(ItemDefinitionSO def)
+        // SO로 아이템 데이터 생성 (옵션 랜덤)
+        public static ItemInstance CreateItemData(ItemDefinitionSO def)
         {
             var instance = new ItemInstance
             {
@@ -41,6 +40,19 @@ namespace ItemSystem
 
             if (def.HasElementalBonusSlot)
                 ResolveElementalBonus(def, instance);
+
+            return instance;
+        }
+
+        // SO로 아이템 데이터 생성 (옵션 직접 지정)
+        public static ItemInstance CreateCustumItemData(ItemDefinitionSO def)
+        {
+            var instance = new ItemInstance
+            {
+                instanceId = Guid.NewGuid().ToString(),
+                definition = def
+                // upgradeLevel은 선언부 기본값(0) 그대로 사용
+            };
 
             return instance;
         }

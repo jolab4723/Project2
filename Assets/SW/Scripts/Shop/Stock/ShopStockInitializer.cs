@@ -84,7 +84,7 @@ public sealed class ShopStockInitializer : MonoBehaviour
             }
 
             ItemInstance itemData =
-                ItemDataCreator.Generate(selectedDefinition);
+                ItemDataCreator.CreateItemData(selectedDefinition);
 
             if (itemData == null)
             {
