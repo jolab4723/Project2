@@ -3,7 +3,7 @@ using UnityEngine;
 public enum EffectAttachType
 {
     World,
-    Local,
+    AttachOnce,
     Follow
 }
 

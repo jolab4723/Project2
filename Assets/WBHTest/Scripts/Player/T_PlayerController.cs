@@ -1,15 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public class T_PlayerController : MonoBehaviour
+public class T_PlayerController : MonoBehaviour, WBH_ICombat
 {
+
     [Header("Move")]
     [SerializeField] public NavMeshAgent agent;
-
-    [Header("Dodge")]
-    [SerializeField] private float dodgeDistance = 5f;
-    [SerializeField] private float dodgeDuration = 0.5f;
-    [SerializeField] private float dodgeCooltime = 6f;
 
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
@@ -20,19 +16,27 @@ public class T_PlayerController : MonoBehaviour
     private Camera mainCamera;
     private Animator animator;
     private WBH_PlayerIndicator indicator;
+    private WBH_PlayerStatus status;
     private Vector3 dodgeDir;
 
-    private float speed;
+    public WBH_ICombatStatus Status => status;
 
     private void Awake()
     {
         mainCamera = Camera.main;
         animator = GetComponent<Animator>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
-        indicator = GetComponent<WBH_PlayerIndicator>();
+        indicator = GetComponentInChildren<WBH_PlayerIndicator>();
+        status = GetComponent<WBH_PlayerStatus>();
 
-        agent.autoBraking = true;
-        //agent.updateRotation = false;
+        agent.autoBraking = false;
+        agent.updateRotation = false;
+        agent.speed *= status.MoveSpeed;
+    }
+
+    private void Start()
+    {
+        status.Initialize(this);
     }
 
     private void OnEnable()
@@ -123,17 +127,17 @@ public class T_PlayerController : MonoBehaviour
         agent.enabled = false;
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = startPos + dir * dodgeDistance;
+        Vector3 endPos = startPos + dir * status.DodgeDistance;
 
         float elapsed = 0f;
 
         animator.SetTrigger("Dodge");
 
-        while (elapsed < dodgeDuration)
+        while (elapsed < status.DodgeDuration)
         {
             elapsed += Time.deltaTime;
 
-            float t = elapsed / dodgeDuration;
+            float t = elapsed / status.DodgeDuration;
 
             transform.position = Vector3.Lerp(startPos, endPos, t);
 
@@ -150,7 +154,19 @@ public class T_PlayerController : MonoBehaviour
         if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
             return;
 
+        stateMachine.ChangeState(PlayerState.Move);
+
         agent.SetDestination(destination);
+
+        Vector3 dir = destination - transform.position;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude > 0.001f)
+        {
+            transform.forward = dir;
+        }
+
+        lookDir = transform.forward;
     }
 
     public void TryDodge()
@@ -163,7 +179,7 @@ public class T_PlayerController : MonoBehaviour
         if (dodgeDir == Vector3.zero)
             return;
 
-        currentDodgeCooltime = dodgeCooltime;
+        currentDodgeCooltime = status.DodgeCooltime;
 
         stateMachine.ChangeState(PlayerState.Dodge);
     }
@@ -174,6 +190,11 @@ public class T_PlayerController : MonoBehaviour
             return;
 
         stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+    public void Die() //!@ 사망처리. 이벤트 구독으로 리팩토링.
+    {
+        stateMachine.ChangeState(PlayerState.Dead);
     }
 
     // --- combat.cs 에서 활용할 이동처리
@@ -190,6 +211,21 @@ public class T_PlayerController : MonoBehaviour
     public void ResetStoppingDistance()
     {
         agent.stoppingDistance = 0f;
+    }
+
+    public void SetMoveSpeed(float moveSpeed)
+    {
+        agent.speed = moveSpeed;
+    }
+
+    public void TakeDamage(WBH_DamageResult result)
+    {
+        status.TakeDamage(result);
+
+        // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
+        //stateMachine.ChangeState(PlayerState.Hit);
+        // 사망 처리 OnDead 이벤트 구독
+
     }
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드

@@ -1,17 +1,5 @@
 using UnityEngine;
 
-
-/*
- * Initialize()
-
-CanAttack()
-
-Attack() 공격 애니메이션이 없는 경우? 
-
-ResetAttackCoolTime()
-
-AttackRange
- */
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
 [RequireComponent(typeof(WBH_EnemyAnimation))]
@@ -68,5 +56,17 @@ public class WBH_EnemyCombat : MonoBehaviour
     public void ResetAttackCoolTime()
     {
         attackTimer = controller.Info.attackCoolTime / status.AttackSpeed;
+    }
+
+    // 투사체 외
+    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    {
+        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult);
+    }
+
+    // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
+    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    {
+        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
     }
 }

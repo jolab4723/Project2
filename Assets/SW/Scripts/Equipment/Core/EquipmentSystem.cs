@@ -34,6 +34,7 @@ public class EquipmentSystem : MonoBehaviour
         // 여기서는 EquipmentChanged를 호출하지 않는다.
         return EquipResultData.Success(slotType, item);
     }
+    
 
     internal EquipResultData TryUnequipState(
         EquipSlotType slotType)

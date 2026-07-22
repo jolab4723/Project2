@@ -62,6 +62,7 @@ public class PlayerStatManager : MonoBehaviour
             PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
     }
 
+   
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
     {
         Recalculate();

@@ -255,7 +255,7 @@ public class TooltipManager : MonoBehaviour
         var def = itemData.definition;
         string rarityName = ItemDisplayNames.GradeNames.TryGetValue(def.rarity, out var r) ? r : def.rarity.ToString();
 
-        if (def.category == ItemCategory.Weapon && itemData.rolledElement != ElementType.None)
+        if (def.category == ItemCategory.Weapon && itemData.rolledElement != ItemSystem.ElementType.None)
         {
             string elementName = ItemDisplayNames.ElementNames.TryGetValue(itemData.rolledElement, out var e) ? e : itemData.rolledElement.ToString();
             return $"{rarityName} | {elementName}";

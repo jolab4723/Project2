@@ -176,7 +176,7 @@ namespace SW.Test.ItemTablePipeline
                 asset.itemWidth = Mathf.Max(1, row.itemWidth);
                 asset.itemHeight = Mathf.Max(1, row.itemHeight);
                 asset.upgradeBonusPerLevel = row.upgradeBonusPerLevel;
-                asset.weaponEnchantElement = ParseEnumOrDefault(row.weaponEnchantElement, ElementType.None);
+                asset.weaponEnchantElement = ParseEnumOrDefault(row.weaponEnchantElement, ItemSystem.ElementType.None);
                 asset.mainOptions = BuildMainOptions(row).ToArray();
 
                 asset.icon = LoadSprite(row.iconKey);
