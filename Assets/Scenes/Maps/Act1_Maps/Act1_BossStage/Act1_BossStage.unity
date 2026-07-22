@@ -697,7 +697,7 @@ PrefabInstance:
     - target: {fileID: 8079437305587753341, guid: 0d7aadba4f237574182a3f9e30c3cbce, type: 3}
       propertyPath: popupEntries.Array.data[3].popup
       value: 
-      objectReference: {fileID: 1979039882}
+      objectReference: {fileID: 0}
     - target: {fileID: 8079437305587753341, guid: 0d7aadba4f237574182a3f9e30c3cbce, type: 3}
       propertyPath: popupEntries.Array.data[4].popup
       value: 
@@ -816,7 +816,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &339274898
 RectTransform:
   m_ObjectHideFlags: 0
@@ -829,13 +829,13 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1979039881}
   - {fileID: 1430334467}
   - {fileID: 650671562}
   - {fileID: 223758448}
   - {fileID: 1355835336}
   - {fileID: 1412757963}
   - {fileID: 121494928}
+  - {fileID: 1741978090}
   m_Father: {fileID: 573813211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -3773,6 +3773,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1741978090 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 64070848886092258, guid: 7dbf83ae24fa95440ae338b42cdacbdb, type: 3}
+  m_PrefabInstance: {fileID: 1979039880}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1774290617
 GameObject:
   m_ObjectHideFlags: 0
@@ -5252,22 +5257,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7dbf83ae24fa95440ae338b42cdacbdb, type: 3}
---- !u!224 &1979039881 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 4110162017567670214, guid: 7dbf83ae24fa95440ae338b42cdacbdb, type: 3}
-  m_PrefabInstance: {fileID: 1979039880}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1979039882 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4166904163966743398, guid: 7dbf83ae24fa95440ae338b42cdacbdb, type: 3}
-  m_PrefabInstance: {fileID: 1979039880}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b871c5b0fb838f74db50fea35f454e11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KY_InventoryPopup
 --- !u!1 &2088954051
 GameObject:
   m_ObjectHideFlags: 0
