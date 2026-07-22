@@ -50,7 +50,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.GetComponent<WBH_ProjectileSpawner>().Initialize(projectilePool);
         enemy.GetComponent<WBH_EnemyView>().Initialize(damageTextPool);
 
-        enemy.Initialize(info);
+        enemy.Initialize(info, enemyPool);
 
         enemy.SetTarget(target);
 

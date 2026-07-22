@@ -12,6 +12,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyAnimation enemyAnimation;
     private WBH_EnemyStatus status;
     private WBH_EnemyPattern pattern;
+    private WBH_EnemyPoolManager poolManager; 
 
     private WBH_EnemyInfo info;
 
@@ -27,9 +28,20 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern = GetComponent<WBH_EnemyPattern>();
     }
 
-    public void Initialize(WBH_EnemyInfo info)
+    private void OnEnable()
+    {
+        status.OnDead += Dead; 
+    }
+
+    private void OnDisable()
+    {
+        status.OnDead -= Dead;
+    }
+
+    public void Initialize(WBH_EnemyInfo info, WBH_EnemyPoolManager poolManager)
     {
         this.info = info;
+        this.poolManager = poolManager;
         
         status.Initialize(info);
 
@@ -48,13 +60,14 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         // 애니메이션 피격 !@
 
-        // 사망 처리
-        if (status.IsDead)
-        {
-
-        }
+        
     }
 
+
+    private void Dead()
+    {
+        poolManager.Return(this);
+    }
 
     public void SetTarget(Transform target)
     {

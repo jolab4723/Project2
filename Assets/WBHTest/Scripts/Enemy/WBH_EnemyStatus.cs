@@ -25,7 +25,6 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     private float moveSpeed;
     private float attackSpeed;
     private float projectileSpeed;
-    private float minDamage = 1f;
 
     //-- 이벤트
     public event Action<float, float> OnHpChanged;
