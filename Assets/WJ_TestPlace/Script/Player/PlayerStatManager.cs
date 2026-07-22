@@ -35,11 +35,14 @@ public class PlayerStatManager : MonoBehaviour
     [Header("Equipment System")]
     [SerializeField] private EquipmentSystem equipmentSystem;
 
+    // 장비 장착 변동시 발생하는 이벤트
+    public event System.Action<EquippedWeaponInfo?> OnWeaponInfoChanged;
     private IStatSetProvider EquipProvider => equipManagerBehaviour as IStatSetProvider;
     private IStatSetProvider BuffProvider => buffManagerBehaviour as IStatSetProvider;
 
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
+    
 
     private void OnEnable()
     {
@@ -62,6 +65,33 @@ public class PlayerStatManager : MonoBehaviour
     private void HandleEquipmentChanged(EquippedItemInfo[] infos)
     {
         Recalculate();
+
+        if (TryGetEquippedWeaponInfo(out var weaponInfo))
+            OnWeaponInfoChanged?.Invoke(weaponInfo);
+        else
+            OnWeaponInfoChanged?.Invoke(null);
+    }
+
+    private bool TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
+    {
+        weaponInfo = default;
+
+        if (equipmentSystem == null)
+            return false;
+
+        if (!equipmentSystem.TryGetEquippedItemInstance(
+                EquipSlotType.Weapon,
+                out ItemInstance weapon))
+
+            return false;
+
+
+        weaponInfo = new EquippedWeaponInfo(
+            weapon.definition.weaponType,
+            weapon.rolledElement,
+            weapon.upgradeLevel);
+
+        return true;
     }
 
     private void Awake()

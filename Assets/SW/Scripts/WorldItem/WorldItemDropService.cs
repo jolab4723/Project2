@@ -43,15 +43,50 @@ public sealed class WorldItemDropService : MonoBehaviour
             return WorldItemDropResult.DropOriginUnavailable;
         }
 
+        return TryDropAt(
+        item,
+        center,
+        rotation,
+        out spawnedPickup);
+    }
+
+    public WorldItemDropResult TryDropAt(
+    ItemInstance item,
+    Vector3 dropCenter,
+    Quaternion rotation)
+    {
+        return TryDropAt(
+            item,
+            dropCenter,
+            rotation,
+            out _);
+    }
+
+    public WorldItemDropResult TryDropAt(
+        ItemInstance item,
+        Vector3 dropCenter,
+        Quaternion rotation,
+        out ItemDataStorage spawnedPickup)
+    {
+        spawnedPickup = null;
+
+        if (item == null || item.definition == null)
+            return WorldItemDropResult.InvalidItem;
+
         if (pickupPrefab == null)
             return WorldItemDropResult.PickupPrefabUnavailable;
 
-        if (!TryFindAvailablePosition(center,out Vector3 spawnPosition))
+        if (!TryFindAvailablePosition(
+                dropCenter,
+                out Vector3 spawnPosition))
         {
             return WorldItemDropResult.NoAvailablePosition;
         }
 
-        spawnedPickup = Instantiate(pickupPrefab, spawnPosition, rotation);
+        spawnedPickup = Instantiate(
+            pickupPrefab,
+            spawnPosition,
+            rotation);
 
         if (spawnedPickup == null)
             return WorldItemDropResult.SpawnFailed;
@@ -66,7 +101,6 @@ public sealed class WorldItemDropService : MonoBehaviour
 
         return WorldItemDropResult.Success;
     }
-
     private bool TryFindAvailablePosition(Vector3 center, out Vector3 availablePosition)
     {
         float minRadius = Mathf.Max(0f, Mathf.Min(minDropRadius, maxDropRadius));
