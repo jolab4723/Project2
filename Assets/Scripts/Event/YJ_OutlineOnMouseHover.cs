@@ -7,7 +7,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     [SerializeField] private YJ_NameTag nameTag;
     [SerializeField] private Camera worldCamera;
     [SerializeField] private Vector3 nameTagWorldOffset = new Vector3(0f, 3f, 0f);
-    [SerializeField] private string npcName = "";
+    public string objectName = "";
     //[SerializeField] private LayerMask layer;
 
     private bool isHovered;
@@ -52,12 +52,12 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     {
         isHovered = true;
         SetOutlineVisible(true);
-        nameTag.ChangeText(npcName);
+        nameTag.ChangeText(objectName);
         UpdateNameTagPosition();
 
         if (nameTag != null)
         {
-            nameTag.ChangeText(npcName);
+            nameTag.ChangeText(objectName);
             nameTag.Active(true);
         }
     }
