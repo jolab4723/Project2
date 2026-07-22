@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+// HUD상에 표시되는 입력키 안내에 대한 코드
 public class KY_KeyGuideView : MonoBehaviour
 {
     public KY_KeyGuideSlot skillSlot;

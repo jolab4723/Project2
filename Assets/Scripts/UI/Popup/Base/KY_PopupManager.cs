@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// 팝업을 관리.
+// 키 입력을 이벤트로 받아 해당하는 팝업을 여는 코드입니다.
 public class KY_PopupManager : MonoBehaviour
 {
     public static KY_PopupManager Instance;
@@ -78,6 +80,7 @@ public class KY_PopupManager : MonoBehaviour
 
         currentSidePopup = popup;
         popup.Open();
+        KY_GameEvents.SidePopupOpened();
     }
 
     public void HideSidePopup()
@@ -86,6 +89,7 @@ public class KY_PopupManager : MonoBehaviour
 
         currentSidePopup.Close();
         currentSidePopup = null;
+        KY_GameEvents.SidePopupClosed();
     }
 
     void OnEscPressed()

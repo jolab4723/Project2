@@ -1,6 +1,10 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+// 스탯 팝업용 코드입니다.
+// 데이터를 받아 캐릭터의 스탯을 팝업에 표시. ( 아직 연결은 미구현 )
+// 토탈, 디테일 전환
 public class KY_StatusPopup : KY_PopupBase
 {
     [Header("스탯 행")]
@@ -96,7 +100,12 @@ public class KY_StatusPopup : KY_PopupBase
         isDetailed = isOn;
         SetData(currentData);
 
-        // 레이아웃 강제 갱신
+        StartCoroutine(RebuildLayout());
+    }
+
+    IEnumerator RebuildLayout()
+    {
+        yield return null; // 한 프레임 대기
         LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
     }
 }

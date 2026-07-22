@@ -91,4 +91,18 @@ public static class KY_GameEvents
     {
         OnKeyBindingChanged?.Invoke();
     }
+
+    // 팝업 여닫기 신호
+    public static event Action OnSidePopupOpened;
+    public static event Action OnSidePopupClosed;
+
+    public static void SidePopupOpened()
+    {
+        OnSidePopupOpened?.Invoke();
+    }
+
+    public static void SidePopupClosed()
+    {
+        OnSidePopupClosed?.Invoke();
+    }
 }

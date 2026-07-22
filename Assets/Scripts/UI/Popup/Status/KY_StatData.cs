@@ -1,4 +1,6 @@
 [System.Serializable]
+
+// 스텟 팝업을 테스트 하기 위해 만든 구조. 실제 스탯과 연결하면 삭제할 것.
 public class KY_StatData
 {
     public KY_StatTypeData hp;
