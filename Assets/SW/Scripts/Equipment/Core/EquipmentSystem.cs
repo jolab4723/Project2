@@ -117,6 +117,34 @@ public class EquipmentSystem : MonoBehaviour
     {
         return equippedItems.TryGetValue(slotType, out item);
     }
+
+    public bool TryGetEquippedItemInstance(
+    EquipSlotType slotType,
+    out ItemInstance itemInstance)
+    {
+        itemInstance = null;
+
+        if (!equippedItems.TryGetValue(slotType, out InventoryItem inventoryItem))
+            return false;
+
+        if (inventoryItem?.itemData?.definition == null)
+            return false;
+
+        itemInstance = inventoryItem.itemData;
+        return true;
+    }
+
+    public bool TryGetEquippedWeaponType(out WeaponType weaponType)
+    {
+        weaponType = default;
+
+        if (!TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon))
+            return false;
+
+        weaponType = weapon.definition.weaponType;
+        return true;
+    }
+
     private void EquipmentChanged()
     {
         EquippedItemInfo[] infos = new EquippedItemInfo[equippedItems.Count];

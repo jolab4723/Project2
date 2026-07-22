@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d9a8e1d4b6715d41a74a4ef83b3f049, type: 3}
+  m_Name: ItemDropTable
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDropTableSO
+  enemyDropRules:
+  - enemyGrade: 0
+    itemDropChance: 25
+    rarityWeights:
+    - rarity: 0
+      weight: 85
+    - rarity: 1
+      weight: 10
+    - rarity: 2
+      weight: 3
+    - rarity: 3
+      weight: 1.5
+    - rarity: 4
+      weight: 0.5
+  - enemyGrade: 1
+    itemDropChance: 50
+    rarityWeights:
+    - rarity: 0
+      weight: 50
+    - rarity: 1
+      weight: 25
+    - rarity: 2
+      weight: 15
+    - rarity: 3
+      weight: 7
+    - rarity: 4
+      weight: 3
+  - enemyGrade: 2
+    itemDropChance: 100
+    rarityWeights:
+    - rarity: 0
+      weight: 10
+    - rarity: 1
+      weight: 20
+    - rarity: 2
+      weight: 30
+    - rarity: 3
+      weight: 30
+    - rarity: 4
+      weight: 10
+  - enemyGrade: 3
+    itemDropChance: 100
+    rarityWeights:
+    - rarity: 0
+      weight: 0
+    - rarity: 1
+      weight: 0
+    - rarity: 2
+      weight: 35
+    - rarity: 3
+      weight: 35
+    - rarity: 4
+      weight: 30
+  - enemyGrade: 4
+    itemDropChance: 0
+    rarityWeights: []
+  itemKindWeights:
+  - itemKind: 0
+    weight: 38
+  - itemKind: 1
+    weight: 20
+  - itemKind: 2
+    weight: 20
+  - itemKind: 3
+    weight: 20
+  - itemKind: 4
+    weight: 2
