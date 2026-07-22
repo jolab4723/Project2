@@ -10,10 +10,26 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T instance;
 
+    /// <summary>
+    /// 앱 종료/Play 모드 종료가 시작됐는지. OnApplicationQuit은 실제 빌드 종료뿐 아니라
+    /// 에디터에서 Play 모드를 끌 때도 호출된다.
+    /// !! 이게 없으면: 씬을 닫는 도중 다른 오브젝트의 OnDisable/OnDestroy가 이미 파괴된 이
+    ///    싱글턴의 Instance를 참조하는 순간, 죽은 참조를 null로 오인해서 새 GameObject를
+    ///    즉석에서 또 만들어버린다. 그 오브젝트는 씬이 닫히는 도중에 생겨서 정리가 안 되고,
+    ///    "Some objects were not cleaned up when closing the scene" 경고로 나타난다.
+    /// </summary>
+    private static bool isShuttingDown;
+
     public static T Instance
     {
         get
         {
+            if (isShuttingDown)
+            {
+                Debug.LogWarning("[Singleton] 종료 중이라 " + typeof(T).Name + " 인스턴스를 새로 만들지 않고 null을 반환합니다.");
+                return null;
+            }
+
             if (instance == null)
             {
                 instance = FindFirstObjectByType<T>();
@@ -43,6 +59,17 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
             DontDestroyOnLoad(transform.root.gameObject);
         else
             DontDestroyOnLoad(gameObject);
+    }
+
+    protected virtual void OnDestroy()
+    {
+        if (instance == this as T)
+            instance = null;
+    }
+
+    protected virtual void OnApplicationQuit()
+    {
+        isShuttingDown = true;
     }
 }
 
