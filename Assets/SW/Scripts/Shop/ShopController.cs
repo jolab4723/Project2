@@ -31,11 +31,16 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        if (!TryFindRandomShopSpace(
-                item.CurrentWidth,
-                item.CurrentHeight,
-                out int x,
-                out int y))
+        //if (!TryFindRandomShopSpace(
+        //        item.CurrentWidth,
+        //        item.CurrentHeight,
+        //        out int x,
+        //        out int y))
+        if (!shopGrid.FindEmptySpace(
+            item.CurrentWidth,
+            item.CurrentHeight,
+            out int x,
+            out int y))
         {
             Debug.LogWarning(
                 $"[ShopController] 상점에 {item.itemData.definition.itemName}을 " +
