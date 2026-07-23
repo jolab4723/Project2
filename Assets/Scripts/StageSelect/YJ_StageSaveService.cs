@@ -69,14 +69,66 @@ public class YJ_StageSaveService : MonoBehaviour
         FindReferences();
         if (stageSelectManager == null)
         {
-            Debug.LogError("YJ_StageSelectManager was not found.", this);
+            Log.Error("YJ_StageSelectManager를 찾을 수 없습니다.");
             return false;
         }
 
         StageMapSaveData saveData = stageSelectManager.CaptureSaveData();
         if (saveData == null || saveData.nodes == null || saveData.nodes.Count == 0)
         {
-            Debug.LogError("There is no generated stage map to save.", this);
+            Log.Error("저장할 스테이지 맵이 생성되지 않았습니다.");
+            return false;
+        }
+
+        return WriteSaveData(saveData);
+    }
+
+    /// <summary>
+    /// 스테이지 Portal에 도달한 시점에 저장된 pending 노드를 클리어 상태로 변경합니다.
+    /// </summary>
+    public bool CompletePendingNode()
+    {
+        if (!TryLoadSaveData(out StageMapSaveData saveData))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(saveData.pendingNodeId))
+        {
+            Log.Warning("완료 처리할 pending 스테이지 노드가 없습니다.");
+            return true;
+        }
+
+        StageNodeSaveData completedNode = saveData.nodes.Find(
+            node => node != null && node.id == saveData.pendingNodeId);
+        if (completedNode == null)
+        {
+            Log.Error(
+                $"저장 데이터에서 pending 노드를 찾지 못했습니다: {saveData.pendingNodeId}");
+            return false;
+        }
+
+        saveData.clearedNodeIds ??= new System.Collections.Generic.List<string>();
+        saveData.visitedNodeIds ??= new System.Collections.Generic.List<string>();
+
+        AddUnique(saveData.clearedNodeIds, completedNode.id);
+        AddUnique(saveData.visitedNodeIds, completedNode.id);
+
+        saveData.clearedFloor = Math.Max(
+            saveData.clearedFloor,
+            completedNode.floor);
+        saveData.lastClearedNodeId = completedNode.id;
+        saveData.pendingNodeId = string.Empty;
+
+        return WriteSaveData(saveData);
+    }
+
+    /// <summary>
+    /// JSON 저장 데이터 전체를 임시 파일에 먼저 기록한 뒤 실제 저장 파일로 교체합니다.
+    /// </summary>
+    private bool WriteSaveData(StageMapSaveData saveData)
+    {
+        if (saveData == null)
+        {
+            Log.Error("저장할 스테이지 맵 데이터가 없습니다.");
             return false;
         }
 
@@ -97,12 +149,12 @@ public class YJ_StageSaveService : MonoBehaviour
             File.Copy(temporaryPath, path, true);
             File.Delete(temporaryPath);
 
-            Debug.Log($"Stage map saved: {path}", this);
+            Log.Print($"스테이지 맵 저장 완료: {path}");
             return true;
         }
         catch (Exception exception)
         {
-            Debug.LogError($"Failed to save stage map.\n{exception}", this);
+            Log.Error($"스테이지 맵 저장 실패\n{exception}");
             return false;
         }
         finally
@@ -110,6 +162,17 @@ public class YJ_StageSaveService : MonoBehaviour
             if (File.Exists(temporaryPath))
                 File.Delete(temporaryPath);
         }
+    }
+
+    /// <summary>
+    /// 문자열 목록에 동일한 ID가 없을 때만 새 ID를 추가합니다.
+    /// </summary>
+    private static void AddUnique(
+        System.Collections.Generic.ICollection<string> ids,
+        string id)
+    {
+        if (!ids.Contains(id))
+            ids.Add(id);
     }
 
     /// <summary>
@@ -128,7 +191,7 @@ public class YJ_StageSaveService : MonoBehaviour
         FindReferences();
         if (stageSelectManager == null)
         {
-            Debug.LogError("YJ_StageSelectManager was not found.", this);
+            Log.Error("YJ_StageSelectManager를 찾을 수 없습니다.");
             return false;
         }
 
@@ -137,7 +200,7 @@ public class YJ_StageSaveService : MonoBehaviour
 
         bool restored = stageSelectManager.RestoreMap(saveData);
         if (restored)
-            Debug.Log($"Stage map loaded: {SavePath}", this);
+            Log.Print($"스테이지 맵 불러오기 완료: {SavePath}");
 
         return restored;
     }
@@ -161,7 +224,7 @@ public class YJ_StageSaveService : MonoBehaviour
 
         if (!File.Exists(path))
         {
-            Debug.LogWarning($"Stage map save file does not exist: {path}", this);
+            Log.Warning($"스테이지 맵 저장 파일이 없습니다: {path}");
             return false;
         }
 
@@ -174,7 +237,7 @@ public class YJ_StageSaveService : MonoBehaviour
 
             if (saveData == null || saveData.nodes == null || saveData.nodes.Count == 0)
             {
-                Debug.LogError("The stage map save file contains no node data.", this);
+                Log.Error("스테이지 맵 저장 파일에 노드 데이터가 없습니다.");
                 saveData = null;
                 return false;
             }
@@ -183,7 +246,7 @@ public class YJ_StageSaveService : MonoBehaviour
         }
         catch (Exception exception)
         {
-            Debug.LogError($"Failed to load stage map.\n{exception}", this);
+            Log.Error($"스테이지 맵 불러오기 실패\n{exception}");
             saveData = null;
             return false;
         }
@@ -197,19 +260,19 @@ public class YJ_StageSaveService : MonoBehaviour
         string path = SavePath;
         if (!File.Exists(path))
         {
-            Debug.Log($"No stage map save file to delete: {path}", this);
+            Log.Print($"삭제할 스테이지 맵 저장 파일이 없습니다: {path}");
             return true;
         }
 
         try
         {
             File.Delete(path);
-            Debug.Log($"Stage map save deleted: {path}", this);
+            Log.Print($"스테이지 맵 저장 파일 삭제 완료: {path}");
             return true;
         }
         catch (Exception exception)
         {
-            Debug.LogError($"Failed to delete stage map save.\n{exception}", this);
+            Log.Error($"스테이지 맵 저장 파일 삭제 실패\n{exception}");
             return false;
         }
     }
