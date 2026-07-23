@@ -4,13 +4,13 @@ using TMPro;
 
 public class YJ_NameTag : MonoBehaviour
 {
-    private TMP_Text text;
-    private Image image;
+    private TMP_Text nameTagText;
+    private Image nameTagImage;
 
     private void Awake()
     {
-        text = GetComponentInChildren<TMP_Text>();
-        image = GetComponentInChildren<Image>();
+        nameTagText = GetComponentInChildren<TMP_Text>();
+        nameTagImage = GetComponentInChildren<Image>();
     }
 
     public void Active(bool active)
@@ -20,6 +20,6 @@ public class YJ_NameTag : MonoBehaviour
 
     public void ChangeText(string str)
     {
-        text.text = str;
+        nameTagText.text = str;
     }
 }
