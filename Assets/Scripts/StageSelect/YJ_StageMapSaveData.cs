@@ -15,6 +15,7 @@ public class StageMapSaveData
 
     public List<string> clearedNodeIds = new(); // 클리어된 노드들
     public List<string> visitedNodeIds = new(); // 플레이어가 지나온 노드들
+    public List<string> usedStageSceneNames = new(); // 일반/엘리트 노드에서 실제로 사용한 전투 씬들
     public List<StageNodeSaveData> nodes = new(); // 노드 종류와 실제 배치 좌표
 }
 
@@ -49,6 +50,10 @@ public class StageNodeSaveData
   "visitedNodeIds": [
     "A1_F01_N01",
     "A1_F02_N02"
+  ],
+  "usedStageSceneNames": [
+    "Act1_Stage2",
+    "Act1_Stage7"
   ],
   "nodes": [
     {
