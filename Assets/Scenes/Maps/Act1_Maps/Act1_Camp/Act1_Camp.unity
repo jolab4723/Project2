@@ -4710,6 +4710,8 @@ GameObject:
   - component: {fileID: 738563023}
   - component: {fileID: 738563025}
   - component: {fileID: 738563024}
+  - component: {fileID: 738563026}
+  - component: {fileID: 738563027}
   m_Layer: 17
   m_Name: QuestNPC
   m_TagString: Untagged
@@ -4789,6 +4791,30 @@ MonoBehaviour:
   precomputeOutline: 0
   bakeKeys: []
   bakeValues: []
+--- !u!114 &738563026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 738563019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930cadeda877696448a6bcafd73145fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
+--- !u!114 &738563027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 738563019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd9f19040387e641985043db32f36b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_NameTag
 --- !u!1001 &754757704
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5367,6 +5393,8 @@ GameObject:
   - component: {fileID: 806410369}
   - component: {fileID: 806410371}
   - component: {fileID: 806410370}
+  - component: {fileID: 806410372}
+  - component: {fileID: 806410373}
   m_Layer: 17
   m_Name: EnforceNPC
   m_TagString: Untagged
@@ -5446,6 +5474,30 @@ MonoBehaviour:
   precomputeOutline: 0
   bakeKeys: []
   bakeValues: []
+--- !u!114 &806410372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806410365}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930cadeda877696448a6bcafd73145fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
+--- !u!114 &806410373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806410365}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd9f19040387e641985043db32f36b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_NameTag
 --- !u!1 &820769967
 GameObject:
   m_ObjectHideFlags: 0
@@ -5763,6 +5815,8 @@ GameObject:
   - component: {fileID: 843246134}
   - component: {fileID: 843246136}
   - component: {fileID: 843246135}
+  - component: {fileID: 843246137}
+  - component: {fileID: 843246138}
   m_Layer: 17
   m_Name: RestNPC
   m_TagString: Untagged
@@ -5842,6 +5896,30 @@ MonoBehaviour:
   precomputeOutline: 0
   bakeKeys: []
   bakeValues: []
+--- !u!114 &843246137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 843246130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930cadeda877696448a6bcafd73145fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
+--- !u!114 &843246138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 843246130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd9f19040387e641985043db32f36b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_NameTag
 --- !u!1001 &858395453
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9261,8 +9339,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1494050491}
   - component: {fileID: 1494050493}
-  - component: {fileID: 1494050495}
+  - component: {fileID: 1494050498}
   - component: {fileID: 1494050494}
+  - component: {fileID: 1494050496}
+  - component: {fileID: 1494050497}
   m_Layer: 17
   m_Name: ShopNPC
   m_TagString: Untagged
@@ -9321,12 +9401,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93efa53e321f058449d02979a02058df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_OutlineOnMouseHover
-  targetOutline: {fileID: 1494050495}
+  targetOutline: {fileID: 0}
   nameTag: {fileID: 959185}
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: "\uC0C1\uC810"
---- !u!114 &1494050495
+--- !u!114 &1494050496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1494050490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930cadeda877696448a6bcafd73145fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
+--- !u!114 &1494050497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1494050490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd9f19040387e641985043db32f36b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_NameTag
+--- !u!114 &1494050498
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
