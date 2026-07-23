@@ -260,13 +260,7 @@ private void UnbindButtons()
                     Object.FindFirstObjectByType<WorldItemTooltipScanner>();
             }
 
-            if (itemPickupPrefabOverride == null)
-            {
-                ItemDropTester legacyDropTester = Object.FindFirstObjectByType<ItemDropTester>(FindObjectsInactive.Include);
-                if (legacyDropTester != null)
-                    itemPickupPrefabOverride = legacyDropTester.itemPickupPrefab;
-            }
-if (itemGenerator == null)
+            if (itemGenerator == null)
                 itemGenerator = Object.FindFirstObjectByType<ItemGenerator>(FindObjectsInactive.Include);
 
             if (receiverBehaviour == null)
@@ -289,9 +283,6 @@ if (itemGenerator == null)
         {
             if (definition == null)
                 return null;
-
-            if (itemGenerator != null)
-                return itemGenerator.GenerateItem(definition);
 
             return ItemDataCreator.CreateItemData(definition);
         }

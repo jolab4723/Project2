@@ -5,7 +5,7 @@ namespace ItemSystem.EditorScripts
 {
     /// <summary>
     /// ItemDataStorage 전용 커스텀 인스펙터.
-    /// 기본 fold-out 대신 ItemDropTester의 BuildLog()와 같은 형태로 정리해서 보여준다.
+    /// 기본 fold-out 대신 아이템 드랍 결과를 보기 좋게 정리해서 보여준다.
     /// 이 스크립트는 반드시 "Editor" 폴더 안에 있어야 함 (런타임 빌드에 포함되면 안 됨).
     /// </summary>
     [CustomEditor(typeof(ItemDataStorage))]

@@ -121,7 +121,8 @@ public class TestButtonController : MonoBehaviour
         Vector3 pos = dropPoint != null ? dropPoint.position : transform.position;
         Quaternion rot = dropPoint != null ? dropPoint.rotation : transform.rotation;
 
-        lastDropped = itemGenerator.Drop(testDropItem, pos, rot);
+        lastDropped = ItemDataCreator.CreateItemData(testDropItem);
+        itemGenerator.DropGeneratedItem(lastDropped, pos, rot);
         RefreshGetItemButton();
     }
 

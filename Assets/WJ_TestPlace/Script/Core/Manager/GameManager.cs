@@ -8,7 +8,6 @@ namespace Core
         [Tooltip("IManagerModule을 구현한 컴포넌트를 순서대로 넣으면 그 순서대로 로드/활성화됨")]
         [SerializeField] private MonoBehaviour[] orderedManagers;
 
-        /// <summary>orderedManagers에 등록된 모든 매니저의 Activate 호출이 끝났는지 나타냅니다.</summary>
         public bool IsInitialized { get; private set; }
 
         private void Start()
@@ -25,7 +24,6 @@ namespace Core
             if (orderedManagers == null || orderedManagers.Length == 0)
             {
                 Debug.LogWarning("[GameManager] orderedManagers가 비어있습니다.");
-                IsInitialized = true;
                 return;
             }
 

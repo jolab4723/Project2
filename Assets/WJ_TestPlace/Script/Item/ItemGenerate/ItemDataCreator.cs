@@ -57,6 +57,7 @@ namespace ItemSystem
             return instance;
         }
 
+        #region 랜덤 옵션 파트
         static RolledSubStat RollOne(SubStatPoolSO pool)
         {
             // 컴뱃/유틸 옵션은 중복 허용 (아이템_스트럭쳐 시트 H8 기준)
@@ -111,5 +112,7 @@ namespace ItemSystem
                 default: return StatType.attackPowerPercent;
             }
         }
+
+        #endregion
     }
 }
