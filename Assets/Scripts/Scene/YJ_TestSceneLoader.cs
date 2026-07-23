@@ -10,6 +10,8 @@ public class YJ_TestSceneLoader : MonoBehaviour
     public string autoLoadSceneName = "Act1_StageSelect";
     // 활성화하면 이 컴포넌트가 시작될 때 자동으로 테스트 씬을 불러옵니다.
     public bool autoLoad = false;
+    // Unknown 테스트 씬의 자동 복귀 전에 저장된 pending 노드를 클리어 처리합니다.
+    [SerializeField] private bool completePendingStageOnAutoLoad = true;
 
     // 중복된 씬 전환 요청을 막기 위해 현재 실행 중인 지연 코루틴을 보관합니다.
     private Coroutine loadRoutine;
@@ -51,6 +53,14 @@ public class YJ_TestSceneLoader : MonoBehaviour
         if (loadDelay > 0f)
             yield return new WaitForSecondsRealtime(loadDelay);
 
+        if (autoLoad &&
+            completePendingStageOnAutoLoad &&
+            !CompletePendingStage())
+        {
+            loadRoutine = null;
+            yield break;
+        }
+
         SceneLoader sceneLoader = SceneLoader.Instance;
 
         if (sceneLoader == null)
@@ -62,5 +72,26 @@ public class YJ_TestSceneLoader : MonoBehaviour
 
         loadRoutine = null;
         sceneLoader.LoadScene(sceneName);
+    }
+
+    /// <summary>
+    /// Unknown 테스트 씬의 자동 종료를 실제 스테이지 클리어와 동일하게 저장합니다.
+    /// 저장 파일이 없는 직접 실행 테스트에서는 완료 처리를 생략합니다.
+    /// </summary>
+    private bool CompletePendingStage()
+    {
+        YJ_StageSaveService saveService =
+            FindFirstObjectByType<YJ_StageSaveService>();
+        if (saveService == null)
+            saveService = gameObject.AddComponent<YJ_StageSaveService>();
+
+        if (!saveService.HasSaveFile)
+        {
+            Log.Warning(
+                "스테이지 맵 저장 파일이 없어 pending 노드 완료 처리를 생략합니다.");
+            return true;
+        }
+
+        return saveService.CompletePendingNode();
     }
 }

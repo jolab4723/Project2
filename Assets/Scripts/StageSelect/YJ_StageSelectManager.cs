@@ -84,6 +84,12 @@ public class YJ_StageSelectManager : MonoBehaviour
     // Reticle 애니메이션 종료 후 선택한 노드의 씬을 불러오는 테스트용 로더입니다.
     [SerializeField] private YJ_TestSceneLoader testSceneLoader;
 
+    [Header("Local Progress")]
+    // 스테이지 이동 전 맵을 저장하고 Stage Select 복귀 시 복원하는 서비스입니다.
+    [SerializeField] private YJ_StageSaveService stageSaveService;
+    // 로컬 JSON 저장 파일이 있으면 새 맵 생성보다 저장된 진행 상태 복원을 우선합니다.
+    [SerializeField] private bool loadSavedMapOnStart = true;
+
     // 현재 맵에 생성된 모든 노드 UI 컴포넌트 목록입니다.
     private readonly List<YJ_StageNodeHover> generatedNodes = new();
     // 층 인덱스별로 생성된 노드 데이터를 묶어 보관합니다.
@@ -144,10 +150,20 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 씬 시작 시 현재 설정을 사용해 전체 노드 맵을 생성합니다.
+    /// 씬 시작 시 로컬 저장 맵을 우선 복원하고 저장 파일이 없으면 새 맵을 생성합니다.
     /// </summary>
     private void Start()
     {
+        if (loadSavedMapOnStart &&
+            stageSaveService != null &&
+            stageSaveService.HasSaveFile)
+        {
+            if (stageSaveService.LoadCurrentMap())
+                return;
+
+            Log.Warning("저장된 스테이지 맵 복원에 실패하여 새 맵을 생성합니다.");
+        }
+
         GenerateMap();
     }
 
@@ -570,6 +586,21 @@ public class YJ_StageSelectManager : MonoBehaviour
         if (testSceneLoader == null)
         {
             Log.Error("YJ_TestSceneLoader를 찾을 수 없습니다.");
+            return;
+        }
+
+        if (stageSaveService == null)
+            FindSaveService();
+
+        if (stageSaveService == null)
+        {
+            Log.Error("YJ_StageSaveService를 찾을 수 없습니다.");
+            return;
+        }
+
+        if (!stageSaveService.SaveCurrentMap())
+        {
+            Log.Error("스테이지 진행 상태 저장에 실패하여 씬 전환을 중단합니다.");
             return;
         }
 
@@ -1263,6 +1294,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             nodeReticle = FindFirstObjectByType<YJ_StageNodeReticle>();
 
         FindSceneLoader();
+        FindSaveService();
     }
 
     /// <summary>
@@ -1279,6 +1311,22 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         if (testSceneLoader == null)
             testSceneLoader = gameObject.AddComponent<YJ_TestSceneLoader>();
+    }
+
+    /// <summary>
+    /// Inspector 참조, 같은 오브젝트, 현재 씬 순서로 저장 서비스를 찾고 없으면 추가합니다.
+    /// </summary>
+    private void FindSaveService()
+    {
+        if (stageSaveService != null)
+            return;
+
+        stageSaveService = GetComponent<YJ_StageSaveService>();
+        if (stageSaveService == null)
+            stageSaveService = FindFirstObjectByType<YJ_StageSaveService>();
+
+        if (stageSaveService == null)
+            stageSaveService = gameObject.AddComponent<YJ_StageSaveService>();
     }
 
     /// <summary>
