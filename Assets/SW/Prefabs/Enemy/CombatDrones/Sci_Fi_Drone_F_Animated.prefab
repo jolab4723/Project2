@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8604237069605042827
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4913144730757196916}
+  - component: {fileID: 3612301368994928153}
+  m_Layer: 0
+  m_Name: Sci_Fi_Drone_F_Animated
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4913144730757196916
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8604237069605042827}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7692545083389325792}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3612301368994928153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8604237069605042827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 162843c87e4f6c54e892d4bf6188a586, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatDroneVisualAnimator
+  variant: 1
+  visualRoot: {fileID: 7692545083389325792}
+  hoverAmplitude: 0.11
+  hoverFrequency: 0.76
+  pitchAmplitude: 1.8
+  rollAmplitude: 2.7
+  phaseOffset: 0
+  propellerSpeed: 1350
+  radarSpeed: 0
+  weaponRecoilDistance: 0.18
+  weaponRecoilDuration: 0.14
+  aimSmoothing: 120
+  previewSweepAim: 1
+  previewAutoFire: 1
+  previewFireInterval: 1.15
+  previewFireInitialDelay: 0.55
+--- !u!1001 &5898208536035405111
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4913144730757196916}
+    m_Modifications:
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5815517052236495654, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+      propertyPath: m_Name
+      value: Sci_Fi_Drone_F_Visual
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+--- !u!4 &7692545083389325792 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4259223920018201815, guid: e06bfd7c572f94846885b774e9b8bcaa, type: 3}
+  m_PrefabInstance: {fileID: 5898208536035405111}
+  m_PrefabAsset: {fileID: 0}
