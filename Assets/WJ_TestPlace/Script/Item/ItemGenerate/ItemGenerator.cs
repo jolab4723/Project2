@@ -2,40 +2,32 @@ using UnityEngine;
 
 namespace ItemSystem
 {
+    /// <summary>
+    /// 아이템 데이터를 오브젝트에 주입하고 지정된 위치/회전에 드랍(스폰)하는 것만 담당한다.
+    /// 아이템 데이터 생성 자체는 ItemDataCreator의 역할이라 여기서는 안 한다 - 호출부가 먼저
+    /// ItemDataCreator.CreateItemData(def)로 ItemInstance를 만든 뒤 DropGeneratedItem()에 넘겨줘야 한다.
+    /// </summary>
     public class ItemGenerator : MonoBehaviour
     {
         [Header("드랍 처리")]
         [Tooltip("ItemDataStorage 컴포넌트가 붙어있는 프리팹")]
         public GameObject itemPickupPrefab;
 
-        /// <summary>가장 최근 Drop()으로 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
+        /// <summary>가장 최근 DropGeneratedItem()으로 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
         public GameObject LastSpawnedPickup { get; private set; }
 
-
         /// <summary>
-        /// def로부터 데이터만 생성한다 (월드 스폰 없음).
+        /// instance를 지정된 위치/회전에 픽업 오브젝트로 스폰한다 (데이터 주입 + 드랍만 담당).
         /// </summary>
-        public ItemInstance GenerateItem(ItemDefinitionSO structure)
+        public void DropGeneratedItem(ItemInstance instance, Vector3 position, Quaternion rotation)
         {
-            // 아이템 데이터 생성
-            return ItemDataCreator.CreateItemData(structure);
-        }
-
-        /// <summary>
-        /// def로부터 새 ItemInstance를 생성하고, 지정된 위치/회전에 픽업 오브젝트를 스폰한다.
-        /// (아이템 오브젝트 생성 후 데이터 주입, 드랍 역할)
-        /// </summary>
-        public ItemInstance Drop(ItemDefinitionSO def, Vector3 position, Quaternion rotation)
-        {
-            if (def == null)
+            if (instance == null)
             {
-                Debug.LogWarning("[ItemGenerator] def가 null입니다.");
-                return null;
+                Debug.LogWarning("[ItemGenerator] instance가 null입니다.");
+                return;
             }
 
-            ItemInstance instance = GenerateItem(def);
             SpawnPickup(instance, position, rotation);
-            return instance;
         }
 
         void SpawnPickup(ItemInstance instance, Vector3 position, Quaternion rotation)

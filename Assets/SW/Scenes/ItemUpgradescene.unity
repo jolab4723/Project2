@@ -130,7 +130,7 @@ PrefabInstance:
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: spawnPoint
       value: 
-      objectReference: {fileID: 2326669447099491508}
+      objectReference: {fileID: 0}
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: monsterGrade
       value: 2
@@ -142,7 +142,7 @@ PrefabInstance:
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: itemGenerator
       value: 
-      objectReference: {fileID: 673172483009153551}
+      objectReference: {fileID: 0}
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: dropItemButton
       value: 
@@ -565,6 +565,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryItemUISpawner
   itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
+  worldItemDropService: {fileID: 0}
 --- !u!1 &966692090
 GameObject:
   m_ObjectHideFlags: 0
@@ -2217,22 +2218,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 5
---- !u!114 &673172483009153551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5906903907024842909}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71ff555f4c00dba46bc20fcf9d877362, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemGenerator
-  potionData: {fileID: 0}
-  weaponData: []
-  bootsData: {fileID: 11400000, guid: 64a1b96c30132dc4e8b5a54f6ed870d3, type: 2}
-  itemPickupPrefab: {fileID: 0}
 --- !u!114 &679448823072690827
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5222,21 +5207,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2172947066146013885}
   m_CullTransparentMesh: 1
---- !u!4 &2326669447099491508
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5906903907024842909}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1073.6134, y: -642.3015, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6376405959479971045}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2327769030687800746
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9311,24 +9281,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &4973419740344897881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5906903907024842909}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b9843d2636c76d49b8af5caebac72f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropTester
-  testItem: {fileID: 11400000, guid: 1713642df37d32b408d296328da7943b, type: 2}
-  itemPickupPrefab: {fileID: 8883981134098272347, guid: 600459e1c0b9c004f80f45064323f463, type: 3}
-  spawnPoint: {fileID: 2326669447099491508}
-  dropOnStart: 0
-  dropKey: 32
-  testUpgradeLevel: 0
 --- !u!1 &4977950789974010896
 GameObject:
   m_ObjectHideFlags: 0
@@ -9457,32 +9409,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TestButtonController
   inventoryPopup: {fileID: 1487756483423251240}
-  itemGenerator: {fileID: 673172483009153551}
+  passivePopup: {fileID: 0}
+  itemGenerator: {fileID: 0}
   testDropItem: {fileID: 11400000, guid: 64a1b96c30132dc4e8b5a54f6ed870d3, type: 2}
   dropPoint: {fileID: 8512923220990187068}
   getItemBtn: {fileID: 1640643511314756975}
   receiverBehaviour: {fileID: 2535807133466354597}
   AttackText: {fileID: 2900651530649585218}
---- !u!114 &5051847872919392647
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5906903907024842909}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7cf0d5ae2e938f469827d56d16bf6e2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropAcquireTester
-  testItem: {fileID: 11400000, guid: 1713642df37d32b408d296328da7943b, type: 2}
-  itemGenerator: {fileID: 673172483009153551}
-  receiverBehaviour: {fileID: 2535807133466354597}
-  spawnPoint: {fileID: 2326669447099491508}
-  dropOnStart: 0
-  dropKey: 0
-  acquireKey: 0
-  testUpgradeLevel: 0
 --- !u!222 &5075558822050683732
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10806,25 +10739,6 @@ MonoBehaviour:
   cellSize: 70
   cellSpacing: 3
   highlightUI: {fileID: 682742648}
---- !u!1 &5906903907024842909
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2326669447099491508}
-  - component: {fileID: 4973419740344897881}
-  - component: {fileID: 673172483009153551}
-  - component: {fileID: 5051847872919392647}
-  m_Layer: 0
-  m_Name: ItemDropTester
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!222 &5918411600223927135
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11334,7 +11248,6 @@ Transform:
   - {fileID: 5584672584074231391}
   - {fileID: 6474399615692313524}
   - {fileID: 7399914594472166292}
-  - {fileID: 2326669447099491508}
   - {fileID: 7297672513224273249}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

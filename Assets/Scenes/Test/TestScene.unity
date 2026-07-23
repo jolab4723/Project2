@@ -119,56 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &10671783
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 10671785}
-  - component: {fileID: 10671784}
-  m_Layer: 0
-  m_Name: ItemDropTester
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &10671784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 10671783}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b9843d2636c76d49b8af5caebac72f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropTester
-  testItem: {fileID: 11400000, guid: 1713642df37d32b408d296328da7943b, type: 2}
-  itemPickupPrefab: {fileID: 8883981134098272347, guid: 600459e1c0b9c004f80f45064323f463, type: 3}
-  spawnPoint: {fileID: 10671785}
-  dropOnStart: 0
-  dropKey: 32
-  testUpgradeLevel: 0
---- !u!4 &10671785
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 10671783}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1659485104
 GameObject:
   m_ObjectHideFlags: 0
@@ -664,6 +614,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efe9cefc1c2a93745bae29ede6a6e71f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDataStorage
+  item:
+    instanceId: 
+    definition: {fileID: 0}
+    rolledSubStats: []
+    rolledElement: 0
+    upgradeLevel: 0
   iconRenderer: {fileID: 0}
 --- !u!114 &1576321031876052928
 MonoBehaviour:
@@ -677,16 +633,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e10a2f6db29c23b4f90701206d0a21a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
+  canvas: {fileID: 0}
+  canvasRect: {fileID: 0}
+  tooltipRect: {fileID: 0}
   tooltipPanel: {fileID: 1576321031876052926}
   borderImage: {fileID: 2959416409392770875}
   overlayImage: {fileID: 6582380770484761117}
   itemImage: {fileID: 3361865287006278123}
-  itemName: {fileID: 1790138694935248927}
-  itemType: {fileID: 7021254831709219498}
-  gradeText: {fileID: 8213110761460232001}
-  statText: {fileID: 4175573935790931478}
-  itemSize: {fileID: 671418044335020208}
-  offset: {x: 15, y: 15, z: 0}
+  itemNameText: {fileID: 0}
+  itemRarityText: {fileID: 0}
+  itemCategoryText: {fileID: 0}
+  mainStatText: {fileID: 0}
+  subStat1Text: {fileID: 0}
+  subStat2Text: {fileID: 0}
+  subStat3Text: {fileID: 0}
+  subStat4Text: {fileID: 0}
+  elementBonusText: {fileID: 0}
+  uniqueEffectNameText: {fileID: 0}
+  uniqueEffectDescriptionText: {fileID: 0}
+  itemPriceText: {fileID: 0}
+  itemSizeText: {fileID: 0}
+  offset: {x: 15, y: 15}
+  section1: {fileID: 0}
+  section2: {fileID: 0}
+  section3: {fileID: 0}
+  section4: {fileID: 0}
+  backgroundRect: {fileID: 0}
+  sectionSpacing: 5
+  topPadding: 10
+  bottomPadding: 10
 --- !u!222 &1698551831076013113
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2728,5 +2703,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1659485107}
   - {fileID: 1808677796}
-  - {fileID: 10671785}
   - {fileID: 3864256688081577256}

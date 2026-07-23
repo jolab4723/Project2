@@ -7,12 +7,6 @@ namespace Core
 {
     public class DataManager : Singleton<DataManager>, IManagerModule
     {
-        [Header("정적 데이터")]
-        [Tooltip("모든 아이템 정의를 itemId로 조회할 수 있는 데이터베이스")]
-        [SerializeField] private ItemDatabaseSO itemDatabase;
-
-        public ItemDatabaseSO ItemDatabase => itemDatabase;
-        public bool IsStaticDataLoaded { get; private set; }
         public string ModuleName => "DataManager";
 
         private const string GameplaySaveFileName = "gamesave.json";
@@ -32,22 +26,10 @@ namespace Core
             return Path.Combine(Application.persistentDataPath, fileName);
         }
 
-        #region ===================== 1. 정적 데이터 =====================
-
         public void Activate()
         {
-            if (itemDatabase == null)
-            {
-                Debug.LogWarning("[DataManager] itemDatabase가 연결되지 않았습니다.");
-                IsStaticDataLoaded = false;
-                return;
-            }
-
-            IsStaticDataLoaded = true;
-            Debug.Log("[DataManager] 활성화 완료 (itemDatabase 연결됨, 아이템 " + itemDatabase.allItems.Count + "개)");
+            Debug.Log("[DataManager] 활성화 완료.");
         }
-
-        #endregion
 
         #region ===================== 2. 플레이어 프로필 (세이브 슬롯) =====================
         // 싱글플레이 슬롯 1개 + 멀티플레이 슬롯 3개(다크소울 스타일, 서로 독립).
@@ -282,10 +264,11 @@ namespace Core
                 return;
 
             InventoryController controller = InventoryController.Instance;
+            ItemDatabaseSO itemDatabase = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
 
-            if (controller == null || itemDatabase == null ||controller.PlayerGrid == null || controller.EquipmentSystem == null)
+            if (controller == null || itemDatabase == null || controller.PlayerGrid == null || controller.EquipmentSystem == null)
             {
-                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 itemDatabase, EquipmentSystem이 없음).");
+                Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 ItemManager.ItemDatabase, EquipmentSystem이 없음).");
                 return;
             }
 
