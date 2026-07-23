@@ -119,6 +119,81 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &92517973
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 92517974}
+  - component: {fileID: 92517976}
+  - component: {fileID: 92517975}
+  m_Layer: 5
+  m_Name: Glow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &92517974
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 92517973}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.9, y: 1.9, z: 1.9}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 6617749076148652510}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -500, y: 65}
+  m_SizeDelta: {x: -1320, y: -260}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &92517975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 92517973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: 929017eee1b8ec44c9f54ce3b9fd4848, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &92517976
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 92517973}
+  m_CullTransparentMesh: 1
 --- !u!1 &129190109
 GameObject:
   m_ObjectHideFlags: 0
@@ -919,6 +994,7 @@ GameObject:
   - component: {fileID: 463139084}
   - component: {fileID: 463139085}
   - component: {fileID: 463139086}
+  - component: {fileID: 463139087}
   m_Layer: 0
   m_Name: StageSelectManager
   m_TagString: Untagged
@@ -957,7 +1033,7 @@ MonoBehaviour:
   clearedFloor: 0
   lastClearedNodeId: 
   mapSeed: 0
-  completeNodeOnClick: 1
+  completeNodeOnClick: 0
   testCompletionDelay: 1
   centerNextFloor: 1
   floorCenterDuration: 0.25
@@ -965,6 +1041,7 @@ MonoBehaviour:
   nodeLayoutController: {fileID: 463139085}
   nodeLineController: {fileID: 463139084}
   nodeReticle: {fileID: 0}
+  testSceneLoader: {fileID: 0}
 --- !u!114 &463139084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1021,6 +1098,21 @@ MonoBehaviour:
   stageSelectManager: {fileID: 0}
   fileName: stage_map_save.json
   prettyPrint: 1
+--- !u!114 &463139087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463139081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb358bada904bcd4faacd50e74eddc99, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_TestSceneLoader
+  loadDelay: 2
+  autoLoadSceneName: Act1_StageSelect
+  autoLoad: 0
 --- !u!1001 &582894604
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4599,6 +4691,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 92517974}
   - {fileID: 251537865}
   m_Father: {fileID: 5389898231557993738}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

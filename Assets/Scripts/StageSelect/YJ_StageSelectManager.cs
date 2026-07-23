@@ -14,6 +14,18 @@ public class YJ_StageSelectManager : MonoBehaviour
     private const string PrefabPath = "Prefabs/Map/StageNode/";
     // 분기 분리 조건을 만족하는 전체 맵 배치를 찾기 위해 허용할 최대 생성 횟수입니다.
     private const int MaximumMapGenerationAttempts = 32;
+    // 일반 및 엘리트 노드가 무작위로 선택할 첫 번째 Act 1 전투 씬 번호입니다.
+    private const int FirstAct1CombatSceneNumber = 1;
+    // 일반 및 엘리트 노드가 무작위로 선택할 마지막 Act 1 전투 씬 번호입니다.
+    private const int LastAct1CombatSceneNumber = 11;
+    // Act 1 일반 및 엘리트 전투 씬 이름 앞에 공통으로 붙는 문자열입니다.
+    private const string Act1CombatScenePrefix = "Act1_Stage";
+    // Act 1 캠프 노드가 이동할 고정 씬 이름입니다.
+    private const string Act1CampSceneName = "Act1_Camp";
+    // Act 1 보스 노드가 이동할 고정 씬 이름입니다.
+    private const string Act1BossSceneName = "Act1_BossStage";
+    // 미지 노드가 이동하여 실제 이벤트 씬을 다시 선택할 중간 씬 이름입니다.
+    private const string UnknownMasterSceneName = "Unknown_MasterScene";
     // 확률에 따라 생성될 수 있는 일반 중간층 노드 종류 목록입니다.
     private static readonly StageNodeType[] MiddleNodeTypes =
     {
@@ -67,6 +79,10 @@ public class YJ_StageSelectManager : MonoBehaviour
     [SerializeField] private YJ_StageNodeLineController nodeLineController;
     // 맵 로드 후 마지막 클리어 노드의 위치를 표시할 HUD Reticle입니다.
     [SerializeField] private YJ_StageNodeReticle nodeReticle;
+
+    [Header("Scene Transition")]
+    // Reticle 애니메이션 종료 후 선택한 노드의 씬을 불러오는 테스트용 로더입니다.
+    [SerializeField] private YJ_TestSceneLoader testSceneLoader;
 
     // 현재 맵에 생성된 모든 노드 UI 컴포넌트 목록입니다.
     private readonly List<YJ_StageNodeHover> generatedNodes = new();
@@ -531,11 +547,33 @@ public class YJ_StageSelectManager : MonoBehaviour
 
     /// <summary>
     /// Reticle 선택 애니메이션이 끝난 뒤 선택한 노드의 전투 또는 이벤트 씬으로 전환합니다.
-    /// 실제 씬 로딩 시스템이 정해지면 nodeData.sceneName을 사용해 전환 로직을 구현합니다.
+    /// 생성 또는 저장 데이터에 기록된 sceneName을 테스트 씬 로더에 전달합니다.
     /// </summary>
     public void TransitionToSelectedNodeScene(YJ_StageNodeData nodeData)
     {
-        // TODO: 선택 노드와 현재 진행 상태를 저장한 뒤 nodeData.sceneName에 해당하는 씬으로 전환합니다.
+        if (nodeData == null)
+        {
+            Log.Warning("씬으로 전환할 노드 데이터가 없습니다.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(nodeData.sceneName))
+        {
+            Log.Warning(
+                $"노드에 이동할 씬 이름이 지정되지 않았습니다: {nodeData.id}");
+            return;
+        }
+
+        if (testSceneLoader == null)
+            FindSceneLoader();
+
+        if (testSceneLoader == null)
+        {
+            Log.Error("YJ_TestSceneLoader를 찾을 수 없습니다.");
+            return;
+        }
+
+        testSceneLoader.LoadScene(nodeData.sceneName);
     }
 
     /// <summary>
@@ -761,6 +799,7 @@ public class YJ_StageSelectManager : MonoBehaviour
                 data = instance.AddComponent<YJ_StageNodeData>();
 
             data.Initialize(nodeId, currentAct, floor, index, type, position);
+            data.sceneName = ResolveNodeSceneName(type);
             nodesById[nodeId] = data;
 
             YJ_StageNodeHover node = instance.GetComponent<YJ_StageNodeHover>();
@@ -803,7 +842,9 @@ public class YJ_StageSelectManager : MonoBehaviour
             nodeSaveData.nodeIndex,
             nodeSaveData.type,
             position);
-        data.sceneName = nodeSaveData.sceneName;
+        data.sceneName = string.IsNullOrWhiteSpace(nodeSaveData.sceneName)
+            ? ResolveNodeSceneName(nodeSaveData.type)
+            : nodeSaveData.sceneName;
         data.cleared = clearedNodeIds.Contains(nodeSaveData.id);
 
         nodesById[data.id] = data;
@@ -966,6 +1007,46 @@ public class YJ_StageSelectManager : MonoBehaviour
             return StageNodeType.Elite;
 
         return GetRandomMiddleNodeType();
+    }
+
+    /// <summary>
+    /// 현재 Act와 노드 종류에 따라 진입할 씬 이름을 반환합니다.
+    /// 일반 및 엘리트 노드는 맵 Seed 기반으로 Act1_Stage1~11 중 하나를 선택합니다.
+    /// </summary>
+    private string ResolveNodeSceneName(StageNodeType nodeType)
+    {
+        if (currentAct != StageActType.Act1)
+        {
+            Log.Warning($"아직 씬 이동 규칙이 없는 Act입니다: {currentAct}");
+            return string.Empty;
+        }
+
+        return nodeType switch
+        {
+            StageNodeType.Battle => GetRandomAct1CombatSceneName(),
+            StageNodeType.Elite => GetRandomAct1CombatSceneName(),
+            StageNodeType.Camp => Act1CampSceneName,
+            StageNodeType.Boss => Act1BossSceneName,
+            StageNodeType.Event => UnknownMasterSceneName,
+            _ => string.Empty
+        };
+    }
+
+    /// <summary>
+    /// Act1_Stage1부터 Act1_Stage11 중 하나를 현재 맵 난수 생성기로 선택합니다.
+    /// </summary>
+    private string GetRandomAct1CombatSceneName()
+    {
+        if (random == null)
+        {
+            Log.Error("스테이지 씬을 선택할 난수 생성기가 없습니다.");
+            return string.Empty;
+        }
+
+        int stageNumber = random.Next(
+            FirstAct1CombatSceneNumber,
+            LastAct1CombatSceneNumber + 1);
+        return $"{Act1CombatScenePrefix}{stageNumber}";
     }
 
     /// <summary>
@@ -1180,6 +1261,24 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         if (nodeReticle == null)
             nodeReticle = FindFirstObjectByType<YJ_StageNodeReticle>();
+
+        FindSceneLoader();
+    }
+
+    /// <summary>
+    /// Inspector 참조, 같은 오브젝트, 현재 씬 순서로 테스트 씬 로더를 찾고 없으면 추가합니다.
+    /// </summary>
+    private void FindSceneLoader()
+    {
+        if (testSceneLoader != null)
+            return;
+
+        testSceneLoader = GetComponent<YJ_TestSceneLoader>();
+        if (testSceneLoader == null)
+            testSceneLoader = FindFirstObjectByType<YJ_TestSceneLoader>();
+
+        if (testSceneLoader == null)
+            testSceneLoader = gameObject.AddComponent<YJ_TestSceneLoader>();
     }
 
     /// <summary>
