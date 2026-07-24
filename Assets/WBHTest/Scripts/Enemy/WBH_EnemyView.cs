@@ -22,11 +22,20 @@ public class WBH_EnemyView : MonoBehaviour
     [SerializeField] private Slider hpBarSlider;
     [SerializeField] private float hpBarVisibleTime = 2f;
 
+    [Header("Hit Flash")]
+    [SerializeField] private Renderer[] renderers;
+    [SerializeField] private float hitFlashDuration = 0.12f;
+    [SerializeField] private float hitFlashIntensity = 1f;
+
+    private MaterialPropertyBlock propertyBlock;
+    private static readonly int HitStrengthID = Shader.PropertyToID("_HitStrength");
+
     private WBH_DamageTextPoolManager poolManager;
     private WBH_EnemyStatus status;
     private Camera mainCamera;
 
     private Coroutine hideHpBarCoroutine;
+    private Coroutine hitFlashCoroutine;
 
 
     private void Awake()
@@ -36,6 +45,11 @@ public class WBH_EnemyView : MonoBehaviour
 
         if(hpBarRoot != null)
             hpBarRoot.SetActive(false);
+
+        propertyBlock = new MaterialPropertyBlock();
+
+        if (renderers == null || renderers.Length == 0)
+            renderers = GetComponentsInChildren<Renderer>();
     }
 
     private void OnEnable()
@@ -70,6 +84,8 @@ public class WBH_EnemyView : MonoBehaviour
         WBH_DamageText damageText = poolManager.GetDamageText();
 
         damageText.Show(damageTextRoot.position, result);
+
+        PlayHitFlash();
     }
 
     private void UpdateHpBar(float currentHp, float maxHp)
@@ -98,5 +114,37 @@ public class WBH_EnemyView : MonoBehaviour
 
         hpBarRoot.SetActive(false);
         hideHpBarCoroutine = null;
+    }
+
+    private void PlayHitFlash()
+    {
+        if (hitFlashCoroutine != null)
+            StopCoroutine(hitFlashCoroutine);
+
+        hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
+    }
+
+
+    private IEnumerator HitFlashRoutine()
+    {
+        SetHitStrength(hitFlashIntensity);
+
+        yield return new WaitForSeconds(hitFlashDuration);
+
+        SetHitStrength(0f);
+
+        hitFlashCoroutine = null;
+    }
+
+    private void SetHitStrength(float value)
+    {
+        foreach(Renderer renderer in renderers)
+        {
+            renderer.GetPropertyBlock(propertyBlock);
+
+            propertyBlock.SetFloat(HitStrengthID, value);
+
+            renderer.SetPropertyBlock(propertyBlock);
+        }
     }
 }
