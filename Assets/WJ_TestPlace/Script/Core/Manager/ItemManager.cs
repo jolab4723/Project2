@@ -29,17 +29,18 @@ namespace Core
             Debug.Log("[ItemManager] 활성화 완료 (itemDatabase 연결됨, 아이템 " + itemDatabase.allItems.Count + "개)");
         }
 
-        /// <summary>
-        /// 적 등급과 드랍 위치만 넘기면 씬의 ItemSystemController를 통해 아이템을 생성/드랍한다.
-        /// 적 사망 처리 등 외부 코드는 이 메서드 하나만 호출하면 되고, 실제 롤/생성/스폰 로직은
-        /// ItemSystemController가 그대로 담당한다 (ItemManager는 전역 진입점 역할만).
-        /// </summary>
-        public void DropItem(EnemyGrade grade, Vector3 position)
-        {
-            DropItem(grade, position, Quaternion.identity);
-        }
+        /*
+        적 등급과 드랍 위치만 넘기면 씬의 ItemSystemController를 통해 아이템을 생성/드랍한다.
+        적 사망 처리 등 외부 코드는 이 메서드 하나만 호출하면 되고, 실제 롤/생성/스폰 로직은
+        ItemSystemController가 그대로 담당한다 (ItemManager는 전역 진입점 역할만).
+        */
 
-        public void DropItem(EnemyGrade grade, Vector3 position, Quaternion rotation)
+        /// <summary>
+        /// 적 등급에 따른 아이템 랜덤 드롭
+        /// </summary>
+        /// <param name="grade">적 등급</param>
+        /// <param name="position">아이템 드롭 위치</param>
+        public void DropRandomItem(EnemyGrade grade, Vector3 position)
         {
             if (ItemSystemController.Instance == null)
             {
@@ -47,7 +48,31 @@ namespace Core
                 return;
             }
 
-            ItemSystemController.Instance.DropGeneratedItem(grade, position, rotation);
+            ItemSystemController.Instance.DropGeneratedItem(grade, position);
+        }
+
+        /// <summary>
+        /// 특정 아이템 드롭
+        /// </summary>
+        /// <param name="SO">드랍시킬 특정 아이템 정의</param>
+        /// <param name="position">아이템 드롭 위치</param>
+        public void DropSpecificItem(ItemDefinitionSO SO, Vector3 position)
+        {
+            if (ItemSystemController.Instance == null)
+            {
+                Debug.LogWarning("[ItemManager] ItemSystemController.Instance가 없어 아이템을 드랍하지 못했습니다.");
+                return;
+            }
+
+            ItemSystemController.Instance.DropGeneratedItem(SO, position);
+        }
+
+        /// <summary>
+        // 아이템 ID 반환 메소드
+        /// </summary>
+        public int SearchItemID(string name)
+        {
+            return 0;
         }
     }
 }
