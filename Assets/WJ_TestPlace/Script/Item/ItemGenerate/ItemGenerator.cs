@@ -47,6 +47,12 @@ namespace ItemSystem
             }
 
             storage.Init(instance);
+            if (obj.TryGetComponent(
+                out WorldItemRarityColorView rarityColorView))
+            {
+                rarityColorView.Apply(instance.definition.rarity);
+            }
+
             LastSpawnedPickup = obj;
         }
     }

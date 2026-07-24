@@ -74,58 +74,59 @@ private void OnEnable()
 [ContextMenu("SW TEST/랜덤 아이템 필드 드랍")]
         public void DropRandomItemToField()
         {
-            if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
-            {
-                RefreshGetItemButton();
-                return;
-            }
+            Core.ItemManager.Instance.DropRandomItem(monsterGrade, spawnPoint.position);
+            //if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
+            //{
+            //    RefreshGetItemButton();
+            //    return;
+            //}
 
-            if (itemGenerator == null)
-            {
-                Debug.LogWarning("[SW TEST 랜덤 드랍] ItemGenerator를 찾지 못해 필드 드랍을 할 수 없습니다.");
-                RefreshGetItemButton();
-                return;
-            }
+            //if (itemGenerator == null)
+            //{
+            //    Debug.LogWarning("[SW TEST 랜덤 드랍] ItemGenerator를 찾지 못해 필드 드랍을 할 수 없습니다.");
+            //    RefreshGetItemButton();
+            //    return;
+            //}
 
 
 
-            ItemInstance instance = CreateItemInstance(result.itemDefinition);
-            RefreshGetItemButton();
+            //ItemInstance instance = CreateItemInstance(result.itemDefinition);
+            //RefreshGetItemButton();
 
-            if (instance == null)
-            {
-                Debug.LogWarning(
-                    "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
+            //if (instance == null)
+            //{
+            //    Debug.LogWarning(
+            //        "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
 
-                RefreshGetItemButton();
-                return;
-            }
+            //    RefreshGetItemButton();
+            //    return;
+            //}
 
-            instance.upgradeLevel = testUpgradeLevel;
+            //instance.upgradeLevel = testUpgradeLevel;
 
-            WorldItemDropResult dropResult =
-                worldItemDropService.TryDrop(
-                    instance,
-                    out ItemDataStorage spawnedPickup);
+            //WorldItemDropResult dropResult =
+            //    worldItemDropService.TryDrop(
+            //        instance,
+            //        out ItemDataStorage spawnedPickup);
 
-            if (dropResult != WorldItemDropResult.Success)
-            {
-                Debug.LogWarning(
-                    $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}");
+            //if (dropResult != WorldItemDropResult.Success)
+            //{
+            //    Debug.LogWarning(
+            //        $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}");
 
-                RefreshGetItemButton();
-                return;
-            }
+            //    RefreshGetItemButton();
+            //    return;
+            //}
 
-            lastDropped = instance;
-            lastSpawnedPickup = spawnedPickup.gameObject;
+            //lastDropped = instance;
+            //lastSpawnedPickup = spawnedPickup.gameObject;
 
-            RefreshGetItemButton();
-            Debug.Log(
-                BuildResultLog(
-                    "필드 드랍",
-                    result,
-                    lastDropped));
+            //RefreshGetItemButton();
+            //Debug.Log(
+            //    BuildResultLog(
+            //        "필드 드랍",
+            //        result,
+            //        lastDropped));
         }
 
         [ContextMenu("SW TEST/랜덤 아이템 인벤토리 추가")]

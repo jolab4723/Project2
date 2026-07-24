@@ -37,10 +37,7 @@ public class TestButtonController : MonoBehaviour
 
     [Header("Key Mapping")]
 
-
     private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
-
-    private ItemInstance lastDropped;
 
 
     private void Start()
@@ -48,7 +45,6 @@ public class TestButtonController : MonoBehaviour
         if (receiverBehaviour != null && Receiver == null)
             Debug.LogWarning($"[TestButtonController] {receiverBehaviour.GetType().Name}은(는) IItemReceiver를 구현하지 않았습니다.");
 
-        RefreshGetItemButton();
         var stat = PlayerStatManager.Instance.Stat;
     }
 
@@ -119,37 +115,8 @@ public class TestButtonController : MonoBehaviour
             Destroy(itemSystemController.LastSpawnedPickup);
 
         Vector3 pos = dropPoint != null ? dropPoint.position : transform.position;
-        Quaternion rot = dropPoint != null ? dropPoint.rotation : transform.rotation;
 
-        lastDropped = ItemDataCreator.CreateItemData(testDropItem);
-        itemSystemController.SpawnDroppedInstance(lastDropped, pos, rot);
-        RefreshGetItemButton();
-    }
-
-    /// <summary>5. getItemBtn - 드랍된 아이템 획득 (드랍이 없으면 버튼 자체가 비활성화됨)</summary>
-    public void OnClickGetItem()
-    {
-        if (lastDropped == null)
-        {
-            Debug.LogWarning("[TestButtonController] 획득할 아이템이 없습니다.");
-            return;
-        }
-
-        bool success = ItemAcquisition.Acquire(lastDropped, Receiver);
-
-        if (itemSystemController != null && itemSystemController.LastSpawnedPickup != null)
-            Destroy(itemSystemController.LastSpawnedPickup);
-
-        if (success || Receiver == null) // Receiver가 없어 로그만 찍은 경우도 테스트 목적상 정리
-            lastDropped = null;
-
-        RefreshGetItemButton();
-    }
-
-    private void RefreshGetItemButton()
-    {
-        if (getItemBtn != null)
-            getItemBtn.interactable = lastDropped != null;
+        ItemSystemController.Instance.DropGeneratedItem(testDropItem, pos);
     }
 
     private void Update()
