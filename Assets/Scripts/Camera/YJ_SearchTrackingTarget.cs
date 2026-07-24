@@ -10,6 +10,8 @@ public enum Pivot
 public class YJ_SearchTrackingTarget : MonoBehaviour
 {
     private CinemachineCamera cinemachineCamera;
+    private Vector3 combatRotation = new Vector3(60, 0, 0);
+    private Vector3 campRotation = new Vector3(30, 0, 0);
     [SerializeField] private Pivot pivot = Pivot.CameraPivot_Combat;
 
     void Awake()
@@ -23,6 +25,17 @@ public class YJ_SearchTrackingTarget : MonoBehaviour
 
         if (trackingTarget == null)
             return;
+
+        switch (pivot)
+        {
+            case Pivot.CameraPivot_Combat:
+                cinemachineCamera.transform.rotation = Quaternion.Euler(combatRotation);
+                break;
+
+            case Pivot.CameraPivot_Camp:
+                cinemachineCamera.transform.rotation = Quaternion.Euler(campRotation);
+                break;
+        }
 
         cinemachineCamera.Target.TrackingTarget = trackingTarget;
     }
