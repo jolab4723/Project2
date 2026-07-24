@@ -90,6 +90,8 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
         StopAllCoroutines();
         destructionStarted = false;
         completionHandled = false;
+        if (tuningTarget != null)
+            tuningTarget.ResetTransientState();
         if (visualAnimator != null) visualAnimator.enabled = animatorWasEnabled;
         RestoreColliders();
         RestoreNavigation();

@@ -19,8 +19,8 @@ Artificer의 파편은 각각 생성된 `GameObject + Rigidbody`가 아니다. A
 
 | 코드 | 테스트에서 하는 일 | 실제 게임에서의 대체 대상 |
 | --- | --- | --- |
-| `WBHDroneManualTestReset` | 여러 드론 생성, R키 리셋 | 웨이브·스폰·적 풀 관리자 |
-| `WBHCombatDroneDestructionTarget` | 임시 체력 1과 공격 방향 계산 | 실제 적 Health/Death 시스템 |
+| `EnemyManualTestReset` | 여러 적 생성, R키 리셋 | 웨이브·스폰·적 풀 관리자 |
+| `EnemyDestructionTarget` | 임시 체력 1과 공격 방향 계산 | 실제 적 Health/Death 시스템 |
 | `CombatDroneArtificerDestruction` | Artificer 호출, 공격 방향과 Ground 충돌 전달 | 파괴 연출 분신 내부의 저수준 실행 컴포넌트로 재사용 가능 |
 | `ArtificerRuntimeTuningPanel` | 런타임 수치 실험 | 개발 빌드 디버그 도구로만 선택 사용 |
 
@@ -44,13 +44,83 @@ public readonly struct EnemyDeathVfxRequest
 
 - D형: `Assets/SW/Prefabs/Enemy/CombatDrones/DestructionEffect/Sci_Fi_Drone_D_DestructionEffect.prefab`
 - F형: `Assets/SW/Prefabs/Enemy/CombatDrones/DestructionEffect/Sci_Fi_Drone_F_DestructionEffect.prefab`
-- 풀 재사용 래퍼: `CombatDroneDestructionProxy`
+- 풀 재사용 컴포넌트: `EnemyDestructionVisual`
 - 런타임 조절 대상: `ArtificerRuntimeTuningTarget`
-- 독립 조절 패널: `Assets/SW/Prefabs/Debug/Artificer_Runtime_Tuning_Panel.prefab`
+- 통합 테스트 패널: `Assets/SW/Prefabs/Enemy/CombatDrones/Enemy Manual Test.prefab`
 
-팀 문서와 에디터에서는 쉬운 표현인 **파괴 연출 분신**을 사용한다. `CombatDroneDestructionProxy`는 현재 코드의 내부 클래스명이다.
+팀 문서와 에디터에서는 초심자가 역할을 바로 알 수 있도록 **파괴 연출**이라는 표현과 `EnemyDestructionVisual` 클래스명을 사용한다.
 
-`CombatDroneDestructionProxy.Play(...)`에 위치, 회전, 피격 지점, 공격 방향과 방향 힘을 전달하면 파괴가 시작된다. `Completed` 이벤트는 풀 매니저가 반납 시점을 받을 때 사용하고, `ReturnToPoolNow()`는 연출을 즉시 중단하고 분신을 비활성화할 때 사용한다.
+`EnemyDestructionVisual.Play(...)`에 위치, 회전, 피격 지점, 공격 방향과 방향 힘을 전달하면 파괴가 시작된다. `Completed` 이벤트는 풀 매니저가 반납 시점을 받을 때 사용하고, `ReturnToPoolNow()`는 연출을 즉시 중단하고 오브젝트를 비활성화할 때 사용한다.
+
+### SW 안전 생성 기능
+
+파괴 연출 프리팹은 옛 `Tools` 변환 메뉴 대신 최상단 `SW > Artificer` 메뉴에서 만든다.
+
+| 메뉴 | 기본 파괴 방식 | 생성 후 검증 |
+| --- | --- | --- |
+| `일반 적 파괴 연출 프리팹 생성 (동시)` | 모든 MeshElement 동시 해제 | MeshElement 1개 이상 |
+| `보스 파괴 연출 프리팹 생성 (순차)` | Baked 순서로 파츠별 해제 | MeshElement 2개 이상, 미달 시 생성 취소 |
+
+두 메뉴 모두 선택한 원본을 수정하지 않고 새 프리팹과 Renderer별 정적 메시, 전용 BuildData를 지정한 팀원 폴더에 만든다. 프리팹 루트에는 `Artificer`, `CombatDroneArtificerDestruction`, `ArtificerFragmentBurstProfile`, `ArtificerRuntimeTuningTarget`, `EnemyDestructionVisual`을 자동 추가하고 서로 연결한다.
+
+생성 결과가 프리팹 하나여도 순차 파괴할 수 있다. 프리팹은 파괴 연출 전체를 담는 컨테이너이고, 실제 순차 단위는 BuildData의 `MeshElement`다. Renderer가 하나여도 연결되지 않은 메시 섬이 여러 개라면 `Use Position` 분할로 여러 MeshElement가 나올 수 있다. 반대로 BuildData가 MeshElement 1개뿐인 진짜 통짜 메시라면 파츠별 순차 파괴가 불가능하므로 모델링 단계에서 파츠를 분리하거나 보스 단계별 전용 연출 프리팹·컨트롤러를 만든다.
+
+### 런타임 조절 패널의 실제 한글 항목
+
+테스트 씬에는 `Enemy Manual Test.prefab`을 하나만 둔다. 이 프리팹 안에 적 생성·리셋, 파괴 연출 풀과 `ArtificerRuntimeTuningPanel`이 함께 들어 있으므로 별도 패널 프리팹을 추가하지 않는다.
+
+패널 상단의 `현재 파괴 연출: 일반 / 보스 / 전체`는 지금 활성화되어 조절 가능한 파괴 연출 수다. 아직 적을 파괴하지 않았다면 0으로 표시될 수 있으며, 적이 죽어 분신이 활성화되면 자동으로 목록을 갱신하고 현재 값을 적용한다.
+
+| 화면 구역 | 실제 한글 항목 | 동작 |
+| --- | --- | --- |
+| `1. 파괴 방식 적용 범위` | `일반/보스 구분 유지 (추천)` | 일반 적은 동시, 보스는 순차 파괴를 유지한다. 공통 연출 값만 함께 적용한다. |
+| `1. 파괴 방식 적용 범위` | `전체 동시 파괴` | 보스를 포함한 모든 파괴 연출을 동시 방식으로 강제한다. |
+| `1. 파괴 방식 적용 범위` | `전체 순차 파괴` | 일반 적을 포함한 모든 파괴 연출을 순차 방식으로 강제한다. |
+| `보스 순차 파괴 세부 설정` / `전체 순차 파괴 세부 설정` | `전체 파괴 시간`, `공격 지점부터`, `중심부터`, `바깥부터`, `무작위`, `에셋 기본 순서` | 추천 혼합 모드에서는 `보스 순차 파괴 세부 설정`, 전체 순차 모드에서는 `전체 순차 파괴 세부 설정`으로 표시된다. 적용 대상도 각각 보스만 또는 모든 대상으로 바뀐다. |
+| `2. 파편이 남는 시간` | `최소`, `최대` | 파편별 유지 시간 범위를 정한다. |
+| `3. 파편 크기와 사라짐` | `파편 크기`, `수명이 끝날 때 파편 크기 줄이기`, `크기 감소 시작`, `Advanced Dissolve로 부드럽게 사라지기`, `디졸브 시작`, `디졸브 무늬 크기`, `빛나는 가장자리` | 파편 크기, 축소와 디졸브를 조절한다. |
+| `4. 파편 힘` | `퍼지는 힘 최소`, `퍼지는 힘 최대`, `공격 방향 힘`, `회전 세기` | 폭발 확산과 공격 방향 반응을 조절한다. |
+| `5. 움직임` | `중력`, `튕김`, `공기 저항` | 바닥에 떨어진 뒤 움직임을 조절한다. |
+| `6. 처음에 팍 튀는 속도` | `초반 폭발 속도 커브 사용`, `원래 움직임`, `강한 타격`, `묵직한 보스`, `처음 튀는 속도 배수`, `빠르게 튀는 구간`, `마지막 속도 배수`, `바닥에서 띄우는 비율`, `기존 이동 거리에 가깝게 자동 보정` | 파편이 처음에는 빠르게 튀고 수명 후반에는 느려지는 속도 곡선을 조절한다. 바닥에 붙은 파츠는 전체 속도를 키우지 않고 진행 방향만 위쪽으로 보정한다. |
+
+### 처음에는 빠르고 마지막에는 느린 파편 설정
+
+이 기능은 Artificer 원본 스크립트를 수정하지 않는다. 파괴 연출 프리팹의 `ArtificerFragmentBurstProfile`이 Artificer의 `CustomDismantle` 확장 지점에서 각 파편의 초기 속도와 이후 속도를 보정한다. 안전 생성 기능으로 만든 프리팹에는 자동으로 추가·연결되므로 팀원이 스크립트를 직접 붙일 필요가 없다.
+
+빠르게 확인하려면 다음 순서로 사용한다.
+
+1. Play 후 패널의 `6. 처음에 팍 튀는 속도`를 연다.
+2. `강한 타격`을 누른다. 기본값은 처음 강조 `3.5`, 빠른 구간 `0.10`, 마지막 속도 `0.12`, 바닥에서 띄우는 비율 `0.35`, 거리 자동 보정 사용이다.
+3. `현재 값 적용`을 누른 뒤 적을 공격한다. 아직 파괴 연출이 활성화되지 않았다면 `적 전체 다시 생성 + 적용`으로 다시 생성한다.
+4. 더 날카롭게 튀게 하려면 `처음 튀는 속도 배수`를 올리고 `빠르게 튀는 구간`을 줄인다.
+5. 무거운 파편처럼 보이게 하려면 `묵직한 보스`를 누르거나 `빠르게 튀는 구간`을 늘리고 `마지막 속도 배수`를 낮춘다.
+6. 기존보다 너무 멀리 날아가면 `기존 이동 거리에 가깝게 자동 보정`을 켠다.
+
+`빠르게 튀는 구간`은 초 단위가 아니라 파편 수명의 비율이다. 예를 들어 `0.10`은 각 파편 수명의 처음 10%다. 최소·최대 수명이 서로 달라도 각 파편에 같은 비율로 적용된다.
+
+`바닥에서 띄우는 비율`은 파편의 전체 속력은 유지하면서 초기 방향에 필요한 최소 위쪽 성분을 만든다. 권장 시작값은 `0.35`다. 바닥에 붙어 미끄러지는 느낌이면 `0.40~0.50`, 너무 위로 솟으면 `0.15~0.30`으로 조절하고, `0`이면 방향 보정과 충돌 유예를 사용하지 않는다. 이 값이 0보다 크면 파괴 직후 최대 약 `0.12초` 동안만 Ground 충돌을 유예한 뒤 원래 `Raycast` 충돌로 자동 복구하므로, 파편은 바닥에서 빠져나온 뒤 정상적으로 떨어지고 멈춘다.
+
+거리 자동 보정은 커브를 사용하지 않았을 때의 자유 비행 거리에 가깝도록 전체 속도 배율을 정규화한다. 그래서 `처음 튀는 속도 배수 3.5`는 화면에 보이는 정확한 순간 속도가 반드시 3.5배라는 뜻이 아니라 **커브 모양에서 처음을 얼마나 강하게 강조할지**를 뜻한다. 중력, 바닥 Raycast, 튕김이 개입한 뒤의 최종 정지 위치까지 완전히 같게 만드는 옵션은 아니다.
+
+프리셋의 용도는 다음과 같다.
+
+| 프리셋 | 용도 | 특징 |
+| --- | --- | --- |
+| `원래 움직임` | Artificer 기본 운동과 비교 | 속도 커브를 끈다. |
+| `강한 타격` | 일반 적의 즉각적인 폭발감 | 짧고 강한 초반 가속 뒤 빠르게 감속한다. |
+| `묵직한 보스` | 큰 파츠가 무겁게 퍼지는 연출 | 일반 적보다 초반 강조가 낮고 빠른 구간은 길며, 후반은 더 느리다. |
+
+패널 없이 실제 게임에 넣을 때도 구조는 같다. 안전 생성 프리팹에 이미 저장된 기본값을 사용하거나, 개발용 패널에서 값을 확정한 뒤 프리팹의 `ArtificerFragmentBurstProfile` 값으로 옮긴다. 런타임에 코드로 바꾸려면 `ArtificerRuntimeSettings`의 `useBurstSpeedCurve`, `initialSpeedMultiplier`, `burstDuration`, `finalSpeedMultiplier`, `groundClearanceLift`, `preserveBurstTravelDistance`를 채워 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다.
+
+`ArtificerFragmentBurstProfile`은 Artificer의 `CustomDismantle` 경로를 사용하므로, 사용자 확장에서 속도만 바꾸고 위치 적분을 생략하면 파편이 전혀 움직이지 않는다. 현재 구현은 사용자 `Remove(...)` 안에서 Artificer의 기본 `RemoveElement(...)`를 호출해 원래 중력·드래그·위치·회전·충돌 계산을 그대로 실행한 뒤 속도 곡선만 덧씌운다. 이 호출은 삭제하면 안 된다.
+
+패널 아래 버튼은 다음 순서로 사용한다.
+
+1. `현재 값 적용`: 활성화된 파괴 연출에 지금 값을 적용한다.
+2. `적 전체 다시 생성 + 적용`: Reset의 Enemy 1·2 설정으로 실제 적을 다시 만들고 값을 적용한다.
+3. `대상 목록 새로고침`: 씬의 활성 파괴 연출 목록만 다시 읽는다.
+
+일반 적과 보스를 동시에 비교할 때는 Reset의 Enemy 1에 일반 적 본체·동시 파괴 분신, Enemy 2에 보스 본체·순차 파괴 분신을 각각 한 쌍으로 넣고 생성 수를 정한다. 패널에서는 `일반/보스 구분 유지 (추천)`를 선택한다. 일반·보스 판정은 이름이 아니라 안전 생성 시 프리팹에 저장된 기본 파괴 방식으로 구분하므로, `전체 동시 파괴`를 시험한 뒤 추천 모드로 돌아와도 원래 구분을 복원한다.
 
 ## 3. 권장 풀 분리 구조
 
@@ -248,6 +318,10 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 
 ## 11. 다른 로봇에 적용하는 체크리스트
 
+- [ ] `SW > Artificer`의 일반 적 또는 보스 안전 생성 메뉴를 사용했는가?
+- [ ] 생성된 프리팹 루트에 다섯 컴포넌트가 자동 연결되어 있는가?
+- [ ] 생성된 BuildData가 팀원 폴더 아래에 있고 프리팹에 연결되어 있는가?
+- [ ] 보스 순차 파괴라면 BuildData의 MeshElement가 2개 이상인가?
 - [ ] 파괴 가능한 외형의 모든 Renderer가 Artificer 대상에 포함되어 있는가?
 - [ ] 해당 외형 전용 BuildData를 만들었는가?
 - [ ] BuildData를 인스턴스별로 안전하게 복제하는가?
@@ -264,4 +338,4 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 
 아래처럼 요청하면 된다.
 
-> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 분신 풀을 분리해 구현해 줘. 테스트용 WBHDroneManualTestReset, WBHCombatDroneDestructionTarget, CombatDroneArtificerDestruction에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDeathVfxRequest를 만들어 전달해. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.
+> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 풀을 분리해 구현해 줘. 테스트용 EnemyManualTestReset, EnemyDestructionTarget에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDeathVfxRequest를 만들어 전달해. 파괴 연출 내부의 CombatDroneArtificerDestruction은 재사용해도 된다. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.

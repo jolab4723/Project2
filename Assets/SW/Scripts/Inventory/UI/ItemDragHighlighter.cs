@@ -56,6 +56,41 @@ public class ItemDragHighlighter : MonoBehaviour
             return;
         }
 
+        ShopController shop = ShopController.Instance;
+
+        bool isSellingToShop =
+            shop != null &&
+            targetGrid == shop.ShopGrid &&
+            shop.IsTradingToShop(itemUI.OriginalGrid, itemUI);
+
+        if (isSellingToShop)
+        {
+            if (shop.TryResolveSellPosition(
+                    item,
+                    requestedCell.x,
+                    requestedCell.y,
+                    out int resolvedX,
+                    out int resolvedY))
+            {
+                CurrentSwapPlan = default;
+
+                InventoryCellRect resolvedRect =
+                    new InventoryCellRect(
+                        resolvedX,
+                        resolvedY,
+                        item.CurrentWidth,
+                        item.CurrentHeight);
+
+                ShowMovePreview(targetGrid, resolvedRect);
+            }
+            else
+            {
+                CurrentSwapPlan = default;
+                ShowInvalidPreview(targetGrid, requestedRect);
+            }
+
+            return;
+        }
         if (targetGrid != itemUI.OriginalGrid || itemUI.OriginalWasEquipped)
         {
             CurrentSwapPlan = default;

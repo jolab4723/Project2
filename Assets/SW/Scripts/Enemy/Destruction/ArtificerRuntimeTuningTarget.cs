@@ -35,6 +35,12 @@ public sealed class ArtificerRuntimeSettings
     [Range(0f, 1f)] public float bounce = 0.15f;
     [Min(0f)] public float linearDrag = 0.12f;
     [Min(0f)] public float angularDrag = 0.1f;
+    public bool useBurstSpeedCurve = true;
+    [Range(1f, 6f)] public float initialSpeedMultiplier = 3.5f;
+    [Range(0.02f, 0.4f)] public float burstDuration = 0.1f;
+    [Range(0.02f, 1f)] public float finalSpeedMultiplier = 0.12f;
+    [Range(0f, 0.75f)] public float groundClearanceLift = 0.35f;
+    public bool preserveBurstTravelDistance = true;
     [Range(0.1f, 1.5f)] public float fragmentScale = 1f;
     public bool shrinkFragments = true;
     [Range(0f, 0.95f)] public float shrinkStart = 0.7f;
@@ -61,6 +67,10 @@ public sealed class ArtificerRuntimeSettings
         bounce = Mathf.Clamp01(bounce);
         linearDrag = Mathf.Max(0f, linearDrag);
         angularDrag = Mathf.Max(0f, angularDrag);
+        initialSpeedMultiplier = Mathf.Clamp(initialSpeedMultiplier, 1f, 6f);
+        burstDuration = Mathf.Clamp(burstDuration, 0.02f, 0.4f);
+        finalSpeedMultiplier = Mathf.Clamp(finalSpeedMultiplier, 0.02f, 1f);
+        groundClearanceLift = Mathf.Clamp(groundClearanceLift, 0f, 0.75f);
         fragmentScale = Mathf.Clamp(fragmentScale, 0.1f, 1.5f);
         shrinkStart = Mathf.Clamp(shrinkStart, 0f, 0.95f);
         dissolveStart = Mathf.Clamp(dissolveStart, 0f, 0.95f);
@@ -83,6 +93,12 @@ public sealed class ArtificerRuntimeSettings
         bounce = source.bounce;
         linearDrag = source.linearDrag;
         angularDrag = source.angularDrag;
+        useBurstSpeedCurve = source.useBurstSpeedCurve;
+        initialSpeedMultiplier = source.initialSpeedMultiplier;
+        burstDuration = source.burstDuration;
+        finalSpeedMultiplier = source.finalSpeedMultiplier;
+        groundClearanceLift = source.groundClearanceLift;
+        preserveBurstTravelDistance = source.preserveBurstTravelDistance;
         fragmentScale = source.fragmentScale;
         shrinkFragments = source.shrinkFragments;
         shrinkStart = source.shrinkStart;
@@ -114,12 +130,15 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
 
     [SerializeField] private Artificer artificer;
     [SerializeField] private Texture2D dissolveMap;
+    [SerializeField] private ArtificerFragmentBurstProfile fragmentBurstProfile;
     [SerializeField] private ArtificerRuntimeSettings activeSettings =
         new ArtificerRuntimeSettings();
 
     private BuildData runtimeBuildData;
     private bool ownsRuntimeBuildData;
     private List<int> bakedOrder;
+    private bool hasPrefabReleaseMode;
+    private ArtificerRuntimeReleaseMode prefabReleaseMode;
     private readonly Dictionary<Material, Material> dissolveMaterials =
         new Dictionary<Material, Material>();
     private readonly Dictionary<Material, Material> dissolveSources =
@@ -134,11 +153,21 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
         : 0f;
     public ArtificerRuntimeOrderMode OrderMode => activeSettings.orderMode;
     public ArtificerRuntimeReleaseMode ReleaseMode => activeSettings.releaseMode;
+    public ArtificerRuntimeReleaseMode PrefabReleaseMode
+    {
+        get
+        {
+            CapturePrefabReleaseMode();
+            return prefabReleaseMode;
+        }
+    }
 
     public void Initialize(Artificer source = null)
     {
         if (source != null) artificer = source;
         if (artificer == null) artificer = GetComponent<Artificer>();
+        EnsureBurstProfile();
+        CapturePrefabReleaseMode();
         if (artificer == null || artificer.buildData == null) return;
 
         if (!ownsRuntimeBuildData)
@@ -180,6 +209,8 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
         destination.bounce = artificer.bounce;
         destination.linearDrag = artificer.linearDrag;
         destination.angularDrag = artificer.angularDrag;
+        if (fragmentBurstProfile != null)
+            fragmentBurstProfile.CaptureSettings(destination);
         destination.shrinkFragments = artificer.useDisPlaceScaleCurve;
         destination.randomSeed = artificer.seed;
         destination.Clamp();
@@ -194,6 +225,17 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
 
         settings.Clamp();
         activeSettings.CopyFrom(settings);
+
+        // Artificer.Dismantle() expects its private dismantle list to keep the
+        // same size as buildLevel until the current effect finishes. Clearing
+        // that list while an effect is playing causes an out-of-range access
+        // on the next Artificer update. Keep the requested values and apply
+        // them when this pooled visual is prepared for its next playback.
+        if (artificer.buildMode == BuildMode.Dismantle)
+        {
+            return;
+        }
+
         artificer.dismantleTime = settings.releaseMode ==
             ArtificerRuntimeReleaseMode.Simultaneous
             ? SimultaneousDismantleTime
@@ -211,6 +253,17 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
         artificer.bounce = settings.bounce;
         artificer.linearDrag = settings.linearDrag;
         artificer.angularDrag = settings.angularDrag;
+        EnsureBurstProfile();
+        if (fragmentBurstProfile != null)
+        {
+            fragmentBurstProfile.Configure(
+                settings.useBurstSpeedCurve,
+                settings.initialSpeedMultiplier,
+                settings.burstDuration,
+                settings.finalSpeedMultiplier,
+                settings.groundClearanceLift,
+                settings.preserveBurstTravelDistance);
+        }
         artificer.useDisPlaceScaleCurve = settings.shrinkFragments ||
             !Mathf.Approximately(settings.fragmentScale, 1f);
         artificer.disPlaceScaleCurve = CreateShrinkCurve(
@@ -242,10 +295,33 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
         artificer.ClearDismantle();
     }
 
+    public void ApplySettingsPreservingPrefabReleaseMode(
+        ArtificerRuntimeSettings settings)
+    {
+        if (settings == null)
+            return;
+
+        CapturePrefabReleaseMode();
+        ArtificerRuntimeSettings combined = new ArtificerRuntimeSettings();
+        combined.CopyFrom(settings);
+        combined.releaseMode = prefabReleaseMode;
+        ApplySettings(combined);
+    }
+
     public void PrepareForDismantle(Vector3 localImpactPoint)
     {
         Initialize();
         if (artificer == null || artificer.buildData == null) return;
+
+        // Artificer.Init() runs on the first active frame and can rebuild its
+        // cached dismantle data from the prefab defaults. That happens after
+        // Awake-time/pool-time settings have already been applied. Reapply the
+        // current values at the actual destruction boundary so the first use
+        // and every pooled reuse both start with Explode physics and the same
+        // burst profile.
+        if (activeSettings != null)
+            ApplySettings(activeSettings);
+        InvalidateIncompleteRenderCaches();
 
         List<int> order = artificer.buildData.sorted;
         switch (activeSettings.orderMode)
@@ -270,6 +346,38 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
                 break;
         }
         artificer.ClearDismantle();
+    }
+
+    private void InvalidateIncompleteRenderCaches()
+    {
+        if (artificer == null || artificer.buildData == null)
+            return;
+
+        foreach (MeshElement element in EnumerateElements(
+                     artificer.buildData.meshes))
+        {
+            if (element == null || element.mesh == null)
+                continue;
+
+            int drawCount = element.draw != null ? element.draw.Count : 0;
+            if (element.rp != null && element.rp.Length == drawCount)
+                continue;
+
+            // Artificer only creates RenderParams inside the same branch that
+            // rebuilds a null Mesh. A transient editor Mesh can survive in the
+            // cloned BuildData while RenderParams cannot, which otherwise
+            // stops Dismantle() on its first render. Clearing only the runtime
+            // clone lets Artificer rebuild both caches together.
+            element.mesh = null;
+            element.rp = null;
+        }
+    }
+
+    public void ResetTransientState()
+    {
+        EnsureBurstProfile();
+        if (fragmentBurstProfile != null)
+            fragmentBurstProfile.ResetProfileState();
     }
 
     private float DistanceSquared(int index, Vector3 point)
@@ -520,9 +628,40 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
 
     private void Awake()
     {
+        CapturePrefabReleaseMode();
         Initialize();
         if (activeSettings != null)
             ApplySettings(activeSettings);
+    }
+
+    private void EnsureBurstProfile()
+    {
+        if (fragmentBurstProfile == null)
+            fragmentBurstProfile = GetComponent<ArtificerFragmentBurstProfile>();
+        if (fragmentBurstProfile == null && Application.isPlaying)
+            fragmentBurstProfile = gameObject.AddComponent<ArtificerFragmentBurstProfile>();
+        if (fragmentBurstProfile != null)
+            fragmentBurstProfile.Initialize(artificer);
+    }
+
+    private void CapturePrefabReleaseMode()
+    {
+        if (hasPrefabReleaseMode)
+            return;
+
+        if (activeSettings != null)
+        {
+            prefabReleaseMode = activeSettings.releaseMode;
+        }
+        else if (artificer != null)
+        {
+            prefabReleaseMode = artificer.dismantleTime <=
+                SimultaneousDismantleTime * 2f
+                ? ArtificerRuntimeReleaseMode.Simultaneous
+                : ArtificerRuntimeReleaseMode.Sequential;
+        }
+
+        hasPrefabReleaseMode = true;
     }
 
     private void OnDestroy()

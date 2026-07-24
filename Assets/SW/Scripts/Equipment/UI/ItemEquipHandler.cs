@@ -410,10 +410,10 @@ public class ItemEquipHandler : MonoBehaviour
         previousSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        bool sold = shop.ConfirmSell(
-            itemUI,
-            targetCell.x,
-            targetCell.y);
+        bool sold = shop.RequestSell(
+                    itemUI,
+                    targetCell.x,
+                    targetCell.y);
 
         if (sold)
             return true;

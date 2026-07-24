@@ -782,7 +782,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6992279550769587886, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: m_Name
-      value: Drone Manual Test
+      value: Enemy Manual Test
+      objectReference: {fileID: 0}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy1Count
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy2Count
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy1Prefab
+      value: 
+      objectReference: {fileID: 8625115385302485139, guid: bc799e0dd669fa649b404be315816703, type: 3}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy2Prefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy1DestructionVisualPrefab
+      value: 
+      objectReference: {fileID: 214506587219290412, guid: 4af9aa12be61a374fb11c1e03fea9503, type: 3}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy2DestructionVisualPrefab
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12969,9 +12993,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 176e3eb7f084dee459c40f5315026aab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerInputHandler
-  enemyLayer:
+  inputBlockLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 0
 --- !u!4 &6743953319533957639
 Transform:
   m_ObjectHideFlags: 0

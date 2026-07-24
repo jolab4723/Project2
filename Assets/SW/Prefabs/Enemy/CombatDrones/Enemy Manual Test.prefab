@@ -1,0 +1,118 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6992279550769587886
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1038570651803111324}
+  - component: {fileID: 8895581519448211860}
+  - component: {fileID: 1901558651301216123}
+  - component: {fileID: 769819615162958435}
+  m_Layer: 0
+  m_Name: Enemy Manual Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1038570651803111324
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6992279550769587886}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8895581519448211860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6992279550769587886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2247886f2bd060848a6e26a1527fae6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyManualTestReset
+  enemy1Prefab: {fileID: 5638673341845258149, guid: 64b6b4a2891ee1942bf1642c5de4cdf7, type: 3}
+  enemy2Prefab: {fileID: 8604237069605042827, guid: edb995453e6568b4f89ace0ee6a9e356, type: 3}
+  enemy1DestructionVisualPrefab: {fileID: 0}
+  enemy2DestructionVisualPrefab: {fileID: 0}
+  currentEnemy1: {fileID: 0}
+  currentEnemy2: {fileID: 0}
+  enemy1Position: {x: 0, y: 1, z: 1.45}
+  enemy1Rotation: {x: 0, y: 180, z: 0}
+  enemy2Position: {x: 3.5, y: 1, z: 0}
+  enemy2Rotation: {x: 0, y: 90, z: 0}
+  enemy1Count: 6
+  enemy2Count: 6
+  gridColumns: 4
+  horizontalSpacing: 3
+  depthSpacing: 2.8
+  formationCenter: {x: 1.75, y: 1, z: 4.5}
+  alternateVariants: 1
+  enemyHealth: 1
+  directionalForce: 4.5
+  enemyLayer: 10
+  resetKey: 114
+--- !u!114 &1901558651301216123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6992279550769587886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 990e8e4f7c2c61a48af0f25a169988f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArtificerRuntimeTuningPanel
+  applyToAll: 1
+  collapsed: 0
+  loadFirstTargetOnStart: 1
+  settings:
+    releaseMode: 1
+    dismantleTime: 0.3
+    minimumLifetime: 2.5
+    maximumLifetime: 4
+    minimumRadialForce: 0.8
+    maximumRadialForce: 2.8
+    directionalForce: 5.5
+    angularSpeed: 180
+    gravity: 1.35
+    bounce: 0.15
+    linearDrag: 0.25
+    angularDrag: 0.2
+    fragmentScale: 1
+    shrinkFragments: 1
+    shrinkStart: 0.7
+    useDissolve: 1
+    dissolveStart: 0.65
+    dissolvePatternScale: 2.5
+    dissolveEdgeWidth: 0.06
+    orderMode: 0
+    randomSeed: 404
+--- !u!114 &769819615162958435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6992279550769587886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 030491c89b4c04745a0af8ff78d64aa8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionVisualPool

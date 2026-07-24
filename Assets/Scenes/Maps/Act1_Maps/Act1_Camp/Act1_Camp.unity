@@ -16783,13 +16783,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7cf0d5ae2e938f469827d56d16bf6e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropAcquireTester
-  testItem: {fileID: 11400000, guid: 1713642df37d32b408d296328da7943b, type: 2}
-  itemGenerator: {fileID: 5690890092821034267}
+  itemPickupPrefab: {fileID: 0}
+  itemDropTable: {fileID: 0}
+  enemyGrade: 0
   receiverBehaviour: {fileID: 455065817154530570}
   spawnPoint: {fileID: 8799285441460947305}
-  dropOnStart: 0
-  dropKey: 0
-  acquireKey: 0
   testUpgradeLevel: 0
 --- !u!224 &997284677864672631
 RectTransform:
@@ -22788,7 +22786,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -290, y: 600}
+  m_AnchoredPosition: {x: -280, y: 600}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &3271342647699420547
@@ -28619,7 +28617,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71ff555f4c00dba46bc20fcf9d877362, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemGenerator
-  itemPickupPrefab: {fileID: 0}
 --- !u!1 &5694025658358826164
 GameObject:
   m_ObjectHideFlags: 0
