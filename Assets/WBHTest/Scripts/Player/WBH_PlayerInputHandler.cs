@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class WBH_PlayerInputHandler : MonoBehaviour
 {
     //[SerializeField] private PlayerSkillSystem skillSystem; // 우진님 스킬시스템 연결
 
-    [SerializeField] LayerMask enemyLayer;
+    [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어
 
     private Camera mainCamera;
 
@@ -26,23 +27,25 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         HandleMoveInput();
         HandleAttackInput();
         HandleDodgeInput();
-        HandlePortionInput();
 
-        HandleOpenUIInput();
-
+        //HandlePortionInput();
+        //HandleOpenUIInput();
         //HandleSkillInput(); // 스킬 연결 시, 활성화
     }
 
     // 이동
     private void HandleMoveInput()
     {
-        if (!Input.GetMouseButtonDown(1))
+        if (!Input.GetMouseButtonDown(1) || IsPointerOverUI())
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
+            if (((1 << hit.collider.gameObject.layer) & inputBlockLayer) != 0)
+                return;
+
             combat.CancelChase();
             controller.MoveCommand(hit.point);
         }
@@ -51,10 +54,16 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     // 공격
     private void HandleAttackInput()
     {
-        if (!Input.GetMouseButtonDown(0))
+        if (!Input.GetMouseButtonDown(0) || IsPointerOverUI())
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if(Physics.Raycast(ray, out RaycastHit hit))
+        {
+            if (((1 << hit.collider.gameObject.layer) & inputBlockLayer) != 0)
+                return;
+        }
 
         Plane plane = new Plane(Vector3.up, Vector3.zero);
 
@@ -75,44 +84,51 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         }
     }
 
-    // 포션 사용
-    private void HandlePortionInput()
+    // 마우스 포인터가 UI위에 올라가있는지 체크하는 메서드
+    private bool IsPointerOverUI()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+    }
+
+
+    //// 포션 사용
+    //private void HandlePortionInput()
+    //{
+    //    if (Input.GetKeyDown(KeyCode.Q))
+    //    {
             
-        }
-    }
+    //    }
+    //}
     
-    // UI 단축키
-    private void HandleOpenUIInput()
-    {
-        // 환경설정 
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
+    //// UI 단축키
+    //private void HandleOpenUIInput()
+    //{
+    //    // 환경설정 
+    //    if (Input.GetKeyDown(KeyCode.Escape))
+    //    {
 
-        }
-        // 스킬트리
-        if (Input.GetKeyDown(KeyCode.K))
-        {
+    //    }
+    //    // 스킬트리
+    //    if (Input.GetKeyDown(KeyCode.K))
+    //    {
 
-        }
-        // 인벤토리
-        if (Input.GetKeyDown(KeyCode.I))
-        {
+    //    }
+    //    // 인벤토리
+    //    if (Input.GetKeyDown(KeyCode.I))
+    //    {
 
-        }
-        // 스탯패널
-        if (Input.GetKeyDown(KeyCode.P))
-        {
+    //    }
+    //    // 스탯패널
+    //    if (Input.GetKeyDown(KeyCode.P))
+    //    {
 
-        }
-        // 퀘스트 패널
-        if (Input.GetKeyDown(KeyCode.O))
-        {
+    //    }
+    //    // 퀘스트 패널
+    //    if (Input.GetKeyDown(KeyCode.O))
+    //    {
 
-        }
-    }
+    //    }
+    //}
 
 
 
