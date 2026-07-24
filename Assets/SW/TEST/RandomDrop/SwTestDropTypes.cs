@@ -39,7 +39,7 @@ namespace SW.Test.RandomDrop
     [Serializable]
     public class SwTestMonsterDropRate
     {
-        public SwTestMonsterDropGrade monsterGrade;
+        public EnemyGrade monsterGrade;
         [Range(0f, 100f)] public float itemDropChance;
         public List<SwTestRarityChance> rarityChances = new List<SwTestRarityChance>();
     }
@@ -49,12 +49,12 @@ namespace SW.Test.RandomDrop
     {
         public bool success;
         public string failReason;
-        public SwTestMonsterDropGrade monsterGrade;
+        public EnemyGrade monsterGrade;
         public ItemRarity rarity;
         public SwTestDropItemKind itemKind;
         public ItemDefinitionSO itemDefinition;
 
-        public static SwTestEquipmentDropResult Failed(SwTestMonsterDropGrade monsterGrade, string reason)
+        public static SwTestEquipmentDropResult Failed(EnemyGrade monsterGrade, string reason)
         {
             return new SwTestEquipmentDropResult
             {
@@ -65,7 +65,7 @@ namespace SW.Test.RandomDrop
         }
 
         public static SwTestEquipmentDropResult Succeeded(
-            SwTestMonsterDropGrade monsterGrade,
+            EnemyGrade monsterGrade,
             ItemRarity rarity,
             SwTestDropItemKind itemKind,
             ItemDefinitionSO itemDefinition)

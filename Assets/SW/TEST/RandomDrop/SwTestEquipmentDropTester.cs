@@ -21,7 +21,7 @@ namespace SW.Test.RandomDrop
         [SerializeField] private string itemDefinitionFolder = "Assets/SW/TEST/ItemTablePipeline/GeneratedAssets/Items";
 
         [Header("시뮬레이션")]
-        [SerializeField] private SwTestMonsterDropGrade simulationGrade = SwTestMonsterDropGrade.Normal;
+        [SerializeField] private EnemyGrade simulationGrade = EnemyGrade.Normal;
         [SerializeField] private int simulationCount = 1000;
 
         private void Start()
@@ -39,16 +39,16 @@ namespace SW.Test.RandomDrop
                 return;
 
             if (keyboard.digit1Key.wasPressedThisFrame)
-                RollOnce(SwTestMonsterDropGrade.Normal);
+                RollOnce(EnemyGrade.Normal);
 
             if (keyboard.digit2Key.wasPressedThisFrame)
-                RollOnce(SwTestMonsterDropGrade.Champion);
+                RollOnce(EnemyGrade.Advanced);
 
             if (keyboard.digit3Key.wasPressedThisFrame)
-                RollOnce(SwTestMonsterDropGrade.Elite);
+                RollOnce(EnemyGrade.Elite);
 
             if (keyboard.digit4Key.wasPressedThisFrame)
-                RollOnce(SwTestMonsterDropGrade.Boss);
+                RollOnce(EnemyGrade.Boss);
 
             if (keyboard.f5Key.wasPressedThisFrame)
                 Simulate(simulationGrade, simulationCount);
@@ -57,25 +57,25 @@ namespace SW.Test.RandomDrop
         [ContextMenu("일반 몬스터 1회 드랍 테스트")]
         public void RollNormalOnce()
         {
-            RollOnce(SwTestMonsterDropGrade.Normal);
+            RollOnce(EnemyGrade.Normal);
         }
 
         [ContextMenu("대장급 일반 1회 드랍 테스트")]
         public void RollChampionOnce()
         {
-            RollOnce(SwTestMonsterDropGrade.Champion);
+            RollOnce(EnemyGrade.Advanced);
         }
 
         [ContextMenu("엘리트 1회 드랍 테스트")]
         public void RollEliteOnce()
         {
-            RollOnce(SwTestMonsterDropGrade.Elite);
+            RollOnce(EnemyGrade.Elite);
         }
 
         [ContextMenu("보스 1회 드랍 테스트")]
         public void RollBossOnce()
         {
-            RollOnce(SwTestMonsterDropGrade.Boss);
+            RollOnce(EnemyGrade.Boss);
         }
 
         [ContextMenu("선택 등급 시뮬레이션")]
@@ -84,7 +84,7 @@ namespace SW.Test.RandomDrop
             Simulate(simulationGrade, simulationCount);
         }
 
-        public SwTestEquipmentDropResult RollOnce(SwTestMonsterDropGrade monsterGrade)
+        public SwTestEquipmentDropResult RollOnce(EnemyGrade monsterGrade)
         {
             SwTestEquipmentDropResult result = SwTestEquipmentDropService.Roll(dropTable, itemDefinitions, monsterGrade);
             string monsterName = SwTestEquipmentDropService.GetMonsterGradeName(monsterGrade);
@@ -109,7 +109,7 @@ namespace SW.Test.RandomDrop
                 && !string.IsNullOrEmpty(result.failReason)
                 && result.failReason.StartsWith(SwTestEquipmentDropService.NoCandidateItemReasonPrefix);
         }
-        public void Simulate(SwTestMonsterDropGrade monsterGrade, int count)
+        public void Simulate(EnemyGrade monsterGrade, int count)
         {
             count = Mathf.Max(1, count);
             Dictionary<ItemRarity, int> rarityCounts = CreateEnumCountMap<ItemRarity>();
@@ -192,7 +192,7 @@ namespace SW.Test.RandomDrop
         }
 
 private static string BuildSimulationLog(
-            SwTestMonsterDropGrade monsterGrade,
+            EnemyGrade monsterGrade,
             int totalCount,
             int seed,
             int successCount,

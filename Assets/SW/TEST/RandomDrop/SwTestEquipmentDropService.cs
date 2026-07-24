@@ -13,7 +13,7 @@ namespace SW.Test.RandomDrop
         public static SwTestEquipmentDropResult Roll(
             SwTestEquipmentDropTableSO table,
             IReadOnlyList<ItemDefinitionSO> itemDefinitions,
-            SwTestMonsterDropGrade monsterGrade,
+            EnemyGrade monsterGrade,
             System.Random random = null)
         {
             if (table == null)
@@ -99,17 +99,17 @@ namespace SW.Test.RandomDrop
             }
         }
 
-        public static string GetMonsterGradeName(SwTestMonsterDropGrade monsterGrade)
+        public static string GetMonsterGradeName(EnemyGrade monsterGrade)
         {
             switch (monsterGrade)
             {
-                case SwTestMonsterDropGrade.Normal:
+                case EnemyGrade.Normal:
                     return "일반";
-                case SwTestMonsterDropGrade.Champion:
+                case EnemyGrade.Advanced:
                     return "대장급 일반";
-                case SwTestMonsterDropGrade.Elite:
+                case EnemyGrade.Elite:
                     return "엘리트";
-                case SwTestMonsterDropGrade.Boss:
+                case EnemyGrade.Boss:
                     return "보스";
                 default:
                     return monsterGrade.ToString();
