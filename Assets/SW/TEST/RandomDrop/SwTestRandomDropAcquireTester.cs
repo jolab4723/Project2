@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.UI;
+using Core;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -29,7 +31,7 @@ namespace SW.Test.RandomDrop
 
         [Header("랜덤 드랍 설정")]
         [SerializeField] private SwTestEquipmentDropTableSO dropTable;
-        [SerializeField] private SwTestMonsterDropGrade monsterGrade = SwTestMonsterDropGrade.Normal;
+        [SerializeField] private EnemyGrade monsterGrade = EnemyGrade.Normal;
         [SerializeField] private List<ItemDefinitionSO> itemDefinitions = new List<ItemDefinitionSO>();
         [SerializeField] private string generatedItemFolder = DefaultGeneratedItemFolder;
 
@@ -85,9 +87,10 @@ private void OnEnable()
                 return;
             }
 
-            
+
 
             ItemInstance instance = CreateItemInstance(result.itemDefinition);
+            RefreshGetItemButton();
 
             if (instance == null)
             {
@@ -171,10 +174,10 @@ private void OnEnable()
             RefreshGetItemButton();
         }
 
-        public void SetMonsterGradeNormal() => monsterGrade = SwTestMonsterDropGrade.Normal;
-        public void SetMonsterGradeChampion() => monsterGrade = SwTestMonsterDropGrade.Champion;
-        public void SetMonsterGradeElite() => monsterGrade = SwTestMonsterDropGrade.Elite;
-        public void SetMonsterGradeBoss() => monsterGrade = SwTestMonsterDropGrade.Boss;
+        public void SetMonsterGradeNormal() => monsterGrade = EnemyGrade.Normal;
+        public void SetMonsterGradeAdvanced() => monsterGrade = EnemyGrade.Advanced;
+        public void SetMonsterGradeElite() => monsterGrade = EnemyGrade.Elite;
+        public void SetMonsterGradeBoss() => monsterGrade = EnemyGrade.Boss;
         public void PrepareRandomItemData()
         {
             if (!TryRollRandomItem(

@@ -13,7 +13,7 @@ namespace SW.Test.RandomDrop
         [Header("드랍 성공 시 장비 종류 확률 - 유물 제외")]
         public List<SwTestItemKindChance> itemKindChances = new List<SwTestItemKindChance>();
 
-        public SwTestMonsterDropRate GetMonsterRule(SwTestMonsterDropGrade monsterGrade)
+        public SwTestMonsterDropRate GetMonsterRule(EnemyGrade monsterGrade)
         {
             for (int i = 0; i < monsterDropRates.Count; i++)
             {
@@ -28,10 +28,10 @@ namespace SW.Test.RandomDrop
         {
             monsterDropRates = new List<SwTestMonsterDropRate>
             {
-                CreateMonsterRule(SwTestMonsterDropGrade.Normal, 25f, 85f, 10f, 3f, 1.5f, 0.5f),
-                CreateMonsterRule(SwTestMonsterDropGrade.Champion, 55f, 55f, 25f, 13f, 5f, 2f),
-                CreateMonsterRule(SwTestMonsterDropGrade.Elite, 100f, 10f, 20f, 30f, 30f, 10f),
-                CreateMonsterRule(SwTestMonsterDropGrade.Boss, 100f, 0f, 0f, 35f, 35f, 30f),
+                CreateMonsterRule(EnemyGrade.Normal, 25f, 85f, 10f, 3f, 1.5f, 0.5f),
+                CreateMonsterRule(EnemyGrade.Advanced, 55f, 55f, 25f, 13f, 5f, 2f),
+                CreateMonsterRule(EnemyGrade.Elite, 100f, 10f, 20f, 30f, 30f, 10f),
+                CreateMonsterRule(EnemyGrade.Boss, 100f, 0f, 0f, 35f, 35f, 30f),
             };
 
             itemKindChances = new List<SwTestItemKindChance>
@@ -68,7 +68,7 @@ namespace SW.Test.RandomDrop
         }
 
         private static SwTestMonsterDropRate CreateMonsterRule(
-            SwTestMonsterDropGrade monsterGrade,
+            EnemyGrade monsterGrade,
             float itemDropChance,
             float common,
             float advanced,
