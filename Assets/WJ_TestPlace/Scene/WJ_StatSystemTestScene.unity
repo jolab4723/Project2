@@ -16768,19 +16768,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &3067193876446413051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8232232210780306025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71ff555f4c00dba46bc20fcf9d877362, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemGenerator
-  itemPickupPrefab: {fileID: 9040515642582385264, guid: 1c7128164625f6f489d59221b0164ce3, type: 3}
 --- !u!114 &3067296617754543680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27772,8 +27759,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7cf0d5ae2e938f469827d56d16bf6e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropAcquireTester
-  itemPickupPrefab: {fileID: 0}
-  itemGenerator: {fileID: 3067193876446413051}
+  itemPickupPrefab: {fileID: 9040515642582385264, guid: 1c7128164625f6f489d59221b0164ce3, type: 3}
   itemDropTable: {fileID: 11400000, guid: c3308f518ba21aa4984956464fd0703b, type: 2}
   enemyGrade: 1
   receiverBehaviour: {fileID: 69723871576222033}
@@ -27863,7 +27849,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TestButtonController
   inventoryPopup: {fileID: 3990990785208754652}
   passivePopup: {fileID: 1156429652}
-  itemGenerator: {fileID: 3067193876446413051}
+  itemSystemController: {fileID: 7339898194860432243}
   testDropItem: {fileID: 11400000, guid: 9f3213ea2b00fbb4fa8f83f36e5f7371, type: 2}
   dropPoint: {fileID: 6189266170077043912}
   getItemBtn: {fileID: 3820168274813173659}
@@ -30020,7 +30006,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 256344341455121984}
-  - component: {fileID: 3067193876446413051}
   - component: {fileID: 7339898194860432243}
   m_Layer: 0
   m_Name: ItemSystemController

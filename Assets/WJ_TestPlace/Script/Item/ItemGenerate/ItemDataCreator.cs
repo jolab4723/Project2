@@ -47,14 +47,16 @@ namespace ItemSystem
         // SO로 아이템 데이터 생성 (옵션 직접 지정)
         public static ItemInstance CreateCustumItemData(ItemDefinitionSO def)
         {
+            /*
             var instance = new ItemInstance
             {
                 instanceId = Guid.NewGuid().ToString(),
                 definition = def
                 // upgradeLevel은 선언부 기본값(0) 그대로 사용
             };
-
-            return instance;
+            */
+            // 커스텀 기능 미구현, 랜덤 생성값으로 리턴
+            return CreateItemData(def);
         }
 
         #region 랜덤 옵션 파트
