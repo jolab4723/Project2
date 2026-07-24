@@ -1,9 +1,10 @@
+using HighlightPlus;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public class YJ_OutlineOnMouseHover : MonoBehaviour
 {
-    [SerializeField] private Outline targetOutline;
+    [SerializeField] private HighlightEffect targetHighlightEffect;
     [SerializeField] private YJ_NameTag nameTag;
     [SerializeField] private Camera worldCamera;
     [SerializeField] private Vector3 nameTagWorldOffset = new Vector3(0f, 3f, 0f);
@@ -14,12 +15,12 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
     private void Reset()
     {
-        FindTargetOutline();
+        FindHighlightEffect();
     }
 
     private void Awake()
     {
-        FindTargetOutline();
+        FindHighlightEffect();
 
         if (worldCamera == null)
             worldCamera = Camera.main;
@@ -27,7 +28,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
     private void Start()
     {
-        SetOutlineVisible(false);
+        SetHighlightVisible(false);
 
         if (nameTag != null)
             nameTag.Active(false);
@@ -42,7 +43,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void OnDisable()
     {
         isHovered = false;
-        SetOutlineVisible(false);
+        SetHighlightVisible(false);
 
         if (nameTag != null)
             nameTag.Active(false);
@@ -51,8 +52,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void OnMouseEnter()
     {
         isHovered = true;
-        SetOutlineVisible(true);
-        nameTag.ChangeText(objectName);
+        SetHighlightVisible(true);
         UpdateNameTagPosition();
 
         if (nameTag != null)
@@ -65,27 +65,27 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void OnMouseExit()
     {
         isHovered = false;
-        SetOutlineVisible(false);
+        SetHighlightVisible(false);
 
         if (nameTag != null)
             nameTag.Active(false);
     }
 
-    private void FindTargetOutline()
+    private void FindHighlightEffect()
     {
-        if (targetOutline != null)
+        if (targetHighlightEffect != null)
             return;
 
-        targetOutline = GetComponent<Outline>();
+        targetHighlightEffect = GetComponent<HighlightEffect>();
 
-        if (targetOutline == null)
-            targetOutline = GetComponentInParent<Outline>();
+        if (targetHighlightEffect == null)
+            targetHighlightEffect = GetComponentInParent<HighlightEffect>();
     }
 
-    private void SetOutlineVisible(bool isVisible)
+    private void SetHighlightVisible(bool isVisible)
     {
-        if (targetOutline != null && targetOutline.enabled != isVisible)
-            targetOutline.enabled = isVisible;
+        if (targetHighlightEffect != null)
+            targetHighlightEffect.SetHighlighted(isVisible);
     }
 
     private void UpdateNameTagPosition()
