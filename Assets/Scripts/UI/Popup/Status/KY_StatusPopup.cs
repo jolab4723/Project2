@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,28 +32,35 @@ public class KY_StatusPopup : KY_PopupBase
     private bool isDetailed = false;
 
     private KY_SlideAnimator slideAnimator;
+    private KY_CurtainEffect curtainEffect;
 
     void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
+        curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
     }
 
     public override void Open()
     {
         gameObject.SetActive(true);
-        slideAnimator.SlideIn();
         RequestData();
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(slideAnimator.SlideIn());
+        seq.AppendCallback(() => curtainEffect.Open());
     }
 
     public override void Close()
     {
-        slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        Sequence seq = DOTween.Sequence();
+        seq.Append(curtainEffect.Close());
+        seq.AppendCallback(() => slideAnimator.SlideOut(() => gameObject.SetActive(false)));
     }
 
     void RequestData()
     {
-        // 테스트용 더미 데이터
+        // 테스트용 더미 데이터 ( 추후 삭제할 것 )
         KY_StatData dummyData = new KY_StatData
         {
             hp = new KY_StatTypeData { baseValue = 300, equipValue = 150, buffValue = 50 },

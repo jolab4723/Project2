@@ -1,24 +1,18 @@
+using DG.Tweening;
 using UnityEngine;
-using System.Collections;
 
-public enum SlideType
-{
-    Lerp,
-    MoveTowards
-}
-
+// 옆에서 나오는 방식의 팝업의 애니메이션 코드입니다.
 public class KY_SlideAnimator : MonoBehaviour
 {
-    public float slideSpeed = 10f;
-    public float hiddenOffsetX = 0f;
-    public SlideType inslideType = SlideType.Lerp;
-    public SlideType outslideType = SlideType.Lerp;
-
+    [Header("수치 조정")]
+    public float duration = 0.35f;      // 지연
+    public Ease inEase = Ease.OutBack;  // 나가는 속도
+    public Ease outEase = Ease.InBack;  // 들어오는 속도
+    public float hiddenOffsetX = 0f;    // 들어가는 위치
+    
     private RectTransform rectTransform;
-    private Vector2 originalPosition;
-    private Vector2 hiddenPosition;
-
-    private Coroutine currentCoroutine;
+    private Vector2 originalPosition;       // 원래 위치
+    private Vector2 hiddenPosition;         // 숨는 위치
 
     void Awake()
     {
@@ -31,66 +25,17 @@ public class KY_SlideAnimator : MonoBehaviour
         rectTransform.anchoredPosition = hiddenPosition;
     }
 
-    public void SlideIn()
+    // 팝업이 들어올 때 호출
+    public Tween SlideIn()
     {
-        if (currentCoroutine != null) StopCoroutine(currentCoroutine);
-        currentCoroutine = StartCoroutine(DoSlideIn());
+        return rectTransform.DOAnchorPos(originalPosition, duration).SetEase(inEase);
     }
 
-    public void SlideOut(System.Action onComplete)
-    {
-        if (currentCoroutine != null) StopCoroutine(currentCoroutine);
-        currentCoroutine = StartCoroutine(DoSlideOut(onComplete));
-    }
-
-    IEnumerator DoSlideIn()
-    {
-        while (Vector2.Distance(rectTransform.anchoredPosition, originalPosition) > 0.1f)
-        {
-            if (inslideType == SlideType.Lerp)
-            {
-                rectTransform.anchoredPosition = Vector2.Lerp(
-                    rectTransform.anchoredPosition,
-                    originalPosition,
-                    Time.unscaledDeltaTime * slideSpeed
-                );
-            }
-            else
-            {
-                rectTransform.anchoredPosition = Vector2.MoveTowards(
-                    rectTransform.anchoredPosition,
-                    originalPosition,
-                    slideSpeed * 300 * Time.unscaledDeltaTime
-                );
-            }
-            yield return null;
-        }
-        rectTransform.anchoredPosition = originalPosition;
-    }
-
-    IEnumerator DoSlideOut(System.Action onComplete)
-    {
-        while (Vector2.Distance(rectTransform.anchoredPosition, hiddenPosition) > 0.1f)
-        {
-            if (outslideType == SlideType.Lerp)
-            {
-                rectTransform.anchoredPosition = Vector2.Lerp(
-                    rectTransform.anchoredPosition,
-                    hiddenPosition,
-                    Time.unscaledDeltaTime * slideSpeed
-                );
-            }
-            else
-            {
-                rectTransform.anchoredPosition = Vector2.MoveTowards(
-                    rectTransform.anchoredPosition,
-                    hiddenPosition,
-                    slideSpeed * 300 * Time.unscaledDeltaTime
-                );
-            }
-            yield return null;
-        }
-        rectTransform.anchoredPosition = hiddenPosition;
-        onComplete?.Invoke();
+    // 팝업이 나갈 때 호출
+    public Tween SlideOut(System.Action onComplete)
+    { 
+        return rectTransform.DOAnchorPos(hiddenPosition, duration)
+            .SetEase(outEase)
+            .OnComplete(() => onComplete?.Invoke());
     }
 }
