@@ -6,7 +6,7 @@ using UnityEngine;
 public class YJ_StartBootstrap : MonoBehaviour
 {
     [Header("Startup")]
-    [SerializeField] private string initialSceneName = "Act1_StageSelect";
+    [SerializeField] private string initialSceneName = "StageSelect";
     [SerializeField, Min(0f)] private float minimumStartupDuration = 0.5f;
     [SerializeField, Min(1f)] private float managerInitializationTimeout = 10f;
 
