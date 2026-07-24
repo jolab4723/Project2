@@ -299,6 +299,8 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             directionalForce,
             destructionVisualPool,
             destructionVisualPrefab);
+
+        target.enemyGrade = EnemyGrade.Boss;
     }
 
     private static void EnsureRootHitCollider(GameObject enemy)

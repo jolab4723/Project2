@@ -45,6 +45,7 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     {
         if (currentHealth <= 0f)
         {
+            
             return;
         }
 
@@ -72,6 +73,7 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
             ? hitCollider.ClosestPoint(attackerPosition)
             : transform.position;
 
+        Core.ItemManager.Instance.DropRandomItem(enemyGrade, transform.position);
         if (destructionVisualPrefab != null && destructionVisualPool != null)
         {
             destructionVisualPool.Play(
