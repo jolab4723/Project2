@@ -31,8 +31,11 @@ namespace ItemSystem
         private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
         [Header("스폰 위치")]
-        [Tooltip("비워두면 이 오브젝트의 위치에 생성")]
-        public Transform spawnPoint;
+        [Tooltip("드랍 위치를 중심으로 이 반경 안의 랜덤한 지점에 스폰한다. 0이면 정확히 그 위치에 스폰.")]
+        [SerializeField] private float spawnRadius = 1f;
+
+        [Tooltip("아이템이 바닥에 절반쯤 묻히지 않도록 스폰 위치를 y축으로 띄우는 높이")]
+        [SerializeField] private float spawnHeightOffset = 0.5f;
 
         [Header("테스트 옵션")]
         public int testUpgradeLevel = 0; // 강화 보너스 확인용. 드랍 후 이 값으로 강제 세팅
@@ -66,19 +69,12 @@ namespace ItemSystem
 
         }
 
-        /// <summary>고정 필드(enemyGrade/spawnPoint) 기준으로 드랍한다. 수동 테스트/버튼용.</summary>
-        public void DropGeneratedItem()
-        {
-            Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
-            Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
-            DropGeneratedItem(enemyGrade, pos, rot);
-        }
 
         /// <summary>
-        /// grade/position/rotation을 그때그때 받아서 드랍한다 (적 사망 처리 등 외부 호출용).
+        /// grade/position을 그때그때 받아서 드랍한다 (적 사망 처리 등 외부 호출용).
         /// itemDropTable에서 grade 기준으로 랜덤으로 하나 뽑아, itemGenerator로 생성해서 월드에 드랍한다.
         /// </summary>
-        public void DropGeneratedItem(EnemyGrade grade, Vector3 position, Quaternion rotation)
+        public void DropGeneratedItem(EnemyGrade grade, Vector3 position)
         {
             if (itemGenerator == null)
             {
@@ -86,6 +82,7 @@ namespace ItemSystem
                 return;
             }
 
+            // 아이템 랜덤 선별
             ItemDefinitionSO def = GetRandomItemSO(grade);
             if (def == null)
                 return;
@@ -94,20 +91,38 @@ namespace ItemSystem
             ItemInstance instance = ItemDataCreator.CreateItemData(def);
             instance.upgradeLevel = testUpgradeLevel;
 
-            itemGenerator.DropGeneratedItem(instance, position, rotation);
+            itemGenerator.DropGeneratedItem(instance, GetRandomizedPosition(position), Quaternion.identity);
         }
 
-        /// <summary>외부 코드(예: TestButtonController)가 이미 만들어둔 ItemInstance를 직접 스폰할 때 사용.</summary>
-        public void SpawnDroppedInstance(ItemInstance instance, Vector3 position, Quaternion rotation)
+        /// <summary>이미 정해진 특정 아이템(SO)을 그대로 드랍한다 (랜덤 롤 없음).</summary>
+        public void DropGeneratedItem(ItemDefinitionSO SO, Vector3 position)
         {
             if (itemGenerator == null)
             {
-                Debug.LogWarning("[ItemSystemController] itemGenerator가 초기화되지 않았습니다.");
+                Debug.LogWarning("[ItemSystemController] itemGenerator가 연결되지 않았습니다.");
                 return;
             }
 
-            itemGenerator.DropGeneratedItem(instance, position, rotation);
+            if (SO == null) return;
+
+            ItemInstance instance = ItemDataCreator.CreateItemData(SO);
+            instance.upgradeLevel = testUpgradeLevel;
+
+            itemGenerator.DropGeneratedItem(instance, GetRandomizedPosition(position), Quaternion.identity);
         }
+
+        /// <summary>basePosition을 중심으로 spawnRadius 반경 안의 랜덤한 지점을, spawnHeightOffset만큼 띄워서 반환한다 (수평면 기준).</summary>
+        private Vector3 GetRandomizedPosition(Vector3 basePosition)
+        {
+            basePosition += Vector3.up * spawnHeightOffset;
+
+            if (spawnRadius <= 0f)
+                return basePosition;
+
+            Vector2 offset = Random.insideUnitCircle * spawnRadius;
+            return basePosition + new Vector3(offset.x, 0f, offset.y);
+        }
+
 
         /// <summary>가장 최근에 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
         public GameObject LastSpawnedPickup => itemGenerator?.LastSpawnedPickup;
@@ -117,7 +132,6 @@ namespace ItemSystem
 
         /// <summary>
         /// itemDropTable + ItemManager.ItemDatabase 기준으로 grade 규칙에 따라 아이템 하나를 랜덤으로 뽑는다.
-        /// 이름은 GetRandomItemID이지만 실제로는 ItemDefinitionSO를 반환한다 (id 문자열이 아니라 정의 자체가 필요해서).
         /// 드랍 확률에 걸리지 않았거나 설정 문제가 있으면 null을 반환한다.
         /// </summary>
         public ItemDefinitionSO GetRandomItemSO(EnemyGrade grade)
@@ -149,7 +163,5 @@ namespace ItemSystem
             return result.ItemDefinition;
         }
 
-
-        
     }
 }
