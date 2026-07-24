@@ -742,7 +742,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8200363816754393395, guid: 5f3c3c315d08cc54599282e282d896af, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8296864385546791295, guid: 5f3c3c315d08cc54599282e282d896af, type: 3}
       propertyPath: m_LocalPosition.x
@@ -961,9 +961,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 176e3eb7f084dee459c40f5315026aab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerInputHandler
-  enemyLayer:
+  inputBlockLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 131104
 --- !u!114 &859720171535124851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1070,12 +1070,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
   maxHp: 5000
-  attackPower: 5
+  attackPower: 20
   defensePower: 3
   attackSpeed: 1
   moveSpeed: 1
-  criticalChance: 1
-  criticalMultiplier: 1
+  criticalChance: 0.4
+  criticalMultiplier: 1.5
   fireBonus: 1
   iceBonus: 1
   electricBonus: 1
