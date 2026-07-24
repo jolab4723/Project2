@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6de67c2ea0b9ecd4d89c8f8b0f1b623a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Artifice.ObjectID
   id: 2
   rend: {fileID: 111107856242175107}
@@ -756,6 +756,7 @@ GameObject:
   - component: {fileID: 6383840830036879892}
   - component: {fileID: 2615264374233623486}
   - component: {fileID: 4066958125945521621}
+  - component: {fileID: 2106186243651730743}
   m_Layer: 0
   m_Name: Sci_Fi_Drone_D_DestructionEffect
   m_TagString: Untagged
@@ -1157,7 +1158,7 @@ MonoBehaviour:
   showSplit: 0
   showExtra: 0
   customBuild: {fileID: 0}
-  customDismantle: {fileID: 0}
+  customDismantle: {fileID: 2106186243651730743}
   placing: {fileID: 0}
   rebuildNeeded: 0
   completedObjects: []
@@ -1347,7 +1348,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fe3cde1a26a5234d818e9d03a56c956, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CombatDroneDestructionProxy
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionVisual
   artificer: {fileID: 7818749399207384473}
   visualAnimator: {fileID: 494182479495789501}
   destruction: {fileID: 6383840830036879892}
@@ -1364,8 +1365,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1faab6f71767aa41a3977b8181e83e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArtificerRuntimeTuningTarget
-  artificer: {fileID: 0}
+  artificer: {fileID: 7818749399207384473}
   dissolveMap: {fileID: 2800000, guid: 0319720cf33e1ac4c85541f88adac7b1, type: 3}
+  fragmentBurstProfile: {fileID: 2106186243651730743}
   activeSettings:
     releaseMode: 1
     dismantleTime: 0.3
@@ -1379,6 +1381,11 @@ MonoBehaviour:
     bounce: 0.15
     linearDrag: 0.12
     angularDrag: 0.1
+    useBurstSpeedCurve: 1
+    initialSpeedMultiplier: 3.5
+    burstDuration: 0.1
+    finalSpeedMultiplier: 0.12
+    preserveBurstTravelDistance: 1
     fragmentScale: 1
     shrinkFragments: 1
     shrinkStart: 0.7
@@ -1388,3 +1395,21 @@ MonoBehaviour:
     dissolveEdgeWidth: 0.06
     orderMode: 0
     randomSeed: 404
+--- !u!114 &2106186243651730743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8491033513309489009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33d0de4bd0d8482cb2d4d63cf61bd031, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArtificerFragmentBurstProfile
+  artificer: {fileID: 7818749399207384473}
+  useBurstSpeedCurve: 1
+  initialSpeedMultiplier: 3.5
+  burstDuration: 0.1
+  finalSpeedMultiplier: 0.12
+  preserveTravelDistance: 1

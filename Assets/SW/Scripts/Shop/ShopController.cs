@@ -226,9 +226,42 @@ public class ShopController : MonoBehaviour
     {
 
     }
-    public bool RequestSell (ItemUI itemUI, int targetX, int targetY)
+    public bool RequestSell(
+                ItemUI itemUI,
+                int requestedX,
+                int requestedY)
     {
-        return ConfirmSell(itemUI, targetX, targetY);
+        InventoryItem item = itemUI?.Item;
+
+        if (item?.itemData?.definition == null)
+        {
+            ShowTradeMessage(
+                TradeResult.InvalidItem,
+                item,
+                false);
+
+            return false;
+        }
+
+        if (!TryResolveSellPosition(
+                item,
+                requestedX,
+                requestedY,
+                out int resolvedX,
+                out int resolvedY))
+        {
+            ShowTradeMessage(
+                TradeResult.NoSpace,
+                item,
+                false);
+
+            return false;
+        }
+
+        return ConfirmSell(
+            itemUI,
+            resolvedX,
+            resolvedY);
     }
 
     public bool ConfirmSell(ItemUI itemUI, int targetX, int targetY)
@@ -333,6 +366,36 @@ public class ShopController : MonoBehaviour
             isBuying);
     }
 
+    public bool TryResolveSellPosition(
+    InventoryItem item,
+    int requestedX,
+    int requestedY,
+    out int resolvedX,
+    out int resolvedY)
+    {
+        resolvedX = requestedX;
+        resolvedY = requestedY;
+
+        if (item?.itemData?.definition == null || shopGrid == null)
+            return false;
+
+        // 드롭한 위치가 비어 있으면 해당 위치를 그대로 사용한다.
+        if (shopGrid.CanPlaceItem(
+                requestedX,
+                requestedY,
+                item.CurrentWidth,
+                item.CurrentHeight))
+        {
+            return true;
+        }
+
+        // 드롭한 위치가 차 있으면 상점의 다른 빈자리를 찾는다.
+        return shopGrid.FindEmptySpace(
+            item.CurrentWidth,
+            item.CurrentHeight,
+            out resolvedX,
+            out resolvedY);
+    }
     private bool TryFindRandomShopSpace(
     int width,
     int height,

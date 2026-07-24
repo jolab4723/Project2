@@ -16,7 +16,9 @@ public static class ShopMessageMapper
                 return $"골드가 부족해 {itemName} 구매에 실패했습니다.";
 
             case TradeResult.NoSpace:
-                return "인벤토리에 공간이 없습니다.";
+                return isBuying
+                    ? "인벤토리에 공간이 없습니다."
+                    : "상점에 판매 아이템을 놓을 공간이 없습니다.";
 
             case TradeResult.InvalidItem:
                 return "유효하지 않은 아이템입니다.";

@@ -6,11 +6,19 @@ public interface IArtificerRuntimeResetProvider
     void ResetRuntimeArtificerTargets();
 }
 
+public enum ArtificerRuntimePanelApplyMode
+{
+    PreservePrefabTypes,
+    ForceSimultaneous,
+    ForceSequential
+}
+
 [DefaultExecutionOrder(-1100)]
 [DisallowMultipleComponent]
 public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
 {
-    [SerializeField] private bool applyToAll = true;
+    [SerializeField] private ArtificerRuntimePanelApplyMode applyMode =
+        ArtificerRuntimePanelApplyMode.PreservePrefabTypes;
     [SerializeField] private bool collapsed;
     [SerializeField] private bool loadFirstTargetOnStart = true;
     [SerializeField] private ArtificerRuntimeSettings settings =
@@ -19,8 +27,9 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     private readonly List<ArtificerRuntimeTuningTarget> targets =
         new List<ArtificerRuntimeTuningTarget>();
     private Vector2 scroll;
-    private int selectedIndex;
     private bool isRespawning;
+    private int simultaneousPresetCount;
+    private int sequentialPresetCount;
 
     public bool IsRespawning => isRespawning;
 
@@ -35,9 +44,20 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         ApplyCurrentSettings();
     }
 
+    public void RegisterTargetAndApply(ArtificerRuntimeTuningTarget target)
+    {
+        if (target == null)
+            return;
+
+        RefreshTargets(false);
+        ApplySettingsToTarget(target);
+    }
+
     public void RefreshTargets(bool captureFirst)
     {
         targets.Clear();
+        simultaneousPresetCount = 0;
+        sequentialPresetCount = 0;
         Artifice.Artificer[] artificers =
             FindObjectsByType<Artifice.Artificer>(FindObjectsSortMode.None);
         foreach (Artifice.Artificer artificer in artificers)
@@ -48,9 +68,13 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 target = artificer.gameObject.AddComponent<ArtificerRuntimeTuningTarget>();
             target.Initialize(artificer);
             targets.Add(target);
+            if (target.PrefabReleaseMode ==
+                ArtificerRuntimeReleaseMode.Sequential)
+                sequentialPresetCount++;
+            else
+                simultaneousPresetCount++;
         }
         targets.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-        selectedIndex = Mathf.Clamp(selectedIndex, 0, Mathf.Max(0, targets.Count - 1));
         if (captureFirst && targets.Count > 0)
             targets[0].CaptureSettings(settings);
     }
@@ -58,15 +82,30 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     public void ApplyCurrentSettings()
     {
         settings.Clamp();
-        if (applyToAll)
+        if (applyMode == ArtificerRuntimePanelApplyMode.ForceSimultaneous)
+            settings.releaseMode = ArtificerRuntimeReleaseMode.Simultaneous;
+        else if (applyMode == ArtificerRuntimePanelApplyMode.ForceSequential)
+            settings.releaseMode = ArtificerRuntimeReleaseMode.Sequential;
+
+        foreach (ArtificerRuntimeTuningTarget target in targets)
         {
-            foreach (ArtificerRuntimeTuningTarget target in targets)
-                if (target != null) target.ApplySettings(settings);
+            if (target == null)
+                continue;
+
+            ApplySettingsToTarget(target);
         }
-        else if (targets.Count > 0 && targets[selectedIndex] != null)
-        {
-            targets[selectedIndex].ApplySettings(settings);
-        }
+    }
+
+    private void ApplySettingsToTarget(ArtificerRuntimeTuningTarget target)
+    {
+        if (target == null)
+            return;
+
+        if (applyMode ==
+            ArtificerRuntimePanelApplyMode.PreservePrefabTypes)
+            target.ApplySettingsPreservingPrefabReleaseMode(settings);
+        else
+            target.ApplySettings(settings);
     }
 
     public void RespawnAndApply()
@@ -104,24 +143,43 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         }
 
         scroll = GUILayout.BeginScrollView(scroll);
-        GUILayout.Label($"적용 대상: {targets.Count}대");
-        applyToAll = GUILayout.Toggle(applyToAll, "모든 로봇에 같은 값 적용");
+        GUILayout.Label(
+            $"현재 파괴 연출: 일반 {simultaneousPresetCount} / " +
+            $"보스 {sequentialPresetCount} / 전체 {targets.Count}");
+        if (targets.Count == 0)
+            GUILayout.Label("적을 파괴하면 활성화된 파괴 연출이 자동으로 등록됩니다.");
 
         GUILayout.Space(6f);
-        GUILayout.Label("1. 파괴 방식");
+        GUILayout.Label("1. 파괴 방식 적용 범위");
+        if (GUILayout.Button("일반/보스 구분 유지 (추천)"))
+            applyMode = ArtificerRuntimePanelApplyMode.PreservePrefabTypes;
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("순차 파괴"))
-            settings.releaseMode = ArtificerRuntimeReleaseMode.Sequential;
-        if (GUILayout.Button("동시 파괴 (일반 몬스터)"))
-            settings.releaseMode = ArtificerRuntimeReleaseMode.Simultaneous;
+        if (GUILayout.Button("전체 동시 파괴"))
+            applyMode = ArtificerRuntimePanelApplyMode.ForceSimultaneous;
+        if (GUILayout.Button("전체 순차 파괴"))
+            applyMode = ArtificerRuntimePanelApplyMode.ForceSequential;
         GUILayout.EndHorizontal();
-        GUILayout.Label(settings.releaseMode == ArtificerRuntimeReleaseMode.Simultaneous
-            ? "현재: 모든 파츠가 동시에 떨어짐"
-            : "현재: 파츠가 순서대로 떨어짐");
-        if (settings.releaseMode == ArtificerRuntimeReleaseMode.Sequential)
+
+        switch (applyMode)
+        {
+            case ArtificerRuntimePanelApplyMode.ForceSimultaneous:
+                GUILayout.Label("현재: 일반 적과 보스를 모두 동시에 파괴합니다.");
+                break;
+            case ArtificerRuntimePanelApplyMode.ForceSequential:
+                GUILayout.Label("현재: 일반 적과 보스를 모두 순차 파괴합니다.");
+                break;
+            default:
+                GUILayout.Label("현재: 일반 적은 동시, 보스는 순차 방식을 유지합니다.");
+                break;
+        }
+
+        if (applyMode != ArtificerRuntimePanelApplyMode.ForceSimultaneous)
         {
             GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label("순차 파괴 세부 설정");
+            GUILayout.Label(applyMode ==
+                ArtificerRuntimePanelApplyMode.PreservePrefabTypes
+                ? "보스 순차 파괴 세부 설정"
+                : "전체 순차 파괴 세부 설정");
             settings.dismantleTime = Slider(
                 "전체 파괴 시간",
                 settings.dismantleTime,
@@ -198,6 +256,50 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.bounce = Slider("튕김", settings.bounce, 0f, 1f);
         settings.linearDrag = Slider("공기 저항", settings.linearDrag, 0f, 2f);
 
+        GUILayout.Space(6f);
+        GUILayout.Label("6. 처음에 팍 튀는 속도");
+        settings.useBurstSpeedCurve = GUILayout.Toggle(
+            settings.useBurstSpeedCurve,
+            "초반 폭발 속도 커브 사용");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("원래 움직임"))
+            ApplyBurstPresetOriginal();
+        if (GUILayout.Button("강한 타격"))
+            ApplyBurstPresetStrongHit();
+        if (GUILayout.Button("묵직한 보스"))
+            ApplyBurstPresetHeavyBoss();
+        GUILayout.EndHorizontal();
+        if (settings.useBurstSpeedCurve)
+        {
+            settings.initialSpeedMultiplier = Slider(
+                "처음 튀는 속도 배수",
+                settings.initialSpeedMultiplier,
+                1f,
+                6f);
+            settings.burstDuration = Slider(
+                "빠르게 튀는 구간",
+                settings.burstDuration,
+                0.02f,
+                0.4f);
+            settings.finalSpeedMultiplier = Slider(
+                "마지막 속도 배수",
+                settings.finalSpeedMultiplier,
+                0.02f,
+                1f);
+            settings.groundClearanceLift = Slider(
+                "바닥에서 띄우는 비율",
+                settings.groundClearanceLift,
+                0f,
+                0.75f);
+            settings.preserveBurstTravelDistance = GUILayout.Toggle(
+                settings.preserveBurstTravelDistance,
+                "기존 이동 거리에 가깝게 자동 보정");
+            GUILayout.Label(
+                "빠른 구간 0.10은 파편 수명의 처음 10%를 뜻합니다.");
+            GUILayout.Label(
+                "거리 보정은 중력·바닥 충돌 전 자유 비행 거리를 기준으로 합니다.");
+        }
+
         GUILayout.Space(8f);
         if (GUILayout.Button("현재 값 적용", GUILayout.Height(30f)))
             ApplyCurrentSettings();
@@ -217,6 +319,36 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         value = GUILayout.HorizontalSlider(value, minimum, maximum);
         GUILayout.EndHorizontal();
         return value;
+    }
+
+    private void ApplyBurstPresetOriginal()
+    {
+        settings.useBurstSpeedCurve = false;
+        settings.initialSpeedMultiplier = 1f;
+        settings.burstDuration = 0.1f;
+        settings.finalSpeedMultiplier = 1f;
+        settings.groundClearanceLift = 0f;
+        settings.preserveBurstTravelDistance = true;
+    }
+
+    private void ApplyBurstPresetStrongHit()
+    {
+        settings.useBurstSpeedCurve = true;
+        settings.initialSpeedMultiplier = 3.5f;
+        settings.burstDuration = 0.1f;
+        settings.finalSpeedMultiplier = 0.12f;
+        settings.groundClearanceLift = 0.35f;
+        settings.preserveBurstTravelDistance = true;
+    }
+
+    private void ApplyBurstPresetHeavyBoss()
+    {
+        settings.useBurstSpeedCurve = true;
+        settings.initialSpeedMultiplier = 2.3f;
+        settings.burstDuration = 0.18f;
+        settings.finalSpeedMultiplier = 0.06f;
+        settings.groundClearanceLift = 0.25f;
+        settings.preserveBurstTravelDistance = true;
     }
 
     private static string OrderModeLabel(ArtificerRuntimeOrderMode mode)
