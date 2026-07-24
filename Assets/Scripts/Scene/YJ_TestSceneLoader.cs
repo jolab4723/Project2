@@ -7,7 +7,7 @@ public class YJ_TestSceneLoader : MonoBehaviour
     // 씬 로딩 요청 후 실제 SceneLoader를 호출하기까지 기다릴 시간입니다.
     [SerializeField, Min(0f)] private float loadDelay = 2f;
     // 자동 로딩 테스트에서 사용할 씬 이름입니다.
-    public string autoLoadSceneName = "Act1_StageSelect";
+    public string autoLoadSceneName = "StageSelect";
     // 활성화하면 이 컴포넌트가 시작될 때 자동으로 테스트 씬을 불러옵니다.
     public bool autoLoad = false;
     // Unknown 테스트 씬의 자동 복귀 전에 저장된 pending 노드를 클리어 처리합니다.

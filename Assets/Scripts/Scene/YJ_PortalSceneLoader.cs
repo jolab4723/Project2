@@ -3,7 +3,7 @@ using Core;
 
 public class YJ_PortalSceneLoader : MonoBehaviour
 {
-    public string loadSceneName = "Act1_StageSelect";
+    public string loadSceneName = "StageSelect";
     [SerializeField] private bool completePendingStage = true;
 
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
