@@ -14,8 +14,7 @@ namespace ItemSystem
         [Tooltip("ItemDataStorage 컴포넌트가 붙어있는 프리팹")]
         public GameObject itemPickupPrefab;
 
-        [Header("드랍 처리기")]
-        public ItemGenerator itemGenerator;
+        private ItemGenerator itemGenerator;
 
         [Header("드랍 확률 테이블")]
         public ItemDropTableSO itemDropTable;
@@ -49,6 +48,7 @@ namespace ItemSystem
             }
 
             Instance = this;
+            itemGenerator = new ItemGenerator(itemPickupPrefab);
         }
 
         private void OnDestroy()
@@ -96,6 +96,21 @@ namespace ItemSystem
 
             itemGenerator.DropGeneratedItem(instance, position, rotation);
         }
+
+        /// <summary>외부 코드(예: TestButtonController)가 이미 만들어둔 ItemInstance를 직접 스폰할 때 사용.</summary>
+        public void SpawnDroppedInstance(ItemInstance instance, Vector3 position, Quaternion rotation)
+        {
+            if (itemGenerator == null)
+            {
+                Debug.LogWarning("[ItemSystemController] itemGenerator가 초기화되지 않았습니다.");
+                return;
+            }
+
+            itemGenerator.DropGeneratedItem(instance, position, rotation);
+        }
+
+        /// <summary>가장 최근에 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
+        public GameObject LastSpawnedPickup => itemGenerator?.LastSpawnedPickup;
 
         /// <summary>고정 필드(enemyGrade) 기준으로 랜덤 아이템을 뽑는다.</summary>
         public ItemDefinitionSO GetRandomItemSO() => GetRandomItemSO(enemyGrade);

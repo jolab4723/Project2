@@ -260,9 +260,6 @@ private void UnbindButtons()
                     Object.FindFirstObjectByType<WorldItemTooltipScanner>();
             }
 
-            if (itemGenerator == null)
-                itemGenerator = Object.FindFirstObjectByType<ItemGenerator>(FindObjectsInactive.Include);
-
             if (receiverBehaviour == null)
                 receiverBehaviour = FindItemReceiverBehaviour();
         }
@@ -355,14 +352,6 @@ private void UnbindButtons()
         }
 #endif
     
-
-private void EnsureItemGeneratorPickupPrefab()
-{
-            if (itemGenerator == null || itemPickupPrefabOverride == null)
-                return;
-
-            itemGenerator.itemPickupPrefab = itemPickupPrefabOverride;
- }
 
         public void AcquireNearestWorldItem()
         {

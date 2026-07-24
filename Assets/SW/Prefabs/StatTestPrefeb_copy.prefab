@@ -6847,7 +6847,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5264847880295014848}
-  - component: {fileID: 9076778957400645042}
   - component: {fileID: 4520371706940624360}
   m_Layer: 0
   m_Name: ItemDropTester
@@ -6871,19 +6870,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2636888903064333488}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9076778957400645042
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4774169346069593495}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71ff555f4c00dba46bc20fcf9d877362, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemGenerator
-  itemPickupPrefab: {fileID: 0}
 --- !u!114 &4520371706940624360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6896,13 +6882,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7cf0d5ae2e938f469827d56d16bf6e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDropAcquireTester
-  testItem: {fileID: 11400000, guid: 1713642df37d32b408d296328da7943b, type: 2}
-  itemGenerator: {fileID: 9076778957400645042}
+  itemPickupPrefab: {fileID: 0}
+  itemDropTable: {fileID: 0}
+  enemyGrade: 0
   receiverBehaviour: {fileID: 3845405366876833187}
   spawnPoint: {fileID: 5264847880295014848}
-  dropOnStart: 0
-  dropKey: 0
-  acquireKey: 0
   testUpgradeLevel: 0
 --- !u!1 &4919414884519817870
 GameObject:

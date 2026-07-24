@@ -18,7 +18,7 @@ public class TestButtonController : MonoBehaviour
     [SerializeField] private GameObject passivePopup;
 
     [Header("아이템 드랍 / 획득")]
-    [SerializeField] private ItemGenerator itemGenerator;
+    [SerializeField] private ItemSystemController itemSystemController;
 
     [Tooltip("드랍 테스트에 사용할 아이템 정의")]
     [SerializeField] private ItemDefinitionSO testDropItem;
@@ -102,9 +102,9 @@ public class TestButtonController : MonoBehaviour
     /// <summary>4. dropItemBtn - 아이템 생성 및 드랍</summary>
     public void OnClickDropItem()
     {
-        if (itemGenerator == null)
+        if (itemSystemController == null)
         {
-            Debug.LogWarning("[TestButtonController] itemGenerator가 연결되지 않았습니다.");
+            Debug.LogWarning("[TestButtonController] itemSystemController가 연결되지 않았습니다.");
             return;
         }
 
@@ -115,14 +115,14 @@ public class TestButtonController : MonoBehaviour
         }
 
         // 아직 안 주운 이전 드랍이 남아있으면, 월드에 고아 오브젝트가 쌓이지 않도록 먼저 정리.
-        if (itemGenerator.LastSpawnedPickup != null)
-            Destroy(itemGenerator.LastSpawnedPickup);
+        if (itemSystemController.LastSpawnedPickup != null)
+            Destroy(itemSystemController.LastSpawnedPickup);
 
         Vector3 pos = dropPoint != null ? dropPoint.position : transform.position;
         Quaternion rot = dropPoint != null ? dropPoint.rotation : transform.rotation;
 
         lastDropped = ItemDataCreator.CreateItemData(testDropItem);
-        itemGenerator.DropGeneratedItem(lastDropped, pos, rot);
+        itemSystemController.SpawnDroppedInstance(lastDropped, pos, rot);
         RefreshGetItemButton();
     }
 
@@ -137,8 +137,8 @@ public class TestButtonController : MonoBehaviour
 
         bool success = ItemAcquisition.Acquire(lastDropped, Receiver);
 
-        if (itemGenerator != null && itemGenerator.LastSpawnedPickup != null)
-            Destroy(itemGenerator.LastSpawnedPickup);
+        if (itemSystemController != null && itemSystemController.LastSpawnedPickup != null)
+            Destroy(itemSystemController.LastSpawnedPickup);
 
         if (success || Receiver == null) // Receiver가 없어 로그만 찍은 경우도 테스트 목적상 정리
             lastDropped = null;
