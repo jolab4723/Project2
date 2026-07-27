@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using ItemSystem;
@@ -169,6 +170,96 @@ public class PlayerStatManager : MonoBehaviour
     {
         Stat.currentLevel = 1;
         Recalculate();
+    }
+
+    /// <summary>
+    /// 현재 최종 스탯 전체를 콘솔에 출력한다. (테스트용)
+    /// 레이어별 원본 값도 같이 찍어서, 어느 레이어에서 값이 들어왔는지 바로 확인할 수 있게 한다.
+    /// </summary>
+    [ContextMenu("전체 스탯 로그 출력")]
+    public void LogAllStats()
+    {
+        if (Stat == null)
+        {
+            Debug.LogWarning("[PlayerStatManager] Stat이 아직 생성되지 않았습니다. (Play 모드에서 실행해주세요)");
+            return;
+        }
+
+        StatSet character = GetCharacterStatSet();
+        StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
+        StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
+        StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"===== [{name}] 전체 스탯 (레벨 {Stat.currentLevel}) =====");
+        sb.AppendLine($"경험치 {Stat.currentExp}");
+        sb.AppendLine("--- 최종 스탯 ---");
+        sb.AppendLine($"  최대 체력 {Stat.maxHealth}" + CurrentHealthSuffix());
+        sb.AppendLine($"  최대 마나 {Stat.maxMana}" + CurrentManaSuffix());
+        sb.AppendLine($"  공격력 {Stat.attackPower}");
+        sb.AppendLine($"  방어력 {Stat.defensePower}");
+        sb.AppendLine($"  관통력 {Stat.pen}");
+        sb.AppendLine($"  이동속도 {Stat.moveSpeed:F2}");
+        sb.AppendLine($"  공격속도 {Stat.attackSpeed:F2}");
+        sb.AppendLine($"  치명타 확률 {Stat.critRate:F1}%");
+        sb.AppendLine($"  치명타 피해 {Stat.critMult:F2}");
+        sb.AppendLine($"  쿨타임 감소 {Stat.cdr:F1}%");
+        sb.AppendLine($"  마나 재생 {Stat.mpRegen:F2}");
+        sb.AppendLine($"  스킬 사거리 {Stat.skillRange:F2}");
+        sb.AppendLine($"  화염 피해 {Stat.fireBonus:F1} / 빙결 피해 {Stat.iceBonus:F1} / 전기 피해 {Stat.electricBonus:F1}");
+
+        sb.AppendLine("--- 레이어별 기여분 (Flat / Percent) ---");
+        AppendLayer(sb, "캐릭터", character);
+        AppendLayer(sb, "장비", equipment);
+        AppendLayer(sb, "버프", buff);
+        AppendLayer(sb, "패시브", passive);
+
+        sb.Append("=======================================");
+        Debug.Log(sb.ToString());
+    }
+
+    private string CurrentHealthSuffix()
+    {
+        var health = GetComponent<PlayerHealthManager>();
+        return health != null ? $" (현재 {health.CurrentHealth})" : string.Empty;
+    }
+
+    private string CurrentManaSuffix()
+    {
+        var mana = GetComponent<PlayerManaManager>();
+        return mana != null ? $" (현재 {mana.CurrentMana:F0})" : string.Empty;
+    }
+
+    /// <summary>한 레이어에서 0이 아닌 값만 모아서 한 줄로 출력한다. 값이 전부 0이면 "(없음)".</summary>
+    private static void AppendLayer(StringBuilder sb, string layerName, StatSet set)
+    {
+        var parts = new List<string>();
+
+        void Add(string label, float flat, float percent)
+        {
+            if (!Mathf.Approximately(flat, 0f))
+                parts.Add($"{label} +{flat:F2}");
+            if (!Mathf.Approximately(percent, 0f))
+                parts.Add($"{label} +{percent:F2}%");
+        }
+
+        Add("체력", set.maxHealthFlat, set.maxHealthPercent);
+        Add("마나", set.maxManaFlat, 0f);
+        Add("공격력", set.attackPowerFlat, set.attackPowerPercent);
+        Add("방어력", set.defensePowerFlat, set.defensePowerPercent);
+        Add("관통력", set.penFlat, set.penPercent);
+        Add("이동속도", set.moveSpeedFlat, set.moveSpeedPercent);
+        Add("공격속도", set.attackSpeedFlat, set.attackSpeedPercent);
+        Add("치명타확률", set.critRateFlat, 0f);
+        Add("치명타피해", set.critMultFlat, set.critMultPercent);
+        Add("쿨감", set.cdrFlat, 0f);
+        Add("마나재생", set.mpRegenFlat, set.mpRegenPercent);
+        Add("스킬사거리", set.skillRangeFlat, set.skillRangePercent);
+        Add("화염", set.fireBonusFlat, set.fireBonusPercent);
+        Add("빙결", set.iceBonusFlat, set.iceBonusPercent);
+        Add("전기", set.electricBonusFlat, set.electricBonusPercent);
+
+        sb.AppendLine($"  [{layerName}] " + (parts.Count == 0 ? "(없음)" : string.Join(", ", parts)));
     }
 
     private StatSet GetCharacterStatSet()
