@@ -169,13 +169,18 @@ namespace DataSystem
         }
 
         private static ItemDefinitionSO CreateOrUpdateBase(
-            string outputFolder, int itemId, string itemName, ItemCategory category,
+            string outputFolder, string itemId, string itemName, ItemCategory category,
             string rarityText, string description, int price, int width, int height,
             string mainStat1Type, float mainStat1Value, string mainStat2Type, float mainStat2Value,
             string uniqueEffectId,
             SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig)
         {
-            string idText = itemId.ToString();
+            // itemId는 엑셀 셀에 이미 8자리 텍스트("01000001" 등)로 들어있는 Category+Class+Index 고유키.
+            // int로 거치면 앞자리 0이 사라지므로 절대 숫자로 변환하지 않고 그대로 쓴다.
+            string idText = (itemId ?? string.Empty).Trim();
+
+            if (idText.Length != 8)
+                Debug.LogWarning($"[ItemDataTable] itemId가 8자리가 아닙니다: '{idText}' ({itemName}). Category+Class+Index 스킴을 확인해주세요.");
 
             ItemDefinitionSO asset = GetOrCreateAsset<ItemDefinitionSO>(outputFolder, idText, itemName);
             if (asset == null)
