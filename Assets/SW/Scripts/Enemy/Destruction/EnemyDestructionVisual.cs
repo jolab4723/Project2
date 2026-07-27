@@ -34,6 +34,25 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
         float directionalForce,
         Action onReadyToReplaceSource = null)
     {
+        Play(
+            worldPosition,
+            worldRotation,
+            worldImpactPoint,
+            attackDirection,
+            directionalForce,
+            1f,
+            onReadyToReplaceSource);
+    }
+
+    public void Play(
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        Vector3 worldImpactPoint,
+        Vector3 attackDirection,
+        float directionalForce,
+        float directionalForceMultiplier,
+        Action onReadyToReplaceSource = null)
+    {
         transform.SetPositionAndRotation(worldPosition, worldRotation);
 
         if (!gameObject.activeSelf)
@@ -59,6 +78,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
                 worldImpactPoint,
                 attackDirection,
                 directionalForce,
+                directionalForceMultiplier,
                 onReadyToReplaceSource));
             return;
         }
@@ -67,6 +87,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
             worldImpactPoint,
             attackDirection,
             directionalForce,
+            directionalForceMultiplier,
             onReadyToReplaceSource);
     }
 
@@ -74,6 +95,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
         Vector3 worldImpactPoint,
         Vector3 attackDirection,
         float directionalForce,
+        float directionalForceMultiplier,
         Action onReadyToReplaceSource)
     {
         // The first pooled use waits one frame for Artificer's Start(). Keep
@@ -84,13 +106,15 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
         destruction.TriggerDestruction(
             worldImpactPoint,
             attackDirection,
-            directionalForce);
+            directionalForce,
+            directionalForceMultiplier);
     }
 
     private IEnumerator PlayAfterStartup(
         Vector3 worldImpactPoint,
         Vector3 attackDirection,
         float directionalForce,
+        float directionalForceMultiplier,
         Action onReadyToReplaceSource)
     {
         yield return null;
@@ -106,6 +130,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
             worldImpactPoint,
             attackDirection,
             directionalForce,
+            directionalForceMultiplier,
             onReadyToReplaceSource);
     }
 

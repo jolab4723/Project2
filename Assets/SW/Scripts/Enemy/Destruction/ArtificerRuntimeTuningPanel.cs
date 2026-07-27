@@ -23,6 +23,8 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     [SerializeField] private bool loadFirstTargetOnStart = true;
     [SerializeField] private ArtificerRuntimeSettings settings =
         new ArtificerRuntimeSettings();
+    [SerializeField] private DestructionDamageStrengthScaler
+        damageStrengthScaler;
 
     private readonly List<ArtificerRuntimeTuningTarget> targets =
         new List<ArtificerRuntimeTuningTarget>();
@@ -32,9 +34,12 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     private int sequentialPresetCount;
 
     public bool IsRespawning => isRespawning;
+    public DestructionDamageStrengthScaler DamageStrengthScaler =>
+        damageStrengthScaler;
 
     private void Start()
     {
+        EnsureDamageStrengthScaler();
         RefreshTargets(loadFirstTargetOnStart);
     }
 
@@ -308,6 +313,42 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 "거리 보정은 중력·바닥 충돌 전 자유 비행 거리를 기준으로 합니다.");
         }
 
+        GUILayout.Space(6f);
+        GUILayout.Label("7. 결정타 데미지에 따른 세기");
+        EnsureDamageStrengthScaler();
+        if (damageStrengthScaler == null)
+        {
+            GUILayout.Label("데미지 배수 컴포넌트를 찾지 못했습니다.");
+        }
+        else
+        {
+            damageStrengthScaler.UseDamageScaling = GUILayout.Toggle(
+                damageStrengthScaler.UseDamageScaling,
+                "결정타 데미지 배수 사용");
+            float previewMaxHealth = Slider(
+                "미리보기 적 최대 체력",
+                damageStrengthScaler.PreviewTargetMaxHealth,
+                1f,
+                1000f);
+            float previewDamage = Slider(
+                "미리보기 결정타 데미지",
+                damageStrengthScaler.PreviewKillingDamage,
+                0f,
+                Mathf.Max(1f, previewMaxHealth * 2f));
+            damageStrengthScaler.SetPreviewValues(
+                previewDamage,
+                previewMaxHealth);
+            GUILayout.Label(
+                $"데미지 비율: {damageStrengthScaler.PreviewDamageRatio:0.00} / " +
+                $"적용 배수: {damageStrengthScaler.PreviewMultiplier:0.00}배");
+            GUILayout.Label(
+                "커브 그래프: Hierarchy의 Enemy Manual Test를 선택한 뒤");
+            GUILayout.Label(
+                "Inspector > 결정타 데미지 세기에서 직접 편집합니다.");
+            GUILayout.Label(
+                "실제 공격은 미리보기 값이 아니라 결정타의 실제 데미지를 사용합니다.");
+        }
+
         GUILayout.Space(8f);
         if (GUILayout.Button("현재 값 적용", GUILayout.Height(30f)))
             ApplyCurrentSettings();
@@ -327,6 +368,16 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         value = GUILayout.HorizontalSlider(value, minimum, maximum);
         GUILayout.EndHorizontal();
         return value;
+    }
+
+    private void EnsureDamageStrengthScaler()
+    {
+        if (damageStrengthScaler == null)
+            damageStrengthScaler =
+                GetComponent<DestructionDamageStrengthScaler>();
+        if (damageStrengthScaler == null && Application.isPlaying)
+            damageStrengthScaler =
+                gameObject.AddComponent<DestructionDamageStrengthScaler>();
     }
 
     private void ApplyBurstPresetOriginal()

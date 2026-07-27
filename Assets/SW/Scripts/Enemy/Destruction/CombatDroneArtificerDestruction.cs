@@ -33,6 +33,8 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
 
     public bool IsDestructionStarted => destructionStarted;
     public bool IsDestructionComplete => destructionStarted && artificer != null && artificer.IsDismantled();
+    public float LastDirectionalImpulse { get; private set; }
+    public float LastDirectionalForceMultiplier { get; private set; } = 1f;
 
     public void Configure(
         Artificer newArtificer,
@@ -59,6 +61,19 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
         Vector3 attackDirection,
         float directionalForce)
     {
+        TriggerDestruction(
+            worldImpactPoint,
+            attackDirection,
+            directionalForce,
+            1f);
+    }
+
+    public void TriggerDestruction(
+        Vector3 worldImpactPoint,
+        Vector3 attackDirection,
+        float directionalForce,
+        float directionalForceMultiplier)
+    {
         EnsureReferences();
         if (!Application.isPlaying || destructionStarted || artificer == null || artificer.buildData == null)
             return;
@@ -69,6 +84,12 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
         direction = (direction + Vector3.up * 0.2f).normalized;
         if (tuningTarget != null && tuningTarget.HasActiveSettings)
             directionalForce = tuningTarget.DirectionalForce;
+        directionalForceMultiplier = Mathf.Max(
+            0f,
+            directionalForceMultiplier);
+        directionalForce *= directionalForceMultiplier;
+        LastDirectionalImpulse = directionalForce;
+        LastDirectionalForceMultiplier = directionalForceMultiplier;
 
         destructionStarted = true;
         completionHandled = false;
@@ -100,6 +121,8 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
         StopAllCoroutines();
         destructionStarted = false;
         completionHandled = false;
+        LastDirectionalImpulse = 0f;
+        LastDirectionalForceMultiplier = 1f;
         if (tuningTarget != null)
             tuningTarget.ResetTransientState();
         if (visualAnimator != null) visualAnimator.enabled = animatorWasEnabled;

@@ -62,6 +62,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
     // WBH 입력 시스템 연동부: 리셋 버튼 클릭이 플레이어 공격으로 전달되지 않도록 잠시 입력을 막는다.
     private WBH_PlayerInputHandler playerInput;
     private EnemyDestructionVisualPool destructionVisualPool;
+    private DestructionDamageStrengthScaler damageStrengthScaler;
     private bool restorePlayerInput;
     private bool playerInputWasEnabled;
     private int restorePlayerInputAfterFrame;
@@ -162,6 +163,13 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
         {
             destructionVisualPool =
                 gameObject.AddComponent<EnemyDestructionVisualPool>();
+        }
+        damageStrengthScaler =
+            GetComponent<DestructionDamageStrengthScaler>();
+        if (damageStrengthScaler == null)
+        {
+            damageStrengthScaler =
+                gameObject.AddComponent<DestructionDamageStrengthScaler>();
         }
 
         yield return PrewarmDestructionVisuals();
@@ -323,7 +331,8 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             enemyHealth,
             directionalForce,
             destructionVisualPool,
-            destructionVisualPrefab);
+            destructionVisualPrefab,
+            damageStrengthScaler);
 
         target.enemyGrade = EnemyGrade.Elite;
     }

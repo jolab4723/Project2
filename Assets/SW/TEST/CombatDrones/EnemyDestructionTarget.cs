@@ -11,6 +11,7 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     private CombatDroneArtificerDestruction destruction;
     private EnemyDestructionVisualPool destructionVisualPool;
     private GameObject destructionVisualPrefab;
+    private DestructionDamageStrengthScaler damageStrengthScaler;
     private float currentHealth;
 
     public WBH_ICombatStatus Status => this;
@@ -30,13 +31,15 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
         float health,
         float force,
         EnemyDestructionVisualPool newDestructionVisualPool = null,
-        GameObject newDestructionVisualPrefab = null)
+        GameObject newDestructionVisualPrefab = null,
+        DestructionDamageStrengthScaler newDamageStrengthScaler = null)
     {
         maxHealth = Mathf.Max(0.01f, health);
         currentHealth = maxHealth;
         directionalForce = Mathf.Max(0f, force);
         destructionVisualPool = newDestructionVisualPool;
         destructionVisualPrefab = newDestructionVisualPrefab;
+        damageStrengthScaler = newDamageStrengthScaler;
         destruction = GetComponent<CombatDroneArtificerDestruction>();
     }
 
@@ -45,7 +48,6 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     {
         if (currentHealth <= 0f)
         {
-            
             return;
         }
 
@@ -76,13 +78,16 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
         Core.ItemManager.Instance.DropRandomItem(enemyGrade, transform.position);
         if (destructionVisualPrefab != null && destructionVisualPool != null)
         {
-            destructionVisualPool.Play(
+            destructionVisualPool.PlayWithDamage(
                 destructionVisualPrefab,
                 transform.position,
                 transform.rotation,
                 impactPoint,
                 attackDirection,
                 directionalForce,
+                result.FinalDamage,
+                maxHealth,
+                damageStrengthScaler,
                 () =>
                 {
                     if (this != null && gameObject != null)
@@ -104,10 +109,16 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
             return;
         }
 
+        float damageMultiplier = damageStrengthScaler != null
+            ? damageStrengthScaler.EvaluateMultiplier(
+                result.FinalDamage,
+                maxHealth)
+            : 1f;
         destruction.TriggerDestruction(
             impactPoint,
             attackDirection,
-            directionalForce);
+            directionalForce,
+            damageMultiplier);
     }
 
     private void Awake()

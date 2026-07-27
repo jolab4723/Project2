@@ -126,11 +126,12 @@ RobotA_파괴연출                      ← 식별하기 쉬운 이름의 루�
 
 `Assets/SW/Prefabs/Enemy/CombatDrones/Enemy Manual Test.prefab`
 
-이 프리팹에는 다음 세 컴포넌트가 이미 함께 들어 있다.
+이 프리팹에는 다음 네 컴포넌트가 이미 함께 들어 있다.
 
 - `EnemyManualTestReset`: 여러 적 생성, R 키·버튼 리셋
 - `EnemyDestructionVisualPool`: 파괴 연출을 재사용하는 테스트용 풀
 - `ArtificerRuntimeTuningPanel`: 실행 중 파괴 값 조절
+- `DestructionDamageStrengthScaler`: 결정타 데미지 비율을 초기 충격 배수로 바꾸는 커브
 
 따라서 패널 프리팹을 따로 배치하거나 스크립트를 새 오브젝트에 다시 붙이지 않는다. `Enemy Manual Test`를 씬에 하나만 놓으면 된다.
 
@@ -192,6 +193,18 @@ WBH 공격 코드는 맞은 Collider가 있는 GameObject에서 전투 인터페
 - 착지 시간은 애니메이션 값이 아니라 속도·중력·공기 저항과 바닥 Raycast 충돌 결과다.
 - 더 빨리 바닥으로 떨어뜨리려면 `중력`을 높이거나 초기 힘을 낮춘다.
 - 착지 후 오래 미끄러지거나 튀면 `튕김`을 낮추고 `공기 저항`을 높인다.
+
+### 결정타 데미지 배수 커브 시험하기
+
+1. Hierarchy에서 `Enemy Manual Test`를 선택한다.
+2. Inspector의 `Destruction Damage Strength Scaler`에서 `데미지 비율 → 초기 충격 배수` 그래프를 클릭한다.
+3. 가로축은 `결정타 데미지 ÷ 적 최대 체력`, 세로축은 `공격 방향 초기 충격`에 곱할 배수로 생각한다.
+4. Play 후 패널의 `7. 결정타 데미지에 따른 세기`에서 미리보기 체력·데미지를 움직여 현재 비율과 배수를 확인한다.
+5. 실제 공격 테스트는 미리보기 수치가 아니라 플레이어 공격의 실제 `FinalDamage`를 사용한다.
+
+기본 커브는 체력 대비 결정타 데미지가 `0% / 50% / 100%`일 때 `0.7 / 1.0 / 1.8배`다. 예를 들어 `공격 방향 초기 충격`이 `5.5`라면 각각 `3.85 / 5.5 / 9.9`가 전달된다. 기능을 끄면 항상 `1배`다.
+
+정식 적에 적용할 때는 테스트용 `EnemyDestructionTarget`을 붙이지 않는다. 실제 사망 메서드에서 죽음을 만든 공격 한 번의 최종 데미지와 적 최대 체력을 `DestructionDamageStrengthScaler.EvaluateMultiplier(...)`에 넣고, 계산된 배수를 파괴 연출 재생 요청 또는 `CombatDroneArtificerDestruction.TriggerDestruction(...)`의 네 번째 인자로 전달한다.
 
 ### 일반 적과 보스를 동시에 비교할 때
 

@@ -82,6 +82,7 @@ public readonly struct EnemyDeathVfxRequest
 | `4. 파편 힘` | `퍼지는 힘 최소`, `퍼지는 힘 최대`, `공격 방향 초기 충격`, `회전 세기` | 폭발 확산과 사망 순간의 공격 방향 반응을 조절한다. |
 | `5. 움직임` | `중력`, `튕김`, `공기 저항` | 바닥에 떨어진 뒤 움직임을 조절한다. |
 | `6. 처음에 팍 튀는 속도` | `초반 폭발 속도 커브 사용`, `원래 움직임`, `강한 타격`, `묵직한 보스`, `처음 튀는 속도 배수`, `빠르게 튀는 구간`, `마지막 속도 배수`, `기존 이동 거리에 가깝게 자동 보정` | 파편이 처음에는 빠르게 튀고 수명 후반에는 느려지는 속도 곡선을 조절한다. 처음 속도 배수는 최대 `10`까지 설정할 수 있다. |
+| `7. 결정타 데미지에 따른 세기` | `결정타 데미지 배수 사용`, `미리보기 적 최대 체력`, `미리보기 결정타 데미지`, `데미지 비율`, `적용 배수` | 죽게 만든 마지막 공격의 데미지가 클수록 `공격 방향 초기 충격`을 강하게 만든다. 미리보기 값은 계산 확인용이고 실제 공격값을 바꾸지 않는다. |
 
 ### 처음에는 빠르고 마지막에는 느린 파편 설정
 
@@ -113,6 +114,34 @@ public readonly struct EnemyDeathVfxRequest
 | `묵직한 보스` | 큰 파츠가 무겁게 퍼지는 연출 | 일반 적보다 초반 강조가 낮고 빠른 구간은 길며, 후반은 더 느리다. |
 
 패널 없이 실제 게임에 넣을 때도 구조는 같다. 안전 생성 프리팹에 이미 저장된 기본값을 사용하거나, 개발용 패널에서 값을 확정한 뒤 프리팹의 `ArtificerFragmentBurstProfile` 값으로 옮긴다. 런타임에 코드로 바꾸려면 `ArtificerRuntimeSettings`의 `useBurstSpeedCurve`, `initialSpeedMultiplier`, `burstDuration`, `finalSpeedMultiplier`, `preserveBurstTravelDistance`를 채워 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다.
+
+### 결정타 데미지에 따라 초기 충격을 다르게 주기
+
+`Enemy Manual Test` 루트에는 `DestructionDamageStrengthScaler`가 연결되어 있다. 이 컴포넌트의 Inspector에서 `데미지 비율 → 초기 충격 배수` 그래프를 눈으로 보며 직접 편집할 수 있다.
+
+- 커브 가로축 X: `결정타 데미지 ÷ 적 최대 체력`이며 `0~1`로 제한한다.
+- 커브 세로축 Y: `공격 방향 초기 충격`에 곱할 배수다.
+- 기본 키: `0 → 0.7배`, `0.5 → 1.0배`, `1.0 → 1.8배`다.
+- 실제 최종값: `패널의 공격 방향 초기 충격 × 커브 배수`다.
+- 패널의 `미리보기` 두 값은 현재 배수를 확인하는 시험값일 뿐, 실제 적 체력이나 플레이어 데미지를 변경하지 않는다.
+
+테스트에서는 `EnemyDestructionTarget.TakeDamage(WBH_DamageResult)`가 사망을 확정한 공격의 `FinalDamage`와 대상 `MaxHealth`를 `EnemyDestructionVisualPool.PlayWithDamage(...)`에 전달한다. 풀은 `DestructionDamageStrengthScaler.EvaluateMultiplier(...)`로 배수를 계산하고, `CombatDroneArtificerDestruction.TriggerDestruction(..., directionalForceMultiplier)`가 파편의 1회성 초기 충격에 마지막으로 곱한다.
+
+실제 게임에 옮길 때 `EnemyDestructionTarget`은 사용하지 않는다. 실제 Health/Death 코드가 **죽음을 확정한 한 번의 데미지**, 적 최대 체력, 공격 방향을 보관한 뒤 같은 순서로 전달한다. 정식 파괴 연출 풀에 `PlayWithDamage`와 같은 인자를 추가하거나 다음 계산 결과만 기존 재생 요청에 담아도 된다.
+
+```csharp
+float multiplier = damageStrengthScaler.EvaluateMultiplier(
+    killingDamage,
+    targetMaxHealth);
+
+destruction.TriggerDestruction(
+    impactPoint,
+    attackDirection,
+    baseDirectionalImpulse,
+    multiplier);
+```
+
+`killingDamage`에는 누적 피해나 남은 체력이 아니라 **현재 체력을 0 이하로 만든 공격 한 번의 최종 데미지**를 넣는다. 배수 기능을 끄거나 컴포넌트를 전달하지 않으면 기존과 같은 `1배`로 동작한다. 중복 사망 콜백은 실제 적의 사망 상태에서 한 번만 통과시키고, 풀 반환 시 파괴 분신의 이전 배수는 `ResetForReuse()`에서 초기화한다.
 
 `ArtificerFragmentBurstProfile`은 Artificer의 `CustomDismantle` 경로를 사용하므로, 사용자 확장에서 속도만 바꾸고 위치 적분을 생략하면 파편이 전혀 움직이지 않는다. 현재 구현은 사용자 `Remove(...)` 안에서 Artificer의 기본 `RemoveElement(...)`를 호출해 원래 중력·드래그·위치·회전·충돌 계산을 그대로 실행한 뒤 속도 곡선만 덧씌운다. 이 호출은 삭제하면 안 된다.
 
@@ -329,6 +358,8 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 - [ ] BuildData를 인스턴스별로 안전하게 복제하는가?
 - [ ] 실제 적과 파괴 연출 분신 풀이 분리되어 있는가?
 - [ ] 공격 방향 벡터를 사망 요청에 포함했는가?
+- [ ] 결정타 한 번의 최종 데미지와 대상 최대 체력을 사망 요청에 포함했는가?
+- [ ] `DestructionDamageStrengthScaler`의 커브와 최소·최대 배수 제한을 확정했는가?
 - [ ] 파괴 전에 모든 MeshElement에 Ground 충돌 마스크를 적용했는가?
 - [ ] 바닥 Collider가 Ground 레이어이고 Trigger가 아닌가?
 - [ ] 실제 적의 AI와 Collider를 먼저 중지했는가?

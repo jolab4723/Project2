@@ -84,6 +84,55 @@ public sealed class EnemyDestructionVisualPool : MonoBehaviour
         float directionalForce,
         Action onReadyToReplaceSource = null)
     {
+        return PlayInternal(
+            visualPrefab,
+            worldPosition,
+            worldRotation,
+            worldImpactPoint,
+            attackDirection,
+            directionalForce,
+            1f,
+            onReadyToReplaceSource);
+    }
+
+    public EnemyDestructionVisual PlayWithDamage(
+        GameObject visualPrefab,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        Vector3 worldImpactPoint,
+        Vector3 attackDirection,
+        float baseDirectionalForce,
+        float killingDamage,
+        float targetMaxHealth,
+        DestructionDamageStrengthScaler damageStrengthScaler,
+        Action onReadyToReplaceSource = null)
+    {
+        float multiplier = damageStrengthScaler != null
+            ? damageStrengthScaler.EvaluateMultiplier(
+                killingDamage,
+                targetMaxHealth)
+            : 1f;
+        return PlayInternal(
+            visualPrefab,
+            worldPosition,
+            worldRotation,
+            worldImpactPoint,
+            attackDirection,
+            baseDirectionalForce,
+            multiplier,
+            onReadyToReplaceSource);
+    }
+
+    private EnemyDestructionVisual PlayInternal(
+        GameObject visualPrefab,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        Vector3 worldImpactPoint,
+        Vector3 attackDirection,
+        float directionalForce,
+        float directionalForceMultiplier,
+        Action onReadyToReplaceSource)
+    {
         EnemyDestructionVisual visual = Rent(visualPrefab);
         if (visual == null)
         {
@@ -100,6 +149,7 @@ public sealed class EnemyDestructionVisualPool : MonoBehaviour
             worldImpactPoint,
             attackDirection,
             directionalForce,
+            directionalForceMultiplier,
             onReadyToReplaceSource);
         return visual;
     }
