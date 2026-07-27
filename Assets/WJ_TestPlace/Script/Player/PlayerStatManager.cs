@@ -30,6 +30,9 @@ public class PlayerStatManager : MonoBehaviour
     [Tooltip("IStatSetProvider를 구현한 컴포넌트. 아직 없으면 비워둬도 됨 (StatSet.Zero로 취급)")]
     [SerializeField] private MonoBehaviour buffManagerBehaviour;
 
+    [Tooltip("IStatSetProvider를 구현한 컴포넌트. 플레이어가 인벤토리에 소지한 유물 스탯을 제공")]
+    [SerializeField] private MonoBehaviour relicProviderBehaviour;
+
     [Header("초기값")]
     [SerializeField] private int startLevel = 1;
 
@@ -40,6 +43,7 @@ public class PlayerStatManager : MonoBehaviour
     public event System.Action<EquippedWeaponInfo?> OnWeaponInfoChanged;
     private IStatSetProvider EquipProvider => equipManagerBehaviour as IStatSetProvider;
     private IStatSetProvider BuffProvider => buffManagerBehaviour as IStatSetProvider;
+    private IStatSetProvider RelicProvider => relicProviderBehaviour as IStatSetProvider;
 
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
@@ -123,6 +127,9 @@ public class PlayerStatManager : MonoBehaviour
         if (buffManagerBehaviour != null && BuffProvider == null)
             Debug.LogWarning($"[PlayerStatManager] {buffManagerBehaviour.GetType().Name}은(는) IStatSetProvider를 구현하지 않았습니다.");
 
+        if (relicProviderBehaviour != null && RelicProvider == null)
+            Debug.LogWarning($"[PlayerStatManager] {relicProviderBehaviour.GetType().Name}은(는) IStatSetProvider를 구현하지 않았습니다.");
+
         Stat = new PlayerStat(startLevel);
         Recalculate();
 
@@ -146,10 +153,13 @@ public class PlayerStatManager : MonoBehaviour
     {
         StatSet character = GetCharacterStatSet();
         StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
+        StatSet relic = RelicProvider != null ? RelicProvider.GetStatSet() : StatSet.Zero;
         StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
         StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
 
-        Stat.Recalculate(character, equipment, buff, passive);
+        StatSet buffAndRelic = buff + relic;
+
+        Stat.Recalculate(character, equipment, buffAndRelic, passive);
     }
 
     /// <summary>레벨을 올리고 전체 재계산까지 한 번에 처리.</summary>
@@ -187,6 +197,7 @@ public class PlayerStatManager : MonoBehaviour
 
         StatSet character = GetCharacterStatSet();
         StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
+        StatSet relic = RelicProvider != null ? RelicProvider.GetStatSet() : StatSet.Zero;
         StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
         StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
 
@@ -211,6 +222,7 @@ public class PlayerStatManager : MonoBehaviour
         sb.AppendLine("--- 레이어별 기여분 (Flat / Percent) ---");
         AppendLayer(sb, "캐릭터", character);
         AppendLayer(sb, "장비", equipment);
+        AppendLayer(sb, "유물", relic);
         AppendLayer(sb, "버프", buff);
         AppendLayer(sb, "패시브", passive);
 

@@ -84,6 +84,8 @@ public readonly struct EnemyDeathVfxRequest
 | `6. 처음에 팍 튀는 속도` | `초반 폭발 속도 커브 사용`, `원래 움직임`, `강한 타격`, `묵직한 보스`, `처음 튀는 속도 배수`, `빠르게 튀는 구간`, `마지막 속도 배수`, `기존 이동 거리에 가깝게 자동 보정` | 파편이 처음에는 빠르게 튀고 수명 후반에는 느려지는 속도 곡선을 조절한다. 처음 속도 배수는 최대 `10`까지 설정할 수 있다. |
 | `7. 결정타 데미지에 따른 세기` | `결정타 데미지 배수 사용`, `미리보기 적 최대 체력`, `미리보기 결정타 데미지`, `데미지 비율`, `적용 배수` | 죽게 만든 마지막 공격의 데미지가 클수록 `공격 방향 초기 충격`을 강하게 만든다. 미리보기 값은 계산 확인용이고 실제 공격값을 바꾸지 않는다. |
 
+현재 통합 테스트 패널의 기본 운동값은 `공격 방향 초기 충격 3`, `중력 2.5`, `공기 저항 1`이다. 새 `ArtificerRuntimeSettings`와 `Enemy Manual Test` 프리팹이 같은 값을 사용한다.
+
 ### 처음에는 빠르고 마지막에는 느린 파편 설정
 
 이 기능은 Artificer 원본 스크립트를 수정하지 않는다. 파괴 연출 프리팹의 `ArtificerFragmentBurstProfile`이 Artificer의 `CustomDismantle` 확장 지점에서 각 파편의 초기 속도와 이후 속도를 보정한다. 안전 생성 기능으로 만든 프리팹에는 자동으로 추가·연결되므로 팀원이 스크립트를 직접 붙일 필요가 없다.
@@ -122,7 +124,7 @@ public readonly struct EnemyDeathVfxRequest
 - 커브 가로축 X: `결정타 데미지 ÷ 적 최대 체력`이며 `0~1`로 제한한다.
 - 커브 세로축 Y: `공격 방향 초기 충격`에 곱할 배수다.
 - 기본 키: `0 → 0.7배`, `0.5 → 1.0배`, `1.0 → 1.8배`다.
-- 실제 최종값: `패널의 공격 방향 초기 충격 × 커브 배수`다.
+- 실제 최종값: `패널의 공격 방향 초기 충격 × 커브 배수`다. 현재 기본 충격 `3`에서는 `0% / 50% / 100%` 결정타가 각각 `2.1 / 3 / 5.4`가 된다.
 - 패널의 `미리보기` 두 값은 현재 배수를 확인하는 시험값일 뿐, 실제 적 체력이나 플레이어 데미지를 변경하지 않는다.
 
 테스트에서는 `EnemyDestructionTarget.TakeDamage(WBH_DamageResult)`가 사망을 확정한 공격의 `FinalDamage`와 대상 `MaxHealth`를 `EnemyDestructionVisualPool.PlayWithDamage(...)`에 전달한다. 풀은 `DestructionDamageStrengthScaler.EvaluateMultiplier(...)`로 배수를 계산하고, `CombatDroneArtificerDestruction.TriggerDestruction(..., directionalForceMultiplier)`가 파편의 1회성 초기 충격에 마지막으로 곱한다.

@@ -4116,6 +4116,7 @@ GameObject:
   - component: {fileID: 905915410}
   - component: {fileID: 905915411}
   - component: {fileID: 905915412}
+  - component: {fileID: 905915413}
   m_Layer: 0
   m_Name: PlayerStatManager
   m_TagString: Untagged
@@ -4206,6 +4207,7 @@ MonoBehaviour:
   levelManager: {fileID: 5300018382505854271}
   equipManagerBehaviour: {fileID: 905915407}
   buffManagerBehaviour: {fileID: 905915406}
+  relicProviderBehaviour: {fileID: 905915413}
   startLevel: 1
   equipmentSystem: {fileID: 0}
 --- !u!4 &905915409
@@ -4260,6 +4262,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ba6bf62a64393d4b9b0a9c2728fad10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemTriggerManager
+--- !u!114 &905915413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905915402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb87689cc9ef7634fa8bba69bcfc5df4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
+  inventoryController: {fileID: 69723871576222033}
+  statManager: {fileID: 905915408}
 --- !u!1 &906582699
 GameObject:
   m_ObjectHideFlags: 0
@@ -10064,6 +10080,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5913973492688690292}
   - component: {fileID: 2815563626284033769}
+  - component: {fileID: 5913973492688690293}
   m_Layer: 5
   m_Name: ItemTooltip_AutoSize
   m_TagString: Untagged
@@ -15281,33 +15298,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
   canvas: {fileID: 5725945158809901768}
   canvasRect: {fileID: 5931378826057285211}
-  tooltipRect: {fileID: 5913973492688690292}
-  tooltipPanel: {fileID: 239549886046756756}
-  borderImage: {fileID: 5655178517000459377}
-  overlayImage: {fileID: 8449751016150016277}
-  itemImage: {fileID: 1476098253767018314}
-  itemNameText: {fileID: 6757769547812018496}
-  itemRarityText: {fileID: 9192422556730546665}
-  itemCategoryText: {fileID: 3302416645354071465}
-  mainStatText: {fileID: 3910105914811107368}
-  subStat1Text: {fileID: 5321959652258464960}
-  subStat2Text: {fileID: 2015705132823057806}
-  subStat3Text: {fileID: 5550527740906022860}
-  subStat4Text: {fileID: 255209582124513118}
-  elementBonusText: {fileID: 7700052662977147707}
-  uniqueEffectNameText: {fileID: 4303569894507813167}
-  uniqueEffectDescriptionText: {fileID: 5239033012801083088}
-  itemPriceText: {fileID: 7486755473263141573}
-  itemSizeText: {fileID: 3584477740745703501}
+  equipmentSystem: {fileID: 1778033012}
+  primaryTooltip: {fileID: 5913973492688690293}
   offset: {x: 15, y: 15}
-  section1: {fileID: 3233964684912001769}
-  section2: {fileID: 8573442576564668633}
-  section3: {fileID: 6627474459824262143}
-  section4: {fileID: 7646693265113162282}
-  backgroundRect: {fileID: 1133800442155989725}
-  sectionSpacing: 5
-  topPadding: 30
-  bottomPadding: 10
+  comparisonGap: 12
 --- !u!1 &2324281732686694125
 GameObject:
   m_ObjectHideFlags: 0
@@ -24469,6 +24463,42 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -300}
   m_SizeDelta: {x: 400, y: 600}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &5913973492688690293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 239549886046756756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b15bb6379294b2478b9b0ffb9e9ffa3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipUI
+  borderImage: {fileID: 5655178517000459377}
+  overlayImage: {fileID: 8449751016150016277}
+  itemImage: {fileID: 1476098253767018314}
+  itemNameText: {fileID: 6757769547812018496}
+  itemRarityText: {fileID: 9192422556730546665}
+  itemCategoryText: {fileID: 3302416645354071465}
+  mainStatText: {fileID: 3910105914811107368}
+  subStat1Text: {fileID: 5321959652258464960}
+  subStat2Text: {fileID: 2015705132823057806}
+  subStat3Text: {fileID: 5550527740906022860}
+  subStat4Text: {fileID: 255209582124513118}
+  elementBonusText: {fileID: 7700052662977147707}
+  uniqueEffectNameText: {fileID: 4303569894507813167}
+  uniqueEffectDescriptionText: {fileID: 5239033012801083088}
+  itemPriceText: {fileID: 7486755473263141573}
+  itemSizeText: {fileID: 3584477740745703501}
+  section1: {fileID: 3233964684912001769}
+  section2: {fileID: 8573442576564668633}
+  section3: {fileID: 6627474459824262143}
+  section4: {fileID: 7646693265113162282}
+  backgroundRect: {fileID: 1133800442155989725}
+  sectionSpacing: 5
+  topPadding: 30
+  bottomPadding: 10
 --- !u!1 &5918452922339585970
 GameObject:
   m_ObjectHideFlags: 0

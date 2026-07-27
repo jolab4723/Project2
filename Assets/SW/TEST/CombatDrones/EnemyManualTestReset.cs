@@ -50,7 +50,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
     [SerializeField, Min(0.01f), InspectorName("적 체력")]
     private float enemyHealth = 1f;
     [SerializeField, Min(0f), InspectorName("파편 방향 힘")]
-    private float directionalForce = 4.5f;
+    private float directionalForce = 3f;
     [SerializeField, Range(0, 31), InspectorName("적 레이어")]
     private int enemyLayer = 10;
     [SerializeField, InspectorName("리셋 키")]

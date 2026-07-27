@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 990e8e4f7c2c61a48af0f25a169988f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArtificerRuntimeTuningPanel
-  applyToAll: 1
+  applyMode: 0
   collapsed: 0
   loadFirstTargetOnStart: 1
   settings:
@@ -54,12 +54,17 @@ MonoBehaviour:
     maximumLifetime: 4
     minimumRadialForce: 0.8
     maximumRadialForce: 2.8
-    directionalForce: 5.5
+    directionalForce: 3
     angularSpeed: 180
-    gravity: 1.35
+    gravity: 2.5
     bounce: 0.15
-    linearDrag: 0.25
+    linearDrag: 1
     angularDrag: 0.2
+    useBurstSpeedCurve: 1
+    initialSpeedMultiplier: 3.5
+    burstDuration: 0.1
+    finalSpeedMultiplier: 0.05
+    preserveBurstTravelDistance: 1
     fragmentScale: 1
     shrinkFragments: 1
     shrinkStart: 0.7
@@ -69,3 +74,4 @@ MonoBehaviour:
     dissolveEdgeWidth: 0.06
     orderMode: 0
     randomSeed: 404
+  damageStrengthScaler: {fileID: 0}

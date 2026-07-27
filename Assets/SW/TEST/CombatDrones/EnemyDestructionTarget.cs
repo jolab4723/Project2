@@ -6,7 +6,7 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     WBH_ICombatStatus
 {
     [SerializeField, Min(0.01f)] private float maxHealth = 1f;
-    [SerializeField, Min(0f)] private float directionalForce = 4.5f;
+    [SerializeField, Min(0f)] private float directionalForce = 3f;
 
     private CombatDroneArtificerDestruction destruction;
     private EnemyDestructionVisualPool destructionVisualPool;

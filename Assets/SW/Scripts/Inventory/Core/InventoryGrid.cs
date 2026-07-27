@@ -133,6 +133,9 @@ public class InventoryGrid : MonoBehaviour
         var seen = new System.Collections.Generic.HashSet<InventoryItem>();
         var result = new System.Collections.Generic.List<InventoryItem>();
 
+        if (grid == null)
+            return result;
+
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)

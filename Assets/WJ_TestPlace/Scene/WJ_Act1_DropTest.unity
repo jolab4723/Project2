@@ -1059,17 +1059,6 @@ Transform:
   - {fileID: 1124618598}
   m_Father: {fileID: 241510689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &83103757 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2270419008205961542, guid: fad03a56877a9c24085144fcf376486f, type: 3}
-  m_PrefabInstance: {fileID: 7103675155684568988}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1001 &83541864
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20828,6 +20817,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1403968078}
   - component: {fileID: 1403968077}
+  - component: {fileID: 1403968079}
   m_Layer: 5
   m_Name: ItemTooltip_AutoSize
   m_TagString: Untagged
@@ -20872,6 +20862,42 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -300}
   m_SizeDelta: {x: 400, y: 600}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1403968079
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403968076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b15bb6379294b2478b9b0ffb9e9ffa3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipUI
+  borderImage: {fileID: 758690689}
+  overlayImage: {fileID: 1418489968}
+  itemImage: {fileID: 554429570}
+  itemNameText: {fileID: 1104456502}
+  itemRarityText: {fileID: 163112378}
+  itemCategoryText: {fileID: 862217642}
+  mainStatText: {fileID: 1070942674}
+  subStat1Text: {fileID: 2069158507}
+  subStat2Text: {fileID: 1815397957}
+  subStat3Text: {fileID: 1401426730}
+  subStat4Text: {fileID: 1742004265}
+  elementBonusText: {fileID: 423741146}
+  uniqueEffectNameText: {fileID: 635135513}
+  uniqueEffectDescriptionText: {fileID: 1553647242}
+  itemPriceText: {fileID: 2111867670}
+  itemSizeText: {fileID: 557003613}
+  section1: {fileID: 196711247}
+  section2: {fileID: 1031715657}
+  section3: {fileID: 325422283}
+  section4: {fileID: 1678475455}
+  backgroundRect: {fileID: 323463002}
+  sectionSpacing: 5
+  topPadding: 30
+  bottomPadding: 10
 --- !u!1001 &1404725658
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32171,6 +32197,7 @@ GameObject:
   - component: {fileID: 1907446004}
   - component: {fileID: 1907446003}
   - component: {fileID: 1907446002}
+  - component: {fileID: 1907446009}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -32474,6 +32501,7 @@ MonoBehaviour:
   levelManager: {fileID: 1907446008}
   equipManagerBehaviour: {fileID: 1907446006}
   buffManagerBehaviour: {fileID: 1907446007}
+  relicProviderBehaviour: {fileID: 1907446009}
   startLevel: 1
   equipmentSystem: {fileID: 2124315520}
 --- !u!114 &1907446006
@@ -32515,6 +32543,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelManager
   statDataJson: {fileID: 4900000, guid: 7aadd889b989ef14ea384bae286d2dc6, type: 3}
   testLevel: 1
+--- !u!114 &1907446009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907445989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb87689cc9ef7634fa8bba69bcfc5df4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
+  inventoryController: {fileID: 1062686098}
+  statManager: {fileID: 1907446005}
 --- !u!1 &1907832346
 GameObject:
   m_ObjectHideFlags: 0
@@ -33261,33 +33303,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
   canvas: {fileID: 780376235}
   canvasRect: {fileID: 2124315523}
-  tooltipRect: {fileID: 1403968078}
-  tooltipPanel: {fileID: 1403968076}
-  borderImage: {fileID: 758690689}
-  overlayImage: {fileID: 1418489968}
-  itemImage: {fileID: 554429570}
-  itemNameText: {fileID: 1104456502}
-  itemRarityText: {fileID: 163112378}
-  itemCategoryText: {fileID: 862217642}
-  mainStatText: {fileID: 1070942674}
-  subStat1Text: {fileID: 2069158507}
-  subStat2Text: {fileID: 1815397957}
-  subStat3Text: {fileID: 1401426730}
-  subStat4Text: {fileID: 1742004265}
-  elementBonusText: {fileID: 423741146}
-  uniqueEffectNameText: {fileID: 635135513}
-  uniqueEffectDescriptionText: {fileID: 1553647242}
-  itemPriceText: {fileID: 2111867670}
-  itemSizeText: {fileID: 557003613}
+  equipmentSystem: {fileID: 2124315520}
+  primaryTooltip: {fileID: 1403968079}
   offset: {x: 15, y: 15}
-  section1: {fileID: 196711247}
-  section2: {fileID: 1031715657}
-  section3: {fileID: 325422283}
-  section4: {fileID: 1678475455}
-  backgroundRect: {fileID: 323463002}
-  sectionSpacing: 5
-  topPadding: 30
-  bottomPadding: 10
+  comparisonGap: 12
 --- !u!1 &2005670293
 GameObject:
   m_ObjectHideFlags: 0
@@ -34882,7 +34901,7 @@ PrefabInstance:
     - target: {fileID: 6798184219723874282, guid: fad03a56877a9c24085144fcf376486f, type: 3}
       propertyPath: itemImage
       value: 
-      objectReference: {fileID: 83103757}
+      objectReference: {fileID: 0}
     - target: {fileID: 7856793883276445210, guid: fad03a56877a9c24085144fcf376486f, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

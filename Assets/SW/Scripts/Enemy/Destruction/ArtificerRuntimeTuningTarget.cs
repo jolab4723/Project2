@@ -29,11 +29,11 @@ public sealed class ArtificerRuntimeSettings
     [Min(0.05f)] public float maximumLifetime = 2.2f;
     [Min(0f)] public float minimumRadialForce = 0.8f;
     [Min(0f)] public float maximumRadialForce = 2.8f;
-    [Min(0f)] public float directionalForce = 4.5f;
+    [Min(0f)] public float directionalForce = 3f;
     [Min(0f)] public float angularSpeed = 180f;
-    [Min(0f)] public float gravity = 1.35f;
+    [Min(0f)] public float gravity = 2.5f;
     [Range(0f, 1f)] public float bounce = 0.15f;
-    [Min(0f)] public float linearDrag = 0.12f;
+    [Min(0f)] public float linearDrag = 1f;
     [Min(0f)] public float angularDrag = 0.1f;
     public bool useBurstSpeedCurve = true;
     [Range(1f, 10f)] public float initialSpeedMultiplier = 3.5f;
