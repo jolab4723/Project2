@@ -809,8 +809,15 @@ namespace SW.EditorTools
         {
             Artificer artificer = root.AddComponent<Artificer>();
             artificer.target = root;
-            artificer.splitMode = SplitMode.Elements;
-            artificer.usePosition = true;
+            bool optimizeBossGroups =
+                preset == DestructionVisualPreset.BossSequential;
+
+            // 일반 몬스터는 기존의 연결된 메시 파츠를 보존한다.
+            // 파츠 수가 많은 보스만 렌더러/머티리얼 단위로 묶어 파괴 비용을 줄인다.
+            artificer.splitMode = optimizeBossGroups
+                ? SplitMode.Materials
+                : SplitMode.Elements;
+            artificer.usePosition = !optimizeBossGroups;
             artificer.useUV = false;
             artificer.useUV2 = false;
             artificer.useNormal = false;

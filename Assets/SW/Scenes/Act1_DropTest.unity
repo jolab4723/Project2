@@ -4294,6 +4294,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6743684066845059865, guid: e0eaf8d1f6e56504090f153f5a7e8bc0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2124315526}
+    - targetCorrespondingSourceObject: {fileID: 6743684066845059865, guid: e0eaf8d1f6e56504090f153f5a7e8bc0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2124315529}
     - targetCorrespondingSourceObject: {fileID: 2286705783710933955, guid: e0eaf8d1f6e56504090f153f5a7e8bc0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 243129393}
@@ -34331,9 +34334,9 @@ MonoBehaviour:
   maxPlacementAttempts: 20
   blockedDropLayers:
     serializedVersion: 2
-    m_Bits: 118784
+    m_Bits: 8192
   pickupPrefab: {fileID: 5278797764294090788, guid: 1c7128164625f6f489d59221b0164ce3, type: 3}
-  dropOrigin: {fileID: 0}
+  dropOrigin: {fileID: 2124315529}
 --- !u!114 &2124315520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34383,6 +34386,19 @@ MonoBehaviour:
     m_Bits: 65536
   receiverBehaviour: {fileID: 1062686098}
   rayDistance: 500
+--- !u!114 &2124315529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 243129385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe644b5b66924084cb4121b38ac569d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerItemDropOrigin
+  dropPoint: {fileID: 1907445990}
 --- !u!1001 &2129189705
 PrefabInstance:
   m_ObjectHideFlags: 0
