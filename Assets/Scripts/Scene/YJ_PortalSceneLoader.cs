@@ -38,8 +38,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
         if ( ! saveService.HasSaveFile)
         {
-            Log.Warning(
-                "스테이지 맵 저장 파일이 없어 pending 노드 완료 처리를 생략합니다.");
+            Log.Warning("스테이지 맵 저장 파일이 없어 pending 노드 완료 처리를 생략합니다.");
             return true;
         }
 
