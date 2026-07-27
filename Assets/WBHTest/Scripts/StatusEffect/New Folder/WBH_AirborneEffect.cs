@@ -1,16 +1,23 @@
 using UnityEngine;
 
-public class WBH_AirborneEffect : MonoBehaviour
+public class WBH_AirborneEffect : WBH_StatusEffectBase
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public WBH_AirborneEffect(WBH_StatusEffectController controller, WBH_StatusEffectData data) : base(controller, data) { }
+
+    public override void Apply()
     {
-        
+        controller.SetControlEnable(false);
+
+        controller.ApplyAirborne(data.Force, data.Duration);
+
+        controller.PlayStatusEffect(EffectType);
+        controller.PlayStatusSound(EffectType);
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void Remove()
     {
-        
+        controller.SetControlEnable(true);
+
+        controller.StopStatusEffect(EffectType);
     }
 }

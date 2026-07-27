@@ -1,16 +1,19 @@
 using UnityEngine;
 
-public class WBH_KnockbackEffect : MonoBehaviour
+public class WBH_KnockbackEffect : WBH_StatusEffectBase
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public WBH_KnockbackEffect(WBH_StatusEffectController controller, WBH_StatusEffectData data) : base(controller, data) { }
+
+    public override void Apply()
     {
-        
+        controller.ApplyKnockback(data.Direction, data.Force);
+
+        controller.PlayStatusEffect(EffectType);
+        controller.PlayStatusSound(EffectType);
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void Remove()
     {
-        
+        controller.StopStatusEffect(EffectType);
     }
 }

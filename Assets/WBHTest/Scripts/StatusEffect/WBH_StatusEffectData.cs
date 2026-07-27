@@ -10,10 +10,11 @@ public struct WBH_StatusEffectData
     public float Interval; // 틱뎀 간격
     public float TickTimer;// 내부 계산용 타이머
 
-    public Vector3 Direction;
-    public float Force;
+    public Vector3 Direction; // 넉백 방향
+    public float Force; // 넉백 거리
+    public float Height; // 에어본 높이
 
-    public WBH_StatusEffectData(WBH_StatusEffectType type, float duration, float value = 0, float interval = 0, Vector3 direction = default, float force = 0f)
+    public WBH_StatusEffectData(WBH_StatusEffectType type, float duration, float value = 0, float interval = 0, Vector3 direction = default, float force = 0f, float height = 0f)
     {
         Type = type;
 
@@ -25,5 +26,6 @@ public struct WBH_StatusEffectData
 
         Direction = direction;
         Force = force;
+        Height = height;
     }
 }

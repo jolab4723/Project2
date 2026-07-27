@@ -48,7 +48,8 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     // 상태이상 생성 요청
     protected override WBH_IStatusEffect CreateEffect(WBH_StatusEffectData data)
     {
-        return WBH_StatusEffectFactory.Create(data, this); // !@
+        //return WBH_StatusEffectFactory.Create(data, this); // !@
+        return WBH_StatusEffectFactory.Create(this, data); // !@
     }
 
     // 능력치 변경

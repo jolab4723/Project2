@@ -1,16 +1,21 @@
 using UnityEngine;
 
-public class WBH_StunEffect : MonoBehaviour
+public class WBH_StunEffect : WBH_StatusEffectBase
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public WBH_StunEffect(WBH_StatusEffectController controller, WBH_StatusEffectData data) : base(controller, data) { }
+
+    public override void Apply()
     {
-        
+        controller.SetControlEnable(false);
+
+        controller.PlayStatusEffect(EffectType);
+        controller.PlayStatusSound(EffectType);
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void Remove()
     {
-        
+        controller.SetControlEnable(true);
+
+        controller.StopStatusEffect(EffectType);
     }
 }
