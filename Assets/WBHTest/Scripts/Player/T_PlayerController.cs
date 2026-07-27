@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,12 +13,15 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public bool canDodge => currentDodgeCooltime <= 0f;
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
+    public bool IsControlEnabled { get; private set; } = true;
 
     private Camera mainCamera;
     private Animator animator;
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
     private Vector3 dodgeDir;
+    private Coroutine knockbackRoutine;
+    private Coroutine airborneRoutine;
 
     public WBH_ICombatStatus Status => status;
 
@@ -122,7 +126,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     }
 
     // 회피 코루틴
-    private System.Collections.IEnumerator Dodge(Vector3 dir)
+    private IEnumerator Dodge(Vector3 dir)
     {
         agent.enabled = false;
 
@@ -154,6 +158,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
             return;
 
+        if (!IsControlEnabled)
+            return;
+
         stateMachine.ChangeState(PlayerState.Move);
 
         agent.SetDestination(destination);
@@ -171,7 +178,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void TryDodge()
     {
-        if (!canDodge)
+        if (!IsControlEnabled || !canDodge)
             return;
 
         dodgeDir = GetMouseDirection();
@@ -228,6 +235,24 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     }
 
+    // 현재 조작가능한 상태인지 판단
+    public void SetControlEnable(bool enabled)
+    {
+        IsControlEnabled = enabled;
+
+        if (!enabled)
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+
+            agent.ResetPath();
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+        else
+            agent.isStopped = false;
+    }
+
+    
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
     //private void PlayerViewDir()
     //{
