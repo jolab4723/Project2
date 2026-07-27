@@ -9,11 +9,6 @@ public class WorldItemTooltipView : MonoBehaviour
     [SerializeField] private GameObject tooltipPanel;
 
     [SerializeField] private TextMeshProUGUI itemNameText;
-    [SerializeField] private TextMeshProUGUI itemCategoryText;
-    [SerializeField] private TextMeshProUGUI itemRarityText;
-
-    [SerializeField] private Image itemImage;
-    [SerializeField] private Image borderImage;
 
     [SerializeField] private RectTransform tooltipRect;
     [SerializeField] private Canvas canvas;
@@ -39,29 +34,7 @@ public class WorldItemTooltipView : MonoBehaviour
         currentTarget = target;
 
         ItemDefinitionSO definition = item.definition;
-
-        itemImage.sprite = definition.icon;
-        itemImage.enabled = definition.icon != null;
-        itemImage.preserveAspect = true;
-
-        itemNameText.text = item.upgradeLevel > 0
-            ? $"+{item.upgradeLevel} {definition.itemName}"
-            : definition.itemName;
-
-        itemCategoryText.text =
-            ItemDisplayNames.CategoryNames.TryGetValue(
-                definition.category,
-                out string categoryName)
-                ? categoryName
-                : definition.category.ToString();
-
-        itemRarityText.text =
-            ItemDisplayNames.GradeNames.TryGetValue(
-                definition.rarity,
-                out string rarityName)
-                ? rarityName
-                : definition.rarity.ToString();
-
+        itemNameText.text = definition.itemName;
         ApplyRarityColor(definition.rarity);
 
         tooltipPanel.SetActive(true);
@@ -80,11 +53,9 @@ public class WorldItemTooltipView : MonoBehaviour
         if (!ColorUtility.TryParseHtmlString(colorHex, out Color color))
             color = Color.white;
 
-        if (itemRarityText != null)
-            itemRarityText.color = color;
+        if (itemNameText != null)
+            itemNameText.color = color;
 
-        if (borderImage != null)
-            borderImage.color = color;
     }
 
     private void LateUpdate()
@@ -118,12 +89,6 @@ public class WorldItemTooltipView : MonoBehaviour
     public void Hide()
     {
         currentTarget = null;
-
-        if (itemImage != null)
-        {
-            itemImage.sprite = null;
-            itemImage.enabled = false;
-        }
 
         if (tooltipPanel != null)
             tooltipPanel.SetActive(false);
