@@ -49,7 +49,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         if (target == null)
             return;
 
-        RefreshTargets(false);
+        RegisterTarget(target);
         ApplySettingsToTarget(target);
     }
 
@@ -66,17 +66,26 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 artificer.GetComponent<ArtificerRuntimeTuningTarget>();
             if (target == null)
                 target = artificer.gameObject.AddComponent<ArtificerRuntimeTuningTarget>();
-            target.Initialize(artificer);
-            targets.Add(target);
-            if (target.PrefabReleaseMode ==
-                ArtificerRuntimeReleaseMode.Sequential)
-                sequentialPresetCount++;
-            else
-                simultaneousPresetCount++;
+            RegisterTarget(target);
         }
         targets.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
         if (captureFirst && targets.Count > 0)
             targets[0].CaptureSettings(settings);
+    }
+
+    private void RegisterTarget(ArtificerRuntimeTuningTarget target)
+    {
+        if (target == null || targets.Contains(target))
+            return;
+
+        target.Initialize();
+        targets.Add(target);
+        if (target.PrefabReleaseMode ==
+            ArtificerRuntimeReleaseMode.Sequential)
+            sequentialPresetCount++;
+        else
+            simultaneousPresetCount++;
+        targets.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
     }
 
     public void ApplyCurrentSettings()
@@ -247,7 +256,11 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         GUILayout.Label("4. 파편 힘");
         settings.minimumRadialForce = Slider("퍼지는 힘 최소", settings.minimumRadialForce, 0f, 10f);
         settings.maximumRadialForce = Slider("퍼지는 힘 최대", settings.maximumRadialForce, settings.minimumRadialForce, 15f);
-        settings.directionalForce = Slider("공격 방향 힘", settings.directionalForce, 0f, 15f);
+        settings.directionalForce = Slider(
+            "공격 방향 초기 충격",
+            settings.directionalForce,
+            0f,
+            15f);
         settings.angularSpeed = Slider("회전 세기", settings.angularSpeed, 0f, 720f);
 
         GUILayout.Space(6f);
@@ -275,7 +288,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 "처음 튀는 속도 배수",
                 settings.initialSpeedMultiplier,
                 1f,
-                6f);
+                10f);
             settings.burstDuration = Slider(
                 "빠르게 튀는 구간",
                 settings.burstDuration,
@@ -286,11 +299,6 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 settings.finalSpeedMultiplier,
                 0.02f,
                 1f);
-            settings.groundClearanceLift = Slider(
-                "바닥에서 띄우는 비율",
-                settings.groundClearanceLift,
-                0f,
-                0.75f);
             settings.preserveBurstTravelDistance = GUILayout.Toggle(
                 settings.preserveBurstTravelDistance,
                 "기존 이동 거리에 가깝게 자동 보정");
@@ -327,7 +335,6 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.initialSpeedMultiplier = 1f;
         settings.burstDuration = 0.1f;
         settings.finalSpeedMultiplier = 1f;
-        settings.groundClearanceLift = 0f;
         settings.preserveBurstTravelDistance = true;
     }
 
@@ -336,8 +343,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.useBurstSpeedCurve = true;
         settings.initialSpeedMultiplier = 3.5f;
         settings.burstDuration = 0.1f;
-        settings.finalSpeedMultiplier = 0.12f;
-        settings.groundClearanceLift = 0.35f;
+        settings.finalSpeedMultiplier = 0.05f;
         settings.preserveBurstTravelDistance = true;
     }
 
@@ -347,7 +353,6 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.initialSpeedMultiplier = 2.3f;
         settings.burstDuration = 0.18f;
         settings.finalSpeedMultiplier = 0.06f;
-        settings.groundClearanceLift = 0.25f;
         settings.preserveBurstTravelDistance = true;
     }
 

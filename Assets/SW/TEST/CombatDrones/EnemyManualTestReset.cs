@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Artifice;
 using UnityEngine;
@@ -152,7 +153,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         // WBH 입력 시스템 연동부: 씬의 플레이어 입력 핸들러를 찾아 리셋 클릭을 보호한다.
         playerInput = FindFirstObjectByType<WBH_PlayerInputHandler>();
@@ -162,7 +163,31 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             destructionVisualPool =
                 gameObject.AddComponent<EnemyDestructionVisualPool>();
         }
+
+        yield return PrewarmDestructionVisuals();
         ResetEnemies();
+    }
+
+    private IEnumerator PrewarmDestructionVisuals()
+    {
+        if (destructionVisualPool == null)
+            yield break;
+
+        bool usesSameVisual = enemy1DestructionVisualPrefab != null &&
+            enemy1DestructionVisualPrefab == enemy2DestructionVisualPrefab;
+        int enemy1WarmCount = Mathf.Max(0, enemy1Count) +
+            (usesSameVisual ? Mathf.Max(0, enemy2Count) : 0);
+
+        yield return destructionVisualPool.Prewarm(
+            enemy1DestructionVisualPrefab,
+            enemy1WarmCount);
+
+        if (!usesSameVisual)
+        {
+            yield return destructionVisualPool.Prewarm(
+                enemy2DestructionVisualPrefab,
+                Mathf.Max(0, enemy2Count));
+        }
     }
 
     private void Update()

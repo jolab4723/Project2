@@ -24,6 +24,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
     public event Action<EnemyDestructionVisual> Completed;
 
     public bool IsPlaying => playing;
+    public bool IsStartupCompleted => startupCompleted;
 
     public void Play(
         Vector3 worldPosition,

@@ -20,6 +20,7 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
     [SerializeField] private LayerMask fragmentCollisionLayers = 1 << 13;
 
     private ArtificerRuntimeTuningTarget tuningTarget;
+    private ArtificerFragmentBurstProfile fragmentBurstProfile;
     private Collider[] colliders;
     private bool[] colliderStates;
     private bool animatorWasEnabled;
@@ -79,6 +80,15 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
         artificer.forceRange = new Vector3Range(direction * Mathf.Max(0f, directionalForce));
         if (tuningTarget != null)
             tuningTarget.PrepareForDismantle(artificer.explodeOrigin);
+        if (fragmentBurstProfile != null &&
+            fragmentBurstProfile.UseBurstSpeedCurve)
+        {
+            // 커브 사용 시 공격 방향 힘은 지속 가속도가 아니라 사망 순간의
+            // 1회성 초기 충격으로 전달한다.
+            fragmentBurstProfile.PrepareLaunch(
+                direction,
+                directionalForce);
+        }
         PrepareFragmentGroundCollision();
         artificer.StartDismantle();
         RestoreSourceRendererStates();
@@ -161,6 +171,10 @@ public sealed class CombatDroneArtificerDestruction : MonoBehaviour
                 tuningTarget = gameObject.AddComponent<ArtificerRuntimeTuningTarget>();
         }
         if (tuningTarget != null) tuningTarget.Initialize(artificer);
+        if (fragmentBurstProfile == null)
+            fragmentBurstProfile = GetComponent<ArtificerFragmentBurstProfile>();
+        if (fragmentBurstProfile != null)
+            fragmentBurstProfile.Initialize(artificer);
     }
 
     private void CacheColliderStates()
