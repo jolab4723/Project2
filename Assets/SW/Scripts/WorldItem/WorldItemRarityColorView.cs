@@ -13,8 +13,16 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
 
     private ParticleSystem[] lootParticles;
     private MaterialPropertyBlock propertyBlock;
+
     [Header("유일 ~ 전설 등급에만 적용할 이펙트")]
     [SerializeField] private GameObject[] enhancedEffects;
+
+    [Header("등급별 빔 밝기")]
+    [SerializeField, Range(0f, 3f)] private float commonBeamIntensity = 0.5f;
+    [SerializeField, Range(0f, 3f)] private float advancedBeamIntensity = 0.7f;
+    [SerializeField, Range(0f, 3f)] private float rareBeamIntensity = 1f;
+    [SerializeField, Range(0f, 3f)] private float uniqueBeamIntensity = 1f;
+    [SerializeField, Range(0f, 3f)] private float legendaryBeamIntensity = 1.1f;
     private void Awake()
     {
         if (targetRenderer == null)
@@ -22,6 +30,30 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
 
         if (lootRoot != null)
             lootParticles = lootRoot.GetComponentsInChildren<ParticleSystem>(true);
+    }
+
+    private float GetBeamIntensity(ItemRarity rarity)
+    {
+        switch (rarity)
+        {
+            case ItemRarity.Common:
+                return commonBeamIntensity;
+
+            case ItemRarity.Advanced:
+                return advancedBeamIntensity;
+
+            case ItemRarity.Rare:
+                return rareBeamIntensity;
+
+            case ItemRarity.Unique:
+                return uniqueBeamIntensity;
+
+            case ItemRarity.Legendary:
+                return legendaryBeamIntensity;
+
+            default:
+                return 1f;
+        }
     }
 
     public void Apply(ItemRarity rarity)
@@ -51,7 +83,7 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
         targetRenderer.SetPropertyBlock(propertyBlock);
 
         ApplyEffectDetail(rarity);
-        ApplyParticleColor(color);
+        ApplyParticleColor(color, GetBeamIntensity(rarity));
     }
 
     private void ApplyEffectDetail(ItemRarity rarity)
@@ -66,10 +98,12 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
                 effect.SetActive(showEnhancedEffects);
         }
     }
-    private void ApplyParticleColor(Color gradeColor)
+    private void ApplyParticleColor(Color gradeColor, float intensity)
     {
         if (lootRoot == null || lootParticles == null)
             return;
+
+        Color beamColor = gradeColor * Mathf.Max(0f, intensity);
 
         lootRoot.Stop(
             true,
@@ -87,7 +121,9 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
             {
                 case ParticleSystemGradientMode.Color:
                     {
-                        Color color = gradeColor;
+                        Color color = beamColor;
+
+                        // 기존 파티클의 투명도는 유지
                         color.a = original.color.a;
                         main.startColor = color;
                         break;
@@ -95,10 +131,10 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
 
                 case ParticleSystemGradientMode.TwoColors:
                     {
-                        Color minColor = gradeColor;
+                        Color minColor = beamColor;
                         minColor.a = original.colorMin.a;
 
-                        Color maxColor = gradeColor;
+                        Color maxColor = beamColor;
                         maxColor.a = original.colorMax.a;
 
                         main.startColor =
@@ -109,7 +145,6 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
                     }
             }
         }
-
         lootRoot.Play(true);
     }
 }

@@ -46,8 +46,9 @@ GameObject:
   - component: {fileID: 7940425405684510953}
   - component: {fileID: 5278797764294090788}
   - component: {fileID: 3640196731071313401}
+  - component: {fileID: 4350486100493576676}
   m_Layer: 16
-  m_Name: TemporaryWorldItemCube
+  m_Name: WorldItemCube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -187,6 +188,23 @@ MonoBehaviour:
   - {fileID: 4945449672693664074}
   - {fileID: 4945449671046581301}
   - {fileID: 5633406599415762035}
+  commonBeamIntensity: 0.5
+  advancedBeamIntensity: 0.7
+  rareBeamIntensity: 1
+  uniqueBeamIntensity: 1
+  legendaryBeamIntensity: 1.1
+--- !u!114 &4350486100493576676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9040515642582385264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99aa10c08e5d4bf4c80381c946f88313, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldItemPickupClaim
 --- !u!1001 &6042388072953980378
 PrefabInstance:
   m_ObjectHideFlags: 0

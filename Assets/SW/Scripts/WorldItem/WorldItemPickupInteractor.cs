@@ -129,18 +129,34 @@ public sealed class WorldItemPickupInteractor : MonoBehaviour
             return false;
         }
 
-        bool success =
-            ItemAcquisition.Acquire(
-                pickup.Item,
-                Receiver);
-
-        if (!success)
+        if (!pickup.TryGetComponent(
+            out WorldItemPickupClaim pickupClaim))
         {
-            // 인벤토리 공간 부족 등의 경우 큐브를 유지한다.
+            Debug.LogError(
+                "[WorldItemPickupInteractor] " +
+                "월드 아이템에 WorldItemPickupClaim이 없습니다.");
+
             return false;
         }
 
+        // 다른 클릭이나 획득 요청이 먼저 처리 중이면 중단한다.
+        if (!pickupClaim.TryClaim())
+            return false;
+
+        bool success = ItemAcquisition.Acquire(pickup.Item, Receiver);
+
+        if (!success)
+        {
+            // 인벤토리 공간 부족 등의 경우 다시 획득할 수 있어야 한다.
+            pickupClaim.Release();
+            return false;
+        }
+
+        // Destroy는 프레임 마지막에 실행되므로 즉시 비활성화해
+        // Collider와 다른 획득 입력을 먼저 차단한다.
+        pickup.gameObject.SetActive(false);
         Destroy(pickup.gameObject);
+
         return true;
     }
 }
