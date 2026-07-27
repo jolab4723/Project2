@@ -13,7 +13,8 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
 
     private ParticleSystem[] lootParticles;
     private MaterialPropertyBlock propertyBlock;
-
+    [Header("유일 ~ 전설 등급에만 적용할 이펙트")]
+    [SerializeField] private GameObject[] enhancedEffects;
     private void Awake()
     {
         if (targetRenderer == null)
@@ -49,10 +50,22 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
 
         targetRenderer.SetPropertyBlock(propertyBlock);
 
-
+        ApplyEffectDetail(rarity);
         ApplyParticleColor(color);
     }
 
+    private void ApplyEffectDetail(ItemRarity rarity)
+    {
+        bool showEnhancedEffects =
+            rarity == ItemRarity.Unique ||
+            rarity == ItemRarity.Legendary;
+
+        foreach (GameObject effect in enhancedEffects)
+        {
+            if (effect != null)
+                effect.SetActive(showEnhancedEffects);
+        }
+    }
     private void ApplyParticleColor(Color gradeColor)
     {
         if (lootRoot == null || lootParticles == null)

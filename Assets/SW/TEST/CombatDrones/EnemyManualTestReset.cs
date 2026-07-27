@@ -300,7 +300,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             destructionVisualPool,
             destructionVisualPrefab);
 
-        target.enemyGrade = EnemyGrade.Boss;
+        target.enemyGrade = EnemyGrade.Elite;
     }
 
     private static void EnsureRootHitCollider(GameObject enemy)
