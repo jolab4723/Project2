@@ -67,8 +67,10 @@ public class ItemEquipHandler : MonoBehaviour
             }
         }
 
-        if (TryRightClickSwapWithEquipSlot(swapSlot))
-            return true;
+        // 호환 슬롯이 이미 차 있었다면 교체 메서드가 성공 여부와 구체적인 실패 메시지를 담당한다.
+        // 교체 실패 뒤 일반 메시지로 다시 덮어쓰지 않도록 결과를 그대로 반환한다.
+        if (swapSlot != null)
+            return TryRightClickSwapWithEquipSlot(swapSlot);
 
         InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
         return false;

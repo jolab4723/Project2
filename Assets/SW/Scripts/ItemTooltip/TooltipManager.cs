@@ -13,6 +13,12 @@ public class TooltipManager : MonoBehaviour
     [SerializeField] private Canvas canvas;
     [SerializeField] private RectTransform canvasRect;
 
+    /// <summary>
+    /// 후보 장비 착용 전후의 최종 공격력, 방어력, 이동속도를 계산할 플레이어 스탯 관리자다.
+    /// </summary>
+    [Header("Player Stats")]
+    [SerializeField] private PlayerStatManager playerStatManager;
+
     [Header("Equipment")]
     [SerializeField] private EquipmentSystem equipmentSystem;
 
@@ -59,6 +65,12 @@ public class TooltipManager : MonoBehaviour
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         else
             Debug.LogWarning("[TooltipManager] EquipmentSystem이 연결되지 않아 비교 툴팁이 표시되지 않습니다.");
+
+        if (playerStatManager == null)
+        {
+            Debug.LogWarning(
+                "[TooltipManager] PlayerStatManager가 연결되지 않아 최종 스탯 비교가 표시되지 않습니다.");
+        }
     }
 
     private void OnDestroy()
@@ -104,6 +116,7 @@ public class TooltipManager : MonoBehaviour
             TooltipComparisonResolver.TryResolveComparison(
                     itemData,
                     equipmentSystem,
+                    playerStatManager,
                     out result);
 
         if (hasComparison)
@@ -137,8 +150,7 @@ public class TooltipManager : MonoBehaviour
         // 후보 실제 수치 + 초록/빨강 변화량
         bool candidateShown = primaryTooltip.Show(candidateItem, result);
 
-        // 현재 장비 툴팁:
-        // 비교 색상 없이 현재 장비의 실제 정보
+        // 현재 장비 툴팁은 비교 문구 없이 원래 아이템 옵션을 표시한다.
         bool equippedShown = comparisonTooltip.Show(result.EquippedItem);
 
         if (!candidateShown)

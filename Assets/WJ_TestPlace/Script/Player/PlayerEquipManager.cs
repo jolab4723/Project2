@@ -37,6 +37,60 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
 
         return total;
     }
+    /// <summary>
+    /// 실제 장착 상태를 변경하지 않고 지정한 슬롯의 현재 장비를 후보 아이템으로
+    /// 교체했다고 가정한 전체 장비 StatSet을 계산한다.
+    /// 포션은 제외하며 후보 아이템의 강화 적용 메인 옵션과 모든 부가 옵션을 포함한다.
+    /// </summary>
+    /// <returns>후보 아이템이 유효하고 지정 슬롯에 장착할 수 있으면 true.</returns>
+    public bool TryGetStatSetAfterReplacing(
+        EquipSlotType replacingSlot,
+        ItemInstance candidateItem,
+        out StatSet result)
+    {
+        result = StatSet.Zero;
+
+        if (equipmentSystem == null)
+        {
+            Debug.LogWarning("[PlayerEquipManager] EquipmentSystem이 연결되지 않았습니다.");
+            return false;
+        }
+
+        if (candidateItem == null || candidateItem.definition == null)
+        {
+            return false;
+        }
+
+        if (!EquipSlotRules.CanEquipTo(
+                candidateItem.definition,
+                replacingSlot))
+        {
+            return false;
+        }
+
+        foreach (var pair in equipmentSystem.GetEquippedItems())
+        {
+            EquipSlotType currentSlot = pair.Key;
+            InventoryItem inventoryItem = pair.Value;
+
+            if (currentSlot == EquipSlotType.Potion)
+                continue;
+
+            // 교체할 슬롯의 기존 아이템은 합산하지 않는다.
+            if (currentSlot == replacingSlot)
+                continue;
+
+            if (inventoryItem == null || inventoryItem.itemData == null)
+                continue;
+
+            result += ToStatSet(inventoryItem.itemData);
+        }
+
+        // 기존 장비 대신 후보 아이템을 합산한다.
+        result += ToStatSet(candidateItem);
+
+        return true;
+    }
 
     /// <summary>메인 옵션(강화 적용됨) + 서브 옵션(속성 보너스 포함)을 전부 StatSet에 더한다.</summary>
     private static StatSet ToStatSet(ItemInstance itemData)

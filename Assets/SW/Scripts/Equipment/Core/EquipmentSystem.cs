@@ -28,6 +28,8 @@ public class EquipmentSystem : MonoBehaviour
                 item);
         }
 
+        // 인벤토리에서 회전된 아이템도 장비 슬롯 안에서는 항상 정방향 상태를 가진다.
+        item.isRotated = false;
         equippedItems[slotType] = item;
         item.isEquipped = true;
 
@@ -91,6 +93,8 @@ public class EquipmentSystem : MonoBehaviour
                 incomingItem);
         }
 
+        // 교체로 들어오는 아이템 역시 장비 상태에서는 회전값을 유지하지 않는다.
+        incomingItem.isRotated = false;
         equippedItems[slotType] = incomingItem;
 
         outgoingItem.isEquipped = false;
