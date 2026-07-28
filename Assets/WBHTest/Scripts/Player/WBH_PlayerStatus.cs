@@ -175,7 +175,12 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         // PlayerHealthManager가 있으면 현재 체력은 그쪽이 Start()에서 풀피로 초기화한다.
         if (healthManager == null)
+        {
             currentHp = maxHp;
+            currentAttackPower = attackPower; 
+            currentAttackSpeed = attackSpeed;
+            currentMoveSpeed = moveSpeed;
+        }
 
         // T_PlayerController.Start()에서 호출되므로 이 시점엔 PlayerStatManager.Awake()가 이미 끝나
         // Stat이 만들어져 있다. 여기서 구독하고 초기 이동속도를 한 번 적용한다.
@@ -253,32 +258,52 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     public void Heal(float amount)
     {
+        if (UseHealthManager)
+        {
+            healthManager.Heal(amount);
+            return;
+        }
 
         currentHp += amount;
         currentHp = Mathf.Min(currentHp, maxHp);
         OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
-    public void MultiplyMoveSpeed(float multiplier)
+    public void MultiplyMoveSpeed(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
             return;
 
-        moveSpeed *= multiplier;
-        playerController.SetMoveSpeed(this.moveSpeed);
+        currentMoveSpeed = moveSpeed * modifier;
+        playerController.SetMoveSpeed(currentMoveSpeed);
     }
-    public void MultiplyAttackSpeed(float multiplier)
+    public void MultiplyAttackSpeed(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
             return;
 
-        attackSpeed *= multiplier;
+        currentAttackSpeed = attackSpeed * modifier;
     }
-    public void MultiplyAttack(float multiplier)
+    public void MultiplyAttack(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
             return;
 
-        attackPower *= multiplier;
+        currentAttackPower = attackPower * modifier;
+    }
+
+    /// <summary>
+    /// WJ 스탯 시스템이 스탯을 소유한 상태에서는 Fallback 필드를 곱해도 실제 스탯이 바뀌지 않는다.
+    /// 이 경우 조용히 무시되지 않도록 경고를 남기고 true를 반환한다.
+    /// (일시적인 배율 변경은 PlayerBuffManager.ApplyBuff로 처리해야 함)
+    /// </summary>
+    private bool WarnIfStatManagerOwnsStats(string methodName)
+    {
+        if (!UseStatManager)
+            return false;
+
+        Debug.LogWarning($"[WBH_PlayerStatus] {methodName}은(는) PlayerStatManager가 스탯을 관리할 때 효과가 없습니다. " +
+                         "PlayerBuffManager.ApplyBuff(BuffDefinitionSO)로 처리해주세요.");
+        return true;
     }
 }
