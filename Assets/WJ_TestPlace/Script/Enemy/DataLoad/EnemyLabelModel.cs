@@ -10,11 +10,11 @@ namespace DataSystem
         public List<EnemyLabelRow> engLabels = new List<EnemyLabelRow>();
     }
 
-    /// <summary>EnemyDataLabel.xlsx의 KOR/ENG 시트 한 줄. enemyID는 EnemyData.xlsx의 enemyId와 1:1로 맞춘다.</summary>
+    /// <summary>EnemyDataLabel.xlsx의 KOR/ENG 시트 한 줄. enemyId는 EnemyData.xlsx의 enemyId와 1:1로 맞춘다.</summary>
     [Serializable]
     public class EnemyLabelRow
     {
-        public string enemyID;
+        public string enemyId;
         public string enemyName;
     }
 }

@@ -10,13 +10,13 @@ namespace DataSystem
 {
     /// <summary>
     /// EnemyDataLabel.xlsx(KOR/ENG 시트)를 JSON으로 변환한다.
-    /// enemyID 컬럼은 EnemyData.xlsx의 enemyId(예: "enemy.normal.ranged.patrol_drone")와 1:1로 맞춰져 있다.
+    /// enemyId 컬럼은 EnemyData.xlsx의 enemyId(예: "enemy.normal.ranged.patrol_drone")와 1:1로 맞춰져 있다.
     /// 아이템 시트와 같은 구조(1행 헤더, 타입 힌트 행 없음)라 ExcelSheetReader.ReadSheetRows를 그대로 사용한다.
     /// </summary>
     public static class EnemyLabelExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/JSONFile";
-        private const string DefaultExcelPath = "Assets/Resources/DataFiles/CharData/ExcelFile/EnemyDataLabel.xlsx";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/EnemyData/ExcelFile/EnemyDataLabel.xlsx";
 
         [MenuItem("DataLoader/Enemy Label/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
