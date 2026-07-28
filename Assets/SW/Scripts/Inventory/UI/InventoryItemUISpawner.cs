@@ -106,7 +106,7 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
         if (dropHandler != null)
         {
-            dropHandler.Bind(worldItemDropService);
+            dropHandler.Bind(worldItemDropService, inventoryController);
         }
 
         return itemUI;

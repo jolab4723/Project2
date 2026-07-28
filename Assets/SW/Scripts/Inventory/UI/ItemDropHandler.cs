@@ -6,6 +6,7 @@ public class ItemDropHandler : MonoBehaviour
     [SerializeField] private ItemEquipHandler equipHandler;
 
     private WorldItemDropService worldItemDropService;
+    private InventoryController inventoryController;
 
     private void Awake()
     {
@@ -16,9 +17,10 @@ public class ItemDropHandler : MonoBehaviour
             equipHandler = GetComponent<ItemEquipHandler>();
     }
 
-    public void Bind(WorldItemDropService service)
+    public void Bind(WorldItemDropService service, InventoryController owner)
     {
         worldItemDropService = service;
+        inventoryController = owner;
     }
     public void ResolveDrop()
     {
@@ -65,6 +67,15 @@ public class ItemDropHandler : MonoBehaviour
             }
 
             upgradeDropSlot.TrySelectItem(itemUI);
+            return;
+        }
+
+        InventoryRemoveDropZone removeDropZone = target != null
+        ? target.GetComponentInParent<InventoryRemoveDropZone>() : null;
+
+        if (removeDropZone != null)
+        {
+            HandleDiscard();
             return;
         }
         Vector2Int targetCell = itemUI.GetCellFromItemRect(itemUI.CurrentGrid);
@@ -211,6 +222,55 @@ public class ItemDropHandler : MonoBehaviour
 
         // 실패해도 이번 드롭 입력은 여기서 처리 완료한다.
         return true;
+    }
+
+    private void HandleDiscard()
+    {
+        InventoryItem item = itemUI != null ? itemUI.Item : null;
+
+        InventoryDiscardResult result =
+            InventoryDiscardService.TryDiscard(
+                inventoryController,
+                item,
+                itemUI != null ? itemUI.OriginalGrid : null,
+                itemUI != null && itemUI.OriginalWasEquipped);
+
+        string itemName =
+            item?.itemData?.definition != null
+                ? item.itemData.definition.itemName
+                : "아이템";
+
+        string message = InventoryDiscardMessageMapper.GetMessage(result, itemName);
+
+        if (inventoryController != null)
+            inventoryController.PrintLog(message);
+        else
+            Debug.LogWarning(message);
+
+        if (result == InventoryDiscardResult.Success)
+        {
+            TooltipManager.Instance?.HideTooltip();
+            Destroy(itemUI.gameObject);
+            return;
+        }
+
+        bool restored;
+
+        if (itemUI != null && itemUI.OriginalWasEquipped)
+        {
+            restored =
+                equipHandler != null &&
+                equipHandler.TryHandleDropToEquipSlot(itemUI.CurrentEquipSlot);
+        }
+        else
+        {
+            restored =
+                itemUI != null &&
+                itemUI.TryReturnToOriginalPosition();
+        }
+
+        if (!restored)
+            Debug.LogError($"[ItemDropHandler] 삭제 실패 후 아이템 복구에도 실패했습니다. result={result}");
     }
 }
 
