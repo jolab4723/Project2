@@ -1,8 +1,8 @@
+using ItemSystem;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using ItemSystem;
 
 /// <summary>
 /// 캐릭터(PlayerLevelManager) + 장비(PlayerEquipManager) + 버프(PlayerBuffManager) 레이어를
@@ -160,6 +160,77 @@ public class PlayerStatManager : MonoBehaviour
         StatSet buffAndRelic = buff + relic;
 
         Stat.Recalculate(character, equipment, buffAndRelic, passive);
+    }
+
+    /// <summary>
+    /// 실제 플레이어와 장비 상태를 변경하지 않고 현재 장비 구성과 후보 장비 교체 후 구성의
+    /// 최종 스탯을 각각 계산한다. 두 계산 모두 현재 캐릭터, 버프, 유물, 패시브 조건을 동일하게 사용한다.
+    /// </summary>
+    /// <returns>PlayerEquipManager와 후보 아이템이 유효해 두 최종 스탯을 계산했으면 true.</returns>
+    public bool TryCalculateStatsAfterReplacing(
+        EquipSlotType replacingSlot,
+        ItemInstance candidateItem,
+        out PlayerStat currentStats,
+        out PlayerStat candidateStats)
+    {
+        currentStats = null;
+        candidateStats = null;
+
+        if (Stat == null)
+            return false;
+
+        PlayerEquipManager equipManager = equipManagerBehaviour as PlayerEquipManager;
+
+        if (equipManager == null)
+        {
+            Debug.LogWarning("[PlayerStatManager] PlayerEquipManager를 찾을 수 없습니다.");
+
+            return false;
+        }
+
+        StatSet currentEquipment = equipManager.GetStatSet();
+
+        if (!equipManager.TryGetStatSetAfterReplacing(
+                replacingSlot,
+                candidateItem,
+                out StatSet candidateEquipment))
+        {
+            return false;
+        }
+
+        currentStats = CalculateStatsForComparison(currentEquipment);
+        candidateStats = CalculateStatsForComparison(candidateEquipment);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 전달받은 장비 합계에 현재 캐릭터 기본값, 버프, 유물, 패시브를 결합해
+    /// 비교 전용 PlayerStat을 만든다. 새 객체에서 계산하므로 실제 Stat과 이벤트 구독자는 변경되지 않는다.
+    /// </summary>
+    private PlayerStat CalculateStatsForComparison(
+        StatSet equipmentStats)
+    {
+        PlayerStat calculatedStats =
+            new PlayerStat(Stat.currentLevel, Stat.currentExp);
+
+        StatSet character = GetCharacterStatSet();
+
+        StatSet relic = RelicProvider != null
+            ? RelicProvider.GetStatSet()
+            : StatSet.Zero;
+
+        StatSet buff = BuffProvider != null
+            ? BuffProvider.GetStatSet()
+            : StatSet.Zero;
+
+        StatSet passive = PassiveSkillManager.Instance != null
+            ? PassiveSkillManager.Instance.GetStatSet()
+            : StatSet.Zero;
+
+        calculatedStats.Recalculate(character, equipmentStats, buff + relic, passive);
+
+        return calculatedStats;
     }
 
     /// <summary>레벨을 올리고 전체 재계산까지 한 번에 처리.</summary>

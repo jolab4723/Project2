@@ -48,11 +48,21 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     
     private void Awake()
     {
-        rect = GetComponent<RectTransform>();
-        equipmentHandler = GetComponent<ItemEquipHandler>();
+        EnsureUIReferences();
     }
+
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
+        EnsureUIReferences();
+
+        if (rect == null || itemIcon == null || itemTransform == null)
+        {
+            Debug.LogError(
+                "[ItemUI] UI 표시를 위한 RectTransform 또는 아이콘 Image를 찾지 못했습니다.",
+                this);
+            return;
+        }
+
         inventoryItem = item;
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -73,11 +83,24 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         // 위치 계산: step(73)을 곱해줍니다.
         rect.anchoredPosition = new Vector2(item.x * step, -item.y * step);
 
-        itemIcon = transform.GetChild(0).GetComponent<Image>();
-        itemTransform = itemIcon.transform;
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
+    }
+
+    private void EnsureUIReferences()
+    {
+        if (rect == null)
+            rect = GetComponent<RectTransform>();
+
+        if (equipmentHandler == null)
+            equipmentHandler = GetComponent<ItemEquipHandler>();
+
+        if (itemIcon == null && transform.childCount > 0)
+            itemIcon = transform.GetChild(0).GetComponent<Image>();
+
+        if (itemTransform == null && itemIcon != null)
+            itemTransform = itemIcon.transform;
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -276,44 +299,51 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     out int foundY,
     out bool targetRotated)
     {
-        targetRotated = inventoryItem.isRotated;
+        foundX = -1;
+        foundY = -1;
+        targetRotated = false;
 
-        if (currentGrid.FindEmptySpace(
-                inventoryItem.CurrentWidth,
-                inventoryItem.CurrentHeight,
-                out foundX,
-                out foundY))
+        if (currentGrid == null || inventoryItem == null)
+            return false;
+
+        // 장비 교체와 동일한 공용 규칙으로 현재 방향을 먼저 찾고,
+        // 자리가 없을 때만 회전 방향을 확인한다.
+        if (!currentGrid.TryFindEmptySpaceForItem(
+                inventoryItem,
+                inventoryItem.isRotated,
+                out InventoryPlacementSnapshot placement))
         {
-            return true;
+            return false;
         }
 
-        int rotatedWidth = inventoryItem.CurrentHeight;
-        int rotatedHeight = inventoryItem.CurrentWidth;
-
-        if (currentGrid.FindEmptySpace(
-                rotatedWidth,
-                rotatedHeight,
-                out foundX,
-                out foundY))
-        {
-            targetRotated = !inventoryItem.isRotated;
-            return true;
-        }
-
-        return false;
+        foundX = placement.Rect.X;
+        foundY = placement.Rect.Y;
+        targetRotated = placement.IsRotated;
+        return true;
     }
 
+    /// <summary>
+    /// 장착 시 데이터와 아이콘을 항상 정방향으로 맞춘다.
+    /// 트랜잭션이 데이터의 회전값을 먼저 초기화했더라도 아이콘 회전은 별도로 남을 수 있으므로
+    /// 기존 회전값과 관계없이 시각 상태까지 매번 초기화한다.
+    /// </summary>
     public void ResetRotationForEquipSlot()
     {
-        if (!inventoryItem.isRotated)
+        if (inventoryItem == null)
             return;
 
         inventoryItem.isRotated = false;
-        itemTransform.localRotation = Quaternion.Euler(0, 0, 0);
-        rect.sizeDelta = new Vector2(
-            inventoryItem.CurrentWidth * cellSize,
-            inventoryItem.CurrentHeight * cellSize
-        );
+
+        if (itemTransform != null)
+            itemTransform.localRotation = Quaternion.identity;
+
+        if (rect != null)
+        {
+            rect.sizeDelta = new Vector2(
+                inventoryItem.CurrentWidth * cellSize,
+                inventoryItem.CurrentHeight * cellSize
+            );
+        }
     }
 
     public void RestoreRotationToOriginal()

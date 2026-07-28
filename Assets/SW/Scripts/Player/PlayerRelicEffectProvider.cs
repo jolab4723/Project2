@@ -40,20 +40,26 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
 
     private void OnEnable()
     {
-        if (inventoryController != null)
-            inventoryController.OnItemAdded += HandleItemAdded;
+        if (inventoryController == null)
+            return;
+
+        inventoryController.OnItemAdded += HandleItemAdded;
+        inventoryController.OnItemRemoved += HandleItemRemoved;
+    }
+
+    private void OnDisable()
+    {
+        if (inventoryController == null)
+            return;
+
+        inventoryController.OnItemAdded -= HandleItemAdded;
+        inventoryController.OnItemRemoved -= HandleItemRemoved;
     }
 
     private void Start()
     {
         // 씬 시작 시 이미 인벤토리에 들어 있는 유물도 반영한다.
         RefreshRelicEffects();
-    }
-
-    private void OnDisable()
-    {
-        if (inventoryController != null)
-            inventoryController.OnItemAdded -= HandleItemAdded;
     }
 
     /// <summary>
@@ -112,6 +118,13 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
         RefreshRelicEffects();
     }
 
+    private void HandleItemRemoved(InventoryItem removedItem)
+    {
+        if (!IsRelic(removedItem))
+            return;
+
+        RefreshRelicEffects();
+    }
     private static bool IsRelic(InventoryItem inventoryItem)
     {
         return inventoryItem?.itemData?.definition != null &&

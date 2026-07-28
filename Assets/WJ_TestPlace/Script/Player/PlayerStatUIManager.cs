@@ -18,6 +18,9 @@ public class PlayerStatUIManager : MonoBehaviour
     [Tooltip("비워두면 PlayerStatManager.Instance를 사용")]
     [SerializeField] private PlayerStatManager playerStatManager;
 
+    [Tooltip("비워두면 상세 스탯 라벨은 기존 하드코딩된 한글 텍스트를 그대로 사용")]
+    [SerializeField] private StatLabelDatabaseSO statLabels;
+
     [Header("체력")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthText;
@@ -77,23 +80,29 @@ public class PlayerStatUIManager : MonoBehaviour
             detailStatText.text = BuildDetailStatText();
     }
 
+    /// <summary>statLabels가 연결돼있으면 DB에서, 아니면 fallback(기존 하드코딩 한글)을 사용한다.</summary>
+    private string Label(string statKey, string fallback)
+    {
+        return statLabels != null ? statLabels.GetLabel(statKey) : fallback;
+    }
+
     private string BuildDetailStatText()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"공격력 {Stat.attackPower}");
-        sb.AppendLine($"방어력 {Stat.defensePower}");
-        sb.AppendLine($"이동속도 {Stat.moveSpeed:F1}");
-        sb.AppendLine($"공격속도 {Stat.attackSpeed:F2}");
-        sb.AppendLine($"치명타 확률 {Stat.critRate:F1}%");
-        sb.AppendLine($"치명타 피해 {Stat.critMult:F2}");
-        sb.AppendLine($"쿨타임 감소 {Stat.cdr:F1}%");
-        sb.AppendLine($"마나 재생 {Stat.mpRegen:F1}");
+        sb.AppendLine($"{Label("attackPower", "공격력")} {Stat.attackPower}");
+        sb.AppendLine($"{Label("defensePower", "방어력")} {Stat.defensePower}");
+        sb.AppendLine($"{Label("moveSpeed", "이동속도")} {Stat.moveSpeed:F1}");
+        sb.AppendLine($"{Label("attackSpeed", "공격속도")} {Stat.attackSpeed:F2}");
+        sb.AppendLine($"{Label("critRate", "치명타 확률")} {Stat.critRate:F1}%");
+        sb.AppendLine($"{Label("critMult", "치명타 피해")} {Stat.critMult:F2}");
+        sb.AppendLine($"{Label("cdr", "쿨타임 감소")} {Stat.cdr:F1}%");
+        sb.AppendLine($"{Label("mpRegen", "마나 재생")} {Stat.mpRegen:F1}");
         sb.AppendLine($"마나 {(PlayerManaManager.Instance != null ? PlayerManaManager.Instance.CurrentMana.ToString("F0") : "?")} / {Stat.maxMana}");
-        sb.AppendLine($"관통력 {Stat.pen}");
-        sb.AppendLine($"스킬 사거리 {Stat.skillRange:F1}");
-        sb.AppendLine($"화염 피해 {Stat.fireBonus:F1}");
-        sb.AppendLine($"빙결 피해 {Stat.iceBonus:F1}");
-        sb.AppendLine($"전기 피해 {Stat.electricBonus:F1}");
+        sb.AppendLine($"{Label("pen", "관통력")} {Stat.pen}");
+        sb.AppendLine($"{Label("skillRange", "스킬 사거리")} {Stat.skillRange:F1}");
+        sb.AppendLine($"{Label("fireBonus", "화염 피해")} {Stat.fireBonus:F1}");
+        sb.AppendLine($"{Label("iceBonus", "빙결 피해")} {Stat.iceBonus:F1}");
+        sb.AppendLine($"{Label("electricBonus", "전기 피해")} {Stat.electricBonus:F1}");
         return sb.ToString().TrimEnd();
     }
 }
