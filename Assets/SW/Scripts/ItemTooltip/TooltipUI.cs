@@ -11,6 +11,7 @@ public class TooltipUI : MonoBehaviour
 
     private const string IncreaseColorHex = "#55D66B";
     private const string DecreaseColorHex = "#FF5B5B";
+    private const string EqualColorHex = "#9A9A9A";
     [Header("패널 / 배경")]
     [SerializeField] private Image borderImage;
     [SerializeField] private Image overlayImage;
@@ -107,20 +108,31 @@ public class TooltipUI : MonoBehaviour
 
     /// <summary>
     /// 비교 정보 없이 일반 아이템 툴팁을 표시한다.
-    /// 포션, 유물, 현재 장비 툴팁에서 사용한다.
+    /// 포션, 유물처럼 장비 최종 스탯 비교가 필요 없는 아이템에 사용한다.
     /// </summary>
     public bool Show(ItemInstance itemData)
     {
-        return Show(itemData, null);
+        return ShowInternal(itemData, null);
     }
 
     /// <summary>
-    /// 아이템 정보와 선택적인 메인 스탯 비교 결과를 표시한다.
-    /// 
-    /// comparisonResult가 null이면 일반 메인 스탯을 표시하고,
-    /// 값이 있으면 후보 수치 옆에 증감량을 표시한다.
+    /// 후보 아이템의 원래 메인 옵션을 표시하고,
+    /// 비교 결과가 있으면 최종 스탯 증감량만 색상과 함께 덧붙인다.
     /// </summary>
-    public bool Show(ItemInstance itemData, ItemMainStatComparisonResult result)
+    public bool Show(
+        ItemInstance itemData,
+        ItemMainStatComparisonResult result)
+    {
+        return ShowInternal(itemData, result);
+    }
+
+    /// <summary>
+    /// 공통 아이템 정보를 채우고, 비교 결과가 전달된 경우에만
+    /// 아이템 메인 옵션 뒤에 최종 스탯 증감량을 추가하는 내부 표시 함수다.
+    /// </summary>
+    private bool ShowInternal(
+        ItemInstance itemData,
+        ItemMainStatComparisonResult result)
     {
         if (itemData == null || itemData.definition == null)
         {
@@ -174,7 +186,8 @@ public class TooltipUI : MonoBehaviour
             mainStatText.richText = true;
 
             mainStatText.text = result != null
-                    ? BuildComparedMainStatText(result) : BuildMainStatText(itemData);
+                ? BuildComparedMainStatText(result)
+                : BuildMainStatText(itemData);
 
         }
 
@@ -345,56 +358,73 @@ public class TooltipUI : MonoBehaviour
     }
 
     /// <summary>
-    /// 후보 아이템의 메인 스탯 수치와
-    /// 현재 장비 대비 증감량을 한 줄씩 생성한다.
+    /// 후보 아이템의 강화 적용 메인 옵션은 기존 형식으로 유지하고,
+    /// 그 뒤에 현재 장비 대비 최종 스탯 증감량을 덧붙인다.
     /// </summary>
-    private string BuildComparedMainStatText(ItemMainStatComparisonResult comparisonResult)
+    private string BuildComparedMainStatText(
+        ItemMainStatComparisonResult comparisonResult)
     {
-        if (comparisonResult == null ||
-            comparisonResult.Rows == null ||
+        if (comparisonResult == null)
+            return string.Empty;
+
+        string itemMainStatText =
+            BuildMainStatText(comparisonResult.CandidateItem);
+
+        if (comparisonResult.Rows == null ||
             comparisonResult.Rows.Count == 0)
         {
-            return string.Empty;
+            return itemMainStatText;
         }
 
-        var builder = new StringBuilder();
+        var builder = new StringBuilder(itemMainStatText);
+        bool addedDelta = false;
 
         foreach (MainStatComparisonResult row in comparisonResult.Rows)
         {
-            // 인벤토리 아이템을 장착했을 때의 실제 수치
-            builder.Append(FormatStat( row.StatType, row.CandidateValue));
+            string deltaText = FormatComparisonDelta(row);
 
-            string deltaText =
-                FormatComparisonDelta(row);
+            if (string.IsNullOrEmpty(deltaText))
+                continue;
 
-            if (!string.IsNullOrEmpty(deltaText))
-            {
-                builder.Append("  ");
-                builder.Append(deltaText);
-            }
+            if (builder.Length > 0)
+                builder.Append(addedDelta ? "\n" : "  ");
 
-            builder.AppendLine();
+            builder.Append(deltaText);
+            addedDelta = true;
         }
 
         return builder.ToString().TrimEnd();
     }
 
     /// <summary>
-    /// 증가량은 초록색, 감소량은 빨간색으로 만든다.
-    /// 동일한 값은 빈 문자열을 반환해 표시하지 않는다.
+    /// 최종 스탯 증가량은 초록색, 감소량은 빨간색으로 만든다.
+    /// 긴 스탯 이름 대신 게임 툴팁에서 자주 사용하는 화살표로 짧게 표시한다.
+    /// 동일한 값은 음수와 혼동되지 않도록 회색 긴 대시로 표시한다.
+    /// 예: ▲ 6, ▼ 0.15, —
     /// </summary>
     private string FormatComparisonDelta(
         MainStatComparisonResult row)
     {
-        if (row == null || row.Direction ==  MainStatComparisonDirection.Equal)
+        if (row == null)
             return string.Empty;
+
+        if (row.Direction == MainStatComparisonDirection.Equal)
+            return $"<color={EqualColorHex}>—</color>";
 
         string colorHex = row.Direction ==
             MainStatComparisonDirection.Increase ? IncreaseColorHex : DecreaseColorHex;
 
-        string sign = row.Delta > 0f ? "+" : string.Empty;
+        string numberFormat = row.StatType == StatType.moveSpeedFlat
+            ? "F2"
+            : "F0";
 
-        return $"<color={colorHex}>({sign}{row.Delta:F1})</color>";
+        string directionSymbol = row.Direction ==
+            MainStatComparisonDirection.Increase
+                ? "▲"
+                : "▼";
+
+        return
+            $"<color={colorHex}>{directionSymbol} {Mathf.Abs(row.Delta).ToString(numberFormat)}</color>";
     }
 
     private (
@@ -671,52 +701,37 @@ public class TooltipUI : MonoBehaviour
         SetHeight(target, height);
     }
 
-    private static void SetHeight(
-        RectTransform target,
-        float height)
+    private static void SetHeight(RectTransform target, float height)
     {
         if (target == null)
             return;
 
-        Vector2 size =
-            target.sizeDelta;
+        Vector2 size = target.sizeDelta;
 
         size.y = height;
         target.sizeDelta = size;
     }
 
-    private static float GetRectHeight(
-        RectTransform target)
+    private static float GetRectHeight(RectTransform target)
     {
-        return target != null
-            ? target.rect.height
-            : 0f;
+        return target != null ? target.rect.height : 0f;
     }
 
-    private float GetHiddenHeight(
-        TextMeshProUGUI target)
+    private float GetHiddenHeight(TextMeshProUGUI target)
     {
-        if (target == null ||
-            target.gameObject.activeSelf)
-        {
+        if (target == null || target.gameObject.activeSelf)
             return 0f;
-        }
 
         float height = 0f;
 
-        LayoutElement layoutElement =
-            target.GetComponent<LayoutElement>();
+        LayoutElement layoutElement = target.GetComponent<LayoutElement>();
 
         if (layoutElement != null && layoutElement.preferredHeight > 0f)
-        {
             height += layoutElement.preferredHeight;
-        }
 
         if (target.transform.parent != null)
         {
-            VerticalLayoutGroup layoutGroup =
-                target.transform.parent
-                    .GetComponent<VerticalLayoutGroup>();
+            VerticalLayoutGroup layoutGroup = target.transform.parent.GetComponent<VerticalLayoutGroup>();
 
             if (layoutGroup != null)
                 height += layoutGroup.spacing;
@@ -724,4 +739,5 @@ public class TooltipUI : MonoBehaviour
 
         return height;
     }
+
 }

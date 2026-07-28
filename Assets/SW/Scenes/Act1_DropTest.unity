@@ -33155,33 +33155,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
   canvas: {fileID: 780376235}
   canvasRect: {fileID: 2124315523}
-  tooltipRect: {fileID: 1403968078}
-  tooltipPanel: {fileID: 1403968076}
-  borderImage: {fileID: 758690689}
-  overlayImage: {fileID: 1418489968}
-  itemImage: {fileID: 554429570}
-  itemNameText: {fileID: 1104456502}
-  itemRarityText: {fileID: 163112378}
-  itemCategoryText: {fileID: 862217642}
-  mainStatText: {fileID: 1070942674}
-  subStat1Text: {fileID: 2069158507}
-  subStat2Text: {fileID: 1815397957}
-  subStat3Text: {fileID: 1401426730}
-  subStat4Text: {fileID: 1742004265}
-  elementBonusText: {fileID: 423741146}
-  uniqueEffectNameText: {fileID: 635135513}
-  uniqueEffectDescriptionText: {fileID: 1553647242}
-  itemPriceText: {fileID: 2111867670}
-  itemSizeText: {fileID: 557003613}
+  equipmentSystem: {fileID: 0}
+  primaryTooltip: {fileID: 0}
   offset: {x: 15, y: 15}
-  section1: {fileID: 196711247}
-  section2: {fileID: 1031715657}
-  section3: {fileID: 325422283}
-  section4: {fileID: 1678475455}
-  backgroundRect: {fileID: 323463002}
-  sectionSpacing: 5
-  topPadding: 30
-  bottomPadding: 10
+  comparisonGap: 12
 --- !u!1 &2005670293
 GameObject:
   m_ObjectHideFlags: 0
@@ -34327,7 +34304,7 @@ MonoBehaviour:
   maxPlacementAttempts: 20
   blockedDropLayers:
     serializedVersion: 2
-    m_Bits: 8192
+    m_Bits: 86016
   pickupPrefab: {fileID: 5278797764294090788, guid: 1c7128164625f6f489d59221b0164ce3, type: 3}
   dropOrigin: {fileID: 2124315529}
 --- !u!114 &2124315520

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using ItemSystem;
 
 /// <summary>
-/// 후보 아이템의 메인 스탯이 현재 장비보다
-/// 증가했는지, 감소했는지, 동일한지를 나타낸다.
+/// 후보 장비 착용 후의 최종 스탯이 현재 최종 스탯보다
+/// 증가하는지, 감소하는지, 동일한지를 나타낸다.
 /// </summary>
 public enum MainStatComparisonDirection
 {
@@ -14,8 +14,8 @@ public enum MainStatComparisonDirection
 }
 
 /// <summary>
-/// 메인 스탯 한 종류에 대한 비교 결과.
-/// UI 문자열이나 색상은 보관하지 않고 숫자 정보만 보관한다.
+/// 장비 슬롯에 대응하는 최종 스탯 한 종류의 비교 결과를 보관한다.
+/// 후보 착용 후 값, 현재 값, 두 값의 차이만 제공하며 UI 문자열과 색상은 결정하지 않는다.
 /// </summary>
 public sealed class MainStatComparisonResult
 {
@@ -41,7 +41,8 @@ public sealed class MainStatComparisonResult
 }
 
 /// <summary>
-/// 두 아이템 전체의 메인 스탯 비교 결과.
+/// 후보 아이템과 현재 장착 아이템 사이의 최종 스탯 비교 결과 묶음이다.
+/// 현재 정책은 슬롯마다 대표 최종 스탯 한 행만 생성한다.
 /// </summary>
 public sealed class ItemMainStatComparisonResult
 {
@@ -77,146 +78,149 @@ public sealed class ItemMainStatComparisonResult
 }
 
 /// <summary>
-/// 두 ItemInstance의 강화 적용 메인 스탯을 비교한다.
+/// 실제 장비 상태를 변경하지 않고 후보 아이템 착용 전후의 최종 스탯을 비교한다.
+/// 무기는 공격력, 투구와 상의는 방어력을 대표값으로 사용한다.
+/// 부츠는 후보 아이템의 메인 옵션에 맞춰 이동속도 또는 방어력을 선택한다.
 ///
 /// 이 클래스는 다음 책임을 갖지 않는다.
 /// - 장비 슬롯 판정
 /// - 현재 장비 조회
+/// - 플레이어 최종 스탯 계산 공식
 /// - UI 문자열 생성
 /// - 색상 결정
 /// </summary>
 public static class ItemMainStatComparer
 {
-    // 강화 계산 시 발생하는 부동소수점 오차를 동일 값으로 취급한다.
+    /// <summary>
+    /// 부동소수점 계산 과정에서 생기는 미세한 오차를 동일 값으로 처리하기 위한 허용 범위다.
+    /// </summary>
     private const float ComparisonEpsilon = 0.0001f;
 
     /// <summary>
-    /// 후보 아이템과 현재 장착 아이템의 메인 스탯을 비교한다.
-    ///
-    /// 반환값:
-    /// true  = 입력이 유효하여 비교 결과를 생성함
-    /// false = 아이템이나 definition이 유효하지 않음
+    /// 현재 장비 구성과 해당 슬롯을 후보 아이템으로 교체한 구성을 각각 계산한 뒤,
+    /// 슬롯에 맞는 대표 최종 스탯의 값과 증감량을 비교 결과로 만든다.
+    /// 실제 장비 데이터와 플레이어의 현재 스탯은 변경하지 않는다.
     /// </summary>
+    /// <returns>입력과 슬롯이 유효하고 두 구성의 최종 스탯을 계산했으면 true.</returns>
     public static bool TryCompare(
         ItemInstance candidateItem,
         ItemInstance equippedItem,
+        EquipSlotType comparisonSlot,
+        PlayerStatManager playerStatManager,
         out ItemMainStatComparisonResult result)
     {
         result = null;
 
-        if (!IsValid(candidateItem) || !IsValid(equippedItem))
+        if (!IsValid(candidateItem) || !IsValid(equippedItem) || playerStatManager == null)
             return false;
 
-        // 후보 아이템에 존재하는 스탯을 먼저 배치하고,
-        // 장착 아이템에만 존재하는 스탯을 뒤에 추가한다.
-        var orderedStatTypes = new List<StatType>();
-        var discoveredStatTypes = new HashSet<StatType>();
-
-        Dictionary<StatType, float> candidateValues =
-            BuildMainStatTotals(
+        if (!playerStatManager.TryCalculateStatsAfterReplacing(
+                comparisonSlot,
                 candidateItem,
-                orderedStatTypes,
-                discoveredStatTypes);
-
-        Dictionary<StatType, float> equippedValues =
-            BuildMainStatTotals(
-                equippedItem,
-                orderedStatTypes,
-                discoveredStatTypes);
-
-        var rows = new List<MainStatComparisonResult>();
-
-        foreach (StatType statType in orderedStatTypes)
+                out PlayerStat currentStats,
+                out PlayerStat candidateStats))
         {
-            float candidateValue =
-                GetValueOrZero(candidateValues, statType);
-
-            float equippedValue =
-                GetValueOrZero(equippedValues, statType);
-
-            float delta = candidateValue - equippedValue;
-
-            MainStatComparisonDirection direction =
-                GetDirection(delta);
-
-            // 아주 작은 부동소수점 오차는 0으로 정리한다.
-            if (direction == MainStatComparisonDirection.Equal)
-                delta = 0f;
-
-            rows.Add(
-                new MainStatComparisonResult(
-                    statType,
-                    candidateValue,
-                    equippedValue,
-                    delta,
-                    direction));
+            return false;
         }
 
-        result = new ItemMainStatComparisonResult(
-            candidateItem,
-            equippedItem,
-            rows.ToArray());
+        StatType displayStatType;
+        float currentValue;
+        float candidateValue;
+
+        switch (comparisonSlot)
+        {
+            case EquipSlotType.Weapon:
+                displayStatType = StatType.attackPowerFlat;
+                currentValue = currentStats.attackPower;
+                candidateValue = candidateStats.attackPower;
+                break;
+
+            case EquipSlotType.Helmet:
+            case EquipSlotType.Chest:
+                displayStatType = StatType.defensePowerFlat;
+                currentValue = currentStats.defensePower;
+                candidateValue = candidateStats.defensePower;
+                break;
+
+            case EquipSlotType.Boots:
+                if (UsesMoveSpeedAsMainStat(candidateItem))
+                {
+                    displayStatType = StatType.moveSpeedFlat;
+                    currentValue = currentStats.moveSpeed;
+                    candidateValue = candidateStats.moveSpeed;
+                }
+                else
+                {
+                    displayStatType = StatType.defensePowerFlat;
+                    currentValue = currentStats.defensePower;
+                    candidateValue = candidateStats.defensePower;
+                }
+                break;
+
+            default:
+                return false;
+        }
+
+        float delta = candidateValue - currentValue;
+
+        MainStatComparisonDirection direction = GetDirection(delta);
+
+        if (direction == MainStatComparisonDirection.Equal)
+            delta = 0f;
+
+        var row =
+            new MainStatComparisonResult(
+                displayStatType,
+                candidateValue,
+                currentValue,
+                delta,
+                direction);
+
+        result =
+            new ItemMainStatComparisonResult(
+                candidateItem,
+                equippedItem,
+                new[] { row });
 
         return true;
     }
 
+    /// <summary>
+    /// 비교에 필요한 아이템 인스턴스와 원본 정의가 모두 존재하는지 확인한다.
+    /// </summary>
     private static bool IsValid(ItemInstance item)
     {
         return item != null && item.definition != null;
     }
 
     /// <summary>
-    /// GetEffectiveMainOptions()를 사용하므로 강화 레벨이 반영된 값이다.
-    ///
-    /// 같은 StatType이 여러 번 들어 있다면 하나로 합산한다.
+    /// 부츠의 강화 적용 메인 옵션에 이동속도 고정값 또는 비율값이 있는지 확인한다.
+    /// 이동속도형 부츠와 방어력형 부츠가 함께 존재하므로 슬롯만으로 비교 스탯을 고정하지 않는다.
     /// </summary>
-    private static Dictionary<StatType, float> BuildMainStatTotals(
-        ItemInstance item,
-        List<StatType> orderedStatTypes,
-        HashSet<StatType> discoveredStatTypes)
+    private static bool UsesMoveSpeedAsMainStat(ItemInstance item)
     {
-        var totals = new Dictionary<StatType, float>();
+        if (!IsValid(item))
+            return false;
 
-        List<RolledSubStat> mainOptions =
-            item.GetEffectiveMainOptions();
-
-        foreach (RolledSubStat option in mainOptions)
+        foreach (RolledSubStat option in item.GetEffectiveMainOptions())
         {
             if (option == null)
                 continue;
 
-            if (totals.TryGetValue(
-                    option.statType,
-                    out float currentValue))
+            if (option.statType == StatType.moveSpeedFlat ||
+                option.statType == StatType.moveSpeedPercent)
             {
-                totals[option.statType] =
-                    currentValue + option.value;
+                return true;
             }
-            else
-            {
-                totals.Add(option.statType, option.value);
-            }
-
-            if (discoveredStatTypes.Add(option.statType))
-                orderedStatTypes.Add(option.statType);
         }
 
-        return totals;
+        return false;
     }
 
-    private static float GetValueOrZero(
-        Dictionary<StatType, float> values,
-        StatType statType)
-    {
-        return values.TryGetValue(
-            statType,
-            out float value)
-            ? value
-            : 0f;
-    }
-
-    private static MainStatComparisonDirection GetDirection(
-        float delta)
+    /// <summary>
+    /// 계산된 차이를 허용 오차와 비교해 증가, 감소, 동일 중 하나로 분류한다.
+    /// </summary>
+    private static MainStatComparisonDirection GetDirection(float delta)
     {
         if (Math.Abs(delta) <= ComparisonEpsilon)
             return MainStatComparisonDirection.Equal;

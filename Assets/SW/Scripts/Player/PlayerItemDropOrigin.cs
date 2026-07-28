@@ -3,6 +3,8 @@ using UnityEngine;
 public sealed class PlayerItemDropOrigin : MonoBehaviour
 {
     [SerializeField] private Transform dropPoint;
+    [SerializeField] private float heightOffset = 0.5f;
+
 
     public bool TryGetSpawnPose(
         out Vector3 position,
@@ -16,6 +18,7 @@ public sealed class PlayerItemDropOrigin : MonoBehaviour
         }
 
         position = dropPoint.position;
+        position.y = dropPoint.position.y + heightOffset;
         rotation = dropPoint.rotation;
         return true;
     }
