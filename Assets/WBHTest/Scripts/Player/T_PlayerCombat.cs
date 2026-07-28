@@ -202,22 +202,22 @@ public class T_PlayerCombat : MonoBehaviour
     // -- 작동 테스트용 메서드
     public void TestMultiple()
     {
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+        //WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
 
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            Vector3 targetPos = transform.position + transform.forward * 8f;
+        //if (Input.GetKeyDown(KeyCode.Alpha1))
+        //{
+        //    Vector3 targetPos = transform.position + transform.forward * 8f;
 
-            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, request, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
-        }
+        //    projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, request, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //if (Input.GetKeyDown(KeyCode.Alpha2))
+        //{
+        //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out RaycastHit hit))
-                projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, request, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
-        }
+        //    if (Physics.Raycast(ray, out RaycastHit hit))
+        //        projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, request, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
+        //}
     }
 
 #if UNITY_EDITOR

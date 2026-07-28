@@ -24,6 +24,8 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
     void Update()
     {
+        if (!controller.IsControlEnabled)
+            return;
         HandleMoveInput();
         HandleAttackInput();
         HandleDodgeInput();

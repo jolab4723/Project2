@@ -1,9 +1,8 @@
 using ItemSystem;
 using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
-
+// 해당 클래스에서는 상태이상으로 인한 능력치 변동만 적용하기에 모든 능력치를 base - current 로 이원화하지 않음.
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -26,6 +25,10 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     private float attackSpeed;
     private float projectileSpeed;
 
+    private float currentAttackPower;
+    private float currentMoveSpeed;
+    private float currentAttackSpeed;
+
     //-- 이벤트
     public event Action<float, float> OnHpChanged;
     public event Action <WBH_DamageResult> OnDamaged; // 구독중 : WBH_EnemyView
@@ -34,7 +37,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     //-- 인터페이스 구현
     public float MaxHealth => maxHp;
     public float CurrentHp => currentHp;
-    public float AttackPower => attackPower;
+    public float AttackPower => currentAttackPower;
     public float DefensePower => defensePower;
     public float CritRate => criticalChance;
     public float CritMult => criticalMultiplier;
@@ -43,8 +46,8 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     public float ElectricBonus => electricBonus;
 
     // -- 외부 사용을 위한 프로퍼티
-    public float MoveSpeed => moveSpeed;
-    public float AttackSpeed => attackSpeed;
+    public float MoveSpeed => currentMoveSpeed;
+    public float AttackSpeed => currentAttackSpeed;
     public float ProjectileSpeed => projectileSpeed;
     public bool IsDead => currentHp <= 0;
 
@@ -64,6 +67,10 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
         moveSpeed = info.moveSpeed;
         attackSpeed = info.attackSpeed;
         projectileSpeed = info.projectileSpeed;
+
+        currentAttackPower = attackPower;
+        currentAttackSpeed = attackSpeed;
+        currentMoveSpeed = moveSpeed;
     }
 
     public void TakeDamage(WBH_DamageResult result)
@@ -79,7 +86,17 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
             OnDead?.Invoke();
         }
     }
-    
+
+    // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
+    public void TakeDamage(float damage)
+    {
+        currentHp -= damage;
+
+        WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
+
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
+    }
+
     void Update()
     {
         //Debug.Log(currentHp);
@@ -94,17 +111,17 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
 
 
     // -- 이동속도, 공격속도, 공격 배율 조정 (버프 등)
-    public void MultiplyMoveSpeed(float multiplier)
+    public void MultiplyMoveSpeed(float modifier)
     {
-        moveSpeed *= multiplier;
+        currentMoveSpeed = moveSpeed * modifier;
         movement.SetMoveSpeed(this.moveSpeed);
     }
-    public void MultiplyAttackSpeed(float multiplier)
+    public void MultiplyAttackSpeed(float modifier)
     {
-        attackSpeed *= multiplier;
+        currentAttackSpeed = attackSpeed * modifier;
     }
-    public void MultiplyAttack(float multiplier)
+    public void MultiplyAttack(float modifier)
     {
-        attackPower *= multiplier;
+        currentAttackPower = attackPower * modifier;
     }
 }

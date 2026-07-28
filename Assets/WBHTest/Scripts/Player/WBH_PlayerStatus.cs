@@ -48,6 +48,10 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
 
+    private float currentAttackPower = 5;
+    private float currentAttackSpeed = 1;
+    private float currentMoveSpeed = 1;
+
     private T_PlayerController playerController;
     private float currentHp;
 
@@ -237,13 +241,18 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         }
     }
 
+    // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
+    public void TakeDamage(float damage)
+    {
+        currentHp -= damage;
+
+        WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
+
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
+    }
+
     public void Heal(float amount)
     {
-        if (UseHealthManager)
-        {
-            healthManager.Heal(amount);
-            return;
-        }
 
         currentHp += amount;
         currentHp = Mathf.Min(currentHp, maxHp);
@@ -271,20 +280,5 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         attackPower *= multiplier;
-    }
-
-    /// <summary>
-    /// WJ 스탯 시스템이 스탯을 소유한 상태에서는 Fallback 필드를 곱해도 실제 스탯이 바뀌지 않는다.
-    /// 이 경우 조용히 무시되지 않도록 경고를 남기고 true를 반환한다.
-    /// (일시적인 배율 변경은 PlayerBuffManager.ApplyBuff로 처리해야 함)
-    /// </summary>
-    private bool WarnIfStatManagerOwnsStats(string methodName)
-    {
-        if (!UseStatManager)
-            return false;
-
-        Debug.LogWarning($"[WBH_PlayerStatus] {methodName}은(는) PlayerStatManager가 스탯을 관리할 때 효과가 없습니다. " +
-                         "PlayerBuffManager.ApplyBuff(BuffDefinitionSO)로 처리해주세요.");
-        return true;
     }
 }
