@@ -8,6 +8,9 @@ public class WorldItemTooltipView : MonoBehaviour
 {
     [SerializeField] private GameObject tooltipPanel;
 
+    [Tooltip("비워두면 definition.itemName을 그대로 사용")]
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
+
     [SerializeField] private TextMeshProUGUI itemNameText;
 
     [SerializeField] private RectTransform tooltipRect;
@@ -34,11 +37,20 @@ public class WorldItemTooltipView : MonoBehaviour
         currentTarget = target;
 
         ItemDefinitionSO definition = item.definition;
-        itemNameText.text = definition.itemName;
+        itemNameText.text = GetItemName(definition);
         ApplyRarityColor(definition.rarity);
 
         tooltipPanel.SetActive(true);
         UpdatePosition();
+    }
+
+    /// <summary>라벨 DB에 itemId가 없는 아이템(예: 구 스킴의 TEST 아이템)은 definition.itemName으로 그대로 폴백한다.</summary>
+    private string GetItemName(ItemDefinitionSO definition)
+    {
+        if (itemLabels != null && itemLabels.TryGetName(definition.itemId, out string name))
+            return name;
+
+        return definition.itemName;
     }
 
     private void ApplyRarityColor(ItemRarity rarity)
