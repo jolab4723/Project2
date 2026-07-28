@@ -20874,6 +20874,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b15bb6379294b2478b9b0ffb9e9ffa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TooltipUI
+  itemLabels: {fileID: 11400000, guid: 4276d92fb9e2f3e449d22d6677ddadae, type: 2}
   borderImage: {fileID: 758690689}
   overlayImage: {fileID: 1418489968}
   itemImage: {fileID: 554429570}
@@ -32198,6 +32199,7 @@ GameObject:
   - component: {fileID: 1907446003}
   - component: {fileID: 1907446002}
   - component: {fileID: 1907446009}
+  - component: {fileID: 1907446010}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -32557,6 +32559,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
   inventoryController: {fileID: 1062686098}
   statManager: {fileID: 1907446005}
+--- !u!114 &1907446010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907445989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe644b5b66924084cb4121b38ac569d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerItemDropOrigin
+  dropPoint: {fileID: 1907445990}
+  heightOffset: 0.5
 --- !u!1 &1907832346
 GameObject:
   m_ObjectHideFlags: 0
@@ -33303,6 +33319,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
   canvas: {fileID: 780376235}
   canvasRect: {fileID: 2124315523}
+  playerStatManager: {fileID: 0}
   equipmentSystem: {fileID: 2124315520}
   primaryTooltip: {fileID: 1403968079}
   offset: {x: 15, y: 15}
@@ -34452,9 +34469,9 @@ MonoBehaviour:
   maxPlacementAttempts: 20
   blockedDropLayers:
     serializedVersion: 2
-    m_Bits: 118784
+    m_Bits: 86016
   pickupPrefab: {fileID: 5278797764294090788, guid: 1c7128164625f6f489d59221b0164ce3, type: 3}
-  dropOrigin: {fileID: 0}
+  dropOrigin: {fileID: 1907446010}
 --- !u!114 &2124315520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34735,7 +34752,7 @@ PrefabInstance:
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy1DestructionVisualPrefab
       value: 
-      objectReference: {fileID: 1400478593948007173, guid: 0922d8337e5202c43b75cbd666c6ae87, type: 3}
+      objectReference: {fileID: 4415374573181466943, guid: 424144d4181ca494b8c8ffbfab4190de, type: 3}
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy2DestructionVisualPrefab
       value: 

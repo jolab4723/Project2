@@ -10,21 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e6d48275404c848b6d12d56e378f8e, type: 3}
-  m_Name: "01040001_\uBE68\uAC04 \uBB3C\uC57D"
+  m_Name: "item.weapon.greatsword.basic_\uAE30\uBCF8 \uB300\uAC80"
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemDefinitionSO
-  itemId: 01040001
-  itemName: "\uBE68\uAC04 \uBB3C\uC57D"
-  category: 3
+  itemId: item.weapon.greatsword.basic
+  itemName: "\uAE30\uBCF8 \uB300\uAC80"
+  category: 0
   rarity: 0
-  description: "\uD3EC\uC158\uC785\uB2C8\uB2E4."
+  description: "\uD3C9\uBC94\uD55C \uB300\uAC80\uC785\uB2C8\uB2E4."
   characterClass: 0
   weaponType: 0
   armorType: 0
-  sellPrice: 40
+  sellPrice: 1000
   icon: {fileID: 0}
-  itemWidth: 1
-  itemHeight: 1
-  mainOptions: []
+  itemWidth: 2
+  itemHeight: 4
+  mainOptions:
+  - statType: 2
+    value: 45
   upgradeBonusPerLevel: 0.1
   elementalBonusConfig: {fileID: 11400000, guid: 3a0f6b7c8d8a403418e336d9d1b60d27, type: 2}
   weaponEnchantElement: 0
