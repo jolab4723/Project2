@@ -69,15 +69,15 @@ namespace DataSystem
             int index = 0;
             foreach (ItemLabelRow row in rows)
             {
-                if (string.IsNullOrEmpty(row.itemID))
+                if (string.IsNullOrEmpty(row.itemId))
                 {
-                    Debug.LogWarning("[ItemLabel] itemID가 비어있는 행을 건너뜁니다.");
+                    Debug.LogWarning("[ItemLabel] itemId가 비어있는 행을 건너뜁니다.");
                     continue;
                 }
 
                 labelsProp.InsertArrayElementAtIndex(index);
                 SerializedProperty element = labelsProp.GetArrayElementAtIndex(index);
-                element.FindPropertyRelative("itemId").stringValue = row.itemID;
+                element.FindPropertyRelative("itemId").stringValue = row.itemId;
                 element.FindPropertyRelative("name").stringValue = row.itemName;
                 element.FindPropertyRelative("description").stringValue = row.description;
                 index++;

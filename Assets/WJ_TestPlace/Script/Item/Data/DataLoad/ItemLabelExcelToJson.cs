@@ -10,7 +10,7 @@ namespace DataSystem
 {
     /// <summary>
     /// ItemDataLabel.xlsx(KOR/ENG 시트)를 JSON으로 변환한다.
-    /// itemID 컬럼은 ItemDataTable.xlsx의 itemId(예: "item.weapon.greatsword.basic")와 1:1로 맞춰져 있다.
+    /// itemId 컬럼은 ItemDataTable.xlsx의 itemId(예: "item.weapon.greatsword.basic")와 1:1로 맞춰져 있다.
     /// </summary>
     public static class ItemLabelExcelToJson
     {

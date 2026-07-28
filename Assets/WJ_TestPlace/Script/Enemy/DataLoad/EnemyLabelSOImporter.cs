@@ -13,7 +13,7 @@ namespace DataSystem
     /// </summary>
     public static class EnemyLabelSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/JSONFile";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/JSONFile";
         private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Enemy/EnemyLabelDatabase.asset";
 
         [MenuItem("DataLoader/Enemy Label/2. Generate SO From JSON")]
@@ -68,15 +68,15 @@ namespace DataSystem
             int index = 0;
             foreach (EnemyLabelRow row in rows)
             {
-                if (string.IsNullOrEmpty(row.enemyID))
+                if (string.IsNullOrEmpty(row.enemyId))
                 {
-                    Debug.LogWarning("[EnemyLabel] enemyID가 비어있는 행을 건너뜁니다.");
+                    Debug.LogWarning("[EnemyLabel] enemyId가 비어있는 행을 건너뜁니다.");
                     continue;
                 }
 
                 labelsProp.InsertArrayElementAtIndex(index);
                 SerializedProperty element = labelsProp.GetArrayElementAtIndex(index);
-                element.FindPropertyRelative("enemyId").stringValue = row.enemyID;
+                element.FindPropertyRelative("enemyId").stringValue = row.enemyId;
                 element.FindPropertyRelative("name").stringValue = row.enemyName;
                 index++;
             }
