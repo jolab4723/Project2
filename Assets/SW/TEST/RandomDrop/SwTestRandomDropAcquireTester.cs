@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.UI;
-using Core;
-
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -74,59 +71,62 @@ private void OnEnable()
 [ContextMenu("SW TEST/랜덤 아이템 필드 드랍")]
         public void DropRandomItemToField()
         {
-            Core.ItemManager.Instance.DropRandomItem(monsterGrade, spawnPoint.position);
-            //if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
-            //{
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
+            {
+                RefreshGetItemButton();
+                return;
+            }
 
-            //if (itemGenerator == null)
-            //{
-            //    Debug.LogWarning("[SW TEST 랜덤 드랍] ItemGenerator를 찾지 못해 필드 드랍을 할 수 없습니다.");
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            ItemInstance instance =
+                CreateItemInstance(result.itemDefinition);
 
+            if (instance == null)
+            {
+                Debug.LogWarning(
+                    "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
 
+                RefreshGetItemButton();
+                return;
+            }
 
-            //ItemInstance instance = CreateItemInstance(result.itemDefinition);
-            //RefreshGetItemButton();
+            instance.upgradeLevel = testUpgradeLevel;
 
-            //if (instance == null)
-            //{
-            //    Debug.LogWarning(
-            //        "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
+            // 월드 드랍 서비스가 없는 순수 UI 테스트 씬에서도 Get 버튼으로 획득할 수 있도록
+            // 생성된 아이템 데이터를 먼저 보관한다.
+            lastDropped = instance;
+            lastSpawnedPickup = null;
 
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            string actionName = "아이템 데이터 생성";
 
-            //instance.upgradeLevel = testUpgradeLevel;
+            // 실제 월드 드랍 서비스가 연결된 씬에서는 같은 아이템 인스턴스를 필드에도 생성한다.
+            // 드랍에 실패하더라도 보관한 데이터는 유지해 테스트 획득 흐름이 끊기지 않게 한다.
+            if (worldItemDropService != null)
+            {
+                WorldItemDropResult dropResult =
+                    worldItemDropService.TryDrop(
+                        instance,
+                        out ItemDataStorage spawnedPickup);
 
-            //WorldItemDropResult dropResult =
-            //    worldItemDropService.TryDrop(
-            //        instance,
-            //        out ItemDataStorage spawnedPickup);
+                if (dropResult == WorldItemDropResult.Success)
+                {
+                    lastSpawnedPickup = spawnedPickup.gameObject;
+                    actionName = "필드 드랍";
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}. " +
+                        "생성된 아이템 데이터는 Get 버튼으로 획득할 수 있습니다.");
+                }
+            }
 
-            //if (dropResult != WorldItemDropResult.Success)
-            //{
-            //    Debug.LogWarning(
-            //        $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}");
+            RefreshGetItemButton();
 
-            //    RefreshGetItemButton();
-            //    return;
-            //}
-
-            //lastDropped = instance;
-            //lastSpawnedPickup = spawnedPickup.gameObject;
-
-            //RefreshGetItemButton();
-            //Debug.Log(
-            //    BuildResultLog(
-            //        "필드 드랍",
-            //        result,
-            //        lastDropped));
+            Debug.Log(
+                BuildResultLog(
+                    actionName,
+                    result,
+                    lastDropped));
         }
 
         [ContextMenu("SW TEST/랜덤 아이템 인벤토리 추가")]
@@ -264,7 +264,9 @@ private void UnbindButtons()
                     Object.FindFirstObjectByType<WorldItemTooltipScanner>();
             }
 
-            if (receiverBehaviour == null)
+            // 슬롯이 비어 있거나 IItemReceiver가 아닌 컴포넌트가 잘못 연결된 경우,
+            // 씬 안의 실제 인벤토리 수신자를 다시 찾아 테스트 획득 흐름을 복구한다.
+            if (Receiver == null)
                 receiverBehaviour = FindItemReceiverBehaviour();
         }
 

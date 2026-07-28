@@ -52,6 +52,7 @@ public class ItemDragHandler : MonoBehaviour,
         }
 
         IsDragging = true;
+        TooltipManager.Instance?.BeginItemDrag();
         itemUI.SetParentToCurrentGrid(true);
 
         Vector2 localPoint = itemUI.ScreenToCurrentGridLocalPoint(eventData);
@@ -101,6 +102,22 @@ public class ItemDragHandler : MonoBehaviour,
         dragHighlighter.HideActiveHighlight();
         dragVisual.EndDragVisual();
         IsDragging = false;
+        TooltipManager.Instance?.EndItemDrag();
+    }
+
+    /// <summary>
+    /// 팝업 종료나 오브젝트 비활성화로 OnEndDrag가 호출되지 않아도
+    /// 전역 툴팁 억제 상태와 드래그 시각 효과가 남지 않도록 정리한다.
+    /// </summary>
+    private void OnDisable()
+    {
+        if (!IsDragging)
+            return;
+
+        IsDragging = false;
+        TooltipManager.Instance?.EndItemDrag();
+        dragHighlighter?.HideActiveHighlight();
+        dragVisual?.EndDragVisual();
     }
 
     private void UpdatePointerContext(PointerEventData eventData)

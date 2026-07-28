@@ -38,6 +38,9 @@ public class TooltipManager : MonoBehaviour
     // 현재 표시 중인 비교를 다시 계산하기 위해 보관한다.
     private ItemInstance currentHoveredItem;
 
+    // 하나 이상의 아이템을 드래그하는 동안 다른 아이템의 호버 툴팁도 표시하지 않는다.
+    private int activeItemDragCount;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -94,6 +97,10 @@ public class TooltipManager : MonoBehaviour
 
     public void ShowTooltip(ItemInstance itemData)
     {
+        // 장비 슬롯의 기존 아이템 위를 지나며 발생하는 PointerEnter도 드래그 중에는 무시한다.
+        if (activeItemDragCount > 0)
+            return;
+
         if (itemData == null || itemData.definition == null)
         {
             Debug.LogWarning("[TooltipManager] 유효하지 않은 itemData가 전달되었습니다.");
@@ -173,6 +180,25 @@ public class TooltipManager : MonoBehaviour
 
         if (comparisonTooltip != null)
             comparisonTooltip.Hide();
+    }
+
+    /// <summary>
+    /// 아이템 드래그가 시작됐음을 알리고 열려 있던 기본·비교 툴팁을 모두 숨긴다.
+    /// 중첩 호출에도 마지막 드래그가 끝날 때까지 표시 억제가 유지되도록 개수를 관리한다.
+    /// </summary>
+    public void BeginItemDrag()
+    {
+        activeItemDragCount++;
+        HideTooltip();
+    }
+
+    /// <summary>
+    /// 아이템 드래그 종료를 알린다. 이후 새 PointerEnter부터 툴팁 표시가 다시 허용된다.
+    /// </summary>
+    public void EndItemDrag()
+    {
+        activeItemDragCount =
+            Mathf.Max(0, activeItemDragCount - 1);
     }
 
     /// <summary>
