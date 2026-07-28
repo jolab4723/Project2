@@ -13596,6 +13596,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2065496028}
     - target: {fileID: 7285551732598754581, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
+      propertyPath: itemLabels
+      value: 
+      objectReference: {fileID: 11400000, guid: 4276d92fb9e2f3e449d22d6677ddadae, type: 2}
+    - target: {fileID: 7285551732598754581, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
       propertyPath: tooltipRect
       value: 
       objectReference: {fileID: 7103675155684568989}
@@ -17459,7 +17463,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItemTooltipScanner
   player: {fileID: 1907445990}
-  tooltipView: {fileID: 7103675155684568995}
+  tooltipView: {fileID: 1834286425}
   worldItemLayer:
     serializedVersion: 2
     m_Bits: 65536
@@ -22387,6 +22391,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4943570864988476, guid: 349a73b30d41c3441b162f8a0018fab1, type: 3}
   m_PrefabInstance: {fileID: 1829752586}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1834286425 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7285551732598754581, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
+  m_PrefabInstance: {fileID: 888588763}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72590cde702123f439d6179f62c7b1ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldItemTooltipView
 --- !u!1 &1836046694
 GameObject:
   m_ObjectHideFlags: 0
@@ -30535,7 +30550,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6798184219723874282, guid: fad03a56877a9c24085144fcf376486f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -30545,17 +30561,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7856793883276445210, guid: fad03a56877a9c24085144fcf376486f, type: 3}
   m_PrefabInstance: {fileID: 7103675155684568988}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7103675155684568995 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6798184219723874282, guid: fad03a56877a9c24085144fcf376486f, type: 3}
-  m_PrefabInstance: {fileID: 7103675155684568988}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017814903}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72590cde702123f439d6179f62c7b1ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorldItemTooltipView
 --- !u!65 &7346003844674876747
 BoxCollider:
   m_ObjectHideFlags: 0
