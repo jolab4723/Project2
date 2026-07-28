@@ -48,11 +48,21 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     
     private void Awake()
     {
-        rect = GetComponent<RectTransform>();
-        equipmentHandler = GetComponent<ItemEquipHandler>();
+        EnsureUIReferences();
     }
+
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
+        EnsureUIReferences();
+
+        if (rect == null || itemIcon == null || itemTransform == null)
+        {
+            Debug.LogError(
+                "[ItemUI] UI 표시를 위한 RectTransform 또는 아이콘 Image를 찾지 못했습니다.",
+                this);
+            return;
+        }
+
         inventoryItem = item;
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -73,11 +83,24 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         // 위치 계산: step(73)을 곱해줍니다.
         rect.anchoredPosition = new Vector2(item.x * step, -item.y * step);
 
-        itemIcon = transform.GetChild(0).GetComponent<Image>();
-        itemTransform = itemIcon.transform;
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
+    }
+
+    private void EnsureUIReferences()
+    {
+        if (rect == null)
+            rect = GetComponent<RectTransform>();
+
+        if (equipmentHandler == null)
+            equipmentHandler = GetComponent<ItemEquipHandler>();
+
+        if (itemIcon == null && transform.childCount > 0)
+            itemIcon = transform.GetChild(0).GetComponent<Image>();
+
+        if (itemTransform == null && itemIcon != null)
+            itemTransform = itemIcon.transform;
     }
 
     public void OnPointerClick(PointerEventData eventData)

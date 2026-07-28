@@ -10,6 +10,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
     public event System.Action<InventoryItem> OnItemAdded;
+    public event System.Action<InventoryItem> OnItemRemoved;
 
     /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
     public static readonly List<InventoryController> All = new List<InventoryController>();
@@ -145,5 +146,13 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         InventoryItem item = new InventoryItem(itemData);
 
         return TryAddItemAt(item, x, y);
+    }
+
+    internal void NotifyItemRemoved(InventoryItem item)
+    {
+        if (item == null)
+            return;
+
+        OnItemRemoved?.Invoke(item);
     }
 }
