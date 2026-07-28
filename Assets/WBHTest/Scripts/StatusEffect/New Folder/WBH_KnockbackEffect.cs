@@ -6,7 +6,7 @@ public class WBH_KnockbackEffect : WBH_StatusEffectBase
 
     public override void Apply()
     {
-        controller.ApplyKnockback(data.Direction, data.Force);
+        controller.ApplyKnockback(data.Direction, data.Force, data.Duration);
 
         controller.PlayStatusEffect(EffectType);
         controller.PlayStatusSound(EffectType);

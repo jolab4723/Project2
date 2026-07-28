@@ -15,6 +15,7 @@ public class WBH_SlowEffect : WBH_StatusEffectBase
     public override void Remove()
     {
         controller.RemoveMoveSpeedModifier(this);
+        Log.Print("Remove Slow");
 
         controller.StopStatusEffect(EffectType);
     }

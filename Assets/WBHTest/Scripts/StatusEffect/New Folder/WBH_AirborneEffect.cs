@@ -8,7 +8,7 @@ public class WBH_AirborneEffect : WBH_StatusEffectBase
     {
         controller.SetControlEnable(false);
 
-        controller.ApplyAirborne(data.Force, data.Duration);
+        controller.ApplyAirborne(data.Height, data.Duration);
 
         controller.PlayStatusEffect(EffectType);
         controller.PlayStatusSound(EffectType);

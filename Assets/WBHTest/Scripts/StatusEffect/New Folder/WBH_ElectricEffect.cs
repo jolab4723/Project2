@@ -6,7 +6,7 @@ public class WBH_ElectricEffect : WBH_StatusEffectBase
 
     public override void Apply()
     {
-        controller.SetMoveSpeedModifier(this, data.Value);
+        controller.SetAttackModifier(this, data.Value);
 
         controller.PlayStatusEffect(EffectType);
         controller.PlayStatusSound(EffectType);

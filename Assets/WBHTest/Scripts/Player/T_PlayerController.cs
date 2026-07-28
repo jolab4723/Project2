@@ -20,8 +20,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
     private Vector3 dodgeDir;
-    private Coroutine knockbackRoutine;
-    private Coroutine airborneRoutine;
 
     public WBH_ICombatStatus Status => status;
 
@@ -222,7 +220,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void SetMoveSpeed(float moveSpeed)
     {
+        Debug.Log($"Agent Speed Before : {agent.speed}");
         agent.speed = moveSpeed;
+        Debug.Log($"Agent Speed After : {agent.speed}");
     }
 
     public void TakeDamage(WBH_DamageResult result)
