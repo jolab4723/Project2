@@ -48,6 +48,10 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
 
+    private float currentAttackPower = 5;
+    private float currentAttackSpeed = 1;
+    private float currentMoveSpeed = 1;
+
     private T_PlayerController playerController;
     private float currentHp;
 
@@ -171,7 +175,12 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         // PlayerHealthManager가 있으면 현재 체력은 그쪽이 Start()에서 풀피로 초기화한다.
         if (healthManager == null)
+        {
             currentHp = maxHp;
+            currentAttackPower = attackPower; 
+            currentAttackSpeed = attackSpeed;
+            currentMoveSpeed = moveSpeed;
+        }
 
         // T_PlayerController.Start()에서 호출되므로 이 시점엔 PlayerStatManager.Awake()가 이미 끝나
         // Stat이 만들어져 있다. 여기서 구독하고 초기 이동속도를 한 번 적용한다.
@@ -237,6 +246,16 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         }
     }
 
+    // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
+    public void TakeDamage(float damage)
+    {
+        currentHp -= damage;
+
+        WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
+
+        OnHpChanged?.Invoke(currentHp, MaxHealth);
+    }
+
     public void Heal(float amount)
     {
         if (UseHealthManager)
@@ -250,27 +269,27 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
-    public void MultiplyMoveSpeed(float multiplier)
+    public void MultiplyMoveSpeed(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
             return;
 
-        moveSpeed *= multiplier;
-        playerController.SetMoveSpeed(this.moveSpeed);
+        currentMoveSpeed = moveSpeed * modifier;
+        playerController.SetMoveSpeed(currentMoveSpeed);
     }
-    public void MultiplyAttackSpeed(float multiplier)
+    public void MultiplyAttackSpeed(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
             return;
 
-        attackSpeed *= multiplier;
+        currentAttackSpeed = attackSpeed * modifier;
     }
-    public void MultiplyAttack(float multiplier)
+    public void MultiplyAttack(float modifier)
     {
         if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
             return;
 
-        attackPower *= multiplier;
+        currentAttackPower = attackPower * modifier;
     }
 
     /// <summary>

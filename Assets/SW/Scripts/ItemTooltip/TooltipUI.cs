@@ -12,6 +12,10 @@ public class TooltipUI : MonoBehaviour
     private const string IncreaseColorHex = "#55D66B";
     private const string DecreaseColorHex = "#FF5B5B";
     private const string EqualColorHex = "#9A9A9A";
+    [Header("데이터")]
+    [Tooltip("비워두면 definition.itemName을 그대로 사용")]
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
+
     [Header("패널 / 배경")]
     [SerializeField] private Image borderImage;
     [SerializeField] private Image overlayImage;
@@ -164,10 +168,12 @@ public class TooltipUI : MonoBehaviour
 
         if (itemNameText != null)
         {
+            string displayName = GetItemName(definition);
+
             itemNameText.text =
                 itemData.upgradeLevel > 0
-                    ? $"+{itemData.upgradeLevel} {definition.itemName}"
-                    : definition.itemName;
+                    ? $"+{itemData.upgradeLevel} {displayName}"
+                    : displayName;
         }
 
         if (itemRarityText != null)
@@ -219,6 +225,15 @@ public class TooltipUI : MonoBehaviour
     public void Hide()
     {
         gameObject.SetActive(false);
+    }
+
+    /// <summary>라벨 DB에 itemId가 없는 아이템(예: 구 스킴의 TEST 아이템)은 definition.itemName으로 그대로 폴백한다.</summary>
+    private string GetItemName(ItemDefinitionSO definition)
+    {
+        if (itemLabels != null && itemLabels.TryGetName(definition.itemId, out string name))
+            return name;
+
+        return definition.itemName;
     }
 
     private void ApplyColor(ItemInstance itemData)

@@ -175,12 +175,12 @@ namespace DataSystem
             string uniqueEffectId,
             SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig)
         {
-            // itemId는 엑셀 셀에 이미 8자리 텍스트("01000001" 등)로 들어있는 Category+Class+Index 고유키.
-            // int로 거치면 앞자리 0이 사라지므로 절대 숫자로 변환하지 않고 그대로 쓴다.
+            // itemId는 엑셀 셀에 이미 "item.weapon.greatsword.basic" 같은 네임스페이스 문자열로 들어있는 고유키.
+            // 숫자로 변환하지 않고 그대로 쓴다 (구 8자리 Category+Class+Index 스킴에서 전환됨).
             string idText = (itemId ?? string.Empty).Trim();
 
-            if (idText.Length != 8)
-                Debug.LogWarning($"[ItemDataTable] itemId가 8자리가 아닙니다: '{idText}' ({itemName}). Category+Class+Index 스킴을 확인해주세요.");
+            if (string.IsNullOrEmpty(idText) || idText.Contains(" "))
+                Debug.LogWarning($"[ItemDataTable] itemId가 비어있거나 공백을 포함합니다: '{idText}' ({itemName}). 'item.category.type.name' 형식을 확인해주세요.");
 
             ItemDefinitionSO asset = GetOrCreateAsset<ItemDefinitionSO>(outputFolder, idText, itemName);
             if (asset == null)

@@ -51,6 +51,9 @@ public class WBH_EnemyPattern : MonoBehaviour
         if (target == null)
             return;
 
+        if (!movement.CanControl)
+            return;
+
         distance = Vector3.Distance(transform.position, target.position);
 
         UpdateMove(distance);
