@@ -339,52 +339,45 @@ public class EquipmentTransaction
                     incomingItem));
         }
 
-        // 기존 장비가 인벤토리에서 사용할 회전을 적용한다.
-        outgoingItem.isRotated =
-            outgoingPlacement.IsRotated;
+        // 먼저 교체 대상 아이템이 있던 위치를 확인한다. 이때 아이템 상태를 미리 바꾸지 않고
+        // 전달받은 배치 정보와 정의상의 크기가 일치하는지도 함께 검증한다.
+        InventoryPlacementSnapshot resolvedOutgoingPlacement =
+            InventoryPlacementSnapshot.FromOriginalState(
+                outgoingGrid,
+                outgoingItem,
+                outgoingPlacement.Rect.X,
+                outgoingPlacement.Rect.Y,
+                outgoingPlacement.IsRotated);
 
-        if (outgoingItem.CurrentWidth !=
-                outgoingPlacement.Rect.Width ||
-            outgoingItem.CurrentHeight !=
-                outgoingPlacement.Rect.Height)
-        {
-            outgoingItem.isRotated = false;
-
-            bool restored = RestoreToGrid(
-                incomingGrid,
-                incomingItem,
-                incomingOriginal);
-
-            return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem),
-                restored);
-        }
-
-        int outgoingX = outgoingPlacement.Rect.X;
-        int outgoingY = outgoingPlacement.Rect.Y;
+        bool requestedPlacementMatches =
+            resolvedOutgoingPlacement.IsValid &&
+            resolvedOutgoingPlacement.Rect.Width ==
+                outgoingPlacement.Rect.Width &&
+            resolvedOutgoingPlacement.Rect.Height ==
+                outgoingPlacement.Rect.Height;
 
         bool hasOutgoingSpace =
+            requestedPlacementMatches &&
             outgoingGrid.CanPlaceItem(
-                outgoingX,
-                outgoingY,
-                outgoingItem.CurrentWidth,
-                outgoingItem.CurrentHeight);
+                resolvedOutgoingPlacement.Rect.X,
+                resolvedOutgoingPlacement.Rect.Y,
+                resolvedOutgoingPlacement.Rect.Width,
+                resolvedOutgoingPlacement.Rect.Height);
 
+        // 원래 위치에 들어가지 않으면 장비 직접 해제와 같은 규칙으로 다른 위치를 찾고,
+        // 현재 방향의 공간도 없을 때는 회전 방향까지 확인한다.
         if (!hasOutgoingSpace && allowAlternativeSpace)
         {
             hasOutgoingSpace =
-                outgoingGrid.FindEmptySpace(
-                    outgoingItem.CurrentWidth,
-                    outgoingItem.CurrentHeight,
-                    out outgoingX,
-                    out outgoingY);
+                outgoingGrid.TryFindEmptySpaceForItem(
+                    outgoingItem,
+                    outgoingPlacement.IsRotated,
+                    out resolvedOutgoingPlacement);
         }
 
         if (!hasOutgoingSpace)
         {
+            // 실패 후에도 장비 슬롯의 회전 상태는 정방향으로 유지한다.
             outgoingItem.isRotated = false;
 
             bool restored = RestoreToGrid(
@@ -399,6 +392,15 @@ public class EquipmentTransaction
                     incomingItem),
                 restored);
         }
+
+        // 배치가 확정된 뒤에만 인벤토리로 나갈 장비의 실제 회전 상태를 반영한다.
+        outgoingItem.isRotated =
+            resolvedOutgoingPlacement.IsRotated;
+
+        int outgoingX =
+            resolvedOutgoingPlacement.Rect.X;
+        int outgoingY =
+            resolvedOutgoingPlacement.Rect.Y;
 
         // 장착되는 아이템은 회전하지 않은 상태로 통일한다.
         incomingItem.isRotated = false;
