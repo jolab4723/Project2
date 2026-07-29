@@ -62,6 +62,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     private PlayerStat subscribedStat;
 
     public event Action<float, float> OnHpChanged;
+    public event Action<float> OnAtkSpeedChanged; // 애니메이션 모션 속도를 공격속도와 연동되게끔 하기 위함
     public event Action OnDead;
 
     /// <summary>
@@ -281,6 +282,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         currentAttackSpeed = attackSpeed * modifier;
+        OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
     }
     public void MultiplyAttack(float modifier)
     {

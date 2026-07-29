@@ -20,6 +20,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private T_PlayerController controller;
     private NavMeshAgent agent;
     private WBH_PlayerEffect effect;
+    private WBH_PlayerStatus status;
     
 
     void Awake()
@@ -30,15 +31,18 @@ public class WBH_PlayerAnimation : MonoBehaviour
         combat = GetComponent<T_PlayerCombat>();
         controller = GetComponent<T_PlayerController>();
         effect = GetComponent<WBH_PlayerEffect>();
+        status = GetComponent<WBH_PlayerStatus>();
     }
 
     private void OnEnable()
     {
         stateMachine.OnEnterState += HandleEnterState;
+        status.OnAtkSpeedChanged += SetAtkAnimationSpeed;
     }
     private void OnDisable()
     {
         stateMachine.OnEnterState -= HandleEnterState;
+        status.OnAtkSpeedChanged -= SetAtkAnimationSpeed;
     }
 
     void Update()
@@ -70,6 +74,11 @@ public class WBH_PlayerAnimation : MonoBehaviour
                 animator.SetTrigger("Dead");
                 break;
         }
+    }
+
+    private void SetAtkAnimationSpeed(float attackSpeed)
+    {
+        animator.SetFloat("AttackSpeed", status.AttackSpeed);
     }
 
     private void UpdateMoveAnimation()
