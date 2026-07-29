@@ -202,6 +202,8 @@ public class ItemDropHandler : MonoBehaviour
 
         if (result == WorldItemDropResult.Success)
         {
+            inventoryController?.NotifyItemOwnershipLost(itemUI.Item);
+
             // 드래그 시작 시 이미 InventoryGrid에서는 제거되었으므로
             // 여기서 다시 TryRemoveItem을 호출하면 안 된다.
             Destroy(itemUI.gameObject);

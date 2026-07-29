@@ -9,8 +9,11 @@ using UnityEngine;
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
+
     public event System.Action<InventoryItem> OnItemAdded;
     public event System.Action<InventoryItem> OnItemRemoved;
+    public event System.Action<InventoryItem> OnItemOwnershipGained;
+    public event System.Action<InventoryItem> OnItemOwnershipLost;
 
     /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
     public static readonly List<InventoryController> All = new List<InventoryController>();
@@ -113,6 +116,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
             InventoryAddResultData.Success(item, x, y);
 
         OnItemAdded?.Invoke(item);
+        NotifyItemOwnershipGained(item);
 
         return result;
     }
@@ -148,11 +152,19 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         return TryAddItemAt(item, x, y);
     }
 
-    internal void NotifyItemRemoved(InventoryItem item)
+    internal void NotifyItemOwnershipGained(InventoryItem item)
     {
         if (item == null)
             return;
 
-        OnItemRemoved?.Invoke(item);
+        OnItemOwnershipGained?.Invoke(item);
+    }
+
+    internal void NotifyItemOwnershipLost(InventoryItem item)
+    {
+        if (item == null)
+            return;
+
+        OnItemOwnershipLost?.Invoke(item);
     }
 }

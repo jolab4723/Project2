@@ -43,8 +43,8 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
         if (inventoryController == null)
             return;
 
-        inventoryController.OnItemAdded += HandleItemAdded;
-        inventoryController.OnItemRemoved += HandleItemRemoved;
+        inventoryController.OnItemOwnershipGained += HandleOwnershipGained;
+        inventoryController.OnItemOwnershipLost += HandleOwnershipLost;
     }
 
     private void OnDisable()
@@ -52,8 +52,8 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
         if (inventoryController == null)
             return;
 
-        inventoryController.OnItemAdded -= HandleItemAdded;
-        inventoryController.OnItemRemoved -= HandleItemRemoved;
+        inventoryController.OnItemOwnershipGained -= HandleOwnershipGained;
+        inventoryController.OnItemOwnershipLost -= HandleOwnershipLost;
     }
 
     private void Start()
@@ -109,21 +109,16 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
         statManager.Recalculate();
     }
 
-    private void HandleItemAdded(InventoryItem addedItem)
+    private void HandleOwnershipGained(InventoryItem item)
     {
-        // 일반 아이템을 획득했을 때는 불필요한 스탯 재계산을 하지 않는다.
-        if (!IsRelic(addedItem))
-            return;
-
-        RefreshRelicEffects();
+        if (IsRelic(item))
+            RefreshRelicEffects();
     }
 
-    private void HandleItemRemoved(InventoryItem removedItem)
+    private void HandleOwnershipLost(InventoryItem item)
     {
-        if (!IsRelic(removedItem))
-            return;
-
-        RefreshRelicEffects();
+        if (IsRelic(item))
+            RefreshRelicEffects();
     }
     private static bool IsRelic(InventoryItem inventoryItem)
     {
