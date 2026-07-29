@@ -119,6 +119,32 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &58945924 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3433699924133273942, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
+  m_PrefabInstance: {fileID: 1368375385}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &58945937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 58945924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a8c0dfe044fa45489349ea318069733, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatusEffectController
+  statusEffectRoot: {fileID: 859252617}
+  effectSpawner: {fileID: 1630218758}
+  burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
+  freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
+  electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  slowEffect: {fileID: 11400000, guid: 678a1ecf6bfb3ea4b9a5a63e743cf0bf, type: 2}
+  knockbackEffect: {fileID: 0}
+  airborneEffect: {fileID: 0}
+  stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
 --- !u!1 &75300523
 GameObject:
   m_ObjectHideFlags: 0
@@ -1000,6 +1026,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Fighter 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8874953783023553297, guid: aa94a7f003e1c95479fdb3a7fdfcc51b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9168128714396232285, guid: aa94a7f003e1c95479fdb3a7fdfcc51b, type: 3}
       propertyPath: m_Speed
       value: 1
@@ -1010,10 +1040,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: aa94a7f003e1c95479fdb3a7fdfcc51b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1470282711}
+      addedObject: {fileID: 1470282710}
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: aa94a7f003e1c95479fdb3a7fdfcc51b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1470282710}
+      addedObject: {fileID: 1470282724}
   m_SourcePrefab: {fileID: 100100000, guid: aa94a7f003e1c95479fdb3a7fdfcc51b, type: 3}
 --- !u!1 &832575517
 GameObject:
@@ -1064,6 +1094,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &859252617 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1567172518342530222, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
+  m_PrefabInstance: {fileID: 1368375385}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &897571179
 GameObject:
   m_ObjectHideFlags: 0
@@ -1499,6 +1534,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0.021477513
       objectReference: {fileID: 0}
+    - target: {fileID: 2660881850511957214, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
+      propertyPath: m_Speed
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2686080287042882887, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
       propertyPath: m_LocalPosition.x
       value: -8.1189
@@ -1547,6 +1586,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3632469624452875769, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
+      propertyPath: projectileSpawner
+      value: 
+      objectReference: {fileID: 395296268}
     - target: {fileID: 3667448924719522129, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.07758393
@@ -1654,7 +1697,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3433699924133273942, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 58945937}
   m_SourcePrefab: {fileID: 100100000, guid: 04ba44168a1f68b4da081e7a77ef3b00, type: 3}
 --- !u!1 &1470282709 stripped
 GameObject:
@@ -1682,7 +1728,7 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
---- !u!114 &1470282711
+--- !u!114 &1470282724
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1858,16 +1904,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1369748414708007391, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
+    - target: {fileID: 4530266933040665708, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
       propertyPath: m_AnchorMax.x
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1369748414708007391, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
+    - target: {fileID: 4530266933040665708, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1369748414708007391, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
-      propertyPath: m_AnchorMin.x
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5577328161507397385, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
@@ -1877,14 +1919,6 @@ PrefabInstance:
     - target: {fileID: 5577328161507397385, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
       propertyPath: m_IsActive
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6554096474237473435, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6554096474237473435, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

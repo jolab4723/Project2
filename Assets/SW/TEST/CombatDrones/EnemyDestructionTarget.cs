@@ -26,6 +26,7 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     public float FireBonus => 0f;
     public float IceBonus => 0f;
     public float ElectricBonus => 0f;
+    public bool IsDead => true; // 0729 WBH 추가. 인터페이스 구현을 위한 단순 추가 
 
     public void Configure(
         float health,
@@ -120,6 +121,9 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
             directionalForce,
             damageMultiplier);
     }
+
+    // 0729 WBH 추가. 인터페이스 구현을 위한 단순 추가 
+    public void AddStatusEffect(WBH_StatusEffectData data) {}
 
     private void Awake()
     {

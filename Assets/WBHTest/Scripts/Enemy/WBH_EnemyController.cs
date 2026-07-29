@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemyStatus))]
 [RequireComponent(typeof(WBH_EnemyAnimation))]
 [RequireComponent(typeof(WBH_EnemyPattern))]
+[RequireComponent(typeof(WBH_EnemyStatusEffectController))]
 public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 {
     private WBH_EnemyMovement movement;
@@ -12,6 +13,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyAnimation enemyAnimation;
     private WBH_EnemyStatus status;
     private WBH_EnemyPattern pattern;
+    private WBH_EnemyStatusEffectController statusEffectController;
     private WBH_EnemyPoolManager poolManager; 
 
     private WBH_EnemyInfo info;
@@ -26,6 +28,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
         status = GetComponent<WBH_EnemyStatus>();
         pattern = GetComponent<WBH_EnemyPattern>();
+        statusEffectController = GetComponent<WBH_EnemyStatusEffectController>();
     }
 
     private void OnEnable()
@@ -72,5 +75,10 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public void SetTarget(Transform target)
     {
         pattern.SetTarget(target);
+    }
+
+    public void AddStatusEffect(WBH_StatusEffectData data)
+    {
+        statusEffectController.AddStatusEffect(data);
     }
 }
