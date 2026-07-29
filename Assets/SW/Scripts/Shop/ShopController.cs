@@ -69,7 +69,11 @@ public class ShopController : MonoBehaviour
         ItemUI itemUI = itemUISpawner.SpawnItemUIAndGet(item, shopGrid);
 
         if (itemUI != null)
+        {
+            RefreshItemBadge(itemUI);
             return true;
+        }
+            
 
         // UI 생성에 실패했으므로 재고와 그리드를 모두 이전 상태로 되돌린다.
         bool stockRemoved = stockService.RemoveStock(item.itemData.instanceId);
@@ -215,6 +219,7 @@ public class ShopController : MonoBehaviour
         if (result == TradeResult.Success)
         {
             itemUI.SetGridPosition(playerGrid, targetX, targetY);
+            RefreshItemBadge(itemUI);
             inventoryController?.NotifyItemOwnershipGained(item);
         }
 
@@ -279,6 +284,7 @@ public class ShopController : MonoBehaviour
         if (result == TradeResult.Success)
         {
             itemUI.SetGridPosition(shopGrid, targetX, targetY);
+            RefreshItemBadge(itemUI);
             inventoryController?.NotifyItemOwnershipLost(item);
         }
 
@@ -398,36 +404,26 @@ public class ShopController : MonoBehaviour
             out resolvedX,
             out resolvedY);
     }
-    private bool TryFindRandomShopSpace(
-    int width,
-    int height,
-    out int foundX,
-    out int foundY)
+    private void RefreshItemBadge(ItemUI itemUI)
     {
-        var candidates = new List<Vector2Int>();
+        if (itemUI == null)
+            return;
 
-        for (int y = 0; y <= shopGrid.GridHeight - height; y++)
+        ShopItemBadgeView badgeView = itemUI.GetComponent<ShopItemBadgeView>();
+
+        if (badgeView == null)
+            return;
+
+        string instanceId = itemUI.Item?.itemData?.instanceId;
+
+        if (itemUI.CurrentGrid != shopGrid || stockService == null ||
+            !stockService.TryGetEntry(instanceId, out ShopStockEntry entry))
         {
-            for (int x = 0; x <= shopGrid.GridWidth - width; x++)
-            {
-                if (shopGrid.CanPlaceItem(x, y, width, height))
-                    candidates.Add(new Vector2Int(x, y));
-            }
+            badgeView.Hide();
+            return;
         }
 
-        if (candidates.Count == 0)
-        {
-            foundX = -1;
-            foundY = -1;
-            return false;
-        }
-
-        Vector2Int selected =
-            candidates[Random.Range(0, candidates.Count)];
-
-        foundX = selected.x;
-        foundY = selected.y;
-        return true;
+        badgeView.Apply(entry.Source);
     }
     private void RestoreItemAfterFailedTrade(ItemUI itemUI)
     {

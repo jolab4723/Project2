@@ -67,7 +67,43 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     {
         playerWallet.OnGoldChanged -= RefreshGoldText;
     }
-    
+
+    /// <summary>
+    /// 플레이어 인벤토리 그리드에 보관 중인 모든 아이템의 목록을 반환합니다.
+    /// 반환된 목록을 수정해도 실제 인벤토리 배치는 변경되지 않습니다.
+    /// 장착 슬롯에 있는 아이템은 포함하지 않습니다.
+    /// </summary>
+    public IReadOnlyList<InventoryItem> GetAllInventoryItems()
+    {
+        if (playerGrid == null)
+            return System.Array.Empty<InventoryItem>();
+
+        return playerGrid.GetAllItems();
+    }
+
+    /// <summary>
+    /// 플레이어 인벤토리 그리드에 보관 중인 아이템을 제거합니다.
+    /// 장착 중인 아이템은 이 메서드로 제거하지 않습니다.
+    /// </summary>
+    public InventoryDiscardResult TryRemoveInventoryItem(InventoryItem item)
+    {
+        if (item?.itemData?.definition == null)
+            return InventoryDiscardResult.InvalidItem;
+
+        if (playerGrid == null)
+            return InventoryDiscardResult.InventoryUnavailable;
+
+        if (!playerGrid.ContainsItem(item))
+            return InventoryDiscardResult.NotPlayerInventory;
+
+        if (!playerGrid.TryRemoveItem(item))
+            return InventoryDiscardResult.RemoveFailed;
+
+        OnItemRemoved?.Invoke(item);
+        NotifyItemOwnershipLost(item);
+
+        return InventoryDiscardResult.Success;
+    }
     public bool AddItem(ItemInstance itemData)
     {
         InventoryAddResultData result = TryAddItemData(itemData);

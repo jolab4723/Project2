@@ -21,8 +21,7 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
         playerGrid = inventoryController != null ? inventoryController.PlayerGrid : null;
 
-        if (inventoryController == null ||
-            playerGrid == null)
+        if (inventoryController == null ||  playerGrid == null)
         {
             Debug.LogError(
                 "[InventoryItemUISpawner] " +
@@ -32,18 +31,20 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        if (inventoryController != null)
-        {
-            inventoryController.OnItemAdded += HandleItemAdded;
-        }
+        if (inventoryController == null)
+            return;
+
+        inventoryController.OnItemAdded += HandleItemAdded;
+        inventoryController.OnItemRemoved += HandleItemRemoved;
     }
 
     private void OnDisable()
     {
-        if (inventoryController != null)
-        {
-            inventoryController.OnItemAdded -= HandleItemAdded;
-        }
+        if (inventoryController == null)
+            return;
+
+        inventoryController.OnItemAdded -= HandleItemAdded;
+        inventoryController.OnItemRemoved -= HandleItemRemoved;
     }
 
     private void HandleItemAdded(InventoryItem item)
@@ -59,6 +60,18 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
             $"[InventoryItemUISpawner] {itemName}의 " +
             "모델 추가는 성공했지만 Item UI 생성에 실패했습니다.");
     }
+
+    private void HandleItemRemoved(InventoryItem item)
+    {
+        ItemUI itemUI = ItemUIFinder.FindInGrid(playerGrid, item);
+
+        if (itemUI == null)
+            return;
+
+        TooltipManager.Instance?.HideTooltip();
+        Destroy(itemUI.gameObject);
+    }
+
     public ItemUI SpawnItemUIAndGet(InventoryItem item)
     {
         return SpawnItemUIAndGet(item, playerGrid);
@@ -68,22 +81,19 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
     {
         if (item?.itemData?.definition == null)
         {
-            Debug.LogWarning(
-                "[InventoryItemUISpawner] 유효하지 않은 InventoryItem입니다.");
+            Debug.LogWarning("[InventoryItemUISpawner] 유효하지 않은 InventoryItem입니다.");
             return null;
         }
 
         if (targetGrid == null || targetGrid.ItemsContainer == null)
         {
-            Debug.LogWarning(
-                "[InventoryItemUISpawner] 대상 Grid 또는 ItemsContainer가 없습니다.");
+            Debug.LogWarning("[InventoryItemUISpawner] 대상 Grid 또는 ItemsContainer가 없습니다.");
             return null;
         }
 
         if (itemUIPrefab == null)
         {
-            Debug.LogWarning(
-                "[InventoryItemUISpawner] itemUIPrefab이 연결되지 않았습니다.");
+            Debug.LogWarning("[InventoryItemUISpawner] itemUIPrefab이 연결되지 않았습니다.");
             return null;
         }
 
@@ -93,8 +103,7 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
         if (itemUI == null)
         {
-            Debug.LogWarning(
-                "[InventoryItemUISpawner] itemUIPrefab에 ItemUI가 없습니다.");
+            Debug.LogWarning("[InventoryItemUISpawner] itemUIPrefab에 ItemUI가 없습니다.");
 
             Destroy(newObject);
             return null;
@@ -105,9 +114,7 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
         ItemDropHandler dropHandler = newObject.GetComponent<ItemDropHandler>();
 
         if (dropHandler != null)
-        {
             dropHandler.Bind(worldItemDropService, inventoryController);
-        }
 
         return itemUI;
     }
