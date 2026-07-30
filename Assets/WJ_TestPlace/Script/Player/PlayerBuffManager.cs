@@ -123,7 +123,9 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         int removed = activeBuffs.RemoveAll(b => b.definition == def);
 
         if (removed > 0)
+        {
             statManager?.Recalculate();
+        }
     }
 
     /// <summary>모든 버프를 제거한다. (예: 사망/씬 전환 시 초기화용)</summary>
