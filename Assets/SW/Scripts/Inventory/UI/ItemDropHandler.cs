@@ -82,7 +82,7 @@ public class ItemDropHandler : MonoBehaviour
         int targetX = targetCell.x;
         int targetY = targetCell.y;
 
-        EquipSlotUI targetEquipSlot = InventoryController.Instance.hoveredEquipSlot;
+        EquipSlotUI targetEquipSlot = inventoryController?.hoveredEquipSlot;
 
         // 장착 중인 아이템을 상점으로 직접 판매하는 전용 경로.
         // 반드시 일반 ShopController.TradeItem보다 먼저 처리한다.
