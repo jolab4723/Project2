@@ -1,5 +1,8 @@
 using UnityEngine;
+using UnityEngine.AI;
 
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
