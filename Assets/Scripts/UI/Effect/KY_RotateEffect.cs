@@ -1,10 +1,14 @@
 using DG.Tweening;
 using UnityEngine;
 
+
+// 회전하는 2D 오브젝트용 스크립트
+// 회전 속도, 방향, 방식을 인스팩터에서 조절할 수 있음
+
 public enum RotateDirection { Clockwise, CounterClockwise } // 시계방향, 반시계방향 
 public enum RotateStyle { Continuous, PingPong, Stepped }   // 일반, 핑퐁, 스탭 모드
 
-public class KY_RotateEffect : MonoBehaviour
+public class KY_RotateEffect : MonoBehaviour, IPlayableEffect
 {
     public RotateDirection direction = RotateDirection.Clockwise;
     public RotateStyle mode = RotateStyle.Continuous;
