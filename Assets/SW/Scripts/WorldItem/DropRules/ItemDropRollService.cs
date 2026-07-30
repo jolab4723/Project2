@@ -139,6 +139,9 @@ public sealed class ItemDropRollService
             case ItemDropTypes.ItemDropKind.Potion:
                 return definition.category == ItemCategory.Potion;
 
+            case ItemDropTypes.ItemDropKind.Relic:
+                return definition.category == ItemCategory.Relic;
+
             default:
                 return false;
         }

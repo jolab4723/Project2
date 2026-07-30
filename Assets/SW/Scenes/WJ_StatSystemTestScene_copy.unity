@@ -3467,17 +3467,6 @@ RectTransform:
   m_AnchoredPosition: {x: 30, y: -60}
   m_SizeDelta: {x: 250, y: 25}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &683295271 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5816231582872393876, guid: dd77c0c6647156a4e87a5f76f43eb6ee, type: 3}
-  m_PrefabInstance: {fileID: 684068133}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &684068133
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3591,12 +3580,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5816231582872393876, guid: dd77c0c6647156a4e87a5f76f43eb6ee, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5816231582872393876, guid: dd77c0c6647156a4e87a5f76f43eb6ee, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1659643331}
     - target: {fileID: 5816231582872393876, guid: dd77c0c6647156a4e87a5f76f43eb6ee, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: AcquireLastDroppedItem
+      value: AcquireDirectRelicToInventory
       objectReference: {fileID: 0}
     - target: {fileID: 5816231582872393876, guid: dd77c0c6647156a4e87a5f76f43eb6ee, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -3889,7 +3882,7 @@ PrefabInstance:
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: getItemButton
       value: 
-      objectReference: {fileID: 683295271}
+      objectReference: {fileID: 0}
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: itemGenerator
       value: 
@@ -3899,6 +3892,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1813380851}
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: getItemButtonName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: receiverBehaviour
       value: 
       objectReference: {fileID: 237435516}
@@ -3906,6 +3903,18 @@ PrefabInstance:
       propertyPath: generatedItemFolder
       value: Assets/SW/TEST/ItemTablePipeline/GeneratedAssets/Items
       objectReference: {fileID: 0}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: directRelicDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e41ef196028d6e419d8fe933ce43edc, type: 2}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: itemDefinitions.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: 'itemDefinitions.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e41ef196028d6e419d8fe933ce43edc, type: 2}
     - target: {fileID: 7603633145334238222, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 527.6267
@@ -12733,9 +12742,9 @@ MonoBehaviour:
   inventoryPopup: {fileID: 237435519}
   passivePopup: {fileID: 1156429652}
   itemSystemController: {fileID: 1378595259}
-  testDropItem: {fileID: 11400000, guid: 71f5d326fa09f5840b67f91b8acb3e38, type: 2}
+  testDropItem: {fileID: 11400000, guid: 7e41ef196028d6e419d8fe933ce43edc, type: 2}
   dropPoint: {fileID: 6189266170077043912}
-  getItemBtn: {fileID: 683295271}
+  getItemBtn: {fileID: 0}
   receiverBehaviour: {fileID: 237435516}
   AttackText: {fileID: 830462678933458102}
 --- !u!114 &7903658047190746245

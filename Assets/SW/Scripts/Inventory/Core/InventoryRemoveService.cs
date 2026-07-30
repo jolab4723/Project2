@@ -23,7 +23,7 @@ public static class InventoryDiscardService
         if (originalGrid.ContainsItem(item) && !originalGrid.TryRemoveItem(item))
             return InventoryDiscardResult.RemoveFailed;
 
-        inventoryController.NotifyItemRemoved(item);
+        inventoryController.NotifyItemOwnershipLost(item);
 
         return InventoryDiscardResult.Success;
     }

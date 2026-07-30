@@ -215,6 +215,7 @@ public class ShopController : MonoBehaviour
         if (result == TradeResult.Success)
         {
             itemUI.SetGridPosition(playerGrid, targetX, targetY);
+            inventoryController?.NotifyItemOwnershipGained(item);
         }
 
         ShowTradeMessage(result, item, true);
@@ -278,6 +279,7 @@ public class ShopController : MonoBehaviour
         if (result == TradeResult.Success)
         {
             itemUI.SetGridPosition(shopGrid, targetX, targetY);
+            inventoryController?.NotifyItemOwnershipLost(item);
         }
 
         ShowTradeMessage(result, item, false);

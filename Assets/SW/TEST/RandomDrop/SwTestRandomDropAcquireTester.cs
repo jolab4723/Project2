@@ -41,11 +41,55 @@ namespace SW.Test.RandomDrop
         [SerializeField] private int testUpgradeLevel;
         [SerializeField] private bool destroyPickupAfterAcquire = true;
 
+        [Header("유물 직접 획득 테스트")]
+        [SerializeField] private ItemDefinitionSO directRelicDefinition;
+
         private ItemInstance lastDropped;
         private GameObject lastSpawnedPickup;
         private bool buttonsBound;
 
-        
+        [ContextMenu("SW TEST/유물 직접 인벤토리 획득")]
+        public void AcquireDirectRelicToInventory()
+        {
+            AutoResolveReferences();
+
+            if (directRelicDefinition == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 유물 SO가 연결되지 않았습니다.");
+                return;
+            }
+
+            if (Receiver == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] InventoryController가 연결되지 않았습니다.");
+                return;
+            }
+
+            if (directRelicDefinition.category != ItemCategory.Relic)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 연결된 아이템이 유물이 아닙니다.");
+                return;
+            }
+
+            // SO의 메인 옵션, 서브 옵션 풀, 원소 보너스 설정을
+            // 정식 아이템 생성 경로로 전부 반영한다.
+            ItemInstance instance =
+                ItemDataCreator.CreateItemData(directRelicDefinition);
+
+            if (instance == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 유물 ItemInstance 생성에 실패했습니다.");
+                return;
+            }
+
+            bool success =
+                ItemAcquisition.Acquire(instance, Receiver);
+
+            Debug.Log(
+                success
+                    ? $"[SW 유물 테스트] {directRelicDefinition.itemName} 획득 성공"
+                    : $"[SW 유물 테스트] {directRelicDefinition.itemName} 획득 실패");
+        }
         public bool HasLastDroppedItem => lastDropped != null;
 private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
