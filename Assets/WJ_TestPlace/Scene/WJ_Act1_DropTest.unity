@@ -16923,53 +16923,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4608566255072588, guid: cafcfd4d46bfbd7479464e7c0925ab8c, type: 3}
   m_PrefabInstance: {fileID: 1044070754}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1048939262
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1048939264}
-  - component: {fileID: 1048939263}
-  m_Layer: 0
-  m_Name: EnemyItemDropSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1048939263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048939262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f78d75683e80934f85f452fabdc6006, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyItemDropHandler
-  itemDropTable: {fileID: 11400000, guid: e6cc7b94995780c47be17236d6374aa8, type: 2}
-  itemDatabase: {fileID: 11400000, guid: 00b69cc0ec5780746a46b548b30f2e06, type: 2}
-  worldItemDropService: {fileID: 2124315518}
---- !u!4 &1048939264
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048939262}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1038.7446, y: 638.70575, z: -32.01772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1051555889
 GameObject:
   m_ObjectHideFlags: 0
@@ -31684,6 +31637,10 @@ PrefabInstance:
       propertyPath: receiverBehaviour
       value: 
       objectReference: {fileID: 1062686098}
+    - target: {fileID: 7598001696252591469, guid: 94f16136bcd60824889891256f726146, type: 3}
+      propertyPath: worldItemDropService
+      value:
+      objectReference: {fileID: 2124315518}
     - target: {fileID: 8624674059670754940, guid: 94f16136bcd60824889891256f726146, type: 3}
       propertyPath: m_Name
       value: ItemSystemController
@@ -35083,7 +35040,6 @@ SceneRoots:
   - {fileID: 1041979786}
   - {fileID: 1722077609}
   - {fileID: 180234580}
-  - {fileID: 1048939264}
   - {fileID: 2145920583}
   - {fileID: 1858523330}
   - {fileID: 555977707}

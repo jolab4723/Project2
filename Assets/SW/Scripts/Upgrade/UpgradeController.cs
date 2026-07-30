@@ -35,11 +35,9 @@ public class UpgradeController : MonoBehaviour
 
     public bool TrySetItem(ItemInstance item)
     {
-        if (item?.definition?.mainOptions == null ||
-            item.definition.mainOptions.Length == 0)
+        if (!UpgradeService.CanUpgrade(item))
         {
-            Debug.LogWarning(
-                "[UpgradeController] 강화할 아이템 또는 메인 옵션이 유효하지 않습니다.");
+            Debug.LogWarning("[UpgradeController] 강화할 수 없는 아이템입니다.");
 
             return false;
         }

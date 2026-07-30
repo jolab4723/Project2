@@ -14335,53 +14335,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4608566255072588, guid: cafcfd4d46bfbd7479464e7c0925ab8c, type: 3}
   m_PrefabInstance: {fileID: 1044070754}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1048939262
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1048939264}
-  - component: {fileID: 1048939263}
-  m_Layer: 0
-  m_Name: EnemyItemDropSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1048939263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048939262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f78d75683e80934f85f452fabdc6006, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyItemDropHandler
-  itemDropTable: {fileID: 11400000, guid: e6cc7b94995780c47be17236d6374aa8, type: 2}
-  itemDatabase: {fileID: 11400000, guid: 00b69cc0ec5780746a46b548b30f2e06, type: 2}
-  worldItemDropService: {fileID: 2124605533}
---- !u!4 &1048939264
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048939262}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1038.7446, y: 638.70575, z: -32.01772}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1051555889
 GameObject:
   m_ObjectHideFlags: 0
@@ -20927,6 +20880,10 @@ PrefabInstance:
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: receiverBehaviour
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
+      propertyPath: generatedItemFolder
+      value: Assets/WJ_TestPlace/Script/Item/Data/ItemData/
       objectReference: {fileID: 0}
     - target: {fileID: 5158649887417844896, guid: cf8e4da2ec2b25841a7e4c60fc9d30c5, type: 3}
       propertyPath: worldItemDropService
@@ -27538,9 +27495,17 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7598001696252591469, guid: 94f16136bcd60824889891256f726146, type: 3}
+      propertyPath: enemyGrade
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7598001696252591469, guid: 94f16136bcd60824889891256f726146, type: 3}
       propertyPath: receiverBehaviour
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 7598001696252591469, guid: 94f16136bcd60824889891256f726146, type: 3}
+      propertyPath: worldItemDropService
+      value: 
+      objectReference: {fileID: 2124605533}
     - target: {fileID: 8624674059670754940, guid: 94f16136bcd60824889891256f726146, type: 3}
       propertyPath: m_Name
       value: ItemSystemController
@@ -30230,7 +30195,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy1Count
-      value: 1
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
+      propertyPath: enemy2Count
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy1Prefab
@@ -30239,7 +30208,7 @@ PrefabInstance:
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy2Prefab
       value: 
-      objectReference: {fileID: 3641883656113343479, guid: 85574d282257e074285c898913d3d2ac, type: 3}
+      objectReference: {fileID: 9109071794180357373, guid: 5d05899c3ecd124409c0f14ad61d2922, type: 3}
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy1DestructionVisualPrefab
       value: 
@@ -30247,7 +30216,7 @@ PrefabInstance:
     - target: {fileID: 8895581519448211860, guid: 52c7df914210e5348a6cf174054c1fc2, type: 3}
       propertyPath: enemy2DestructionVisualPrefab
       value: 
-      objectReference: {fileID: 5972735313546825318, guid: e64201c0cfd48c248826cb247f16981e, type: 3}
+      objectReference: {fileID: 3018902730718220544, guid: e2c9a5f4b6bc5314e81aa8c848620c93, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -30455,7 +30424,6 @@ SceneRoots:
   - {fileID: 1041979786}
   - {fileID: 1722077609}
   - {fileID: 180234580}
-  - {fileID: 1048939264}
   - {fileID: 2145920583}
   - {fileID: 1858523330}
   - {fileID: 555977707}
