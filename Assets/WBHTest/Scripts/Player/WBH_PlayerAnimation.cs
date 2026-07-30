@@ -45,6 +45,11 @@ public class WBH_PlayerAnimation : MonoBehaviour
         status.OnAtkSpeedChanged -= SetAtkAnimationSpeed;
     }
 
+    private void Start()
+    {
+        SetAtkAnimationSpeed(1);
+    }
+
     void Update()
     {
         UpdateMoveAnimation();

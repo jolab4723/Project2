@@ -123,7 +123,7 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Burn1)); // test
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // test
         }
     }
 

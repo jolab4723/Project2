@@ -37,7 +37,10 @@ public class WBH_Effect : MonoBehaviour
             particle.Play(true);
         }
 
-        returnCoroutine = StartCoroutine(AutoReturn());
+        if(autoReturn)
+        {
+            returnCoroutine = StartCoroutine(AutoReturn());
+        }
     }
 
     public void StopEffect()

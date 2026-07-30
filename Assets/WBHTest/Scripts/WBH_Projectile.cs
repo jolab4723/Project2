@@ -209,7 +209,8 @@ public class WBH_Projectile : MonoBehaviour
                                                                  target,
                                                                  request.AttackType,
                                                                  request.ElementType,
-                                                                 request.DamageMultiplier);
+                                                                 request.DamageMultiplier,
+                                                                 request.StatusEffect);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 
