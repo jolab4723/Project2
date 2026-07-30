@@ -2,39 +2,28 @@ using ItemSystem;
 using UnityEngine;
 
 /// <summary>
-/// 플레이어 인벤토리에 들어 있는 유물의 스탯을 합산해서
-/// PlayerStatManager에 제공한다.
+/// 플레이어 인벤토리에서 유물의 소유 상태가 바뀔 때 그 유물의 고유 효과(uniqueEffect)를 적용/해제한다.
 ///
-/// 유물의 실제 소유 상태는 InventoryController가 관리하며,
-/// 이 컴포넌트는 인벤토리를 읽어서 StatSet으로 변환하는 역할만 담당한다.
+/// 유물은 장비처럼 별도의 메인/서브 스탯(장비 스펙)을 갖지 않는다 - 인벤토리에 보유하는 동안
+/// 고유 효과가 상시 적용되는 개념이라, 장비 슬롯의 EquipmentTransaction이 장착/해제 시
+/// uniqueEffect.OnEquip/OnUnequip을 부르는 것과 동일한 훅을 소유권 획득/상실 시점에 그대로 부른다.
+/// (예: PassiveBuffUniqueEffectSO면 내부적으로 PlayerBuffManager.ApplyBuff/RemoveBuff가 호출되고,
+///  그 버프 매니저가 알아서 PlayerStatManager.Recalculate까지 처리하므로 이 클래스는 스탯 계산에
+///  전혀 관여하지 않는다.)
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
+public sealed class PlayerRelicEffectProvider : MonoBehaviour
 {
     [Header("References")]
     [SerializeField]
     private InventoryController inventoryController;
 
-    [SerializeField]
-    private PlayerStatManager statManager;
-
     private void Awake()
     {
-        // 일반적으로 PlayerStatManager와 같은 플레이어 오브젝트에
-        // 붙이는 것을 기준으로 한다.
-        if (statManager == null)
-            statManager = GetComponent<PlayerStatManager>();
-
         if (inventoryController == null)
         {
             Debug.LogWarning(
                 "[PlayerRelicEffectProvider] InventoryController가 연결되지 않았습니다.");
-        }
-
-        if (statManager == null)
-        {
-            Debug.LogWarning(
-                "[PlayerRelicEffectProvider] PlayerStatManager를 찾지 못했습니다.");
         }
     }
 
@@ -58,106 +47,40 @@ public sealed class PlayerRelicEffectProvider : MonoBehaviour, IStatSetProvider
 
     private void Start()
     {
-        // 씬 시작 시 이미 인벤토리에 들어 있는 유물도 반영한다.
-        RefreshRelicEffects();
-    }
-
-    /// <summary>
-    /// 현재 플레이어 인벤토리에 들어 있는 모든 유물의 스탯을 합산한다.
-    ///
-    /// 계산 결과를 내부에 따로 저장하지 않고, 호출 시점의 인벤토리를
-    /// 다시 읽기 때문에 항상 현재 상태를 기준으로 계산한다.
-    /// </summary>
-    public StatSet GetStatSet()
-    {
-        StatSet total = StatSet.Zero;
-
+        // 씬 시작 시 이미 인벤토리에 들어 있는 유물도 효과를 적용한다.
         if (inventoryController == null)
-            return total;
+            return;
 
-        InventoryGrid playerGrid =
-            inventoryController.PlayerGrid;
-
+        InventoryGrid playerGrid = inventoryController.PlayerGrid;
         if (playerGrid == null)
-            return total;
+            return;
 
         foreach (InventoryItem inventoryItem in playerGrid.GetAllItems())
         {
-            if (!IsRelic(inventoryItem))
-                continue;
-
-            AddRelicStats(
-                ref total,
-                inventoryItem.itemData);
+            if (IsRelic(inventoryItem))
+                inventoryItem.itemData.definition.uniqueEffect?.OnEquip(inventoryItem.itemData);
         }
-
-        return total;
-    }
-
-    /// <summary>
-    /// 유물 소유 상태가 바뀐 뒤 최종 스탯을 다시 계산한다.
-    ///
-    /// 현재는 유물 획득 시 자동 호출된다.
-    /// 유물 판매와 월드 드롭 이벤트는 이후 이 메서드와 연결하면 된다.
-    /// </summary>
-    [ContextMenu("유물 효과 재계산")]
-    public void RefreshRelicEffects()
-    {
-        if (statManager == null)
-            return;
-
-        statManager.Recalculate();
     }
 
     private void HandleOwnershipGained(InventoryItem item)
     {
-        if (IsRelic(item))
-            RefreshRelicEffects();
+        if (!IsRelic(item))
+            return;
+
+        item.itemData.definition.uniqueEffect?.OnEquip(item.itemData);
     }
 
     private void HandleOwnershipLost(InventoryItem item)
     {
-        if (IsRelic(item))
-            RefreshRelicEffects();
+        if (!IsRelic(item))
+            return;
+
+        item.itemData.definition.uniqueEffect?.OnUnequip(item.itemData);
     }
+
     private static bool IsRelic(InventoryItem inventoryItem)
     {
         return inventoryItem?.itemData?.definition != null &&
                inventoryItem.itemData.definition.category == ItemCategory.Relic;
-    }
-
-    /// <summary>
-    /// 유물 하나의 메인 옵션과 굴려진 서브 옵션을 StatSet에 더한다.
-    ///
-    /// 현재 PlayerEquipManager가 장비 스탯을 계산하는 방식과
-    /// 동일한 계산 방식을 사용한다.
-    /// </summary>
-    private static void AddRelicStats(ref StatSet total, ItemInstance relic)
-    {
-        if (relic?.definition == null)
-            return;
-
-        // 메인 옵션이 없는 유물 데이터도 안전하게 처리한다.
-        if (relic.definition.mainOptions != null)
-        {
-            foreach (RolledSubStat mainOption in relic.GetEffectiveMainOptions())
-            {
-                StatSetMapper.AddStat(
-                    ref total,
-                    mainOption.statType,
-                    mainOption.value);
-            }
-        }
-
-        if (relic.rolledSubStats == null)
-            return;
-
-        foreach (RolledSubStat subStat in relic.rolledSubStats)
-        {
-            StatSetMapper.AddStat(
-                ref total,
-                subStat.statType,
-                subStat.value);
-        }
     }
 }
