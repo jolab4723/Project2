@@ -64,21 +64,49 @@ public class ItemTriggerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 지정한 조건과 일치하는 발동형 고유효과를 가진 (로컬 플레이어의) 장착 아이템을 전부 발동시킨다.
+    /// 지정한 조건과 일치하는 발동형 고유효과를 가진 (로컬 플레이어의) 장착 아이템과
+    /// 인벤토리에 보유 중인 유물을 전부 발동시킨다.
     /// 전투 시스템이 생기면 치명타/처치/공격적중 등에서도 이 메서드를 그대로 호출하면 됨.
+    ///
+    /// !! 유물은 장착 슬롯이 아니라 인벤토리 보유 개념이라 EquipmentSystem.GetEquippedItems()에
+    ///    잡히지 않는다. 그래서 PlayerGrid를 별도로 훑어 Relic 카테고리만 추가로 확인한다.
     /// </summary>
     public void Fire(TriggerCondition condition)
     {
-        if (InventoryController.Instance == null || InventoryController.Instance.EquipmentSystem == null)
+        if (InventoryController.Instance == null)
             return;
 
-        foreach (var pair in InventoryController.Instance.EquipmentSystem.GetEquippedItems())
+        if (InventoryController.Instance.EquipmentSystem != null)
         {
-            var itemInstance = pair.Value != null ? pair.Value.itemData : null;
-            var uniqueEffect = itemInstance != null && itemInstance.definition != null ? itemInstance.definition.uniqueEffect : null;
-
-            if (uniqueEffect is TriggeredBuffUniqueEffectSO triggered && triggered.triggerCondition == condition)
-                triggered.OnTrigger(itemInstance);
+            foreach (var pair in InventoryController.Instance.EquipmentSystem.GetEquippedItems())
+                FireIfMatches(pair.Value != null ? pair.Value.itemData : null, condition);
         }
+
+        FireRelics(condition);
+    }
+
+    /// <summary>인벤토리에 있는 유물(Relic 카테고리) 중 조건이 일치하는 발동형 고유효과를 발동시킨다.</summary>
+    private void FireRelics(TriggerCondition condition)
+    {
+        InventoryGrid playerGrid = InventoryController.Instance.PlayerGrid;
+        if (playerGrid == null)
+            return;
+
+        foreach (InventoryItem inventoryItem in playerGrid.GetAllItems())
+        {
+            ItemInstance itemData = inventoryItem?.itemData;
+            if (itemData?.definition == null || itemData.definition.category != ItemCategory.Relic)
+                continue;
+
+            FireIfMatches(itemData, condition);
+        }
+    }
+
+    private static void FireIfMatches(ItemInstance itemInstance, TriggerCondition condition)
+    {
+        var uniqueEffect = itemInstance != null && itemInstance.definition != null ? itemInstance.definition.uniqueEffect : null;
+
+        if (uniqueEffect is TriggeredBuffUniqueEffectSO triggered && triggered.triggerCondition == condition)
+            triggered.OnTrigger(itemInstance);
     }
 }
