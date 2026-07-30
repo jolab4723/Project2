@@ -31639,7 +31639,7 @@ PrefabInstance:
       objectReference: {fileID: 1062686098}
     - target: {fileID: 7598001696252591469, guid: 94f16136bcd60824889891256f726146, type: 3}
       propertyPath: worldItemDropService
-      value:
+      value: 
       objectReference: {fileID: 2124315518}
     - target: {fileID: 8624674059670754940, guid: 94f16136bcd60824889891256f726146, type: 3}
       propertyPath: m_Name
@@ -32157,6 +32157,7 @@ GameObject:
   - component: {fileID: 1907446002}
   - component: {fileID: 1907446009}
   - component: {fileID: 1907446010}
+  - component: {fileID: 1907446011}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -32216,8 +32217,6 @@ MonoBehaviour:
   dodgeCooltime: 6
   fighterAttackRange: 2
   gunnerAttackRange: 10
-  fighterAttackDamage: 15
-  gunnerAttackDamage: 10
   gunnerBulletSpeed: 10
 --- !u!54 &1907445992
 Rigidbody:
@@ -32528,6 +32527,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerItemDropOrigin
   dropPoint: {fileID: 1907445990}
   heightOffset: 0.5
+--- !u!114 &1907446011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907445989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 398363f19e4fc284190a6f5127de198c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthTestKeyTrigger
+  damageAmount: 5
+  healAmount: 5
 --- !u!1 &1907832346
 GameObject:
   m_ObjectHideFlags: 0
@@ -34862,6 +34875,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2065496025}
     m_Modifications:
+    - target: {fileID: 5093916217597070715, guid: fad03a56877a9c24085144fcf376486f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5093916217597070715, guid: fad03a56877a9c24085144fcf376486f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5093916217597070715, guid: fad03a56877a9c24085144fcf376486f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5093916217597070715, guid: fad03a56877a9c24085144fcf376486f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5093916217597070715, guid: fad03a56877a9c24085144fcf376486f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5474350715365418024, guid: fad03a56877a9c24085144fcf376486f, type: 3}
       propertyPath: m_Name
       value: WorldItemTooltip
@@ -34900,7 +34933,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7856793883276445210, guid: fad03a56877a9c24085144fcf376486f, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 370
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7856793883276445210, guid: fad03a56877a9c24085144fcf376486f, type: 3}
       propertyPath: m_SizeDelta.y

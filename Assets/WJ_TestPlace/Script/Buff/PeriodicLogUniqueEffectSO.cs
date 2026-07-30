@@ -25,7 +25,6 @@ namespace ItemSystem
                 return; // 이미 실행 중이면 중복 생성 방지
 
             runnerObject = new GameObject("[PeriodicLogEffect] " + effectName);
-            runnerObject.hideFlags = HideFlags.DontSave;
             Object.DontDestroyOnLoad(runnerObject);
 
             PeriodicLogRunner runner = runnerObject.AddComponent<PeriodicLogRunner>();
