@@ -28,7 +28,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float attackPower = 5;
     [SerializeField] private float defensePower = 3;
     [SerializeField] private float attackSpeed = 1;
-    [SerializeField] private float moveSpeed = 1;
+    [SerializeField] private float moveSpeed = 6;
     [SerializeField] private float criticalChance = 1;
     [SerializeField] private float criticalMultiplier = 1;
     [SerializeField] private float fireBonus = 1;
@@ -43,14 +43,12 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     [SerializeField] private float fighterAttackRange = 2f;
     [SerializeField] private float gunnerAttackRange = 10f;
-    [SerializeField] private float fighterAttackDamage = 15f;
-    [SerializeField] private float gunnerAttackDamage = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
 
     private float currentAttackPower = 5;
     private float currentAttackSpeed = 1;
-    private float currentMoveSpeed = 1;
+    private float currentMoveSpeed = 6;
 
     private T_PlayerController playerController;
     private float currentHp;
@@ -64,6 +62,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     private PlayerStat subscribedStat;
 
     public event Action<float, float> OnHpChanged;
+    public event Action<float> OnAtkSpeedChanged; // 애니메이션 모션 속도를 공격속도와 연동되게끔 하기 위함
     public event Action OnDead;
 
     /// <summary>
@@ -108,7 +107,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     // -- combatManager 계산을 위한 인터페이스
     public float MaxHealth => UseStatManager ? statManager.Stat.maxHealth : maxHp;
     public float CurrentHp => UseHealthManager ? healthManager.CurrentHealth : currentHp;
-    public float AttackPower => UseStatManager ? statManager.Stat.attackPower : attackPower;
+    public float AttackPower => UseStatManager ? statManager.Stat.attackPower : currentAttackPower;
     public float DefensePower => UseStatManager ? statManager.Stat.defensePower : defensePower;
     public float CritRate => UseStatManager ? PercentToFraction(statManager.Stat.critRate) : criticalChance;
     public float CritMult => UseStatManager ? PercentToMultiplier(statManager.Stat.critMult) : criticalMultiplier;
@@ -117,15 +116,13 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float ElectricBonus => UseStatManager ? PercentToFraction(statManager.Stat.electricBonus) : electricBonus;
 
     //-- 외부 사용을 위한 프로퍼티
-    public float AttackSpeed => UseStatManager ? statManager.Stat.attackSpeed : attackSpeed;
-    public float MoveSpeed => UseStatManager ? statManager.Stat.moveSpeed : moveSpeed;
+    public float AttackSpeed => UseStatManager ? statManager.Stat.attackSpeed : currentAttackSpeed;
+    public float MoveSpeed => UseStatManager ? statManager.Stat.moveSpeed : currentMoveSpeed;
     public float DodgeDistance => dodgeDistance;
     public float DodgeDuration => dodgeDuration;
     public float DodgeCooltime => dodgeCooltime;
     public float FighterAttackRange => fighterAttackRange;
     public float GunnerAttackRange => gunnerAttackRange;
-    public float FighterAttackDamage => fighterAttackDamage;
-    public float GunnerAttackDamage => gunnerAttackDamage;
     public float GunnerBulletSpeed => gunnerBulletSpeed;
 
     public bool IsDead => UseHealthManager ? healthManager.CurrentHealth <= 0f : currentHp <= 0;
@@ -254,6 +251,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
+        Log.Print($"{CurrentHp}");
     }
 
     public void Heal(float amount)
@@ -275,6 +273,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         currentMoveSpeed = moveSpeed * modifier;
+        Debug.Log($"CurrentMoveSpeed : {currentMoveSpeed}");
         playerController.SetMoveSpeed(currentMoveSpeed);
     }
     public void MultiplyAttackSpeed(float modifier)
@@ -283,6 +282,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         currentAttackSpeed = attackSpeed * modifier;
+        OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
     }
     public void MultiplyAttack(float modifier)
     {

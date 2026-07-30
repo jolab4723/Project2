@@ -11,4 +11,5 @@ public interface WBH_ICombatStatus
     float FireBonus { get; }
     float IceBonus { get; }
     float ElectricBonus { get; }
+    bool IsDead { get; }
 }

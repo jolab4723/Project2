@@ -5,4 +5,6 @@ public interface WBH_ICombat
     WBH_ICombatStatus Status { get; }
 
     void TakeDamage(WBH_DamageResult result);
+
+    void AddStatusEffect(WBH_StatusEffectData data);
 }

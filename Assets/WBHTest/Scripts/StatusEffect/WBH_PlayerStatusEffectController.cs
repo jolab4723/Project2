@@ -66,21 +66,20 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
 
 
     // 넉백
-    public override void ApplyKnockback(Vector3 direction, float force)
+    public override void ApplyKnockback(Vector3 direction, float force, float duration)
     {
         if (knockbackRoutine != null)
             StopCoroutine(knockbackRoutine);
 
-        knockbackRoutine = StartCoroutine(KnockbackRoutine(direction, force));
+        knockbackRoutine = StartCoroutine(KnockbackRoutine(direction, force, duration));
     }
-    private IEnumerator KnockbackRoutine(Vector3 direction, float force)
+    private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
     {
         SetControlEnable(false);
 
         Vector3 start = transform.position;
         Vector3 end = start + direction.normalized * force;
 
-        float duration = 0.15f;
         float elapsed = 0f;
 
         while (elapsed < duration)

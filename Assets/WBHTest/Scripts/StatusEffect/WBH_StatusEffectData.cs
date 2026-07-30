@@ -13,7 +13,7 @@ public struct WBH_StatusEffectData
     public Vector3 Direction; // 넉백 방향
     public float Force; // 넉백 거리
     public float Height; // 에어본 높이
-
+    
     public WBH_StatusEffectData(WBH_StatusEffectType type, float duration, float value = 0, float interval = 0, Vector3 direction = default, float force = 0f, float height = 0f)
     {
         Type = type;
