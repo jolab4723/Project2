@@ -73,7 +73,7 @@ public class T_PlayerCombat : MonoBehaviour
         Vector3 direction = transform.forward;
 
         // 투사체용 데미지 요청 생성.
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Burn1); // TEst
 
         switch(currentWeapon)
         {
@@ -123,20 +123,20 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult));
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // test
         }
     }
 
     // 투사체 외
-    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
     {
-        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult);
+        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult, statusEffect);
     }
 
     // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
-    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
     {
-        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
+        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect);
     }
 
     public void CancelChase()

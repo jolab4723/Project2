@@ -133,6 +133,7 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     public void RemoveMoveSpeedModifier(WBH_IStatusEffect effect)
     {
         RemoveModifier(moveSpeedModifiers, effect, RefreshMoveSpeed);
+        Log.Print("리프레쉬");
     }
     private void RefreshMoveSpeed()
     {
@@ -180,7 +181,7 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     public abstract void SetControlEnable(bool enabled);
 
     // 피격 이동
-    public abstract void ApplyKnockback(Vector3 direction, float force);
+    public abstract void ApplyKnockback(Vector3 direction, float force, float duration);
     public abstract void ApplyAirborne(float height, float duration);
 
     // 상태이상 이펙트

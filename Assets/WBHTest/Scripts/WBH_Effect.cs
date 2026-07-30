@@ -22,7 +22,7 @@ public class WBH_Effect : MonoBehaviour
         this.poolManager = poolManager;
     }
 
-    public void Play(WBH_EffectData data)
+    public void Play(WBH_EffectData data, bool autoReturn = true) // !@ 상태이상이펙트 사라짐. 수정필요
     {
         effectData = data;
 
@@ -37,7 +37,10 @@ public class WBH_Effect : MonoBehaviour
             particle.Play(true);
         }
 
-        returnCoroutine = StartCoroutine(AutoReturn());
+        if(autoReturn)
+        {
+            returnCoroutine = StartCoroutine(AutoReturn());
+        }
     }
 
     public void StopEffect()

@@ -19,9 +19,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private Animator animator;
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
+    private WBH_PlayerStatusEffectController statusEffectController;
     private Vector3 dodgeDir;
-    private Coroutine knockbackRoutine;
-    private Coroutine airborneRoutine;
 
     public WBH_ICombatStatus Status => status;
 
@@ -32,6 +31,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         indicator = GetComponentInChildren<WBH_PlayerIndicator>();
         status = GetComponent<WBH_PlayerStatus>();
+        statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
 
         agent.autoBraking = false;
         agent.updateRotation = false;
@@ -222,7 +222,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void SetMoveSpeed(float moveSpeed)
     {
+        Debug.Log($"Agent Speed Before : {agent.speed}");
         agent.speed = moveSpeed;
+        Debug.Log($"Agent Speed After : {agent.speed}");
     }
 
     public void TakeDamage(WBH_DamageResult result)
@@ -252,7 +254,12 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
             agent.isStopped = false;
     }
 
-    
+    public void AddStatusEffect (WBH_StatusEffectData data)
+    {
+        statusEffectController.AddStatusEffect(data);
+    }
+
+
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
     //private void PlayerViewDir()
     //{

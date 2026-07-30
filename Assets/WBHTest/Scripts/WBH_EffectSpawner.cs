@@ -83,7 +83,7 @@ public class WBH_EffectSpawner : MonoBehaviour
                 effect.transform.localRotation = Quaternion.Euler(data.localRot);
                 break;
         }
-        effect.Play(data);
+        effect.Play(data,false);
 
         return effect;
     }

@@ -32,6 +32,11 @@ public class WBH_CombatManager
         WBH_DamageResult result = new WBH_DamageResult(request.Attacker, damage, isCritical, request.ElementType);
 
         request.Target.TakeDamage(result);
+
+        if(!request.Target.Status.IsDead && request.StatusEffect.HasValue)
+        {
+            request.Target.AddStatusEffect(request.StatusEffect.Value);
+        }
     }
 
 
@@ -70,5 +75,13 @@ public class WBH_CombatManager
     private static float CalculateDefense(float damage, WBH_ICombatStatus targetStat)
     {
         return damage - targetStat.DefensePower;
+    }
+
+    private static void ApplyStatusEffect(WBH_DamageRequest request)
+    {
+        if (!request.StatusEffect.HasValue)
+            return;
+
+        WBH_StatusEffectData data = request.StatusEffect.Value;
     }
 }

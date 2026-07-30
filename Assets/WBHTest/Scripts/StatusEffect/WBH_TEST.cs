@@ -37,7 +37,7 @@ public class WBH_TEST : MonoBehaviour
             target.AddStatusEffect(new WBH_StatusEffectData(
                 WBH_StatusEffectType.Electric,
                 5f,
-                0.7f));
+                0.5f));
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha5))
@@ -50,19 +50,18 @@ public class WBH_TEST : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha6))
         {
             target.AddStatusEffect(new WBH_StatusEffectData(
-                WBH_StatusEffectType.KnockBack,
-                0.15f,
-                3f,
-                0f,
-                transform.forward));
+                type: WBH_StatusEffectType.KnockBack,
+                duration: 1f,
+                force: 10f,
+                direction: transform.forward));
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha7))
         {
             target.AddStatusEffect(new WBH_StatusEffectData(
                 WBH_StatusEffectType.Airborne,
-                1f,
-                2f));
+                duration: 3f,
+                height: 7f));
         }
     }
 }
