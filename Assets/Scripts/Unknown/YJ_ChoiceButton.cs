@@ -48,12 +48,15 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (sceneLoader.IsLoading)
             return;
 
-        if (completePendingStage && !CompletePendingStage())
+        if (completePendingStage && ! CompletePendingStage())
         {
             Log.Error("Failed to complete the pending Unknown stage node.");
             return;
         }
 
+        // 버튼 클릭으로 인한 효과 넣는곳
+
+        // 스테이지 셀렉트 씬으로 변경
         transitionRequested = true;
         sceneLoader.LoadScene(stageSelectSceneName);
     }

@@ -15,6 +15,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
     [Header("Data")]
     [SerializeField] private YJ_UnknownStageDatabaseSO stageDatabase;
     [SerializeField] private YJ_UnknownStageLabelDatabaseSO labelDatabase;
+    [SerializeField] private YJ_StageSaveService stageSaveService;
 
     [Header("Localization")]
     [SerializeField] private GameLanguage currentLanguage = GameLanguage.KOR;
@@ -24,8 +25,15 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void Start()
     {
-        if ( ! ResolveReferences() ||  ! TrySelectRandomStage())
+        if (!ResolveReferences())
             return;
+
+        if (!TrySelectSavedStage() &&
+            selectedStage == null &&
+            !TrySelectRandomStage())
+        {
+            return;
+        }
 
         ApplySelectedStage(true);
     }
@@ -45,12 +53,16 @@ public class YJ_UnknownStageManager : MonoBehaviour
     {
         if (stageDatabase == null)
         {
-            stageDatabase =Resources.Load<YJ_UnknownStageDatabaseSO>(StageDatabaseResourcePath);
+            stageDatabase =
+                Resources.Load<YJ_UnknownStageDatabaseSO>(
+                    StageDatabaseResourcePath);
         }
 
         if (labelDatabase == null)
         {
-            labelDatabase =Resources.Load<YJ_UnknownStageLabelDatabaseSO>(LabelDatabaseResourcePath);
+            labelDatabase =
+                Resources.Load<YJ_UnknownStageLabelDatabaseSO>(
+                    LabelDatabaseResourcePath);
         }
 
         if (unknownStageContents == null)
@@ -80,6 +92,45 @@ public class YJ_UnknownStageManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Stage Select가 저장한 pending Event 노드의 고정 이벤트 ID를 불러옵니다.
+    /// </summary>
+    private bool TrySelectSavedStage()
+    {
+        FindSaveService();
+
+        if (stageSaveService == null ||
+            !stageSaveService.HasSaveFile ||
+            !stageSaveService.TryGetPendingNode(
+                out StageNodeSaveData pendingNode))
+        {
+            return false;
+        }
+
+        if (pendingNode.type != StageNodeType.Event ||
+            string.IsNullOrWhiteSpace(pendingNode.unknownStageId))
+        {
+            Log.Warning(
+                $"pending 노드에 Unknown 이벤트 ID가 없습니다: " +
+                $"{pendingNode.id}");
+            return false;
+        }
+
+        selectedStage =
+            stageDatabase.GetById(pendingNode.unknownStageId);
+
+        if (selectedStage != null)
+            return true;
+
+        Log.Warning(
+            $"저장된 Unknown 이벤트를 데이터베이스에서 찾지 못했습니다: " +
+            $"{pendingNode.unknownStageId}");
+        return false;
+    }
+
+    /// <summary>
+    /// Unknown 씬 단독 실행처럼 저장된 Event 노드가 없을 때 사용할 테스트용 임의 이벤트를 선택합니다.
+    /// </summary>
     private bool TrySelectRandomStage()
     {
         IReadOnlyList<YJ_UnknownStageDefinitionSO> stages =
@@ -100,9 +151,29 @@ public class YJ_UnknownStageManager : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Inspector, 같은 오브젝트, 현재 씬 순서로 저장 서비스를 찾고 없으면 추가합니다.
+    /// </summary>
+    private void FindSaveService()
+    {
+        if (stageSaveService != null)
+            return;
+
+        stageSaveService = GetComponent<YJ_StageSaveService>();
+        if (stageSaveService == null)
+            stageSaveService =
+                FindFirstObjectByType<YJ_StageSaveService>();
+
+        if (stageSaveService == null)
+            stageSaveService =
+                gameObject.AddComponent<YJ_StageSaveService>();
+    }
+
     private void ApplySelectedStage(bool createButtons)
     {
-        YJ_UnknownStageLabel label = labelDatabase.GetLabel(selectedStage.StageId, currentLanguage);
+        YJ_UnknownStageLabel label = labelDatabase.GetLabel(
+            selectedStage.StageId,
+            currentLanguage);
 
         if (label == null)
         {
@@ -123,7 +194,11 @@ public class YJ_UnknownStageManager : MonoBehaviour
         choiceButtonBox.ButtonTextSet(titles, descriptions);
     }
 
-    private static void BuildChoiceTexts(YJ_UnknownStageLabel label, int choiceCount, out List<string> titles, out List<string> descriptions)
+    private static void BuildChoiceTexts(
+        YJ_UnknownStageLabel label,
+        int choiceCount,
+        out List<string> titles,
+        out List<string> descriptions)
     {
         titles = new List<string>(choiceCount);
         descriptions = new List<string>(choiceCount);
