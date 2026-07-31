@@ -513,7 +513,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b9731484ae9ec746aad30c087b3b39e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_UnknownStageManager
+  unknownStageContents: {fileID: 1115556480}
   choiceButtonBox: {fileID: 1813020435}
+  stageTitle: 
+  stageContent: 
   buttonTitle:
   - Title1
   - Title2
@@ -534,6 +537,7 @@ GameObject:
   - component: {fileID: 1115556476}
   - component: {fileID: 1115556477}
   - component: {fileID: 1115556479}
+  - component: {fileID: 1115556480}
   m_Layer: 5
   m_Name: Contents
   m_TagString: Untagged
@@ -598,6 +602,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1115556475}
   m_CullTransparentMesh: 1
+--- !u!114 &1115556480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1115556475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 075a1c7cd2651a24e971968e7ec71fd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_UnknownStageContents
+  stageTitle: {fileID: 647984595}
+  stageContent: {fileID: 2070226288}
 --- !u!1 &1455671014
 GameObject:
   m_ObjectHideFlags: 0
