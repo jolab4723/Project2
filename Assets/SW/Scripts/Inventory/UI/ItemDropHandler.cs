@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using ItemSystem;
+using UnityEngine;
 
 public class ItemDropHandler : MonoBehaviour
 {
@@ -7,6 +8,10 @@ public class ItemDropHandler : MonoBehaviour
 
     private WorldItemDropService worldItemDropService;
     private InventoryController inventoryController;
+    private bool restorePending;
+    private bool recoveryFailureLogged;
+
+    public bool HasPendingRestore => restorePending;
 
     private void Awake()
     {
@@ -17,17 +22,105 @@ public class ItemDropHandler : MonoBehaviour
             equipHandler = GetComponent<ItemEquipHandler>();
     }
 
+    private void OnEnable()
+    {
+        if (restorePending && inventoryController != null)
+            TryRestoreOriginalPlacement();
+    }
+
     public void Bind(WorldItemDropService service, InventoryController owner)
     {
         worldItemDropService = service;
         inventoryController = owner;
-    }
-    public void ResolveDrop()
-    {
-        ResolveDrop(Vector2.zero, null, default, null);
+
+        if (restorePending)
+            TryRestoreOriginalPlacement();
     }
 
+    public void PrepareRestore()
+    {
+        restorePending = true;
+        recoveryFailureLogged = false;
+    }
+
+    public void CancelRestore()
+    {
+        restorePending = false;
+        recoveryFailureLogged = false;
+    }
+
+    /// <summary>
+    /// 강화, 상점, 장비, 월드, 인벤토리 순서로 겹친 드롭 대상을 판별한다.
+    /// 모든 분기가 끝난 뒤 모델과 UI가 함께 배치됐는지 확인해 복구 상태를 닫는다.
+    /// </summary>
     public void ResolveDrop(
+        Vector2 screenPosition,
+        Camera eventCamera,
+        InventorySwapPlan previewPlan,
+        GameObject target)
+    {
+        try
+        {
+            ResolveDropInternal(
+                screenPosition,
+                eventCamera,
+                previewPlan,
+                target);
+        }
+        finally
+        {
+            TryConsumeStablePlacement();
+        }
+    }
+
+    /// <summary>
+    /// 드래그 시작 때 저장한 동일 InventoryItem을 장비 슬롯 또는 Grid에 복구한다.
+    /// 모델과 UI가 모두 정상화된 뒤에만 pending을 소비해 중복 배치를 막는다.
+    /// </summary>
+    public bool TryRestoreOriginalPlacement()
+    {
+        if (!restorePending)
+            return true;
+
+        if (!CanRestoreNow())
+            return false;
+
+        if (TryConsumeStablePlacement())
+            return true;
+
+        // 모델이 장비에 남아 있는데 시각 슬롯을 찾지 못한 경우 Grid 복구로 중복 소유시키지 않는다.
+        if (IsItemOwnedByEquipmentModel())
+        {
+            LogRecoveryFailureOnce();
+            return false;
+        }
+
+        bool restored = false;
+
+        if (itemUI.OriginalWasEquipped && equipHandler != null)
+        {
+            restored = equipHandler.TryRestoreOriginalEquipment(
+                itemUI.OriginalEquipSlot);
+        }
+
+        // 트랜잭션이 부분적으로 장비 모델을 변경했다면 Grid fallback을 금지한다.
+        if (!restored && IsItemOwnedByEquipmentModel())
+        {
+            LogRecoveryFailureOnce();
+            return false;
+        }
+
+        if (!restored)
+            restored = TryRestoreToGrid();
+
+        if (restored && TryConsumeStablePlacement())
+            return true;
+
+        LogRecoveryFailureOnce();
+        return false;
+    }
+
+    private void ResolveDropInternal(
         Vector2 screenPosition,
         Camera eventCamera,
         InventorySwapPlan previewPlan,
@@ -43,46 +136,33 @@ public class ItemDropHandler : MonoBehaviour
             // 상점 아이템은 구매 전이므로 강화 대상으로 선택하지 않는다.
             if (shop != null && itemUI.OriginalGrid == shop.ShopGrid)
             {
-                itemUI.TryReturnToOriginalPosition();
+                TryRestoreOriginalPlacement();
                 return;
             }
 
-            bool restored;
-
-            if (itemUI.OriginalWasEquipped)
-            {
-                restored = equipHandler.TryHandleDropToEquipSlot(
-                    itemUI.CurrentEquipSlot);
-            }
-            else
-            {
-                restored = itemUI.TryReturnToOriginalPosition();
-            }
-
-            if (!restored)
-            {
-                Debug.LogError(
-                    "[ItemDropHandler] 강화창 드롭 후 원래 위치 복구에 실패했습니다.");
+            if (!TryRestoreOriginalPlacement())
                 return;
-            }
 
             upgradeDropSlot.TrySelectItem(itemUI);
             return;
         }
 
         InventoryRemoveDropZone removeDropZone = target != null
-        ? target.GetComponentInParent<InventoryRemoveDropZone>() : null;
+            ? target.GetComponentInParent<InventoryRemoveDropZone>()
+            : null;
 
         if (removeDropZone != null)
         {
             HandleDiscard();
             return;
         }
+
         Vector2Int targetCell = itemUI.GetCellFromItemRect(itemUI.CurrentGrid);
         int targetX = targetCell.x;
         int targetY = targetCell.y;
 
-        EquipSlotUI targetEquipSlot = inventoryController?.hoveredEquipSlot;
+        EquipSlotUI targetEquipSlot =
+            target != null ? target.GetComponentInParent<EquipSlotUI>() : null;
 
         // 장착 중인 아이템을 상점으로 직접 판매하는 전용 경로.
         // 반드시 일반 ShopController.TradeItem보다 먼저 처리한다.
@@ -101,26 +181,25 @@ public class ItemDropHandler : MonoBehaviour
             itemUI.OriginalGrid == shop.ShopGrid &&
             targetEquipSlot != null)
         {
-            itemUI.ReturnToOriginalPosition();
+            TryRestoreOriginalPlacement();
             return;
         }
 
         if (targetEquipSlot != null)
         {
-            equipHandler.TryHandleDropToEquipSlot(targetEquipSlot);
+            equipHandler?.TryHandleDropToEquipSlot(targetEquipSlot);
             return;
         }
 
         if (itemUI.IsEquipped)
         {
-            equipHandler.TryHandleDropFromEquipSlotToGrid(targetX, targetY);
+            equipHandler?.TryHandleDropFromEquipSlotToGrid(targetX, targetY);
             return;
         }
 
         if (TryHandleWorldDrop(screenPosition, eventCamera, target))
-        {
             return;
-        }
+
         InventoryMoveResultData result = InventoryMoveService.TryMoveOnGrid(
             itemUI.CurrentGrid,
             itemUI.Item,
@@ -128,6 +207,7 @@ public class ItemDropHandler : MonoBehaviour
             targetY,
             itemUI.OriginalPlacement,
             previewPlan);
+
         HandleInventoryMoveResult(result);
     }
 
@@ -140,13 +220,17 @@ public class ItemDropHandler : MonoBehaviour
             case InventoryMoveResult.MovedToEmptySpace:
                 itemUI.SetGridPosition(itemUI.CurrentGrid, result.MovedX, result.MovedY);
                 break;
+
             case InventoryMoveResult.Swapped:
                 itemUI.SetGridPositionAnimated(
                     itemUI.CurrentGrid,
                     result.MovedX,
                     result.MovedY);
 
-                ItemUI swappedUI = ItemUIFinder.FindInGrid(itemUI.CurrentGrid, result.SwappedItem);
+                ItemUI swappedUI = ItemUIFinder.FindInGrid(
+                    itemUI.CurrentGrid,
+                    result.SwappedItem);
+
                 if (swappedUI != null)
                 {
                     swappedUI.SetGridPositionAnimated(
@@ -155,22 +239,17 @@ public class ItemDropHandler : MonoBehaviour
                         result.SwappedY);
                 }
                 break;
+
             case InventoryMoveResult.Failed:
-                if (!itemUI.TryReturnToOriginalPosition())
-                {
-                    Debug.LogError(
-                        "[ItemDropHandler] 드롭 실패 후 아이템을 원래 위치에 복구하지 못했습니다.");
-                }
-                return;
+                break;
         }
     }
 
     private bool TryHandleWorldDrop(
-    Vector2 screenPosition,
-    Camera eventCamera,
-    GameObject target)
+        Vector2 screenPosition,
+        Camera eventCamera,
+        GameObject target)
     {
-        // 다른 UI 위에 놓은 경우 월드 드롭으로 처리하지 않는다.
         if (target != null)
             return false;
 
@@ -188,7 +267,6 @@ public class ItemDropHandler : MonoBehaviour
         if (gridRect == null)
             return false;
 
-        // 여전히 인벤토리 그리드 안이면 기존 이동 로직이 처리한다.
         if (RectTransformUtility.RectangleContainsScreenPoint(
                 gridRect,
                 screenPosition,
@@ -202,6 +280,7 @@ public class ItemDropHandler : MonoBehaviour
 
         if (result == WorldItemDropResult.Success)
         {
+            MarkPlacementCompleted();
             inventoryController?.NotifyItemOwnershipLost(itemUI.Item);
 
             // 드래그 시작 시 이미 InventoryGrid에서는 제거되었으므로
@@ -210,19 +289,12 @@ public class ItemDropHandler : MonoBehaviour
             return true;
         }
 
-        // 월드 생성 실패 시 인벤토리로 되돌린다.
-        if (!itemUI.TryReturnToOriginalPosition())
-        {
-            Debug.LogError(
-                $"[ItemDropHandler] 월드 드롭 실패 후 복구에도 실패했습니다. result={result}");
-        }
-        else
+        if (TryRestoreOriginalPlacement())
         {
             Debug.LogWarning(
                 $"[ItemDropHandler] 월드 드롭에 실패하여 원래 위치로 복구했습니다. result={result}");
         }
 
-        // 실패해도 이번 드롭 입력은 여기서 처리 완료한다.
         return true;
     }
 
@@ -251,28 +323,208 @@ public class ItemDropHandler : MonoBehaviour
 
         if (result == InventoryDiscardResult.Success)
         {
+            MarkPlacementCompleted();
             TooltipManager.Instance?.HideTooltip();
             Destroy(itemUI.gameObject);
             return;
         }
 
-        bool restored;
+        TryRestoreOriginalPlacement();
+    }
 
-        if (itemUI != null && itemUI.OriginalWasEquipped)
+    private bool TryRestoreToGrid()
+    {
+        InventoryGrid originalGrid = itemUI?.OriginalGrid;
+        InventoryItem item = itemUI?.Item;
+
+        if (originalGrid == null || item == null)
+            return false;
+
+        if (originalGrid.ContainsItem(item))
         {
-            restored =
-                equipHandler != null &&
-                equipHandler.TryHandleDropToEquipSlot(itemUI.CurrentEquipSlot);
-        }
-        else
-        {
-            restored =
-                itemUI != null &&
-                itemUI.TryReturnToOriginalPosition();
+            itemUI.SetGridPosition(originalGrid, item.x, item.y);
+            return true;
         }
 
-        if (!restored)
-            Debug.LogError($"[ItemDropHandler] 삭제 실패 후 아이템 복구에도 실패했습니다. result={result}");
+        InventoryMoveResultData result = InventoryMoveService.TryRestoreToGrid(
+            originalGrid,
+            item,
+            itemUI.OriginalPlacement);
+
+        if (result.Result != InventoryMoveResult.ReturnedToOriginal &&
+            result.Result != InventoryMoveResult.MovedToEmptySpace)
+        {
+            return false;
+        }
+
+        itemUI.SetGridPosition(originalGrid, result.MovedX, result.MovedY);
+        return true;
+    }
+
+    private bool TryConsumeStablePlacement()
+    {
+        if (!restorePending)
+            return true;
+
+        bool hasGridOwner = TryFindOwningGrid(
+            out InventoryGrid owningGrid,
+            out bool hasMultipleGridOwners);
+        bool hasEquipmentOwner = TryFindEquipmentModelSlot(
+            out EquipSlotType equipmentSlotType);
+
+        if (hasMultipleGridOwners ||
+            (hasGridOwner && hasEquipmentOwner))
+        {
+            return false;
+        }
+
+        bool synchronized = hasEquipmentOwner
+            ? TrySynchronizeEquipmentPlacement(equipmentSlotType)
+            : hasGridOwner && TrySynchronizeGridPlacement(owningGrid);
+
+        if (!synchronized)
+            return false;
+
+        MarkPlacementCompleted();
+        return true;
+    }
+
+    private bool TrySynchronizeGridPlacement(InventoryGrid owningGrid)
+    {
+        InventoryItem item = itemUI?.Item;
+
+        if (owningGrid == null || item == null || !owningGrid.ContainsItem(item))
+            return false;
+
+        if (!itemUI.IsGridPlacementVisualized(owningGrid))
+            itemUI.SetGridPosition(owningGrid, item.x, item.y);
+
+        return itemUI.IsGridPlacementVisualized(owningGrid);
+    }
+
+    private bool TrySynchronizeEquipmentPlacement(EquipSlotType slotType)
+    {
+        if (inventoryController == null ||
+            itemUI?.Item == null ||
+            equipHandler == null)
+        {
+            return false;
+        }
+
+        EquipSlotUI targetSlot = null;
+        EquipSlotUI[] slots = inventoryController.allEquipSlots;
+
+        if (slots == null)
+            return false;
+
+        foreach (EquipSlotUI slot in slots)
+        {
+            if (slot != null && slot.SlotType == slotType)
+            {
+                targetSlot = slot;
+                break;
+            }
+        }
+
+        if (targetSlot == null ||
+            (targetSlot.EquippedItemUI != null &&
+             targetSlot.EquippedItemUI != itemUI))
+        {
+            return false;
+        }
+
+        equipHandler.SetEquipSlotVisual(targetSlot);
+
+        return targetSlot.EquippedItemUI == itemUI &&
+               itemUI.CurrentEquipSlot == targetSlot &&
+               itemUI.transform.parent == targetSlot.transform;
+    }
+
+    private bool TryFindOwningGrid(
+        out InventoryGrid owningGrid,
+        out bool hasMultipleOwners)
+    {
+        owningGrid = null;
+        hasMultipleOwners = false;
+
+        InventoryGrid[] candidates =
+        {
+            itemUI?.CurrentGrid,
+            itemUI?.OriginalGrid,
+            inventoryController?.PlayerGrid,
+            ShopController.Instance?.ShopGrid
+        };
+
+        foreach (InventoryGrid candidate in candidates)
+        {
+            if (candidate == null ||
+                candidate == owningGrid ||
+                !candidate.ContainsItem(itemUI.Item))
+            {
+                continue;
+            }
+
+            if (owningGrid != null)
+            {
+                hasMultipleOwners = true;
+                return true;
+            }
+
+            owningGrid = candidate;
+        }
+
+        return owningGrid != null;
+    }
+
+    private bool IsItemOwnedByEquipmentModel()
+    {
+        return TryFindEquipmentModelSlot(out _);
+    }
+
+    private bool TryFindEquipmentModelSlot(out EquipSlotType slotType)
+    {
+        slotType = default;
+
+        EquipmentSystem equipmentSystem = inventoryController?.EquipmentSystem;
+
+        if (equipmentSystem == null || itemUI?.Item == null)
+            return false;
+
+        foreach (var equippedEntry in equipmentSystem.GetEquippedItems())
+        {
+            if (ReferenceEquals(equippedEntry.Value, itemUI.Item))
+            {
+                slotType = equippedEntry.Key;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CanRestoreNow()
+    {
+        return itemUI != null &&
+               inventoryController != null &&
+               gameObject.scene.isLoaded &&
+               inventoryController.gameObject.scene.isLoaded;
+    }
+
+    private void MarkPlacementCompleted()
+    {
+        restorePending = false;
+        recoveryFailureLogged = false;
+    }
+
+    private void LogRecoveryFailureOnce()
+    {
+        if (recoveryFailureLogged)
+            return;
+
+        recoveryFailureLogged = true;
+        Debug.LogError(
+            "[ItemDropHandler] 드래그된 아이템을 장비 또는 인벤토리에 복구하지 못했습니다. " +
+            "아이템 데이터는 유지되며 다음 UI 활성화 때 다시 복구합니다.",
+            this);
     }
 }
-

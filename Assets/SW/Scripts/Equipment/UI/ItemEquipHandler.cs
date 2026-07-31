@@ -1,21 +1,37 @@
-using Unity.VisualScripting;
 using UnityEngine;
 public class ItemEquipHandler : MonoBehaviour
 {
     [SerializeField] private ItemUI itemUI;
+    private InventoryController inventoryController;
     private EquipmentSystem equipmentSystem;
     private EquipmentTransaction equipmentTransaction;
+    private bool bindWarningLogged;
+
     private void Awake()
     {
         if (itemUI == null)
             itemUI = GetComponent<ItemUI>();
+    }
 
-        equipmentSystem = InventoryController.Instance.EquipmentSystem;
-        equipmentTransaction = new EquipmentTransaction(equipmentSystem);
+    /// <summary>
+    /// 생성한 아이템 UI가 어느 플레이어의 인벤토리와 장비를 변경할지 지정한다.
+    /// 입력이 시작되기 전에 Spawner가 호출해야 하며 전역 Instance를 대신한다.
+    /// </summary>
+    public void Bind(InventoryController owner)
+    {
+        inventoryController = owner;
+        equipmentSystem = owner != null ? owner.EquipmentSystem : null;
+        equipmentTransaction = equipmentSystem != null
+            ? new EquipmentTransaction(equipmentSystem)
+            : null;
+        bindWarningLogged = false;
     }
 
     public bool TryHandleRightClick()
     {
+        if (!EnsureReady())
+            return false;
+
         if (itemUI.IsEquipped)
             return TryUnequip();
 
@@ -33,7 +49,7 @@ public class ItemEquipHandler : MonoBehaviour
                 sourceGrid,
                 itemUI.Item);
 
-        foreach (EquipSlotUI slot in InventoryController.Instance.allEquipSlots)
+        foreach (EquipSlotUI slot in inventoryController.allEquipSlots)
         {
             if (slot == null || !slot.CanAcceptType(itemUI.Item.itemData))
                 continue;
@@ -72,7 +88,7 @@ public class ItemEquipHandler : MonoBehaviour
         if (swapSlot != null)
             return TryRightClickSwapWithEquipSlot(swapSlot);
 
-        InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
+        inventoryController.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
         return false;
     }
 
@@ -89,7 +105,7 @@ public class ItemEquipHandler : MonoBehaviour
                 out int foundY,
                 out bool targetRotated))
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(EquipResult.NoReturnSpace));
             return false;
         }
@@ -110,7 +126,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
             if (!result.RollbackSucceeded)
@@ -133,7 +149,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (rotationBeforeRequest != targetRotated)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 "공간 확보를 위해 아이템을 회전하여 보관했습니다.");
         }
 
@@ -142,7 +158,7 @@ public class ItemEquipHandler : MonoBehaviour
     
     public bool TryHandleDropToEquipSlot(EquipSlotUI targetSlot)
     {
-        if (targetSlot == null)
+        if (!EnsureReady() || targetSlot == null)
             return false;
 
         if (itemUI.OriginalWasEquipped)
@@ -160,18 +176,15 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (itemUI.OriginalGrid == ShopController.Instance?.ShopGrid)
         {
-            itemUI.ReturnToOriginalPosition();
-            return true;
+            return itemUI.TryReturnToOriginalPosition();
         }
         if (!targetSlot.IsEmpty)
         {
             if (TrySwapWithEquipSlot(targetSlot))
                 return true;
 
-            itemUI.ReturnToOriginalPosition();
-            return true;
+            return itemUI.TryReturnToOriginalPosition();
         }
-        EquipmentSystem equipmentSystem = InventoryController.Instance.EquipmentSystem;
 
         EquipmentTransactionResult result =
         equipmentTransaction.TryEquip(
@@ -185,7 +198,7 @@ public class ItemEquipHandler : MonoBehaviour
             SetEquipSlotVisual(targetSlot);
             return true;
         }
-        InventoryController.Instance.PrintLog(EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
+        inventoryController.PrintLog(EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
         if (!result.RollbackSucceeded)
         {
@@ -201,6 +214,38 @@ public class ItemEquipHandler : MonoBehaviour
             itemUI.OriginalX,
             itemUI.OriginalY);
 
+        return true;
+    }
+
+    /// <summary>
+    /// 드래그 중 사라진 장비 슬롯 표시를 실제 EquipmentSystem 상태에 맞춰 복구한다.
+    /// 모델이 이미 바뀐 경우에만 정식 EquipmentTransaction 복구 경로를 사용한다.
+    /// </summary>
+    public bool TryRestoreOriginalEquipment(EquipSlotUI originalSlot)
+    {
+        if (!EnsureReady() || originalSlot == null || itemUI?.Item == null)
+            return false;
+
+        if (equipmentSystem.TryGetEquippedItem(
+                originalSlot.SlotType,
+                out InventoryItem equippedItem))
+        {
+            if (!ReferenceEquals(equippedItem, itemUI.Item))
+                return false;
+
+            SetEquipSlotVisual(originalSlot);
+            return true;
+        }
+
+        EquipmentTransactionResult result =
+            equipmentTransaction.TryRestoreEquippedItem(
+                itemUI.Item,
+                originalSlot.SlotType);
+
+        if (!result.IsSuccess)
+            return false;
+
+        SetEquipSlotVisual(originalSlot);
         return true;
     }
 
@@ -266,7 +311,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
             if (result.RollbackSucceeded)
@@ -345,7 +390,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
             if (!result.RollbackSucceeded)
@@ -373,8 +418,13 @@ public class ItemEquipHandler : MonoBehaviour
 
     public bool TryHandleSellEquippedItem(ShopController shop)
     {
-        if (shop == null || itemUI == null || !itemUI.OriginalWasEquipped)
+        if (!EnsureReady() ||
+            shop == null ||
+            itemUI == null ||
+            !itemUI.OriginalWasEquipped)
+        {
             return false;
+        }
 
         EquipSlotUI previousSlot = itemUI.CurrentEquipSlot;
 
@@ -398,7 +448,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!unequipResult.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(
                     unequipResult.EquipmentResult.Result));
 
@@ -449,7 +499,7 @@ public class ItemEquipHandler : MonoBehaviour
     }
     public bool TryHandleDropFromEquipSlotToGrid(int targetX, int targetY)
     {
-        if (!itemUI.IsEquipped)
+        if (!EnsureReady() || !itemUI.IsEquipped)
             return false;
 
         EquipSlotUI previousSlot = itemUI.CurrentEquipSlot;
@@ -486,7 +536,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
             if (result.RollbackSucceeded)
@@ -577,7 +627,7 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
 
             if (!result.RollbackSucceeded)
@@ -606,5 +656,26 @@ public class ItemEquipHandler : MonoBehaviour
             previousSlot);
 
         return true;
+    }
+
+    private bool EnsureReady()
+    {
+        if (itemUI != null &&
+            inventoryController != null &&
+            equipmentSystem != null &&
+            equipmentTransaction != null)
+        {
+            return true;
+        }
+
+        if (!bindWarningLogged)
+        {
+            bindWarningLogged = true;
+            Debug.LogError(
+                "[ItemEquipHandler] InventoryController가 Bind되기 전에 장비 동작이 요청되었습니다.",
+                this);
+        }
+
+        return false;
     }
 }

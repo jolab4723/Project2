@@ -1,8 +1,7 @@
 using ItemSystem;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
-public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class EquipSlotUI : MonoBehaviour
 {
 
     [SerializeField] private EquipSlotType slotType;
@@ -30,17 +29,6 @@ public class EquipSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public bool CanSwap(ItemUI incomingItem)
     {
         return !IsEmpty && CanAcceptType(incomingItem.Item.itemData);
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        InventoryController.Instance.hoveredEquipSlot = this;
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (InventoryController.Instance.hoveredEquipSlot == this)
-            InventoryController.Instance.hoveredEquipSlot = null;
     }
 
     public void SetItemUI(ItemUI itemUI)

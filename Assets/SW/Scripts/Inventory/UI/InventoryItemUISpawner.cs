@@ -109,12 +109,16 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
             return null;
         }
 
-        itemUI.Setup(item, targetGrid);
-
         ItemDropHandler dropHandler = newObject.GetComponent<ItemDropHandler>();
+        ItemEquipHandler equipHandler = newObject.GetComponent<ItemEquipHandler>();
 
         if (dropHandler != null)
             dropHandler.Bind(worldItemDropService, inventoryController);
+
+        if (equipHandler != null)
+            equipHandler.Bind(inventoryController);
+
+        itemUI.Setup(item, targetGrid);
 
         return itemUI;
     }

@@ -8,11 +8,7 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(DestructionDamageStrengthScaler))]
 public sealed class EnemyDestructionService : MonoBehaviour
 {
-    private enum OverflowPolicy
-    {
-        Skip,
-        UseReadyFallback
-    }
+    private const float WarmupDepth = 10000f;
 
     [Serializable]
     private sealed class PoolEntry
@@ -25,12 +21,6 @@ public sealed class EnemyDestructionService : MonoBehaviour
 
         [SerializeField, Min(0), InspectorName("최대 풀 크기")]
         public int MaxPoolSize = 12;
-
-        [SerializeField, InspectorName("풀이 부족할 때")]
-        public OverflowPolicy Overflow = OverflowPolicy.Skip;
-
-        [SerializeField, InspectorName("준비된 대체 연출 프리팹")]
-        public GameObject FallbackPrefab;
     }
 
     private sealed class PoolState
@@ -52,67 +42,55 @@ public sealed class EnemyDestructionService : MonoBehaviour
         internal EnemyDestructionVisual Visual;
         internal Action<EnemyDestructionVisual> CompletedHandler;
         internal bool InUse;
-        internal bool InReadyQueue;
     }
 
-    private static readonly Dictionary<int, HashSet<EnemyDestructionService>>
-        ServicesByScene =
-            new Dictionary<int, HashSet<EnemyDestructionService>>();
+    private static readonly List<EnemyDestructionService> ActiveServices =
+        new List<EnemyDestructionService>();
 
     [SerializeField, InspectorName("파괴 연출 풀 목록")]
     private PoolEntry[] poolEntries = Array.Empty<PoolEntry>();
 
-    [SerializeField, InspectorName("데미지별 파괴 세기")]
     private DestructionDamageStrengthScaler damageStrengthScaler;
-
-    [SerializeField, Min(100f), InspectorName("화면 밖 준비 위치 깊이")]
-    private float warmupDepth = 10000f;
 
     private readonly Dictionary<GameObject, PoolState> statesByPrefab =
         new Dictionary<GameObject, PoolState>();
     private readonly HashSet<GameObject> unregisteredWarnings =
         new HashSet<GameObject>();
 
-    private int registeredSceneHandle = -1;
-    private bool isRegistered;
-
     internal static bool TryGet(
         Scene scene,
         out EnemyDestructionService service)
     {
         service = null;
-        if (!scene.IsValid() ||
-            !ServicesByScene.TryGetValue(
-                scene.handle,
-                out HashSet<EnemyDestructionService> candidates))
+        if (!scene.IsValid())
         {
             return false;
         }
 
-        candidates.RemoveWhere(candidate =>
-            candidate == null ||
-            !candidate.isActiveAndEnabled ||
-            candidate.registeredSceneHandle != scene.handle ||
-            candidate.gameObject.scene.handle != scene.handle);
-
-        if (candidates.Count == 0)
+        for (int i = ActiveServices.Count - 1; i >= 0; i--)
         {
-            ServicesByScene.Remove(scene.handle);
-            return false;
-        }
+            EnemyDestructionService candidate = ActiveServices[i];
+            if (candidate == null || !candidate.isActiveAndEnabled)
+            {
+                ActiveServices.RemoveAt(i);
+                continue;
+            }
 
-        if (candidates.Count != 1)
-        {
-            return false;
-        }
+            if (candidate.gameObject.scene.handle != scene.handle)
+            {
+                continue;
+            }
 
-        foreach (EnemyDestructionService candidate in candidates)
-        {
+            if (service != null)
+            {
+                service = null;
+                return false;
+            }
+
             service = candidate;
-            return true;
         }
 
-        return false;
+        return service != null;
     }
 
     internal bool TryPlay(
@@ -128,31 +106,13 @@ public sealed class EnemyDestructionService : MonoBehaviour
             return false;
         }
 
-        PoolState selectedState = primary;
         PoolItem item = Rent(primary);
         if (item == null)
         {
             TryStartExpansion(primary);
-            if (primary.Config.Overflow == OverflowPolicy.UseReadyFallback &&
-                primary.Config.FallbackPrefab != null &&
-                primary.Config.FallbackPrefab != visualPrefab &&
-                statesByPrefab.TryGetValue(
-                    primary.Config.FallbackPrefab,
-                    out PoolState fallback))
-            {
-                item = Rent(fallback);
-                selectedState = fallback;
-            }
-        }
-
-        if (item == null)
-        {
             WarnExhausted(primary);
             return false;
         }
-
-        item.InReadyQueue = false;
-        item.InUse = true;
 
         Transform visualTransform = item.Visual.transform;
         visualTransform.SetParent(null, false);
@@ -176,13 +136,13 @@ public sealed class EnemyDestructionService : MonoBehaviour
             Mathf.Max(0f, baseDirectionalForce),
             forceMultiplier);
 
-        selectedState.ExhaustionWarned = false;
+        primary.ExhaustionWarned = false;
         return true;
     }
 
     private void Awake()
     {
-        ResolveReferences();
+        damageStrengthScaler = GetComponent<DestructionDamageStrengthScaler>();
     }
 
     private void OnEnable()
@@ -211,18 +171,22 @@ public sealed class EnemyDestructionService : MonoBehaviour
             return;
         }
 
-        registeredSceneHandle = scene.handle;
-        if (!ServicesByScene.TryGetValue(
-                registeredSceneHandle,
-                out HashSet<EnemyDestructionService> services))
+        ActiveServices.Remove(this);
+        ActiveServices.Add(this);
+
+        int sameSceneCount = 0;
+        for (int i = 0; i < ActiveServices.Count; i++)
         {
-            services = new HashSet<EnemyDestructionService>();
-            ServicesByScene.Add(registeredSceneHandle, services);
+            EnemyDestructionService service = ActiveServices[i];
+            if (service != null &&
+                service.isActiveAndEnabled &&
+                service.gameObject.scene.handle == scene.handle)
+            {
+                sameSceneCount++;
+            }
         }
 
-        services.Add(this);
-        isRegistered = true;
-        if (services.Count > 1)
+        if (sameSceneCount > 1)
         {
             Debug.LogError(
                 $"[{nameof(EnemyDestructionService)}] {scene.name}: " +
@@ -233,20 +197,7 @@ public sealed class EnemyDestructionService : MonoBehaviour
 
     private void UnregisterService()
     {
-        if (isRegistered &&
-            ServicesByScene.TryGetValue(
-                registeredSceneHandle,
-                out HashSet<EnemyDestructionService> services))
-        {
-            services.Remove(this);
-            if (services.Count == 0)
-            {
-                ServicesByScene.Remove(registeredSceneHandle);
-            }
-        }
-
-        isRegistered = false;
-        registeredSceneHandle = -1;
+        ActiveServices.Remove(this);
     }
 
     private void InitializeRuntimePools()
@@ -303,7 +254,7 @@ public sealed class EnemyDestructionService : MonoBehaviour
     {
         var warming = new List<PoolItem>(count);
         Vector3 warmupPosition =
-            transform.position + Vector3.down * warmupDepth;
+            transform.position + Vector3.down * WarmupDepth;
 
         for (int i = 0; i < count; i++)
         {
@@ -362,7 +313,7 @@ public sealed class EnemyDestructionService : MonoBehaviour
             item.Visual.ReturnToPoolNow();
             item.Visual.transform.SetParent(transform, false);
             SubscribeCompleted(state, item);
-            EnqueueReady(state, item);
+            state.Ready.Enqueue(item);
         }
     }
 
@@ -424,19 +375,8 @@ public sealed class EnemyDestructionService : MonoBehaviour
             return;
         }
 
-        EnqueueReady(state, item);
-        state.ExhaustionWarned = false;
-    }
-
-    private static void EnqueueReady(PoolState state, PoolItem item)
-    {
-        if (item.InReadyQueue)
-        {
-            return;
-        }
-
-        item.InReadyQueue = true;
         state.Ready.Enqueue(item);
+        state.ExhaustionWarned = false;
     }
 
     private PoolItem Rent(PoolState state)
@@ -449,9 +389,9 @@ public sealed class EnemyDestructionService : MonoBehaviour
                 continue;
             }
 
-            item.InReadyQueue = false;
             if (!item.InUse && item.Visual.IsStartupCompleted)
             {
+                item.InUse = true;
                 return item;
             }
 
@@ -487,7 +427,6 @@ public sealed class EnemyDestructionService : MonoBehaviour
         }
 
         state.Items.Remove(item);
-        item.InReadyQueue = false;
         item.InUse = false;
 
         if (item.Visual == null)
@@ -525,7 +464,6 @@ public sealed class EnemyDestructionService : MonoBehaviour
                 }
 
                 item.InUse = false;
-                item.InReadyQueue = false;
                 item.Visual.ReturnToPoolNow();
                 Destroy(item.Visual.gameObject);
             }
@@ -567,18 +505,8 @@ public sealed class EnemyDestructionService : MonoBehaviour
             this);
     }
 
-    private void ResolveReferences()
-    {
-        if (damageStrengthScaler == null)
-        {
-            damageStrengthScaler = GetComponent<DestructionDamageStrengthScaler>();
-        }
-    }
-
     private void OnValidate()
     {
-        ResolveReferences();
-        warmupDepth = Mathf.Max(100f, warmupDepth);
         if (poolEntries == null)
         {
             poolEntries = Array.Empty<PoolEntry>();
@@ -598,10 +526,6 @@ public sealed class EnemyDestructionService : MonoBehaviour
                 entry.PrewarmCount,
                 0,
                 entry.MaxPoolSize);
-            if (entry.FallbackPrefab == entry.VisualPrefab)
-            {
-                entry.FallbackPrefab = null;
-            }
         }
     }
 
@@ -609,6 +533,6 @@ public sealed class EnemyDestructionService : MonoBehaviour
         RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetRegistry()
     {
-        ServicesByScene.Clear();
+        ActiveServices.Clear();
     }
 }

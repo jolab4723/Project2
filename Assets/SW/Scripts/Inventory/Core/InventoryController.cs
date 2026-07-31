@@ -15,8 +15,13 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public event System.Action<InventoryItem> OnItemOwnershipGained;
     public event System.Action<InventoryItem> OnItemOwnershipLost;
 
-    /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
-    public static readonly List<InventoryController> All = new List<InventoryController>();
+    private static readonly List<InventoryController> all = new List<InventoryController>();
+
+    /// <summary>
+    /// 씬에 존재하는 인벤토리 후보 목록이며 대상 선택이나 권한을 판정하지 않는다.
+    /// 특정 대상은 전달받은 Controller를 우선하고, 멀티플레이에서는 서버만 순회한다.
+    /// </summary>
+    public static IReadOnlyList<InventoryController> All => all;
 
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
@@ -26,14 +31,14 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public PlayerWallet PlayerWallet => playerWallet;
 
     public TextMeshProUGUI logText;
-    public EquipSlotUI hoveredEquipSlot;
     public EquipSlotUI[] allEquipSlots;
 
     public TextMeshProUGUI goldText;
 
     void Awake()
     {
-        All.Add(this);
+        if (!all.Contains(this))
+            all.Add(this);
 
         var identity = GetComponent<Mirror.NetworkIdentity>();
         if (identity != null && !identity.isLocalPlayer)
@@ -52,7 +57,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     private void OnDestroy()
     {
-        All.Remove(this);
+        all.Remove(this);
         if (Instance == this)
             Instance = null;
     }
@@ -69,9 +74,8 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     }
 
     /// <summary>
-    /// 플레이어 인벤토리 그리드에 보관 중인 모든 아이템의 목록을 반환합니다.
-    /// 반환된 목록을 수정해도 실제 인벤토리 배치는 변경되지 않습니다.
-    /// 장착 슬롯에 있는 아이템은 포함하지 않습니다.
+    /// 대상 플레이어의 Grid 아이템을 중복 없이 반환한다.
+    /// 특수 던전은 전달받은 Controller로 호출하며 장비·상점·월드 아이템은 제외한다.
     /// </summary>
     public IReadOnlyList<InventoryItem> GetAllInventoryItems()
     {
@@ -82,8 +86,8 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     }
 
     /// <summary>
-    /// 플레이어 인벤토리 그리드에 보관 중인 아이템을 제거합니다.
-    /// 장착 중인 아이템은 이 메서드로 제거하지 않습니다.
+    /// 대상 플레이어의 Grid 아이템을 제거하고 UI·소유권 이벤트를 함께 발행한다.
+    /// 장착 아이템 제거 정책은 별도 합의 대상이므로 이 경로에서 처리하지 않는다.
     /// </summary>
     public InventoryDiscardResult TryRemoveInventoryItem(InventoryItem item)
     {

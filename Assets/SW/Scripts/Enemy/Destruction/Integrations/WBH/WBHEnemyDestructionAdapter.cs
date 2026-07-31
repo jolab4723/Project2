@@ -10,9 +10,7 @@ public sealed class WBHEnemyDestructionAdapter : MonoBehaviour
 
     private WBH_EnemyStatus status;
     private EnemyDestructionLink destructionLink;
-    private bool subscribed;
 
-    private bool hasRecordedHit;
     private int recordedFrame = -1;
     private Vector3 recordedImpactPoint;
     private Vector3 recordedAttackDirection;
@@ -28,47 +26,39 @@ public sealed class WBHEnemyDestructionAdapter : MonoBehaviour
         recordedImpactPoint = impactPoint;
         recordedAttackDirection = attackDirection;
         recordedFrame = Time.frameCount;
-        hasRecordedHit = true;
-    }
-
-    private void Awake()
-    {
-        ResolveReferences();
     }
 
     private void OnEnable()
     {
-        ResolveReferences();
-        ClearRecordedHit();
-        if (status == null || subscribed)
+        status = GetComponent<WBH_EnemyStatus>();
+        destructionLink = GetComponent<EnemyDestructionLink>();
+        if (targetCollider == null)
         {
-            return;
+            targetCollider = GetComponent<Collider>();
         }
 
+        recordedFrame = -1;
         status.OnDamaged += HandleDamaged;
-        subscribed = true;
     }
 
     private void OnDisable()
     {
-        if (status != null && subscribed)
+        if (status != null)
         {
             status.OnDamaged -= HandleDamaged;
         }
 
-        subscribed = false;
-        ClearRecordedHit();
+        recordedFrame = -1;
     }
 
     private void HandleDamaged(WBH_DamageResult result)
     {
-        bool useRecordedHit =
-            hasRecordedHit && recordedFrame == Time.frameCount;
+        bool useRecordedHit = recordedFrame == Time.frameCount;
         Vector3 impactPoint = recordedImpactPoint;
         Vector3 attackDirection = recordedAttackDirection;
 
         // 치명 피해 여부를 보기 전에 소비해 non-lethal 정보가 남지 않게 한다.
-        ClearRecordedHit();
+        recordedFrame = -1;
 
         if (status == null ||
             destructionLink == null ||
@@ -102,34 +92,11 @@ public sealed class WBHEnemyDestructionAdapter : MonoBehaviour
             status.MaxHealth);
     }
 
-    private void ResolveReferences()
+    private void OnValidate()
     {
-        if (status == null)
-        {
-            status = GetComponent<WBH_EnemyStatus>();
-        }
-
-        if (destructionLink == null)
-        {
-            destructionLink = GetComponent<EnemyDestructionLink>();
-        }
-
         if (targetCollider == null)
         {
             targetCollider = GetComponent<Collider>();
         }
-    }
-
-    private void ClearRecordedHit()
-    {
-        hasRecordedHit = false;
-        recordedFrame = -1;
-        recordedImpactPoint = default;
-        recordedAttackDirection = default;
-    }
-
-    private void OnValidate()
-    {
-        ResolveReferences();
     }
 }
