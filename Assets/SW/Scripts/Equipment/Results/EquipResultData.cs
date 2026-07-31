@@ -1,6 +1,6 @@
-public class EquipResultData
+internal sealed class EquipResultData
 {
-    public EquipResult Result { get; private set; }
+    public EquipResult Result { get; }
 
     public bool IsSuccess =>
         Result == EquipResult.Success ||
@@ -11,17 +11,17 @@ public class EquipResultData
         Result = result;
     }
 
-    public static EquipResultData Success()
+    internal static EquipResultData Success()
     {
         return new EquipResultData(EquipResult.Success);
     }
 
-    public static EquipResultData Swapped()
+    internal static EquipResultData Swapped()
     {
         return new EquipResultData(EquipResult.Swapped);
     }
 
-    public static EquipResultData Failed(EquipResult result)
+    internal static EquipResultData Failed(EquipResult result)
     {
         return new EquipResultData(result);
     }

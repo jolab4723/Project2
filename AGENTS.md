@@ -32,7 +32,7 @@
 
 이 원칙은 구현을 불필요하게 키우지 않기 위한 `lite` 기준이다. 아래의 시스템 통합, Git 협업, 완료 검증 규칙을 대체하지 않는다.
 
-Codex에서 현재 요청 한 건에만 더 강한 간결화 검토가 필요하면 `$ponytail` 또는 `$ponytail full`로 호출한다. `$ponytail`의 기본값은 `full`이며, 요청을 마치면 별도 해제 명령 없이 이 절의 `lite` 기준으로 돌아온다. `$ponytail ultra`는 삭제와 요구사항 축소를 강하게 검토해야 할 때만 사용한다. Claude Code에는 이 호출이 자동 제공되지 않으므로 `AGENTS.md`의 `lite` 기준만 공통 적용된다. Codex는 관련 흐름을 조사한 뒤 코드 간소화나 리팩터링이 실제로 필요하고 더 강한 검토가 도움이 된다고 판단한 경우에만, 임의로 적용하지 말고 사용자에게 `$ponytail` 사용을 짧게 제안한다.
+현재 요청 한 건에만 더 강한 간결화 검토가 필요하면 Codex에서는 `$ponytail [lite|full|ultra]`, Claude Code에서는 `/ponytail [lite|full|ultra]`로 호출한다. 단계를 생략하면 `full`이며, 요청을 마치면 별도 해제 명령 없이 이 절의 `lite` 기준으로 돌아온다. `ultra`는 삭제와 요구사항 축소를 강하게 검토해야 할 때만 사용한다. 두 도구는 `.agents/skills/ponytail/SKILL.md`를 공통 원본으로 사용한다. Codex와 Claude Code는 관련 흐름을 조사한 뒤 코드 간소화나 리팩터링이 실제로 필요하고 더 강한 검토가 도움이 된다고 판단한 경우에만, 임의로 적용하지 말고 사용자에게 각각 `$ponytail` 또는 `/ponytail` 사용을 짧게 제안한다.
 
 ## 2. 팀 브랜치와 우선 탐색 영역
 

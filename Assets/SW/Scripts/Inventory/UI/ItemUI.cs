@@ -109,7 +109,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (eventData.button != PointerEventData.InputButton.Right)
             return;
 
-        if (ShopController.Instance != null && ShopController.Instance.TryRightClick(this))
+        if (ShopController.Instance != null && ShopController.Instance.TryHandleRightClick(this))
             return;
 
         equipmentHandler.TryHandleRightClick();

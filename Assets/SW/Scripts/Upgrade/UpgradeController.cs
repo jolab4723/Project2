@@ -16,9 +16,6 @@ public class UpgradeController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI nextStatText;
     [SerializeField] private Image itemImage;
 
-    [SerializeField] private ItemDefinitionSO testItemDefinition;
-
-    private FixedStatValue mainOptions;
     private ItemInstance selectedItem;
     
     private UpgradeService upgradeService;
@@ -33,6 +30,9 @@ public class UpgradeController : MonoBehaviour
         ClearItem();
     }
 
+    /// <summary>
+    /// 강화 가능한 아이템을 현재 선택 항목으로 지정하고 표시를 갱신한다.
+    /// </summary>
     public bool TrySetItem(ItemInstance item)
     {
         if (!UpgradeService.CanUpgrade(item))
@@ -46,7 +46,6 @@ public class UpgradeController : MonoBehaviour
         !ReferenceEquals(selectedItem, item);
 
         selectedItem = item;
-        mainOptions = item.definition.mainOptions[0];
 
         if (isDifferentItem)
         {
@@ -60,11 +59,14 @@ public class UpgradeController : MonoBehaviour
     public void ClearItem()
     {
         selectedItem = null;
-        mainOptions = default;
         ShowMessage(string.Empty);
         RefreshUI();
     }
 
+    /// <summary>
+    /// 선택된 아이템의 비용 결제와 강화 수치 변경을 UpgradeService에 요청한다.
+    /// 장착 중인 아이템이면 성공 후 장비 변경 이벤트도 알린다.
+    /// </summary>
     public void TryUpgrade()
     {
         if (selectedItem == null)
@@ -133,7 +135,7 @@ public class UpgradeController : MonoBehaviour
         if (item.definition.mainOptions == null || item.definition.mainOptions.Length == 0)
             return 0f;
 
-        float baseValue = mainOptions.value;
+        float baseValue = item.definition.mainOptions[0].value;
         float bonusPerLevel = item.definition.upgradeBonusPerLevel;
 
         return baseValue * (1f + previewUpgradeLevel * bonusPerLevel);
@@ -155,10 +157,11 @@ public class UpgradeController : MonoBehaviour
 
         float currentValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel);
         float nextValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel + 1);
+        FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
 
-        upgradeLevelText.text = $"+{selectedItem.upgradeLevel.ToString()}";
-        currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOptions.statType]} + {currentValue:0.#}";
-        nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOptions.statType]} + {nextValue:0.#}";
+        upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
+        currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {currentValue:0.#}";
+        nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {nextValue:0.#}";
         costText.text = $"강화비용 : {GetUpgradeCost(selectedItem)}";
     }
 
@@ -187,12 +190,6 @@ public class UpgradeController : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            //ItemInstance instance = ItemOptionRoller.Generate(testItemDefinition);
-            //SetItem(instance);
-        }
-
         if (Keyboard.current.cKey.wasPressedThisFrame)
         {
             playerWallet.AddGold(999999999);

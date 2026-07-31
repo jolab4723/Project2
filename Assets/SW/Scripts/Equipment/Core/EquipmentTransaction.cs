@@ -2,29 +2,41 @@ using ItemSystem;
 using UnityEngine;
 public readonly struct EquipmentTransactionResult
 {
-    public EquipResultData EquipmentResult { get; }
+    private readonly EquipResultData equipmentResult;
+    private readonly bool rollbackSucceeded;
 
+    /// <summary>
+    /// 장비 처리 결과다. 초기화되지 않은 기본 구조체는 Failed로 취급한다.
+    /// </summary>
+    public EquipResult Result => equipmentResult?.Result ?? EquipResult.Failed;
     public InventoryGrid ResultGrid { get; }
     public InventoryPlacementSnapshot ResultPlacement { get; }
 
-    public bool RollbackSucceeded { get; }
     public bool IsSuccess =>
-        EquipmentResult != null &&
-        EquipmentResult.IsSuccess;
+        equipmentResult != null &&
+        equipmentResult.IsSuccess;
 
-    public EquipmentTransactionResult(
+    /// <summary>
+    /// 실패 후 장비·인벤토리 모델을 원래 상태로 되돌리지 못했을 때만 true다.
+    /// UI 표시 복구 여부는 포함하지 않는다.
+    /// </summary>
+    public bool HasRecoveryFailure =>
+        equipmentResult != null &&
+        !rollbackSucceeded;
+
+    internal EquipmentTransactionResult(
     EquipResultData equipmentResult,
     InventoryGrid resultGrid,
     InventoryPlacementSnapshot resultPlacement,
     bool rollbackSucceeded)
     {
-        EquipmentResult = equipmentResult;
+        this.equipmentResult = equipmentResult;
         ResultGrid = resultGrid;
         ResultPlacement = resultPlacement;
-        RollbackSucceeded = rollbackSucceeded;
+        this.rollbackSucceeded = rollbackSucceeded;
     }
 
-    public static EquipmentTransactionResult Failed(
+    internal static EquipmentTransactionResult Failed(
     EquipResultData equipmentResult,
     bool rollbackSucceeded = true)
     {
@@ -44,6 +56,10 @@ public class EquipmentTransaction
         this.equipmentSystem = equipmentSystem;
     }
     
+    /// <summary>
+    /// 인벤토리 아이템을 장착한다. 드래그 경로에서는 아이템이 이미 Grid에서
+    /// 빠져 있을 수 있으며, 실패하면 전달받은 원래 배치로 복구한다.
+    /// </summary>
     public EquipmentTransactionResult TryEquip(
     InventoryGrid sourceGrid,
     InventoryItem incomingItem,
@@ -108,6 +124,10 @@ public class EquipmentTransaction
             true);
     }
 
+    /// <summary>
+    /// 장착 아이템을 검증된 인벤토리 위치로 옮긴다.
+    /// 배치 실패 시 장비 모델을 원래 슬롯으로 자동 복구한다.
+    /// </summary>
     public EquipmentTransactionResult TryUnequip(
         EquipSlotType sourceSlot,
         InventoryGrid targetGrid,
@@ -212,6 +232,10 @@ public class EquipmentTransaction
             true);
     }
 
+    /// <summary>
+    /// 판매 같은 외부 이동을 위해 장비 모델에서 아이템을 분리한다.
+    /// 성공 이후의 이동 또는 실패 복구는 호출자가 이어서 책임진다.
+    /// </summary>
     public EquipmentTransactionResult TryUnequipForTransfer(
     EquipSlotType sourceSlot,
     InventoryItem expectedItem)
@@ -253,6 +277,10 @@ public class EquipmentTransaction
             true);
     }
 
+    /// <summary>
+    /// 인벤토리 아이템과 장착 아이템을 하나의 복구 가능한 흐름으로 교환한다.
+    /// allowAlternativeSpace가 true면 기존 위치가 찼을 때 다른 빈 공간도 찾는다.
+    /// </summary>
     public EquipmentTransactionResult TrySwap(
     EquipSlotType targetSlot,
     InventoryItem incomingItem,
@@ -461,6 +489,10 @@ public class EquipmentTransaction
             placement.Rect.Y);
     }
 
+    /// <summary>
+    /// 로드 또는 실패 복구 경로에서 아이템을 장비 모델에 다시 넣는다.
+    /// 이 메서드는 인벤토리 Grid에서 아이템을 제거하지 않는다.
+    /// </summary>
     public EquipmentTransactionResult TryRestoreEquippedItem(
     InventoryItem item,
     EquipSlotType targetSlot)
@@ -494,15 +526,19 @@ public class EquipmentTransaction
             true);
     }
 
-    /// <summary>장착 성공 시 고유효과 OnEquip 호출</summary>
-    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
+    /// <summary>
+    /// 장착 성공 시 고유 효과를 적용한다.
+    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// </summary>
     private static void NotifyEquipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?
             .OnEquip(item.itemData);
     }
-    /// <summary>해제 성공 시 고유효과 OnUnequip 호출</summary>
-    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
+    /// <summary>
+    /// 해제 성공 시 고유 효과를 제거한다.
+    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// </summary>
     private static void NotifyUnequipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?

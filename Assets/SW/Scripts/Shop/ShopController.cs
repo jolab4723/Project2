@@ -31,11 +31,6 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        //if (!TryFindRandomShopSpace(
-        //        item.CurrentWidth,
-        //        item.CurrentHeight,
-        //        out int x,
-        //        out int y))
         if (!shopGrid.FindEmptySpace(
             item.CurrentWidth,
             item.CurrentHeight,
@@ -154,7 +149,11 @@ public class ShopController : MonoBehaviour
         return true;
     }
 
-    public bool TradeItem(ItemUI itemUI, InventoryGrid fromGrid)
+    /// <summary>
+    /// 상점과 플레이어 인벤토리 사이의 드롭을 처리한다.
+    /// 반환값은 거래 성공 여부가 아니라 상점이 해당 드롭을 처리했는지 여부다.
+    /// </summary>
+    public bool TryHandleTradeDrop(ItemUI itemUI, InventoryGrid fromGrid)
     {
         if (!isActiveAndEnabled)
             return false;
@@ -165,7 +164,7 @@ public class ShopController : MonoBehaviour
             if (!IsTradingToShop(fromGrid, itemUI))
                 return false;
             Vector2Int cell = itemUI.GetCellFromItemRect(shopGrid);
-            bool success = RequestSell(itemUI, cell.x, cell.y);
+            bool success = TrySell(itemUI, cell.x, cell.y);
 
             if (!success)
                 RestoreItemAfterFailedTrade(itemUI);
@@ -178,7 +177,7 @@ public class ShopController : MonoBehaviour
             if (!IsTradingToPlayer(fromGrid, itemUI))
                 return false;
             Vector2Int cell = itemUI.GetCellFromItemRect(playerGrid);
-            bool success = RequestBuy(itemUI, cell.x, cell.y);
+            bool success = TryBuy(itemUI, cell.x, cell.y);
 
             if (!success)
                 RestoreItemAfterFailedTrade(itemUI);
@@ -187,25 +186,11 @@ public class ShopController : MonoBehaviour
 
         return false;
     }
-    public Vector2Int GetShopCell(ItemUI itemUI)
-    {
-        return itemUI.GetCellFromItemRect(shopGrid);
-    }
-
-    public Vector2Int GetPlayerCell(ItemUI itemUI)
-    {
-        return itemUI.GetCellFromItemRect(playerGrid);
-
-    }
- 
-    public bool RequestBuy(ItemUI itemUI, int targetX, int targetY)
-    {
-        // 팝업 추후 추가 예정
-
-        return ConfirmBuy(itemUI, targetX, targetY);
-    }
-
-    public bool ConfirmBuy(ItemUI itemUI, int targetX, int targetY)
+    /// <summary>
+    /// 상점 아이템을 지정한 플레이어 인벤토리 위치에 구매한다.
+    /// 반환값은 구매 트랜잭션의 성공 여부다.
+    /// </summary>
+    public bool TryBuy(ItemUI itemUI, int targetX, int targetY)
     {
         InventoryItem item = itemUI?.Item;
 
@@ -228,14 +213,11 @@ public class ShopController : MonoBehaviour
         return result == TradeResult.Success;
     }
 
-    public void CancelBuy(ItemUI itemUI)
-    {
-
-    }
-    public bool RequestSell(
-                ItemUI itemUI,
-                int requestedX,
-                int requestedY)
+    /// <summary>
+    /// 플레이어 아이템을 상점에 판매하고, 요청 위치가 차 있으면 빈 공간을 찾는다.
+    /// 반환값은 판매 트랜잭션의 성공 여부다.
+    /// </summary>
+    public bool TrySell(ItemUI itemUI, int requestedX, int requestedY)
     {
         InventoryItem item = itemUI?.Item;
 
@@ -264,26 +246,16 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        return ConfirmSell(
-            itemUI,
-            resolvedX,
-            resolvedY);
-    }
-
-    public bool ConfirmSell(ItemUI itemUI, int targetX, int targetY)
-    {
-        InventoryItem item = itemUI?.Item;
-
         TradeResult result = tradeService.TrySell(
             item,
             playerGrid,
             shopGrid,
-            targetX,
-            targetY);
+            resolvedX,
+            resolvedY);
 
         if (result == TradeResult.Success)
         {
-            itemUI.SetGridPosition(shopGrid, targetX, targetY);
+            itemUI.SetGridPosition(shopGrid, resolvedX, resolvedY);
             RefreshItemBadge(itemUI);
             inventoryController?.NotifyItemOwnershipLost(item);
         }
@@ -292,12 +264,11 @@ public class ShopController : MonoBehaviour
 
         return result == TradeResult.Success;
     }
-    public void CancelSell(ItemUI itemUI)
-    {
-
-    }
-
-    public bool TryRightClick(ItemUI itemUI)
+    /// <summary>
+    /// 상점 아이템의 우클릭 구매를 처리한다.
+    /// 반환값은 구매 성공 여부가 아니라 상점이 입력을 처리했는지 여부다.
+    /// </summary>
+    public bool TryHandleRightClick(ItemUI itemUI)
     {
         if (!isActiveAndEnabled)
             return false;
@@ -318,7 +289,7 @@ public class ShopController : MonoBehaviour
             return true;
         }
 
-        RequestBuy(itemUI, x, y);
+        TryBuy(itemUI, x, y);
         return true;   
     }
 

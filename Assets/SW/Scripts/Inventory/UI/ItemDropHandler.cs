@@ -165,7 +165,7 @@ public class ItemDropHandler : MonoBehaviour
             target != null ? target.GetComponentInParent<EquipSlotUI>() : null;
 
         // 장착 중인 아이템을 상점으로 직접 판매하는 전용 경로.
-        // 반드시 일반 ShopController.TradeItem보다 먼저 처리한다.
+        // 반드시 일반 ShopController.TryHandleTradeDrop보다 먼저 처리한다.
         if (shop != null &&
             equipHandler != null &&
             itemUI.OriginalWasEquipped &&
@@ -174,7 +174,7 @@ public class ItemDropHandler : MonoBehaviour
             return;
         }
 
-        if (shop != null && shop.TradeItem(itemUI, itemUI.OriginalGrid))
+        if (shop != null && shop.TryHandleTradeDrop(itemUI, itemUI.OriginalGrid))
             return;
 
         if (shop != null &&
