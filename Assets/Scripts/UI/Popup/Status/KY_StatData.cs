@@ -1,6 +1,6 @@
 [System.Serializable]
 
-// 스텟 팝업을 테스트 하기 위해 만든 구조. 실제 스탯과 연결하면 삭제할 것.
+// 스탯 팝업 화면 표시용 뷰모델. KY_StatusPopup.BuildDataFromPlayerStat에서 PlayerStatManager 값으로 채워진다.
 public class KY_StatData
 {
     public KY_StatTypeData hp;

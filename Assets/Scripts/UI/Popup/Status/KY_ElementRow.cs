@@ -7,6 +7,6 @@ public class KY_ElementRow : MonoBehaviour
 
     public void SetData(KY_StatTypeData data)
     {
-        totalValueText.text = data.Total.ToString();
+        totalValueText.text = data.Total.ToString("0.##");
     }
 }
