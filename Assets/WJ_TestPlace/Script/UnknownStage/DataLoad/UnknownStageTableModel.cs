@@ -1,3 +1,4 @@
+using Microsoft.Unity.VisualStudio.Editor;
 using System;
 
 namespace DataSystem
@@ -15,6 +16,6 @@ namespace DataSystem
         public string stageId;
         public string stageName;
         public int choiceNumber;
-        public string backgroundImage;
+        public Image backgroundImage;
     }
 }
