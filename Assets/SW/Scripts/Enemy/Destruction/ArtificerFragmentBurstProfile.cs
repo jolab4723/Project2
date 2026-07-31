@@ -38,13 +38,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
     private bool distanceNormalizationValid;
 
     public bool UseBurstSpeedCurve => useBurstSpeedCurve;
-    public float InitialSpeedMultiplier => initialSpeedMultiplier;
-    public float BurstDuration => burstDuration;
-    public float FinalSpeedMultiplier => finalSpeedMultiplier;
-    public bool PreserveTravelDistance => preserveTravelDistance;
-    public int ActiveFragmentCount => states.Count;
-    public float LastInitialMultiplier { get; private set; } = 1f;
-    public float LastCurrentMultiplier { get; private set; } = 1f;
 
     public void PrepareLaunch(
         Vector3 worldAttackDirection,
@@ -110,22 +103,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         destination.burstDuration = burstDuration;
         destination.finalSpeedMultiplier = finalSpeedMultiplier;
         destination.preserveBurstTravelDistance = preserveTravelDistance;
-    }
-
-    public float EvaluateSpeedMultiplier(
-        float normalizedLifetime,
-        float lifetime,
-        float linearDrag)
-    {
-        if (!useBurstSpeedCurve)
-            return 1f;
-
-        float normalization = preserveTravelDistance
-            ? CalculateDistanceNormalization(lifetime, linearDrag)
-            : 1f;
-        return Mathf.Max(
-            MinimumMultiplier,
-            EvaluateRawMultiplier(normalizedLifetime) * normalization);
     }
 
     public override void AddedToDismantle(MeshElement element, int index)
@@ -207,8 +184,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         states.Clear();
         liveQueues.Clear();
         staleQueues.Clear();
-        LastInitialMultiplier = 1f;
-        LastCurrentMultiplier = 1f;
         pendingAttackDirection = Vector3.zero;
         pendingDirectionalImpulse = 0f;
         launchPrepared = false;
@@ -292,8 +267,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
             hasIntegratedFrame = false
         };
         states.Add(fragment, state);
-        LastInitialMultiplier = multiplier;
-        LastCurrentMultiplier = multiplier;
     }
 
     private void ApplySpeedBeforeMovement(
@@ -308,7 +281,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         if (!state.hasIntegratedFrame)
         {
             state.hasIntegratedFrame = true;
-            LastCurrentMultiplier = state.previousMultiplier;
             return;
         }
 
@@ -320,7 +292,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
             state.previousMultiplier);
         fragment.velocity *= multiplier / previous;
         state.previousMultiplier = multiplier;
-        LastCurrentMultiplier = multiplier;
     }
 
     private float EvaluateRuntimeMultiplier(

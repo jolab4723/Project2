@@ -172,12 +172,6 @@ public class ItemEquipHandler : MonoBehaviour
         if (itemUI.OriginalWasEquipped)
         {
             EquipSlotUI originalSlot = itemUI.CurrentEquipSlot;
-
-            if (targetSlot == originalSlot)
-            {
-                SetEquipSlotVisual(originalSlot);
-                return true;
-            }
             SetEquipSlotVisual(originalSlot);
             return true;
         }
@@ -219,8 +213,8 @@ public class ItemEquipHandler : MonoBehaviour
 
         itemUI.SetGridPosition(
             itemUI.OriginalGrid,
-            itemUI.OriginalX,
-            itemUI.OriginalY);
+            itemUI.OriginalPlacement.Rect.X,
+            itemUI.OriginalPlacement.Rect.Y);
 
         return true;
     }
@@ -302,8 +296,8 @@ public class ItemEquipHandler : MonoBehaviour
             InventoryPlacementSnapshot.FromOriginalState(
                 returnGrid,
                 outgoingItem,
-                itemUI.OriginalX,
-                itemUI.OriginalY,
+                itemUI.OriginalPlacement.Rect.X,
+                itemUI.OriginalPlacement.Rect.Y,
                 outgoingItem.isRotated);
 
         // B가 A의 원래 위치에 들어갈 수 있는지 확인
@@ -327,8 +321,8 @@ public class ItemEquipHandler : MonoBehaviour
                 // 트랜잭션이 모델을 복구했으므로 UI만 복구한다.
                 itemUI.SetGridPosition(
                     itemUI.OriginalGrid,
-                    itemUI.OriginalX,
-                    itemUI.OriginalY);
+                    itemUI.OriginalPlacement.Rect.X,
+                    itemUI.OriginalPlacement.Rect.Y);
             }
             else
             {

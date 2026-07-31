@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6de67c2ea0b9ecd4d89c8f8b0f1b623a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Artifice.ObjectID
   id: 2
   rend: {fileID: 111107856242175107}
@@ -750,8 +750,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3474425642880472111}
-  - component: {fileID: 494182479495789501}
-  - component: {fileID: 4987273738937694447}
   - component: {fileID: 7818749399207384473}
   - component: {fileID: 6383840830036879892}
   - component: {fileID: 2615264374233623486}
@@ -780,55 +778,6 @@ Transform:
   - {fileID: 3028554942173491954}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &494182479495789501
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8491033513309489009}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 162843c87e4f6c54e892d4bf6188a586, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CombatDroneVisualAnimator
-  variant: 0
-  visualRoot: {fileID: 3028554942173491954}
-  hoverAmplitude: 0.14
-  hoverFrequency: 0.64
-  pitchAmplitude: 2.4
-  rollAmplitude: 3.2
-  phaseOffset: 0
-  propellerSpeed: 1150
-  radarSpeed: 105
-  weaponRecoilDistance: 0.13
-  weaponRecoilDuration: 0.18
-  aimSmoothing: 120
-  previewSweepAim: 0
-  previewAutoFire: 0
-  previewFireInterval: 2.25
-  previewFireInitialDelay: 0.9
---- !u!65 &4987273738937694447
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8491033513309489009}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 3.1000657, y: 1.2815359, z: 1.0729892}
-  m_Center: {x: -0.0000015497208, y: 0.245372, z: 0.000000059604645}
 --- !u!114 &7818749399207384473
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1327,12 +1276,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatDroneArtificerDestruction
   artificer: {fileID: 7818749399207384473}
-  visualAnimator: {fileID: 494182479495789501}
-  disableCollidersOnDestroy: 1
-  destroyRootOnComplete: 0
-  destroyDelayAfterComplete: 0.05
-  previewAutoTrigger: 0
-  previewDelay: 0
   enableFragmentGroundCollision: 1
   fragmentCollisionLayers:
     serializedVersion: 2
@@ -1350,9 +1293,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionVisual
   artificer: {fileID: 7818749399207384473}
-  visualAnimator: {fileID: 494182479495789501}
   destruction: {fileID: 6383840830036879892}
-  autoDeactivateOnComplete: 1
 --- !u!114 &4066958125945521621
 MonoBehaviour:
   m_ObjectHideFlags: 0
