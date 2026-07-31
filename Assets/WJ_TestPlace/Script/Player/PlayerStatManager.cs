@@ -144,12 +144,21 @@ public class PlayerStatManager : MonoBehaviour
     /// </summary>
     public void Recalculate()
     {
-        StatSet character = GetCharacterStatSet();
-        StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
-        StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
-        StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
+        GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
 
         Stat.Recalculate(character, equipment, buff, passive);
+    }
+
+    /// <summary>
+    /// 캐릭터/장비/버프/패시브 네 레이어의 StatSet을 각각 가져온다.
+    /// 스탯 UI처럼 레이어별 기여분을 따로 보여줘야 하는 외부 코드에서 사용.
+    /// </summary>
+    public void GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive)
+    {
+        character = GetCharacterStatSet();
+        equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
+        buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
+        passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
     }
 
     /// <summary>
@@ -204,15 +213,7 @@ public class PlayerStatManager : MonoBehaviour
         PlayerStat calculatedStats =
             new PlayerStat(Stat.currentLevel, Stat.currentExp);
 
-        StatSet character = GetCharacterStatSet();
-
-        StatSet buff = BuffProvider != null
-            ? BuffProvider.GetStatSet()
-            : StatSet.Zero;
-
-        StatSet passive = PassiveSkillManager.Instance != null
-            ? PassiveSkillManager.Instance.GetStatSet()
-            : StatSet.Zero;
+        GetLayerStatSets(out StatSet character, out _, out StatSet buff, out StatSet passive);
 
         calculatedStats.Recalculate(character, equipmentStats, buff, passive);
 
@@ -252,10 +253,7 @@ public class PlayerStatManager : MonoBehaviour
             return;
         }
 
-        StatSet character = GetCharacterStatSet();
-        StatSet equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
-        StatSet buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
-        StatSet passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
+        GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
 
         var sb = new StringBuilder();
         sb.AppendLine($"===== [{name}] 전체 스탯 (레벨 {Stat.currentLevel}) =====");

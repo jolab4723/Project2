@@ -15,7 +15,7 @@ public class YJ_StageSelectManager : MonoBehaviour
     // 분기 분리 조건을 만족하는 전체 맵 배치를 찾기 위해 허용할 최대 생성 횟수입니다.
     private const int MaximumMapGenerationAttempts = 32;
     // 미지 노드가 이동하여 실제 이벤트 씬을 다시 선택할 중간 씬 이름입니다.
-    private const string UnknownMasterSceneName = "Unknown_MasterScene";
+    private const string UnknownMasterSceneName = "Unknown_Stage";
     // 확률에 따라 생성될 수 있는 일반 중간층 노드 종류 목록입니다.
     private static readonly StageNodeType[] MiddleNodeTypes =
     {
