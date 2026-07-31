@@ -275,6 +275,12 @@ public class ItemDropHandler : MonoBehaviour
             return false;
         }
 
+        if (itemUI.OriginalGrid == ShopController.Instance?.ShopGrid)
+        {
+            TryRestoreOriginalPlacement();
+            return true;
+        }
+
         WorldItemDropResult result =
             worldItemDropService.TryDrop(itemUI.Item.itemData);
 

@@ -7,10 +7,8 @@ public sealed class DestructionDamageStrengthScaler : MonoBehaviour
     [SerializeField, InspectorName("데미지 배수 사용")]
     private bool useDamageScaling = true;
     [SerializeField, InspectorName("데미지 비율 → 초기 충격 배수")]
-    private AnimationCurve damageRatioToImpulseMultiplier = new AnimationCurve(
-        new Keyframe(0f, 0.7f),
-        new Keyframe(0.5f, 1f),
-        new Keyframe(1f, 1.8f));
+    private AnimationCurve damageRatioToImpulseMultiplier =
+        CreateDefaultCurve();
     [SerializeField, Min(0f), InspectorName("최소 배수 제한")]
     private float minimumMultiplier = 0.5f;
     [SerializeField, Min(0f), InspectorName("최대 배수 제한")]
@@ -55,15 +53,6 @@ public sealed class DestructionDamageStrengthScaler : MonoBehaviour
             maximumMultiplier);
     }
 
-    public float EvaluateDirectionalImpulse(
-        float baseDirectionalImpulse,
-        float killingDamage,
-        float targetMaxHealth)
-    {
-        return Mathf.Max(0f, baseDirectionalImpulse) *
-            EvaluateMultiplier(killingDamage, targetMaxHealth);
-    }
-
     public void SetPreviewValues(
         float killingDamage,
         float targetMaxHealth)
@@ -88,19 +77,21 @@ public sealed class DestructionDamageStrengthScaler : MonoBehaviour
         if (damageRatioToImpulseMultiplier == null ||
             damageRatioToImpulseMultiplier.length == 0)
         {
-            damageRatioToImpulseMultiplier = new AnimationCurve(
-                new Keyframe(0f, 0.7f),
-                new Keyframe(0.5f, 1f),
-                new Keyframe(1f, 1.8f));
+            damageRatioToImpulseMultiplier = CreateDefaultCurve();
         }
+    }
+
+    private static AnimationCurve CreateDefaultCurve()
+    {
+        return new AnimationCurve(
+            new Keyframe(0f, 0.7f),
+            new Keyframe(0.5f, 1f),
+            new Keyframe(1f, 1.8f));
     }
 
     private void Reset()
     {
-        damageRatioToImpulseMultiplier = new AnimationCurve(
-            new Keyframe(0f, 0.7f),
-            new Keyframe(0.5f, 1f),
-            new Keyframe(1f, 1.8f));
+        damageRatioToImpulseMultiplier = CreateDefaultCurve();
         useDamageScaling = true;
         minimumMultiplier = 0.5f;
         maximumMultiplier = 2f;

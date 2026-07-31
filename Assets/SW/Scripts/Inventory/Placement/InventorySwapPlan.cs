@@ -57,6 +57,9 @@ public readonly struct InventoryCellRect
 
 }
 
+/// <summary>
+/// 드래그 실패나 장비 해제 시 아이템을 되돌릴 수 있도록 그리드 배치를 보관한다.
+/// </summary>
 public readonly struct InventoryPlacementSnapshot
 {
     public InventoryCellRect Rect { get; }

@@ -99,13 +99,14 @@ namespace ItemSystem
                 itemDatabase,
                 grade);
 
-            if (rollResult.Result == ItemDropRollResult.NoDrop)
-                return false;
-
             if (!rollResult.HasDrop)
             {
-                Debug.LogWarning(
-                    $"[ItemSystemController] 아이템 롤 실패: {rollResult.Result}");
+                if (rollResult.Result != ItemDropRollResult.NoDrop)
+                {
+                    Debug.LogWarning(
+                        $"[ItemSystemController] {ItemDropMessageMapper.GetMessage(rollResult)}");
+                }
+
                 return false;
             }
 
@@ -204,26 +205,16 @@ namespace ItemSystem
         public ItemDefinitionSO GetRandomItemSO(EnemyGrade grade)
         {
             var itemDatabase = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
-            if (itemDatabase == null)
-            {
-                Debug.LogWarning("[ItemSystemController] ItemManager.ItemDatabase를 찾을 수 없습니다.");
-                return null;
-            }
-
-            if (itemDropTable == null)
-            {
-                Debug.LogWarning("[ItemSystemController] itemDropTable이 연결되지 않았습니다.");
-                return null;
-            }
-
             ItemDropRollResultData result = dropRollService.Roll(itemDropTable, itemDatabase, grade);
-
-            if (result.Result == ItemDropRollResult.NoDrop)
-                return null; // 확률상 정상적으로 드랍 안 됨
 
             if (!result.HasDrop)
             {
-                Debug.LogWarning($"[ItemSystemController] 아이템 롤 실패: {result.Result}");
+                if (result.Result != ItemDropRollResult.NoDrop)
+                {
+                    Debug.LogWarning(
+                        $"[ItemSystemController] {ItemDropMessageMapper.GetMessage(result)}");
+                }
+
                 return null;
             }
 

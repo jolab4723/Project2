@@ -1,14 +1,14 @@
-using System;
-
 public static class ItemDropMessageMapper
 {
+    /// <summary>
+    /// 드롭 판정 결과를 로그나 UI에서 바로 사용할 수 있는 메시지로 변환한다.
+    /// </summary>
     public static string GetMessage(ItemDropRollResultData resultData)
     {
         if (resultData == null)
         {
             return "아이템 드랍 결과를 확인할 수 없습니다.";
         }
-            
 
         switch (resultData.Result)
         {

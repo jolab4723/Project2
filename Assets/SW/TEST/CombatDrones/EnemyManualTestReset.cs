@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Artifice;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -304,22 +303,6 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
         enemy.name = instanceName;
         enemy.layer = enemyLayer;
         EnsureRootHitCollider(enemy);
-
-        Artificer artificer = enemy.GetComponent<Artificer>();
-        CombatDroneVisualAnimator visualAnimator =
-            enemy.GetComponent<CombatDroneVisualAnimator>();
-        CombatDroneArtificerDestruction destruction =
-            enemy.GetComponent<CombatDroneArtificerDestruction>();
-
-        if (destruction != null)
-        {
-            destruction.Configure(
-                artificer,
-                visualAnimator,
-                false,
-                0f,
-                false);
-        }
 
         EnemyDestructionTarget target =
             enemy.GetComponent<EnemyDestructionTarget>();

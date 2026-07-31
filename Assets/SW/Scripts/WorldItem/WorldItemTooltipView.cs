@@ -1,7 +1,6 @@
 using ItemSystem;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 
 public class WorldItemTooltipView : MonoBehaviour
@@ -14,7 +13,6 @@ public class WorldItemTooltipView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI itemNameText;
 
     [SerializeField] private RectTransform tooltipRect;
-    [SerializeField] private Canvas canvas;
     [SerializeField] private Camera worldCamera;
 
     [SerializeField]
@@ -93,7 +91,15 @@ public class WorldItemTooltipView : MonoBehaviour
             currentTarget.position + worldOffset);
 
         if (screenPosition.z <= 0f)
+        {
+            if (tooltipPanel != null)
+                tooltipPanel.SetActive(false);
+
             return;
+        }
+
+        if (tooltipPanel != null && !tooltipPanel.activeSelf)
+            tooltipPanel.SetActive(true);
 
         tooltipRect.position = screenPosition;
     }

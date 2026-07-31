@@ -22,11 +22,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     private InventoryItem inventoryItem;
 
     private Vector2 originalPosition;
-    private int originalX;
-    private int originalY;
-    public int OriginalX => originalX;
-    public int OriginalY => originalY;
-    private bool originalRotated;
     private bool originalWasEquipped;
     private EquipSlotUI originalEquipSlot;
     private InventoryPlacementSnapshot originalPlacement;
@@ -143,14 +138,19 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
     public bool TryReturnToOriginalPosition()
     {
-        if (inventoryItem.isRotated != originalRotated)
+        if (originalGrid == null || !originalPlacement.IsValid)
+            return false;
+
+        if (inventoryItem.isRotated != originalPlacement.IsRotated)
         {
-            inventoryItem.isRotated = originalRotated;
+            inventoryItem.isRotated = originalPlacement.IsRotated;
             UpdateRotationUI();
         }
 
-        if (originalGrid == null ||
-            !originalGrid.TryPlaceItem(inventoryItem, originalX, originalY))
+        if (!originalGrid.TryPlaceItem(
+                inventoryItem,
+                originalPlacement.Rect.X,
+                originalPlacement.Rect.Y))
         {
             return false;
         }
@@ -384,9 +384,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     {
         StopGridPositionAnimation(true);
         originalPosition = rect.anchoredPosition;
-        originalX = inventoryItem.x;
-        originalY = inventoryItem.y;
-        originalRotated = inventoryItem.isRotated;
         originalWasEquipped = IsEquipped;
         originalEquipSlot = currentEquipSlot;
         originalGrid = currentGrid;

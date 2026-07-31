@@ -154,7 +154,56 @@ public sealed class EnemyDestructionService : MonoBehaviour
         }
 
         InitializeRuntimePools();
-        StartCoroutine(PrewarmAll());
+        StartCoroutine(InitializeLinkedPools());
+    }
+
+    private IEnumerator InitializeLinkedPools()
+    {
+        // 다른 컴포넌트의 Awake에서 생성되는 WBH 적 풀까지 준비된 뒤 연결 프리팹을 찾는다.
+        yield return null;
+        RegisterLinkedVisualPrefabs();
+        yield return PrewarmAll();
+    }
+
+    private void RegisterLinkedVisualPrefabs()
+    {
+        EnemyDestructionLink[] links =
+            FindObjectsByType<EnemyDestructionLink>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int i = 0; i < links.Length; i++)
+        {
+            EnemyDestructionLink link = links[i];
+            if (link == null ||
+                link.gameObject.scene.handle != gameObject.scene.handle ||
+                link.DestructionVisualPrefab == null ||
+                statesByPrefab.ContainsKey(link.DestructionVisualPrefab))
+            {
+                continue;
+            }
+
+            var entry = new PoolEntry
+            {
+                VisualPrefab = link.DestructionVisualPrefab
+            };
+            statesByPrefab.Add(entry.VisualPrefab, new PoolState(entry));
+        }
+    }
+
+    public void ReturnAllActive()
+    {
+        foreach (PoolState state in statesByPrefab.Values)
+        {
+            for (int i = 0; i < state.Items.Count; i++)
+            {
+                PoolItem item = state.Items[i];
+                if (item != null && item.Visual != null && item.InUse)
+                {
+                    HandleCompleted(state, item);
+                }
+            }
+        }
     }
 
     private void OnDisable()
