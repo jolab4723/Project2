@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // 스탯 팝업용 코드입니다.
-// 데이터를 받아 캐릭터의 스탯을 팝업에 표시. ( 아직 연결은 미구현 )
+// 데이터를 받아 캐릭터의 스탯을 팝업에 표시. PlayerStatManager.Instance와 연결됨.
 // 토탈, 디테일 전환
 public class KY_StatusPopup : KY_PopupBase
 {
@@ -28,17 +28,64 @@ public class KY_StatusPopup : KY_PopupBase
     [Header("세부 보기 토글")]
     public Toggle detailToggle;
 
+    [Header("스탯 이름 라벨")]
+    [Tooltip("비워두면 각 행의 이름 텍스트를 건드리지 않는다(기존 하드코딩된 텍스트 유지).")]
+    public StatLabelDatabaseSO statLabels;
+
     private KY_StatData currentData;
     private bool isDetailed = false;
 
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect curtainEffect;
 
+    private PlayerStatManager statManager;
+
     void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
         curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
+
+        ApplyLabels();
+    }
+
+    /// <summary>
+    /// 각 행의 이름 텍스트를 StatLabelDatabase 값으로 한 번 채운다. 값이 바뀌는 게 아니라
+    /// 매번 갱신할 필요 없이 팝업 생성 시 한 번만 하면 된다.
+    /// </summary>
+    void ApplyLabels()
+    {
+        if (statLabels == null)
+            return;
+
+        hpRow.SetLabel(statLabels.GetLabel("maxHealth"));
+        attackRow.SetLabel(statLabels.GetLabel("attackPower"));
+        defenseRow.SetLabel(statLabels.GetLabel("defensePower"));
+        moveSpeedRow.SetLabel(statLabels.GetLabel("moveSpeed"));
+        attackSpeedRow.SetLabel(statLabels.GetLabel("attackSpeed"));
+        critChanceRow.SetLabel(statLabels.GetLabel("critRate"));
+        critMultiplierRow.SetLabel(statLabels.GetLabel("critMult"));
+        cooldownReductionRow.SetLabel(statLabels.GetLabel("cdr"));
+        mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
+        penetrationRow.SetLabel(statLabels.GetLabel("pen"));
+    }
+
+    void OnEnable()
+    {
+        statManager = PlayerStatManager.Instance;
+        if (statManager != null)
+            statManager.Stat.OnStatChanged += HandleStatChanged;
+    }
+
+    void OnDisable()
+    {
+        if (statManager != null)
+            statManager.Stat.OnStatChanged -= HandleStatChanged;
+    }
+
+    void HandleStatChanged()
+    {
+        RequestData();
     }
 
     public override void Open()
@@ -60,25 +107,56 @@ public class KY_StatusPopup : KY_PopupBase
 
     void RequestData()
     {
-        // 테스트용 더미 데이터 ( 추후 삭제할 것 )
-        KY_StatData dummyData = new KY_StatData
-        {
-            hp = new KY_StatTypeData { baseValue = 300, equipValue = 150, buffValue = 50 },
-            attack = new KY_StatTypeData { baseValue = 80, equipValue = 30, buffValue = 10 },
-            defense = new KY_StatTypeData { baseValue = 50, equipValue = 20, buffValue = 5 },
-            moveSpeed = new KY_StatTypeData { baseValue = 10, equipValue = 2, buffValue = 1 },
-            attackSpeed = new KY_StatTypeData { baseValue = 1, equipValue = 0.5f, buffValue = 0.2f },
-            critChance = new KY_StatTypeData { baseValue = 5, equipValue = 10, buffValue = 3 },
-            critMultiplier = new KY_StatTypeData { baseValue = 150, equipValue = 50, buffValue = 20 },
-            cooldownReduction = new KY_StatTypeData { baseValue = 0, equipValue = 10, buffValue = 5 },
-            mpRegen = new KY_StatTypeData { baseValue = 5, equipValue = 3, buffValue = 2 },
-            penetration = new KY_StatTypeData { baseValue = 0, equipValue = 15, buffValue = 0 },
-            fireDamage = new KY_StatTypeData { baseValue = 0, equipValue = 10, buffValue = 5 },
-            iceDamage = new KY_StatTypeData { baseValue = 0, equipValue = 0, buffValue = 0 },
-            lightningDamage = new KY_StatTypeData { baseValue = 0, equipValue = 8, buffValue = 2 }
-        };
+        if (statManager == null)
+            statManager = PlayerStatManager.Instance;
 
-        SetData(dummyData);
+        if (statManager == null || statManager.Stat == null)
+        {
+            Debug.LogWarning("[KY_StatusPopup] PlayerStatManager.Instance가 없어 스탯을 표시할 수 없습니다.");
+            return;
+        }
+
+        SetData(BuildDataFromPlayerStat(statManager));
+    }
+
+    /// <summary>
+    /// PlayerStatManager의 캐릭터/장비/버프/패시브 레이어를 KY_StatData(캐릭터/장비/버프 3단)로 변환한다.
+    /// 패시브 스킬트리는 아직 UI가 구분하는 3단에 없어서 버프 몫에 합쳐 넣는다(현재는 패시브가 스텁이라 실질적으로 0).
+    /// </summary>
+    private static KY_StatData BuildDataFromPlayerStat(PlayerStatManager statManager)
+    {
+        statManager.GetLayerStatSets(out StatSet c, out StatSet eq, out StatSet bu, out StatSet pa);
+
+        return new KY_StatData
+        {
+            hp = Build(c.maxHealthFlat, eq.maxHealthFlat, eq.maxHealthPercent, bu.maxHealthPercent, bu.maxHealthFlat, pa.maxHealthPercent, pa.maxHealthFlat),
+            attack = Build(c.attackPowerFlat, eq.attackPowerFlat, eq.attackPowerPercent, bu.attackPowerPercent, bu.attackPowerFlat, pa.attackPowerPercent, pa.attackPowerFlat),
+            defense = Build(c.defensePowerFlat, eq.defensePowerFlat, eq.defensePowerPercent, bu.defensePowerPercent, bu.defensePowerFlat, pa.defensePowerPercent, pa.defensePowerFlat),
+            moveSpeed = Build(c.moveSpeedFlat, eq.moveSpeedFlat, eq.moveSpeedPercent, bu.moveSpeedPercent, bu.moveSpeedFlat, pa.moveSpeedPercent, pa.moveSpeedFlat),
+            attackSpeed = Build(c.attackSpeedFlat, eq.attackSpeedFlat, eq.attackSpeedPercent, bu.attackSpeedPercent, bu.attackSpeedFlat, pa.attackSpeedPercent, pa.attackSpeedFlat),
+            critChance = BuildClamped(c.critRateFlat, eq.critRateFlat, bu.critRateFlat, pa.critRateFlat, 0f, 100f),
+            critMultiplier = Build(c.critMultFlat, eq.critMultFlat, eq.critMultPercent, bu.critMultPercent, bu.critMultFlat, pa.critMultPercent, pa.critMultFlat),
+            cooldownReduction = BuildClamped(c.cdrFlat, eq.cdrFlat, bu.cdrFlat, pa.cdrFlat, 0f, 70f),
+            mpRegen = Build(c.mpRegenFlat, eq.mpRegenFlat, eq.mpRegenPercent, bu.mpRegenPercent, bu.mpRegenFlat, pa.mpRegenPercent, pa.mpRegenFlat),
+            penetration = Build(c.penFlat, eq.penFlat, eq.penPercent, bu.penPercent, bu.penFlat, pa.penPercent, pa.penFlat),
+            fireDamage = Build(c.fireBonusFlat, eq.fireBonusFlat, eq.fireBonusPercent, bu.fireBonusPercent, bu.fireBonusFlat, pa.fireBonusPercent, pa.fireBonusFlat),
+            iceDamage = Build(c.iceBonusFlat, eq.iceBonusFlat, eq.iceBonusPercent, bu.iceBonusPercent, bu.iceBonusFlat, pa.iceBonusPercent, pa.iceBonusFlat),
+            lightningDamage = Build(c.electricBonusFlat, eq.electricBonusFlat, eq.electricBonusPercent, bu.electricBonusPercent, bu.electricBonusFlat, pa.electricBonusPercent, pa.electricBonusFlat),
+        };
+    }
+
+    private static KY_StatTypeData Build(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
+    {
+        PlayerStat.CalcBreakdown(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat,
+            out float baseValue, out float equipValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+    }
+
+    private static KY_StatTypeData BuildClamped(float characterFlat, float equipFlat, float buffFlat, float passiveFlat, float min, float max)
+    {
+        PlayerStat.CalcBreakdownClampedFlat(characterFlat, equipFlat, buffFlat, passiveFlat, min, max,
+            out float baseValue, out float equipValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
     }
 
     void SetData(KY_StatData data)
