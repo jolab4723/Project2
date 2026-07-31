@@ -42,6 +42,8 @@ public class YJ_StageNodeData : MonoBehaviour
     public StageNodeType type;
     // 노드를 선택한 뒤 불러올 씬 이름을 저장할 때 사용합니다.
     public string sceneName;
+    // Event 노드에 맵 생성 시점부터 고정 배정된 Unknown 이벤트 ID입니다.
+    public string unknownStageId;
     // 라인 거리와 교차 여부를 계산할 때 사용하는 UI 배치 좌표입니다.
     public Vector2 position;
     // 이 노드에서 직접 이동할 수 있는 다음 층 노드 ID 목록입니다.
@@ -68,6 +70,8 @@ public class YJ_StageNodeData : MonoBehaviour
         nodeIndex = index;
         type = nodeType;
         position = anchoredPosition;
+        sceneName = string.Empty;
+        unknownStageId = string.Empty;
         cleared = false;
         available = false;
         nextNodeIds.Clear();

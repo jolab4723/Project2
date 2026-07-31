@@ -16,6 +16,11 @@ public class YJ_StageSelectManager : MonoBehaviour
     private const int MaximumMapGenerationAttempts = 32;
     // 미지 노드가 이동하여 실제 이벤트 씬을 다시 선택할 중간 씬 이름입니다.
     private const string UnknownMasterSceneName = "Unknown_Stage";
+    // Unknown 이벤트 정의 데이터베이스의 Resources 경로입니다.
+    private const string UnknownStageDatabaseResourcePath =
+        "DataFiles/UnknownStageData/3. GeneratedAssets/AllUnknownStages";
+    // 맵 Seed와 Unknown 이벤트 배정용 Seed를 분리하는 고정값입니다.
+    private const int UnknownStageSeedSalt = 1851936439;
     // 확률에 따라 생성될 수 있는 일반 중간층 노드 종류 목록입니다.
     private static readonly StageNodeType[] MiddleNodeTypes =
     {
@@ -73,6 +78,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     [Header("Scene Transition")]
     // Reticle 애니메이션 종료 후 선택한 노드의 씬을 불러오는 테스트용 로더입니다.
     [SerializeField] private YJ_TestSceneLoader testSceneLoader;
+    // Event 노드에 맵 생성 시점부터 고정 이벤트를 배정할 데이터베이스입니다.
+    [SerializeField] private YJ_UnknownStageDatabaseSO unknownStageDatabase;
 
     [Header("Local Progress")]
     // 스테이지 이동 전 맵을 저장하고 Stage Select 복귀 시 복원하는 서비스입니다.
@@ -96,9 +103,13 @@ public class YJ_StageSelectManager : MonoBehaviour
     private readonly HashSet<string> usedStageSceneNames = new();
     // 씬 선택 시 아직 사용하지 않은 후보를 모아 재사용하는 임시 목록입니다.
     private readonly List<string> availableStageSceneNames = new();
+    // 유효한 Unknown 이벤트 정의를 배정할 때 재사용하는 임시 목록입니다.
+    private readonly List<YJ_UnknownStageDefinitionSO> availableUnknownStages = new();
 
     // 현재 맵 생성에서 노드 종류와 연결을 결정할 난수 생성기입니다.
     private System.Random random;
+    // 현재 생성 시도에서 만들어진 Event 노드 수입니다.
+    private int generatedUnknownNodeCount;
     // 현재 Act에 대응하는 층 수와 노드 생성 규칙입니다.
     private ActRules currentRules;
     // 다음 층 중앙 이동을 실행 중인 코루틴입니다.
@@ -190,6 +201,7 @@ public class YJ_StageSelectManager : MonoBehaviour
         }
 
         LoadPrefabs();
+        TryPrepareUnknownStageCandidates();
 
         int initialSeed = mapSeed != 0 ? mapSeed : Environment.TickCount;
         if (initialSeed == 0)
@@ -204,6 +216,7 @@ public class YJ_StageSelectManager : MonoBehaviour
 
             GeneratedSeed = GetGenerationAttemptSeed(initialSeed, attempt);
             random = new System.Random(GeneratedSeed);
+            generatedUnknownNodeCount = 0;
 
             for (int floor = 1; floor <= currentRules.floorCount; floor++)
                 GenerateFloor(floor, nodesLayer);
@@ -245,6 +258,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             }
         }
 
+        AssignUnknownStageIds();
         clearedFloor = Mathf.Clamp(clearedFloor, 0, currentRules.floorCount);
         RefreshNodeAvailability();
 
@@ -334,6 +348,7 @@ public class YJ_StageSelectManager : MonoBehaviour
                     nodeIndex = node.nodeIndex,
                     type = node.type,
                     sceneName = node.sceneName,
+                    unknownStageId = node.unknownStageId,
                     positionX = node.position.x,
                     positionY = node.position.y,
                     nextNodeIds = new List<string>(node.nextNodeIds)
@@ -411,6 +426,7 @@ public class YJ_StageSelectManager : MonoBehaviour
         foreach (StageNodeSaveData nodeSaveData in orderedNodes)
             CreateNodeFromSaveData(nodeSaveData, clearedNodeIds, nodesLayer);
 
+        AssignUnknownStageIds();
         RestoreUsedStageSceneNames(saveData, clearedNodeIds);
 
         foreach (StageNodeSaveData nodeSaveData in orderedNodes)
@@ -810,6 +826,9 @@ public class YJ_StageSelectManager : MonoBehaviour
                 continue;
             }
 
+            if (type == StageNodeType.Event)
+                generatedUnknownNodeCount++;
+
             GameObject instance = Instantiate(prefab, nodesLayer, false);
             RectTransform nodeRect = instance.GetComponent<RectTransform>();
             if (nodeRect == null)
@@ -884,6 +903,7 @@ public class YJ_StageSelectManager : MonoBehaviour
         data.sceneName = string.IsNullOrWhiteSpace(nodeSaveData.sceneName)
             ? ResolveInitialNodeSceneName(nodeSaveData.type)
             : nodeSaveData.sceneName;
+        data.unknownStageId = nodeSaveData.unknownStageId ?? string.Empty;
         data.cleared = clearedNodeIds.Contains(nodeSaveData.id);
 
         nodesById[data.id] = data;
@@ -1061,6 +1081,149 @@ public class YJ_StageSelectManager : MonoBehaviour
             StageNodeType.Event => UnknownMasterSceneName,
             _ => string.Empty
         };
+    }
+
+    /// <summary>
+    /// 모든 Event 노드에 맵 Seed로 재현 가능한 Unknown 이벤트 ID를 고정 배정합니다.
+    /// 같은 Act에서는 가능한 한 ID가 중복되지 않도록 남은 후보를 하나씩 사용합니다.
+    /// 저장 데이터의 첫 번째 유효 ID는 유지하고, 이후 중복 ID는 새로운 후보로 교체합니다.
+    /// </summary>
+    private void AssignUnknownStageIds()
+    {
+        if (availableUnknownStages.Count == 0 &&
+            !TryPrepareUnknownStageCandidates())
+        {
+            return;
+        }
+
+        int assignmentSeed = GeneratedSeed ^ UnknownStageSeedSalt;
+        if (assignmentSeed == 0)
+            assignmentSeed = UnknownStageSeedSalt;
+
+        System.Random assignmentRandom = new(assignmentSeed);
+        HashSet<string> assignedStageIds = new();
+        List<YJ_StageNodeData> nodesRequiringAssignment = new();
+
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            foreach (YJ_StageNodeData node in floorNodes)
+            {
+                if (node == null || node.type != StageNodeType.Event)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(node.unknownStageId))
+                {
+                    nodesRequiringAssignment.Add(node);
+                    continue;
+                }
+
+                if (unknownStageDatabase.GetById(node.unknownStageId) == null)
+                {
+                    Log.Warning(
+                        $"Unknown 이벤트 ID가 유효하지 않아 다시 배정합니다: " +
+                        $"{node.id} / {node.unknownStageId}");
+                    node.unknownStageId = string.Empty;
+                    nodesRequiringAssignment.Add(node);
+                    continue;
+                }
+
+                if (assignedStageIds.Add(node.unknownStageId))
+                    continue;
+
+                Log.Warning(
+                    $"같은 Act에 중복된 Unknown 이벤트 ID를 다시 배정합니다: " +
+                    $"{node.id} / {node.unknownStageId}");
+                node.unknownStageId = string.Empty;
+                nodesRequiringAssignment.Add(node);
+            }
+        }
+
+        List<YJ_UnknownStageDefinitionSO> remainingStages = new();
+        foreach (YJ_UnknownStageDefinitionSO stage in availableUnknownStages)
+        {
+            if (!assignedStageIds.Contains(stage.StageId))
+                remainingStages.Add(stage);
+        }
+
+        ShuffleUnknownStages(remainingStages, assignmentRandom);
+
+        if (nodesRequiringAssignment.Count > remainingStages.Count)
+        {
+            Log.Warning(
+                $"Event 노드 수가 고유한 Unknown 이벤트 수보다 많아 " +
+                $"일부 ID가 중복될 수 있습니다. 노드: " +
+                $"{nodesRequiringAssignment.Count + assignedStageIds.Count}, " +
+                $"이벤트: {availableUnknownStages.Count}");
+        }
+
+        int remainingIndex = 0;
+        foreach (YJ_StageNodeData node in nodesRequiringAssignment)
+        {
+            if (remainingIndex >= remainingStages.Count)
+            {
+                remainingStages.Clear();
+                remainingStages.AddRange(availableUnknownStages);
+                ShuffleUnknownStages(remainingStages, assignmentRandom);
+                remainingIndex = 0;
+            }
+
+            YJ_UnknownStageDefinitionSO candidate =
+                remainingStages[remainingIndex++];
+            node.unknownStageId = candidate.StageId;
+            assignedStageIds.Add(candidate.StageId);
+        }
+    }
+
+    /// <summary>
+    /// 맵 Seed 전용 난수로 Unknown 이벤트 후보 순서를 결정적으로 섞습니다.
+    /// </summary>
+    private static void ShuffleUnknownStages(
+        List<YJ_UnknownStageDefinitionSO> stages,
+        System.Random assignmentRandom)
+    {
+        for (int i = stages.Count - 1; i > 0; i--)
+        {
+            int swapIndex = assignmentRandom.Next(i + 1);
+            (stages[i], stages[swapIndex]) =
+                (stages[swapIndex], stages[i]);
+        }
+    }
+
+    /// <summary>
+    /// Resources에서 Unknown 이벤트 데이터베이스를 불러오고 유효한 정의만 후보로 준비합니다.
+    /// </summary>
+    private bool TryPrepareUnknownStageCandidates()
+    {
+        if (unknownStageDatabase == null)
+        {
+            unknownStageDatabase =
+                Resources.Load<YJ_UnknownStageDatabaseSO>(
+                    UnknownStageDatabaseResourcePath);
+        }
+
+        availableUnknownStages.Clear();
+        HashSet<string> candidateStageIds = new();
+
+        if (unknownStageDatabase != null)
+        {
+            foreach (YJ_UnknownStageDefinitionSO stage in
+                     unknownStageDatabase.Stages)
+            {
+                if (stage != null &&
+                    !string.IsNullOrWhiteSpace(stage.StageId) &&
+                    candidateStageIds.Add(stage.StageId))
+                {
+                    availableUnknownStages.Add(stage);
+                }
+            }
+        }
+
+        if (availableUnknownStages.Count > 0)
+            return true;
+
+        Log.Error(
+            "Unknown 이벤트 데이터베이스가 없거나 유효한 이벤트가 없습니다.");
+        return false;
     }
 
     /// <summary>
@@ -1251,6 +1414,12 @@ public class YJ_StageSelectManager : MonoBehaviour
     {
         if (GetPrefab(type) == null)
             return 0f;
+
+        if (type == StageNodeType.Event &&
+            generatedUnknownNodeCount >= availableUnknownStages.Count)
+        {
+            return 0f;
+        }
 
         float weight = type switch
         {

@@ -1,4 +1,5 @@
 using Core;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -9,14 +10,20 @@ public class YJ_ChoiceButton : MonoBehaviour
     [SerializeField] private string stageSelectSceneName = "StageSelect";
     [SerializeField] private bool completePendingStage = true;
 
+    private YJ_ChoiceButtonBox choiceButtonBox;
     private bool transitionRequested;
+
+    private void Awake()
+    {
+        choiceButtonBox = GetComponentInParent<YJ_ChoiceButtonBox>();
+    }
 
     public void ButtonTitleSet(string str)
     {
         if (buttonTitle == null)
             return;
 
-        buttonTitle.text = str;
+        SetRichText(buttonTitle, str);
     }
 
     public void ButtonContentSet(string str)
@@ -24,7 +31,13 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (buttonContent == null)
             return;
 
-        buttonContent.text = str;
+        SetRichText(buttonContent, str);
+    }
+
+    private static void SetRichText(TMP_Text target, string text)
+    {
+        target.richText = true;
+        target.text = text ?? string.Empty;
     }
 
     public void OnClick()
@@ -48,14 +61,34 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (sceneLoader.IsLoading)
             return;
 
-        if (completePendingStage && !CompletePendingStage())
+        if (choiceButtonBox == null)
+        {
+            Log.Error("YJ_ChoiceButtonBox could not be found.");
+            return;
+        }
+
+        if (choiceButtonBox.IsExitPlaying)
+            return;
+
+        if (completePendingStage && ! CompletePendingStage())
         {
             Log.Error("Failed to complete the pending Unknown stage node.");
             return;
         }
 
-        transitionRequested = true;
-        sceneLoader.LoadScene(stageSelectSceneName);
+        // 버튼 클릭으로 인한 효과 넣는곳
+
+        // 스테이지 셀렉트 씬으로 변경
+        TweenCallback loadScene = () =>
+        {
+            if (sceneLoader == null || sceneLoader.IsLoading)
+                return;
+
+            sceneLoader.LoadScene(stageSelectSceneName);
+        };
+
+        if (choiceButtonBox.PlayExit(this, loadScene))
+            transitionRequested = true;
     }
 
     private bool CompletePendingStage()
