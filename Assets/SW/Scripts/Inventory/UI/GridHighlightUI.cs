@@ -13,33 +13,6 @@ public class GridHighlightUI : MonoBehaviour
     private static readonly Color SwapMovingColor = new Color(0f, 0.75f, 1f, 0.75f);
     private static readonly Color SwapOtherColor = new Color(1f, 0.85f, 0f, 0.75f);
 
-    public void ShowHighlight(int width, int height, float cellSize, float spacing)
-    {
-        ShowRect(
-            highlightRect,
-            highlightImage,
-            0,
-            0,
-            width,
-            height,
-            MoveColor,
-            cellSize,
-            spacing);
-    }
-
-    public void MoveHighlight(int gridX, int gridY, bool isValid, float cellSize, float spacing)
-    {
-        MoveRect(
-            highlightRect,
-            highlightImage,
-            gridX,
-            gridY,
-            isValid ? MoveColor : InvalidColor,
-            cellSize,
-            spacing);
-        HideSecondaryHighlight();
-    }
-
     public void ShowMovePreview(
         InventoryCellRect rect,
         float cellSize,
@@ -114,17 +87,6 @@ public class GridHighlightUI : MonoBehaviour
         HideSecondaryHighlight();
     }
 
-    public void SetHighlightActive(bool isActive)
-    {
-        if (highlightRect != null && highlightRect.gameObject.activeSelf != isActive)
-        {
-            highlightRect.gameObject.SetActive(isActive);
-        }
-
-        if (!isActive)
-            HideSecondaryHighlight();
-    }
-
     private void EnsureSecondaryHighlight()
     {
         if (secondaryHighlightRect != null && secondaryHighlightImage != null)
@@ -181,22 +143,4 @@ public class GridHighlightUI : MonoBehaviour
         rect.SetAsLastSibling();
     }
 
-    private static void MoveRect(
-        RectTransform rect,
-        Image image,
-        int gridX,
-        int gridY,
-        Color color,
-        float cellSize,
-        float spacing)
-    {
-        if (rect == null || image == null)
-            return;
-
-        float step = cellSize + spacing;
-        rect.anchoredPosition = new Vector2(gridX * step, -gridY * step);
-        image.color = color;
-        image.raycastTarget = false;
-        rect.SetAsLastSibling();
-    }
 }

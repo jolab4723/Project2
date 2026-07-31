@@ -1,41 +1,28 @@
-using ItemSystem;
-
 public class EquipResultData
 {
     public EquipResult Result { get; private set; }
-    public EquipSlotType SlotType { get; private set; }
-
-    public InventoryItem EquippedItem { get; private set; }
-    public InventoryItem PreviousItem { get; private set; }
 
     public bool IsSuccess =>
         Result == EquipResult.Success ||
         Result == EquipResult.Swapped;
 
-    private EquipResultData(
-        EquipResult result,
-        EquipSlotType slotType,
-        InventoryItem equippedItem,
-        InventoryItem previousItem)
+    private EquipResultData(EquipResult result)
     {
         Result = result;
-        SlotType = slotType;
-        EquippedItem = equippedItem;
-        PreviousItem = previousItem;
     }
 
-    public static EquipResultData Success(EquipSlotType slotType, InventoryItem item)
+    public static EquipResultData Success()
     {
-        return new EquipResultData(EquipResult.Success, slotType, item, null);
+        return new EquipResultData(EquipResult.Success);
     }
 
-    public static EquipResultData Swapped(EquipSlotType slotType, InventoryItem newItem, InventoryItem previousItem)
+    public static EquipResultData Swapped()
     {
-        return new EquipResultData(EquipResult.Swapped, slotType, newItem, previousItem);
+        return new EquipResultData(EquipResult.Swapped);
     }
 
-    public static EquipResultData Failed(EquipResult result, EquipSlotType slotType, InventoryItem item = null)
+    public static EquipResultData Failed(EquipResult result)
     {
-        return new EquipResultData(result, slotType, item, null);
+        return new EquipResultData(result);
     }
 }

@@ -8,7 +8,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private ItemEquipHandler equipmentHandler;
     private InventoryGrid currentGrid;
     private InventoryGrid originalGrid;
-    public bool OriginalRotated => originalRotated;
 
     public EquipSlotUI CurrentEquipSlot => currentEquipSlot;
 
@@ -373,15 +372,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
                 inventoryItem.CurrentWidth * cellSize,
                 inventoryItem.CurrentHeight * cellSize
             );
-        }
-    }
-
-    public void RestoreRotationToOriginal()
-    {
-        if (inventoryItem.isRotated != originalRotated)
-        {
-            inventoryItem.isRotated = originalRotated;
-            UpdateRotationUI();
         }
     }
 

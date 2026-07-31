@@ -15,7 +15,7 @@ public class EquipmentSystem : MonoBehaviour
         EquipResult validation = ValidateEquip(item, slotType);
 
         if (validation != EquipResult.Success)
-            return EquipResultData.Failed(validation, slotType, item);
+            return EquipResultData.Failed(validation);
 
         if (equippedItems.TryGetValue(
                 slotType,
@@ -23,9 +23,7 @@ public class EquipmentSystem : MonoBehaviour
             currentItem != null)
         {
             return EquipResultData.Failed(
-                EquipResult.SlotOccupied,
-                slotType,
-                item);
+                EquipResult.SlotOccupied);
         }
 
         // 인벤토리에서 회전된 아이템도 장비 슬롯 안에서는 항상 정방향 상태를 가진다.
@@ -34,7 +32,7 @@ public class EquipmentSystem : MonoBehaviour
         item.isEquipped = true;
 
         // 여기서는 EquipmentChanged를 호출하지 않는다.
-        return EquipResultData.Success(slotType, item);
+        return EquipResultData.Success();
     }
     
 
@@ -48,15 +46,14 @@ public class EquipmentSystem : MonoBehaviour
         item == null)
         {
             return EquipResultData.Failed(
-                EquipResult.NotEquipped,
-                slotType);
+                EquipResult.NotEquipped);
         }
 
         equippedItems.Remove(slotType);
         item.isEquipped = false;
 
         // 여기서는 EquipmentChanged를 호출하지 않는다.
-        return EquipResultData.Success(slotType, item);
+        return EquipResultData.Success();
     }
 
     internal EquipResultData TrySwapState(
@@ -69,9 +66,7 @@ public class EquipmentSystem : MonoBehaviour
         if (validation != EquipResult.Success)
         {
             return EquipResultData.Failed(
-                validation,
-                slotType,
-                incomingItem);
+                validation);
         }
 
         if (!equippedItems.TryGetValue(
@@ -80,17 +75,13 @@ public class EquipmentSystem : MonoBehaviour
             outgoingItem == null)
         {
             return EquipResultData.Failed(
-                EquipResult.NotEquipped,
-                slotType,
-                incomingItem);
+                EquipResult.NotEquipped);
         }
 
         if (outgoingItem == incomingItem)
         {
             return EquipResultData.Failed(
-                EquipResult.Failed,
-                slotType,
-                incomingItem);
+                EquipResult.Failed);
         }
 
         // 교체로 들어오는 아이템 역시 장비 상태에서는 회전값을 유지하지 않는다.
@@ -101,10 +92,7 @@ public class EquipmentSystem : MonoBehaviour
         incomingItem.isEquipped = true;
 
         // 여기서는 EquipmentChanged를 호출하지 않는다.
-        return EquipResultData.Swapped(
-            slotType,
-            incomingItem,
-            outgoingItem);
+        return EquipResultData.Swapped();
 
     }
 
@@ -135,17 +123,6 @@ public class EquipmentSystem : MonoBehaviour
             return false;
 
         itemInstance = inventoryItem.itemData;
-        return true;
-    }
-
-    public bool TryGetEquippedWeaponType(out WeaponType weaponType)
-    {
-        weaponType = default;
-
-        if (!TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon))
-            return false;
-
-        weaponType = weapon.definition.weaponType;
         return true;
     }
 

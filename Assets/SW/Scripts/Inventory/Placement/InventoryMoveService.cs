@@ -24,7 +24,6 @@
                 originalPlacement.Rect.Y))
         {
             return InventoryMoveResultData.ReturnedToOriginal(
-                item,
                 originalPlacement.Rect.X,
                 originalPlacement.Rect.Y);
         }
@@ -48,52 +47,8 @@
         }
 
         return InventoryMoveResultData.MovedToEmptySpace(
-            item,
             fallbackPlacement.Rect.X,
             fallbackPlacement.Rect.Y);
-    }
-
-    public static InventoryMoveResultData TrySwapOnGrid(
-        InventoryGrid grid,
-        InventoryItem movingItem,
-        int targetX,
-        int targetY,
-        int originalX,
-        int originalY)
-    {
-        return InventorySwapService.TrySwapOnGrid(
-            grid,
-            movingItem,
-            targetX,
-            targetY,
-            originalX,
-            originalY);
-    }
-
-    public static InventoryMoveResultData TryMoveOnGrid(
-        InventoryGrid grid,
-        InventoryItem item,
-        int targetX,
-        int targetY,
-        int originalX,
-        int originalY,
-        bool originalRotated)
-    {
-        InventoryPlacementSnapshot movingOriginal =
-            InventoryPlacementSnapshot.FromOriginalState(
-                grid,
-                item,
-                originalX,
-                originalY,
-                originalRotated);
-
-        return TryMoveOnGrid(
-            grid,
-            item,
-            targetX,
-            targetY,
-            movingOriginal,
-            default);
     }
 
     public static InventoryMoveResultData TryMoveOnGrid(
@@ -108,7 +63,7 @@
         item.CurrentWidth, item.CurrentHeight) &&
         grid.TryPlaceItem(item,targetX,targetY))
         {
-            return InventoryMoveResultData.Success(item, targetX, targetY);
+            return InventoryMoveResultData.Success(targetX, targetY);
         }
 
         InventoryMoveResultData swapResult;
@@ -138,7 +93,6 @@
             grid.TryPlaceItem(item, movingOriginal.Rect.X, movingOriginal.Rect.Y))
         {
             return InventoryMoveResultData.ReturnedToOriginal(
-                item,
                 movingOriginal.Rect.X,
                 movingOriginal.Rect.Y);
         }
@@ -149,7 +103,6 @@
             grid.TryPlaceItem(item, foundX, foundY))
         {
             return InventoryMoveResultData.MovedToEmptySpace(
-                item,
                 foundX,
                 foundY);
         }

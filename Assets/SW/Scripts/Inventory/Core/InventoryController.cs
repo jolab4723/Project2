@@ -153,7 +153,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         }
 
         InventoryAddResultData result =
-            InventoryAddResultData.Success(item, x, y);
+            InventoryAddResultData.Success(x, y);
 
         OnItemAdded?.Invoke(item);
         NotifyItemOwnershipGained(item);

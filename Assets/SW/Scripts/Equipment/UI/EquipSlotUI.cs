@@ -26,11 +26,6 @@ public class EquipSlotUI : MonoBehaviour
         return EquipSlotRules.CanEquipTo(data.definition, slotType);
     }
 
-    public bool CanSwap(ItemUI incomingItem)
-    {
-        return !IsEmpty && CanAcceptType(incomingItem.Item.itemData);
-    }
-
     public void SetItemUI(ItemUI itemUI)
     {
         equipItemUI = itemUI;

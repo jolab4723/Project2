@@ -3,8 +3,6 @@ using UnityEngine;
 public readonly struct EquipmentTransactionResult
 {
     public EquipResultData EquipmentResult { get; }
-    public InventoryItem EquippedItem { get; }
-    public InventoryItem ReturnedItem { get; }
 
     public InventoryGrid ResultGrid { get; }
     public InventoryPlacementSnapshot ResultPlacement { get; }
@@ -16,15 +14,11 @@ public readonly struct EquipmentTransactionResult
 
     public EquipmentTransactionResult(
     EquipResultData equipmentResult,
-    InventoryItem equippedItem,
-    InventoryItem returnedItem,
     InventoryGrid resultGrid,
     InventoryPlacementSnapshot resultPlacement,
     bool rollbackSucceeded)
     {
         EquipmentResult = equipmentResult;
-        EquippedItem = equippedItem;
-        ReturnedItem = returnedItem;
         ResultGrid = resultGrid;
         ResultPlacement = resultPlacement;
         RollbackSucceeded = rollbackSucceeded;
@@ -36,8 +30,6 @@ public readonly struct EquipmentTransactionResult
     {
         return new EquipmentTransactionResult(
             equipmentResult,
-            null,
-            null,
             null,
             default,
             rollbackSucceeded);
@@ -65,9 +57,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.InvalidItem));
         }
 
         // 우클릭 장착이면 아직 그리드에 있고,
@@ -77,9 +67,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.Failed));
         }
 
         // 장비 상태에서는 회전하지 않은 상태로 통일한다.
@@ -115,8 +103,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            incomingItem,
-            null,
             null,
             default,
             true);
@@ -133,8 +119,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    sourceSlot));
+                    EquipResult.NoReturnSpace));
         }
 
         if (!equipmentSystem.TryGetEquippedItem(
@@ -144,8 +129,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    sourceSlot));
+                    EquipResult.NotEquipped));
         }
 
         // 장비 슬롯 안에서는 회전하지 않은 상태가 기준이다.
@@ -159,9 +143,7 @@ public class EquipmentTransaction
 
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    sourceSlot,
-                    item));
+                    EquipResult.Failed));
         }
 
         if (!targetGrid.CanPlaceItem(
@@ -174,9 +156,7 @@ public class EquipmentTransaction
 
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    sourceSlot,
-                    item));
+                    EquipResult.NoReturnSpace));
         }
 
         EquipResultData equipmentResult =
@@ -217,9 +197,7 @@ public class EquipmentTransaction
 
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    sourceSlot,
-                    item),
+                    EquipResult.Failed),
                 rollbackSucceeded);
         }
 
@@ -229,8 +207,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            null,
-            item,
             targetGrid,
             targetPlacement,
             true);
@@ -244,9 +220,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    sourceSlot,
-                    expectedItem));
+                    EquipResult.InvalidItem));
         }
 
         if (!equipmentSystem.TryGetEquippedItem(sourceSlot, out InventoryItem equippedItem) ||
@@ -255,9 +229,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    sourceSlot,
-                    expectedItem));
+                    EquipResult.NotEquipped));
         }
 
         EquipResultData equipmentResult =
@@ -276,8 +248,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            null,
-            expectedItem,
             null,
             default,
             true);
@@ -301,9 +271,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.InvalidItem));
         }
 
         if (!equipmentSystem.TryGetEquippedItem(
@@ -313,18 +281,14 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.NotEquipped));
         }
 
         if (incomingItem == outgoingItem)
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.Failed));
         }
 
         // 우클릭이면 아직 그리드에 있고,
@@ -334,9 +298,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                    EquipResult.Failed));
         }
 
         // 먼저 교체 대상 아이템이 있던 위치를 확인한다. 이때 아이템 상태를 미리 바꾸지 않고
@@ -387,9 +349,7 @@ public class EquipmentTransaction
 
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    targetSlot,
-                    incomingItem),
+                    EquipResult.NoReturnSpace),
                 restored);
         }
 
@@ -459,9 +419,7 @@ public class EquipmentTransaction
 
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem),
+                    EquipResult.Failed),
                 rollbackSucceeded);
         }
 
@@ -477,8 +435,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            incomingItem,
-            outgoingItem,
             outgoingGrid,
             actualPlacement,
             true);
@@ -514,9 +470,7 @@ public class EquipmentTransaction
         {
             return EquipmentTransactionResult.Failed(
                 EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    item));
+                    EquipResult.InvalidItem));
         }
 
         EquipResultData equipmentResult = equipmentSystem.TryEquipState(item, targetSlot);
@@ -535,8 +489,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            item,
-            null,
             null,
             default,
             true);

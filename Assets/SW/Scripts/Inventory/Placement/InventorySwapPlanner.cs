@@ -70,18 +70,15 @@ public static class InventorySwapPlanner
 
     private readonly struct SwapCandidate
     {
-        public InventorySwapMode Mode { get; }
         public InventoryCellRect MovingTo { get; }
         public InventoryCellRect OtherTo { get; }
         public SwapCandidateScore Score { get; }
 
         public SwapCandidate(
-            InventorySwapMode mode,
             InventoryCellRect movingTo,
             InventoryCellRect otherTo,
             SwapCandidateScore score)
         {
-            Mode = mode;
             MovingTo = movingTo;
             OtherTo = otherTo;
             Score = score;
@@ -147,7 +144,6 @@ public static class InventorySwapPlanner
         InventoryGrid grid,
         InventoryItem movingItem,
         InventoryPlacementSnapshot movingOriginal,
-        Vector2Int requestedCell,
         InventoryItem otherItem)
     {
         if (grid == null ||
@@ -156,13 +152,7 @@ public static class InventorySwapPlanner
             movingItem == otherItem ||
             !movingOriginal.IsValid)
         {
-            return InventorySwapPlan.Invalid(
-                grid,
-                movingItem,
-                movingOriginal,
-                requestedCell,
-                InventorySwapFailReason.InvalidInput,
-                otherItem);
+            return InventorySwapPlan.Invalid();
         }
 
         InventoryPlacementSnapshot otherOriginal =
@@ -170,13 +160,7 @@ public static class InventorySwapPlanner
 
         if (!otherOriginal.IsValid)
         {
-            return InventorySwapPlan.Invalid(
-                grid,
-                movingItem,
-                movingOriginal,
-                requestedCell,
-                InventorySwapFailReason.InvalidInput,
-                otherItem);
+            return InventorySwapPlan.Invalid();
         }
 
         SwapRelationship relationship = GetRelationship(
@@ -212,24 +196,13 @@ public static class InventorySwapPlanner
                 movingItem,
                 otherItem))
         {
-            InventorySwapMode idealMode = HasEdgeAdjustment(
-                    idealMoving,
-                    idealOther,
-                    movingOriginal,
-                    otherOriginal)
-                ? InventorySwapMode.EdgeAnchored
-                : InventorySwapMode.Direct;
-
             return InventorySwapPlan.Valid(
-                idealMode,
                 grid,
                 movingItem,
                 otherItem,
-                movingOriginal,
                 otherOriginal,
                 idealMoving,
-                idealOther,
-                requestedCell);
+                idealOther);
         }
 
         List<InventoryCellRect> movingPlacements =
@@ -282,25 +255,16 @@ public static class InventorySwapPlanner
 
         if (!foundCandidate)
         {
-            return InventorySwapPlan.Invalid(
-                grid,
-                movingItem,
-                movingOriginal,
-                requestedCell,
-                InventorySwapFailReason.CannotFit,
-                otherItem);
+            return InventorySwapPlan.Invalid();
         }
 
         return InventorySwapPlan.Valid(
-            bestCandidate.Mode,
             grid,
             movingItem,
             otherItem,
-            movingOriginal,
             otherOriginal,
             bestCandidate.MovingTo,
-            bestCandidate.OtherTo,
-            requestedCell);
+            bestCandidate.OtherTo);
     }
 
     private static SwapCandidate CreateCandidate(
@@ -351,13 +315,7 @@ public static class InventorySwapPlanner
                                    otherTo,
                                    otherOriginal.Rect);
 
-        InventorySwapMode mode = GetCandidateMode(
-            relationship,
-            movingTo,
-            otherTo);
-
         return new SwapCandidate(
-            mode,
             movingTo,
             otherTo,
             new SwapCandidateScore(
@@ -525,38 +483,6 @@ public static class InventorySwapPlanner
     {
         return Mathf.Abs(first.X - second.X) +
                Mathf.Abs(first.Y - second.Y);
-    }
-
-    private static InventorySwapMode GetCandidateMode(
-        SwapRelationship relationship,
-        InventoryCellRect movingTo,
-        InventoryCellRect otherTo)
-    {
-        if (relationship == SwapRelationship.Horizontal &&
-            AreHorizontallyTouching(movingTo, otherTo))
-        {
-            return InventorySwapMode.StackHorizontal;
-        }
-
-        if (relationship == SwapRelationship.Vertical &&
-            AreVerticallyTouching(movingTo, otherTo))
-        {
-            return InventorySwapMode.StackVertical;
-        }
-
-        return InventorySwapMode.Adjusted;
-    }
-
-    private static bool HasEdgeAdjustment(
-        InventoryCellRect movingTo,
-        InventoryCellRect otherTo,
-        InventoryPlacementSnapshot movingOriginal,
-        InventoryPlacementSnapshot otherOriginal)
-    {
-        return movingTo.X != otherOriginal.Rect.X ||
-               movingTo.Y != otherOriginal.Rect.Y ||
-               otherTo.X != movingOriginal.Rect.X ||
-               otherTo.Y != movingOriginal.Rect.Y;
     }
 
     private static bool AreVerticallyTouching(

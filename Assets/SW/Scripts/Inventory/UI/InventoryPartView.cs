@@ -61,16 +61,6 @@ public class InventoryPartView : MonoBehaviour
         OpenIfClosed(upgrade);
     }
 
-    public void CloseShop()
-    {
-        CloseIfOpen(shop);
-    }
-
-    public void CloseUpgrade()
-    {
-        CloseIfOpen(upgrade);
-    }
-
     public void CloseAll()
     {
         CloseIfOpen(shop);
