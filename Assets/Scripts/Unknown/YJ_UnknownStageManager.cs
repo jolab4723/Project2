@@ -181,8 +181,6 @@ public class YJ_UnknownStageManager : MonoBehaviour
             return;
         }
 
-        unknownStageContents.StageTitleSet(label.stageName);
-        unknownStageContents.StageContentSet(label.stageDescription);
         unknownStageContents.StageBackgroundSet(selectedStage.BackgroundImage);
 
         int choiceCount = Mathf.Clamp(selectedStage.ChoiceNumber, 1, 3);
@@ -192,6 +190,11 @@ public class YJ_UnknownStageManager : MonoBehaviour
             choiceButtonBox.ButtonCreate(choiceCount);
 
         choiceButtonBox.ButtonTextSet(titles, descriptions);
+        choiceButtonBox.HideButtons();
+        unknownStageContents.PlayTextReveal(
+            label.stageName,
+            label.stageDescription,
+            choiceButtonBox.PlayReveal);
     }
 
     private static void BuildChoiceTexts(

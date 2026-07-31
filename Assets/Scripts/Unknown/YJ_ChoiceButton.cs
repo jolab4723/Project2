@@ -1,4 +1,5 @@
 using Core;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -9,7 +10,13 @@ public class YJ_ChoiceButton : MonoBehaviour
     [SerializeField] private string stageSelectSceneName = "StageSelect";
     [SerializeField] private bool completePendingStage = true;
 
+    private YJ_ChoiceButtonBox choiceButtonBox;
     private bool transitionRequested;
+
+    private void Awake()
+    {
+        choiceButtonBox = GetComponentInParent<YJ_ChoiceButtonBox>();
+    }
 
     public void ButtonTitleSet(string str)
     {
@@ -48,6 +55,15 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (sceneLoader.IsLoading)
             return;
 
+        if (choiceButtonBox == null)
+        {
+            Log.Error("YJ_ChoiceButtonBox could not be found.");
+            return;
+        }
+
+        if (choiceButtonBox.IsExitPlaying)
+            return;
+
         if (completePendingStage && ! CompletePendingStage())
         {
             Log.Error("Failed to complete the pending Unknown stage node.");
@@ -57,8 +73,16 @@ public class YJ_ChoiceButton : MonoBehaviour
         // 버튼 클릭으로 인한 효과 넣는곳
 
         // 스테이지 셀렉트 씬으로 변경
-        transitionRequested = true;
-        sceneLoader.LoadScene(stageSelectSceneName);
+        TweenCallback loadScene = () =>
+        {
+            if (sceneLoader == null || sceneLoader.IsLoading)
+                return;
+
+            sceneLoader.LoadScene(stageSelectSceneName);
+        };
+
+        if (choiceButtonBox.PlayExit(this, loadScene))
+            transitionRequested = true;
     }
 
     private bool CompletePendingStage()
