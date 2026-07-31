@@ -40,7 +40,7 @@ public class YJ_UnknownStageContents : MonoBehaviour
 
         KillTextReveal();
         ShowAllText();
-        stageTitle.text = str ?? string.Empty;
+        SetRichText(stageTitle, str);
         stageTitle.maxVisibleCharacters = int.MaxValue;
         PinTextLayoutHeight(stageTitle);
     }
@@ -52,7 +52,7 @@ public class YJ_UnknownStageContents : MonoBehaviour
 
         KillTextReveal();
         ShowAllText();
-        stageContent.text = str ?? string.Empty;
+        SetRichText(stageContent, str);
         stageContent.maxVisibleCharacters = int.MaxValue;
         PinTextLayoutHeight(stageContent);
     }
@@ -112,7 +112,7 @@ public class YJ_UnknownStageContents : MonoBehaviour
         if (target == null)
             return false;
 
-        target.text = text ?? string.Empty;
+        SetRichText(target, text);
         target.maxVisibleCharacters = int.MaxValue;
         target.ForceMeshUpdate();
         PinTextLayoutHeight(target);
@@ -120,6 +120,12 @@ public class YJ_UnknownStageContents : MonoBehaviour
         int characterCount = target.textInfo.characterCount;
         target.maxVisibleCharacters = 0;
         return characterCount > 0;
+    }
+
+    private static void SetRichText(TMP_Text target, string text)
+    {
+        target.richText = true;
+        target.text = text ?? string.Empty;
     }
 
     /// <summary>

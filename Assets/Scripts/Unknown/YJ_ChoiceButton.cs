@@ -23,7 +23,7 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (buttonTitle == null)
             return;
 
-        buttonTitle.text = str;
+        SetRichText(buttonTitle, str);
     }
 
     public void ButtonContentSet(string str)
@@ -31,7 +31,13 @@ public class YJ_ChoiceButton : MonoBehaviour
         if (buttonContent == null)
             return;
 
-        buttonContent.text = str;
+        SetRichText(buttonContent, str);
+    }
+
+    private static void SetRichText(TMP_Text target, string text)
+    {
+        target.richText = true;
+        target.text = text ?? string.Empty;
     }
 
     public void OnClick()

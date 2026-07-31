@@ -17,6 +17,7 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
     [Header("Exit Animation")]
     [SerializeField] private Vector2 unselectedExitOffset = new(150f, 0f);
     [SerializeField, Min(0f)] private float exitDuration = 0.35f;
+    [SerializeField, Min(0f)] private float sceneTransitionDelay = 0.5f;
     [SerializeField] private Ease exitMoveEase = Ease.InCubic;
 
     private LayoutGroup layoutGroup;
@@ -172,6 +173,7 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
         exitSequence = DOTween.Sequence()
             .SetLink(gameObject, LinkBehaviour.KillOnDisable);
         exitSequence.AppendInterval(exitDuration);
+        exitSequence.AppendInterval(sceneTransitionDelay);
 
         foreach (GameObject button in buttons)
         {
