@@ -6,12 +6,6 @@ public class YJ_ChoiceButton : MonoBehaviour
     [SerializeField] private TMP_Text buttonTitle;
     [SerializeField] private TMP_Text buttonContent;
 
-
-    void Start()
-    {
-
-    }
-
     public void ButtonTitleSet(string str)
     {
         if (buttonTitle == null)
@@ -30,6 +24,6 @@ public class YJ_ChoiceButton : MonoBehaviour
 
     public void OnClick()
     {
-        Log.Print("초이스 버튼 클릭");
+        Log.Print($"[{buttonTitle.text}] 버튼 클릭함");
     }
 }
