@@ -54,6 +54,8 @@ public class WBH_EnemySpawner : MonoBehaviour
 
         enemy.SetTarget(target);
 
+        enemy.gameObject.SetActive(true);
+
         return enemy;
     }
 
