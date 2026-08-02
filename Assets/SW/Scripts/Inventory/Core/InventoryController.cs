@@ -89,24 +89,24 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     /// 대상 플레이어의 Grid 아이템을 제거하고 UI·소유권 이벤트를 함께 발행한다.
     /// 장착 아이템 제거 정책은 별도 합의 대상이므로 이 경로에서 처리하지 않는다.
     /// </summary>
-    public InventoryDiscardResult TryRemoveInventoryItem(InventoryItem item)
+    public InventoryRemoveResult TryRemoveInventoryItem(InventoryItem item)
     {
         if (item?.itemData?.definition == null)
-            return InventoryDiscardResult.InvalidItem;
+            return InventoryRemoveResult.InvalidItem;
 
         if (playerGrid == null)
-            return InventoryDiscardResult.InventoryUnavailable;
+            return InventoryRemoveResult.InventoryUnavailable;
 
         if (!playerGrid.ContainsItem(item))
-            return InventoryDiscardResult.NotPlayerInventory;
+            return InventoryRemoveResult.NotPlayerInventory;
 
         if (!playerGrid.TryRemoveItem(item))
-            return InventoryDiscardResult.RemoveFailed;
+            return InventoryRemoveResult.RemoveFailed;
 
         OnItemRemoved?.Invoke(item);
         NotifyItemOwnershipLost(item);
 
-        return InventoryDiscardResult.Success;
+        return InventoryRemoveResult.Success;
     }
     public bool AddItem(ItemInstance itemData)
     {

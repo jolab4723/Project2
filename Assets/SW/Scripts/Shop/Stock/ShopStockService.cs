@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ShopStockService
+internal sealed class ShopStockService
 {
     private readonly Dictionary<string, ShopStockEntry> entriesByInstanceId = new();
 
@@ -18,23 +18,23 @@ public class ShopStockService
         return TryRegister(item, ShopItemSource.PlayerSold, pricePaidToPlayer);
     }
 
-    public bool TryGetEntry(string instanceID, out ShopStockEntry entry)
+    public bool TryGetEntry(string instanceId, out ShopStockEntry entry)
     {
-        if (string.IsNullOrWhiteSpace(instanceID))
+        if (string.IsNullOrWhiteSpace(instanceId))
         {
             entry = null;
             return false;
         }
 
-        return entriesByInstanceId.TryGetValue(instanceID, out entry);
+        return entriesByInstanceId.TryGetValue(instanceId, out entry);
     }
 
-    public bool RemoveStock(string instanceID)
+    public bool RemoveStock(string instanceId)
     {
-        if (string.IsNullOrWhiteSpace(instanceID))
+        if (string.IsNullOrWhiteSpace(instanceId))
             return false;
 
-        return entriesByInstanceId.Remove(instanceID);
+        return entriesByInstanceId.Remove(instanceId);
     }
 
     public List<ShopStockEntry> GetEntriesBySource(ShopItemSource source)

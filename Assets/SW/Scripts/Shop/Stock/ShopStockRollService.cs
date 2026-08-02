@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 
-public sealed class ShopStockRollService
+internal sealed class ShopStockRollService
 {
     public bool TryRoll(
         ItemDatabaseSO itemDatabase,
@@ -27,24 +27,17 @@ public sealed class ShopStockRollService
         if (uniqueItems.Count == 0)
             return false;
 
-        float totalWeight =
-            GetAvailableWeight(uniqueItems, rarityChances);
+        List<ShopRarityChance> availableChances =
+            GetAvailableChances(uniqueItems, rarityChances, out float totalWeight);
 
         if (totalWeight <= 0f)
             return false;
 
         float roll = NextFloat(random) * totalWeight;
 
-        for (int i = 0; i < rarityChances.Count; i++)
+        for (int i = 0; i < availableChances.Count; i++)
         {
-            ShopRarityChance chance = rarityChances[i];
-
-            if (chance == null ||
-                chance.Weight <= 0f ||
-                !HasCandidate(uniqueItems, chance.Rarity))
-            {
-                continue;
-            }
+            ShopRarityChance chance = availableChances[i];
 
             roll -= chance.Weight;
 
@@ -90,11 +83,13 @@ public sealed class ShopStockRollService
         return result;
     }
 
-    private static float GetAvailableWeight(
+    private static List<ShopRarityChance> GetAvailableChances(
         IReadOnlyList<ItemDefinitionSO> items,
-        IReadOnlyList<ShopRarityChance> rarityChances)
+        IReadOnlyList<ShopRarityChance> rarityChances,
+        out float totalWeight)
     {
-        float totalWeight = 0f;
+        var availableChances = new List<ShopRarityChance>();
+        totalWeight = 0f;
 
         for (int i = 0; i < rarityChances.Count; i++)
         {
@@ -107,10 +102,11 @@ public sealed class ShopStockRollService
                 continue;
             }
 
+            availableChances.Add(chance);
             totalWeight += chance.Weight;
         }
 
-        return totalWeight;
+        return availableChances;
     }
 
     private static bool HasCandidate(
