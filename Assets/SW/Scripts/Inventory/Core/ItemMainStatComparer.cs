@@ -15,26 +15,20 @@ public enum MainStatComparisonDirection
 
 /// <summary>
 /// 장비 슬롯에 대응하는 최종 스탯 한 종류의 비교 결과를 보관한다.
-/// 후보 착용 후 값, 현재 값, 두 값의 차이만 제공하며 UI 문자열과 색상은 결정하지 않는다.
+/// 스탯 종류와 두 값의 차이만 제공하며 UI 문자열과 색상은 결정하지 않는다.
 /// </summary>
 public sealed class MainStatComparisonResult
 {
     public StatType StatType { get; }
-    public float CandidateValue { get; }
-    public float EquippedValue { get; }
     public float Delta { get; }
     public MainStatComparisonDirection Direction { get; }
 
     public MainStatComparisonResult(
         StatType statType,
-        float candidateValue,
-        float equippedValue,
         float delta,
         MainStatComparisonDirection direction)
     {
         StatType = statType;
-        CandidateValue = candidateValue;
-        EquippedValue = equippedValue;
         Delta = delta;
         Direction = direction;
     }
@@ -51,20 +45,6 @@ public sealed class ItemMainStatComparisonResult
     public IReadOnlyList<MainStatComparisonResult> Rows { get; }
 
     public bool HasComparableStats => Rows.Count > 0;
-
-    public bool HasAnyDifference
-    {
-        get
-        {
-            foreach (MainStatComparisonResult row in Rows)
-            {
-                if (row.Direction != MainStatComparisonDirection.Equal)
-                    return true;
-            }
-
-            return false;
-        }
-    }
 
     public ItemMainStatComparisonResult(
         ItemInstance candidateItem,
@@ -171,8 +151,6 @@ public static class ItemMainStatComparer
         var row =
             new MainStatComparisonResult(
                 displayStatType,
-                candidateValue,
-                currentValue,
                 delta,
                 direction);
 

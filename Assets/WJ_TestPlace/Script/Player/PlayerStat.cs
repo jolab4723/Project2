@@ -128,6 +128,45 @@ public class PlayerStat
         return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) * (1f + passivePercent / 100f) + buffFlat + passiveFlat;
     }
 
+    /// <summary>
+    /// UI에서 스탯 한 줄을 "캐릭터/장비/버프" 3단으로 나눠 보여줄 때 쓰는 분해 계산.
+    /// 4단 공식은 장비%/버프%/패시브%가 서로 곱연산으로 얽혀있어 레이어별 기여분을 딱 나눌 수 없으므로,
+    /// 레이어를 하나씩 순서대로 켜가며 그 차이를 해당 레이어의 몫으로 본다(텔레스코핑 방식).
+    /// UI가 캐릭터/장비/버프 3단만 구분하므로 패시브는 버프 몫에 합쳐서 반환한다
+    /// (패시브 스킬트리가 아직 스텁이라 지금은 실질적으로 0).
+    /// base+equip+buff를 더하면 항상 CalcFinal(전체)와 정확히 같다.
+    /// </summary>
+    public static void CalcBreakdown(
+        float characterFlat, float equipFlat, float equipPercent,
+        float buffPercent, float buffFlat, float passivePercent, float passiveFlat,
+        out float baseValue, out float equipValue, out float buffValue)
+    {
+        baseValue = CalcFinal(characterFlat, 0f, 0f, 0f, 0f, 0f, 0f);
+        float withEquip = CalcFinal(characterFlat, equipFlat, equipPercent, 0f, 0f, 0f, 0f);
+        float final = CalcFinal(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat);
+
+        equipValue = withEquip - baseValue;
+        buffValue = final - withEquip;
+    }
+
+    /// <summary>
+    /// critRate/cdr처럼 퍼센트 배율 없이 Flat만 클램프해서 쓰는 스탯의 3단 분해.
+    /// 클램프 때문에 캐릭터+장비 단계에서 이미 상한/하한에 걸리면 버프 몫이 0으로 보일 수 있는데,
+    /// 이는 실제로 클램프에 막혀 화면에 반영되지 않는 값이라 의도된 동작이다.
+    /// </summary>
+    public static void CalcBreakdownClampedFlat(
+        float characterFlat, float equipFlat, float buffFlat, float passiveFlat,
+        float min, float max,
+        out float baseValue, out float equipValue, out float buffValue)
+    {
+        baseValue = Mathf.Clamp(characterFlat, min, max);
+        float withEquip = Mathf.Clamp(characterFlat + equipFlat, min, max);
+        float final = Mathf.Clamp(characterFlat + equipFlat + buffFlat + passiveFlat, min, max);
+
+        equipValue = withEquip - baseValue;
+        buffValue = final - withEquip;
+    }
+
     // ----- 구독용 핸들러 예시 (실제 매니저 이벤트 시그니처에 맞춰 연결 필요) -----
     public void OnEquipmentChanged(StatSet character, StatSet equipment, StatSet buff, StatSet passive) => Recalculate(character, equipment, buff, passive);
     public void OnLevelUp(StatSet character, StatSet equipment, StatSet buff, StatSet passive) => Recalculate(character, equipment, buff, passive);

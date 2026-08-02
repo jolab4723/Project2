@@ -2,21 +2,6 @@ using UnityEngine;
 
 public static class InventorySwapService
 {
-    public static InventorySwapPlan BuildPlan(
-        InventoryGrid grid,
-        InventoryItem movingItem,
-        InventoryPlacementSnapshot movingOriginal,
-        Vector2Int requestedCell,
-        InventoryItem otherItem)
-    {
-        return InventorySwapPlanner.BuildPlan(
-            grid,
-            movingItem,
-            movingOriginal,
-            requestedCell,
-            otherItem);
-    }
-
     public static InventoryMoveResultData TryCommitPlan(InventorySwapPlan plan)
     {
         if (!plan.IsValid || !plan.MatchesCurrentState())
@@ -81,36 +66,11 @@ public static class InventorySwapService
 
         // 두 배치가 모두 성공했을 때만 여기까지 온다.
         return InventoryMoveResultData.Swapped(
-            movingItem,
             plan.MovingTo.X,
             plan.MovingTo.Y,
             otherItem,
             plan.OtherTo.X,
-            plan.OtherTo.Y,
-            plan.Mode);
-    }
-
-    public static InventoryMoveResultData TrySwapOnGrid(
-        InventoryGrid grid,
-        InventoryItem movingItem,
-        int targetX,
-        int targetY,
-        int originalX,
-        int originalY)
-    {
-        InventoryPlacementSnapshot movingOriginal =
-            InventoryPlacementSnapshot.FromOriginalState(
-                grid,
-                movingItem,
-                originalX,
-                originalY,
-                movingItem != null && movingItem.isRotated);
-
-        return TrySwapOnGrid(
-            grid,
-            movingItem,
-            new Vector2Int(targetX, targetY),
-            movingOriginal);
+            plan.OtherTo.Y);
     }
 
     public static InventoryMoveResultData TrySwapOnGrid(
@@ -128,11 +88,10 @@ public static class InventorySwapService
             return InventoryMoveResultData.Failed();
         }
 
-        InventorySwapPlan plan = BuildPlan(
+        InventorySwapPlan plan = InventorySwapPlanner.BuildPlan(
             grid,
             movingItem,
             movingOriginal,
-            requestedCell,
             otherItem);
 
         return TryCommitPlan(plan);

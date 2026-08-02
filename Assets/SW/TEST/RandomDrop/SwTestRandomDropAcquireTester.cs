@@ -34,7 +34,6 @@ namespace SW.Test.RandomDrop
 
         [Header("기존 아이템 시스템 연결")]
         [SerializeField]private WorldItemDropService worldItemDropService;
-        [SerializeField] private ItemGenerator itemGenerator;
         [SerializeField] private GameObject itemPickupPrefabOverride;
         [SerializeField] private MonoBehaviour receiverBehaviour;
         [SerializeField] private Transform spawnPoint;

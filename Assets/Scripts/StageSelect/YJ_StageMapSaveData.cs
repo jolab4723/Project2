@@ -27,6 +27,7 @@ public class StageNodeSaveData
     public int nodeIndex;  // 노드 인덱스
     public StageNodeType type; // 노드 타입
     public string sceneName; // 씬 이름
+    public string unknownStageId; // Event 노드에 미리 배정된 Unknown 이벤트 ID
 
     public float positionX; // 노드의 X 위치
     public float positionY; // 노드의 Y 위치
@@ -62,6 +63,7 @@ public class StageNodeSaveData
       "nodeIndex": 1,
       "type": 1,
       "sceneName": "Act1_Stage2",
+      "unknownStageId": "",
       "positionX": 120.0,
       "positionY": -1540.0,
       "nextNodeIds": [

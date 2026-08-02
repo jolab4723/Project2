@@ -5,9 +5,6 @@ public class ShopStockService
 {
     private readonly Dictionary<string, ShopStockEntry> entriesByInstanceId = new();
 
-    public int Count => entriesByInstanceId.Count;
-    public IEnumerable<ShopStockEntry> Entries =>  entriesByInstanceId.Values;
-
     public bool RegisterGeneratedItem(InventoryItem item)
     {
         return TryRegister(item, ShopItemSource.Generated, 0);
@@ -51,16 +48,6 @@ public class ShopStockService
         }
 
         return result;
-    }
-
-    public void Restock()
-    {
-        
-    }
-
-    public void Clear()
-    {
-        entriesByInstanceId.Clear();
     }
 
     private bool TryRegister(InventoryItem item, ShopItemSource source, int pricePaidToPlayer)

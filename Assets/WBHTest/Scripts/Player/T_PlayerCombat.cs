@@ -67,8 +67,8 @@ public class T_PlayerCombat : MonoBehaviour
     {
         Vector3 direction = transform.forward;
 
-        // 투사체용 데미지 요청 생성.
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Burn1); // TEst
+        // 투사체용 데미지 요청 생성. ElementType은 현재 장착 무기에 인챈트된 속성을 그대로 사용한다.
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Burn1); // Burn1은 아직 테스트값
 
         switch(currentWeapon)
         {
@@ -118,7 +118,7 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // test
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // Slow1은 아직 테스트값
         }
     }
 

@@ -15,8 +15,13 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public event System.Action<InventoryItem> OnItemOwnershipGained;
     public event System.Action<InventoryItem> OnItemOwnershipLost;
 
-    /// <summary>씬에 존재하는 모든 캐릭터의 인벤토리 컨트롤러 (나 + 다른 플레이어).</summary>
-    public static readonly List<InventoryController> All = new List<InventoryController>();
+    private static readonly List<InventoryController> all = new List<InventoryController>();
+
+    /// <summary>
+    /// 씬에 존재하는 인벤토리 후보 목록이며 대상 선택이나 권한을 판정하지 않는다.
+    /// 특정 대상은 전달받은 Controller를 우선하고, 멀티플레이에서는 서버만 순회한다.
+    /// </summary>
+    public static IReadOnlyList<InventoryController> All => all;
 
     [SerializeField] private PlayerWallet playerWallet;
     [SerializeField] private InventoryGrid playerGrid;
@@ -26,14 +31,14 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public PlayerWallet PlayerWallet => playerWallet;
 
     public TextMeshProUGUI logText;
-    public EquipSlotUI hoveredEquipSlot;
     public EquipSlotUI[] allEquipSlots;
 
     public TextMeshProUGUI goldText;
 
     void Awake()
     {
-        All.Add(this);
+        if (!all.Contains(this))
+            all.Add(this);
 
         var identity = GetComponent<Mirror.NetworkIdentity>();
         if (identity != null && !identity.isLocalPlayer)
@@ -52,7 +57,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     private void OnDestroy()
     {
-        All.Remove(this);
+        all.Remove(this);
         if (Instance == this)
             Instance = null;
     }
@@ -67,7 +72,42 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     {
         playerWallet.OnGoldChanged -= RefreshGoldText;
     }
-    
+
+    /// <summary>
+    /// 대상 플레이어의 Grid 아이템을 중복 없이 반환한다.
+    /// 특수 던전은 전달받은 Controller로 호출하며 장비·상점·월드 아이템은 제외한다.
+    /// </summary>
+    public IReadOnlyList<InventoryItem> GetAllInventoryItems()
+    {
+        if (playerGrid == null)
+            return System.Array.Empty<InventoryItem>();
+
+        return playerGrid.GetAllItems();
+    }
+
+    /// <summary>
+    /// 대상 플레이어의 Grid 아이템을 제거하고 UI·소유권 이벤트를 함께 발행한다.
+    /// 장착 아이템 제거 정책은 별도 합의 대상이므로 이 경로에서 처리하지 않는다.
+    /// </summary>
+    public InventoryDiscardResult TryRemoveInventoryItem(InventoryItem item)
+    {
+        if (item?.itemData?.definition == null)
+            return InventoryDiscardResult.InvalidItem;
+
+        if (playerGrid == null)
+            return InventoryDiscardResult.InventoryUnavailable;
+
+        if (!playerGrid.ContainsItem(item))
+            return InventoryDiscardResult.NotPlayerInventory;
+
+        if (!playerGrid.TryRemoveItem(item))
+            return InventoryDiscardResult.RemoveFailed;
+
+        OnItemRemoved?.Invoke(item);
+        NotifyItemOwnershipLost(item);
+
+        return InventoryDiscardResult.Success;
+    }
     public bool AddItem(ItemInstance itemData)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
@@ -113,7 +153,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         }
 
         InventoryAddResultData result =
-            InventoryAddResultData.Success(item, x, y);
+            InventoryAddResultData.Success(x, y);
 
         OnItemAdded?.Invoke(item);
         NotifyItemOwnershipGained(item);

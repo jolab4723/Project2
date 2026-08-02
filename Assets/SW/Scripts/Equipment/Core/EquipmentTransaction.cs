@@ -1,48 +1,66 @@
 using ItemSystem;
 using UnityEngine;
+
+/// <summary>
+/// 장비 모델 변경 결과와 실패 시 인벤토리 복구 상태를 함께 전달한다.
+/// </summary>
 public readonly struct EquipmentTransactionResult
 {
-    public EquipResultData EquipmentResult { get; }
-    public InventoryItem EquippedItem { get; }
-    public InventoryItem ReturnedItem { get; }
+    private readonly EquipResult? equipmentResult;
+    private readonly bool rollbackSucceeded;
 
+    /// <summary>
+    /// 장비 처리 결과다. 초기화되지 않은 기본 구조체는 Failed로 취급한다.
+    /// </summary>
+    public EquipResult Result => equipmentResult ?? EquipResult.Failed;
     public InventoryGrid ResultGrid { get; }
     public InventoryPlacementSnapshot ResultPlacement { get; }
 
-    public bool RollbackSucceeded { get; }
     public bool IsSuccess =>
-        EquipmentResult != null &&
-        EquipmentResult.IsSuccess;
+        equipmentResult.HasValue &&
+        IsSuccessful(equipmentResult.Value);
 
-    public EquipmentTransactionResult(
-    EquipResultData equipmentResult,
-    InventoryItem equippedItem,
-    InventoryItem returnedItem,
+    /// <summary>
+    /// 실패 후 장비·인벤토리 모델을 원래 상태로 되돌리지 못했을 때만 true다.
+    /// UI 표시 복구 여부는 포함하지 않는다.
+    /// </summary>
+    public bool HasRecoveryFailure =>
+        equipmentResult.HasValue &&
+        !rollbackSucceeded;
+
+    internal EquipmentTransactionResult(
+    EquipResult equipmentResult,
     InventoryGrid resultGrid,
     InventoryPlacementSnapshot resultPlacement,
     bool rollbackSucceeded)
     {
-        EquipmentResult = equipmentResult;
-        EquippedItem = equippedItem;
-        ReturnedItem = returnedItem;
+        this.equipmentResult = equipmentResult;
         ResultGrid = resultGrid;
         ResultPlacement = resultPlacement;
-        RollbackSucceeded = rollbackSucceeded;
+        this.rollbackSucceeded = rollbackSucceeded;
     }
 
-    public static EquipmentTransactionResult Failed(
-    EquipResultData equipmentResult,
+    internal static EquipmentTransactionResult Failed(
+    EquipResult equipmentResult,
     bool rollbackSucceeded = true)
     {
         return new EquipmentTransactionResult(
             equipmentResult,
             null,
-            null,
-            null,
             default,
             rollbackSucceeded);
     }
+
+    internal static bool IsSuccessful(EquipResult result)
+    {
+        return result == EquipResult.Success ||
+               result == EquipResult.Swapped;
+    }
 }
+
+/// <summary>
+/// 장비와 인벤토리 상태를 함께 변경하고, 중간 실패 시 이전 모델 상태로 복구한다.
+/// </summary>
 public class EquipmentTransaction
 {
     private readonly EquipmentSystem equipmentSystem;
@@ -52,6 +70,10 @@ public class EquipmentTransaction
         this.equipmentSystem = equipmentSystem;
     }
     
+    /// <summary>
+    /// 인벤토리 아이템을 장착한다. 드래그 경로에서는 아이템이 이미 Grid에서
+    /// 빠져 있을 수 있으며, 실패하면 전달받은 원래 배치로 복구한다.
+    /// </summary>
     public EquipmentTransactionResult TryEquip(
     InventoryGrid sourceGrid,
     InventoryItem incomingItem,
@@ -64,10 +86,7 @@ public class EquipmentTransaction
         !originalPlacement.IsValid)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.InvalidItem);
         }
 
         // 우클릭 장착이면 아직 그리드에 있고,
@@ -76,21 +95,18 @@ public class EquipmentTransaction
             !sourceGrid.TryRemoveItem(incomingItem))
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.Failed);
         }
 
         // 장비 상태에서는 회전하지 않은 상태로 통일한다.
         incomingItem.isRotated = false;
 
-        EquipResultData equipmentResult =
+        EquipResult equipmentResult =
             equipmentSystem.TryEquipState(
                 incomingItem,
                 targetSlot);
 
-        if (!equipmentResult.IsSuccess)
+        if (!EquipmentTransactionResult.IsSuccessful(equipmentResult))
         {
             bool restored = RestoreToGrid(
                 sourceGrid,
@@ -115,13 +131,15 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            incomingItem,
-            null,
             null,
             default,
             true);
     }
 
+    /// <summary>
+    /// 장착 아이템을 검증된 인벤토리 위치로 옮긴다.
+    /// 배치 실패 시 장비 모델을 원래 슬롯으로 자동 복구한다.
+    /// </summary>
     public EquipmentTransactionResult TryUnequip(
         EquipSlotType sourceSlot,
         InventoryGrid targetGrid,
@@ -132,9 +150,7 @@ public class EquipmentTransaction
         !targetPlacement.IsValid)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    sourceSlot));
+                EquipResult.NoReturnSpace);
         }
 
         if (!equipmentSystem.TryGetEquippedItem(
@@ -143,9 +159,7 @@ public class EquipmentTransaction
             item == null)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    sourceSlot));
+                EquipResult.NotEquipped);
         }
 
         // 장비 슬롯 안에서는 회전하지 않은 상태가 기준이다.
@@ -158,10 +172,7 @@ public class EquipmentTransaction
             item.isRotated = false;
 
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    sourceSlot,
-                    item));
+                EquipResult.Failed);
         }
 
         if (!targetGrid.CanPlaceItem(
@@ -173,16 +184,13 @@ public class EquipmentTransaction
             item.isRotated = false;
 
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    sourceSlot,
-                    item));
+                EquipResult.NoReturnSpace);
         }
 
-        EquipResultData equipmentResult =
+        EquipResult equipmentResult =
             equipmentSystem.TryUnequipState(sourceSlot);
 
-        if (!equipmentResult.IsSuccess)
+        if (!EquipmentTransactionResult.IsSuccessful(equipmentResult))
         {
             item.isRotated = false;
 
@@ -200,13 +208,13 @@ public class EquipmentTransaction
             // 인벤토리 배치 실패: 원래 장비 상태로 무이벤트 복구한다.
             item.isRotated = false;
 
-            EquipResultData rollbackResult =
+            EquipResult rollbackResult =
                 equipmentSystem.TryEquipState(
                     item,
                     sourceSlot);
 
             bool rollbackSucceeded =
-                rollbackResult.IsSuccess;
+                EquipmentTransactionResult.IsSuccessful(rollbackResult);
 
             if (!rollbackSucceeded)
             {
@@ -216,10 +224,7 @@ public class EquipmentTransaction
             }
 
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    sourceSlot,
-                    item),
+                EquipResult.Failed,
                 rollbackSucceeded);
         }
 
@@ -229,13 +234,15 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            null,
-            item,
             targetGrid,
             targetPlacement,
             true);
     }
 
+    /// <summary>
+    /// 판매 같은 외부 이동을 위해 장비 모델에서 아이템을 분리한다.
+    /// 성공 이후의 이동 또는 실패 복구는 호출자가 이어서 책임진다.
+    /// </summary>
     public EquipmentTransactionResult TryUnequipForTransfer(
     EquipSlotType sourceSlot,
     InventoryItem expectedItem)
@@ -243,10 +250,7 @@ public class EquipmentTransaction
         if (equipmentSystem == null || expectedItem?.itemData?.definition == null)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    sourceSlot,
-                    expectedItem));
+                EquipResult.InvalidItem);
         }
 
         if (!equipmentSystem.TryGetEquippedItem(sourceSlot, out InventoryItem equippedItem) ||
@@ -254,16 +258,13 @@ public class EquipmentTransaction
             !ReferenceEquals(equippedItem, expectedItem))
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    sourceSlot,
-                    expectedItem));
+                EquipResult.NotEquipped);
         }
 
-        EquipResultData equipmentResult =
+        EquipResult equipmentResult =
             equipmentSystem.TryUnequipState(sourceSlot);
 
-        if (!equipmentResult.IsSuccess)
+        if (!EquipmentTransactionResult.IsSuccessful(equipmentResult))
         {
             return EquipmentTransactionResult.Failed(
                 equipmentResult);
@@ -277,12 +278,14 @@ public class EquipmentTransaction
         return new EquipmentTransactionResult(
             equipmentResult,
             null,
-            expectedItem,
-            null,
             default,
             true);
     }
 
+    /// <summary>
+    /// 인벤토리 아이템과 장착 아이템을 하나의 복구 가능한 흐름으로 교환한다.
+    /// allowAlternativeSpace가 true면 기존 위치가 찼을 때 다른 빈 공간도 찾는다.
+    /// </summary>
     public EquipmentTransactionResult TrySwap(
     EquipSlotType targetSlot,
     InventoryItem incomingItem,
@@ -300,10 +303,7 @@ public class EquipmentTransaction
             !outgoingPlacement.IsValid)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.InvalidItem);
         }
 
         if (!equipmentSystem.TryGetEquippedItem(
@@ -312,19 +312,13 @@ public class EquipmentTransaction
             outgoingItem == null)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NotEquipped,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.NotEquipped);
         }
 
         if (incomingItem == outgoingItem)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.Failed);
         }
 
         // 우클릭이면 아직 그리드에 있고,
@@ -333,10 +327,7 @@ public class EquipmentTransaction
             !incomingGrid.TryRemoveItem(incomingItem))
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem));
+                EquipResult.Failed);
         }
 
         // 먼저 교체 대상 아이템이 있던 위치를 확인한다. 이때 아이템 상태를 미리 바꾸지 않고
@@ -386,10 +377,7 @@ public class EquipmentTransaction
                 incomingOriginal);
 
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.NoReturnSpace,
-                    targetSlot,
-                    incomingItem),
+                EquipResult.NoReturnSpace,
                 restored);
         }
 
@@ -405,12 +393,12 @@ public class EquipmentTransaction
         // 장착되는 아이템은 회전하지 않은 상태로 통일한다.
         incomingItem.isRotated = false;
 
-        EquipResultData equipmentResult =
+        EquipResult equipmentResult =
             equipmentSystem.TrySwapState(
                 targetSlot,
                 incomingItem);
 
-        if (!equipmentResult.IsSuccess)
+        if (!EquipmentTransactionResult.IsSuccessful(equipmentResult))
         {
             outgoingItem.isRotated = false;
 
@@ -435,7 +423,7 @@ public class EquipmentTransaction
             // 장비 상태부터 원래 장비로 되돌린다.
             outgoingItem.isRotated = false;
 
-            EquipResultData equipmentRollback =
+            EquipResult equipmentRollback =
                 equipmentSystem.TrySwapState(
                     targetSlot,
                     outgoingItem);
@@ -447,7 +435,7 @@ public class EquipmentTransaction
                 incomingOriginal);
 
             bool rollbackSucceeded =
-                equipmentRollback.IsSuccess &&
+                EquipmentTransactionResult.IsSuccessful(equipmentRollback) &&
                 incomingRestored;
 
             if (!rollbackSucceeded)
@@ -458,10 +446,7 @@ public class EquipmentTransaction
             }
 
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.Failed,
-                    targetSlot,
-                    incomingItem),
+                EquipResult.Failed,
                 rollbackSucceeded);
         }
 
@@ -477,8 +462,6 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            incomingItem,
-            outgoingItem,
             outgoingGrid,
             actualPlacement,
             true);
@@ -505,6 +488,10 @@ public class EquipmentTransaction
             placement.Rect.Y);
     }
 
+    /// <summary>
+    /// 로드 또는 실패 복구 경로에서 아이템을 장비 모델에 다시 넣는다.
+    /// 이 메서드는 인벤토리 Grid에서 아이템을 제거하지 않는다.
+    /// </summary>
     public EquipmentTransactionResult TryRestoreEquippedItem(
     InventoryItem item,
     EquipSlotType targetSlot)
@@ -513,15 +500,12 @@ public class EquipmentTransaction
             item?.itemData?.definition == null)
         {
             return EquipmentTransactionResult.Failed(
-                EquipResultData.Failed(
-                    EquipResult.InvalidItem,
-                    targetSlot,
-                    item));
+                EquipResult.InvalidItem);
         }
 
-        EquipResultData equipmentResult = equipmentSystem.TryEquipState(item, targetSlot);
+        EquipResult equipmentResult = equipmentSystem.TryEquipState(item, targetSlot);
 
-        if (!equipmentResult.IsSuccess)
+        if (!EquipmentTransactionResult.IsSuccessful(equipmentResult))
         {
             return EquipmentTransactionResult.Failed(
                 equipmentResult);
@@ -535,22 +519,24 @@ public class EquipmentTransaction
 
         return new EquipmentTransactionResult(
             equipmentResult,
-            item,
-            null,
             null,
             default,
             true);
     }
 
-    /// <summary>장착 성공 시 고유효과 OnEquip 호출</summary>
-    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
+    /// <summary>
+    /// 장착 성공 시 고유 효과를 적용한다.
+    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// </summary>
     private static void NotifyEquipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?
             .OnEquip(item.itemData);
     }
-    /// <summary>해제 성공 시 고유효과 OnUnequip 호출</summary>
-    /// 스탯 갱신은 EquipmentSystem의 변경 이벤트 구독자가 담당한다.
+    /// <summary>
+    /// 해제 성공 시 고유 효과를 제거한다.
+    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// </summary>
     private static void NotifyUnequipped(InventoryItem item)
     {
         item?.itemData?.definition?.uniqueEffect?

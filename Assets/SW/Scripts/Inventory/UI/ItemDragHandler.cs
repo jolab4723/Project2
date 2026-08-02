@@ -5,6 +5,14 @@ using UnityEngine.InputSystem;
 public class ItemDragHandler : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    private enum DragState
+    {
+        Idle,
+        Preparing,
+        Detached,
+        Resolving
+    }
+
     [SerializeField] private ItemUI itemUI;
     [SerializeField] private ItemDragVisual dragVisual;
     [SerializeField] private ItemDragHighlighter dragHighlighter;
@@ -12,8 +20,11 @@ public class ItemDragHandler : MonoBehaviour,
 
     private Vector2 lastPointerPosition;
     private Camera lastEventCamera;
+    private DragState dragState;
 
-    public bool IsDragging { get; private set; }
+    public bool IsDragging =>
+        dragState == DragState.Detached ||
+        dragState == DragState.Resolving;
 
     private void Awake()
     {
@@ -37,6 +48,13 @@ public class ItemDragHandler : MonoBehaviour,
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (dragState != DragState.Idle ||
+            itemUI == null ||
+            dropHandler == null)
+        {
+            return;
+        }
+
         UpdatePointerContext(eventData);
 
         TooltipManager.Instance?.HideTooltip();
@@ -44,14 +62,27 @@ public class ItemDragHandler : MonoBehaviour,
         bool wasEquipped = itemUI.IsEquipped;
 
         itemUI.SaveOriginalState();
+        dropHandler.PrepareRestore();
+        dragState = DragState.Preparing;
+
         if (!itemUI.TryDetachFromCurrentSlotOrGrid())
         {
+            dropHandler.CancelRestore();
+            dragState = DragState.Idle;
             Debug.LogError(
                 "[ItemDragHandler] 드래그 시작 전 아이템을 기존 위치에서 분리하지 못했습니다.");
             return;
         }
 
-        IsDragging = true;
+        dragState = DragState.Detached;
+
+        // 분리 메서드 안에서 UI가 비활성화되더라도 모델이 빠진 채 남지 않게 한다.
+        if (!isActiveAndEnabled)
+        {
+            TryRestoreInterruptedDrag();
+            return;
+        }
+
         TooltipManager.Instance?.BeginItemDrag();
         itemUI.SetParentToCurrentGrid(true);
 
@@ -85,7 +116,7 @@ public class ItemDragHandler : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (!IsDragging)
+        if (dragState != DragState.Detached)
             return;
 
         UpdatePointerContext(eventData);
@@ -93,28 +124,48 @@ public class ItemDragHandler : MonoBehaviour,
             lastPointerPosition,
             lastEventCamera);
 
-        InventorySwapPlan previewPlan = dragHighlighter.CurrentSwapPlan;
-        dropHandler.ResolveDrop(
-            lastPointerPosition,
-            lastEventCamera,
-            previewPlan,
-            eventData.pointerCurrentRaycast.gameObject);
-        dragHighlighter.HideActiveHighlight();
-        dragVisual.EndDragVisual();
-        IsDragging = false;
-        TooltipManager.Instance?.EndItemDrag();
+        dragState = DragState.Resolving;
+
+        try
+        {
+            InventorySwapPlan previewPlan = dragHighlighter.CurrentSwapPlan;
+            dropHandler.ResolveDrop(
+                lastPointerPosition,
+                lastEventCamera,
+                previewPlan,
+                eventData.pointerCurrentRaycast.gameObject);
+        }
+        finally
+        {
+            if (dropHandler.HasPendingRestore)
+                dropHandler.TryRestoreOriginalPlacement();
+
+            dragState = DragState.Idle;
+            EndDragVisuals();
+        }
     }
 
     /// <summary>
-    /// 팝업 종료나 오브젝트 비활성화로 OnEndDrag가 호출되지 않아도
-    /// 전역 툴팁 억제 상태와 드래그 시각 효과가 남지 않도록 정리한다.
+    /// 팝업 종료로 OnEndDrag가 생략되면 분리 완료된 아이템만 복구한다.
+    /// 드롭 처리 중인 아이템은 OnEndDrag의 finally가 담당해 중복 복구하지 않는다.
     /// </summary>
     private void OnDisable()
     {
-        if (!IsDragging)
+        if (dragState != DragState.Detached)
             return;
 
-        IsDragging = false;
+        TryRestoreInterruptedDrag();
+    }
+
+    private void TryRestoreInterruptedDrag()
+    {
+        dropHandler?.TryRestoreOriginalPlacement();
+        dragState = DragState.Idle;
+        EndDragVisuals();
+    }
+
+    private void EndDragVisuals()
+    {
         TooltipManager.Instance?.EndItemDrag();
         dragHighlighter?.HideActiveHighlight();
         dragVisual?.EndDragVisual();

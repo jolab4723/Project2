@@ -6,6 +6,11 @@ public class InventoryPartView : MonoBehaviour
     [SerializeField] private KY_PopupBase shop;
     [SerializeField] private KY_PopupBase upgrade;
 
+    public bool HasOpenWindow =>
+        IsOpen(inventory) ||
+        IsOpen(shop) ||
+        IsOpen(upgrade);
+
     private void OnEnable()
     {
         KY_GameEvents.OnEscPressed += HandleEscape;
@@ -31,12 +36,7 @@ public class InventoryPartView : MonoBehaviour
 
     private void HandleEscape()
     {
-        bool anyWindowOpen =
-            IsOpen(inventory) ||
-            IsOpen(shop) ||
-            IsOpen(upgrade);
-
-        if (!anyWindowOpen)
+        if (!HasOpenWindow)
             return;
 
         CloseAll();
@@ -59,16 +59,6 @@ public class InventoryPartView : MonoBehaviour
         CloseIfOpen(shop);
         OpenIfClosed(inventory);
         OpenIfClosed(upgrade);
-    }
-
-    public void CloseShop()
-    {
-        CloseIfOpen(shop);
-    }
-
-    public void CloseUpgrade()
-    {
-        CloseIfOpen(upgrade);
     }
 
     public void CloseAll()

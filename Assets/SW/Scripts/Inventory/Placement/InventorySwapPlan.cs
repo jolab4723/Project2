@@ -11,28 +11,6 @@ public enum InventoryGridEdgeFlags
     Bottom = 1 << 3
 }
 
-public enum InventorySwapMode
-{
-    None,
-    Direct,
-    StackHorizontal,
-    StackVertical,
-    EdgeAnchored,
-    Clamped,
-    Adjusted
-}
-
-public enum InventorySwapFailReason
-{
-    None,
-    InvalidInput,
-    NoTarget,
-    IntentNotConfirmed,
-    CannotFit,
-    Occupied,
-    StalePlan
-}
-
 public readonly struct InventoryCellRect
 {
     public int X { get; }
@@ -62,11 +40,6 @@ public readonly struct InventoryCellRect
                Bottom <= grid.GridHeight;
     }
 
-    public bool ContainsCell(int x, int y)
-    {
-        return x >= X && x < Right && y >= Y && y < Bottom;
-    }
-
     public bool Overlaps(InventoryCellRect other)
     {
         return X < other.Right &&
@@ -82,12 +55,11 @@ public readonly struct InventoryCellRect
         return width * height;
     }
 
-    public override string ToString()
-    {
-        return $"({X},{Y}) {Width}x{Height}";
-    }
 }
 
+/// <summary>
+/// 드래그 실패나 장비 해제 시 아이템을 되돌릴 수 있도록 그리드 배치를 보관한다.
+/// </summary>
 public readonly struct InventoryPlacementSnapshot
 {
     public InventoryCellRect Rect { get; }
@@ -170,98 +142,65 @@ public readonly struct InventorySwapPlan
 {
     public bool IsEvaluated { get; }
     public bool IsValid { get; }
-    public InventorySwapMode Mode { get; }
-    public InventorySwapFailReason FailReason { get; }
 
     public InventoryGrid Grid { get; }
     public InventoryItem MovingItem { get; }
     public InventoryItem OtherItem { get; }
 
-    public InventoryPlacementSnapshot MovingOriginal { get; }
     public InventoryPlacementSnapshot OtherOriginal { get; }
     public InventoryCellRect MovingTo { get; }
     public InventoryCellRect OtherTo { get; }
-    public Vector2Int RequestedCell { get; }
-
-    public int CorrectionDistance =>
-        Mathf.Abs(MovingTo.X - RequestedCell.x) +
-        Mathf.Abs(MovingTo.Y - RequestedCell.y);
 
     private InventorySwapPlan(
         bool isEvaluated,
         bool isValid,
-        InventorySwapMode mode,
-        InventorySwapFailReason failReason,
         InventoryGrid grid,
         InventoryItem movingItem,
         InventoryItem otherItem,
-        InventoryPlacementSnapshot movingOriginal,
         InventoryPlacementSnapshot otherOriginal,
         InventoryCellRect movingTo,
-        InventoryCellRect otherTo,
-        Vector2Int requestedCell)
+        InventoryCellRect otherTo)
     {
         IsEvaluated = isEvaluated;
         IsValid = isValid;
-        Mode = mode;
-        FailReason = failReason;
         Grid = grid;
         MovingItem = movingItem;
         OtherItem = otherItem;
-        MovingOriginal = movingOriginal;
         OtherOriginal = otherOriginal;
         MovingTo = movingTo;
         OtherTo = otherTo;
-        RequestedCell = requestedCell;
     }
 
     public static InventorySwapPlan Valid(
-        InventorySwapMode mode,
         InventoryGrid grid,
         InventoryItem movingItem,
         InventoryItem otherItem,
-        InventoryPlacementSnapshot movingOriginal,
         InventoryPlacementSnapshot otherOriginal,
         InventoryCellRect movingTo,
-        InventoryCellRect otherTo,
-        Vector2Int requestedCell)
+        InventoryCellRect otherTo)
     {
         return new InventorySwapPlan(
             true,
             true,
-            mode,
-            InventorySwapFailReason.None,
             grid,
             movingItem,
             otherItem,
-            movingOriginal,
             otherOriginal,
             movingTo,
-            otherTo,
-            requestedCell);
+            otherTo);
     }
 
-    public static InventorySwapPlan Invalid(
-        InventoryGrid grid,
-        InventoryItem movingItem,
-        InventoryPlacementSnapshot movingOriginal,
-        Vector2Int requestedCell,
-        InventorySwapFailReason failReason,
-        InventoryItem otherItem = null)
+    public static InventorySwapPlan Invalid()
     {
         return new InventorySwapPlan(
             true,
             false,
-            InventorySwapMode.None,
-            failReason,
-            grid,
-            movingItem,
-            otherItem,
-            movingOriginal,
+            null,
+            null,
+            null,
             default,
             default,
-            default,
-            requestedCell);
+            default);
     }
 
     public bool MatchesCurrentState()

@@ -408,7 +408,7 @@ namespace Core
                 Debug.LogWarning(
                     $"[DataManager] 장비 복원 실패: " +
                     $"{invItem.itemData.definition.itemName}, " +
-                    $"result={result.EquipmentResult.Result}");
+                    $"result={result.Result}");
 
                 return false;
             }

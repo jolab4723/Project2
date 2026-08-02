@@ -27,18 +27,19 @@ Artificer의 파편은 각각 생성된 `GameObject + Rigidbody`가 아니다. A
 실제 적 코드가 위 테스트 클래스에 의존하게 만들지 않는다. 실제 시스템에서는 아래 데이터만 파괴 연출 계층으로 넘기면 된다.
 
 ```csharp
-public readonly struct EnemyDeathVfxRequest
+internal readonly struct EnemyDestructionRequest
 {
     public readonly Vector3 Position;
     public readonly Quaternion Rotation;
+    public readonly Vector3 WorldScale;
     public readonly Vector3 ImpactPoint;
     public readonly Vector3 AttackDirection;
-    public readonly float DirectionalForce;
-    public readonly EnemyVisualType VisualType;
+    public readonly float KillingDamage;
+    public readonly float MaxHealth;
 }
 ```
 
-최소 입력은 `피격 위치`, `공격 방향`, `방향 힘`, `사용할 외형 종류`다.
+팀원이 직접 호출할 공개 진입점은 이 내부 구조체가 아니라 `EnemyDestructionLink.TryPlayDeath(피격 위치, 공격 방향, 결정타 데미지, 최대 체력)`다. Link가 적의 위치·회전·스케일까지 묶어 같은 씬의 서비스에 전달한다.
 
 ### 현재 제공되는 파괴 연출 분신
 
@@ -67,7 +68,7 @@ public readonly struct EnemyDeathVfxRequest
 
 ### 런타임 조절 패널의 실제 한글 항목
 
-테스트 씬에는 `Enemy Manual Test.prefab`을 하나만 둔다. 이 프리팹 안에 적 생성·리셋, 파괴 연출 풀과 `ArtificerRuntimeTuningPanel`이 함께 들어 있으므로 별도 패널 프리팹을 추가하지 않는다.
+테스트할 씬에는 `Enemy Manual Test.prefab`을 하나만 둔다. 현재 이 프리팹에는 `ArtificerRuntimeTuningPanel`, `DestructionDamageStrengthScaler`, 실전용 `EnemyDestructionService`가 함께 들어 있다. 적 생성은 기존 씬의 스포너가 담당하고, 사용할 파괴 연출은 서비스의 `파괴 연출 풀 목록`에 등록한다.
 
 패널 상단의 `현재 파괴 연출: 일반 / 보스 / 전체`는 지금 활성화되어 조절 가능한 파괴 연출 수다. 아직 적을 파괴하지 않았다면 0으로 표시될 수 있으며, 적이 죽어 분신이 활성화되면 자동으로 목록을 갱신하고 현재 값을 적용한다.
 
@@ -115,7 +116,9 @@ public readonly struct EnemyDeathVfxRequest
 | `강한 타격` | 일반 적의 즉각적인 폭발감 | 짧고 강한 초반 가속 뒤 빠르게 감속한다. |
 | `묵직한 보스` | 큰 파츠가 무겁게 퍼지는 연출 | 일반 적보다 초반 강조가 낮고 빠른 구간은 길며, 후반은 더 느리다. |
 
-패널 없이 실제 게임에 넣을 때도 구조는 같다. 안전 생성 프리팹에 이미 저장된 기본값을 사용하거나, 개발용 패널에서 값을 확정한 뒤 프리팹의 `ArtificerFragmentBurstProfile` 값으로 옮긴다. 런타임에 코드로 바꾸려면 `ArtificerRuntimeSettings`의 `useBurstSpeedCurve`, `initialSpeedMultiplier`, `burstDuration`, `finalSpeedMultiplier`, `preserveBurstTravelDistance`를 채워 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다.
+패널 없이 실제 게임에 넣을 때도 구조는 같다. 개발용 패널에서 값을 확정한 뒤 **파괴 연출 프리팹**의 `ArtificerRuntimeTuningTarget > Active Settings`에 수명, 힘, 중력, Drag, 속도 커브, 크기, 디졸브 값을 저장한다. Play 중 패널 변경은 에셋에 자동 저장되지 않는다. `ArtificerRuntimeTuningTarget`이 속도 커브를 `ArtificerFragmentBurstProfile`에 전달하므로 같은 값을 두 곳에 중복 입력하지 않는다. 실전에서는 `EnemyDestructionService`가 이 프리팹을 풀링하므로 적 본체에는 파편 설정을 복사하지 않는다.
+
+런타임에 코드로 바꿔야 할 때만 `ArtificerRuntimeSettings`를 만들어 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다. 평소에는 프리팹 직렬화값 하나를 원본으로 사용한다.
 
 ### 결정타 데미지에 따라 초기 충격을 다르게 주기
 
@@ -127,33 +130,27 @@ public readonly struct EnemyDeathVfxRequest
 - 실제 최종값: `패널의 공격 방향 초기 충격 × 커브 배수`다. 현재 기본 충격 `3`에서는 `0% / 50% / 100%` 결정타가 각각 `2.1 / 3 / 5.4`가 된다.
 - 패널의 `미리보기` 두 값은 현재 배수를 확인하는 시험값일 뿐, 실제 적 체력이나 플레이어 데미지를 변경하지 않는다.
 
-테스트에서는 `EnemyDestructionTarget.TakeDamage(WBH_DamageResult)`가 사망을 확정한 공격의 `FinalDamage`와 대상 `MaxHealth`를 `EnemyDestructionVisualPool.PlayWithDamage(...)`에 전달한다. 풀은 `DestructionDamageStrengthScaler.EvaluateMultiplier(...)`로 배수를 계산하고, `CombatDroneArtificerDestruction.TriggerDestruction(..., directionalForceMultiplier)`가 파편의 1회성 초기 충격에 마지막으로 곱한다.
-
-실제 게임에 옮길 때 `EnemyDestructionTarget`은 사용하지 않는다. 실제 Health/Death 코드가 **죽음을 확정한 한 번의 데미지**, 적 최대 체력, 공격 방향을 보관한 뒤 같은 순서로 전달한다. 정식 파괴 연출 풀에 `PlayWithDamage`와 같은 인자를 추가하거나 다음 계산 결과만 기존 재생 요청에 담아도 된다.
+실제 게임과 통합 테스트 모두 테스트용 `EnemyDestructionTarget`에 의존하지 않는다. 실제 Health/Death 코드 또는 전투 어댑터가 **죽음을 확정한 한 번의 데미지**, 적 최대 체력, 피격 지점과 공격 방향을 다음 공개 메서드에 전달한다.
 
 ```csharp
-float multiplier = damageStrengthScaler.EvaluateMultiplier(
-    killingDamage,
-    targetMaxHealth);
-
-destruction.TriggerDestruction(
+destructionLink.TryPlayDeath(
     impactPoint,
     attackDirection,
-    baseDirectionalImpulse,
-    multiplier);
+    killingDamage,
+    targetMaxHealth);
 ```
 
-`killingDamage`에는 누적 피해나 남은 체력이 아니라 **현재 체력을 0 이하로 만든 공격 한 번의 최종 데미지**를 넣는다. 배수 기능을 끄거나 컴포넌트를 전달하지 않으면 기존과 같은 `1배`로 동작한다. 중복 사망 콜백은 실제 적의 사망 상태에서 한 번만 통과시키고, 풀 반환 시 파괴 분신의 이전 배수는 `ResetForReuse()`에서 초기화한다.
+`killingDamage`에는 누적 피해나 남은 체력이 아니라 **현재 체력을 0 이하로 만든 공격 한 번의 최종 데미지**를 넣는다. `EnemyDestructionService`가 `DestructionDamageStrengthScaler`로 배수를 계산하며, 기능을 끄면 기존과 같은 `1배`로 동작한다. `EnemyDestructionLink`는 생명당 첫 사망 요청만 소비하고, 분신의 이전 런타임 상태는 풀 반환 과정에서 초기화한다.
 
 `ArtificerFragmentBurstProfile`은 Artificer의 `CustomDismantle` 경로를 사용하므로, 사용자 확장에서 속도만 바꾸고 위치 적분을 생략하면 파편이 전혀 움직이지 않는다. 현재 구현은 사용자 `Remove(...)` 안에서 Artificer의 기본 `RemoveElement(...)`를 호출해 원래 중력·드래그·위치·회전·충돌 계산을 그대로 실행한 뒤 속도 곡선만 덧씌운다. 이 호출은 삭제하면 안 된다.
 
 패널 아래 버튼은 다음 순서로 사용한다.
 
 1. `현재 값 적용`: 활성화된 파괴 연출에 지금 값을 적용한다.
-2. `적 전체 다시 생성 + 적용`: Reset의 Enemy 1·2 설정으로 실제 적을 다시 만들고 값을 적용한다.
+2. `적 전체 다시 생성 + 적용`: 같은 오브젝트에 `IArtificerRuntimeResetProvider` 구현이 있을 때만 그 테스트 리셋을 호출한다. 실전 테스트 씬에서는 기존 스포너를 사용한다.
 3. `대상 목록 새로고침`: 씬의 활성 파괴 연출 목록만 다시 읽는다.
 
-일반 적과 보스를 동시에 비교할 때는 Reset의 Enemy 1에 일반 적 본체·동시 파괴 분신, Enemy 2에 보스 본체·순차 파괴 분신을 각각 한 쌍으로 넣고 생성 수를 정한다. 패널에서는 `일반/보스 구분 유지 (추천)`를 선택한다. 일반·보스 판정은 이름이 아니라 안전 생성 시 프리팹에 저장된 기본 파괴 방식으로 구분하므로, `전체 동시 파괴`를 시험한 뒤 추천 모드로 돌아와도 원래 구분을 복원한다.
+일반 적과 보스를 동시에 비교할 때는 두 파괴 연출 프리팹을 `EnemyDestructionService > 파괴 연출 풀 목록`에 각각 등록하고 기존 스포너로 실제 적을 배치한다. 패널에서는 `일반/보스 구분 유지 (추천)`를 선택한다. 일반·보스 판정은 이름이 아니라 안전 생성 시 프리팹에 저장된 기본 파괴 방식으로 구분하므로, `전체 동시 파괴`를 시험한 뒤 추천 모드로 돌아와도 원래 구분을 복원한다.
 
 ## 3. 권장 풀 분리 구조
 
@@ -328,13 +325,13 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 - Artificer 파괴 큐와 진행 상태
 - 원본 Renderer 표시 상태
 - 파편 순서 목록
-- Collider 활성 상태
-- NavMeshAgent 또는 이동 컴포넌트 상태
 - 런타임 힘 방향과 충돌 레이어
 - 코루틴과 지연 반환 예약
 - 위치, 회전, 로컬 스케일
 
 풀에서 꺼낼 때 초기화가 끝나기 전에는 화면에 표시하지 않는다.
+
+파괴 연출 프리팹에는 Collider, NavMeshAgent, Animator를 넣지 않는다. 해당 상태의 중지와 복구는 실제 적 본체 풀의 책임이며, 파괴 분신은 Artificer 렌더와 풀 반환만 담당한다.
 
 ## 10. 다수 적 성능 주의점
 
@@ -373,4 +370,4 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 
 아래처럼 요청하면 된다.
 
-> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 풀을 분리해 구현해 줘. 테스트용 EnemyManualTestReset, EnemyDestructionTarget에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDeathVfxRequest를 만들어 전달해. 파괴 연출 내부의 CombatDroneArtificerDestruction은 재사용해도 된다. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.
+> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 풀을 분리해 구현해 줘. 테스트용 EnemyManualTestReset, EnemyDestructionTarget에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDestructionLink.TryPlayDeath(...)를 호출해. 파괴 연출 내부의 CombatDroneArtificerDestruction은 재사용해도 된다. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.

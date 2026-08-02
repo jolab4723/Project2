@@ -831,19 +831,22 @@ namespace SW.EditorTools
             CombatDroneArtificerDestruction destruction =
                 root.AddComponent<CombatDroneArtificerDestruction>();
             ArtificerFragmentBurstProfile burstProfile =
-                root.AddComponent<ArtificerFragmentBurstProfile>();
+                root.GetComponent<ArtificerFragmentBurstProfile>();
             ArtificerRuntimeTuningTarget tuningTarget =
-                root.AddComponent<ArtificerRuntimeTuningTarget>();
+                root.GetComponent<ArtificerRuntimeTuningTarget>();
             EnemyDestructionVisual destructionVisual =
                 root.AddComponent<EnemyDestructionVisual>();
 
-            destruction.Configure(
-                artificer,
-                null,
-                false,
-                0f,
-                false);
-            burstProfile.Initialize(artificer);
+            var destructionSerialized = new SerializedObject(destruction);
+            destructionSerialized.FindProperty("artificer").objectReferenceValue =
+                artificer;
+            destructionSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var burstSerialized = new SerializedObject(burstProfile);
+            burstSerialized.FindProperty("artificer").objectReferenceValue =
+                artificer;
+            burstSerialized.ApplyModifiedPropertiesWithoutUndo();
+            artificer.customDismantle = burstProfile;
 
             var tuningSerialized = new SerializedObject(tuningTarget);
             tuningSerialized.FindProperty("artificer").objectReferenceValue = artificer;
