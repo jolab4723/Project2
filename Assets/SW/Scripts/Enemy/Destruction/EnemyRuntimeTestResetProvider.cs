@@ -70,6 +70,11 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
             return;
         }
 
+        // 이 컴포넌트가 배치된 성능 테스트 씬에서는 적 사망을 웨이브
+        // 진행으로 소비하지 않는다. 공개 Spawn API는 비활성 상태에서도
+        // 호출할 수 있으므로 테스트용 재생성 흐름은 그대로 유지된다.
+        spawnManager.enabled = false;
+
         WBH_EnemyController[] enemies =
             FindObjectsByType<WBH_EnemyController>(
                 FindObjectsInactive.Exclude,

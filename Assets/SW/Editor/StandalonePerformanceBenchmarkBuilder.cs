@@ -244,6 +244,16 @@ internal static class StandalonePerformanceBenchmarkBuilder
         builder.AppendLine("# Project2 성능 벤치마크 요약");
         builder.AppendLine();
         builder.Append("- 측정 완료: ").AppendLine(finishedText);
+        builder.Append("- CPU: ").AppendLine(
+            string.IsNullOrWhiteSpace(report.processorType)
+                ? "알 수 없음"
+                : report.processorType);
+        builder.Append("- RAM: ").AppendLine(
+            FormatMemoryCapacity(report.systemMemoryMB));
+        builder.Append("- GPU: ").AppendLine(
+            string.IsNullOrWhiteSpace(report.graphicsDeviceName)
+                ? "알 수 없음"
+                : report.graphicsDeviceName);
         builder.Append("- 적 수: ").AppendLine(
             report.expectedEnemyCount.ToString(CultureInfo.InvariantCulture));
         builder.Append("- 프레임 상한: ").AppendLine(
@@ -289,6 +299,17 @@ internal static class StandalonePerformanceBenchmarkBuilder
         return builder.ToString();
     }
 
+    private static string FormatMemoryCapacity(int memoryMB)
+    {
+        if (memoryMB <= 0)
+            return "알 수 없음";
+
+        return (memoryMB / 1024d).ToString("F1", CultureInfo.InvariantCulture) +
+               " GB (" +
+               memoryMB.ToString("N0", CultureInfo.InvariantCulture) +
+               " MB)";
+    }
+
     private static string FormatAverage(
         IEnumerable<SummaryCase> items,
         Func<SummaryCase, double> selector)
@@ -323,6 +344,9 @@ internal static class StandalonePerformanceBenchmarkBuilder
     private sealed class SummaryReport
     {
         public string finishedUtc;
+        public string processorType;
+        public int systemMemoryMB;
+        public string graphicsDeviceName;
         public int expectedEnemyCount;
         public int targetFrameRate;
         public SummaryCase[] cases;
