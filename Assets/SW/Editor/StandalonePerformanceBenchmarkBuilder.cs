@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -12,6 +13,10 @@ using Debug = UnityEngine.Debug;
 
 internal static class StandalonePerformanceBenchmarkBuilder
 {
+    private static readonly Regex BuildSourcePathPattern = new Regex(
+        @"(?<path>Assets[\\/][^\r\n:(]+?\.(?:cs|asmdef|asmref|shader|compute|prefab|unity))",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     private const string BenchmarkScene =
         "Assets/SW/Scenes/Act1_Camp_MergeTest.unity";
     private const string BuildDirectory = "Builds/Benchmark/Windows";
@@ -376,15 +381,24 @@ internal static class StandalonePerformanceBenchmarkBuilder
             scenes = new[] { BenchmarkScene },
             locationPathName = executablePath,
             target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.Development
+            options = BuildOptions.Development |
+                      BuildOptions.DetailedBuildReport
         };
 
-        BuildReport buildReport = BuildPipeline.BuildPlayer(buildOptions);
+        BuildReport buildReport;
+        try
+        {
+            buildReport = BuildPipeline.BuildPlayer(buildOptions);
+        }
+        catch (Exception exception)
+        {
+            LogBuildFailure(null, exception);
+            return false;
+        }
+
         if (buildReport.summary.result != BuildResult.Succeeded)
         {
-            Debug.LogError(
-                "[StandalonePerformanceBenchmarkBuilder] 빌드 실패: " +
-                buildReport.summary.result);
+            LogBuildFailure(buildReport, null);
             return false;
         }
 
@@ -392,6 +406,166 @@ internal static class StandalonePerformanceBenchmarkBuilder
             "[StandalonePerformanceBenchmarkBuilder] 빌드 완료: " +
             $"{executablePath} ({buildReport.summary.totalSize / 1048576d:F1} MB)");
         return true;
+    }
+
+    private static void LogBuildFailure(
+        BuildReport buildReport,
+        Exception exception)
+    {
+        var errorMessages = new List<string>();
+        if (buildReport != null)
+        {
+            foreach (BuildStep step in buildReport.steps)
+            {
+                foreach (BuildStepMessage message in step.messages)
+                {
+                    if (message.type != LogType.Error &&
+                        message.type != LogType.Exception &&
+                        message.type != LogType.Assert)
+                    {
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(message.content) &&
+                        !errorMessages.Contains(message.content))
+                    {
+                        errorMessages.Add(message.content.Trim());
+                    }
+                }
+            }
+        }
+
+        if (exception != null &&
+            !string.IsNullOrWhiteSpace(exception.Message) &&
+            !errorMessages.Contains(exception.Message))
+        {
+            errorMessages.Insert(0, exception.Message.Trim());
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine(
+            "[StandalonePerformanceBenchmarkBuilder] Windows 벤치마크 빌드 실패");
+        if (buildReport != null)
+        {
+            builder.Append("결과: ").AppendLine(
+                buildReport.summary.result.ToString());
+            builder.Append("오류/경고: ")
+                .Append(buildReport.summary.totalErrors)
+                .Append(" / ")
+                .AppendLine(buildReport.summary.totalWarnings.ToString());
+
+            string summarizedErrors = buildReport.SummarizeErrors();
+            if (!string.IsNullOrWhiteSpace(summarizedErrors))
+            {
+                builder.Append("Unity 요약: ")
+                    .AppendLine(summarizedErrors.Trim());
+            }
+        }
+
+        if (errorMessages.Count == 0)
+        {
+            builder.AppendLine(
+                "원인: BuildReport에 구체적인 Error 메시지가 없습니다.");
+            builder.AppendLine(
+                "해결: Console의 빌드 실패 직전 첫 Error와 Editor.log를 확인하세요.");
+        }
+        else
+        {
+            for (int i = 0; i < errorMessages.Count; i++)
+            {
+                string errorMessage = errorMessages[i];
+                string sourcePath = ExtractBuildSourcePath(errorMessage);
+                builder.AppendLine();
+                builder.Append('[').Append(i + 1).AppendLine("] 원인");
+                builder.AppendLine(errorMessage);
+                if (!string.IsNullOrEmpty(sourcePath))
+                {
+                    builder.Append("원인 파일: ")
+                        .AppendLine(sourcePath.Replace('\\', '/'));
+                }
+
+                builder.Append("해결 방법: ")
+                    .AppendLine(GetBuildResolutionHint(errorMessage, sourcePath));
+            }
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(
+            "위 목록의 첫 번째 컴파일 오류부터 해결한 뒤 Console 오류가 0개인지 확인하고 다시 빌드하세요.");
+        Debug.LogError(builder.ToString());
+    }
+
+    private static string ExtractBuildSourcePath(string message)
+    {
+        Match match = BuildSourcePathPattern.Match(message ?? string.Empty);
+        return match.Success
+            ? match.Groups["path"].Value
+            : string.Empty;
+    }
+
+    private static string GetBuildResolutionHint(
+        string message,
+        string sourcePath)
+    {
+        string normalizedMessage = message ?? string.Empty;
+        string normalizedPath = (sourcePath ?? string.Empty).Replace('\\', '/');
+
+        bool usesEditorApi = normalizedMessage.IndexOf(
+                                 "UnityEditor",
+                                 StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             normalizedMessage.IndexOf(
+                                 "EditorWindow",
+                                 StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             normalizedMessage.IndexOf(
+                                 "MenuItem",
+                                 StringComparison.OrdinalIgnoreCase) >= 0;
+        if (usesEditorApi &&
+            normalizedPath.IndexOf(
+                "/Editor/",
+                StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            return "UnityEditor를 사용하는 Editor 전용 스크립트입니다. 파일을 Editor 폴더 아래로 옮기거나 UnityEditor 사용부를 #if UNITY_EDITOR로 감싸 Player 컴파일에서 제외하세요.";
+        }
+
+        if (Regex.IsMatch(
+                normalizedMessage,
+                @"\berror\s+CS\d+\b",
+                RegexOptions.IgnoreCase))
+        {
+            return "표시된 파일과 (행, 열)의 C# 컴파일 오류를 수정하세요. 연쇄 오류가 많으면 가장 먼저 출력된 CS 오류부터 처리하세요.";
+        }
+
+        if (normalizedMessage.IndexOf(
+                "shader error",
+                StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return "표시된 Shader/Include 파일의 첫 오류를 수정하고 대상 플랫폼에서 지원하지 않는 키워드·API인지 확인하세요.";
+        }
+
+        if (normalizedMessage.IndexOf(
+                "access denied",
+                StringComparison.OrdinalIgnoreCase) >= 0 ||
+            normalizedMessage.IndexOf(
+                "being used by another process",
+                StringComparison.OrdinalIgnoreCase) >= 0 ||
+            normalizedMessage.IndexOf(
+                "sharing violation",
+                StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return "실행 중인 기존 벤치마크 EXE와 해당 파일을 사용하는 프로그램을 종료하고 빌드 폴더 쓰기 권한을 확인하세요.";
+        }
+
+        if (normalizedMessage.IndexOf(
+                "could not be found",
+                StringComparison.OrdinalIgnoreCase) >= 0 ||
+            normalizedMessage.IndexOf(
+                "missing",
+                StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return "누락된 타입·어셋·패키지 참조를 복구하고 asmdef 의존성과 GUID/Missing 참조를 확인하세요.";
+        }
+
+        return "위 원문에서 지목한 파일 또는 빌드 단계의 첫 오류를 해결하세요. 세부 스택은 Console에서 이 로그 바로 앞의 Error를 펼쳐 확인할 수 있습니다.";
     }
 
     private static string GetExecutablePath()
