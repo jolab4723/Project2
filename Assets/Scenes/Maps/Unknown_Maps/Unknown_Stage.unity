@@ -343,6 +343,7 @@ GameObject:
   - component: {fileID: 647984594}
   - component: {fileID: 647984596}
   - component: {fileID: 647984595}
+  - component: {fileID: 647984597}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -469,6 +470,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 647984593}
   m_CullTransparentMesh: 1
+--- !u!114 &647984597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647984593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1059603515
 GameObject:
   m_ObjectHideFlags: 0
@@ -518,7 +531,6 @@ MonoBehaviour:
   stageDatabase: {fileID: 11400000, guid: 4e8636e464269544e9a5bd288f6a8c50, type: 2}
   labelDatabase: {fileID: 0}
   stageSaveService: {fileID: 0}
-  currentLanguage: 0
   selectedStage: {fileID: 0}
 --- !u!1 &1115556475
 GameObject:
@@ -788,6 +800,7 @@ GameObject:
   - component: {fileID: 2070226287}
   - component: {fileID: 2070226289}
   - component: {fileID: 2070226288}
+  - component: {fileID: 2070226290}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -914,6 +927,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2070226286}
   m_CullTransparentMesh: 1
+--- !u!114 &2070226290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070226286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &2147470268
 GameObject:
   m_ObjectHideFlags: 0

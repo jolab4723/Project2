@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -16,8 +17,16 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
     private KY_PopupBase currentPopup;
     private GameInputActions inputActions;
 
+    private void Start()
+    {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+    }
+
     private void OnEnable()
     {
+        InitializePopupManager();
+
         inputActions ??= new GameInputActions();
         inputActions.Enable();
 
@@ -85,7 +94,41 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
             return;
         }
 
-        popupManager?.Show(PopupType.Pause);
+        ShowPausePopup();
+    }
+
+    private void InitializePopupManager()
+    {
+        if (popupManager == null || popupManager.enabled)
+            return;
+
+        // 이 테스트 씬은 KY 이벤트 중복 처리를 피하려고 PopupManager를 비활성화해 둔다.
+        // 한 번만 활성/비활성 전환해 Awake 초기화는 실행하되 이벤트 구독은 남기지 않는다.
+        popupManager.enabled = true;
+        popupManager.enabled = false;
+    }
+
+    private void ShowPausePopup()
+    {
+        if (popupManager == null || pausePopup == null)
+            return;
+
+        popupManager.Show(PopupType.Pause);
+
+        // PausePopup이 즉시 timeScale을 0으로 만들기 때문에 방금 생성된
+        // 슬라이드 트윈만 unscaled time으로 전환한다.
+        KY_SlideAnimator slideAnimator = pausePopup.GetComponentInChildren<KY_SlideAnimator>(true);
+        if (slideAnimator == null)
+            return;
+
+        RectTransform target = slideAnimator.GetComponent<RectTransform>();
+        var tweens = DOTween.TweensByTarget(target, true);
+
+        if (tweens == null)
+            return;
+
+        foreach (Tween tween in tweens)
+            tween.SetUpdate(true);
     }
 
     private void HandleEscape()

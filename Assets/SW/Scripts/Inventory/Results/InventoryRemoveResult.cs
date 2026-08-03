@@ -1,4 +1,4 @@
-public enum InventoryDiscardResult : byte
+public enum InventoryRemoveResult : byte
 {
     Success = 0,
     InvalidItem = 1,

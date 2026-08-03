@@ -1,3 +1,5 @@
+using ItemSystem;
+
 [System.Serializable]
 
 // 스탯 팝업 화면 표시용 뷰모델. KY_StatusPopup.BuildDataFromPlayerStat에서 PlayerStatManager 값으로 채워진다.

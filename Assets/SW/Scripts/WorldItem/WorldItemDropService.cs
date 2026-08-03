@@ -21,10 +21,7 @@ public sealed class WorldItemDropService : MonoBehaviour
         dropOrigin = origin;
     }
 
-    public WorldItemDropResult TryDrop(ItemInstance item)
-    {
-        return TryDrop(item, out _);
-    }
+    public WorldItemDropResult TryDrop(ItemInstance item) => TryDrop(item, out _);
 
     public WorldItemDropResult TryDrop(
         ItemInstance item,
@@ -43,24 +40,13 @@ public sealed class WorldItemDropService : MonoBehaviour
             return WorldItemDropResult.DropOriginUnavailable;
         }
 
-        return TryDropAt(
-        item,
-        center,
-        rotation,
-        out spawnedPickup);
+        return TryDropAt(item, center, rotation, out spawnedPickup);
     }
 
     public WorldItemDropResult TryDropAt(
-    ItemInstance item,
-    Vector3 dropCenter,
-    Quaternion rotation)
-    {
-        return TryDropAt(
-            item,
-            dropCenter,
-            rotation,
-            out _);
-    }
+        ItemInstance item,
+        Vector3 dropCenter,
+        Quaternion rotation) => TryDropAt(item, dropCenter, rotation, out _);
 
     public WorldItemDropResult TryDropAt(
         ItemInstance item,
@@ -101,7 +87,8 @@ public sealed class WorldItemDropService : MonoBehaviour
 
         return WorldItemDropResult.Success;
     }
-    private bool TryFindAvailablePosition(Vector3 center, out Vector3 availablePosition)
+
+    private bool TryFindAvailablePosition(Vector3 dropCenter, out Vector3 availablePosition)
     {
         float minRadius = Mathf.Max(0f, Mathf.Min(minDropRadius, maxDropRadius));
 
@@ -113,9 +100,10 @@ public sealed class WorldItemDropService : MonoBehaviour
 
             float distance = Mathf.Sqrt(Random.Range(minRadius * minRadius, maxRadius * maxRadius));
 
-            Vector3 candidate =center + new Vector3(
-                    Mathf.Cos(angle) * distance, 0f,
-                    Mathf.Sin(angle) * distance);
+            Vector3 candidate = dropCenter + new Vector3(
+                Mathf.Cos(angle) * distance,
+                0f,
+                Mathf.Sin(angle) * distance);
 
             bool isBlocked = Physics.CheckSphere(
                 candidate,

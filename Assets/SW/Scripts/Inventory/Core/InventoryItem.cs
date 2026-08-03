@@ -2,7 +2,6 @@ using UnityEngine;
 using ItemSystem;
 
 [System.Serializable]
-
 public class InventoryItem
 {
     public ItemInstance itemData { get; private set; }
@@ -11,11 +10,11 @@ public class InventoryItem
     public int y;
     public bool isRotated;
     public bool isEquipped;
-    
 
     public int CurrentWidth => isRotated ? itemData.definition.itemHeight : itemData.definition.itemWidth;
     public int CurrentHeight => isRotated ? itemData.definition.itemWidth : itemData.definition.itemHeight;
-    public InventoryItem (ItemInstance data)
+
+    public InventoryItem(ItemInstance data)
     {
         itemData = data;
         x = 0;
@@ -23,5 +22,4 @@ public class InventoryItem
         isRotated = false;
         isEquipped = false;
     }
-
 }

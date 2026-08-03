@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+
 public class ShopController : MonoBehaviour
 {
     public static ShopController Instance { get; private set; }
@@ -68,12 +69,11 @@ public class ShopController : MonoBehaviour
             RefreshItemBadge(itemUI);
             return true;
         }
-            
 
         // UI 생성에 실패했으므로 재고와 그리드를 모두 이전 상태로 되돌린다.
         bool stockRemoved = stockService.RemoveStock(item.itemData.instanceId);
 
-        bool gridRemoved =shopGrid.TryRemoveItem(item);
+        bool gridRemoved = shopGrid.TryRemoveItem(item);
 
         if (!stockRemoved || !gridRemoved)
         {
@@ -157,12 +157,15 @@ public class ShopController : MonoBehaviour
     {
         if (!isActiveAndEnabled)
             return false;
+
         if (itemUI == null || fromGrid == null)
             return false;
+
         if (fromGrid == playerGrid)
         {
             if (!IsTradingToShop(fromGrid, itemUI))
                 return false;
+
             Vector2Int cell = itemUI.GetCellFromItemRect(shopGrid);
             bool success = TrySell(itemUI, cell.x, cell.y);
 
@@ -176,6 +179,7 @@ public class ShopController : MonoBehaviour
         {
             if (!IsTradingToPlayer(fromGrid, itemUI))
                 return false;
+
             Vector2Int cell = itemUI.GetCellFromItemRect(playerGrid);
             bool success = TryBuy(itemUI, cell.x, cell.y);
 
@@ -186,6 +190,7 @@ public class ShopController : MonoBehaviour
 
         return false;
     }
+
     /// <summary>
     /// 상점 아이템을 지정한 플레이어 인벤토리 위치에 구매한다.
     /// 반환값은 구매 트랜잭션의 성공 여부다.
@@ -264,6 +269,7 @@ public class ShopController : MonoBehaviour
 
         return result == TradeResult.Success;
     }
+
     /// <summary>
     /// 상점 아이템의 우클릭 구매를 처리한다.
     /// 반환값은 구매 성공 여부가 아니라 상점이 입력을 처리했는지 여부다.
@@ -276,10 +282,10 @@ public class ShopController : MonoBehaviour
             return false;
 
         if (!playerGrid.FindEmptySpace(
-        itemUI.Item.CurrentWidth,
-        itemUI.Item.CurrentHeight,
-        out int x,
-        out int y))
+                itemUI.Item.CurrentWidth,
+                itemUI.Item.CurrentHeight,
+                out int x,
+                out int y))
         {
             ShowTradeMessage(
                 TradeResult.NoSpace,
@@ -290,30 +296,23 @@ public class ShopController : MonoBehaviour
         }
 
         TryBuy(itemUI, x, y);
-        return true;   
+        return true;
     }
 
-    public bool IsTradingToShop(InventoryGrid fromGrid, ItemUI itemUI)
-    {
-        if (!isActiveAndEnabled)
-            return false;
-        if (fromGrid != playerGrid)
-            return false;
+    public bool IsTradingToShop(InventoryGrid fromGrid, ItemUI itemUI) =>
+        IsTradingBetween(fromGrid, playerGrid, itemUI, shopGrid);
 
+    public bool IsTradingToPlayer(InventoryGrid fromGrid, ItemUI itemUI) =>
+        IsTradingBetween(fromGrid, shopGrid, itemUI, playerGrid);
 
-        return IsItemOverGrid(itemUI, shopGrid);
-    }
-
-    public bool IsTradingToPlayer(InventoryGrid fromGrid, ItemUI itemUI)
-    {
-        if (!isActiveAndEnabled)
-            return false;
-        if (fromGrid != shopGrid)
-            return false;
-
-        return IsItemOverGrid(itemUI, playerGrid);
-
-    }
+    private bool IsTradingBetween(
+        InventoryGrid fromGrid,
+        InventoryGrid expectedSource,
+        ItemUI itemUI,
+        InventoryGrid targetGrid)
+        => isActiveAndEnabled &&
+           fromGrid == expectedSource &&
+           IsItemOverGrid(itemUI, targetGrid);
 
     private bool IsItemOverGrid(ItemUI itemUI, InventoryGrid grid)
     {
@@ -327,9 +326,9 @@ public class ShopController : MonoBehaviour
     }
 
     private void ShowTradeMessage(
-    TradeResult result,
-    InventoryItem item,
-    bool isBuying)
+        TradeResult result,
+        InventoryItem item,
+        bool isBuying)
     {
         if (logText == null)
             return;
@@ -346,11 +345,11 @@ public class ShopController : MonoBehaviour
     }
 
     public bool TryResolveSellPosition(
-    InventoryItem item,
-    int requestedX,
-    int requestedY,
-    out int resolvedX,
-    out int resolvedY)
+        InventoryItem item,
+        int requestedX,
+        int requestedY,
+        out int resolvedX,
+        out int resolvedY)
     {
         resolvedX = requestedX;
         resolvedY = requestedY;
