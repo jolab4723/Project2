@@ -13,11 +13,8 @@ public sealed class UpgradeService
         ItemInstance item,
         int cost)
     {
-        if (item?.definition?.mainOptions == null ||
-            item.definition.mainOptions.Length == 0)
-        {
+        if (!CanUpgrade(item))
             return UpgradeResult.InvalidItem;
-        }
 
         if (cost <= 0)
             return UpgradeResult.InvalidCost;
@@ -31,5 +28,13 @@ public sealed class UpgradeService
         item.upgradeLevel++;
 
         return UpgradeResult.Success;
+    }
+
+    public static bool CanUpgrade(ItemInstance item)
+    {
+        return item?.definition != null &&
+               item.definition.category != ItemCategory.Relic &&
+               item.definition.mainOptions != null &&
+               item.definition.mainOptions.Length > 0;
     }
 }

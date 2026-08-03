@@ -9,21 +9,19 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
 {
     private const int IntegrationSamples = 96;
     private const float MinimumMultiplier = 0.001f;
-    private const float GroundCollisionGraceSeconds = 0.12f;
 
     private sealed class FragmentState
     {
         public float previousMultiplier;
-        public CollisionMode originalCollisionMode;
-        public bool collisionTemporarilyDisabled;
+        public float distanceNormalization;
+        public bool hasIntegratedFrame;
     }
 
     [SerializeField] private Artificer artificer;
     [SerializeField] private bool useBurstSpeedCurve = true;
-    [SerializeField, Range(1f, 6f)] private float initialSpeedMultiplier = 3.5f;
+    [SerializeField, Range(1f, 10f)] private float initialSpeedMultiplier = 3.5f;
     [SerializeField, Range(0.02f, 0.4f)] private float burstDuration = 0.1f;
-    [SerializeField, Range(0.02f, 1f)] private float finalSpeedMultiplier = 0.12f;
-    [SerializeField, Range(0f, 0.75f)] private float minimumUpwardRatio = 0.35f;
+    [SerializeField, Range(0.02f, 1f)] private float finalSpeedMultiplier = 0.05f;
     [SerializeField] private bool preserveTravelDistance = true;
 
     private readonly Dictionary<BuildQueue, FragmentState> states =
@@ -33,16 +31,25 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
     private readonly List<BuildQueue> staleQueues =
         new List<BuildQueue>();
     private bool warnedCustomDismantleConflict;
+    private Vector3 pendingAttackDirection;
+    private float pendingDirectionalImpulse;
+    private bool launchPrepared;
+    private float cachedDistanceNormalization = 1f;
+    private bool distanceNormalizationValid;
 
     public bool UseBurstSpeedCurve => useBurstSpeedCurve;
-    public float InitialSpeedMultiplier => initialSpeedMultiplier;
-    public float BurstDuration => burstDuration;
-    public float FinalSpeedMultiplier => finalSpeedMultiplier;
-    public float MinimumUpwardRatio => minimumUpwardRatio;
-    public bool PreserveTravelDistance => preserveTravelDistance;
-    public int ActiveFragmentCount => states.Count;
-    public float LastInitialMultiplier { get; private set; } = 1f;
-    public float LastCurrentMultiplier { get; private set; } = 1f;
+
+    public void PrepareLaunch(
+        Vector3 worldAttackDirection,
+        float directionalImpulse)
+    {
+        pendingAttackDirection = worldAttackDirection.sqrMagnitude > 0.0001f
+            ? worldAttackDirection.normalized
+            : transform.forward;
+        pendingDirectionalImpulse = Mathf.Max(0f, directionalImpulse);
+        launchPrepared = true;
+        RefreshDistanceNormalization();
+    }
 
     public void Initialize(Artificer source = null)
     {
@@ -75,15 +82,14 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         float initialMultiplier,
         float fastSection,
         float finalMultiplier,
-        float upwardRatio,
         bool preserveDistance)
     {
         useBurstSpeedCurve = enabled;
-        initialSpeedMultiplier = Mathf.Clamp(initialMultiplier, 1f, 6f);
+        initialSpeedMultiplier = Mathf.Clamp(initialMultiplier, 1f, 10f);
         burstDuration = Mathf.Clamp(fastSection, 0.02f, 0.4f);
         finalSpeedMultiplier = Mathf.Clamp(finalMultiplier, 0.02f, 1f);
-        minimumUpwardRatio = Mathf.Clamp(upwardRatio, 0f, 0.75f);
         preserveTravelDistance = preserveDistance;
+        distanceNormalizationValid = false;
         Initialize();
     }
 
@@ -96,24 +102,7 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         destination.initialSpeedMultiplier = initialSpeedMultiplier;
         destination.burstDuration = burstDuration;
         destination.finalSpeedMultiplier = finalSpeedMultiplier;
-        destination.groundClearanceLift = minimumUpwardRatio;
         destination.preserveBurstTravelDistance = preserveTravelDistance;
-    }
-
-    public float EvaluateSpeedMultiplier(
-        float normalizedLifetime,
-        float lifetime,
-        float linearDrag)
-    {
-        if (!useBurstSpeedCurve)
-            return 1f;
-
-        float normalization = preserveTravelDistance
-            ? CalculateDistanceNormalization(lifetime, linearDrag)
-            : 1f;
-        return Mathf.Max(
-            MinimumMultiplier,
-            EvaluateRawMultiplier(normalizedLifetime) * normalization);
     }
 
     public override void AddedToDismantle(MeshElement element, int index)
@@ -159,6 +148,20 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         if (fragment == null)
             return;
 
+        if (useBurstSpeedCurve)
+        {
+            if (!states.TryGetValue(fragment, out FragmentState state))
+            {
+                BeginTracking(fragment, fragment.calpha);
+                states.TryGetValue(fragment, out state);
+            }
+
+            if (state != null)
+            {
+                ApplySpeedBeforeMovement(fragment, state);
+            }
+        }
+
         float deltaTime = artificer.useUnscaledTime
             ? Time.unscaledDeltaTime
             : Time.deltaTime;
@@ -178,13 +181,12 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
 
     public void ResetProfileState()
     {
-        foreach (KeyValuePair<BuildQueue, FragmentState> pair in states)
-            RestoreCollision(pair.Key, pair.Value);
         states.Clear();
         liveQueues.Clear();
         staleQueues.Clear();
-        LastInitialMultiplier = 1f;
-        LastCurrentMultiplier = 1f;
+        pendingAttackDirection = Vector3.zero;
+        pendingDirectionalImpulse = 0f;
+        launchPrepared = false;
     }
 
     private void Awake()
@@ -215,24 +217,8 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
                 continue;
 
             liveQueues.Add(fragment);
-            if (!states.TryGetValue(fragment, out FragmentState state))
-            {
+            if (!states.ContainsKey(fragment))
                 BeginTracking(fragment, fragment.calpha);
-                continue;
-            }
-
-            RestoreCollisionAfterLaunch(fragment, state);
-
-            float multiplier = EvaluateSpeedMultiplier(
-                fragment.calpha,
-                fragment.element.removeTime,
-                fragment.element.linearDrag);
-            float previous = Mathf.Max(
-                MinimumMultiplier,
-                state.previousMultiplier);
-            fragment.velocity *= multiplier / previous;
-            state.previousMultiplier = multiplier;
-            LastCurrentMultiplier = multiplier;
         }
 
         staleQueues.Clear();
@@ -244,8 +230,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
         for (int i = 0; i < staleQueues.Count; i++)
         {
             BuildQueue fragment = staleQueues[i];
-            if (states.TryGetValue(fragment, out FragmentState state))
-                RestoreCollision(fragment, state);
             states.Remove(fragment);
         }
     }
@@ -256,26 +240,99 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
             states.ContainsKey(fragment))
             return;
 
-        float multiplier = EvaluateSpeedMultiplier(
+        EnsureDistanceNormalization();
+        float multiplier = EvaluateRuntimeMultiplier(
             normalizedLifetime,
-            fragment.element.removeTime,
-            fragment.element.linearDrag);
-        fragment.velocity = RedirectUpwardWithoutChangingSpeed(
-            fragment.velocity,
-            minimumUpwardRatio);
+            cachedDistanceNormalization);
+
+        Vector3 launchVelocity = fragment.velocity;
+        if (launchPrepared && pendingDirectionalImpulse > 0f)
+        {
+            launchVelocity += pendingAttackDirection *
+                pendingDirectionalImpulse;
+        }
+        if (launchPrepared)
+        {
+            // 공격 방향 힘은 더 이상 매 프레임 누적되는 가속도가 아니다.
+            // 사망 순간의 1회성 충격 속도로 합쳤으므로 Artificer의 force는 비운다.
+            fragment.force = Vector3.zero;
+        }
+
+        fragment.velocity = launchVelocity;
         fragment.velocity *= multiplier;
         var state = new FragmentState
         {
             previousMultiplier = multiplier,
-            originalCollisionMode = fragment.element.collisionMode,
-            collisionTemporarilyDisabled = minimumUpwardRatio > 0f &&
-                fragment.element.collisionMode != CollisionMode.None
+            distanceNormalization = cachedDistanceNormalization,
+            hasIntegratedFrame = false
         };
-        if (state.collisionTemporarilyDisabled)
-            fragment.element.collisionMode = CollisionMode.None;
         states.Add(fragment, state);
-        LastInitialMultiplier = multiplier;
-        LastCurrentMultiplier = multiplier;
+    }
+
+    private void ApplySpeedBeforeMovement(
+        BuildQueue fragment,
+        FragmentState state)
+    {
+        if (fragment == null || fragment.element == null || state == null)
+            return;
+
+        // 생성 직후 첫 이동은 최고 속도를 그대로 사용한다. 이후 프레임부터
+        // 현재 수명 위치의 배수를 이동 계산 전에 적용해 한 프레임 늦는 현상을 없앤다.
+        if (!state.hasIntegratedFrame)
+        {
+            state.hasIntegratedFrame = true;
+            return;
+        }
+
+        float multiplier = EvaluateRuntimeMultiplier(
+            fragment.calpha,
+            state.distanceNormalization);
+        float previous = Mathf.Max(
+            MinimumMultiplier,
+            state.previousMultiplier);
+        fragment.velocity *= multiplier / previous;
+        state.previousMultiplier = multiplier;
+    }
+
+    private float EvaluateRuntimeMultiplier(
+        float normalizedLifetime,
+        float distanceNormalization)
+    {
+        if (!useBurstSpeedCurve)
+            return 1f;
+
+        return Mathf.Max(
+            MinimumMultiplier,
+            EvaluateRawMultiplier(normalizedLifetime) *
+            distanceNormalization);
+    }
+
+    private void EnsureDistanceNormalization()
+    {
+        if (!distanceNormalizationValid)
+            RefreshDistanceNormalization();
+    }
+
+    private void RefreshDistanceNormalization()
+    {
+        float representativeLifetime = 1f;
+        float drag = 0f;
+        if (artificer != null)
+        {
+            representativeLifetime = Mathf.Max(
+                0.05f,
+                (artificer.removeTimeRange.min +
+                 artificer.removeTimeRange.max) * 0.5f);
+            drag = Mathf.Max(0f, artificer.linearDrag);
+        }
+
+        cachedDistanceNormalization =
+            useBurstSpeedCurve && preserveTravelDistance
+                ? CalculateDistanceNormalization(
+                    representativeLifetime,
+                    drag)
+                : 1f;
+        distanceNormalizationValid = true;
     }
 
     private BuildQueue FindQueue(MeshElement element, int index)
@@ -309,57 +366,6 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
                 return candidate;
         }
         return null;
-    }
-
-    private void RestoreCollisionAfterLaunch(
-        BuildQueue fragment,
-        FragmentState state)
-    {
-        if (fragment == null || fragment.element == null || state == null ||
-            !state.collisionTemporarilyDisabled)
-            return;
-
-        float lifetime = Mathf.Max(0.05f, fragment.element.removeTime);
-        float restorePoint = Mathf.Min(
-            Mathf.Clamp(burstDuration, 0.02f, 0.4f),
-            GroundCollisionGraceSeconds / lifetime);
-        if (fragment.calpha >= restorePoint)
-            RestoreCollision(fragment, state);
-    }
-
-    private static void RestoreCollision(
-        BuildQueue fragment,
-        FragmentState state)
-    {
-        if (fragment == null || fragment.element == null || state == null ||
-            !state.collisionTemporarilyDisabled)
-            return;
-
-        fragment.element.collisionMode = state.originalCollisionMode;
-        state.collisionTemporarilyDisabled = false;
-    }
-
-    private static Vector3 RedirectUpwardWithoutChangingSpeed(
-        Vector3 velocity,
-        float minimumRatio)
-    {
-        float speed = velocity.magnitude;
-        float ratio = Mathf.Clamp(minimumRatio, 0f, 0.75f);
-        if (speed <= 0.0001f || ratio <= 0f)
-            return velocity;
-
-        Vector3 direction = velocity / speed;
-        if (direction.y >= ratio)
-            return velocity;
-
-        Vector3 horizontal = Vector3.ProjectOnPlane(direction, Vector3.up);
-        if (horizontal.sqrMagnitude <= 0.0001f)
-            horizontal = Vector3.forward;
-        else
-            horizontal.Normalize();
-
-        float horizontalRatio = Mathf.Sqrt(1f - ratio * ratio);
-        return (horizontal * horizontalRatio + Vector3.up * ratio) * speed;
     }
 
     private float EvaluateRawMultiplier(float normalizedLifetime)
@@ -409,10 +415,9 @@ public sealed class ArtificerFragmentBurstProfile : CustomDismantle
 
     private void OnValidate()
     {
-        initialSpeedMultiplier = Mathf.Clamp(initialSpeedMultiplier, 1f, 6f);
+        initialSpeedMultiplier = Mathf.Clamp(initialSpeedMultiplier, 1f, 10f);
         burstDuration = Mathf.Clamp(burstDuration, 0.02f, 0.4f);
         finalSpeedMultiplier = Mathf.Clamp(finalSpeedMultiplier, 0.02f, 1f);
-        minimumUpwardRatio = Mathf.Clamp(minimumUpwardRatio, 0f, 0.75f);
         Initialize();
     }
 }

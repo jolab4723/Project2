@@ -23,6 +23,8 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     [SerializeField] private bool loadFirstTargetOnStart = true;
     [SerializeField] private ArtificerRuntimeSettings settings =
         new ArtificerRuntimeSettings();
+    [SerializeField] private DestructionDamageStrengthScaler
+        damageStrengthScaler;
 
     private readonly List<ArtificerRuntimeTuningTarget> targets =
         new List<ArtificerRuntimeTuningTarget>();
@@ -32,10 +34,15 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     private int sequentialPresetCount;
 
     public bool IsRespawning => isRespawning;
+    public DestructionDamageStrengthScaler DamageStrengthScaler =>
+        damageStrengthScaler;
 
     private void Start()
     {
+        EnsureDamageStrengthScaler();
         RefreshTargets(loadFirstTargetOnStart);
+        if (!loadFirstTargetOnStart)
+            ApplyCurrentSettings();
     }
 
     public void RefreshTargetsAndApply()
@@ -49,7 +56,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         if (target == null)
             return;
 
-        RefreshTargets(false);
+        RegisterTarget(target);
         ApplySettingsToTarget(target);
     }
 
@@ -59,24 +66,35 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         simultaneousPresetCount = 0;
         sequentialPresetCount = 0;
         Artifice.Artificer[] artificers =
-            FindObjectsByType<Artifice.Artificer>(FindObjectsSortMode.None);
+            FindObjectsByType<Artifice.Artificer>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
         foreach (Artifice.Artificer artificer in artificers)
         {
             ArtificerRuntimeTuningTarget target =
                 artificer.GetComponent<ArtificerRuntimeTuningTarget>();
             if (target == null)
                 target = artificer.gameObject.AddComponent<ArtificerRuntimeTuningTarget>();
-            target.Initialize(artificer);
-            targets.Add(target);
-            if (target.PrefabReleaseMode ==
-                ArtificerRuntimeReleaseMode.Sequential)
-                sequentialPresetCount++;
-            else
-                simultaneousPresetCount++;
+            RegisterTarget(target);
         }
         targets.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
         if (captureFirst && targets.Count > 0)
             targets[0].CaptureSettings(settings);
+    }
+
+    private void RegisterTarget(ArtificerRuntimeTuningTarget target)
+    {
+        if (target == null || targets.Contains(target))
+            return;
+
+        target.Initialize();
+        targets.Add(target);
+        if (target.PrefabReleaseMode ==
+            ArtificerRuntimeReleaseMode.Sequential)
+            sequentialPresetCount++;
+        else
+            simultaneousPresetCount++;
+        targets.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
     }
 
     public void ApplyCurrentSettings()
@@ -247,7 +265,11 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         GUILayout.Label("4. 파편 힘");
         settings.minimumRadialForce = Slider("퍼지는 힘 최소", settings.minimumRadialForce, 0f, 10f);
         settings.maximumRadialForce = Slider("퍼지는 힘 최대", settings.maximumRadialForce, settings.minimumRadialForce, 15f);
-        settings.directionalForce = Slider("공격 방향 힘", settings.directionalForce, 0f, 15f);
+        settings.directionalForce = Slider(
+            "공격 방향 초기 충격",
+            settings.directionalForce,
+            0f,
+            15f);
         settings.angularSpeed = Slider("회전 세기", settings.angularSpeed, 0f, 720f);
 
         GUILayout.Space(6f);
@@ -275,7 +297,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 "처음 튀는 속도 배수",
                 settings.initialSpeedMultiplier,
                 1f,
-                6f);
+                10f);
             settings.burstDuration = Slider(
                 "빠르게 튀는 구간",
                 settings.burstDuration,
@@ -286,11 +308,6 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 settings.finalSpeedMultiplier,
                 0.02f,
                 1f);
-            settings.groundClearanceLift = Slider(
-                "바닥에서 띄우는 비율",
-                settings.groundClearanceLift,
-                0f,
-                0.75f);
             settings.preserveBurstTravelDistance = GUILayout.Toggle(
                 settings.preserveBurstTravelDistance,
                 "기존 이동 거리에 가깝게 자동 보정");
@@ -298,6 +315,42 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
                 "빠른 구간 0.10은 파편 수명의 처음 10%를 뜻합니다.");
             GUILayout.Label(
                 "거리 보정은 중력·바닥 충돌 전 자유 비행 거리를 기준으로 합니다.");
+        }
+
+        GUILayout.Space(6f);
+        GUILayout.Label("7. 결정타 데미지에 따른 세기");
+        EnsureDamageStrengthScaler();
+        if (damageStrengthScaler == null)
+        {
+            GUILayout.Label("데미지 배수 컴포넌트를 찾지 못했습니다.");
+        }
+        else
+        {
+            damageStrengthScaler.UseDamageScaling = GUILayout.Toggle(
+                damageStrengthScaler.UseDamageScaling,
+                "결정타 데미지 배수 사용");
+            float previewMaxHealth = Slider(
+                "미리보기 적 최대 체력",
+                damageStrengthScaler.PreviewTargetMaxHealth,
+                1f,
+                1000f);
+            float previewDamage = Slider(
+                "미리보기 결정타 데미지",
+                damageStrengthScaler.PreviewKillingDamage,
+                0f,
+                Mathf.Max(1f, previewMaxHealth * 2f));
+            damageStrengthScaler.SetPreviewValues(
+                previewDamage,
+                previewMaxHealth);
+            GUILayout.Label(
+                $"데미지 비율: {damageStrengthScaler.PreviewDamageRatio:0.00} / " +
+                $"적용 배수: {damageStrengthScaler.PreviewMultiplier:0.00}배");
+            GUILayout.Label(
+                "커브 그래프: Hierarchy의 Enemy Manual Test를 선택한 뒤");
+            GUILayout.Label(
+                "Inspector > 결정타 데미지 세기에서 직접 편집합니다.");
+            GUILayout.Label(
+                "실제 공격은 미리보기 값이 아니라 결정타의 실제 데미지를 사용합니다.");
         }
 
         GUILayout.Space(8f);
@@ -321,13 +374,22 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         return value;
     }
 
+    private void EnsureDamageStrengthScaler()
+    {
+        if (damageStrengthScaler == null)
+            damageStrengthScaler =
+                GetComponent<DestructionDamageStrengthScaler>();
+        if (damageStrengthScaler == null && Application.isPlaying)
+            damageStrengthScaler =
+                gameObject.AddComponent<DestructionDamageStrengthScaler>();
+    }
+
     private void ApplyBurstPresetOriginal()
     {
         settings.useBurstSpeedCurve = false;
         settings.initialSpeedMultiplier = 1f;
         settings.burstDuration = 0.1f;
         settings.finalSpeedMultiplier = 1f;
-        settings.groundClearanceLift = 0f;
         settings.preserveBurstTravelDistance = true;
     }
 
@@ -336,8 +398,7 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.useBurstSpeedCurve = true;
         settings.initialSpeedMultiplier = 3.5f;
         settings.burstDuration = 0.1f;
-        settings.finalSpeedMultiplier = 0.12f;
-        settings.groundClearanceLift = 0.35f;
+        settings.finalSpeedMultiplier = 0.05f;
         settings.preserveBurstTravelDistance = true;
     }
 
@@ -347,7 +408,6 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         settings.initialSpeedMultiplier = 2.3f;
         settings.burstDuration = 0.18f;
         settings.finalSpeedMultiplier = 0.06f;
-        settings.groundClearanceLift = 0.25f;
         settings.preserveBurstTravelDistance = true;
     }
 

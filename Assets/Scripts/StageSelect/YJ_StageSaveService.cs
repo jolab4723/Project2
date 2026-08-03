@@ -253,6 +253,30 @@ public class YJ_StageSaveService : MonoBehaviour
     }
 
     /// <summary>
+    /// 저장된 맵에서 현재 선택 후 진행 중인 노드 데이터를 반환합니다.
+    /// </summary>
+    public bool TryGetPendingNode(out StageNodeSaveData pendingNode)
+    {
+        pendingNode = null;
+
+        if (!TryLoadSaveData(out StageMapSaveData saveData) ||
+            string.IsNullOrWhiteSpace(saveData.pendingNodeId))
+        {
+            return false;
+        }
+
+        pendingNode = saveData.nodes.Find(
+            node => node != null && node.id == saveData.pendingNodeId);
+
+        if (pendingNode != null)
+            return true;
+
+        Log.Error(
+            $"저장 데이터에서 pending 노드를 찾지 못했습니다: {saveData.pendingNodeId}");
+        return false;
+    }
+
+    /// <summary>
     /// 테스트 또는 새 게임 시작 시 기존 JSON 저장 파일을 삭제합니다.
     /// </summary>
     public bool DeleteSaveFile()

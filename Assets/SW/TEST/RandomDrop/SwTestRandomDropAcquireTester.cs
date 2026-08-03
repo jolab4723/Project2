@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.UI;
-using Core;
-
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -37,18 +34,61 @@ namespace SW.Test.RandomDrop
 
         [Header("기존 아이템 시스템 연결")]
         [SerializeField]private WorldItemDropService worldItemDropService;
-        [SerializeField] private ItemGenerator itemGenerator;
         [SerializeField] private GameObject itemPickupPrefabOverride;
         [SerializeField] private MonoBehaviour receiverBehaviour;
         [SerializeField] private Transform spawnPoint;
         [SerializeField] private int testUpgradeLevel;
         [SerializeField] private bool destroyPickupAfterAcquire = true;
 
+        [Header("유물 직접 획득 테스트")]
+        [SerializeField] private ItemDefinitionSO directRelicDefinition;
+
         private ItemInstance lastDropped;
         private GameObject lastSpawnedPickup;
         private bool buttonsBound;
 
-        
+        [ContextMenu("SW TEST/유물 직접 인벤토리 획득")]
+        public void AcquireDirectRelicToInventory()
+        {
+            AutoResolveReferences();
+
+            if (directRelicDefinition == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 유물 SO가 연결되지 않았습니다.");
+                return;
+            }
+
+            if (Receiver == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] InventoryController가 연결되지 않았습니다.");
+                return;
+            }
+
+            if (directRelicDefinition.category != ItemCategory.Relic)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 연결된 아이템이 유물이 아닙니다.");
+                return;
+            }
+
+            // SO의 메인 옵션, 서브 옵션 풀, 원소 보너스 설정을
+            // 정식 아이템 생성 경로로 전부 반영한다.
+            ItemInstance instance =
+                ItemDataCreator.CreateItemData(directRelicDefinition);
+
+            if (instance == null)
+            {
+                Debug.LogWarning("[SW 유물 테스트] 유물 ItemInstance 생성에 실패했습니다.");
+                return;
+            }
+
+            bool success =
+                ItemAcquisition.Acquire(instance, Receiver);
+
+            Debug.Log(
+                success
+                    ? $"[SW 유물 테스트] {directRelicDefinition.itemName} 획득 성공"
+                    : $"[SW 유물 테스트] {directRelicDefinition.itemName} 획득 실패");
+        }
         public bool HasLastDroppedItem => lastDropped != null;
 private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
@@ -74,59 +114,62 @@ private void OnEnable()
 [ContextMenu("SW TEST/랜덤 아이템 필드 드랍")]
         public void DropRandomItemToField()
         {
-            Core.ItemManager.Instance.DropRandomItem(monsterGrade, spawnPoint.position);
-            //if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
-            //{
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            if (!TryRollRandomItem(out SwTestEquipmentDropResult result))
+            {
+                RefreshGetItemButton();
+                return;
+            }
 
-            //if (itemGenerator == null)
-            //{
-            //    Debug.LogWarning("[SW TEST 랜덤 드랍] ItemGenerator를 찾지 못해 필드 드랍을 할 수 없습니다.");
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            ItemInstance instance =
+                CreateItemInstance(result.itemDefinition);
 
+            if (instance == null)
+            {
+                Debug.LogWarning(
+                    "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
 
+                RefreshGetItemButton();
+                return;
+            }
 
-            //ItemInstance instance = CreateItemInstance(result.itemDefinition);
-            //RefreshGetItemButton();
+            instance.upgradeLevel = testUpgradeLevel;
 
-            //if (instance == null)
-            //{
-            //    Debug.LogWarning(
-            //        "[SW TEST 랜덤 드랍] 아이템 생성에 실패했습니다.");
+            // 월드 드랍 서비스가 없는 순수 UI 테스트 씬에서도 Get 버튼으로 획득할 수 있도록
+            // 생성된 아이템 데이터를 먼저 보관한다.
+            lastDropped = instance;
+            lastSpawnedPickup = null;
 
-            //    RefreshGetItemButton();
-            //    return;
-            //}
+            string actionName = "아이템 데이터 생성";
 
-            //instance.upgradeLevel = testUpgradeLevel;
+            // 실제 월드 드랍 서비스가 연결된 씬에서는 같은 아이템 인스턴스를 필드에도 생성한다.
+            // 드랍에 실패하더라도 보관한 데이터는 유지해 테스트 획득 흐름이 끊기지 않게 한다.
+            if (worldItemDropService != null)
+            {
+                WorldItemDropResult dropResult =
+                    worldItemDropService.TryDrop(
+                        instance,
+                        out ItemDataStorage spawnedPickup);
 
-            //WorldItemDropResult dropResult =
-            //    worldItemDropService.TryDrop(
-            //        instance,
-            //        out ItemDataStorage spawnedPickup);
+                if (dropResult == WorldItemDropResult.Success)
+                {
+                    lastSpawnedPickup = spawnedPickup.gameObject;
+                    actionName = "필드 드랍";
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}. " +
+                        "생성된 아이템 데이터는 Get 버튼으로 획득할 수 있습니다.");
+                }
+            }
 
-            //if (dropResult != WorldItemDropResult.Success)
-            //{
-            //    Debug.LogWarning(
-            //        $"[SW TEST 랜덤 드랍] 월드 드롭 실패: {dropResult}");
+            RefreshGetItemButton();
 
-            //    RefreshGetItemButton();
-            //    return;
-            //}
-
-            //lastDropped = instance;
-            //lastSpawnedPickup = spawnedPickup.gameObject;
-
-            //RefreshGetItemButton();
-            //Debug.Log(
-            //    BuildResultLog(
-            //        "필드 드랍",
-            //        result,
-            //        lastDropped));
+            Debug.Log(
+                BuildResultLog(
+                    actionName,
+                    result,
+                    lastDropped));
         }
 
         [ContextMenu("SW TEST/랜덤 아이템 인벤토리 추가")]
@@ -264,7 +307,9 @@ private void UnbindButtons()
                     Object.FindFirstObjectByType<WorldItemTooltipScanner>();
             }
 
-            if (receiverBehaviour == null)
+            // 슬롯이 비어 있거나 IItemReceiver가 아닌 컴포넌트가 잘못 연결된 경우,
+            // 씬 안의 실제 인벤토리 수신자를 다시 찾아 테스트 획득 흐름을 복구한다.
+            if (Receiver == null)
                 receiverBehaviour = FindItemReceiverBehaviour();
         }
 

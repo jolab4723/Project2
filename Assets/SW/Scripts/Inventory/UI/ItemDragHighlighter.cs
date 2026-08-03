@@ -112,21 +112,15 @@ public class ItemDragHighlighter : MonoBehaviour
                 pointerCell,
                 out InventoryItem otherItem))
         {
-            CurrentSwapPlan = InventorySwapPlan.Invalid(
-                targetGrid,
-                item,
-                itemUI.OriginalPlacement,
-                requestedCell,
-                InventorySwapFailReason.IntentNotConfirmed);
+            CurrentSwapPlan = InventorySwapPlan.Invalid();
             ShowInvalidPreview(targetGrid, requestedRect);
             return;
         }
 
-        CurrentSwapPlan = InventorySwapService.BuildPlan(
+        CurrentSwapPlan = InventorySwapPlanner.BuildPlan(
             targetGrid,
             item,
             itemUI.OriginalPlacement,
-            requestedCell,
             otherItem);
 
         if (CurrentSwapPlan.IsValid)

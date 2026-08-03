@@ -535,12 +535,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatDroneArtificerDestruction
   artificer: {fileID: 4284886754381136134}
-  visualAnimator: {fileID: 0}
-  disableCollidersOnDestroy: 1
-  destroyRootOnComplete: 0
-  destroyDelayAfterComplete: 0.05
-  previewAutoTrigger: 0
-  previewDelay: 0
   enableFragmentGroundCollision: 1
   fragmentCollisionLayers:
     serializedVersion: 2
@@ -576,7 +570,7 @@ MonoBehaviour:
     useBurstSpeedCurve: 1
     initialSpeedMultiplier: 3.5
     burstDuration: 0.1
-    finalSpeedMultiplier: 0.12
+    finalSpeedMultiplier: 0.05
     preserveBurstTravelDistance: 1
     fragmentScale: 1
     shrinkFragments: 1
@@ -600,9 +594,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionVisual
   artificer: {fileID: 4284886754381136134}
-  visualAnimator: {fileID: 0}
   destruction: {fileID: 671306466579576228}
-  autoDeactivateOnComplete: 1
 --- !u!114 &2988737803164942622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -619,7 +611,7 @@ MonoBehaviour:
   useBurstSpeedCurve: 1
   initialSpeedMultiplier: 3.5
   burstDuration: 0.1
-  finalSpeedMultiplier: 0.12
+  finalSpeedMultiplier: 0.05
   preserveTravelDistance: 1
 --- !u!1 &5598354981277992280
 GameObject:

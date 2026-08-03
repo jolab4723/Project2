@@ -36,6 +36,7 @@ public class PlayerLevelManager : MonoBehaviour
         { "baseCDR", StatType.cdrFlat },
         { "baseMPRegen", StatType.mpRegenFlat },
         { "basePen", StatType.penetrationFlat },
+        { "baseSkillRange", StatType.skillRangeFlat },
     };
 
     private List<FighterLevelStatData> levelStatList;
@@ -94,6 +95,7 @@ public class PlayerLevelManager : MonoBehaviour
         ApplyField(result, "baseCDR", row.baseCDR);
         ApplyField(result, "baseMPRegen", row.baseMPRegen);
         ApplyField(result, "basePen", row.basePen);
+        ApplyField(result, "baseSkillRange", row.baseSkillRange);
 
         return result;
     }
@@ -169,6 +171,7 @@ public class FighterLevelStatData
     public float baseCDR;
     public float baseMPRegen;
     public float basePen;
+    public float baseSkillRange;
 }
 
 /// <summary>JsonUtility로 최상위 배열 JSON을 파싱하기 위한 래퍼.</summary>

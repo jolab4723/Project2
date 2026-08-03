@@ -8,29 +8,23 @@ using UnityEngine;
 [RequireComponent(typeof(CombatDroneArtificerDestruction))]
 public sealed class EnemyDestructionVisual : MonoBehaviour
 {
-    [Header("References")]
     [SerializeField] private Artificer artificer;
-    [SerializeField] private CombatDroneVisualAnimator visualAnimator;
     [SerializeField] private CombatDroneArtificerDestruction destruction;
 
-    [Header("Pool Behaviour")]
-    [SerializeField] private bool autoDeactivateOnComplete = true;
-
-    private Collider[] visualColliders;
     private bool playing;
     private bool startupCompleted;
     private Coroutine delayedPlay;
 
-    public event Action<EnemyDestructionVisual> Completed;
+    internal event Action<EnemyDestructionVisual> Completed;
+    internal bool IsStartupCompleted => startupCompleted;
 
-    public bool IsPlaying => playing;
-
-    public void Play(
+    internal void Play(
         Vector3 worldPosition,
         Quaternion worldRotation,
         Vector3 worldImpactPoint,
         Vector3 attackDirection,
         float directionalForce,
+        float directionalForceMultiplier = 1f,
         Action onReadyToReplaceSource = null)
     {
         transform.SetPositionAndRotation(worldPosition, worldRotation);
@@ -58,6 +52,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
                 worldImpactPoint,
                 attackDirection,
                 directionalForce,
+                directionalForceMultiplier,
                 onReadyToReplaceSource));
             return;
         }
@@ -66,30 +61,46 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
             worldImpactPoint,
             attackDirection,
             directionalForce,
+            directionalForceMultiplier,
             onReadyToReplaceSource);
+    }
+
+    internal void ReturnToPoolNow()
+    {
+        playing = false;
+        if (delayedPlay != null)
+        {
+            StopCoroutine(delayedPlay);
+            delayedPlay = null;
+        }
+
+        ResetVisualState();
+        gameObject.SetActive(false);
     }
 
     private void BeginDestruction(
         Vector3 worldImpactPoint,
         Vector3 attackDirection,
         float directionalForce,
+        float directionalForceMultiplier,
         Action onReadyToReplaceSource)
     {
-        // The first pooled use waits one frame for Artificer's Start(). Keep
-        // the live enemy visible until this exact handoff point so there is no
-        // blank frame between the gameplay body and the destruction visual.
+        // 첫 풀 사용은 Artificer.Start가 끝날 때까지 기다린다. 실제 적은
+        // 이 시점까지 유지해 본체와 파편 사이의 빈 프레임을 방지한다.
         onReadyToReplaceSource?.Invoke();
         ResetVisualState();
-        destruction.TriggerDestruction(
+        destruction.Play(
             worldImpactPoint,
             attackDirection,
-            directionalForce);
+            directionalForce,
+            directionalForceMultiplier);
     }
 
     private IEnumerator PlayAfterStartup(
         Vector3 worldImpactPoint,
         Vector3 attackDirection,
         float directionalForce,
+        float directionalForceMultiplier,
         Action onReadyToReplaceSource)
     {
         yield return null;
@@ -105,35 +116,13 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
             worldImpactPoint,
             attackDirection,
             directionalForce,
+            directionalForceMultiplier,
             onReadyToReplaceSource);
-    }
-
-    public void ReturnToPoolNow()
-    {
-        playing = false;
-        if (delayedPlay != null)
-        {
-            StopCoroutine(delayedPlay);
-            delayedPlay = null;
-        }
-        ResetVisualState();
-        gameObject.SetActive(false);
     }
 
     private void Awake()
     {
         ResolveReferences();
-        visualColliders = GetComponentsInChildren<Collider>(true);
-
-        if (destruction != null)
-        {
-            destruction.Configure(
-                artificer,
-                visualAnimator,
-                false,
-                0f,
-                false);
-        }
     }
 
     private void OnEnable()
@@ -152,19 +141,13 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
 
     private void Update()
     {
-        if (!playing || destruction == null ||
-            !destruction.IsDestructionComplete)
+        if (!playing || destruction == null || !destruction.IsComplete)
         {
             return;
         }
 
         playing = false;
         Completed?.Invoke(this);
-
-        if (autoDeactivateOnComplete && gameObject.activeSelf)
-        {
-            gameObject.SetActive(false);
-        }
     }
 
     private void OnDisable()
@@ -177,25 +160,7 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
     {
         if (destruction != null)
         {
-            destruction.ResetForReuse();
-        }
-
-        DisableVisualColliders();
-    }
-
-    private void DisableVisualColliders()
-    {
-        if (visualColliders == null)
-        {
-            visualColliders = GetComponentsInChildren<Collider>(true);
-        }
-
-        for (int i = 0; i < visualColliders.Length; i++)
-        {
-            if (visualColliders[i] != null)
-            {
-                visualColliders[i].enabled = false;
-            }
+            destruction.ResetForPool();
         }
     }
 
@@ -204,11 +169,6 @@ public sealed class EnemyDestructionVisual : MonoBehaviour
         if (artificer == null)
         {
             artificer = GetComponent<Artificer>();
-        }
-
-        if (visualAnimator == null)
-        {
-            visualAnimator = GetComponent<CombatDroneVisualAnimator>();
         }
 
         if (destruction == null)

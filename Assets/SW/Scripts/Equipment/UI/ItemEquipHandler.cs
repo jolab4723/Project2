@@ -1,28 +1,49 @@
-using Unity.VisualScripting;
 using UnityEngine;
+
 public class ItemEquipHandler : MonoBehaviour
 {
     [SerializeField] private ItemUI itemUI;
+    private InventoryController inventoryController;
     private EquipmentSystem equipmentSystem;
     private EquipmentTransaction equipmentTransaction;
+    private bool bindWarningLogged;
+
     private void Awake()
     {
         if (itemUI == null)
             itemUI = GetComponent<ItemUI>();
-
-        equipmentSystem = InventoryController.Instance.EquipmentSystem;
-        equipmentTransaction = new EquipmentTransaction(equipmentSystem);
     }
 
+    /// <summary>
+    /// 생성한 아이템 UI가 어느 플레이어의 인벤토리와 장비를 변경할지 지정한다.
+    /// 입력이 시작되기 전에 Spawner가 호출해야 하며 전역 Instance를 대신한다.
+    /// </summary>
+    public void Bind(InventoryController owner)
+    {
+        inventoryController = owner;
+        equipmentSystem = owner != null ? owner.EquipmentSystem : null;
+        equipmentTransaction = equipmentSystem != null
+            ? new EquipmentTransaction(equipmentSystem)
+            : null;
+        bindWarningLogged = false;
+    }
+
+    /// <summary>
+    /// 현재 아이템의 장착 상태에 따라 우클릭 장착 또는 해제를 요청한다.
+    /// 반환값은 실제 장비 변경 성공 여부다.
+    /// </summary>
     public bool TryHandleRightClick()
     {
-        if (itemUI.IsEquipped)
-            return TryUnequip();
+        if (!EnsureReady())
+            return false;
 
-        return TryEquip();
+        if (itemUI.IsEquipped)
+            return TryUnequipByRightClick();
+
+        return TryEquipByRightClick();
     }
 
-    private bool TryEquip()
+    private bool TryEquipByRightClick()
     {
         EquipSlotUI swapSlot = null;
 
@@ -33,17 +54,17 @@ public class ItemEquipHandler : MonoBehaviour
                 sourceGrid,
                 itemUI.Item);
 
-        foreach (EquipSlotUI slot in InventoryController.Instance.allEquipSlots)
+        foreach (EquipSlotUI slot in inventoryController.allEquipSlots)
         {
             if (slot == null || !slot.CanAcceptType(itemUI.Item.itemData))
                 continue;
 
             EquipmentTransactionResult result =
-             equipmentTransaction.TryEquip(
-                 sourceGrid,
-                 itemUI.Item,
-                 originalPlacement,
-                 slot.SlotType);
+                equipmentTransaction.TryEquip(
+                    sourceGrid,
+                    itemUI.Item,
+                    originalPlacement,
+                    slot.SlotType);
 
             if (result.IsSuccess)
             {
@@ -51,7 +72,7 @@ public class ItemEquipHandler : MonoBehaviour
                 return true;
             }
 
-            if (!result.RollbackSucceeded)
+            if (result.HasRecoveryFailure)
             {
                 Debug.LogError(
                     "[ItemEquipHandler] 장착 실패 후 " +
@@ -59,7 +80,7 @@ public class ItemEquipHandler : MonoBehaviour
                 return false;
             }
 
-            if (result.EquipmentResult.Result ==
+            if (result.Result ==
                 EquipResult.SlotOccupied &&
                 swapSlot == null)
             {
@@ -67,14 +88,16 @@ public class ItemEquipHandler : MonoBehaviour
             }
         }
 
-        if (TryRightClickSwapWithEquipSlot(swapSlot))
-            return true;
+        // 호환 슬롯이 이미 차 있었다면 교체 메서드가 성공 여부와 구체적인 실패 메시지를 담당한다.
+        // 교체 실패 뒤 일반 메시지로 다시 덮어쓰지 않도록 결과를 그대로 반환한다.
+        if (swapSlot != null)
+            return TryRightClickSwapWithEquipSlot(swapSlot);
 
-        InventoryController.Instance.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
+        inventoryController.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
         return false;
     }
 
-    private bool TryUnequip()
+    private bool TryUnequipByRightClick()
     {
         EquipSlotUI equippedSlot = itemUI.CurrentEquipSlot;
         if (equippedSlot == null) return false;
@@ -87,18 +110,18 @@ public class ItemEquipHandler : MonoBehaviour
                 out int foundY,
                 out bool targetRotated))
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(EquipResult.NoReturnSpace));
             return false;
         }
 
         InventoryPlacementSnapshot targetPlacement =
-        InventoryPlacementSnapshot.FromOriginalState(
-            grid,
-            itemUI.Item,
-            foundX,
-            foundY,
-            targetRotated);
+            InventoryPlacementSnapshot.FromOriginalState(
+                grid,
+                itemUI.Item,
+                foundX,
+                foundY,
+                targetRotated);
 
         EquipmentTransactionResult result =
             equipmentTransaction.TryUnequip(
@@ -108,104 +131,117 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
-                EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
-
-            if (!result.RollbackSucceeded)
-            {
-                Debug.LogError(
-                    "[ItemEquipHandler] 장착 해제 실패 후 " +
-                    "장비 상태 복구에 실패했습니다.");
-            }
-
+            LogTransactionFailure(
+                result,
+                "[ItemEquipHandler] 장착 해제 실패 후 장비 상태 복구에 실패했습니다.");
             return false;
         }
 
         equippedSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        itemUI.SetGridPosition(
-            result.ResultGrid,
-            result.ResultPlacement.Rect.X,
-            result.ResultPlacement.Rect.Y);
+        ApplyResultGridPlacement(itemUI, result);
 
         if (rotationBeforeRequest != targetRotated)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 "공간 확보를 위해 아이템을 회전하여 보관했습니다.");
         }
 
         return true;
     }
-    
+
+    /// <summary>
+    /// 장비 슬롯으로 놓은 드래그를 처리한다.
+    /// true면 장착·교환 또는 원래 위치 복구까지 이 메서드가 마친 상태다.
+    /// </summary>
     public bool TryHandleDropToEquipSlot(EquipSlotUI targetSlot)
     {
-        if (targetSlot == null)
+        if (!EnsureReady() || targetSlot == null)
             return false;
 
         if (itemUI.OriginalWasEquipped)
         {
             EquipSlotUI originalSlot = itemUI.CurrentEquipSlot;
-
-            if (targetSlot == originalSlot)
-            {
-                SetEquipSlotVisual(originalSlot);
-                return true;
-            }
             SetEquipSlotVisual(originalSlot);
             return true;
         }
 
         if (itemUI.OriginalGrid == ShopController.Instance?.ShopGrid)
         {
-            itemUI.ReturnToOriginalPosition();
-            return true;
+            return itemUI.TryReturnToOriginalPosition();
         }
         if (!targetSlot.IsEmpty)
         {
             if (TrySwapWithEquipSlot(targetSlot))
                 return true;
 
-            itemUI.ReturnToOriginalPosition();
-            return true;
+            return itemUI.TryReturnToOriginalPosition();
         }
-        EquipmentSystem equipmentSystem = InventoryController.Instance.EquipmentSystem;
 
         EquipmentTransactionResult result =
-        equipmentTransaction.TryEquip(
-        itemUI.OriginalGrid,
-        itemUI.Item,
-        itemUI.OriginalPlacement,
-        targetSlot.SlotType);
+            equipmentTransaction.TryEquip(
+                itemUI.OriginalGrid,
+                itemUI.Item,
+                itemUI.OriginalPlacement,
+                targetSlot.SlotType);
 
         if (result.IsSuccess)
         {
             SetEquipSlotVisual(targetSlot);
             return true;
         }
-        InventoryController.Instance.PrintLog(EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
+        LogTransactionFailure(
+            result,
+            "[ItemEquipHandler] 드래그 장착 실패 후 아이템 모델을 복구하지 못했습니다.");
 
-        if (!result.RollbackSucceeded)
-        {
-            Debug.LogError(
-                "[ItemEquipHandler] 드래그 장착 실패 후 " +
-                "아이템 모델을 복구하지 못했습니다.");
-
+        if (result.HasRecoveryFailure)
             return true;
-        }
 
-        itemUI.SetGridPosition(
-            itemUI.OriginalGrid,
-            itemUI.OriginalX,
-            itemUI.OriginalY);
+        RestoreOriginalGridVisual();
 
         return true;
     }
 
+    /// <summary>
+    /// 드래그 중 사라진 장비 슬롯 표시를 실제 EquipmentSystem 상태에 맞춰 복구한다.
+    /// 모델이 이미 바뀐 경우에만 정식 EquipmentTransaction 복구 경로를 사용한다.
+    /// 반환값은 모델과 슬롯 표시가 모두 복구되었는지 여부다.
+    /// </summary>
+    public bool TryRestoreOriginalEquipment(EquipSlotUI originalSlot)
+    {
+        if (!EnsureReady() || originalSlot == null || itemUI?.Item == null)
+            return false;
+
+        if (equipmentSystem.TryGetEquippedItem(
+                originalSlot.SlotType,
+                out InventoryItem equippedItem))
+        {
+            if (!ReferenceEquals(equippedItem, itemUI.Item))
+                return false;
+
+            SetEquipSlotVisual(originalSlot);
+            return true;
+        }
+
+        EquipmentTransactionResult result =
+            equipmentTransaction.TryRestoreEquippedItem(
+                itemUI.Item,
+                originalSlot.SlotType);
+
+        if (!result.IsSuccess)
+            return false;
+
+        SetEquipSlotVisual(originalSlot);
+        return true;
+    }
+
+    /// <summary>
+    /// 확정되거나 검증된 장비 모델 상태를 슬롯 UI에 반영한다.
+    /// EquipmentSystem 상태나 고유 효과는 변경하지 않는다.
+    /// </summary>
     public void SetEquipSlotVisual(EquipSlotUI slot)
     {
-        // 기존 EquipDirectly 내용
-
         if (slot == null)
             return;
 
@@ -234,9 +270,6 @@ public class ItemEquipHandler : MonoBehaviour
         if (equippedUI == null)
             return false;
 
-        if (slot.IsEmpty)
-            return false;
-
         if (!slot.CanAcceptType(itemUI.Item.itemData))
             return false;
 
@@ -247,8 +280,8 @@ public class ItemEquipHandler : MonoBehaviour
             InventoryPlacementSnapshot.FromOriginalState(
                 returnGrid,
                 outgoingItem,
-                itemUI.OriginalX,
-                itemUI.OriginalY,
+                itemUI.OriginalPlacement.Rect.X,
+                itemUI.OriginalPlacement.Rect.Y,
                 outgoingItem.isRotated);
 
         // B가 A의 원래 위치에 들어갈 수 있는지 확인
@@ -264,22 +297,14 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
-                EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
+            LogTransactionFailure(
+                result,
+                "[ItemEquipHandler] 장비 교환 실패 후 상태 복구에 실패했습니다.");
 
-            if (result.RollbackSucceeded)
+            if (!result.HasRecoveryFailure)
             {
                 // 트랜잭션이 모델을 복구했으므로 UI만 복구한다.
-                itemUI.SetGridPosition(
-                    itemUI.OriginalGrid,
-                    itemUI.OriginalX,
-                    itemUI.OriginalY);
-            }
-            else
-            {
-                Debug.LogError(
-                    "[ItemEquipHandler] 장비 교환 실패 후 " +
-                    "상태 복구에 실패했습니다.");
+                RestoreOriginalGridVisual();
             }
 
             // 교환 실패까지 처리했으므로 외부에서 다시
@@ -287,15 +312,7 @@ public class ItemEquipHandler : MonoBehaviour
             return true;
         }
 
-        slot.ClearItemUI();
-        equippedUI.ClearCurrentEquipSlot();
-
-        equippedUI.SetGridPosition(
-            result.ResultGrid,
-            result.ResultPlacement.Rect.X,
-            result.ResultPlacement.Rect.Y);
-
-        SetEquipSlotVisual(slot);
+        ApplySuccessfulEquipmentSwapVisuals(slot, equippedUI, result);
 
         return true;
     }
@@ -320,8 +337,8 @@ public class ItemEquipHandler : MonoBehaviour
 
         InventoryPlacementSnapshot incomingOriginal =
             InventoryPlacementSnapshot.Capture(
-            grid,
-            itemUI.Item);
+                grid,
+                itemUI.Item);
 
         InventoryPlacementSnapshot outgoingPlacement =
             InventoryPlacementSnapshot.FromOriginalState(
@@ -343,36 +360,30 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
-                EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
-
-            if (!result.RollbackSucceeded)
-            {
-                Debug.LogError(
-                    "[ItemEquipHandler] 우클릭 장비 교환 실패 후 " +
-                    "상태 복구에 실패했습니다.");
-            }
-
+            LogTransactionFailure(
+                result,
+                "[ItemEquipHandler] 우클릭 장비 교환 실패 후 상태 복구에 실패했습니다.");
             return false;
         }
 
-        slot.ClearItemUI();
-        equippedUI.ClearCurrentEquipSlot();
-
-        equippedUI.SetGridPosition(
-            result.ResultGrid,
-            result.ResultPlacement.Rect.X,
-            result.ResultPlacement.Rect.Y);
-
-        SetEquipSlotVisual(slot);
+        ApplySuccessfulEquipmentSwapVisuals(slot, equippedUI, result);
 
         return true;
     }
 
+    /// <summary>
+    /// 장착 아이템을 상점으로 판매하고, 실패하면 원래 장비 상태를 복구한다.
+    /// true면 판매 성공 여부와 관계없이 이 전용 경로가 요청 처리를 마친 상태다.
+    /// </summary>
     public bool TryHandleSellEquippedItem(ShopController shop)
     {
-        if (shop == null || itemUI == null || !itemUI.OriginalWasEquipped)
+        if (!EnsureReady() ||
+            shop == null ||
+            itemUI == null ||
+            !itemUI.OriginalWasEquipped)
+        {
             return false;
+        }
 
         EquipSlotUI previousSlot = itemUI.CurrentEquipSlot;
 
@@ -387,7 +398,7 @@ public class ItemEquipHandler : MonoBehaviour
         if (!shop.IsTradingToShop(itemUI.OriginalGrid, itemUI))
             return false;
 
-        Vector2Int targetCell = shop.GetShopCell(itemUI);
+        Vector2Int targetCell = itemUI.GetCellFromItemRect(shop.ShopGrid);
 
         EquipmentTransactionResult unequipResult =
             equipmentTransaction.TryUnequipForTransfer(
@@ -396,9 +407,9 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!unequipResult.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
+            inventoryController.PrintLog(
                 EquipMessageMapper.GetMessage(
-                    unequipResult.EquipmentResult.Result));
+                    unequipResult.Result));
 
             // 드래그 시작 시 비워진 장비 슬롯 UI 복구
             SetEquipSlotVisual(previousSlot);
@@ -410,7 +421,7 @@ public class ItemEquipHandler : MonoBehaviour
         previousSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        bool sold = shop.RequestSell(
+        bool sold = shop.TrySell(
                     itemUI,
                     targetCell.x,
                     targetCell.y);
@@ -445,9 +456,14 @@ public class ItemEquipHandler : MonoBehaviour
         SetEquipSlotVisual(previousSlot);
         return true;
     }
+
+    /// <summary>
+    /// 장착 아이템을 인벤토리로 놓는 드래그를 처리한다.
+    /// true면 해제·교환 또는 장비 슬롯 표시 복구까지 이 메서드가 마친 상태다.
+    /// </summary>
     public bool TryHandleDropFromEquipSlotToGrid(int targetX, int targetY)
     {
-        if (!itemUI.IsEquipped)
+        if (!EnsureReady() || !itemUI.IsEquipped)
             return false;
 
         EquipSlotUI previousSlot = itemUI.CurrentEquipSlot;
@@ -469,12 +485,12 @@ public class ItemEquipHandler : MonoBehaviour
             return true;
         }
         InventoryPlacementSnapshot targetPlacement =
-    InventoryPlacementSnapshot.FromOriginalState(
-        grid,
-        itemUI.Item,
-        targetX,
-        targetY,
-        itemUI.Item.isRotated);
+            InventoryPlacementSnapshot.FromOriginalState(
+                grid,
+                itemUI.Item,
+                targetX,
+                targetY,
+                itemUI.Item.isRotated);
 
         EquipmentTransactionResult result =
             equipmentTransaction.TryUnequip(
@@ -484,19 +500,14 @@ public class ItemEquipHandler : MonoBehaviour
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
-                EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
+            LogTransactionFailure(
+                result,
+                "[ItemEquipHandler] 드래그 해제 실패 후 장비 상태 복구에 실패했습니다.");
 
-            if (result.RollbackSucceeded)
+            if (!result.HasRecoveryFailure)
             {
                 // 드래그 시작 때 사라진 슬롯 UI만 복구한다.
                 SetEquipSlotVisual(previousSlot);
-            }
-            else
-            {
-                Debug.LogError(
-                    "[ItemEquipHandler] 드래그 해제 실패 후 " +
-                    "장비 상태 복구에 실패했습니다.");
             }
 
             return true;
@@ -505,25 +516,21 @@ public class ItemEquipHandler : MonoBehaviour
         previousSlot.ClearItemUI();
         itemUI.ClearCurrentEquipSlot();
 
-        itemUI.SetGridPosition(
-            result.ResultGrid,
-            result.ResultPlacement.Rect.X,
-            result.ResultPlacement.Rect.Y);
+        ApplyResultGridPlacement(itemUI, result);
 
         return true;
     }
 
     private bool TrySwapEquippedItemWithGridItem(
-    EquipSlotUI previousSlot,
-    InventoryGrid grid,
-    int targetX,
-    int targetY)
+        EquipSlotUI previousSlot,
+        InventoryGrid grid,
+        int targetX,
+        int targetY)
     {
         if (previousSlot == null || grid == null)
             return false;
 
         InventoryItem equippedItem = itemUI.Item;
-
 
         if (!grid.TryGetItemInArea(
             targetX,
@@ -564,26 +571,24 @@ public class ItemEquipHandler : MonoBehaviour
                 equippedItem.isRotated);
 
         EquipmentTransactionResult result =
-    equipmentTransaction.TrySwap(
-        previousSlot.SlotType,
-        gridItem,
-        grid,
-        incomingOriginal,
-        grid,
-        outgoingPlacement,
-        false);
+            equipmentTransaction.TrySwap(
+                previousSlot.SlotType,
+                gridItem,
+                grid,
+                incomingOriginal,
+                grid,
+                outgoingPlacement,
+                false);
 
         if (!result.IsSuccess)
         {
-            InventoryController.Instance.PrintLog(
-                EquipMessageMapper.GetMessage(result.EquipmentResult.Result));
+            LogTransactionFailure(
+                result,
+                "[ItemEquipHandler] 장비와 인벤토리 아이템 교환 실패 후 " +
+                "상태 복구에 실패했습니다.");
 
-            if (!result.RollbackSucceeded)
+            if (result.HasRecoveryFailure)
             {
-                Debug.LogError(
-                    "[ItemEquipHandler] 장비와 인벤토리 아이템 " +
-                    "교환 실패 후 상태 복구에 실패했습니다.");
-
                 // 외부에서 장비 UI만 잘못 복구하지 않도록 처리 완료로 반환
                 return true;
             }
@@ -592,17 +597,71 @@ public class ItemEquipHandler : MonoBehaviour
             return false;
         }
 
-        previousSlot.ClearItemUI();
-        itemUI.ClearCurrentEquipSlot();
+        gridItemEquipHandler.ApplySuccessfulEquipmentSwapVisuals(
+            previousSlot,
+            itemUI,
+            result);
 
+        return true;
+    }
+
+    private void ApplySuccessfulEquipmentSwapVisuals(
+        EquipSlotUI slot,
+        ItemUI previouslyEquippedUI,
+        EquipmentTransactionResult result)
+    {
+        slot.ClearItemUI();
+        previouslyEquippedUI.ClearCurrentEquipSlot();
+        ApplyResultGridPlacement(previouslyEquippedUI, result);
+        SetEquipSlotVisual(slot);
+    }
+
+    private void RestoreOriginalGridVisual()
+    {
         itemUI.SetGridPosition(
+            itemUI.OriginalGrid,
+            itemUI.OriginalPlacement.Rect.X,
+            itemUI.OriginalPlacement.Rect.Y);
+    }
+
+    private void LogTransactionFailure(
+        EquipmentTransactionResult result,
+        string recoveryFailureMessage)
+    {
+        inventoryController.PrintLog(EquipMessageMapper.GetMessage(result.Result));
+
+        if (result.HasRecoveryFailure)
+            Debug.LogError(recoveryFailureMessage);
+    }
+
+    private static void ApplyResultGridPlacement(
+        ItemUI targetItemUI,
+        EquipmentTransactionResult result)
+    {
+        targetItemUI.SetGridPosition(
             result.ResultGrid,
             result.ResultPlacement.Rect.X,
             result.ResultPlacement.Rect.Y);
+    }
 
-        gridItemEquipHandler.SetEquipSlotVisual(
-            previousSlot);
+    private bool EnsureReady()
+    {
+        if (itemUI != null &&
+            inventoryController != null &&
+            equipmentSystem != null &&
+            equipmentTransaction != null)
+        {
+            return true;
+        }
 
-        return true;
+        if (!bindWarningLogged)
+        {
+            bindWarningLogged = true;
+            Debug.LogError(
+                "[ItemEquipHandler] InventoryController가 Bind되기 전에 장비 동작이 요청되었습니다.",
+                this);
+        }
+
+        return false;
     }
 }

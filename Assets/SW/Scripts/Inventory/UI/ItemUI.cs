@@ -8,7 +8,6 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private ItemEquipHandler equipmentHandler;
     private InventoryGrid currentGrid;
     private InventoryGrid originalGrid;
-    public bool OriginalRotated => originalRotated;
 
     public EquipSlotUI CurrentEquipSlot => currentEquipSlot;
 
@@ -23,12 +22,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     private InventoryItem inventoryItem;
 
     private Vector2 originalPosition;
-    private int originalX;
-    private int originalY;
-    public int OriginalX => originalX;
-    public int OriginalY => originalY;
-    private bool originalRotated;
     private bool originalWasEquipped;
+    private EquipSlotUI originalEquipSlot;
     private InventoryPlacementSnapshot originalPlacement;
     private float cellSize;
     private float cellSpacing;
@@ -43,16 +38,27 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     public InventoryGrid CurrentGrid => currentGrid;
     public InventoryItem Item => inventoryItem;
     public bool OriginalWasEquipped => originalWasEquipped;
+    public EquipSlotUI OriginalEquipSlot => originalEquipSlot;
     public InventoryPlacementSnapshot OriginalPlacement => originalPlacement;
     private Image itemIcon;
     
     private void Awake()
     {
-        rect = GetComponent<RectTransform>();
-        equipmentHandler = GetComponent<ItemEquipHandler>();
+        EnsureUIReferences();
     }
+
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
+        EnsureUIReferences();
+
+        if (rect == null || itemIcon == null || itemTransform == null)
+        {
+            Debug.LogError(
+                "[ItemUI] UI 표시를 위한 RectTransform 또는 아이콘 Image를 찾지 못했습니다.",
+                this);
+            return;
+        }
+
         inventoryItem = item;
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -73,11 +79,24 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         // 위치 계산: step(73)을 곱해줍니다.
         rect.anchoredPosition = new Vector2(item.x * step, -item.y * step);
 
-        itemIcon = transform.GetChild(0).GetComponent<Image>();
-        itemTransform = itemIcon.transform;
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
+    }
+
+    private void EnsureUIReferences()
+    {
+        if (rect == null)
+            rect = GetComponent<RectTransform>();
+
+        if (equipmentHandler == null)
+            equipmentHandler = GetComponent<ItemEquipHandler>();
+
+        if (itemIcon == null && transform.childCount > 0)
+            itemIcon = transform.GetChild(0).GetComponent<Image>();
+
+        if (itemTransform == null && itemIcon != null)
+            itemTransform = itemIcon.transform;
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -85,7 +104,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (eventData.button != PointerEventData.InputButton.Right)
             return;
 
-        if (ShopController.Instance != null && ShopController.Instance.TryRightClick(this))
+        if (ShopController.Instance != null && ShopController.Instance.TryHandleRightClick(this))
             return;
 
         equipmentHandler.TryHandleRightClick();
@@ -117,21 +136,21 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    public void ReturnToOriginalPosition()
-    {
-        TryReturnToOriginalPosition();
-    }
-
     public bool TryReturnToOriginalPosition()
     {
-        if (inventoryItem.isRotated != originalRotated)
+        if (originalGrid == null || !originalPlacement.IsValid)
+            return false;
+
+        if (inventoryItem.isRotated != originalPlacement.IsRotated)
         {
-            inventoryItem.isRotated = originalRotated;
+            inventoryItem.isRotated = originalPlacement.IsRotated;
             UpdateRotationUI();
         }
 
-        if (originalGrid == null ||
-            !originalGrid.TryPlaceItem(inventoryItem, originalX, originalY))
+        if (!originalGrid.TryPlaceItem(
+                inventoryItem,
+                originalPlacement.Rect.X,
+                originalPlacement.Rect.Y))
         {
             return false;
         }
@@ -175,6 +194,39 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
                 startPosition,
                 targetPosition,
                 swapMoveDuration));
+    }
+
+    /// <summary>
+    /// Grid 모델 좌표·회전과 현재 UI 또는 진행 중인 이동 목표가 일치하는지 확인한다.
+    /// 복구 완료 판단이 정상적인 스왑 애니메이션을 중단하지 않도록 사용한다.
+    /// </summary>
+    public bool IsGridPlacementVisualized(InventoryGrid grid)
+    {
+        if (grid == null ||
+            inventoryItem == null ||
+            currentGrid != grid ||
+            currentEquipSlot != null ||
+            transform.parent != grid.ItemsContainer)
+        {
+            return false;
+        }
+
+        Vector2 expectedPosition = new Vector2(
+            inventoryItem.x * grid.Step,
+            -inventoryItem.y * grid.Step);
+
+        bool positionMatches = gridPositionAnimation != null
+            ? (gridPositionAnimationTarget - expectedPosition).sqrMagnitude < 0.01f
+            : (rect.anchoredPosition - expectedPosition).sqrMagnitude < 0.01f;
+
+        Quaternion expectedRotation = inventoryItem.isRotated
+            ? Quaternion.Euler(0f, 0f, -90f)
+            : Quaternion.identity;
+
+        bool rotationMatches =
+            Quaternion.Angle(itemTransform.localRotation, expectedRotation) < 0.1f;
+
+        return positionMatches && rotationMatches;
     }
 
     private void PrepareGridPosition(InventoryGrid grid)
@@ -276,52 +328,50 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     out int foundY,
     out bool targetRotated)
     {
-        targetRotated = inventoryItem.isRotated;
+        foundX = -1;
+        foundY = -1;
+        targetRotated = false;
 
-        if (currentGrid.FindEmptySpace(
-                inventoryItem.CurrentWidth,
-                inventoryItem.CurrentHeight,
-                out foundX,
-                out foundY))
+        if (currentGrid == null || inventoryItem == null)
+            return false;
+
+        // 장비 교체와 동일한 공용 규칙으로 현재 방향을 먼저 찾고,
+        // 자리가 없을 때만 회전 방향을 확인한다.
+        if (!currentGrid.TryFindEmptySpaceForItem(
+                inventoryItem,
+                inventoryItem.isRotated,
+                out InventoryPlacementSnapshot placement))
         {
-            return true;
+            return false;
         }
 
-        int rotatedWidth = inventoryItem.CurrentHeight;
-        int rotatedHeight = inventoryItem.CurrentWidth;
-
-        if (currentGrid.FindEmptySpace(
-                rotatedWidth,
-                rotatedHeight,
-                out foundX,
-                out foundY))
-        {
-            targetRotated = !inventoryItem.isRotated;
-            return true;
-        }
-
-        return false;
+        foundX = placement.Rect.X;
+        foundY = placement.Rect.Y;
+        targetRotated = placement.IsRotated;
+        return true;
     }
 
+    /// <summary>
+    /// 장착 시 데이터와 아이콘을 항상 정방향으로 맞춘다.
+    /// 트랜잭션이 데이터의 회전값을 먼저 초기화했더라도 아이콘 회전은 별도로 남을 수 있으므로
+    /// 기존 회전값과 관계없이 시각 상태까지 매번 초기화한다.
+    /// </summary>
     public void ResetRotationForEquipSlot()
     {
-        if (!inventoryItem.isRotated)
+        if (inventoryItem == null)
             return;
 
         inventoryItem.isRotated = false;
-        itemTransform.localRotation = Quaternion.Euler(0, 0, 0);
-        rect.sizeDelta = new Vector2(
-            inventoryItem.CurrentWidth * cellSize,
-            inventoryItem.CurrentHeight * cellSize
-        );
-    }
 
-    public void RestoreRotationToOriginal()
-    {
-        if (inventoryItem.isRotated != originalRotated)
+        if (itemTransform != null)
+            itemTransform.localRotation = Quaternion.identity;
+
+        if (rect != null)
         {
-            inventoryItem.isRotated = originalRotated;
-            UpdateRotationUI();
+            rect.sizeDelta = new Vector2(
+                inventoryItem.CurrentWidth * cellSize,
+                inventoryItem.CurrentHeight * cellSize
+            );
         }
     }
 
@@ -334,10 +384,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     {
         StopGridPositionAnimation(true);
         originalPosition = rect.anchoredPosition;
-        originalX = inventoryItem.x;
-        originalY = inventoryItem.y;
-        originalRotated = inventoryItem.isRotated;
         originalWasEquipped = IsEquipped;
+        originalEquipSlot = currentEquipSlot;
         originalGrid = currentGrid;
         originalPlacement = InventoryPlacementSnapshot.Capture(
             currentGrid,

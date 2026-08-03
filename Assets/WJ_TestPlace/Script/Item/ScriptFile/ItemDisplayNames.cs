@@ -21,10 +21,10 @@ namespace ItemSystem
         public static readonly Dictionary<ItemRarity, string> GradeColorHex = new Dictionary<ItemRarity, string>
         {
             { ItemRarity.Common, "#FFFFFF" },
-            { ItemRarity.Advanced, "#B7E1CD" },
-            { ItemRarity.Rare, "#9FC5E8" },
+            { ItemRarity.Advanced, "#82D17D" },
+            { ItemRarity.Rare, "#4D9CE4" },
             { ItemRarity.Unique, "#C27BA0" },
-            { ItemRarity.Legendary, "#FFE599" },
+            { ItemRarity.Legendary, "#FFD175" },
         };
 
         public static readonly Dictionary<ElementType, string> ElementNames = new Dictionary<ElementType, string>

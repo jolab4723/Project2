@@ -27,18 +27,19 @@ Artificer의 파편은 각각 생성된 `GameObject + Rigidbody`가 아니다. A
 실제 적 코드가 위 테스트 클래스에 의존하게 만들지 않는다. 실제 시스템에서는 아래 데이터만 파괴 연출 계층으로 넘기면 된다.
 
 ```csharp
-public readonly struct EnemyDeathVfxRequest
+internal readonly struct EnemyDestructionRequest
 {
     public readonly Vector3 Position;
     public readonly Quaternion Rotation;
+    public readonly Vector3 WorldScale;
     public readonly Vector3 ImpactPoint;
     public readonly Vector3 AttackDirection;
-    public readonly float DirectionalForce;
-    public readonly EnemyVisualType VisualType;
+    public readonly float KillingDamage;
+    public readonly float MaxHealth;
 }
 ```
 
-최소 입력은 `피격 위치`, `공격 방향`, `방향 힘`, `사용할 외형 종류`다.
+팀원이 직접 호출할 공개 진입점은 이 내부 구조체가 아니라 `EnemyDestructionLink.TryPlayDeath(피격 위치, 공격 방향, 결정타 데미지, 최대 체력)`다. Link가 적의 위치·회전·스케일까지 묶어 같은 씬의 서비스에 전달한다.
 
 ### 현재 제공되는 파괴 연출 분신
 
@@ -67,7 +68,7 @@ public readonly struct EnemyDeathVfxRequest
 
 ### 런타임 조절 패널의 실제 한글 항목
 
-테스트 씬에는 `Enemy Manual Test.prefab`을 하나만 둔다. 이 프리팹 안에 적 생성·리셋, 파괴 연출 풀과 `ArtificerRuntimeTuningPanel`이 함께 들어 있으므로 별도 패널 프리팹을 추가하지 않는다.
+테스트할 씬에는 `Enemy Manual Test.prefab`을 하나만 둔다. 현재 이 프리팹에는 `ArtificerRuntimeTuningPanel`, `DestructionDamageStrengthScaler`, 실전용 `EnemyDestructionService`가 함께 들어 있다. 적 생성은 기존 씬의 스포너가 담당하고, 사용할 파괴 연출은 서비스의 `파괴 연출 풀 목록`에 등록한다.
 
 패널 상단의 `현재 파괴 연출: 일반 / 보스 / 전체`는 지금 활성화되어 조절 가능한 파괴 연출 수다. 아직 적을 파괴하지 않았다면 0으로 표시될 수 있으며, 적이 죽어 분신이 활성화되면 자동으로 목록을 갱신하고 현재 값을 적용한다.
 
@@ -79,9 +80,12 @@ public readonly struct EnemyDeathVfxRequest
 | `보스 순차 파괴 세부 설정` / `전체 순차 파괴 세부 설정` | `전체 파괴 시간`, `공격 지점부터`, `중심부터`, `바깥부터`, `무작위`, `에셋 기본 순서` | 추천 혼합 모드에서는 `보스 순차 파괴 세부 설정`, 전체 순차 모드에서는 `전체 순차 파괴 세부 설정`으로 표시된다. 적용 대상도 각각 보스만 또는 모든 대상으로 바뀐다. |
 | `2. 파편이 남는 시간` | `최소`, `최대` | 파편별 유지 시간 범위를 정한다. |
 | `3. 파편 크기와 사라짐` | `파편 크기`, `수명이 끝날 때 파편 크기 줄이기`, `크기 감소 시작`, `Advanced Dissolve로 부드럽게 사라지기`, `디졸브 시작`, `디졸브 무늬 크기`, `빛나는 가장자리` | 파편 크기, 축소와 디졸브를 조절한다. |
-| `4. 파편 힘` | `퍼지는 힘 최소`, `퍼지는 힘 최대`, `공격 방향 힘`, `회전 세기` | 폭발 확산과 공격 방향 반응을 조절한다. |
+| `4. 파편 힘` | `퍼지는 힘 최소`, `퍼지는 힘 최대`, `공격 방향 초기 충격`, `회전 세기` | 폭발 확산과 사망 순간의 공격 방향 반응을 조절한다. |
 | `5. 움직임` | `중력`, `튕김`, `공기 저항` | 바닥에 떨어진 뒤 움직임을 조절한다. |
-| `6. 처음에 팍 튀는 속도` | `초반 폭발 속도 커브 사용`, `원래 움직임`, `강한 타격`, `묵직한 보스`, `처음 튀는 속도 배수`, `빠르게 튀는 구간`, `마지막 속도 배수`, `바닥에서 띄우는 비율`, `기존 이동 거리에 가깝게 자동 보정` | 파편이 처음에는 빠르게 튀고 수명 후반에는 느려지는 속도 곡선을 조절한다. 바닥에 붙은 파츠는 전체 속도를 키우지 않고 진행 방향만 위쪽으로 보정한다. |
+| `6. 처음에 팍 튀는 속도` | `초반 폭발 속도 커브 사용`, `원래 움직임`, `강한 타격`, `묵직한 보스`, `처음 튀는 속도 배수`, `빠르게 튀는 구간`, `마지막 속도 배수`, `기존 이동 거리에 가깝게 자동 보정` | 파편이 처음에는 빠르게 튀고 수명 후반에는 느려지는 속도 곡선을 조절한다. 처음 속도 배수는 최대 `10`까지 설정할 수 있다. |
+| `7. 결정타 데미지에 따른 세기` | `결정타 데미지 배수 사용`, `미리보기 적 최대 체력`, `미리보기 결정타 데미지`, `데미지 비율`, `적용 배수` | 죽게 만든 마지막 공격의 데미지가 클수록 `공격 방향 초기 충격`을 강하게 만든다. 미리보기 값은 계산 확인용이고 실제 공격값을 바꾸지 않는다. |
+
+현재 통합 테스트 패널의 기본 운동값은 `공격 방향 초기 충격 3`, `중력 2.5`, `공기 저항 1`이다. 새 `ArtificerRuntimeSettings`와 `Enemy Manual Test` 프리팹이 같은 값을 사용한다.
 
 ### 처음에는 빠르고 마지막에는 느린 파편 설정
 
@@ -90,7 +94,7 @@ public readonly struct EnemyDeathVfxRequest
 빠르게 확인하려면 다음 순서로 사용한다.
 
 1. Play 후 패널의 `6. 처음에 팍 튀는 속도`를 연다.
-2. `강한 타격`을 누른다. 기본값은 처음 강조 `3.5`, 빠른 구간 `0.10`, 마지막 속도 `0.12`, 바닥에서 띄우는 비율 `0.35`, 거리 자동 보정 사용이다.
+2. `강한 타격`을 누른다. 기본값은 처음 강조 `3.5`, 빠른 구간 `0.10`, 마지막 속도 `0.05`, 거리 자동 보정 사용이다.
 3. `현재 값 적용`을 누른 뒤 적을 공격한다. 아직 파괴 연출이 활성화되지 않았다면 `적 전체 다시 생성 + 적용`으로 다시 생성한다.
 4. 더 날카롭게 튀게 하려면 `처음 튀는 속도 배수`를 올리고 `빠르게 튀는 구간`을 줄인다.
 5. 무거운 파편처럼 보이게 하려면 `묵직한 보스`를 누르거나 `빠르게 튀는 구간`을 늘리고 `마지막 속도 배수`를 낮춘다.
@@ -98,7 +102,9 @@ public readonly struct EnemyDeathVfxRequest
 
 `빠르게 튀는 구간`은 초 단위가 아니라 파편 수명의 비율이다. 예를 들어 `0.10`은 각 파편 수명의 처음 10%다. 최소·최대 수명이 서로 달라도 각 파편에 같은 비율로 적용된다.
 
-`바닥에서 띄우는 비율`은 파편의 전체 속력은 유지하면서 초기 방향에 필요한 최소 위쪽 성분을 만든다. 권장 시작값은 `0.35`다. 바닥에 붙어 미끄러지는 느낌이면 `0.40~0.50`, 너무 위로 솟으면 `0.15~0.30`으로 조절하고, `0`이면 방향 보정과 충돌 유예를 사용하지 않는다. 이 값이 0보다 크면 파괴 직후 최대 약 `0.12초` 동안만 Ground 충돌을 유예한 뒤 원래 `Raycast` 충돌로 자동 복구하므로, 파편은 바닥에서 빠져나온 뒤 정상적으로 떨어지고 멈춘다.
+파편을 인위적으로 위쪽으로 꺾던 `바닥에서 띄우는 비율`과 초기 Ground 충돌 유예는 제거했다. 현재 파편은 공격 방향 초기 충격, 퍼지는 힘, 중력, 공기 저항, 튕김과 바닥 Raycast 충돌만으로 움직인다.
+
+파편이 바닥에 닿는 시점은 고정 애니메이션이 아니다. Artificer가 파편별 속도와 중력·공기 저항을 매 프레임 적분하고 바닥 Raycast 충돌을 계산하는 절차적 물리 방식이다. 착지까지 걸리는 시간을 직접 초 단위로 지정하는 옵션은 없으며, `파편이 남는 시간`은 착지 시간이 아니라 파편의 전체 생존 시간이다. 더 빨리 가라앉히려면 중력을 높이거나 초기 힘·속도 배수를 낮추고, 착지 후 오래 움직이면 튕김을 낮추고 공기 저항을 높인다.
 
 거리 자동 보정은 커브를 사용하지 않았을 때의 자유 비행 거리에 가깝도록 전체 속도 배율을 정규화한다. 그래서 `처음 튀는 속도 배수 3.5`는 화면에 보이는 정확한 순간 속도가 반드시 3.5배라는 뜻이 아니라 **커브 모양에서 처음을 얼마나 강하게 강조할지**를 뜻한다. 중력, 바닥 Raycast, 튕김이 개입한 뒤의 최종 정지 위치까지 완전히 같게 만드는 옵션은 아니다.
 
@@ -110,17 +116,41 @@ public readonly struct EnemyDeathVfxRequest
 | `강한 타격` | 일반 적의 즉각적인 폭발감 | 짧고 강한 초반 가속 뒤 빠르게 감속한다. |
 | `묵직한 보스` | 큰 파츠가 무겁게 퍼지는 연출 | 일반 적보다 초반 강조가 낮고 빠른 구간은 길며, 후반은 더 느리다. |
 
-패널 없이 실제 게임에 넣을 때도 구조는 같다. 안전 생성 프리팹에 이미 저장된 기본값을 사용하거나, 개발용 패널에서 값을 확정한 뒤 프리팹의 `ArtificerFragmentBurstProfile` 값으로 옮긴다. 런타임에 코드로 바꾸려면 `ArtificerRuntimeSettings`의 `useBurstSpeedCurve`, `initialSpeedMultiplier`, `burstDuration`, `finalSpeedMultiplier`, `groundClearanceLift`, `preserveBurstTravelDistance`를 채워 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다.
+패널 없이 실제 게임에 넣을 때도 구조는 같다. 개발용 패널에서 값을 확정한 뒤 **파괴 연출 프리팹**의 `ArtificerRuntimeTuningTarget > Active Settings`에 수명, 힘, 중력, Drag, 속도 커브, 크기, 디졸브 값을 저장한다. Play 중 패널 변경은 에셋에 자동 저장되지 않는다. `ArtificerRuntimeTuningTarget`이 속도 커브를 `ArtificerFragmentBurstProfile`에 전달하므로 같은 값을 두 곳에 중복 입력하지 않는다. 실전에서는 `EnemyDestructionService`가 이 프리팹을 풀링하므로 적 본체에는 파편 설정을 복사하지 않는다.
+
+런타임에 코드로 바꿔야 할 때만 `ArtificerRuntimeSettings`를 만들어 `ArtificerRuntimeTuningTarget.ApplySettings(...)`에 전달한다. 평소에는 프리팹 직렬화값 하나를 원본으로 사용한다.
+
+### 결정타 데미지에 따라 초기 충격을 다르게 주기
+
+`Enemy Manual Test` 루트에는 `DestructionDamageStrengthScaler`가 연결되어 있다. 이 컴포넌트의 Inspector에서 `데미지 비율 → 초기 충격 배수` 그래프를 눈으로 보며 직접 편집할 수 있다.
+
+- 커브 가로축 X: `결정타 데미지 ÷ 적 최대 체력`이며 `0~1`로 제한한다.
+- 커브 세로축 Y: `공격 방향 초기 충격`에 곱할 배수다.
+- 기본 키: `0 → 0.7배`, `0.5 → 1.0배`, `1.0 → 1.8배`다.
+- 실제 최종값: `패널의 공격 방향 초기 충격 × 커브 배수`다. 현재 기본 충격 `3`에서는 `0% / 50% / 100%` 결정타가 각각 `2.1 / 3 / 5.4`가 된다.
+- 패널의 `미리보기` 두 값은 현재 배수를 확인하는 시험값일 뿐, 실제 적 체력이나 플레이어 데미지를 변경하지 않는다.
+
+실제 게임과 통합 테스트 모두 테스트용 `EnemyDestructionTarget`에 의존하지 않는다. 실제 Health/Death 코드 또는 전투 어댑터가 **죽음을 확정한 한 번의 데미지**, 적 최대 체력, 피격 지점과 공격 방향을 다음 공개 메서드에 전달한다.
+
+```csharp
+destructionLink.TryPlayDeath(
+    impactPoint,
+    attackDirection,
+    killingDamage,
+    targetMaxHealth);
+```
+
+`killingDamage`에는 누적 피해나 남은 체력이 아니라 **현재 체력을 0 이하로 만든 공격 한 번의 최종 데미지**를 넣는다. `EnemyDestructionService`가 `DestructionDamageStrengthScaler`로 배수를 계산하며, 기능을 끄면 기존과 같은 `1배`로 동작한다. `EnemyDestructionLink`는 생명당 첫 사망 요청만 소비하고, 분신의 이전 런타임 상태는 풀 반환 과정에서 초기화한다.
 
 `ArtificerFragmentBurstProfile`은 Artificer의 `CustomDismantle` 경로를 사용하므로, 사용자 확장에서 속도만 바꾸고 위치 적분을 생략하면 파편이 전혀 움직이지 않는다. 현재 구현은 사용자 `Remove(...)` 안에서 Artificer의 기본 `RemoveElement(...)`를 호출해 원래 중력·드래그·위치·회전·충돌 계산을 그대로 실행한 뒤 속도 곡선만 덧씌운다. 이 호출은 삭제하면 안 된다.
 
 패널 아래 버튼은 다음 순서로 사용한다.
 
 1. `현재 값 적용`: 활성화된 파괴 연출에 지금 값을 적용한다.
-2. `적 전체 다시 생성 + 적용`: Reset의 Enemy 1·2 설정으로 실제 적을 다시 만들고 값을 적용한다.
+2. `적 전체 다시 생성 + 적용`: 같은 오브젝트에 `IArtificerRuntimeResetProvider` 구현이 있을 때만 그 테스트 리셋을 호출한다. 실전 테스트 씬에서는 기존 스포너를 사용한다.
 3. `대상 목록 새로고침`: 씬의 활성 파괴 연출 목록만 다시 읽는다.
 
-일반 적과 보스를 동시에 비교할 때는 Reset의 Enemy 1에 일반 적 본체·동시 파괴 분신, Enemy 2에 보스 본체·순차 파괴 분신을 각각 한 쌍으로 넣고 생성 수를 정한다. 패널에서는 `일반/보스 구분 유지 (추천)`를 선택한다. 일반·보스 판정은 이름이 아니라 안전 생성 시 프리팹에 저장된 기본 파괴 방식으로 구분하므로, `전체 동시 파괴`를 시험한 뒤 추천 모드로 돌아와도 원래 구분을 복원한다.
+일반 적과 보스를 동시에 비교할 때는 두 파괴 연출 프리팹을 `EnemyDestructionService > 파괴 연출 풀 목록`에 각각 등록하고 기존 스포너로 실제 적을 배치한다. 패널에서는 `일반/보스 구분 유지 (추천)`를 선택한다. 일반·보스 판정은 이름이 아니라 안전 생성 시 프리팹에 저장된 기본 파괴 방식으로 구분하므로, `전체 동시 파괴`를 시험한 뒤 추천 모드로 돌아와도 원래 구분을 복원한다.
 
 ## 3. 권장 풀 분리 구조
 
@@ -295,13 +325,13 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 - Artificer 파괴 큐와 진행 상태
 - 원본 Renderer 표시 상태
 - 파편 순서 목록
-- Collider 활성 상태
-- NavMeshAgent 또는 이동 컴포넌트 상태
 - 런타임 힘 방향과 충돌 레이어
 - 코루틴과 지연 반환 예약
 - 위치, 회전, 로컬 스케일
 
 풀에서 꺼낼 때 초기화가 끝나기 전에는 화면에 표시하지 않는다.
+
+파괴 연출 프리팹에는 Collider, NavMeshAgent, Animator를 넣지 않는다. 해당 상태의 중지와 복구는 실제 적 본체 풀의 책임이며, 파괴 분신은 Artificer 렌더와 풀 반환만 담당한다.
 
 ## 10. 다수 적 성능 주의점
 
@@ -327,6 +357,8 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 - [ ] BuildData를 인스턴스별로 안전하게 복제하는가?
 - [ ] 실제 적과 파괴 연출 분신 풀이 분리되어 있는가?
 - [ ] 공격 방향 벡터를 사망 요청에 포함했는가?
+- [ ] 결정타 한 번의 최종 데미지와 대상 최대 체력을 사망 요청에 포함했는가?
+- [ ] `DestructionDamageStrengthScaler`의 커브와 최소·최대 배수 제한을 확정했는가?
 - [ ] 파괴 전에 모든 MeshElement에 Ground 충돌 마스크를 적용했는가?
 - [ ] 바닥 Collider가 Ground 레이어이고 Trigger가 아닌가?
 - [ ] 실제 적의 AI와 Collider를 먼저 중지했는가?
@@ -338,4 +370,4 @@ Artificer는 폭발 파편을 그릴 때 `RemoveElement()`에 일반적인 진�
 
 아래처럼 요청하면 된다.
 
-> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 풀을 분리해 구현해 줘. 테스트용 EnemyManualTestReset, EnemyDestructionTarget에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDeathVfxRequest를 만들어 전달해. 파괴 연출 내부의 CombatDroneArtificerDestruction은 재사용해도 된다. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.
+> `Docs/Artificer_Destruction_Pooling_Guide.md`를 읽고 실제 적 풀과 파괴 연출 풀을 분리해 구현해 줘. 테스트용 EnemyManualTestReset, EnemyDestructionTarget에는 의존하지 말고, 실제 Health/Death 이벤트에서 EnemyDestructionLink.TryPlayDeath(...)를 호출해. 파괴 연출 내부의 CombatDroneArtificerDestruction은 재사용해도 된다. Artificer 시작 전에 모든 MeshElement를 Raycast + Ground 마스크로 설정하고, BuildData는 런타임 복제본만 수정해. 완료 후 다수 적 동시 파괴와 풀 재사용을 검증해.

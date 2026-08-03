@@ -14,7 +14,7 @@ namespace DataSystem
     [Serializable]
     public class ArmorDefinitionRow
     {
-        public int itemId;
+        public string itemId; // Category+Class+Index 8자리 고유키. 앞자리 0이 있어서 int가 아니라 string.
         public string itemName;
         public string category; // 항상 "Armor" - 시트 자체가 Armor 전용이라 참고용
         public string armorType;
@@ -36,7 +36,7 @@ namespace DataSystem
     [Serializable]
     public class WeaponDefinitionRow
     {
-        public int itemId;
+        public string itemId; // Category+Class+Index 8자리 고유키. 앞자리 0이 있어서 int가 아니라 string.
         public string itemName;
         public string characterClass;
         public string weaponType;
@@ -56,7 +56,7 @@ namespace DataSystem
     [Serializable]
     public class PotionDefinitionRow
     {
-        public int itemId;
+        public string itemId; // Category+Class+Index 8자리 고유키. 앞자리 0이 있어서 int가 아니라 string.
         public string itemName;
         public string category; // 항상 "Potion" - 시트 자체가 Potion 전용이라 참고용
         public string rarity;

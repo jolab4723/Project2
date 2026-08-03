@@ -29,9 +29,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
 
-    public virtual void Initialize(WBH_EnemyController controller)
+    private void Awake()
     {
-        this.controller = controller;
         movement = GetComponent<WBH_EnemyMovement>();
         combat = GetComponent<WBH_EnemyCombat>();
         status = GetComponent<WBH_EnemyStatus>();
@@ -40,8 +39,16 @@ public class WBH_EnemyPattern : MonoBehaviour
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
     }
 
+    public virtual void Initialize(WBH_EnemyController controller)
+    {
+        this.controller = controller;
+    }
+
     protected virtual void Update()
     {
+        if (status == null || controller == null)
+            return;
+
         if(status.IsDead)
         {
             Die();
@@ -49,6 +56,9 @@ public class WBH_EnemyPattern : MonoBehaviour
         }
 
         if (target == null)
+            return;
+
+        if (!movement.CanControl)
             return;
 
         distance = Vector3.Distance(transform.position, target.position);

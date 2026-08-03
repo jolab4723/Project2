@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+
 public class ShopController : MonoBehaviour
 {
     public static ShopController Instance { get; private set; }
@@ -31,11 +32,6 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        //if (!TryFindRandomShopSpace(
-        //        item.CurrentWidth,
-        //        item.CurrentHeight,
-        //        out int x,
-        //        out int y))
         if (!shopGrid.FindEmptySpace(
             item.CurrentWidth,
             item.CurrentHeight,
@@ -69,12 +65,15 @@ public class ShopController : MonoBehaviour
         ItemUI itemUI = itemUISpawner.SpawnItemUIAndGet(item, shopGrid);
 
         if (itemUI != null)
+        {
+            RefreshItemBadge(itemUI);
             return true;
+        }
 
         // UI 생성에 실패했으므로 재고와 그리드를 모두 이전 상태로 되돌린다.
         bool stockRemoved = stockService.RemoveStock(item.itemData.instanceId);
 
-        bool gridRemoved =shopGrid.TryRemoveItem(item);
+        bool gridRemoved = shopGrid.TryRemoveItem(item);
 
         if (!stockRemoved || !gridRemoved)
         {
@@ -150,18 +149,25 @@ public class ShopController : MonoBehaviour
         return true;
     }
 
-    public bool TradeItem(ItemUI itemUI, InventoryGrid fromGrid)
+    /// <summary>
+    /// 상점과 플레이어 인벤토리 사이의 드롭을 처리한다.
+    /// 반환값은 거래 성공 여부가 아니라 상점이 해당 드롭을 처리했는지 여부다.
+    /// </summary>
+    public bool TryHandleTradeDrop(ItemUI itemUI, InventoryGrid fromGrid)
     {
         if (!isActiveAndEnabled)
             return false;
+
         if (itemUI == null || fromGrid == null)
             return false;
+
         if (fromGrid == playerGrid)
         {
             if (!IsTradingToShop(fromGrid, itemUI))
                 return false;
+
             Vector2Int cell = itemUI.GetCellFromItemRect(shopGrid);
-            bool success = RequestSell(itemUI, cell.x, cell.y);
+            bool success = TrySell(itemUI, cell.x, cell.y);
 
             if (!success)
                 RestoreItemAfterFailedTrade(itemUI);
@@ -173,8 +179,9 @@ public class ShopController : MonoBehaviour
         {
             if (!IsTradingToPlayer(fromGrid, itemUI))
                 return false;
+
             Vector2Int cell = itemUI.GetCellFromItemRect(playerGrid);
-            bool success = RequestBuy(itemUI, cell.x, cell.y);
+            bool success = TryBuy(itemUI, cell.x, cell.y);
 
             if (!success)
                 RestoreItemAfterFailedTrade(itemUI);
@@ -183,25 +190,12 @@ public class ShopController : MonoBehaviour
 
         return false;
     }
-    public Vector2Int GetShopCell(ItemUI itemUI)
-    {
-        return itemUI.GetCellFromItemRect(shopGrid);
-    }
 
-    public Vector2Int GetPlayerCell(ItemUI itemUI)
-    {
-        return itemUI.GetCellFromItemRect(playerGrid);
-
-    }
- 
-    public bool RequestBuy(ItemUI itemUI, int targetX, int targetY)
-    {
-        // 팝업 추후 추가 예정
-
-        return ConfirmBuy(itemUI, targetX, targetY);
-    }
-
-    public bool ConfirmBuy(ItemUI itemUI, int targetX, int targetY)
+    /// <summary>
+    /// 상점 아이템을 지정한 플레이어 인벤토리 위치에 구매한다.
+    /// 반환값은 구매 트랜잭션의 성공 여부다.
+    /// </summary>
+    public bool TryBuy(ItemUI itemUI, int targetX, int targetY)
     {
         InventoryItem item = itemUI?.Item;
 
@@ -215,6 +209,8 @@ public class ShopController : MonoBehaviour
         if (result == TradeResult.Success)
         {
             itemUI.SetGridPosition(playerGrid, targetX, targetY);
+            RefreshItemBadge(itemUI);
+            inventoryController?.NotifyItemOwnershipGained(item);
         }
 
         ShowTradeMessage(result, item, true);
@@ -222,14 +218,11 @@ public class ShopController : MonoBehaviour
         return result == TradeResult.Success;
     }
 
-    public void CancelBuy(ItemUI itemUI)
-    {
-
-    }
-    public bool RequestSell(
-                ItemUI itemUI,
-                int requestedX,
-                int requestedY)
+    /// <summary>
+    /// 플레이어 아이템을 상점에 판매하고, 요청 위치가 차 있으면 빈 공간을 찾는다.
+    /// 반환값은 판매 트랜잭션의 성공 여부다.
+    /// </summary>
+    public bool TrySell(ItemUI itemUI, int requestedX, int requestedY)
     {
         InventoryItem item = itemUI?.Item;
 
@@ -258,38 +251,30 @@ public class ShopController : MonoBehaviour
             return false;
         }
 
-        return ConfirmSell(
-            itemUI,
-            resolvedX,
-            resolvedY);
-    }
-
-    public bool ConfirmSell(ItemUI itemUI, int targetX, int targetY)
-    {
-        InventoryItem item = itemUI?.Item;
-
         TradeResult result = tradeService.TrySell(
             item,
             playerGrid,
             shopGrid,
-            targetX,
-            targetY);
+            resolvedX,
+            resolvedY);
 
         if (result == TradeResult.Success)
         {
-            itemUI.SetGridPosition(shopGrid, targetX, targetY);
+            itemUI.SetGridPosition(shopGrid, resolvedX, resolvedY);
+            RefreshItemBadge(itemUI);
+            inventoryController?.NotifyItemOwnershipLost(item);
         }
 
         ShowTradeMessage(result, item, false);
 
         return result == TradeResult.Success;
     }
-    public void CancelSell(ItemUI itemUI)
-    {
 
-    }
-
-    public bool TryRightClick(ItemUI itemUI)
+    /// <summary>
+    /// 상점 아이템의 우클릭 구매를 처리한다.
+    /// 반환값은 구매 성공 여부가 아니라 상점이 입력을 처리했는지 여부다.
+    /// </summary>
+    public bool TryHandleRightClick(ItemUI itemUI)
     {
         if (!isActiveAndEnabled)
             return false;
@@ -297,10 +282,10 @@ public class ShopController : MonoBehaviour
             return false;
 
         if (!playerGrid.FindEmptySpace(
-        itemUI.Item.CurrentWidth,
-        itemUI.Item.CurrentHeight,
-        out int x,
-        out int y))
+                itemUI.Item.CurrentWidth,
+                itemUI.Item.CurrentHeight,
+                out int x,
+                out int y))
         {
             ShowTradeMessage(
                 TradeResult.NoSpace,
@@ -310,31 +295,24 @@ public class ShopController : MonoBehaviour
             return true;
         }
 
-        RequestBuy(itemUI, x, y);
-        return true;   
+        TryBuy(itemUI, x, y);
+        return true;
     }
 
-    public bool IsTradingToShop(InventoryGrid fromGrid, ItemUI itemUI)
-    {
-        if (!isActiveAndEnabled)
-            return false;
-        if (fromGrid != playerGrid)
-            return false;
+    public bool IsTradingToShop(InventoryGrid fromGrid, ItemUI itemUI) =>
+        IsTradingBetween(fromGrid, playerGrid, itemUI, shopGrid);
 
+    public bool IsTradingToPlayer(InventoryGrid fromGrid, ItemUI itemUI) =>
+        IsTradingBetween(fromGrid, shopGrid, itemUI, playerGrid);
 
-        return IsItemOverGrid(itemUI, shopGrid);
-    }
-
-    public bool IsTradingToPlayer(InventoryGrid fromGrid, ItemUI itemUI)
-    {
-        if (!isActiveAndEnabled)
-            return false;
-        if (fromGrid != shopGrid)
-            return false;
-
-        return IsItemOverGrid(itemUI, playerGrid);
-
-    }
+    private bool IsTradingBetween(
+        InventoryGrid fromGrid,
+        InventoryGrid expectedSource,
+        ItemUI itemUI,
+        InventoryGrid targetGrid)
+        => isActiveAndEnabled &&
+           fromGrid == expectedSource &&
+           IsItemOverGrid(itemUI, targetGrid);
 
     private bool IsItemOverGrid(ItemUI itemUI, InventoryGrid grid)
     {
@@ -348,9 +326,9 @@ public class ShopController : MonoBehaviour
     }
 
     private void ShowTradeMessage(
-    TradeResult result,
-    InventoryItem item,
-    bool isBuying)
+        TradeResult result,
+        InventoryItem item,
+        bool isBuying)
     {
         if (logText == null)
             return;
@@ -367,11 +345,11 @@ public class ShopController : MonoBehaviour
     }
 
     public bool TryResolveSellPosition(
-    InventoryItem item,
-    int requestedX,
-    int requestedY,
-    out int resolvedX,
-    out int resolvedY)
+        InventoryItem item,
+        int requestedX,
+        int requestedY,
+        out int resolvedX,
+        out int resolvedY)
     {
         resolvedX = requestedX;
         resolvedY = requestedY;
@@ -396,36 +374,26 @@ public class ShopController : MonoBehaviour
             out resolvedX,
             out resolvedY);
     }
-    private bool TryFindRandomShopSpace(
-    int width,
-    int height,
-    out int foundX,
-    out int foundY)
+    private void RefreshItemBadge(ItemUI itemUI)
     {
-        var candidates = new List<Vector2Int>();
+        if (itemUI == null)
+            return;
 
-        for (int y = 0; y <= shopGrid.GridHeight - height; y++)
+        ShopItemBadgeView badgeView = itemUI.GetComponent<ShopItemBadgeView>();
+
+        if (badgeView == null)
+            return;
+
+        string instanceId = itemUI.Item?.itemData?.instanceId;
+
+        if (itemUI.CurrentGrid != shopGrid || stockService == null ||
+            !stockService.TryGetEntry(instanceId, out ShopStockEntry entry))
         {
-            for (int x = 0; x <= shopGrid.GridWidth - width; x++)
-            {
-                if (shopGrid.CanPlaceItem(x, y, width, height))
-                    candidates.Add(new Vector2Int(x, y));
-            }
+            badgeView.Hide();
+            return;
         }
 
-        if (candidates.Count == 0)
-        {
-            foundX = -1;
-            foundY = -1;
-            return false;
-        }
-
-        Vector2Int selected =
-            candidates[Random.Range(0, candidates.Count)];
-
-        foundX = selected.x;
-        foundY = selected.y;
-        return true;
+        badgeView.Apply(entry.Source);
     }
     private void RestoreItemAfterFailedTrade(ItemUI itemUI)
     {

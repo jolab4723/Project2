@@ -1,22 +1,18 @@
 using ItemSystem;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 
 public class WorldItemTooltipView : MonoBehaviour
 {
     [SerializeField] private GameObject tooltipPanel;
 
-    [SerializeField] private TextMeshProUGUI itemNameText;
-    [SerializeField] private TextMeshProUGUI itemCategoryText;
-    [SerializeField] private TextMeshProUGUI itemRarityText;
+    [Tooltip("비워두면 definition.itemName을 그대로 사용")]
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
 
-    [SerializeField] private Image itemImage;
-    [SerializeField] private Image borderImage;
+    [SerializeField] private TextMeshProUGUI itemNameText;
 
     [SerializeField] private RectTransform tooltipRect;
-    [SerializeField] private Canvas canvas;
     [SerializeField] private Camera worldCamera;
 
     [SerializeField]
@@ -39,33 +35,20 @@ public class WorldItemTooltipView : MonoBehaviour
         currentTarget = target;
 
         ItemDefinitionSO definition = item.definition;
-
-        itemImage.sprite = definition.icon;
-        itemImage.enabled = definition.icon != null;
-        itemImage.preserveAspect = true;
-
-        itemNameText.text = item.upgradeLevel > 0
-            ? $"+{item.upgradeLevel} {definition.itemName}"
-            : definition.itemName;
-
-        itemCategoryText.text =
-            ItemDisplayNames.CategoryNames.TryGetValue(
-                definition.category,
-                out string categoryName)
-                ? categoryName
-                : definition.category.ToString();
-
-        itemRarityText.text =
-            ItemDisplayNames.GradeNames.TryGetValue(
-                definition.rarity,
-                out string rarityName)
-                ? rarityName
-                : definition.rarity.ToString();
-
+        itemNameText.text = GetItemName(definition);
         ApplyRarityColor(definition.rarity);
 
         tooltipPanel.SetActive(true);
         UpdatePosition();
+    }
+
+    /// <summary>라벨 DB에 itemId가 없는 아이템(예: 구 스킴의 TEST 아이템)은 definition.itemName으로 그대로 폴백한다.</summary>
+    private string GetItemName(ItemDefinitionSO definition)
+    {
+        if (itemLabels != null && itemLabels.TryGetName(definition.itemId, out string name))
+            return name;
+
+        return definition.itemName;
     }
 
     private void ApplyRarityColor(ItemRarity rarity)
@@ -80,11 +63,9 @@ public class WorldItemTooltipView : MonoBehaviour
         if (!ColorUtility.TryParseHtmlString(colorHex, out Color color))
             color = Color.white;
 
-        if (itemRarityText != null)
-            itemRarityText.color = color;
+        if (itemNameText != null)
+            itemNameText.color = color;
 
-        if (borderImage != null)
-            borderImage.color = color;
     }
 
     private void LateUpdate()
@@ -110,7 +91,15 @@ public class WorldItemTooltipView : MonoBehaviour
             currentTarget.position + worldOffset);
 
         if (screenPosition.z <= 0f)
+        {
+            if (tooltipPanel != null)
+                tooltipPanel.SetActive(false);
+
             return;
+        }
+
+        if (tooltipPanel != null && !tooltipPanel.activeSelf)
+            tooltipPanel.SetActive(true);
 
         tooltipRect.position = screenPosition;
     }
@@ -118,12 +107,6 @@ public class WorldItemTooltipView : MonoBehaviour
     public void Hide()
     {
         currentTarget = null;
-
-        if (itemImage != null)
-        {
-            itemImage.sprite = null;
-            itemImage.enabled = false;
-        }
 
         if (tooltipPanel != null)
             tooltipPanel.SetActive(false);

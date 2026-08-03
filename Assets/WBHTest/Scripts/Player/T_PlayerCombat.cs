@@ -15,9 +15,6 @@ public class T_PlayerCombat : MonoBehaviour
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    private float fighterAttackRange = 2f;
-    private float gunnerAttackRange = 10f;
-    private float gunnerBulletSpeed = 10f;
     private float basicAttackMult = 1f;
 
 
@@ -51,8 +48,6 @@ public class T_PlayerCombat : MonoBehaviour
         if (status.IsDead)
             return;
 
-        UpdateStats();
-
         TestMultiple();
     }
 
@@ -66,14 +61,14 @@ public class T_PlayerCombat : MonoBehaviour
 
     private void FighterAttack()
     {
-        SectorAttack(fighterAttackRange, 230f);
+        SectorAttack(status.FighterAttackRange, 230f);
     }
     private void GunnerAttack()
     {
         Vector3 direction = transform.forward;
 
-        // 투사체용 데미지 요청 생성.
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+        // 투사체용 데미지 요청 생성. ElementType은 현재 장착 무기에 인챈트된 속성을 그대로 사용한다.
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Burn1); // Burn1은 아직 테스트값
 
         switch(currentWeapon)
         {
@@ -123,20 +118,20 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult));
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // Slow1은 아직 테스트값
         }
     }
 
     // 투사체 외
-    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
     {
-        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult);
+        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult, statusEffect);
     }
 
     // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
-    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult)
+    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
     {
-        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
+        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect);
     }
 
     public void CancelChase()
@@ -183,41 +178,28 @@ public class T_PlayerCombat : MonoBehaviour
         }
     }
 
-    private void UpdateStats() // !@ 아이템으로 받아올 것.
-    {
-        switch (currentWeapon)
-        {
-            case GunnerWeaponType.Rifle:
-                gunnerAttackRange = 10f;
-                break;
-            case GunnerWeaponType.Shotgun:
-                gunnerAttackRange = 4f;
-                break;
-            case GunnerWeaponType.GrenadeLauncher:
-                gunnerAttackRange = 7f;
-                break;
-        }
-    }
+
+    // ------ 테스트용 메서드
 
     // -- 작동 테스트용 메서드
     public void TestMultiple()
     {
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
+        //WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
 
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            Vector3 targetPos = transform.position + transform.forward * 8f;
+        //if (Input.GetKeyDown(KeyCode.Alpha1))
+        //{
+        //    Vector3 targetPos = transform.position + transform.forward * 8f;
 
-            projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, request, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
-        }
+        //    projectileSpawner.FireMultipleProjectile(ProjectileType.Normal, firePoint.position, transform.forward, request, gunnerBulletSpeed, gunnerAttackRange, enemyLayer, 5, 30);
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //if (Input.GetKeyDown(KeyCode.Alpha2))
+        //{
+        //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out RaycastHit hit))
-                projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, request, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
-        }
+        //    if (Physics.Raycast(ray, out RaycastHit hit))
+        //        projectileSpawner.FireMultipleGrenade(ProjectileType.Grenade, firePoint.position, hit.point, 5, 30f, request, gunnerBulletSpeed, gunnerAttackRange, explosionRadius, enemyLayer);
+        //}
     }
 
 #if UNITY_EDITOR
@@ -225,7 +207,7 @@ public class T_PlayerCombat : MonoBehaviour
     {
         Gizmos.color = Color.red;
 
-        Gizmos.DrawWireSphere(transform.position, fighterAttackRange);
+        //Gizmos.DrawWireSphere(transform.position, fighterAttackRange);
     }
 #endif
 }

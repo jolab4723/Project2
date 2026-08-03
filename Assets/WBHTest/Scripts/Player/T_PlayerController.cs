@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,11 +13,14 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public bool canDodge => currentDodgeCooltime <= 0f;
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
+    public bool IsControlEnabled { get; private set; } = true;
+    public bool IsInvincible { get; private set; } = false; // 무적여부
 
     private Camera mainCamera;
     private Animator animator;
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
+    private WBH_PlayerStatusEffectController statusEffectController;
     private Vector3 dodgeDir;
 
     public WBH_ICombatStatus Status => status;
@@ -28,6 +32,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         indicator = GetComponentInChildren<WBH_PlayerIndicator>();
         status = GetComponent<WBH_PlayerStatus>();
+        statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
 
         agent.autoBraking = false;
         agent.updateRotation = false;
@@ -122,9 +127,10 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     }
 
     // 회피 코루틴
-    private System.Collections.IEnumerator Dodge(Vector3 dir)
+    private IEnumerator Dodge(Vector3 dir)
     {
         agent.enabled = false;
+        IsInvincible = true;
 
         Vector3 startPos = transform.position;
         Vector3 endPos = startPos + dir * status.DodgeDistance;
@@ -145,6 +151,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         }
 
         agent.enabled = true;
+        IsInvincible = false;
 
         stateMachine.ChangeState(PlayerState.Idle);
     }
@@ -152,6 +159,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public void MoveCommand(Vector3 destination)
     {
         if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+            return;
+
+        if (!IsControlEnabled)
             return;
 
         stateMachine.ChangeState(PlayerState.Move);
@@ -171,7 +181,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void TryDodge()
     {
-        if (!canDodge)
+        if (!IsControlEnabled || !canDodge)
             return;
 
         dodgeDir = GetMouseDirection();
@@ -215,11 +225,16 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void SetMoveSpeed(float moveSpeed)
     {
+        Debug.Log($"Agent Speed Before : {agent.speed}");
         agent.speed = moveSpeed;
+        Debug.Log($"Agent Speed After : {agent.speed}");
     }
 
     public void TakeDamage(WBH_DamageResult result)
     {
+        if (IsInvincible || stateMachine.Is(PlayerState.Dead))
+            return;
+
         status.TakeDamage(result);
 
         // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
@@ -227,6 +242,32 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         // 사망 처리 OnDead 이벤트 구독
 
     }
+
+    // 현재 조작가능한 상태인지 판단
+    public void SetControlEnable(bool enabled)
+    {
+        IsControlEnabled = enabled;
+
+        if (!enabled)
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+
+            agent.ResetPath();
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+        else
+            agent.isStopped = false;
+    }
+
+    public void AddStatusEffect (WBH_StatusEffectData data)
+    {
+        if (IsInvincible || stateMachine.Is(PlayerState.Dead))
+            return;
+
+        statusEffectController.AddStatusEffect(data);
+    }
+
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
     //private void PlayerViewDir()

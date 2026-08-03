@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,6 +11,8 @@ public class WBH_EnemyMovement : MonoBehaviour
     private WBH_EnemyStatus status;
     private NavMeshAgent agent;
     private Vector3 lastDestination;
+    private bool canControl = true;
+    public bool CanControl => canControl;
 
     private void Awake()
     {
@@ -20,6 +23,7 @@ public class WBH_EnemyMovement : MonoBehaviour
     // NavMeshAgent 초기화
     public void Initialize(WBH_EnemyInfo info)
     {
+        agent ??= GetComponent<NavMeshAgent>();
         agent.speed = info.moveSpeed;
     }
 
@@ -37,7 +41,9 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 정지
     public void Stop()
     {
+        agent.ResetPath();
         agent.isStopped = true;
+        agent.velocity = Vector3.zero;
     }
 
     // 속도 변경
@@ -50,5 +56,15 @@ public class WBH_EnemyMovement : MonoBehaviour
     public void Warp(Vector3 position)
     {
         agent.Warp(position);
+    }
+
+    public void SetControlEnable(bool enable)
+    {
+        canControl = enable;
+
+        if (!enable)
+            Stop();
+        else
+            agent.isStopped = false;
     }
 }

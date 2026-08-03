@@ -10,11 +10,11 @@ namespace ItemSystem
         /// <summary>씬에 있는 ItemSystemController. ItemManager가 이걸 통해 드랍을 위임한다.</summary>
         public static ItemSystemController Instance { get; private set; }
 
-        [Header("드랍 오브젝트")]
-        [Tooltip("ItemDataStorage 컴포넌트가 붙어있는 프리팹")]
-        public GameObject itemPickupPrefab;
+        [Header("월드 드랍")]
+        [Tooltip("빈자리 탐색과 월드 픽업 생성을 담당하는 서비스")]
+        [SerializeField] private WorldItemDropService worldItemDropService;
 
-        private ItemGenerator itemGenerator;
+        private ItemDataStorage lastSpawnedPickup;
 
         [Header("드랍 확률 테이블")]
         public ItemDropTableSO itemDropTable;
@@ -31,9 +31,6 @@ namespace ItemSystem
         private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
         [Header("스폰 위치")]
-        [Tooltip("드랍 위치를 중심으로 이 반경 안의 랜덤한 지점에 스폰한다. 0이면 정확히 그 위치에 스폰.")]
-        [SerializeField] private float spawnRadius = 1f;
-
         [Tooltip("아이템이 바닥에 절반쯤 묻히지 않도록 스폰 위치를 y축으로 띄우는 높이")]
         [SerializeField] private float spawnHeightOffset = 0.5f;
 
@@ -51,7 +48,6 @@ namespace ItemSystem
             }
 
             Instance = this;
-            itemGenerator = new ItemGenerator(itemPickupPrefab);
         }
 
         private void OnDestroy()
@@ -72,60 +68,132 @@ namespace ItemSystem
 
         /// <summary>
         /// grade/position을 그때그때 받아서 드랍한다 (적 사망 처리 등 외부 호출용).
-        /// itemDropTable에서 grade 기준으로 랜덤으로 하나 뽑아, itemGenerator로 생성해서 월드에 드랍한다.
+        /// itemDropTable에서 grade 기준으로 랜덤으로 하나 뽑아 WorldItemDropService로 드랍한다.
         /// </summary>
         public void DropGeneratedItem(EnemyGrade grade, Vector3 position)
         {
-            if (itemGenerator == null)
+            TryDropGeneratedItem(grade, position, out _, out _, out _);
+        }
+
+        /// <summary>
+        /// 적 등급에 따라 아이템을 추첨하고 월드에 생성한다.
+        /// 추첨 결과와 월드 배치 결과를 분리해서 반환하므로 호출자가 실패 원인을 판단할 수 있다.
+        /// </summary>
+        public bool TryDropGeneratedItem(
+            EnemyGrade grade,
+            Vector3 position,
+            out ItemDropRollResultData rollResult,
+            out WorldItemDropResult? worldDropResult,
+            out ItemDataStorage spawnedPickup)
+        {
+            worldDropResult = null;
+            spawnedPickup = null;
+
+            ItemDatabaseSO itemDatabase =
+                Core.ItemManager.Instance != null
+                    ? Core.ItemManager.Instance.ItemDatabase
+                    : null;
+
+            rollResult = dropRollService.Roll(
+                itemDropTable,
+                itemDatabase,
+                grade);
+
+            if (!rollResult.HasDrop)
             {
-                Debug.LogWarning("[ItemSystemController] itemGenerator가 연결되지 않았습니다.");
-                return;
+                if (rollResult.Result != ItemDropRollResult.NoDrop)
+                {
+                    Debug.LogWarning(
+                        $"[ItemSystemController] {ItemDropMessageMapper.GetMessage(rollResult)}");
+                }
+
+                return false;
             }
 
-            // 아이템 랜덤 선별
-            ItemDefinitionSO def = GetRandomItemSO(grade);
-            if (def == null)
-                return;
-
-            // 강화 수치를 스폰 "전"에 반영: 데이터 생성 -> 값 세팅 -> 드랍(스폰) 순서.
-            ItemInstance instance = ItemDataCreator.CreateItemData(def);
-            instance.upgradeLevel = testUpgradeLevel;
-
-            itemGenerator.DropGeneratedItem(instance, GetRandomizedPosition(position), Quaternion.identity);
+            return TrySpawnWorldItem(
+                rollResult.ItemDefinition,
+                position,
+                out worldDropResult,
+                out spawnedPickup);
         }
 
         /// <summary>이미 정해진 특정 아이템(SO)을 그대로 드랍한다 (랜덤 롤 없음).</summary>
         public void DropGeneratedItem(ItemDefinitionSO SO, Vector3 position)
         {
-            if (itemGenerator == null)
+            TryDropGeneratedItem(SO, position, out _, out _);
+        }
+
+        /// <summary>
+        /// 특정 아이템을 추첨 없이 월드에 생성한다.
+        /// </summary>
+        public bool TryDropGeneratedItem(
+            ItemDefinitionSO itemDefinition,
+            Vector3 position,
+            out WorldItemDropResult? worldDropResult,
+            out ItemDataStorage spawnedPickup)
+        {
+            return TrySpawnWorldItem(
+                itemDefinition,
+                position,
+                out worldDropResult,
+                out spawnedPickup);
+        }
+
+        private bool TrySpawnWorldItem(
+            ItemDefinitionSO itemDefinition,
+            Vector3 position,
+            out WorldItemDropResult? worldDropResult,
+            out ItemDataStorage spawnedPickup)
+        {
+            worldDropResult = null;
+            spawnedPickup = null;
+
+            if (itemDefinition == null)
             {
-                Debug.LogWarning("[ItemSystemController] itemGenerator가 연결되지 않았습니다.");
-                return;
+                worldDropResult = WorldItemDropResult.InvalidItem;
+                return false;
             }
 
-            if (SO == null) return;
+            if (worldItemDropService == null)
+            {
+                Debug.LogWarning("[ItemSystemController] WorldItemDropService가 연결되지 않았습니다.");
+                return false;
+            }
 
-            ItemInstance instance = ItemDataCreator.CreateItemData(SO);
+            ItemInstance instance =
+                ItemDataCreator.CreateItemData(itemDefinition);
+
+            if (instance == null)
+            {
+                worldDropResult = WorldItemDropResult.InvalidItem;
+                Debug.LogWarning("[ItemSystemController] ItemInstance 생성에 실패했습니다.");
+                return false;
+            }
+
             instance.upgradeLevel = testUpgradeLevel;
 
-            itemGenerator.DropGeneratedItem(instance, GetRandomizedPosition(position), Quaternion.identity);
+            WorldItemDropResult result =
+                worldItemDropService.TryDropAt(
+                    instance,
+                    position + Vector3.up * spawnHeightOffset,
+                    Quaternion.identity,
+                    out spawnedPickup);
+
+            worldDropResult = result;
+
+            if (result != WorldItemDropResult.Success)
+            {
+                Debug.LogWarning($"[ItemSystemController] 월드 아이템 생성 실패: {result}");
+                return false;
+            }
+
+            lastSpawnedPickup = spawnedPickup;
+            return true;
         }
-
-        /// <summary>basePosition을 중심으로 spawnRadius 반경 안의 랜덤한 지점을, spawnHeightOffset만큼 띄워서 반환한다 (수평면 기준).</summary>
-        private Vector3 GetRandomizedPosition(Vector3 basePosition)
-        {
-            basePosition += Vector3.up * spawnHeightOffset;
-
-            if (spawnRadius <= 0f)
-                return basePosition;
-
-            Vector2 offset = Random.insideUnitCircle * spawnRadius;
-            return basePosition + new Vector3(offset.x, 0f, offset.y);
-        }
-
 
         /// <summary>가장 최근에 스폰된 픽업 오브젝트. 테스트 버튼 등에서 획득 처리 후 파괴할 때 사용.</summary>
-        public GameObject LastSpawnedPickup => itemGenerator?.LastSpawnedPickup;
+        public GameObject LastSpawnedPickup =>
+            lastSpawnedPickup != null ? lastSpawnedPickup.gameObject : null;
 
         /// <summary>고정 필드(enemyGrade) 기준으로 랜덤 아이템을 뽑는다.</summary>
         public ItemDefinitionSO GetRandomItemSO() => GetRandomItemSO(enemyGrade);
@@ -137,31 +205,20 @@ namespace ItemSystem
         public ItemDefinitionSO GetRandomItemSO(EnemyGrade grade)
         {
             var itemDatabase = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
-            if (itemDatabase == null)
-            {
-                Debug.LogWarning("[ItemSystemController] ItemManager.ItemDatabase를 찾을 수 없습니다.");
-                return null;
-            }
-
-            if (itemDropTable == null)
-            {
-                Debug.LogWarning("[ItemSystemController] itemDropTable이 연결되지 않았습니다.");
-                return null;
-            }
-
             ItemDropRollResultData result = dropRollService.Roll(itemDropTable, itemDatabase, grade);
-
-            if (result.Result == ItemDropRollResult.NoDrop)
-                return null; // 확률상 정상적으로 드랍 안 됨
 
             if (!result.HasDrop)
             {
-                Debug.LogWarning($"[ItemSystemController] 아이템 롤 실패: {result.Result}");
+                if (result.Result != ItemDropRollResult.NoDrop)
+                {
+                    Debug.LogWarning(
+                        $"[ItemSystemController] {ItemDropMessageMapper.GetMessage(result)}");
+                }
+
                 return null;
             }
 
             return result.ItemDefinition;
         }
-
     }
 }

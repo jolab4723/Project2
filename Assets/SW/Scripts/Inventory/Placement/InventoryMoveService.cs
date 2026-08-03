@@ -1,46 +1,54 @@
 ﻿public static class InventoryMoveService
 {
-    public static InventoryMoveResultData TrySwapOnGrid(
-        InventoryGrid grid,
-        InventoryItem movingItem,
-        int targetX,
-        int targetY,
-        int originalX,
-        int originalY)
-    {
-        return InventorySwapService.TrySwapOnGrid(
-            grid,
-            movingItem,
-            targetX,
-            targetY,
-            originalX,
-            originalY);
-    }
-
-    public static InventoryMoveResultData TryMoveOnGrid(
+    /// <summary>
+    /// 드래그가 중단되었을 때 교환 없이 원래 위치부터 복구한다.
+    /// 원래 자리가 점유된 경우에만 같은 Grid의 다른 빈자리를 사용한다.
+    /// </summary>
+    public static InventoryMoveResultData TryRestoreToGrid(
         InventoryGrid grid,
         InventoryItem item,
-        int targetX,
-        int targetY,
-        int originalX,
-        int originalY,
-        bool originalRotated)
+        InventoryPlacementSnapshot originalPlacement)
     {
-        InventoryPlacementSnapshot movingOriginal =
-            InventoryPlacementSnapshot.FromOriginalState(
-                grid,
-                item,
-                originalX,
-                originalY,
-                originalRotated);
+        if (grid == null ||
+            item?.itemData?.definition == null ||
+            !originalPlacement.IsValid)
+        {
+            return InventoryMoveResultData.Failed();
+        }
 
-        return TryMoveOnGrid(
-            grid,
-            item,
-            targetX,
-            targetY,
-            movingOriginal,
-            default);
+        item.isRotated = originalPlacement.IsRotated;
+
+        if (grid.TryPlaceItem(
+                item,
+                originalPlacement.Rect.X,
+                originalPlacement.Rect.Y))
+        {
+            return InventoryMoveResultData.ReturnedToOriginal(
+                originalPlacement.Rect.X,
+                originalPlacement.Rect.Y);
+        }
+
+        if (!grid.TryFindEmptySpaceForItem(
+                item,
+                originalPlacement.IsRotated,
+                out InventoryPlacementSnapshot fallbackPlacement))
+        {
+            return InventoryMoveResultData.Failed();
+        }
+
+        item.isRotated = fallbackPlacement.IsRotated;
+
+        if (!grid.TryPlaceItem(
+                item,
+                fallbackPlacement.Rect.X,
+                fallbackPlacement.Rect.Y))
+        {
+            return InventoryMoveResultData.Failed();
+        }
+
+        return InventoryMoveResultData.MovedToEmptySpace(
+            fallbackPlacement.Rect.X,
+            fallbackPlacement.Rect.Y);
     }
 
     public static InventoryMoveResultData TryMoveOnGrid(
@@ -55,7 +63,7 @@
         item.CurrentWidth, item.CurrentHeight) &&
         grid.TryPlaceItem(item,targetX,targetY))
         {
-            return InventoryMoveResultData.Success(item, targetX, targetY);
+            return InventoryMoveResultData.Success(targetX, targetY);
         }
 
         InventoryMoveResultData swapResult;
@@ -85,7 +93,6 @@
             grid.TryPlaceItem(item, movingOriginal.Rect.X, movingOriginal.Rect.Y))
         {
             return InventoryMoveResultData.ReturnedToOriginal(
-                item,
                 movingOriginal.Rect.X,
                 movingOriginal.Rect.Y);
         }
@@ -96,7 +103,6 @@
             grid.TryPlaceItem(item, foundX, foundY))
         {
             return InventoryMoveResultData.MovedToEmptySpace(
-                item,
                 foundX,
                 foundY);
         }

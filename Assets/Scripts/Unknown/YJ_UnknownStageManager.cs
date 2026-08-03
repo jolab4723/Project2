@@ -1,62 +1,259 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using Core;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-
-// 이 스크립트는 "Assets/Scenes/Maps/Unknown_Maps/Maps/"폴더 내의 씬 중 랜덤하게 1개의 씬을 불러오는 스크립트입니다.
-// 중요) File > Build Profiles > Scene List에 불러오려는 씬을 등록해야만 정상 동작합니다.
 
 public class YJ_UnknownStageManager : MonoBehaviour
 {
-    private const string UnknownSceneFolder = "Assets/Scenes/Maps/Unknown_Maps/Maps/";
-    private List<string> scenePaths = new();
+    private const string StageDatabaseResourcePath =
+        "DataFiles/UnknownStageData/3. GeneratedAssets/AllUnknownStages";
+    private const string LabelDatabaseResourcePath =
+        "DataFiles/UnknownStageData/3. GeneratedAssets/AllUnknownStageLabels";
 
-    private IEnumerator Start()
+    [Header("UI")]
+    [SerializeField] private YJ_UnknownStageContents unknownStageContents;
+    [SerializeField] private YJ_ChoiceButtonBox choiceButtonBox;
+
+    [Header("Data")]
+    [SerializeField] private YJ_UnknownStageDatabaseSO stageDatabase;
+    [SerializeField] private YJ_UnknownStageLabelDatabaseSO labelDatabase;
+    [SerializeField] private YJ_StageSaveService stageSaveService;
+
+    [Header("Runtime")]
+    [SerializeField] private YJ_UnknownStageDefinitionSO selectedStage;
+
+    private YJ_LanguageManager languageManager;
+
+    private void OnEnable()
     {
-        // GameManager.Start에서 SceneLoader를 활성화한 다음 프레임에 전환을 요청합니다.
-        yield return null;
-
-        RefreshSceneList();
-        LoadRandomScene();
+        BindLanguageManager();
     }
 
-    private void RefreshSceneList()
+    private void OnDisable()
     {
-        scenePaths.Clear();
-
-        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-        {
-            string path = SceneUtility.GetScenePathByBuildIndex(i).Replace('\\', '/');
-
-            if (path.StartsWith(UnknownSceneFolder, StringComparison.OrdinalIgnoreCase))
-            {
-                scenePaths.Add(path);
-            }
-        }
+        UnbindLanguageManager();
     }
 
-    public void LoadRandomScene()
+    private void Start()
     {
-        if (scenePaths.Count == 0)
+        if (!ResolveReferences())
+            return;
+
+        if (!TrySelectSavedStage() &&
+            selectedStage == null &&
+            !TrySelectRandomStage())
         {
-            Log.Warning("등록된 Unknown씬이 없습니다.");
             return;
         }
 
-        int randomIndex = UnityEngine.Random.Range(0, scenePaths.Count);
-        string scenePath = scenePaths[randomIndex];
-        string sceneName = Path.GetFileNameWithoutExtension(scenePath);
+        ApplySelectedStage(true);
+    }
 
-        SceneLoader sceneLoader = SceneLoader.Instance;
-        if (sceneLoader == null)
+    private void BindLanguageManager()
+    {
+        if (languageManager != null)
+            return;
+
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager == null)
         {
-            Log.Error("SceneLoader를 찾을 수 없습니다.");
+            Log.Error("YJ_LanguageManager could not be found.");
             return;
         }
 
-        sceneLoader.LoadScene(sceneName);
+        languageManager.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void UnbindLanguageManager()
+    {
+        if (languageManager == null)
+            return;
+
+        languageManager.LanguageChanged -= HandleLanguageChanged;
+        languageManager = null;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _)
+    {
+        if (selectedStage != null && labelDatabase != null)
+            ApplySelectedStage(false);
+    }
+
+    private bool ResolveReferences()
+    {
+        BindLanguageManager();
+
+        if (languageManager == null)
+            return false;
+
+        if (stageDatabase == null)
+        {
+            stageDatabase =
+                Resources.Load<YJ_UnknownStageDatabaseSO>(
+                    StageDatabaseResourcePath);
+        }
+
+        if (labelDatabase == null)
+        {
+            labelDatabase =
+                Resources.Load<YJ_UnknownStageLabelDatabaseSO>(
+                    LabelDatabaseResourcePath);
+        }
+
+        if (unknownStageContents == null)
+        {
+            Log.Error("YJ_UnknownStageContents reference is missing.");
+            return false;
+        }
+
+        if (choiceButtonBox == null)
+        {
+            Log.Error("YJ_ChoiceButtonBox reference is missing.");
+            return false;
+        }
+
+        if (stageDatabase == null)
+        {
+            Log.Error("AllUnknownStages database could not be loaded.");
+            return false;
+        }
+
+        if (labelDatabase == null)
+        {
+            Log.Error("AllUnknownStageLabels database could not be loaded.");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Stage Select가 저장한 pending Event 노드의 고정 이벤트 ID를 불러옵니다.
+    /// </summary>
+    private bool TrySelectSavedStage()
+    {
+        FindSaveService();
+
+        if (stageSaveService == null ||
+            !stageSaveService.HasSaveFile ||
+            !stageSaveService.TryGetPendingNode(
+                out StageNodeSaveData pendingNode))
+        {
+            return false;
+        }
+
+        if (pendingNode.type != StageNodeType.Event ||
+            string.IsNullOrWhiteSpace(pendingNode.unknownStageId))
+        {
+            Log.Warning(
+                $"pending 노드에 Unknown 이벤트 ID가 없습니다: " +
+                $"{pendingNode.id}");
+            return false;
+        }
+
+        selectedStage =
+            stageDatabase.GetById(pendingNode.unknownStageId);
+
+        if (selectedStage != null)
+            return true;
+
+        Log.Warning(
+            $"저장된 Unknown 이벤트를 데이터베이스에서 찾지 못했습니다: " +
+            $"{pendingNode.unknownStageId}");
+        return false;
+    }
+
+    /// <summary>
+    /// Unknown 씬 단독 실행처럼 저장된 Event 노드가 없을 때 사용할 테스트용 임의 이벤트를 선택합니다.
+    /// </summary>
+    private bool TrySelectRandomStage()
+    {
+        IReadOnlyList<YJ_UnknownStageDefinitionSO> stages =
+            stageDatabase.Stages;
+
+        if (stages == null || stages.Count == 0)
+        {
+            Log.Error("Unknown Stage database is empty.");
+            return false;
+        }
+
+        selectedStage = stages[Random.Range(0, stages.Count)];
+
+        if (selectedStage != null)
+            return true;
+
+        Log.Error("The randomly selected Unknown Stage is null.");
+        return false;
+    }
+
+    /// <summary>
+    /// Inspector, 같은 오브젝트, 현재 씬 순서로 저장 서비스를 찾고 없으면 추가합니다.
+    /// </summary>
+    private void FindSaveService()
+    {
+        if (stageSaveService != null)
+            return;
+
+        stageSaveService = GetComponent<YJ_StageSaveService>();
+        if (stageSaveService == null)
+            stageSaveService =
+                FindFirstObjectByType<YJ_StageSaveService>();
+
+        if (stageSaveService == null)
+            stageSaveService =
+                gameObject.AddComponent<YJ_StageSaveService>();
+    }
+
+    private void ApplySelectedStage(bool createButtons)
+    {
+        YJ_UnknownStageLabel label =
+            labelDatabase.GetLabel(selectedStage.StageId);
+
+        if (label == null)
+        {
+            Log.Error($"Unknown Stage label was not found: {selectedStage.StageId}");
+            return;
+        }
+
+        unknownStageContents.StageBackgroundSet(selectedStage.BackgroundImage);
+
+        int choiceCount = Mathf.Clamp(selectedStage.ChoiceNumber, 1, 3);
+        BuildChoiceTexts(label, choiceCount, out List<string> titles, out List<string> descriptions);
+
+        if (createButtons)
+            choiceButtonBox.ButtonCreate(choiceCount);
+
+        choiceButtonBox.ButtonTextSet(titles, descriptions);
+        choiceButtonBox.HideButtons();
+        unknownStageContents.PlayTextReveal(
+            label.stageName,
+            label.stageDescription,
+            choiceButtonBox.PlayReveal);
+    }
+
+    private static void BuildChoiceTexts(
+        YJ_UnknownStageLabel label,
+        int choiceCount,
+        out List<string> titles,
+        out List<string> descriptions)
+    {
+        titles = new List<string>(choiceCount);
+        descriptions = new List<string>(choiceCount);
+
+        if (choiceCount >= 1)
+        {
+            titles.Add(label.choice1Name);
+            descriptions.Add(label.choice1Description);
+        }
+
+        if (choiceCount >= 2)
+        {
+            titles.Add(label.choice2Name);
+            descriptions.Add(label.choice2Description);
+        }
+
+        if (choiceCount >= 3)
+        {
+            titles.Add(label.choice3Name);
+            descriptions.Add(label.choice3Description);
+        }
     }
 }

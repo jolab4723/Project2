@@ -6,11 +6,11 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     WBH_ICombatStatus
 {
     [SerializeField, Min(0.01f)] private float maxHealth = 1f;
-    [SerializeField, Min(0f)] private float directionalForce = 4.5f;
+    [SerializeField, Min(0f)] private float directionalForce = 3f;
 
-    private CombatDroneArtificerDestruction destruction;
     private EnemyDestructionVisualPool destructionVisualPool;
     private GameObject destructionVisualPrefab;
+    private DestructionDamageStrengthScaler damageStrengthScaler;
     private float currentHealth;
 
     public WBH_ICombatStatus Status => this;
@@ -25,19 +25,21 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     public float FireBonus => 0f;
     public float IceBonus => 0f;
     public float ElectricBonus => 0f;
+    public bool IsDead => true; // 0729 WBH 추가. 인터페이스 구현을 위한 단순 추가 
 
     public void Configure(
         float health,
         float force,
         EnemyDestructionVisualPool newDestructionVisualPool = null,
-        GameObject newDestructionVisualPrefab = null)
+        GameObject newDestructionVisualPrefab = null,
+        DestructionDamageStrengthScaler newDamageStrengthScaler = null)
     {
         maxHealth = Mathf.Max(0.01f, health);
         currentHealth = maxHealth;
         directionalForce = Mathf.Max(0f, force);
         destructionVisualPool = newDestructionVisualPool;
         destructionVisualPrefab = newDestructionVisualPrefab;
-        destruction = GetComponent<CombatDroneArtificerDestruction>();
+        damageStrengthScaler = newDamageStrengthScaler;
     }
 
     // WBH 전투 시스템 연동부: 기존 플레이어 공격 결과를 테스트 적의 체력과 파괴 요청으로 변환한다.
@@ -45,7 +47,6 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     {
         if (currentHealth <= 0f)
         {
-            
             return;
         }
 
@@ -74,45 +75,38 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
             : transform.position;
 
         Core.ItemManager.Instance.DropRandomItem(enemyGrade, transform.position);
-        if (destructionVisualPrefab != null && destructionVisualPool != null)
-        {
-            destructionVisualPool.Play(
-                destructionVisualPrefab,
-                transform.position,
-                transform.rotation,
-                impactPoint,
-                attackDirection,
-                directionalForce,
-                () =>
-                {
-                    if (this != null && gameObject != null)
-                        gameObject.SetActive(false);
-                });
-            return;
-        }
-
-        if (destruction == null)
-        {
-            destruction = GetComponent<CombatDroneArtificerDestruction>();
-        }
-
-        if (destruction == null)
+        if (destructionVisualPrefab == null || destructionVisualPool == null)
         {
             Debug.LogError(
-                "[Enemy Manual Test] 직접 파괴 컴포넌트 또는 파괴 연출 프리팹이 연결되지 않았습니다: " + name,
+                "[Enemy Manual Test] 파괴 연출 프리팹과 테스트 풀이 모두 필요합니다: " + name,
                 this);
             return;
         }
 
-        destruction.TriggerDestruction(
+        destructionVisualPool.PlayWithDamage(
+            destructionVisualPrefab,
+            transform.position,
+            transform.rotation,
             impactPoint,
             attackDirection,
-            directionalForce);
+            directionalForce,
+            result.FinalDamage,
+            maxHealth,
+            damageStrengthScaler,
+            () =>
+            {
+                if (this != null && gameObject != null)
+                {
+                    gameObject.SetActive(false);
+                }
+            });
     }
+
+    // 0729 WBH 추가. 인터페이스 구현을 위한 단순 추가 
+    public void AddStatusEffect(WBH_StatusEffectData data) {}
 
     private void Awake()
     {
-        destruction = GetComponent<CombatDroneArtificerDestruction>();
         currentHealth = maxHealth;
     }
 

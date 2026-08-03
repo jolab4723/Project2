@@ -29,17 +29,16 @@ public sealed class ArtificerRuntimeSettings
     [Min(0.05f)] public float maximumLifetime = 2.2f;
     [Min(0f)] public float minimumRadialForce = 0.8f;
     [Min(0f)] public float maximumRadialForce = 2.8f;
-    [Min(0f)] public float directionalForce = 4.5f;
+    [Min(0f)] public float directionalForce = 3f;
     [Min(0f)] public float angularSpeed = 180f;
-    [Min(0f)] public float gravity = 1.35f;
+    [Min(0f)] public float gravity = 2.5f;
     [Range(0f, 1f)] public float bounce = 0.15f;
-    [Min(0f)] public float linearDrag = 0.12f;
+    [Min(0f)] public float linearDrag = 1f;
     [Min(0f)] public float angularDrag = 0.1f;
     public bool useBurstSpeedCurve = true;
-    [Range(1f, 6f)] public float initialSpeedMultiplier = 3.5f;
+    [Range(1f, 10f)] public float initialSpeedMultiplier = 3.5f;
     [Range(0.02f, 0.4f)] public float burstDuration = 0.1f;
-    [Range(0.02f, 1f)] public float finalSpeedMultiplier = 0.12f;
-    [Range(0f, 0.75f)] public float groundClearanceLift = 0.35f;
+    [Range(0.02f, 1f)] public float finalSpeedMultiplier = 0.05f;
     public bool preserveBurstTravelDistance = true;
     [Range(0.1f, 1.5f)] public float fragmentScale = 1f;
     public bool shrinkFragments = true;
@@ -67,10 +66,9 @@ public sealed class ArtificerRuntimeSettings
         bounce = Mathf.Clamp01(bounce);
         linearDrag = Mathf.Max(0f, linearDrag);
         angularDrag = Mathf.Max(0f, angularDrag);
-        initialSpeedMultiplier = Mathf.Clamp(initialSpeedMultiplier, 1f, 6f);
+        initialSpeedMultiplier = Mathf.Clamp(initialSpeedMultiplier, 1f, 10f);
         burstDuration = Mathf.Clamp(burstDuration, 0.02f, 0.4f);
         finalSpeedMultiplier = Mathf.Clamp(finalSpeedMultiplier, 0.02f, 1f);
-        groundClearanceLift = Mathf.Clamp(groundClearanceLift, 0f, 0.75f);
         fragmentScale = Mathf.Clamp(fragmentScale, 0.1f, 1.5f);
         shrinkStart = Mathf.Clamp(shrinkStart, 0f, 0.95f);
         dissolveStart = Mathf.Clamp(dissolveStart, 0f, 0.95f);
@@ -97,7 +95,6 @@ public sealed class ArtificerRuntimeSettings
         initialSpeedMultiplier = source.initialSpeedMultiplier;
         burstDuration = source.burstDuration;
         finalSpeedMultiplier = source.finalSpeedMultiplier;
-        groundClearanceLift = source.groundClearanceLift;
         preserveBurstTravelDistance = source.preserveBurstTravelDistance;
         fragmentScale = source.fragmentScale;
         shrinkFragments = source.shrinkFragments;
@@ -146,13 +143,10 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
     private static Texture2D fallbackDissolveMap;
     private bool warnedMissingDissolveShader;
 
-    public Artificer Artificer => artificer;
     public bool HasActiveSettings => activeSettings != null;
     public float DirectionalForce => activeSettings != null
         ? activeSettings.directionalForce
         : 0f;
-    public ArtificerRuntimeOrderMode OrderMode => activeSettings.orderMode;
-    public ArtificerRuntimeReleaseMode ReleaseMode => activeSettings.releaseMode;
     public ArtificerRuntimeReleaseMode PrefabReleaseMode
     {
         get
@@ -261,7 +255,6 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
                 settings.initialSpeedMultiplier,
                 settings.burstDuration,
                 settings.finalSpeedMultiplier,
-                settings.groundClearanceLift,
                 settings.preserveBurstTravelDistance);
         }
         artificer.useDisPlaceScaleCurve = settings.shrinkFragments ||

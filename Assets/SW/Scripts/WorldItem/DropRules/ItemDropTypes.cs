@@ -11,7 +11,8 @@ public static class ItemDropTypes
         Helmet = 1,
         Chest = 2,
         Boots = 3,
-        Potion = 4
+        Potion = 4,
+        Relic = 5
     }
 
     [Serializable]

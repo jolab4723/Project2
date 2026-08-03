@@ -60,6 +60,34 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.Play(data);
     }
 
+    // 상태이상 같은 일정시간 동안 지속형 이펙트
+    public WBH_Effect SpawnPersistentEffect(WBH_EffectData data, Transform attachTarget)
+    {
+        WBH_Effect effect = poolManager.GetEffect(data);
+
+        if(effect == null)
+            return null;
+
+        switch (data.attachType)
+        {
+            case EffectAttachType.AttachOnce:
+                effect.transform.SetParent(attachTarget);
+                effect.transform.localPosition = data.localPos;
+                effect.transform.localRotation = Quaternion.Euler(data.localRot);
+                effect.transform.SetParent(null, true);
+                break;
+
+            case EffectAttachType.Follow:
+                effect.transform.SetParent(attachTarget);
+                effect.transform.localPosition = data.localPos;
+                effect.transform.localRotation = Quaternion.Euler(data.localRot);
+                break;
+        }
+        effect.Play(data,false);
+
+        return effect;
+    }
+
     public void Initialize(WBH_EffectPoolManager effectPool)
     {
         this.poolManager = effectPool;

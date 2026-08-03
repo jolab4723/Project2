@@ -1,5 +1,5 @@
+using System.Collections;
 using System.Collections.Generic;
-using Artifice;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -49,7 +49,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
     [SerializeField, Min(0.01f), InspectorName("적 체력")]
     private float enemyHealth = 1f;
     [SerializeField, Min(0f), InspectorName("파편 방향 힘")]
-    private float directionalForce = 4.5f;
+    private float directionalForce = 3f;
     [SerializeField, Range(0, 31), InspectorName("적 레이어")]
     private int enemyLayer = 10;
     [SerializeField, InspectorName("리셋 키")]
@@ -61,6 +61,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
     // WBH 입력 시스템 연동부: 리셋 버튼 클릭이 플레이어 공격으로 전달되지 않도록 잠시 입력을 막는다.
     private WBH_PlayerInputHandler playerInput;
     private EnemyDestructionVisualPool destructionVisualPool;
+    private DestructionDamageStrengthScaler damageStrengthScaler;
     private bool restorePlayerInput;
     private bool playerInputWasEnabled;
     private int restorePlayerInputAfterFrame;
@@ -152,7 +153,7 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         // WBH 입력 시스템 연동부: 씬의 플레이어 입력 핸들러를 찾아 리셋 클릭을 보호한다.
         playerInput = FindFirstObjectByType<WBH_PlayerInputHandler>();
@@ -162,7 +163,38 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             destructionVisualPool =
                 gameObject.AddComponent<EnemyDestructionVisualPool>();
         }
+        damageStrengthScaler =
+            GetComponent<DestructionDamageStrengthScaler>();
+        if (damageStrengthScaler == null)
+        {
+            damageStrengthScaler =
+                gameObject.AddComponent<DestructionDamageStrengthScaler>();
+        }
+
+        yield return PrewarmDestructionVisuals();
         ResetEnemies();
+    }
+
+    private IEnumerator PrewarmDestructionVisuals()
+    {
+        if (destructionVisualPool == null)
+            yield break;
+
+        bool usesSameVisual = enemy1DestructionVisualPrefab != null &&
+            enemy1DestructionVisualPrefab == enemy2DestructionVisualPrefab;
+        int enemy1WarmCount = Mathf.Max(0, enemy1Count) +
+            (usesSameVisual ? Mathf.Max(0, enemy2Count) : 0);
+
+        yield return destructionVisualPool.Prewarm(
+            enemy1DestructionVisualPrefab,
+            enemy1WarmCount);
+
+        if (!usesSameVisual)
+        {
+            yield return destructionVisualPool.Prewarm(
+                enemy2DestructionVisualPrefab,
+                Mathf.Max(0, enemy2Count));
+        }
     }
 
     private void Update()
@@ -272,22 +304,6 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
         enemy.layer = enemyLayer;
         EnsureRootHitCollider(enemy);
 
-        Artificer artificer = enemy.GetComponent<Artificer>();
-        CombatDroneVisualAnimator visualAnimator =
-            enemy.GetComponent<CombatDroneVisualAnimator>();
-        CombatDroneArtificerDestruction destruction =
-            enemy.GetComponent<CombatDroneArtificerDestruction>();
-
-        if (destruction != null)
-        {
-            destruction.Configure(
-                artificer,
-                visualAnimator,
-                false,
-                0f,
-                false);
-        }
-
         EnemyDestructionTarget target =
             enemy.GetComponent<EnemyDestructionTarget>();
         if (target == null)
@@ -298,9 +314,10 @@ public sealed class EnemyManualTestReset : MonoBehaviour,
             enemyHealth,
             directionalForce,
             destructionVisualPool,
-            destructionVisualPrefab);
+            destructionVisualPrefab,
+            damageStrengthScaler);
 
-        target.enemyGrade = EnemyGrade.Boss;
+        target.enemyGrade = EnemyGrade.Elite;
     }
 
     private static void EnsureRootHitCollider(GameObject enemy)

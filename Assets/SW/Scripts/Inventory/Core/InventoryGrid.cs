@@ -1,11 +1,9 @@
-using TMPro;
 using UnityEngine;
 
 public class InventoryGrid : MonoBehaviour
 {
     private InventoryItem[,] grid;
     [SerializeField] private RectTransform gridRect;
-    [SerializeField] private TextMeshProUGUI text;
     [SerializeField] private RectTransform itemsContainer;
     [SerializeField] private int gridWidth = 8;
     [SerializeField] private int gridHeight = 6;
@@ -117,6 +115,82 @@ public class InventoryGrid : MonoBehaviour
         foundX = -1; foundY = -1;
         return false;
     }
+
+    /// <summary>
+    /// 아이템을 인벤토리에 자동 배치할 빈 공간을 찾는다.
+    /// 지정한 회전 상태를 먼저 확인하고, 자리가 없으면 반대 회전 상태까지 확인한다.
+    /// 장비 해제와 장비 교체가 같은 자동 회전 배치 규칙을 사용하도록 제공하는 공용 진입점이다.
+    /// </summary>
+    public bool TryFindEmptySpaceForItem(
+        InventoryItem item,
+        bool preferredRotation,
+        out InventoryPlacementSnapshot placement)
+    {
+        placement = default;
+
+        if (item?.itemData?.definition == null)
+            return false;
+
+        if (TryFindEmptySpaceForRotation(
+                item,
+                preferredRotation,
+                out placement))
+        {
+            return true;
+        }
+
+        ItemSystem.ItemDefinitionSO definition =
+            item.itemData.definition;
+
+        // 정사각형 아이템은 회전해도 점유 크기가 같으므로 같은 탐색을 반복하지 않는다.
+        if (definition.itemWidth == definition.itemHeight)
+            return false;
+
+        return TryFindEmptySpaceForRotation(
+            item,
+            !preferredRotation,
+            out placement);
+    }
+
+    /// <summary>
+    /// 아이템 상태를 변경하지 않고 지정한 회전 방향의 빈 공간과 배치 정보를 계산한다.
+    /// 실제 회전 상태 반영은 배치를 확정하는 트랜잭션에서만 수행한다.
+    /// </summary>
+    private bool TryFindEmptySpaceForRotation(
+        InventoryItem item,
+        bool isRotated,
+        out InventoryPlacementSnapshot placement)
+    {
+        placement = default;
+
+        ItemSystem.ItemDefinitionSO definition =
+            item.itemData.definition;
+
+        int width = isRotated
+            ? definition.itemHeight
+            : definition.itemWidth;
+        int height = isRotated
+            ? definition.itemWidth
+            : definition.itemHeight;
+
+        if (!FindEmptySpace(
+                width,
+                height,
+                out int foundX,
+                out int foundY))
+        {
+            return false;
+        }
+
+        placement = InventoryPlacementSnapshot.FromOriginalState(
+            this,
+            item,
+            foundX,
+            foundY,
+            isRotated);
+
+        return placement.IsValid;
+    }
     public InventoryItem GetItemAt(int x, int y)
     {
         if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
@@ -132,6 +206,9 @@ public class InventoryGrid : MonoBehaviour
     {
         var seen = new System.Collections.Generic.HashSet<InventoryItem>();
         var result = new System.Collections.Generic.List<InventoryItem>();
+
+        if (grid == null)
+            return result;
 
         for (int x = 0; x < gridWidth; x++)
         {
