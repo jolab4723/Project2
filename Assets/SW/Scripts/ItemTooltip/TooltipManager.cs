@@ -234,7 +234,7 @@ public class TooltipManager : MonoBehaviour
 
     private void PositionVisibleTooltips(Vector2 screenPosition)
     {
-        RectTransform targetCanvasRect = GetCanvasRect();
+        RectTransform targetCanvasRect = ResolveCanvasRect();
 
         if (targetCanvasRect == null || primaryTooltip == null)
             return;
@@ -253,7 +253,7 @@ public class TooltipManager : MonoBehaviour
         else
         {
             ClampInsideCanvas(
-primaryTooltip.RootRect,
+                primaryTooltip.RootRect,
                 targetCanvasRect);
         }
     }
@@ -268,7 +268,7 @@ primaryTooltip.RootRect,
 
         RectTransform tooltipRect = tooltip.RootRect;
 
-        Camera eventCamera = GetCanvasCamera();
+        Camera eventCamera = ResolveCanvasCamera();
 
         Vector2 targetScreenPosition = screenPosition + offset;
 
@@ -371,54 +371,22 @@ primaryTooltip.RootRect,
         if (primaryRect == null || comparisonRect == null || targetCanvasRect == null)
             return;
 
-        var primaryCorners = new Vector3[4];
-
-        var comparisonCorners = new Vector3[4];
-
-        var canvasCorners = new Vector3[4];
-
-        primaryRect.GetWorldCorners(primaryCorners);
-
-        comparisonRect.GetWorldCorners(comparisonCorners);
-
-        targetCanvasRect.GetWorldCorners(canvasCorners);
-
-        float groupLeft =
-            Mathf.Min(primaryCorners[0].x, comparisonCorners[0].x);
-
-        float groupRight =
-            Mathf.Max(primaryCorners[2].x, comparisonCorners[2].x);
-
-        float groupBottom =
-            Mathf.Min(primaryCorners[0].y, comparisonCorners[0].y);
-
-        float groupTop =
-            Mathf.Max(primaryCorners[2].y, comparisonCorners[2].y);
-
-        Vector3 correction = Vector3.zero;
-
-        if (groupRight > canvasCorners[2].x)
-        {
-            correction.x = canvasCorners[2].x -groupRight;
-        }
-        else if (groupLeft < canvasCorners[0].x)
-        {
-            correction.x = canvasCorners[0].x - groupLeft;
-        }
-
-        if (groupTop > canvasCorners[2].y)
-        {
-            correction.y = canvasCorners[2].y - groupTop;
-        }
-        else if (groupBottom < canvasCorners[0].y)
-        {
-            correction.y = canvasCorners[0].y - groupBottom;
-        }
+        Rect primaryBounds = GetWorldBounds(primaryRect);
+        Rect comparisonBounds = GetWorldBounds(comparisonRect);
+        Rect groupBounds = Rect.MinMaxRect(
+            Mathf.Min(primaryBounds.xMin, comparisonBounds.xMin),
+            Mathf.Min(primaryBounds.yMin, comparisonBounds.yMin),
+            Mathf.Max(primaryBounds.xMax, comparisonBounds.xMax),
+            Mathf.Max(primaryBounds.yMax, comparisonBounds.yMax));
+        Vector3 correction = GetClampCorrection(
+            groupBounds,
+            GetWorldBounds(targetCanvasRect));
 
         primaryRect.position += correction;
         comparisonRect.position += correction;
     }
-    private RectTransform GetCanvasRect()
+
+    private RectTransform ResolveCanvasRect()
     {
         if (canvasRect != null)
             return canvasRect;
@@ -429,7 +397,7 @@ primaryTooltip.RootRect,
         return null;
     }
 
-    private Camera GetCanvasCamera()
+    private Camera ResolveCanvasCamera()
     {
         if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
             return null;
@@ -445,34 +413,37 @@ primaryTooltip.RootRect,
         RectTransform tooltipRect,
         RectTransform targetCanvasRect)
     {
-        var tooltipCorners = new Vector3[4];
-        var canvasCorners = new Vector3[4];
+        tooltipRect.position += GetClampCorrection(
+            GetWorldBounds(tooltipRect),
+            GetWorldBounds(targetCanvasRect));
+    }
 
-        tooltipRect.GetWorldCorners(tooltipCorners);
-        targetCanvasRect.GetWorldCorners(canvasCorners);
+    private static Rect GetWorldBounds(RectTransform rectTransform)
+    {
+        var corners = new Vector3[4];
+        rectTransform.GetWorldCorners(corners);
 
+        return Rect.MinMaxRect(
+            corners[0].x,
+            corners[0].y,
+            corners[2].x,
+            corners[2].y);
+    }
+
+    private static Vector3 GetClampCorrection(Rect contentBounds, Rect canvasBounds)
+    {
         Vector3 correction = Vector3.zero;
 
-        // 오른쪽 또는 왼쪽 경계 보정
-        if (tooltipCorners[2].x > canvasCorners[2].x)
-        {
-            correction.x = canvasCorners[2].x - tooltipCorners[2].x;
-        }
-        else if (tooltipCorners[0].x < canvasCorners[0].x)
-        {
-            correction.x = canvasCorners[0].x - tooltipCorners[0].x;
-        }
+        if (contentBounds.xMax > canvasBounds.xMax)
+            correction.x = canvasBounds.xMax - contentBounds.xMax;
+        else if (contentBounds.xMin < canvasBounds.xMin)
+            correction.x = canvasBounds.xMin - contentBounds.xMin;
 
-        // 위쪽 또는 아래쪽 경계 보정
-        if (tooltipCorners[2].y > canvasCorners[2].y)
-        {
-            correction.y = canvasCorners[2].y - tooltipCorners[2].y;
-        }
-        else if (tooltipCorners[0].y < canvasCorners[0].y)
-        {
-            correction.y = canvasCorners[0].y - tooltipCorners[0].y;
-        }
+        if (contentBounds.yMax > canvasBounds.yMax)
+            correction.y = canvasBounds.yMax - contentBounds.yMax;
+        else if (contentBounds.yMin < canvasBounds.yMin)
+            correction.y = canvasBounds.yMin - contentBounds.yMin;
 
-        tooltipRect.position += correction;
+        return correction;
     }
 }

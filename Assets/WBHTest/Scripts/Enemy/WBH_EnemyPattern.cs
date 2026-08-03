@@ -25,9 +25,18 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     private Transform target;
 
-    private float distance = 0;
+    private WBH_IEnemyPattern currentPattern;
+
+    public float Distance { get; private set; } = 0;
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
+
+    public WBH_EnemyMovement Movement => movement;
+    public WBH_EnemyCombat Combat => combat;
+    public float AttackRange => status.AttackRange;
+    public Transform Target => target;
+    public Transform FirePoint => firePoint;
+    public LayerMask PlayerLayer => playerLayer;
 
     private void Awake()
     {
@@ -42,6 +51,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     public virtual void Initialize(WBH_EnemyController controller)
     {
         this.controller = controller;
+
+        CreatePattern();
     }
 
     protected virtual void Update()
@@ -61,15 +72,22 @@ public class WBH_EnemyPattern : MonoBehaviour
         if (!movement.CanControl)
             return;
 
-        distance = Vector3.Distance(transform.position, target.position);
+        Distance = Vector3.Distance(transform.position, target.position);
 
-        UpdateMove(distance);
-        UpdateAttack(distance);
+        if(currentPattern != null)
+        {
+            currentPattern?.Tick(Time.deltaTime);
+        }
+        else
+        {
+            UpdateMove(Distance);
+            UpdateAttack(Distance);
+        }
     }
 
     protected virtual void UpdateMove(float distance)
     {
-        if(distance > combat.AttackRange)
+        if(distance > status.AttackRange)
         {
             movement.Move(target.position);
             enemyAnimation.SetMove(true);
@@ -83,7 +101,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     protected virtual void UpdateAttack(float distance)
     {
-        if (distance > combat.AttackRange)
+        if (distance > status.AttackRange)
             return;
 
         combat.Attack();
@@ -116,7 +134,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     protected virtual void MeleeAttack()
     {
-        SectorAttack(combat.AttackRange, basicMeleeAttackAngle);
+        SectorAttack(status.AttackRange, basicMeleeAttackAngle);
         effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint);
     }
 
@@ -128,7 +146,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
         WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
 
-        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, request, status.ProjectileSpeed, combat.AttackRange, playerLayer);
+        projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, request, status.ProjectileSpeed, status.AttackRange, playerLayer);
     }
 
     // player 공격 코드 재활용
@@ -167,5 +185,16 @@ public class WBH_EnemyPattern : MonoBehaviour
     public void SetTarget(Transform target)
     {
         this.target = target;
+    }
+
+    private void CreatePattern()
+    {
+        switch(controller.Info.patternID)
+        {
+            case 1:
+                currentPattern = new WBH_EnemyElitePattern();
+                break;
+        }
+        currentPattern?.Initialize(this);
     }
 }

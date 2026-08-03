@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// HP, MP, EXP를 관리하는 코드
+// HP, MP, EXP 슬라이더를 관리하는 코드
 public class KY_StatusView : MonoBehaviour
 {
     public Slider healthSlider;

@@ -1,5 +1,6 @@
 using UnityEngine;
-public class ShopTradeService
+
+internal sealed class ShopTradeService
 {
     private readonly PlayerWallet playerWallet;
     private readonly ShopStockService stockService;

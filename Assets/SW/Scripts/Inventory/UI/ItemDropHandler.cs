@@ -69,7 +69,7 @@ public class ItemDropHandler : MonoBehaviour
         }
         finally
         {
-            TryConsumeStablePlacement();
+            TryFinalizeStablePlacement();
         }
     }
 
@@ -82,10 +82,10 @@ public class ItemDropHandler : MonoBehaviour
         if (!restorePending)
             return true;
 
-        if (!CanRestoreNow())
+        if (!CanAttemptRestore())
             return false;
 
-        if (TryConsumeStablePlacement())
+        if (TryFinalizeStablePlacement())
             return true;
 
         // 모델이 장비에 남아 있는데 시각 슬롯을 찾지 못한 경우 Grid 복구로 중복 소유시키지 않는다.
@@ -113,7 +113,7 @@ public class ItemDropHandler : MonoBehaviour
         if (!restored)
             restored = TryRestoreToGrid();
 
-        if (restored && TryConsumeStablePlacement())
+        if (restored && TryFinalizeStablePlacement())
             return true;
 
         LogRecoveryFailureOnce();
@@ -153,7 +153,7 @@ public class ItemDropHandler : MonoBehaviour
 
         if (removeDropZone != null)
         {
-            HandleDiscard();
+            HandleRemove();
             return;
         }
 
@@ -304,12 +304,12 @@ public class ItemDropHandler : MonoBehaviour
         return true;
     }
 
-    private void HandleDiscard()
+    private void HandleRemove()
     {
         InventoryItem item = itemUI != null ? itemUI.Item : null;
 
-        InventoryDiscardResult result =
-            InventoryDiscardService.TryDiscard(
+        InventoryRemoveResult result =
+            InventoryRemoveService.TryRemove(
                 inventoryController,
                 item,
                 itemUI != null ? itemUI.OriginalGrid : null,
@@ -320,14 +320,14 @@ public class ItemDropHandler : MonoBehaviour
                 ? item.itemData.definition.itemName
                 : "아이템";
 
-        string message = InventoryDiscardMessageMapper.GetMessage(result, itemName);
+        string message = InventoryRemoveMessageMapper.GetMessage(result, itemName);
 
         if (inventoryController != null)
             inventoryController.PrintLog(message);
         else
             Debug.LogWarning(message);
 
-        if (result == InventoryDiscardResult.Success)
+        if (result == InventoryRemoveResult.Success)
         {
             MarkPlacementCompleted();
             TooltipManager.Instance?.HideTooltip();
@@ -367,7 +367,7 @@ public class ItemDropHandler : MonoBehaviour
         return true;
     }
 
-    private bool TryConsumeStablePlacement()
+    private bool TryFinalizeStablePlacement()
     {
         if (!restorePending)
             return true;
@@ -508,7 +508,7 @@ public class ItemDropHandler : MonoBehaviour
         return false;
     }
 
-    private bool CanRestoreNow()
+    private bool CanAttemptRestore()
     {
         return itemUI != null &&
                inventoryController != null &&
