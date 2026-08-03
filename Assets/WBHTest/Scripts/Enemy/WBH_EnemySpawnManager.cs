@@ -19,6 +19,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
     private WBH_DamageTextPoolManager damagePool;
+    private YJ_PortalActive portalActive;
 
     private int currentWave = -1;
     private int aliveEnemyCount;
@@ -34,6 +35,8 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
         spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
         player = FindAnyObjectByType<T_PlayerController>().transform;
+
+        portalActive = FindAnyObjectByType<YJ_PortalActive>();
     }
 
     private void OnEnable()
@@ -66,6 +69,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         if(currentWave >= waves.Length)
         {
             stageClear = true;
+            portalActive.Active(true);
             Debug.Log("Stage Clear");
             return;
         }
