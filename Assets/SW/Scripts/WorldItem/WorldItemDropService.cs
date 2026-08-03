@@ -9,7 +9,7 @@ public sealed class WorldItemDropService : MonoBehaviour
 
     [SerializeField] private float clearanceRadius = 0.6f;
 
-    [SerializeField] private int maxPlacementAttempts = 20;
+    [SerializeField, Min(1)] private int maxPlacementAttempts = 20;
 
     [SerializeField] private LayerMask blockedDropLayers;
 

@@ -14,6 +14,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
     public bool IsControlEnabled { get; private set; } = true;
+    public bool IsInvincible { get; private set; } = false; // 무적여부
 
     private Camera mainCamera;
     private Animator animator;
@@ -129,6 +130,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private IEnumerator Dodge(Vector3 dir)
     {
         agent.enabled = false;
+        IsInvincible = true;
 
         Vector3 startPos = transform.position;
         Vector3 endPos = startPos + dir * status.DodgeDistance;
@@ -149,6 +151,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         }
 
         agent.enabled = true;
+        IsInvincible = false;
 
         stateMachine.ChangeState(PlayerState.Idle);
     }
@@ -229,6 +232,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
+        if (IsInvincible || stateMachine.Is(PlayerState.Dead))
+            return;
+
         status.TakeDamage(result);
 
         // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
@@ -256,6 +262,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void AddStatusEffect (WBH_StatusEffectData data)
     {
+        if (IsInvincible || stateMachine.Is(PlayerState.Dead))
+            return;
+
         statusEffectController.AddStatusEffect(data);
     }
 

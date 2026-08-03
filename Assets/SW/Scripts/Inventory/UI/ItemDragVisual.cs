@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-public class ItemDragVisual : MonoBehaviour
+
+[DisallowMultipleComponent]
+[RequireComponent(typeof(Canvas), typeof(CanvasGroup), typeof(GraphicRaycaster))]
+public sealed class ItemDragVisual : MonoBehaviour
 {
     private Canvas itemCanvas;
     private bool originalOverrideSorting;
@@ -9,22 +12,15 @@ public class ItemDragVisual : MonoBehaviour
     private CanvasGroup canvasGroup;
     private Image itemIcon;
 
-
     private void Awake()
     {
-
         itemCanvas = GetComponent<Canvas>();
-        if (itemCanvas == null) itemCanvas = gameObject.AddComponent<Canvas>();
-
-        if (GetComponent<GraphicRaycaster>() == null) gameObject.AddComponent<GraphicRaycaster>();
-
         canvasGroup = GetComponent<CanvasGroup>();
-        if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
         originalOverrideSorting = itemCanvas.overrideSorting;
         originalSortingOrder = itemCanvas.sortingOrder;
 
-        if(itemIcon== null) itemIcon = transform.GetChild(0).GetComponent<Image>();
+        itemIcon = GetComponentInChildren<Image>(true);
     }
     public void RaiseForDrag()
     {

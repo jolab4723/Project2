@@ -64,7 +64,9 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
         simultaneousPresetCount = 0;
         sequentialPresetCount = 0;
         Artifice.Artificer[] artificers =
-            FindObjectsByType<Artifice.Artificer>(FindObjectsSortMode.None);
+            FindObjectsByType<Artifice.Artificer>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
         foreach (Artifice.Artificer artificer in artificers)
         {
             ArtificerRuntimeTuningTarget target =

@@ -37,6 +37,9 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     // 몬스터 등급별 예외처리
     protected override void UpdateEffects(float deltaTime)
     {
+        if (controller == null || controller.Info == null)
+            return;
+
         if (controller.Info.enemyGrade == EnemyGrade.Boss)
         {
             // 보스의 경우 면역되는 상태이상.

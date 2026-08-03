@@ -3376,7 +3376,7 @@ Transform:
   m_GameObject: {fileID: 4306151390367019180}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006197005, y: 0.0093165515, z: -0.007022988, w: 0.99993193}
-  m_LocalPosition: {x: 0.07309731, y: 0.16063644, z: -0.061683547}
+  m_LocalPosition: {x: 0.07309762, y: 0.1606365, z: -0.061683074}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5511,7 +5511,7 @@ Transform:
   m_GameObject: {fileID: 6102766017331635460}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000012134537, y: 0.6087615, z: 0.7933533, w: 0.00000014341002}
-  m_LocalPosition: {x: 0.00000016159252, y: 1.1164671, z: 0.011522293}
+  m_LocalPosition: {x: 0, y: 1.1164671, z: 0.011522293}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5730,7 +5730,7 @@ Transform:
   m_GameObject: {fileID: 6319511063285921067}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.07758369, y: 0.16274357, z: -0.056084204}
+  m_LocalPosition: {x: -0.07758393, y: 0.16274357, z: -0.056084212}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7398,7 +7398,7 @@ Transform:
   m_GameObject: {fileID: 8033987866719858990}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: 0.026278257, y: 0.1612828, z: -0.09219008}
+  m_LocalPosition: {x: 0.026277788, y: 0.16128281, z: -0.09218958}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7525,7 +7525,7 @@ Transform:
   m_GameObject: {fileID: 8131167696511496113}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.031432368, y: 0.1620902, z: -0.08875212}
+  m_LocalPosition: {x: -0.031432122, y: 0.1620902, z: -0.08875184}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8362,13 +8362,15 @@ GameObject:
   - component: {fileID: 2312052604114874023}
   - component: {fileID: 245515211961115271}
   - component: {fileID: 2674546040288394452}
+  - component: {fileID: 8116131008466465804}
+  - component: {fileID: 6955574096264595998}
   m_Layer: 15
   m_Name: Fighter 1
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8098030532292546987
 Transform:
   m_ObjectHideFlags: 0
@@ -8425,7 +8427,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.2
-  m_Speed: 6
+  m_Speed: 1
   m_Acceleration: 999
   avoidancePriority: 1
   m_AngularSpeed: 720
@@ -8534,9 +8536,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 176e3eb7f084dee459c40f5315026aab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerInputHandler
-  enemyLayer:
+  inputBlockLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 0
 --- !u!114 &859720171535124851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8596,7 +8598,7 @@ MonoBehaviour:
   attackPower: 5
   defensePower: 3
   attackSpeed: 1
-  moveSpeed: 1
+  moveSpeed: 6
   criticalChance: 1
   criticalMultiplier: 1
   fireBonus: 1
@@ -8607,9 +8609,41 @@ MonoBehaviour:
   dodgeCooltime: 6
   fighterAttackRange: 2
   gunnerAttackRange: 10
-  fighterAttackDamage: 15
-  gunnerAttackDamage: 10
   gunnerBulletSpeed: 10
+--- !u!114 &8116131008466465804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a8c0dfe044fa45489349ea318069733, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatusEffectController
+  statusEffectRoot: {fileID: 5022215380906037386}
+  effectSpawner: {fileID: 0}
+  burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
+  freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
+  electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  slowEffect: {fileID: 11400000, guid: 678a1ecf6bfb3ea4b9a5a63e743cf0bf, type: 2}
+  knockbackEffect: {fileID: 0}
+  airborneEffect: {fileID: 0}
+  stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+--- !u!114 &6955574096264595998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80a799bc43dd26145b9bf2a92786de0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_TEST
+  target: {fileID: 8116131008466465804}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0

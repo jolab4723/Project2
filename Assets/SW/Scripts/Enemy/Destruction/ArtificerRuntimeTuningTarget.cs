@@ -143,13 +143,10 @@ public sealed class ArtificerRuntimeTuningTarget : MonoBehaviour
     private static Texture2D fallbackDissolveMap;
     private bool warnedMissingDissolveShader;
 
-    public Artificer Artificer => artificer;
     public bool HasActiveSettings => activeSettings != null;
     public float DirectionalForce => activeSettings != null
         ? activeSettings.directionalForce
         : 0f;
-    public ArtificerRuntimeOrderMode OrderMode => activeSettings.orderMode;
-    public ArtificerRuntimeReleaseMode ReleaseMode => activeSettings.releaseMode;
     public ArtificerRuntimeReleaseMode PrefabReleaseMode
     {
         get

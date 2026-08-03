@@ -11,6 +11,8 @@ public sealed class EnemyDestructionLink : MonoBehaviour
 
     private bool deathRequestedThisLife;
 
+    internal GameObject DestructionVisualPrefab => destructionVisualPrefab;
+
     /// <summary>
     /// 실제 적의 사망 판정 직후 호출한다. 실제 적을 끄거나 풀에 반환하지
     /// 않으며, 한 번 활성화된 생명에서는 첫 요청만 소비한다.

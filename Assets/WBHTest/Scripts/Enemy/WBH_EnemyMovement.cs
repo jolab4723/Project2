@@ -23,6 +23,7 @@ public class WBH_EnemyMovement : MonoBehaviour
     // NavMeshAgent 초기화
     public void Initialize(WBH_EnemyInfo info)
     {
+        agent ??= GetComponent<NavMeshAgent>();
         agent.speed = info.moveSpeed;
     }
 

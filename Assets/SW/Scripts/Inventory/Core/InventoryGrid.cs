@@ -1,11 +1,9 @@
-using TMPro;
 using UnityEngine;
 
 public class InventoryGrid : MonoBehaviour
 {
     private InventoryItem[,] grid;
     [SerializeField] private RectTransform gridRect;
-    [SerializeField] private TextMeshProUGUI text;
     [SerializeField] private RectTransform itemsContainer;
     [SerializeField] private int gridWidth = 8;
     [SerializeField] private int gridHeight = 6;
