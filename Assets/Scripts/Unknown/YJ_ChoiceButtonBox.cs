@@ -4,9 +4,9 @@ using System.Collections.Generic;
 public class YJ_ChoiceButtonBox : MonoBehaviour
 {
     [SerializeField] private GameObject choiceButtonPrefab;
-    [SerializeField] private List<GameObject> buttons;
+    [SerializeField] private List<GameObject> buttons = new();
 
-    void Start()
+    private void Awake()
     {
         buttons.Clear();
     }
@@ -25,9 +25,18 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
 
     public void ButtonTextSet(List<string> title, List<string> content)
     {
-        for (int i = 0; i < buttons.Count; i++)
+        if (title == null || content == null)
+            return;
+
+        int textCount = Mathf.Min(buttons.Count, title.Count, content.Count);
+
+        for (int i = 0; i < textCount; i++)
         {
             YJ_ChoiceButton buttonObject = buttons[i].GetComponent<YJ_ChoiceButton>();
+
+            if (buttonObject == null)
+                continue;
+
             buttonObject.ButtonTitleSet(title[i]);
             buttonObject.ButtonContentSet(content[i]);
         }
