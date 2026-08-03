@@ -17,11 +17,20 @@ public class YJ_UnknownStageManager : MonoBehaviour
     [SerializeField] private YJ_UnknownStageLabelDatabaseSO labelDatabase;
     [SerializeField] private YJ_StageSaveService stageSaveService;
 
-    [Header("Localization")]
-    [SerializeField] private GameLanguage currentLanguage = GameLanguage.KOR;
-
     [Header("Runtime")]
     [SerializeField] private YJ_UnknownStageDefinitionSO selectedStage;
+
+    private YJ_LanguageManager languageManager;
+
+    private void OnEnable()
+    {
+        BindLanguageManager();
+    }
+
+    private void OnDisable()
+    {
+        UnbindLanguageManager();
+    }
 
     private void Start()
     {
@@ -38,19 +47,43 @@ public class YJ_UnknownStageManager : MonoBehaviour
         ApplySelectedStage(true);
     }
 
-    public void SetLanguage(GameLanguage language)
+    private void BindLanguageManager()
     {
-        if (currentLanguage == language)
+        if (languageManager != null)
             return;
 
-        currentLanguage = language;
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager == null)
+        {
+            Log.Error("YJ_LanguageManager could not be found.");
+            return;
+        }
 
-        if (selectedStage != null)
+        languageManager.LanguageChanged += HandleLanguageChanged;
+    }
+
+    private void UnbindLanguageManager()
+    {
+        if (languageManager == null)
+            return;
+
+        languageManager.LanguageChanged -= HandleLanguageChanged;
+        languageManager = null;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _)
+    {
+        if (selectedStage != null && labelDatabase != null)
             ApplySelectedStage(false);
     }
 
     private bool ResolveReferences()
     {
+        BindLanguageManager();
+
+        if (languageManager == null)
+            return false;
+
         if (stageDatabase == null)
         {
             stageDatabase =
@@ -171,9 +204,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void ApplySelectedStage(bool createButtons)
     {
-        YJ_UnknownStageLabel label = labelDatabase.GetLabel(
-            selectedStage.StageId,
-            currentLanguage);
+        YJ_UnknownStageLabel label =
+            labelDatabase.GetLabel(selectedStage.StageId);
 
         if (label == null)
         {
