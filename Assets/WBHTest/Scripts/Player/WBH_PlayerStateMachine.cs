@@ -24,8 +24,6 @@ public class WBH_PlayerStateMachine : MonoBehaviour
         if (CurrentState == next)
             return;
 
-        Log.Print($"{CurrentState} -> {next}");
-        
         PlayerState previous = CurrentState;
 
         OnExitState?.Invoke(previous);

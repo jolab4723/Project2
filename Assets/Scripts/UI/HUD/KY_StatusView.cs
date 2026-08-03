@@ -8,6 +8,22 @@ public class KY_StatusView : MonoBehaviour
     public Slider manaSlider;
     public Slider expSlider;
 
+    private WBH_PlayerStatus status;
+
+    private void Awake()
+    {
+        status = FindFirstObjectByType<WBH_PlayerStatus>();
+    }
+
+    private void OnEnable()
+    {
+        status.OnHpChanged += UpdateHealth;
+    }
+    private void OnDisable()
+    {
+        status.OnHpChanged -= UpdateHealth;
+    }
+
     public void UpdateHealth(float current, float max)
     {
         healthSlider.value = current / max;

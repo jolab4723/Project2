@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class WBH_EnemyElitePattern : WBH_IEnemyPattern
+public class WBH_EnemyElitePattern : WBH_EnemyPattern, WBH_IEnemyPattern
 {
     private WBH_EnemyPattern owner;
 
@@ -12,10 +12,12 @@ public class WBH_EnemyElitePattern : WBH_IEnemyPattern
 
     private float dashRange = 10f;
     private float dashMinRange = 4f;
+    protected float dashHitRadius = 3f;
 
     public void Initialize(WBH_EnemyPattern owner)
     {
         this.owner = owner;
+        dashHitRadius = 3f;
     }
 
     public void Tick(float deltaTime)
@@ -37,7 +39,7 @@ public class WBH_EnemyElitePattern : WBH_IEnemyPattern
         {
             dashCooldown = DashCooldown;
 
-            owner.Combat.DashAttack(dashRange);
+            owner.Combat.DashAttack(dashRange, 0.4f);
 
             return;
         }

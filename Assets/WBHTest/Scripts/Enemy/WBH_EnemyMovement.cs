@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -12,6 +13,8 @@ public class WBH_EnemyMovement : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 lastDestination;
     private bool canControl = true;
+    public event Action OnDashUpdate;
+
     public bool CanControl => canControl;
 
     private void Awake()
@@ -88,10 +91,12 @@ public class WBH_EnemyMovement : MonoBehaviour
             time += Time.deltaTime;
 
             transform.position = Vector3.Lerp(start, end, time / duration);
+            OnDashUpdate?.Invoke();
+
             yield return null;
         }
 
-        agent.Warp(transform.position);
+        Warp(transform.position);
 
         SetControlEnable(true);
     }
