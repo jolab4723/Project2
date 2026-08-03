@@ -246,6 +246,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
 
+        Log.Print($"{this.gameObject.name} 현재 체력 {currentHp}");
+
         if (currentHp == 0)
         {
             OnDead?.Invoke();

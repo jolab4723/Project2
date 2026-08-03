@@ -36,6 +36,15 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         player = FindAnyObjectByType<T_PlayerController>().transform;
     }
 
+    private void OnEnable()
+    {
+        WBH_EnemyController.OnEnemyDead += EnemyDead;
+    }
+    private void OnDisable()
+    {
+        WBH_EnemyController.OnEnemyDead -= EnemyDead;
+    }
+
     private void Start()
     {
         InitializeSpawnAreas();
@@ -101,7 +110,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         return spawnAreas[index];
     }
 
-    public void OnEnemyDead()
+    public void EnemyDead() //!@ 차후 게임 매니저 생기면 거기서 웨이브 감지 바꾸는 것 고려
     {
         if (stageClear)
             return;

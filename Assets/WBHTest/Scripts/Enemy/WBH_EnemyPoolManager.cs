@@ -60,7 +60,7 @@ public class WBH_EnemyPoolManager : MonoBehaviour
         {
             enemy = pool.Dequeue();
         }
-        enemy.gameObject.SetActive(true);
+        //enemy.gameObject.SetActive(true);
 
         return enemy;
     }
