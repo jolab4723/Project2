@@ -5,7 +5,7 @@ public class YJ_PortalActive : MonoBehaviour
 {
     [SerializeField] private Light light;
     private float maxIntensity = 100f;
-    private float duration = 1f;
+    private float duration = 3f;
 
     void Awake()
     {
