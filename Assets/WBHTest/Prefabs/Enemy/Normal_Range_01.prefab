@@ -300,6 +300,8 @@ GameObject:
   - component: {fileID: 5791879278000763495}
   - component: {fileID: 5847430986532663735}
   - component: {fileID: -4694232577346268441}
+  - component: {fileID: 3813137896030985729}
+  - component: {fileID: 6719123838374900437}
   m_Layer: 10
   m_Name: Normal_Range_01
   m_TagString: Untagged
@@ -517,7 +519,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -544,6 +546,33 @@ MonoBehaviour:
   renderers: []
   hitFlashDuration: 0.12
   hitFlashIntensity: 1
+--- !u!114 &3813137896030985729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7354258622308962069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 446203d7d0e89a440a4034c8ad72bb1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionLink
+  destructionVisualPrefab: {fileID: 1734380527962910862, guid: 75641b1a17c40b44e8f9e3f566994df6, type: 3}
+  baseDirectionalForce: 3
+--- !u!114 &6719123838374900437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7354258622308962069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e69d35b0b4df428438e30380680235c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyDestructionAdapter
+  targetCollider: {fileID: 5847430986532663735}
 --- !u!1 &7418149949931920296
 GameObject:
   m_ObjectHideFlags: 0
@@ -791,11 +820,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8130924080246504071, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Name
