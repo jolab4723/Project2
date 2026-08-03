@@ -9,7 +9,10 @@ public class KY_SlideAnimator : MonoBehaviour
     public Ease inEase = Ease.OutBack;  // 나가는 속도
     public Ease outEase = Ease.InBack;  // 들어오는 속도
     public float hiddenOffsetX = 0f;    // 들어가는 위치
-    
+
+    [Header("일시정지 영향 여부")]
+    public bool ignoreTimeScale = false; 
+
     private RectTransform rectTransform;
     private Vector2 originalPosition;       // 원래 위치
     private Vector2 hiddenPosition;         // 숨는 위치
@@ -28,14 +31,17 @@ public class KY_SlideAnimator : MonoBehaviour
     // 팝업이 들어올 때 호출
     public Tween SlideIn()
     {
-        return rectTransform.DOAnchorPos(originalPosition, duration).SetEase(inEase);
+        return rectTransform.DOAnchorPos(originalPosition, duration)
+            .SetEase(inEase)
+            .SetUpdate(ignoreTimeScale);
     }
 
     // 팝업이 나갈 때 호출
     public Tween SlideOut(System.Action onComplete)
-    { 
+    {
         return rectTransform.DOAnchorPos(hiddenPosition, duration)
             .SetEase(outEase)
+            .SetUpdate(ignoreTimeScale)
             .OnComplete(() => onComplete?.Invoke());
     }
 }

@@ -2,6 +2,7 @@ using DG.Tweening;
 using UnityEngine;
 
 // UI가 압축되었다가 가로나 세로로 커지는 연출용 코드입니다.
+// 속도, 압축되는 크기를 조절할 수 있습니다.
 public enum CurtainAxis { Vertical, Horizontal } // 가로 세로 전환
 
 public class KY_CurtainEffect : MonoBehaviour
