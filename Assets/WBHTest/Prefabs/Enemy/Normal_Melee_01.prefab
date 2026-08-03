@@ -1014,7 +1014,7 @@ GameObject:
   - component: {fileID: 2818968809625392605}
   - component: {fileID: 3732678896662894666}
   - component: {fileID: 1439654924293940347}
-  - component: {fileID: 89066974495413303}
+  - component: {fileID: -6054080787084376288}
   m_Layer: 10
   m_Name: Normal_Melee_01
   m_TagString: Untagged
@@ -1286,7 +1286,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyDestructionAdapter
   targetCollider: {fileID: 5025398194320583428}
---- !u!114 &89066974495413303
+--- !u!114 &-6054080787084376288
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1776,12 +1776,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4369432294793635458, guid: b242be491c491cc42917c34c970c7831, type: 3}
+      propertyPath: m_Direction
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8130924080246504071, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Name

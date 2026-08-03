@@ -15,6 +15,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     private WBH_ProjectileSpawner projectileSpawner;
 
     private float attackTimer = 0f;
+    private bool isDashAttack;
+    private bool hasHitTarget;
 
 
     private void Awake()
@@ -26,6 +28,15 @@ public class WBH_EnemyCombat : MonoBehaviour
         movement = GetComponent<WBH_EnemyMovement>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
 
+    }
+
+    private void OnEnable()
+    {
+        movement.OnDashUpdate += CheckDashHit;
+    }
+    private void OnDisable()
+    {
+        movement.OnDashUpdate -= CheckDashHit;
     }
 
     private void Update()
@@ -50,7 +61,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     public void Attack()
     {
         // 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
-        if (!CanAttack())
+        if (!CanAttack() && !movement.CanControl)
             return;
 
         ResetAttackCoolTime();
@@ -75,17 +86,18 @@ public class WBH_EnemyCombat : MonoBehaviour
         return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
     }
 
-    public void DashAttack(float distance)
+    public void DashAttack(float distance, float duration)
     {
-        movement.Dash(transform.forward, distance, 2f);
+        isDashAttack = true;
+        movement.Dash(transform.forward, distance, duration);
     }
 
-    public void ShootBurst(float count)
+    public void ShootBurst(int count)
     {
         StartCoroutine(CoShootBurst(count));
     }
 
-    private IEnumerator CoShootBurst(float count)
+    private IEnumerator CoShootBurst(int count)
     {
         for(int i = 0; i < count; i++)
         {
@@ -103,4 +115,24 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, 12f, pattern.PlayerLayer);
     }    
+
+    private void CheckDashHit()
+    {
+        if (hasHitTarget)
+            return;
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer);
+
+        foreach(Collider hit in hits)
+        {
+            if (!hit.TryGetComponent<WBH_ICombat>(out var target))
+                continue;
+
+            hasHitTarget = true;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(target, WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f));
+
+            break;
+        }
+    }
 }
