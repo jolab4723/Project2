@@ -255,7 +255,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 800, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &429672601
 GameObject:
@@ -314,7 +314,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9afdd16ebbb58bc48b6646cedc9c43b3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0ce8674bcfad2c64e920edb29829f819, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -367,7 +367,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 1000, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &647984595
 MonoBehaviour:
@@ -399,7 +399,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4280329690
-  m_fontColor: {r: 0.854902, g: 0.6470588, b: 0.1254902, a: 1}
+  m_fontColor: {r: 0.85490197, g: 0.64705884, b: 0.1254902, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -515,17 +515,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_UnknownStageManager
   unknownStageContents: {fileID: 1115556480}
   choiceButtonBox: {fileID: 1813020435}
-  stageTitle: 
-  stageContent: 
-  buttonTitle:
-  - Title1
-  - Title2
-  - Title3
-  buttonContent:
-  - Content1
-  - Content2
-  - Content3
-  buttonNumber: 3
+  stageDatabase: {fileID: 11400000, guid: 4e8636e464269544e9a5bd288f6a8c50, type: 2}
+  labelDatabase: {fileID: 0}
+  stageSaveService: {fileID: 0}
+  currentLanguage: 0
+  selectedStage: {fileID: 0}
 --- !u!1 &1115556475
 GameObject:
   m_ObjectHideFlags: 0
@@ -566,7 +560,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: -500, y: 0}
-  m_SizeDelta: {x: 800, y: 1080}
+  m_SizeDelta: {x: 1000, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1115556477
 MonoBehaviour:
@@ -589,7 +583,7 @@ MonoBehaviour:
   m_Spacing: 30
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 1
+  m_ChildControlWidth: 0
   m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
@@ -616,6 +610,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_UnknownStageContents
   stageTitle: {fileID: 647984595}
   stageContent: {fileID: 2070226288}
+  stageBackground: {fileID: 0}
+  charactersPerSecond: 120
+  contentStartDelay: 0.15
 --- !u!1 &1455671014
 GameObject:
   m_ObjectHideFlags: 0
@@ -730,7 +727,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 800, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1813020434
 MonoBehaviour:
@@ -772,6 +769,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_ChoiceButtonBox
   choiceButtonPrefab: {fileID: 3151745826846084479, guid: 32566978b7290c74d8cf07127cf06b13, type: 3}
   buttons: []
+  revealStartOffset: {x: -150, y: 0}
+  revealDuration: 0.35
+  revealInterval: 0.1
+  revealEase: 9
+  unselectedExitOffset: {x: 150, y: 0}
+  exitDuration: 0.35
+  sceneTransitionDelay: 0.5
+  exitMoveEase: 8
 --- !u!1 &2070226286
 GameObject:
   m_ObjectHideFlags: 0
@@ -807,7 +812,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 900, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2070226288
 MonoBehaviour:
@@ -829,10 +834,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBBF8\uC9C0 \uC2A4\uD14C\uC774\uC9C0 \uCEE8\uD150\uCE20 \uB0B4\uC6A91\n\uBBF8\uC9C0
-    \uC2A4\uD14C\uC774\uC9C0 \uCEE8\uD150\uCE20 \uB0B4\uC6A92\n\uBBF8\uC9C0 \uC2A4\uD14C\uC774\uC9C0
-    \uCEE8\uD150\uCE20 \uB0B4\uC6A93\n\uBBF8\uC9C0 \uC2A4\uD14C\uC774\uC9C0 \uCEE8\uD150\uCE20
-    \uB0B4\uC6A94\n\uBBF8\uC9C0 \uC2A4\uD14C\uC774\uC9C0 \uCEE8\uD150\uCE20 \uB0B4\uC6A95"
+  m_text: "\uBBF8\uC9C0 \uC2A4\uD14C\uC774\uC9C0 \uCEE8\uD150\uCE20 \uB0B4\uC6A9"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
   m_sharedMaterial: {fileID: -4062070630887492077, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
@@ -859,8 +861,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 32
-  m_fontSizeBase: 32
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -876,7 +878,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 0
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}

@@ -74,7 +74,8 @@ public class PlayerStatManager : MonoBehaviour
             OnWeaponInfoChanged?.Invoke(null);
     }
 
-    private bool TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
+    /// <summary>현재 장착 중인 무기의 타입/속성/강화 수치. 전투 시스템에서 공격의 속성(인챈트)을 판정할 때 사용.</summary>
+    public bool TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
     {
         weaponInfo = default;
 

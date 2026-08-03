@@ -115,6 +115,15 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float IceBonus => UseStatManager ? PercentToFraction(statManager.Stat.iceBonus) : iceBonus;
     public float ElectricBonus => UseStatManager ? PercentToFraction(statManager.Stat.electricBonus) : electricBonus;
 
+    /// <summary>
+    /// 현재 장착 무기에 인챈트된 속성. 모든 공격은 이 속성의 공격으로 간주되어 동일 속성 피해 보너스를 받는다.
+    /// WJ 스탯 시스템이 없거나 무기 정보를 못 가져오면 무속성(None)으로 취급한다.
+    /// </summary>
+    public ItemSystem.ElementType CurrentElement =>
+        UseStatManager && statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
+            ? weaponInfo.elementType
+            : ItemSystem.ElementType.None;
+
     //-- 외부 사용을 위한 프로퍼티
     public float AttackSpeed => UseStatManager ? statManager.Stat.attackSpeed : currentAttackSpeed;
     public float MoveSpeed => UseStatManager ? statManager.Stat.moveSpeed : currentMoveSpeed;
