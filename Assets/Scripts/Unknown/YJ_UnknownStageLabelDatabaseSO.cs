@@ -14,10 +14,19 @@ public class YJ_UnknownStageLabelDatabaseSO : ScriptableObject
     private readonly Dictionary<GameLanguage, Dictionary<string, YJ_UnknownStageLabel>>
         lookups = new();
 
-    public YJ_UnknownStageLabel GetLabel(string stageId, GameLanguage language)
+    public YJ_UnknownStageLabel GetLabel(string stageId)
     {
         if (string.IsNullOrWhiteSpace(stageId))
             return null;
+
+        YJ_LanguageManager languageManager = YJ_LanguageManager.Instance;
+        if (languageManager == null)
+        {
+            Log.Error("YJ_LanguageManager could not be found.");
+            return null;
+        }
+
+        GameLanguage language = languageManager.CurrentLanguage;
 
         Dictionary<string, YJ_UnknownStageLabel> lookup =
             GetOrBuildLookup(language);

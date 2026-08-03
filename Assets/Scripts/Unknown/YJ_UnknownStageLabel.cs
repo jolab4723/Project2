@@ -1,11 +1,3 @@
-public enum GameLanguage
-{
-    KOR,
-    ENG,
-    JPN,
-    CHN
-}
-
 [System.Serializable]
 public class YJ_UnknownStageLabel
 {
