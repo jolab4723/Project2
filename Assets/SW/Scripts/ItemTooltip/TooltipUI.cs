@@ -8,7 +8,6 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class TooltipUI : MonoBehaviour
 {
-
     private const string IncreaseColorHex = "#55D66B";
     private const string DecreaseColorHex = "#FF5B5B";
     private const string EqualColorHex = "#9A9A9A";
@@ -197,8 +196,9 @@ public class TooltipUI : MonoBehaviour
 
         }
 
-        ApplySubStats(itemData);
-        ApplyElementBonus(itemData);
+        var (regularSubStats, elementalSubStat) = SplitSubStats(itemData);
+        ApplySubStats(regularSubStats);
+        ApplyElementBonus(elementalSubStat);
         ApplyUniqueEffect(definition);
 
         if (itemPriceText != null)
@@ -272,22 +272,16 @@ public class TooltipUI : MonoBehaviour
         ItemDefinitionSO definition =
             itemData.definition;
 
-        string rarityName =
-            ItemDisplayNames.GradeNames.TryGetValue(
-                definition.rarity,
-                out string rarity)
-                ? rarity
-                : definition.rarity.ToString();
+        string rarityName = GetDisplayName(
+            ItemDisplayNames.GradeNames,
+            definition.rarity);
 
         if (definition.category == ItemCategory.Weapon &&
             itemData.rolledElement != ElementType.None)
         {
-            string elementName =
-                ItemDisplayNames.ElementNames.TryGetValue(
-                    itemData.rolledElement,
-                    out string element)
-                    ? element
-                    : itemData.rolledElement.ToString();
+            string elementName = GetDisplayName(
+                ItemDisplayNames.ElementNames,
+                itemData.rolledElement);
 
             return $"{rarityName} | {elementName}";
         }
@@ -301,49 +295,17 @@ public class TooltipUI : MonoBehaviour
         switch (definition.category)
         {
             case ItemCategory.Weapon:
-            {
-                string className =
-                    ItemDisplayNames.ClassNames.TryGetValue(
-                        definition.characterClass,
-                        out string characterClass)
-                        ? characterClass
-                        : definition.characterClass.ToString();
-
-                string weaponName =
-                    ItemDisplayNames.WeaponNames.TryGetValue(
-                        definition.weaponType,
-                        out string weapon)
-                        ? weapon
-                        : definition.weaponType.ToString();
-
-                return $"{className} | {weaponName}";
-            }
+                return $"{GetDisplayName(ItemDisplayNames.ClassNames, definition.characterClass)} | " +
+                       GetDisplayName(ItemDisplayNames.WeaponNames, definition.weaponType);
 
             case ItemCategory.Armor:
-            {
-                string categoryName =
-                    ItemDisplayNames.CategoryNames.TryGetValue(
-                        definition.category,
-                        out string category)
-                        ? category
-                        : definition.category.ToString();
-
-                string armorName =
-                    ItemDisplayNames.ArmorNames.TryGetValue(
-                        definition.armorType,
-                        out string armor)
-                        ? armor
-                        : definition.armorType.ToString();
-
-                return $"{categoryName} | {armorName}";
-            }
+                return $"{GetDisplayName(ItemDisplayNames.CategoryNames, definition.category)} | " +
+                       GetDisplayName(ItemDisplayNames.ArmorNames, definition.armorType);
 
             default:
-                return ItemDisplayNames.CategoryNames.TryGetValue(
-                    definition.category,
-                    out string displayName)
-                        ? displayName
-                        : definition.category.ToString();
+                return GetDisplayName(
+                    ItemDisplayNames.CategoryNames,
+                    definition.category);
         }
     }
 
@@ -464,12 +426,8 @@ public class TooltipUI : MonoBehaviour
         return (all, null);
     }
 
-    private void ApplySubStats(
-        ItemInstance itemData)
+    private void ApplySubStats(List<RolledSubStat> regularSubStats)
     {
-        var (regular, _) =
-            SplitSubStats(itemData);
-
         for (int i = 0;
              i < subStatTexts.Length;
              i++)
@@ -480,14 +438,14 @@ public class TooltipUI : MonoBehaviour
             if (slot == null)
                 continue;
 
-            if (i < regular.Count)
+            if (i < regularSubStats.Count)
             {
                 slot.gameObject.SetActive(true);
 
                 slot.text =
                     FormatStat(
-                        regular[i].statType,
-                        regular[i].value);
+                        regularSubStats[i].statType,
+                        regularSubStats[i].value);
             }
             else
             {
@@ -496,23 +454,18 @@ public class TooltipUI : MonoBehaviour
         }
     }
 
-    private void ApplyElementBonus(
-        ItemInstance itemData)
+    private void ApplyElementBonus(RolledSubStat elementalSubStat)
     {
         if (elementBonusText == null)
             return;
 
-        var (_, elemental) =
-            SplitSubStats(itemData);
-
-        if (elemental != null)
+        if (elementalSubStat != null)
         {
             elementBonusText.gameObject.SetActive(true);
 
-            elementBonusText.text =
-                FormatStat(
-                    elemental.statType,
-                    elemental.value);
+            elementBonusText.text = FormatStat(
+                elementalSubStat.statType,
+                elementalSubStat.value);
         }
         else
         {
@@ -557,17 +510,21 @@ public class TooltipUI : MonoBehaviour
         StatType statType,
         float value)
     {
-        string statName =
-            ItemDisplayNames.StatNames.TryGetValue(
-                statType,
-                out string displayName)
-                ? displayName
-                : statType.ToString();
+        string statName = GetDisplayName(ItemDisplayNames.StatNames, statType);
 
         string sign =
             value >= 0f ? "+" : string.Empty;
 
         return $"{statName} {sign}{value:F1}";
+    }
+
+    private static string GetDisplayName<T>(
+        IReadOnlyDictionary<T, string> names,
+        T value)
+    {
+        return names.TryGetValue(value, out string displayName)
+            ? displayName
+            : value.ToString();
     }
 
     private void ApplyLayout(bool hasUniqueEffect)
@@ -581,24 +538,15 @@ public class TooltipUI : MonoBehaviour
 
         float section1Height = section1BaseHeight;
 
-        float section2Height =
-            Mathf.Max(
-                0f,
-                section2BaseHeight - hiddenHeight);
-
-        float section3Height = 0f;
-
-        if (hasUniqueEffect)
-        {
-            section3Height = CalculateUniqueEffectSectionHeight();
-        }
+        float section2Height = Mathf.Max(0f, section2BaseHeight - hiddenHeight);
+        float section3Height = hasUniqueEffect
+            ? CalculateUniqueEffectSectionHeight()
+            : 0f;
 
         float section4Height = section4BaseHeight;
 
         if (section3 != null)
-        {
-            section3.gameObject.SetActive( hasUniqueEffect);
-        }
+            section3.gameObject.SetActive(hasUniqueEffect);
 
         SetHeight(section2, section2Height);
         SetHeight(section3, section3Height);
@@ -616,25 +564,19 @@ public class TooltipUI : MonoBehaviour
 
         AlignBackdrop(backgroundRect, totalHeight);
 
-        AlignBackdrop(
-            borderImage != null
-                ? borderImage.rectTransform
-                : null,
-            totalHeight);
+        AlignBackdrop(borderImage != null ? borderImage.rectTransform : null, totalHeight);
     }
 
     private float CalculateUniqueEffectSectionHeight()
     {
-        float descriptionHeight =
-            uniqueEffectDescriptionBaseHeight;
+        float descriptionHeight = uniqueEffectDescriptionBaseHeight;
 
         if (uniqueEffectDescriptionText != null)
         {
-            descriptionHeight =
-                Mathf.Clamp(
-                    uniqueEffectDescriptionText.preferredHeight,
-                    0f,
-                    uniqueEffectDescriptionBaseHeight);
+            descriptionHeight = Mathf.Clamp(
+                uniqueEffectDescriptionText.preferredHeight,
+                0f,
+                uniqueEffectDescriptionBaseHeight);
 
             RectTransform descriptionRect =
                 uniqueEffectDescriptionText.rectTransform;
@@ -649,18 +591,7 @@ public class TooltipUI : MonoBehaviour
                 oldAnchoredY +
                 (1f - oldPivotY) * oldHeight;
 
-            descriptionRect.anchorMin =
-                new Vector2(descriptionRect.anchorMin.x, 1f);
-
-            descriptionRect.anchorMax =
-                new Vector2(descriptionRect.anchorMax.x, 1f);
-
-            descriptionRect.pivot =
-                new Vector2(descriptionRect.pivot.x, 1f);
-
-            descriptionRect.anchoredPosition =
-                new Vector2(descriptionRect.anchoredPosition.x, preservedTopY);
-
+            AlignToTop(descriptionRect, preservedTopY);
             SetHeight(descriptionRect, descriptionHeight);
         }
 
@@ -679,18 +610,7 @@ public class TooltipUI : MonoBehaviour
         if (section == null || height <= 0f)
             return 0f;
 
-        section.anchorMin =
-            new Vector2(section.anchorMin.x, 1f);
-
-        section.anchorMax =
-            new Vector2(section.anchorMax.x, 1f);
-
-        section.pivot =
-            new Vector2(section.pivot.x,1f);
-
-        section.anchoredPosition =
-            new Vector2(section.anchoredPosition.x, -yOffset);
-
+        AlignToTop(section, -yOffset);
         return height + sectionSpacing;
     }
 
@@ -701,19 +621,16 @@ public class TooltipUI : MonoBehaviour
         if (target == null)
             return;
 
-        target.anchorMin =
-            new Vector2(target.anchorMin.x, 1f);
-
-        target.anchorMax =
-            new Vector2(target.anchorMax.x, 1f);
-
-        target.pivot =
-            new Vector2(target.pivot.x, 1f);
-
-        target.anchoredPosition =
-            new Vector2(target.anchoredPosition.x, 0f);
-
+        AlignToTop(target, 0f);
         SetHeight(target, height);
+    }
+
+    private static void AlignToTop(RectTransform target, float anchoredY)
+    {
+        target.anchorMin = new Vector2(target.anchorMin.x, 1f);
+        target.anchorMax = new Vector2(target.anchorMax.x, 1f);
+        target.pivot = new Vector2(target.pivot.x, 1f);
+        target.anchoredPosition = new Vector2(target.anchoredPosition.x, anchoredY);
     }
 
     private static void SetHeight(RectTransform target, float height)

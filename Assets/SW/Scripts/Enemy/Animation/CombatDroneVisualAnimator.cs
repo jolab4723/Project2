@@ -116,7 +116,7 @@ public sealed class CombatDroneVisualAnimator : MonoBehaviour
         recoilElapsed = 0f;
     }
 
-public void Rebind()
+    public void Rebind()
     {
         ResetBoundTransforms();
         propellers.Clear();
@@ -246,7 +246,7 @@ public void Rebind()
         visualRoot.localRotation = visualBaseRotation * Quaternion.Euler(pitch, 0f, roll);
     }
 
-private void AnimatePropellers(float deltaTime)
+    private void AnimatePropellers(float deltaTime)
     {
         propellerAngle = Mathf.Repeat(propellerAngle + propellerSpeed * deltaTime, 360f);
 
@@ -313,7 +313,7 @@ private void AnimatePropellers(float deltaTime)
         ResetBoundTransforms();
     }
 
-private void ResetBoundTransforms()
+    private void ResetBoundTransforms()
     {
         if (!isBound)
         {

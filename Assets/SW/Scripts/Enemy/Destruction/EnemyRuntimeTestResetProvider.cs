@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 // WBH 전투 코드는 수정하지 않고, 테스트 패널의 리셋 요청만 기존 공개 API에 연결한다.
 [DisallowMultipleComponent]
@@ -18,12 +19,34 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
     [SerializeField, InspectorName("리셋 단축키")]
     private KeyCode resetKey = KeyCode.R;
 
+    [Header("다시 생성할 적 배치")]
+    [SerializeField, Min(1), InspectorName("한 줄에 배치할 적 수")]
+    private int formationColumns = 5;
+
+    [SerializeField, Min(0.5f), InspectorName("적 사이 간격")]
+    private float formationSpacing = 2.5f;
+
+    [SerializeField, Min(0.1f), InspectorName("NavMesh 탐색 반경")]
+    private float navMeshSampleRadius = 1.25f;
+
     private void Update()
     {
         if (Input.GetKeyDown(resetKey))
         {
-            ResetRuntimeArtificerTargets();
+            if (TryGetComponent(out ArtificerRuntimeTuningPanel panel))
+                panel.RespawnAndApply();
+            else
+                ResetRuntimeArtificerTargets();
         }
+    }
+
+    public void ConfigureSpawnCounts(int normalCount, int eliteCount = 0)
+    {
+        normalEnemyCount = Mathf.Max(0, normalCount);
+        eliteEnemyCount = Mathf.Max(0, eliteCount);
+        int totalCount = normalEnemyCount + eliteEnemyCount;
+        if (totalCount > 0)
+            formationColumns = Mathf.CeilToInt(Mathf.Sqrt(totalCount));
     }
 
     public void ResetRuntimeArtificerTargets()
@@ -70,11 +93,98 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
         {
             spawnManager.SpawnElite(eliteEnemyCount);
         }
+
+        ArrangeAndSyncSpawnedEnemies();
+    }
+
+    private void ArrangeAndSyncSpawnedEnemies()
+    {
+        WBH_EnemyController[] enemies =
+            FindObjectsByType<WBH_EnemyController>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+        if (enemies.Length == 0)
+        {
+            return;
+        }
+
+        Vector3 center = Vector3.zero;
+        int sceneEnemyCount = 0;
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            if (enemies[i] == null ||
+                enemies[i].gameObject.scene.handle != gameObject.scene.handle)
+            {
+                continue;
+            }
+
+            center += enemies[i].transform.position;
+            sceneEnemyCount++;
+        }
+
+        if (sceneEnemyCount == 0)
+        {
+            return;
+        }
+
+        center /= sceneEnemyCount;
+        int columns = Mathf.Clamp(formationColumns, 1, sceneEnemyCount);
+        int rows = Mathf.CeilToInt(sceneEnemyCount / (float)columns);
+        int arrangedIndex = 0;
+
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            WBH_EnemyController enemy = enemies[i];
+            if (enemy == null ||
+                enemy.gameObject.scene.handle != gameObject.scene.handle)
+            {
+                continue;
+            }
+
+            int row = arrangedIndex / columns;
+            int column = arrangedIndex % columns;
+            Vector3 candidate = center + new Vector3(
+                (column - (columns - 1) * 0.5f) * formationSpacing,
+                0f,
+                (row - (rows - 1) * 0.5f) * formationSpacing);
+
+            if (NavMesh.SamplePosition(
+                    candidate,
+                    out NavMeshHit hit,
+                    navMeshSampleRadius,
+                    NavMesh.AllAreas))
+            {
+                NavMeshAgent agent = enemy.GetComponent<NavMeshAgent>();
+                if (agent != null && agent.enabled && agent.isOnNavMesh)
+                {
+                    agent.Warp(hit.position);
+                }
+                else
+                {
+                    enemy.transform.position = hit.position;
+                }
+            }
+            else
+            {
+                enemy.transform.position = candidate;
+            }
+
+            WBH_EnemyStatus status = enemy.GetComponent<WBH_EnemyStatus>();
+            if (status != null)
+            {
+                status.Heal(0f);
+            }
+
+            arrangedIndex++;
+        }
     }
 
     private void OnValidate()
     {
         normalEnemyCount = Mathf.Max(0, normalEnemyCount);
         eliteEnemyCount = Mathf.Max(0, eliteEnemyCount);
+        formationColumns = Mathf.Max(1, formationColumns);
+        formationSpacing = Mathf.Max(0.5f, formationSpacing);
+        navMeshSampleRadius = Mathf.Max(0.1f, navMeshSampleRadius);
     }
 }
