@@ -15,9 +15,6 @@ public class T_PlayerCombat : MonoBehaviour
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    private float fighterAttackRange = 2f;
-    private float gunnerAttackRange = 10f;
-    private float gunnerBulletSpeed = 10f;
     private float basicAttackMult = 1f;
 
 
@@ -51,8 +48,6 @@ public class T_PlayerCombat : MonoBehaviour
         if (status.IsDead)
             return;
 
-        UpdateStats();
-
         TestMultiple();
     }
 
@@ -66,7 +61,7 @@ public class T_PlayerCombat : MonoBehaviour
 
     private void FighterAttack()
     {
-        SectorAttack(fighterAttackRange, 230f);
+        SectorAttack(status.FighterAttackRange, 230f);
     }
     private void GunnerAttack()
     {
@@ -183,21 +178,8 @@ public class T_PlayerCombat : MonoBehaviour
         }
     }
 
-    private void UpdateStats() // !@ 아이템으로 받아올 것.
-    {
-        switch (currentWeapon)
-        {
-            case GunnerWeaponType.Rifle:
-                gunnerAttackRange = 10f;
-                break;
-            case GunnerWeaponType.Shotgun:
-                gunnerAttackRange = 4f;
-                break;
-            case GunnerWeaponType.GrenadeLauncher:
-                gunnerAttackRange = 7f;
-                break;
-        }
-    }
+
+    // ------ 테스트용 메서드
 
     // -- 작동 테스트용 메서드
     public void TestMultiple()
@@ -225,7 +207,7 @@ public class T_PlayerCombat : MonoBehaviour
     {
         Gizmos.color = Color.red;
 
-        Gizmos.DrawWireSphere(transform.position, fighterAttackRange);
+        //Gizmos.DrawWireSphere(transform.position, fighterAttackRange);
     }
 #endif
 }

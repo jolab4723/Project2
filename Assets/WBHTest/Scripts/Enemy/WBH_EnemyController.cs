@@ -1,5 +1,9 @@
+using System;
 using UnityEngine;
+using UnityEngine.AI;
 
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
@@ -17,6 +21,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyPoolManager poolManager; 
 
     private WBH_EnemyInfo info;
+
+    public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
 
     public WBH_EnemyInfo Info => info;
     public WBH_ICombatStatus Status => status;
@@ -45,13 +51,18 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     {
         this.info = info;
         this.poolManager = poolManager;
-        
-        status.Initialize(info);
 
+        status ??= GetComponent<WBH_EnemyStatus>();
+        movement ??= GetComponent<WBH_EnemyMovement>();
+        combat ??= GetComponent<WBH_EnemyCombat>();
+        enemyAnimation ??= GetComponent<WBH_EnemyAnimation>();
+        pattern ??= GetComponent<WBH_EnemyPattern>();
+        statusEffectController ??= GetComponent<WBH_EnemyStatusEffectController>();
+
+        status.Initialize(info);
         movement.Initialize(info);
         combat.Initialize(info);
         enemyAnimation.Initialize();
-
         pattern.Initialize(this);
 
         Debug.Log(info.enemyName);
@@ -69,6 +80,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     private void Dead()
     {
+        OnEnemyDead?.Invoke();
+
         poolManager.Return(this);
     }
 
