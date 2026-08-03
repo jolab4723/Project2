@@ -1012,13 +1012,15 @@ GameObject:
   - component: {fileID: 5025398194320583428}
   - component: {fileID: 6453888425464919382}
   - component: {fileID: 2818968809625392605}
+  - component: {fileID: 3732678896662894666}
+  - component: {fileID: 1439654924293940347}
   m_Layer: 10
   m_Name: Normal_Melee_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1079042634644656969
 Transform:
   m_ObjectHideFlags: 0
@@ -1256,6 +1258,33 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+--- !u!114 &3732678896662894666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 446203d7d0e89a440a4034c8ad72bb1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionLink
+  destructionVisualPrefab: {fileID: 8887182158459588711, guid: dfb4604f8f32821499f19973aba5f212, type: 3}
+  baseDirectionalForce: 3
+--- !u!114 &1439654924293940347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e69d35b0b4df428438e30380680235c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyDestructionAdapter
+  targetCollider: {fileID: 5025398194320583428}
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0
@@ -1732,6 +1761,14 @@ PrefabInstance:
     - target: {fileID: 1241451252244969311, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8130924080246504071, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Name

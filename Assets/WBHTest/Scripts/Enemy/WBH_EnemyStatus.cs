@@ -21,6 +21,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     private float fireBonus;
     private float iceBonus;
     private float electricBonus;
+    private float attackRange;
     private float moveSpeed;
     private float attackSpeed;
     private float projectileSpeed;
@@ -49,6 +50,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     public float MoveSpeed => currentMoveSpeed;
     public float AttackSpeed => currentAttackSpeed;
     public float ProjectileSpeed => projectileSpeed;
+    public float AttackRange => attackRange;
     public bool IsDead => currentHp <= 0;
 
     private void Awake()
@@ -67,6 +69,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
         moveSpeed = info.moveSpeed;
         attackSpeed = info.attackSpeed;
         projectileSpeed = info.projectileSpeed;
+        attackRange = info.attackRange;
 
         currentAttackPower = attackPower;
         currentAttackSpeed = attackSpeed;

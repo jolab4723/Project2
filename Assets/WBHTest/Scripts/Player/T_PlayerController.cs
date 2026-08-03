@@ -48,11 +48,13 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         stateMachine.OnEnterState += HandleEnterState;
         stateMachine.OnExitState += HandleExitState;
+        status.OnDead += Die;
     }
     private void OnDisable()
     {
         stateMachine.OnEnterState -= HandleEnterState;
         stateMachine.OnExitState -= HandleExitState;
+        status.OnDead -= Die;
     }
 
     private void Update()

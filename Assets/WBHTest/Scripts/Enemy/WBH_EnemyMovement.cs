@@ -67,4 +67,32 @@ public class WBH_EnemyMovement : MonoBehaviour
         else
             agent.isStopped = false;
     }
+
+    public void Dash(Vector3 direction, float distance, float duration)
+    {
+        StartCoroutine(CoDash(direction, distance, duration));
+    }
+
+    private IEnumerator CoDash(Vector3 direction, float distance, float duration)
+    {
+        SetControlEnable(false);
+
+        Vector3 start = transform.position;
+
+        Vector3 end = start + direction * distance;
+
+        float time = 0f;
+
+        while (time < duration) 
+        {
+            time += Time.deltaTime;
+
+            transform.position = Vector3.Lerp(start, end, time / duration);
+            yield return null;
+        }
+
+        agent.Warp(transform.position);
+
+        SetControlEnable(true);
+    }
 }

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &1873469111205241603
+--- !u!1 &4605956697973229241
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,153 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2906127087263024561}
-  - component: {fileID: 2476132324257612873}
-  - component: {fileID: 6484252029916114910}
-  - component: {fileID: 8696979066044902834}
-  - component: {fileID: 8528505310087936238}
-  - component: {fileID: 3969846645113659856}
+  - component: {fileID: 4712992839112491343}
+  - component: {fileID: 2765877455364601823}
+  - component: {fileID: 5588206797855253630}
+  - component: {fileID: 3005058008118504688}
   m_Layer: 0
-  m_Name: Droid_01 3_Arti test_DestructionVisual
+  m_Name: 000_SciFiDroid01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2906127087263024561
+--- !u!4 &4712992839112491343
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
+  m_GameObject: {fileID: 4605956697973229241}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1147174401397536594}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2765877455364601823
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605956697973229241}
+  m_Mesh: {fileID: 4300000, guid: afee4b2e7ca9ae048b854464f4c3e387, type: 2}
+--- !u!23 &5588206797855253630
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605956697973229241}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9ddd3e0a64524a64ebd8edeb7a784e1f, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3005058008118504688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605956697973229241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6de67c2ea0b9ecd4d89c8f8b0f1b623a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Artifice.ObjectID
+  id: 0
+  rend: {fileID: 5588206797855253630}
+--- !u!1 &8887182158459588711
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1147174401397536594}
+  - component: {fileID: 1536342367540800155}
+  - component: {fileID: 2104981476720464723}
+  - component: {fileID: 2169790423530698638}
+  - component: {fileID: 5306107434560581429}
+  - component: {fileID: 3623807206773584820}
+  m_Layer: 0
+  m_Name: Normal_Melee_01_DestructionVisual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1147174401397536594
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887182158459588711}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7425922020546038187}
+  - {fileID: 4712992839112491343}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2476132324257612873
+--- !u!114 &1536342367540800155
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
+  m_GameObject: {fileID: 8887182158459588711}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 308f599aa93f79a40ac2d7712cfb5db4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Artifice.Artificer
-  target: {fileID: 1873469111205241603}
+  target: {fileID: 8887182158459588711}
   exclude: []
   buildDistRange:
     mode: 0
@@ -248,7 +353,7 @@ MonoBehaviour:
   sortDistanceMode: 0
   reverseSortOrder: 0
   materialSortOrder: []
-  buildData: {fileID: 11400000, guid: 9df7e5fc19367ba4699f1de9ec4bf552, type: 2}
+  buildData: {fileID: 11400000, guid: cf66d2895725c2241a206cd07bd72904, type: 2}
   dontSplit: 0
   dontAdd: 0
   addAll: 0
@@ -366,7 +471,7 @@ MonoBehaviour:
   showSplit: 0
   showExtra: 0
   customBuild: {fileID: 0}
-  customDismantle: {fileID: 8696979066044902834}
+  customDismantle: {fileID: 2169790423530698638}
   placing: {fileID: 0}
   rebuildNeeded: 0
   completedObjects: []
@@ -522,63 +627,21 @@ MonoBehaviour:
   boundsMode: 1
   boundsValue: {x: 100, y: 100, z: 100}
   clickBuildPos: 0
---- !u!114 &6484252029916114910
+--- !u!114 &2104981476720464723
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e30a7ae56cacd3b4bba8b3cb044f06af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CombatDroneArtificerDestruction
-  artificer: {fileID: 2476132324257612873}
-  visualAnimator: {fileID: 0}
-  disableCollidersOnDestroy: 1
-  destroyRootOnComplete: 0
-  destroyDelayAfterComplete: 0.05
-  previewAutoTrigger: 0
-  previewDelay: 0
-  enableFragmentGroundCollision: 1
-  fragmentCollisionLayers:
-    serializedVersion: 2
-    m_Bits: 8192
---- !u!114 &8696979066044902834
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33d0de4bd0d8482cb2d4d63cf61bd031, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArtificerFragmentBurstProfile
-  artificer: {fileID: 2476132324257612873}
-  useBurstSpeedCurve: 1
-  initialSpeedMultiplier: 3.5
-  burstDuration: 0.1
-  finalSpeedMultiplier: 0.12
-  minimumUpwardRatio: 0.35
-  preserveTravelDistance: 1
---- !u!114 &8528505310087936238
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
+  m_GameObject: {fileID: 8887182158459588711}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1faab6f71767aa41a3977b8181e83e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArtificerRuntimeTuningTarget
-  artificer: {fileID: 2476132324257612873}
+  artificer: {fileID: 1536342367540800155}
   dissolveMap: {fileID: 0}
-  fragmentBurstProfile: {fileID: 8696979066044902834}
+  fragmentBurstProfile: {fileID: 0}
   activeSettings:
     releaseMode: 1
     dismantleTime: 0.3
@@ -586,17 +649,16 @@ MonoBehaviour:
     maximumLifetime: 2.2
     minimumRadialForce: 0.8
     maximumRadialForce: 2.8
-    directionalForce: 4.5
+    directionalForce: 3
     angularSpeed: 180
-    gravity: 1.35
+    gravity: 2.5
     bounce: 0.15
-    linearDrag: 0.12
+    linearDrag: 1
     angularDrag: 0.1
     useBurstSpeedCurve: 1
     initialSpeedMultiplier: 3.5
     burstDuration: 0.1
-    finalSpeedMultiplier: 0.12
-    groundClearanceLift: 0.35
+    finalSpeedMultiplier: 0.05
     preserveBurstTravelDistance: 1
     fragmentScale: 1
     shrinkFragments: 1
@@ -607,124 +669,52 @@ MonoBehaviour:
     dissolveEdgeWidth: 0.06
     orderMode: 0
     randomSeed: 404
---- !u!114 &3969846645113659856
+--- !u!114 &2169790423530698638
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873469111205241603}
+  m_GameObject: {fileID: 8887182158459588711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33d0de4bd0d8482cb2d4d63cf61bd031, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArtificerFragmentBurstProfile
+  artificer: {fileID: 1536342367540800155}
+  useBurstSpeedCurve: 1
+  initialSpeedMultiplier: 3.5
+  burstDuration: 0.1
+  finalSpeedMultiplier: 0.05
+  preserveTravelDistance: 1
+--- !u!114 &5306107434560581429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887182158459588711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e30a7ae56cacd3b4bba8b3cb044f06af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatDroneArtificerDestruction
+  artificer: {fileID: 1536342367540800155}
+  enableFragmentGroundCollision: 1
+  fragmentCollisionLayers:
+    serializedVersion: 2
+    m_Bits: 8192
+--- !u!114 &3623807206773584820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887182158459588711}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fe3cde1a26a5234d818e9d03a56c956, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionVisual
-  artificer: {fileID: 2476132324257612873}
-  visualAnimator: {fileID: 0}
-  destruction: {fileID: 6484252029916114910}
-  autoDeactivateOnComplete: 1
---- !u!1 &4215981792705951532
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7425922020546038187}
-  - component: {fileID: 8044773364603385295}
-  - component: {fileID: 1281549480764264821}
-  - component: {fileID: 3625690250093136538}
-  m_Layer: 0
-  m_Name: 000_SciFiDroid01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7425922020546038187
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4215981792705951532}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2906127087263024561}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &8044773364603385295
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4215981792705951532}
-  m_Mesh: {fileID: 4300000, guid: a151a615c1f013c4fbc3b41e5c158498, type: 2}
---- !u!23 &1281549480764264821
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4215981792705951532}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9ddd3e0a64524a64ebd8edeb7a784e1f, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3625690250093136538
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4215981792705951532}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6de67c2ea0b9ecd4d89c8f8b0f1b623a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Artifice.ObjectID
-  id: 0
-  rend: {fileID: 1281549480764264821}
+  artificer: {fileID: 1536342367540800155}
+  destruction: {fileID: 5306107434560581429}
