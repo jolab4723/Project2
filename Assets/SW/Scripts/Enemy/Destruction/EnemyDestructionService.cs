@@ -51,6 +51,7 @@ public sealed class EnemyDestructionService : MonoBehaviour
     private PoolEntry[] poolEntries = Array.Empty<PoolEntry>();
 
     private DestructionDamageStrengthScaler damageStrengthScaler;
+    private ArtificerRuntimeTuningPanel runtimeTuningPanel;
 
     private readonly Dictionary<GameObject, PoolState> statesByPrefab =
         new Dictionary<GameObject, PoolState>();
@@ -143,6 +144,7 @@ public sealed class EnemyDestructionService : MonoBehaviour
     private void Awake()
     {
         damageStrengthScaler = GetComponent<DestructionDamageStrengthScaler>();
+        runtimeTuningPanel = GetComponent<ArtificerRuntimeTuningPanel>();
     }
 
     private void OnEnable()
@@ -203,6 +205,27 @@ public sealed class EnemyDestructionService : MonoBehaviour
                     HandleCompleted(state, item);
                 }
             }
+        }
+    }
+
+    public IEnumerator EnsureCapacity(int minimumCount)
+    {
+        int targetCount = Mathf.Max(0, minimumCount);
+        foreach (PoolState state in statesByPrefab.Values)
+        {
+            while (state.CreateInProgress)
+                yield return null;
+
+            state.Config.MaxPoolSize = Mathf.Max(
+                state.Config.MaxPoolSize,
+                targetCount);
+            int missingCount = targetCount - state.Items.Count;
+            if (missingCount <= 0)
+                continue;
+
+            state.CreateInProgress = true;
+            yield return WarmNewItems(state, missingCount);
+            state.CreateInProgress = false;
         }
     }
 
@@ -388,6 +411,14 @@ public sealed class EnemyDestructionService : MonoBehaviour
                 state.Config.VisualPrefab);
             Destroy(instance);
             return null;
+        }
+
+        if (runtimeTuningPanel != null)
+        {
+            ArtificerRuntimeTuningTarget tuningTarget =
+                instance.GetComponentInChildren<ArtificerRuntimeTuningTarget>(true);
+            if (tuningTarget != null)
+                runtimeTuningPanel.RegisterTargetAndApply(tuningTarget);
         }
 
         var item = new PoolItem { Visual = visual };

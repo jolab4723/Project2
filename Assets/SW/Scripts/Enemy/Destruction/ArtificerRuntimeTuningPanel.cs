@@ -41,6 +41,8 @@ public sealed class ArtificerRuntimeTuningPanel : MonoBehaviour
     {
         EnsureDamageStrengthScaler();
         RefreshTargets(loadFirstTargetOnStart);
+        if (!loadFirstTargetOnStart)
+            ApplyCurrentSettings();
     }
 
     public void RefreshTargetsAndApply()
