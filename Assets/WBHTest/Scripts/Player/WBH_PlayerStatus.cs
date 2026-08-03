@@ -192,6 +192,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         // Stat이 만들어져 있다. 여기서 구독하고 초기 이동속도를 한 번 적용한다.
         SubscribeStatChanges();
         ApplyMoveSpeedToController();
+
+        OnHpChanged?.Invoke(CurrentHp, MaxHealth);
     }
 
     /// <summary>스탯이 재계산될 때마다 NavMeshAgent 속도를 다시 맞추도록 구독한다.</summary>

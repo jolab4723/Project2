@@ -30,6 +30,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     public float Distance { get; private set; } = 0;
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
+    protected float dashHitRadius = 3f;
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
@@ -37,6 +38,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     public Transform Target => target;
     public Transform FirePoint => firePoint;
     public LayerMask PlayerLayer => playerLayer;
+
+    public float DashHitRadius => DashHitRadius;
 
     private void Awake()
     {
