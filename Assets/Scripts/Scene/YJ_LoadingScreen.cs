@@ -41,7 +41,6 @@ public class YJ_LoadingScreen : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(gameObject);
         ResolveReferences();
 
         if (showOnStart)
