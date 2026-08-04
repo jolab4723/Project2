@@ -13,14 +13,14 @@ namespace ItemSystem
     internal class HealthThresholdRunner : MonoBehaviour
     {
         private float thresholdFraction;
-        private BuffDefinitionSO buffToApply;
+        private IBuffSource buffSource;
         private bool isActive;
         private bool subscribed;
 
-        public void Begin(float thresholdPercent, BuffDefinitionSO buff)
+        public void Begin(float thresholdPercent, IBuffSource source)
         {
             thresholdFraction = thresholdPercent / 100f;
-            buffToApply = buff;
+            buffSource = source;
 
             TrySubscribe();
             CheckCondition(); // 장착 시점에 이미 임계값 이하일 수도 있으니 한 번 즉시 판정한다.
@@ -48,13 +48,13 @@ namespace ItemSystem
                 PlayerHealthManager.Instance.OnHealthChanged -= CheckCondition;
 
             // 해제되는 순간 버프가 켜져있었다면 남지 않도록 정리한다.
-            if (isActive && buffToApply != null && PlayerBuffManager.Instance != null)
-                PlayerBuffManager.Instance.RemoveBuff(buffToApply);
+            if (isActive && buffSource != null && PlayerBuffManager.Instance != null)
+                PlayerBuffManager.Instance.RemoveBuff(buffSource);
         }
 
         private void CheckCondition()
         {
-            if (buffToApply == null || PlayerHealthManager.Instance == null || PlayerBuffManager.Instance == null)
+            if (buffSource == null || PlayerHealthManager.Instance == null || PlayerBuffManager.Instance == null)
                 return;
 
             float maxHealth = PlayerHealthManager.Instance.MaxHealth;
@@ -70,9 +70,9 @@ namespace ItemSystem
             isActive = shouldBeActive;
 
             if (isActive)
-                PlayerBuffManager.Instance.ApplyBuff(buffToApply);
+                PlayerBuffManager.Instance.ApplyBuff(buffSource);
             else
-                PlayerBuffManager.Instance.RemoveBuff(buffToApply);
+                PlayerBuffManager.Instance.RemoveBuff(buffSource);
         }
     }
 }

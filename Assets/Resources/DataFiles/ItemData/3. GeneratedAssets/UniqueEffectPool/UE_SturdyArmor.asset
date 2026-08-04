@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: UE_SturdyArmor
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.HealthThresholdBuffUniqueEffectSO
   effectName: "\uC0AC\uB825\uC744 \uB2E4\uD55C \uC9C8\uC8FC"
+  icon: {fileID: 0}
   effectDescription: "\uCCB4\uB825\uC774 {0}% \uC774\uD558\uB85C \uB5A8\uC5B4\uC9C0\uBA74
     \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. \uB2E4\uC2DC
     \uB118\uC5B4\uC11C\uBA74 \uD574\uC81C\uB429\uB2C8\uB2E4."
@@ -20,4 +21,10 @@ MonoBehaviour:
   - 50
   - 50
   healthThresholdPercent: 50
-  buffToApply: {fileID: 11400000, guid: 9cd17188f15d3d2408bfc9559ca579c2, type: 2}
+  buffSpec:
+    statEffects:
+    - statType: 7
+      value: 50
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1

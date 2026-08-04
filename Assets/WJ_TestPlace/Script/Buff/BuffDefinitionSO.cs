@@ -18,9 +18,13 @@ namespace ItemSystem
     /// <summary>
     /// 버프 하나의 정의. ItemDefinitionSO와 같은 역할(설계 데이터)을 하고,
     /// 실제 적용 상태는 BuffInstance(런타임)가 따로 들고 있다.
+    ///
+    /// !! 아이템 고유 효과는 이 에셋을 쓰지 않는다. 고유 효과는 UniqueEffectSO 안에 BuffSpec을
+    ///    인라인으로 들고 있어서 한 에셋에서 전부 설정한다. 이 에셋은 포션·스킬·적 디버프처럼
+    ///    고유 효과가 아닌 소스가 거는 독립 버프를 정의할 때 쓴다.
     /// </summary>
     [CreateAssetMenu(menuName = "Buff/BuffDefinition")]
-    public class BuffDefinitionSO : ScriptableObject
+    public class BuffDefinitionSO : ScriptableObject, IBuffSource
     {
         [Header("기본 정보")]
         public string buffId;
@@ -42,5 +46,15 @@ namespace ItemSystem
         public FixedStatValue[] statEffects;
 
         public bool IsPermanent => duration <= 0f;
+
+        // ----- IBuffSource -----
+        // 기존 필드 배치를 그대로 두고 인터페이스만 덧붙였다 (기존 버프 에셋의 직렬화 데이터 보존).
+        string IBuffSource.BuffDisplayName => string.IsNullOrEmpty(buffName) ? name : buffName;
+        Sprite IBuffSource.BuffIcon => icon;
+        FixedStatValue[] IBuffSource.StatEffects => statEffects;
+        float IBuffSource.Duration => duration;
+        BuffStackBehavior IBuffSource.StackBehavior => stackBehavior;
+        int IBuffSource.MaxStack => maxStack;
+        bool IBuffSource.IsPermanent => IsPermanent;
     }
 }
