@@ -61,7 +61,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     public void Attack()
     {
         // 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
-        if (!CanAttack() && !movement.CanControl)
+        if (!CanAttack() || !movement.CanControl)
             return;
 
         ResetAttackCoolTime();

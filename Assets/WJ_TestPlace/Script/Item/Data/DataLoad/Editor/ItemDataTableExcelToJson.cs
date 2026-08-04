@@ -74,7 +74,8 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[ItemDataTable] JSON generated: {jsonAbsolutePath}\n" +
-                      $"Armor: {data.armorDefinitions.Count}, Weapon: {data.weaponDefinitions.Count}, Potion: {data.potionDefinitions.Count}");
+                      $"Armor: {data.armorDefinitions.Count}, Weapon: {data.weaponDefinitions.Count}, " +
+                      $"Potion: {data.potionDefinitions.Count}, Relic: {data.relicDefinitions.Count}");
         }
 
         private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, ItemDataTableJsonData data)
@@ -94,8 +95,11 @@ namespace DataSystem
                     break;
 
                 case "RelicDefinitions":
+                    data.relicDefinitions = ExcelSheetReader.MapRows<RelicDefinitionRow>(rows);
+                    break;
+
                 case "ComboBox":
-                    // 아직 빈 시트 - 나중에 내용 채워지면 케이스 추가
+                    // 드롭다운 검증용 시트라 데이터가 아니다.
                     break;
 
                 default:
