@@ -33,10 +33,10 @@ public sealed class YJ_LoadingSceneView : MonoBehaviour
         if (FindFirstObjectByType<YJ_LoadingSceneView>() != null)
             return;
 
-        GameObject canvasObject = GameObject.Find("Canvas_Loading");
+        GameObject canvasObject = GameObject.Find("Canvas");
         if (canvasObject == null)
         {
-            Log.Error("[LoadingScene] Canvas_Loading 오브젝트를 찾을 수 없습니다.");
+            Log.Error("[LoadingScene] Canvas 오브젝트를 찾을 수 없습니다.");
             return;
         }
 

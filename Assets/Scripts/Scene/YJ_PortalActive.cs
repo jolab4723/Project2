@@ -1,80 +1,209 @@
-using UnityEngine;
-using UnityEngine.AI;
 using System.Collections;
-using System.Threading.Tasks;
+using UnityEngine;
 
 public class YJ_PortalActive : MonoBehaviour
 {
-    [SerializeField] private Light targetLight;
+    private const int OverlapBufferCapacity = 32;
 
+    [SerializeField] private Light targetLight;
     [SerializeField] private float maxIntensity = 100f;
     [SerializeField] private float duration = 3f;
-    private float activationDelay = 0.5f;
-    [SerializeField] private bool isCamp = false;
+    [SerializeField] private bool isCamp;
 
-    [SerializeField, Min(0f)] private float searchRadius = 8f;
-    [SerializeField, Min(0.1f)] private float navMeshSampleDistance = 2f;
-    [SerializeField, Min(1)] private int maxAttempts = 30;
-    [SerializeField] private float groundOffset;
-    [SerializeField, Min(0f)] private float playerClearance = 0.5f;
-    [SerializeField] private LayerMask playerLayerMask;
+    private SphereCollider portalCollider;
+    private Renderer[] portalRenderers;
+    private ParticleSystem[] portalParticles;
+    private Collider[] playerColliders;
+    private readonly Collider[] overlapBuffer = new Collider[OverlapBufferCapacity];
+    private Coroutine lightRoutine;
+    private bool activationRequested;
+    private bool isPortalActive;
 
-    private SphereCollider sphereCollider;
-    private Vector3 searchCenter;
-    private int activationRequestId;
-
-    void Awake()
+    private void Awake()
     {
-        targetLight = GetComponentInChildren<Light>();
-        sphereCollider = GetComponentInChildren<SphereCollider>();
-        searchCenter = transform.position;
+        targetLight = targetLight != null
+            ? targetLight
+            : GetComponentInChildren<Light>(true);
+        portalCollider = GetComponentInChildren<SphereCollider>(true);
+        portalRenderers = GetComponentsInChildren<Renderer>(true);
+        portalParticles = GetComponentsInChildren<ParticleSystem>(true);
+
+        if (portalCollider == null)
+            Log.Error("Portal 활성화에 사용할 SphereCollider를 찾지 못했습니다.");
+
+        if (!isCamp)
+            SetPortalState(false);
     }
 
-    void Start()
+    private void Start()
     {
-        gameObject.SetActive(isCamp);
+        if (!isCamp)
+            return;
 
+        SetPortalState(true);
         if (targetLight != null)
-            targetLight.intensity = isCamp ? maxIntensity : 0f;
+            targetLight.intensity = maxIntensity;
+    }
+
+    private void Update()
+    {
+        if (!activationRequested || isPortalActive)
+            return;
+
+        if (!CanCheckPlayerOverlap())
+            return;
+
+        if (!IsPlayerOverlappingPortal())
+            ActivatePortal();
     }
 
     public void Active(bool active)
     {
-        int requestId = ++activationRequestId;
-
         if (!active)
         {
-            gameObject.SetActive(false);
+            activationRequested = false;
+            playerColliders = null;
+            SetPortalState(false);
             return;
         }
 
-        gameObject.SetActive(false);
-        _ = ActivateAfterDelayAsync(requestId);
+        if (isPortalActive)
+            return;
+
+        activationRequested = true;
+
+        if (!CanCheckPlayerOverlap())
+            return;
+
+        if (!IsPlayerOverlappingPortal())
+            ActivatePortal();
     }
 
-    private async Task ActivateAfterDelayAsync(int requestId)
+    private void ActivatePortal()
     {
-        int delayMilliseconds = Mathf.Max(0, Mathf.RoundToInt(activationDelay * 1000f));
-        await Task.Delay(delayMilliseconds);
+        activationRequested = false;
+        SetPortalState(true);
 
-        if (this == null || requestId != activationRequestId)
+        if (targetLight == null)
             return;
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
+        if (lightRoutine != null)
+            StopCoroutine(lightRoutine);
+
+        lightRoutine = StartCoroutine(LightOn());
+    }
+
+    private void SetPortalState(bool active)
+    {
+        isPortalActive = active;
+
+        if (portalCollider != null)
+            portalCollider.enabled = active;
+
+        foreach (Renderer portalRenderer in portalRenderers)
         {
-            Log.Warning("Portal 활성화를 위한 Player 오브젝트를 찾지 못했습니다.");
-            return;
+            if (portalRenderer != null)
+                portalRenderer.enabled = active;
         }
 
-        if (!TryActivate(player.transform.position))
+        foreach (ParticleSystem portalParticle in portalParticles)
         {
-            Log.Warning("Portal을 활성화할 수 있는 NavMesh 위치를 찾지 못했습니다.");
+            if (portalParticle == null)
+                continue;
+
+            if (active)
+                portalParticle.Play(true);
+            else
+                portalParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        if (active)
             return;
+
+        if (lightRoutine != null)
+        {
+            StopCoroutine(lightRoutine);
+            lightRoutine = null;
         }
 
         if (targetLight != null)
-            StartCoroutine(LightOn());
+            targetLight.intensity = 0f;
+    }
+
+    private bool CanCheckPlayerOverlap()
+    {
+        if (portalCollider == null)
+            return false;
+
+        if (playerColliders != null && playerColliders.Length > 0)
+            return true;
+
+        return FindPlayerColliders();
+    }
+
+    private bool FindPlayerColliders()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        playerColliders = player != null
+            ? player.GetComponentsInChildren<Collider>(true)
+            : null;
+
+        return playerColliders != null && playerColliders.Length > 0;
+    }
+
+    private bool IsPlayerOverlappingPortal()
+    {
+        Transform colliderTransform = portalCollider.transform;
+        Vector3 scale = colliderTransform.lossyScale;
+        float largestScale = Mathf.Max(
+            Mathf.Abs(scale.x),
+            Mathf.Abs(scale.y),
+            Mathf.Abs(scale.z));
+        float worldRadius = portalCollider.radius * largestScale;
+        Vector3 worldCenter = colliderTransform.TransformPoint(portalCollider.center);
+        int overlapCount = Physics.OverlapSphereNonAlloc(
+            worldCenter,
+            worldRadius,
+            overlapBuffer,
+            Physics.AllLayers,
+            QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < overlapCount; i++)
+        {
+            if (IsPlayerCollider(overlapBuffer[i]))
+                return true;
+        }
+
+        if (overlapCount < overlapBuffer.Length)
+            return false;
+
+        Collider[] allOverlaps = Physics.OverlapSphere(
+            worldCenter,
+            worldRadius,
+            Physics.AllLayers,
+            QueryTriggerInteraction.Collide);
+
+        foreach (Collider overlap in allOverlaps)
+        {
+            if (IsPlayerCollider(overlap))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsPlayerCollider(Collider candidate)
+    {
+        if (candidate == null)
+            return false;
+
+        foreach (Collider playerCollider in playerColliders)
+        {
+            if (candidate == playerCollider)
+                return true;
+        }
+
+        return false;
     }
 
     private IEnumerator LightOn()
@@ -85,61 +214,14 @@ public class YJ_PortalActive : MonoBehaviour
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-            float ratio = Mathf.Clamp01(elapsedTime / duration);
+            float ratio = duration > 0f
+                ? Mathf.Clamp01(elapsedTime / duration)
+                : 1f;
             targetLight.intensity = Mathf.Lerp(0f, maxIntensity, ratio);
-
             yield return null;
         }
+
         targetLight.intensity = maxIntensity;
-    }
-
-    private bool TryActivate(Vector3 playerPosition)
-    {
-        if (sphereCollider == null)
-            sphereCollider = GetComponentInChildren<SphereCollider>();
-
-        if (sphereCollider == null)
-            return false;
-
-        gameObject.SetActive(false);
-
-        for (int attempt = 0; attempt < maxAttempts; attempt++)
-        {
-            Vector2 randomOffset = attempt == 0 ? Vector2.zero : Random.insideUnitCircle * searchRadius;
-            Vector3 candidate = searchCenter + new Vector3(randomOffset.x, 0f, randomOffset.y);
-
-            if ( ! NavMesh.SamplePosition(candidate, out NavMeshHit hit, navMeshSampleDistance, NavMesh.AllAreas))
-                continue;
-
-            transform.position = hit.position + Vector3.up * groundOffset;
-
-            if (IsOverlappingPlayer(playerPosition))
-                continue;
-
-            gameObject.SetActive(true);
-            return true;
-        }
-
-        return false;
-    }
-
-    private bool IsOverlappingPlayer(Vector3 playerPosition)
-    {
-        Transform colliderTransform = sphereCollider.transform;
-        Vector3 scale = colliderTransform.lossyScale;
-        float largestScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
-        float worldRadius = sphereCollider.radius * largestScale + playerClearance;
-        Vector3 worldCenter = colliderTransform.TransformPoint(sphereCollider.center);
-
-        Vector2 portalPosition = new Vector2(worldCenter.x, worldCenter.z);
-        Vector2 currentPlayerPosition = new Vector2(playerPosition.x, playerPosition.z);
-        if ((portalPosition - currentPlayerPosition).sqrMagnitude < worldRadius * worldRadius)
-            return true;
-
-        return Physics.CheckSphere(
-            worldCenter,
-            worldRadius,
-            playerLayerMask,
-            QueryTriggerInteraction.Collide);
+        lightRoutine = null;
     }
 }
