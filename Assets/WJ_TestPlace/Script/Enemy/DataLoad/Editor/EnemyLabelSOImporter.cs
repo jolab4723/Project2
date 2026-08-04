@@ -8,7 +8,7 @@ namespace DataSystem
 {
     /// <summary>
     /// EnemyLabelExcelToJson 결과물(JSON)을 읽어서 EnemyLabelDatabaseSO를 갱신한다.
-    /// EnemyLabelDatabaseSO의 korLabels/engLabels는 private [SerializeField]라
+    /// EnemyLabelDatabaseSO의 korLabels/engLabels/jpnLabels/chnLabels는 private [SerializeField]라
     /// 그 파일은 그대로 두고 SerializedObject/SerializedProperty로 직접 써넣는다.
     /// </summary>
     public static class EnemyLabelSOImporter
@@ -51,6 +51,8 @@ namespace DataSystem
             SerializedObject serialized = new SerializedObject(so);
             int korCount = WriteLabels(serialized.FindProperty("korLabels"), data.korLabels);
             int engCount = WriteLabels(serialized.FindProperty("engLabels"), data.engLabels);
+            int jpnCount = WriteLabels(serialized.FindProperty("jpnLabels"), data.jpnLabels);
+            int chnCount = WriteLabels(serialized.FindProperty("chnLabels"), data.chnLabels);
             serialized.ApplyModifiedProperties();
 
             EditorUtility.SetDirty(so);
@@ -58,7 +60,7 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[EnemyLabel] SO 갱신 완료: {outputAssetPath}\n" +
-                      $"KOR: {korCount}, ENG: {engCount}");
+                      $"KOR: {korCount}, ENG: {engCount}, JPN: {jpnCount}, CHN: {chnCount}");
         }
 
         private static int WriteLabels(SerializedProperty labelsProp, List<EnemyLabelRow> rows)

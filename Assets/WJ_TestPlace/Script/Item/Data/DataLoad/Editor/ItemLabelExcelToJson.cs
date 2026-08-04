@@ -78,7 +78,7 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[ItemLabel] JSON generated: {jsonAbsolutePath}\n" +
-                      $"KOR: {data.korLabels.Count}, ENG: {data.engLabels.Count}");
+                      $"KOR: {data.korLabels.Count}, ENG: {data.engLabels.Count}, JPN: {data.jpnLabels.Count}, CHN: {data.chnLabels.Count}");
         }
 
         private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, ItemLabelJsonData data)
@@ -91,6 +91,14 @@ namespace DataSystem
 
                 case "ENG":
                     data.engLabels = ExcelSheetReader.MapRows<ItemLabelRow>(rows);
+                    break;
+
+                case "JPN":
+                    data.jpnLabels = ExcelSheetReader.MapRows<ItemLabelRow>(rows);
+                    break;
+
+                case "CHN":
+                    data.chnLabels = ExcelSheetReader.MapRows<ItemLabelRow>(rows);
                     break;
 
                 default:

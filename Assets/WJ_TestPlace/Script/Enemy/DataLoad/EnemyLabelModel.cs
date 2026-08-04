@@ -8,9 +8,11 @@ namespace DataSystem
     {
         public List<EnemyLabelRow> korLabels = new List<EnemyLabelRow>();
         public List<EnemyLabelRow> engLabels = new List<EnemyLabelRow>();
+        public List<EnemyLabelRow> jpnLabels = new List<EnemyLabelRow>();
+        public List<EnemyLabelRow> chnLabels = new List<EnemyLabelRow>();
     }
 
-    /// <summary>EnemyDataLabel.xlsx의 KOR/ENG 시트 한 줄. enemyId는 EnemyData.xlsx의 enemyId와 1:1로 맞춘다.</summary>
+    /// <summary>EnemyDataLabel.xlsx의 KOR/ENG/JPN/CHN 시트 한 줄. enemyId는 EnemyData.xlsx의 enemyId와 1:1로 맞춘다.</summary>
     [Serializable]
     public class EnemyLabelRow
     {

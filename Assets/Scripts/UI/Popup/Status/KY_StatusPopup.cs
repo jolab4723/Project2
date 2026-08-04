@@ -50,8 +50,9 @@ public class KY_StatusPopup : KY_PopupBase
     }
 
     /// <summary>
-    /// 각 행의 이름 텍스트를 StatLabelDatabase 값으로 한 번 채운다. 값이 바뀌는 게 아니라
-    /// 매번 갱신할 필요 없이 팝업 생성 시 한 번만 하면 된다.
+    /// 각 행의 이름 텍스트를 StatLabelDatabase 값으로 채운다.
+    /// 표시 언어가 바뀌면 문구도 바뀌므로, 생성 시 한 번이 아니라
+    /// 팝업을 열 때와 언어 변경 이벤트가 올 때마다 다시 채운다.
     /// </summary>
     void ApplyLabels()
     {
@@ -75,12 +76,24 @@ public class KY_StatusPopup : KY_PopupBase
         statManager = PlayerStatManager.Instance;
         if (statManager != null)
             statManager.Stat.OnStatChanged += HandleStatChanged;
+
+        // 팝업이 떠 있는 동안 언어가 바뀌면 즉시 반영되도록 구독한다.
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
     }
 
     void OnDisable()
     {
         if (statManager != null)
             statManager.Stat.OnStatChanged -= HandleStatChanged;
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+    }
+
+    void HandleLanguageChanged(GameLanguage _)
+    {
+        ApplyLabels();
     }
 
     void HandleStatChanged()
@@ -91,6 +104,9 @@ public class KY_StatusPopup : KY_PopupBase
     public override void Open()
     {
         gameObject.SetActive(true);
+
+        // 닫혀 있는 동안 언어가 바뀌었을 수 있으므로 열 때마다 다시 채운다.
+        ApplyLabels();
         RequestData();
 
         Sequence seq = DOTween.Sequence();

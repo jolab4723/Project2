@@ -8,9 +8,11 @@ namespace DataSystem
     {
         public List<ItemLabelRow> korLabels = new List<ItemLabelRow>();
         public List<ItemLabelRow> engLabels = new List<ItemLabelRow>();
+        public List<ItemLabelRow> jpnLabels = new List<ItemLabelRow>();
+        public List<ItemLabelRow> chnLabels = new List<ItemLabelRow>();
     }
 
-    /// <summary>ItemDataLabel.xlsx의 KOR/ENG 시트 한 줄. itemId는 ItemDataTable.xlsx의 itemId와 1:1로 맞춘다.</summary>
+    /// <summary>ItemDataLabel.xlsx의 KOR/ENG/JPN/CHN 시트 한 줄. itemId는 ItemDataTable.xlsx의 itemId와 1:1로 맞춘다.</summary>
     [Serializable]
     public class ItemLabelRow
     {

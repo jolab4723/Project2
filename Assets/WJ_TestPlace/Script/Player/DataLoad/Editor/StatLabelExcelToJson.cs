@@ -79,7 +79,7 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[StatLabel] JSON generated: {jsonAbsolutePath}\n" +
-                      $"KOR: {data.korLabels.Count}, ENG: {data.engLabels.Count}");
+                      $"KOR: {data.korLabels.Count}, ENG: {data.engLabels.Count}, JPN: {data.jpnLabels.Count}, CHN: {data.chnLabels.Count}");
         }
 
         private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, StatLabelJsonData data)
@@ -92,6 +92,14 @@ namespace DataSystem
 
                 case "ENG":
                     data.engLabels = ExcelSheetReader.MapRows<StatLabelRow>(rows);
+                    break;
+
+                case "JPN":
+                    data.jpnLabels = ExcelSheetReader.MapRows<StatLabelRow>(rows);
+                    break;
+
+                case "CHN":
+                    data.chnLabels = ExcelSheetReader.MapRows<StatLabelRow>(rows);
                     break;
 
                 default:

@@ -8,9 +8,11 @@ namespace DataSystem
     {
         public List<StatLabelRow> korLabels = new List<StatLabelRow>();
         public List<StatLabelRow> engLabels = new List<StatLabelRow>();
+        public List<StatLabelRow> jpnLabels = new List<StatLabelRow>();
+        public List<StatLabelRow> chnLabels = new List<StatLabelRow>();
     }
 
-    /// <summary>StatDataLabel.xlsx의 KOR/ENG 시트 한 줄. statKey는 PlayerStat.cs의 실제 필드명과 1:1로 맞춘다.</summary>
+    /// <summary>StatDataLabel.xlsx의 KOR/ENG/JPN/CHN 시트 한 줄. statKey는 PlayerStat.cs의 실제 필드명과 1:1로 맞춘다.</summary>
     [Serializable]
     public class StatLabelRow
     {
