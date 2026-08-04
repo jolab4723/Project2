@@ -11,19 +11,7 @@ public class InventoryPartView : MonoBehaviour
         IsOpen(shop) ||
         IsOpen(upgrade);
 
-    private void OnEnable()
-    {
-        KY_GameEvents.OnEscPressed += HandleEscape;
-        KY_GameEvents.OnInventoryRequested += HandleInventoryRequested;
-    }
-
-    private void OnDisable()
-    {
-        KY_GameEvents.OnEscPressed -= HandleEscape;
-        KY_GameEvents.OnInventoryRequested -= HandleInventoryRequested;
-    }
-
-    private void HandleInventoryRequested()
+    public void ToggleInventory()
     {
         if (IsOpen(inventory))
         {
@@ -34,38 +22,46 @@ public class InventoryPartView : MonoBehaviour
         OpenInventory();
     }
 
-    private void HandleEscape()
-    {
-        if (!HasOpenWindow)
-            return;
-
-        CloseAll();
-    }
-
     public void OpenInventory()
     {
+        bool hadOpenWindow = HasOpenWindow;
         OpenIfClosed(inventory);
+        NotifyOpened(hadOpenWindow);
     }
 
     public void OpenShop()
     {
+        bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(upgrade);
         OpenIfClosed(inventory);
         OpenIfClosed(shop);
+        NotifyOpened(hadOpenWindow);
     }
 
     public void OpenUpgrade()
     {
+        bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(shop);
         OpenIfClosed(inventory);
         OpenIfClosed(upgrade);
+        NotifyOpened(hadOpenWindow);
     }
 
     public void CloseAll()
     {
+        if (!HasOpenWindow)
+            return;
+
         CloseIfOpen(shop);
         CloseIfOpen(upgrade);
         CloseIfOpen(inventory);
+        KY_GameEvents.SidePopupClosed();
+    }
+
+    private void NotifyOpened(bool hadOpenWindow)
+    {
+        if (!hadOpenWindow && HasOpenWindow)
+            KY_GameEvents.SidePopupOpened();
     }
 
     private static bool IsOpen(KY_PopupBase popup)

@@ -40,6 +40,5 @@ public class KY_KeyGuideView : MonoBehaviour
         inventorySlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "OpenInventory"));
         statusSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "OpenStatus"));
         questSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "OpenQuest"));
-        pauseSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Pause"));
     }
 }

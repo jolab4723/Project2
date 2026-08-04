@@ -6,6 +6,7 @@ public class YJ_PortalActive : MonoBehaviour
     [SerializeField] private Light targetLight;
     [SerializeField] private float maxIntensity = 100f;
     [SerializeField] private float duration = 3f;
+    [SerializeField] private bool isCamp = false;
 
     void Awake()
     {
@@ -14,10 +15,10 @@ public class YJ_PortalActive : MonoBehaviour
 
     void Start()
     {
-        gameObject.SetActive(false);
+        gameObject.SetActive(isCamp);
 
         if (targetLight != null)
-            targetLight.intensity = 0f;
+            targetLight.intensity = isCamp ? maxIntensity : 0f;
     }
 
     public void Active(bool active)
