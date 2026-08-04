@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19ea732605ffa1242a33df4dc784f832, type: 3}
   m_Name: ItemLabelDatabase
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemLabelDatabaseSO
-  currentLanguage: 0
   korLabels:
   - itemId: item.weapon.greatsword.basic
     name: "\uAE30\uBCF8 \uB300\uAC80"
@@ -68,7 +67,63 @@ MonoBehaviour:
     description: A potion.
   - itemId: item.relic.mass-produced_core
     name: Mass-Produced Core
-    description: 
+    description: A machine core stamped out in a factory.
   - itemId: item.relic.advanced_core
     name: Advanced Core
-    description: 
+    description: A core with higher output than an ordinary one.
+  jpnLabels:
+  - itemId: item.weapon.greatsword.basic
+    name: "\u57FA\u672C\u5927\u5263"
+    description: "\u3054\u304F\u666E\u901A\u306E\u5927\u5263\u3067\u3059\u3002"
+  - itemId: item.weapon.shotgun.flamethrower
+    name: "\u706B\u708E\u653E\u5C04\u5668"
+    description: "\u708E\u3092\u8907\u6570\u306E\u65B9\u5411\u306B\u5674\u5C04\u3057\u307E\u3059\u3002"
+  - itemId: item.armor.helmet.basic
+    name: "\u57FA\u672C\u515C"
+    description: "\u3054\u304F\u666E\u901A\u306E\u515C\u3067\u3059\u3002"
+  - itemId: item.armor.chest.sturdy
+    name: "\u9811\u4E08\u306A\u93A7"
+    description: "\u4E08\u592B\u306A\u93A7\u3067\u3059\u3002"
+  - itemId: item.armor.boots.ninja_movement
+    name: "\u5FCD\u8005\u306E\u52D5\u304D"
+    description: "\u91CF\u7523\u578B\u306E\u9774\u3067\u3059\u3002"
+  - itemId: item.armor.boots.quantum_shoes
+    name: "\u30AF\u30A1\u30F3\u30BF\u30E0\u30B7\u30E5\u30FC\u30BA"
+    description: "\u30CF\u30A4\u30C6\u30AF\u30CE\u30ED\u30B8\u30FC\u304C\u642D\u8F09\u3055\u308C\u305F\u9774\u3067\u3059\u3002"
+  - itemId: item.potion.red
+    name: "\u8D64\u3044\u30DD\u30FC\u30B7\u30E7\u30F3"
+    description: "\u30DD\u30FC\u30B7\u30E7\u30F3\u3067\u3059\u3002"
+  - itemId: item.relic.mass-produced_core
+    name: "\u91CF\u7523\u578B\u30B3\u30A2"
+    description: "\u5DE5\u5834\u3067\u5927\u91CF\u751F\u7523\u3055\u308C\u305F\u6A5F\u68B0\u88C5\u7F6E\u306E\u30B3\u30A2\u3067\u3059\u3002"
+  - itemId: item.relic.advanced_core
+    name: "\u9AD8\u7D1A\u30B3\u30A2"
+    description: "\u901A\u5E38\u306E\u30B3\u30A2\u3088\u308A\u51FA\u529B\u304C\u9AD8\u3044\u30B3\u30A2\u3067\u3059\u3002"
+  chnLabels:
+  - itemId: item.weapon.greatsword.basic
+    name: "\u57FA\u7840\u5927\u5251"
+    description: "\u4E00\u628A\u666E\u901A\u7684\u5927\u5251\u3002"
+  - itemId: item.weapon.shotgun.flamethrower
+    name: "\u706B\u7130\u55B7\u5C04\u5668"
+    description: "\u5411\u591A\u4E2A\u65B9\u5411\u55B7\u5C04\u706B\u7130\u3002"
+  - itemId: item.armor.helmet.basic
+    name: "\u57FA\u7840\u5934\u76D4"
+    description: "\u4E00\u9876\u666E\u901A\u7684\u5934\u76D4\u3002"
+  - itemId: item.armor.chest.sturdy
+    name: "\u575A\u56FA\u62A4\u7532"
+    description: "\u4E00\u4EF6\u7ED3\u5B9E\u7684\u62A4\u7532\u3002"
+  - itemId: item.armor.boots.ninja_movement
+    name: "\u5FCD\u8005\u4E4B\u52A8"
+    description: "\u91CF\u4EA7\u578B\u978B\u5B50\u3002"
+  - itemId: item.armor.boots.quantum_shoes
+    name: "\u91CF\u5B50\u978B"
+    description: "\u642D\u8F7D\u4E86\u9AD8\u79D1\u6280\u7684\u978B\u5B50\u3002"
+  - itemId: item.potion.red
+    name: "\u7EA2\u8272\u836F\u6C34"
+    description: "\u4E00\u74F6\u836F\u6C34\u3002"
+  - itemId: item.relic.mass-produced_core
+    name: "\u91CF\u4EA7\u578B\u6838\u5FC3"
+    description: "\u5DE5\u5382\u6279\u91CF\u751F\u4EA7\u7684\u673A\u68B0\u88C5\u7F6E\u6838\u5FC3\u3002"
+  - itemId: item.relic.advanced_core
+    name: "\u9AD8\u7EA7\u6838\u5FC3"
+    description: "\u8F93\u51FA\u6BD4\u666E\u901A\u6838\u5FC3\u66F4\u9AD8\u7684\u6838\u5FC3\u3002"
