@@ -59,7 +59,7 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
             var buff = activeBuffs[i];
-            if (buff.definition == null || buff.definition.IsPermanent)
+            if (buff.source == null || buff.source.IsPermanent)
                 continue;
 
             buff.remainingTime -= Time.deltaTime;
@@ -75,31 +75,34 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
     }
 
     /// <summary>
-    /// 버프를 적용한다. 이미 같은 버프가 있으면 def.stackBehavior에 따라
+    /// 버프를 적용한다. 이미 같은 버프가 있으면 source.StackBehavior에 따라
     /// 지속시간 갱신(RefreshDuration) / 스택 증가(Stack) / 무시(Ignore) 중 하나로 처리한다.
+    ///
+    /// !! 같은 버프인지는 source 객체의 **참조**로 판정한다. 고유 효과는 UniqueEffectSO 에셋이,
+    ///    그 외 소스는 BuffDefinitionSO 에셋이 각각 고유한 키 역할을 한다.
     /// </summary>
-    public void ApplyBuff(BuffDefinitionSO def)
+    public void ApplyBuff(IBuffSource source)
     {
-        if (def == null)
+        if (source == null)
         {
-            Debug.LogWarning("[PlayerBuffManager] def가 null입니다.");
+            Debug.LogWarning("[PlayerBuffManager] source가 null입니다.");
             return;
         }
 
-        var existing = activeBuffs.Find(b => b.definition == def);
+        var existing = activeBuffs.Find(b => ReferenceEquals(b.source, source));
 
         if (existing != null)
         {
-            switch (def.stackBehavior)
+            switch (source.StackBehavior)
             {
                 case BuffStackBehavior.RefreshDuration:
-                    existing.remainingTime = def.duration;
+                    existing.remainingTime = source.Duration;
                     break;
 
                 case BuffStackBehavior.Stack:
-                    if (def.maxStack <= 0 || existing.stackCount < def.maxStack)
+                    if (source.MaxStack <= 0 || existing.stackCount < source.MaxStack)
                         existing.stackCount++;
-                    existing.remainingTime = def.duration; // 스택될 때도 지속시간은 최신으로 갱신
+                    existing.remainingTime = source.Duration; // 스택될 때도 지속시간은 최신으로 갱신
                     break;
 
                 case BuffStackBehavior.Ignore:
@@ -108,19 +111,19 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         }
         else
         {
-            activeBuffs.Add(new BuffInstance(def));
+            activeBuffs.Add(new BuffInstance(source));
         }
 
         statManager?.Recalculate();
     }
 
     /// <summary>해당 버프를 스택 상관없이 완전히 제거한다.</summary>
-    public void RemoveBuff(BuffDefinitionSO def)
+    public void RemoveBuff(IBuffSource source)
     {
-        if (def == null)
+        if (source == null)
             return;
 
-        int removed = activeBuffs.RemoveAll(b => b.definition == def);
+        int removed = activeBuffs.RemoveAll(b => ReferenceEquals(b.source, source));
 
         if (removed > 0)
         {
@@ -144,10 +147,10 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
 
         foreach (var buff in activeBuffs)
         {
-            if (buff?.definition?.statEffects == null)
+            if (buff?.source?.StatEffects == null)
                 continue;
 
-            foreach (var effect in buff.definition.statEffects)
+            foreach (var effect in buff.source.StatEffects)
                 StatSetMapper.AddStat(ref total, effect.statType, effect.value * buff.stackCount);
         }
 

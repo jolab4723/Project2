@@ -24,7 +24,6 @@ namespace DataSystem
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
         private const string UniqueEffectFolder = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/UniqueEffectPool";
-        private const string BuffFolder = "Assets/WJ_TestPlace/Data/Buff";
 
         [MenuItem("DataLoader/Unique Effect/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -37,6 +36,36 @@ namespace DataSystem
             GenerateAllFromJson(jsonPath, UniqueEffectFolder);
         }
 
+        /// <summary>
+        /// 대화상자 없이 엑셀 -> JSON -> SO를 한 번에 수행한다.
+        /// 아이템 데이터 테이블의 고유효과 연결 단계가 시작할 때 이걸 먼저 불러서,
+        /// 연결 대상 SO가 항상 엑셀 최신 내용으로 만들어져 있도록 보장한다.
+        /// </summary>
+        /// <returns>SO 생성/갱신까지 실제로 수행했으면 true.</returns>
+        public static bool RunExcelToSoWithDefaultPaths()
+        {
+            string jsonPath = UniqueEffectTableExcelToJson.ConvertWithDefaultPaths();
+            if (string.IsNullOrEmpty(jsonPath))
+                return false;
+
+            GenerateAllFromJson(jsonPath, UniqueEffectFolder);
+            return true;
+        }
+
+        [MenuItem("DataLoader/Unique Effect/0. Run All Steps")]
+        public static void RunAllSteps()
+        {
+            Debug.Log("[UniqueEffect] ===== 통합 실행 시작 =====");
+
+            if (!RunExcelToSoWithDefaultPaths())
+            {
+                Debug.LogError("[UniqueEffect] 엑셀을 찾지 못해 중단했습니다.");
+                return;
+            }
+
+            Debug.Log("[UniqueEffect] ===== 통합 실행 완료 =====");
+        }
+
         public static void GenerateAllFromJson(string jsonPath, string outputFolder)
         {
             List<UniqueEffectTableRow> rows = LoadJson(jsonPath);
@@ -44,7 +73,6 @@ namespace DataSystem
                 return;
 
             EnsureAssetFolder(outputFolder);
-            Dictionary<string, BuffDefinitionSO> buffLookup = BuildBuffLookup();
 
             int created = 0, updated = 0, skipped = 0;
 
@@ -95,7 +123,7 @@ namespace DataSystem
                     updated++;
                 }
 
-                ApplyRow(asset, row, buffLookup);
+                ApplyRow(asset, row);
                 EditorUtility.SetDirty(asset);
             }
 
@@ -105,8 +133,12 @@ namespace DataSystem
             Debug.Log($"[UniqueEffect] SO 생성/갱신 완료. 신규 {created}개, 갱신 {updated}개, 건너뜀 {skipped}개");
         }
 
-        /// <summary>공통 필드를 채운 뒤 effectType별 고유 필드를 채운다.</summary>
-        private static void ApplyRow(UniqueEffectSO asset, UniqueEffectTableRow row, Dictionary<string, BuffDefinitionSO> buffLookup)
+        /// <summary>
+        /// 공통 필드를 채운 뒤 effectType별 고유 필드를 채운다.
+        /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
+        ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
+        /// </summary>
+        private static void ApplyRow(UniqueEffectSO asset, UniqueEffectTableRow row)
         {
             asset.effectName = row.effectName;
             asset.effectDescription = row.effectDescription;
@@ -115,16 +147,16 @@ namespace DataSystem
             switch (asset)
             {
                 case PassiveBuffUniqueEffectSO passive:
-                    passive.buffToApply = ResolveBuff(row, buffLookup);
+                    passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
                     break;
 
                 case TriggeredBuffUniqueEffectSO triggered:
-                    triggered.buffToApply = ResolveBuff(row, buffLookup);
+                    triggered.buffSpec = BuildBuffSpec(row, BuffStackBehavior.RefreshDuration);
                     triggered.triggerCondition = ParseEnumOrDefault(row.triggerCondition, TriggerCondition.None, row.uniqueEffectId);
                     break;
 
                 case HealthThresholdBuffUniqueEffectSO threshold:
-                    threshold.buffToApply = ResolveBuff(row, buffLookup);
+                    threshold.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
                     threshold.healthThresholdPercent = row.healthThresholdPercent;
                     break;
 
@@ -133,6 +165,57 @@ namespace DataSystem
                     periodic.message = row.message;
                     break;
             }
+        }
+
+        /// <summary>시트의 버프 컬럼들(statEffects/duration/stackBehavior/maxStack)로 BuffSpec을 만든다.</summary>
+        private static BuffSpec BuildBuffSpec(UniqueEffectTableRow row, BuffStackBehavior fallbackStack)
+        {
+            return new BuffSpec
+            {
+                statEffects = ParseStatEffects(row.statEffects, row.uniqueEffectId),
+                duration = row.duration,
+                stackBehavior = ParseEnumOrDefault(row.stackBehavior, fallbackStack, row.uniqueEffectId),
+                maxStack = row.maxStack,
+            };
+        }
+
+        /// <summary>"moveSpeedPercent:50;attackPowerFlat:10" 형태를 FixedStatValue 배열로 바꾼다.</summary>
+        private static FixedStatValue[] ParseStatEffects(string raw, string id)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                Debug.LogWarning($"[UniqueEffect] '{id}'의 statEffects가 비어있습니다. 스탯 효과 없는 버프가 됩니다.");
+                return Array.Empty<FixedStatValue>();
+            }
+
+            var result = new List<FixedStatValue>();
+
+            foreach (string entry in raw.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string[] pair = entry.Split(':');
+                if (pair.Length != 2)
+                {
+                    Debug.LogWarning($"[UniqueEffect] '{id}'의 statEffects 항목 형식이 잘못됐습니다: '{entry.Trim()}' " +
+                                     "(\"statType:값\" 형태여야 함). 해당 항목은 건너뜁니다.");
+                    continue;
+                }
+
+                if (!Enum.TryParse(pair[0].Trim(), true, out StatType statType))
+                {
+                    Debug.LogWarning($"[UniqueEffect] '{id}'의 statEffects에 알 수 없는 statType이 있습니다: '{pair[0].Trim()}'. 해당 항목은 건너뜁니다.");
+                    continue;
+                }
+
+                if (!float.TryParse(pair[1].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out float value))
+                {
+                    Debug.LogWarning($"[UniqueEffect] '{id}'의 statEffects 값이 숫자가 아닙니다: '{pair[1].Trim()}'. 해당 항목은 건너뜁니다.");
+                    continue;
+                }
+
+                result.Add(new FixedStatValue { statType = statType, value = value });
+            }
+
+            return result.ToArray();
         }
 
         /// <summary>"30;5" 형태의 한 칸 문자열을 float 배열로 바꾼다.</summary>
@@ -153,41 +236,6 @@ namespace DataSystem
             }
 
             return values.ToArray();
-        }
-
-        private static BuffDefinitionSO ResolveBuff(UniqueEffectTableRow row, Dictionary<string, BuffDefinitionSO> buffLookup)
-        {
-            string buffId = (row.buffId ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(buffId))
-                return null;
-
-            if (buffLookup.TryGetValue(buffId, out BuffDefinitionSO buff))
-                return buff;
-
-            Debug.LogWarning($"[UniqueEffect] '{row.uniqueEffectId}'의 buffId '{buffId}'에 해당하는 버프 에셋을 {BuffFolder}에서 찾지 못했습니다.");
-            return null;
-        }
-
-        /// <summary>버프 폴더를 한 번만 훑어서 "에셋 파일명 -> BuffDefinitionSO" 사전을 만든다.</summary>
-        private static Dictionary<string, BuffDefinitionSO> BuildBuffLookup()
-        {
-            var lookup = new Dictionary<string, BuffDefinitionSO>(StringComparer.OrdinalIgnoreCase);
-
-            if (!AssetDatabase.IsValidFolder(BuffFolder))
-            {
-                Debug.LogWarning($"[UniqueEffect] 버프 폴더를 찾지 못했습니다: {BuffFolder}");
-                return lookup;
-            }
-
-            foreach (string guid in AssetDatabase.FindAssets($"t:{nameof(BuffDefinitionSO)}", new[] { BuffFolder }))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                var buff = AssetDatabase.LoadAssetAtPath<BuffDefinitionSO>(path);
-                if (buff != null)
-                    lookup[Path.GetFileNameWithoutExtension(path)] = buff;
-            }
-
-            return lookup;
         }
 
         /// <summary>effectType 문자열을 실제 UniqueEffectSO 파생 타입으로 바꾼다.</summary>

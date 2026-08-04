@@ -13,7 +13,14 @@ MonoBehaviour:
   m_Name: UE_QuantumShoes
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
   effectName: "\uD000\uD140 \uBD80\uC2A4\uD2B8"
+  icon: {fileID: 21300000, guid: 364647ad61ffe264cb68e81161bfea80, type: 3}
   effectDescription: "\uC774\uB3D9 \uC18D\uB3C4\uAC00 {0:F1} \uC99D\uAC00\uD569\uB2C8\uB2E4."
   coefficients:
   - 1
-  buffToApply: {fileID: 11400000, guid: d6a348bd98dd1df47ac9632bf87fc95a, type: 2}
+  buffSpec:
+    statEffects:
+    - statType: 6
+      value: 1
+    duration: 0
+    stackBehavior: 0
+    maxStack: 0

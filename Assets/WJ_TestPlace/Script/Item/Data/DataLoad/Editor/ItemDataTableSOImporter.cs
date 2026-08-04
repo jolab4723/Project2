@@ -21,7 +21,7 @@ namespace DataSystem
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
         private const string DefaultOutputRoot = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/Items";
 
-        private const string ItemDatabasePath = "Assets/WJ_TestPlace/Script/Item/Data/ItemData/AllItems.asset";
+        private const string ItemDatabasePath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/AllItems.asset";
 
         private const string CombatPoolPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData/CombatStatPool.asset";
         private const string UtilityPoolPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/SubStatPoolData/UtilityStatPool.asset";
@@ -267,6 +267,7 @@ namespace DataSystem
 
             int matched = 0;
             int missing = 0;
+            int effectIconsCopied = 0;
 
             foreach (ItemDefinitionSO asset in database.allItems)
             {
@@ -283,10 +284,26 @@ namespace DataSystem
                 asset.icon = icon;
                 EditorUtility.SetDirty(asset);
                 matched++;
+
+                // 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을 그대로 쓴다.
+                // 한 효과가 여러 아이템에 붙어 있으면 마지막에 처리된 아이템 것이 남으므로 경고를 남긴다.
+                if (asset.uniqueEffect != null)
+                {
+                    if (asset.uniqueEffect.icon != null && asset.uniqueEffect.icon != icon)
+                    {
+                        Debug.LogWarning($"[ItemDataTable] 고유 효과 '{asset.uniqueEffect.name}'가 아이콘이 서로 다른 여러 아이템에 붙어 있습니다. " +
+                                         $"'{asset.itemId}'의 아이콘으로 덮어씁니다.");
+                    }
+
+                    asset.uniqueEffect.icon = icon;
+                    EditorUtility.SetDirty(asset.uniqueEffect);
+                    effectIconsCopied++;
+                }
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[ItemDataTable] 아이콘 연결 완료. 성공 {matched}, 실패 {missing}");
+            Debug.Log($"[ItemDataTable] 아이콘 연결 완료. 성공 {matched}, 실패 {missing} " +
+                      $"(고유 효과에 복사 {effectIconsCopied}건)");
         }
 
         /// <summary>png/jpg 순서로 시도. 파일은 있는데 Sprite로 안 읽히면(Texture Type 설정 문제) 별도 경고.</summary>
@@ -314,11 +331,23 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// ItemDefinitionSO.uniqueEffectId 기준으로, 같은 이름(확장자 제외)의 UniqueEffectSO를 찾아 연결한다.
+        /// 고유 효과 엑셀을 먼저 SO로 변환한 뒤, ItemDefinitionSO.uniqueEffectId 기준으로
+        /// 같은 이름(확장자 제외)의 UniqueEffectSO를 찾아 연결한다.
+        ///
+        /// !! 변환을 먼저 하는 이유: 연결만 하면 엑셀에서 새로 추가·수정한 고유 효과가 아직 SO로
+        ///    만들어지지 않아 "고유효과를 못 찾았습니다"로 실패한다. 변환을 앞에 두면
+        ///    이 단계 하나만 돌려도 항상 엑셀 최신 상태가 반영된다.
         /// </summary>
         [MenuItem("DataLoader/Item Data Table/4. Insert Unique Effects")]
         public static void InsertUniqueEffects()
         {
+            Debug.Log("[ItemDataTable] 고유효과 엑셀 -> SO 변환 먼저 수행합니다.");
+            if (!UniqueEffectTableSOImporter.RunExcelToSoWithDefaultPaths())
+            {
+                Debug.LogWarning("[ItemDataTable] 고유효과 변환을 건너뛰었습니다. " +
+                                 "이미 만들어져 있는 SO만으로 연결을 시도합니다.");
+            }
+
             ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(ItemDatabasePath);
             if (database == null)
             {
@@ -360,24 +389,22 @@ namespace DataSystem
             Debug.Log($"[ItemDataTable] 고유효과 연결 완료. 성공 {matched}, 실패 {missing}, 대상 없음(스킵) {skipped}");
         }
 
+        /// <summary>
+        /// 1~4단계를 한 번에 실행한다. 엑셀·JSON 모두 사전 설정된 기본 경로를 우선 사용하며,
+        /// 기본 엑셀이 없을 때만 파일 선택 대화상자로 넘어간다(개별 단계 메뉴와 동일한 방침).
+        /// </summary>
         [MenuItem("DataLoader/Item Data Table/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            string excelPath = EditorUtility.OpenFilePanel("Select item data table", Application.dataPath, "xlsx");
-            if (string.IsNullOrEmpty(excelPath))
-                return;
-
-            string jsonFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
-            if (!Directory.Exists(jsonFolder))
-                Directory.CreateDirectory(jsonFolder);
-
-            string jsonFileName = Path.GetFileNameWithoutExtension(excelPath) + ".json";
-            string jsonPath = Path.Combine(jsonFolder, jsonFileName);
-
             Debug.Log("[ItemDataTable] ===== 통합 실행 시작 =====");
 
             Debug.Log("[ItemDataTable] 1/4: Excel -> JSON 변환 중...");
-            ItemDataTableExcelToJson.Convert(excelPath, jsonPath);
+            string jsonPath = ItemDataTableExcelToJson.ConvertPreferringDefaultPaths();
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                Debug.LogError("[ItemDataTable] 엑셀을 정하지 못해 통합 실행을 중단했습니다.");
+                return;
+            }
 
             Debug.Log("[ItemDataTable] 2/4: JSON -> SO 생성/갱신 중...");
             GenerateAllFromJson(jsonPath, DefaultOutputRoot);
@@ -385,7 +412,8 @@ namespace DataSystem
             Debug.Log("[ItemDataTable] 3/4: 아이콘 연결 중...");
             InsertItemIcons();
 
-            Debug.Log("[ItemDataTable] 4/4: 고유효과 연결 중...");
+            // 이 단계가 내부에서 고유효과 엑셀 -> SO 변환을 먼저 수행한 뒤 연결한다.
+            Debug.Log("[ItemDataTable] 4/4: 고유효과 변환 및 연결 중...");
             InsertUniqueEffects();
 
             Debug.Log("[ItemDataTable] ===== 통합 실행 완료 =====");

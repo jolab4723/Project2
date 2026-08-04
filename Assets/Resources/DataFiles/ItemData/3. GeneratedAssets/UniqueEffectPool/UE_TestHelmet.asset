@@ -13,7 +13,14 @@ MonoBehaviour:
   m_Name: UE_TestHelmet
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
   effectName: "\uBC29\uC5B4 \uAC15\uD654"
+  icon: {fileID: 0}
   effectDescription: "\uC7A5\uCC29 \uC911 \uBC29\uC5B4\uB825\uC774 {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
   coefficients:
   - 10
-  buffToApply: {fileID: 11400000, guid: 7a01ef664881fb14e84b1fc497c75abd, type: 2}
+  buffSpec:
+    statEffects:
+    - statType: 5
+      value: 10
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1
