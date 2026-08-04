@@ -22,6 +22,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_PlayerStatus status;
     private WBH_PlayerStatusEffectController statusEffectController;
     private Vector3 dodgeDir;
+    public int reviveCount = 3;
 
     public WBH_ICombatStatus Status => status;
 
@@ -63,6 +64,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         CheckDodge();
         // 이동 종료 시, Idle 상태로 변환
         UpdateMoveState();
+        Revive();
     }
 
     // 상태 진입 행동
@@ -271,6 +273,26 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
+    // --- 테스트용 메서드
+    public void Revive()
+    {
+        if(status.IsDead && reviveCount > 0)
+        {
+            reviveCount--;
+            animator.SetTrigger("Revive");
+            stateMachine.ChangeState(PlayerState.Idle);
+            SetControlEnable(true);
+            status.Heal(status.MaxHealth * 1f);
+            StartCoroutine( BeInvincible(10));
+        }
+    }
+
+    private IEnumerator BeInvincible(float duration)
+    {
+        IsInvincible = true;
+        yield return new WaitForSeconds(duration);
+        IsInvincible = false;
+    }
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
     //private void PlayerViewDir()

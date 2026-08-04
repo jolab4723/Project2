@@ -19,6 +19,7 @@ public class T_PlayerCombat : MonoBehaviour
 
 
     private bool CanAttack => !stateMachine.IsAnyState(PlayerState.Hit,
+                                                       PlayerState.Attack,
                                                        PlayerState.Skill,
                                                        PlayerState.Dodge,
                                                        PlayerState.Dead);
@@ -180,6 +181,10 @@ public class T_PlayerCombat : MonoBehaviour
 
 
     // ------ 테스트용 메서드
+
+   
+
+
 
     // -- 작동 테스트용 메서드
     public void TestMultiple()
