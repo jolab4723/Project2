@@ -14,7 +14,7 @@ namespace DataSystem
     public static class StatLabelSOImporter
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Player/StatLabelDatabase.asset";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/CharData/GeneratedAssets/StatLabelDatabase.asset";
 
         [MenuItem("DataLoader/Stat Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
