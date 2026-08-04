@@ -36,6 +36,10 @@ namespace ItemSystem
         [Tooltip("툴팁에 표시할 고유 효과 이름")]
         public string effectName;
 
+        [Tooltip("툴팁/버프 HUD에 표시할 아이콘. 이 효과가 붙은 아이템의 아이콘을 파이프라인이 자동으로 복사한다 " +
+                 "(DataLoader/Item Data Table/3. Insert Icons). 손으로 채울 필요 없음.")]
+        public Sprite icon;
+
         [TextArea]
         [Tooltip("설명 템플릿. {0}, {1}... 자리에 아래 coefficients 값이 순서대로 대입됨.\n예: \"이동 속도가 {0} 증가합니다.\" + coefficients=[1.0] -> \"이동 속도가 1 증가합니다.\"")]
         public string effectDescription;

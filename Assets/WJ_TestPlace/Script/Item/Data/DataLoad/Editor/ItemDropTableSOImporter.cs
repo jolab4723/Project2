@@ -17,7 +17,7 @@ namespace DataSystem
     public static class ItemDropTableSOImporter
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Script/Item/Data/ItemData/ItemDropTable.asset";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/ItemDropTable.asset";
 
         [MenuItem("DataLoader/Item Drop Table/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()

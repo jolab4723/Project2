@@ -36,6 +36,30 @@ namespace DataSystem
             Convert(excelPath, jsonPath);
         }
 
+        /// <summary>
+        /// 대화상자 없이 사전 설정된 경로만으로 Excel -> JSON 변환을 수행한다.
+        /// 아이템 데이터 테이블 통합 실행처럼 다른 단계가 자동으로 호출할 때 쓴다.
+        /// </summary>
+        /// <returns>생성된 JSON의 절대 경로. 엑셀이 없거나 실패하면 null.</returns>
+        public static string ConvertWithDefaultPaths()
+        {
+            string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
+            if (!File.Exists(excelAbsolutePath))
+            {
+                Debug.LogWarning($"[UniqueEffect] 고유 효과 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                return null;
+            }
+
+            EnsureAssetFolder(DefaultJsonFolder);
+            string jsonAbsolutePath = Path.Combine(
+                AssetPathToAbsolutePath(DefaultJsonFolder),
+                Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
+
+            Convert(excelAbsolutePath, jsonAbsolutePath);
+
+            return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
+        }
+
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
         private static string ResolveExcelPath()
         {
@@ -116,13 +140,21 @@ namespace DataSystem
                 if (string.IsNullOrWhiteSpace(row.effectType))
                     Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 비어있습니다. SO 생성 단계에서 건너뛰게 됩니다.");
 
-                // 버프 기반 3종은 buffId가 없으면 실제로 아무 효과가 없다.
+                // 버프 기반 3종은 statEffects가 없으면 실제로 아무 효과가 없다.
                 bool needsBuff = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
                     || row.effectType == nameof(ItemSystem.TriggeredBuffUniqueEffectSO)
                     || row.effectType == nameof(ItemSystem.HealthThresholdBuffUniqueEffectSO);
 
-                if (needsBuff && string.IsNullOrWhiteSpace(row.buffId))
-                    Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})에 buffId가 비어있습니다. 적용할 버프가 없어 효과가 동작하지 않습니다.");
+                if (needsBuff && string.IsNullOrWhiteSpace(row.statEffects))
+                    Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})에 statEffects가 비어있습니다. 적용할 스탯 효과가 없어 효과가 동작하지 않습니다.");
+
+                // 상시/조건부 효과는 수동으로 켜고 끄므로 지속시간이 있으면 의도치 않게 꺼진다.
+                bool shouldBePermanent = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
+                    || row.effectType == nameof(ItemSystem.HealthThresholdBuffUniqueEffectSO);
+
+                if (shouldBePermanent && row.duration > 0f)
+                    Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})의 duration이 {row.duration}입니다. " +
+                                     "상시/조건부 효과는 해제 시점을 직접 관리하므로 duration을 0(영구)으로 두는 것이 맞습니다.");
             }
 
             if (blocking)

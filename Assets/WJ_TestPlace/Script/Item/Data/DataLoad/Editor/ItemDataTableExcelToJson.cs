@@ -30,6 +30,27 @@ namespace DataSystem
             Convert(excelPath, jsonPath);
         }
 
+        /// <summary>
+        /// 엑셀은 사전 설정된 경로를 우선 쓰고(없으면 대화상자), JSON은 대화상자 없이
+        /// 기본 폴더에 엑셀과 같은 이름으로 저장한다. 통합 실행처럼 중간에 멈추면 안 되는 곳에서 쓴다.
+        /// </summary>
+        /// <returns>생성된 JSON의 절대 경로. 엑셀을 못 정했으면 null.</returns>
+        public static string ConvertPreferringDefaultPaths()
+        {
+            string excelPath = ResolveExcelPath();
+            if (string.IsNullOrEmpty(excelPath))
+                return null;
+
+            EnsureAssetFolder(DefaultJsonFolder);
+            string jsonPath = Path.Combine(
+                AssetPathToAbsolutePath(DefaultJsonFolder),
+                Path.GetFileNameWithoutExtension(excelPath) + ".json");
+
+            Convert(excelPath, jsonPath);
+
+            return File.Exists(jsonPath) ? jsonPath : null;
+        }
+
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
         private static string ResolveExcelPath()
         {

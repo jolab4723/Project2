@@ -13,10 +13,17 @@ MonoBehaviour:
   m_Name: UE_TestGreatSword
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
   effectName: "\uCF8C\uC18D \uAC15\uD0C0"
+  icon: {fileID: 0}
   effectDescription: "\uBC1C\uB3D9 \uC2DC {1}\uCD08\uAC04 \uACF5\uACA9\uC18D\uB3C4\uAC00
     {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
   coefficients:
   - 30
   - 5
-  buffToApply: {fileID: 11400000, guid: 0ba36586b6966b044ae606416974498a, type: 2}
   triggerCondition: 1
+  buffSpec:
+    statEffects:
+    - statType: 9
+      value: 30
+    duration: 5
+    stackBehavior: 0
+    maxStack: 1
