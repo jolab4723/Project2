@@ -11,13 +11,15 @@ namespace Core
     /// !! 멀티플레이(Mirror의 ServerChangeScene) 분기는 나중에 LoadScene 내부 구현에 추가할 예정.
     ///    호출부(LoadScene(sceneName))의 시그니처는 그대로 유지되므로, 나중에 붙여도 호출부는 안 바뀐다.
     ///
-    /// !! 로딩 화면 자체는 여기서 직접 띄우지 않는다. OnLoadProgress/OnBeforeSceneUnload/OnSceneLoaded
-    ///    이벤트만 발행하고, 실제 로딩 UI(로딩바, 로딩 씬 표시 등)는 이 이벤트를 구독하는 쪽에서 담당한다.
+    /// 씬 전환 시 LoadingScene을 먼저 열고, 실제 로딩 UI는 OnLoadProgress 이벤트를 구독해 갱신한다.
+    /// OnBeforeSceneUnload/OnSceneLoaded 이벤트는 목적 씬 전환의 시작과 완료 시점에 발행한다.
     /// </summary>
     public class SceneLoader : Singleton<SceneLoader>, IManagerModule
     {
+        private const string LoadingSceneName = "LoadingScene";
+
         [Tooltip("로딩 화면이 최소 이 시간(초) 동안은 유지되도록 한다. 로드가 순식간에 끝나도 화면이 깜빡이지 않게.")]
-        [SerializeField] private float minLoadingScreenSeconds = 0.3f;
+        [SerializeField] private float minLoadingScreenSeconds = 0.75f;
 
         public string ModuleName => "SceneLoader";
 
@@ -47,7 +49,25 @@ namespace Core
         {
             if (IsLoading)
             {
-                Debug.LogWarning("[SceneLoader] 이미 씬을 불러오는 중이라 " + sceneName + " 요청을 무시합니다.");
+                Log.Warning("[SceneLoader] 이미 씬을 불러오는 중이므로 " + sceneName + " 요청을 무시합니다.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                Log.Error("[SceneLoader] 이동할 씬 이름이 비어 있습니다.");
+                return;
+            }
+
+            if (sceneName == LoadingSceneName)
+            {
+                Log.Warning("[SceneLoader] LoadingScene 자체는 목적 씬으로 요청할 수 없습니다.");
+                return;
+            }
+
+            if (!Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Log.Error("[SceneLoader] " + sceneName + " 씬이 Build Settings에 등록되어 있지 않습니다.");
                 return;
             }
 
@@ -57,17 +77,46 @@ namespace Core
         private IEnumerator LoadSceneRoutine(string sceneName)
         {
             IsLoading = true;
-            string previousSceneName = CurrentSceneName;
+            string previousSceneName = SceneManager.GetActiveScene().name;
 
             OnBeforeSceneUnload?.Invoke(previousSceneName);
+
+            if (previousSceneName != LoadingSceneName)
+            {
+                if (!Application.CanStreamedLevelBeLoaded(LoadingSceneName))
+                {
+                    Log.Error("[SceneLoader] " + LoadingSceneName + " 씬이 Build Settings에 등록되어 있지 않습니다.");
+                    IsLoading = false;
+                    yield break;
+                }
+
+                Log.Print("[SceneLoader] LoadingScene 로드를 시작합니다.");
+                AsyncOperation loadingSceneOperation =
+                    SceneManager.LoadSceneAsync(LoadingSceneName, LoadSceneMode.Single);
+
+                if (loadingSceneOperation == null)
+                {
+                    Log.Error("[SceneLoader] " + LoadingSceneName + " 씬을 불러오지 못했습니다.");
+                    IsLoading = false;
+                    yield break;
+                }
+
+                while (!loadingSceneOperation.isDone)
+                    yield return null;
+
+                // LoadingScene이 최소 한 프레임 실제로 렌더링된 뒤 목적 씬 로드를 시작합니다.
+                yield return new WaitForEndOfFrame();
+            }
+
             OnLoadProgress?.Invoke(0f);
+            Log.Print("[SceneLoader] LoadingScene 표시 후 " + sceneName + " 씬 로드를 시작합니다.");
 
             float startTime = Time.unscaledTime;
 
-            AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
+            AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
             if (operation == null)
             {
-                Debug.LogError("[SceneLoader] " + sceneName + " 씬을 찾을 수 없습니다 (Build Settings에 등록되어 있는지 확인).");
+                Log.Error("[SceneLoader] " + sceneName + " 씬을 불러오지 못했습니다.");
                 IsLoading = false;
                 yield break;
             }
