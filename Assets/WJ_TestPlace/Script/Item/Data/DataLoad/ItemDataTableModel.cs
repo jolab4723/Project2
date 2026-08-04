@@ -9,6 +9,7 @@ namespace DataSystem
         public List<ArmorDefinitionRow> armorDefinitions = new List<ArmorDefinitionRow>();
         public List<WeaponDefinitionRow> weaponDefinitions = new List<WeaponDefinitionRow>();
         public List<PotionDefinitionRow> potionDefinitions = new List<PotionDefinitionRow>();
+        public List<RelicDefinitionRow> relicDefinitions = new List<RelicDefinitionRow>();
     }
 
     [Serializable]
@@ -59,6 +60,24 @@ namespace DataSystem
         public string itemId; // Category+Class+Index 8자리 고유키. 앞자리 0이 있어서 int가 아니라 string.
         public string itemName;
         public string category; // 항상 "Potion" - 시트 자체가 Potion 전용이라 참고용
+        public string rarity;
+        public string uniqueEffectId;
+        public string description;
+        public int itemWidth = 1;
+        public int itemHeight = 1;
+        public int itemPrice;
+    }
+
+    /// <summary>
+    /// 유물. 메인/서브 옵션 없이 보유만으로 uniqueEffect가 상시 적용되는 카테고리라
+    /// 스탯 컬럼이 없고 시트 구조가 포션과 동일하다.
+    /// </summary>
+    [Serializable]
+    public class RelicDefinitionRow
+    {
+        public string itemId;
+        public string itemName;
+        public string category; // 항상 "Relic" - 시트 자체가 Relic 전용이라 참고용
         public string rarity;
         public string uniqueEffectId;
         public string description;

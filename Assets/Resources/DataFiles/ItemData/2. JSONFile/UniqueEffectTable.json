@@ -1,0 +1,80 @@
+[
+  {
+    "uniqueEffectId": "UE_TestHelmet",
+    "effectType": "PassiveBuffUniqueEffectSO",
+    "effectName": "방어 강화",
+    "effectDescription": "장착 중 방어력이 {0}% 증가합니다.",
+    "coefficients": "10",
+    "buffId": "Buff_DefenseUp_Passive",
+    "triggerCondition": "",
+    "healthThresholdPercent": 0.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": ""
+  },
+  {
+    "uniqueEffectId": "UE_QuantumShoes",
+    "effectType": "PassiveBuffUniqueEffectSO",
+    "effectName": "퀀텀 부스트",
+    "effectDescription": "이동 속도가 {0:F1} 증가합니다.",
+    "coefficients": "1",
+    "buffId": "Buff_MoveSpeedUpPassive",
+    "triggerCondition": "",
+    "healthThresholdPercent": 0.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": ""
+  },
+  {
+    "uniqueEffectId": "UE_TestGreatSword",
+    "effectType": "TriggeredBuffUniqueEffectSO",
+    "effectName": "쾌속 강타",
+    "effectDescription": "발동 시 {1}초간 공격속도가 {0}% 증가합니다.",
+    "coefficients": "30;5",
+    "buffId": "Buff_AttackSpeedUp_Triggered",
+    "triggerCondition": "OnHitTaken",
+    "healthThresholdPercent": 0.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": ""
+  },
+  {
+    "uniqueEffectId": "UE_MassProducedCore",
+    "effectType": "TriggeredBuffUniqueEffectSO",
+    "effectName": "쾌속 발놀림",
+    "effectDescription": "기본 공격 적중 시 {0}초간 이동 속도가 {1}% 증가합니다.",
+    "coefficients": "3;20",
+    "buffId": "Buff_MoveSpeedUp_OnAttack",
+    "triggerCondition": "OnDamageDealt",
+    "healthThresholdPercent": 0.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "OnDamageDealt는 아직 전투 시스템에 연결 전이라 실전투에서 발동하지 않음"
+  },
+  {
+    "uniqueEffectId": "UE_SturdyArmor",
+    "effectType": "HealthThresholdBuffUniqueEffectSO",
+    "effectName": "사력을 다한 질주",
+    "effectDescription": "체력이 {0}% 이하로 떨어지면 이동 속도가 {1}% 증가합니다. 다시 넘어서면 해제됩니다.",
+    "coefficients": "50;50",
+    "buffId": "Buff_MoveSpeedUp_LowHealth",
+    "triggerCondition": "",
+    "healthThresholdPercent": 50.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": ""
+  },
+  {
+    "uniqueEffectId": "UE_AdvancedCore",
+    "effectType": "PeriodicLogUniqueEffectSO",
+    "effectName": "헬로 월드 발신기",
+    "effectDescription": "보유 중 {0}초마다 콘솔에 \"HELLO WORLD!\"를 출력합니다.",
+    "coefficients": "10",
+    "buffId": "",
+    "triggerCondition": "",
+    "healthThresholdPercent": 0.0,
+    "intervalSeconds": 10.0,
+    "message": "HELLO WORLD!",
+    "note": "동작 확인용 테스트 효과"
+  }
+]

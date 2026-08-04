@@ -158,14 +158,32 @@ namespace DataSystem
             return count;
         }
 
-        /// <summary>유물. RelicDefinitions 시트가 아직 비어있어서 자리만 잡아둠 (TODO).</summary>
+        /// <summary>
+        /// 유물만 생성/갱신한다. 다른 카테고리와 독립적으로 호출 가능.
+        /// 유물은 메인/서브 옵션 없이 보유만으로 uniqueEffect가 상시 적용되므로 스탯 인자를 비워서 넘긴다
+        /// (포션과 동일한 형태).
+        /// </summary>
         public static int CreateOrUpdateRelicDefinitions(
             ItemDataTableJsonData data, string outputFolder,
             SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig,
             ItemDatabaseSO database, ref int registeredCount)
         {
-            // TODO: RelicDefinitions 시트/모델이 채워지면 Armor/Weapon/Potion과 같은 패턴으로 구현.
-            return 0;
+            int count = 0;
+
+            foreach (RelicDefinitionRow row in data.relicDefinitions)
+            {
+                ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Relic,
+                    row.rarity, row.description, row.itemPrice, row.itemWidth, row.itemHeight,
+                    null, 0f, null, 0f,
+                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
+                if (asset == null)
+                    continue;
+
+                FinalizeAsset(asset, database, ref registeredCount);
+                count++;
+            }
+
+            return count;
         }
 
         private static ItemDefinitionSO CreateOrUpdateBase(
