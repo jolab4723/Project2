@@ -15,7 +15,6 @@ public class WBH_EnemyCombat : MonoBehaviour
     private WBH_ProjectileSpawner projectileSpawner;
 
     private float attackTimer = 0f;
-    private bool isDashAttack;
     private bool hasHitTarget;
 
 
@@ -86,14 +85,26 @@ public class WBH_EnemyCombat : MonoBehaviour
         return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
     }
 
-    public void DashAttack(float distance, float duration)
+    public void DashAttack(float distance, float duration, WBH_Indicator indicator = null)
     {
-        isDashAttack = true;
+        transform.LookAt(pattern.Target);
+        StartCoroutine(CoDashAttack(distance, duration,indicator));
+    }
+
+    private IEnumerator CoDashAttack(float distance, float duration, WBH_Indicator indicator)
+    {
+        indicator.Show();
+
+        yield return new WaitForSeconds(1f);
+
+        indicator.Hide();
+        
         movement.Dash(transform.forward, distance, duration);
     }
 
     public void ShootBurst(int count)
     {
+        transform.LookAt(pattern.Target);
         StartCoroutine(CoShootBurst(count));
     }
 
@@ -116,6 +127,7 @@ public class WBH_EnemyCombat : MonoBehaviour
         projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, 12f, pattern.PlayerLayer);
     }    
 
+    // 대쉬 중 플레이어 충돌 체크
     private void CheckDashHit()
     {
         if (hasHitTarget)
