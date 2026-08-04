@@ -3,48 +3,45 @@ using System.Collections;
 
 public class YJ_PortalActive : MonoBehaviour
 {
-    [SerializeField] private Light light;
-    private float maxIntensity = 100f;
-    private float duration = 3f;
+    [SerializeField] private Light targetLight;
+    [SerializeField] private float maxIntensity = 100f;
+    [SerializeField] private float duration = 3f;
 
     void Awake()
     {
-        light = GetComponentInChildren<Light>();
+        targetLight = GetComponentInChildren<Light>();
     }
 
     void Start()
     {
         gameObject.SetActive(false);
 
-        if (light != null)
-            light.intensity = 0f;
+        if (targetLight != null)
+            targetLight.intensity = 0f;
     }
 
     public void Active(bool active)
     {
         gameObject.SetActive(active);
 
-        if (active && light != null)
-        {
+        if (active && targetLight != null)
             StartCoroutine(LightOn());
-        }
     }
 
     private IEnumerator LightOn()
     {
-        light.intensity = 0f;
+        targetLight.intensity = 0f;
         float elapsedTime = 0f;
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-
             float ratio = Mathf.Clamp01(elapsedTime / duration);
-            light.intensity = Mathf.Lerp(0f, maxIntensity, ratio);
+            targetLight.intensity = Mathf.Lerp(0f, maxIntensity, ratio);
 
             yield return null;
         }
 
-        light.intensity = maxIntensity;
+        targetLight.intensity = maxIntensity;
     }
 }
