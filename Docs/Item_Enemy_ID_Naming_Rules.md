@@ -32,6 +32,8 @@ item.카테고리.종류.이름
 | `item.armor.boots.ninja_movement` | 닌자의 움직임 |
 | `item.armor.boots.quantum_shoes` | 퀀텀 슈즈 |
 | `item.potion.red` | 빨간 물약 |
+| `item.relic.mass-produced_core` | 양산형 코어 (Mass-Produced Core) |
+| `item.relic.advanced_core` | 고급 코어 (Advanced Core) |
 
 ## 3. 적(몬스터) ID 형식
 
@@ -58,6 +60,9 @@ enemy.등급.공격타입.이름
 
 - 전부 소문자만 쓴다.
 - 구간 구분은 마침표(`.`), 구간 안에서 여러 단어를 연결할 때는 언더스코어(`_`)를 쓴다.
+- 다만 **영문 표시 이름 자체에 하이픈이 들어가는 경우**에는 그 하이픈을 ID에도 그대로 살린다. 표시 이름과 ID를 눈으로 대조하기 쉽게 하기 위함이다 (2026-08-03 결정).
+  - 예: `Mass-Produced Core` → `item.relic.mass-produced_core` (단어 사이 연결은 그대로 `_`)
+  - 예: `Advanced Core` → `item.relic.advanced_core` (영문에 하이픈이 없으므로 `_`만 사용)
 - 공백을 넣지 않는다 (파이프라인이 공백을 감지하면 경고를 남긴다).
 - 자료형은 항상 `string`이다. ID는 계산에 쓰이는 숫자가 아니라 순수 식별자이기 때문이다.
 - 한 번 붙인 ID는 되도록 바꾸지 않는다. 세이브 데이터, 아이콘 파일명, 번역 라벨 파일이 전부 이 ID를 참조하기 때문에, 이름이 바뀌어도 ID는 유지하는 것이 안전하다 (표시 이름이 바뀌는 것과 ID가 바뀌는 것은 다른 문제다).
