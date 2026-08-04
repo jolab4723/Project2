@@ -207,6 +207,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public void Die() //!@ 사망처리. 이벤트 구독으로 리팩토링.
     {
         stateMachine.ChangeState(PlayerState.Dead);
+        SetControlEnable(false);
     }
 
     // --- combat.cs 에서 활용할 이동처리
