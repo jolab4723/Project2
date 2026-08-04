@@ -1,4 +1,23 @@
 [agents]
 enabled = true
-max_concurrent_threads_per_session = 2
+max_concurrent_threads_per_session = 10
 interrupt_message = true
+
+[mcp_servers.blender]
+command = 'C:\Users\user\.local\bin\uvx.exe'
+args = ["--python", "3.11", "blender-mcp"]
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+default_tools_approval_mode = "writes"
+
+[mcp_servers.blender.env]
+UV_PYTHON_PREFERENCE = "only-managed"
+DISABLE_TELEMETRY = "true"
+BLENDER_HOST = "localhost"
+BLENDER_PORT = "9876"
+
+[mcp_servers.unityMCP]
+command = "C:\\Users\\user\\.local\\bin\\uvx.exe"
+args = ["--prerelease", "explicit", "--from", "mcpforunityserver>=0.0.0a0", "mcp-for-unity", "--transport", "stdio"]
+startup_timeout_sec = 60
+env = { SystemRoot = "C:\\WINDOWS" }
