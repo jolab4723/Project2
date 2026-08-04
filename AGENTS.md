@@ -86,10 +86,12 @@
 
 #### 모델과 손 기준점
 
-- 내보낼 무기는 단일 root를 사용하고 원점을 주 손의 실제 grip 중앙에 둔다. 손잡이에서 칼날·무기 머리로 향하는 주축은 Blender `+Y`로 통일하며 Transform을 적용해 음수·비균일 scale을 남기지 않는다.
-- 한손 무기는 `RightHandGrip`만, 양손 무기는 `RightHandGrip`과 `LeftHandGrip` Empty를 root 아래에 둔다. 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞추며, 양손 여부가 불명확하면 임의의 `LeftHandGrip`을 만들지 않는다.
+- 내보낼 무기는 단일 root를 사용하고 원점을 주 손의 실제 grip 중앙에 둔다. Transform을 적용해 음수·비균일 scale을 남기지 않는다.
+- 파이터 근접 무기는 손잡이에서 칼날·무기 머리로 향하는 주축을 Blender `+Y`로 통일한다. 한손 무기는 `RightHandGrip`만, 양손 무기는 `RightHandGrip`과 `LeftHandGrip` Empty를 root 아래에 둔다.
+- 거너 총기는 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용하고, 총구 방향은 Blender `+Z`, 무기의 위쪽은 `+Y`로 통일한다. `LeftHandGrip`은 앞손의 실제 접촉점에, `Muzzle` Empty는 총구 끝에 두며 `Muzzle`의 `+Z`가 발사 방향을 향하게 한다.
+- 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞춘다. 양손 여부가 불명확하면 임의의 `LeftHandGrip`을 만들지 않으며, FBX 내보내기와 빈 Blender 씬 재가져오기에서 Empty가 실제로 보존됐는지 확인한다.
 - 편집용 `.blend`는 Unity `Assets` 밖에 두고 Unity에는 FBX와 필요한 Unity 자산만 둔다. Camera, Light, Armature, Collider와 촬영용 오브젝트는 요구된 경우가 아니면 FBX에 포함하지 않는다.
-- FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`를 사용하고, 기준점이 없는 기존 모델만 수동 보정한다.
+- FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 거너의 Muzzle, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`의 캐릭터 탭을 사용한다. 기준점이 없는 기존 모델은 생성기의 원본 피벗 자동 맞춤으로 초깃값을 만든 뒤 생성 프리팹만 수동 보정하며 외부 원본 에셋은 수정하지 않는다.
 
 #### 머터리얼과 텍스처
 

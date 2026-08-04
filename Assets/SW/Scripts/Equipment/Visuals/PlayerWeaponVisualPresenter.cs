@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
@@ -15,6 +16,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private string currentItemId;
     private GameObject currentVisual;
+    private readonly Dictionary<string, GameObject> visualCache = new();
 
     private void OnEnable()
     {
@@ -57,10 +59,12 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
         }
 
-        if (currentVisual != null && currentItemId == itemId)
+        if (currentVisual != null &&
+            currentVisual.activeSelf &&
+            currentItemId == itemId)
             return;
 
-        ClearVisual();
+        HideCurrentVisual();
 
         if (weaponMount == null ||
             visualCatalog == null ||
@@ -72,26 +76,37 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
         }
 
-        currentVisual = Instantiate(visualPrefab, weaponMount);
-        currentVisual.transform.SetLocalPositionAndRotation(
-            Vector3.zero,
-            Quaternion.identity);
-        currentVisual.transform.localScale = Vector3.one;
+        if (!visualCache.TryGetValue(itemId, out currentVisual) || currentVisual == null)
+        {
+            currentVisual = Instantiate(visualPrefab, weaponMount);
+            currentVisual.transform.SetLocalPositionAndRotation(
+                Vector3.zero,
+                Quaternion.identity);
+            currentVisual.transform.localScale = Vector3.one;
+            visualCache[itemId] = currentVisual;
+        }
+
+        currentVisual.SetActive(true);
         currentItemId = itemId;
 
         ApplyLeftHandIk(currentVisual.transform.Find(LeftHandGripName));
     }
 
+    /// <summary>
+    /// 장비 교체 때 외형을 파괴하지 않고 숨겨 두었다가 같은 무기를 다시 장착하면 재사용합니다.
+    /// </summary>
     private void ClearVisual()
+    {
+        HideCurrentVisual();
+    }
+
+    private void HideCurrentVisual()
     {
         if (leftHandIkConstraint != null)
             leftHandIkConstraint.weight = 0f;
 
         if (currentVisual != null)
-        {
             currentVisual.SetActive(false);
-            Destroy(currentVisual);
-        }
 
         currentVisual = null;
         currentItemId = null;
