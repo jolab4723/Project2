@@ -3371,7 +3371,7 @@ Transform:
   m_GameObject: {fileID: 4306151390367019180}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006197005, y: 0.0093165515, z: -0.007022988, w: 0.99993193}
-  m_LocalPosition: {x: 0.07309761, y: 0.1606365, z: -0.06168355}
+  m_LocalPosition: {x: 0.07309731, y: 0.16063644, z: -0.061683547}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5599,7 +5599,7 @@ Transform:
   m_GameObject: {fileID: 6319511063285921067}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.07758393, y: 0.16274357, z: -0.056084197}
+  m_LocalPosition: {x: -0.07758369, y: 0.16274357, z: -0.056084204}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7267,7 +7267,7 @@ Transform:
   m_GameObject: {fileID: 8033987866719858990}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: 0.026277838, y: 0.16128281, z: -0.09219007}
+  m_LocalPosition: {x: 0.026278257, y: 0.1612828, z: -0.09219008}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7394,7 +7394,7 @@ Transform:
   m_GameObject: {fileID: 8131167696511496113}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.03143201, y: 0.1620902, z: -0.08875212}
+  m_LocalPosition: {x: -0.031432368, y: 0.1620902, z: -0.08875212}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8138,6 +8138,14 @@ GameObject:
   - component: {fileID: 2312052604114874023}
   - component: {fileID: 245515211961115271}
   - component: {fileID: 2674546040288394452}
+  - component: {fileID: 5376958052108856053}
+  - component: {fileID: 1896365474940792361}
+  - component: {fileID: 2188125559027323366}
+  - component: {fileID: 6806792719965724779}
+  - component: {fileID: 4984542786249164771}
+  - component: {fileID: 6065535127318149145}
+  - component: {fileID: 7801668838040943373}
+  - component: {fileID: 2223535990301607553}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -8384,6 +8392,114 @@ MonoBehaviour:
   fighterAttackRange: 2
   gunnerAttackRange: 10
   gunnerBulletSpeed: 10
+--- !u!114 &5376958052108856053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e11a7135eb17f459b0ccad80dbe3a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBuffManager
+--- !u!114 &1896365474940792361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c28388b841889b94fbca6a6ebee1a76c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatManager
+  levelManager: {fileID: 2188125559027323366}
+  equipManagerBehaviour: {fileID: 6308816638425809528}
+  buffManagerBehaviour: {fileID: 6308816638425809528}
+  startLevel: 1
+  equipmentSystem: {fileID: 0}
+--- !u!114 &2188125559027323366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6145fadacf1f5940a89b2030ed0b6b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelManager
+  statDataJson: {fileID: 4900000, guid: 7aadd889b989ef14ea384bae286d2dc6, type: 3}
+  testLevel: 1
+--- !u!114 &6806792719965724779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d752456487066be4caeaac8611d815b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealthManager
+--- !u!114 &4984542786249164771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f0d59ef7cd92ee40847217acd984b91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerEquipManager
+  equipmentSystem: {fileID: 0}
+--- !u!114 &6065535127318149145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 154b799c9e7d9464b880fabc5982cd46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerManaManager
+  regenTickInterval: 1
+  regenMultiplier: 1
+  IsRegenPaused: 0
+--- !u!114 &7801668838040943373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ba6bf62a64393d4b9b0a9c2728fad10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemTriggerManager
+--- !u!114 &2223535990301607553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb87689cc9ef7634fa8bba69bcfc5df4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
+  inventoryController: {fileID: 0}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0
