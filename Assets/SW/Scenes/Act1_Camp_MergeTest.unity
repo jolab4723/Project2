@@ -8332,6 +8332,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 526547069}
   m_CullTransparentMesh: 1
+--- !u!4 &533051252 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1830349414}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &547695593
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31309,6 +31314,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1001 &1694489424
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 533051252}
+    m_Modifications:
+    - target: {fileID: 2732889911447889829, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_Name
+      value: MechanicalDestroyer_root
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.000018006074
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.5164613
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0000058708883
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+--- !u!4 &1694489425 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7525553096968088952, guid: 6f3252c69c83ef04496f6d506fad5de2, type: 3}
+  m_PrefabInstance: {fileID: 1694489424}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1704559981 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3032656623205437765, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
@@ -33257,6 +33324,10 @@ PrefabInstance:
       propertyPath: effectSpawner
       value: 
       objectReference: {fileID: 1569555025}
+    - target: {fileID: 2961646694436987361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.026277788
@@ -33355,7 +33426,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1694489425}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
