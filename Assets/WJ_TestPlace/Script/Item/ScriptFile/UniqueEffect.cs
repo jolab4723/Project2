@@ -49,26 +49,30 @@ namespace ItemSystem
 
         public string EffectName => effectName;
 
-        public string EffectDescription
+        public string EffectDescription => FormatDescription(effectDescription, coefficients, name);
+
+        /// <summary>
+        /// 설명 템플릿의 {0}, {1}... 자리에 coefficients 값을 대입한다.
+        /// UniqueEffectLabelDatabaseSO도 언어별 번역 템플릿에 같은 coefficients를 대입할 때 이 메서드를 그대로 쓴다
+        /// (템플릿 문구만 언어별로 다르고, 수치는 언어와 무관하기 때문).
+        /// </summary>
+        public static string FormatDescription(string template, float[] coefficients, string idForLogging)
         {
-            get
+            if (coefficients == null || coefficients.Length == 0)
+                return template;
+
+            object[] args = new object[coefficients.Length];
+            for (int i = 0; i < coefficients.Length; i++)
+                args[i] = coefficients[i];
+
+            try
             {
-                if (coefficients == null || coefficients.Length == 0)
-                    return effectDescription;
-
-                object[] args = new object[coefficients.Length];
-                for (int i = 0; i < coefficients.Length; i++)
-                    args[i] = coefficients[i];
-
-                try
-                {
-                    return string.Format(effectDescription, args);
-                }
-                catch (System.FormatException)
-                {
-                    Debug.LogWarning($"[{name}] effectDescription 템플릿과 coefficients 개수가 맞지 않습니다.");
-                    return effectDescription;
-                }
+                return string.Format(template, args);
+            }
+            catch (System.FormatException)
+            {
+                Debug.LogWarning($"[{idForLogging}] 설명 템플릿과 coefficients 개수가 맞지 않습니다.");
+                return template;
             }
         }
 
