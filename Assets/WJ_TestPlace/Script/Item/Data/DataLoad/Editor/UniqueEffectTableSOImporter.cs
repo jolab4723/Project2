@@ -153,11 +153,15 @@ namespace DataSystem
                 case TriggeredBuffUniqueEffectSO triggered:
                     triggered.buffSpec = BuildBuffSpec(row, BuffStackBehavior.RefreshDuration);
                     triggered.triggerCondition = ParseEnumOrDefault(row.triggerCondition, TriggerCondition.None, row.uniqueEffectId);
+                    triggered.cooldownSeconds = row.cooldownSeconds;
+                    triggered.duplicatePolicy = ParseEnumOrDefault(row.duplicatePolicy, DuplicateTriggerPolicy.ShareCooldown, row.uniqueEffectId);
                     break;
 
-                case HealthThresholdBuffUniqueEffectSO threshold:
+                case StatThresholdBuffUniqueEffectSO threshold:
                     threshold.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
-                    threshold.healthThresholdPercent = row.healthThresholdPercent;
+                    threshold.referenceStat = ParseEnumOrDefault(row.referenceStat, StatReference.CurrentHealthPercent, row.uniqueEffectId);
+                    threshold.comparisonOperator = ParseEnumOrDefault(row.comparisonOperator, ComparisonOperator.LessOrEqual, row.uniqueEffectId);
+                    threshold.thresholdValue = row.thresholdValue;
                     break;
 
                 case PeriodicLogUniqueEffectSO periodic:
@@ -252,7 +256,7 @@ namespace DataSystem
             {
                 case nameof(PassiveBuffUniqueEffectSO): return typeof(PassiveBuffUniqueEffectSO);
                 case nameof(TriggeredBuffUniqueEffectSO): return typeof(TriggeredBuffUniqueEffectSO);
-                case nameof(HealthThresholdBuffUniqueEffectSO): return typeof(HealthThresholdBuffUniqueEffectSO);
+                case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
                 case nameof(PeriodicLogUniqueEffectSO): return typeof(PeriodicLogUniqueEffectSO);
             }
 

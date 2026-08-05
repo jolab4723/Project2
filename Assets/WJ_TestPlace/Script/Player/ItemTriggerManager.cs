@@ -42,6 +42,9 @@ public class ItemTriggerManager : MonoBehaviour
             Instance = null;
     }
 
+    /// <summary>회피 감지를 위해 구독 중인 상태머신. 중복 구독/해제 누락을 막으려고 들고 있는다.</summary>
+    private WBH_PlayerStateMachine subscribedStateMachine;
+
     private void OnEnable()
     {
         // 로컬 인스턴스일 때만 실제로 구독한다 (Awake가 아직 안 돌았을 수도 있어 Instance==this로 체크).
@@ -50,17 +53,35 @@ public class ItemTriggerManager : MonoBehaviour
 
         if (PlayerHealthManager.Instance != null)
             PlayerHealthManager.Instance.OnDamageTaken += HandleHitTaken;
+
+        // 회피는 별도 이벤트가 없어서 상태머신의 상태 진입을 보고 판단한다.
+        // 이렇게 하면 회피 로직(T_PlayerController, BH 담당)을 건드리지 않아도 된다.
+        subscribedStateMachine = GetComponent<WBH_PlayerStateMachine>();
+        if (subscribedStateMachine != null)
+            subscribedStateMachine.OnEnterState += HandleStateEntered;
     }
 
     private void OnDisable()
     {
         if (PlayerHealthManager.Instance != null)
             PlayerHealthManager.Instance.OnDamageTaken -= HandleHitTaken;
+
+        if (subscribedStateMachine != null)
+        {
+            subscribedStateMachine.OnEnterState -= HandleStateEntered;
+            subscribedStateMachine = null;
+        }
     }
 
     private void HandleHitTaken(float amount)
     {
         Fire(TriggerCondition.OnHitTaken);
+    }
+
+    private void HandleStateEntered(PlayerState state)
+    {
+        if (state == PlayerState.Dodge)
+            Fire(TriggerCondition.OnDodge);
     }
 
     /// <summary>

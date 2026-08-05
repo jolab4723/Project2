@@ -1,0 +1,112 @@
+[
+  {
+    "buffId": "buff.attack_up",
+    "buffName": "공격 강화",
+    "description": "일정 시간 공격력이 증가합니다.",
+    "statEffects": "attackPowerPercent:20",
+    "duration": 10.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "buff.defense_up",
+    "buffName": "방어 태세",
+    "description": "일정 시간 방어력이 크게 증가합니다.",
+    "statEffects": "defensePowerPercent:30",
+    "duration": 15.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "buff.haste",
+    "buffName": "신속",
+    "description": "이동 속도와 공격 속도가 함께 증가합니다.",
+    "statEffects": "moveSpeedPercent:25;attackSpeedPercent:15",
+    "duration": 8.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": "여러 스탯을 한 버프로 묶는 예시"
+  },
+  {
+    "buffId": "buff.mana_flow",
+    "buffName": "마나 순환",
+    "description": "마나 재생력이 증가합니다. 중첩 가능.",
+    "statEffects": "mpRegenFlat:5",
+    "duration": 20.0,
+    "stackBehavior": "Stack",
+    "maxStack": 3,
+    "note": "중첩 시 효과가 배가되는 예시"
+  },
+  {
+    "buffId": "buff.focus",
+    "buffName": "집중",
+    "description": "치명타 확률이 증가합니다.",
+    "statEffects": "critRateFlat:15",
+    "duration": 12.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "debuff.slow",
+    "buffName": "둔화",
+    "description": "이동 속도가 감소합니다.",
+    "statEffects": "moveSpeedPercent:-30",
+    "duration": 5.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "debuff.weaken",
+    "buffName": "약화",
+    "description": "공격력이 감소합니다.",
+    "statEffects": "attackPowerPercent:-25",
+    "duration": 8.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "debuff.armor_break",
+    "buffName": "방어구 파괴",
+    "description": "방어력이 감소합니다. 중첩 가능.",
+    "statEffects": "defensePowerPercent:-15",
+    "duration": 10.0,
+    "stackBehavior": "Stack",
+    "maxStack": 3,
+    "note": "디버프도 중첩 규칙을 그대로 씀"
+  },
+  {
+    "buffId": "debuff.bind",
+    "buffName": "속박",
+    "description": "짧은 시간 이동할 수 없습니다.",
+    "statEffects": "moveSpeedPercent:-100",
+    "duration": 2.0,
+    "stackBehavior": "Ignore",
+    "maxStack": 0,
+    "note": "재적용해도 시간이 늘지 않는 예시"
+  },
+  {
+    "buffId": "debuff.curse",
+    "buffName": "저주",
+    "description": "공격력과 방어력이 함께 감소합니다.",
+    "statEffects": "attackPowerPercent:-15;defensePowerPercent:-15",
+    "duration": 12.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": ""
+  },
+  {
+    "buffId": "buff.zone_haste",
+    "buffName": "가속 지대",
+    "description": "지대 안에 있는 동안 이동 속도가 증가합니다.",
+    "statEffects": "moveSpeedPercent:40",
+    "duration": 0.0,
+    "stackBehavior": "Ignore",
+    "maxStack": 0,
+    "note": "필드 존용. 존이 직접 제거하므로 duration은 0이어야 함"
+  }
+]
