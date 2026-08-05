@@ -15,6 +15,9 @@ public class TooltipUI : MonoBehaviour
     [Tooltip("비워두면 definition.itemName을 그대로 사용")]
     [SerializeField] private ItemLabelDatabaseSO itemLabels;
 
+    [Tooltip("비워두면 uniqueEffect.EffectName/EffectDescription을 그대로 사용")]
+    [SerializeField] private UniqueEffectLabelDatabaseSO uniqueEffectLabels;
+
     [Header("패널 / 배경")]
     [SerializeField] private Image borderImage;
     [SerializeField] private Image overlayImage;
@@ -234,6 +237,26 @@ public class TooltipUI : MonoBehaviour
             return name;
 
         return definition.itemName;
+    }
+
+    /// <summary>라벨 DB에 없는 고유 효과(예: 번역 전/테스트용)는 effect.EffectName으로 그대로 폴백한다.</summary>
+    private string GetUniqueEffectName(UniqueEffectSO effect)
+    {
+        if (uniqueEffectLabels != null && uniqueEffectLabels.TryGetName(effect.name, out string name))
+            return name;
+
+        return effect.EffectName;
+    }
+
+    /// <summary>
+    /// 라벨 DB의 언어별 설명 템플릿에 coefficients를 대입해 완성 문구를 만든다.
+    /// coefficients는 언어와 무관하므로 effect가 이미 들고 있는 값을 그대로 재사용한다.
+    /// </summary>
+    private string GetUniqueEffectDescription(UniqueEffectSO effect)
+    {
+        return uniqueEffectLabels != null
+            ? uniqueEffectLabels.GetDescription(effect.name, effect.coefficients)
+            : effect.EffectDescription;
     }
 
     private void ApplyColor(ItemInstance itemData)
@@ -487,7 +510,7 @@ public class TooltipUI : MonoBehaviour
             if (hasEffect)
             {
                 uniqueEffectNameText.text =
-                    definition.uniqueEffect.EffectName;
+                    GetUniqueEffectName(definition.uniqueEffect);
             }
         }
 
@@ -499,7 +522,7 @@ public class TooltipUI : MonoBehaviour
             if (hasEffect)
             {
                 uniqueEffectDescriptionText.text =
-                    definition.uniqueEffect.EffectDescription;
+                    GetUniqueEffectDescription(definition.uniqueEffect);
 
                 uniqueEffectDescriptionText.ForceMeshUpdate();
             }
