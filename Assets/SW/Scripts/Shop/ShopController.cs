@@ -198,17 +198,38 @@ public class ShopController : MonoBehaviour
     public bool TryBuy(ItemUI itemUI, int targetX, int targetY)
     {
         InventoryItem item = itemUI?.Item;
+        InventoryPlacementSnapshot placement =
+            InventoryPlacementSnapshot.FromOriginalState(
+                playerGrid,
+                item,
+                targetX,
+                targetY,
+                item?.isRotated ?? false);
+
+        return TryBuy(itemUI, placement);
+    }
+
+    /// <summary>
+    /// 목표 Grid에서 사용할 회전 상태를 거래 서비스에 전달해, 원본 Grid에서 안전하게 제거한 뒤 적용한다.
+    /// </summary>
+    private bool TryBuy(
+        ItemUI itemUI,
+        InventoryPlacementSnapshot placement)
+    {
+        InventoryItem item = itemUI?.Item;
 
         TradeResult result = tradeService.TryBuy(
             item,
             shopGrid,
             playerGrid,
-            targetX,
-            targetY);
+            placement);
 
         if (result == TradeResult.Success)
         {
-            itemUI.SetGridPosition(playerGrid, targetX, targetY);
+            itemUI.SetGridPosition(
+                playerGrid,
+                placement.Rect.X,
+                placement.Rect.Y);
             RefreshItemBadge(itemUI);
             inventoryController?.NotifyItemOwnershipGained(item);
         }
@@ -240,8 +261,7 @@ public class ShopController : MonoBehaviour
                 item,
                 requestedX,
                 requestedY,
-                out int resolvedX,
-                out int resolvedY))
+                out InventoryPlacementSnapshot placement))
         {
             ShowTradeMessage(
                 TradeResult.NoSpace,
@@ -255,12 +275,14 @@ public class ShopController : MonoBehaviour
             item,
             playerGrid,
             shopGrid,
-            resolvedX,
-            resolvedY);
+            placement);
 
         if (result == TradeResult.Success)
         {
-            itemUI.SetGridPosition(shopGrid, resolvedX, resolvedY);
+            itemUI.SetGridPosition(
+                shopGrid,
+                placement.Rect.X,
+                placement.Rect.Y);
             RefreshItemBadge(itemUI);
             inventoryController?.NotifyItemOwnershipLost(item);
         }
@@ -281,11 +303,10 @@ public class ShopController : MonoBehaviour
         if (itemUI == null || itemUI.CurrentGrid != shopGrid)
             return false;
 
-        if (!playerGrid.FindEmptySpace(
-                itemUI.Item.CurrentWidth,
-                itemUI.Item.CurrentHeight,
-                out int x,
-                out int y))
+        if (!playerGrid.TryFindEmptySpaceForItem(
+                itemUI.Item,
+                itemUI.Item.isRotated,
+                out InventoryPlacementSnapshot placement))
         {
             ShowTradeMessage(
                 TradeResult.NoSpace,
@@ -295,7 +316,7 @@ public class ShopController : MonoBehaviour
             return true;
         }
 
-        TryBuy(itemUI, x, y);
+        TryBuy(itemUI, placement);
         return true;
     }
 
@@ -344,15 +365,16 @@ public class ShopController : MonoBehaviour
             isBuying);
     }
 
+    /// <summary>
+    /// 요청 위치를 우선하고, 사용할 수 없으면 현재 방향과 반대 방향 순서로 상점의 빈자리를 찾는다.
+    /// </summary>
     public bool TryResolveSellPosition(
         InventoryItem item,
         int requestedX,
         int requestedY,
-        out int resolvedX,
-        out int resolvedY)
+        out InventoryPlacementSnapshot placement)
     {
-        resolvedX = requestedX;
-        resolvedY = requestedY;
+        placement = default;
 
         if (item?.itemData?.definition == null || shopGrid == null)
             return false;
@@ -364,15 +386,21 @@ public class ShopController : MonoBehaviour
                 item.CurrentWidth,
                 item.CurrentHeight))
         {
-            return true;
+            placement = InventoryPlacementSnapshot.FromOriginalState(
+                shopGrid,
+                item,
+                requestedX,
+                requestedY,
+                item.isRotated);
+
+            return placement.IsValid;
         }
 
-        // 드롭한 위치가 차 있으면 상점의 다른 빈자리를 찾는다.
-        return shopGrid.FindEmptySpace(
-            item.CurrentWidth,
-            item.CurrentHeight,
-            out resolvedX,
-            out resolvedY);
+        // 현재 방향의 다른 빈자리를 우선하고, 필요한 경우에만 반대 방향까지 확인한다.
+        return shopGrid.TryFindEmptySpaceForItem(
+            item,
+            item.isRotated,
+            out placement);
     }
     private void RefreshItemBadge(ItemUI itemUI)
     {

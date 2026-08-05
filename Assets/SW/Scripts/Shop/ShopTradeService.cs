@@ -15,8 +15,7 @@ internal sealed class ShopTradeService
         InventoryItem item,
         InventoryGrid shopGrid,
         InventoryGrid playerGrid,
-        int targetX,
-        int targetY)
+        InventoryPlacementSnapshot targetPlacement)
     {
         if (item?.itemData?.definition == null ||
             shopGrid == null ||
@@ -37,11 +36,12 @@ internal sealed class ShopTradeService
             return TradeResult.StockUpdateFailed;
         }
 
-        if (!playerGrid.CanPlaceItem(
-                targetX,
-                targetY,
-                item.CurrentWidth,
-                item.CurrentHeight))
+        if (!targetPlacement.IsValid ||
+            !playerGrid.CanPlaceItem(
+                targetPlacement.Rect.X,
+                targetPlacement.Rect.Y,
+                targetPlacement.Rect.Width,
+                targetPlacement.Rect.Height))
         {
             return TradeResult.NoSpace;
         }
@@ -62,8 +62,7 @@ internal sealed class ShopTradeService
                 item,
                 shopGrid,
                 playerGrid,
-                targetX,
-                targetY))
+                targetPlacement))
         {
             // 아이템 이동에 실패했으므로 차감한 골드를 되돌린다.
             playerWallet.AddGold(price);
@@ -86,8 +85,7 @@ internal sealed class ShopTradeService
         InventoryItem item,
         InventoryGrid playerGrid,
         InventoryGrid shopGrid,
-        int targetX,
-        int targetY)
+        InventoryPlacementSnapshot targetPlacement)
     {
         if (item?.itemData?.definition == null ||
             playerGrid == null ||
@@ -98,11 +96,12 @@ internal sealed class ShopTradeService
             return TradeResult.InvalidItem;
         }
 
-        if (!shopGrid.CanPlaceItem(
-                targetX,
-                targetY,
-                item.CurrentWidth,
-                item.CurrentHeight))
+        if (!targetPlacement.IsValid ||
+            !shopGrid.CanPlaceItem(
+                targetPlacement.Rect.X,
+                targetPlacement.Rect.Y,
+                targetPlacement.Rect.Width,
+                targetPlacement.Rect.Height))
         {
             return TradeResult.NoSpace;
         }
@@ -122,8 +121,7 @@ internal sealed class ShopTradeService
                 item,
                 playerGrid,
                 shopGrid,
-                targetX,
-                targetY))
+                targetPlacement))
         {
             return TradeResult.TransferFailed;
         }
@@ -171,8 +169,7 @@ internal sealed class ShopTradeService
         InventoryItem item,
         InventoryGrid sourceGrid,
         InventoryGrid targetGrid,
-        int targetX,
-        int targetY)
+        InventoryPlacementSnapshot targetPlacement)
     {
         // 우클릭 거래라면 아직 sourceGrid에 있고,
         // 드래그 거래라면 ItemUI가 이미 제거했을 수 있다.
@@ -191,7 +188,13 @@ internal sealed class ShopTradeService
             return false;
         }
 
-        if (targetGrid.TryPlaceItem(item, targetX, targetY))
+        // 원본 Grid는 기존 방향으로 제거한 뒤, 목표 Grid에 배치하기 직전에만 회전 상태를 바꾼다.
+        item.isRotated = targetPlacement.IsRotated;
+
+        if (targetGrid.TryPlaceItem(
+                item,
+                targetPlacement.Rect.X,
+                targetPlacement.Rect.Y))
             return true;
 
         Debug.LogError(
