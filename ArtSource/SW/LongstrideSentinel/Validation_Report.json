@@ -1,0 +1,88 @@
+{
+  "valid": true,
+  "fbx_path": "C:\\Users\\user\\Desktop\\Project2\\Assets\\SW\\Models\\Enemy\\LongstrideSentinel\\LongstrideSentinel.fbx",
+  "fbx_size_bytes": 1709356,
+  "source": {
+    "stats": {
+      "mesh_count": 6,
+      "vertex_count": 12628,
+      "triangle_count": 24828
+    },
+    "bounds_meters": {
+      "min": [
+        -1.9166,
+        -2.9671,
+        -0.0094
+      ],
+      "max": [
+        1.9166,
+        3.1746,
+        7.738
+      ],
+      "size": [
+        3.8332,
+        6.1417,
+        7.7474
+      ]
+    },
+    "actions": {
+      "LS_Walk_Slow": {
+        "frame_start": 1,
+        "frame_end": 241,
+        "duration_seconds": 8.0,
+        "loop": true
+      },
+      "LS_Idle_Scan": {
+        "frame_start": 1,
+        "frame_end": 181,
+        "duration_seconds": 6.0,
+        "loop": true
+      }
+    }
+  },
+  "reimport": {
+    "stats": {
+      "mesh_count": 6,
+      "vertex_count": 12628,
+      "triangle_count": 24828
+    },
+    "bounds_meters": {
+      "min": [
+        -1.9166,
+        -2.9671,
+        -0.0094
+      ],
+      "max": [
+        1.9166,
+        3.1746,
+        7.7396
+      ],
+      "size": [
+        3.8332,
+        6.1417,
+        7.749
+      ]
+    },
+    "actions": [
+      "Armature|Armature|LS_Idle_Scan",
+      "Armature|Armature|LS_Walk_Slow"
+    ],
+    "root_objects": [
+      "LongstrideSentinel_Root"
+    ],
+    "object_types": {
+      "ARMATURE": 1,
+      "MESH": 6,
+      "EMPTY": 1
+    },
+    "scale_issues": []
+  },
+  "checks": {
+    "single_root": true,
+    "triangle_count_matches": true,
+    "contains_walk_clip": true,
+    "contains_idle_clip": true,
+    "contains_no_camera": true,
+    "contains_no_light": true
+  }
+}

@@ -41,7 +41,7 @@
 - 코드 구현은 기본적으로 주 에이전트가 직접 수행한다. Luna에 구현을 맡길 때는 주 에이전트가 먼저 구현 방법, 대상 파일, 동작 경계와 검증 기준을 확정한 뒤 `.codex/agents/unity-supervised-worker.toml`의 `unity_supervised_worker`에 명시적으로 위임한다.
 - `unity_supervised_worker`는 지정된 코드 파일만 수정한다. Scene, Prefab, `ProjectSettings/**`, `Packages/**`, 외부 에셋, Unity Editor 상태 변경과 개인 구현 로그 갱신은 위임하지 않는다.
 - 주 에이전트는 Luna가 만든 변경을 원본 코드와 Diff로 직접 검토하고, 컴파일, Console, Edit/Play Mode, 실제 플레이 흐름 등 필요한 Unity 검증을 직접 수행한 뒤에만 채택한다. Luna의 완료 주장만으로 구현이나 검증 완료를 선언하지 않는다.
-- 동시에 쓰기 작업을 수행하는 서브에이전트는 하나만 둔다. 읽기 전용 조사도 서로 독립된 범위일 때만 병렬화하며, 같은 파일과 흐름을 중복 조사하지 않는다.
+- 동시에 쓰기 작업을 수행하는 서브에이전트는 하나만 둔다. 다만 아래 `Blender Luna 병렬 작업 규칙`에 따라 실제로 쓰는 파일이 서로 다른 Blender 작업은 예외로 하며 최대 10개의 Luna를 동시에 운용할 수 있다. 읽기 전용 조사도 서로 독립된 범위일 때만 병렬화하며, 같은 파일과 흐름을 중복 조사하지 않는다.
 - Luna 모델을 사용할 수 없거나 서브에이전트 실행이 실패하면 중요 계획이나 구현을 다른 보조 모델에 자동으로 넘기지 않고 주 에이전트가 직접 처리한다.
 
 ## 2. 팀 브랜치와 우선 탐색 영역
@@ -76,6 +76,38 @@
 - UI가 게임 상태를 직접 소유하거나 전투 코드가 특정 UI를 직접 조작하지 않도록 연결 경계를 유지한다.
 - 테스트용 오브젝트에서만 성공한 결과를 완료로 보지 말고 실제 플레이어와 적 로봇에서 최소 한 번 검증한다.
 
+### 3-1. Blender 무기 제작·Unity 전달 규칙
+
+#### 작업 배정과 책임
+
+- Sol은 시작 전에 참조 이미지, 한손·양손 구분, 담당 모델, 허용 파일, 출력 경로와 완료 기준을 확정하고 최종 채택과 Unity 검증을 소유한다.
+- Blender 쓰기 작업은 원칙적으로 Luna 하나가 모델 하나의 `.blend`, FBX, 텍스처, 프리뷰와 검증 산출물을 끝까지 담당한다. 서로 다른 파일만 다룰 때 세션당 최대 10개까지 병렬화할 수 있으며 같은 모델이나 공용 머터리얼·생성기·Unity Scene·Prefab은 나누어 수정하지 않는다.
+- 각 담당은 고유한 파일명과 임시 경로를 사용하고 다른 담당의 결과를 덮어쓰지 않는다. Sol은 원본 대조, FBX 재임포트, Unity 머터리얼·장착 상태를 직접 확인한 뒤에만 완료로 판단한다.
+
+#### 모델과 손 기준점
+
+- 내보낼 무기는 단일 root를 사용하고 원점을 주 손의 실제 grip 중앙에 둔다. Transform을 적용해 음수·비균일 scale을 남기지 않는다.
+- 파이터 근접 무기는 손잡이에서 칼날·무기 머리로 향하는 주축을 Blender `+Y`로 통일한다. 한손 무기는 `RightHandGrip`만, 양손 무기는 `RightHandGrip`과 `LeftHandGrip` Empty를 root 아래에 둔다.
+- 거너 총기는 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용하고, 총구 방향은 Blender `+Z`, 무기의 위쪽은 `+Y`로 통일한다. `LeftHandGrip`은 앞손의 실제 접촉점에, `Muzzle` Empty는 총구 끝에 두며 `Muzzle`의 `+Z`가 발사 방향을 향하게 한다.
+- 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞춘다. 양손 여부가 불명확하면 임의의 `LeftHandGrip`을 만들지 않으며, FBX 내보내기와 빈 Blender 씬 재가져오기에서 Empty가 실제로 보존됐는지 확인한다.
+- 편집용 `.blend`는 Unity `Assets` 밖에 두고 Unity에는 FBX와 필요한 Unity 자산만 둔다. Camera, Light, Armature, Collider와 촬영용 오브젝트는 요구된 경우가 아니면 FBX에 포함하지 않는다.
+- FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 거너의 Muzzle, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`의 캐릭터 탭을 사용한다. 기준점이 없는 기존 모델은 생성기의 원본 피벗 자동 맞춤으로 초깃값을 만든 뒤 생성 프리팹만 수동 보정하며 외부 원본 에셋은 수정하지 않는다.
+
+#### 머터리얼과 텍스처
+
+- Workbench 또는 Material Preview 이미지만으로 완료하지 않는다. 일반 표면은 `Principled BSDF → Material Output`의 Lit 구조를 사용하고 재질 성격에 맞는 Base Color, Metallic, Roughness를 명시한다. 순수 Emission은 불꽃·에너지 같은 보조 표면으로 제한한다.
+- Noise, ColorRamp, Voronoi, Bump 같은 절차적 노드는 FBX에 그대로 전달되지 않는다. Unity에서도 필요한 변화는 Base Color·Normal·Mask 텍스처로 베이크하거나 프로젝트 셰이더로 재현하고, FBX 자체에는 흰색·회색으로 무너지지 않는 대표색을 둔다.
+- Blender 선형 색을 Unity 수치로 그대로 복사하지 말고 실제 표시색을 비교해 선형↔감마 변환을 적용한다. 최종 RGB가 이미 들어간 Base Color 텍스처에는 흰색 tint를 사용해 색을 중복 곱하지 않는다.
+- Base Color 텍스처는 Default·sRGB 활성, Normal 텍스처는 `NormalMap`·sRGB 비활성으로 임포트한다. 베이크 전 UV 유무와 texel density를 확인하고, UV가 필요하면 형상·triangle 수를 바꾸지 않는 범위에서 원본 `.blend`에도 보존한다.
+
+#### Unity 머터리얼과 검증
+
+- FBX가 Metallic·Roughness·Emission을 잃으면 외부 `Universal Render Pipeline/Lit` 머터리얼을 만들고 source material을 1:1 remap한다. 금속은 authored Metallic/Smoothness를 복원하고 나무·가죽·천·뼈는 낮은 금속성을 유지한다.
+- Unity 6 remap은 `AssetImporter.SourceAssetIdentifier(typeof(Material), sourceName)`를 사용한다. remap 후 임베디드 Material이 조회되지 않을 수 있으므로 별도의 원본 머터리얼 명단을 기준으로 반복 실행해도 같은 결과가 나와야 한다.
+- 발광은 HDR `_EmissionColor`, 알파 1, URP Lit `_EMISSION` 키워드와 `BakedEmissive` GI flag를 함께 설정한다. 저장과 도메인 리로드 뒤 로드된 Material에서 다시 확인하고 일반 재질은 `EmissiveIsBlack`을 유지한다.
+- 완료 전 모든 Renderer 슬롯이 non-null 외부 URP/Lit 머터리얼을 가리키는지, source/remap 수와 Base Color·Metallic·Smoothness·Emission·텍스처가 원본과 일치하는지 전수 검사한다. 이어서 격리된 방향광 프리뷰와 실제 맵 장착 상태에서 백색화, 흐릿한 플라스틱 표현, 발광 소실을 확인한다.
+- 검증 때문에 사용자가 열어 둔 Dirty Scene·Prefab을 저장하지 않는다. 임시 Blender/Python/Editor 자동화와 manifest는 완료 후 제거하고, 계속 유지할 Editor 전용 코드는 `Assets/Editor/**`에 둔다.
+
 ## 4. PlayerContext의 우선순위
 
 - `PlayerContext`는 Mirror 연동을 위해 반드시 도입할 장기 방향이다.
@@ -91,7 +123,7 @@
 - `Docs/Artificer_Robot_Quick_Application_Guide.md`
 - `Docs/Artificer_Destruction_Pooling_Guide.md`
 - `Assets/SW/Scripts/Enemy/Destruction/**`
-- `Assets/SW/Editor/SafeStaticDestructionVisualConverter.cs`
+- `Assets/Editor/SafeStaticDestructionVisualConverter.cs`
 
 ### 파괴 연출 구조
 

@@ -33,6 +33,12 @@ public class KY_RotateEffect : MonoBehaviour, IPlayableEffect
 
     public void Play()
     {
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+
+        if (rectTransform == null)
+            return;
+
         Stop();
         float sign = direction == RotateDirection.Clockwise ? -1f : 1f;
 
