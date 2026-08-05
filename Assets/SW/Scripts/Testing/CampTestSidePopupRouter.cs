@@ -7,6 +7,8 @@ using UnityEngine;
 /// </summary>
 public sealed class CampTestSidePopupRouter : MonoBehaviour
 {
+    private const float TestNpcCullHeight = 0.01f;
+
     [SerializeField] private KY_PopupBase statusPopup;
     [SerializeField] private KY_PopupBase skillPopup;
     [SerializeField] private KY_PopupBase questPopup;
@@ -21,6 +23,7 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = -1;
+        ExtendNpcLodVisibility();
     }
 
     private void OnEnable()
@@ -61,7 +64,12 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
             HandlePauseInput();
 
         if (inputActions.Player.OpenInventory.triggered)
-            KY_GameEvents.InventoryRequested();
+        {
+            if (inventoryPartView != null)
+                inventoryPartView.ToggleInventory();
+            else
+                KY_GameEvents.InventoryRequested();
+        }
 
         if (inputActions.Player.OpenSkill.triggered)
             KY_GameEvents.SkillRequested();
@@ -78,6 +86,36 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
     private void HandleSkillRequested() => Toggle(skillPopup);
 
     private void HandleQuestRequested() => Toggle(questPopup);
+
+    /// <summary>
+    /// 테스트 카메라처럼 NPC와 거리가 먼 구도에서도 마지막 LOD가 너무 일찍 사라지지 않도록 조정합니다.
+    /// 원본 NPC와 캠프 씬 에셋은 수정하지 않습니다.
+    /// </summary>
+    private static void ExtendNpcLodVisibility()
+    {
+        YJ_ClickNPC[] npcs = FindObjectsByType<YJ_ClickNPC>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+
+        foreach (YJ_ClickNPC npc in npcs)
+        {
+            LODGroup lodGroup = npc.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                continue;
+
+            LOD[] lods = lodGroup.GetLODs();
+            if (lods.Length == 0)
+                continue;
+
+            int lastIndex = lods.Length - 1;
+            if (lods[lastIndex].screenRelativeTransitionHeight <= TestNpcCullHeight)
+                continue;
+
+            lods[lastIndex].screenRelativeTransitionHeight = TestNpcCullHeight;
+            lodGroup.SetLODs(lods);
+            lodGroup.RecalculateBounds();
+        }
+    }
 
     private void HandlePauseInput()
     {

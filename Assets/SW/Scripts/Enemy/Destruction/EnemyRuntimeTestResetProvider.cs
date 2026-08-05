@@ -29,6 +29,14 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
     [SerializeField, Min(0.1f), InspectorName("NavMesh 탐색 반경")]
     private float navMeshSampleRadius = 1.25f;
 
+    private System.Collections.IEnumerator Start()
+    {
+        // WBH SpawnManager의 첫 웨이브 생성은 그대로 실행한 뒤,
+        // 이 테스트 씬에서는 사망 이벤트가 다음 웨이브나 Portal을 호출하지 않게 한다.
+        yield return null;
+        DisableWaveProgression();
+    }
+
     private void Update()
     {
         if (Input.GetKeyDown(resetKey))
@@ -73,7 +81,7 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
         // 이 컴포넌트가 배치된 성능 테스트 씬에서는 적 사망을 웨이브
         // 진행으로 소비하지 않는다. 공개 Spawn API는 비활성 상태에서도
         // 호출할 수 있으므로 테스트용 재생성 흐름은 그대로 유지된다.
-        spawnManager.enabled = false;
+        DisableWaveProgression(spawnManager);
 
         WBH_EnemyController[] enemies =
             FindObjectsByType<WBH_EnemyController>(
@@ -100,6 +108,16 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
         }
 
         ArrangeAndSyncSpawnedEnemies();
+    }
+
+    private static void DisableWaveProgression(
+        WBH_EnemySpawnManager spawnManager = null)
+    {
+        if (spawnManager == null)
+            spawnManager = FindFirstObjectByType<WBH_EnemySpawnManager>();
+
+        if (spawnManager != null)
+            spawnManager.enabled = false;
     }
 
     private void ArrangeAndSyncSpawnedEnemies()
