@@ -73,6 +73,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     [SerializeField] private SourceAxis sourceForwardAxis;
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
+    [SerializeField] private bool captureIconAfterGenerate = true;
+    [SerializeField] private EnemyIconCaptureTool iconCaptureTool;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -89,6 +91,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             AssetDatabase.LoadAssetAtPath<WeaponVisualCatalogSO>(DefaultCatalogPath);
         outputFolder ??=
             AssetDatabase.LoadAssetAtPath<DefaultAsset>(DefaultOutputFolder);
+        iconCaptureTool ??=
+            UnityEngine.Object.FindFirstObjectByType<EnemyIconCaptureTool>();
     }
 
     private void OnGUI()
@@ -103,11 +107,15 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             DrawGunnerOptions();
 
         DrawSaveOptions();
+        DrawIconOptions();
 
         EditorGUILayout.Space(12f);
         using (new EditorGUI.DisabledScope(!CanGenerate()))
         {
-            if (GUILayout.Button("프리팹 생성 및 카탈로그 등록", GUILayout.Height(36f)))
+            string buttonLabel = captureIconAfterGenerate
+                ? "외형 생성 · 등록 · 아이콘 촬영"
+                : "프리팹 생성 및 카탈로그 등록";
+            if (GUILayout.Button(buttonLabel, GUILayout.Height(36f)))
                 Generate();
         }
 
@@ -210,12 +218,34 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         }
     }
 
+    private void DrawIconOptions()
+    {
+        EditorGUILayout.Space(8f);
+        EditorGUILayout.LabelField("아이콘 자동 연결", EditorStyles.boldLabel);
+        captureIconAfterGenerate = EditorGUILayout.ToggleLeft(
+            "생성한 외형을 촬영하고 아이템 아이콘에 연결", captureIconAfterGenerate);
+
+        using (new EditorGUI.DisabledScope(!captureIconAfterGenerate))
+        {
+            iconCaptureTool = (EnemyIconCaptureTool)EditorGUILayout.ObjectField(
+                "아이콘 촬영 도구", iconCaptureTool, typeof(EnemyIconCaptureTool), true);
+        }
+
+        if (captureIconAfterGenerate && iconCaptureTool == null)
+        {
+            EditorGUILayout.HelpBox(
+                "CaptureScene의 EnemyIconCaptureTool을 연결해주세요. PNG 이름은 itemId로 자동 지정됩니다.",
+                MessageType.Warning);
+        }
+    }
+
     private bool CanGenerate()
     {
         return itemDefinition != null &&
                modelAsset != null &&
                visualCatalog != null &&
                outputFolder != null &&
+               (!captureIconAfterGenerate || iconCaptureTool != null) &&
                GetTab(itemDefinition.characterClass) == selectedTab;
     }
 
@@ -427,11 +457,37 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             RegisterCatalogEntry(itemId, savedPrefab);
             AssetDatabase.SaveAssets();
 
+            bool iconCaptured = false;
+            if (captureIconAfterGenerate)
+            {
+                if (iconCaptureTool.TryCaptureTarget(
+                        savedPrefab,
+                        itemId,
+                        out string iconAssetPath) &&
+                    TryAssignCapturedIcon(itemDefinition, iconAssetPath))
+                {
+                    iconCaptured = true;
+                    AssetDatabase.SaveAssets();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[{nameof(WeaponVisualPrefabGeneratorWindow)}] 외형 프리팹은 생성했지만 " +
+                        $"아이콘 촬영 또는 연결에 실패했습니다: {iconAssetPath}",
+                        itemDefinition);
+                }
+            }
+
             Selection.activeObject = savedPrefab;
             EditorGUIUtility.PingObject(savedPrefab);
+            string iconResult = iconCaptured
+                ? itemId + ".png 촬영 및 연결 완료"
+                : captureIconAfterGenerate ? "실패 (Console 확인)" : "건너뜀";
             EditorUtility.DisplayDialog(
                 "생성 완료",
-                $"무기 외형 프리팹을 만들고 카탈로그에 등록했습니다.\n{prefabPath}\n\n자동 맞춤: {fitResult}",
+                $"무기 외형 프리팹을 만들고 카탈로그에 등록했습니다.\n{prefabPath}\n\n" +
+                $"자동 맞춤: {fitResult}\n" +
+                $"아이콘: {iconResult}",
                 "확인");
         }
         catch (Exception exception)
@@ -449,6 +505,29 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             else if (wrapper != null)
                 DestroyImmediate(wrapper);
         }
+    }
+
+    /// <summary>
+    /// 방금 촬영한 아이콘만 연결합니다. 데이터 변환 파이프라인에는 의존하지 않습니다.
+    /// </summary>
+    private static bool TryAssignCapturedIcon(
+        ItemDefinitionSO definition,
+        string iconAssetPath)
+    {
+        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(iconAssetPath);
+        if (definition == null || icon == null)
+            return false;
+
+        definition.icon = icon;
+        EditorUtility.SetDirty(definition);
+
+        if (definition.uniqueEffect != null)
+        {
+            definition.uniqueEffect.icon = icon;
+            EditorUtility.SetDirty(definition.uniqueEffect);
+        }
+
+        return true;
     }
 
     private bool TryValidateInputs(out string outputFolderPath, out string itemId)
@@ -482,6 +561,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
         if (visualCatalog == null)
             return ShowValidationError("WeaponVisualCatalogSO를 연결해주세요.");
+
+        if (captureIconAfterGenerate && iconCaptureTool == null)
+            return ShowValidationError("아이콘 자동 연결을 사용하려면 EnemyIconCaptureTool을 연결해주세요.");
 
         if (string.IsNullOrEmpty(outputFolderPath) ||
             !AssetDatabase.IsValidFolder(outputFolderPath))
