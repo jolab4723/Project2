@@ -10,6 +10,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private Transform weaponMount;
+    [SerializeField] private GameObject defaultVisual;
     [SerializeField] private WeaponVisualCatalogSO visualCatalog;
     [SerializeField] private Transform leftHandIkTarget;
     [SerializeField] private TwoBoneIKConstraint leftHandIkConstraint;
@@ -21,7 +22,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     private void OnEnable()
     {
         if (equipmentSystem == null)
+        {
+            ShowDefaultVisual();
             return;
+        }
 
         equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         RefreshFromEquipment();
@@ -55,7 +59,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (string.IsNullOrEmpty(itemId))
         {
-            ClearVisual();
+            ShowDefaultVisual();
             return;
         }
 
@@ -78,11 +82,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
         if (!visualCache.TryGetValue(itemId, out currentVisual) || currentVisual == null)
         {
-            currentVisual = Instantiate(visualPrefab, weaponMount);
-            currentVisual.transform.SetLocalPositionAndRotation(
-                Vector3.zero,
-                Quaternion.identity);
-            currentVisual.transform.localScale = Vector3.one;
+            currentVisual = Instantiate(visualPrefab, weaponMount, false);
             visualCache[itemId] = currentVisual;
         }
 
@@ -92,18 +92,21 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         ApplyLeftHandIk(currentVisual.transform.Find(LeftHandGripName));
     }
 
-    /// <summary>
-    /// 장비 교체 때 외형을 파괴하지 않고 숨겨 두었다가 같은 무기를 다시 장착하면 재사용합니다.
-    /// </summary>
-    private void ClearVisual()
+    private void ShowDefaultVisual()
     {
         HideCurrentVisual();
+
+        if (defaultVisual != null)
+            defaultVisual.SetActive(true);
     }
 
     private void HideCurrentVisual()
     {
         if (leftHandIkConstraint != null)
             leftHandIkConstraint.weight = 0f;
+
+        if (defaultVisual != null)
+            defaultVisual.SetActive(false);
 
         if (currentVisual != null)
             currentVisual.SetActive(false);
