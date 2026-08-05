@@ -17,9 +17,14 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         enemySpawner = GetComponent<WBH_EnemySpawner>();
     }
 
-    public void Initialize(WBH_EnemyPoolManager enemyPool, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target, WBH_DamageTextPoolManager damagePool)
+    public void Initialize(WBH_EnemyPoolManager enemyPool, 
+                           WBH_EffectPoolManager effectPool, 
+                           WBH_ProjectilePoolManager projectilePool, 
+                           Transform target, 
+                           WBH_DamageTextPoolManager damagePool,
+                           WBH_EliteHpbarView eliteView)
     {
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target, damagePool);
+        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target, damagePool,eliteView);
         //view.Initialize(damagePool);
     }
 

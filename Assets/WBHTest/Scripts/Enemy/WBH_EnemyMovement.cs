@@ -8,6 +8,7 @@ public class WBH_EnemyMovement : MonoBehaviour
 {
     public bool IsMoving => agent.hasPath && agent.velocity.sqrMagnitude > 0.01f;
     public bool IsArrived => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance;
+    public float CurrentSpeed => agent.velocity.magnitude / agent.speed;//!@
 
     private WBH_EnemyStatus status;
     private NavMeshAgent agent;

@@ -96,12 +96,10 @@ public class WBH_EnemyPattern : MonoBehaviour
         if(distance > status.AttackRange)
         {
             movement.Move(target.position);
-            enemyAnimation.SetMove(true);
         }
         else
         {
             movement.Stop();
-            enemyAnimation.SetMove(false);
         }
     }
 

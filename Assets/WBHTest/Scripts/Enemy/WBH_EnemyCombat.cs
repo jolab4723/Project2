@@ -98,13 +98,16 @@ public class WBH_EnemyCombat : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         indicator.Hide();
-        
+
+        enemyAnimation.PlayDash();
+
         movement.Dash(transform.forward, distance, duration);
     }
 
     public void ShootBurst(int count)
     {
         transform.LookAt(pattern.Target);
+        enemyAnimation.PlayShootBurst();
         StartCoroutine(CoShootBurst(count));
     }
 

@@ -32,6 +32,8 @@ public class WBH_EnemyView : MonoBehaviour
 
     private WBH_DamageTextPoolManager poolManager;
     private WBH_EnemyStatus status;
+    private WBH_EnemyController controller;
+    private WBH_EliteHpbarView eliteView; // !@ 차후 UI 와 합일 필요
     private Camera mainCamera;
 
     private Coroutine hideHpBarCoroutine;
@@ -41,6 +43,7 @@ public class WBH_EnemyView : MonoBehaviour
     private void Awake()
     {
         status = GetComponent<WBH_EnemyStatus>();
+        controller = GetComponent<WBH_EnemyController>();
         mainCamera = Camera.main;
 
         if(hpBarRoot != null)
@@ -54,13 +57,13 @@ public class WBH_EnemyView : MonoBehaviour
 
     private void OnEnable()
     {
-        status.OnDamaged += ShowDamageText;
+        status.OnDamaged += ViewOnDamaged;
         status.OnHpChanged += UpdateHpBar;
     }
 
     private void OnDisable()
     {
-        status.OnDamaged -= ShowDamageText;
+        status.OnDamaged -= ViewOnDamaged;
         status.OnHpChanged -= UpdateHpBar;
     }
 
@@ -73,19 +76,28 @@ public class WBH_EnemyView : MonoBehaviour
         hpBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
     }
 
-    public void Initialize(WBH_DamageTextPoolManager poolManager)
+    public void Initialize(WBH_DamageTextPoolManager poolManager, WBH_EliteHpbarView eliteView)
     {
         this.poolManager = poolManager;
+        this.eliteView = eliteView;
     }
 
-    // 데미지 텍스트 처리
-    private void ShowDamageText(WBH_DamageResult result)
+    // 피격 시 보여주는 처리
+    private void ViewOnDamaged(WBH_DamageResult result)
     {
+        // 데미지 텍스트 처리
         WBH_DamageText damageText = poolManager.GetDamageText();
 
         damageText.Show(damageTextRoot.position, result);
 
+        // 적 적색으로 깜빡임 처리
         PlayHitFlash();
+
+        // 엘리트 적일 경우 UI 갱신 !@ 차후 합일 시 수정
+        if (!(result.Attacker is T_PlayerController))
+            return;
+
+        eliteView.Bind(controller);
     }
 
     private void UpdateHpBar(float currentHp, float maxHp)
