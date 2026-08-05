@@ -248,6 +248,8 @@ public class EnemyIconCaptureTool : MonoBehaviour
     private static List<Renderer> HideOtherRenderers(Renderer[] targetRenderers)
     {
         HashSet<Renderer> targetSet = new HashSet<Renderer>(targetRenderers);
+        UnityEngine.SceneManagement.Scene targetScene =
+            targetRenderers[0].gameObject.scene;
         Renderer[] sceneRenderers = Object.FindObjectsByType<Renderer>(
             FindObjectsInactive.Exclude,
             FindObjectsSortMode.None);
@@ -255,7 +257,9 @@ public class EnemyIconCaptureTool : MonoBehaviour
 
         foreach (Renderer renderer in sceneRenderers)
         {
-            if (renderer.enabled && !targetSet.Contains(renderer))
+            if (renderer.gameObject.scene == targetScene &&
+                renderer.enabled &&
+                !targetSet.Contains(renderer))
             {
                 renderer.enabled = false;
                 hiddenRenderers.Add(renderer);

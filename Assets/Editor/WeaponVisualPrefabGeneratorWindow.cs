@@ -55,6 +55,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string RightHandGripName = "RightHandGrip";
     private const string LeftHandGripName = "LeftHandGrip";
     private const string MuzzleName = "Muzzle";
+    private const string IconOutputFolder = "Assets/Resources/Images/Item/";
+    private const int IconSize = 512;
+    private const float IconFramingPadding = 1.15f;
 
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
@@ -74,7 +77,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
     [SerializeField] private bool captureIconAfterGenerate = true;
-    [SerializeField] private EnemyIconCaptureTool iconCaptureTool;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -91,8 +93,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             AssetDatabase.LoadAssetAtPath<WeaponVisualCatalogSO>(DefaultCatalogPath);
         outputFolder ??=
             AssetDatabase.LoadAssetAtPath<DefaultAsset>(DefaultOutputFolder);
-        iconCaptureTool ??=
-            UnityEngine.Object.FindFirstObjectByType<EnemyIconCaptureTool>();
     }
 
     private void OnGUI()
@@ -223,20 +223,12 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("아이콘 자동 연결", EditorStyles.boldLabel);
         captureIconAfterGenerate = EditorGUILayout.ToggleLeft(
-            "생성한 외형을 촬영하고 아이템 아이콘에 연결", captureIconAfterGenerate);
-
-        using (new EditorGUI.DisabledScope(!captureIconAfterGenerate))
-        {
-            iconCaptureTool = (EnemyIconCaptureTool)EditorGUILayout.ObjectField(
-                "아이콘 촬영 도구", iconCaptureTool, typeof(EnemyIconCaptureTool), true);
-        }
-
-        if (captureIconAfterGenerate && iconCaptureTool == null)
-        {
-            EditorGUILayout.HelpBox(
-                "CaptureScene의 EnemyIconCaptureTool을 연결해주세요. PNG 이름은 itemId로 자동 지정됩니다.",
-                MessageType.Warning);
-        }
+            "아이콘 자동 촬영 및 SO 연결 사용", captureIconAfterGenerate);
+        EditorGUILayout.HelpBox(
+            captureIconAfterGenerate
+                ? "Preview Scene에서 자동 촬영하고 ItemDefinitionSO.icon에 연결합니다."
+                : "자동 촬영을 건너뜁니다. 직접 만든 기존 아이콘 연결은 변경하지 않습니다.",
+            MessageType.None);
     }
 
     private bool CanGenerate()
@@ -245,7 +237,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
                modelAsset != null &&
                visualCatalog != null &&
                outputFolder != null &&
-               (!captureIconAfterGenerate || iconCaptureTool != null) &&
                GetTab(itemDefinition.characterClass) == selectedTab;
     }
 
@@ -440,6 +431,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             previewScene = EditorSceneManager.NewPreviewScene();
             wrapper = new GameObject(Path.GetFileNameWithoutExtension(prefabName));
             SceneManager.MoveGameObjectToScene(wrapper, previewScene);
+            EnemyIconCaptureTool previewCaptureTool = captureIconAfterGenerate
+                ? CreatePreviewCaptureRig(previewScene)
+                : null;
             GameObject modelInstance = InstantiateModel(wrapper.transform);
 
             Transform sourceLeftGrip = FindDescendant(modelInstance.transform, LeftHandGripName);
@@ -460,8 +454,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             bool iconCaptured = false;
             if (captureIconAfterGenerate)
             {
-                if (iconCaptureTool.TryCaptureTarget(
-                        savedPrefab,
+                if (previewCaptureTool.TryCaptureTarget(
+                        wrapper,
                         itemId,
                         out string iconAssetPath) &&
                     TryAssignCapturedIcon(itemDefinition, iconAssetPath))
@@ -505,6 +499,83 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             else if (wrapper != null)
                 DestroyImmediate(wrapper);
         }
+    }
+
+    /// <summary>
+    /// CaptureScene과 같은 카메라 및 3점 조명을 Preview Scene에 임시 생성합니다.
+    /// 생성한 오브젝트는 Preview Scene이 닫힐 때 함께 제거됩니다.
+    /// </summary>
+    private static EnemyIconCaptureTool CreatePreviewCaptureRig(Scene previewScene)
+    {
+        var cameraObject = new GameObject("Weapon Icon Capture Camera");
+        SceneManager.MoveGameObjectToScene(cameraObject, previewScene);
+
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Color.clear;
+        camera.fieldOfView = 35f;
+        camera.orthographic = false;
+        camera.allowHDR = true;
+        camera.allowMSAA = true;
+        camera.overrideSceneCullingMask =
+            EditorSceneManager.GetSceneCullingMask(previewScene);
+        camera.transform.SetPositionAndRotation(
+            new Vector3(0f, 0.1577594f, -1.0630515f),
+            Quaternion.identity);
+
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Key Light",
+            new Color(1f, 0.88f, 0.72f, 1f),
+            2f,
+            new Quaternion(-0.4030582f, 0.2725321f, -0.1270838f, -0.8643611f),
+            LightShadows.Soft,
+            0.65f);
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Fill Light",
+            new Color(0.55f, 0.68f, 1f, 1f),
+            0.9f,
+            new Quaternion(0.51243174f, 0.2536127f, -0.1615691f, 0.8043567f),
+            LightShadows.None,
+            1f);
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Rim Light",
+            new Color(0.72f, 0.86f, 1f, 1f),
+            1.2f,
+            new Quaternion(-0.0000000094608765f, 0.976296f, -0.21643962f, -0.000000042675254f),
+            LightShadows.None,
+            1f);
+
+        EnemyIconCaptureTool captureTool = cameraObject.AddComponent<EnemyIconCaptureTool>();
+        captureTool.captureCamera = camera;
+        captureTool.width = IconSize;
+        captureTool.height = IconSize;
+        captureTool.framingPadding = IconFramingPadding;
+        captureTool.outputFolder = IconOutputFolder;
+        return captureTool;
+    }
+
+    private static void CreatePreviewDirectionalLight(
+        Scene previewScene,
+        string objectName,
+        Color color,
+        float intensity,
+        Quaternion rotation,
+        LightShadows shadows,
+        float shadowStrength)
+    {
+        var lightObject = new GameObject(objectName);
+        SceneManager.MoveGameObjectToScene(lightObject, previewScene);
+        lightObject.transform.rotation = rotation;
+
+        Light light = lightObject.AddComponent<Light>();
+        light.type = LightType.Directional;
+        light.color = color;
+        light.intensity = intensity;
+        light.shadows = shadows;
+        light.shadowStrength = shadowStrength;
     }
 
     /// <summary>
@@ -561,9 +632,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
         if (visualCatalog == null)
             return ShowValidationError("WeaponVisualCatalogSO를 연결해주세요.");
-
-        if (captureIconAfterGenerate && iconCaptureTool == null)
-            return ShowValidationError("아이콘 자동 연결을 사용하려면 EnemyIconCaptureTool을 연결해주세요.");
 
         if (string.IsNullOrEmpty(outputFolderPath) ||
             !AssetDatabase.IsValidFolder(outputFolderPath))
