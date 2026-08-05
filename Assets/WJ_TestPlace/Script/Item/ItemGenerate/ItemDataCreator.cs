@@ -15,6 +15,12 @@ namespace ItemSystem
                 // upgradeLevel은 선언부 기본값(0) 그대로 사용
             };
 
+            // 유물/포션은 등급과 무관하게 랜덤 옵션을 굴리지 않는다.
+            // 보유(또는 사용)만으로 uniqueEffect가 적용되는 아이템이라 서브 옵션과 속성 보너스가 없다.
+            // 판정 기준은 ItemDefinitionSO.RollsSubStats 한 곳에만 둔다.
+            if (!def.RollsSubStats)
+                return instance;
+
             foreach (var slotType in def.GetSubStatSlots())
             {
                 SubStatPoolSO pool;
