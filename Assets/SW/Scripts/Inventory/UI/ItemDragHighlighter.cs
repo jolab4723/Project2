@@ -69,19 +69,10 @@ public class ItemDragHighlighter : MonoBehaviour
                     item,
                     requestedCell.x,
                     requestedCell.y,
-                    out int resolvedX,
-                    out int resolvedY))
+                    out InventoryPlacementSnapshot placement))
             {
                 CurrentSwapPlan = default;
-
-                InventoryCellRect resolvedRect =
-                    new InventoryCellRect(
-                        resolvedX,
-                        resolvedY,
-                        item.CurrentWidth,
-                        item.CurrentHeight);
-
-                ShowMovePreview(targetGrid, resolvedRect);
+                ShowMovePreview(targetGrid, placement.Rect);
             }
             else
             {

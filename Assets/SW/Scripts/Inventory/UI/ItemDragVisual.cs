@@ -10,7 +10,7 @@ public sealed class ItemDragVisual : MonoBehaviour
     private int originalSortingOrder;
 
     private CanvasGroup canvasGroup;
-    private Image itemIcon;
+    [SerializeField] private Image itemIcon;
 
     private void Awake()
     {
@@ -20,7 +20,9 @@ public sealed class ItemDragVisual : MonoBehaviour
         originalOverrideSorting = itemCanvas.overrideSorting;
         originalSortingOrder = itemCanvas.sortingOrder;
 
-        itemIcon = GetComponentInChildren<Image>(true);
+        // 배경 Image가 추가되어도 드래그 투명도는 실제 아이콘에만 적용한다.
+        if (itemIcon == null)
+            itemIcon = transform.Find("IconImage")?.GetComponent<Image>();
     }
     public void RaiseForDrag()
     {
@@ -37,7 +39,9 @@ public sealed class ItemDragVisual : MonoBehaviour
 
     public void BeginDragVisual()
     {
-        itemIcon.color = new Color(1f, 1f, 1f, 0.8f);
+        if (itemIcon != null)
+            itemIcon.color = new Color(1f, 1f, 1f, 0.8f);
+
         canvasGroup.blocksRaycasts = false;
 
         RaiseForDrag();
@@ -45,7 +49,9 @@ public sealed class ItemDragVisual : MonoBehaviour
 
     public void EndDragVisual()
     {
-        itemIcon.color = Color.white;
+        if (itemIcon != null)
+            itemIcon.color = Color.white;
+
         canvasGroup.blocksRaycasts = true;
 
         RestoreSorting();

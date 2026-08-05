@@ -18,5 +18,11 @@ namespace ItemSystem
 
         /// <summary>공격 적중(피해를 줬을 때) 시. 전투 시스템이 생기면 연결 예정 (아직 발동 안 됨).</summary>
         OnDamageDealt,
+
+        /// <summary>
+        /// 회피(기본 Space) 사용 시. WBH_PlayerStateMachine.OnEnterState에서 Dodge 상태 진입을
+        /// 감지해 실제 연결됨 (ItemTriggerManager).
+        /// </summary>
+        OnDodge,
     }
 }

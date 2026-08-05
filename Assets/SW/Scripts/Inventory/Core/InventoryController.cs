@@ -164,6 +164,10 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     {
         goldText.text = gold.ToString();
     }
+    /// <summary>
+    /// 아이템의 기본 방향으로 빈자리를 먼저 찾고, 필요한 경우 회전한 방향까지 확인해 인벤토리에 추가한다.
+    /// 실제 배치가 확정되기 전에는 아이템 상태를 바꾸지 않으며, 선택된 회전값을 적용한 뒤 추가 이벤트를 전달한다.
+    /// </summary>
     public InventoryAddResultData TryAddItemData(ItemInstance itemData)
     {
         if (itemData == null || itemData.definition == null)
@@ -175,21 +179,23 @@ public class InventoryController : MonoBehaviour, IItemReceiver
                 InventoryAddResult.GridUnavailable);
         }
 
-        var definition = itemData.definition;
+        InventoryItem item = new InventoryItem(itemData);
 
-        if (!playerGrid.FindEmptySpace(
-                definition.itemWidth,
-                definition.itemHeight,
-                out int x,
-                out int y))
+        if (!playerGrid.TryFindEmptySpaceForItem(
+                item,
+                item.isRotated,
+                out InventoryPlacementSnapshot placement))
         {
             return InventoryAddResultData.Failed(
                 InventoryAddResult.NoSpace);
         }
 
-        InventoryItem item = new InventoryItem(itemData);
+        item.isRotated = placement.IsRotated;
 
-        return TryAddItemAt(item, x, y);
+        return TryAddItemAt(
+            item,
+            placement.Rect.X,
+            placement.Rect.Y);
     }
 
     internal void NotifyItemOwnershipGained(InventoryItem item)

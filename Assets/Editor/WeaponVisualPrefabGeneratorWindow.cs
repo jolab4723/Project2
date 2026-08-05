@@ -31,6 +31,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
     private sealed class ExistingCalibration
     {
+        public Vector3 RootPosition;
+        public Quaternion RootRotation;
+        public Vector3 RootScale;
         public bool HasModel;
         public Vector3 ModelPosition;
         public Quaternion ModelRotation;
@@ -68,7 +71,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     [SerializeField] private WeaponVisualCatalogSO visualCatalog;
     [SerializeField] private DefaultAsset outputFolder;
     [SerializeField] private SourceAxis sourceForwardAxis;
-    [SerializeField] private bool twoHanded;
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
 
@@ -108,6 +110,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             if (GUILayout.Button("프리팹 생성 및 카탈로그 등록", GUILayout.Height(36f)))
                 Generate();
         }
+
+        DrawRuntimeCalibrationSave();
     }
 
     private void DrawCharacterTabs()
@@ -168,15 +172,10 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("파이터 왼손 IK", EditorStyles.boldLabel);
-        twoHanded = EditorGUILayout.ToggleLeft("양손 무기", twoHanded);
-
-        using (new EditorGUI.DisabledScope(!twoHanded))
-        {
-            EditorGUILayout.HelpBox(
-                "원본의 LeftHandGrip을 우선 사용하고, 없으면 무기 종류별 기본 위치를 생성합니다. " +
-                "기본 위치는 시작점이므로 생성된 프리팹에서 손 위치를 확인해주세요.",
-                MessageType.None);
-        }
+        EditorGUILayout.HelpBox(
+            "파이터 무기는 항상 양손 기준으로 생성합니다. 원본의 LeftHandGrip을 우선 사용하고, " +
+            "없으면 무기 종류별 기본 위치를 생성합니다. 기본 위치는 생성된 프리팹에서 확인해주세요.",
+            MessageType.None);
     }
 
     private void DrawGunnerOptions()
@@ -218,6 +217,168 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
                visualCatalog != null &&
                outputFolder != null &&
                GetTab(itemDefinition.characterClass) == selectedTab;
+    }
+
+    private void DrawRuntimeCalibrationSave()
+    {
+        EditorGUILayout.Space(16f);
+        EditorGUILayout.LabelField("플레이 중 손 맞춤값 저장", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "플레이 중 장착된 외형의 루트, Model, LeftHandGrip, Muzzle 보정값을 " +
+            "카탈로그에 등록된 생성 프리팹에 저장합니다. 같은 외형이 여러 개라면 저장할 외형을 Hierarchy에서 선택해주세요.",
+            MessageType.Info);
+
+        using (new EditorGUI.DisabledScope(
+                   !EditorApplication.isPlaying || itemDefinition == null || visualCatalog == null))
+        {
+            if (GUILayout.Button("현재 장착 외형 보정값을 프리팹에 저장", GUILayout.Height(32f)))
+                SaveCurrentRuntimeCalibration();
+        }
+    }
+
+    /// <summary>
+    /// 플레이 중 손에 맞춘 외형의 보정값을 카탈로그에 등록된 생성 프리팹에 저장합니다.
+    /// 외부 원본 모델은 수정하지 않습니다.
+    /// </summary>
+    private void SaveCurrentRuntimeCalibration()
+    {
+        string itemId = itemDefinition != null
+            ? itemDefinition.itemId?.Trim()
+            : string.Empty;
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            ShowValidationError("아이템 정의의 itemId가 비어 있습니다.");
+            return;
+        }
+
+        if (visualCatalog == null ||
+            !visualCatalog.TryGetVisualPrefab(itemId, out GameObject visualPrefab) ||
+            visualPrefab == null)
+        {
+            ShowValidationError($"'{itemId}'에 등록된 무기 외형 프리팹을 찾지 못했습니다.");
+            return;
+        }
+
+        string prefabPath = AssetDatabase.GetAssetPath(visualPrefab);
+        if (string.IsNullOrEmpty(prefabPath) ||
+            !prefabPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowValidationError("카탈로그의 외형이 프로젝트 프리팹 에셋을 가리키지 않습니다.");
+            return;
+        }
+
+        if (prefabPath.StartsWith(
+                "Assets/Resources_GoogleDrive",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            ShowValidationError("외부 원본 에셋에는 손 맞춤값을 저장할 수 없습니다. 생성된 SW 외형 프리팹을 사용해주세요.");
+            return;
+        }
+
+        if (!TryFindRuntimeVisualInstance(visualPrefab, out GameObject runtimeVisual, out string error))
+        {
+            ShowValidationError(error);
+            return;
+        }
+
+        ExistingCalibration calibration = CaptureExistingCalibration(runtimeVisual);
+        string message =
+            $"현재 플레이 중인 보정값을 다음 프리팹에 저장합니다.\n\n{prefabPath}\n\n" +
+            $"위치: {calibration.RootPosition:F3}\n" +
+            $"회전: {calibration.RootRotation.eulerAngles:F2}\n" +
+            $"크기: {calibration.RootScale:F3}";
+        if (!EditorUtility.DisplayDialog("손 맞춤값 저장", message, "저장", "취소"))
+            return;
+
+        GameObject prefabContents = null;
+        try
+        {
+            prefabContents = PrefabUtility.LoadPrefabContents(prefabPath);
+            ApplyExistingCalibration(prefabContents.transform, calibration);
+            PrefabUtility.SaveAsPrefabAsset(prefabContents, prefabPath);
+            AssetDatabase.SaveAssets();
+
+            EditorGUIUtility.PingObject(visualPrefab);
+            Debug.Log(
+                $"[{nameof(WeaponVisualPrefabGeneratorWindow)}] '{itemId}'의 현재 장착 보정값을 저장했습니다.\n{prefabPath}",
+                visualPrefab);
+            EditorUtility.DisplayDialog(
+                "저장 완료",
+                "현재 장착 외형의 손 맞춤값을 생성 프리팹에 저장했습니다.",
+                "확인");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            EditorUtility.DisplayDialog(
+                "저장 실패",
+                "Console의 오류 내용을 확인해주세요.",
+                "확인");
+        }
+        finally
+        {
+            if (prefabContents != null)
+                PrefabUtility.UnloadPrefabContents(prefabContents);
+        }
+    }
+
+    /// <summary>
+    /// 선택한 외형을 우선 사용하고, 선택이 없으면 현재 활성화된 동일 외형 하나를 찾습니다.
+    /// 여러 플레이어가 같은 무기를 장착했다면 잘못 저장하지 않도록 선택을 요구합니다.
+    /// </summary>
+    private static bool TryFindRuntimeVisualInstance(
+        GameObject visualPrefab,
+        out GameObject runtimeVisual,
+        out string error)
+    {
+        runtimeVisual = null;
+        error = null;
+        string runtimeName = visualPrefab.name + "(Clone)";
+
+        Transform selected = Selection.activeGameObject != null
+            ? Selection.activeGameObject.transform
+            : null;
+        while (selected != null)
+        {
+            if (selected.gameObject.scene.IsValid() && selected.name == runtimeName)
+            {
+                runtimeVisual = selected.gameObject;
+                return true;
+            }
+
+            selected = selected.parent;
+        }
+
+        GameObject found = null;
+        foreach (Transform candidate in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            GameObject candidateObject = candidate.gameObject;
+            if (!candidateObject.scene.IsValid() ||
+                !candidateObject.activeInHierarchy ||
+                candidate.name != runtimeName)
+            {
+                continue;
+            }
+
+            if (found != null)
+            {
+                error =
+                    "같은 장착 외형이 여러 개 있습니다. 저장할 외형의 루트를 Hierarchy에서 선택한 뒤 다시 실행해주세요.";
+                return false;
+            }
+
+            found = candidateObject;
+        }
+
+        if (found == null)
+        {
+            error =
+                $"플레이 중인 '{runtimeName}' 외형을 찾지 못했습니다. 해당 무기를 장착한 뒤 다시 실행해주세요.";
+            return false;
+        }
+
+        runtimeVisual = found;
+        return true;
     }
 
     private void Generate()
@@ -439,12 +600,11 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         if (selectedTab == CharacterTab.Fighter)
         {
-            if (twoHanded)
-                CreateMarker(
-                    wrapper,
-                    LeftHandGripName,
-                    sourceLeftGrip,
-                    GetDefaultLeftGripPosition(itemDefinition.weaponType));
+            CreateMarker(
+                wrapper,
+                LeftHandGripName,
+                sourceLeftGrip,
+                GetDefaultLeftGripPosition(itemDefinition.weaponType));
             return;
         }
 
@@ -683,6 +843,10 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return null;
 
         var calibration = new ExistingCalibration();
+        calibration.RootPosition = prefab.transform.localPosition;
+        calibration.RootRotation = prefab.transform.localRotation;
+        calibration.RootScale = prefab.transform.localScale;
+
         Transform model = prefab.transform.Find(ModelName);
         if (model != null)
         {
@@ -717,6 +881,11 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         if (calibration == null)
             return;
+
+        wrapper.SetLocalPositionAndRotation(
+            calibration.RootPosition,
+            calibration.RootRotation);
+        wrapper.localScale = calibration.RootScale;
 
         Transform model = wrapper.Find(ModelName);
         if (calibration.HasModel && model != null)

@@ -15,7 +15,7 @@ public class EnemyIconCaptureTool : MonoBehaviour
     [Min(1)] public int width = 512;
     [Min(1)] public int height = 512;
     [Range(1f, 2f)] public float framingPadding = 1.15f;
-    public string outputFolder = "Assets/Resources/EnemyIcons/";
+    public string outputFolder = "Assets/Resources/Images/Item/";
 
     [ContextMenu("Capture All")]
     public void CaptureAll()
@@ -40,11 +40,37 @@ public class EnemyIconCaptureTool : MonoBehaviour
                 CaptureTarget(target);
         }
 
-        AssetDatabase.Refresh();
         Debug.Log("장비 아이콘 촬영 완료", this);
     }
 
     private void CaptureTarget(GameObject target)
+    {
+        if (!EditorUtility.IsPersistent(target))
+        {
+            CaptureSceneTarget(target, target.name);
+            return;
+        }
+
+        GameObject temporaryTarget = Instantiate(target);
+        temporaryTarget.name = target.name;
+        temporaryTarget.hideFlags = HideFlags.HideAndDontSave;
+        temporaryTarget.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+        temporaryTarget.SetActive(true);
+
+        try
+        {
+            CaptureSceneTarget(temporaryTarget, target.name);
+        }
+        finally
+        {
+            DestroyImmediate(temporaryTarget);
+        }
+    }
+
+    /// <summary>
+    /// 씬 오브젝트는 현재 배치 상태를 유지하고, 임시 생성된 에셋은 초기 위치와 회전으로 촬영한다.
+    /// </summary>
+    private void CaptureSceneTarget(GameObject target, string fileNameSource)
     {
         Renderer[] targetRenderers = GetEnabledRenderers(target);
 
@@ -95,10 +121,11 @@ public class EnemyIconCaptureTool : MonoBehaviour
             texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             texture.Apply(false, false);
 
-            string fileName = MakeSafeFileName(target.name) + ".png";
+            string fileName = MakeSafeFileName(fileNameSource) + ".png";
             string outputPath = Path.Combine(outputFolder, fileName).Replace('\\', '/');
             File.WriteAllBytes(outputPath, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(outputPath, ImportAssetOptions.ForceUpdate);
+            ConfigureAsSingleSprite(outputPath);
         }
         finally
         {
@@ -222,5 +249,26 @@ public class EnemyIconCaptureTool : MonoBehaviour
             value = value.Replace(invalidCharacter, '_');
 
         return value;
+    }
+
+    private static void ConfigureAsSingleSprite(string assetPath)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+        if (importer == null)
+        {
+            Debug.LogError($"Sprite 임포터를 찾을 수 없습니다: {assetPath}");
+            return;
+        }
+
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.spritePixelsPerUnit = 100f;
+        importer.alphaIsTransparency = true;
+        importer.sRGBTexture = true;
+        importer.mipmapEnabled = false;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.filterMode = FilterMode.Bilinear;
+        importer.SaveAndReimport();
     }
 }

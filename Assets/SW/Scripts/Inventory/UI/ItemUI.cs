@@ -1,4 +1,5 @@
 using System.Collections;
+using ItemSystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -40,7 +41,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     public bool OriginalWasEquipped => originalWasEquipped;
     public EquipSlotUI OriginalEquipSlot => originalEquipSlot;
     public InventoryPlacementSnapshot OriginalPlacement => originalPlacement;
-    private Image itemIcon;
+    [SerializeField] private Image itemIcon;
+    [SerializeField] private Image rarityBackground;
     
     private void Awake()
     {
@@ -80,6 +82,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         rect.anchoredPosition = new Vector2(item.x * step, -item.y * step);
 
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
+        ApplyRarityBackground(inventoryItem.itemData.definition.rarity);
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
     }
@@ -92,11 +95,33 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (equipmentHandler == null)
             equipmentHandler = GetComponent<ItemEquipHandler>();
 
-        if (itemIcon == null && transform.childCount > 0)
-            itemIcon = transform.GetChild(0).GetComponent<Image>();
+        if (itemIcon == null)
+            itemIcon = transform.Find("IconImage")?.GetComponent<Image>();
+
+        if (rarityBackground == null)
+            rarityBackground = transform.Find("RarityBackground")?.GetComponent<Image>();
 
         if (itemTransform == null && itemIcon != null)
             itemTransform = itemIcon.transform;
+    }
+
+    /// <summary>
+    /// 공용 등급 색상표를 아이템 점유 면적 전체에 불투명하게 적용한다.
+    /// 배경 RectTransform은 아이템 루트에 Stretch되어 다칸·회전 크기를 자동으로 따라간다.
+    /// </summary>
+    private void ApplyRarityBackground(ItemRarity rarity)
+    {
+        if (rarityBackground == null)
+            return;
+
+        if (!ItemDisplayNames.GradeColorHex.TryGetValue(rarity, out string colorHex) ||
+            !ColorUtility.TryParseHtmlString(colorHex, out Color gradeColor))
+        {
+            gradeColor = Color.white;
+        }
+
+        gradeColor.a = 1f;
+        rarityBackground.color = gradeColor;
     }
 
     public void OnPointerClick(PointerEventData eventData)
