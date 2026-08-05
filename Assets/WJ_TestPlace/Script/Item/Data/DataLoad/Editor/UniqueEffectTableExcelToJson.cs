@@ -143,14 +143,14 @@ namespace DataSystem
                 // 버프 기반 3종은 statEffects가 없으면 실제로 아무 효과가 없다.
                 bool needsBuff = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
                     || row.effectType == nameof(ItemSystem.TriggeredBuffUniqueEffectSO)
-                    || row.effectType == nameof(ItemSystem.HealthThresholdBuffUniqueEffectSO);
+                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO);
 
                 if (needsBuff && string.IsNullOrWhiteSpace(row.statEffects))
                     Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})에 statEffects가 비어있습니다. 적용할 스탯 효과가 없어 효과가 동작하지 않습니다.");
 
                 // 상시/조건부 효과는 수동으로 켜고 끄므로 지속시간이 있으면 의도치 않게 꺼진다.
                 bool shouldBePermanent = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
-                    || row.effectType == nameof(ItemSystem.HealthThresholdBuffUniqueEffectSO);
+                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO);
 
                 if (shouldBePermanent && row.duration > 0f)
                     Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})의 duration이 {row.duration}입니다. " +

@@ -69,8 +69,8 @@ namespace DataSystem
 
             int armorCount = CreateOrUpdateArmorDefinitions(data, outputRoot, combatPool, utilityPool, elementalConfig, database, ref registeredCount);
             int weaponCount = CreateOrUpdateWeaponDefinitions(data, outputRoot, combatPool, utilityPool, elementalConfig, database, ref registeredCount);
-            int potionCount = CreateOrUpdatePotionDefinitions(data, outputRoot, combatPool, utilityPool, elementalConfig, database, ref registeredCount);
-            int relicCount = CreateOrUpdateRelicDefinitions(data, outputRoot, combatPool, utilityPool, elementalConfig, database, ref registeredCount);
+            int potionCount = CreateOrUpdatePotionDefinitions(data, outputRoot, database, ref registeredCount);
+            int relicCount = CreateOrUpdateRelicDefinitions(data, outputRoot, database, ref registeredCount);
 
             if (database != null && registeredCount > 0)
                 EditorUtility.SetDirty(database);
@@ -134,10 +134,12 @@ namespace DataSystem
             return count;
         }
 
-        /// <summary>포션만 생성/갱신한다. 다른 카테고리와 독립적으로 호출 가능.</summary>
+        /// <summary>
+        /// 포션만 생성/갱신한다. 다른 카테고리와 독립적으로 호출 가능.
+        /// 포션은 메인/서브 옵션 없이 uniqueEffect만 가지므로 스탯 인자와 옵션 풀을 모두 비워서 넘긴다.
+        /// </summary>
         public static int CreateOrUpdatePotionDefinitions(
             ItemDataTableJsonData data, string outputFolder,
-            SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig,
             ItemDatabaseSO database, ref int registeredCount)
         {
             int count = 0;
@@ -147,7 +149,7 @@ namespace DataSystem
                 ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Potion,
                     row.rarity, row.description, row.itemPrice, row.itemWidth, row.itemHeight,
                     null, 0f, null, 0f,
-                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
+                    row.uniqueEffectId, null, null, null);
                 if (asset == null)
                     continue;
 
@@ -160,12 +162,11 @@ namespace DataSystem
 
         /// <summary>
         /// 유물만 생성/갱신한다. 다른 카테고리와 독립적으로 호출 가능.
-        /// 유물은 메인/서브 옵션 없이 보유만으로 uniqueEffect가 상시 적용되므로 스탯 인자를 비워서 넘긴다
-        /// (포션과 동일한 형태).
+        /// 유물은 메인/서브 옵션 없이 보유만으로 uniqueEffect가 상시 적용되므로 스탯 인자와 옵션 풀을
+        /// 모두 비워서 넘긴다 (포션과 동일한 형태).
         /// </summary>
         public static int CreateOrUpdateRelicDefinitions(
             ItemDataTableJsonData data, string outputFolder,
-            SubStatPoolSO combatPool, SubStatPoolSO utilityPool, ElementalBonusConfigSO elementalConfig,
             ItemDatabaseSO database, ref int registeredCount)
         {
             int count = 0;
@@ -175,7 +176,7 @@ namespace DataSystem
                 ItemDefinitionSO asset = CreateOrUpdateBase(outputFolder, row.itemId, row.itemName, ItemCategory.Relic,
                     row.rarity, row.description, row.itemPrice, row.itemWidth, row.itemHeight,
                     null, 0f, null, 0f,
-                    row.uniqueEffectId, combatPool, utilityPool, elementalConfig);
+                    row.uniqueEffectId, null, null, null);
                 if (asset == null)
                     continue;
 

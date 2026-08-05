@@ -6,10 +6,10 @@ namespace DataSystem
     /// UniqueEffectTable.xlsx(UniqueEffectDefinitions 시트) 한 줄.
     ///
     /// effectType에 따라 실제로 사용되는 컬럼이 다르다. 해당 없는 컬럼은 비워둔다.
-    ///   PassiveBuffUniqueEffectSO         : 버프 컬럼
-    ///   TriggeredBuffUniqueEffectSO       : 버프 컬럼, triggerCondition
-    ///   HealthThresholdBuffUniqueEffectSO : 버프 컬럼, healthThresholdPercent
-    ///   PeriodicLogUniqueEffectSO         : intervalSeconds, message
+    ///   PassiveBuffUniqueEffectSO       : 버프 컬럼
+    ///   TriggeredBuffUniqueEffectSO     : 버프 컬럼, triggerCondition, cooldownSeconds, duplicatePolicy
+    ///   StatThresholdBuffUniqueEffectSO : 버프 컬럼, referenceStat, comparisonOperator, thresholdValue
+    ///   PeriodicLogUniqueEffectSO       : intervalSeconds, message
     ///
     /// 버프 컬럼 = statEffects / duration / stackBehavior / maxStack.
     /// 예전에는 별도 BuffDefinitionSO 에셋을 buffId로 참조했지만, 지금은 고유 효과가 BuffSpec을
@@ -46,7 +46,25 @@ namespace DataSystem
         public int maxStack;
 
         public string triggerCondition;
-        public float healthThresholdPercent;
+
+        /// <summary>발동 후 재발동까지의 쿨타임(초). 0이면 쿨타임 없음. TriggeredBuff에서만 쓴다.</summary>
+        public float cooldownSeconds;
+
+        /// <summary>
+        /// 같은 효과를 여러 개 보유했을 때의 처리. TriggeredBuff에서만 쓴다.
+        /// ShareCooldown(기본, 비워두면 이 값) / PerItem
+        /// </summary>
+        public string duplicatePolicy;
+
+        /// <summary>조건 판정에 쓸 스탯. StatThresholdBuff에서만 쓴다. (예: CurrentHealthPercent, AttackPower)</summary>
+        public string referenceStat;
+
+        /// <summary>비교 방식. StatThresholdBuff에서만 쓴다. GreaterOrEqual / LessOrEqual</summary>
+        public string comparisonOperator;
+
+        /// <summary>비교 기준값. StatThresholdBuff에서만 쓴다. Percent 계열 스탯은 0~100, 나머지는 실제 수치.</summary>
+        public float thresholdValue;
+
         public float intervalSeconds;
         public string message;
 

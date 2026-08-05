@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// 테스트용: H키로 체력을 일정량 깎고, J키로 그만큼 회복시킨다.
-/// 체력 조건부 고유 효과(예: HealthThresholdBuffUniqueEffectSO) 등 체력 구간에 반응하는
+/// 체력 조건부 고유 효과(예: StatThresholdBuffUniqueEffectSO) 등 체력 구간에 반응하는
 /// 기능을 실제 전투 없이 눌러서 확인할 때 쓴다.
 /// 실제 전투 데미지 경로(WBH_PlayerStatus 등)가 대신하게 되면 이 스크립트는 지워도 됨.
 /// </summary>

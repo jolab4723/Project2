@@ -52,8 +52,17 @@ namespace ItemSystem
         [Tooltip("고유효과 자동 연결(SOImporter)용 소스 ID. uniqueEffect 자체가 바뀌어도 이 값으로 다시 찾을 수 있음.")]
         public string uniqueEffectId;
 
-        public List<SubStatSlotType> GetSubStatSlots() => ItemGradeSlotTable.SlotsByGrade[rarity];
+        /// <summary>
+        /// 등급별 서브 옵션을 굴리는 카테고리인지. 무기/방어구만 해당한다.
+        /// 유물과 포션은 등급이 높아도 서브 옵션 없이 uniqueEffect만 가진다.
+        /// </summary>
+        public bool RollsSubStats => category == ItemCategory.Weapon || category == ItemCategory.Armor;
 
-        public bool HasElementalBonusSlot => ItemGradeSlotTable.HasElementalBonusSlot(rarity);
+        public List<SubStatSlotType> GetSubStatSlots() =>
+            RollsSubStats ? ItemGradeSlotTable.SlotsByGrade[rarity] : EmptySlots;
+
+        public bool HasElementalBonusSlot => RollsSubStats && ItemGradeSlotTable.HasElementalBonusSlot(rarity);
+
+        private static readonly List<SubStatSlotType> EmptySlots = new List<SubStatSlotType>();
     }
 }
