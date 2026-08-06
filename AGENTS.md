@@ -91,7 +91,19 @@
 - 거너 총기는 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용하고, 총구 방향은 Blender `+Z`, 무기의 위쪽은 `+Y`로 통일한다. `LeftHandGrip`은 앞손의 실제 접촉점에, `Muzzle` Empty는 총구 끝에 두며 `Muzzle`의 `+Z`가 발사 방향을 향하게 한다.
 - 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞춘다. 양손 여부가 불명확하면 임의의 `LeftHandGrip`을 만들지 않으며, FBX 내보내기와 빈 Blender 씬 재가져오기에서 Empty가 실제로 보존됐는지 확인한다.
 - 편집용 `.blend`는 Unity `Assets` 밖에 두고 Unity에는 FBX와 필요한 Unity 자산만 둔다. Camera, Light, Armature, Collider와 촬영용 오브젝트는 요구된 경우가 아니면 FBX에 포함하지 않는다.
-- FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 거너의 Muzzle, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`의 캐릭터 탭을 사용한다. 기준점이 없는 기존 모델은 생성기의 원본 피벗 자동 맞춤으로 초깃값을 만든 뒤 생성 프리팹만 수동 보정하며 외부 원본 에셋은 수정하지 않는다.
+- FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 거너의 Muzzle, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`에서 `ItemDefinitionSO`의 캐릭터 규격을 자동 적용한다. 기준점이 없는 기존 모델은 생성기의 원본 피벗 자동 맞춤으로 초깃값을 만든 뒤 생성 프리팹만 수동 보정하며 외부 원본 에셋은 수정하지 않는다.
+
+#### Tripo 제작부터 아이템·외형·아이콘 연결 순서
+
+- Tripo 작업 전에 ItemTable의 최종 `itemId`, `characterClass`, `weaponType`, 한손·양손 구분과 `itemWidth`·`itemHeight`를 먼저 확정한다. 모델·FBX·텍스처의 기본 파일명도 가능하면 `itemId`를 사용하고, 확정 뒤에는 다른 Unity 자산과 매핑이 연결된 `itemId`를 임의로 바꾸지 않는다.
+- Tripo에는 모델링용 참조와 필요한 정면·측면을 전달하고, Unity 인벤토리용으로는 별도의 0° 정면, 투명 배경, 무회전, 무잘림 PNG를 준비한다. 이 PNG에는 배경·바닥 그림자·프레임 밖으로 번지는 오라를 넣지 않으며 왼쪽 10° 회전과 최종 잘림은 Unity 변환기에 맡긴다.
+- Unity 작업 순서는 `DataLoader/Item Data Table/0. Run All Steps`로 SO 생성·갱신 → FBX와 텍스처 임포트 및 머터리얼 remap → `SW/Equipment/무기 외형 프리팹 생성기`로 외형·카탈로그 등록 → `SW/Equipment/인벤토리 무기 아이콘 변환기`로 원본 PNG와 무기 SO 매핑·출력 순서로 통일한다. ItemTable 개별 단계 메뉴는 담당자 진단용이며 일반 Tripo 전달 흐름에서는 Run All을 사용한다.
+- 외형 생성기는 3D 프리팹과 `WeaponVisualCatalogSO`만 담당하고 인벤토리 아이콘을 생성하거나 덮어쓰지 않는다. 아이콘 변환기만 팀 공용 `Assets/Resources/Images/Item/OriginalImage`의 원본을 GUID로 매핑해 상위 폴더에 `Assets/Resources/Images/Item/{itemId}.png`를 생성하고 `ItemDefinitionSO.icon`에 연결한다. 원본 파일명이 `{itemId}.png` 또는 `{itemId}.source.png`이면 `전체 원본 자동 매핑 및 일괄 변환`에서 아직 매핑되지 않은 항목을 Auto 구도로 자동 등록하며, 다른 파일명은 창에서 원본과 SO를 직접 선택해 등록한다.
+- ItemTable Run All의 아이콘 연결은 상위 폴더의 `Assets/Resources/Images/Item/{itemId}.png`만 정확한 경로로 조회하므로 `OriginalImage` 자식 폴더 원본과 충돌하지 않는다. 단, `OriginalImage`도 Resources 하위라 Player 빌드에 포함되므로 고해상도 원본이 많이 쌓이면 빌드 용량을 점검한다.
+- 아이콘 변환 규격은 왼쪽 10°, 칸당 128px, 공통 8px 여백으로 고정한다. 기본은 Auto 구도를 사용하고 실제 미리보기가 기준과 다를 때만 ItemID별 표시 방식·배율·가로 강조·위치 보정을 저장한다. ItemTable에서 `itemWidth`나 `itemHeight`를 바꿨다면 Run All 뒤 등록 아이콘 일괄 변환을 다시 실행한다.
+- 기존 수동 매핑과 ItemID별 고급 구도 보정은 파일명 자동 매핑보다 우선한다. 매핑 저장 뒤에는 Unity GUID를 사용하므로 파일 교체·이동 시 `.meta`를 보존한다. 새 파일로 GUID가 바뀌었거나 `itemId`를 바꿨다면 해당 매핑을 다시 등록한다.
+- 전설 무기의 오라·파티클·Trail은 FBX 머터리얼과 분리된 생성 프리팹 후처리 VFX로 둔다. 외형 생성기의 덮어쓰기는 손 맞춤값 외의 추가 자식을 보존하지 않으므로 VFX를 붙인 뒤에는 프리팹을 무심코 재생성하지 않으며, 재생성이 필요하면 VFX 연결을 다시 검증한다.
+- 완료 시 같은 `itemId`의 ItemDefinitionSO, `{itemId}_WeaponVisual.prefab`, `WeaponVisualCatalogSO` 항목, `{itemId}.png`를 한 묶음으로 확인한다. PNG 크기가 `itemWidth × 128`·`itemHeight × 128`인지, Sprite/Single 설정과 SO 아이콘 참조가 맞는지, 실제 캐릭터 장착에서 Grip·Muzzle·머터리얼·VFX가 유지되는지 검증한다.
 
 #### 머터리얼과 텍스처
 

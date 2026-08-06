@@ -55,10 +55,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string RightHandGripName = "RightHandGrip";
     private const string LeftHandGripName = "LeftHandGrip";
     private const string MuzzleName = "Muzzle";
-    private const string IconOutputFolder = "Assets/Resources/Images/Item/";
-    private const int IconSize = 512;
-    private const float IconFramingPadding = 1.15f;
-
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
     private const float AxeReferenceLength = 1.35f;
@@ -66,95 +62,82 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const float ShotgunReferenceLength = 0.90f;
     private const float RifleReferenceLength = 1.05f;
 
-    private static readonly string[] TabLabels = { "파이터", "거너 (준비)" };
-
-    [SerializeField] private CharacterTab selectedTab;
     [SerializeField] private ItemDefinitionSO itemDefinition;
     [SerializeField] private GameObject modelAsset;
-    [SerializeField] private WeaponVisualCatalogSO visualCatalog;
-    [SerializeField] private DefaultAsset outputFolder;
     [SerializeField] private SourceAxis sourceForwardAxis;
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
-    [SerializeField] private bool captureIconAfterGenerate = true;
+
+    private WeaponVisualCatalogSO visualCatalog;
+    private DefaultAsset outputFolder;
+
+    private CharacterTab SelectedTab => itemDefinition != null
+        ? GetTab(itemDefinition.characterClass)
+        : CharacterTab.Fighter;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
     {
         var window = GetWindow<WeaponVisualPrefabGeneratorWindow>();
         window.titleContent = new GUIContent("무기 외형 생성기");
-        window.minSize = new Vector2(470f, 650f);
+        window.minSize = new Vector2(470f, 570f);
         window.Show();
     }
 
     private void OnEnable()
     {
-        visualCatalog ??=
-            AssetDatabase.LoadAssetAtPath<WeaponVisualCatalogSO>(DefaultCatalogPath);
-        outputFolder ??=
-            AssetDatabase.LoadAssetAtPath<DefaultAsset>(DefaultOutputFolder);
+        visualCatalog = AssetDatabase.LoadAssetAtPath<WeaponVisualCatalogSO>(DefaultCatalogPath);
+        outputFolder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(DefaultOutputFolder);
     }
 
     private void OnGUI()
     {
-        DrawCharacterTabs();
+        DrawCharacterSpec();
         DrawCommonFields();
         DrawAlignmentOptions();
 
-        if (selectedTab == CharacterTab.Fighter)
+        if (SelectedTab == CharacterTab.Fighter)
             DrawFighterOptions();
         else
             DrawGunnerOptions();
 
         DrawSaveOptions();
-        DrawIconOptions();
 
         EditorGUILayout.Space(12f);
         using (new EditorGUI.DisabledScope(!CanGenerate()))
         {
-            string buttonLabel = captureIconAfterGenerate
-                ? "외형 생성 · 등록 · 아이콘 촬영"
-                : "프리팹 생성 및 카탈로그 등록";
-            if (GUILayout.Button(buttonLabel, GUILayout.Height(36f)))
+            if (GUILayout.Button("프리팹 생성 및 카탈로그 등록", GUILayout.Height(36f)))
                 Generate();
         }
 
         DrawRuntimeCalibrationSave();
     }
 
-    private void DrawCharacterTabs()
+    private void DrawCharacterSpec()
     {
         EditorGUILayout.LabelField("캐릭터 장착 규격", EditorStyles.boldLabel);
-        selectedTab = (CharacterTab)GUILayout.Toolbar((int)selectedTab, TabLabels);
+        EditorGUILayout.LabelField(
+            itemDefinition != null ? GetTabLabel(itemDefinition.characterClass) : "아이템 정의 선택 필요");
 
-        string description = selectedTab == CharacterTab.Fighter
-            ? "파이터: 오른손 장착점을 원점으로 사용하고 무기 끝 방향을 루트 +Y에 맞춥니다."
-            : "거너: 방아쇠 손을 원점으로 사용하고 총구 방향을 루트 +Z에 맞춥니다. " +
-              "현재는 프리팹 생성 규격만 제공하며 거너 캐릭터에는 자동 연결하지 않습니다.";
+        string description = itemDefinition == null
+            ? "ItemDefinitionSO의 캐릭터 클래스에 맞는 장착 규격을 자동 적용합니다."
+            : SelectedTab == CharacterTab.Fighter
+                ? "파이터: 오른손 장착점을 원점으로 사용하고 무기 끝 방향을 루트 +Y에 맞춥니다."
+                : "거너: 방아쇠 손을 원점으로 사용하고 총구 방향을 루트 +Z에 맞춥니다. " +
+                  "현재는 프리팹 생성 규격만 제공하며 거너 캐릭터에는 자동 연결하지 않습니다.";
         EditorGUILayout.HelpBox(description, MessageType.Info);
     }
 
     private void DrawCommonFields()
     {
-        EditorGUI.BeginChangeCheck();
         itemDefinition = (ItemDefinitionSO)EditorGUILayout.ObjectField(
             "아이템 정의", itemDefinition, typeof(ItemDefinitionSO), false);
-        if (EditorGUI.EndChangeCheck() && itemDefinition != null)
-            selectedTab = GetTab(itemDefinition.characterClass);
-
         modelAsset = (GameObject)EditorGUILayout.ObjectField(
             "모델 또는 프리팹", modelAsset, typeof(GameObject), false);
-        visualCatalog = (WeaponVisualCatalogSO)EditorGUILayout.ObjectField(
-            "외형 카탈로그", visualCatalog, typeof(WeaponVisualCatalogSO), false);
-        outputFolder = (DefaultAsset)EditorGUILayout.ObjectField(
-            "출력 폴더", outputFolder, typeof(DefaultAsset), false);
-
-        if (itemDefinition != null && GetTab(itemDefinition.characterClass) != selectedTab)
-        {
-            EditorGUILayout.HelpBox(
-                $"아이템 정의는 {GetTabLabel(itemDefinition.characterClass)}용입니다. 같은 탭을 선택해주세요.",
-                MessageType.Error);
-        }
+        EditorGUILayout.HelpBox(
+            "ItemTable Run All로 생성된 무기 SO와 Unity에 임포트한 FBX/프리팹을 선택합니다. " +
+            "외형 생성 후 인벤토리 아이콘 변환기를 별도로 실행하세요.",
+            MessageType.None);
     }
 
     private void DrawAlignmentOptions()
@@ -164,7 +147,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         sourceForwardAxis = (SourceAxis)EditorGUILayout.EnumPopup(
             "원본 무기 진행축", sourceForwardAxis);
 
-        string targetDirection = selectedTab == CharacterTab.Fighter ? "+Y" : "+Z";
+        string targetDirection = SelectedTab == CharacterTab.Fighter ? "+Y" : "+Z";
         EditorGUILayout.HelpBox(
             itemDefinition != null
                 ? $"{itemDefinition.weaponType} 기준 길이 " +
@@ -216,19 +199,14 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             preserveExistingCalibration = EditorGUILayout.ToggleLeft(
                 "기존 프리팹의 손 맞춤값 유지", preserveExistingCalibration);
         }
-    }
 
-    private void DrawIconOptions()
-    {
-        EditorGUILayout.Space(8f);
-        EditorGUILayout.LabelField("아이콘 자동 연결", EditorStyles.boldLabel);
-        captureIconAfterGenerate = EditorGUILayout.ToggleLeft(
-            "아이콘 자동 촬영 및 SO 연결 사용", captureIconAfterGenerate);
-        EditorGUILayout.HelpBox(
-            captureIconAfterGenerate
-                ? "Preview Scene에서 자동 촬영하고 ItemDefinitionSO.icon에 연결합니다."
-                : "자동 촬영을 건너뜁니다. 직접 만든 기존 아이콘 연결은 변경하지 않습니다.",
-            MessageType.None);
+        if (overwriteExisting)
+        {
+            EditorGUILayout.HelpBox(
+                "덮어쓰기는 기존 생성 프리팹을 다시 만듭니다. 손 맞춤값 외에 나중에 추가한 VFX·추가 자식은 " +
+                "유지되지 않으므로 원본 모델에 포함하거나 재생성 후 다시 연결해야 합니다.",
+                MessageType.Warning);
+        }
     }
 
     private bool CanGenerate()
@@ -236,8 +214,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         return itemDefinition != null &&
                modelAsset != null &&
                visualCatalog != null &&
-               outputFolder != null &&
-               GetTab(itemDefinition.characterClass) == selectedTab;
+               outputFolder != null;
     }
 
     private void DrawRuntimeCalibrationSave()
@@ -431,9 +408,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             previewScene = EditorSceneManager.NewPreviewScene();
             wrapper = new GameObject(Path.GetFileNameWithoutExtension(prefabName));
             SceneManager.MoveGameObjectToScene(wrapper, previewScene);
-            EnemyIconCaptureTool previewCaptureTool = captureIconAfterGenerate
-                ? CreatePreviewCaptureRig(previewScene)
-                : null;
             GameObject modelInstance = InstantiateModel(wrapper.transform);
 
             Transform sourceLeftGrip = FindDescendant(modelInstance.transform, LeftHandGripName);
@@ -451,37 +425,13 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             RegisterCatalogEntry(itemId, savedPrefab);
             AssetDatabase.SaveAssets();
 
-            bool iconCaptured = false;
-            if (captureIconAfterGenerate)
-            {
-                if (previewCaptureTool.TryCaptureTarget(
-                        wrapper,
-                        itemId,
-                        out string iconAssetPath) &&
-                    TryAssignCapturedIcon(itemDefinition, iconAssetPath))
-                {
-                    iconCaptured = true;
-                    AssetDatabase.SaveAssets();
-                }
-                else
-                {
-                    Debug.LogWarning(
-                        $"[{nameof(WeaponVisualPrefabGeneratorWindow)}] 외형 프리팹은 생성했지만 " +
-                        $"아이콘 촬영 또는 연결에 실패했습니다: {iconAssetPath}",
-                        itemDefinition);
-                }
-            }
-
             Selection.activeObject = savedPrefab;
             EditorGUIUtility.PingObject(savedPrefab);
-            string iconResult = iconCaptured
-                ? itemId + ".png 촬영 및 연결 완료"
-                : captureIconAfterGenerate ? "실패 (Console 확인)" : "건너뜀";
             EditorUtility.DisplayDialog(
                 "생성 완료",
                 $"무기 외형 프리팹을 만들고 카탈로그에 등록했습니다.\n{prefabPath}\n\n" +
-                $"자동 맞춤: {fitResult}\n" +
-                $"아이콘: {iconResult}",
+                $"자동 맞춤: {fitResult}\n\n" +
+                "다음 단계: SW/Equipment/인벤토리 무기 아이콘 변환기",
                 "확인");
         }
         catch (Exception exception)
@@ -501,106 +451,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         }
     }
 
-    /// <summary>
-    /// CaptureScene과 같은 카메라 및 3점 조명을 Preview Scene에 임시 생성합니다.
-    /// 생성한 오브젝트는 Preview Scene이 닫힐 때 함께 제거됩니다.
-    /// </summary>
-    private static EnemyIconCaptureTool CreatePreviewCaptureRig(Scene previewScene)
-    {
-        var cameraObject = new GameObject("Weapon Icon Capture Camera");
-        SceneManager.MoveGameObjectToScene(cameraObject, previewScene);
-
-        Camera camera = cameraObject.AddComponent<Camera>();
-        camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = Color.clear;
-        camera.fieldOfView = 35f;
-        camera.orthographic = false;
-        camera.allowHDR = true;
-        camera.allowMSAA = true;
-        camera.overrideSceneCullingMask =
-            EditorSceneManager.GetSceneCullingMask(previewScene);
-        camera.transform.SetPositionAndRotation(
-            new Vector3(0f, 0.1577594f, -1.0630515f),
-            Quaternion.identity);
-
-        CreatePreviewDirectionalLight(
-            previewScene,
-            "Capture Key Light",
-            new Color(1f, 0.88f, 0.72f, 1f),
-            2f,
-            new Quaternion(-0.4030582f, 0.2725321f, -0.1270838f, -0.8643611f),
-            LightShadows.Soft,
-            0.65f);
-        CreatePreviewDirectionalLight(
-            previewScene,
-            "Capture Fill Light",
-            new Color(0.55f, 0.68f, 1f, 1f),
-            0.9f,
-            new Quaternion(0.51243174f, 0.2536127f, -0.1615691f, 0.8043567f),
-            LightShadows.None,
-            1f);
-        CreatePreviewDirectionalLight(
-            previewScene,
-            "Capture Rim Light",
-            new Color(0.72f, 0.86f, 1f, 1f),
-            1.2f,
-            new Quaternion(-0.0000000094608765f, 0.976296f, -0.21643962f, -0.000000042675254f),
-            LightShadows.None,
-            1f);
-
-        EnemyIconCaptureTool captureTool = cameraObject.AddComponent<EnemyIconCaptureTool>();
-        captureTool.captureCamera = camera;
-        captureTool.width = IconSize;
-        captureTool.height = IconSize;
-        captureTool.framingPadding = IconFramingPadding;
-        captureTool.outputFolder = IconOutputFolder;
-        return captureTool;
-    }
-
-    private static void CreatePreviewDirectionalLight(
-        Scene previewScene,
-        string objectName,
-        Color color,
-        float intensity,
-        Quaternion rotation,
-        LightShadows shadows,
-        float shadowStrength)
-    {
-        var lightObject = new GameObject(objectName);
-        SceneManager.MoveGameObjectToScene(lightObject, previewScene);
-        lightObject.transform.rotation = rotation;
-
-        Light light = lightObject.AddComponent<Light>();
-        light.type = LightType.Directional;
-        light.color = color;
-        light.intensity = intensity;
-        light.shadows = shadows;
-        light.shadowStrength = shadowStrength;
-    }
-
-    /// <summary>
-    /// 방금 촬영한 아이콘만 연결합니다. 데이터 변환 파이프라인에는 의존하지 않습니다.
-    /// </summary>
-    private static bool TryAssignCapturedIcon(
-        ItemDefinitionSO definition,
-        string iconAssetPath)
-    {
-        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(iconAssetPath);
-        if (definition == null || icon == null)
-            return false;
-
-        definition.icon = icon;
-        EditorUtility.SetDirty(definition);
-
-        if (definition.uniqueEffect != null)
-        {
-            definition.uniqueEffect.icon = icon;
-            EditorUtility.SetDirty(definition.uniqueEffect);
-        }
-
-        return true;
-    }
-
     private bool TryValidateInputs(out string outputFolderPath, out string itemId)
     {
         outputFolderPath = outputFolder != null
@@ -616,9 +466,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         if (itemDefinition.category != ItemCategory.Weapon)
             return ShowValidationError("무기 category의 ItemDefinition만 사용할 수 있습니다.");
 
-        if (GetTab(itemDefinition.characterClass) != selectedTab)
-            return ShowValidationError("아이템 정의의 캐릭터 클래스와 선택한 탭이 다릅니다.");
-
         if (!ClassWeaponTable.WeaponsByClass.TryGetValue(
                 itemDefinition.characterClass,
                 out var validWeaponTypes) ||
@@ -631,12 +478,12 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return ShowValidationError("Project 창의 모델 또는 프리팹 에셋을 선택해주세요.");
 
         if (visualCatalog == null)
-            return ShowValidationError("WeaponVisualCatalogSO를 연결해주세요.");
+            return ShowValidationError($"기본 외형 카탈로그를 찾지 못했습니다.\n{DefaultCatalogPath}");
 
         if (string.IsNullOrEmpty(outputFolderPath) ||
             !AssetDatabase.IsValidFolder(outputFolderPath))
         {
-            return ShowValidationError("Project 창의 유효한 출력 폴더를 선택해주세요.");
+            return ShowValidationError($"기본 외형 출력 폴더를 찾지 못했습니다.\n{DefaultOutputFolder}");
         }
 
         if (!outputFolderPath.StartsWith("Assets", StringComparison.Ordinal))
@@ -705,7 +552,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         Vector3 sourceDirection = sourceForwardAxis == SourceAxis.Auto
             ? GetLongestBoundsDirection(modelBounds, directionHint)
             : model.TransformDirection(GetAxisVector(sourceForwardAxis));
-        Vector3 targetDirection = selectedTab == CharacterTab.Fighter
+        Vector3 targetDirection = SelectedTab == CharacterTab.Fighter
             ? wrapper.up
             : wrapper.forward;
 
@@ -748,7 +595,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         Transform sourceLeftGrip,
         Transform sourceMuzzle)
     {
-        if (selectedTab == CharacterTab.Fighter)
+        if (SelectedTab == CharacterTab.Fighter)
         {
             CreateMarker(
                 wrapper,
