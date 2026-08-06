@@ -72,12 +72,12 @@ public class WBH_EnemyMovement : MonoBehaviour
             agent.isStopped = false;
     }
 
-    public void Dash(Vector3 direction, float distance, float duration)
+    public void Dash(Vector3 direction, float distance, float duration, Action onCompleted = null)
     {
-        StartCoroutine(CoDash(direction, distance, duration));
+        StartCoroutine(CoDash(direction, distance, duration, onCompleted));
     }
 
-    private IEnumerator CoDash(Vector3 direction, float distance, float duration)
+    private IEnumerator CoDash(Vector3 direction, float distance, float duration, Action onCompleted)
     {
         SetControlEnable(false);
 
@@ -100,5 +100,7 @@ public class WBH_EnemyMovement : MonoBehaviour
         Warp(transform.position);
 
         SetControlEnable(true);
+
+        onCompleted?.Invoke();
     }
 }

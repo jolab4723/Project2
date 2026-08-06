@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor.Build.Pipeline;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyController))]
@@ -16,6 +17,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
     private float attackTimer = 0f;
     private bool hasHitTarget;
+    public bool IsActionInProgress { get; private set; }
 
 
     private void Awake()
@@ -36,6 +38,9 @@ public class WBH_EnemyCombat : MonoBehaviour
     private void OnDisable()
     {
         movement.OnDashUpdate -= CheckDashHit;
+
+        hasHitTarget = false;
+        IsActionInProgress = false;
     }
 
     private void Update()
@@ -50,6 +55,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     public void Initialize(WBH_EnemyInfo info)
     {
         attackTimer = 0f;
+        hasHitTarget = false;
+        IsActionInProgress = false;
     }
 
     public bool CanAttack()
@@ -57,15 +64,17 @@ public class WBH_EnemyCombat : MonoBehaviour
         return attackTimer <= 0f;
     }
 
-    public void Attack()
+    public bool TryAttack()
     {
-        // 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
-        if (!CanAttack() || !movement.CanControl)
-            return;
+        // 현재 다른 행동 중이 아니거나 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
+        if (IsActionInProgress || !CanAttack() || !movement.CanControl)
+            return false;
 
+        BeginAction();
         ResetAttackCoolTime();
 
-        enemyAnimation.PlayAttack(pattern.ExecuteAttack);
+        enemyAnimation.PlayAttack(pattern.ExecuteAttack, EndAction);
+        return true;
     }
 
     public void ResetAttackCoolTime()
@@ -85,10 +94,16 @@ public class WBH_EnemyCombat : MonoBehaviour
         return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult);
     }
 
-    public void DashAttack(float distance, float duration, WBH_Indicator indicator = null)
+    public bool TryDashAttack(float distance, float duration, WBH_Indicator indicator = null)
     {
+        if (IsActionInProgress)
+            return false;
+
+        BeginAction();
         transform.LookAt(pattern.Target);
+
         StartCoroutine(CoDashAttack(distance, duration,indicator));
+        return true;
     }
 
     private IEnumerator CoDashAttack(float distance, float duration, WBH_Indicator indicator)
@@ -101,14 +116,20 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         enemyAnimation.PlayDash();
 
-        movement.Dash(transform.forward, distance, duration);
+        movement.Dash(transform.forward, distance, duration, EndAction);
     }
 
-    public void ShootBurst(int count)
+    public bool TryShootBurst(int count)
     {
+        if (IsActionInProgress)
+            return false;
+
+        BeginAction();
         transform.LookAt(pattern.Target);
+
         enemyAnimation.PlayShootBurst();
         StartCoroutine(CoShootBurst(count));
+        return true;
     }
 
     private IEnumerator CoShootBurst(int count)
@@ -117,8 +138,10 @@ public class WBH_EnemyCombat : MonoBehaviour
         {
             FireProjectile();
 
-            yield return new WaitForSeconds(0.15f);
+            if(i < count -1)
+                yield return new WaitForSeconds(0.15f);
         }
+        EndAction();
     }
 
     private void FireProjectile()
@@ -150,4 +173,15 @@ public class WBH_EnemyCombat : MonoBehaviour
             break;
         }
     }
+
+    private void BeginAction()
+    {
+        IsActionInProgress = true;
+    }
+    private void EndAction()
+    {
+        IsActionInProgress = false;
+    }
+
+    
 }

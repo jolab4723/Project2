@@ -61,7 +61,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, damagePool, eliteView);
+            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView);
         }
     }
 
@@ -128,5 +128,29 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         {
             SpawnNextWave();
         }
+    }
+
+    // 가까운 플레이어 찾기
+    private Transform FindClosePlayer(Vector3 origin)
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform closePlayer = null;
+        float closestSqrDistance = float.MaxValue;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float sqrDistance = (player.transform.position - origin).sqrMagnitude;
+
+            if (sqrDistance >= closestSqrDistance)
+                continue;
+
+            closestSqrDistance = sqrDistance;
+            closePlayer = player.transform;
+        }
+        return closePlayer;
     }
 }

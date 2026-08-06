@@ -32,6 +32,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
     protected float dashHitRadius = 3f;
+    private bool waitingForTarget;
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
@@ -72,7 +73,7 @@ public class WBH_EnemyPattern : MonoBehaviour
             return;
         }
 
-        if (target == null)
+        if (!EnsureTarget()) // 현재 타겟이 null 인지 체크 및 null 일 경우 가까운 다른 player 체크하여 타겟 재설정
             return;
 
         if (!movement.CanControl)
@@ -108,7 +109,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         if (distance > status.AttackRange)
             return;
 
-        combat.Attack();
+        combat.TryAttack();
     }
 
     public virtual void Hit()
@@ -187,10 +188,63 @@ public class WBH_EnemyPattern : MonoBehaviour
     }
 
     // 멀티플레이 감안. 타겟 설정.
-    // Spawner 에서 호출 예정.
+    // 초기 타겟은 Spawner 에서 호출 예정.
     public void SetTarget(Transform target)
     {
         this.target = target;
+        waitingForTarget = false;
+    }
+
+    private bool IsTargetValid()
+    {
+        if(target == null)
+            return false;
+        if(!target.gameObject.activeInHierarchy)
+            return false;
+
+        return target.TryGetComponent<T_PlayerController>(out T_PlayerController player) && player.isActiveAndEnabled;
+    }
+
+    private bool EnsureTarget()
+    {
+        if(IsTargetValid())
+        {
+            waitingForTarget = false;
+            return true;
+        }
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform closetPlayer = null;
+        float closestSqrDistance = float.MaxValue;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float sqrDistance = (player.transform.position - transform.position).sqrMagnitude;
+
+            if (sqrDistance >= closestSqrDistance)
+                continue;
+
+            closestSqrDistance = sqrDistance;
+            closetPlayer = player.transform;
+        }
+
+        target = closetPlayer;
+
+        if(target != null)
+        {
+            waitingForTarget = false;
+            return true;
+        }
+
+        if(!waitingForTarget)
+        {
+            movement.Stop();
+            waitingForTarget = true;
+        }
+        return false;
     }
 
     private void CreatePattern()

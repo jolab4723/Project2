@@ -237,10 +237,11 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
         status.TakeDamage(result);
 
-        // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
-        //stateMachine.ChangeState(PlayerState.Hit);
-        // 사망 처리 OnDead 이벤트 구독
-
+        // 최대 hp 대비 큰 피해(10%) 입으면 피격 애니메이션
+        if(result.FinalDamage >= status.MaxHealth *0.1f )
+        {
+            stateMachine.ChangeState(PlayerState.Hit);
+        }
     }
 
     // 현재 조작가능한 상태인지 판단

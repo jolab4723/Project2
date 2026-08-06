@@ -13,11 +13,13 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     private Animator animator;
     WBH_EnemyMovement movement;
+    WBH_EnemyCombat combat;
 
     public const int DashSkillId = 1;
     public const int ShootBurstSkillId = 2;
 
     private Action attackEvent;
+    private Action attackEndEvent;
 
     private readonly int MoveHash = Animator.StringToHash("MoveSpeed");
     private readonly int AttackHash = Animator.StringToHash("Attack");
@@ -31,6 +33,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         movement = GetComponent<WBH_EnemyMovement>();
+        combat = GetComponent<WBH_EnemyCombat>();
     }
 
     private void Update()
@@ -49,14 +52,17 @@ public class WBH_EnemyAnimation : MonoBehaviour
     }
 
 
-    public void PlayAttack(Action callback)
+    public void PlayAttack(Action onHit, Action onFinished)
     {
-        attackEvent = callback;
+        attackEvent = onHit;
+        attackEndEvent = onFinished; 
 
         if (!useAttackAni || animator == null)
         {
             attackEvent?.Invoke();
+            attackEndEvent?.Invoke();
             attackEvent = null;
+            attackEndEvent = null;
             return;
         }
         animator.SetTrigger(AttackHash);
@@ -78,14 +84,14 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public void PlayDash()
     {
+        animator.SetInteger(SkillIdHash, DashSkillId);
         animator.SetTrigger(SkillHash);
-        animator.SetFloat(SkillIdHash, DashSkillId);
     }
 
     public void PlayShootBurst()
     {
+        animator.SetInteger(SkillIdHash, ShootBurstSkillId);
         animator.SetTrigger(SkillHash);
-        animator.SetFloat(SkillIdHash, ShootBurstSkillId);
     }
 
 
@@ -94,5 +100,10 @@ public class WBH_EnemyAnimation : MonoBehaviour
     {
         attackEvent?.Invoke();
         attackEvent = null;
+    }
+    public void OnAttackEndEvent()
+    {
+        attackEndEvent?.Invoke();
+        attackEndEvent = null;
     }
 }
