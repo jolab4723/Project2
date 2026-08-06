@@ -1899,7 +1899,7 @@ Animator:
   m_GameObject: {fileID: 8343252582345304491}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: d6e8d1ff9151ba2419c13386ebb81d9a, type: 3}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: f0ec00b7fec006741b001205078a8381, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1969,8 +1969,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21eb5de270356614385a2d236702b11a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyAnimation
-  useMoveAni: 0
-  useAttackAni: 0
+  useMoveAni: 1
+  useAttackAni: 1
   useHitAni: 0
   useDieAni: 0
 --- !u!114 &9017580310281181731
@@ -2044,7 +2044,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 1661950488867914113}
-  effectSpawner: {fileID: 0}
+  effectSpawner: {fileID: 5098649128698489512}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}

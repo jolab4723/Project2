@@ -15,10 +15,13 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     [SerializeField] private WaveData[] waves;
 
+    [SerializeField] private WBH_EliteHpbarView eliteView;
+
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
     private WBH_DamageTextPoolManager damagePool;
+    
     private YJ_PortalActive portalActive;
 
     private int currentWave = -1;
@@ -54,11 +57,11 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         SpawnNextWave();
     }
 
-    private void InitializeSpawnAreas() //!@
+    private void InitializeSpawnAreas() //!@ 차후 어그로 시스템 제작 시 player 빼기, eliteview UI쪽과 통합 시 eliteView 빼기
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, damagePool);
+            area.Initialize(enemyPool, effectPool, projectilePool, player, damagePool, eliteView);
         }
     }
 
