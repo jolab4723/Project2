@@ -4,10 +4,16 @@ using UnityEngine;
 public class WBH_EnemySpawnManager : MonoBehaviour
 {
     [System.Serializable]
+    public class GradeCount
+    {
+        public EnemyGrade grade;
+        [Min(0)] public int count;
+    }
+
+    [System.Serializable]
     public class WaveData
     {
-        public int normalCount;
-        public int eliteCount;
+        public GradeCount[] enemies;
     }
 
     [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
@@ -15,10 +21,13 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     [SerializeField] private WaveData[] waves;
 
+    [SerializeField] private WBH_EliteHpbarView eliteView;
+
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
     private WBH_DamageTextPoolManager damagePool;
+    
     private YJ_PortalActive portalActive;
 
     private int currentWave = -1;
@@ -54,11 +63,11 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         SpawnNextWave();
     }
 
-    private void InitializeSpawnAreas() //!@
+    private void InitializeSpawnAreas() //!@ 차후 어그로 시스템 제작 시 player 빼기, eliteview UI쪽과 통합 시 eliteView 빼기
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, damagePool);
+            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView);
         }
     }
 
@@ -70,42 +79,36 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         {
             stageClear = true;
             portalActive.Active(true);
-            Debug.Log("Stage Clear");
+            Log.Print("Stage Clear");
             return;
         }
 
-        WaveData wave = waves[currentWave];
+        aliveEnemyCount = 0;
 
-        SpawnNormal(wave.normalCount);
-        SpawnElite(wave.eliteCount);
+        foreach(GradeCount entry in waves[currentWave].enemies)
+        {
+            aliveEnemyCount += Spawn(entry.grade, entry.count);
+        }
 
-        aliveEnemyCount = wave.normalCount + wave.eliteCount;
+        if (aliveEnemyCount == 0)
+        {
+            SpawnNextWave();
+        }
     }
 
-    public void SpawnNormal(int count)
+    private int Spawn(EnemyGrade grade, int count)
     {
-        Spawn(count, false);
-    }
+        if (count <= 0 || spawnAreas.Length == 0)
+            return 0;
 
-    public void SpawnElite(int count)
-    {
-        Spawn(count, true);
-    }
-
-    private void Spawn(int count, bool isElite)
-    {
-        if (spawnAreas.Length == 0)
-            return;
+        int spawnedCount = 0;
 
         for(int i = 0; i < count; i ++)
         {
             WBH_EnemySpawnArea area = GetRandomArea();
-
-            if (isElite)
-                area.SpawnElite(1);
-            else
-                area.SpawnNormal(1);
+            spawnedCount += area.Spawn(grade, 1);
         }
+        return spawnedCount;
     }
 
     private WBH_EnemySpawnArea GetRandomArea()
@@ -125,5 +128,29 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         {
             SpawnNextWave();
         }
+    }
+
+    // 가까운 플레이어 찾기
+    private Transform FindClosePlayer(Vector3 origin)
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform closePlayer = null;
+        float closestSqrDistance = float.MaxValue;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float sqrDistance = (player.transform.position - origin).sqrMagnitude;
+
+            if (sqrDistance >= closestSqrDistance)
+                continue;
+
+            closestSqrDistance = sqrDistance;
+            closePlayer = player.transform;
+        }
+        return closePlayer;
     }
 }

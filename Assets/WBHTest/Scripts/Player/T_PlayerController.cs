@@ -10,12 +10,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    public bool canDodge => currentDodgeCooltime <= 0f;
-    public Vector3 lookDir { get; private set; }
-    public float currentDodgeCooltime { get; private set; }
-    public bool IsControlEnabled { get; private set; } = true;
-    public bool IsInvincible { get; private set; } = false; // 무적여부
-
     private Camera mainCamera;
     private Animator animator;
     private WBH_PlayerIndicator indicator;
@@ -24,7 +18,15 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private Vector3 dodgeDir;
     public int reviveCount = 3;
 
+    public Vector3 lookDir { get; private set; }
+    public float currentDodgeCooltime { get; private set; }
+    public bool IsControlEnabled { get; private set; } = true;
+    public bool IsInvincible { get; private set; } = false; // 무적여부
+
     public WBH_ICombatStatus Status => status;
+    public bool canDodge => currentDodgeCooltime <= 0f;
+    private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+
 
     private void Awake()
     {
@@ -72,6 +74,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         if(state == PlayerState.Dodge)
         {
+            this.gameObject.transform.LookAt(dodgeDir);
             StartCoroutine(Dodge(dodgeDir));
         }
         switch (state)
@@ -133,30 +136,33 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 회피 코루틴
     private IEnumerator Dodge(Vector3 dir)
     {
-        agent.enabled = false;
-        IsInvincible = true;
+        if(!CanUseAgent || !TryGetDodgeEnd(dir, out Vector3 endPos))
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+            yield break;
+        }
 
-        Vector3 startPos = transform.position;
-        Vector3 endPos = startPos + dir * status.DodgeDistance;
+        agent.ResetPath();
+        agent.isStopped = true;
+        IsInvincible = true;
+        animator.SetTrigger("Dodge");
 
         float elapsed = 0f;
-
-        animator.SetTrigger("Dodge");
 
         while (elapsed < status.DodgeDuration)
         {
             elapsed += Time.deltaTime;
 
-            float t = elapsed / status.DodgeDuration;
+            Vector3 remaining = endPos - transform.position;
+            Vector3 step = remaining * (Time.deltaTime / Mathf.Max(0.001f, status.DodgeDuration - elapsed + Time.deltaTime));
 
-            transform.position = Vector3.Lerp(startPos, endPos, t);
-
+            agent.Move(step);
             yield return null;
         }
 
-        agent.enabled = true;
+        agent.Warp(endPos);
+        agent.isStopped = false;
         IsInvincible = false;
-
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
@@ -200,7 +206,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     private void UpdateMoveState()
     {
-        if (!stateMachine.Is(PlayerState.Move) || agent.pathPending || agent.remainingDistance > agent.stoppingDistance || agent.velocity.sqrMagnitude > 0.01f)
+        if (!CanUseAgent || !stateMachine.Is( PlayerState.Move))
             return;
 
         stateMachine.ChangeState(PlayerState.Idle);
@@ -210,17 +216,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         stateMachine.ChangeState(PlayerState.Dead);
         SetControlEnable(false);
-    }
-
-    // --- combat.cs 에서 활용할 이동처리
-    public void MoveToTarget(Vector3 position, float attackRange)
-    {
-        if (stateMachine.Is(PlayerState.Dodge))
-            return;
-
-        agent.stoppingDistance = attackRange;
-
-        agent.SetDestination(position);
     }
 
     public void ResetStoppingDistance()
@@ -242,15 +237,19 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
         status.TakeDamage(result);
 
-        // hp 대비 큰 피해(%) 입으면 애니메이션 피격 !@
-        //stateMachine.ChangeState(PlayerState.Hit);
-        // 사망 처리 OnDead 이벤트 구독
-
+        // 최대 hp 대비 큰 피해(10%) 입으면 피격 애니메이션
+        if(result.FinalDamage >= status.MaxHealth *0.1f )
+        {
+            stateMachine.ChangeState(PlayerState.Hit);
+        }
     }
 
     // 현재 조작가능한 상태인지 판단
     public void SetControlEnable(bool enabled)
     {
+        if (!CanUseAgent)
+            return;
+
         IsControlEnabled = enabled;
 
         if (!enabled)
@@ -265,6 +264,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
             agent.isStopped = false;
     }
 
+    // 상태이상 추가
     public void AddStatusEffect (WBH_StatusEffectData data)
     {
         if (IsInvincible || stateMachine.Is(PlayerState.Dead))
@@ -273,7 +273,25 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
+    private bool TryGetDodgeEnd(Vector3 direction, out Vector3 dodgeEnd)
+    {
+        Vector3 start = transform.position;
+        Vector3 desiredEnd = start + direction * status.DodgeDistance;
+
+        if(NavMesh.Raycast(start, desiredEnd, out NavMeshHit hit, agent.areaMask))
+        {
+            float safeDistance = Mathf.Max(0f, Vector3.Distance(start, hit.position) - agent.radius);
+            dodgeEnd = start + direction * safeDistance;
+        }
+        else
+        {
+            dodgeEnd = desiredEnd;
+        }
+        return Vector3.Distance(start, dodgeEnd) > 0.01f;
+    }
+
     // --- 테스트용 메서드
+    // 부활
     public void Revive()
     {
         if(status.IsDead && reviveCount > 0)
@@ -286,7 +304,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
             StartCoroutine( BeInvincible(10));
         }
     }
-
+    // 무적 코루틴. duration 동안 IsInvincible 이며 TakeDamage 의 영향을 받지 않음.
     private IEnumerator BeInvincible(float duration)
     {
         IsInvincible = true;
@@ -304,5 +322,16 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     //        lookDir = dir;
     //        transform.forward = lookDir;
     //    }
+    //}
+
+    // --- combat.cs 에서 활용할 이동처리. 현재는 추적 기능을 사용하지 않아 미사용 상태
+    //public void MoveToTarget(Vector3 position, float attackRange)
+    //{
+    //    if (!CanUseAgent || stateMachine.Is(PlayerState.Dodge))
+    //        return;
+
+    //    agent.stoppingDistance = attackRange;
+
+    //    agent.SetDestination(position);
     //}
 }

@@ -8,6 +8,7 @@ public class WBH_EnemyMovement : MonoBehaviour
 {
     public bool IsMoving => agent.hasPath && agent.velocity.sqrMagnitude > 0.01f;
     public bool IsArrived => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance;
+    public float CurrentSpeed => agent.velocity.magnitude / agent.speed;//!@
 
     private WBH_EnemyStatus status;
     private NavMeshAgent agent;
@@ -71,12 +72,12 @@ public class WBH_EnemyMovement : MonoBehaviour
             agent.isStopped = false;
     }
 
-    public void Dash(Vector3 direction, float distance, float duration)
+    public void Dash(Vector3 direction, float distance, float duration, Action onCompleted = null)
     {
-        StartCoroutine(CoDash(direction, distance, duration));
+        StartCoroutine(CoDash(direction, distance, duration, onCompleted));
     }
 
-    private IEnumerator CoDash(Vector3 direction, float distance, float duration)
+    private IEnumerator CoDash(Vector3 direction, float distance, float duration, Action onCompleted)
     {
         SetControlEnable(false);
 
@@ -99,5 +100,7 @@ public class WBH_EnemyMovement : MonoBehaviour
         Warp(transform.position);
 
         SetControlEnable(true);
+
+        onCompleted?.Invoke();
     }
 }

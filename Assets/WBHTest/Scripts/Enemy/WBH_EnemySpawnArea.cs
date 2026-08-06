@@ -1,44 +1,62 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+
+
 
 [RequireComponent(typeof(WBH_EnemySpawner))]
 public class WBH_EnemySpawnArea : MonoBehaviour
 {
+    [System.Serializable]
+    public class EnemyGradeSpawnData
+    {
+        public EnemyGrade grade;
+        public int[] enemyIDs;
+    }
+
     [Header("Spawn Setting")]
     [SerializeField] private Transform[] spawnPoints; //!@ find - inchildren 을 사용해서 자동처리
-    [SerializeField] private int[] normalEnemyIDs;
-    [SerializeField] private int[] eliteEnemyIDs;
+    [SerializeField] private EnemyGradeSpawnData[] spawnDatas; 
 
     private WBH_EnemySpawner enemySpawner;
-    private WBH_EnemyView view;
+    private Func<Vector3, Transform> findClosestPlayer;
 
     private void Awake()
     {
         enemySpawner = GetComponent<WBH_EnemySpawner>();
     }
 
-    public void Initialize(WBH_EnemyPoolManager enemyPool, WBH_EffectPoolManager effectPool, WBH_ProjectilePoolManager projectilePool, Transform target, WBH_DamageTextPoolManager damagePool)
+    public void Initialize(WBH_EnemyPoolManager enemyPool, 
+                           WBH_EffectPoolManager effectPool, 
+                           WBH_ProjectilePoolManager projectilePool, 
+                           Transform localPlayer, 
+                           Func<Vector3, Transform> findClosestPlayer,
+                           WBH_DamageTextPoolManager damagePool,
+                           WBH_EliteHpbarView eliteView)
     {
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target, damagePool);
+        this.findClosestPlayer = findClosestPlayer;
+        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, localPlayer, damagePool,eliteView);
         //view.Initialize(damagePool);
     }
 
-    public void SpawnNormal(int count)
+    public int Spawn(EnemyGrade grade, int count)
     {
-        SpawnEnemies(normalEnemyIDs, count);
+        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data.grade == grade);
+
+        if(spawnData == null || spawnData.enemyIDs == null || spawnData.enemyIDs.Length == 0)
+        {
+            Log.Warning($"{name} : {grade} 등급의 스폰 ID가 설정되지 않았습니다.");
+            return 0;
+        }
+        return SpawnEnemies(spawnData.enemyIDs, count);
     }
 
-    public void SpawnElite(int count)
-    {
-        SpawnEnemies(eliteEnemyIDs, count);
-    }
-
-
-    private void SpawnEnemies(int[] enemyIDs, int count)
+    private int SpawnEnemies(int[] enemyIDs, int count)
     {
         if (spawnPoints.Length == 0 || enemyIDs.Length == 0)
-            return;
+            return 0;
 
+        int spawnCount = 0;
         List<Transform> availablePoints = new List<Transform>(spawnPoints);
 
         for(int i = 0; i < count; i++)
@@ -49,14 +67,18 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                 availablePoints = new List<Transform>(spawnPoints);
             }
 
-            int pointIndex = Random.Range(0, availablePoints.Count);
+            int pointIndex = UnityEngine.Random.Range(0, availablePoints.Count);
             Transform spawnPoint = availablePoints[pointIndex];
             availablePoints.RemoveAt(pointIndex);
 
-            int enemyID = enemyIDs[Random.Range(0, enemyIDs.Length)];
+            int enemyID = enemyIDs[UnityEngine.Random.Range(0, enemyIDs.Length)];
 
-            enemySpawner.Spawn(enemyID, spawnPoint);
+            Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
+
+            if (enemySpawner.Spawn(enemyID, spawnPoint, target) != null)
+                spawnCount++;
         }
+        return spawnCount;
     }
 
 }

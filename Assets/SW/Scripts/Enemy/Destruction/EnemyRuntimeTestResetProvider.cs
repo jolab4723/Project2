@@ -100,11 +100,11 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
 
         if (normalEnemyCount > 0)
         {
-            spawnManager.SpawnNormal(normalEnemyCount);
+            //spawnManager.SpawnNormal(normalEnemyCount); @@
         }
         if (eliteEnemyCount > 0)
         {
-            spawnManager.SpawnElite(eliteEnemyCount);
+            //spawnManager.SpawnElite(eliteEnemyCount); @@
         }
 
         ArrangeAndSyncSpawnedEnemies();
