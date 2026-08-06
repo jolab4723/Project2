@@ -26,12 +26,13 @@ public class WBH_Indicator : MonoBehaviour
             indicatorObject.SetActive(false);
     }
 
-    public void SetSize(float worldWidth, float worldlLength)
+    public void SetWorldSize(float worldWidth,  float worldLength, float thickness = 0.01f)
     {
         Transform indicator = indicatorObject.transform;
         Vector3 parentScale = indicator.parent.lossyScale;
 
-        indicator.localScale = new Vector3(worldWidth / Mathf.Abs(parentScale.x), worldWidth / Mathf.Abs(parentScale.y), 1f);
+        indicator.localScale = new Vector3(worldWidth / Mathf.Abs(parentScale.x), thickness / Mathf.Abs(parentScale.y), worldLength / Mathf.Abs(parentScale.z));
+        indicator.localPosition = Vector3.forward * (worldLength * 0.5f / Mathf.Abs(parentScale.z));
     }
 
     public IEnumerator PlayCharge(float duration)

@@ -109,7 +109,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         if (distance > status.AttackRange)
             return;
 
-        combat.Attack();
+        combat.TryAttack();
     }
 
     public virtual void Hit()

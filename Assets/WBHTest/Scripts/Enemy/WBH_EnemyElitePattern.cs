@@ -26,34 +26,38 @@ public class WBH_EnemyElitePattern : WBH_IEnemyPattern
         dashCooldown -= deltaTime;
         shootCooldown -= deltaTime;
 
+        if (owner.Combat.IsActionInProgress)
+            return;
+
         float distance = owner.Distance;
 
         // 기본 공격
         if(distance <= owner.AttackRange)
         {
-            owner.Combat.Attack();
+            owner.Combat.TryAttack();
             return;
         }
 
         // 돌진
         if(distance <= dashRange && distance >= dashMinRange && dashCooldown <= 0f)
         {
-            dashCooldown = DashCooldown;
 
-            owner.Indicator.SetSize(dashHitRadius * 2, dashRange);
+            owner.Indicator.SetWorldSize(dashHitRadius * 2, dashRange);
 
-            owner.Combat.DashAttack(dashRange, 0.4f, owner.Indicator);
-
+            if(owner.Combat.TryDashAttack(dashRange, 0.4f, owner.Indicator))
+            {
+                dashCooldown = DashCooldown;
+            }
             return;
         }
 
         // 연사
         if(distance > dashRange && shootCooldown <= 0f)
         {
-            shootCooldown = ShootCooldown;
-
-            owner.Combat.ShootBurst(5);
-
+            if(owner.Combat.TryShootBurst(5))
+            {
+                shootCooldown = ShootCooldown;
+            }
             return;
         }
 
