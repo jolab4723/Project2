@@ -37,18 +37,43 @@ public class EnemyIconCaptureTool : MonoBehaviour
         foreach (GameObject target in captureTargets)
         {
             if (target != null)
-                CaptureTarget(target);
+                TryCaptureTarget(target, target.name, out _);
         }
 
         Debug.Log("장비 아이콘 촬영 완료", this);
     }
 
-    private void CaptureTarget(GameObject target)
+    /// <summary>
+    /// 대상 하나를 지정한 파일명으로 촬영하고 생성된 Sprite 에셋 경로를 반환합니다.
+    /// 씬 오브젝트는 현재 배치를, 프로젝트 에셋은 원점과 기본 회전을 사용합니다.
+    /// </summary>
+    public bool TryCaptureTarget(
+        GameObject target,
+        string fileNameSource,
+        out string outputAssetPath)
     {
+        outputAssetPath = null;
+
+        if (captureCamera == null)
+        {
+            Debug.LogError("Capture Camera가 지정되지 않았습니다.", this);
+            return false;
+        }
+
+        if (target == null)
+        {
+            Debug.LogError("촬영할 대상이 지정되지 않았습니다.", this);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(fileNameSource))
+            fileNameSource = target.name;
+
+        Directory.CreateDirectory(outputFolder);
+
         if (!EditorUtility.IsPersistent(target))
         {
-            CaptureSceneTarget(target, target.name);
-            return;
+            return CaptureSceneTarget(target, fileNameSource, out outputAssetPath);
         }
 
         GameObject temporaryTarget = Instantiate(target);
@@ -59,7 +84,7 @@ public class EnemyIconCaptureTool : MonoBehaviour
 
         try
         {
-            CaptureSceneTarget(temporaryTarget, target.name);
+            return CaptureSceneTarget(temporaryTarget, fileNameSource, out outputAssetPath);
         }
         finally
         {
@@ -70,14 +95,18 @@ public class EnemyIconCaptureTool : MonoBehaviour
     /// <summary>
     /// 씬 오브젝트는 현재 배치 상태를 유지하고, 임시 생성된 에셋은 초기 위치와 회전으로 촬영한다.
     /// </summary>
-    private void CaptureSceneTarget(GameObject target, string fileNameSource)
+    private bool CaptureSceneTarget(
+        GameObject target,
+        string fileNameSource,
+        out string outputAssetPath)
     {
+        outputAssetPath = null;
         Renderer[] targetRenderers = GetEnabledRenderers(target);
 
         if (targetRenderers.Length == 0)
         {
             Debug.LogWarning($"{target.name}: 활성화된 Renderer가 없습니다.", target);
-            return;
+            return false;
         }
 
         Bounds bounds = CalculateBounds(targetRenderers);
@@ -126,6 +155,8 @@ public class EnemyIconCaptureTool : MonoBehaviour
             File.WriteAllBytes(outputPath, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(outputPath, ImportAssetOptions.ForceUpdate);
             ConfigureAsSingleSprite(outputPath);
+            outputAssetPath = outputPath;
+            return true;
         }
         finally
         {
@@ -217,6 +248,8 @@ public class EnemyIconCaptureTool : MonoBehaviour
     private static List<Renderer> HideOtherRenderers(Renderer[] targetRenderers)
     {
         HashSet<Renderer> targetSet = new HashSet<Renderer>(targetRenderers);
+        UnityEngine.SceneManagement.Scene targetScene =
+            targetRenderers[0].gameObject.scene;
         Renderer[] sceneRenderers = Object.FindObjectsByType<Renderer>(
             FindObjectsInactive.Exclude,
             FindObjectsSortMode.None);
@@ -224,7 +257,9 @@ public class EnemyIconCaptureTool : MonoBehaviour
 
         foreach (Renderer renderer in sceneRenderers)
         {
-            if (renderer.enabled && !targetSet.Contains(renderer))
+            if (renderer.gameObject.scene == targetScene &&
+                renderer.enabled &&
+                !targetSet.Contains(renderer))
             {
                 renderer.enabled = false;
                 hiddenRenderers.Add(renderer);

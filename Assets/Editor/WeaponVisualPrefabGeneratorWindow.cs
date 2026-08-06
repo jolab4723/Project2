@@ -55,6 +55,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string RightHandGripName = "RightHandGrip";
     private const string LeftHandGripName = "LeftHandGrip";
     private const string MuzzleName = "Muzzle";
+    private const string IconOutputFolder = "Assets/Resources/Images/Item/";
+    private const int IconSize = 512;
+    private const float IconFramingPadding = 1.15f;
 
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
@@ -73,6 +76,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     [SerializeField] private SourceAxis sourceForwardAxis;
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
+    [SerializeField] private bool captureIconAfterGenerate = true;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -103,11 +107,15 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             DrawGunnerOptions();
 
         DrawSaveOptions();
+        DrawIconOptions();
 
         EditorGUILayout.Space(12f);
         using (new EditorGUI.DisabledScope(!CanGenerate()))
         {
-            if (GUILayout.Button("프리팹 생성 및 카탈로그 등록", GUILayout.Height(36f)))
+            string buttonLabel = captureIconAfterGenerate
+                ? "외형 생성 · 등록 · 아이콘 촬영"
+                : "프리팹 생성 및 카탈로그 등록";
+            if (GUILayout.Button(buttonLabel, GUILayout.Height(36f)))
                 Generate();
         }
 
@@ -208,6 +216,19 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             preserveExistingCalibration = EditorGUILayout.ToggleLeft(
                 "기존 프리팹의 손 맞춤값 유지", preserveExistingCalibration);
         }
+    }
+
+    private void DrawIconOptions()
+    {
+        EditorGUILayout.Space(8f);
+        EditorGUILayout.LabelField("아이콘 자동 연결", EditorStyles.boldLabel);
+        captureIconAfterGenerate = EditorGUILayout.ToggleLeft(
+            "아이콘 자동 촬영 및 SO 연결 사용", captureIconAfterGenerate);
+        EditorGUILayout.HelpBox(
+            captureIconAfterGenerate
+                ? "Preview Scene에서 자동 촬영하고 ItemDefinitionSO.icon에 연결합니다."
+                : "자동 촬영을 건너뜁니다. 직접 만든 기존 아이콘 연결은 변경하지 않습니다.",
+            MessageType.None);
     }
 
     private bool CanGenerate()
@@ -410,6 +431,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             previewScene = EditorSceneManager.NewPreviewScene();
             wrapper = new GameObject(Path.GetFileNameWithoutExtension(prefabName));
             SceneManager.MoveGameObjectToScene(wrapper, previewScene);
+            EnemyIconCaptureTool previewCaptureTool = captureIconAfterGenerate
+                ? CreatePreviewCaptureRig(previewScene)
+                : null;
             GameObject modelInstance = InstantiateModel(wrapper.transform);
 
             Transform sourceLeftGrip = FindDescendant(modelInstance.transform, LeftHandGripName);
@@ -427,11 +451,37 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             RegisterCatalogEntry(itemId, savedPrefab);
             AssetDatabase.SaveAssets();
 
+            bool iconCaptured = false;
+            if (captureIconAfterGenerate)
+            {
+                if (previewCaptureTool.TryCaptureTarget(
+                        wrapper,
+                        itemId,
+                        out string iconAssetPath) &&
+                    TryAssignCapturedIcon(itemDefinition, iconAssetPath))
+                {
+                    iconCaptured = true;
+                    AssetDatabase.SaveAssets();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[{nameof(WeaponVisualPrefabGeneratorWindow)}] 외형 프리팹은 생성했지만 " +
+                        $"아이콘 촬영 또는 연결에 실패했습니다: {iconAssetPath}",
+                        itemDefinition);
+                }
+            }
+
             Selection.activeObject = savedPrefab;
             EditorGUIUtility.PingObject(savedPrefab);
+            string iconResult = iconCaptured
+                ? itemId + ".png 촬영 및 연결 완료"
+                : captureIconAfterGenerate ? "실패 (Console 확인)" : "건너뜀";
             EditorUtility.DisplayDialog(
                 "생성 완료",
-                $"무기 외형 프리팹을 만들고 카탈로그에 등록했습니다.\n{prefabPath}\n\n자동 맞춤: {fitResult}",
+                $"무기 외형 프리팹을 만들고 카탈로그에 등록했습니다.\n{prefabPath}\n\n" +
+                $"자동 맞춤: {fitResult}\n" +
+                $"아이콘: {iconResult}",
                 "확인");
         }
         catch (Exception exception)
@@ -449,6 +499,106 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             else if (wrapper != null)
                 DestroyImmediate(wrapper);
         }
+    }
+
+    /// <summary>
+    /// CaptureScene과 같은 카메라 및 3점 조명을 Preview Scene에 임시 생성합니다.
+    /// 생성한 오브젝트는 Preview Scene이 닫힐 때 함께 제거됩니다.
+    /// </summary>
+    private static EnemyIconCaptureTool CreatePreviewCaptureRig(Scene previewScene)
+    {
+        var cameraObject = new GameObject("Weapon Icon Capture Camera");
+        SceneManager.MoveGameObjectToScene(cameraObject, previewScene);
+
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Color.clear;
+        camera.fieldOfView = 35f;
+        camera.orthographic = false;
+        camera.allowHDR = true;
+        camera.allowMSAA = true;
+        camera.overrideSceneCullingMask =
+            EditorSceneManager.GetSceneCullingMask(previewScene);
+        camera.transform.SetPositionAndRotation(
+            new Vector3(0f, 0.1577594f, -1.0630515f),
+            Quaternion.identity);
+
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Key Light",
+            new Color(1f, 0.88f, 0.72f, 1f),
+            2f,
+            new Quaternion(-0.4030582f, 0.2725321f, -0.1270838f, -0.8643611f),
+            LightShadows.Soft,
+            0.65f);
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Fill Light",
+            new Color(0.55f, 0.68f, 1f, 1f),
+            0.9f,
+            new Quaternion(0.51243174f, 0.2536127f, -0.1615691f, 0.8043567f),
+            LightShadows.None,
+            1f);
+        CreatePreviewDirectionalLight(
+            previewScene,
+            "Capture Rim Light",
+            new Color(0.72f, 0.86f, 1f, 1f),
+            1.2f,
+            new Quaternion(-0.0000000094608765f, 0.976296f, -0.21643962f, -0.000000042675254f),
+            LightShadows.None,
+            1f);
+
+        EnemyIconCaptureTool captureTool = cameraObject.AddComponent<EnemyIconCaptureTool>();
+        captureTool.captureCamera = camera;
+        captureTool.width = IconSize;
+        captureTool.height = IconSize;
+        captureTool.framingPadding = IconFramingPadding;
+        captureTool.outputFolder = IconOutputFolder;
+        return captureTool;
+    }
+
+    private static void CreatePreviewDirectionalLight(
+        Scene previewScene,
+        string objectName,
+        Color color,
+        float intensity,
+        Quaternion rotation,
+        LightShadows shadows,
+        float shadowStrength)
+    {
+        var lightObject = new GameObject(objectName);
+        SceneManager.MoveGameObjectToScene(lightObject, previewScene);
+        lightObject.transform.rotation = rotation;
+
+        Light light = lightObject.AddComponent<Light>();
+        light.type = LightType.Directional;
+        light.color = color;
+        light.intensity = intensity;
+        light.shadows = shadows;
+        light.shadowStrength = shadowStrength;
+    }
+
+    /// <summary>
+    /// 방금 촬영한 아이콘만 연결합니다. 데이터 변환 파이프라인에는 의존하지 않습니다.
+    /// </summary>
+    private static bool TryAssignCapturedIcon(
+        ItemDefinitionSO definition,
+        string iconAssetPath)
+    {
+        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(iconAssetPath);
+        if (definition == null || icon == null)
+            return false;
+
+        definition.icon = icon;
+        EditorUtility.SetDirty(definition);
+
+        if (definition.uniqueEffect != null)
+        {
+            definition.uniqueEffect.icon = icon;
+            EditorUtility.SetDirty(definition.uniqueEffect);
+        }
+
+        return true;
     }
 
     private bool TryValidateInputs(out string outputFolderPath, out string itemId)
