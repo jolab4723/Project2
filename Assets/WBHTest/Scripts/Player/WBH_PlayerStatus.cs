@@ -244,6 +244,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         }
 
         currentHp -= result.FinalDamage;
+
         currentHp = Mathf.Max(currentHp, 0);
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);

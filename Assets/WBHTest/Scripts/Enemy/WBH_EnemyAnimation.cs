@@ -78,14 +78,14 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public void PlayDash()
     {
+        animator.SetInteger(SkillIdHash, DashSkillId);
         animator.SetTrigger(SkillHash);
-        animator.SetFloat(SkillIdHash, DashSkillId);
     }
 
     public void PlayShootBurst()
     {
+        animator.SetInteger(SkillIdHash, ShootBurstSkillId);
         animator.SetTrigger(SkillHash);
-        animator.SetFloat(SkillIdHash, ShootBurstSkillId);
     }
 
 

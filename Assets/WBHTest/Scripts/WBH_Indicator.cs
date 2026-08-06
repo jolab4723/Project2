@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class WBH_Indicator : MonoBehaviour
@@ -25,9 +26,12 @@ public class WBH_Indicator : MonoBehaviour
             indicatorObject.SetActive(false);
     }
 
-    public void SetSize(float width, float length)
+    public void SetSize(float worldWidth, float worldlLength)
     {
-        indicatorObject.transform.localScale = new Vector3(width, length, 1f);
+        Transform indicator = indicatorObject.transform;
+        Vector3 parentScale = indicator.parent.lossyScale;
+
+        indicator.localScale = new Vector3(worldWidth / Mathf.Abs(parentScale.x), worldWidth / Mathf.Abs(parentScale.y), 1f);
     }
 
     public IEnumerator PlayCharge(float duration)

@@ -40,14 +40,14 @@ public class WBH_EnemyElitePattern : WBH_IEnemyPattern
         {
             dashCooldown = DashCooldown;
 
-            owner.Indicator.SetSize(dashHitRadius, dashRange);
+            owner.Indicator.SetSize(dashHitRadius * 2, dashRange);
 
             owner.Combat.DashAttack(dashRange, 0.4f, owner.Indicator);
 
             return;
         }
 
-        // 돌진
+        // 연사
         if(distance > dashRange && shootCooldown <= 0f)
         {
             shootCooldown = ShootCooldown;

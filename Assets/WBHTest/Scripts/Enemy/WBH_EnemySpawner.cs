@@ -13,25 +13,22 @@ public class WBH_EnemySpawner : MonoBehaviour
 
     //!@ 데이터 매니저 연결
 
-    private Transform target;
-
     public void Initialize(WBH_EnemyPoolManager poolManager, 
                            WBH_EffectPoolManager effectPool, 
                            WBH_ProjectilePoolManager projectilePool, 
-                           Transform target,
+                           Transform localPlayer, // eliteView 에만 사용
                            WBH_DamageTextPoolManager damageTextPool,
                            WBH_EliteHpbarView eliteView)
     {
         this.enemyPool = poolManager;
         this.effectPool = effectPool;
         this.projectilePool = projectilePool;
-        this.target = target;
         this.damageTextPool = damageTextPool;
         this.eliteView = eliteView;
-        this.eliteView.Initialize(target);
+        this.eliteView.Initialize(localPlayer);
     }
 
-    public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint)
+    public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint, Transform target)
     {
         if(enemyPool == null)
         {

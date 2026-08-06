@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
 
     private WBH_EnemySpawner enemySpawner;
     private WBH_EnemyView view;
+    private Func<Vector3, Transform> findClosestPlayer;
 
     private void Awake()
     {
@@ -20,11 +22,13 @@ public class WBH_EnemySpawnArea : MonoBehaviour
     public void Initialize(WBH_EnemyPoolManager enemyPool, 
                            WBH_EffectPoolManager effectPool, 
                            WBH_ProjectilePoolManager projectilePool, 
-                           Transform target, 
+                           Transform localPlayer, 
+                           Func<Vector3, Transform> findClosestPlayer,
                            WBH_DamageTextPoolManager damagePool,
                            WBH_EliteHpbarView eliteView)
     {
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, target, damagePool,eliteView);
+        this.findClosestPlayer = findClosestPlayer;
+        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, localPlayer, damagePool,eliteView);
         //view.Initialize(damagePool);
     }
 
@@ -54,13 +58,15 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                 availablePoints = new List<Transform>(spawnPoints);
             }
 
-            int pointIndex = Random.Range(0, availablePoints.Count);
+            int pointIndex = UnityEngine.Random.Range(0, availablePoints.Count);
             Transform spawnPoint = availablePoints[pointIndex];
             availablePoints.RemoveAt(pointIndex);
 
-            int enemyID = enemyIDs[Random.Range(0, enemyIDs.Length)];
+            int enemyID = enemyIDs[UnityEngine.Random.Range(0, enemyIDs.Length)];
 
-            enemySpawner.Spawn(enemyID, spawnPoint);
+            Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
+
+            enemySpawner.Spawn(enemyID, spawnPoint, target);
         }
     }
 
