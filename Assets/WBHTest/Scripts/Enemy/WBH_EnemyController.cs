@@ -74,9 +74,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         // 애니메이션 피격 !@
 
-        
     }
-
 
     private void Dead()
     {
