@@ -110,6 +110,7 @@ public class TooltipUI : MonoBehaviour
                 : 0f;
 
         initialized = true;
+        itemImage.preserveAspect = true;
     }
 
     /// <summary>

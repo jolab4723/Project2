@@ -223,15 +223,19 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         EditorGUILayout.LabelField("플레이 중 손 맞춤값 저장", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             "플레이 중 장착된 외형의 루트, Model, LeftHandGrip, Muzzle 보정값을 " +
-            "카탈로그에 등록된 생성 프리팹에 저장합니다. 같은 외형이 여러 개라면 저장할 외형을 Hierarchy에서 선택해주세요.",
+            "카탈로그에 등록된 생성 프리팹에 저장합니다. 아이템 정의가 비어 있거나 같은 외형이 여러 개라면 " +
+            "저장할 외형을 Hierarchy에서 선택해주세요.",
             MessageType.Info);
 
         using (new EditorGUI.DisabledScope(
-                   !EditorApplication.isPlaying || itemDefinition == null || visualCatalog == null))
+                   !EditorApplication.isPlaying || visualCatalog == null))
         {
             if (GUILayout.Button("현재 장착 외형 보정값을 프리팹에 저장", GUILayout.Height(32f)))
                 SaveCurrentRuntimeCalibration();
         }
+
+        if (!EditorApplication.isPlaying)
+            EditorGUILayout.LabelField("Play Mode에서 저장 버튼이 활성화됩니다.", EditorStyles.miniLabel);
     }
 
     /// <summary>
@@ -240,20 +244,13 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     /// </summary>
     private void SaveCurrentRuntimeCalibration()
     {
-        string itemId = itemDefinition != null
-            ? itemDefinition.itemId?.Trim()
-            : string.Empty;
-        if (string.IsNullOrWhiteSpace(itemId))
+        if (!TryResolveRuntimeCalibrationTarget(
+                out string itemId,
+                out GameObject visualPrefab,
+                out GameObject runtimeVisual,
+                out string error))
         {
-            ShowValidationError("아이템 정의의 itemId가 비어 있습니다.");
-            return;
-        }
-
-        if (visualCatalog == null ||
-            !visualCatalog.TryGetVisualPrefab(itemId, out GameObject visualPrefab) ||
-            visualPrefab == null)
-        {
-            ShowValidationError($"'{itemId}'에 등록된 무기 외형 프리팹을 찾지 못했습니다.");
+            ShowValidationError(error);
             return;
         }
 
@@ -270,12 +267,6 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
                 StringComparison.OrdinalIgnoreCase))
         {
             ShowValidationError("외부 원본 에셋에는 손 맞춤값을 저장할 수 없습니다. 생성된 SW 외형 프리팹을 사용해주세요.");
-            return;
-        }
-
-        if (!TryFindRuntimeVisualInstance(visualPrefab, out GameObject runtimeVisual, out string error))
-        {
-            ShowValidationError(error);
             return;
         }
 
@@ -321,6 +312,101 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     }
 
     /// <summary>
+    /// 선택된 런타임 외형을 우선 사용하고, 선택으로 찾지 못하면 아이템 정의의 ID를 사용합니다.
+    /// </summary>
+    private bool TryResolveRuntimeCalibrationTarget(
+        out string itemId,
+        out GameObject visualPrefab,
+        out GameObject runtimeVisual,
+        out string error)
+    {
+        itemId = string.Empty;
+        visualPrefab = null;
+        runtimeVisual = null;
+        error = null;
+
+        if (visualCatalog == null)
+        {
+            error = "무기 외형 카탈로그를 불러오지 못했습니다. 창을 다시 열어주세요.";
+            return false;
+        }
+
+        Transform selected = Selection.activeGameObject != null
+            ? Selection.activeGameObject.transform
+            : null;
+        while (selected != null)
+        {
+            if (selected.gameObject.scene.IsValid() &&
+                TryGetCatalogEntryForRuntimeVisual(
+                    selected.gameObject,
+                    out itemId,
+                    out visualPrefab))
+            {
+                runtimeVisual = selected.gameObject;
+                return true;
+            }
+
+            selected = selected.parent;
+        }
+
+        string requestedItemId = itemDefinition != null
+            ? itemDefinition.itemId?.Trim()
+            : string.Empty;
+        if (string.IsNullOrWhiteSpace(requestedItemId))
+        {
+            error =
+                "아이템 정의를 지정하거나 저장할 장착 외형의 루트 또는 자식을 Hierarchy에서 선택해주세요.";
+            return false;
+        }
+
+        if (!visualCatalog.TryGetVisualPrefab(requestedItemId, out visualPrefab) ||
+            visualPrefab == null)
+        {
+            error = $"'{requestedItemId}'에 등록된 무기 외형 프리팹을 찾지 못했습니다.";
+            return false;
+        }
+
+        if (!TryFindRuntimeVisualInstance(visualPrefab, out runtimeVisual, out error))
+            return false;
+
+        itemId = requestedItemId;
+        return true;
+    }
+
+    private bool TryGetCatalogEntryForRuntimeVisual(
+        GameObject candidate,
+        out string itemId,
+        out GameObject visualPrefab)
+    {
+        itemId = string.Empty;
+        visualPrefab = null;
+
+        var serializedCatalog = new SerializedObject(visualCatalog);
+        SerializedProperty entries = serializedCatalog.FindProperty("entries");
+        if (entries == null || !entries.isArray)
+            return false;
+
+        for (int index = 0; index < entries.arraySize; index++)
+        {
+            SerializedProperty entry = entries.GetArrayElementAtIndex(index);
+            SerializedProperty idProperty = entry.FindPropertyRelative("itemId");
+            SerializedProperty prefabProperty = entry.FindPropertyRelative("visualPrefab");
+            var registeredPrefab = prefabProperty?.objectReferenceValue as GameObject;
+            if (registeredPrefab == null ||
+                !IsRuntimeVisualInstanceOf(candidate, registeredPrefab))
+            {
+                continue;
+            }
+
+            itemId = idProperty?.stringValue?.Trim() ?? string.Empty;
+            visualPrefab = registeredPrefab;
+            return !string.IsNullOrWhiteSpace(itemId);
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// 선택한 외형을 우선 사용하고, 선택이 없으면 현재 활성화된 동일 외형 하나를 찾습니다.
     /// 여러 플레이어가 같은 무기를 장착했다면 잘못 저장하지 않도록 선택을 요구합니다.
     /// </summary>
@@ -331,14 +417,14 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         runtimeVisual = null;
         error = null;
-        string runtimeName = visualPrefab.name + "(Clone)";
 
         Transform selected = Selection.activeGameObject != null
             ? Selection.activeGameObject.transform
             : null;
         while (selected != null)
         {
-            if (selected.gameObject.scene.IsValid() && selected.name == runtimeName)
+            if (selected.gameObject.scene.IsValid() &&
+                IsRuntimeVisualInstanceOf(selected.gameObject, visualPrefab))
             {
                 runtimeVisual = selected.gameObject;
                 return true;
@@ -353,7 +439,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             GameObject candidateObject = candidate.gameObject;
             if (!candidateObject.scene.IsValid() ||
                 !candidateObject.activeInHierarchy ||
-                candidate.name != runtimeName)
+                !IsRuntimeVisualInstanceOf(candidateObject, visualPrefab))
             {
                 continue;
             }
@@ -371,12 +457,24 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         if (found == null)
         {
             error =
-                $"플레이 중인 '{runtimeName}' 외형을 찾지 못했습니다. 해당 무기를 장착한 뒤 다시 실행해주세요.";
+                $"플레이 중인 '{visualPrefab.name}' 외형을 찾지 못했습니다. 해당 무기를 장착한 뒤 다시 실행해주세요.";
             return false;
         }
 
         runtimeVisual = found;
         return true;
+    }
+
+    private static bool IsRuntimeVisualInstanceOf(
+        GameObject candidate,
+        GameObject visualPrefab)
+    {
+        if (candidate == null || visualPrefab == null)
+            return false;
+
+        GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(candidate);
+        return source == visualPrefab ||
+               candidate.name == visualPrefab.name + "(Clone)";
     }
 
     private void Generate()
