@@ -11,7 +11,6 @@ public class KY_KeyGuideView : MonoBehaviour
     public KY_KeyGuideSlot inventorySlot;
     public KY_KeyGuideSlot statusSlot;
     public KY_KeyGuideSlot questSlot;
-    public KY_KeyGuideSlot pauseSlot;
 
     private GameInputActions inputActions;
 
