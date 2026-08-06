@@ -4,10 +4,16 @@ using UnityEngine;
 public class WBH_EnemySpawnManager : MonoBehaviour
 {
     [System.Serializable]
+    public class GradeCount
+    {
+        public EnemyGrade grade;
+        [Min(0)] public int count;
+    }
+
+    [System.Serializable]
     public class WaveData
     {
-        public int normalCount;
-        public int eliteCount;
+        public GradeCount[] enemies;
     }
 
     [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
@@ -73,42 +79,36 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         {
             stageClear = true;
             portalActive.Active(true);
-            Debug.Log("Stage Clear");
+            Log.Print("Stage Clear");
             return;
         }
 
-        WaveData wave = waves[currentWave];
+        aliveEnemyCount = 0;
 
-        SpawnNormal(wave.normalCount);
-        SpawnElite(wave.eliteCount);
+        foreach(GradeCount entry in waves[currentWave].enemies)
+        {
+            aliveEnemyCount += Spawn(entry.grade, entry.count);
+        }
 
-        aliveEnemyCount = wave.normalCount + wave.eliteCount;
+        if (aliveEnemyCount == 0)
+        {
+            SpawnNextWave();
+        }
     }
 
-    public void SpawnNormal(int count)
+    private int Spawn(EnemyGrade grade, int count)
     {
-        Spawn(count, false);
-    }
+        if (count <= 0 || spawnAreas.Length == 0)
+            return 0;
 
-    public void SpawnElite(int count)
-    {
-        Spawn(count, true);
-    }
-
-    private void Spawn(int count, bool isElite)
-    {
-        if (spawnAreas.Length == 0)
-            return;
+        int spawnedCount = 0;
 
         for(int i = 0; i < count; i ++)
         {
             WBH_EnemySpawnArea area = GetRandomArea();
-
-            if (isElite)
-                area.SpawnElite(1);
-            else
-                area.SpawnNormal(1);
+            spawnedCount += area.Spawn(grade, 1);
         }
+        return spawnedCount;
     }
 
     private WBH_EnemySpawnArea GetRandomArea()

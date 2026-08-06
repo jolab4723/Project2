@@ -2,16 +2,23 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 [RequireComponent(typeof(WBH_EnemySpawner))]
 public class WBH_EnemySpawnArea : MonoBehaviour
 {
+    [System.Serializable]
+    public class EnemyGradeSpawnData
+    {
+        public EnemyGrade grade;
+        public int[] enemyIDs;
+    }
+
     [Header("Spawn Setting")]
     [SerializeField] private Transform[] spawnPoints; //!@ find - inchildren 을 사용해서 자동처리
-    [SerializeField] private int[] normalEnemyIDs;
-    [SerializeField] private int[] eliteEnemyIDs;
+    [SerializeField] private EnemyGradeSpawnData[] spawnDatas; 
 
     private WBH_EnemySpawner enemySpawner;
-    private WBH_EnemyView view;
     private Func<Vector3, Transform> findClosestPlayer;
 
     private void Awake()
@@ -32,22 +39,24 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         //view.Initialize(damagePool);
     }
 
-    public void SpawnNormal(int count)
+    public int Spawn(EnemyGrade grade, int count)
     {
-        SpawnEnemies(normalEnemyIDs, count);
+        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data.grade == grade);
+
+        if(spawnData == null || spawnData.enemyIDs == null || spawnData.enemyIDs.Length == 0)
+        {
+            Log.Warning($"{name} : {grade} 등급의 스폰 ID가 설정되지 않았습니다.");
+            return 0;
+        }
+        return SpawnEnemies(spawnData.enemyIDs, count);
     }
 
-    public void SpawnElite(int count)
-    {
-        SpawnEnemies(eliteEnemyIDs, count);
-    }
-
-
-    private void SpawnEnemies(int[] enemyIDs, int count)
+    private int SpawnEnemies(int[] enemyIDs, int count)
     {
         if (spawnPoints.Length == 0 || enemyIDs.Length == 0)
-            return;
+            return 0;
 
+        int spawnCount = 0;
         List<Transform> availablePoints = new List<Transform>(spawnPoints);
 
         for(int i = 0; i < count; i++)
@@ -66,8 +75,10 @@ public class WBH_EnemySpawnArea : MonoBehaviour
 
             Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
 
-            enemySpawner.Spawn(enemyID, spawnPoint, target);
+            if (enemySpawner.Spawn(enemyID, spawnPoint, target) != null)
+                spawnCount++;
         }
+        return spawnCount;
     }
 
 }
