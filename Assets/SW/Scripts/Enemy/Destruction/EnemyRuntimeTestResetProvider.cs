@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,13 +9,17 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
     IArtificerRuntimeResetProvider
 {
     private const string MissingManagerWarning =
-        "[EnemyRuntimeTestResetProvider] 현재 씬에서 WBH 적 풀 또는 스폰 매니저를 찾지 못했습니다.";
+        "[EnemyRuntimeTestResetProvider] 현재 씬에서 WBH 적 풀, 스폰 매니저 또는 스폰 영역을 찾지 못했습니다.";
 
-    [SerializeField, Min(0), InspectorName("다시 생성할 일반 적 수")]
-    private int normalEnemyCount = 1;
-
-    [SerializeField, Min(0), InspectorName("다시 생성할 정예 적 수")]
-    private int eliteEnemyCount;
+    [SerializeField, InspectorName("다시 생성할 적 등급과 수")]
+    private WBH_EnemySpawnManager.GradeCount[] enemies =
+    {
+        new WBH_EnemySpawnManager.GradeCount
+        {
+            grade = EnemyGrade.Normal,
+            count = 1
+        }
+    };
 
     [SerializeField, InspectorName("리셋 단축키")]
     private KeyCode resetKey = KeyCode.R;
@@ -50,9 +55,32 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
 
     public void ConfigureSpawnCounts(int normalCount, int eliteCount = 0)
     {
-        normalEnemyCount = Mathf.Max(0, normalCount);
-        eliteEnemyCount = Mathf.Max(0, eliteCount);
-        int totalCount = normalEnemyCount + eliteEnemyCount;
+        normalCount = Mathf.Max(0, normalCount);
+        eliteCount = Mathf.Max(0, eliteCount);
+        enemies = eliteCount > 0
+            ? new[]
+            {
+                new WBH_EnemySpawnManager.GradeCount
+                {
+                    grade = EnemyGrade.Normal,
+                    count = normalCount
+                },
+                new WBH_EnemySpawnManager.GradeCount
+                {
+                    grade = EnemyGrade.Elite,
+                    count = eliteCount
+                }
+            }
+            : new[]
+            {
+                new WBH_EnemySpawnManager.GradeCount
+                {
+                    grade = EnemyGrade.Normal,
+                    count = normalCount
+                }
+            };
+
+        int totalCount = normalCount + eliteCount;
         if (totalCount > 0)
             formationColumns = Mathf.CeilToInt(Mathf.Sqrt(totalCount));
     }
@@ -70,7 +98,8 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
             FindFirstObjectByType<WBH_EnemyPoolManager>();
         WBH_EnemySpawnManager spawnManager =
             FindFirstObjectByType<WBH_EnemySpawnManager>();
-        if (poolManager == null || spawnManager == null)
+        List<WBH_EnemySpawnArea> spawnAreas = FindSceneSpawnAreas();
+        if (poolManager == null || spawnManager == null || spawnAreas.Count == 0)
         {
             Debug.LogWarning(
                 MissingManagerWarning,
@@ -79,7 +108,7 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
         }
 
         // 이 컴포넌트가 배치된 성능 테스트 씬에서는 적 사망을 웨이브
-        // 진행으로 소비하지 않는다. 공개 Spawn API는 비활성 상태에서도
+        // 진행으로 소비하지 않는다. 스폰 영역 API는 매니저가 비활성 상태여도
         // 호출할 수 있으므로 테스트용 재생성 흐름은 그대로 유지된다.
         DisableWaveProgression(spawnManager);
 
@@ -98,16 +127,45 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
             }
         }
 
-        if (normalEnemyCount > 0)
-        {
-            //spawnManager.SpawnNormal(normalEnemyCount); @@
-        }
-        if (eliteEnemyCount > 0)
-        {
-            //spawnManager.SpawnElite(eliteEnemyCount); @@
-        }
+        SpawnConfiguredEnemies(spawnAreas);
 
         ArrangeAndSyncSpawnedEnemies();
+    }
+
+    private List<WBH_EnemySpawnArea> FindSceneSpawnAreas()
+    {
+        WBH_EnemySpawnArea[] found =
+            FindObjectsByType<WBH_EnemySpawnArea>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+        List<WBH_EnemySpawnArea> result = new List<WBH_EnemySpawnArea>();
+        for (int i = 0; i < found.Length; i++)
+        {
+            if (found[i] != null &&
+                found[i].gameObject.scene.handle == gameObject.scene.handle)
+            {
+                result.Add(found[i]);
+            }
+        }
+        return result;
+    }
+
+    private void SpawnConfiguredEnemies(List<WBH_EnemySpawnArea> spawnAreas)
+    {
+        if (enemies == null)
+            return;
+
+        for (int entryIndex = 0; entryIndex < enemies.Length; entryIndex++)
+        {
+            WBH_EnemySpawnManager.GradeCount entry = enemies[entryIndex];
+            int count = Mathf.Max(0, entry.count);
+            for (int i = 0; i < count; i++)
+            {
+                WBH_EnemySpawnArea area =
+                    spawnAreas[UnityEngine.Random.Range(0, spawnAreas.Count)];
+                area.Spawn(entry.grade, 1);
+            }
+        }
     }
 
     private static void DisableWaveProgression(
@@ -204,8 +262,11 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
 
     private void OnValidate()
     {
-        normalEnemyCount = Mathf.Max(0, normalEnemyCount);
-        eliteEnemyCount = Mathf.Max(0, eliteEnemyCount);
+        if (enemies != null)
+        {
+            for (int i = 0; i < enemies.Length; i++)
+                enemies[i].count = Mathf.Max(0, enemies[i].count);
+        }
         formationColumns = Mathf.Max(1, formationColumns);
         formationSpacing = Mathf.Max(0.5f, formationSpacing);
         navMeshSampleRadius = Mathf.Max(0.1f, navMeshSampleRadius);

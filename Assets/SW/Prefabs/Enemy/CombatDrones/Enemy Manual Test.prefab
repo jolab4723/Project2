@@ -153,5 +153,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 951bbf4455bb4054e94f505dedc3990a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyRuntimeTestResetProvider
-  normalEnemyCount: 1
-  eliteEnemyCount: 0
+  enemies:
+  - grade: 0
+    count: 1
+  resetKey: 114
+  formationColumns: 5
+  formationSpacing: 2.5
+  navMeshSampleRadius: 1.25
