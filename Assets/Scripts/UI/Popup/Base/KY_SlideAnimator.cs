@@ -22,9 +22,7 @@ public class KY_SlideAnimator : MonoBehaviour
         rectTransform = GetComponent<RectTransform>();
         originalPosition = rectTransform.anchoredPosition;
         hiddenPosition = new Vector2(
-            originalPosition.x + rectTransform.rect.width + hiddenOffsetX,
-            originalPosition.y
-        );
+        originalPosition.x + rectTransform.rect.width + hiddenOffsetX, originalPosition.y);
         rectTransform.anchoredPosition = hiddenPosition;
     }
 
@@ -32,7 +30,7 @@ public class KY_SlideAnimator : MonoBehaviour
     public Tween SlideIn()
     {
         return rectTransform.DOAnchorPos(originalPosition, duration)
-            .SetEase(inEase)
+            .SetEase(inEase, 0)
             .SetUpdate(ignoreTimeScale);
     }
 
@@ -40,7 +38,7 @@ public class KY_SlideAnimator : MonoBehaviour
     public Tween SlideOut(System.Action onComplete)
     {
         return rectTransform.DOAnchorPos(hiddenPosition, duration)
-            .SetEase(outEase)
+            .SetEase(outEase, 0)
             .SetUpdate(ignoreTimeScale)
             .OnComplete(() => onComplete?.Invoke());
     }
