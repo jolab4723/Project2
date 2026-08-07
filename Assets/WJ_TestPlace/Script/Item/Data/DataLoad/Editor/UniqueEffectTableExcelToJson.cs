@@ -140,21 +140,26 @@ namespace DataSystem
                 if (string.IsNullOrWhiteSpace(row.effectType))
                     Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 비어있습니다. SO 생성 단계에서 건너뛰게 됩니다.");
 
-                // 버프 기반 3종은 statEffects가 없으면 실제로 아무 효과가 없다.
+                // 버프 기반 종류는 statEffects가 없으면 실제로 아무 효과가 없다.
                 bool needsBuff = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
                     || row.effectType == nameof(ItemSystem.TriggeredBuffUniqueEffectSO)
-                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO);
+                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO)
+                    || row.effectType == nameof(ItemSystem.FieldAuraUniqueEffectSO);
 
                 if (needsBuff && string.IsNullOrWhiteSpace(row.statEffects))
                     Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})에 statEffects가 비어있습니다. 적용할 스탯 효과가 없어 효과가 동작하지 않습니다.");
 
-                // 상시/조건부 효과는 수동으로 켜고 끄므로 지속시간이 있으면 의도치 않게 꺼진다.
+                // 상시/조건부/영역 효과는 수동(또는 영역 진입·이탈)으로 켜고 끄므로 지속시간이 있으면 의도치 않게 꺼진다.
                 bool shouldBePermanent = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)
-                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO);
+                    || row.effectType == nameof(ItemSystem.StatThresholdBuffUniqueEffectSO)
+                    || row.effectType == nameof(ItemSystem.FieldAuraUniqueEffectSO);
 
                 if (shouldBePermanent && row.duration > 0f)
                     Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})의 duration이 {row.duration}입니다. " +
-                                     "상시/조건부 효과는 해제 시점을 직접 관리하므로 duration을 0(영구)으로 두는 것이 맞습니다.");
+                                     "상시/조건부/영역 효과는 해제 시점을 직접 관리하므로 duration을 0(영구)으로 두는 것이 맞습니다.");
+
+                if (row.effectType == nameof(ItemSystem.FieldAuraUniqueEffectSO) && row.radius <= 0f)
+                    Debug.LogWarning($"[UniqueEffect] '{id}'({row.effectType})의 radius가 {row.radius}입니다. 0 이하면 영역이 사실상 존재하지 않습니다.");
             }
 
             if (blocking)

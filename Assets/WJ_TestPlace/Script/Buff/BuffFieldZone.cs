@@ -42,6 +42,22 @@ public class BuffFieldZone : MonoBehaviour
     /// <summary>지금 이 존 안에 있는 대상들. 나갈 때 정확히 그 대상에게서만 제거하려고 들고 있는다.</summary>
     private readonly HashSet<PlayerBuffManager> inside = new HashSet<PlayerBuffManager>();
 
+    /// <summary>
+    /// 코드로 존을 생성할 때(예: 아이템 소유 시 자동 생성되는 오라) 인스펙터의 buff 필드 대신 쓸 소스.
+    /// 설정돼 있으면 이쪽이 우선한다. 인스펙터로 직접 배치한 기존 존은 이 필드를 안 써서 그대로 동작한다.
+    /// </summary>
+    private IBuffSource runtimeBuffSource;
+
+    private IBuffSource ActiveBuff => runtimeBuffSource ?? (IBuffSource)buff;
+
+    /// <summary>코드에서 존을 생성/구성할 때 사용. 인스펙터 buff 필드 대신 임의의 IBuffSource를 쓸 수 있게 한다.</summary>
+    public void ConfigureRuntime(IBuffSource source, bool removeOnExit = true, bool removeWhenZoneDisabled = true)
+    {
+        runtimeBuffSource = source;
+        this.removeOnExit = removeOnExit;
+        this.removeWhenZoneDisabled = removeWhenZoneDisabled;
+    }
+
     private void Reset()
     {
         // 새로 붙였을 때 바로 동작하도록 트리거로 맞춰둔다.
@@ -68,14 +84,15 @@ public class BuffFieldZone : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         PlayerBuffManager target = Resolve(other);
-        if (target == null || buff == null)
+        IBuffSource activeBuff = ActiveBuff;
+        if (target == null || activeBuff == null)
             return;
 
         // 콜라이더가 여러 개인 캐릭터면 Enter가 여러 번 올 수 있어 중복 적용을 막는다.
         if (!inside.Add(target))
             return;
 
-        target.ApplyBuff(buff);
+        target.ApplyBuff(activeBuff);
     }
 
     private void OnTriggerExit(Collider other)
@@ -87,13 +104,15 @@ public class BuffFieldZone : MonoBehaviour
         if (!inside.Remove(target))
             return;
 
-        if (removeOnExit && buff != null)
-            target.RemoveBuff(buff);
+        IBuffSource activeBuff = ActiveBuff;
+        if (removeOnExit && activeBuff != null)
+            target.RemoveBuff(activeBuff);
     }
 
     private void OnDisable()
     {
-        if (!removeWhenZoneDisabled || buff == null)
+        IBuffSource activeBuff = ActiveBuff;
+        if (!removeWhenZoneDisabled || activeBuff == null)
         {
             inside.Clear();
             return;
@@ -102,7 +121,7 @@ public class BuffFieldZone : MonoBehaviour
         foreach (PlayerBuffManager target in inside)
         {
             if (target != null)
-                target.RemoveBuff(buff);
+                target.RemoveBuff(activeBuff);
         }
 
         inside.Clear();
