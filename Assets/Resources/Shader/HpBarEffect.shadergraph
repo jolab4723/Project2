@@ -17,6 +17,9 @@
         },
         {
             "m_Id": "d3017a8e5b3f4d1a9c0e6f2b7a4d801"
+        },
+        {
+            "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d801"
         }
     ],
     "m_Keywords": [],
@@ -128,6 +131,15 @@
         },
         {
             "m_Id": "d3017a8e5b3f4d1a9c0e6f2b7a4d802"
+        },
+        {
+            "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d802"
+        },
+        {
+            "m_Id": "e4027a8e5b3f4d1a9c0e6f2b7a4d801"
+        },
+        {
+            "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
         }
     ],
     "m_GroupDatas": [
@@ -327,9 +339,9 @@
         {
             "m_OutputSlot": {
                 "m_Node": {
-                    "m_Id": "4a8c474bc2dd476a82e671046b64f571"
+                    "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
                 },
-                "m_SlotId": 0
+                "m_SlotId": 3
             },
             "m_InputSlot": {
                 "m_Node": {
@@ -714,6 +726,76 @@
                     "m_Id": "e2285da2f7e949a3acb58af93caf8560"
                 },
                 "m_SlotId": 2
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "7989959128e947b8a39e99e2f6951904"
+                },
+                "m_SlotId": 2
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "b16f6c1b638f45c49e0a4d0a5f3d4d01"
+                },
+                "m_SlotId": 7
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "e4027a8e5b3f4d1a9c0e6f2b7a4d801"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
+                },
+                "m_SlotId": 0
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "4a8c474bc2dd476a82e671046b64f571"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
+                },
+                "m_SlotId": 1
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d802"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
+                },
+                "m_SlotId": 2
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d801"
+                },
+                "m_SlotId": 3
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "b16f6c1b638f45c49e0a4d0a5f3d4d01"
+                },
+                "m_SlotId": 8
             }
         }
     ],
@@ -3737,6 +3819,9 @@
         },
         {
             "m_Id": "d3017a8e5b3f4d1a9c0e6f2b7a4d801"
+        },
+        {
+            "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d801"
         }
     ]
 }
@@ -3789,6 +3874,12 @@
             "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e16"
         },
         {
+            "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e18"
+        },
+        {
+            "m_Id": "e4047a8e5b3f4d1a9c0e6f2b7a4d801"
+        },
+        {
             "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e14"
         },
         {
@@ -3815,7 +3906,7 @@
     "m_FunctionName": "ApplyHPGlassShading",
     "m_FunctionSource": "",
     "m_FunctionSourceUsePragmas": true,
-    "m_FunctionBody": "float x = saturate(UV.x);\nfloat y = saturate(UV.y);\nfloat health = saturate(Health);\n\nfloat leftBand = 1.0 - smoothstep(0.05, 0.30, x);\nfloat centerShadow = smoothstep(0.18, 0.36, x) * (1.0 - smoothstep(0.62, 0.82, x));\nfloat rightShadow = smoothstep(0.72, 0.985, x);\nfloat bottomDepth = lerp(0.72, 1.0, smoothstep(0.0, 0.30, y));\n\nfloat leftRim = 1.0 - smoothstep(0.012, 0.065, x);\nfloat rightRim = smoothstep(0.93, 0.992, x);\nfloat diagonalSheen = 1.0 - smoothstep(0.018, 0.105, abs(x - (0.08 + 0.22 * y)));\nfloat upperReflection = smoothstep(0.70, 0.82, y) * (1.0 - smoothstep(0.94, 0.99, y)) * (1.0 - smoothstep(0.18, 0.58, x));\n\nfloat shade = (1.0 + leftBand * 0.12 - centerShadow * 0.20 - rightShadow * 0.28) * bottomDepth;\nfloat highlight = leftRim * 0.34 + rightRim * 0.22 + diagonalSheen * 0.10 + upperReflection * 0.16;\nfloat3 glassTint = float3(0.18, 0.52, 0.78);\n\nfloat edgeFade = saturate(min(health, 1.0 - health) * 12.0);\nfloat surfaceWave = (saturate(Pattern) - 0.5) * 0.018 * edgeFade;\nfloat surfaceY = 0.985 + surfaceWave;\nfloat liquidMask = 1.0;\nfloat belowSurface = step(y, surfaceY);\nfloat surfaceDistance = abs(y - surfaceY);\nfloat surfaceBand = (1.0 - smoothstep(0.0, 0.035, surfaceDistance)) * edgeFade;\nfloat innerSurfaceGlow = (1.0 - smoothstep(0.0, 0.11, surfaceY - y)) * belowSurface * edgeFade;\nfloat3 surfaceTint = float3(2.4, 0.65, 0.06);\n\nColor = max(FluidColor * shade + glassTint * highlight + surfaceTint * surfaceBand * 0.35, 0.0) * liquidMask;\nEmission = (FluidColor * (0.025 + saturate(Pattern) * 0.07) + glassTint * highlight * 0.12 + surfaceTint * (surfaceBand * 1.5 + innerSurfaceGlow * 0.18)) * liquidMask;\nAlpha = 1.0;"
+    "m_FunctionBody": "float x = saturate(UV.x);\nfloat localY = saturate(UV.y);\nfloat fixedY = StableUV.y;\nfloat health = saturate(Health);\n\nfloat side = clamp(x * 2.0 - 1.0, -0.999, 0.999);\nfloat cylinderAngle = asin(side);\nfloat cylinderDepth = sqrt(saturate(1.0 - side * side));\nfloat turbulence = (saturate(Pattern) - 0.5) * 1.4;\nfloat helixPhase = cylinderAngle * 2.7 + fixedY * 14.0 - FlowTime * 10.0 + turbulence;\nfloat detailPhase = -cylinderAngle * 4.2 + fixedY * 20.0 - FlowTime * 14.0 + 2.2 - turbulence * 0.7;\nfloat helixA = pow(saturate(0.5 + 0.5 * sin(helixPhase)), 3.0);\nfloat helixB = pow(saturate(0.5 + 0.5 * sin(detailPhase)), 5.0);\nfloat rotatingFlow = saturate(helixA * 0.82 + helixB * 0.48);\nfloat cylinderShade = lerp(0.58, 1.08, pow(cylinderDepth, 0.65));\nfloat flowLighting = lerp(0.74, 1.38, rotatingFlow) * cylinderShade;\n\nfloat leftBand = 1.0 - smoothstep(0.05, 0.30, x);\nfloat centerShadow = smoothstep(0.18, 0.36, x) * (1.0 - smoothstep(0.62, 0.82, x));\nfloat rightShadow = smoothstep(0.72, 0.985, x);\nfloat bottomDepth = lerp(0.72, 1.0, smoothstep(0.0, 0.30, localY));\n\nfloat leftRim = 1.0 - smoothstep(0.012, 0.065, x);\nfloat rightRim = smoothstep(0.93, 0.992, x);\nfloat diagonalSheen = 1.0 - smoothstep(0.018, 0.105, abs(x - (0.08 + 0.22 * localY)));\nfloat upperReflection = smoothstep(0.70, 0.82, localY) * (1.0 - smoothstep(0.94, 0.99, localY)) * (1.0 - smoothstep(0.18, 0.58, x));\n\nfloat shade = (1.0 + leftBand * 0.12 - centerShadow * 0.20 - rightShadow * 0.28) * bottomDepth;\nfloat highlight = leftRim * 0.34 + rightRim * 0.22 + diagonalSheen * 0.10 + upperReflection * 0.16;\nfloat3 glassTint = float3(0.18, 0.52, 0.78);\n\nfloat edgeFade = saturate(min(health, 1.0 - health) * 12.0);\nfloat surfaceWave = (saturate(Pattern) - 0.5) * 0.018 * edgeFade;\nfloat surfaceY = 0.985 + surfaceWave;\nfloat belowSurface = step(localY, surfaceY);\nfloat surfaceDistance = abs(localY - surfaceY);\nfloat surfaceBand = (1.0 - smoothstep(0.0, 0.035, surfaceDistance)) * edgeFade;\nfloat innerSurfaceGlow = (1.0 - smoothstep(0.0, 0.11, surfaceY - localY)) * belowSurface * edgeFade;\nfloat3 surfaceTint = float3(2.4, 0.65, 0.06);\n\nfloat3 shadedFluid = FluidColor * shade * flowLighting;\nColor = max(shadedFluid + glassTint * highlight + surfaceTint * surfaceBand * 0.35, 0.0);\nEmission = FluidColor * (0.025 + saturate(Pattern) * 0.07 + rotatingFlow * (0.16 + cylinderDepth * 0.12)) + glassTint * highlight * 0.12 + surfaceTint * (surfaceBand * 1.5 + innerSurfaceGlow * 0.18);\nAlpha = 1.0;"
 }
 
 {
@@ -4914,4 +5005,331 @@
         "w": 0.0
     },
     "m_LiteralMode": false
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e18",
+    "m_Id": 7,
+    "m_DisplayName": "Flow Time",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "FlowTime",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": [],
+    "m_LiteralMode": false
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "e4017a8e5b3f4d1a9c0e6f2b7a4d801",
+    "m_Guid": {
+        "m_GuidSerialized": "f11c0a46-6db8-4b2c-83f0-22a8e0e2c610"
+    },
+    "promotedFromAssetID": "",
+    "promotedFromCategoryName": "",
+    "promotedOrdering": -1,
+    "m_Name": "Reference Height",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "Reference Height",
+    "m_DefaultReferenceName": "_ReferenceHeight",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_PerRendererData": false,
+    "m_customAttributes": [],
+    "m_Value": 260.0,
+    "m_FloatType": 0,
+    "m_LiteralFloatMode": false,
+    "m_RangeValues": {
+        "x": 1.0,
+        "y": 1000.0
+    },
+    "m_SliderType": 0,
+    "m_SliderPower": 3.0,
+    "m_EnumType": 0,
+    "m_CSharpEnumString": "",
+    "m_EnumNames": [
+        "Default"
+    ],
+    "m_EnumValues": [
+        0
+    ]
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "e4017a8e5b3f4d1a9c0e6f2b7a4d802",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -620.0,
+            "y": -350.0,
+            "width": 150.0,
+            "height": 34.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d803"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "e4017a8e5b3f4d1a9c0e6f2b7a4d801"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "e4017a8e5b3f4d1a9c0e6f2b7a4d803",
+    "m_Id": 0,
+    "m_DisplayName": "Reference Height",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": [],
+    "m_LiteralMode": false
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.ScreenPositionNode",
+    "m_ObjectId": "e4027a8e5b3f4d1a9c0e6f2b7a4d801",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Screen Position",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -620.0,
+            "y": -450.0,
+            "width": 170.0,
+            "height": 110.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "e4027a8e5b3f4d1a9c0e6f2b7a4d802"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": false,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 2,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_ScreenSpaceType": 4
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
+    "m_ObjectId": "e4027a8e5b3f4d1a9c0e6f2b7a4d802",
+    "m_Id": 0,
+    "m_DisplayName": "Out",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.CustomFunctionNode",
+    "m_ObjectId": "e4037a8e5b3f4d1a9c0e6f2b7a4d801",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Build Stable Fill UV (Custom Function)",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -420.0,
+            "y": -440.0,
+            "width": 250.0,
+            "height": 130.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d811"
+        },
+        {
+            "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d812"
+        },
+        {
+            "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d813"
+        },
+        {
+            "m_Id": "e4037a8e5b3f4d1a9c0e6f2b7a4d814"
+        }
+    ],
+    "synonyms": [
+        "crop",
+        "fixed",
+        "slider",
+        "UV"
+    ],
+    "m_Precision": 0,
+    "m_PreviewExpanded": false,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_SourceType": 1,
+    "m_FunctionName": "BuildStableFillUV",
+    "m_FunctionSource": "",
+    "m_FunctionSourceUsePragmas": true,
+    "m_FunctionBody": "StableUV = float2(UV.x, -ScreenPosition.y / max(ReferenceHeight, 0.0001));"
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
+    "m_ObjectId": "e4037a8e5b3f4d1a9c0e6f2b7a4d811",
+    "m_Id": 0,
+    "m_DisplayName": "Screen Position",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "ScreenPosition",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
+    "m_ObjectId": "e4037a8e5b3f4d1a9c0e6f2b7a4d812",
+    "m_Id": 1,
+    "m_DisplayName": "UV",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "UV",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "e4037a8e5b3f4d1a9c0e6f2b7a4d813",
+    "m_Id": 2,
+    "m_DisplayName": "Reference Height",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "ReferenceHeight",
+    "m_StageCapability": 3,
+    "m_Value": 260.0,
+    "m_DefaultValue": 260.0,
+    "m_Labels": [],
+    "m_LiteralMode": false
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
+    "m_ObjectId": "e4037a8e5b3f4d1a9c0e6f2b7a4d814",
+    "m_Id": 3,
+    "m_DisplayName": "Stable UV",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "StableUV",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
+    "m_ObjectId": "e4047a8e5b3f4d1a9c0e6f2b7a4d801",
+    "m_Id": 8,
+    "m_DisplayName": "Stable UV",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "StableUV",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_Labels": []
 }

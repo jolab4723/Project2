@@ -417,6 +417,20 @@
             },
             "m_InputSlot": {
                 "m_Node": {
+                    "m_Id": "b16f6c1b638f45c49e0a4d0a5f3d4d01"
+                },
+                "m_SlotId": 7
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "7989959128e947b8a39e99e2f6951904"
+                },
+                "m_SlotId": 2
+            },
+            "m_InputSlot": {
+                "m_Node": {
                     "m_Id": "c712238aab2d496aa7ce79b6f69dd2b5"
                 },
                 "m_SlotId": 0
@@ -2227,8 +2241,8 @@
     "m_ObjectId": "4e695926d1b743c1a9fc45f3cb84f367",
     "m_Title": "Local Orb Coordinates",
     "m_Position": {
-        "x": -3119.0,
-        "y": 145.0
+        "x": -3119.000244140625,
+        "y": 145.00006103515626
     }
 }
 
@@ -3147,8 +3161,8 @@
     "m_ObjectId": "831ee030462941e0a1c38ffd8afa03ef",
     "m_Title": "Generate and combine fluid noise",
     "m_Position": {
-        "x": -1549.0,
-        "y": -51.0
+        "x": -1549.0001220703125,
+        "y": -50.99995803833008
     }
 }
 
@@ -3789,6 +3803,9 @@
             "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e16"
         },
         {
+            "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e18"
+        },
+        {
             "m_Id": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e14"
         },
         {
@@ -3815,7 +3832,7 @@
     "m_FunctionName": "ApplyMPGlassShading",
     "m_FunctionSource": "",
     "m_FunctionSourceUsePragmas": true,
-    "m_FunctionBody": "float x = saturate(UV.x);\nfloat y = saturate(UV.y);\nfloat health = saturate(Health);\n\nfloat leftBand = 1.0 - smoothstep(0.05, 0.30, x);\nfloat centerShadow = smoothstep(0.18, 0.36, x) * (1.0 - smoothstep(0.62, 0.82, x));\nfloat rightShadow = smoothstep(0.72, 0.985, x);\nfloat bottomDepth = lerp(0.72, 1.0, smoothstep(0.0, 0.30, y));\n\nfloat leftRim = 1.0 - smoothstep(0.012, 0.065, x);\nfloat rightRim = smoothstep(0.93, 0.992, x);\nfloat diagonalSheen = 1.0 - smoothstep(0.018, 0.105, abs(x - (0.08 + 0.22 * y)));\nfloat upperReflection = smoothstep(0.70, 0.82, y) * (1.0 - smoothstep(0.94, 0.99, y)) * (1.0 - smoothstep(0.18, 0.58, x));\n\nfloat shade = (1.0 + leftBand * 0.12 - centerShadow * 0.20 - rightShadow * 0.28) * bottomDepth;\nfloat highlight = leftRim * 0.34 + rightRim * 0.22 + diagonalSheen * 0.10 + upperReflection * 0.16;\nfloat3 glassTint = float3(0.16, 0.34, 0.85);\n\nfloat edgeFade = saturate(min(health, 1.0 - health) * 12.0);\nfloat surfaceWave = (saturate(Pattern) - 0.5) * 0.018 * edgeFade;\nfloat surfaceY = 0.985 + surfaceWave;\nfloat liquidMask = 1.0;\nfloat belowSurface = step(y, surfaceY);\nfloat surfaceDistance = abs(y - surfaceY);\nfloat surfaceBand = (1.0 - smoothstep(0.0, 0.035, surfaceDistance)) * edgeFade;\nfloat innerSurfaceGlow = (1.0 - smoothstep(0.0, 0.11, surfaceY - y)) * belowSurface * edgeFade;\nfloat3 surfaceTint = float3(0.4227450980392157, 0.655686274509804, 2.07921568627451);\n\nColor = max(FluidColor * shade + glassTint * highlight + surfaceTint * surfaceBand * 0.35, 0.0) * liquidMask;\nEmission = (FluidColor * (0.025 + saturate(Pattern) * 0.07) + glassTint * highlight * 0.12 + surfaceTint * (surfaceBand * 1.5 + innerSurfaceGlow * 0.18)) * liquidMask;\nAlpha = 1.0;"
+    "m_FunctionBody": "float x = saturate(UV.x);\nfloat y = saturate(UV.y);\nfloat health = saturate(Health);\n\nfloat side = clamp(x * 2.0 - 1.0, -0.999, 0.999);\nfloat cylinderAngle = asin(side);\nfloat cylinderDepth = sqrt(saturate(1.0 - side * side));\nfloat turbulence = (saturate(Pattern) - 0.5) * 1.4;\nfloat helixPhase = cylinderAngle * 2.7 + y * 14.0 - FlowTime * 10.0 + turbulence;\nfloat detailPhase = -cylinderAngle * 4.2 + y * 20.0 - FlowTime * 14.0 + 2.2 - turbulence * 0.7;\nfloat helixA = pow(saturate(0.5 + 0.5 * sin(helixPhase)), 3.0);\nfloat helixB = pow(saturate(0.5 + 0.5 * sin(detailPhase)), 5.0);\nfloat rotatingFlow = saturate(helixA * 0.82 + helixB * 0.48);\nfloat cylinderShade = lerp(0.58, 1.08, pow(cylinderDepth, 0.65));\nfloat flowLighting = lerp(0.74, 1.38, rotatingFlow) * cylinderShade;\n\nfloat leftBand = 1.0 - smoothstep(0.05, 0.30, x);\nfloat centerShadow = smoothstep(0.18, 0.36, x) * (1.0 - smoothstep(0.62, 0.82, x));\nfloat rightShadow = smoothstep(0.72, 0.985, x);\nfloat bottomDepth = lerp(0.72, 1.0, smoothstep(0.0, 0.30, y));\n\nfloat leftRim = 1.0 - smoothstep(0.012, 0.065, x);\nfloat rightRim = smoothstep(0.93, 0.992, x);\nfloat diagonalSheen = 1.0 - smoothstep(0.018, 0.105, abs(x - (0.08 + 0.22 * y)));\nfloat upperReflection = smoothstep(0.70, 0.82, y) * (1.0 - smoothstep(0.94, 0.99, y)) * (1.0 - smoothstep(0.18, 0.58, x));\n\nfloat shade = (1.0 + leftBand * 0.12 - centerShadow * 0.20 - rightShadow * 0.28) * bottomDepth;\nfloat highlight = leftRim * 0.34 + rightRim * 0.22 + diagonalSheen * 0.10 + upperReflection * 0.16;\nfloat3 glassTint = float3(0.16, 0.34, 0.85);\n\nfloat edgeFade = saturate(min(health, 1.0 - health) * 12.0);\nfloat surfaceWave = (saturate(Pattern) - 0.5) * 0.018 * edgeFade;\nfloat surfaceY = 0.985 + surfaceWave;\nfloat belowSurface = step(y, surfaceY);\nfloat surfaceDistance = abs(y - surfaceY);\nfloat surfaceBand = (1.0 - smoothstep(0.0, 0.035, surfaceDistance)) * edgeFade;\nfloat innerSurfaceGlow = (1.0 - smoothstep(0.0, 0.11, surfaceY - y)) * belowSurface * edgeFade;\nfloat3 surfaceTint = float3(0.4227450980392157, 0.655686274509804, 2.07921568627451);\n\nfloat3 shadedFluid = FluidColor * shade * flowLighting;\nColor = max(shadedFluid + glassTint * highlight + surfaceTint * surfaceBand * 0.35, 0.0);\nEmission = FluidColor * (0.025 + saturate(Pattern) * 0.07 + rotatingFlow * (0.16 + cylinderDepth * 0.12)) + glassTint * highlight * 0.12 + surfaceTint * (surfaceBand * 1.5 + innerSurfaceGlow * 0.18);\nAlpha = 1.0;"
 }
 
 {
@@ -4081,6 +4098,22 @@
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Alpha",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": [],
+    "m_LiteralMode": false
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "c2017a8e5b3f4d1a9c0e6f2b7a4d8e18",
+    "m_Id": 7,
+    "m_DisplayName": "Flow Time",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "FlowTime",
     "m_StageCapability": 3,
     "m_Value": 0.0,
     "m_DefaultValue": 0.0,
@@ -4647,7 +4680,7 @@
     "m_ObjectId": "ea3c4d6864924e32a462b1323134e497",
     "m_Title": "Three bottom-left to top-right fluid layers",
     "m_Position": {
-        "x": -2415.0,
+        "x": -2415.000244140625,
         "y": -16.0
     }
 }
@@ -4915,3 +4948,4 @@
     },
     "m_LiteralMode": false
 }
+
