@@ -1,3 +1,4 @@
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -19,6 +20,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_EnemyStatus status;
     private WBH_EnemyAnimation enemyAnimation;
     private WBH_Indicator indicator;
+    private WBH_IndicatorSpawner indicatorSpawner;
 
     private WBH_EffectSpawner effectSpawner;
 
@@ -37,12 +39,15 @@ public class WBH_EnemyPattern : MonoBehaviour
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
     public WBH_Indicator Indicator => indicator;
+    public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;
     public Transform FirePoint => firePoint;
     public LayerMask PlayerLayer => playerLayer;
 
     public float DashHitRadius => dashHitRadius;
+
+    public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
 
     private void Awake()
     {
@@ -53,6 +58,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
         indicator = GetComponent<WBH_Indicator>();
+        indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
     }
 
     public virtual void Initialize(WBH_EnemyController controller)
@@ -254,7 +260,68 @@ public class WBH_EnemyPattern : MonoBehaviour
             case 1:
                 currentPattern = new WBH_EnemyElitePattern();
                 break;
+            case 10:
+                currentPattern = new WBH_EnemyBossPattern_Act1();
+                break;
         }
         currentPattern?.Initialize(this);
+    }
+
+    // 랜덤 타겟 선택
+    public bool TrySelectAnotherActivePlayer()
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform selected = null;
+        int candidateCount = 0;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled || player.transform == target)
+                continue;
+
+            candidateCount++;
+
+            // 현재 타겟 제외 플레이어 중 하나 랜덤 선택
+            if(Random.Range(0, candidateCount) == 0)
+            {
+                selected = player.transform;
+            }
+        }
+        if(selected == null)
+            return false;
+
+        SetTarget(selected);
+        return true;
+    }
+
+    // 사거리 이내 가장 먼 거리의 타겟 선택
+    public bool TrySelectFarTarget(float maxRange)
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        float maxRangeSqr = maxRange * maxRange;
+        float farSqr = -1f;
+        Transform selected = null;
+
+        foreach (T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+
+            if (distanceSqr > maxRangeSqr || distanceSqr <= farSqr)
+                continue;
+
+            farSqr = distanceSqr;
+            selected = player.transform;
+        }
+
+        if (selected == null)
+            return false;
+
+        SetTarget(selected);
+        return true;
     }
 }

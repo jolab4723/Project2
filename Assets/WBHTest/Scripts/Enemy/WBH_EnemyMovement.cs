@@ -14,6 +14,10 @@ public class WBH_EnemyMovement : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 lastDestination;
     private bool canControl = true;
+    private float jumpHeight = 3f;
+    private float landingNavSearchRadius = 2f;
+    
+    private Coroutine jumpCoroutine;
     public event Action OnDashUpdate;
 
     public bool CanControl => canControl;
@@ -56,12 +60,13 @@ public class WBH_EnemyMovement : MonoBehaviour
         agent.speed = moveSpeed;
     }
 
-    // 순간이동 (몬스터 생성시 위치지정, 순간이동 패턴 구현 시 사용.)
+    // 순간이동 (navmesh 끈 상태에서 이동 후 다시 nav적용 시킬 때 필요) (몬스터 생성시 위치지정, 순간이동 패턴 구현 시 사용)
     public void Warp(Vector3 position)
     {
         agent.Warp(position);
     }
 
+    // 움직임 여부 조작
     public void SetControlEnable(bool enable)
     {
         canControl = enable;
@@ -72,6 +77,7 @@ public class WBH_EnemyMovement : MonoBehaviour
             agent.isStopped = false;
     }
 
+    // 돌진 (데미지 X)
     public void Dash(Vector3 direction, float distance, float duration, Action onCompleted = null)
     {
         StartCoroutine(CoDash(direction, distance, duration, onCompleted));
@@ -99,6 +105,64 @@ public class WBH_EnemyMovement : MonoBehaviour
 
         Warp(transform.position);
 
+        SetControlEnable(true);
+
+        onCompleted?.Invoke();
+    }
+
+    // 점프 (데미지 X)
+    public bool JumpTo(Vector3 destination, float duration, System.Action onCompleted = null)
+    {
+        if(!NavMesh.SamplePosition(destination, out NavMeshHit navMeshHit, landingNavSearchRadius, agent.areaMask))
+        {
+            return false;
+        }
+
+        if (jumpCoroutine != null)
+        {
+            StopCoroutine(jumpCoroutine);
+        }
+
+        jumpCoroutine = StartCoroutine(CoJumpTo(navMeshHit.position, duration, onCompleted));
+
+        return true;
+    }
+    // 점프할 목적지가 navMesh 가능한지 탐색
+    public bool CanJumpTo(Vector3 destination)
+    {
+        return NavMesh.SamplePosition(destination, out _, landingNavSearchRadius, agent.areaMask);
+    }
+
+    private IEnumerator CoJumpTo(Vector3 landingPos, float duration, System.Action onCompleted)
+    {
+        SetControlEnable(false);
+
+        Vector3 startPos = transform.position;
+        float elapsed = 0f;
+
+        agent.updatePosition = false;
+
+        while(elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            Vector3 position = Vector3.Lerp(startPos, landingPos, t);
+
+            position.y += jumpHeight * 4f * t * (1f - t);
+
+            transform.position = position;
+
+            yield return null;
+        }
+
+        transform.position = landingPos;
+
+        agent.Warp(landingPos);
+        agent.updatePosition = true;
+
+        jumpCoroutine = null;
         SetControlEnable(true);
 
         onCompleted?.Invoke();

@@ -1,34 +1,33 @@
 using System.Collections;
-using Unity.Mathematics;
 using UnityEngine;
 
 public class WBH_Indicator : MonoBehaviour
 {
-    [SerializeField] private GameObject indicatorObject;
+    [SerializeField] private GameObject dashIndicator;
     private Material mat;
 
     public void Awake()
     {
         Hide();
-        mat = indicatorObject.GetComponent<Material>();
+        mat = dashIndicator.GetComponent<Material>();
     }
 
 
     public void Show()
     {
-        if (indicatorObject != null)
-            indicatorObject.SetActive(true);
+        if (dashIndicator != null)
+            dashIndicator.SetActive(true);
     }
 
     public void Hide()
     {
-        if (indicatorObject != null)
-            indicatorObject.SetActive(false);
+        if (dashIndicator != null)
+            dashIndicator.SetActive(false);
     }
 
     public void SetWorldSize(float worldWidth,  float worldLength, float thickness = 0.01f)
     {
-        Transform indicator = indicatorObject.transform;
+        Transform indicator = dashIndicator.transform;
         Vector3 parentScale = indicator.parent.lossyScale;
 
         indicator.localScale = new Vector3(worldWidth / Mathf.Abs(parentScale.x), thickness / Mathf.Abs(parentScale.y), worldLength / Mathf.Abs(parentScale.z));
