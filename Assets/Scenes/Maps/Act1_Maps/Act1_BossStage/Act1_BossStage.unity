@@ -1287,17 +1287,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
---- !u!114 &862543830 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8756550498913179854, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
-  m_PrefabInstance: {fileID: 862543829}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
 --- !u!4 &862543831 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 96970395601806380, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
@@ -1794,7 +1783,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1713014241565711533, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00087068696
+      value: 0.00033157077
       objectReference: {fileID: 0}
     - target: {fileID: 1867469949808910375, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1848,10 +1837,6 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5978985454865746886, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
-      propertyPath: m_Size
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6013441984223797049, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1895,6 +1880,18 @@ PrefabInstance:
     - target: {fileID: 8684275076153490265, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Name
       value: Canvas_HUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880399958642114645, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880399958642114645, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880399958642114645, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3131,17 +3128,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fcabd762b3b6ca4a81c7884044e63e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryController
---- !u!114 &1989499410 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3923252342818187604, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
-  m_PrefabInstance: {fileID: 1989499406}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
 --- !u!114 &1989499411 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2502391874385409984, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
@@ -3329,26 +3315,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1522336687}
     m_Modifications:
-    - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: equipmentSystem
-      value: 
-      objectReference: {fileID: 1989499410}
-    - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: buffManagerBehaviour
-      value: 
-      objectReference: {fileID: 2057887743}
-    - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: equipManagerBehaviour
-      value: 
-      objectReference: {fileID: 2057887741}
-    - target: {fileID: 2223535990301607553, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: inventoryController
-      value: 
-      objectReference: {fileID: 1989499409}
-    - target: {fileID: 2312052604114874023, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectSpawner
-      value: 
-      objectReference: {fileID: 862543830}
     - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.026278257
@@ -3365,30 +3331,6 @@ PrefabInstance:
       propertyPath: m_LocalPosition.x
       value: -0.031432368
       objectReference: {fileID: 0}
-    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.1620902
-      objectReference: {fileID: 0}
-    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.08875212
-      objectReference: {fileID: 0}
-    - target: {fileID: 4902738837393913659, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 4902738837393913659, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.227
-      objectReference: {fileID: 0}
-    - target: {fileID: 4902738837393913659, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.227
-      objectReference: {fileID: 0}
-    - target: {fileID: 4984542786249164771, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: equipmentSystem
-      value: 
-      objectReference: {fileID: 1989499410}
     - target: {fileID: 5095415882564276479, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.07309731
@@ -3401,34 +3343,6 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -0.061683547
       objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6757565152260833919, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7905982457287239412, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: equipmentSystem
-      value: 
-      objectReference: {fileID: 1989499410}
     - target: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -3491,17 +3405,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
   m_PrefabInstance: {fileID: 2057887739}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2057887741 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4984542786249164771, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-  m_PrefabInstance: {fileID: 2057887739}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f0d59ef7cd92ee40847217acd984b91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerEquipManager
 --- !u!114 &2057887742 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
@@ -3513,17 +3416,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c28388b841889b94fbca6a6ebee1a76c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatManager
---- !u!114 &2057887743 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5376958052108856053, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-  m_PrefabInstance: {fileID: 2057887739}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15e11a7135eb17f459b0ccad80dbe3a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerBuffManager
 --- !u!1001 &2088359046
 PrefabInstance:
   m_ObjectHideFlags: 0
