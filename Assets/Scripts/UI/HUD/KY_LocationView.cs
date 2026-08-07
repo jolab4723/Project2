@@ -3,8 +3,7 @@ using TMPro;
 
 public class KY_LocationView : MonoBehaviour
 {
-    public TextMeshProUGUI chapterText;
-    public TextMeshProUGUI zoneText;
+    public TextMeshProUGUI stageText;
 
     void OnEnable()
     {
@@ -16,9 +15,8 @@ public class KY_LocationView : MonoBehaviour
         KY_GameEvents.OnLocationChanged -= OnLocationChanged;
     }
 
-    void OnLocationChanged(int chapter, int zone)
+    void OnLocationChanged(int currentStage, int totalStage)
     {
-        chapterText.text = chapter.ToString();
-        zoneText.text = zone.ToString();
+        stageText.text = ($"Stage : {currentStage.ToString()} / {totalStage.ToString()}");
     }
 }
