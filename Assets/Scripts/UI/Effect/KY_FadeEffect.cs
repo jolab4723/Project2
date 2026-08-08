@@ -1,9 +1,10 @@
 using DG.Tweening;
 using UnityEngine;
 
+// 투명도 조절을 통해 깜빡거리는 효과를 내는 코드입니다.
 public class KY_FadeEffect : MonoBehaviour
 {
-    public float duration = 0.1f;
+    public float duration = 0.1f;       
     public Ease fadeEase = Ease.Linear;
     public bool ignoreTimeScale = false;
 

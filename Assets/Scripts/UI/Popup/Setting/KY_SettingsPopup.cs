@@ -19,6 +19,9 @@ public class KY_SettingsPopup : KY_PopupBase
     public KY_RebindSlot potionSlot;
     public KY_RebindSlot dodgeSlot;
 
+    [Header("게임 플레이")]
+    public TMP_Dropdown languageDropdown;
+
     private GameInputActions inputActions;
     private KY_SettingsData tempData;
 
@@ -31,6 +34,14 @@ public class KY_SettingsPopup : KY_PopupBase
         "1920 x 1080",
         "2560 x 1440",
         "3840 x 2160"
+    });
+        languageDropdown.ClearOptions();
+        languageDropdown.AddOptions(new System.Collections.Generic.List<string>
+    {
+        "한국어",
+        "English ",
+        "日本語",
+        "中國語"
     });
 
         //inputActions = new GameInputActions();

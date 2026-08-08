@@ -6,5 +6,6 @@ public enum PopupType
     Skill,
     Inventory,
     Quest,
-    QuestDetail
+    QuestDetail,
+    PassiveSkill
 }
