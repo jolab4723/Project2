@@ -17,6 +17,9 @@ public class WBH_EnemyCombat : MonoBehaviour
     private WBH_ProjectileSpawner projectileSpawner;
 
     private float attackTimer = 0f;
+    private float missileMaxDistance = 100f;
+    private float minMissileFlightTime = 1f;
+
     private bool hasHitTarget;
     public bool IsActionInProgress { get; private set; }
 
@@ -227,30 +230,54 @@ public class WBH_EnemyCombat : MonoBehaviour
         return true;
     }
 
+    // 미사일 패턴(인디케이터 O)
     private IEnumerator CoMissile(IReadOnlyList<Vector3> impactPoints, float explosionRadius, float warningDuration, float recoveryDuration, WBH_IndicatorSpawner indicatorSpawner)
     {
+        Vector3 spawnPos = pattern.FirePoint.position;
+
+        float[] flightTimes = new float[impactPoints.Count];
+        float impactTime = warningDuration;
+
+        // 모든 미사일의 착탄 시점을 가장 긴 비행시간 기준으로 동일화
+        for(int i = 0; i < impactPoints.Count; i++)
+        {
+            float distance = Mathf.Min(Vector3.Distance(spawnPos, impactPoints[i]), missileMaxDistance);
+
+            float flightTime = Mathf.Max(minMissileFlightTime, distance / status.ProjectileSpeed);
+
+            flightTimes[i] = flightTime;
+            impactTime = Mathf.Max(impactTime, flightTime);
+        }
+
+        for(int i = 0; i < impactPoints.Count; i++)
+        {
+            indicatorSpawner.ShowCircle(impactPoints[i], explosionRadius, impactTime, growOverTime: true);
+
+            float launchDelay = impactTime - flightTimes[i];
+
+            StartCoroutine(CoLaunchMissileAfter(launchDelay, spawnPos, impactPoints[i], explosionRadius));
+        }
+
+        yield return new WaitForSeconds(impactTime + recoveryDuration);
+        EndAction();
+
         foreach(Vector3 impactPoint in impactPoints)
         {
             indicatorSpawner.ShowCircle(impactPoint, explosionRadius, warningDuration, growOverTime: true);
         }
         yield return new WaitForSeconds(warningDuration);
+    }
+
+    // 미사일 실제 발사 메서드
+    private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius)
+    {
+        yield return new WaitForSeconds(delay);
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        foreach(Vector3 impactPoint in impactPoints)
-        {
-            projectileSpawner.FireGrenade(ProjectileType.Missile, 
-                                          pattern.FirePoint.position, 
-                                          impactPoint, 
-                                          request, 
-                                          status.ProjectileSpeed, 
-                                          100f, 
-                                          explosionRadius, 
-                                          pattern.PlayerLayer);
-        }
-        yield return new WaitForSeconds(recoveryDuration);
-        EndAction();
+        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer);
     }
+
 
     public bool TryJumpAttack(Vector3 landingPos, float damageRadius, float jumpDuration, float recoveryDuration)
     {

@@ -164,6 +164,9 @@ public class WBH_Projectile : MonoBehaviour
 
         if(isExplosion)
         {
+            if (projectileType == ProjectileType.Missile)
+                return;
+
             Debug.Log("유탄 폭발");
             Explode();
             return;
