@@ -41,6 +41,10 @@ MonoBehaviour:
     description: "\uD68C\uD53C \uC0AC\uC6A9 \uC2DC \uC2E0\uACBD \uAC00\uC18D \uBAA8\uB4DC\uC5D0
       \uB4E4\uC5B4\uAC11\uB2C8\uB2E4. {0}\uCD08 \uB3D9\uC548 \uC774\uB3D9 \uC18D\uB3C4\uAC00
       {1} \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {2}\uCD08)"
+  - uniqueEffectId: UE_LightSaber
+    name: "\uAD11\uC790 \uAC00\uC18D"
+    description: "\uAE30\uBCF8 \uACF5\uACA9 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+      {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
   engLabels:
   - uniqueEffectId: UE_TestHelmet
     name: Defense Boost
@@ -65,6 +69,10 @@ MonoBehaviour:
     name: Basic Implant
     description: 'Using dodge activates Neural Acceleration Mode. Movement speed
       increases by {1} for {0} seconds. (Cooldown: {2}s)'
+  - uniqueEffectId: UE_LightSaber
+    name: Photon Acceleration
+    description: On basic attack, attack speed increases by {1}% for {0} seconds.
+      (Max {2} stacks)
   jpnLabels:
   - uniqueEffectId: UE_TestHelmet
     name: "\u9632\u5FA1\u5F37\u5316"
@@ -88,6 +96,9 @@ MonoBehaviour:
   - uniqueEffectId: UE_CyberneticCore
     name: "\u57FA\u790E\u7684\u306A\u30A4\u30F3\u30D7\u30E9\u30F3\u30C8"
     description: "\u56DE\u907F\u4F7F\u7528\u6642\u3001\u795E\u7D4C\u52A0\u901F\u30E2\u30FC\u30C9\u306B\u5165\u308A\u307E\u3059\u3002{0}\u79D2\u9593\u79FB\u52D5\u901F\u5EA6\u304C{1}\u5897\u52A0\u3057\u307E\u3059\u3002(\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{2}\u79D2)"
+  - uniqueEffectId: UE_LightSaber
+    name: "\u5149\u5B50\u52A0\u901F"
+    description: "\u901A\u5E38\u653B\u6483\u6642\u3001{0}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002(\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF)"
   chnLabels:
   - uniqueEffectId: UE_TestHelmet
     name: "\u9632\u5FA1\u5F3A\u5316"
@@ -111,3 +122,6 @@ MonoBehaviour:
   - uniqueEffectId: UE_CyberneticCore
     name: "\u57FA\u7840\u690D\u5165\u4F53"
     description: "\u4F7F\u7528\u95EA\u907F\u65F6\u8FDB\u5165\u795E\u7ECF\u52A0\u901F\u6A21\u5F0F\u3002{0}\u79D2\u5185\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{1}\u3002\uFF08\u51B7\u5374\u65F6\u95F4{2}\u79D2\uFF09"
+  - uniqueEffectId: UE_LightSaber
+    name: "\u5149\u5B50\u52A0\u901F"
+    description: "\u666E\u901A\u653B\u51FB\u65F6\uFF0C{0}\u79D2\u5185\u653B\u51FB\u901F\u5EA6\u589E\u52A0{1}%\u3002(\u6700\u591A{2}\u5C42)"

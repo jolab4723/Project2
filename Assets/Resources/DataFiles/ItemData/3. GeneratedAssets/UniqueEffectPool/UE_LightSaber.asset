@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_LightSaber
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uAD11\uC790 \uAC00\uC18D"
+  icon: {fileID: 21300000, guid: 7c62fdfd32dc44942a1c7a75a7e0b7dc, type: 3}
+  effectDescription: "\uAE30\uBCF8 \uACF5\uACA9 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9
+    \uC18D\uB3C4\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
+  coefficients:
+  - 5
+  - 6
+  - 5
+  triggerCondition: 4
+  cooldownSeconds: 0
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 9
+      value: 6
+    duration: 5
+    stackBehavior: 1
+    maxStack: 5
