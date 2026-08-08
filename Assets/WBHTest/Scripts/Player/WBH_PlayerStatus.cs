@@ -159,6 +159,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         // (첫 OnEnable 시점엔 Stat/playerController가 아직 없을 수 있는데, 그건 Initialize에서 처리한다)
         SubscribeStatChanges();
         ApplyMoveSpeedToController();
+        ApplyAttackSpeedToAnimation();
     }
 
     private void OnDisable()
@@ -192,6 +193,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         // Stat이 만들어져 있다. 여기서 구독하고 초기 이동속도를 한 번 적용한다.
         SubscribeStatChanges();
         ApplyMoveSpeedToController();
+        ApplyAttackSpeedToAnimation();
 
         OnHpChanged?.Invoke(CurrentHp, MaxHealth);
     }
@@ -210,6 +212,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         UnsubscribeStatChanges();
         subscribedStat = statManager.Stat;
         subscribedStat.OnStatChanged += ApplyMoveSpeedToController;
+        subscribedStat.OnStatChanged += ApplyAttackSpeedToAnimation;
     }
 
     private void UnsubscribeStatChanges()
@@ -218,6 +221,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         subscribedStat.OnStatChanged -= ApplyMoveSpeedToController;
+        subscribedStat.OnStatChanged -= ApplyAttackSpeedToAnimation;
         subscribedStat = null;
     }
 
@@ -232,6 +236,21 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return;
 
         playerController.SetMoveSpeed(statManager.Stat.moveSpeed);
+    }
+
+    /// <summary>
+    /// PlayerStatManager가 재계산될 때마다(장비/버프/레벨/패시브 변경) 최종 공격속도를 애니메이터에 반영하도록
+    /// OnAtkSpeedChanged를 다시 발행한다. WBH_PlayerAnimation.SetAtkAnimationSpeed가 이를 구독해서
+    /// animator.SetFloat("AttackSpeed", ...)로 적용한다.
+    /// !! 이게 없으면 게임 시작 시점(WBH_PlayerAnimation.Start의 최초 1회 반영)의 공격속도만 애니메이션에
+    ///    반영되고, 이후 장비 교체나 버프로 공격속도가 바뀌어도 애니메이션 재생 속도는 그대로 남는다.
+    /// </summary>
+    private void ApplyAttackSpeedToAnimation()
+    {
+        if (!UseStatManager)
+            return;
+
+        OnAtkSpeedChanged?.Invoke(AttackSpeed);
     }
 
     public void TakeDamage(WBH_DamageResult result)

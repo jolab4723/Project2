@@ -15,6 +15,7 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": ""
@@ -35,6 +36,7 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": ""
@@ -55,6 +57,7 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": ""
@@ -75,6 +78,7 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": "OnDamageDealt는 아직 전투 시스템에 연결 전이라 실전투에서 발동하지 않음"
@@ -95,6 +99,7 @@
     "referenceStat": "CurrentHealthPercent",
     "comparisonOperator": "LessOrEqual",
     "thresholdValue": 50.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": ""
@@ -115,6 +120,7 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 10.0,
     "message": "HELLO WORLD!",
     "note": "동작 확인용 테스트 효과"
@@ -135,8 +141,51 @@
     "referenceStat": "",
     "comparisonOperator": "",
     "thresholdValue": 0.0,
+    "radius": 0.0,
     "intervalSeconds": 0.0,
     "message": "",
     "note": "회피키(기본 Space) 입력 시 발동"
+  },
+  {
+    "uniqueEffectId": "UE_LightSaber",
+    "effectType": "TriggeredBuffUniqueEffectSO",
+    "effectName": "광자 가속",
+    "effectDescription": "기본 공격 시 {0}초간 공격 속도가 {1}% 증가합니다. (최대 {2}스택)",
+    "coefficients": "5;6;5",
+    "statEffects": "attackSpeedPercent:6",
+    "duration": 5.0,
+    "stackBehavior": "Stack",
+    "maxStack": 5,
+    "triggerCondition": "OnDamageDealt",
+    "cooldownSeconds": 0.0,
+    "duplicatePolicy": "ShareCooldown",
+    "referenceStat": "",
+    "comparisonOperator": "",
+    "thresholdValue": 0.0,
+    "radius": 0.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "기본 공격 적중마다 스택, 스택될 때마다 지속시간 갱신(PlayerBuffManager 기본 동작)"
+  },
+  {
+    "uniqueEffectId": "UE_HasteAura",
+    "effectType": "FieldAuraUniqueEffectSO",
+    "effectName": "영역: 가속화",
+    "effectDescription": "반경 {0}유닛 안의 플레이어들의 이동 속도가 {1}% 증가합니다.",
+    "coefficients": "10;30",
+    "statEffects": "moveSpeedPercent:30",
+    "duration": 0.0,
+    "stackBehavior": "Ignore",
+    "maxStack": 0,
+    "triggerCondition": "",
+    "cooldownSeconds": 0.0,
+    "duplicatePolicy": "",
+    "referenceStat": "",
+    "comparisonOperator": "",
+    "thresholdValue": 0.0,
+    "radius": 10.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "아직 어떤 아이템에도 배정하지 않음(효과만 우선 제작)"
   }
 ]

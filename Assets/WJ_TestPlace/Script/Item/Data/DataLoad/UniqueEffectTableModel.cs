@@ -9,6 +9,7 @@ namespace DataSystem
     ///   PassiveBuffUniqueEffectSO       : 버프 컬럼
     ///   TriggeredBuffUniqueEffectSO     : 버프 컬럼, triggerCondition, cooldownSeconds, duplicatePolicy
     ///   StatThresholdBuffUniqueEffectSO : 버프 컬럼, referenceStat, comparisonOperator, thresholdValue
+    ///   FieldAuraUniqueEffectSO         : 버프 컬럼, radius
     ///   PeriodicLogUniqueEffectSO       : intervalSeconds, message
     ///
     /// 버프 컬럼 = statEffects / duration / stackBehavior / maxStack.
@@ -64,6 +65,9 @@ namespace DataSystem
 
         /// <summary>비교 기준값. StatThresholdBuff에서만 쓴다. Percent 계열 스탯은 0~100, 나머지는 실제 수치.</summary>
         public float thresholdValue;
+
+        /// <summary>오라 반경(월드 유닛). FieldAura에서만 쓴다.</summary>
+        public float radius;
 
         public float intervalSeconds;
         public string message;

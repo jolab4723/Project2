@@ -164,6 +164,11 @@ namespace DataSystem
                     threshold.thresholdValue = row.thresholdValue;
                     break;
 
+                case FieldAuraUniqueEffectSO aura:
+                    aura.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
+                    aura.radius = row.radius;
+                    break;
+
                 case PeriodicLogUniqueEffectSO periodic:
                     periodic.intervalSeconds = row.intervalSeconds;
                     periodic.message = row.message;
@@ -257,6 +262,7 @@ namespace DataSystem
                 case nameof(PassiveBuffUniqueEffectSO): return typeof(PassiveBuffUniqueEffectSO);
                 case nameof(TriggeredBuffUniqueEffectSO): return typeof(TriggeredBuffUniqueEffectSO);
                 case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
+                case nameof(FieldAuraUniqueEffectSO): return typeof(FieldAuraUniqueEffectSO);
                 case nameof(PeriodicLogUniqueEffectSO): return typeof(PeriodicLogUniqueEffectSO);
             }
 
