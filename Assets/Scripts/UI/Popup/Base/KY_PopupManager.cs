@@ -22,6 +22,12 @@ public class KY_PopupManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("KY_PopupManager가 씬에 중복으로 존재합니다!");
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
 
         popupDict = new Dictionary<PopupType, KY_PopupBase>();

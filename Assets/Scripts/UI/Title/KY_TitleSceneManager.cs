@@ -22,9 +22,9 @@ public class KY_TitleSceneManager : MonoBehaviour
 
     void Start()
     {
-        // singlePlayButton.onClick.AddListener(OnSinglePlayClicked);
+        singlePlayButton.onClick.AddListener(OnSinglePlayClicked);
         // multiPlayButton.onClick.AddListener(OnMultiPlayClicked);
-        // passiveSkillButton.onClick.AddListener(OnPassiveSkillClicked);
+        passiveSkillButton.onClick.AddListener(OnPassiveSkillClicked);
         settingsButton.onClick.AddListener(OnSettingsClicked);
         quitButton.onClick.AddListener(OnQuitClicked);
 
@@ -47,7 +47,7 @@ public class KY_TitleSceneManager : MonoBehaviour
         userInfoText.text = "유저 이름";
     }
 
-    // void OnSinglePlayClicked() { SceneManager.LoadScene("CharacterSelectScene"); }
+     void OnSinglePlayClicked() { SceneManager.LoadScene("CharacterSelectScene"); }
     // void OnMultiPlayClicked() { SceneManager.LoadScene("MultiPlayScene"); }
-    // void OnPassiveSkillClicked() { popupManager.Show(PopupType.PassiveSkill); }
+     void OnPassiveSkillClicked() { popupManager.Show(PopupType.PassiveSkill); }
 }
