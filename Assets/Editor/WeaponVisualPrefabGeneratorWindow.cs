@@ -55,6 +55,14 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string RightHandGripName = "RightHandGrip";
     private const string LeftHandGripName = "LeftHandGrip";
     private const string MuzzleName = "Muzzle";
+    private static readonly Vector3 FighterDefaultRootPosition =
+        new(0.11569060f, -0.08016107f, 0.07089359f);
+    private static readonly Quaternion FighterDefaultRootRotation =
+        new(0.97106050f, 0.10750510f, 0.18089250f, 0.11297130f);
+    private static readonly Vector3 FighterDefaultLeftGripPosition =
+        new(0f, 0.22282f, 0f);
+    private static readonly Quaternion FighterDefaultLeftGripRotation =
+        new(0f, 0f, 0.70710678f, 0.70710678f);
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
     private const float AxeReferenceLength = 1.35f;
@@ -65,6 +73,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     [SerializeField] private ItemDefinitionSO itemDefinition;
     [SerializeField] private GameObject modelAsset;
     [SerializeField] private SourceAxis sourceForwardAxis;
+    [SerializeField] private bool normalizeToReferenceLength = true;
+    [SerializeField] private Vector3 generatedRootScale = Vector3.one;
+    [SerializeField] private Vector3 generatedModelScaleMultiplier = Vector3.one;
     [SerializeField] private bool overwriteExisting;
     [SerializeField] private bool preserveExistingCalibration = true;
 
@@ -146,14 +157,49 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         EditorGUILayout.LabelField("자동 맞춤", EditorStyles.boldLabel);
         sourceForwardAxis = (SourceAxis)EditorGUILayout.EnumPopup(
             "원본 무기 진행축", sourceForwardAxis);
+        normalizeToReferenceLength = EditorGUILayout.ToggleLeft(
+            "무기 종류 기준 길이 자동 맞춤",
+            normalizeToReferenceLength);
+        generatedRootScale = EditorGUILayout.Vector3Field(
+            "생성 루트 스케일",
+            generatedRootScale);
+        generatedModelScaleMultiplier = EditorGUILayout.Vector3Field(
+            "모델 스케일 배율",
+            generatedModelScaleMultiplier);
 
         string targetDirection = SelectedTab == CharacterTab.Fighter ? "+Y" : "+Z";
         EditorGUILayout.HelpBox(
-            itemDefinition != null
-                ? $"{itemDefinition.weaponType} 기준 길이 " +
-                  $"{GetReferenceLength(itemDefinition.weaponType):0.00}m로 맞추고 진행 방향을 {targetDirection}로 정렬합니다."
-                : $"아이템 정의의 무기 종류를 기준으로 크기를 맞추고 진행 방향을 {targetDirection}로 정렬합니다.",
+            normalizeToReferenceLength
+                ? itemDefinition != null
+                    ? $"{itemDefinition.weaponType} 기준 길이 " +
+                      $"{GetReferenceLength(itemDefinition.weaponType):0.00}m로 먼저 맞춘 뒤 모델 배율을 적용하고, " +
+                      $"진행 방향을 {targetDirection}로 정렬합니다."
+                    : $"아이템 정의의 무기 종류를 기준으로 크기를 맞춘 뒤 모델 배율을 적용하고, " +
+                      $"진행 방향을 {targetDirection}로 정렬합니다."
+                : $"원본 크기에 모델 배율만 적용하고 진행 방향을 {targetDirection}로 정렬합니다.",
             MessageType.None);
+
+        EditorGUILayout.HelpBox(
+            "루트/모델 스케일은 팀원의 외형 취향에 맞게 자유롭게 지정할 수 있습니다. " +
+            "기존 프리팹을 덮어쓸 때 '기존 프리팹의 손 맞춤값 유지'를 켜면 기존 루트/Model 스케일이 우선하며, " +
+            "끄면 위 입력값을 새로 적용합니다. 비균일·음수 스케일은 IK와 충돌 검증 결과를 바꿀 수 있습니다.",
+            MessageType.Info);
+
+        if (overwriteExisting && preserveExistingCalibration)
+        {
+            EditorGUILayout.HelpBox(
+                "현재는 기존 손 맞춤값 유지가 켜져 있어 위 스케일 입력값보다 기존 프리팹의 Root/Model 스케일이 우선합니다. " +
+                "새 스케일을 적용하려면 유지 옵션을 끄세요.",
+                MessageType.Warning);
+        }
+
+        if (HasNonPositiveComponent(generatedRootScale) ||
+            HasNonPositiveComponent(generatedModelScaleMultiplier))
+        {
+            EditorGUILayout.HelpBox(
+                "0 또는 음수 스케일이 포함되어 있습니다. 입력은 허용하지만 렌더 방향, IK, 충돌 검증을 반드시 확인하세요.",
+                MessageType.Warning);
+        }
 
         if (modelAsset != null)
             DrawAutomaticFitStatus();
@@ -164,8 +210,11 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField("파이터 왼손 IK", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
-            "파이터 무기는 항상 양손 기준으로 생성합니다. 원본의 LeftHandGrip을 우선 사용하고, " +
-            "없으면 무기 종류별 기본 위치를 생성합니다. 기본 위치는 생성된 프리팹에서 확인해주세요.",
+            "파이터 무기는 항상 양손 기준으로 생성합니다. RightHandGrip과 LeftHandGrip이 모두 있으면 " +
+            "두 기준점을 그대로 사용합니다. 두 Grip은 손잡이 표면이 아니라 각 손가락 고리 안을 지나는 " +
+            "손잡이 중심축 위에 있어야 하며, Grip의 +X가 손잡이 축과 나란해야 합니다. " +
+            "LeftHandGrip이 없으면 정식 Fighter 손 간격으로 초깃값만 생성하므로 " +
+            "실제 손 메시 검증 전에는 완료로 취급하지 않습니다.",
             MessageType.None);
     }
 
@@ -232,6 +281,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         {
             if (GUILayout.Button("현재 장착 외형 보정값을 프리팹에 저장", GUILayout.Height(32f)))
                 SaveCurrentRuntimeCalibration();
+
+            if (GUILayout.Button("현재 장착 무기 실제 손 메시 검증", GUILayout.Height(28f)))
+                WeaponGripFitValidatorWindow.OpenAndValidate();
         }
 
         if (!EditorApplication.isPlaying)
@@ -495,6 +547,18 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return;
         }
 
+        if (existingPrefab != null &&
+            overwriteExisting &&
+            preserveExistingCalibration &&
+            !CanPreserveExistingPrefab(existingPrefab, out string preserveError))
+        {
+            EditorUtility.DisplayDialog(
+                "덮어쓰기 중단",
+                preserveError,
+                "확인");
+            return;
+        }
+
         ExistingCalibration calibration = overwriteExisting && preserveExistingCalibration
             ? CaptureExistingCalibration(existingPrefab)
             : null;
@@ -514,6 +578,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
             string fitResult = FitModelAutomatically(wrapper.transform, modelInstance.transform);
             CreateRequiredMarkers(wrapper.transform, modelInstance.transform, sourceLeftGrip, sourceMuzzle);
+            if (calibration == null)
+                ApplyDefaultCharacterCalibration(wrapper.transform);
             ApplyExistingCalibration(wrapper.transform, calibration);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(wrapper, prefabPath);
@@ -572,7 +638,10 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return ShowValidationError("아이템 정의의 캐릭터 클래스와 무기 종류 조합이 올바르지 않습니다.");
         }
 
-        if (modelAsset == null || string.IsNullOrEmpty(AssetDatabase.GetAssetPath(modelAsset)))
+        string modelAssetPath = modelAsset != null
+            ? AssetDatabase.GetAssetPath(modelAsset)
+            : string.Empty;
+        if (modelAsset == null || string.IsNullOrEmpty(modelAssetPath))
             return ShowValidationError("Project 창의 모델 또는 프리팹 에셋을 선택해주세요.");
 
         if (visualCatalog == null)
@@ -594,6 +663,21 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return ShowValidationError("외부 에셋 원본 폴더에는 생성 결과를 저장할 수 없습니다.");
         }
 
+        if (modelAssetPath.StartsWith(
+                outputFolderPath + "/",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return ShowValidationError(
+                "생성 결과 프리팹을 원본 모델로 다시 선택할 수 없습니다. " +
+                "스케일 중첩과 순환 참조를 막기 위해 FBX 또는 원본 모델 프리팹을 선택해주세요.");
+        }
+
+        if (!IsFinite(generatedRootScale) ||
+            !IsFinite(generatedModelScaleMultiplier))
+        {
+            return ShowValidationError("스케일에는 NaN 또는 Infinity를 입력할 수 없습니다.");
+        }
+
         if (modelAsset.GetComponentsInChildren<Renderer>(true).Length == 0)
             return ShowValidationError("선택한 모델에서 Renderer를 찾지 못했습니다.");
 
@@ -603,6 +687,46 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private static bool ShowValidationError(string message)
     {
         EditorUtility.DisplayDialog("입력 확인", message, "확인");
+        return false;
+    }
+
+    private static bool CanPreserveExistingPrefab(
+        GameObject prefab,
+        out string error)
+    {
+        error = null;
+        if (prefab.transform.Find(ModelName) == null)
+        {
+            error =
+                "기존 프리팹에 직접 자식 'Model'이 없어 손 맞춤값과 모델 변환을 안전하게 보존할 수 없습니다.\n\n" +
+                "기존 보정 유지를 끄고 새로 생성하거나, 현재 프리팹을 수동으로 확인해주세요.";
+            return false;
+        }
+
+        string unsupportedChildren = string.Empty;
+        for (int i = 0; i < prefab.transform.childCount; i++)
+        {
+            string childName = prefab.transform.GetChild(i).name;
+            if (childName == ModelName ||
+                childName == LeftHandGripName ||
+                childName == MuzzleName)
+            {
+                continue;
+            }
+
+            unsupportedChildren +=
+                string.IsNullOrEmpty(unsupportedChildren)
+                    ? childName
+                    : ", " + childName;
+        }
+
+        if (string.IsNullOrEmpty(unsupportedChildren))
+            return true;
+
+        error =
+            "기존 프리팹에 생성기가 보존하지 못하는 추가 자식이 있습니다:\n" +
+            unsupportedChildren +
+            "\n\nVFX·추가 기준점을 잃지 않도록 자동 덮어쓰기를 중단했습니다.";
         return false;
     }
 
@@ -635,7 +759,14 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         if (currentLength <= Mathf.Epsilon)
             throw new InvalidOperationException("모델의 렌더 크기를 계산할 수 없습니다.");
 
-        model.localScale *= GetReferenceLength(itemDefinition.weaponType) / currentLength;
+        if (normalizeToReferenceLength)
+        {
+            model.localScale *=
+                GetReferenceLength(itemDefinition.weaponType) / currentLength;
+        }
+        model.localScale = Vector3.Scale(
+            model.localScale,
+            generatedModelScaleMultiplier);
 
         if (rightHandGrip != null && sourceForwardAxis == SourceAxis.Auto)
         {
@@ -699,7 +830,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
                 wrapper,
                 LeftHandGripName,
                 sourceLeftGrip,
-                GetDefaultLeftGripPosition(itemDefinition.weaponType));
+                GetDefaultLeftGripPosition(itemDefinition.weaponType),
+                FighterDefaultLeftGripRotation);
             return;
         }
 
@@ -707,7 +839,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             wrapper,
             LeftHandGripName,
             sourceLeftGrip,
-            GetDefaultLeftGripPosition(itemDefinition.weaponType));
+            GetDefaultLeftGripPosition(itemDefinition.weaponType),
+            Quaternion.identity);
         CreateMuzzle(wrapper, model, sourceMuzzle);
     }
 
@@ -715,7 +848,8 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         Transform wrapper,
         string markerName,
         Transform sourceMarker,
-        Vector3 defaultLocalPosition)
+        Vector3 defaultLocalPosition,
+        Quaternion defaultLocalRotation)
     {
         var marker = new GameObject(markerName).transform;
         marker.SetParent(wrapper, false);
@@ -726,7 +860,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
             return;
         }
 
-        marker.SetLocalPositionAndRotation(defaultLocalPosition, Quaternion.identity);
+        marker.SetLocalPositionAndRotation(defaultLocalPosition, defaultLocalRotation);
     }
 
     private static void CreateMuzzle(
@@ -756,15 +890,20 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private void DrawAutomaticFitStatus()
     {
         Transform rightHandGrip = FindDescendant(modelAsset.transform, RightHandGripName);
+        Transform leftHandGrip = FindDescendant(modelAsset.transform, LeftHandGripName);
         Renderer gripRenderer = FindPreferredGripRenderer(modelAsset.transform);
 
         if (rightHandGrip != null)
         {
+            bool hasBothFighterGrips =
+                SelectedTab != CharacterTab.Fighter || leftHandGrip != null;
             EditorGUILayout.HelpBox(
                 sourceForwardAxis == SourceAxis.Auto
-                    ? "RightHandGrip을 찾았습니다. 해당 기준점의 위치와 회전으로 정렬합니다."
+                    ? hasBothFighterGrips
+                        ? "필요한 Grip 기준점을 찾았습니다. 두 기준점이 실제 손잡이 중심축 위에 있고 +X가 손잡이 축과 나란한지 확인한 뒤 자동 정렬합니다."
+                        : "RightHandGrip은 있지만 LeftHandGrip이 없습니다. 왼손은 정식 Fighter 기본 간격으로 생성합니다."
                     : "RightHandGrip을 장착점으로 사용하고 선택한 원본 진행축으로 회전합니다.",
-                MessageType.Info);
+                hasBothFighterGrips ? MessageType.Info : MessageType.Warning);
             return;
         }
 
@@ -800,14 +939,40 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         return weaponType switch
         {
-            WeaponType.Greatsword => new Vector3(-0.045f, -0.235f, -0.027f),
-            WeaponType.Blunt => new Vector3(-0.080f, -0.250f, -0.030f),
-            WeaponType.Axe => new Vector3(-0.060f, -0.240f, -0.030f),
+            WeaponType.Greatsword => FighterDefaultLeftGripPosition,
+            WeaponType.Blunt => FighterDefaultLeftGripPosition,
+            WeaponType.Axe => FighterDefaultLeftGripPosition,
             WeaponType.GrenadeLauncher => new Vector3(0f, 0f, 0.32f),
             WeaponType.Shotgun => new Vector3(0f, 0f, 0.34f),
             WeaponType.Rifle => new Vector3(0f, 0f, 0.36f),
             _ => Vector3.zero,
         };
+    }
+
+    private void ApplyDefaultCharacterCalibration(Transform wrapper)
+    {
+        wrapper.localScale = generatedRootScale;
+        if (SelectedTab != CharacterTab.Fighter)
+            return;
+
+        wrapper.SetLocalPositionAndRotation(
+            FighterDefaultRootPosition,
+            FighterDefaultRootRotation);
+    }
+
+    private static bool HasNonPositiveComponent(Vector3 value)
+    {
+        return value.x <= 0f || value.y <= 0f || value.z <= 0f;
+    }
+
+    private static bool IsFinite(Vector3 value)
+    {
+        return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
     private static Renderer FindPreferredGripRenderer(Transform root)
