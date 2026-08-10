@@ -20,12 +20,25 @@
 4. 한손/양손 구분
 5. 무기의 위아래와 진행 방향
 6. 손잡이에 장식이 들어가면 안 되는 실제 파지 구간
+7. 인벤토리 크기 `itemWidth × itemHeight`
+8. 모델·텍스처·아이콘에 공통으로 사용할 최종 파일명 `{itemId}`
 
 Fighter 근접 무기는 최종 Unity 전달 시 손잡이에서 날·헤드로 향하는 방향을 `+Y`로 사용한다. 양손 무기는 오른손과 왼손이 나란히 들어갈 만큼 길고 곧은 파지 구간이 필요하다.
 
 ## 2. Tripo 웹 복사·붙여넣기 프롬프트
 
 아래 대괄호 부분만 무기에 맞게 바꾼다. 배경 이야기보다 화면에 보이는 형상·재질·비율을 우선해서 쓴다.
+
+팀원에게 전달할 때는 프롬프트 위에 다음 작업 카드를 함께 보낸다. 이 값은 Tripo가 메시 안에 새기는 문구가 아니라 Unity 연결 실수를 막기 위한 작업 정보다.
+
+```text
+Item ID: [item.weapon...]
+Character Class: [Fighter / Gunner]
+Weapon Type: [Greatsword / Axe / Blunt / Rifle / Shotgun / GrenadeLauncher]
+Handling: [One-handed / Two-handed]
+Inventory Size: [itemWidth] × [itemHeight]
+Required clear grip zone: [right hand only / right + left hand]
+```
 
 ### 양손 대검
 
@@ -45,12 +58,18 @@ Game-ready stylized sci-fi two-handed [battle axe / hammer / maintenance tool], 
 Game-ready stylized sci-fi one-handed [weapon type], one single centered weapon, isolated. The weapon is perfectly straight and vertically aligned, head or blade at the top and pommel at the bottom. Create one continuous unobstructed handle at least 110 mm long. Use a cylindrical or softly oval grip 30 to 40 mm thick and never over 45 mm in any direction. Leave at least 20 mm of clear straight handle before the guard and pommel. No spikes, rings, cables, finger grooves, or ornaments may enter the hand grip zone. Keep every part physically connected. [색상], [재질], [핵심 디자인 특징], detailed PBR game asset.
 ```
 
+### 거너 총기
+
+```text
+Game-ready stylized sci-fi two-handed [rifle / shotgun / grenade launcher], one single centered weapon, isolated. Use a clear production modeling orientation: muzzle pointing straight forward along +Z and weapon top aligned to +Y. Create a distinct right-hand trigger grip with a clean palm-sized contact area and an unobstructed trigger region. Create a separate straight left-hand support corridor on the fore-end, long enough for one full hand, with no spikes, cables, magazines, rails, or decorations crossing the contact zone. Keep the muzzle opening centered, circular or mechanically symmetric, fully visible, and unobstructed so a Muzzle marker can be placed at its exact center. Keep the stock, receiver, barrel, magazine, trigger grip, and fore-end physically connected with no floating pieces. [색상], [재질], [핵심 디자인 특징], clean readable silhouette from front, side, top, and rear, detailed PBR game asset.
+```
+
 ### Negative Prompt
 
 웹 화면에 Negative Prompt 입력란이 있으면 아래 문장을 별도로 넣는다.
 
 ```text
-character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rack, pedestal, ground, background, floating parts, detached pieces, bent handle, curved grip, oversized grip, tiny grip, spikes or ornaments inside the grip zone, guard splitting the grip, text, logo, watermark
+character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rack, pedestal, ground, background, floating parts, detached pieces, bent handle, curved grip, oversized grip, tiny grip, spikes or ornaments inside the grip zone, guard splitting the grip, blocked muzzle, obstructed trigger, text, logo, watermark
 ```
 
 ## 3. 참조 이미지 사용법
@@ -103,15 +122,28 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 7. Camera, Light, 촬영용 오브젝트, 불필요한 Collider를 빼고 FBX로 내보낸다.
 8. 빈 Blender 씬에 FBX를 다시 가져와 root와 두 Grip Empty가 보존되는지 확인한다.
 
+### Gunner 총기
+
+1. 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용한다.
+2. 총구 방향은 Blender `+Z`, 무기 위쪽은 `+Y`로 맞춘다.
+3. `LeftHandGrip`은 앞손이 실제로 닿는 포어엔드 중심에 둔다.
+4. `Muzzle` Empty는 총구 끝의 정확한 중심에 두고 로컬 `+Z`가 발사 방향을 향하게 한다.
+5. root 직속에 `RightHandGrip`, `LeftHandGrip`, `Muzzle`을 두고 Transform을 적용한다.
+6. Camera, Light, 촬영용 오브젝트와 불필요한 Collider를 제외한 뒤 FBX로 내보낸다.
+7. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
+
 ### Unity
 
-1. `SW/Equipment/무기 외형 프리팹 생성기`에서 ItemDefinition과 FBX를 연결한다.
-2. 자동 배치는 초깃값으로만 사용한다.
-3. 실제 Fighter에 장착해 무기 root에서 뻗는 손잡이 중심축이 오른손 손가락 고리 내부를 통과하는지 확인한다. 손목 피벗이나 손바닥 표면 마커 일치만으로 합격 처리하지 않는다.
-4. 양손 무기는 `LeftHandGrip`에서 뻗는 같은 중심축이 왼손 손가락 고리 내부도 통과하고, 두 손 모두 장식이 아닌 깨끗한 파지 구간을 감싸는지 확인한다.
-5. 정면 한 장만 보지 말고 8방위 × 3고도 24방향과 손 근접 각도를 확인한다.
-6. 작은 손가락·손잡이 겹침은 허용한다. 다만 손 전체가 뜨거나, 손이 가드·폼멜·무기 헤드를 잡거나, 손목이 손잡이를 크게 관통하면 실패다.
-7. 런타임 보정 저장 시 팀원이 선택한 root와 Model scale이 그대로 보존되는지 확인한다. scale 변경 자체는 허용한다.
+1. ItemTable의 최종 `itemId`, `characterClass`, `weaponType`, `itemWidth`, `itemHeight`를 확정하고 `DataLoader/Item Data Table/0. Run All Steps`로 ItemDefinitionSO를 생성·갱신한다.
+2. FBX와 텍스처를 임포트하고 외부 URP/Lit 머터리얼을 source material에 1:1 remap한다.
+3. `SW/Equipment/무기 외형 프리팹 생성기`에서 ItemDefinition과 FBX를 연결해 `{itemId}_WeaponVisual.prefab`과 `WeaponVisualCatalogSO` 항목을 만든다.
+4. 자동 배치는 초깃값으로만 사용한다.
+5. 실제 Fighter에 장착해 무기 root에서 뻗는 손잡이 중심축이 오른손 손가락 고리 내부를 통과하는지 확인한다. 손목 피벗이나 손바닥 표면 마커 일치만으로 합격 처리하지 않는다.
+6. 양손 무기는 `LeftHandGrip`에서 뻗는 같은 중심축이 왼손 손가락 고리 내부도 통과하고, 두 손 모두 장식이 아닌 깨끗한 파지 구간을 감싸는지 확인한다.
+7. 정면 한 장만 보지 말고 8방위 × 3고도 24방향과 손 근접 각도를 확인한다.
+8. 작은 손가락·손잡이 겹침은 허용한다. 다만 손 전체가 뜨거나, 손이 가드·폼멜·무기 헤드를 잡거나, 손목이 손잡이를 크게 관통하면 실패다.
+9. 런타임 보정 저장 시 팀원이 선택한 root와 Model scale이 그대로 보존되는지 확인한다. scale 변경 자체는 허용한다.
+10. 마지막에 `SW/Equipment/인벤토리 무기 아이콘 변환기`로 `OriginalImage/{itemId}.png`를 변환하고 ItemDefinitionSO의 아이콘 연결과 `itemWidth × 128`·`itemHeight × 128` 출력 크기를 확인한다.
 
 ## 7. 웹 작업자 전달 묶음
 
