@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3067795153753379537}
   - component: {fileID: 5896177400158945090}
   m_Layer: 0
-  m_Name: StackText
+  m_Name: RemainingText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32,11 +32,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 929183629414987607}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -1, y: 1}
-  m_SizeDelta: {x: 18, y: 14}
-  m_Pivot: {x: 1, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 90, y: 90}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3067795153753379537
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 2
+  m_text: 10
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 12
-  m_fontSizeBase: 12
+  m_fontSize: 50
+  m_fontSizeBase: 50
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -172,7 +172,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -6, y: -6}
+  m_SizeDelta: {x: -10, y: -10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3894841016815608825
 CanvasRenderer:
@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 3396077665787368529}
   - component: {fileID: 4154928515704110423}
   m_Layer: 0
-  m_Name: DurationFill
+  m_Name: CooldownFill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -247,7 +247,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -6, y: -6}
+  m_SizeDelta: {x: -10, y: -10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3396077665787368529
 CanvasRenderer:
@@ -371,9 +371,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 929183629414987607}
-  - component: {fileID: 6389161830042187043}
+  - component: {fileID: 4956760681795993951}
   m_Layer: 0
-  m_Name: BuffIconSlot
+  m_Name: CooldownIconSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -402,7 +402,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 36, y: 36}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &6389161830042187043
+--- !u!114 &4956760681795993951
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -411,12 +411,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 8814697750299451913}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d0c4c60f4170e64f9b05ff3ee775f8f, type: 3}
+  m_Script: {fileID: 11500000, guid: ba35a56430f036b47938c006a94543f1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BuffIconSlot
+  m_EditorClassIdentifier: Assembly-CSharp::CooldownIconSlot
   iconImage: {fileID: 2052530560479727710}
   borderImage: {fileID: 3024636196498939231}
-  durationFillImage: {fileID: 4154928515704110423}
-  stackText: {fileID: 5896177400158945090}
-  buffBorderColor: {r: 0.12, g: 0.14, b: 0.16, a: 1}
-  debuffBorderColor: {r: 0.35, g: 0.08, b: 0.08, a: 1}
+  cooldownFillImage: {fileID: 4154928515704110423}
+  remainingText: {fileID: 5896177400158945090}
+  remainingTextThreshold: 9
+  borderColor: {r: 0.12, g: 0.14, b: 0.16, a: 1}

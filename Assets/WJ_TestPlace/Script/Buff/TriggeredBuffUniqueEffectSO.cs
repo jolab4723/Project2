@@ -95,12 +95,15 @@ namespace ItemSystem
         private float GetLastTriggerTime(ItemInstance ownerItem)
         {
             string key = GetCooldownKey(ownerItem);
-            if (key == null)
-                return sharedLastTriggerTime;
+            float stored = key == null
+                ? sharedLastTriggerTime
+                : (lastTriggerTimeByItem != null && lastTriggerTimeByItem.TryGetValue(key, out float time) ? time : float.NegativeInfinity);
 
-            return lastTriggerTimeByItem != null && lastTriggerTimeByItem.TryGetValue(key, out float time)
-                ? time
-                : float.NegativeInfinity;
+            // Time.time은 Play 모드를 새로 시작할 때마다 0부터 다시 흐른다. 도메인 리로드 없이 Play를
+            // 반복하면(예: Enter Play Mode Options에서 Reload Domain을 끈 경우) OnEnable이 다시 호출되지
+            // 않아 이전 Play 세션에서 남은 기록이 그대로 남는다 - 그러면 기록된 시각이 지금 Time.time보다
+            // 커지는 모순이 생기므로, 이 경우를 새 세션으로 간주해 기록 없음으로 취급한다.
+            return stored <= Time.time ? stored : float.NegativeInfinity;
         }
 
         private void SetLastTriggerTime(ItemInstance ownerItem, float time)
