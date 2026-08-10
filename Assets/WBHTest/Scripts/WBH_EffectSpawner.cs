@@ -88,6 +88,21 @@ public class WBH_EffectSpawner : MonoBehaviour
         return effect;
     }
 
+    // 인디케이터를 위한 오버로드
+    public WBH_Effect SpawnPersistentEffect(WBH_EffectData data, Vector3 positon, Quaternion rotation)
+    {
+        WBH_Effect effect = poolManager.GetEffect(data);
+
+        if (effect == null)
+            return null;
+
+        effect.transform.SetParent(null);
+        effect.transform.SetPositionAndRotation(positon, rotation);
+
+        effect.Play(data, autoReturn: false);
+        return effect;
+    }
+
     public void Initialize(WBH_EffectPoolManager effectPool)
     {
         this.poolManager = effectPool;

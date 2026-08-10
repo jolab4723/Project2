@@ -41,10 +41,7 @@ public class WBH_EnemyElitePattern : WBH_IEnemyPattern
         // 돌진
         if(distance <= dashRange && distance >= dashMinRange && dashCooldown <= 0f)
         {
-
-            owner.Indicator.SetWorldSize(dashHitRadius * 2, dashRange);
-
-            if(owner.Combat.TryDashAttack(dashRange, 0.4f, owner.Indicator))
+            if(owner.Combat.TryDashAttack(dashRange, 0.4f, owner.IndicatorSpawner, dashHitRadius * 2f, 1f))
             {
                 dashCooldown = DashCooldown;
             }
