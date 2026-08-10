@@ -19,9 +19,8 @@ public class BuffIconSlot : MonoBehaviour
     [SerializeField] private TextMeshProUGUI stackText;
 
     [Header("테두리 색상")]
-    [Tooltip("아이콘이 칸 비율(정사각형)과 다르면 여백이 이 색으로 그대로 드러나므로 너무 밝은 색은 피한다.")]
-    [SerializeField] private Color buffBorderColor = new Color(0.12f, 0.14f, 0.16f);
-    [SerializeField] private Color debuffBorderColor = new Color(0.35f, 0.08f, 0.08f);
+    [SerializeField] private Color buffBorderColor = new Color(0.25f, 0.85f, 0.35f);
+    [SerializeField] private Color debuffBorderColor = new Color(0.85f, 0.25f, 0.25f);
 
     private BuffInstance boundInstance;
 
