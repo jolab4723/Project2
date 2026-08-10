@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ItemSystem;
@@ -22,6 +23,15 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
 
     private readonly List<BuffInstance> activeBuffs = new List<BuffInstance>();
     private PlayerStatManager statManager;
+
+    /// <summary>UI 등 외부에서 현재 걸린 버프 목록을 읽기 전용으로 조회. 남은시간/스택 값은 매 프레임 바뀌므로
+    /// UI 쪽에서 직접 폴링해서 쓰면 되고, 이 리스트 자체는 OnBuffsChanged가 발행될 때만 다시 읽으면 된다.</summary>
+    public IReadOnlyList<BuffInstance> ActiveBuffs => activeBuffs;
+
+    /// <summary>버프가 새로 추가되거나 제거돼서 목록 구성 자체가 바뀔 때 발행. 같은 버프의 스택/지속시간만
+    /// 갱신되는 경우(RefreshDuration, Stack 재적용)는 목록 구성이 그대로라 발행하지 않는다 - UI는 이미
+    /// 표시 중인 항목의 남은시간/스택을 매 프레임 직접 읽어서 갱신하면 되기 때문.</summary>
+    public event Action OnBuffsChanged;
 
     private void Awake()
     {
@@ -71,7 +81,10 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         }
 
         if (anyExpired)
+        {
             statManager?.Recalculate();
+            OnBuffsChanged?.Invoke();
+        }
     }
 
     /// <summary>
@@ -112,6 +125,7 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         else
         {
             activeBuffs.Add(new BuffInstance(source));
+            OnBuffsChanged?.Invoke();
         }
 
         statManager?.Recalculate();
@@ -128,6 +142,7 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
         if (removed > 0)
         {
             statManager?.Recalculate();
+            OnBuffsChanged?.Invoke();
         }
     }
 
@@ -139,6 +154,7 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
 
         activeBuffs.Clear();
         statManager?.Recalculate();
+        OnBuffsChanged?.Invoke();
     }
 
     public StatSet GetStatSet()
