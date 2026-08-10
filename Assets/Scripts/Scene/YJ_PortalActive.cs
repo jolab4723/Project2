@@ -19,6 +19,8 @@ public class YJ_PortalActive : MonoBehaviour
     private bool activationRequested;
     private bool isPortalActive;
 
+    public bool IsPortalActive => isPortalActive;
+
     private void Awake()
     {
         targetLight = targetLight != null
