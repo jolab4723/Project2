@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_Effect))]
@@ -9,6 +8,11 @@ public class WBH_IndicatorView : MonoBehaviour
 
     [Header("Circle")]
     [SerializeField, Min(0.01f)] private float sourceDiameter = 1f;
+
+    [Header("Rectangle")]
+    [SerializeField, Min(0.01f)] private float sourceWidth = 1f;
+    [SerializeField, Min(0.01f)] private float sourceLength = 1f;
+
     [SerializeField, Range(0.01f, 1f)] private float growStartRatio = 0.1f;
 
     private WBH_Effect effect;
@@ -38,42 +42,61 @@ public class WBH_IndicatorView : MonoBehaviour
         }
     }
 
-    // 원 크기 설정
+    // 원형 인디케이터
     public void PlayCircle(float radius, float duration, bool growOverTime)
+    {
+        radius = Mathf.Max(0.01f, radius);
+
+        Play(GetCircleScale(radius), duration, growOverTime);
+    }
+
+    // 사각형 인디케이터
+    public void PlayRectangle(float width, float length, float duration, bool growOverTime = false)
+    {
+        width = Mathf.Max(0.01f, width);
+        length = Mathf.Max(0.01f, length);
+
+        Play(GetRectangleScale(width, length), duration, growOverTime);
+    }
+
+    private void Play(Vector3 fullScale, float duration, bool growOverTime)
     {
         if(visualRoot == null)
         {
-            Log.Warning($"{name}: visualRoot 가 연결되지 않았습니다.");
+            Log.Print($"{name} : visual Root 가 연결되지 않았습니다.");
             effect.StopEffect();
             return;
         }
-
+        
         if(playCoroutine != null)
-        {
             StopCoroutine(playCoroutine);
-        }
 
-        radius = Mathf.Max(0.01f, radius);
-        duration = Mathf.Max(0.01f, duration);
-
-        playCoroutine = StartCoroutine(CoPlayCircle(radius, duration, growOverTime));
+        playCoroutine = StartCoroutine(CoPlay(fullScale, Mathf.Max(0.01f, duration), growOverTime));
     }
 
-    private IEnumerator CoPlayCircle(float radius, float duration, bool growOverTime)
+    // 인디케이터 점점 확대
+    private IEnumerator CoPlay(Vector3 fullScale, float duration, bool growOverTime)
     {
-        Vector3 fullScale = GetCircleScale(radius);
-        Vector3 startScale = growOverTime ? GetCircleScale(radius * growStartRatio) : fullScale;
+        Vector3 startScale = growOverTime ? fullScale * growStartRatio : fullScale;
+
+        startScale.y = fullScale.y; // 인디케이터이므로 높이는 얇게 
 
         visualRoot.localScale = startScale;
+
         float elapsed = 0f;
 
-        while(elapsed < duration)
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
+
             if(growOverTime)
             {
                 float t = Mathf.Clamp01(elapsed / duration);
-                visualRoot.localScale = Vector3.Lerp(startScale, fullScale, t);
+
+                Vector3 scale = Vector3.Lerp(startScale, fullScale, t);
+
+                scale.y = fullScale.y;
+                visualRoot.localScale = scale;
             }
             yield return null;
         }
@@ -86,15 +109,35 @@ public class WBH_IndicatorView : MonoBehaviour
     // 원 크기 설정
     private Vector3 GetCircleScale(float radius)
     {
+        Vector3 parentScale = GetParentLossyScale();
+
         float worldDiameter = radius * 2f;
+
+        return new Vector3(baseLocalScale.x * worldDiameter / (sourceDiameter * parentScale.x), 
+                           baseLocalScale.y,
+                           baseLocalScale.z * worldDiameter / (sourceDiameter * parentScale.z));
+    }
+    // 사각형 크기 설정
+    private Vector3 GetRectangleScale(float width, float length)
+    {
+        Vector3 parentScale = GetParentLossyScale();
+
+        return new Vector3(baseLocalScale.x * width / (sourceWidth * parentScale.x), 
+                           baseLocalScale.y,
+                           baseLocalScale.z * length / (sourceWidth * parentScale.z));
+    }
+    // 기존 부모 월드스케일 적용
+    private Vector3 GetParentLossyScale()
+    {
         Transform parent = visualRoot.parent;
 
-        float parentScaleX= Mathf.Abs(parent.localScale.x);
-        float parentScaleZ= Mathf.Abs(parent.localScale.z);
+        if (parent == null)
+            return Vector3.one;
 
-        float localScaleX = baseLocalScale.x * worldDiameter / (sourceDiameter * parentScaleX);
-        float localScaleZ = baseLocalScale.z * worldDiameter / (sourceDiameter * parentScaleZ);
+        Vector3 scale = parent.lossyScale;
 
-        return new Vector3(localScaleX, baseLocalScale.y,localScaleZ);
+        return new Vector3(Mathf.Max(0.0001f, Mathf.Abs(scale.x)),
+                           Mathf.Max(0.0001f, Mathf.Abs(scale.y)),
+                           Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
     }
 }

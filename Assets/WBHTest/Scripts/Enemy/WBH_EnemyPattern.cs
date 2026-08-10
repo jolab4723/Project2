@@ -19,7 +19,6 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_EnemyCombat combat;
     private WBH_EnemyStatus status;
     private WBH_EnemyAnimation enemyAnimation;
-    private WBH_Indicator indicator;
     private WBH_IndicatorSpawner indicatorSpawner;
 
     private WBH_EffectSpawner effectSpawner;
@@ -38,7 +37,6 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
-    public WBH_Indicator Indicator => indicator;
     public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;
@@ -57,7 +55,6 @@ public class WBH_EnemyPattern : MonoBehaviour
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
-        indicator = GetComponent<WBH_Indicator>();
         indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
     }
 
@@ -141,6 +138,9 @@ public class WBH_EnemyPattern : MonoBehaviour
                 break;
             case EnemyType.Ranged:
                 RangedAttack();
+                break;
+            case EnemyType.Boss:
+                MeleeAttack();
                 break;
         }
     }
