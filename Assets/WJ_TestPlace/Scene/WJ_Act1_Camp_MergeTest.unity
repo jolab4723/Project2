@@ -20241,6 +20241,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 888487035}
+  - component: {fileID: 888487037}
+  - component: {fileID: 888487036}
   m_Layer: 5
   m_Name: StateBar
   m_TagString: Untagged
@@ -20267,6 +20269,44 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &888487036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888487034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c50c4e29050e8e4480fb28c914a9fb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuffIconUIContainer
+  iconSlotPrefab: {fileID: 6389161830042187043, guid: feae83538b342ae4b9927ae701817766, type: 3}
+  slotParent: {fileID: 0}
+--- !u!114 &888487037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888487034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 1
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 90, y: 90}
+  m_Spacing: {x: 10, y: 10}
+  m_Constraint: 1
+  m_ConstraintCount: 5
 --- !u!1 &889241623
 GameObject:
   m_ObjectHideFlags: 0
@@ -28555,7 +28595,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -6, y: -6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1414715066
 GameObject:
@@ -36607,10 +36647,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba3e62e499aade34c88735c644276eb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponVisualPresenter
+  rightHandGripCenterLocalPosition: {x: 0.01, y: 0.08, z: -0.04}
+  leftHandGripCenterLocalPosition: {x: -0.01, y: 0.08, z: -0.04}
   equipmentSystem: {fileID: 383630432}
   weaponMount: {fileID: 533051252}
   defaultVisual: {fileID: 575249464}
   visualCatalog: {fileID: 11400000, guid: 29dfb902ec8cb5d4298c21e221279a34, type: 2}
+  leftHandContact: {fileID: 0}
   leftHandIkTarget: {fileID: 252701379}
   leftHandIkConstraint: {fileID: 1460433144}
 --- !u!114 &1830349448
@@ -46037,6 +46080,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ItemSampleDropTester
   itemsToDrop:
   - {fileID: 11400000, guid: de9ba7f4a515394429d7c80e58fee5b5, type: 2}
+  - {fileID: 11400000, guid: 0507957778f7c0e4da6a44bccb49eee7, type: 2}
   dropNextKey: 31
   dropAllKey: 37
   scatterRadius: 0.5
