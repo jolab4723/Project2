@@ -9558,7 +9558,7 @@ GameObject:
   - component: {fileID: 4696975393959056068}
   - component: {fileID: 8002414966718337834}
   m_Layer: 5
-  m_Name: Canvas_Pupop
+  m_Name: Canvas_Popup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9573,8 +9573,8 @@ RectTransform:
   m_GameObject: {fileID: 7039001446181280916}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7385433011429023973}
   - {fileID: 1809183208891526974}
@@ -13338,7 +13338,7 @@ PrefabInstance:
     - target: {fileID: 8079437305587753341, guid: 0d7aadba4f237574182a3f9e30c3cbce, type: 3}
       propertyPath: popupEntries.Array.data[3].popup
       value: 
-      objectReference: {fileID: 6567524558355587189}
+      objectReference: {fileID: 0}
     - target: {fileID: 8079437305587753341, guid: 0d7aadba4f237574182a3f9e30c3cbce, type: 3}
       propertyPath: popupEntries.Array.data[4].popup
       value: 
@@ -15462,7 +15462,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7835541364367320829, guid: 10aad406ca8397947adc76b46d958878, type: 3}
       propertyPath: m_Name
-      value: InventiryPopup
+      value: InventoryPopup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -15474,17 +15474,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5782085876479405443, guid: 10aad406ca8397947adc76b46d958878, type: 3}
   m_PrefabInstance: {fileID: 8489435988503990179}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6567524558355587189 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3383331175685877718, guid: 10aad406ca8397947adc76b46d958878, type: 3}
-  m_PrefabInstance: {fileID: 8489435988503990179}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b871c5b0fb838f74db50fea35f454e11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KY_InventoryPopup
 --- !u!1001 &8912035570293681763
 PrefabInstance:
   m_ObjectHideFlags: 0
