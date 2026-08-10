@@ -578,6 +578,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
             string fitResult = FitModelAutomatically(wrapper.transform, modelInstance.transform);
             CreateRequiredMarkers(wrapper.transform, modelInstance.transform, sourceLeftGrip, sourceMuzzle);
+            ReverseFighterModelDirectionPreservingGripSpan(
+                wrapper.transform,
+                modelInstance.transform);
             if (calibration == null)
                 ApplyDefaultCharacterCalibration(wrapper.transform);
             ApplyExistingCalibration(wrapper.transform, calibration);
@@ -861,6 +864,29 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         }
 
         marker.SetLocalPositionAndRotation(defaultLocalPosition, defaultLocalRotation);
+    }
+
+    private void ReverseFighterModelDirectionPreservingGripSpan(
+        Transform wrapper,
+        Transform model)
+    {
+        if (SelectedTab != CharacterTab.Fighter || wrapper == null || model == null)
+            return;
+
+        Transform leftHandGrip = wrapper.Find(LeftHandGripName);
+        if (leftHandGrip == null)
+            return;
+
+        // Rotate around the midpoint between the two hand contacts. This reverses
+        // the weapon head while keeping the same physical handle span in both hands.
+        Vector3 gripMidpoint = leftHandGrip.localPosition * 0.5f;
+        Quaternion directionReversal =
+            Quaternion.AngleAxis(180f, Vector3.right);
+
+        model.SetLocalPositionAndRotation(
+            gripMidpoint +
+            directionReversal * (model.localPosition - gripMidpoint),
+            directionReversal * model.localRotation);
     }
 
     private static void CreateMuzzle(

@@ -41,7 +41,7 @@ public sealed class WBHEnemyItemDropAdapter : MonoBehaviour
         }
 
         hasRequestedDrop = true;
-
+        ItemTriggerManager.Instance?.Fire(ItemSystem.TriggerCondition.OnKill);
         if (controller.Info == null)
         {
             Debug.LogWarning(

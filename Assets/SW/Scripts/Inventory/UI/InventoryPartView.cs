@@ -6,6 +6,13 @@ public class InventoryPartView : MonoBehaviour
     [SerializeField] private KY_PopupBase shop;
     [SerializeField] private KY_PopupBase upgrade;
 
+    private void Awake()
+    {
+        SetClosedImmediately(inventory);
+        SetClosedImmediately(shop);
+        SetClosedImmediately(upgrade);
+    }
+
     public bool HasOpenWindow =>
         IsOpen(inventory) ||
         IsOpen(shop) ||
@@ -49,6 +56,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void CloseAll()
     {
+        TooltipManager.Instance?.HideTooltip();
+
         if (!HasOpenWindow)
             return;
 
@@ -83,5 +92,11 @@ public class InventoryPartView : MonoBehaviour
             return;
 
         popup.Close();
+    }
+
+    private static void SetClosedImmediately(KY_PopupBase popup)
+    {
+        if (popup != null)
+            popup.gameObject.SetActive(false);
     }
 }
