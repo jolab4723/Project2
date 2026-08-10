@@ -1697,6 +1697,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2057662882}
     m_Modifications:
+    - target: {fileID: 162838714008887138, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1885792313}
+    - target: {fileID: 1048433940641645028, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 2057887740}
     - target: {fileID: 1175335153437914770, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1787,7 +1795,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1713014241565711533, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00093776314
+      value: 0.00007465832
       objectReference: {fileID: 0}
     - target: {fileID: 1867469949808910375, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1821,6 +1829,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3700761160952745310, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1885792313}
     - target: {fileID: 3943287184587411157, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1837,10 +1849,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3964215789537268145, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 2057887740}
     - target: {fileID: 5349086256751169567, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5645707939104673128, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1885792313}
+    - target: {fileID: 5767616302808650651, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 2057887740}
     - target: {fileID: 6013441984223797049, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1857,6 +1881,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6395342502861458991, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1885792313}
     - target: {fileID: 7581083986406848764, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -2000,10 +2028,6 @@ PrefabInstance:
     - target: {fileID: 170218, guid: fcce37cf9ed5a9b489907d9d8ff826a9, type: 3}
       propertyPath: m_Name
       value: Portal_Particle
-      objectReference: {fileID: 0}
-    - target: {fileID: 170218, guid: fcce37cf9ed5a9b489907d9d8ff826a9, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 459190, guid: fcce37cf9ed5a9b489907d9d8ff826a9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2834,6 +2858,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1677853113}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1885792313 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4396124936728655837, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+  m_PrefabInstance: {fileID: 137719163}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1912801153 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2492878649651428515, guid: d9708448ce2baa947b04d0bb6636db82, type: 3}
