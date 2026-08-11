@@ -5,7 +5,7 @@ public class YJ_StageManager : MonoBehaviour
 {
     private DataManager dataManager;
     [SerializeField] private bool bootScene = false;
-
+    public bool isBossStage = false;
 
     private void Start()
     {

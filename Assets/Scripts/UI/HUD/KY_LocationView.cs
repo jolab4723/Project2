@@ -6,8 +6,17 @@ public class KY_LocationView : MonoBehaviour
 {
     [FormerlySerializedAs("chapterText")]
     [SerializeField] private TextMeshProUGUI stageText;
+    [SerializeField] private YJ_StageManager stageManager;
 
     private YJ_StageSaveService stageSaveService;
+
+    void Awake()
+    {
+        if (stageManager != null)
+            return;
+
+        stageManager = FindFirstObjectByType<YJ_StageManager>();
+    }
 
     void OnEnable()
     {
@@ -23,7 +32,13 @@ public class KY_LocationView : MonoBehaviour
     void OnLocationChanged(int act, int stage)
     {
         if (stageText != null)
-            stageText.text = $"Act{act} Floor{stage}";
+        {
+            if (stageManager.isBossStage)
+                stageText.text = $"Act{act} Boss Stage";
+            else
+                stageText.text = $"Act{act} Floor{stage}";
+        }
+            
     }
 
     private void RefreshLocation()
