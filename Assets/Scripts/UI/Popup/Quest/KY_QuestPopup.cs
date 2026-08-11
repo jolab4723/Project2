@@ -1,18 +1,29 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
 public class KY_QuestPopup : KY_PopupBase
 {
-    public KY_QuestSlot slotPrefab;
-    public Transform content;
+    [Header("References")]
+    [SerializeField] private KY_QuestSlot slotPrefab;
+    [SerializeField] private Transform content;
+
+    [Header("Quest List")]
+    [SerializeField] private List<KY_QuestData> quests = new List<KY_QuestData>();
 
     private KY_SlideAnimator slideAnimator;
     private ObjectPool<KY_QuestSlot> slotPool;
-    private System.Collections.Generic.List<KY_QuestSlot> activeSlots = new System.Collections.Generic.List<KY_QuestSlot>();
+    private readonly List<KY_QuestSlot> activeSlots = new List<KY_QuestSlot>();
 
     void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
+
+        if (slotPrefab == null || content == null)
+        {
+            Debug.LogError("[KY_QuestPopup] Slot Prefab 또는 Content가 연결되지 않았습니다.", this);
+            return;
+        }
 
         slotPool = new ObjectPool<KY_QuestSlot>(
             createFunc: () => Instantiate(slotPrefab, content),
@@ -26,40 +37,39 @@ public class KY_QuestPopup : KY_PopupBase
     public override void Open()
     {
         gameObject.SetActive(true);
-        slideAnimator.SlideIn();
+
+        if (slideAnimator != null)
+            slideAnimator.SlideIn();
+
         RefreshList();
     }
 
     public override void Close()
     {
-        slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        if (slideAnimator != null)
+            slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        else
+            gameObject.SetActive(false);
     }
 
-    void RefreshList()
+    private void RefreshList()
     {
+        if (slotPool == null)
+            return;
+
         // 기존 슬롯 전부 반납
         foreach (var slot in activeSlots)
             slotPool.Release(slot);
         activeSlots.Clear();
 
-        // 더미 데이터로 테스트
-        KY_QuestData[] dummyQuests = new KY_QuestData[]
-        {
-            new KY_QuestData
-            {
-                questName = "면도기 모터가 필요해",
-                description = "어우, 오랬동안 면도를 못했네. 로봇들에게서 면도기 모터로 쓸만한 작은 모터를 좀 가져와줘.",
-                conditions = new KY_QuestConditionData[]
-                {
-                    new KY_QuestConditionData { description = "고장난 로봇 처치", current = 0, required = 5 },
-                    new KY_QuestConditionData { description = "면도기 모터 수집", current = 0, required = 3 }
-                },
-                reward = "골드 500, 경험치 300"
-            }
-        };
+        if (quests == null)
+            return;
 
-        foreach (var quest in dummyQuests)
+        foreach (var quest in quests)
         {
+            if (quest == null)
+                continue;
+
             KY_QuestSlot slot = slotPool.Get();
             slot.SetData(quest);
             activeSlots.Add(slot);

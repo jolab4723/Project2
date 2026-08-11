@@ -51,6 +51,9 @@ namespace ItemSystem
     // category가 Armor일 때만 사용
     public enum ArmorType { Helmet, Armor, Boots, None }
 
+    // category가 Potion일 때만 사용
+    public enum PotionEffectType { Heal, StatBoost }
+
     public enum SubStatSlotType { Combat, Utility, Either }
 
     public enum ElementType { None, Fire, Ice, Electric }
