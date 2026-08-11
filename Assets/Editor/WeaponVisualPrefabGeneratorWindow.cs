@@ -62,7 +62,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private static readonly Vector3 FighterDefaultLeftGripPosition =
         new(0f, 0.22282f, 0f);
     private static readonly Quaternion FighterDefaultLeftGripRotation =
-        new(0f, 0f, 0.70710678f, 0.70710678f);
+        new(-0.6625993f, -0.6625993f, 0.2469054f, 0.2469054f);
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
     private const float AxeReferenceLength = 1.35f;
