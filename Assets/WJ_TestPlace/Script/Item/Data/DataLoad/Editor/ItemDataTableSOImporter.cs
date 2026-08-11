@@ -29,6 +29,7 @@ namespace DataSystem
 
         private const string IconFolder = "Assets/Resources/Images/Item";
         private const string UniqueEffectFolder = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/UniqueEffectPool";
+        private const string PotionBuffFolder = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/PotionBuffPool";
 
         [MenuItem("DataLoader/Item Data Table/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -153,11 +154,49 @@ namespace DataSystem
                 if (asset == null)
                     continue;
 
+                ApplyPotionEffectFields(asset, row);
                 FinalizeAsset(asset, database, ref registeredCount);
                 count++;
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// 포션 효과(회복/능력치 증가, 수치, 지속시간)를 채운다.
+        /// StatBoost일 때는 실제로 PlayerBuffManager.ApplyBuff에 넘길 BuffDefinitionSO를
+        /// 포션 하나당 하나씩 자동 생성/갱신해서 연결한다 (IBuffSource.cs 문서 주석 기준:
+        /// 아이템 고유 효과가 아닌 포션/스킬/디버프는 BuffDefinitionSO를 쓰는 게 기존 설계).
+        /// </summary>
+        private static void ApplyPotionEffectFields(ItemDefinitionSO asset, PotionDefinitionRow row)
+        {
+            asset.potionEffectType = ParseEnumOrDefault(row.potionEffectType, PotionEffectType.Heal);
+            asset.potionStatType = ParseEnumOrDefault(row.potionStatType, StatType.healthFlat);
+            asset.potionEffectValue = row.potionEffectValue;
+            asset.potionEffectDuration = row.potionEffectDuration;
+
+            if (asset.potionEffectType != PotionEffectType.StatBoost)
+            {
+                asset.potionBuff = null;
+                return;
+            }
+
+            EnsureAssetFolder(PotionBuffFolder);
+            BuffDefinitionSO buff = GetOrCreateAsset<BuffDefinitionSO>(PotionBuffFolder, asset.itemId, asset.itemName);
+            if (buff == null)
+                return;
+
+            buff.buffId = asset.itemId;
+            buff.buffName = asset.itemName;
+            buff.icon = asset.icon;
+            buff.description = asset.description;
+            buff.duration = asset.potionEffectDuration;
+            buff.stackBehavior = BuffStackBehavior.RefreshDuration;
+            buff.maxStack = 0;
+            buff.statEffects = new[] { new FixedStatValue { statType = asset.potionStatType, value = asset.potionEffectValue } };
+            EditorUtility.SetDirty(buff);
+
+            asset.potionBuff = buff;
         }
 
         /// <summary>
@@ -299,6 +338,13 @@ namespace DataSystem
                     asset.uniqueEffect.icon = icon;
                     EditorUtility.SetDirty(asset.uniqueEffect);
                     effectIconsCopied++;
+                }
+
+                // 포션의 StatBoost 버프도 같은 방식으로 아이템 아이콘을 그대로 쓴다 (버프 HUD 표시용).
+                if (asset.potionBuff != null)
+                {
+                    asset.potionBuff.icon = icon;
+                    EditorUtility.SetDirty(asset.potionBuff);
                 }
             }
 

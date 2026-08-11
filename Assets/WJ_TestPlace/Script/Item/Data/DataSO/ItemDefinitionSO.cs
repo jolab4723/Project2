@@ -52,6 +52,17 @@ namespace ItemSystem
         [Tooltip("고유효과 자동 연결(SOImporter)용 소스 ID. uniqueEffect 자체가 바뀌어도 이 값으로 다시 찾을 수 있음.")]
         public string uniqueEffectId;
 
+        [Header("포션 효과 (category가 Potion일 때만 사용)")]
+        public PotionEffectType potionEffectType;
+        [Tooltip("potionEffectType이 StatBoost일 때만 사용 - 증가시킬 스탯")]
+        public StatType potionStatType;
+        [Tooltip("회복량 또는 스탯 증가량")]
+        public float potionEffectValue;
+        [Tooltip("지속시간(초). Heal은 즉시 적용이라 0. StatBoost는 이 시간만큼 유지된다.")]
+        public float potionEffectDuration;
+        [Tooltip("potionEffectType이 StatBoost일 때 실제로 적용할 버프 정의. SOImporter가 위 필드들로부터 자동 생성/갱신한다.")]
+        public BuffDefinitionSO potionBuff;
+
         /// <summary>
         /// 등급별 서브 옵션을 굴리는 카테고리인지. 무기/방어구만 해당한다.
         /// 유물과 포션은 등급이 높아도 서브 옵션 없이 uniqueEffect만 가진다.
