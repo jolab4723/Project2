@@ -6590,7 +6590,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1713014241565711533, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000052393556
+      value: 0.000021364864
       objectReference: {fileID: 0}
     - target: {fileID: 1867469949808910375, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
@@ -6967,6 +6967,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 96970395601806380, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
   m_PrefabInstance: {fileID: 1035253111}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1035253113 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8756550498913179854, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
+  m_PrefabInstance: {fileID: 1035253111}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
 --- !u!1001 &1035929869
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6975,9 +6986,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1522336687}
     m_Modifications:
+    - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 1984896761}
+    - target: {fileID: 2223535990301607553, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: inventoryController
+      value: 
+      objectReference: {fileID: 501784707}
+    - target: {fileID: 2312052604114874023, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectSpawner
+      value: 
+      objectReference: {fileID: 1035253113}
     - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.026277788
+      objectReference: {fileID: 0}
+    - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.16128281
       objectReference: {fileID: 0}
     - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.z
@@ -7011,6 +7038,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -0.06168307
       objectReference: {fileID: 0}
+    - target: {fileID: 7905982457287239412, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 1984896761}
     - target: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
