@@ -6,6 +6,8 @@ using UnityEngine.UI;
 public class YJ_MinimapPortal : MonoBehaviour
 {
     private const string PortalTag = "Portal";
+    private const float OutsideIconScale = 0.5f;
+    private const float IconScaleTransitionDuration = 0.1f;
 
     [Header("추적 대상")]
     [SerializeField] private Transform player;
@@ -24,6 +26,9 @@ public class YJ_MinimapPortal : MonoBehaviour
     private YJ_PortalActive portal;
     private float playerSearchTimer;
     private float portalSearchTimer;
+    private float scaleStart = 1f;
+    private float scaleTarget = 1f;
+    private float scaleElapsedTime = IconScaleTransitionDuration;
 
     private void Awake()
     {
@@ -66,7 +71,9 @@ public class YJ_MinimapPortal : MonoBehaviour
         SetIconVisible(true);
 
         Vector3 worldOffset = portal.transform.position - player.position;
-        portalIcon.rectTransform.anchoredPosition = GetMinimapPosition(worldOffset);
+        RectTransform iconRect = portalIcon.rectTransform;
+        iconRect.anchoredPosition = GetMinimapPosition(worldOffset, out bool isOutside);
+        UpdateIconScale(iconRect, isOutside ? OutsideIconScale : 1f);
     }
 
     private void ResolveReferences()
@@ -134,6 +141,7 @@ public class YJ_MinimapPortal : MonoBehaviour
             iconRect.anchorMin = new Vector2(0.5f, 0.5f);
             iconRect.anchorMax = new Vector2(0.5f, 0.5f);
             iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.localScale = Vector3.one;
             portalIcon.raycastTarget = false;
         }
 
@@ -145,14 +153,43 @@ public class YJ_MinimapPortal : MonoBehaviour
         }
     }
 
-    private Vector2 GetMinimapPosition(Vector3 worldOffset)
+    private Vector2 GetMinimapPosition(Vector3 worldOffset, out bool isOutside)
     {
         float halfWidth = Mathf.Max(0f, iconArea.rect.width * 0.5f - edgePadding);
         float halfHeight = Mathf.Max(0f, iconArea.rect.height * 0.5f - edgePadding);
+        Vector2 normalizedPosition = new Vector2(
+            worldOffset.x / worldRadius,
+            worldOffset.z / worldRadius);
+
+        float largestAxis = Mathf.Max(
+            Mathf.Abs(normalizedPosition.x),
+            Mathf.Abs(normalizedPosition.y));
+        isOutside = largestAxis > 1f;
+
+        if (isOutside)
+            normalizedPosition /= largestAxis;
 
         return new Vector2(
-            worldOffset.x / worldRadius * halfWidth,
-            worldOffset.z / worldRadius * halfHeight);
+            normalizedPosition.x * halfWidth,
+            normalizedPosition.y * halfHeight);
+    }
+
+    private void UpdateIconScale(RectTransform iconRect, float targetScale)
+    {
+        if (!Mathf.Approximately(scaleTarget, targetScale))
+        {
+            scaleStart = iconRect.localScale.x;
+            scaleTarget = targetScale;
+            scaleElapsedTime = 0f;
+        }
+
+        scaleElapsedTime = Mathf.Min(
+            scaleElapsedTime + Time.unscaledDeltaTime,
+            IconScaleTransitionDuration);
+
+        float progress = scaleElapsedTime / IconScaleTransitionDuration;
+        float scale = Mathf.Lerp(scaleStart, scaleTarget, progress);
+        iconRect.localScale = Vector3.one * scale;
     }
 
     private void SetIconVisible(bool visible)
