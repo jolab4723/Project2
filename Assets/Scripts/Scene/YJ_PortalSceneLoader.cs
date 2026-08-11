@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using Core;
 
@@ -6,6 +7,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     public string loadSceneName = "StageSelect";
     [SerializeField] private bool completePendingStage = true;
     [SerializeField] private YJ_StageManager stageManager;
+    [SerializeField] private YJ_PortalEffect portalEffect;
 
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
     private bool transitionRequested;
@@ -14,6 +16,9 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     {
         if (stageManager == null)
             stageManager = FindFirstObjectByType<YJ_StageManager>();
+
+        if (portalEffect == null)
+            portalEffect = GetComponentInParent<YJ_PortalEffect>();
 
         if (stageManager == null)
             Log.Error("YJ_StageManager를 찾을 수 없습니다.");
@@ -31,6 +36,14 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             transitionRequested = false;
             return;
         }
+
+        StartCoroutine(PlayEffectAndLoadScene(other.gameObject));
+    }
+
+    private IEnumerator PlayEffectAndLoadScene(GameObject player)
+    {
+        if (portalEffect != null)
+            yield return portalEffect.PlayOnce(player);
 
         LoadScene(loadSceneName);
     }
