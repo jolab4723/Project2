@@ -4,10 +4,17 @@ using UnityEngine.UI;
 
 public class WBH_EliteHpbarView : MonoBehaviour
 {
+    [Header("Elite")]
     [SerializeField] private GameObject hpBarRoot;
     [SerializeField] private Slider hpSlider;
     [SerializeField] private TMP_Text enemyNameText;
     [SerializeField] private TMP_Text hpText;
+
+    [Header("Boss")]
+    [SerializeField] private GameObject bossHpBarRoot;
+    [SerializeField] private Slider bossHpSlider;
+    [SerializeField] private TMP_Text bossEnemyNameText;
+    [SerializeField] private TMP_Text bossHpText;
 
     [Header("Hide Condition")]
     [SerializeField] private Transform player;

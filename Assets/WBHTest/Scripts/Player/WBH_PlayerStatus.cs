@@ -31,6 +31,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float moveSpeed = 6;
     [SerializeField] private float criticalChance = 1;
     [SerializeField] private float criticalMultiplier = 1;
+    [SerializeField] private float pen = 0;
     [SerializeField] private float fireBonus = 1;
     [SerializeField] private float iceBonus = 1;
     [SerializeField] private float electricBonus = 1;
@@ -109,6 +110,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float CurrentHp => UseHealthManager ? healthManager.CurrentHealth : currentHp;
     public float AttackPower => UseStatManager ? statManager.Stat.attackPower : currentAttackPower;
     public float DefensePower => UseStatManager ? statManager.Stat.defensePower : defensePower;
+    public float Pen => UseStatManager ? statManager.Stat.pen : pen;
     public float CritRate => UseStatManager ? PercentToFraction(statManager.Stat.critRate) : criticalChance;
     public float CritMult => UseStatManager ? PercentToMultiplier(statManager.Stat.critMult) : criticalMultiplier;
     public float FireBonus => UseStatManager ? PercentToFraction(statManager.Stat.fireBonus) : fireBonus;

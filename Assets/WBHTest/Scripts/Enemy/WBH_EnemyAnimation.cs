@@ -17,6 +17,9 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public const int DashSkillId = 1;
     public const int ShootBurstSkillId = 2;
+    public const int ShootBurst2SkillId = 3;
+    public const int TransitionPhaseSkillId = 4;
+    public const int JumpAtkSkillId = 5;
 
     private Action attackEvent;
     private Action attackEndEvent;
@@ -91,6 +94,21 @@ public class WBH_EnemyAnimation : MonoBehaviour
     public void PlayShootBurst()
     {
         animator.SetInteger(SkillIdHash, ShootBurstSkillId);
+        animator.SetTrigger(SkillHash);
+    }
+    public void PlayShootBurst2()
+    {
+        animator.SetInteger(SkillIdHash, ShootBurst2SkillId);
+        animator.SetTrigger(SkillHash);
+    }
+    public void PlayTransitionPhase()
+    {
+        animator.SetInteger(SkillIdHash, TransitionPhaseSkillId);
+        animator.SetTrigger(SkillHash);
+    }
+    public void PlayJumpAtk()
+    {
+        animator.SetInteger(SkillIdHash, JumpAtkSkillId);
         animator.SetTrigger(SkillHash);
     }
 
