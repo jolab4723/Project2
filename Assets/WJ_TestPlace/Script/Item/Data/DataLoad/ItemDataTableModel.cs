@@ -66,6 +66,13 @@ namespace DataSystem
         public int itemWidth = 1;
         public int itemHeight = 1;
         public int itemPrice;
+
+        // 포션 효과 - 회복 또는 능력치 증가, 수치, 지속시간
+        // 사용 가능 횟수(충전량)는 포션마다가 아니라 플레이어 공유 풀(PotionUseManager)이 관리한다.
+        public string potionEffectType; // Heal / StatBoost
+        public string potionStatType;   // potionEffectType이 StatBoost일 때만 사용
+        public float potionEffectValue;
+        public float potionEffectDuration;
     }
 
     /// <summary>
