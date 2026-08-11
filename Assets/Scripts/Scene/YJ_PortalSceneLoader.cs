@@ -5,9 +5,19 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 {
     public string loadSceneName = "StageSelect";
     [SerializeField] private bool completePendingStage = true;
+    [SerializeField] private YJ_StageManager stageManager;
 
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
     private bool transitionRequested;
+
+    private void Awake()
+    {
+        if (stageManager == null)
+            stageManager = FindFirstObjectByType<YJ_StageManager>();
+
+        if (stageManager == null)
+            Log.Error("YJ_StageManager를 찾을 수 없습니다.");
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -64,6 +74,13 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return;
         }
 
+        if (stageManager == null)
+        {
+            Log.Error("StageManager 찾을 수 없습니다.");
+            return;
+        }
+
+        stageManager.EndScene();
         sceneLoader.LoadScene(sceneName);
     }
 }

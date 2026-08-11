@@ -6,6 +6,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(RectMask2D))]
 public class YJ_MinimapEnemy : MonoBehaviour
 {
+    private const float OutsideIconScale = 0.5f;
+    private const float IconScaleTransitionDuration = 0.1f;
+
     [Header("추적 대상")]
     [SerializeField] private Transform player;
 
@@ -25,6 +28,7 @@ public class YJ_MinimapEnemy : MonoBehaviour
     [SerializeField] private float edgePadding = 2f;
 
     private readonly Dictionary<WBH_EnemyController, Image> enemyIcons = new();
+    private readonly Dictionary<WBH_EnemyController, IconScaleTransition> iconScaleTransitions = new();
     private readonly HashSet<WBH_EnemyController> detectedEnemies = new();
     private readonly List<WBH_EnemyController> iconsToRemove = new();
     private readonly Stack<Image> iconPool = new();
@@ -119,6 +123,7 @@ public class YJ_MinimapEnemy : MonoBehaviour
             else
             {
                 enemyIcons.Add(enemy, GetIcon(GetEnemyIconSprite(enemy.Info.enemyGrade)));
+                iconScaleTransitions.Add(enemy, new IconScaleTransition());
             }
         }
 
@@ -135,6 +140,7 @@ public class YJ_MinimapEnemy : MonoBehaviour
         {
             Image icon = enemyIcons[enemy];
             enemyIcons.Remove(enemy);
+            iconScaleTransitions.Remove(enemy);
             ReleaseIcon(icon);
         }
     }
@@ -150,19 +156,62 @@ public class YJ_MinimapEnemy : MonoBehaviour
                 continue;
 
             Vector3 offset = enemy.transform.position - playerPosition;
-            pair.Value.rectTransform.anchoredPosition = GetMinimapPosition(offset);
+            RectTransform iconRect = pair.Value.rectTransform;
+            iconRect.anchoredPosition = GetMinimapPosition(offset, out bool isOutside);
+            UpdateIconScale(enemy, iconRect, isOutside ? OutsideIconScale : 1f);
         }
 
     }
 
-    private Vector2 GetMinimapPosition(Vector3 worldOffset)
+    private void UpdateIconScale(
+        WBH_EnemyController enemy,
+        RectTransform iconRect,
+        float targetScale)
+    {
+        if (!iconScaleTransitions.TryGetValue(enemy, out IconScaleTransition transition))
+        {
+            transition = new IconScaleTransition();
+            iconScaleTransitions.Add(enemy, transition);
+        }
+
+        if (!Mathf.Approximately(transition.TargetScale, targetScale))
+        {
+            transition.StartScale = iconRect.localScale.x;
+            transition.TargetScale = targetScale;
+            transition.ElapsedTime = 0f;
+        }
+
+        transition.ElapsedTime = Mathf.Min(
+            transition.ElapsedTime + Time.unscaledDeltaTime,
+            IconScaleTransitionDuration);
+
+        float progress = transition.ElapsedTime / IconScaleTransitionDuration;
+        float scale = Mathf.Lerp(
+            transition.StartScale,
+            transition.TargetScale,
+            progress);
+        iconRect.localScale = Vector3.one * scale;
+    }
+
+    private Vector2 GetMinimapPosition(Vector3 worldOffset, out bool isOutside)
     {
         float halfWidth = Mathf.Max(0f, iconArea.rect.width * 0.5f - edgePadding);
         float halfHeight = Mathf.Max(0f, iconArea.rect.height * 0.5f - edgePadding);
+        Vector2 normalizedPosition = new Vector2(
+            worldOffset.x / worldRadius,
+            worldOffset.z / worldRadius);
+
+        float largestAxis = Mathf.Max(
+            Mathf.Abs(normalizedPosition.x),
+            Mathf.Abs(normalizedPosition.y));
+        isOutside = largestAxis > 1f;
+
+        if (isOutside)
+            normalizedPosition /= largestAxis;
 
         return new Vector2(
-            worldOffset.x / worldRadius * halfWidth,
-            worldOffset.z / worldRadius * halfHeight);
+            normalizedPosition.x * halfWidth,
+            normalizedPosition.y * halfHeight);
     }
 
     private Image GetIcon(Sprite sprite)
@@ -188,6 +237,7 @@ public class YJ_MinimapEnemy : MonoBehaviour
         iconRect.anchorMin = new Vector2(0.5f, 0.5f);
         iconRect.anchorMax = new Vector2(0.5f, 0.5f);
         iconRect.pivot = new Vector2(0.5f, 0.5f);
+        iconRect.localScale = Vector3.one;
         icon.raycastTarget = false;
         icon.gameObject.SetActive(true);
 
@@ -237,8 +287,16 @@ public class YJ_MinimapEnemy : MonoBehaviour
         }
 
         enemyIcons.Clear();
+        iconScaleTransitions.Clear();
         detectedEnemies.Clear();
         iconsToRemove.Clear();
+    }
+
+    private sealed class IconScaleTransition
+    {
+        public float StartScale = 1f;
+        public float TargetScale = 1f;
+        public float ElapsedTime = IconScaleTransitionDuration;
     }
 
 #if UNITY_EDITOR
