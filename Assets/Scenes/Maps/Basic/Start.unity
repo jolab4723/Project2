@@ -135,6 +135,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1121801959412544343, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+      propertyPath: fadeInDuration
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 1121801959412544343, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+      propertyPath: fadeOutDuration
+      value: 0.15
+      objectReference: {fileID: 0}
     - target: {fileID: 4632559636180049943, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
       propertyPath: m_Name
       value: Managers ---------------------
@@ -187,6 +195,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7624212961552737347, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+      propertyPath: screenFader
+      value: 
+      objectReference: {fileID: 285155749}
     - target: {fileID: 8115380956495501806, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -200,6 +212,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+--- !u!114 &285155749 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1121801959412544343, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+  m_PrefabInstance: {fileID: 285155748}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7baa94bc737417543a79bab0907fc67b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ScreenFader
 --- !u!1 &465826675
 GameObject:
   m_ObjectHideFlags: 0
