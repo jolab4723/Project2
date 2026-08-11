@@ -82,25 +82,26 @@
 
 #### 작업 배정과 책임
 
-- Sol은 시작 전에 참조 이미지, 한손·양손 구분, 담당 모델, 허용 파일, 출력 경로와 완료 기준을 확정하고 최종 채택과 Unity 검증을 소유한다.
+- Sol은 시작 전에 참조 이미지, Fighter/Gunner 구분과 캐릭터별 Grip 규격, 담당 모델, 허용 파일, 출력 경로와 완료 기준을 확정하고 최종 채택과 Unity 검증을 소유한다.
 - Blender 쓰기 작업은 원칙적으로 Luna 하나가 모델 하나의 `.blend`, FBX, 텍스처, 프리뷰와 검증 산출물을 끝까지 담당한다. 서로 다른 파일만 다룰 때 세션당 최대 10개까지 병렬화할 수 있으며 같은 모델이나 공용 머터리얼·생성기·Unity Scene·Prefab은 나누어 수정하지 않는다.
 - 각 담당은 고유한 파일명과 임시 경로를 사용하고 다른 담당의 결과를 덮어쓰지 않는다. Sol은 원본 대조, FBX 재임포트, Unity 머터리얼·장착 상태를 직접 확인한 뒤에만 완료로 판단한다.
 
 #### 모델과 손 기준점
 
 - 내보낼 무기는 단일 root를 사용하고 원점을 주 손의 실제 grip 중앙에 둔다. Transform을 적용해 음수·비균일 scale을 남기지 않는다.
-- 파이터 근접 무기는 손잡이에서 칼날·무기 머리로 향하는 주축을 Blender `+Y`로 통일한다. 한손 무기는 `RightHandGrip`만, 양손 무기는 `RightHandGrip`과 `LeftHandGrip` Empty를 root 아래에 둔다.
+- 파이터 근접 무기는 모두 양손으로 제작하고, 손잡이에서 칼날·무기 머리로 향하는 주축을 Blender `+Y`로 통일한다. `RightHandGrip`과 `LeftHandGrip` Empty를 모두 root 아래에 둔다.
 - 거너 총기는 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용하고, 총구 방향은 Blender `+Z`, 무기의 위쪽은 `+Y`로 통일한다. `LeftHandGrip`은 앞손의 실제 접촉점에, `Muzzle` Empty는 총구 끝에 두며 `Muzzle`의 `+Z`가 발사 방향을 향하게 한다.
-- 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞춘다. 양손 여부가 불명확하면 임의의 `LeftHandGrip`을 만들지 않으며, FBX 내보내기와 빈 Blender 씬 재가져오기에서 Empty가 실제로 보존됐는지 확인한다.
+- 두 Grip의 위치와 회전은 실제 손바닥과 손잡이 축에 맞춘다. Fighter는 두 Grip이 모두 필수이며, FBX 내보내기와 빈 Blender 씬 재가져오기에서 Empty가 실제로 보존됐는지 확인한다.
 - 편집용 `.blend`는 Unity `Assets` 밖에 두고 Unity에는 FBX와 필요한 Unity 자산만 둔다. Camera, Light, Armature, Collider와 촬영용 오브젝트는 요구된 경우가 아니면 FBX에 포함하지 않는다.
 - FBX를 빈 Blender 씬에 다시 가져와 root, Grip, 거너의 Muzzle, 축, 크기, triangle 수, Transform과 객체 종류가 원본과 일치하는지 확인한다. Unity 외형 프리팹은 `Assets/Editor/WeaponVisualPrefabGeneratorWindow.cs`에서 `ItemDefinitionSO`의 캐릭터 규격을 자동 적용한다. 기준점이 없는 기존 모델은 생성기의 원본 피벗 자동 맞춤으로 초깃값을 만든 뒤 생성 프리팹만 수동 보정하며 외부 원본 에셋은 수정하지 않는다.
 
 #### Tripo 제작부터 아이템·외형·아이콘 연결 순서
 
+- Codex로 Tripo 모델 생성·후처리·Unity 전달 작업을 시작할 때는 `Docs/Tripo_Web_Weapon_Grip_Guide.md`를 먼저 읽고 프롬프트, 파지 구간, 축, Grip과 검증 기준을 적용한다. `AGENTS.md`는 자동 작업 지침이지만 `Docs/**`의 개별 문서는 이 연결 규칙이나 사용자 지정이 있을 때 선택적으로 읽는다.
 - Tripo 모델 생성·작업 조회·결과 다운로드는 공식 API를 호출하는 `tripo-cli` 또는 동등한 API 클라이언트로 수행한다. 인증은 `TRIPO_API_KEY` 환경 변수나 사용자가 로그인해 둔 CLI 프로필을 사용하며, API 키 원문을 출력하거나 저장소에 기록하지 않는다.
 - 사용자가 웹 작업을 명시적으로 요청한 경우가 아니면 Tripo 웹사이트를 브라우저로 열거나, 웹 UI에서 참조 이미지를 업로드하고 생성·다운로드를 시도하지 않는다. API 호출이 실패하면 임의로 웹 방식으로 전환하지 말고 원인과 필요한 조치를 사용자에게 알린다.
-- Tripo 작업 전에 ItemTable의 최종 `itemId`, `characterClass`, `weaponType`, 한손·양손 구분과 `itemWidth`·`itemHeight`를 먼저 확정한다. 모델·FBX·텍스처의 기본 파일명도 가능하면 `itemId`를 사용하고, 확정 뒤에는 다른 Unity 자산과 매핑이 연결된 `itemId`를 임의로 바꾸지 않는다.
-- Tripo에는 모델링용 참조와 필요한 정면·측면을 전달하고, Unity 인벤토리용으로는 별도의 0° 정면, 투명 배경, 무회전, 무잘림 PNG를 준비한다. 이 PNG에는 배경·바닥 그림자·프레임 밖으로 번지는 오라를 넣지 않으며 왼쪽 10° 회전과 최종 잘림은 Unity 변환기에 맡긴다.
+- Tripo 작업 전에 ItemTable의 최종 `itemId`, `characterClass`, `weaponType`, Fighter 양손 규격과 `itemWidth`·`itemHeight`를 먼저 확정한다. 모델·FBX·텍스처의 기본 파일명도 가능하면 `itemId`를 사용하고, 확정 뒤에는 다른 Unity 자산과 매핑이 연결된 `itemId`를 임의로 바꾸지 않는다.
+- Tripo에는 모델링용 참조와 필요한 정면·측면을 전달한다. Unity 인벤토리 원본은 모델링을 위해 처음 GPT Image로 만든 0° 정면 샷을 우선 재사용한다. 배경이 있으면 형상과 색을 바꾸지 않는 범위에서 한 번 투명 처리하되, 가장자리 찌꺼기·색 번짐·배경 잔상이 남거나 이를 없애기 위해 반복 보정이 필요하면 중단하고 동일한 디자인·정면 구도의 투명 배경 이미지를 새로 생성한다. 최종 PNG는 무회전·무잘림이어야 하며 배경·바닥 그림자·프레임 밖으로 번지는 오라를 넣지 않는다. 왼쪽 10° 회전과 최종 잘림은 Unity 변환기에 맡긴다.
 - Unity 작업 순서는 `DataLoader/Item Data Table/0. Run All Steps`로 SO 생성·갱신 → FBX와 텍스처 임포트 및 머터리얼 remap → `SW/Equipment/무기 외형 프리팹 생성기`로 외형·카탈로그 등록 → `SW/Equipment/인벤토리 무기 아이콘 변환기`로 원본 PNG와 무기 SO 매핑·출력 순서로 통일한다. ItemTable 개별 단계 메뉴는 담당자 진단용이며 일반 Tripo 전달 흐름에서는 Run All을 사용한다.
 - 외형 생성기는 3D 프리팹과 `WeaponVisualCatalogSO`만 담당하고 인벤토리 아이콘을 생성하거나 덮어쓰지 않는다. 아이콘 변환기만 팀 공용 `Assets/Resources/Images/Item/OriginalImage`의 원본을 GUID로 매핑해 상위 폴더에 `Assets/Resources/Images/Item/{itemId}.png`를 생성하고 `ItemDefinitionSO.icon`에 연결한다. 원본 파일명이 `{itemId}.png` 또는 `{itemId}.source.png`이면 `전체 원본 자동 매핑 및 일괄 변환`에서 아직 매핑되지 않은 항목을 Auto 구도로 자동 등록하며, 다른 파일명은 창에서 원본과 SO를 직접 선택해 등록한다.
 - ItemTable Run All의 아이콘 연결은 상위 폴더의 `Assets/Resources/Images/Item/{itemId}.png`만 정확한 경로로 조회하므로 `OriginalImage` 자식 폴더 원본과 충돌하지 않는다. 단, `OriginalImage`도 Resources 하위라 Player 빌드에 포함되므로 고해상도 원본이 많이 쌓이면 빌드 용량을 점검한다.
@@ -121,6 +122,10 @@
 - FBX가 Metallic·Roughness·Emission을 잃으면 외부 `Universal Render Pipeline/Lit` 머터리얼을 만들고 source material을 1:1 remap한다. 금속은 authored Metallic/Smoothness를 복원하고 나무·가죽·천·뼈는 낮은 금속성을 유지한다.
 - Unity 6 remap은 `AssetImporter.SourceAssetIdentifier(typeof(Material), sourceName)`를 사용한다. remap 후 임베디드 Material이 조회되지 않을 수 있으므로 별도의 원본 머터리얼 명단을 기준으로 반복 실행해도 같은 결과가 나와야 한다.
 - 발광은 HDR `_EmissionColor`, 알파 1, URP Lit `_EMISSION` 키워드와 `BakedEmissive` GI flag를 함께 설정한다. 저장과 도메인 리로드 뒤 로드된 Material에서 다시 확인하고 일반 재질은 `EmissiveIsBlack`을 유지한다.
+- 무기 발광의 최소 품질 기준은 `폐열 절단 대검`과 `코어브레이커`의 실제 Unity 표시 수준으로 삼는다. 발광 부위는 모델 UV와 정확히 일치하는 Emission Map 또는 처음부터 분리 설계된 전용 발광 메시를 사용하며, Base Color에 그려진 색만으로 발광을 대신하지 않는다.
+- 모델 표면과 무관하게 떠 있는 Cube, Cylinder, Quad 같은 임시 발광 도형은 최종 결과에 사용하지 않는다. 전용 발광 메시를 추가할 때는 원본 형상에 밀착하고 정면·측면에서 실루엣과 깊이 침범이 없는지 확인한다.
+- 실제 주변을 밝힐 필요가 있는 발광만 제한된 범위의 Point Light를 보조로 사용한다. 무기당 Light 수와 Range를 최소화하고 그림자는 기본적으로 끄며, 발광색·위치·세기가 Emission 영역과 맞지 않거나 캐릭터와 맵을 과도하게 물들이면 실패로 판정한다.
+- 발광 완료 판정은 머터리얼 수치나 Blender 렌더만으로 내리지 않는다. 격리된 방향광 프리뷰와 정식 `Act1_` 맵의 실제 광원·Bloom 조건에서 발광 무늬의 선명도, 주변광 반응, 비발광 표면의 재질 보존을 `폐열 절단 대검` 또는 `코어브레이커`와 나란히 비교한다.
 - 완료 전 모든 Renderer 슬롯이 non-null 외부 URP/Lit 머터리얼을 가리키는지, source/remap 수와 Base Color·Metallic·Smoothness·Emission·텍스처가 원본과 일치하는지 전수 검사한다. 이어서 격리된 방향광 프리뷰와 실제 맵 장착 상태에서 백색화, 흐릿한 플라스틱 표현, 발광 소실을 확인한다.
 - 검증 때문에 사용자가 열어 둔 Dirty Scene·Prefab을 저장하지 않는다. 임시 Blender/Python/Editor 자동화와 manifest는 완료 후 제거하고, 계속 유지할 Editor 전용 코드는 `Assets/Editor/**`에 둔다.
 

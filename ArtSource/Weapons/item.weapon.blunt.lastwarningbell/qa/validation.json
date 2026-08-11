@@ -1,0 +1,159 @@
+{
+  "item_id": "item.weapon.blunt.lastwarningbell",
+  "fbx": "C:\\Users\\user\\Desktop\\Project2\\Assets\\SW\\Models\\Weapons\\item.weapon.blunt.lastwarningbell\\item.weapon.blunt.lastwarningbell.fbx",
+  "objects": [
+    {
+      "name": "LeftHandGrip",
+      "type": "EMPTY",
+      "parent": "item.weapon.blunt.lastwarningbell",
+      "location": [
+        0.0,
+        0.3100000023841858,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        1.5707964897155762
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "Model",
+      "type": "MESH",
+      "parent": "item.weapon.blunt.lastwarningbell",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "RightHandGrip",
+      "type": "EMPTY",
+      "parent": "item.weapon.blunt.lastwarningbell",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        1.5707964897155762
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "item.weapon.blunt.lastwarningbell",
+      "type": "EMPTY",
+      "parent": null,
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        -1.6292068494294654e-07,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "errors": [],
+  "root": "item.weapon.blunt.lastwarningbell",
+  "direct_children": [
+    "LeftHandGrip",
+    "Model",
+    "RightHandGrip"
+  ],
+  "right_hand_position": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "left_hand_position": [
+    0.0,
+    0.3100000023841858,
+    0.0
+  ],
+  "grip_distance_mm": 310.0000040761886,
+  "grip_vector_axis_dot_plus_y": 1.0,
+  "right_grip_local_x_axis_dot": 1.0,
+  "left_grip_local_x_axis_dot": 1.0,
+  "dimensions_m": [
+    0.4531339108943939,
+    1.420439213514328,
+    0.4677385687828064
+  ],
+  "bounds_min": [
+    -0.22655363380908966,
+    -0.3199783265590668,
+    -0.23386837542057037
+  ],
+  "bounds_max": [
+    0.22658027708530426,
+    1.1004608869552612,
+    0.23387019336223602
+  ],
+  "triangles": 20380,
+  "materials": [
+    {
+      "object": "Model",
+      "index": 0,
+      "material": "item.weapon.blunt.lastwarningbell_PBR"
+    },
+    {
+      "object": "Model",
+      "index": 1,
+      "material": "item.weapon.blunt.lastwarningbell_RubberGrip"
+    }
+  ],
+  "right_hand_grip_thickness": {
+    "x_mm": 35.00000014901161,
+    "z_mm": 35.00000014901161,
+    "samples": 192
+  },
+  "left_hand_grip_thickness": {
+    "x_mm": 35.00000014901161,
+    "z_mm": 35.00000014901161,
+    "samples": 124
+  },
+  "checks": {
+    "single_root": true,
+    "direct_children": true,
+    "weapon_axis_plus_y": true,
+    "grip_local_x_parallel": true,
+    "grip_distance_300_320mm": true,
+    "grip_thickness_30_40mm": true,
+    "length_matches": true,
+    "triangles_near_20k": true,
+    "transforms_applied": true,
+    "materials_non_null": true,
+    "no_camera_light_armature": true
+  },
+  "pass": true
+}

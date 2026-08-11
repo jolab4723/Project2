@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_MaintenanceDroneCore
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uC790\uB3D9 \uC218\uB9AC"
+  icon: {fileID: 21300000, guid: 1bf731da20d56d54282a77f6cd36ea5d, type: 3}
+  effectDescription: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uBC29\uC5B4\uB825\uC774
+    {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {2}\uCD08)"
+  coefficients:
+  - 6
+  - 15
+  - 2
+  triggerCondition: 3
+  cooldownSeconds: 2
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 5
+      value: 15
+    duration: 6
+    stackBehavior: 0
+    maxStack: 1
