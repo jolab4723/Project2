@@ -75,6 +75,7 @@ public class ItemDragHandler : MonoBehaviour,
         }
 
         dragState = DragState.Detached;
+        YJ_CursorManager.Instance?.BeginDragCursor();
 
         // 분리 메서드 안에서 UI가 비활성화되더라도 모델이 빠진 채 남지 않게 한다.
         if (!isActiveAndEnabled)
@@ -166,6 +167,7 @@ public class ItemDragHandler : MonoBehaviour,
 
     private void EndDragVisuals()
     {
+        YJ_CursorManager.Instance?.EndDragCursor();
         TooltipManager.Instance?.EndItemDrag();
         dragHighlighter?.HideActiveHighlight();
         dragVisual?.EndDragVisual();
