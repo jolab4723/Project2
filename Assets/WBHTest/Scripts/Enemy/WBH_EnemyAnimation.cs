@@ -17,6 +17,11 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public const int DashSkillId = 1;
     public const int ShootBurstSkillId = 2;
+    public const int BarrageSkillId = 3;
+    public const int MissileSkillId = 4;
+    public const int TransitionPhaseSkillId = 5;
+    public const int JumpAtkSkillId = 6;
+    public const int DashWaitSkillId = 7;
 
     private Action attackEvent;
     private Action attackEndEvent;
@@ -82,15 +87,9 @@ public class WBH_EnemyAnimation : MonoBehaviour
         animator.SetTrigger(DieHash);
     }
 
-    public void PlayDash()
+    public void PlaySkill(int skillId)
     {
-        animator.SetInteger(SkillIdHash, DashSkillId);
-        animator.SetTrigger(SkillHash);
-    }
-
-    public void PlayShootBurst()
-    {
-        animator.SetInteger(SkillIdHash, ShootBurstSkillId);
+        animator.SetInteger(SkillIdHash, skillId);
         animator.SetTrigger(SkillHash);
     }
 

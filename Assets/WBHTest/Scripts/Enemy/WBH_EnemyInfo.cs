@@ -14,6 +14,7 @@ public class WBH_EnemyInfo
     public float attack;
     public float defense;
     public float moveSpeed;
+    public float pen;
 
     // 전투
     public float attackRange;

@@ -38,7 +38,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     // 이동
     private void HandleMoveInput()
     {
-        if (!Input.GetMouseButtonDown(1) || IsPointerOverUI())
+        if (!Input.GetMouseButton(1) || IsPointerOverUI())
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
