@@ -44,6 +44,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Image itemIcon;
     [SerializeField] private Image rarityBackground;
     [SerializeField] private Image rarityFrame;
+    [SerializeField] private Image hoverGlow;
     
     private void Awake()
     {
@@ -105,6 +106,9 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (rarityFrame == null)
             rarityFrame = transform.Find("RarityFrame")?.GetComponent<Image>();
 
+        if (hoverGlow == null)
+            hoverGlow = transform.Find("HoverInnerGlow")?.GetComponent<Image>();
+
         if (itemTransform == null && itemIcon != null)
             itemTransform = itemIcon.transform;
     }
@@ -115,7 +119,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     /// </summary>
     private void ApplyRarityVisuals(ItemRarity rarity)
     {
-        if (rarityBackground == null && rarityFrame == null)
+        if (rarityBackground == null && rarityFrame == null && hoverGlow == null)
             return;
 
         if (!ItemDisplayNames.GradeColorHex.TryGetValue(rarity, out string colorHex) ||
@@ -127,12 +131,17 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         gradeColor.a = 1f;
         Color frameColor = gradeColor;
         frameColor.a = 0.5f;
+        Color hoverColor = gradeColor;
+        hoverColor.a = 0.42f;
 
         if (rarityBackground != null)
             rarityBackground.color = gradeColor;
 
         if (rarityFrame != null)
             rarityFrame.color = frameColor;
+
+        if (hoverGlow != null)
+            hoverGlow.color = hoverColor;
     }
 
     public void OnPointerClick(PointerEventData eventData)
