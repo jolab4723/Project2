@@ -32,7 +32,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            Transform localPlayer, 
                            Func<Vector3, Transform> findClosestPlayer,
                            WBH_DamageTextPoolManager damagePool,
-                           WBH_EliteHpbarView eliteView)
+                           WBH_HighEnemyHpbarView eliteView)
     {
         this.findClosestPlayer = findClosestPlayer;
         enemySpawner.Initialize(enemyPool, effectPool, projectilePool, localPlayer, damagePool,eliteView);

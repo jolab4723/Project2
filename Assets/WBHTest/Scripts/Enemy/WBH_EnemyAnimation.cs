@@ -94,7 +94,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
     }
 
 
-    // 공격 애니메이션 이벤트
+    // 애니메이션 이벤트
     public void OnAttackEvent()
     {
         attackEvent?.Invoke();
@@ -105,4 +105,6 @@ public class WBH_EnemyAnimation : MonoBehaviour
         attackEndEvent?.Invoke();
         attackEndEvent = null;
     }
+    
+
 }

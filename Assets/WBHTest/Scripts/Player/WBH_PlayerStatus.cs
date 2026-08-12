@@ -53,8 +53,11 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     private float currentMoveSpeed = 6;
 
     private T_PlayerController playerController;
+    private float currentLevel = 1;
     private float currentHp;
     private float currentMp;
+    private float currentExp = 10;
+    private float maxExp = 100;
 
     // WJ 스탯 시스템 연결부. 둘 다 없으면 위 Fallback 필드로 동작한다.
     private PlayerStatManager statManager;
@@ -65,8 +68,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     /// <summary>OnStatChanged를 구독 중인 PlayerStat. 중복 구독/해제 누락을 막기 위해 들고 있는다.</summary>
     private PlayerStat subscribedStat;
 
-    public event Action<float, float> OnHpChanged;
-    public event Action<float, float> OnMpChanged;
+    //public event Action<float, float> OnHpChanged;
+    //public event Action<float, float> OnMpChanged;
     public event Action<float> OnAtkSpeedChanged; // 애니메이션 모션 속도를 공격속도와 연동되게끔 하기 위함
     public event Action OnDead;
 
@@ -120,7 +123,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     // -- combatManager 계산을 위한 인터페이스
     public float MaxHealth => UseStatManager ? statManager.Stat.maxHealth : maxHp;
-    public float MaxMana => UseStatManager ? statManager.Stat.maxMana : maxHp;
+    public float MaxMana => UseStatManager ? statManager.Stat.maxMana : maxMp;
     public float CurrentHp => UseHealthManager ? healthManager.CurrentHealth : currentHp;
     public float CurrentMp => UseManaManager ? manaManager.CurrentMana : currentMp;
     public float AttackPower => UseStatManager ? statManager.Stat.attackPower : currentAttackPower;
@@ -131,6 +134,10 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float FireBonus => UseStatManager ? PercentToFraction(statManager.Stat.fireBonus) : fireBonus;
     public float IceBonus => UseStatManager ? PercentToFraction(statManager.Stat.iceBonus) : iceBonus;
     public float ElectricBonus => UseStatManager ? PercentToFraction(statManager.Stat.electricBonus) : electricBonus;
+    // -- UI 연결을 위한 프로퍼티 (// 임시 코드 차후 위의 코드들처럼 교체)
+    public float CurrentLevel => currentLevel;
+    public float CurrentExp => currentExp;
+    public float MaxExp => maxExp; 
 
     /// <summary>
     /// 현재 장착 무기에 인챈트된 속성. 모든 공격은 이 속성의 공격으로 간주되어 동일 속성 피해 보너스를 받는다.
@@ -190,7 +197,27 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         UnsubscribeStatChanges();
     }
 
-    private void RelayHealthChanged() => OnHpChanged?.Invoke(CurrentHp, MaxHealth);
+    private void PublishHealthChanged()
+    {
+        KY_GameEvents.HealthChanged(CurrentHp, MaxHealth);
+    }
+    private void PublishManaChanged()
+    {
+        KY_GameEvents.ManaChanged(CurrentMp, MaxMana);
+    }
+    private void PublishExpChanged()
+    {
+        KY_GameEvents.ExpChanged(CurrentExp, MaxExp);
+    }
+    private void PublishHudSnapshot()
+    {
+        PublishHealthChanged();
+        PublishManaChanged();
+        PublishExpChanged();
+    }
+
+    private void RelayHealthChanged() => PublishHealthChanged();
+    private void RelayManaChanged() => PublishManaChanged();
     private void RelayDeath() => OnDead?.Invoke();
 
     public void Initialize(T_PlayerController playerController)
@@ -213,7 +240,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         ApplyMoveSpeedToController();
         ApplyAttackSpeedToAnimation();
 
-        OnHpChanged?.Invoke(CurrentHp, MaxHealth);
+        //OnHpChanged?.Invoke(CurrentHp, MaxHealth);
     }
 
     /// <summary>스탯이 재계산될 때마다 NavMeshAgent 속도를 다시 맞추도록 구독한다.</summary>
@@ -284,7 +311,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         currentHp = Mathf.Max(currentHp, 0);
 
-        OnHpChanged?.Invoke(currentHp, MaxHealth);
+        //OnHpChanged?.Invoke(currentHp, MaxHealth);
 
         Log.Print($"{this.gameObject.name} 현재 체력 {currentHp}");
 
@@ -301,7 +328,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
 
-        OnHpChanged?.Invoke(currentHp, MaxHealth);
+        //OnHpChanged?.Invoke(currentHp, MaxHealth);
         Log.Print($"{CurrentHp}");
     }
 
@@ -309,7 +336,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     {
         currentMp -= amount;
         currentMp = Mathf.Max(currentMp, 0);
-        OnMpChanged?.Invoke(currentMp, MaxMana);
+        //OnMpChanged?.Invoke(currentMp, MaxMana);
     }
 
     public void Heal(float amount)
@@ -322,7 +349,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         currentHp += amount;
         currentHp = Mathf.Min(currentHp, maxHp);
-        OnHpChanged?.Invoke(currentHp, MaxHealth);
+        //OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
     public void MultiplyMoveSpeed(float modifier)

@@ -8,7 +8,7 @@ public class WBH_EnemySpawner : MonoBehaviour
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
     private WBH_DamageTextPoolManager damageTextPool;
-    private WBH_EliteHpbarView eliteView;
+    private WBH_HighEnemyHpbarView eliteView;
 
 
     //!@ 데이터 매니저 연결
@@ -18,7 +18,7 @@ public class WBH_EnemySpawner : MonoBehaviour
                            WBH_ProjectilePoolManager projectilePool, 
                            Transform localPlayer, // eliteView 에만 사용
                            WBH_DamageTextPoolManager damageTextPool,
-                           WBH_EliteHpbarView eliteView)
+                           WBH_HighEnemyHpbarView eliteView)
     {
         this.enemyPool = poolManager;
         this.effectPool = effectPool;
@@ -60,6 +60,11 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.SetTarget(target);
 
         enemy.gameObject.SetActive(true);
+
+        if(info.enemyGrade == EnemyGrade.Boss)
+        {
+            eliteView?.BindBoss(enemy);
+        }
 
         return enemy;
     }
