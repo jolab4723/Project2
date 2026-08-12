@@ -264,6 +264,7 @@ namespace DataSystem
                 case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
                 case nameof(FieldAuraUniqueEffectSO): return typeof(FieldAuraUniqueEffectSO);
                 case nameof(PeriodicLogUniqueEffectSO): return typeof(PeriodicLogUniqueEffectSO);
+                case nameof(DropRarityModifierUniqueEffectSO): return typeof(DropRarityModifierUniqueEffectSO);
             }
 
             Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 건너뜁니다. " +

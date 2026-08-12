@@ -1,3 +1,4 @@
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -10,15 +11,16 @@ public class WBH_EnemyPattern : MonoBehaviour
 {
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
     [SerializeField] private Transform meleeEffectPoint;
     [SerializeField] private WBH_EffectData normalMeleeEffect;
 
+    public WBH_EnemyAnimation enemyAnimation; // pattern 에서의 참조를 위해 public
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;
     private WBH_EnemyCombat combat;
     private WBH_EnemyStatus status;
-    private WBH_EnemyAnimation enemyAnimation;
-    private WBH_Indicator indicator;
+    private WBH_IndicatorSpawner indicatorSpawner;
 
     private WBH_EffectSpawner effectSpawner;
 
@@ -36,13 +38,16 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
-    public WBH_Indicator Indicator => indicator;
+    public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;
     public Transform FirePoint => firePoint;
+    public Transform GrenadePoint => grenadePoint;
     public LayerMask PlayerLayer => playerLayer;
 
     public float DashHitRadius => dashHitRadius;
+
+    public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
 
     private void Awake()
     {
@@ -52,7 +57,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
-        indicator = GetComponent<WBH_Indicator>();
+        indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
     }
 
     public virtual void Initialize(WBH_EnemyController controller)
@@ -136,13 +141,16 @@ public class WBH_EnemyPattern : MonoBehaviour
             case EnemyType.Ranged:
                 RangedAttack();
                 break;
+            case EnemyType.Boss:
+                MeleeAttack();
+                break;
         }
     }
 
     protected virtual void MeleeAttack()
     {
         SectorAttack(status.AttackRange, basicMeleeAttackAngle);
-        effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint);
+        //effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint); //!@ 노말 등급 애니메이션 만든다면 삭제해도?
     }
 
     protected virtual void RangedAttack()
@@ -254,7 +262,68 @@ public class WBH_EnemyPattern : MonoBehaviour
             case 1:
                 currentPattern = new WBH_EnemyElitePattern();
                 break;
+            case 10:
+                currentPattern = new WBH_EnemyBossPattern_Act1();
+                break;
         }
         currentPattern?.Initialize(this);
+    }
+
+    // 랜덤 타겟 선택
+    public bool TrySelectAnotherActivePlayer()
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform selected = null;
+        int candidateCount = 0;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled || player.transform == target)
+                continue;
+
+            candidateCount++;
+
+            // 현재 타겟 제외 플레이어 중 하나 랜덤 선택
+            if(Random.Range(0, candidateCount) == 0)
+            {
+                selected = player.transform;
+            }
+        }
+        if(selected == null)
+            return false;
+
+        SetTarget(selected);
+        return true;
+    }
+
+    // 사거리 이내 가장 먼 거리의 타겟 선택
+    public bool TrySelectFarTarget(float maxRange)
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        float maxRangeSqr = maxRange * maxRange;
+        float farSqr = -1f;
+        Transform selected = null;
+
+        foreach (T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+
+            if (distanceSqr > maxRangeSqr || distanceSqr <= farSqr)
+                continue;
+
+            farSqr = distanceSqr;
+            selected = player.transform;
+        }
+
+        if (selected == null)
+            return false;
+
+        SetTarget(selected);
+        return true;
     }
 }

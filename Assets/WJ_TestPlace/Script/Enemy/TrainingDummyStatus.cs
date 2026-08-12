@@ -64,6 +64,7 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     public float DefensePower => 0f;
     public float CritRate => 0f;
     public float CritMult => 1f;
+    public float Pen => 0f;
     public float FireBonus => 0f;
     public float IceBonus => 0f;
     public float ElectricBonus => 0f;

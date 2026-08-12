@@ -18,7 +18,7 @@ public class YJ_LocalizedFont : MonoBehaviour
 
         if (languageManager == null)
         {
-            Log.Error("YJ_LanguageManager를 찾을 수 없습니다.");
+            Log.Warning("YJ_LanguageManager를 찾을 수 없습니다.");
             return;
         }
 

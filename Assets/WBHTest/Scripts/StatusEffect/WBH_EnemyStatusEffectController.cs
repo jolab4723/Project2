@@ -32,6 +32,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
         movement = GetComponent<WBH_EnemyMovement>();
+        effectSpawner = GetComponent<WBH_EffectSpawner>();
     }
 
     // 몬스터 등급별 예외처리
@@ -76,10 +77,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 
         //animator.enabled = enabled; // 애니메이션 사용을 막고 싶을 경우 추가
     }
-
-
-
-
 
     // 도트데미지 (화상)
     public override void ApplyDotDamage(float damage)

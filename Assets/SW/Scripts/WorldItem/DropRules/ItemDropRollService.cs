@@ -34,7 +34,8 @@ public sealed class ItemDropRollService
 
         if (!TryPickWeighted(
                 enemyRule.rarityWeights,
-                row => row.weight,
+                row => row.weight *
+                       DropRarityModifierUniqueEffectSO.GetRarityWeightMultiplier(row.rarity),
                 random,
                 out ItemDropTypes.ItemDropRarityWeight rarityWeight))
         {
@@ -45,7 +46,12 @@ public sealed class ItemDropRollService
 
         if (!TryPickWeighted(
                 dropTable.ItemKindWeights,
-                row => row.weight,
+                row => HasCandidate(
+                    itemDatabase.allItems,
+                    rarityWeight.rarity,
+                    row.itemKind)
+                    ? row.weight
+                    : 0f,
                 random,
                 out ItemDropTypes.ItemDropKindWeight kindWeight))
         {
@@ -76,6 +82,28 @@ public sealed class ItemDropRollService
             rarityWeight.rarity,
             kindWeight.itemKind,
             candidates[selectedIndex]);
+    }
+
+    private static bool HasCandidate(
+        IReadOnlyList<ItemDefinitionSO> itemDefinitions,
+        ItemRarity rarity,
+        ItemDropTypes.ItemDropKind itemKind)
+    {
+        if (itemDefinitions == null)
+            return false;
+
+        for (int i = 0; i < itemDefinitions.Count; i++)
+        {
+            ItemDefinitionSO definition = itemDefinitions[i];
+            if (definition != null &&
+                definition.rarity == rarity &&
+                MatchesItemKind(definition, itemKind))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static List<ItemDefinitionSO> BuildCandidates(
