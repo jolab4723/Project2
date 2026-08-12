@@ -24924,6 +24924,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c9a06bf1f8ef5e4aaf1c4dd0d652a36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Core.SceneLoader
+  screenFader: {fileID: 0}
   minLoadingScreenSeconds: 0.3
 --- !u!1 &1181871123
 GameObject:
@@ -36468,6 +36469,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1830349463}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1830349464}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!4 &1830349415 stripped
 Transform:
@@ -36639,6 +36643,50 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PotionUseManager
   basePotionCharges: 3
   equipmentSystem: {fileID: 383630432}
+--- !u!114 &1830349452 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2674546040288394452, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1830349414}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830349416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
+--- !u!114 &1830349455 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 859720171535124851, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1830349414}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830349416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f85b2dc654955964f827cbc1cbee69a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStateMachine
+--- !u!114 &1830349457 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4326654807646089153, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1830349414}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830349416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29c0799c857311c49ab2f2e203e6fa23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::T_PlayerCombat
+--- !u!114 &1830349458 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6308816638425809528, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1830349414}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830349416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 943d8034eee011546b02aac6b03474ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::T_PlayerController
 --- !u!114 &1830349463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36651,6 +36699,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b51575d9f779e8a44923ed519855247f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerActionInputHandler
+--- !u!114 &1830349464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830349416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f85fc167f6b18a4e96f2bb4255db016, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FighterSkillController
+  inputHandler: {fileID: 1830349463}
+  combat: {fileID: 1830349457}
+  controller: {fileID: 1830349458}
+  stateMachine: {fileID: 1830349455}
+  status: {fileID: 1830349452}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  skills:
+  - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
+  - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
+  - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
+  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
+  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
+  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
 --- !u!1 &1831219900
 GameObject:
   m_ObjectHideFlags: 0
