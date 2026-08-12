@@ -140,6 +140,16 @@ public class PlayerLevelManager : MonoBehaviour
         return closest;
     }
 
+    /// <summary>
+    /// 지정한 레벨에서 다음 레벨로 올라가는 데 필요한 경험치. 데이터에 없는 레벨(마지막 레벨 등)이거나
+    /// expToNextLevel이 0이면 더 이상 레벨업할 수 없다는 뜻으로 0을 반환한다.
+    /// </summary>
+    public float GetExpToNextLevel(int level)
+    {
+        var row = FindRow(level);
+        return row != null ? row.expToNextLevel : 0f;
+    }
+
     /// <summary>테스트용: testLevel의 스탯 전체를 콘솔에 출력.</summary>
     [ContextMenu("레벨 스탯 테스트 출력")]
     private void TestPrintStats()
@@ -172,6 +182,7 @@ public class FighterLevelStatData
     public float baseMPRegen;
     public float basePen;
     public float baseSkillRange;
+    public float expToNextLevel;
 }
 
 /// <summary>JsonUtility로 최상위 배열 JSON을 파싱하기 위한 래퍼.</summary>
