@@ -44,6 +44,7 @@ public class PlayerManaManager : MonoBehaviour
     public float CurrentMana { get; private set; }
 
     /// <summary>마나가 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
+    
     public event System.Action OnManaChanged;
 
     private float regenTimer;

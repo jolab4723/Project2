@@ -43,7 +43,19 @@ public class PlayerStatManager : MonoBehaviour
 
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
-    
+
+    /// <summary>현재 레벨. UI 등 외부에서 Stat.currentLevel을 직접 건드리지 않고 읽기 전용으로 조회.</summary>
+    public int CurrentLevel => Stat.currentLevel;
+
+    /// <summary>현재 레벨에서 쌓인 경험치. 다음 레벨까지 필요한 양은 ExpToNextLevel 참고.</summary>
+    public float CurrentExp => Stat.currentExp;
+
+    /// <summary>
+    /// 현재 레벨에서 다음 레벨까지 필요한 경험치. 만렙(다음 레벨 데이터 없음)이면 0.
+    /// 경험치 바 UI에서 CurrentExp / ExpToNextLevel로 진행률을 계산할 때 사용.
+    /// </summary>
+    public float ExpToNextLevel => levelManager != null ? levelManager.GetExpToNextLevel(Stat.currentLevel) : 0f;
+
 
     private void OnEnable()
     {
@@ -427,7 +439,6 @@ public class PlayerStatManager : MonoBehaviour
 
 /// <summary>
 /// 장비/버프 등 스탯 레이어 하나를 StatSet으로 제공하는 컴포넌트가 구현해야 하는 계약.
-/// PlayerEquipManager, PlayerBuffManager가 구현 예정.
 /// </summary>
 public interface IStatSetProvider
 {
