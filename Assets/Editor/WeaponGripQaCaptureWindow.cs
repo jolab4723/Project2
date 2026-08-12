@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -26,6 +28,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         "Assets/SW/SO/Equipment/WeaponVisualCatalog.asset";
     private const string VisualPrefabFolder =
         "Assets/SW/Prefabs/Equipment/WeaponVisuals";
+    private const string AddressablesGroupName = "SW Weapon Visuals";
     private const int AzimuthCount = 8;
     private const int ElevationCount = 3;
     private const int ExpectedViewsPerItem = AzimuthCount * ElevationCount;
@@ -202,6 +205,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
     {
         Idle,
         EquipItem,
+        WaitForVisual,
         WaitForPose,
         CaptureViews,
         Finalize,
@@ -237,7 +241,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
     private float originalMoveSpeed;
     private float originalTimeScale;
     private bool timeScaleOverridden;
-    private HashSet<string> originalVisualCacheKeys;
+    private double visualLoadDeadline;
     private readonly List<Renderer> temporarilyDisabledSceneRenderers =
         new List<Renderer>();
     private readonly Dictionary<GameObject, int> temporarilyChangedFighterLayers =
@@ -347,7 +351,6 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         sourceCamera = null;
         applyVisualMethod = null;
         animator = null;
-        originalVisualCacheKeys = null;
         originalTimeScale = Time.timeScale;
         timeScaleOverridden = false;
         try
@@ -529,13 +532,6 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
     {
         originalItemId = GetPrivateField<string>(presenter, "currentItemId");
         originalTimeScale = Time.timeScale;
-        Dictionary<string, GameObject> visualCache =
-            GetPrivateField<Dictionary<string, GameObject>>(presenter, "visualCache");
-        if (visualCache == null)
-            throw new InvalidOperationException("PlayerWeaponVisualPresenter.visualCache를 읽지 못했습니다.");
-        originalVisualCacheKeys = new HashSet<string>(
-            visualCache.Keys,
-            StringComparer.Ordinal);
         originalAnimatorSpeed = animator.speed;
         AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
         originalAnimatorStateHash = state.fullPathHash;
@@ -652,6 +648,9 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
                 case RunPhase.EquipItem:
                     BeginCurrentItem();
                     break;
+                case RunPhase.WaitForVisual:
+                    TryFinishVisualLoad();
+                    break;
                 case RunPhase.WaitForPose:
                     TryFinishPoseSettlement();
                     break;
@@ -694,14 +693,25 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         currentTargets = null;
 
         applyVisualMethod.Invoke(presenter, new object[] { item.ItemId });
+        visualLoadDeadline = EditorApplication.timeSinceStartup + 15d;
+        phase = RunPhase.WaitForVisual;
+        status = $"{currentItemIndex + 1}/{TargetItemCount} {item.ItemId} · Addressable 로드";
+    }
+
+    private void TryFinishVisualLoad()
+    {
+        CatalogItem item = catalogItems[currentItemIndex];
         string actualItemId = GetPrivateField<string>(presenter, "currentItemId");
         GameObject actualVisual = GetPrivateField<GameObject>(presenter, "currentVisual");
         if (!string.Equals(actualItemId, item.ItemId, StringComparison.Ordinal) ||
             actualVisual == null || !actualVisual.activeInHierarchy)
         {
+            if (EditorApplication.timeSinceStartup < visualLoadDeadline)
+                return;
+
             AddFailure(
                 currentItemEvidence,
-                $"카탈로그 항목을 런타임에 표시하지 못했습니다. expected={item.ItemId}, actual={actualItemId}");
+                $"Addressable 외형 로드가 15초 안에 끝나지 않았습니다. expected={item.ItemId}, actual={actualItemId}");
             AppendMissingViews(currentItemEvidence, "장착 외형 없음");
             AdvanceItem();
             return;
@@ -1249,14 +1259,11 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         try
         {
             if (presenter != null && applyVisualMethod != null && EditorApplication.isPlaying)
-            {
                 applyVisualMethod.Invoke(presenter, new object[] { originalItemId });
-                RemoveQaCreatedVisualCacheEntries();
-            }
         }
         catch (Exception exception)
         {
-            RegisterRestorationFailure("원래 장착 외형/visualCache 복구 실패", exception);
+            RegisterRestorationFailure("원래 장착 외형 복구 실패", exception);
         }
 
         try
@@ -1302,24 +1309,6 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         if (EditorApplication.isPlaying)
             Time.timeScale = originalTimeScale;
         timeScaleOverridden = false;
-    }
-
-    private void RemoveQaCreatedVisualCacheEntries()
-    {
-        Dictionary<string, GameObject> visualCache =
-            GetPrivateField<Dictionary<string, GameObject>>(presenter, "visualCache");
-        if (visualCache == null || originalVisualCacheKeys == null)
-            return;
-
-        string[] createdKeys = visualCache.Keys
-            .Where(key => !originalVisualCacheKeys.Contains(key))
-            .ToArray();
-        foreach (string key in createdKeys)
-        {
-            if (visualCache.TryGetValue(key, out GameObject visual) && visual != null)
-                DestroyImmediate(visual);
-            visualCache.Remove(key);
-        }
     }
 
     private void CleanupTemporaryState(bool restoreRuntime)
@@ -1525,7 +1514,13 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         {
             SerializedProperty entry = entries.GetArrayElementAtIndex(index);
             string itemId = entry.FindPropertyRelative("itemId")?.stringValue?.Trim();
-            var prefab = entry.FindPropertyRelative("visualPrefab")?.objectReferenceValue as GameObject;
+            SerializedProperty visualReference =
+                entry.FindPropertyRelative("visualReference");
+            string prefabGuid = visualReference?
+                .FindPropertyRelative("m_AssetGUID")?
+                .stringValue;
+            string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuid);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (string.IsNullOrWhiteSpace(itemId) ||
                 !itemId.StartsWith("item.weapon.", StringComparison.Ordinal))
             {
@@ -1534,9 +1529,24 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             if (!uniqueIds.Add(itemId))
                 throw new InvalidOperationException("중복 itemId: " + itemId);
             if (prefab == null)
-                throw new InvalidOperationException(itemId + " visualPrefab이 없습니다.");
+                throw new InvalidOperationException(itemId + " Addressable visualReference가 없습니다.");
 
-            AssetEvidence evidence = CreateAssetEvidence(AssetDatabase.GetAssetPath(prefab), true);
+            AddressableAssetSettings settings =
+                AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetEntry addressableEntry = settings?.FindAssetEntry(prefabGuid);
+            if (addressableEntry == null ||
+                addressableEntry.parentGroup == null ||
+                !string.Equals(
+                    addressableEntry.parentGroup.Name,
+                    AddressablesGroupName,
+                    StringComparison.Ordinal) ||
+                !string.Equals(addressableEntry.address, itemId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{itemId} Addressables 등록 또는 address가 올바르지 않습니다.");
+            }
+
+            AssetEvidence evidence = CreateAssetEvidence(prefabPath, true);
             string expectedPrefabPath =
                 VisualPrefabFolder + "/" + itemId + "_WeaponVisual.prefab";
             if (!string.Equals(evidence.path, expectedPrefabPath, StringComparison.Ordinal))

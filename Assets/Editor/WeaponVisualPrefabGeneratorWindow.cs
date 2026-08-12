@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using ItemSystem;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -51,6 +54,9 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string DefaultOutputFolder =
         "Assets/SW/Prefabs/Equipment/WeaponVisuals";
     private const string MenuPath = "SW/Equipment/무기 외형 프리팹 생성기";
+    private const string AddressablesMigrationMenuPath =
+        "SW/Equipment/무기 외형 카탈로그 Addressables 전환";
+    private const string AddressablesGroupName = "SW Weapon Visuals";
     private const string ModelName = "Model";
     private const string RightHandGripName = "RightHandGrip";
     private const string LeftHandGripName = "LeftHandGrip";
@@ -442,15 +448,22 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         {
             SerializedProperty entry = entries.GetArrayElementAtIndex(index);
             SerializedProperty idProperty = entry.FindPropertyRelative("itemId");
-            SerializedProperty prefabProperty = entry.FindPropertyRelative("visualPrefab");
-            var registeredPrefab = prefabProperty?.objectReferenceValue as GameObject;
+            string registeredItemId = idProperty?.stringValue?.Trim();
+            if (string.IsNullOrWhiteSpace(registeredItemId) ||
+                !visualCatalog.TryGetVisualPrefab(
+                    registeredItemId,
+                    out GameObject registeredPrefab))
+            {
+                continue;
+            }
+
             if (registeredPrefab == null ||
                 !IsRuntimeVisualInstanceOf(candidate, registeredPrefab))
             {
                 continue;
             }
 
-            itemId = idProperty?.stringValue?.Trim() ?? string.Empty;
+            itemId = registeredItemId;
             visualPrefab = registeredPrefab;
             return !string.IsNullOrWhiteSpace(itemId);
         }
@@ -1273,17 +1286,127 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         }
 
         SerializedProperty targetId = targetEntry.FindPropertyRelative("itemId");
-        SerializedProperty targetPrefab = targetEntry.FindPropertyRelative("visualPrefab");
-        if (targetId == null || targetPrefab == null)
+        SerializedProperty legacyPrefab =
+            targetEntry.FindPropertyRelative("legacyVisualPrefab");
+        SerializedProperty visualReference =
+            targetEntry.FindPropertyRelative("visualReference");
+        SerializedProperty assetGuid =
+            visualReference?.FindPropertyRelative("m_AssetGUID");
+        if (targetId == null || legacyPrefab == null || assetGuid == null)
         {
             throw new InvalidOperationException(
                 "WeaponVisualCatalogSO 항목의 직렬화 필드를 찾지 못했습니다.");
         }
 
+        string guid = RegisterAddressableVisual(itemId, visualPrefab);
         targetId.stringValue = itemId;
-        targetPrefab.objectReferenceValue = visualPrefab;
+        legacyPrefab.objectReferenceValue = null;
+        assetGuid.stringValue = guid;
         serializedCatalog.ApplyModifiedProperties();
         EditorUtility.SetDirty(visualCatalog);
+    }
+
+    [MenuItem(AddressablesMigrationMenuPath)]
+    private static void MigrateCatalogToAddressables()
+    {
+        WeaponVisualCatalogSO catalog =
+            AssetDatabase.LoadAssetAtPath<WeaponVisualCatalogSO>(DefaultCatalogPath);
+        if (catalog == null)
+            throw new InvalidOperationException("WeaponVisualCatalogSO를 찾지 못했습니다.");
+
+        Undo.RecordObject(catalog, "Migrate weapon visuals to Addressables");
+        var serializedCatalog = new SerializedObject(catalog);
+        SerializedProperty entries = serializedCatalog.FindProperty("entries");
+        if (entries == null || !entries.isArray)
+            throw new InvalidOperationException("WeaponVisualCatalogSO.entries를 읽지 못했습니다.");
+
+        int migratedCount = 0;
+        for (int index = 0; index < entries.arraySize; index++)
+        {
+            SerializedProperty entry = entries.GetArrayElementAtIndex(index);
+            string itemId = entry.FindPropertyRelative("itemId")?.stringValue?.Trim();
+            SerializedProperty legacyPrefab =
+                entry.FindPropertyRelative("legacyVisualPrefab");
+            SerializedProperty visualReference =
+                entry.FindPropertyRelative("visualReference");
+            SerializedProperty assetGuid =
+                visualReference?.FindPropertyRelative("m_AssetGUID");
+            if (string.IsNullOrWhiteSpace(itemId) ||
+                legacyPrefab == null ||
+                assetGuid == null)
+            {
+                throw new InvalidOperationException($"카탈로그 {index}번 항목이 올바르지 않습니다.");
+            }
+
+            GameObject prefab = legacyPrefab.objectReferenceValue as GameObject;
+            string guid = assetGuid.stringValue;
+            if (prefab != null)
+            {
+                string prefabPath = AssetDatabase.GetAssetPath(prefab);
+                guid = AssetDatabase.AssetPathToGUID(prefabPath);
+            }
+
+            if (string.IsNullOrWhiteSpace(guid))
+                throw new InvalidOperationException($"'{itemId}' 외형 Prefab GUID가 없습니다.");
+
+            GameObject resolvedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                AssetDatabase.GUIDToAssetPath(guid));
+            if (resolvedPrefab == null)
+                throw new InvalidOperationException($"'{itemId}' 외형 Prefab을 찾지 못했습니다.");
+
+            RegisterAddressableVisual(itemId, resolvedPrefab);
+            assetGuid.stringValue = guid;
+            legacyPrefab.objectReferenceValue = null;
+            migratedCount++;
+        }
+
+        serializedCatalog.ApplyModifiedProperties();
+        EditorUtility.SetDirty(catalog);
+        AssetDatabase.SaveAssets();
+        Debug.Log(
+            $"[{nameof(WeaponVisualPrefabGeneratorWindow)}] " +
+            $"무기 외형 {migratedCount}개를 Addressables로 전환했습니다.");
+    }
+
+    private static string RegisterAddressableVisual(
+        string itemId,
+        GameObject visualPrefab)
+    {
+        string prefabPath = AssetDatabase.GetAssetPath(visualPrefab);
+        string guid = AssetDatabase.AssetPathToGUID(prefabPath);
+        if (string.IsNullOrWhiteSpace(guid))
+            throw new InvalidOperationException($"'{itemId}' 외형 Prefab GUID를 찾지 못했습니다.");
+
+        AddressableAssetSettings settings =
+            AddressableAssetSettingsDefaultObject.GetSettings(true);
+        if (settings == null || settings.DefaultGroup == null)
+            throw new InvalidOperationException("Addressables 기본 설정 또는 그룹을 만들지 못했습니다.");
+
+        AddressableAssetGroup weaponVisualGroup =
+            settings.FindGroup(AddressablesGroupName);
+        if (weaponVisualGroup == null)
+        {
+            weaponVisualGroup = settings.CreateGroup(
+                AddressablesGroupName,
+                false,
+                false,
+                true,
+                settings.DefaultGroup.Schemas);
+            BundledAssetGroupSchema bundledSchema =
+                weaponVisualGroup.GetSchema<BundledAssetGroupSchema>();
+            if (bundledSchema != null)
+            {
+                bundledSchema.BundleMode =
+                    BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
+                EditorUtility.SetDirty(bundledSchema);
+            }
+        }
+
+        AddressableAssetEntry addressableEntry =
+            settings.CreateOrMoveEntry(guid, weaponVisualGroup);
+        addressableEntry.SetAddress(itemId);
+        EditorUtility.SetDirty(settings);
+        return guid;
     }
 
     private static Transform FindDescendant(Transform root, string targetName)
