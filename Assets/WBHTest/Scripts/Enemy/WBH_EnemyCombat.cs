@@ -131,7 +131,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitForSeconds(readyDuration);
 
-        enemyAnimation.PlayDash();
+        enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
 
         movement.Dash(transform.forward, distance, duration, EndAction);
     }
@@ -164,7 +164,7 @@ public class WBH_EnemyCombat : MonoBehaviour
         BeginAction();
         transform.LookAt(pattern.Target);
 
-        enemyAnimation.PlayShootBurst();
+        enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
         StartCoroutine(CoShootBurst(count));
         return true;
     }
@@ -241,7 +241,7 @@ public class WBH_EnemyCombat : MonoBehaviour
                                   WBH_IndicatorSpawner indicatorSpawner, 
                                   System.Action onCompleted = null)
     {
-        Vector3 spawnPos = pattern.FirePoint.position;
+        Vector3 spawnPos = pattern.GrenadePoint.position;
 
         float[] flightTimes = new float[impactPoints.Count];
         float impactTime = warningDuration;

@@ -35,7 +35,7 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
 
     private void PublishHealth()
     {
-        if (healthManager == null)
+        if (healthManager == null || healthManager.MaxHealth <= 0f)
             return;
 
         KY_GameEvents.HealthChanged(healthManager.CurrentHealth, healthManager.MaxHealth);
@@ -43,7 +43,7 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
 
     private void PublishMana()
     {
-        if (manaManager == null)
+        if (manaManager == null || manaManager.MaxMana <= 0f)
             return;
 
         KY_GameEvents.ManaChanged(manaManager.CurrentMana, manaManager.MaxMana);

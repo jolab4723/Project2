@@ -172,7 +172,13 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
     private void HandleEscape()
     {
         if (currentPopup != null)
+        {
             CloseCurrent();
+            return;
+        }
+
+        if (inventoryPartView != null && inventoryPartView.HasOpenWindow)
+            inventoryPartView.CloseAll();
     }
 
     private void Toggle(KY_PopupBase popup)

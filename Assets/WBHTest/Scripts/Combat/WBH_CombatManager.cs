@@ -23,7 +23,7 @@ public class WBH_CombatManager
             damage *= attackerStat.CritMult;
 
         // 타겟 방어력 적용
-        damage = CalculateDefense(damage, targetStat);
+        damage = CalculateDefense(damage, targetStat, attackerStat);
 
         // 최소 데미지 보장
         damage = Mathf.Max(1f, damage);
@@ -84,9 +84,9 @@ public class WBH_CombatManager
         return Random.value <= attackerStat.CritRate;
     }
 
-    private static float CalculateDefense(float damage, WBH_ICombatStatus targetStat)
+    private static float CalculateDefense(float damage, WBH_ICombatStatus targetStat, WBH_ICombatStatus attackerStat)
     {
-        return damage - targetStat.DefensePower;
+        return damage - (targetStat.DefensePower - attackerStat.Pen);
     }
 
     private static void ApplyStatusEffect(WBH_DamageRequest request)

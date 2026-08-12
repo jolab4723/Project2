@@ -1,7 +1,8 @@
-using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Animations.Rigging;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 [DisallowMultipleComponent]
 public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
@@ -26,7 +27,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     private string currentItemId;
     private GameObject currentVisual;
     private Transform currentLeftHandGrip;
-    private readonly Dictionary<string, GameObject> visualCache = new();
+    private int visualRequestVersion;
 
     private void Update()
     {
@@ -53,6 +54,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+
+        visualRequestVersion++;
+        HideCurrentVisual();
     }
 
     private void HandleEquipmentChanged(EquippedItemInfo[] _)
@@ -77,6 +81,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (string.IsNullOrEmpty(itemId))
         {
+            visualRequestVersion++;
             ShowDefaultVisual();
             return;
         }
@@ -86,24 +91,61 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             currentItemId == itemId)
             return;
 
+        int requestVersion = ++visualRequestVersion;
         HideCurrentVisual();
 
         if (weaponMount == null ||
             visualCatalog == null ||
-            !visualCatalog.TryGetVisualPrefab(itemId, out GameObject visualPrefab))
+            !visualCatalog.TryGetVisualReference(
+                itemId,
+                out AssetReferenceGameObject visualReference))
         {
             Debug.LogWarning(
                 $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}'에 연결된 무기 외형을 찾지 못했습니다.",
                 this);
+            ShowDefaultVisual();
             return;
         }
 
-        if (!visualCache.TryGetValue(itemId, out currentVisual) || currentVisual == null)
+        AsyncOperationHandle<GameObject> operation =
+            visualReference.InstantiateAsync(weaponMount, false);
+        operation.Completed += completed =>
+            HandleVisualLoaded(itemId, requestVersion, completed);
+    }
+
+    private void HandleVisualLoaded(
+        string itemId,
+        int requestVersion,
+        AsyncOperationHandle<GameObject> operation)
+    {
+        if (operation.Status != AsyncOperationStatus.Succeeded ||
+            operation.Result == null)
         {
-            currentVisual = Instantiate(visualPrefab, weaponMount, false);
-            visualCache[itemId] = currentVisual;
+            if (operation.IsValid())
+                Addressables.Release(operation);
+
+            if (this != null &&
+                requestVersion == visualRequestVersion &&
+                isActiveAndEnabled)
+            {
+                Debug.LogWarning(
+                    $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}' 무기 외형 로드에 실패했습니다.",
+                    this);
+                ShowDefaultVisual();
+            }
+
+            return;
         }
 
+        if (this == null ||
+            requestVersion != visualRequestVersion ||
+            !isActiveAndEnabled)
+        {
+            Addressables.ReleaseInstance(operation.Result);
+            return;
+        }
+
+        currentVisual = operation.Result;
         currentVisual.SetActive(true);
         currentItemId = itemId;
 
@@ -187,7 +229,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             defaultVisual.SetActive(false);
 
         if (currentVisual != null)
-            currentVisual.SetActive(false);
+            Addressables.ReleaseInstance(currentVisual);
 
         currentVisual = null;
         currentItemId = null;

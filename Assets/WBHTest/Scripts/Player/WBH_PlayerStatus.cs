@@ -25,12 +25,14 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     [Header("Fallback Stat (WJ 스탯 시스템이 없을 때만 사용)")]
     [SerializeField] private float maxHp = 100;
+    [SerializeField] private float maxMp = 100;
     [SerializeField] private float attackPower = 5;
     [SerializeField] private float defensePower = 3;
     [SerializeField] private float attackSpeed = 1;
     [SerializeField] private float moveSpeed = 6;
     [SerializeField] private float criticalChance = 1;
     [SerializeField] private float criticalMultiplier = 1;
+    [SerializeField] private float pen = 0;
     [SerializeField] private float fireBonus = 1;
     [SerializeField] private float iceBonus = 1;
     [SerializeField] private float electricBonus = 1;
@@ -52,16 +54,19 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     private T_PlayerController playerController;
     private float currentHp;
+    private float currentMp;
 
     // WJ 스탯 시스템 연결부. 둘 다 없으면 위 Fallback 필드로 동작한다.
     private PlayerStatManager statManager;
     private PlayerHealthManager healthManager;
+    private PlayerManaManager manaManager;
     private bool managersResolved;
 
     /// <summary>OnStatChanged를 구독 중인 PlayerStat. 중복 구독/해제 누락을 막기 위해 들고 있는다.</summary>
     private PlayerStat subscribedStat;
 
     public event Action<float, float> OnHpChanged;
+    public event Action<float, float> OnMpChanged;
     public event Action<float> OnAtkSpeedChanged; // 애니메이션 모션 속도를 공격속도와 연동되게끔 하기 위함
     public event Action OnDead;
 
@@ -78,6 +83,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         managersResolved = true;
         statManager = GetComponent<PlayerStatManager>();
         healthManager = GetComponent<PlayerHealthManager>();
+        manaManager = GetComponent<PlayerManaManager>();
     }
 
     /// <summary>WJ 스탯 시스템이 붙어 있고 Stat이 준비됐는지. Stat은 Awake에서 만들어지므로 매번 확인한다.</summary>
@@ -103,12 +109,23 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             return healthManager != null && healthManager.MaxHealth > 0f;
         }
     }
+    private bool UseManaManager
+    {
+        get
+        {
+            ResolveManagers();
+            return manaManager != null && manaManager.MaxMana > 0f;
+        }
+    }
 
     // -- combatManager 계산을 위한 인터페이스
     public float MaxHealth => UseStatManager ? statManager.Stat.maxHealth : maxHp;
+    public float MaxMana => UseStatManager ? statManager.Stat.maxMana : maxHp;
     public float CurrentHp => UseHealthManager ? healthManager.CurrentHealth : currentHp;
+    public float CurrentMp => UseManaManager ? manaManager.CurrentMana : currentMp;
     public float AttackPower => UseStatManager ? statManager.Stat.attackPower : currentAttackPower;
     public float DefensePower => UseStatManager ? statManager.Stat.defensePower : defensePower;
+    public float Pen => UseStatManager ? statManager.Stat.pen : pen;
     public float CritRate => UseStatManager ? PercentToFraction(statManager.Stat.critRate) : criticalChance;
     public float CritMult => UseStatManager ? PercentToMultiplier(statManager.Stat.critMult) : criticalMultiplier;
     public float FireBonus => UseStatManager ? PercentToFraction(statManager.Stat.fireBonus) : fireBonus;
@@ -184,6 +201,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         if (healthManager == null)
         {
             currentHp = maxHp;
+            currentMp = maxMp;
             currentAttackPower = attackPower; 
             currentAttackSpeed = attackSpeed;
             currentMoveSpeed = moveSpeed;
@@ -285,6 +303,13 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
         Log.Print($"{CurrentHp}");
+    }
+
+    public void UseMana(float amount)
+    {
+        currentMp -= amount;
+        currentMp = Mathf.Max(currentMp, 0);
+        OnMpChanged?.Invoke(currentMp, MaxMana);
     }
 
     public void Heal(float amount)

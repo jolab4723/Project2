@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
@@ -34,10 +36,12 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
     [SerializeField] private float angularSpeed = 360f;
     [SerializeField] private float gravity = 12f;
     [SerializeField] private float pieceLifetime = 2.5f;
+    [SerializeField] private float armorReleaseDuration = 3f;
 
     private bool[] initialEnabledStates;
     private ArmorPieceSlot[] armorPieceSlots;
     private bool isPhaseTwo;
+    private Coroutine transitionCoroutine;
 
     void Awake()
     {
@@ -108,6 +112,12 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
     // 기존 렌더로 초기화
     public void SetPhaseOne()
     {
+        if(transitionCoroutine !=null)
+        {
+            StopCoroutine(transitionCoroutine);
+            transitionCoroutine = null;
+        }
+
         isPhaseTwo = false;
 
         ReturnAllPiece();
@@ -168,9 +178,9 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
 
         outward.Normalize();
 
-        slot.velocity = outward * horizontalSpeed + Vector3.up * upwardSpeed + Random.insideUnitSphere * randomVelocity;
+        slot.velocity = outward * horizontalSpeed + Vector3.up * upwardSpeed + UnityEngine.Random.insideUnitSphere * randomVelocity;
 
-        slot.angularVelocity = Random.onUnitSphere * angularSpeed;
+        slot.angularVelocity = UnityEngine.Random.onUnitSphere * angularSpeed;
 
         slot.remainingLifetime = pieceLifetime;
         slot.isAcitve = true;
@@ -226,6 +236,26 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
         slot.velocity = Vector3.zero;
         slot.angularVelocity = Vector3.zero;
         slot.remainingLifetime = 0f;
+    }
+
+    public void PlayPhaseTwoTransition(Action onCompleted)
+    {
+        if(transitionCoroutine != null)
+        {
+            StopCoroutine(transitionCoroutine);
+        }
+
+        transitionCoroutine = StartCoroutine(CoPhaseTwoTransition(onCompleted));
+    }
+
+    private IEnumerator CoPhaseTwoTransition(Action onCompleted)
+    {
+        SetPhaseTwo();
+
+        yield return new WaitForSeconds(armorReleaseDuration);
+
+        transitionCoroutine = null;
+        onCompleted?.Invoke();
     }
 
     // 보스가 삭제될 때, 복제본 삭제. 보스를 풀로 반환할 경우에는 동작하지 않음.
