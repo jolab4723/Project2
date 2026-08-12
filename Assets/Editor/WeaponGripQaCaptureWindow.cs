@@ -26,7 +26,6 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         "Assets/SW/SO/Equipment/WeaponVisualCatalog.asset";
     private const string VisualPrefabFolder =
         "Assets/SW/Prefabs/Equipment/WeaponVisuals";
-    private const int ExpectedItemCount = 28;
     private const int AzimuthCount = 8;
     private const int ElevationCount = 3;
     private const int ExpectedViewsPerItem = AzimuthCount * ElevationCount;
@@ -38,7 +37,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
     private const string OutputRootRelative = "Temp/WeaponGripQA";
 
     private static readonly float[] Elevations = { -25f, 0f, 25f };
-    private static readonly string[] ExpectedItemIds =
+    private static readonly string[] LegacyWeaponItemIds =
     {
         "item.weapon.axe.heartofdebris",
         "item.weapon.axe.icecrusher",
@@ -68,6 +67,27 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         "item.weapon.greatsword.voltblade",
         "item.weapon.greatsword.wasteheatcleaver",
         "item.weapon.greatsword.zeroblade",
+    };
+    private static readonly string[] NewWeaponItemIds =
+    {
+        "item.weapon.greatsword.conveyercleaver",
+        "item.weapon.greatsword.sharpgreatsword",
+        "item.weapon.greatsword.ceremonialsword",
+        "item.weapon.greatsword.magneticrailblade",
+        "item.weapon.greatsword.simonslastcontract",
+        "item.weapon.greatsword.planetdeedbreaker",
+        "item.weapon.axe.emergencyrescueaxe",
+        "item.weapon.axe.scrapsorter",
+        "item.weapon.axe.excavatortooth",
+        "item.weapon.axe.maintenancedronewing",
+        "item.weapon.axe.antimattersplitter",
+        "item.weapon.axe.finalinvoice",
+        "item.weapon.blunt.torquewrench",
+        "item.weapon.blunt.managerriotbaton",
+        "item.weapon.blunt.hydraulicpiledriver",
+        "item.weapon.blunt.magneticstormhammer",
+        "item.weapon.blunt.refunddenied",
+        "item.weapon.blunt.lastwarningbell",
     };
     private static readonly BindingFlags PrivateInstance =
         BindingFlags.Instance | BindingFlags.NonPublic;
@@ -137,12 +157,13 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         public string sessionState;
         public string requiredScenePath = BossStagePath;
         public string runtimeScenePath;
-        public int expectedItemCount = ExpectedItemCount;
+        public string captureSet;
+        public int expectedItemCount;
         public int catalogItemCount;
         public int azimuthCount = AzimuthCount;
         public int elevationCount = ElevationCount;
         public int expectedViewsPerItem = ExpectedViewsPerItem;
-        public int expectedTotalPngCount = ExpectedItemCount * ExpectedViewsPerItem;
+        public int expectedTotalPngCount;
         public int captureWidth;
         public int captureHeight;
         public float originalTimeScale;
@@ -186,7 +207,14 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         Finalize,
     }
 
+    private enum CaptureSet
+    {
+        NewWeapons18,
+        LegacyWeapons28,
+    }
+
     private int captureSize = DefaultCaptureSize;
+    private CaptureSet captureSet = CaptureSet.NewWeapons18;
     private Vector2 scroll;
     private bool running;
     private RunPhase phase;
@@ -220,6 +248,19 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
     private ItemEvidence currentItemEvidence;
     private RuntimeTargets currentTargets;
 
+    private string[] SelectedItemIds =>
+        captureSet == CaptureSet.NewWeapons18
+            ? NewWeaponItemIds
+            : LegacyWeaponItemIds;
+
+    private int TargetItemCount =>
+        catalogItems?.Count ?? SelectedItemIds.Length;
+
+    private string CaptureSetLabel =>
+        captureSet == CaptureSet.NewWeapons18
+            ? "신규 18종"
+            : "기존 28종";
+
     [MenuItem("SW/Equipment/무기 손 맞춤 24방향 QA 캡처")]
     public static void Open()
     {
@@ -228,22 +269,29 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
 
     private void OnGUI()
     {
-        EditorGUILayout.LabelField("BossStage · 28종 · 24방향 Grip QA", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(
+            $"BossStage · {CaptureSetLabel} · 24방향 Grip QA",
+            EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
-            "실제 BossStage Play Mode Fighter에서 카탈로그 28종을 순서대로 표시하고 " +
+            $"실제 BossStage Play Mode Fighter에서 {CaptureSetLabel}을 순서대로 표시하고 " +
             "8방위 × 3고도 close-up PNG와 검증 수치/자산 해시/PNG SHA-256을 기록합니다. " +
             "씬과 장비 상태는 저장하지 않으며, 자동 수치 통과도 24방향 육안 검수를 대신하지 않습니다.",
             MessageType.Info);
 
         using (new EditorGUI.DisabledScope(running))
         {
+            captureSet = (CaptureSet)EditorGUILayout.EnumPopup(
+                "검증 대상",
+                captureSet);
             captureSize = EditorGUILayout.IntSlider(
                 "정사각 캡처 해상도",
                 captureSize,
                 512,
                 1536);
 
-            if (GUILayout.Button("현재 BossStage Play Mode에서 28종 QA 시작", GUILayout.Height(36f)))
+            if (GUILayout.Button(
+                    $"현재 BossStage Play Mode에서 {CaptureSetLabel} QA 시작",
+                    GUILayout.Height(36f)))
                 StartRun();
         }
 
@@ -254,13 +302,14 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         EditorGUILayout.LabelField("상태", status ?? "대기 중");
         if (running)
         {
-            float total = ExpectedItemCount * ExpectedViewsPerItem;
+            int targetItemCount = TargetItemCount;
+            float total = targetItemCount * ExpectedViewsPerItem;
             float completed = currentItemIndex * ExpectedViewsPerItem + currentViewIndex;
             Rect rect = EditorGUILayout.GetControlRect(false, 22f);
             EditorGUI.ProgressBar(
                 rect,
                 total > 0f ? completed / total : 0f,
-                $"{Mathf.Min(currentItemIndex + 1, ExpectedItemCount)}/{ExpectedItemCount} · " +
+                $"{Mathf.Min(currentItemIndex + 1, targetItemCount)}/{targetItemCount} · " +
                 $"{currentViewIndex}/{ExpectedViewsPerItem}");
         }
 
@@ -323,7 +372,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
                     $"정식 WeaponVisualCatalog가 아닙니다: {runtimeCatalogPath}");
             }
 
-            catalogItems = ReadAndValidateCatalog(catalog);
+            catalogItems = ReadAndValidateCatalog(catalog, SelectedItemIds);
             sourceCamera = FindSourceCamera(presenter.gameObject.scene);
             if (sourceCamera == null)
                 throw new InvalidOperationException("BossStage에서 활성 원본 Camera를 찾지 못했습니다.");
@@ -373,6 +422,10 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
                     finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
                     sessionState = "Fail",
                     runtimeScenePath = activeScene.IsValid() ? activeScene.path : null,
+                    captureSet = CaptureSetLabel,
+                    expectedItemCount = SelectedItemIds.Length,
+                    expectedTotalPngCount =
+                        SelectedItemIds.Length * ExpectedViewsPerItem,
                     captureWidth = captureSize,
                     captureHeight = captureSize,
                     originalTimeScale = originalTimeScale,
@@ -517,9 +570,12 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             generatedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             sessionState = "Running",
             runtimeScenePath = presenter.gameObject.scene.path,
+            captureSet = CaptureSetLabel,
+            expectedItemCount = catalogItems.Count,
             catalogItemCount = catalogItems.Count,
             captureWidth = captureSize,
             captureHeight = captureSize,
+            expectedTotalPngCount = catalogItems.Count * ExpectedViewsPerItem,
             originalTimeScale = originalTimeScale,
             captureTimeScale = 0f,
             timeScaleWasRestored = false,
@@ -540,7 +596,13 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             throw new InvalidOperationException("Unity 프로젝트 루트를 확인하지 못했습니다.");
 
         string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture);
-        sessionDirectory = Path.Combine(projectRoot, OutputRootRelative, "BossStage_" + stamp);
+        string setToken = captureSet == CaptureSet.NewWeapons18
+            ? "New18"
+            : "Legacy28";
+        sessionDirectory = Path.Combine(
+            projectRoot,
+            OutputRootRelative,
+            $"BossStage_{setToken}_{stamp}");
         Directory.CreateDirectory(sessionDirectory);
         lastSessionPath = sessionDirectory;
     }
@@ -668,7 +730,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
 
         poseReadyFrame = Time.frameCount + PoseSettlementFrames;
         phase = RunPhase.WaitForPose;
-        status = $"{currentItemIndex + 1}/{ExpectedItemCount} {item.ItemId} · 포즈 안정화";
+        status = $"{currentItemIndex + 1}/{TargetItemCount} {item.ItemId} · 포즈 안정화";
         WriteManifestCheckpoint();
     }
 
@@ -702,7 +764,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         }
 
         phase = RunPhase.CaptureViews;
-        status = $"{currentItemIndex + 1}/{ExpectedItemCount} {catalogItem.ItemId} · 24방향 촬영";
+        status = $"{currentItemIndex + 1}/{TargetItemCount} {catalogItem.ItemId} · 24방향 촬영";
         WriteManifestCheckpoint();
     }
 
@@ -1078,7 +1140,8 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
 
     private void FinalizeRun()
     {
-        bool allItemsPresent = manifest.items.Count == ExpectedItemCount;
+        int targetItemCount = TargetItemCount;
+        bool allItemsPresent = manifest.items.Count == targetItemCount;
         bool allEvidenceComplete =
             allItemsPresent && manifest.items.All(item => item.evidenceComplete);
         bool allMetricsPassed =
@@ -1087,10 +1150,11 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             ? Directory.GetFiles(sessionDirectory, "*.png", SearchOption.AllDirectories).Length
             : 0;
         if (!allItemsPresent)
-            manifest.failureReasons.Add($"매니페스트 항목 수 불일치: {manifest.items.Count}/{ExpectedItemCount}");
-        if (pngCount != ExpectedItemCount * ExpectedViewsPerItem)
             manifest.failureReasons.Add(
-                $"PNG 총수 불일치: {pngCount}/{ExpectedItemCount * ExpectedViewsPerItem}");
+                $"매니페스트 항목 수 불일치: {manifest.items.Count}/{targetItemCount}");
+        if (pngCount != targetItemCount * ExpectedViewsPerItem)
+            manifest.failureReasons.Add(
+                $"PNG 총수 불일치: {pngCount}/{targetItemCount * ExpectedViewsPerItem}");
 
         VerifySessionAssetHash(manifest.sceneAsset, "BossStage Scene");
         VerifySessionAssetHash(manifest.fighterPrefab, "Fighter Prefab");
@@ -1105,7 +1169,7 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
         manifest.automatedMetricsPassed = allMetricsPassed;
         manifest.evidenceComplete =
             allEvidenceComplete &&
-            pngCount == ExpectedItemCount * ExpectedViewsPerItem;
+            pngCount == targetItemCount * ExpectedViewsPerItem;
         manifest.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
         manifest.sessionState =
             manifest.automatedMetricsPassed && manifest.evidenceComplete &&
@@ -1439,22 +1503,24 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
                camera.gameObject.scene == targetScene;
     }
 
-    private static List<CatalogItem> ReadAndValidateCatalog(WeaponVisualCatalogSO catalog)
+    private static List<CatalogItem> ReadAndValidateCatalog(
+        WeaponVisualCatalogSO catalog,
+        IReadOnlyList<string> requestedItemIds)
     {
         var serialized = new SerializedObject(catalog);
         SerializedProperty entries = serialized.FindProperty("entries");
         if (entries == null || !entries.isArray)
             throw new InvalidOperationException("WeaponVisualCatalogSO.entries를 읽지 못했습니다.");
-        if (entries.arraySize != ExpectedItemCount)
-        {
-            throw new InvalidOperationException(
-                $"카탈로그 무기 수가 {ExpectedItemCount}가 아닙니다: {entries.arraySize}");
-        }
+        if (requestedItemIds == null || requestedItemIds.Count == 0)
+            throw new InvalidOperationException("검증할 무기 목록이 비어 있습니다.");
 
-        var result = new List<CatalogItem>(ExpectedItemCount);
+        var requestedIds = new HashSet<string>(requestedItemIds, StringComparer.Ordinal);
+        if (requestedIds.Count != requestedItemIds.Count)
+            throw new InvalidOperationException("검증 대상 목록에 중복 itemId가 있습니다.");
+
+        var selectedItems = new Dictionary<string, CatalogItem>(StringComparer.Ordinal);
         var uniqueIds = new HashSet<string>(StringComparer.Ordinal);
         var uniquePrefabs = new HashSet<string>(StringComparer.Ordinal);
-        var expectedIds = new HashSet<string>(ExpectedItemIds, StringComparer.Ordinal);
         for (int index = 0; index < entries.arraySize; index++)
         {
             SerializedProperty entry = entries.GetArrayElementAtIndex(index);
@@ -1467,8 +1533,6 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             }
             if (!uniqueIds.Add(itemId))
                 throw new InvalidOperationException("중복 itemId: " + itemId);
-            if (!expectedIds.Contains(itemId))
-                throw new InvalidOperationException("현행 28종 목록에 없는 itemId: " + itemId);
             if (prefab == null)
                 throw new InvalidOperationException(itemId + " visualPrefab이 없습니다.");
 
@@ -1482,16 +1546,31 @@ public sealed class WeaponGripQaCaptureWindow : EditorWindow
             }
             if (!uniquePrefabs.Add(evidence.guid))
                 throw new InvalidOperationException(itemId + " visualPrefab GUID가 다른 항목과 중복됩니다.");
-            result.Add(new CatalogItem
+
+            if (!requestedIds.Contains(itemId))
+                continue;
+
+            selectedItems.Add(itemId, new CatalogItem
             {
                 ItemId = itemId,
                 Evidence = evidence,
                 RuntimeVisualSignature = CreateRuntimeVisualSignature(prefab),
             });
         }
-        if (!expectedIds.SetEquals(uniqueIds))
-            throw new InvalidOperationException("카탈로그 itemId 집합이 현행 28종과 일치하지 않습니다.");
-        return result;
+
+        string[] missingIds = requestedIds
+            .Where(itemId => !selectedItems.ContainsKey(itemId))
+            .OrderBy(itemId => itemId, StringComparer.Ordinal)
+            .ToArray();
+        if (missingIds.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "카탈로그에 검증 대상 itemId가 없습니다: " + string.Join(", ", missingIds));
+        }
+
+        return requestedItemIds
+            .Select(itemId => selectedItems[itemId])
+            .ToList();
     }
 
     private static AssetEvidence CreateAssetEvidence(string path, bool required)

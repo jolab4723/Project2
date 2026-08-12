@@ -18,6 +18,9 @@ namespace Core
     {
         private const string LoadingSceneName = "LoadingScene";
 
+        [Header("Scene Transition")]
+        [SerializeField] private YJ_ScreenFader screenFader;
+
         [Tooltip("로딩 화면이 최소 이 시간(초) 동안은 유지되도록 한다. 로드가 순식간에 끝나도 화면이 깜빡이지 않게.")]
         [SerializeField] private float minLoadingScreenSeconds = 0.75f;
 
@@ -40,6 +43,7 @@ namespace Core
 
         public void Activate()
         {
+            ResolveScreenFader();
             CurrentSceneName = SceneManager.GetActiveScene().name;
             Debug.Log("[SceneLoader] 활성화 완료 (현재 씬: " + CurrentSceneName + ")");
         }
@@ -81,21 +85,29 @@ namespace Core
 
             OnBeforeSceneUnload?.Invoke(previousSceneName);
 
+            if (previousSceneName != LoadingSceneName &&
+                !Application.CanStreamedLevelBeLoaded(LoadingSceneName))
+            {
+                Log.Error("[SceneLoader] LoadingScene 씬이 Build Settings에 등록되어 있지 않습니다.");
+                IsLoading = false;
+                yield break;
+            }
+
+            ResolveScreenFader();
+            if (screenFader != null)
+                yield return screenFader.FadeToBlack();
+
             if (previousSceneName != LoadingSceneName)
             {
-                if (!Application.CanStreamedLevelBeLoaded(LoadingSceneName))
-                {
-                    Log.Error("[SceneLoader] " + LoadingSceneName + " 씬이 Build Settings에 등록되어 있지 않습니다.");
-                    IsLoading = false;
-                    yield break;
-                }
-
                 Log.Print("[SceneLoader] LoadingScene 로드를 시작합니다.");
                 AsyncOperation loadingSceneOperation =
                     SceneManager.LoadSceneAsync(LoadingSceneName, LoadSceneMode.Single);
 
                 if (loadingSceneOperation == null)
                 {
+                    if (screenFader != null)
+                        yield return screenFader.FadeFromBlack();
+
                     Log.Error("[SceneLoader] " + LoadingSceneName + " 씬을 불러오지 못했습니다.");
                     IsLoading = false;
                     yield break;
@@ -107,6 +119,9 @@ namespace Core
                 // LoadingScene이 최소 한 프레임 실제로 렌더링된 뒤 목적 씬 로드를 시작합니다.
                 yield return new WaitForEndOfFrame();
             }
+
+            if (screenFader != null)
+                yield return screenFader.FadeFromBlack();
 
             OnLoadProgress?.Invoke(0f);
             Log.Print("[SceneLoader] LoadingScene 표시 후 " + sceneName + " 씬 로드를 시작합니다.");
@@ -136,15 +151,35 @@ namespace Core
             if (elapsed < minLoadingScreenSeconds)
                 yield return new WaitForSecondsRealtime(minLoadingScreenSeconds - elapsed);
 
+            if (screenFader != null)
+                yield return screenFader.FadeToBlack();
+
             operation.allowSceneActivation = true;
 
             while (!operation.isDone)
                 yield return null;
 
             CurrentSceneName = sceneName;
-            IsLoading = false;
-
             OnSceneLoaded?.Invoke(sceneName);
+
+            // Render the destination scene before revealing it.
+            yield return new WaitForEndOfFrame();
+
+            if (screenFader != null)
+                yield return screenFader.FadeFromBlack();
+
+            IsLoading = false;
+        }
+
+        private void ResolveScreenFader()
+        {
+            if (screenFader != null)
+                return;
+
+            screenFader = GetComponent<YJ_ScreenFader>();
+
+            if (screenFader == null)
+                screenFader = GetComponentInChildren<YJ_ScreenFader>(true);
         }
     }
 }

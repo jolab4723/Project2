@@ -10,16 +10,8 @@ public class YJ_StartBootstrap : MonoBehaviour
     [SerializeField, Min(0f)] private float minimumStartupDuration = 0.5f;
     [SerializeField, Min(1f)] private float managerInitializationTimeout = 10f;
 
-    [Header("Reference")]
-    [SerializeField] private YJ_LoadingScreen loadingScreen;
-
     private IEnumerator Start()
     {
-        if (loadingScreen == null)
-            loadingScreen = FindFirstObjectByType<YJ_LoadingScreen>();
-
-        loadingScreen?.ShowImmediate("Initializing Managers", 0f);
-
         float startupTime = Time.realtimeSinceStartup;
         GameManager gameManager = GameManager.Instance;
         if (gameManager == null)
@@ -41,8 +33,6 @@ public class YJ_StartBootstrap : MonoBehaviour
             yield return null;
         }
 
-        loadingScreen?.SetMessage("Loading Initial Data");
-
         float remainingDuration =
             minimumStartupDuration - (Time.realtimeSinceStartup - startupTime);
         if (remainingDuration > 0f)
@@ -61,7 +51,6 @@ public class YJ_StartBootstrap : MonoBehaviour
             yield break;
         }
 
-        loadingScreen?.SetMessage("Loading Scene");
         sceneLoader.LoadScene(initialSceneName);
     }
 }

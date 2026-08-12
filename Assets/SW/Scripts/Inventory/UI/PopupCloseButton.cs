@@ -5,6 +5,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public sealed class PopupCloseButton : MonoBehaviour
 {
+    [SerializeField] private bool useSidePopupManager;
+
     private Button button;
 
     private void Awake()
@@ -21,6 +23,12 @@ public sealed class PopupCloseButton : MonoBehaviour
 
     private void ClosePopup()
     {
+        if (useSidePopupManager && KY_PopupManager.Instance != null)
+        {
+            KY_PopupManager.Instance.HideSidePopup();
+            return;
+        }
+
         KY_PopupBase popup = GetComponentInParent<KY_PopupBase>(true);
         popup?.Close();
     }

@@ -56,13 +56,13 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private const string LeftHandGripName = "LeftHandGrip";
     private const string MuzzleName = "Muzzle";
     private static readonly Vector3 FighterDefaultRootPosition =
-        new(0.11569060f, -0.08016107f, 0.07089359f);
+        new(-0.056344427f, -0.09085828f, -0.018773928f);
     private static readonly Quaternion FighterDefaultRootRotation =
-        new(0.97106050f, 0.10750510f, 0.18089250f, 0.11297130f);
+        new(0.9713192f, 0.10734245f, 0.17949681f, 0.11312622f);
     private static readonly Vector3 FighterDefaultLeftGripPosition =
         new(0f, 0.22282f, 0f);
     private static readonly Quaternion FighterDefaultLeftGripRotation =
-        new(0f, 0f, 0.70710678f, 0.70710678f);
+        new(-0.6625993f, -0.6625993f, 0.2469054f, 0.2469054f);
     private const float GreatswordReferenceLength = 1.75f;
     private const float BluntReferenceLength = 1.19f;
     private const float AxeReferenceLength = 1.35f;
@@ -756,6 +756,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     private string FitModelAutomatically(Transform wrapper, Transform model)
     {
         Transform rightHandGrip = FindDescendant(model, RightHandGripName);
+        Transform leftHandGrip = FindDescendant(model, LeftHandGripName);
         Renderer gripRenderer = FindPreferredGripRenderer(model);
         Bounds modelBounds = CalculateRendererBounds(model);
         float currentLength = MaxComponent(modelBounds.size);
@@ -773,8 +774,18 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
 
         if (rightHandGrip != null && sourceForwardAxis == SourceAxis.Auto)
         {
+            if (SelectedTab == CharacterTab.Fighter && leftHandGrip != null)
+            {
+                AlignFighterModelToGripSpan(
+                    wrapper,
+                    model,
+                    rightHandGrip,
+                    leftHandGrip);
+                return "양손 Grip 위치축 기준";
+            }
+
             AlignModelToMarker(wrapper, model, rightHandGrip);
-            return "RightHandGrip 기준";
+            return "RightHandGrip 회전 기준";
         }
 
         modelBounds = CalculateRendererBounds(model);
@@ -821,6 +832,23 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         model.position += wrapper.position - rightHandGrip.position;
     }
 
+    private static void AlignFighterModelToGripSpan(
+        Transform wrapper,
+        Transform model,
+        Transform rightHandGrip,
+        Transform leftHandGrip)
+    {
+        Vector3 sourceGripDirection = leftHandGrip.position - rightHandGrip.position;
+        if (sourceGripDirection.sqrMagnitude <= Mathf.Epsilon)
+            throw new InvalidOperationException("양손 Grip의 위치가 같아 Fighter 무기 축을 계산할 수 없습니다.");
+
+        Quaternion rotationDelta = Quaternion.FromToRotation(
+            sourceGripDirection.normalized,
+            wrapper.up);
+        model.rotation = rotationDelta * model.rotation;
+        model.position += wrapper.position - rightHandGrip.position;
+    }
+
     private void CreateRequiredMarkers(
         Transform wrapper,
         Transform model,
@@ -829,12 +857,10 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
     {
         if (SelectedTab == CharacterTab.Fighter)
         {
-            CreateMarker(
+            CreateFighterLeftGripMarker(
                 wrapper,
-                LeftHandGripName,
                 sourceLeftGrip,
-                GetDefaultLeftGripPosition(itemDefinition.weaponType),
-                FighterDefaultLeftGripRotation);
+                GetDefaultLeftGripPosition(itemDefinition.weaponType));
             return;
         }
 
@@ -866,6 +892,19 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         marker.SetLocalPositionAndRotation(defaultLocalPosition, defaultLocalRotation);
     }
 
+    private static void CreateFighterLeftGripMarker(
+        Transform wrapper,
+        Transform sourceMarker,
+        Vector3 defaultLocalPosition)
+    {
+        var marker = new GameObject(LeftHandGripName).transform;
+        marker.SetParent(wrapper, false);
+        marker.localPosition = sourceMarker != null
+            ? wrapper.InverseTransformPoint(sourceMarker.position)
+            : defaultLocalPosition;
+        marker.localRotation = FighterDefaultLeftGripRotation;
+    }
+
     private void ReverseFighterModelDirectionPreservingGripSpan(
         Transform wrapper,
         Transform model)
@@ -877,8 +916,7 @@ public sealed class WeaponVisualPrefabGeneratorWindow : EditorWindow
         if (leftHandGrip == null)
             return;
 
-        // Rotate around the midpoint between the two hand contacts. This reverses
-        // the weapon head while keeping the same physical handle span in both hands.
+        // 양손 접점의 중점을 기준으로 무기 머리 방향만 뒤집어 실제 손잡이 간격을 유지한다.
         Vector3 gripMidpoint = leftHandGrip.localPosition * 0.5f;
         Quaternion directionReversal =
             Quaternion.AngleAxis(180f, Vector3.right);
