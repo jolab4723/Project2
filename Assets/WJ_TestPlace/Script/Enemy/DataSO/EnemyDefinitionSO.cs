@@ -25,5 +25,8 @@ namespace EnemySystem
 
         [Header("패턴")]
         public int patternId;
+
+        [Header("보상")]
+        public float expReward;
     }
 }

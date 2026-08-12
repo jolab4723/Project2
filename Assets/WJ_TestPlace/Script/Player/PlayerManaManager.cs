@@ -107,8 +107,10 @@ public class PlayerManaManager : MonoBehaviour
     /// <summary>
     /// PlayerStatManager가 계산한 최종 maxMana를 가져와서 갱신한다.
     /// 장비 해제 등으로 maxMana가 줄어들어 CurrentMana가 초과 상태가 되면 clamp한다.
+    /// 기본적으로 Update()에서 매 프레임 호출되지만, Recalculate() 직후 같은 프레임에 FillMana()를
+    /// 불러야 하는 경우(레벨업 등)는 캐시된 MaxMana가 아직 갱신 전이라 외부에서 먼저 호출해야 한다.
     /// </summary>
-    private void RefreshMaxMana()
+    public void RefreshMaxMana()
     {
         float newMax = statManager != null ? statManager.Stat.maxMana : 0f;
         if (newMax == MaxMana)

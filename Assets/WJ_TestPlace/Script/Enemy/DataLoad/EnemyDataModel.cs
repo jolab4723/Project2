@@ -18,5 +18,6 @@ namespace DataSystem
         public float attackRange;
         public float attackCDR;
         public int patternId;
+        public float expReward;
     }
 }

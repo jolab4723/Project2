@@ -1015,6 +1015,7 @@ GameObject:
   - component: {fileID: 5648428584130406983}
   - component: {fileID: 9185435434640518143}
   - component: {fileID: 4089223812338128111}
+  - component: {fileID: 4418219995115632965}
   m_Layer: 10
   m_Name: Droid_01 2_ArtificerIntegration
   m_TagString: Untagged
@@ -1166,8 +1167,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 32768
   firePoint: {fileID: 0}
+  grenadePoint: {fileID: 0}
   meleeEffectPoint: {fileID: 3207281568816389647}
   normalMeleeEffect: {fileID: 11400000, guid: 08a9d8ae06c3471458c9581cc26eb5ef, type: 2}
+  enemyAnimation: {fileID: 0}
 --- !u!114 &-5431423992665652879
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1196,6 +1199,7 @@ MonoBehaviour:
   useAttackAni: 0
   useHitAni: 0
   useDieAni: 0
+  useSkillAni: 1
 --- !u!136 &5025398194320583428
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1298,6 +1302,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed0296a46206eff45b2a85a5f51951af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyItemDropAdapter
+--- !u!114 &4418219995115632965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0bd70d3236423b4ea9e147fd316a773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyKillExpReward
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0
