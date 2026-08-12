@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,6 +11,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(WBH_EnemyAnimation))]
 [RequireComponent(typeof(WBH_EnemyPattern))]
 [RequireComponent(typeof(WBH_EnemyStatusEffectController))]
+[RequireComponent(typeof(EnemyKillExpReward))]
 public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 {
     private WBH_EnemyMovement movement;
@@ -23,6 +25,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyInfo info;
 
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
+    private bool isDying;
 
     public WBH_EnemyInfo Info => info;
     public WBH_ICombatStatus Status => status;
@@ -66,6 +69,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern.Initialize(this);
 
         Debug.Log(info.enemyName);
+        isDying = false;
     }
 
     public void TakeDamage(WBH_DamageResult result)
@@ -78,9 +82,17 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     private void Dead()
     {
-        OnEnemyDead?.Invoke();
+        if (isDying)
+            return;
 
-        poolManager.Return(this);
+        isDying = true;
+
+        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
+
+        movement.Stop();
+        movement.SetControlEnable(false);
+
+        enemyAnimation.PlayDie();
     }
 
     public void SetTarget(Transform target)
@@ -91,5 +103,22 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public void AddStatusEffect(WBH_StatusEffectData data)
     {
         statusEffectController.AddStatusEffect(data);
+    }
+
+    // 보스 전용 사망연출. 사망 후 n초 뒤에 디졸브 걸고 사라짐.
+    public void OnDeathAnimationEnd()
+    {
+        if (!isDying)
+            return;
+
+        StartCoroutine(CoDeath());
+
+    }
+
+    private IEnumerator CoDeath()
+    {
+        yield return new WaitForSeconds(3);
+        poolManager.Return(this);
+        // !@ 디졸브 효과 차후 추가 필요
     }
 }

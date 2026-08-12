@@ -5,12 +5,14 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 {
     //[SerializeField] private PlayerSkillSystem skillSystem; // 우진님 스킬시스템 연결
 
-    [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어
+    [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어. !@ worldItem 레이어 추가
 
     private Camera mainCamera;
 
     private T_PlayerController controller;
     private T_PlayerCombat combat;
+
+    private WorldItemPickupInteractor pickupItem;
 
 
     private void Awake()
@@ -19,6 +21,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         controller = GetComponent<T_PlayerController>();
         combat = GetComponent<T_PlayerCombat>();
+        pickupItem = FindFirstObjectByType<WorldItemPickupInteractor>();
 
     }
 

@@ -33,7 +33,7 @@ public class WBH_EnemyView : MonoBehaviour
     private WBH_DamageTextPoolManager poolManager;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
-    private WBH_EliteHpbarView eliteView; // !@ 차후 UI 와 합일 필요
+    private WBH_HighEnemyHpbarView eliteView; // !@ 차후 UI 와 합일 필요
     private Camera mainCamera;
 
     private Coroutine hideHpBarCoroutine;
@@ -76,7 +76,7 @@ public class WBH_EnemyView : MonoBehaviour
         hpBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
     }
 
-    public void Initialize(WBH_DamageTextPoolManager poolManager, WBH_EliteHpbarView eliteView)
+    public void Initialize(WBH_DamageTextPoolManager poolManager, WBH_HighEnemyHpbarView eliteView)
     {
         this.poolManager = poolManager;
         this.eliteView = eliteView;
@@ -97,7 +97,10 @@ public class WBH_EnemyView : MonoBehaviour
         if (!(result.Attacker is T_PlayerController))
             return;
 
-        eliteView.Bind(controller);
+        if (controller.Info.enemyGrade != EnemyGrade.Elite)
+            return;
+
+        eliteView?.BindElite(controller);
     }
 
     private void UpdateHpBar(float currentHp, float maxHp)

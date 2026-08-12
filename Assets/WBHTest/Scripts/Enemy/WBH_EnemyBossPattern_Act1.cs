@@ -29,7 +29,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     private float transitionOuterRaidus = 13f;     // 페이즈 전환 시 바깥쪽 원 반지름
     private float transitionExplosionRadius = 2f;  // 페이즈 전환 미사일 폭발 반경
     private float transitionWarningDuration = 2f; // 페이즈 전환 미사일 떨어지는 시간(인디케이터 표시 시간)
-    private float transitionRecoveryDuration = 3f; // 페이즈 전환 후딜레이
+    private float transitionRecoveryDuration = 0.4f; // 페이즈 전환 후딜레이
 
     private float phase1TargetTimer;
     private float barrageTimer;

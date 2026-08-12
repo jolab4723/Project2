@@ -21,7 +21,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     [SerializeField] private WaveData[] waves;
 
-    [SerializeField] private WBH_EliteHpbarView eliteView;
+    [SerializeField] private WBH_HighEnemyHpbarView eliteView;
 
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
@@ -78,7 +78,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         if(currentWave >= waves.Length)
         {
             stageClear = true;
-            portalActive.Active(true);
+            //portalActive.Active(true);
             Log.Print("Stage Clear");
             return;
         }

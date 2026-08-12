@@ -80,6 +80,9 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
 
     public void TakeDamage(WBH_DamageResult result)
     {
+        if (IsDead)
+            return;
+
         currentHp -= result.FinalDamage;
         currentHp = Mathf.Max(currentHp, 0);
 
@@ -95,6 +98,9 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
     public void TakeDamage(float damage)
     {
+        if (IsDead)
+            return;
+
         currentHp -= damage;
 
         WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);

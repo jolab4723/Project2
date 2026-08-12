@@ -1,3 +1,4 @@
+using PLAYERTWO.ARPGProject;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,18 +13,26 @@ public class KY_StatusView : MonoBehaviour
 
     private void Awake()
     {
-        status = FindFirstObjectByType<WBH_PlayerStatus>();
+        status = FindFirstObjectByType<WBH_PlayerStatus>(); //!@ WBH 추가 멀티 시, 다른 방법 필요할지도 모르겠음.
+    }
+
+    // WBH 추가. ui 메서드 (현재는 WBH_playerStatus 컴포넌트뿐)가 아닌 다른 경로로 hp, mp 값이 변화할 때, 보험으로 작용.
+    private void Update()
+    {
+        healthSlider.value = status.CurrentHp / status.MaxHealth;
+        manaSlider.value = status.CurrentMp / status.MaxMana;
+        expSlider.value = status.CurrentExp / status.MaxExp;
     }
 
     private void OnEnable()
     {
-        status.OnHpChanged += UpdateHealth;
-        status.OnMpChanged += UpdateMana;
+        //status.OnHpChanged += UpdateHealth;
+        //status.OnMpChanged += UpdateMana;
     }
     private void OnDisable()
     {
-        status.OnHpChanged -= UpdateHealth;
-        status.OnMpChanged -= UpdateMana;
+        //status.OnHpChanged -= UpdateHealth;
+        //status.OnMpChanged -= UpdateMana;
     }
 
     public void UpdateHealth(float current, float max)
