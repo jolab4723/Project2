@@ -29,6 +29,8 @@ public class KY_StatRow : MonoBehaviour
 
     public void UpdateMode(KY_StatTypeData data, bool isDetailed)
     {
+        Debug.Log("[Row] UpdateMode 호출됨, isDetailed = " + isDetailed);
+
         totalValueText.text = data.Total.ToString(ValueFormat);
 
         detailValueText.gameObject.SetActive(isDetailed);

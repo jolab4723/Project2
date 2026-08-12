@@ -18,6 +18,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     private float defensePower;
     private float criticalChance;
     private float criticalMultiplier;
+    private float pen;
     private float fireBonus;
     private float iceBonus;
     private float electricBonus;
@@ -42,6 +43,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     public float DefensePower => defensePower;
     public float CritRate => criticalChance;
     public float CritMult => criticalMultiplier;
+    public float Pen => pen;
     public float FireBonus => fireBonus;
     public float IceBonus => iceBonus;
     public float ElectricBonus => electricBonus;

@@ -10,6 +10,7 @@ public class KY_StatusPopup : KY_PopupBase
 {
     [Header("스탯 행")]
     public KY_StatRow hpRow;
+    public KY_StatRow mpRow;             
     public KY_StatRow attackRow;
     public KY_StatRow defenseRow;
     public KY_StatRow moveSpeedRow;
@@ -19,6 +20,7 @@ public class KY_StatusPopup : KY_PopupBase
     public KY_StatRow cooldownReductionRow;
     public KY_StatRow mpRegenRow;
     public KY_StatRow penetrationRow;
+    public KY_StatRow skillRangeRow;     
 
     [Header("속성 행")]
     public KY_ElementRow fireRow;
@@ -60,6 +62,7 @@ public class KY_StatusPopup : KY_PopupBase
             return;
 
         hpRow.SetLabel(statLabels.GetLabel("maxHealth"));
+        mpRow.SetLabel(statLabels.GetLabel("maxMana"));          
         attackRow.SetLabel(statLabels.GetLabel("attackPower"));
         defenseRow.SetLabel(statLabels.GetLabel("defensePower"));
         moveSpeedRow.SetLabel(statLabels.GetLabel("moveSpeed"));
@@ -69,6 +72,7 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.SetLabel(statLabels.GetLabel("cdr"));
         mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
         penetrationRow.SetLabel(statLabels.GetLabel("pen"));
+        skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));   
     }
 
     void OnEnable()
@@ -146,6 +150,7 @@ public class KY_StatusPopup : KY_PopupBase
         return new KY_StatData
         {
             hp = Build(c.maxHealthFlat, eq.maxHealthFlat, eq.maxHealthPercent, bu.maxHealthPercent, bu.maxHealthFlat, pa.maxHealthPercent, pa.maxHealthFlat),
+            mp = Build(c.maxManaFlat, eq.maxManaFlat, 0f, 0f, bu.maxManaFlat, 0f, pa.maxManaFlat),
             attack = Build(c.attackPowerFlat, eq.attackPowerFlat, eq.attackPowerPercent, bu.attackPowerPercent, bu.attackPowerFlat, pa.attackPowerPercent, pa.attackPowerFlat),
             defense = Build(c.defensePowerFlat, eq.defensePowerFlat, eq.defensePowerPercent, bu.defensePowerPercent, bu.defensePowerFlat, pa.defensePowerPercent, pa.defensePowerFlat),
             moveSpeed = Build(c.moveSpeedFlat, eq.moveSpeedFlat, eq.moveSpeedPercent, bu.moveSpeedPercent, bu.moveSpeedFlat, pa.moveSpeedPercent, pa.moveSpeedFlat),
@@ -155,6 +160,7 @@ public class KY_StatusPopup : KY_PopupBase
             cooldownReduction = BuildClamped(c.cdrFlat, eq.cdrFlat, bu.cdrFlat, pa.cdrFlat, 0f, 70f),
             mpRegen = Build(c.mpRegenFlat, eq.mpRegenFlat, eq.mpRegenPercent, bu.mpRegenPercent, bu.mpRegenFlat, pa.mpRegenPercent, pa.mpRegenFlat),
             penetration = Build(c.penFlat, eq.penFlat, eq.penPercent, bu.penPercent, bu.penFlat, pa.penPercent, pa.penFlat),
+            skillRange = Build(c.skillRangeFlat, eq.skillRangeFlat, eq.skillRangePercent, bu.skillRangePercent, bu.skillRangeFlat, pa.skillRangePercent, pa.skillRangeFlat),
             fireDamage = Build(c.fireBonusFlat, eq.fireBonusFlat, eq.fireBonusPercent, bu.fireBonusPercent, bu.fireBonusFlat, pa.fireBonusPercent, pa.fireBonusFlat),
             iceDamage = Build(c.iceBonusFlat, eq.iceBonusFlat, eq.iceBonusPercent, bu.iceBonusPercent, bu.iceBonusFlat, pa.iceBonusPercent, pa.iceBonusFlat),
             lightningDamage = Build(c.electricBonusFlat, eq.electricBonusFlat, eq.electricBonusPercent, bu.electricBonusPercent, bu.electricBonusFlat, pa.electricBonusPercent, pa.electricBonusFlat),
@@ -180,6 +186,7 @@ public class KY_StatusPopup : KY_PopupBase
         currentData = data;
 
         hpRow.UpdateMode(data.hp, isDetailed);
+        mpRow.UpdateMode(data.mp, isDetailed);                     
         attackRow.UpdateMode(data.attack, isDetailed);
         defenseRow.UpdateMode(data.defense, isDetailed);
         moveSpeedRow.UpdateMode(data.moveSpeed, isDetailed);
@@ -189,7 +196,7 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.UpdateMode(data.cooldownReduction, isDetailed);
         mpRegenRow.UpdateMode(data.mpRegen, isDetailed);
         penetrationRow.UpdateMode(data.penetration, isDetailed);
-
+        skillRangeRow.UpdateMode(data.skillRange, isDetailed);      
         fireRow.SetData(data.fireDamage);
         iceRow.SetData(data.iceDamage);
         lightningRow.SetData(data.lightningDamage);
@@ -197,6 +204,7 @@ public class KY_StatusPopup : KY_PopupBase
 
     void OnDetailToggleChanged(bool isOn)
     {
+        Debug.Log("[토글] 눌림: " + isOn + " / currentData null?: " + (currentData == null));
         if (currentData == null) return;
 
         isDetailed = isOn;

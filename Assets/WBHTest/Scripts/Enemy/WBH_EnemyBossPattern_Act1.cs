@@ -29,7 +29,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     private float transitionOuterRaidus = 13f;     // 페이즈 전환 시 바깥쪽 원 반지름
     private float transitionExplosionRadius = 2f;  // 페이즈 전환 미사일 폭발 반경
     private float transitionWarningDuration = 2f; // 페이즈 전환 미사일 떨어지는 시간(인디케이터 표시 시간)
-    private float transitionRecoveryDuration = 2f; // 페이즈 전환 후딜레이
+    private float transitionRecoveryDuration = 3f; // 페이즈 전환 후딜레이
 
     private float phase1TargetTimer;
     private float barrageTimer;
@@ -101,6 +101,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
             Vector3[] impactPoints = CreateMissilePoints();
             if(owner.Combat.TryMissile(impactPoints, missileExplsionRadius,missileWarningDuration, missileRecoveryDuration, owner.IndicatorSpawner))
             {
+                owner.enemyAnimation.PlaySkill(4);
                 missileTimer = missileCooldown;
                 return;
             }
@@ -108,6 +109,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
         if(barrageTimer <= 0f && owner.Combat.TryBarrage(barrageBulletCount, barrageSpreadAngle, barrageRange, barrageRecoverDuration))
         {
+            owner.enemyAnimation.PlaySkill(3);
             barrageTimer = barrageCooldown;
             return;
         }
@@ -127,6 +129,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
             if(owner.Combat.TryJumpAttack(landingPos, jumpDamageRadius,jumpDuration, jumpRecoveryDuration, owner.IndicatorSpawner))
             {
+                owner.enemyAnimation.PlaySkill(6);
                 jumpTimer = jumpCooldown;
                 return;
             }
@@ -136,6 +139,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
            && owner.TrySelectFarTarget(dashTargetRange) 
            && owner.Combat.TryDashAttack(Mathf.Min(owner.Distance,dashDistance), dashDuration, owner.IndicatorSpawner, owner.DashHitRadius *2f, dashReadyDuration))
         {
+            owner.enemyAnimation.PlaySkill(7);
             dashTimer = dashCooldown;
             return;
         }
@@ -161,7 +165,8 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
         Vector3[] impactPoints = CreatePhaseMissilePoints();
 
-        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, CompletePhaseTwoTransiton);
+        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, FormChange);
+        owner.enemyAnimation.PlaySkill(5);
 
         if(!started) // 특이 오류로 페이즈 전환 실패 시 재시도.
         {
@@ -169,11 +174,19 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
         }
     }
 
+    private void FormChange()
+    {
+        if((phaseView == null))
+        {
+            CompletePhaseTwoTransiton();
+            return;
+        }
+        phaseView.PlayPhaseTwoTransition(CompletePhaseTwoTransiton);
+    }
+
     // 페이즈 전환 완료
     private void CompletePhaseTwoTransiton()
     {
-        phaseView?.SetPhaseTwo();
-
         isPhaseTwo = true;
         isPhaseTransition = false;
 

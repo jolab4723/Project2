@@ -8,6 +8,7 @@ public interface WBH_ICombatStatus
     float DefensePower { get; }
     float CritRate { get; }
     float CritMult { get; }
+    float Pen { get; }
     float FireBonus { get; }
     float IceBonus { get; }
     float ElectricBonus { get; }
