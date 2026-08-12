@@ -87,6 +87,7 @@ namespace DataSystem
             asset.attackRange = row.attackRange;
             asset.attackCooldown = row.attackCDR;
             asset.patternId = row.patternId;
+            asset.expReward = row.expReward;
 
             return asset;
         }

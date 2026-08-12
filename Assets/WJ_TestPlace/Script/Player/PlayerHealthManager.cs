@@ -82,8 +82,10 @@ public class PlayerHealthManager : MonoBehaviour
     /// <summary>
     /// PlayerStatManager가 계산한 최종 maxHealth를 가져와서 갱신한다.
     /// 장비 해제 등으로 maxHealth가 줄어들어 CurrentHealth가 초과 상태가 되면 clamp한다.
+    /// 기본적으로 Update()에서 매 프레임 호출되지만, Recalculate() 직후 같은 프레임에 FillHealth()를
+    /// 불러야 하는 경우(레벨업 등)는 캐시된 MaxHealth가 아직 갱신 전이라 외부에서 먼저 호출해야 한다.
     /// </summary>
-    private void RefreshMaxHealth()
+    public void RefreshMaxHealth()
     {
         float newMax = statManager != null ? statManager.Stat.maxHealth : 0f;
         if (newMax == MaxHealth)

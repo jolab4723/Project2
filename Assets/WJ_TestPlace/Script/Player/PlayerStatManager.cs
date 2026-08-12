@@ -230,6 +230,57 @@ public class PlayerStatManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 경험치를 얻는다(적 처치 등). PlayerLevelManager의 레벨별 expToNextLevel을 넘기면 레벨업까지
+    /// 이어서 처리하고(한 번에 여러 레벨을 오를 만큼 큰 경험치도 while로 대응), 레벨업이 실제로
+    /// 일어났을 때만 재계산 + 체력/마나를 최대치로 채운다. KY_GameEvents.ExpChanged로 HUD 경험치
+    /// 바를 갱신한다(이미 있던 이벤트지만 지금까지 실제 게임플레이에서 발행된 적이 없었음).
+    /// 만렙(expToNextLevel이 0인 레벨, 현재 데이터 기준 20)에서는 경험치를 아예 받지 않는다.
+    /// </summary>
+    public void GainExp(float amount)
+    {
+        if (Stat == null || amount <= 0f)
+            return;
+
+        float expToNext = levelManager != null ? levelManager.GetExpToNextLevel(Stat.currentLevel) : 0f;
+        if (expToNext <= 0f)
+            return; // 만렙 - 더 이상 경험치 획득 불가
+
+        Stat.GainExp(amount);
+
+        bool leveledUp = false;
+
+        while (expToNext > 0f && Stat.currentExp >= expToNext)
+        {
+            Stat.currentExp -= expToNext;
+            Stat.currentLevel++;
+            leveledUp = true;
+            expToNext = levelManager != null ? levelManager.GetExpToNextLevel(Stat.currentLevel) : 0f;
+        }
+
+        if (leveledUp)
+        {
+            Recalculate();
+
+            // FillHealth/FillMana는 각자 캐시해둔 MaxHealth/MaxMana를 그대로 쓰는데, 그 캐시는
+            // 보통 Update()에서만 갱신된다. Recalculate() 직후 같은 프레임에 바로 채우려면 먼저
+            // 캐시를 최신 Stat.maxHealth/maxMana로 강제 갱신해야 레벨업 직후 최대치로 채워진다.
+            var healthManager = GetComponent<PlayerHealthManager>();
+            healthManager?.RefreshMaxHealth();
+            healthManager?.FillHealth();
+
+            var manaManager = GetComponent<PlayerManaManager>();
+            manaManager?.RefreshMaxMana();
+            manaManager?.FillMana();
+        }
+
+        // expToNext가 0이면 더 올릴 레벨이 없는 만렙 상태 - 0으로 나누기를 피하려고 바를 꽉 찬 것으로 표시.
+        if (expToNext > 0f)
+            KY_GameEvents.ExpChanged(Stat.currentExp, expToNext);
+        else
+            KY_GameEvents.ExpChanged(1f, 1f);
+    }
+
+    /// <summary>
     /// 레벨을 1로 초기화하고 재계산한다. (테스트 버튼용)
     /// 현재 체력/마나는 PlayerHealthManager/PlayerManaManager가 maxHealth/maxMana 변화를 자체 감지해서
     /// clamp/보정을 알아서 처리하므로 여기서는 따로 건드리지 않음.
