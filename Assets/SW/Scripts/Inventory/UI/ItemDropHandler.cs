@@ -8,6 +8,7 @@ public class ItemDropHandler : MonoBehaviour
 
     private WorldItemDropService worldItemDropService;
     private InventoryController inventoryController;
+    private EquipSlotUI[] equipmentSlots;
     private bool restorePending;
     private bool recoveryFailureLogged;
 
@@ -28,10 +29,14 @@ public class ItemDropHandler : MonoBehaviour
             TryRestoreOriginalPlacement();
     }
 
-    public void Bind(WorldItemDropService service, InventoryController owner)
+    public void Bind(
+        WorldItemDropService service,
+        InventoryController owner,
+        EquipSlotUI[] ownerEquipmentSlots)
     {
         worldItemDropService = service;
         inventoryController = owner;
+        equipmentSlots = ownerEquipmentSlots;
 
         if (restorePending)
             TryRestoreOriginalPlacement();
@@ -418,7 +423,7 @@ public class ItemDropHandler : MonoBehaviour
         }
 
         EquipSlotUI targetSlot = null;
-        EquipSlotUI[] slots = inventoryController.allEquipSlots;
+        EquipSlotUI[] slots = equipmentSlots;
 
         if (slots == null)
             return false;

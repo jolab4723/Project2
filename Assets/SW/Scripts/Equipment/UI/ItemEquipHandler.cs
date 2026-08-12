@@ -5,6 +5,7 @@ public class ItemEquipHandler : MonoBehaviour
     [SerializeField] private ItemUI itemUI;
     private InventoryController inventoryController;
     private EquipmentSystem equipmentSystem;
+    private EquipSlotUI[] equipmentSlots;
     private EquipmentTransaction equipmentTransaction;
     private bool bindWarningLogged;
 
@@ -18,10 +19,13 @@ public class ItemEquipHandler : MonoBehaviour
     /// 생성한 아이템 UI가 어느 플레이어의 인벤토리와 장비를 변경할지 지정한다.
     /// 입력이 시작되기 전에 Spawner가 호출해야 하며 전역 Instance를 대신한다.
     /// </summary>
-    public void Bind(InventoryController owner)
+    public void Bind(
+        InventoryController owner,
+        EquipSlotUI[] ownerEquipmentSlots)
     {
         inventoryController = owner;
         equipmentSystem = owner != null ? owner.EquipmentSystem : null;
+        equipmentSlots = ownerEquipmentSlots;
         equipmentTransaction = equipmentSystem != null
             ? new EquipmentTransaction(equipmentSystem)
             : null;
@@ -54,7 +58,7 @@ public class ItemEquipHandler : MonoBehaviour
                 sourceGrid,
                 itemUI.Item);
 
-        foreach (EquipSlotUI slot in inventoryController.allEquipSlots)
+        foreach (EquipSlotUI slot in equipmentSlots)
         {
             if (slot == null || !slot.CanAcceptType(itemUI.Item.itemData))
                 continue;
@@ -649,7 +653,8 @@ public class ItemEquipHandler : MonoBehaviour
         if (itemUI != null &&
             inventoryController != null &&
             equipmentSystem != null &&
-            equipmentTransaction != null)
+            equipmentTransaction != null &&
+            equipmentSlots != null)
         {
             return true;
         }

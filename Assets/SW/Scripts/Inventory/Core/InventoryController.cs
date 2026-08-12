@@ -14,6 +14,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public event System.Action<InventoryItem> OnItemRemoved;
     public event System.Action<InventoryItem> OnItemOwnershipGained;
     public event System.Action<InventoryItem> OnItemOwnershipLost;
+    public event System.Action<string> OnLogMessage;
 
     private static readonly List<InventoryController> all = new List<InventoryController>();
 
@@ -30,17 +31,40 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public InventoryGrid PlayerGrid => playerGrid;
     public PlayerWallet PlayerWallet => playerWallet;
 
+    // ponytail: 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
+    // 해당 자산들이 InventoryView로 전환된 뒤 함께 제거한다.
     public TextMeshProUGUI logText;
-    public EquipSlotUI[] allEquipSlots;
-
+    [SerializeField] public EquipSlotUI[] allEquipSlots = System.Array.Empty<EquipSlotUI>();
     public TextMeshProUGUI goldText;
+
+    private EquipSlotUI[] equipmentSlotsBeforeBind;
+    private bool hasRuntimeEquipmentSlotBinding;
+
+    internal void BindEquipmentSlots(EquipSlotUI[] slots)
+    {
+        if (!hasRuntimeEquipmentSlotBinding)
+            equipmentSlotsBeforeBind = allEquipSlots;
+
+        allEquipSlots = slots ?? System.Array.Empty<EquipSlotUI>();
+        hasRuntimeEquipmentSlotBinding = true;
+    }
+
+    internal void UnbindEquipmentSlots(EquipSlotUI[] slots)
+    {
+        if (!hasRuntimeEquipmentSlotBinding || !ReferenceEquals(allEquipSlots, slots))
+            return;
+
+        allEquipSlots = equipmentSlotsBeforeBind;
+        equipmentSlotsBeforeBind = null;
+        hasRuntimeEquipmentSlotBinding = false;
+    }
 
     void Awake()
     {
         if (!all.Contains(this))
             all.Add(this);
 
-        var identity = GetComponent<Mirror.NetworkIdentity>();
+        var identity = GetComponentInParent<Mirror.NetworkIdentity>();
         if (identity != null && !identity.isLocalPlayer)
             return;
 
@@ -51,8 +75,6 @@ public class InventoryController : MonoBehaviour, IItemReceiver
             return;
         }
         Instance = this;
-
-        RefreshGoldText(playerWallet.Gold);
     }
 
     private void OnDestroy()
@@ -64,13 +86,17 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     private void OnEnable()
     {
+        if (playerWallet == null || goldText == null)
+            return;
+
         playerWallet.OnGoldChanged += RefreshGoldText;
         RefreshGoldText(playerWallet.Gold);
     }
 
     private void OnDisable()
     {
-        playerWallet.OnGoldChanged -= RefreshGoldText;
+        if (playerWallet != null)
+            playerWallet.OnGoldChanged -= RefreshGoldText;
     }
 
     /// <summary>
@@ -126,10 +152,16 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     public void PrintLog(string message)
     {
+        OnLogMessage?.Invoke(message);
+
         if (logText != null)
-        {
             logText.text = message;
-        }
+    }
+
+    public void RefreshGoldText(int gold)
+    {
+        if (goldText != null)
+            goldText.text = gold.ToString();
     }
 
     public InventoryAddResultData TryAddItemAt(InventoryItem item, int x, int y)
@@ -159,10 +191,6 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         NotifyItemOwnershipGained(item);
 
         return result;
-    }
-    public void RefreshGoldText(int gold)
-    {
-        goldText.text = gold.ToString();
     }
     /// <summary>
     /// 아이템의 기본 방향으로 빈자리를 먼저 찾고, 필요한 경우 회전한 방향까지 확인해 인벤토리에 추가한다.

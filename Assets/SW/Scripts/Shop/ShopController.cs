@@ -20,7 +20,27 @@ public class ShopController : MonoBehaviour
     {
         Instance = this;
         stockService = new ShopStockService();
+
+        if (inventoryController != null)
+            BindPlayer(inventoryController);
+        else if (playerWallet != null)
+            tradeService = new ShopTradeService(playerWallet, stockService);
+    }
+
+    public bool BindPlayer(InventoryController owner)
+    {
+        if (owner == null || stockService == null)
+            return false;
+
+        inventoryController = owner;
+        playerWallet = owner.PlayerWallet;
+        playerGrid = owner.PlayerGrid;
+
+        if (playerWallet == null || playerGrid == null)
+            return false;
+
         tradeService = new ShopTradeService(playerWallet, stockService);
+        return true;
     }
 
     public bool TryAddGeneratedStock(InventoryItem item)

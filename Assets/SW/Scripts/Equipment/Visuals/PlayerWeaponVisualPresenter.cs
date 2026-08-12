@@ -25,7 +25,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     [SerializeField] private TwoBoneIKConstraint leftHandIkConstraint;
 
     private string currentItemId;
+    private string pendingItemId;
+    private string pooledItemId;
     private GameObject currentVisual;
+    private GameObject pooledVisual;
     private Transform currentLeftHandGrip;
     private int visualRequestVersion;
 
@@ -55,8 +58,8 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
 
-        visualRequestVersion++;
-        HideCurrentVisual();
+        CancelPendingVisualRequest();
+        ReleaseAllVisuals();
     }
 
     private void HandleEquipmentChanged(EquippedItemInfo[] _)
@@ -81,18 +84,27 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (string.IsNullOrEmpty(itemId))
         {
-            visualRequestVersion++;
+            CancelPendingVisualRequest();
             ShowDefaultVisual();
             return;
         }
 
+        if (pendingItemId == itemId)
+            return;
+
         if (currentVisual != null &&
             currentVisual.activeSelf &&
             currentItemId == itemId)
+        {
+            CancelPendingVisualRequest();
+            return;
+        }
+
+        if (TryActivatePooledVisual(itemId))
             return;
 
         int requestVersion = ++visualRequestVersion;
-        HideCurrentVisual();
+        pendingItemId = itemId;
 
         if (weaponMount == null ||
             visualCatalog == null ||
@@ -103,7 +115,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             Debug.LogWarning(
                 $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}'에 연결된 무기 외형을 찾지 못했습니다.",
                 this);
-            ShowDefaultVisual();
+            pendingItemId = null;
+            if (currentVisual == null)
+                ShowDefaultVisual();
             return;
         }
 
@@ -128,10 +142,12 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
                 requestVersion == visualRequestVersion &&
                 isActiveAndEnabled)
             {
+                pendingItemId = null;
                 Debug.LogWarning(
                     $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}' 무기 외형 로드에 실패했습니다.",
                     this);
-                ShowDefaultVisual();
+                if (currentVisual == null)
+                    ShowDefaultVisual();
             }
 
             return;
@@ -145,17 +161,17 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
         }
 
-        currentVisual = operation.Result;
-        currentVisual.SetActive(true);
-        currentItemId = itemId;
+        pendingItemId = null;
+        GameObject previousVisual = currentVisual;
+        string previousItemId = currentItemId;
 
-        currentLeftHandGrip = currentVisual.transform.Find(LeftHandGripName);
-        ApplyLeftHandIk(currentLeftHandGrip);
+        ActivateVisual(itemId, operation.Result);
+        PoolOrReleaseVisual(previousItemId, previousVisual);
     }
 
     private void ShowDefaultVisual()
     {
-        HideCurrentVisual();
+        PoolCurrentVisual();
 
         if (defaultVisual == null)
             return;
@@ -220,7 +236,70 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         return null;
     }
 
-    private void HideCurrentVisual()
+    private void CancelPendingVisualRequest()
+    {
+        visualRequestVersion++;
+        pendingItemId = null;
+    }
+
+    private bool TryActivatePooledVisual(string itemId)
+    {
+        if (pooledVisual == null || pooledItemId != itemId)
+            return false;
+
+        CancelPendingVisualRequest();
+
+        GameObject nextVisual = pooledVisual;
+        GameObject previousVisual = currentVisual;
+        string previousItemId = currentItemId;
+        pooledVisual = null;
+        pooledItemId = null;
+
+        ActivateVisual(itemId, nextVisual);
+        PoolOrReleaseVisual(previousItemId, previousVisual);
+        return true;
+    }
+
+    private void ActivateVisual(string itemId, GameObject visual)
+    {
+        currentVisual = visual;
+        currentVisual.SetActive(true);
+        currentItemId = itemId;
+
+        if (defaultVisual != null)
+            defaultVisual.SetActive(false);
+
+        currentLeftHandGrip = currentVisual.transform.Find(LeftHandGripName);
+        ApplyLeftHandIk(currentLeftHandGrip);
+    }
+
+    private void PoolCurrentVisual()
+    {
+        if (leftHandIkConstraint != null)
+            leftHandIkConstraint.weight = 0f;
+
+        PoolOrReleaseVisual(currentItemId, currentVisual);
+
+        currentVisual = null;
+        currentItemId = null;
+        currentLeftHandGrip = null;
+    }
+
+    private void PoolOrReleaseVisual(string itemId, GameObject visual)
+    {
+        if (visual == null)
+            return;
+
+        visual.SetActive(false);
+
+        // 직전에 사용한 외형 하나만 보관하여 A↔B 반복 장착의 재로드와 재생성을 막습니다.
+        // 다른 외형이 보관되면 기존 인스턴스를 해제해 메모리 사용이 계속 늘어나지 않게 합니다.
+        ReleaseVisualInstance(pooledVisual);
+        pooledItemId = itemId;
+        pooledVisual = visual;
+    }
+
+    private void ReleaseAllVisuals()
     {
         if (leftHandIkConstraint != null)
             leftHandIkConstraint.weight = 0f;
@@ -228,12 +307,20 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (defaultVisual != null)
             defaultVisual.SetActive(false);
 
-        if (currentVisual != null)
-            Addressables.ReleaseInstance(currentVisual);
+        ReleaseVisualInstance(currentVisual);
+        ReleaseVisualInstance(pooledVisual);
 
         currentVisual = null;
         currentItemId = null;
+        pooledVisual = null;
+        pooledItemId = null;
         currentLeftHandGrip = null;
+    }
+
+    private static void ReleaseVisualInstance(GameObject visual)
+    {
+        if (visual != null)
+            Addressables.ReleaseInstance(visual);
     }
 
     private void ApplyLeftHandIk(Transform grip)

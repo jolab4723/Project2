@@ -1,8 +1,6 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[RequireComponent(typeof(InventoryController))]
-
 public sealed class InventoryItemUISpawner : MonoBehaviour
 {
     [SerializeField] private GameObject itemUIPrefab;
@@ -10,41 +8,107 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
     private InventoryController inventoryController;
     private InventoryGrid playerGrid;
+    private InventoryView inventoryView;
+    private bool subscribed;
 
     private void Awake()
     {
-        inventoryController = GetComponent<InventoryController>();
         if (worldItemDropService == null)
-        {
             worldItemDropService = GetComponentInParent<WorldItemDropService>();
-        }
 
-        playerGrid = inventoryController != null ? inventoryController.PlayerGrid : null;
-
-        if (inventoryController == null ||  playerGrid == null)
+        // 기존 싱글플레이 Prefab은 Controller와 Spawner가 같은 오브젝트에 있다.
+        InventoryController localOwner = GetComponent<InventoryController>();
+        if (localOwner != null)
         {
-            Debug.LogError(
-                "[InventoryItemUISpawner] " +
-                "InventoryController 또는 PlayerGrid를 찾지 못했습니다.");
+            inventoryController = localOwner;
+            playerGrid = localOwner.PlayerGrid;
         }
     }
 
     private void OnEnable()
     {
-        if (inventoryController == null)
-            return;
-
-        inventoryController.OnItemAdded += HandleItemAdded;
-        inventoryController.OnItemRemoved += HandleItemRemoved;
+        Subscribe();
     }
 
     private void OnDisable()
     {
-        if (inventoryController == null)
+        Unsubscribe();
+    }
+
+    public bool Bind(InventoryController owner, InventoryView view)
+    {
+        Unbind(inventoryController);
+
+        inventoryController = owner;
+        inventoryView = view;
+        playerGrid = owner != null ? owner.PlayerGrid : null;
+
+        if (inventoryController == null ||
+            inventoryView == null ||
+            playerGrid == null ||
+            !playerGrid.HasView)
+        {
+            Debug.LogError(
+                "[InventoryItemUISpawner] owner와 InventoryView가 완전히 Bind되지 않았습니다.",
+                this);
+            return false;
+        }
+
+        Subscribe();
+        RebuildPlayerItems();
+        return true;
+    }
+
+    public void Unbind(InventoryController owner)
+    {
+        if (owner != null && inventoryController != owner)
+            return;
+
+        Unsubscribe();
+        ClearPlayerItemViews();
+        inventoryController = null;
+        inventoryView = null;
+        playerGrid = null;
+    }
+
+    private void Subscribe()
+    {
+        if (!isActiveAndEnabled || subscribed || inventoryController == null)
+            return;
+
+        inventoryController.OnItemAdded += HandleItemAdded;
+        inventoryController.OnItemRemoved += HandleItemRemoved;
+        subscribed = true;
+    }
+
+    private void Unsubscribe()
+    {
+        if (!subscribed || inventoryController == null)
             return;
 
         inventoryController.OnItemAdded -= HandleItemAdded;
         inventoryController.OnItemRemoved -= HandleItemRemoved;
+        subscribed = false;
+    }
+
+    private void RebuildPlayerItems()
+    {
+        ClearPlayerItemViews();
+
+        foreach (InventoryItem item in inventoryController.GetAllInventoryItems())
+            HandleItemAdded(item);
+    }
+
+    private void ClearPlayerItemViews()
+    {
+        if (playerGrid?.ItemsContainer == null)
+            return;
+
+        ItemUI[] itemViews =
+            playerGrid.ItemsContainer.GetComponentsInChildren<ItemUI>(true);
+
+        foreach (ItemUI itemView in itemViews)
+            Destroy(itemView.gameObject);
     }
 
     private void HandleItemAdded(InventoryItem item)
@@ -111,12 +175,20 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
 
         ItemDropHandler dropHandler = newObject.GetComponent<ItemDropHandler>();
         ItemEquipHandler equipHandler = newObject.GetComponent<ItemEquipHandler>();
+        EquipSlotUI[] equipmentSlots = inventoryView != null
+            ? inventoryView.EquipmentSlots
+            : inventoryController?.allEquipSlots;
 
         if (dropHandler != null)
-            dropHandler.Bind(worldItemDropService, inventoryController);
+            dropHandler.Bind(
+                worldItemDropService,
+                inventoryController,
+                equipmentSlots);
 
         if (equipHandler != null)
-            equipHandler.Bind(inventoryController);
+            equipHandler.Bind(
+                inventoryController,
+                equipmentSlots);
 
         itemUI.Setup(item, targetGrid);
 

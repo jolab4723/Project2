@@ -64,27 +64,43 @@ public class TooltipManager : MonoBehaviour
         primaryTooltip.Hide();
         comparisonTooltip.Hide();
 
-        if (equipmentSystem != null)
-            equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
-        else
-            Debug.LogWarning("[TooltipManager] EquipmentSystem이 연결되지 않아 비교 툴팁이 표시되지 않습니다.");
-
-        if (playerStatManager == null)
-        {
-            Debug.LogWarning(
-                "[TooltipManager] PlayerStatManager가 연결되지 않아 최종 스탯 비교가 표시되지 않습니다.");
-        }
+        Bind(playerStatManager, equipmentSystem);
     }
 
     private void OnDestroy()
     {
-        if (equipmentSystem != null)
-            equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+        Unbind(equipmentSystem);
 
         if (comparisonTooltip != null)
             Destroy(comparisonTooltip.gameObject);
 
         if (Instance == this) Instance = null;
+    }
+
+    public void Bind(
+        PlayerStatManager stats,
+        EquipmentSystem equipment)
+    {
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+
+        playerStatManager = stats;
+        equipmentSystem = equipment;
+
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
+    }
+
+    public void Unbind(EquipmentSystem equipment)
+    {
+        if (equipmentSystem != equipment)
+            return;
+
+        HideTooltip();
+        if (equipmentSystem != null)
+            equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
+        equipmentSystem = null;
+        playerStatManager = null;
     }
 
     private void Update()
