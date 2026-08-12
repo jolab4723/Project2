@@ -91,6 +91,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c9a06bf1f8ef5e4aaf1c4dd0d652a36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Core.SceneLoader
+  screenFader: {fileID: 1121801959412544343}
   minLoadingScreenSeconds: 0.75
 --- !u!114 &1121801959412544343
 MonoBehaviour:
@@ -105,7 +106,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_ScreenFader
   canvasGroup: {fileID: 6019487854218157038}
-  duration: 0.5
+  fadeOutDuration: 0.15
+  fadeInDuration: 0.15
 --- !u!1 &3096803961207692336
 GameObject:
   m_ObjectHideFlags: 0
@@ -269,6 +271,90 @@ MonoBehaviour:
   - {fileID: 2587596789916841183}
   - {fileID: 3942883512401633178}
   - {fileID: 7624212961552737347}
+--- !u!1 &3687316487393616946
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 432363549226184304}
+  - component: {fileID: 1866002706806456489}
+  - component: {fileID: 5412773036065885213}
+  m_Layer: 0
+  m_Name: CursorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &432363549226184304
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3687316487393616946}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6006724857144226378}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1866002706806456489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3687316487393616946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41c042428ee085c4aa69d20d36751196, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_CursorManager
+  cursorSettings:
+  - type: 0
+    texture: {fileID: 2800000, guid: e558aa3d6b8515547bafd835adfa4742, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 1
+    texture: {fileID: 2800000, guid: 2aeac3b8d285f1648b8b5707a8307fd3, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 2
+    texture: {fileID: 2800000, guid: ebb2660c69978714aa20ca8196a06238, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 3
+    texture: {fileID: 2800000, guid: e485ec06de59afa44b9dcd9a2348a591, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 4
+    texture: {fileID: 2800000, guid: ad95064ffd9e35b45b5cba0682b78379, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 5
+    texture: {fileID: 2800000, guid: 4b767edbb35a43d41aacaa49c03b407c, type: 3}
+    hotspot: {x: 0, y: 0}
+  - type: 6
+    texture: {fileID: 2800000, guid: d832a2b1d0726904a97555d74e8192ae, type: 3}
+    hotspot: {x: 0, y: 0}
+--- !u!114 &5412773036065885213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3687316487393616946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2befeed00ba534047bc0756caf273e8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_WorldCursorDetector
+  targetCamera: {fileID: 0}
+  cursorManager: {fileID: 1866002706806456489}
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 197632
 --- !u!1 &4632559636180049943
 GameObject:
   m_ObjectHideFlags: 0
@@ -303,6 +389,7 @@ Transform:
   - {fileID: 358557126352903044}
   - {fileID: 9004439907646563330}
   - {fileID: 3206181790994350242}
+  - {fileID: 432363549226184304}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5841149501474391547
