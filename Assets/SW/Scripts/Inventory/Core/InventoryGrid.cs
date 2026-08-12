@@ -20,6 +20,27 @@ public class InventoryGrid : MonoBehaviour
 
     public int GridWidth => gridWidth;
     public int GridHeight => gridHeight;
+    public bool HasView => gridRect != null && itemsContainer != null;
+
+    public void BindView(
+        RectTransform boundGridRect,
+        RectTransform boundItemsContainer,
+        GridHighlightUI boundHighlight)
+    {
+        gridRect = boundGridRect;
+        itemsContainer = boundItemsContainer;
+        highlightUI = boundHighlight;
+    }
+
+    public void UnbindView(RectTransform boundItemsContainer)
+    {
+        if (itemsContainer != boundItemsContainer)
+            return;
+
+        gridRect = null;
+        itemsContainer = null;
+        highlightUI = null;
+    }
 
     private void Awake()
     {

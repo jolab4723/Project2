@@ -12,6 +12,22 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 4170606954455266063}
+    - target: {fileID: 2223535990301607553, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: inventoryController
+      value: 
+      objectReference: {fileID: 7746940822970853538}
+    - target: {fileID: 4984542786249164771, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 4170606954455266063}
+    - target: {fileID: 7905982457287239412, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: equipmentSystem
+      value: 
+      objectReference: {fileID: 4170606954455266063}
     - target: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -58,7 +74,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5564085432955025618}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
@@ -185,9 +204,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b72036e7b70b0ac4db6d803e2939591f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerContext
-  inventory: {fileID: 0}
-  equipment: {fileID: 0}
-  wallet: {fileID: 0}
+  inventory: {fileID: 7746940822970853538}
+  equipment: {fileID: 4170606954455266063}
+  wallet: {fileID: 1944730471969414574}
   stats: {fileID: 4669305021960324852}
   buffs: {fileID: 1153837035469029928}
   health: {fileID: 354411757978519734}
@@ -275,3 +294,98 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29c0799c857311c49ab2f2e203e6fa23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::T_PlayerCombat
+--- !u!1001 &8013638691066856665
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3097475621473565046}
+    m_Modifications:
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3349918044892257564, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+      propertyPath: m_Name
+      value: InventoryRuntime_MirrorTest
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+--- !u!114 &1944730471969414574 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8487943764403329399, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+  m_PrefabInstance: {fileID: 8013638691066856665}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbfdad3059498044b812a8dd4799d299, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWallet
+--- !u!114 &4170606954455266063 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6257418546604259286, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+  m_PrefabInstance: {fileID: 8013638691066856665}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
+--- !u!4 &5564085432955025618 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2450437407198706699, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+  m_PrefabInstance: {fileID: 8013638691066856665}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7746940822970853538 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 339036937383554171, guid: d513c5de46d7e214582d6528143cecd0, type: 3}
+  m_PrefabInstance: {fileID: 8013638691066856665}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fcabd762b3b6ca4a81c7884044e63e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryController

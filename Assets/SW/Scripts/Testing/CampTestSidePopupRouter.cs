@@ -64,12 +64,7 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
             HandlePauseInput();
 
         if (inputActions.Player.OpenInventory.triggered)
-        {
-            if (inventoryPartView != null)
-                inventoryPartView.ToggleInventory();
-            else
-                KY_GameEvents.InventoryRequested();
-        }
+            HandleInventoryInput();
 
         if (inputActions.Player.OpenSkill.triggered)
             KY_GameEvents.SkillRequested();
@@ -81,11 +76,30 @@ public sealed class CampTestSidePopupRouter : MonoBehaviour
             KY_GameEvents.QuestRequested();
     }
 
-    private void HandleStatusRequested() => Toggle(statusPopup);
+    private void HandleStatusRequested() => ToggleSidePopup(statusPopup);
 
-    private void HandleSkillRequested() => Toggle(skillPopup);
+    private void HandleSkillRequested() => ToggleSidePopup(skillPopup);
 
-    private void HandleQuestRequested() => Toggle(questPopup);
+    private void HandleQuestRequested() => ToggleSidePopup(questPopup);
+
+    private void HandleInventoryInput()
+    {
+        if (currentPopup != null)
+            CloseCurrent();
+
+        if (inventoryPartView != null)
+            inventoryPartView.ToggleInventory();
+        else
+            KY_GameEvents.InventoryRequested();
+    }
+
+    private void ToggleSidePopup(KY_PopupBase popup)
+    {
+        if (inventoryPartView != null && inventoryPartView.HasOpenWindow)
+            inventoryPartView.CloseAll();
+
+        Toggle(popup);
+    }
 
     /// <summary>
     /// 테스트 카메라처럼 NPC와 거리가 먼 구도에서도 마지막 LOD가 너무 일찍 사라지지 않도록 조정합니다.
