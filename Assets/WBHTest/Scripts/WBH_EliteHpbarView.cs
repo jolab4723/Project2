@@ -23,11 +23,14 @@ public class WBH_EliteHpbarView : MonoBehaviour
     private WBH_EnemyController targetEnemy;
     private WBH_EnemyStatus targetStatus;
 
+    private EnemyGrade targetGrade;
+
     private void Awake()
     {
         hpBarRoot.SetActive(false);
     }
 
+    // 엘리트의 경우 플레이어와 기존 타겟(엘리트)의 거리가 멀어지면 hp바 비활성화
     private void Update()
     {
         if (targetEnemy == null)
@@ -39,11 +42,20 @@ public class WBH_EliteHpbarView : MonoBehaviour
             return;
         }
 
-        float sqrDistance = (player.position - targetEnemy.transform.position).sqrMagnitude;
+        if (targetGrade == EnemyGrade.Boss)
+            return;
 
-        if(sqrDistance > hideDistance * hideDistance)
+        if(targetGrade == EnemyGrade.Elite)
         {
-            Unbind();
+            if (player == null)
+                return;
+
+            float sqrDistance = (player.position - targetEnemy.transform.position).sqrMagnitude;
+
+            if(sqrDistance > hideDistance * hideDistance)
+            {
+                Unbind();
+            }
         }
     }
 
@@ -62,10 +74,12 @@ public class WBH_EliteHpbarView : MonoBehaviour
         if (enemy == null || enemy.Info == null)
             return;
 
-        if (enemy.Info.enemyGrade != EnemyGrade.Elite)
+        EnemyGrade grade = enemy.Info.enemyGrade;
+
+        if (grade != EnemyGrade.Elite && grade != EnemyGrade.Boss)
             return;
 
-        if(player == null)
+        if(grade == EnemyGrade.Elite && player == null)
         {
             Log.Warning("EliteView 에 플레이어 초기화가 되지 않았습니다");
             return;
@@ -83,6 +97,7 @@ public class WBH_EliteHpbarView : MonoBehaviour
         Unbind();
 
         targetEnemy = enemy;
+        targetGrade = grade;
         targetStatus = enemy.GetComponent<WBH_EnemyStatus>();
 
         if(targetStatus == null)

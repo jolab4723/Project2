@@ -18,10 +18,12 @@ public class KY_StatusView : MonoBehaviour
     private void OnEnable()
     {
         status.OnHpChanged += UpdateHealth;
+        status.OnMpChanged += UpdateMana;
     }
     private void OnDisable()
     {
         status.OnHpChanged -= UpdateHealth;
+        status.OnMpChanged -= UpdateMana;
     }
 
     public void UpdateHealth(float current, float max)

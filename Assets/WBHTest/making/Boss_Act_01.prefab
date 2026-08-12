@@ -2365,7 +2365,7 @@ GameObject:
   m_Component:
   - component: {fileID: 287411858876415683}
   m_Layer: 0
-  m_Name: FirePoint
+  m_Name: GrenadePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2725,6 +2725,37 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.00000008940697, y: 0.47494835, z: 0.6333643}
     m_Extent: {x: 0.29800206, y: 0.21206076, z: 0.16216719}
   m_DirtyAABB: 0
+--- !u!1 &4445623979006266443
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5945891765140044628}
+  m_Layer: 10
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5945891765140044628
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4445623979006266443}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.7, z: 1.34}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8440374778960160327}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4555456795578413545
 GameObject:
   m_ObjectHideFlags: 0
@@ -5325,8 +5356,6 @@ GameObject:
   - component: {fileID: 3439901779823102211}
   - component: {fileID: 3087450008224212433}
   - component: {fileID: 7056045415955417540}
-  - component: {fileID: 3865252013851892978}
-  - component: {fileID: 4950341072702246977}
   - component: {fileID: 6327803660096634659}
   - component: {fileID: 5021685256685420365}
   - component: {fileID: 8473196466248690649}
@@ -5353,6 +5382,7 @@ Transform:
   m_Children:
   - {fileID: 6210487533168631744}
   - {fileID: 287411858876415683}
+  - {fileID: 5945891765140044628}
   - {fileID: 1072797204313020006}
   - {fileID: 7534506397720038980}
   - {fileID: 8022356021190811761}
@@ -5438,11 +5468,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21eb5de270356614385a2d236702b11a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyAnimation
-  useMoveAni: 0
-  useAttackAni: 0
-  useHitAni: 0
-  useDieAni: 0
-  useSkillAni: 0
+  useMoveAni: 1
+  useAttackAni: 1
+  useHitAni: 1
+  useDieAni: 1
+  useSkillAni: 1
 --- !u!114 &2886216172706041619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5497,10 +5527,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
   playerLayer:
     serializedVersion: 2
-    m_Bits: 0
-  firePoint: {fileID: 287411858876415683}
+    m_Bits: 32768
+  firePoint: {fileID: 5945891765140044628}
+  grenadePoint: {fileID: 287411858876415683}
   meleeEffectPoint: {fileID: 1072797204313020006}
   normalMeleeEffect: {fileID: 0}
+  enemyAnimation: {fileID: 0}
 --- !u!114 &3087450008224212433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5534,33 +5566,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 591aa1c30ce9cff429423ae31e8addf7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyController
---- !u!114 &3865252013851892978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9109071794180357373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 446203d7d0e89a440a4034c8ad72bb1b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionLink
-  destructionVisualPrefab: {fileID: 0}
-  baseDirectionalForce: 3
---- !u!114 &4950341072702246977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9109071794180357373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e69d35b0b4df428438e30380680235c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyDestructionAdapter
-  targetCollider: {fileID: 6327803660096634659}
 --- !u!136 &6327803660096634659
 CapsuleCollider:
   m_ObjectHideFlags: 0
