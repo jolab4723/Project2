@@ -43,6 +43,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     public InventoryPlacementSnapshot OriginalPlacement => originalPlacement;
     [SerializeField] private Image itemIcon;
     [SerializeField] private Image rarityBackground;
+    [SerializeField] private Image rarityFrame;
     
     private void Awake()
     {
@@ -82,7 +83,7 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         rect.anchoredPosition = new Vector2(item.x * step, -item.y * step);
 
         itemIcon.sprite = inventoryItem.itemData.definition.icon;
-        ApplyRarityBackground(inventoryItem.itemData.definition.rarity);
+        ApplyRarityVisuals(inventoryItem.itemData.definition.rarity);
         itemTransform.localRotation = Quaternion.Euler(0, 0, inventoryItem.isRotated ? 90f : 0f);
         RestoreGridSettings();
     }
@@ -101,6 +102,9 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (rarityBackground == null)
             rarityBackground = transform.Find("RarityBackground")?.GetComponent<Image>();
 
+        if (rarityFrame == null)
+            rarityFrame = transform.Find("RarityFrame")?.GetComponent<Image>();
+
         if (itemTransform == null && itemIcon != null)
             itemTransform = itemIcon.transform;
     }
@@ -109,9 +113,9 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     /// 공용 등급 색상표를 아이템 점유 면적 전체에 불투명하게 적용한다.
     /// 배경 RectTransform은 아이템 루트에 Stretch되어 다칸·회전 크기를 자동으로 따라간다.
     /// </summary>
-    private void ApplyRarityBackground(ItemRarity rarity)
+    private void ApplyRarityVisuals(ItemRarity rarity)
     {
-        if (rarityBackground == null)
+        if (rarityBackground == null && rarityFrame == null)
             return;
 
         if (!ItemDisplayNames.GradeColorHex.TryGetValue(rarity, out string colorHex) ||
@@ -121,7 +125,14 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         }
 
         gradeColor.a = 1f;
-        rarityBackground.color = gradeColor;
+        Color frameColor = gradeColor;
+        frameColor.a = 0.5f;
+
+        if (rarityBackground != null)
+            rarityBackground.color = gradeColor;
+
+        if (rarityFrame != null)
+            rarityFrame.color = frameColor;
     }
 
     public void OnPointerClick(PointerEventData eventData)

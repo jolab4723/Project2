@@ -8,10 +8,11 @@ public class GridHighlightUI : MonoBehaviour
     [SerializeField] private RectTransform secondaryHighlightRect;
     [SerializeField] private Image secondaryHighlightImage;
 
-    private static readonly Color MoveColor = new Color(0f, 1f, 0f, 0.75f);
-    private static readonly Color InvalidColor = new Color(1f, 0f, 0f, 0.65f);
-    private static readonly Color SwapMovingColor = new Color(0f, 0.75f, 1f, 0.75f);
-    private static readonly Color SwapOtherColor = new Color(1f, 0.85f, 0f, 0.75f);
+    private static readonly Color MoveColor = new Color(0.34f, 0.84f, 0.64f, 0.60f);
+    private static readonly Color InvalidColor = new Color(1f, 0.42f, 0.42f, 0.62f);
+    private static readonly Color SwapMovingColor = new Color(0.36f, 0.78f, 1f, 0.60f);
+    private static readonly Color SwapOtherColor = new Color(1f, 0.82f, 0.40f, 0.62f);
+    private const float FillAlphaMultiplier = 0.25f;
 
     public void ShowMovePreview(
         InventoryCellRect rect,
@@ -140,6 +141,18 @@ public class GridHighlightUI : MonoBehaviour
             -gridY * (cellSize + spacing));
         image.color = color;
         image.raycastTarget = false;
+
+        Transform fillTransform = rect.Find("HighlightFill");
+        if (fillTransform != null && fillTransform.TryGetComponent(out Image fillImage))
+        {
+            fillImage.color = new Color(
+                color.r,
+                color.g,
+                color.b,
+                color.a * FillAlphaMultiplier);
+            fillImage.raycastTarget = false;
+        }
+
         rect.SetAsLastSibling();
     }
 

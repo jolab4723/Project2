@@ -15,6 +15,8 @@ public class UpgradeController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI currentStatText;
     [SerializeField] private TextMeshProUGUI nextStatText;
     [SerializeField] private Image itemImage;
+    [SerializeField] private Image rarityBackground;
+    [SerializeField] private Image rarityFrame;
 
     private ItemInstance selectedItem;
     
@@ -155,6 +157,8 @@ public class UpgradeController : MonoBehaviour
             itemImage.sprite = selectedItem.definition.icon;
         }
 
+        ApplyRarityVisuals(selectedItem.definition.rarity);
+
         float currentValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel);
         float nextValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel + 1);
         FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
@@ -173,6 +177,8 @@ public class UpgradeController : MonoBehaviour
             itemImage.enabled = false;
         }
 
+        SetRarityVisualsEnabled(false);
+
         if (upgradeLevelText != null)
             upgradeLevelText.text = "";
 
@@ -186,6 +192,40 @@ public class UpgradeController : MonoBehaviour
 
         if (costText != null)
             costText.text = string.Empty;
+    }
+
+    private void ApplyRarityVisuals(ItemRarity rarity)
+    {
+        if (!ItemDisplayNames.GradeColorHex.TryGetValue(rarity, out string colorHex) ||
+            !ColorUtility.TryParseHtmlString(colorHex, out Color gradeColor))
+        {
+            gradeColor = Color.white;
+        }
+
+        gradeColor.a = 1f;
+        Color frameColor = gradeColor;
+        frameColor.a = 0.5f;
+
+        if (rarityBackground != null)
+        {
+            rarityBackground.color = gradeColor;
+            rarityBackground.enabled = true;
+        }
+
+        if (rarityFrame != null)
+        {
+            rarityFrame.color = frameColor;
+            rarityFrame.enabled = true;
+        }
+    }
+
+    private void SetRarityVisualsEnabled(bool isEnabled)
+    {
+        if (rarityBackground != null)
+            rarityBackground.enabled = isEnabled;
+
+        if (rarityFrame != null)
+            rarityFrame.enabled = isEnabled;
     }
 
     private void Update()
