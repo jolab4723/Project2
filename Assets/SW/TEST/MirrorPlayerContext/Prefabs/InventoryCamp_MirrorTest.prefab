@@ -640,6 +640,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -657
       objectReference: {fileID: 0}
+    - target: {fileID: 2694490153222586770, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2719815306418409881, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2511,6 +2515,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4289715495853151683}
+    - targetCorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7412498043944635100}
+    - targetCorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 658228459957300570}
   m_SourcePrefab: {fileID: 100100000, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
 --- !u!114 &69328774095423348 stripped
 MonoBehaviour:
@@ -2523,6 +2533,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d69cba07fba46443af479883efdf87d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipSlotUI
+--- !u!223 &292622672671931275 stripped
+Canvas:
+  m_CorrespondingSourceObject: {fileID: 2916062525652417796, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &422562916056343959 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3000887277246767896, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2545,17 +2560,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
---- !u!114 &911503350189162065 stripped
+--- !u!114 &800712152694986317 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2368395154606831838, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 2838612305111666882, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e10a2f6db29c23b4f90701206d0a21a2, type: 3}
+  m_Script: {fileID: 11500000, guid: 6b15bb6379294b2478b9b0ffb9e9ffa3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipUI
 --- !u!114 &1418192927737104255 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4599894150303646192, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2578,6 +2593,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!224 &1993501279100521708 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4022316406934604387, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3992563894202541545 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1950087340332213094, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d02de6a3ec11d241b7dd850f9da2bda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldItemDropService
 --- !u!224 &4042460736547949717 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1468667368856439322, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2599,28 +2630,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7747770801640456051, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5729244625489707286 stripped
+--- !u!114 &7115204093055396160 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7204114595536144281, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 5676292289274195919, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10cbdf19ac68f2041b10a6467d9ffb26, type: 3}
+  m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InventoryItemUISpawner
---- !u!114 &6003118246462646811 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 9166841276540169364, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
-  m_PrefabInstance: {fileID: 3204440533405714063}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fcabd762b3b6ca4a81c7884044e63e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InventoryController
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
 --- !u!1 &7213731667655026969 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2638,7 +2658,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 484de972698fab341b7113e0070d8037, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryView
-  initialOwner: {fileID: 6003118246462646811}
+  initialOwner: {fileID: 0}
   gridRect: {fileID: 4042460736547949717}
   itemsContainer: {fileID: 5187559431024343548}
   highlight: {fileID: 638249991955536393}
@@ -2650,9 +2670,42 @@ MonoBehaviour:
   - {fileID: 422562916056343959}
   logText: {fileID: 1633286170837113024}
   goldText: {fileID: 7732682799902584649}
-  itemSpawner: {fileID: 5729244625489707286}
-  tooltipManager: {fileID: 911503350189162065}
+  itemSpawner: {fileID: 7412498043944635100}
+  tooltipManager: {fileID: 658228459957300570}
   shopController: {fileID: 8103618423356664121}
+--- !u!114 &7412498043944635100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7213731667655026969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10cbdf19ac68f2041b10a6467d9ffb26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryItemUISpawner
+  itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
+  worldItemDropService: {fileID: 3992563894202541545}
+--- !u!114 &658228459957300570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7213731667655026969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e10a2f6db29c23b4f90701206d0a21a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipManager
+  canvas: {fileID: 292622672671931275}
+  canvasRect: {fileID: 1993501279100521708}
+  playerStatManager: {fileID: 0}
+  equipmentSystem: {fileID: 7115204093055396160}
+  primaryTooltip: {fileID: 800712152694986317}
+  offset: {x: 15, y: 15}
+  comparisonGap: 12
 --- !u!114 &7732682799902584649 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5127479732915775942, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}

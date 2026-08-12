@@ -13,8 +13,8 @@ public sealed class PlayerContext : MonoBehaviour
     [SerializeField] private PlayerBuffManager buffs;
     [SerializeField] private PlayerHealthManager health;
     [SerializeField] private PlayerManaManager mana;
-    [SerializeField] private PotionUseManager potions;
-    [SerializeField] private ItemTriggerManager itemTriggers;
+    [SerializeField] private PotionUseManager_MirrorTest potions;
+    [SerializeField] private ItemTriggerManager_MirrorTest itemTriggers;
 
     [Header("Character")]
     [SerializeField] private T_PlayerController controller;
@@ -28,8 +28,8 @@ public sealed class PlayerContext : MonoBehaviour
     public PlayerBuffManager Buffs => buffs;
     public PlayerHealthManager Health => health;
     public PlayerManaManager Mana => mana;
-    public PotionUseManager Potions => potions;
-    public ItemTriggerManager ItemTriggers => itemTriggers;
+    public PotionUseManager_MirrorTest Potions => potions;
+    public ItemTriggerManager_MirrorTest ItemTriggers => itemTriggers;
     public T_PlayerController Controller => controller;
     public T_PlayerCombat Combat => combat;
     public WBH_PlayerStateMachine StateMachine => stateMachine;
@@ -38,6 +38,18 @@ public sealed class PlayerContext : MonoBehaviour
         inventory != null &&
         equipment != null &&
         wallet != null;
+
+    public bool IsComplete =>
+        HasInventoryRuntime &&
+        stats != null &&
+        buffs != null &&
+        health != null &&
+        mana != null &&
+        potions != null &&
+        itemTriggers != null &&
+        controller != null &&
+        combat != null &&
+        stateMachine != null;
 
     private void Awake()
     {
@@ -50,6 +62,8 @@ public sealed class PlayerContext : MonoBehaviour
     private void OnValidate()
     {
         ResolveReferences();
+        ValidateRequiredReferences();
+        ValidateOwnedReferences();
     }
 #endif
 
@@ -68,8 +82,8 @@ public sealed class PlayerContext : MonoBehaviour
         buffs ??= GetComponent<PlayerBuffManager>();
         health ??= GetComponent<PlayerHealthManager>();
         mana ??= GetComponent<PlayerManaManager>();
-        potions ??= GetComponent<PotionUseManager>();
-        itemTriggers ??= GetComponent<ItemTriggerManager>();
+        potions ??= GetComponent<PotionUseManager_MirrorTest>();
+        itemTriggers ??= GetComponent<ItemTriggerManager_MirrorTest>();
 
         controller ??= GetComponent<T_PlayerController>();
         combat ??= GetComponent<T_PlayerCombat>();
@@ -78,20 +92,11 @@ public sealed class PlayerContext : MonoBehaviour
 
     private void ValidateRequiredReferences()
     {
-        if (stats != null &&
-            buffs != null &&
-            health != null &&
-            mana != null &&
-            itemTriggers != null &&
-            controller != null &&
-            combat != null &&
-            stateMachine != null)
-        {
+        if (IsComplete)
             return;
-        }
 
         Debug.LogError(
-            "[PlayerContext] Fighter의 필수 전투/상태 컴포넌트 참조가 비어 있습니다.",
+            "[PlayerContext] 플레이어의 Inventory/전투/상태 필수 참조가 비어 있습니다.",
             this);
     }
 
