@@ -75,6 +75,7 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 7801668838040943373, guid: ac0352209e99eb446babcad427ac4372, type: 3}
     - {fileID: 2223535990301607553, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+    - {fileID: 2312052604114874023, guid: ac0352209e99eb446babcad427ac4372, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
@@ -105,6 +106,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6626445189154552583}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4453054122860297357}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6920224539749933987}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!114 &354411757978519734 stripped
 MonoBehaviour:
@@ -150,6 +157,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15e11a7135eb17f459b0ccad80dbe3a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerBuffManager
+--- !u!4 &2247283227077507159 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5022215380906037386, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 6529527280875448541}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2429587572153738188 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
@@ -308,6 +320,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider_MirrorTest
   inventory: {fileID: 7746940822970853538}
   buffs: {fileID: 1153837035469029928}
+--- !u!114 &4453054122860297357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6f3bf89aa97405989c802ba270f815, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkAnimator
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0.05
+  clientAuthority: 1
+  animator: {fileID: 8943125756387582732}
+--- !u!114 &6920224539749933987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94bc3e545d2ea9549b2dc8ce205a3cc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerAnimation_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  fighterEffectRoot: {fileID: 2247283227077507159}
+  gunnerEffectRoot: {fileID: 0}
+  Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
+  Eff_gunnerShotgunAtk: {fileID: 0}
+  effectSpawner: {fileID: 0}
 --- !u!4 &3097475621473565046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
@@ -357,6 +406,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29c0799c857311c49ab2f2e203e6fa23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::T_PlayerCombat
+--- !u!95 &8943125756387582732 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 2774735281992846289, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 6529527280875448541}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8013638691066856665
 PrefabInstance:
   m_ObjectHideFlags: 0
