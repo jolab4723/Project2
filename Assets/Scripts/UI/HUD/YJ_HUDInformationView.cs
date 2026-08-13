@@ -11,6 +11,7 @@ public class YJ_HUDInformationView : MonoBehaviour
     [Header("HUD 충돌 영역")]
     [SerializeField] private BoxCollider2D hpBarCollider;
     [SerializeField] private BoxCollider2D mpBarCollider;
+    [SerializeField] private BoxCollider2D expBarCollider;
 
     [Header("정보 표시")]
     [SerializeField] private YJ_NameTag informationTag;
@@ -44,6 +45,7 @@ public class YJ_HUDInformationView : MonoBehaviour
         Canvas.ForceUpdateCanvases();
         FitColliderToRect(hpBarCollider);
         FitColliderToRect(mpBarCollider);
+        FitColliderToRect(expBarCollider);
         Physics2D.SyncTransforms();
 
         ResolvePlayerStatus();
@@ -75,6 +77,12 @@ public class YJ_HUDInformationView : MonoBehaviour
             return;
         }
 
+        if (ContainsPointer(expBarCollider, pointerPosition))
+        {
+            ShowInformation(playerStatus.CurrentExp, playerStatus.MaxExp, pointerPosition);
+            return;
+        }
+
         HideInformation();
     }
 
@@ -98,6 +106,9 @@ public class YJ_HUDInformationView : MonoBehaviour
 
         if (mpBarCollider == null)
             mpBarCollider = FindBarCollider(colliders, "MPBar");
+
+        if (expBarCollider == null)
+            expBarCollider = FindBarCollider(colliders, "ExpBar");
     }
 
     private void ResolveInformationTag()
@@ -250,6 +261,9 @@ public class YJ_HUDInformationView : MonoBehaviour
 
         if (mpBarCollider == null)
             Debug.LogWarning("[YJ_HUDInformationView] MPBar의 BoxCollider2D를 찾지 못했습니다.", this);
+
+        if (expBarCollider == null)
+            Debug.LogWarning("[YJ_HUDInformationView] ExpBar의 BoxCollider2D를 찾지 못했습니다.", this);
 
         if (informationTag == null)
             Debug.LogWarning("[YJ_HUDInformationView] NameTag2를 찾거나 생성하지 못했습니다.", this);

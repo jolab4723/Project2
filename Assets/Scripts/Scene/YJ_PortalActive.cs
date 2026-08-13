@@ -10,12 +10,12 @@ public class YJ_PortalActive : MonoBehaviour
     [SerializeField] private float duration = 3f;
     [SerializeField] private bool isCamp;
 
-    private SphereCollider portalCollider;
-    private Renderer[] portalRenderers;
-    private ParticleSystem[] portalParticles;
-    private Collider[] playerColliders;
+    [SerializeField] private SphereCollider portalCollider;
+    [SerializeField] private Renderer[] portalRenderers;
+    [SerializeField] private ParticleSystem[] portalParticles;
+    [SerializeField] private Collider[] playerColliders;
     private readonly Collider[] overlapBuffer = new Collider[OverlapBufferCapacity];
-    private Coroutine lightRoutine;
+    [SerializeField] private Coroutine lightRoutine;
     private bool activationRequested;
     private bool isPortalActive;
 
