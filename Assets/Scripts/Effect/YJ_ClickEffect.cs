@@ -90,7 +90,5 @@ public class YJ_ClickEffect : MonoBehaviour
         // 연속 클릭해도 매번 처음부터 1회 재생한다.
         rightClickEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         rightClickEffect.Play(true);
-
-        Log.Print($"Right Click Ground: {hit.point}");
     }
 }
