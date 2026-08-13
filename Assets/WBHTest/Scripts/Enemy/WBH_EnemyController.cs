@@ -93,6 +93,11 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         movement.SetControlEnable(false);
 
         enemyAnimation.PlayDie();
+
+        if(!enemyAnimation.UseDieAni)
+        {
+            poolManager.Return(this);
+        }
     }
 
     public void SetTarget(Transform target)

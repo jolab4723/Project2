@@ -33,6 +33,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
 
+    public bool UseDieAni => useDieAni;
 
     private void Awake()
     {
