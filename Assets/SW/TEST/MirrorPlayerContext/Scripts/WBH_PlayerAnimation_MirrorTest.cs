@@ -2,6 +2,13 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// BH 원본 <c>WBH_PlayerAnimation</c>의 Mirror 검증용 복제본이다.
+/// <para>원본: <c>Assets/WBHTest/Scripts/Player/WBH_PlayerAnimation.cs</c></para>
+/// <para><c>MonoBehaviour</c> 대신 <c>NetworkBehaviour</c>를 사용하고, 로컬 플레이어만 상태·공격속도 이벤트와 NavMeshAgent 이동값을 읽는다.</para>
+/// <para>Attack·Dodge·Hit·Dead Trigger는 <c>NetworkAnimator</c>로 전달하여 원격 화면에서도 같은 애니메이션을 재생한다.</para>
+/// <para>원격 복제본의 AnimationEvent는 공격 실행과 상태 전환을 호출하지 않으며, 시각 효과 이벤트만 각 화면에서 null-safe로 재생한다.</para>
+/// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Animator), typeof(NetworkIdentity), typeof(NetworkAnimator))]
 public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour

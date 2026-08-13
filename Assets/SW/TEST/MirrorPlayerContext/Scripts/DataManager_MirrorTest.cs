@@ -4,6 +4,13 @@ using System.IO;
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// WJ 원본 <c>DataManager</c>의 PlayerContext 전환 검증용 복제본이다.
+/// <para>원본: <c>Assets/WJ_TestPlace/Script/Core/Manager/DataManager.cs</c></para>
+/// <para>전역 Singleton과 매니저 모듈, 프로필·옵션·스테이지 슬롯 기능을 제외하고 플레이어 상태 저장/로드만 남겼다.</para>
+/// <para><c>SaveGameplayData/LoadGameplayData(PlayerContext)</c>로 대상을 명시하며, 해당 Context의 Stat·Health·Mana·Wallet·Inventory·Equipment만 읽고 쓴다.</para>
+/// <para>전용 파일명을 사용하므로 운영 세이브를 덮어쓰지 않는다. 네트워크 동기화나 서버 권한 저장은 이 테스트 범위에 포함하지 않는다.</para>
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class DataManager_MirrorTest : MonoBehaviour
 {

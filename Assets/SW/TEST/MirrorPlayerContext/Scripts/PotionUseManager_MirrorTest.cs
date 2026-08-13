@@ -2,6 +2,13 @@ using System;
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// WJ 원본 <c>PotionUseManager</c>의 PlayerContext 전환 검증용 복제본이다.
+/// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/PotionUseManager.cs</c></para>
+/// <para><c>Instance</c>, 중복 오브젝트 삭제와 내부 로컬 플레이어 판정을 제거하고 Equipment·Health·Buff를 같은 플레이어 참조로 받는다.</para>
+/// <para>충전량은 컴포넌트 인스턴스마다 따로 보관하며, UI가 직접 조회하지 않아도 되도록 <c>ChargesChanged</c>를 발행한다.</para>
+/// <para>로컬 입력 허용 여부는 <c>MirrorSpawnedPlayerBinder</c>가 입력 컴포넌트만 제어하고, 원격 플레이어도 독립된 포션 상태는 유지한다.</para>
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class PotionUseManager_MirrorTest : MonoBehaviour
 {

@@ -1,6 +1,12 @@
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// WJ 원본 <c>StatThresholdRunner</c>의 PlayerContext 전환 검증용 복제본이다.
+/// <para>원본: <c>Assets/WJ_TestPlace/Script/Buff/StatThresholdRunner.cs</c></para>
+/// <para>PlayerStat·Health·Mana·Buff의 각 <c>Instance</c> 탐색을 제거하고 생성자가 호출한 <c>Bind</c>에서 특정 플레이어 참조를 받는다.</para>
+/// <para>그 플레이어의 이벤트만 구독해 조건을 계산하며, Runner가 제거될 때 구독과 자신이 적용한 버프를 함께 해제한다.</para>
+/// </summary>
 public sealed class StatThresholdRunner_MirrorTest : MonoBehaviour
 {
     private PlayerStatManager stats;

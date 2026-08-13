@@ -2,6 +2,13 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// WJ 원본 <c>ItemTriggerManager</c>의 PlayerContext 전환 검증용 복제본이다.
+/// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/ItemTriggerManager.cs</c></para>
+/// <para><c>Instance</c>와 로컬 NetworkIdentity 판정을 제거하고, 같은 플레이어의 Inventory·Health·Buff·StateMachine을 직접 참조한다.</para>
+/// <para>피격·회피·처치 호출은 이 컴포넌트가 소유한 플레이어의 장비와 유물만 검사한다.</para>
+/// <para>고유 효과 SO에 있던 공유 쿨타임 대신 플레이어 컴포넌트의 딕셔너리에 아이템별 실행 시간을 보관한다.</para>
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
 {

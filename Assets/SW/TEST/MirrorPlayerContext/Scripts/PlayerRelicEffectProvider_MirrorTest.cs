@@ -2,6 +2,13 @@ using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// SW 원본 <c>PlayerRelicEffectProvider</c>의 PlayerContext 전환 검증용 복제본이다.
+/// <para>원본: <c>Assets/SW/Scripts/Player/PlayerRelicEffectProvider.cs</c></para>
+/// <para>유물 SO의 전역 <c>OnEquip/OnUnequip</c> 호출 대신 같은 플레이어의 Inventory와 Buff를 직접 참조해 효과를 적용한다.</para>
+/// <para>패시브 중첩 수, 오라 GameObject, 조건부 버프 Runner를 이 플레이어 컴포넌트가 소유하여 다른 플레이어와 런타임 상태를 공유하지 않는다.</para>
+/// <para>비활성화 시 이벤트 구독, 버프와 생성한 런타임 오브젝트를 모두 정리한다.</para>
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 {

@@ -12,6 +12,9 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     [SerializeField] private TMP_Text buffText;
 
     private PlayerContext context;
+    private int displayedLevel = -1;
+    private float displayedExp = float.NaN;
+    private float displayedRequiredExp = float.NaN;
 
     public PlayerContext BoundContext => context;
 
@@ -27,6 +30,8 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         context.Mana.OnManaChanged += RefreshMana;
         context.Buffs.OnBuffsChanged += RefreshBuffs;
         context.Potions.ChargesChanged += RefreshPotions;
+        if (context.Stats.Stat != null)
+            context.Stats.Stat.OnStatChanged += RefreshPlayer;
 
         RefreshAll();
     }
@@ -40,6 +45,8 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         context.Mana.OnManaChanged -= RefreshMana;
         context.Buffs.OnBuffsChanged -= RefreshBuffs;
         context.Potions.ChargesChanged -= RefreshPotions;
+        if (context.Stats.Stat != null)
+            context.Stats.Stat.OnStatChanged -= RefreshPlayer;
         context = null;
         RefreshAll();
     }
@@ -47,6 +54,19 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private void OnDisable()
     {
         Unbind();
+    }
+
+    private void Update()
+    {
+        if (context == null ||
+            (displayedLevel == context.Stats.CurrentLevel &&
+             Mathf.Approximately(displayedExp, context.Stats.CurrentExp) &&
+             Mathf.Approximately(displayedRequiredExp, context.Stats.ExpToNextLevel)))
+        {
+            return;
+        }
+
+        RefreshPlayer();
     }
 
     private void RefreshAll()
@@ -58,8 +78,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         if (context != null)
         {
             RefreshPotions(context.Potions.CurrentCharges, context.Potions.MaxCharges);
-            if (playerText != null)
-                playerText.text = context.name;
+            RefreshPlayer();
         }
         else
         {
@@ -98,5 +117,22 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     {
         if (potionText != null)
             potionText.text = $"Potion {current}/{max}";
+    }
+
+    private void RefreshPlayer()
+    {
+        if (playerText == null || context == null)
+            return;
+
+        float requiredExp = context.Stats.ExpToNextLevel;
+        displayedLevel = context.Stats.CurrentLevel;
+        displayedExp = context.Stats.CurrentExp;
+        displayedRequiredExp = requiredExp;
+
+        string expText = requiredExp > 0f
+            ? $"EXP {context.Stats.CurrentExp:0}/{requiredExp:0}"
+            : "MAX";
+
+        playerText.text = $"{context.name}  Lv.{context.Stats.CurrentLevel}  {expText}";
     }
 }

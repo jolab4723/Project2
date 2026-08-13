@@ -95,7 +95,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void ResolveLocalOnlyBehaviours()
     {
-        WBH_PlayerInputHandler movementInput = GetComponent<WBH_PlayerInputHandler>();
+        WBH_PlayerInputHandler_MirrorTest movementInput = GetComponent<WBH_PlayerInputHandler_MirrorTest>();
         PlayerActionInputHandler_MirrorTest actionInput = GetComponent<PlayerActionInputHandler_MirrorTest>();
         localOnlyBehaviours = new Behaviour[] { movementInput, actionInput };
     }
