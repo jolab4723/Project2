@@ -15,5 +15,6 @@ public enum WBH_StatusEffectType
     Airborne,
     Stun,
 
-    
+    // 능력치 감소
+    DefenseDown,
 }

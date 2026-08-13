@@ -1,4 +1,5 @@
 using UnityEngine;
+using ItemSystem;
 
 /// <summary>스킬 하나가 실제로 어떤 모양의 판정을 쓰는지.</summary>
 public enum SkillShapeType
@@ -16,8 +17,10 @@ public enum SkillShapeType
 /// 수치/밸런스를 맞추는 중이라 빠르게 조정하려고 이렇게 시작했고, 안정되면 아이템처럼
 /// Excel 기반 파이프라인으로 옮길 수 있다.
 ///
-/// 진화(3가지 형태 중 선택)·강화(피해량/쿨타임/범위 중 선택)는 아직 구체적인 형태·효과가
-/// 정해지지 않아서 이 에셋에는 넣지 않았다 - 실제 설계가 나오면 확장한다.
+/// 진화(3가지 형태 중 선택)는 아래 evo* 필드로 시작했다 - 스킬마다 진화 3개의 효과가 서로 달라서
+/// 필드도 스킬 형태별로 나눠 정의한다("SectorSlash 진화용" 등 헤더 참고, 실제로 사용되는 필드는
+/// 그 스킬의 shapeType과 FighterSkillController에서 선택된 SkillEvolutionId에 따라 갈린다).
+/// 강화(피해량/쿨타임/범위 중 선택)는 아직 구체적인 형태가 안 정해져서 이 에셋에는 없음.
 /// </summary>
 [CreateAssetMenu(menuName = "Skill/SkillDefinition")]
 public class SkillDefinitionSO : ScriptableObject
@@ -44,4 +47,41 @@ public class SkillDefinitionSO : ScriptableObject
     [Header("Dash일 때만 사용 (커서 방향 대시, 피해 없음)")]
     public float dashDistance = 4f;
     public float dashDuration = 0.15f;
+
+    [Header("SectorSlash 진화1 전용 (밀치기 + 기절)")]
+    [Tooltip("밀려나는 거리. WBH_StatusEffectPresets.Knockback1의 기본값(10)이 너무 멀어서 스킬 전용으로 따로 둠.")]
+    public float evoKnockbackForce = 5f;
+    [Tooltip("밀려나는 데 걸리는 시간(초).")]
+    public float evoKnockbackDuration = 0.3f;
+
+    [Header("SectorSlash 진화3 전용 (원형 + 차징, 최대 charge 시간에 비례해 데미지 증가)")]
+    [Tooltip("누르고 있으면 최대 이 시간(초)까지 차징된다. 도달하면 자동 발동.")]
+    public float evoChargeMaxSeconds = 3f;
+    [Tooltip("최대 차징(evoChargeMaxSeconds)일 때 적용되는 피해 배율. 0초 차징~여기까지 선형 보간.")]
+    public float evoChargeMaxDamageMultiplier = 3.5f;
+
+    [Header("LineSlam 진화1 전용 (방어 감소 + 기절)")]
+    [Tooltip("방어력 배율. 0.7이면 방어력 30% 감소.")]
+    public float evoDefenseDownMultiplier = 0.7f;
+    [Tooltip("방어 감소가 유지되는 시간(초).")]
+    public float evoDefenseDownDuration = 4f;
+
+    [Header("LineSlam 진화2 전용 (범위 증가 + 에어본)")]
+    public float evoWideLineLength = 6f;
+    public float evoWideLineWidth = 3f;
+    public float evoAirborneHeight = 3f;
+    public float evoAirborneDuration = 1.5f;
+
+    [Header("LineSlam 진화3 전용 (범위 감소 + 강한 데미지)")]
+    public float evoNarrowLineLength = 2f;
+    public float evoNarrowLineWidth = 1f;
+    public float evoNarrowDamageMultiplier = 3.5f;
+
+    [Header("Dash 진화2 전용 (2스택화 - 쿨타임 대신 스택으로 관리)")]
+    public int evoDashMaxStacks = 2;
+    [Tooltip("스택 1개가 다시 차는 데 걸리는 시간(초).")]
+    public float evoDashStackRechargeSeconds = 4f;
+
+    [Header("Dash 진화3 전용 (대시 후 피해 증가 버프)")]
+    public BuffDefinitionSO evoDashDamageBuff;
 }

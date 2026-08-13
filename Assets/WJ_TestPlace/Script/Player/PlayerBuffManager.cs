@@ -6,9 +6,9 @@ using ItemSystem;
 /// <summary>
 /// 현재 적용 중인 버프들을 관리하고, 스탯 효과를 합산해서 StatSet으로 제공하는 IStatSetProvider 구현체.
 ///
-/// 지금은 ApplyBuff/RemoveBuff API와 매니저 골격만 만든 상태 - 실제로 언제 버프가 걸리는지
-/// (포션 소비, 스킬, 필드 존 등)는 아직 연결 안 함. 나중에 그 시스템들이 이 매니저의
-/// ApplyBuff(def)만 불러주면 됨.
+/// 실제 목록/틱/스탯 합산 로직은 BuffTracker(재사용 가능한 순수 C# 클래스)에 있고, 여기서는
+/// PlayerStatManager.Recalculate() 연동 + 멀티플레이 Instance 패턴만 얹는다 - 허수아비 등
+/// PlayerStatManager가 없는 대상은 DummyBuffManager처럼 BuffTracker를 직접 들고 쓰면 된다.
 ///
 /// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
 ///    PlayerStatManager는 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로 찾아서
@@ -21,12 +21,12 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
     /// <summary>씬에 존재하는 모든 캐릭터의 버프 매니저 (나 + 다른 플레이어).</summary>
     public static readonly List<PlayerBuffManager> All = new List<PlayerBuffManager>();
 
-    private readonly List<BuffInstance> activeBuffs = new List<BuffInstance>();
+    private readonly BuffTracker tracker = new BuffTracker();
     private PlayerStatManager statManager;
 
     /// <summary>UI 등 외부에서 현재 걸린 버프 목록을 읽기 전용으로 조회. 남은시간/스택 값은 매 프레임 바뀌므로
     /// UI 쪽에서 직접 폴링해서 쓰면 되고, 이 리스트 자체는 OnBuffsChanged가 발행될 때만 다시 읽으면 된다.</summary>
-    public IReadOnlyList<BuffInstance> ActiveBuffs => activeBuffs;
+    public IReadOnlyList<BuffInstance> ActiveBuffs => tracker.ActiveBuffs;
 
     /// <summary>버프가 새로 추가되거나 제거돼서 목록 구성 자체가 바뀔 때 발행. 같은 버프의 스택/지속시간만
     /// 갱신되는 경우(RefreshDuration, Stack 재적용)는 목록 구성이 그대로라 발행하지 않는다 - UI는 이미
@@ -37,6 +37,7 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
     {
         All.Add(this);
         statManager = GetComponent<PlayerStatManager>();
+        tracker.OnBuffsChanged += () => OnBuffsChanged?.Invoke();
 
         var identity = GetComponent<Mirror.NetworkIdentity>();
         if (identity != null && !identity.isLocalPlayer)
@@ -60,31 +61,8 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
 
     private void Update()
     {
-        if (activeBuffs.Count == 0)
-            return;
-
-        bool anyExpired = false;
-
-        // 뒤에서부터 순회해야 RemoveAt으로 인덱스가 밀려도 안전함
-        for (int i = activeBuffs.Count - 1; i >= 0; i--)
-        {
-            var buff = activeBuffs[i];
-            if (buff.source == null || buff.source.IsPermanent)
-                continue;
-
-            buff.remainingTime -= Time.deltaTime;
-            if (buff.remainingTime <= 0f)
-            {
-                activeBuffs.RemoveAt(i);
-                anyExpired = true;
-            }
-        }
-
-        if (anyExpired)
-        {
+        if (tracker.Tick(Time.deltaTime))
             statManager?.Recalculate();
-            OnBuffsChanged?.Invoke();
-        }
     }
 
     /// <summary>
@@ -96,80 +74,23 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
     /// </summary>
     public void ApplyBuff(IBuffSource source)
     {
-        if (source == null)
-        {
-            Debug.LogWarning("[PlayerBuffManager] source가 null입니다.");
-            return;
-        }
-
-        var existing = activeBuffs.Find(b => ReferenceEquals(b.source, source));
-
-        if (existing != null)
-        {
-            switch (source.StackBehavior)
-            {
-                case BuffStackBehavior.RefreshDuration:
-                    existing.remainingTime = source.Duration;
-                    break;
-
-                case BuffStackBehavior.Stack:
-                    if (source.MaxStack <= 0 || existing.stackCount < source.MaxStack)
-                        existing.stackCount++;
-                    existing.remainingTime = source.Duration; // 스택될 때도 지속시간은 최신으로 갱신
-                    break;
-
-                case BuffStackBehavior.Ignore:
-                    return; // 이미 있으면 아무 것도 안 하고 끝
-            }
-        }
-        else
-        {
-            activeBuffs.Add(new BuffInstance(source));
-            OnBuffsChanged?.Invoke();
-        }
-
-        statManager?.Recalculate();
+        if (tracker.ApplyBuff(source))
+            statManager?.Recalculate();
     }
 
     /// <summary>해당 버프를 스택 상관없이 완전히 제거한다.</summary>
     public void RemoveBuff(IBuffSource source)
     {
-        if (source == null)
-            return;
-
-        int removed = activeBuffs.RemoveAll(b => ReferenceEquals(b.source, source));
-
-        if (removed > 0)
-        {
+        if (tracker.RemoveBuff(source))
             statManager?.Recalculate();
-            OnBuffsChanged?.Invoke();
-        }
     }
 
     /// <summary>모든 버프를 제거한다. (예: 사망/씬 전환 시 초기화용)</summary>
     public void ClearAllBuffs()
     {
-        if (activeBuffs.Count == 0)
-            return;
-
-        activeBuffs.Clear();
-        statManager?.Recalculate();
-        OnBuffsChanged?.Invoke();
+        if (tracker.ClearAllBuffs())
+            statManager?.Recalculate();
     }
 
-    public StatSet GetStatSet()
-    {
-        StatSet total = StatSet.Zero;
-
-        foreach (var buff in activeBuffs)
-        {
-            if (buff?.source?.StatEffects == null)
-                continue;
-
-            foreach (var effect in buff.source.StatEffects)
-                StatSetMapper.AddStat(ref total, effect.statType, effect.value * buff.stackCount);
-        }
-
-        return total;
-    }
+    public StatSet GetStatSet() => tracker.GetStatSet();
 }

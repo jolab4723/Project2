@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 /// <summary>
@@ -8,6 +9,11 @@ using UnityEngine.UI;
 /// 기존 적 AI 컴포넌트 체인에 의존하지 않는 독립 컴포넌트로 만들었다.
 /// WBH_EnemyStatus/WBH_EnemyController가 하던 WBH_ICombat/WBH_ICombatStatus 구현 부분만
 /// 필요한 만큼 그대로 옮겨왔다(원본 두 파일은 서로 RequireComponent로 묶여 있어 그대로 재사용 불가).
+///
+/// !! "적 0번"으로 만들려고 WBH_ 접두사를 뗀 복사본 프레임워크(EnemyStatus/StatusEffectController 등)를
+///    한 번 붙였다가 다시 뗐다 - 실제 적 적용은 결국 BH님 파일(WBH_EnemyStatus 등)을 직접 수정하는
+///    쪽으로 방향이 정해져서, 복사본 전용으로 만들었던 부분은 다시 정리했다. 방어감소만 예외로
+///    BuffTracker 기반 버프 경로(DummyBuffManager)는 WBH 복사본과 무관하게 독립적이라 그대로 남겨둠.
 ///
 /// 이 컴포넌트 하나만 붙이면 그 자체로 공격 대상이 된다. 플레이어의 근접 공격(SectorAttack)과
 /// 투사체는 Physics.OverlapSphere + TryGetComponent&lt;WBH_ICombat&gt;로 대상을 찾으므로,
@@ -38,9 +44,15 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     [Tooltip("피격 후 HP바를 계속 보여줄 시간(초).")]
     [SerializeField] private float hpBarVisibleTime = 2f;
 
+    [Tooltip("허수아비의 기초 방어력. 방어감소 디버프를 테스트하려면 0보다 커야 실제 피해량 차이가 보인다.")]
+    [SerializeField] private float defensePower = 20f;
+
     private float currentHp;
+    private float currentDefensePower;
     private float lastHitTime = float.NegativeInfinity;
     private Coroutine hideHpBarCoroutine;
+    private Coroutine knockbackRoutine;
+    private Coroutine airborneRoutine;
 
     // ----- WBH_ICombat -----
     public WBH_ICombatStatus Status => this;
@@ -54,14 +66,96 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
         UpdateHpBar();
     }
 
-    /// <summary>허수아비는 상태이상을 적용받을 필요가 없어 비워둔다. WBH_ICombat 계약만 충족시킨다.</summary>
-    public void AddStatusEffect(WBH_StatusEffectData data) { }
+    /// <summary>도트 데미지(화상 등) 전용 - WBH_DamageResult(크리티컬 등)가 필요 없는 경로.</summary>
+    public void ApplyDotDamage(float damage)
+    {
+        currentHp = Mathf.Max(0f, currentHp - damage);
+        lastHitTime = Time.time;
+        UpdateHpBar();
+    }
+
+    private float buffDefensePercent;
+    private float buffDefenseFlat;
+
+    /// <summary>PlayerBuffManager와 같은 BuffTracker 기반 버프 레이어 결과를 반영한다. DummyBuffManager가 호출한다.</summary>
+    public void ApplyBuffStatSet(StatSet statSet)
+    {
+        buffDefensePercent = statSet.defensePowerPercent;
+        buffDefenseFlat = statSet.defensePowerFlat;
+        RecalculateDefense();
+    }
+
+    private void RecalculateDefense()
+    {
+        currentDefensePower = Mathf.Max(0f, defensePower * (1f + buffDefensePercent / 100f) + buffDefenseFlat);
+    }
+
+    /// <summary>
+    /// 허수아비는 이동 AI/공격이 없어서 실제로 눈에 보이는 반응이 있는 넉백/에어본(위치 이동)만
+    /// 반영한다. 기절/둔화 등은 애초에 허수아비가 움직이지 않으니 시각적으로 확인할 게 없어
+    /// 생략했다(WBH_EnemyStatusEffectController.ApplyKnockback/ApplyAirborne과 같은 방식으로 구현).
+    /// </summary>
+    public void AddStatusEffect(WBH_StatusEffectData data)
+    {
+        switch (data.Type)
+        {
+            case WBH_StatusEffectType.KnockBack:
+                if (knockbackRoutine != null)
+                    StopCoroutine(knockbackRoutine);
+                knockbackRoutine = StartCoroutine(KnockbackRoutine(data.Direction, data.Force, data.Duration));
+                break;
+
+            case WBH_StatusEffectType.Airborne:
+                if (airborneRoutine != null)
+                    StopCoroutine(airborneRoutine);
+                airborneRoutine = StartCoroutine(AirborneRoutine(data.Height, data.Duration));
+                break;
+        }
+    }
+
+    private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
+    {
+        Vector3 start = transform.position;
+        Vector3 rawEnd = start + direction.normalized * force;
+
+        // 벽 등 NavMesh 밖으로 밀려나지 않도록 경로를 검사한다(FighterSkillController.ExecuteDash와 같은 방식).
+        Vector3 end = NavMesh.Raycast(start, rawEnd, out NavMeshHit hit, NavMesh.AllAreas) ? hit.position : rawEnd;
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            transform.position = Vector3.Lerp(start, end, elapsed / duration);
+            yield return null;
+        }
+
+        transform.position = end;
+        knockbackRoutine = null;
+    }
+
+    private IEnumerator AirborneRoutine(float height, float duration)
+    {
+        Vector3 start = transform.position;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            transform.position = start + Vector3.up * (Mathf.Sin(t * Mathf.PI) * height);
+            yield return null;
+        }
+
+        transform.position = start;
+        airborneRoutine = null;
+    }
 
     // ----- WBH_ICombatStatus -----
     public float CurrentHp => currentHp;
     public float MaxHealth => maxHp;
     public float AttackPower => 0f;
-    public float DefensePower => 0f;
+    public float DefensePower => currentDefensePower;
     public float CritRate => 0f;
     public float CritMult => 1f;
     public float Pen => 0f;
@@ -75,6 +169,7 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     private void Awake()
     {
         currentHp = maxHp;
+        currentDefensePower = defensePower;
 
         if (hpBarSlider == null)
         {
