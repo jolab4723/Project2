@@ -39,6 +39,9 @@ public static class WBH_StatusEffectFactory
             case WBH_StatusEffectType.Stun:
                 return new WBH_StunEffect(controller, data);
 
+            case WBH_StatusEffectType.DefenseDown:
+                return new WBH_DefenseDownEffect(controller, data);
+
             default:
                 Log.Error($"지원하지 않는 상태이상입니다. ({data.Type})");
                 return null;

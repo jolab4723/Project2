@@ -30,6 +30,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     private float currentAttackPower;
     private float currentMoveSpeed;
     private float currentAttackSpeed;
+    private float currentDefensePower;
 
     //-- 이벤트
     public event Action<float, float> OnHpChanged;
@@ -40,7 +41,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     public float MaxHealth => maxHp;
     public float CurrentHp => currentHp;
     public float AttackPower => currentAttackPower;
-    public float DefensePower => defensePower;
+    public float DefensePower => currentDefensePower;
     public float CritRate => criticalChance;
     public float CritMult => criticalMultiplier;
     public float Pen => pen;
@@ -76,6 +77,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
         currentAttackPower = attackPower;
         currentAttackSpeed = attackSpeed;
         currentMoveSpeed = moveSpeed;
+        currentDefensePower = defensePower;
     }
 
     public void TakeDamage(WBH_DamageResult result)
@@ -134,5 +136,9 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
     public void MultiplyAttack(float modifier)
     {
         currentAttackPower = attackPower * modifier;
+    }
+    public void MultiplyDefense(float modifier)
+    {
+        currentDefensePower = defensePower * modifier;
     }
 }

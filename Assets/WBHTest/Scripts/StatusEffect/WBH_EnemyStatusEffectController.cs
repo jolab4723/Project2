@@ -69,6 +69,10 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     {
         status.MultiplyAttack(modifier);
     }
+    public override void ApplyDefenseModifier(float modifier)
+    {
+        status.MultiplyDefense(modifier);
+    }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
     public override void SetControlEnable(bool enabled)

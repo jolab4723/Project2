@@ -51,6 +51,11 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     {
         status.MultiplyAttack(modifier);
     }
+    // 플레이어 방어감소 디버프는 아직 사용하지 않음. 차후 구현 필요
+    public override void ApplyDefenseModifier(float modifier)
+    {
+        // !@
+    }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
     public override void SetControlEnable(bool enabled)

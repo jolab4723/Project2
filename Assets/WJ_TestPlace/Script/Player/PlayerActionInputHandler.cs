@@ -23,6 +23,10 @@ public class PlayerActionInputHandler : MonoBehaviour
     /// <summary>스킬 키(1~4)가 눌렸을 때 발행. 인자는 0~3 (Skill1~4).</summary>
     public event Action<int> OnSkillKeyPressed;
 
+    /// <summary>스킬 키(1~4)에서 손을 뗐을 때 발행. 인자는 0~3 (Skill1~4). 차지형 스킬(누르고 있다가
+    /// 떼면 발동)에서 사용 - 차지가 아닌 스킬은 이 이벤트를 무시하면 됨.</summary>
+    public event Action<int> OnSkillKeyReleased;
+
     private GameInputActions inputActions;
 
     private void Awake()
@@ -61,5 +65,14 @@ public class PlayerActionInputHandler : MonoBehaviour
             OnSkillKeyPressed?.Invoke(2);
         if (inputActions.Player.Skill4.triggered)
             OnSkillKeyPressed?.Invoke(3);
+
+        if (inputActions.Player.Skill1.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(0);
+        if (inputActions.Player.Skill2.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(1);
+        if (inputActions.Player.Skill3.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(2);
+        if (inputActions.Player.Skill4.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(3);
     }
 }
