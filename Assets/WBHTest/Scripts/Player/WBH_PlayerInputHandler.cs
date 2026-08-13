@@ -12,7 +12,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     private T_PlayerController controller;
     private T_PlayerCombat combat;
 
-    private WorldItemPickupInteractor pickupItem;
+    private WorldItemPickupInteractor pickupInteractor;
 
 
     private void Awake()
@@ -21,8 +21,11 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         controller = GetComponent<T_PlayerController>();
         combat = GetComponent<T_PlayerCombat>();
-        pickupItem = FindFirstObjectByType<WorldItemPickupInteractor>();
+    }
 
+    private void Start()
+    {
+        ResolvePickupInteractor(); // UI 실행 순서 보장을 위한 Start 에서 호출
     }
 
     void Update()
@@ -56,10 +59,15 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         }
     }
 
-    // 공격
+    // 공격 및 아이템 획득
     private void HandleAttackInput()
     {
         if (!Input.GetMouseButtonDown(0) || IsPointerOverUI())
+            return;
+
+        Vector2 screenPos = Input.mousePosition;
+
+        if (TryHandWorldItemClick(screenPos))
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
@@ -95,6 +103,30 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 
+    // 아이템 획득을 위한 참조
+    private bool ResolvePickupInteractor()
+    {
+        if (pickupInteractor != null)
+            return true;
+
+        pickupInteractor = FindFirstObjectByType<WorldItemPickupInteractor>();
+
+        if(pickupInteractor == null)
+        {
+            Log.Warning($"[{name}] WorldItemPickupInteractor 를 찾지 못했습니다.");
+            return false;
+        }
+        return true;
+    }
+
+    // 좌클릭 시, 참조가 없다면 다시 탐색. 있다면 아이템 획득 메서드 호출
+    private bool TryHandWorldItemClick(Vector2 screenPos)
+    {
+        if (!ResolvePickupInteractor())
+            return false;
+
+        return pickupInteractor.TryHandleClick(screenPos);
+    }
 
     //// 포션 사용
     //private void HandlePortionInput()
