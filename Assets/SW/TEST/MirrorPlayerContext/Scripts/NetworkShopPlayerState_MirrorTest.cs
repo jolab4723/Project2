@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Core;
 using Mirror;
 using UnityEngine;
@@ -65,12 +66,24 @@ public readonly struct MirrorTestShopRequestCompleted
 /// 서버가 불러온 뒤 같은 필드에 넣어야 한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-1000)]
 [RequireComponent(typeof(PlayerContext), typeof(PlayerInventorySync_MirrorTest))]
 public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 {
     private const int ProcessedRequestHistorySize = 128;
+    private const int MaxPassiveStatJsonLength = 4096;
+    private const float MaxPassiveStatValue = 10000f;
+
+    private static readonly FieldInfo[] StatSetFields =
+        typeof(StatSet).GetFields(BindingFlags.Instance | BindingFlags.Public);
+
+    private static readonly FieldInfo PassiveDatabaseField =
+        typeof(PassiveSkillManager).GetField(
+            "database",
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private PlayerContext context;
+    [SerializeField] private PassiveSkillDatabaseSO passiveSkillDatabase;
     [SerializeField, Min(0)] private int startingTestGold = 1000;
     [SerializeField, Min(0)] private int fallbackShopEnhanceLevel;
     [SerializeField, Min(0)] private int fallbackExtraRerollCount;
@@ -95,6 +108,7 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 
     private PlayerInventorySync_MirrorTest inventorySync;
     private PassiveSkillManager passiveSkillManager;
+    private StatSet serverPassiveStats;
     private uint nextRequestId;
 
     public int Gold => syncedGold;
@@ -104,11 +118,14 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     public int PendingRequestCount => pendingRequestIds.Count;
     public PlayerContext Context => context;
     internal PlayerInventorySync_MirrorTest InventorySync => inventorySync;
+    internal StatSet ServerPassiveStats => serverPassiveStats;
 
     public event Action<MirrorTestShopRequestCompleted> RequestCompleted;
+    internal event Action ServerPassiveStatsChanged;
 
     private void Awake()
     {
+        ApplyPassiveSkillDatabase();
         syncMode = SyncMode.Owner;
         context ??= GetComponent<PlayerContext>();
         inventorySync = GetComponent<PlayerInventorySync_MirrorTest>();
@@ -121,6 +138,16 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         context ??= GetComponent<PlayerContext>();
     }
 #endif
+
+    private void ApplyPassiveSkillDatabase()
+    {
+        if (passiveSkillDatabase == null || PassiveDatabaseField == null)
+            return;
+
+        PassiveSkillManager manager = PassiveSkillManager.Instance;
+        if (manager != null && PassiveDatabaseField.GetValue(manager) == null)
+            PassiveDatabaseField.SetValue(manager, passiveSkillDatabase);
+    }
 
     public override void OnStartServer()
     {
@@ -141,6 +168,7 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         shopEnhanceLevel = fallbackShopEnhanceLevel;
         extraRerollCount = fallbackExtraRerollCount;
         discountPercent = fallbackDiscountPercent;
+        serverPassiveStats = StatSet.Zero;
         ResolveShopState()?.ServerRefreshPartyBenefits();
     }
 
@@ -299,7 +327,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         CmdSetShopPassiveState(
             enable ? 1 : 0,
             enable ? 1 : 0,
-            enable ? 0.1f : 0f);
+            enable ? 0.1f : 0f,
+            GetLocalPassiveStatJson());
         return true;
     }
 
@@ -417,11 +446,28 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     }
 
     [Command]
-    private void CmdSetShopPassiveState(int level, int extraRerolls, float discount)
+    private void CmdSetShopPassiveState(
+        int level,
+        int extraRerolls,
+        float discount,
+        string passiveStatsJson)
     {
         shopEnhanceLevel = Mathf.Clamp(level, 0, 20);
         extraRerollCount = Mathf.Clamp(extraRerolls, 0, 20);
         discountPercent = Mathf.Clamp(discount, 0f, 0.95f);
+
+        if (TryReadPassiveStats(passiveStatsJson, out StatSet receivedStats))
+        {
+            serverPassiveStats = receivedStats;
+            ServerPassiveStatsChanged?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[NetworkShopPlayerState_MirrorTest] 유효하지 않은 패시브 StatSet 보고를 무시했습니다.",
+                this);
+        }
+
         ResolveShopState()?.ServerRefreshPartyBenefits();
     }
 
@@ -530,7 +576,48 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             discount = passiveSkillManager.ShopDiscountPercent;
         }
 
-        CmdSetShopPassiveState(level, rerolls, discount);
+        CmdSetShopPassiveState(level, rerolls, discount, GetLocalPassiveStatJson());
+    }
+
+    private string GetLocalPassiveStatJson()
+    {
+        StatSet passiveStats = passiveSkillManager != null
+            ? passiveSkillManager.GetStatSet()
+            : StatSet.Zero;
+
+        return JsonUtility.ToJson(passiveStats);
+    }
+
+    private static bool TryReadPassiveStats(string json, out StatSet stats)
+    {
+        stats = StatSet.Zero;
+        if (string.IsNullOrWhiteSpace(json) || json.Length > MaxPassiveStatJsonLength)
+            return false;
+
+        object boxed;
+        try
+        {
+            boxed = JsonUtility.FromJson<StatSet>(json);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        foreach (FieldInfo field in StatSetFields)
+        {
+            if (field.FieldType != typeof(float))
+                return false;
+
+            float value = (float)field.GetValue(boxed);
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                return false;
+
+            field.SetValue(boxed, Mathf.Clamp(value, 0f, MaxPassiveStatValue));
+        }
+
+        stats = (StatSet)boxed;
+        return true;
     }
 
     private void HandleGoldChanged(int oldGold, int newGold)

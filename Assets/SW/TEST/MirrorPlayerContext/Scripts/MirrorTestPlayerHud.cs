@@ -19,6 +19,8 @@ using UnityEngine.UI;
 /// 어려운 네트워크 용어는 초보자도 읽을 수 있는 한국어 설명으로 바꾼다.</para>
 /// <para>3-5 차이: 모든 플레이어가 공유하는 상점 재고, 무료·유료 리롤 사용량,
 /// 가장 높은 상점 강화 적용자와 플레이어별 골드·할인을 종합상황실에서 확인한다.</para>
+/// <para>3-6 차이: 서버가 확정한 최종 Stat·Buff·HP·MP·포션 상태를 각 플레이어 복제본에 적용하고,
+/// 로컬 화면과 서버 종합상황실에서 같은 상태 번호와 전투 수치를 비교한다.</para>
 [DisallowMultipleComponent]
 public sealed class MirrorTestPlayerHud : MonoBehaviour
 {
@@ -36,6 +38,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private PlayerContext context;
     private PlayerInventorySync_MirrorTest inventorySync;
     private NetworkShopPlayerState_MirrorTest shopPlayerState;
+    private PlayerRuntimeStateSync_MirrorTest runtimeState;
     private readonly Queue<string> ownershipEvents = new();
     private int displayedLevel = -1;
     private float displayedExp = float.NaN;
@@ -65,6 +68,10 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         if (shopPlayerState != null)
             shopPlayerState.RequestCompleted += HandleShopRequestCompleted;
 
+        runtimeState = context.RuntimeState;
+        if (runtimeState != null)
+            runtimeState.StateApplied += RefreshAll;
+
         context.Health.OnHealthChanged += RefreshHealth;
         context.Mana.OnManaChanged += RefreshMana;
         context.Buffs.OnBuffsChanged += RefreshBuffs;
@@ -92,6 +99,8 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             inventorySync.RequestCompleted -= HandleInventoryRequestCompleted;
         if (shopPlayerState != null)
             shopPlayerState.RequestCompleted -= HandleShopRequestCompleted;
+        if (runtimeState != null)
+            runtimeState.StateApplied -= RefreshAll;
 
         context.Health.OnHealthChanged -= RefreshHealth;
         context.Mana.OnManaChanged -= RefreshMana;
@@ -107,6 +116,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         context = null;
         inventorySync = null;
         shopPlayerState = null;
+        runtimeState = null;
         ownershipEvents.Clear();
         RefreshAll();
     }
@@ -317,6 +327,25 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                 inventorySync.PendingRequestCount == 0 ? passStyle : localStyle);
         }
 
+        if (runtimeState != null)
+        {
+            GUILayout.Label(
+                $"내 전투 상태 번호={runtimeState.StateRevision} | " +
+                $"HP={runtimeState.CurrentHealth:0}/{runtimeState.MaxHealth:0} | " +
+                $"MP={runtimeState.CurrentMana:0}/{runtimeState.MaxMana:0} | " +
+                $"버프={runtimeState.ActiveBuffCount}개 | 포션={runtimeState.PotionCharges}/{runtimeState.MaxPotionCharges}",
+                runtimeState.HasSnapshot ? passStyle : failStyle);
+
+            if (GUILayout.Button(runtimeState.TestMutationActive
+                    ? "서버 수치 검증 상태 복구"
+                    : "서버 수치 검증: HP·MP 감소 + 공격 버프"))
+            {
+                AddEvent(runtimeState.RequestToggleTestMutation()
+                    ? "서버 전투 수치 변경 요청"
+                    : "서버 전투 수치 변경 요청 실패");
+            }
+        }
+
         NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         if (shopPlayerState != null && sharedShop != null)
         {
@@ -397,12 +426,17 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         uint netId = identity != null ? identity.netId : 0;
         int itemCount = target.Inventory != null ? target.Inventory.GetAllInventoryItems().Count : -1;
         PlayerStat stat = target.Stats != null ? target.Stats.Stat : null;
+        PlayerRuntimeStateSync_MirrorTest targetState = target.RuntimeState;
+        float health = targetState?.CurrentHealth ?? target.Health?.CurrentHealth ?? 0f;
+        float maxHealth = targetState?.MaxHealth ?? target.Health?.MaxHealth ?? 0f;
+        float attack = targetState?.AttackPower ?? stat?.attackPower ?? 0f;
+        float defense = targetState?.DefensePower ?? stat?.defensePower ?? 0f;
 
         string status = isLocal ? "내 플레이어" : "다른 플레이어 복제본";
         string line = $"{status} | netId={netId} | 로컬 객체 번호: PlayerContext#{target.GetInstanceID()} | 인벤토리#{target.Inventory?.GetInstanceID() ?? 0}";
         GUILayout.Label(line, isLocal ? localStyle : remoteStyle);
         GUILayout.Label($"로컬 객체 번호: 장비 시스템#{target.Equipment?.GetInstanceID() ?? 0} | 스탯 시스템#{target.Stats?.GetInstanceID() ?? 0}");
-        GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={target.Health?.CurrentHealth ?? 0:0}/{target.Health?.MaxHealth ?? 0:0} | 공격={stat?.attackPower ?? 0:0} | 방어={stat?.defensePower ?? 0:0}");
+        GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={health:0}/{maxHealth:0} | 공격={attack:0} | 방어={defense:0} | 전투 상태 번호={targetState?.StateRevision ?? 0}");
     }
 
     private void DrawInventory(PlayerContext target)
@@ -452,7 +486,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
 
         GUILayout.Space(10f);
         GUILayout.Label("서버 종합상황실", titleStyle);
-        GUILayout.Label("서버가 확정한 원본 | 3-5 플레이어별 인벤토리·골드와 하나의 공유 상점 확인 | 체력·마나는 아직 동기화하지 않음");
+        GUILayout.Label("서버가 확정한 원본 | 3-6 플레이어별 최종 Stat·Buff·HP·MP·포션과 기존 인벤토리·장비·상점 확인");
 
         NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         if (sharedShop != null)
@@ -478,6 +512,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             NetworkIdentity identity = player.GetComponent<NetworkIdentity>();
             PlayerInventorySync_MirrorTest sync = player.GetComponent<PlayerInventorySync_MirrorTest>();
             NetworkShopPlayerState_MirrorTest playerShop = player.GetComponent<NetworkShopPlayerState_MirrorTest>();
+            PlayerRuntimeStateSync_MirrorTest playerState = player.RuntimeState;
             int connectionId = identity != null && identity.connectionToClient != null
                 ? identity.connectionToClient.connectionId
                 : -1;
@@ -494,6 +529,12 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             GUILayout.Label(
                 $"  골드={playerShop?.Gold ?? -1} | 상점 강화 레벨={playerShop?.ShopEnhanceLevel ?? 0} | " +
                 $"추가 무료 리롤={playerShop?.ExtraRerollCount ?? 0} | 개인 할인={(playerShop?.DiscountPercent ?? 0f) * 100f:0.#}%");
+            GUILayout.Label(
+                $"  전투 상태 번호={playerState?.StateRevision ?? 0} | " +
+                $"HP={playerState?.CurrentHealth ?? 0f:0}/{playerState?.MaxHealth ?? 0f:0} | " +
+                $"MP={playerState?.CurrentMana ?? 0f:0}/{playerState?.MaxMana ?? 0f:0} | " +
+                $"공격={playerState?.AttackPower ?? 0f:0} | 방어={playerState?.DefensePower ?? 0f:0} | " +
+                $"버프={playerState?.ActiveBuffCount ?? 0}개 | 포션={playerState?.PotionCharges ?? 0}/{playerState?.MaxPotionCharges ?? 0}");
 
             foreach (InventoryItem item in player.Inventory.GetAllInventoryItems())
             {

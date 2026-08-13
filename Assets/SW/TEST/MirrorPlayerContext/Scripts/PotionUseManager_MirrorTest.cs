@@ -67,6 +67,16 @@ public sealed class PotionUseManager_MirrorTest : MonoBehaviour
         ChargesChanged?.Invoke(CurrentCharges, MaxCharges);
     }
 
+    internal void ApplyAuthoritativeCharges(int currentCharges)
+    {
+        int clamped = Mathf.Clamp(currentCharges, 0, MaxCharges);
+        if (CurrentCharges == clamped)
+            return;
+
+        CurrentCharges = clamped;
+        ChargesChanged?.Invoke(CurrentCharges, MaxCharges);
+    }
+
     public bool TryGetEquippedPotion(out ItemInstance potion)
     {
         potion = null;

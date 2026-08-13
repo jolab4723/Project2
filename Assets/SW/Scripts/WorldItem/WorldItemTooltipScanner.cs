@@ -13,6 +13,8 @@ public sealed class WorldItemTooltipScanner : MonoBehaviour
 
     private ItemDataStorage currentTarget;
 
+    public Transform BoundPlayer => player;
+
     private void Awake()
     {
         if (player == null)
@@ -114,6 +116,16 @@ public sealed class WorldItemTooltipScanner : MonoBehaviour
         // 호버 갱신과 클릭 처리의 실행 순서에 영향받지 않도록
         // 클릭 가능 여부는 거리만 독립적으로 검사한다.
         return IsWithinDetectionRadius(target);
+    }
+
+    public void BindPlayer(Transform targetPlayer)
+    {
+        if (player == targetPlayer)
+            return;
+
+        player = targetPlayer;
+        currentTarget = null;
+        tooltipView?.Hide();
     }
 
     private void OnDisable()
