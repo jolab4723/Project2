@@ -1,7 +1,24 @@
+using System.Collections.Generic;
+using ItemSystem;
+using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Mirror PlayerContext 테스트 전용 HUD다.
+/// 기존 HP/MP 표시와 함께 로컬 Context, 플레이어별 Inventory 인스턴스,
+/// 실제 ItemInstance 및 소유권 이벤트를 한 화면에서 확인한다.
+/// <para>3-1 차이: 로컬 플레이어의 Mirror 인벤토리 요청 결과를 구독하고,
+/// 서버 상태 변경 번호와 처리 대기 요청 수를 진단 패널에 표시한다.</para>
+/// <para>3-2 차이: 실제 아이템 드래그 결과도 같은 요청 번호 로그로 표시한다.</para>
+/// </summary>
+/// <para>3-3 차이: 그리드 이동·회전 요청 결과를 같은 요청 번호 로그에 표시하고,
+/// 로컬 및 서버 상황실에서 각 아이템의 셀 좌표와 회전 상태를 직접 비교할 수 있다.</para>
+/// <para>3-4 차이: 장착·해제·교환 결과와 서버 장비 슬롯 상태를 함께 표시하며,
+/// 어려운 네트워크 용어는 초보자도 읽을 수 있는 한국어 설명으로 바꾼다.</para>
+/// <para>3-5 차이: 모든 플레이어가 공유하는 상점 재고, 무료·유료 리롤 사용량,
+/// 가장 높은 상점 강화 적용자와 플레이어별 골드·할인을 종합상황실에서 확인한다.</para>
 [DisallowMultipleComponent]
 public sealed class MirrorTestPlayerHud : MonoBehaviour
 {
@@ -11,10 +28,24 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     [SerializeField] private TMP_Text potionText;
     [SerializeField] private TMP_Text buffText;
 
+    [Header("Player separation test")]
+    [SerializeField] private ItemDefinitionSO[] distinctTestItems;
+    [SerializeField] private bool grantDistinctItemOnFirstBind = true;
+    [SerializeField] private bool showDiagnostics = true;
+
     private PlayerContext context;
+    private PlayerInventorySync_MirrorTest inventorySync;
+    private NetworkShopPlayerState_MirrorTest shopPlayerState;
+    private readonly Queue<string> ownershipEvents = new();
     private int displayedLevel = -1;
     private float displayedExp = float.NaN;
     private float displayedRequiredExp = float.NaN;
+    private GUIStyle titleStyle;
+    private GUIStyle localStyle;
+    private GUIStyle remoteStyle;
+    private GUIStyle passStyle;
+    private GUIStyle failStyle;
+    private Vector2 diagnosticsScroll;
 
     public PlayerContext BoundContext => context;
 
@@ -26,14 +57,30 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         if (context == null)
             return;
 
+        inventorySync = context.GetComponent<PlayerInventorySync_MirrorTest>();
+        if (inventorySync != null)
+            inventorySync.RequestCompleted += HandleInventoryRequestCompleted;
+
+        shopPlayerState = context.GetComponent<NetworkShopPlayerState_MirrorTest>();
+        if (shopPlayerState != null)
+            shopPlayerState.RequestCompleted += HandleShopRequestCompleted;
+
         context.Health.OnHealthChanged += RefreshHealth;
         context.Mana.OnManaChanged += RefreshMana;
         context.Buffs.OnBuffsChanged += RefreshBuffs;
         context.Potions.ChargesChanged += RefreshPotions;
+        context.Equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        context.Inventory.OnItemAdded += HandleItemAdded;
+        context.Inventory.OnItemRemoved += HandleItemRemoved;
+        context.Inventory.OnItemOwnershipGained += HandleOwnershipGained;
+        context.Inventory.OnItemOwnershipLost += HandleOwnershipLost;
         if (context.Stats.Stat != null)
             context.Stats.Stat.OnStatChanged += RefreshPlayer;
 
         RefreshAll();
+
+        if (grantDistinctItemOnFirstBind && context.Inventory.GetAllInventoryItems().Count == 0)
+            GrantDistinctTestItem();
     }
 
     public void Unbind()
@@ -41,13 +88,26 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         if (context == null)
             return;
 
+        if (inventorySync != null)
+            inventorySync.RequestCompleted -= HandleInventoryRequestCompleted;
+        if (shopPlayerState != null)
+            shopPlayerState.RequestCompleted -= HandleShopRequestCompleted;
+
         context.Health.OnHealthChanged -= RefreshHealth;
         context.Mana.OnManaChanged -= RefreshMana;
         context.Buffs.OnBuffsChanged -= RefreshBuffs;
         context.Potions.ChargesChanged -= RefreshPotions;
+        context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        context.Inventory.OnItemAdded -= HandleItemAdded;
+        context.Inventory.OnItemRemoved -= HandleItemRemoved;
+        context.Inventory.OnItemOwnershipGained -= HandleOwnershipGained;
+        context.Inventory.OnItemOwnershipLost -= HandleOwnershipLost;
         if (context.Stats.Stat != null)
             context.Stats.Stat.OnStatChanged -= RefreshPlayer;
         context = null;
+        inventorySync = null;
+        shopPlayerState = null;
+        ownershipEvents.Clear();
         RefreshAll();
     }
 
@@ -83,9 +143,9 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         else
         {
             if (playerText != null)
-                playerText.text = "No local player";
+                playerText.text = "내 플레이어를 기다리는 중";
             if (potionText != null)
-                potionText.text = "Potion -/-";
+                potionText.text = "포션 -/-";
         }
     }
 
@@ -110,13 +170,13 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private void RefreshBuffs()
     {
         if (buffText != null)
-            buffText.text = context != null ? $"Buffs {context.Buffs.ActiveBuffs.Count}" : "Buffs 0";
+            buffText.text = context != null ? $"버프 {context.Buffs.ActiveBuffs.Count}" : "버프 0";
     }
 
     private void RefreshPotions(int current, int max)
     {
         if (potionText != null)
-            potionText.text = $"Potion {current}/{max}";
+            potionText.text = $"포션 {current}/{max}";
     }
 
     private void RefreshPlayer()
@@ -130,9 +190,472 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         displayedRequiredExp = requiredExp;
 
         string expText = requiredExp > 0f
-            ? $"EXP {context.Stats.CurrentExp:0}/{requiredExp:0}"
-            : "MAX";
+            ? $"경험치 {context.Stats.CurrentExp:0}/{requiredExp:0}"
+            : "최대 레벨";
 
-        playerText.text = $"{context.name}  Lv.{context.Stats.CurrentLevel}  {expText}";
+        playerText.text = $"{context.name}  레벨 {context.Stats.CurrentLevel}  {expText}";
+    }
+
+    [ContextMenu("Mirror Test/Grant distinct local item")]
+    public bool GrantDistinctTestItem()
+    {
+        if (inventorySync != null && NetworkClient.active)
+        {
+            bool requested = inventorySync.RequestGrantDistinctTestItem();
+            AddEvent(requested ? "서버에 구분용 아이템 지급 요청" : "서버 지급 요청 실패");
+            return requested;
+        }
+
+        if (context?.Inventory == null || distinctTestItems == null || distinctTestItems.Length == 0)
+        {
+            AddEvent("지급 실패: Context 또는 테스트 아이템 없음");
+            return false;
+        }
+
+        NetworkIdentity identity = context.GetComponent<NetworkIdentity>();
+        uint netId = identity != null ? identity.netId : 0;
+        int itemIndex = (int)(netId > 0 ? (netId - 1) % (uint)distinctTestItems.Length : 0);
+        ItemDefinitionSO definition = distinctTestItems[itemIndex];
+
+        if (definition == null)
+        {
+            AddEvent($"지급 실패: 테스트 아이템 {itemIndex + 1}번이 비었음");
+            return false;
+        }
+
+        ItemInstance item = ItemDataCreator.CreateItemData(definition);
+        bool added = ItemAcquisition.Acquire(item, context.Inventory);
+        AddEvent(added
+            ? $"플레이어 {itemIndex + 1} 실제 아이템 지급: {definition.itemName}"
+            : $"지급 실패: {definition.itemName}");
+        return added;
+    }
+
+    private void HandleItemAdded(InventoryItem item)
+    {
+        AddItemEvent("인벤토리에 추가", item);
+    }
+
+    private void HandleItemRemoved(InventoryItem item)
+    {
+        AddItemEvent("인벤토리에서 빠짐", item);
+    }
+
+    private void HandleOwnershipGained(InventoryItem item)
+    {
+        AddItemEvent("소유권 획득", item);
+    }
+
+    private void HandleOwnershipLost(InventoryItem item)
+    {
+        AddItemEvent("소유권 해제", item);
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] items)
+    {
+        AddEvent($"장비 변경: {items?.Length ?? 0}개 장착 중");
+    }
+
+    private void HandleInventoryRequestCompleted(MirrorTestInventoryRequestCompleted completed)
+    {
+        AddEvent(
+            $"서버 요청 #{completed.RequestId} {GetOperationLabel(completed.Operation)}: " +
+            $"{GetResultLabel(completed.Result)} | 상태 번호 " +
+            $"{completed.RequestedRevision}->{completed.AuthoritativeRevision}");
+    }
+
+    private void HandleShopRequestCompleted(MirrorTestShopRequestCompleted completed)
+    {
+        AddEvent(
+            $"상점 요청 #{completed.RequestId} {GetShopOperationLabel(completed.Operation)}: " +
+            $"{GetShopResultLabel(completed.Result)} | 상점 상태 번호 " +
+            $"{completed.RequestedShopRevision}->{completed.AuthoritativeShopRevision}");
+    }
+
+    private void AddItemEvent(string action, InventoryItem item)
+    {
+        ItemInstance data = item?.itemData;
+        string name = data?.definition != null ? data.definition.itemName : "알 수 없는 아이템";
+        AddEvent($"{action}: {name} [{ShortId(data?.instanceId)}]");
+    }
+
+    private void AddEvent(string message)
+    {
+        ownershipEvents.Enqueue(message);
+        while (ownershipEvents.Count > 6)
+            ownershipEvents.Dequeue();
+    }
+
+    private void OnGUI()
+    {
+        if (!showDiagnostics)
+            return;
+
+        EnsureGuiStyles();
+
+        float width = Mathf.Min(460f, Screen.width - 24f);
+        Rect area = new(12f, 64f, width, Screen.height - 76f);
+        GUILayout.BeginArea(area, GUI.skin.box);
+        GUILayout.Label("PLAYER CONTEXT MIRROR 테스트", titleStyle);
+        GUILayout.Label("I 인벤토리 | O 상점 | U 강화 | ESC 닫기");
+
+        if (context == null)
+        {
+            GUILayout.Label("내 PlayerContext를 기다리는 중");
+            GUILayout.EndArea();
+            return;
+        }
+
+        diagnosticsScroll = GUILayout.BeginScrollView(diagnosticsScroll);
+        DrawContext(context, true);
+
+        if (inventorySync != null)
+        {
+            GUILayout.Label(
+                $"내 동기화 상태 번호={inventorySync.StateRevision} | " +
+                $"서버 처리 대기={inventorySync.PendingRequestCount}건",
+                inventorySync.PendingRequestCount == 0 ? passStyle : localStyle);
+        }
+
+        NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
+        if (shopPlayerState != null && sharedShop != null)
+        {
+            GUILayout.Space(6f);
+            GUILayout.Label("내 상점 상태", titleStyle);
+            GUILayout.Label(
+                $"골드={shopPlayerState.Gold} | 내 할인={shopPlayerState.DiscountPercent * 100f:0.#}% | " +
+                $"내 상점 강화 레벨={shopPlayerState.ShopEnhanceLevel} | 서버 처리 대기={shopPlayerState.PendingRequestCount}건",
+                shopPlayerState.PendingRequestCount == 0 ? passStyle : localStyle);
+            GUILayout.Label(
+                $"공유 재고={sharedShop.StockCount}개 (생성 {sharedShop.GeneratedStockCount} / 플레이어 판매 {sharedShop.PlayerSoldStockCount}) | " +
+                $"상점 상태 번호={sharedShop.StateRevision}");
+            GUILayout.Label(
+                $"무료 리롤 남음={sharedShop.RemainingFreeRerollCount}/{sharedShop.TotalFreeRerollCount} | " +
+                $"이후 비용={sharedShop.PaidRerollGoldCost}골드 | 최고 강화 적용자 netId={sharedShop.HighestBenefitPlayerNetId}");
+
+            if (GUILayout.Button("내 테스트 상점 강화 켜기/끄기"))
+                AddEvent(shopPlayerState.RequestToggleTestShopPassive()
+                    ? "테스트 상점 강화 변경 요청"
+                    : "테스트 상점 강화 변경 요청 실패");
+        }
+
+        if (GUILayout.Button("서버에 내 구분용 실제 아이템 지급 요청"))
+            GrantDistinctTestItem();
+
+        if (inventorySync != null && GUILayout.Button("내 첫 인벤토리 아이템 서버 드랍"))
+        {
+            AddEvent(inventorySync.RequestDropFirstInventoryItem()
+                ? "서버 드랍 요청"
+                : "서버 드랍 요청 실패");
+        }
+
+        GUILayout.Space(6f);
+        GUILayout.Label("현재 인벤토리", titleStyle);
+        DrawInventory(context);
+
+        GUILayout.Space(6f);
+        GUILayout.Label("현재 장비", titleStyle);
+        DrawEquipment(context);
+
+        GUILayout.Space(6f);
+        GUILayout.Label("같은 클라이언트의 플레이어 복제본", titleStyle);
+        PlayerContext[] replicas = FindObjectsByType<PlayerContext>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        int remoteCount = 0;
+        foreach (PlayerContext replica in replicas)
+        {
+            if (replica == context)
+                continue;
+
+            DrawContext(replica, false);
+            remoteCount++;
+        }
+
+        if (remoteCount == 0)
+            GUILayout.Label("- 원격 복제본 없음 (단일 Host 검증 중)");
+
+        GUILayout.Space(6f);
+        GUILayout.Label("최근 소유권 이벤트", titleStyle);
+        if (ownershipEvents.Count == 0)
+            GUILayout.Label("- 아직 이벤트 없음");
+        else
+            foreach (string entry in ownershipEvents)
+                GUILayout.Label("- " + entry);
+
+        if (NetworkServer.active)
+            DrawServerControlRoom();
+
+        GUILayout.EndScrollView();
+        GUILayout.EndArea();
+    }
+
+    private void DrawContext(PlayerContext target, bool isLocal)
+    {
+        if (target == null)
+            return;
+
+        NetworkIdentity identity = target.GetComponent<NetworkIdentity>();
+        uint netId = identity != null ? identity.netId : 0;
+        int itemCount = target.Inventory != null ? target.Inventory.GetAllInventoryItems().Count : -1;
+        PlayerStat stat = target.Stats != null ? target.Stats.Stat : null;
+
+        string status = isLocal ? "내 플레이어" : "다른 플레이어 복제본";
+        string line = $"{status} | netId={netId} | 로컬 객체 번호: PlayerContext#{target.GetInstanceID()} | 인벤토리#{target.Inventory?.GetInstanceID() ?? 0}";
+        GUILayout.Label(line, isLocal ? localStyle : remoteStyle);
+        GUILayout.Label($"로컬 객체 번호: 장비 시스템#{target.Equipment?.GetInstanceID() ?? 0} | 스탯 시스템#{target.Stats?.GetInstanceID() ?? 0}");
+        GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={target.Health?.CurrentHealth ?? 0:0}/{target.Health?.MaxHealth ?? 0:0} | 공격={stat?.attackPower ?? 0:0} | 방어={stat?.defensePower ?? 0:0}");
+    }
+
+    private void DrawInventory(PlayerContext target)
+    {
+        IReadOnlyList<InventoryItem> items = target.Inventory.GetAllInventoryItems();
+        if (items.Count == 0)
+        {
+            GUILayout.Label("- 비어 있음");
+            return;
+        }
+
+        foreach (InventoryItem item in items)
+        {
+            ItemInstance data = item?.itemData;
+            ItemDefinitionSO definition = data?.definition;
+            string name = definition != null ? definition.itemName : "알 수 없는 아이템";
+            string itemId = definition != null ? definition.itemId : "종류 ID 없음";
+            GUILayout.Label(
+                $"- {name} | 종류 ID={itemId} | instance={ShortId(data?.instanceId)} " +
+                $"| 인벤토리 칸=({item.x},{item.y}) | 회전={(item.isRotated ? "예" : "아니오")}");
+        }
+    }
+
+    private void DrawEquipment(PlayerContext target)
+    {
+        int count = 0;
+        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in target.Equipment.GetEquippedItems())
+        {
+            ItemInstance data = pair.Value?.itemData;
+            string itemName = data?.definition != null ? data.definition.itemName : "알 수 없는 아이템";
+            GUILayout.Label($"- {GetSlotLabel(pair.Key)}: {itemName} | instance={ShortId(data?.instanceId)} | 강화 +{data?.upgradeLevel ?? 0}");
+            count++;
+        }
+
+        if (count == 0)
+            GUILayout.Label("- 장착 아이템 없음");
+    }
+
+    private void DrawServerControlRoom()
+    {
+        MirrorTestNetworkManager manager = NetworkManager.singleton as MirrorTestNetworkManager;
+        if (manager == null)
+            return;
+
+        List<PlayerContext> serverPlayers = new(manager.ServerPlayerContexts);
+        serverPlayers.Sort((left, right) => GetNetId(left).CompareTo(GetNetId(right)));
+
+        GUILayout.Space(10f);
+        GUILayout.Label("서버 종합상황실", titleStyle);
+        GUILayout.Label("서버가 확정한 원본 | 3-5 플레이어별 인벤토리·골드와 하나의 공유 상점 확인 | 체력·마나는 아직 동기화하지 않음");
+
+        NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
+        if (sharedShop != null)
+        {
+            GUILayout.Label(
+                $"공유 상점 | 상태 번호={sharedShop.StateRevision} | 전체={sharedShop.StockCount}개 | " +
+                $"생성={sharedShop.GeneratedStockCount}개 | 플레이어 판매={sharedShop.PlayerSoldStockCount}개",
+                localStyle);
+            GUILayout.Label(
+                $"무료 리롤 사용={sharedShop.UsedFreeRerollCount}/{sharedShop.TotalFreeRerollCount} | " +
+                $"최고 상점 강화 netId={sharedShop.HighestBenefitPlayerNetId} 레벨={sharedShop.HighestShopEnhanceLevel} | " +
+                $"최근 처리={sharedShop.LastServerEvent}");
+        }
+
+        bool unique = HasUniquePlayerReferences(serverPlayers);
+        bool expectedCount = serverPlayers.Count == 4;
+        GUILayout.Label(
+            $"접속 플레이어 {serverPlayers.Count}/4명 | 플레이어별 시스템 분리 {(unique ? "정상" : "문제 있음")}",
+            unique && expectedCount ? passStyle : failStyle);
+
+        foreach (PlayerContext player in serverPlayers)
+        {
+            NetworkIdentity identity = player.GetComponent<NetworkIdentity>();
+            PlayerInventorySync_MirrorTest sync = player.GetComponent<PlayerInventorySync_MirrorTest>();
+            NetworkShopPlayerState_MirrorTest playerShop = player.GetComponent<NetworkShopPlayerState_MirrorTest>();
+            int connectionId = identity != null && identity.connectionToClient != null
+                ? identity.connectionToClient.connectionId
+                : -1;
+
+            GUILayout.Label(
+                $"netId={identity?.netId ?? 0} | 접속 번호={connectionId} | " +
+                $"로컬 객체 번호: PlayerContext#{player.GetInstanceID()} 인벤토리#{player.Inventory.GetInstanceID()} " +
+                $"장비#{player.Equipment.GetInstanceID()} 스탯#{player.Stats.GetInstanceID()}",
+                localStyle);
+            GUILayout.Label(
+                $"  서버 인벤토리={player.Inventory.GetAllInventoryItems().Count}개 | " +
+                $"서버 소유 기록={sync?.SyncedItemCount ?? -1}개 | 상태 변경 번호={sync?.StateRevision ?? 0} | " +
+                $"장착={CountEquipment(player)}개");
+            GUILayout.Label(
+                $"  골드={playerShop?.Gold ?? -1} | 상점 강화 레벨={playerShop?.ShopEnhanceLevel ?? 0} | " +
+                $"추가 무료 리롤={playerShop?.ExtraRerollCount ?? 0} | 개인 할인={(playerShop?.DiscountPercent ?? 0f) * 100f:0.#}%");
+
+            foreach (InventoryItem item in player.Inventory.GetAllInventoryItems())
+            {
+                GUILayout.Label(
+                    $"    instance={ShortId(item?.itemData?.instanceId)} | " +
+                    $"인벤토리 칸=({item?.x ?? -1},{item?.y ?? -1}) | 회전={(item != null && item.isRotated ? "예" : "아니오")}");
+            }
+
+            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in player.Equipment.GetEquippedItems())
+            {
+                GUILayout.Label(
+                    $"    장착 칸={GetSlotLabel(pair.Key)} | " +
+                    $"instance={ShortId(pair.Value?.itemData?.instanceId)} | " +
+                    $"이름={pair.Value?.itemData?.definition?.itemName ?? "알 수 없음"}");
+            }
+        }
+    }
+
+    private static bool HasUniquePlayerReferences(List<PlayerContext> players)
+    {
+        HashSet<int> contexts = new();
+        HashSet<int> inventories = new();
+        HashSet<int> equipment = new();
+        HashSet<int> stats = new();
+
+        foreach (PlayerContext player in players)
+        {
+            if (player == null ||
+                !contexts.Add(player.GetInstanceID()) ||
+                !inventories.Add(player.Inventory.GetInstanceID()) ||
+                !equipment.Add(player.Equipment.GetInstanceID()) ||
+                !stats.Add(player.Stats.GetInstanceID()))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static int CountEquipment(PlayerContext target)
+    {
+        int count = 0;
+        foreach (KeyValuePair<EquipSlotType, InventoryItem> _ in target.Equipment.GetEquippedItems())
+            count++;
+        return count;
+    }
+
+    private static uint GetNetId(PlayerContext target)
+    {
+        NetworkIdentity identity = target != null ? target.GetComponent<NetworkIdentity>() : null;
+        return identity != null ? identity.netId : 0;
+    }
+
+    private static string GetOperationLabel(MirrorTestInventoryOperation operation)
+    {
+        return operation switch
+        {
+            MirrorTestInventoryOperation.GrantDistinctItem => "테스트 아이템 지급",
+            MirrorTestInventoryOperation.DropFirstItem => "첫 아이템 필드 드랍",
+            MirrorTestInventoryOperation.PickupWorldItem => "필드 아이템 획득",
+            MirrorTestInventoryOperation.DropInventoryItem => "선택 아이템 필드 드랍",
+            MirrorTestInventoryOperation.MoveGridItem => "인벤토리 이동·회전",
+            MirrorTestInventoryOperation.ChangeEquipment => "장비 장착·해제·교환",
+            _ => "알 수 없는 작업",
+        };
+    }
+
+    private static string GetResultLabel(MirrorTestInventoryRequestResult result)
+    {
+        return result switch
+        {
+            MirrorTestInventoryRequestResult.Success => "성공",
+            MirrorTestInventoryRequestResult.InvalidRequest => "요청 내용이 올바르지 않음",
+            MirrorTestInventoryRequestResult.DuplicateRequest => "같은 요청이 이미 처리됨",
+            MirrorTestInventoryRequestResult.StaleRevision => "서버 상태가 먼저 바뀌어 다시 시도해야 함",
+            MirrorTestInventoryRequestResult.InventoryUnavailable => "인벤토리를 찾을 수 없음",
+            MirrorTestInventoryRequestResult.ItemUnavailable => "아이템을 찾을 수 없음",
+            MirrorTestInventoryRequestResult.InventoryFull => "인벤토리 공간 부족",
+            MirrorTestInventoryRequestResult.PickupUnavailable => "필드 아이템을 찾을 수 없음",
+            MirrorTestInventoryRequestResult.OutOfRange => "아이템이 너무 멀리 있음",
+            MirrorTestInventoryRequestResult.AlreadyClaimed => "다른 플레이어가 먼저 획득함",
+            MirrorTestInventoryRequestResult.ServerSetupInvalid => "서버 테스트 설정 누락",
+            MirrorTestInventoryRequestResult.SpawnFailed => "필드 아이템 생성 실패",
+            MirrorTestInventoryRequestResult.StateApplyFailed => "서버 상태 적용 실패",
+            MirrorTestInventoryRequestResult.RecoveryFailed => "이전 상태 복구 실패",
+            _ => "알 수 없는 결과",
+        };
+    }
+
+    private static string GetShopOperationLabel(MirrorTestShopOperation operation)
+    {
+        return operation switch
+        {
+            MirrorTestShopOperation.Buy => "구매",
+            MirrorTestShopOperation.Sell => "판매",
+            MirrorTestShopOperation.Reroll => "리롤",
+            _ => "알 수 없는 상점 작업",
+        };
+    }
+
+    private static string GetShopResultLabel(MirrorTestShopRequestResult result)
+    {
+        return result switch
+        {
+            MirrorTestShopRequestResult.Success => "성공",
+            MirrorTestShopRequestResult.InvalidRequest => "요청 내용이 올바르지 않음",
+            MirrorTestShopRequestResult.DuplicateRequest => "같은 요청이 이미 처리됨",
+            MirrorTestShopRequestResult.ShopStateChanged => "다른 거래가 먼저 처리되어 다시 시도해야 함",
+            MirrorTestShopRequestResult.InventoryStateChanged => "내 인벤토리가 먼저 바뀌어 다시 시도해야 함",
+            MirrorTestShopRequestResult.ItemUnavailable => "아이템을 찾을 수 없음",
+            MirrorTestShopRequestResult.NotEnoughGold => "골드 부족",
+            MirrorTestShopRequestResult.InventoryFull => "인벤토리 공간 부족",
+            MirrorTestShopRequestResult.ShopFull => "상점 공간 부족",
+            MirrorTestShopRequestResult.RerollUnavailable => "리롤 불가",
+            MirrorTestShopRequestResult.ServerSetupInvalid => "서버 테스트 설정 누락",
+            MirrorTestShopRequestResult.StateApplyFailed => "서버 상태 적용 실패",
+            MirrorTestShopRequestResult.RecoveryFailed => "이전 상태 복구 실패",
+            _ => "알 수 없는 결과",
+        };
+    }
+
+    private static string GetSlotLabel(EquipSlotType slotType)
+    {
+        return slotType switch
+        {
+            EquipSlotType.Weapon => "무기",
+            EquipSlotType.Helmet => "머리 방어구",
+            EquipSlotType.Chest => "몸통 방어구",
+            EquipSlotType.Boots => "신발",
+            EquipSlotType.Potion => "포션",
+            _ => "장비 칸 없음",
+        };
+    }
+
+    private void EnsureGuiStyles()
+    {
+        if (titleStyle != null)
+            return;
+
+        titleStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontStyle = FontStyle.Bold,
+            fontSize = 14,
+        };
+        localStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontStyle = FontStyle.Bold,
+        };
+        localStyle.normal.textColor = new Color(0.25f, 0.85f, 0.45f);
+        remoteStyle = new GUIStyle(GUI.skin.label);
+        remoteStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f);
+        passStyle = new GUIStyle(localStyle);
+        failStyle = new GUIStyle(localStyle);
+        failStyle.normal.textColor = new Color(1f, 0.35f, 0.3f);
+    }
+
+    private static string ShortId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "no-id";
+
+        return value.Length <= 8 ? value : value.Substring(0, 8);
     }
 }

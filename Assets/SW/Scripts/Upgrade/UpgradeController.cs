@@ -19,8 +19,10 @@ public class UpgradeController : MonoBehaviour
     [SerializeField] private Image rarityFrame;
 
     private ItemInstance selectedItem;
-    
     private UpgradeService upgradeService;
+
+    public PlayerWallet BoundPlayerWallet => playerWallet;
+    public EquipmentSystem BoundEquipment => equipmentSystem;
 
     private void Awake()
     {
@@ -30,6 +32,29 @@ public class UpgradeController : MonoBehaviour
     private void OnDisable()
     {
         ClearItem();
+    }
+
+    public bool BindPlayer(PlayerWallet wallet, EquipmentSystem equipment)
+    {
+        if (wallet == null || equipment == null)
+            return false;
+
+        ClearItem();
+        playerWallet = wallet;
+        equipmentSystem = equipment;
+        upgradeService = new UpgradeService(playerWallet);
+        return true;
+    }
+
+    public void UnbindPlayer(PlayerWallet wallet)
+    {
+        if (playerWallet != wallet)
+            return;
+
+        ClearItem();
+        playerWallet = null;
+        equipmentSystem = null;
+        upgradeService = new UpgradeService(null);
     }
 
     /// <summary>
@@ -230,10 +255,7 @@ public class UpgradeController : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current.cKey.wasPressedThisFrame)
-        {
+        if (Keyboard.current?.cKey.wasPressedThisFrame == true && playerWallet != null)
             playerWallet.AddGold(999999999);
-
-        }
     }
 }

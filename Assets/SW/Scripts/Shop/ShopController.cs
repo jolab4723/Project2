@@ -13,6 +13,7 @@ public class ShopController : MonoBehaviour
     [SerializeField] private InventoryItemUISpawner itemUISpawner;
     public InventoryGrid ShopGrid => shopGrid;
     public InventoryGrid PlayerGrid => playerGrid;
+    public InventoryController BoundPlayer => inventoryController;
     private ShopTradeService tradeService;
     private ShopStockService stockService;
 
@@ -29,18 +30,31 @@ public class ShopController : MonoBehaviour
 
     public bool BindPlayer(InventoryController owner)
     {
-        if (owner == null || stockService == null)
+        if (owner == null ||
+            owner.PlayerWallet == null ||
+            owner.PlayerGrid == null ||
+            stockService == null)
+        {
             return false;
+        }
 
         inventoryController = owner;
         playerWallet = owner.PlayerWallet;
         playerGrid = owner.PlayerGrid;
 
-        if (playerWallet == null || playerGrid == null)
-            return false;
-
         tradeService = new ShopTradeService(playerWallet, stockService);
         return true;
+    }
+
+    public void UnbindPlayer(InventoryController owner)
+    {
+        if (inventoryController != owner)
+            return;
+
+        inventoryController = null;
+        playerWallet = null;
+        playerGrid = null;
+        tradeService = null;
     }
 
     public bool TryAddGeneratedStock(InventoryItem item)

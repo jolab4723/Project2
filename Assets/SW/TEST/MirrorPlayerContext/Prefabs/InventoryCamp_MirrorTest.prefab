@@ -1024,6 +1024,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -146
       objectReference: {fileID: 0}
+    - target: {fileID: 3701190492861722661, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3863277898109962159, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -2080,6 +2084,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -365
       objectReference: {fileID: 0}
+    - target: {fileID: 7204114595536144281, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      propertyPath: itemUIPrefab
+      value: 
+      objectReference: {fileID: 6864517610852664778, guid: f3411cef736a6174992858cb0416824d, type: 3}
+    - target: {fileID: 7204114595536144281, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      propertyPath: worldItemDropService
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 7221584673829193266, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -2508,10 +2520,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 73
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2935471549932176255, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6689417336085291310, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4815386227471973916}
     - targetCorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4289715495853151683}
@@ -2549,17 +2565,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d69cba07fba46443af479883efdf87d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipSlotUI
---- !u!114 &638249991955536393 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2640219147533098118, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
-  m_PrefabInstance: {fileID: 3204440533405714063}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
 --- !u!114 &800712152694986317 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2838612305111666882, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2571,6 +2576,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b15bb6379294b2478b9b0ffb9e9ffa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TooltipUI
+--- !u!114 &828674177600761140 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2880192054274321339, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
 --- !u!114 &1418192927737104255 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4599894150303646192, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2598,22 +2614,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4022316406934604387, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &3992563894202541545 stripped
+--- !u!114 &2823680765221590442 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1950087340332213094, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 817349585073607461, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d02de6a3ec11d241b7dd850f9da2bda, type: 3}
+  m_Script: {fileID: 11500000, guid: f9d31cf9ccd14534497f8d36b57bba03, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorldItemDropService
---- !u!224 &4042460736547949717 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 1468667368856439322, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
-  m_PrefabInstance: {fileID: 3204440533405714063}
-  m_PrefabAsset: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeController
 --- !u!114 &4302150963305181616 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1714809527639619391, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2625,9 +2636,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d69cba07fba46443af479883efdf87d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipSlotUI
---- !u!224 &5187559431024343548 stripped
+--- !u!224 &5406535423146945521 stripped
 RectTransform:
-  m_CorrespondingSourceObject: {fileID: 7747770801640456051, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 7457867513494220158, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &6388241728954390749 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8421711161399287378, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
   m_PrefabInstance: {fileID: 3204440533405714063}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &7115204093055396160 stripped
@@ -2659,9 +2675,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryView
   initialOwner: {fileID: 0}
-  gridRect: {fileID: 4042460736547949717}
-  itemsContainer: {fileID: 5187559431024343548}
-  highlight: {fileID: 638249991955536393}
+  gridRect: {fileID: 6388241728954390749}
+  itemsContainer: {fileID: 5406535423146945521}
+  highlight: {fileID: 828674177600761140}
   equipmentSlots:
   - {fileID: 1418192927737104255}
   - {fileID: 8356198092602246008}
@@ -2673,6 +2689,7 @@ MonoBehaviour:
   itemSpawner: {fileID: 7412498043944635100}
   tooltipManager: {fileID: 658228459957300570}
   shopController: {fileID: 8103618423356664121}
+  upgradeController: {fileID: 2823680765221590442}
 --- !u!114 &7412498043944635100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2685,8 +2702,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10cbdf19ac68f2041b10a6467d9ffb26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryItemUISpawner
-  itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
-  worldItemDropService: {fileID: 3992563894202541545}
+  itemUIPrefab: {fileID: 6864517610852664778, guid: f3411cef736a6174992858cb0416824d, type: 3}
+  worldItemDropService: {fileID: 0}
 --- !u!114 &658228459957300570
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2728,6 +2745,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0deb4e2becb975049a6f345dea96365f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopController
+--- !u!1 &8119392062378796961 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6689417336085291310, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4815386227471973916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8119392062378796961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23fd05a42ca641efb4799db58e255b73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkShopRerollButton_MirrorTest
+  button: {fileID: 0}
 --- !u!114 &8356198092602246008 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6885819436966102519, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}

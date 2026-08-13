@@ -1,107 +1,124 @@
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public sealed class WorldItemTooltipScanner : MonoBehaviour
 {
     [SerializeField] private Transform player;
     [SerializeField] private WorldItemTooltipView tooltipView;
+    [SerializeField] private Camera worldCamera;
     [SerializeField] private LayerMask worldItemLayer;
     [SerializeField] private float detectionRadius = 2.5f;
-    [SerializeField] private float scanInterval = 0.1f;
-
-    private readonly Collider[] overlapBuffer = new Collider[32];
+    [SerializeField] private float rayDistance = 500f;
 
     private ItemDataStorage currentTarget;
-    private float nextScanTime;
 
     private void Awake()
     {
         if (player == null)
             player = transform;
+
+        if (worldCamera == null)
+            worldCamera = Camera.main;
     }
 
     private void Update()
     {
-        if (Time.time < nextScanTime)
+        UpdateHoveredItem();
+    }
+
+    private void UpdateHoveredItem()
+    {
+        ItemDataStorage hoveredItem = FindHoveredItem();
+
+        if (hoveredItem == currentTarget)
             return;
 
-        nextScanTime = Time.time + scanInterval;
-        ScanNearestItem();
+        currentTarget = hoveredItem;
+
+        if (currentTarget == null)
+        {
+            tooltipView?.Hide();
+            return;
+        }
+
+        tooltipView?.Show(
+            currentTarget.Item,
+            currentTarget.transform);
+    }
+
+    private ItemDataStorage FindHoveredItem()
+    {
+        if (player == null)
+            return null;
+
+        if (worldCamera == null)
+            worldCamera = Camera.main;
+
+        if (worldCamera == null)
+            return null;
+
+        // UI 뒤에 있는 월드 아이템의 툴팁은 표시하지 않는다.
+        if (EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject())
+        {
+            return null;
+        }
+
+        Ray ray = worldCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (!Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                rayDistance,
+                worldItemLayer,
+                QueryTriggerInteraction.Collide))
+        {
+            return null;
+        }
+
+        ItemDataStorage target =
+            hit.collider.GetComponentInParent<ItemDataStorage>();
+
+        if (!IsWithinDetectionRadius(target))
+            return null;
+
+        return target;
+    }
+
+    private bool IsWithinDetectionRadius(ItemDataStorage target)
+    {
+        if (player == null ||
+            target == null ||
+            target.Item?.definition == null)
+        {
+            return false;
+        }
+
+        float sqrDistance =
+            (target.transform.position - player.position).sqrMagnitude;
+
+        return sqrDistance <= detectionRadius * detectionRadius;
     }
 
     public bool TryGetCurrentTarget(out ItemDataStorage target)
     {
         target = currentTarget;
 
-        return target != null && target.Item?.definition != null;
-    }
-    private void ScanNearestItem()
-    {
-        if (player == null || tooltipView == null)
-            return;
-
-        int count = Physics.OverlapSphereNonAlloc(
-            player.position,
-            detectionRadius,
-            overlapBuffer,
-            worldItemLayer,
-            QueryTriggerInteraction.Collide);
-
-        ItemDataStorage nearest = null;
-        float nearestSqrDistance = float.MaxValue;
-
-        for (int i = 0; i < count; i++)
-        {
-            Collider hit = overlapBuffer[i];
-            overlapBuffer[i] = null;
-
-            if (hit == null)
-                continue;
-
-            ItemDataStorage storage =
-                hit.GetComponentInParent<ItemDataStorage>();
-
-            if (storage == null || storage.Item?.definition == null)
-                continue;
-
-            float sqrDistance =
-                (storage.transform.position - player.position).sqrMagnitude;
-
-            if (sqrDistance < nearestSqrDistance)
-            {
-                nearestSqrDistance = sqrDistance;
-                nearest = storage;
-            }
-        }
-
-        if (nearest == currentTarget)
-            return;
-
-        currentTarget = nearest;
-
-        if (currentTarget == null)
-        {
-            tooltipView.Hide();
-            return;
-        }
-
-        tooltipView.Show(
-            currentTarget.Item,
-            currentTarget.transform);
+        return target != null &&
+               target.Item?.definition != null;
     }
 
     public bool CanInteract(ItemDataStorage target)
     {
-        return target != null &&
-               target == currentTarget &&
-               target.Item?.definition != null;
+        // 호버 갱신과 클릭 처리의 실행 순서에 영향받지 않도록
+        // 클릭 가능 여부는 거리만 독립적으로 검사한다.
+        return IsWithinDetectionRadius(target);
     }
 
     private void OnDisable()
     {
         currentTarget = null;
-
-        if (tooltipView != null)
-            tooltipView.Hide();
+        tooltipView?.Hide();
     }
 }

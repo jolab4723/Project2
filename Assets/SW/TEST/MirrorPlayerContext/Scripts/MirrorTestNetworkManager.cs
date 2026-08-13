@@ -30,14 +30,14 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     internal void RegisterServerPlayer(PlayerContext context)
     {
-        if (context != null)
-            serverPlayerContexts.Add(context);
+        if (context != null && serverPlayerContexts.Add(context))
+            FindFirstObjectByType<NetworkShopState_MirrorTest>()?.ServerRefreshPartyBenefits();
     }
 
     internal void UnregisterServerPlayer(PlayerContext context)
     {
-        if (context != null)
-            serverPlayerContexts.Remove(context);
+        if (context != null && serverPlayerContexts.Remove(context))
+            FindFirstObjectByType<NetworkShopState_MirrorTest>()?.ServerRefreshPartyBenefits();
     }
 
     public override void OnStopClient()

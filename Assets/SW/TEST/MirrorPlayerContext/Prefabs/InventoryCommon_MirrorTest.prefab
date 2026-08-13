@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1789419258442662329, guid: 358c6fe8ab794af4f90bf68ec3c176f7, type: 3}
+      propertyPath: itemUIPrefab
+      value: 
+      objectReference: {fileID: 6864517610852664778, guid: f3411cef736a6174992858cb0416824d, type: 3}
     - target: {fileID: 6794704641931773874, guid: 358c6fe8ab794af4f90bf68ec3c176f7, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -234,6 +238,7 @@ MonoBehaviour:
   itemSpawner: {fileID: 8216449183020993420}
   tooltipManager: {fileID: 2304041602181308713}
   shopController: {fileID: 0}
+  upgradeController: {fileID: 0}
 --- !u!114 &8216449183020993420
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,7 +251,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10cbdf19ac68f2041b10a6467d9ffb26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryItemUISpawner
-  itemUIPrefab: {fileID: 1388205904292028024, guid: 5bd295fcf6c1dc047bd38673a7e31da9, type: 3}
+  itemUIPrefab: {fileID: 6864517610852664778, guid: f3411cef736a6174992858cb0416824d, type: 3}
   worldItemDropService: {fileID: 0}
 --- !u!114 &2304041602181308713
 MonoBehaviour:

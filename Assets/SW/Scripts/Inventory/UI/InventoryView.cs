@@ -19,8 +19,10 @@ public sealed class InventoryView : MonoBehaviour
     [SerializeField] private InventoryItemUISpawner itemSpawner;
     [SerializeField] private TooltipManager tooltipManager;
     [SerializeField] private ShopController shopController;
+    [SerializeField] private UpgradeController upgradeController;
 
     private InventoryController owner;
+    private InventoryController boundPlayerServicesOwner;
 
     public InventoryController Owner => owner;
     public EquipSlotUI[] EquipmentSlots => equipmentSlots;
@@ -75,8 +77,21 @@ public sealed class InventoryView : MonoBehaviour
         if (tooltipManager != null)
             tooltipManager.Bind(context.Stats, context.Equipment);
 
-        if (shopController == null || shopController.BindPlayer(context.Inventory))
+        bool shopBound = shopController == null || shopController.BindPlayer(context.Inventory);
+        bool upgradeBound = upgradeController == null ||
+            upgradeController.BindPlayer(context.Wallet, context.Equipment);
+
+        if (shopBound && upgradeBound)
+        {
+            boundPlayerServicesOwner = context.Inventory;
             return true;
+        }
+
+        if (shopBound)
+            shopController?.UnbindPlayer(context.Inventory);
+
+        if (upgradeBound)
+            upgradeController?.UnbindPlayer(context.Wallet);
 
         Unbind();
         return false;
@@ -84,6 +99,13 @@ public sealed class InventoryView : MonoBehaviour
 
     public void Unbind()
     {
+        if (boundPlayerServicesOwner != null)
+        {
+            shopController?.UnbindPlayer(boundPlayerServicesOwner);
+            upgradeController?.UnbindPlayer(boundPlayerServicesOwner.PlayerWallet);
+            boundPlayerServicesOwner = null;
+        }
+
         if (owner == null)
             return;
 

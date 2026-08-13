@@ -4059,7 +4059,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00018898587}
+  m_AnchoredPosition: {x: 0, y: 0.00036115662}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &225213475
@@ -4959,17 +4959,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
---- !u!114 &258843025 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6688585013039175316, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
-  m_PrefabInstance: {fileID: 258843024}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30c14352a8f16844da33b1a35dcde7d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EliteHpbarView
 --- !u!224 &258843026 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6938854077490614189, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
@@ -18194,7 +18183,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 241738351}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99999607
+  m_Size: 0.99991834
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -20955,6 +20944,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 1830349415}
+    - target: {fileID: 160216542632889082, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
+      propertyPath: detectionRadius
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 2197044488199152331, guid: d1b15eacab7d0d8489f3fa1b61958a83, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -27041,7 +27034,7 @@ MonoBehaviour:
   - enemies:
     - grade: 1
       count: 1
-  eliteView: {fileID: 258843025}
+  eliteView: {fileID: 0}
 --- !u!114 &1831219902
 MonoBehaviour:
   m_ObjectHideFlags: 0

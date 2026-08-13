@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 /// <summary>
 /// BH 원본 <c>WBH_PlayerInputHandler</c>의 Mirror 검증용 복제본이다.
 /// <para>원본: <c>Assets/WBHTest/Scripts/Player/WBH_PlayerInputHandler.cs</c></para>
-/// <para>이동·공격·회피, <c>inputBlockLayer</c> 판정과 향후 필드 드롭 상호작용에 사용할 <c>WorldItemPickupInteractor</c> 참조를 원본과 같이 유지한다.</para>
+/// <para>원본의 <c>WorldItemPickupInteractor</c> 참조는 유지하되, 네트워크 픽업은 서버 판정을 위해 <c>PlayerInventorySync_MirrorTest</c>에 요청한다.</para>
 /// <para>카메라·Controller·Combat 누락 시 입력을 무시하도록 방어하며, 로컬 플레이어 여부는 <c>MirrorSpawnedPlayerBinder</c>가 컴포넌트 활성화로 보장한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -16,6 +16,7 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
     private T_PlayerController controller;
     private T_PlayerCombat combat;
     private WorldItemPickupInteractor pickupItem;
+    private PlayerInventorySync_MirrorTest inventorySync;
 
     private void Awake()
     {
@@ -23,6 +24,7 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
         controller = GetComponent<T_PlayerController>();
         combat = GetComponent<T_PlayerCombat>();
         pickupItem = FindFirstObjectByType<WorldItemPickupInteractor>();
+        inventorySync = GetComponent<PlayerInventorySync_MirrorTest>();
     }
 
     private void Update()
@@ -54,6 +56,9 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        if (inventorySync != null && inventorySync.TryRequestPickup(ray))
+            return;
+
         if (Physics.Raycast(ray, out RaycastHit hit) && IsBlocked(hit.collider.gameObject.layer))
             return;
 
