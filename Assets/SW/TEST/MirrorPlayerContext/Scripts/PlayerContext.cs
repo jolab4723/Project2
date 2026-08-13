@@ -15,6 +15,7 @@ public sealed class PlayerContext : MonoBehaviour
     [SerializeField] private PlayerManaManager mana;
     [SerializeField] private PotionUseManager_MirrorTest potions;
     [SerializeField] private ItemTriggerManager_MirrorTest itemTriggers;
+    [SerializeField] private PlayerRuntimeStateSync_MirrorTest runtimeState;
 
     [Header("Character")]
     [SerializeField] private T_PlayerController controller;
@@ -30,6 +31,7 @@ public sealed class PlayerContext : MonoBehaviour
     public PlayerManaManager Mana => mana;
     public PotionUseManager_MirrorTest Potions => potions;
     public ItemTriggerManager_MirrorTest ItemTriggers => itemTriggers;
+    public PlayerRuntimeStateSync_MirrorTest RuntimeState => runtimeState;
     public T_PlayerController Controller => controller;
     public T_PlayerCombat Combat => combat;
     public WBH_PlayerStateMachine StateMachine => stateMachine;
@@ -47,6 +49,7 @@ public sealed class PlayerContext : MonoBehaviour
         mana != null &&
         potions != null &&
         itemTriggers != null &&
+        runtimeState != null &&
         controller != null &&
         combat != null &&
         stateMachine != null;
@@ -84,6 +87,7 @@ public sealed class PlayerContext : MonoBehaviour
         mana ??= GetComponent<PlayerManaManager>();
         potions ??= GetComponent<PotionUseManager_MirrorTest>();
         itemTriggers ??= GetComponent<ItemTriggerManager_MirrorTest>();
+        runtimeState ??= GetComponent<PlayerRuntimeStateSync_MirrorTest>();
 
         controller ??= GetComponent<T_PlayerController>();
         combat ??= GetComponent<T_PlayerCombat>();
@@ -111,6 +115,7 @@ public sealed class PlayerContext : MonoBehaviour
         ValidateOwnedReference(mana, nameof(mana));
         ValidateOwnedReference(potions, nameof(potions));
         ValidateOwnedReference(itemTriggers, nameof(itemTriggers));
+        ValidateOwnedReference(runtimeState, nameof(runtimeState));
         ValidateOwnedReference(controller, nameof(controller));
         ValidateOwnedReference(combat, nameof(combat));
         ValidateOwnedReference(stateMachine, nameof(stateMachine));

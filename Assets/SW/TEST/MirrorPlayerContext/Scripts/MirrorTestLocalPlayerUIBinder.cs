@@ -1,3 +1,4 @@
+using System.Reflection;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,10 +13,16 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 {
+    private static readonly FieldInfo ShopControllerField =
+        typeof(InventoryView).GetField(
+            "shopController",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
     [SerializeField] private MirrorTestNetworkManager networkManager;
     [SerializeField] private InventoryView inventoryView;
     [SerializeField] private InventoryPartView inventoryPartView;
     [SerializeField] private MirrorTestPlayerHud playerHud;
+    [SerializeField] private WorldItemTooltipScanner worldItemScanner;
 
     private PlayerContext boundContext;
     private PlayerInventorySync_MirrorTest boundInventorySync;
@@ -27,6 +34,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     {
         if (networkManager == null)
             networkManager = FindFirstObjectByType<MirrorTestNetworkManager>();
+
+        if (worldItemScanner == null)
+            worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
 
         if (networkManager == null || inventoryView == null || inventoryPartView == null)
         {
@@ -51,6 +61,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync = null;
         inventoryView?.Unbind();
         playerHud?.Unbind();
+        worldItemScanner?.BindPlayer(null);
         boundContext = null;
     }
 
@@ -62,12 +73,29 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync = null;
         inventoryView.Unbind();
         playerHud?.Unbind();
+        worldItemScanner?.BindPlayer(null);
         boundContext = null;
 
         if (context == null)
             return;
 
-        if (!inventoryView.Bind(context))
+        // 비활성 상점 패널은 아직 Awake 전이라 원본의 로컬 Shop Bind가 실패한다.
+        // 공유 상점은 NetworkShopState가 별도로 연결하므로 이 Bind 한 번만 건너뛴다.
+        ShopController shopController =
+            ShopControllerField?.GetValue(inventoryView) as ShopController;
+        ShopControllerField?.SetValue(inventoryView, null);
+
+        bool inventoryBound;
+        try
+        {
+            inventoryBound = inventoryView.Bind(context);
+        }
+        finally
+        {
+            ShopControllerField?.SetValue(inventoryView, shopController);
+        }
+
+        if (!inventoryBound)
         {
             Debug.LogError(
                 "[MirrorTestLocalPlayerUIBinder] 로컬 PlayerContext UI Bind에 실패했습니다.",
@@ -81,6 +109,12 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundShopState = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(context, inventoryView);
         playerHud?.Bind(context);
+        worldItemScanner?.BindPlayer(context.transform);
+
+        Debug.Assert(
+            worldItemScanner == null || worldItemScanner.BoundPlayer == context.transform,
+            "[MirrorTestLocalPlayerUIBinder] 월드 아이템 툴팁이 로컬 플레이어에 연결되지 않았습니다.",
+            this);
     }
 
     private void Update()

@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// WJ 원본 <c>PlayerActionInputHandler</c>의 PlayerContext 전환 검증용 복제본이다.
 /// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/PlayerActionInputHandler.cs</c></para>
-/// <para><c>PotionUseManager.Instance</c> 대신 같은 플레이어의 <c>PotionUseManager_MirrorTest</c>를 직렬화 참조 또는 GetComponent로 받는다.</para>
+/// <para>포션 입력은 같은 플레이어의 <c>PlayerRuntimeStateSync_MirrorTest</c>를 통해 서버에 요청하고,
+/// 서버가 <c>PotionUseManager_MirrorTest</c>를 실행한다.</para>
 /// <para>리바인딩 로드는 원본과 동일하며, 입력 인스턴스 생성은 중복 생성을 막도록 한 경로로 모았다.</para>
 /// <para>로컬 플레이어 여부는 여기서 전역 조회하지 않고 <c>MirrorSpawnedPlayerBinder</c>가 이 컴포넌트의 활성화를 제어한다.</para>
 /// </summary>
@@ -14,7 +15,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
 {
     private const string KeyBindingsPrefKey = "KeyBindings";
 
-    [SerializeField] private PotionUseManager_MirrorTest potions;
+    [SerializeField] private PlayerRuntimeStateSync_MirrorTest runtimeState;
 
     public event Action<int> OnSkillKeyPressed;
 
@@ -22,7 +23,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
 
     private void Awake()
     {
-        potions ??= GetComponent<PotionUseManager_MirrorTest>();
+        runtimeState ??= GetComponent<PlayerRuntimeStateSync_MirrorTest>();
         CreateInputActions();
     }
 
@@ -45,7 +46,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
     private void Update()
     {
         if (inputActions.Player.Potion.triggered)
-            potions?.TryUsePotion();
+            runtimeState?.RequestUsePotion();
 
         if (inputActions.Player.Skill1.triggered)
             OnSkillKeyPressed?.Invoke(0);

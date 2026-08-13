@@ -124,6 +124,11 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         if (!localViewRebuildQueued)
             return;
 
+        // 닫힌 상점 패널의 InventoryGrid는 Awake 전이라 재고를 받을 배열이 없다.
+        // 패널이 실제로 열린 첫 프레임까지 요청을 유지한다.
+        if (localShopController != null && !localShopController.gameObject.activeInHierarchy)
+            return;
+
         localViewRebuildQueued = false;
         RebuildLocalShopView();
     }
