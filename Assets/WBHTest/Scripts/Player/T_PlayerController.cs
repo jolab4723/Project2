@@ -105,6 +105,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         }
     }
 
+    // 회피 쿨타임 판단
     private void CheckDodge()
     {
         if (canDodge)
@@ -166,6 +167,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
+    // 움직임
     public void MoveCommand(Vector3 destination)
     {
         if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
@@ -189,6 +191,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         lookDir = transform.forward;
     }
 
+    // 회피
     public void TryDodge()
     {
         if (!IsControlEnabled || !canDodge)
@@ -204,6 +207,12 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Dodge);
     }
 
+    public void ChaseCommand()
+    {
+
+    }
+
+    // 목적지 도달 시 자동 Idle 상태 진입
     private void UpdateMoveState()
     {
         if (!CanUseAgent || !stateMachine.Is( PlayerState.Move))

@@ -23,20 +23,6 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     /// <summary>퍼센트 숫자(10)를 배율(1.10)로. 치명타 피해용.</summary>
     private static float PercentToMultiplier(float percent) => 1f + percent / 100f;
 
-    [Header("Fallback Stat (WJ 스탯 시스템이 없을 때만 사용)")]
-    [SerializeField] private float maxHp = 100;
-    [SerializeField] private float maxMp = 100;
-    [SerializeField] private float attackPower = 5;
-    [SerializeField] private float defensePower = 3;
-    [SerializeField] private float attackSpeed = 1;
-    [SerializeField] private float moveSpeed = 6;
-    [SerializeField] private float criticalChance = 1;
-    [SerializeField] private float criticalMultiplier = 1;
-    [SerializeField] private float pen = 0;
-    [SerializeField] private float fireBonus = 1;
-    [SerializeField] private float iceBonus = 1;
-    [SerializeField] private float electricBonus = 1;
-
     //--- 플레이어 속성에 추가 필요 . (WJ 스탯 시스템에 대응 값이 없어서 항상 아래 값을 사용)
     [Header("Local Only (WJ 스탯 시스템에 대응 값 없음)")]
     [SerializeField] private float dodgeDistance = 5f;
@@ -47,19 +33,45 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float gunnerAttackRange = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
+    // -- combatManager 계산을 위한 인터페이스 및 외부 사용을 위한 프로퍼티
+    public float MaxHealth => healthManager.MaxHealth;
+    public float MaxMana => manaManager.MaxMana;
+    public float CurrentHp => healthManager.CurrentHealth;
+    public float CurrentMp => manaManager.CurrentMana;
+    public float AttackPower => statManager.Stat.attackPower;
+    public float DefensePower => statManager.Stat.defensePower;
+    public float Pen => statManager.Stat.pen;
+    public float CritRate => PercentToFraction(statManager.Stat.critRate);
+    public float CritMult => PercentToMultiplier(statManager.Stat.critMult);
+    public float FireBonus => PercentToFraction(statManager.Stat.fireBonus);
+    public float IceBonus => PercentToFraction(statManager.Stat.iceBonus);
+    public float ElectricBonus => PercentToFraction(statManager.Stat.electricBonus);
+    public float CurrentLevel => statManager.CurrentLevel;
+    public float CurrentExp => statManager.CurrentExp;
+    public float MaxExp => statManager.ExpToNextLevel;
 
-    private float currentAttackPower = 5;
-    private float currentAttackSpeed = 1;
-    private float currentMoveSpeed = 6;
+    /// <summary>
+    /// 현재 장착 무기에 인챈트된 속성. 모든 공격은 이 속성의 공격으로 간주되어 동일 속성 피해 보너스를 받는다.
+    /// 무기 정보를 못 가져오면 무속성(None)으로 취급한다.
+    /// </summary>
+    public ItemSystem.ElementType CurrentElement =>
+        statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
+            ? weaponInfo.elementType
+            : ItemSystem.ElementType.None;
+    public float AttackSpeed => statManager.Stat.attackSpeed;
+    public float MoveSpeed => statManager.Stat.moveSpeed;
+    // 아직 statManager 에 구현되지 않은 능력치 차후 구현되면 위처럼 스탯매니저에서 값을 받아오는 형식의 코드로 변경
+    public float DodgeDistance => dodgeDistance;
+    public float DodgeDuration => dodgeDuration;
+    public float DodgeCooltime => dodgeCooltime;
+    public float FighterAttackRange => fighterAttackRange;
+    public float GunnerAttackRange => gunnerAttackRange;
+    public float GunnerBulletSpeed => gunnerBulletSpeed;
+    public bool IsDead => healthManager.CurrentHealth <= 0f;
+
+    private float minDamage;
 
     private T_PlayerController playerController;
-    private float currentLevel = 1;
-    private float currentHp;
-    private float currentMp;
-    private float currentExp = 10;
-    private float maxExp = 100;
-
-    // WJ 스탯 시스템 연결부. 둘 다 없으면 위 Fallback 필드로 동작한다.
     private PlayerStatManager statManager;
     private PlayerHealthManager healthManager;
     private PlayerManaManager manaManager;
@@ -68,327 +80,120 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     /// <summary>OnStatChanged를 구독 중인 PlayerStat. 중복 구독/해제 누락을 막기 위해 들고 있는다.</summary>
     private PlayerStat subscribedStat;
 
-    //public event Action<float, float> OnHpChanged;
-    //public event Action<float, float> OnMpChanged;
     public event Action<float> OnAtkSpeedChanged; // 애니메이션 모션 속도를 공격속도와 연동되게끔 하기 위함
     public event Action OnDead;
 
-    /// <summary>
-    /// 같은 GameObject의 WJ 스탯 컴포넌트를 찾아둔다.
-    /// 같은 오브젝트 내 Awake 순서는 보장되지 않고(T_PlayerController.Awake가 MoveSpeed를 읽는다)
-    /// 프로퍼티가 Awake보다 먼저 호출될 수 있어서, 첫 접근 시점에 지연 해석한다.
-    /// </summary>
-    private void ResolveManagers()
+    private void Awake()
     {
-        if (managersResolved)
-            return;
-
-        managersResolved = true;
         statManager = GetComponent<PlayerStatManager>();
         healthManager = GetComponent<PlayerHealthManager>();
         manaManager = GetComponent<PlayerManaManager>();
     }
 
-    /// <summary>WJ 스탯 시스템이 붙어 있고 Stat이 준비됐는지. Stat은 Awake에서 만들어지므로 매번 확인한다.</summary>
-    private bool UseStatManager
-    {
-        get
-        {
-            ResolveManagers();
-            return statManager != null && statManager.Stat != null;
-        }
-    }
-
-    /// <summary>
-    /// PlayerHealthManager를 쓸 수 있는지. MaxHealth는 PlayerHealthManager.Start()에서 채워지므로,
-    /// 그 전(MaxHealth가 0)에는 아직 준비 안 된 것으로 보고 Fallback을 쓴다.
-    /// (안 그러면 첫 프레임에 CurrentHealth 0 = 사망으로 오판해서 T_PlayerCombat이 멈춘다.)
-    /// </summary>
-    private bool UseHealthManager
-    {
-        get
-        {
-            ResolveManagers();
-            return healthManager != null && healthManager.MaxHealth > 0f;
-        }
-    }
-    private bool UseManaManager
-    {
-        get
-        {
-            ResolveManagers();
-            return manaManager != null && manaManager.MaxMana > 0f;
-        }
-    }
-
-    // -- combatManager 계산을 위한 인터페이스
-    public float MaxHealth => UseStatManager ? statManager.Stat.maxHealth : maxHp;
-    public float MaxMana => UseStatManager ? statManager.Stat.maxMana : maxMp;
-    public float CurrentHp => UseHealthManager ? healthManager.CurrentHealth : currentHp;
-    public float CurrentMp => UseManaManager ? manaManager.CurrentMana : currentMp;
-    public float AttackPower => UseStatManager ? statManager.Stat.attackPower : currentAttackPower;
-    public float DefensePower => UseStatManager ? statManager.Stat.defensePower : defensePower;
-    public float Pen => UseStatManager ? statManager.Stat.pen : pen;
-    public float CritRate => UseStatManager ? PercentToFraction(statManager.Stat.critRate) : criticalChance;
-    public float CritMult => UseStatManager ? PercentToMultiplier(statManager.Stat.critMult) : criticalMultiplier;
-    public float FireBonus => UseStatManager ? PercentToFraction(statManager.Stat.fireBonus) : fireBonus;
-    public float IceBonus => UseStatManager ? PercentToFraction(statManager.Stat.iceBonus) : iceBonus;
-    public float ElectricBonus => UseStatManager ? PercentToFraction(statManager.Stat.electricBonus) : electricBonus;
-    // -- UI 연결을 위한 프로퍼티 (// 임시 코드 차후 위의 코드들처럼 교체)
-    public float CurrentLevel => currentLevel;
-    public float CurrentExp => currentExp;
-    public float MaxExp => maxExp; 
-
-    /// <summary>
-    /// 현재 장착 무기에 인챈트된 속성. 모든 공격은 이 속성의 공격으로 간주되어 동일 속성 피해 보너스를 받는다.
-    /// WJ 스탯 시스템이 없거나 무기 정보를 못 가져오면 무속성(None)으로 취급한다.
-    /// </summary>
-    public ItemSystem.ElementType CurrentElement =>
-        UseStatManager && statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
-            ? weaponInfo.elementType
-            : ItemSystem.ElementType.None;
-
-    //-- 외부 사용을 위한 프로퍼티
-    public float AttackSpeed => UseStatManager ? statManager.Stat.attackSpeed : currentAttackSpeed;
-    public float MoveSpeed => UseStatManager ? statManager.Stat.moveSpeed : currentMoveSpeed;
-    public float DodgeDistance => dodgeDistance;
-    public float DodgeDuration => dodgeDuration;
-    public float DodgeCooltime => dodgeCooltime;
-    public float FighterAttackRange => fighterAttackRange;
-    public float GunnerAttackRange => gunnerAttackRange;
-    public float GunnerBulletSpeed => gunnerBulletSpeed;
-
-    public bool IsDead => UseHealthManager ? healthManager.CurrentHealth <= 0f : currentHp <= 0;
-
-    private float minDamage;
-
-
-    private void Awake()
-    {
-        ResolveManagers();
-    }
-
     private void OnEnable()
     {
-        ResolveManagers();
-
-        // PlayerHealthManager가 체력을 관리할 때도 기존 OnHpChanged/OnDead 구독자가 그대로 동작하도록 중계한다.
-        if (healthManager != null)
+        if(healthManager != null)
         {
-            healthManager.OnHealthChanged += RelayHealthChanged;
-            healthManager.OnDeath += RelayDeath;
+            healthManager.OnDeath += HandleDeath;
         }
 
-        // 비활성화 후 다시 켜진 경우에도 이동속도 동기화가 살아있도록 재구독한다.
-        // (첫 OnEnable 시점엔 Stat/playerController가 아직 없을 수 있는데, 그건 Initialize에서 처리한다)
-        SubscribeStatChanges();
-        ApplyMoveSpeedToController();
-        ApplyAttackSpeedToAnimation();
+        if(statManager?.Stat != null)
+        {
+            statManager.Stat.OnStatChanged += HandleStatChanged;
+        }
     }
-
     private void OnDisable()
     {
         if (healthManager != null)
         {
-            healthManager.OnHealthChanged -= RelayHealthChanged;
-            healthManager.OnDeath -= RelayDeath;
+            healthManager.OnDeath -= HandleDeath;
         }
 
-        UnsubscribeStatChanges();
+        if (statManager?.Stat != null)
+        {
+            statManager.Stat.OnStatChanged -= HandleStatChanged;
+        }
     }
-
-    private void PublishHealthChanged()
-    {
-        KY_GameEvents.HealthChanged(CurrentHp, MaxHealth);
-    }
-    private void PublishManaChanged()
-    {
-        KY_GameEvents.ManaChanged(CurrentMp, MaxMana);
-    }
-    private void PublishExpChanged()
-    {
-        KY_GameEvents.ExpChanged(CurrentExp, MaxExp);
-    }
-    private void PublishHudSnapshot()
-    {
-        PublishHealthChanged();
-        PublishManaChanged();
-        PublishExpChanged();
-    }
-
-    private void RelayHealthChanged() => PublishHealthChanged();
-    private void RelayManaChanged() => PublishManaChanged();
-    private void RelayDeath() => OnDead?.Invoke();
 
     public void Initialize(T_PlayerController playerController)
     {
         this.playerController = playerController;
 
-        // PlayerHealthManager가 있으면 현재 체력은 그쪽이 Start()에서 풀피로 초기화한다.
-        if (healthManager == null)
-        {
-            currentHp = maxHp;
-            currentMp = maxMp;
-            currentAttackPower = attackPower; 
-            currentAttackSpeed = attackSpeed;
-            currentMoveSpeed = moveSpeed;
-        }
-
-        // T_PlayerController.Start()에서 호출되므로 이 시점엔 PlayerStatManager.Awake()가 이미 끝나
-        // Stat이 만들어져 있다. 여기서 구독하고 초기 이동속도를 한 번 적용한다.
-        SubscribeStatChanges();
-        ApplyMoveSpeedToController();
-        ApplyAttackSpeedToAnimation();
-
-        //OnHpChanged?.Invoke(CurrentHp, MaxHealth);
+        ApplyMoveSpeed();
+        ApplyAtkSpeed();
     }
 
-    /// <summary>스탯이 재계산될 때마다 NavMeshAgent 속도를 다시 맞추도록 구독한다.</summary>
-    private void SubscribeStatChanges()
+    private void HandleDeath()
     {
-        ResolveManagers();
-
-        if (statManager == null || statManager.Stat == null)
-            return;
-
-        if (subscribedStat == statManager.Stat)
-            return;
-
-        UnsubscribeStatChanges();
-        subscribedStat = statManager.Stat;
-        subscribedStat.OnStatChanged += ApplyMoveSpeedToController;
-        subscribedStat.OnStatChanged += ApplyAttackSpeedToAnimation;
+        OnDead?.Invoke();
     }
 
-    private void UnsubscribeStatChanges()
+    private void HandleStatChanged()
     {
-        if (subscribedStat == null)
-            return;
-
-        subscribedStat.OnStatChanged -= ApplyMoveSpeedToController;
-        subscribedStat.OnStatChanged -= ApplyAttackSpeedToAnimation;
-        subscribedStat = null;
+        ApplyMoveSpeed();
+        ApplyAtkSpeed();
     }
 
-    /// <summary>
-    /// PlayerStatManager가 합산한 최종 이동속도(캐릭터+장비+버프+패시브)를 NavMeshAgent에 그대로 적용한다.
-    /// !! 배율이 아니라 절대값이다 - NavMeshAgent에 미리 설정된 speed는 무시되고 Stat.moveSpeed가 실제 속도가 된다.
-    ///    T_PlayerController.Awake()의 'agent.speed *= status.MoveSpeed'는 Start 시점에 이 값으로 덮어써진다.
-    /// </summary>
-    private void ApplyMoveSpeedToController()
+    private void ApplyMoveSpeed()
     {
-        if (playerController == null || !UseStatManager)
-            return;
-
-        playerController.SetMoveSpeed(statManager.Stat.moveSpeed);
+        playerController?.SetMoveSpeed(MoveSpeed);
     }
-
-    /// <summary>
-    /// PlayerStatManager가 재계산될 때마다(장비/버프/레벨/패시브 변경) 최종 공격속도를 애니메이터에 반영하도록
-    /// OnAtkSpeedChanged를 다시 발행한다. WBH_PlayerAnimation.SetAtkAnimationSpeed가 이를 구독해서
-    /// animator.SetFloat("AttackSpeed", ...)로 적용한다.
-    /// !! 이게 없으면 게임 시작 시점(WBH_PlayerAnimation.Start의 최초 1회 반영)의 공격속도만 애니메이션에
-    ///    반영되고, 이후 장비 교체나 버프로 공격속도가 바뀌어도 애니메이션 재생 속도는 그대로 남는다.
-    /// </summary>
-    private void ApplyAttackSpeedToAnimation()
+    private void ApplyAtkSpeed()
     {
-        if (!UseStatManager)
-            return;
-
         OnAtkSpeedChanged?.Invoke(AttackSpeed);
     }
 
     public void TakeDamage(WBH_DamageResult result)
     {
-        if (UseHealthManager)
-        {
-            // OnHpChanged/OnDead는 PlayerHealthManager 이벤트를 중계하면서 발행된다.
-            healthManager.TakeDamage(result.FinalDamage);
+        if (IsDead)
             return;
-        }
 
-        currentHp -= result.FinalDamage;
-
-        currentHp = Mathf.Max(currentHp, 0);
-
-        //OnHpChanged?.Invoke(currentHp, MaxHealth);
-
-        Log.Print($"{this.gameObject.name} 현재 체력 {currentHp}");
-
-        if (currentHp == 0)
-        {
-            OnDead?.Invoke();
-        }
+        healthManager.TakeDamage(result.FinalDamage);
     }
 
     // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
     public void TakeDamage(float damage)
     {
-        currentHp -= damage;
-
         WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
-
-        //OnHpChanged?.Invoke(currentHp, MaxHealth);
-        Log.Print($"{CurrentHp}");
+        healthManager.TakeDamage(result.FinalDamage);
     }
 
-    public void UseMana(float amount)
+    public bool TryUseMana(float amount)
     {
-        currentMp -= amount;
-        currentMp = Mathf.Max(currentMp, 0);
-        //OnMpChanged?.Invoke(currentMp, MaxMana);
+        if (amount <= 0f)
+            return true;
+
+        return manaManager.UseMana(amount);
     }
 
     public void Heal(float amount)
     {
-        if (UseHealthManager)
-        {
             healthManager.Heal(amount);
             return;
-        }
-
-        currentHp += amount;
-        currentHp = Mathf.Min(currentHp, maxHp);
-        //OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
 
     public void MultiplyMoveSpeed(float modifier)
     {
-        if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
-            return;
+        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
+        //    return;
 
-        currentMoveSpeed = moveSpeed * modifier;
-        Debug.Log($"CurrentMoveSpeed : {currentMoveSpeed}");
-        playerController.SetMoveSpeed(currentMoveSpeed);
+        //currentMoveSpeed = moveSpeed * modifier;
+        //Debug.Log($"CurrentMoveSpeed : {currentMoveSpeed}");
+        //playerController.SetMoveSpeed(currentMoveSpeed);
     }
     public void MultiplyAttackSpeed(float modifier)
     {
-        if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
-            return;
+        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
+        //    return;
 
-        currentAttackSpeed = attackSpeed * modifier;
-        OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
+        //currentAttackSpeed = attackSpeed * modifier;
+        //OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
     }
     public void MultiplyAttack(float modifier)
     {
-        if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
-            return;
+        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
+        //    return;
 
-        currentAttackPower = attackPower * modifier;
-    }
-
-    /// <summary>
-    /// WJ 스탯 시스템이 스탯을 소유한 상태에서는 Fallback 필드를 곱해도 실제 스탯이 바뀌지 않는다.
-    /// 이 경우 조용히 무시되지 않도록 경고를 남기고 true를 반환한다.
-    /// (일시적인 배율 변경은 PlayerBuffManager.ApplyBuff로 처리해야 함)
-    /// </summary>
-    private bool WarnIfStatManagerOwnsStats(string methodName)
-    {
-        if (!UseStatManager)
-            return false;
-
-        Debug.LogWarning($"[WBH_PlayerStatus] {methodName}은(는) PlayerStatManager가 스탯을 관리할 때 효과가 없습니다. " +
-                         "PlayerBuffManager.ApplyBuff(BuffDefinitionSO)로 처리해주세요.");
-        return true;
+        //currentAttackPower = attackPower * modifier;
     }
 }
