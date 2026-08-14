@@ -754,5 +754,26 @@
     "intervalSeconds": 0.0,
     "message": "",
     "note": "마나 회복 대신 기존 기동 버프로 구현"
+  },
+  {
+    "uniqueEffectId": "UE_GravityFieldCore",
+    "effectType": "FieldAuraUniqueEffectSO",
+    "effectName": "중력장 발생",
+    "effectDescription": "반경 {0}유닛 안의 적 유닛의 이동속도가 {1}% 감소합니다.",
+    "coefficients": "8;50",
+    "statEffects": "moveSpeedPercent:-50",
+    "duration": 0.0,
+    "stackBehavior": "Ignore",
+    "maxStack": 0,
+    "triggerCondition": "",
+    "cooldownSeconds": 0.0,
+    "duplicatePolicy": "",
+    "referenceStat": "",
+    "comparisonOperator": "",
+    "thresholdValue": 0.0,
+    "radius": 8.0,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "적 대상 디버프 - FieldAuraUniqueEffectSO.targetEnemies를 true로 수동 설정 필요(코드 신규 필드, 엑셀 컬럼 없음)"
   }
 ]

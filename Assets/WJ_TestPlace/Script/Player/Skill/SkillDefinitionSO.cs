@@ -54,11 +54,13 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("밀려나는 데 걸리는 시간(초).")]
     public float evoKnockbackDuration = 0.3f;
 
-    [Header("SectorSlash 진화3 전용 (원형 + 차징, 최대 charge 시간에 비례해 데미지 증가)")]
+    [Header("SectorSlash 진화3 전용 (원형 + 차징, 차징 시간에 비례해 데미지 증가)")]
     [Tooltip("누르고 있으면 최대 이 시간(초)까지 차징된다. 도달하면 자동 발동.")]
     public float evoChargeMaxSeconds = 3f;
-    [Tooltip("최대 차징(evoChargeMaxSeconds)일 때 적용되는 피해 배율. 0초 차징~여기까지 선형 보간.")]
-    public float evoChargeMaxDamageMultiplier = 3.5f;
+    [Tooltip("0초 차징(즉시 발동)일 때 적용되는 피해 배율.")]
+    public float evoChargeMinDamageMultiplier = 1.2f;
+    [Tooltip("최대 차징(evoChargeMaxSeconds)일 때 적용되는 피해 배율. Min~Max로 선형 보간.")]
+    public float evoChargeMaxDamageMultiplier = 1.6f;
 
     [Header("LineSlam 진화1 전용 (방어 감소 + 기절)")]
     [Tooltip("방어력 배율. 0.7이면 방어력 30% 감소.")]
@@ -76,6 +78,10 @@ public class SkillDefinitionSO : ScriptableObject
     public float evoNarrowLineLength = 2f;
     public float evoNarrowLineWidth = 1f;
     public float evoNarrowDamageMultiplier = 3.5f;
+
+    [Header("Dash 진화1 전용 (무적 부여)")]
+    [Tooltip("대시 시작과 동시에 무적이 걸리는 시간(초). dashDuration보다 길게 잡으면 착지 직후까지 무적이 유지된다.")]
+    public float evoInvincibleDuration = 0.5f;
 
     [Header("Dash 진화2 전용 (2스택화 - 쿨타임 대신 스택으로 관리)")]
     public int evoDashMaxStacks = 2;

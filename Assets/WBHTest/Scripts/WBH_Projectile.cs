@@ -224,6 +224,12 @@ public class WBH_Projectile : MonoBehaviour
         poolManager.ReturnProjectile(projectileType, this);
     }
 
+    /// <summary>외부(플레이어 스킬 등)에서 투사체를 강제로 제거할 때 사용. ReturnToPool이 private라 감싸서 노출.</summary>
+    public void ForceRemove()
+    {
+        ReturnToPool();
+    }
+
 
 
     // ------- 

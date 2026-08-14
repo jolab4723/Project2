@@ -358,15 +358,28 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
             stateMachine.ChangeState(PlayerState.Idle);
             SetControlEnable(true);
             status.Heal(status.MaxHealth * 1f);
-            StartCoroutine( BeInvincible(10));
+            ApplyInvincibility(10);
         }
     }
+
+    private Coroutine invincibilityRoutine;
+
+    /// <summary>외부(스킬 등)에서 일정 시간 무적을 걸 때 사용. 이미 무적이 진행 중이면 새 지속시간으로 갱신한다.</summary>
+    public void ApplyInvincibility(float duration)
+    {
+        if (invincibilityRoutine != null)
+            StopCoroutine(invincibilityRoutine);
+
+        invincibilityRoutine = StartCoroutine(BeInvincible(duration));
+    }
+
     // 무적 코루틴. duration 동안 IsInvincible 이며 TakeDamage 의 영향을 받지 않음.
     private IEnumerator BeInvincible(float duration)
     {
         IsInvincible = true;
         yield return new WaitForSeconds(duration);
         IsInvincible = false;
+        invincibilityRoutine = null;
     }
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
