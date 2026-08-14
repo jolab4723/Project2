@@ -5,6 +5,7 @@ public enum EnemyType
 {
     Melee,
     Ranged,
+    SelfDestruct,
     Boss,
     Hidden
 }

@@ -126,4 +126,9 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         poolManager.Return(this);
         // !@ 디졸브 효과 차후 추가 필요
     }
+
+    public void KillSelf()
+    {
+
+    }
 }
