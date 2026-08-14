@@ -1,4 +1,3 @@
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -9,6 +8,27 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_ProjectileSpawner))]
 public class WBH_EnemyPattern : MonoBehaviour
 {
+    [System.Serializable]
+    public class SelfDestructSettings
+    {
+        [Min(0f)] public float startDelay = 1f;
+        [Tooltip("자폭 시퀀스 시작 거리")]
+        [Min(0.1f)] public float triggerDistance = 1.25f;
+        
+        [Min(0.1f)] public float fuseDuration = 2f;
+        [Min(0.1f)] public float explosionRadius = 3f;
+        [Min(0f)] public float damageMultiplier = 2f;
+
+        [Tooltip("가속 시퀀스 시작 거리")]
+        [Min(0.1f)] public float accelerationStartDistance = 8f;
+
+        [Min(1f)] public float maxSpeedMultiplier = 2.2f;
+        [Min(0.1f)] public float farBlinkInterval = 0.5f;
+        [Min(0.1f)] public float nearBlinkInterval = 0.08f;
+    }
+
+    [SerializeField] private SelfDestructSettings selfSettings = new SelfDestructSettings();
+
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
@@ -21,6 +41,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_EnemyCombat combat;
     private WBH_EnemyStatus status;
     private WBH_IndicatorSpawner indicatorSpawner;
+    private WBH_EnemyView view;
 
     private WBH_EffectSpawner effectSpawner;
 
@@ -34,6 +55,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
     protected float dashHitRadius = 3f;
+    private float rangedTurnSpeed = 360f;
+    private float facingDeadZone = 1f;
     private bool waitingForTarget;
 
     public WBH_EnemyMovement Movement => movement;
@@ -48,6 +71,9 @@ public class WBH_EnemyPattern : MonoBehaviour
     public float DashHitRadius => dashHitRadius;
 
     public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
+    public SelfDestructSettings SelfDestructConfig => selfSettings;
+    public WBH_EnemyView EnemyView => view;
+    public float CurrentMoveSpeed => status.MoveSpeed;
 
     private void Awake()
     {
@@ -58,6 +84,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
         indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
+        view = GetComponent<WBH_EnemyView>();
     }
 
     public virtual void Initialize(WBH_EnemyController controller)
@@ -93,6 +120,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         else
         {
             UpdateMove(Distance);
+            UpdateFacing(Distance, Time.deltaTime);
             UpdateAttack(Distance);
         }
     }
@@ -117,6 +145,31 @@ public class WBH_EnemyPattern : MonoBehaviour
         combat.TryAttack();
     }
 
+    protected virtual void UpdateFacing(float distance, float deltaTime)
+    {
+        if (combat.IsActionInProgress)
+            return;
+        if (distance > status.AttackRange)
+            return;
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        float angle = Quaternion.Angle(transform.rotation, targetRotation);
+
+        if (angle <= facingDeadZone)
+            return;
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rangedTurnSpeed * deltaTime);
+    }
+
     public virtual void Hit()
     {
         enemyAnimation.PlayHit();
@@ -131,7 +184,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void ExecuteAttack()
     {
-        transform.LookAt(Target);
+        FaceTarget();
 
         switch (controller.Info.enemyType)
         {
@@ -145,6 +198,20 @@ public class WBH_EnemyPattern : MonoBehaviour
                 MeleeAttack();
                 break;
         }
+    }
+
+    private void FaceTarget()
+    {
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        transform.rotation = Quaternion.LookRotation(dir.normalized);
     }
 
     protected virtual void MeleeAttack()
@@ -325,5 +392,10 @@ public class WBH_EnemyPattern : MonoBehaviour
 
         SetTarget(selected);
         return true;
+    }
+
+    public void KillSelf()
+    {
+        controller.KillSelf();
     }
 }

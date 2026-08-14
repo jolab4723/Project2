@@ -167,18 +167,19 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
-    // 움직임
+    // 이동명령
     public void MoveCommand(Vector3 destination)
     {
-        if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
             return;
 
-        if (!IsControlEnabled)
+        agent.isStopped = false;
+        agent.stoppingDistance = 0f;
+
+        if (!agent.SetDestination(destination))
             return;
 
         stateMachine.ChangeState(PlayerState.Move);
-
-        agent.SetDestination(destination);
 
         Vector3 dir = destination - transform.position;
         dir.y = 0;
@@ -207,9 +208,48 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Dodge);
     }
 
-    public void ChaseCommand()
+    // 추적 명령
+    public bool ChaseCommand(Vector3 destination, float stoppingDistance)
     {
+        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+            return false;
 
+        agent.isStopped = false;
+        agent.stoppingDistance = Mathf.Max(0f, stoppingDistance);
+
+        if (!agent.SetDestination(destination))
+            return false;
+
+        stateMachine.ChangeState(PlayerState.Chase);
+
+        Vector3 dir = destination - transform.position;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude > 0.001f)
+        {
+            transform.forward = dir.normalized;
+        }
+
+        lookDir = transform.forward;
+
+        return true;
+    }
+
+    // 이동취소
+    public void StopMovement()
+    {
+        if(CanUseAgent)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+            agent.stoppingDistance = 0f;
+        }
+
+        if(stateMachine.IsAnyState(PlayerState.Move,PlayerState.Chase))
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+        }
     }
 
     // 목적지 도달 시 자동 Idle 상태 진입
@@ -218,10 +258,17 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         if (!CanUseAgent || !stateMachine.Is( PlayerState.Move))
             return;
 
+        if (agent.pathPending || agent.remainingDistance > agent.stoppingDistance + 0.05f)
+            return;
+
+        if (agent.hasPath && agent.velocity.sqrMagnitude > 0.01f)
+            return;
+
+        agent.ResetPath();
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
-    public void Die() //!@ 사망처리. 이벤트 구독으로 리팩토링.
+    public void Die() // 사망처리. 
     {
         stateMachine.ChangeState(PlayerState.Dead);
         SetControlEnable(false);
@@ -282,6 +329,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
+    // 회피지점 검사 (벽뚫 방지)
     private bool TryGetDodgeEnd(Vector3 direction, out Vector3 dodgeEnd)
     {
         Vector3 start = transform.position;

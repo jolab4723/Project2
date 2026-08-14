@@ -39,6 +39,9 @@ public class WBH_EnemyView : MonoBehaviour
     private Coroutine hideHpBarCoroutine;
     private Coroutine hitFlashCoroutine;
 
+    private float damageFlashStrength;
+    private float selfDestructFlashStrength;
+
 
     private void Awake()
     {
@@ -65,6 +68,16 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status.OnDamaged -= ViewOnDamaged;
         status.OnHpChanged -= UpdateHpBar;
+
+        if(hitFlashCoroutine != null)
+        {
+            StopCoroutine(hitFlashCoroutine);
+            hitFlashCoroutine = null;
+        }
+
+        damageFlashStrength = 0f;
+        selfDestructFlashStrength = 0f;
+        SetHitStrength(0);
     }
 
     // 메인카메라를 바라보는 코드
@@ -142,11 +155,13 @@ public class WBH_EnemyView : MonoBehaviour
 
     private IEnumerator HitFlashRoutine()
     {
-        SetHitStrength(hitFlashIntensity);
+        damageFlashStrength = hitFlashIntensity;
+        ApplyFlashStrength();
 
         yield return new WaitForSeconds(hitFlashDuration);
 
-        SetHitStrength(0f);
+        damageFlashStrength = 0f;
+        ApplyFlashStrength();
 
         hitFlashCoroutine = null;
     }
@@ -161,5 +176,16 @@ public class WBH_EnemyView : MonoBehaviour
 
             renderer.SetPropertyBlock(propertyBlock);
         }
+    }
+
+    public void SetSelfDestructFlash(bool visible)
+    {
+        selfDestructFlashStrength = visible ? 1f : 0f;
+        ApplyFlashStrength();
+    }
+
+    private void ApplyFlashStrength()
+    {
+        SetHitStrength(Mathf.Max(damageFlashStrength, selfDestructFlashStrength));
     }
 }
