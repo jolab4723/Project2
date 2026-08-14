@@ -35,7 +35,11 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     {
         base.OnStartLocalPlayer();
         RegisterLocalContext();
-        SetLocalOnlyBehaviours(true);
+
+        // Host는 첫 서버 스냅샷 발행 전에 OnStartLocalPlayer가 올 수 있다.
+        // 아직 스냅샷이 없다면 초기 HP 0을 사망으로 오인하지 않고 입력을 먼저 연다.
+        bool hasAuthoritativeSnapshot = context?.RuntimeState?.HasSnapshot == true;
+        SetLocalOnlyBehaviours(!hasAuthoritativeSnapshot || context.RuntimeState.IsDead == false);
     }
 
     public override void OnStopLocalPlayer()
@@ -91,6 +95,16 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             if (behaviour != null)
                 behaviour.enabled = enabled;
         }
+    }
+
+    /// <summary>
+    /// 서버가 확정한 사망·부활 상태에 맞춰 이 컴퓨터의 로컬 입력만 켜고 끈다.
+    /// 원격 플레이어 복제본에는 입력 컴포넌트가 항상 꺼진 상태로 남는다.
+    /// </summary>
+    public void SetLocalInputEnabled(bool enabled)
+    {
+        if (isLocalPlayer)
+            SetLocalOnlyBehaviours(enabled);
     }
 
     private void ResolveLocalOnlyBehaviours()

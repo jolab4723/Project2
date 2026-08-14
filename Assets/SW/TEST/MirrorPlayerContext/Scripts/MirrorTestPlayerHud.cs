@@ -21,6 +21,10 @@ using UnityEngine.UI;
 /// 가장 높은 상점 강화 적용자와 플레이어별 골드·할인을 종합상황실에서 확인한다.</para>
 /// <para>3-6 차이: 서버가 확정한 최종 Stat·Buff·HP·MP·포션 상태를 각 플레이어 복제본에 적용하고,
 /// 로컬 화면과 서버 종합상황실에서 같은 상태 번호와 전투 수치를 비교한다.</para>
+/// <para>4단계 차이: 플레이어별 공격 요청·사망 상태와 서버 적의 체력·타깃·마지막 공격자·보상 횟수를 표시하고,
+/// 서버 상황판에서 사망한 플레이어를 수동 부활시킨다.</para>
+/// <para>5-A 보완: 녹화 중에는 작은 열기 버튼만 남기고 종합상황실 본문을 접을 수 있다.
+/// 표시만 숨기며 PlayerContext 바인딩과 진단 이벤트 수집은 계속 유지한다.</para>
 [DisallowMultipleComponent]
 public sealed class MirrorTestPlayerHud : MonoBehaviour
 {
@@ -49,6 +53,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private GUIStyle passStyle;
     private GUIStyle failStyle;
     private Vector2 diagnosticsScroll;
+    private bool diagnosticsCollapsed;
 
     public PlayerContext BoundContext => context;
 
@@ -303,6 +308,13 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
 
         EnsureGuiStyles();
 
+        Rect toggleArea = new(12f, 30f, 120f, 28f);
+        if (GUI.Button(toggleArea, diagnosticsCollapsed ? "상황실 열기" : "상황실 접기"))
+            diagnosticsCollapsed = !diagnosticsCollapsed;
+
+        if (diagnosticsCollapsed)
+            return;
+
         float width = Mathf.Min(460f, Screen.width - 24f);
         Rect area = new(12f, 64f, width, Screen.height - 76f);
         GUILayout.BeginArea(area, GUI.skin.box);
@@ -333,6 +345,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                 $"내 전투 상태 번호={runtimeState.StateRevision} | " +
                 $"HP={runtimeState.CurrentHealth:0}/{runtimeState.MaxHealth:0} | " +
                 $"MP={runtimeState.CurrentMana:0}/{runtimeState.MaxMana:0} | " +
+                $"생존={(runtimeState.IsDead ? "사망" : "생존")} | " +
                 $"버프={runtimeState.ActiveBuffCount}개 | 포션={runtimeState.PotionCharges}/{runtimeState.MaxPotionCharges}",
                 runtimeState.HasSnapshot ? passStyle : failStyle);
 
@@ -431,12 +444,21 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         float maxHealth = targetState?.MaxHealth ?? target.Health?.MaxHealth ?? 0f;
         float attack = targetState?.AttackPower ?? stat?.attackPower ?? 0f;
         float defense = targetState?.DefensePower ?? stat?.defensePower ?? 0f;
+        PlayerCombatAuthority_MirrorTest combatAuthority = target.CombatAuthority;
 
         string status = isLocal ? "내 플레이어" : "다른 플레이어 복제본";
         string line = $"{status} | netId={netId} | 로컬 객체 번호: PlayerContext#{target.GetInstanceID()} | 인벤토리#{target.Inventory?.GetInstanceID() ?? 0}";
         GUILayout.Label(line, isLocal ? localStyle : remoteStyle);
         GUILayout.Label($"로컬 객체 번호: 장비 시스템#{target.Equipment?.GetInstanceID() ?? 0} | 스탯 시스템#{target.Stats?.GetInstanceID() ?? 0}");
-        GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={health:0}/{maxHealth:0} | 공격={attack:0} | 방어={defense:0} | 전투 상태 번호={targetState?.StateRevision ?? 0}");
+        GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={health:0}/{maxHealth:0} | {(targetState?.IsDead == true ? "사망" : "생존")} | 공격={attack:0} | 방어={defense:0} | 전투 상태 번호={targetState?.StateRevision ?? 0}");
+        GUILayout.Label(
+            $"공격 접수={combatAuthority?.AcceptedRequestCount ?? 0} | 거절={combatAuthority?.RejectedRequestCount ?? 0} | " +
+            $"최근 결과={GetCombatResultLabel(combatAuthority?.LastResult ?? MirrorCombatRequestResult.None)} | 대상 netId={combatAuthority?.LastTargetNetId ?? 0} | " +
+            $"데미지={combatAuthority?.LastDamage ?? 0f:0.#} | 치명타={(combatAuthority?.LastHitCritical == true ? "예" : "아니오")}");
+        GUILayout.Label(
+            $"요청 전달 시간={combatAuthority?.LastRequestBackdateSeconds * 1000f ?? 0f:0}ms | " +
+            $"공격 대기 남음={combatAuthority?.LastCooldownRemainingSeconds ?? 0f:0.000}초 | " +
+            $"이전 타격 처리 중={(combatAuthority?.LastRejectedWhileImpactPending == true ? "예" : "아니오")}");
     }
 
     private void DrawInventory(PlayerContext target)
@@ -486,7 +508,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
 
         GUILayout.Space(10f);
         GUILayout.Label("서버 종합상황실", titleStyle);
-        GUILayout.Label("서버가 확정한 원본 | 3-6 플레이어별 최종 Stat·Buff·HP·MP·포션과 기존 인벤토리·장비·상점 확인");
+        GUILayout.Label("서버가 확정한 원본 | PlayerContext별 전투 상태와 적 타깃·보상·드랍을 함께 확인");
 
         NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         if (sharedShop != null)
@@ -513,6 +535,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             PlayerInventorySync_MirrorTest sync = player.GetComponent<PlayerInventorySync_MirrorTest>();
             NetworkShopPlayerState_MirrorTest playerShop = player.GetComponent<NetworkShopPlayerState_MirrorTest>();
             PlayerRuntimeStateSync_MirrorTest playerState = player.RuntimeState;
+            PlayerCombatAuthority_MirrorTest playerCombat = player.CombatAuthority;
             int connectionId = identity != null && identity.connectionToClient != null
                 ? identity.connectionToClient.connectionId
                 : -1;
@@ -533,8 +556,22 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                 $"  전투 상태 번호={playerState?.StateRevision ?? 0} | " +
                 $"HP={playerState?.CurrentHealth ?? 0f:0}/{playerState?.MaxHealth ?? 0f:0} | " +
                 $"MP={playerState?.CurrentMana ?? 0f:0}/{playerState?.MaxMana ?? 0f:0} | " +
+                $"생존={(playerState?.IsDead == true ? "사망" : "생존")} | " +
                 $"공격={playerState?.AttackPower ?? 0f:0} | 방어={playerState?.DefensePower ?? 0f:0} | " +
                 $"버프={playerState?.ActiveBuffCount ?? 0}개 | 포션={playerState?.PotionCharges ?? 0}/{playerState?.MaxPotionCharges ?? 0}");
+            GUILayout.Label(
+                $"  공격 접수={playerCombat?.AcceptedRequestCount ?? 0} | 거절={playerCombat?.RejectedRequestCount ?? 0} | " +
+                $"최근 결과={GetCombatResultLabel(playerCombat?.LastResult ?? MirrorCombatRequestResult.None)} | 대상 netId={playerCombat?.LastTargetNetId ?? 0} | " +
+                $"데미지={playerCombat?.LastDamage ?? 0f:0.#}");
+            GUILayout.Label(
+                $"  요청 전달 시간={playerCombat?.LastRequestBackdateSeconds * 1000f ?? 0f:0}ms | " +
+                $"공격 대기 남음={playerCombat?.LastCooldownRemainingSeconds ?? 0f:0.000}초 | " +
+                $"이전 타격 처리 중={(playerCombat?.LastRejectedWhileImpactPending == true ? "예" : "아니오")}");
+
+            if (playerState != null && GUILayout.Button($"netId={identity?.netId ?? 0} 체력 회복 및 수동 부활"))
+                AddEvent(playerState.ServerReviveForTest()
+                    ? $"netId={identity?.netId ?? 0} 서버 수동 부활"
+                    : $"netId={identity?.netId ?? 0} 부활 실패");
 
             foreach (InventoryItem item in player.Inventory.GetAllInventoryItems())
             {
@@ -550,6 +587,55 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                     $"instance={ShortId(pair.Value?.itemData?.instanceId)} | " +
                     $"이름={pair.Value?.itemData?.definition?.itemName ?? "알 수 없음"}");
             }
+        }
+
+        DrawServerEnemies();
+    }
+
+    private void DrawServerEnemies()
+    {
+        List<NetworkEnemyAuthority_MirrorTest> enemies = new();
+        foreach (NetworkIdentity identity in NetworkServer.spawned.Values)
+        {
+            if (identity != null && identity.TryGetComponent(out NetworkEnemyAuthority_MirrorTest enemy))
+                enemies.Add(enemy);
+        }
+
+        enemies.Sort((left, right) => left.netId.CompareTo(right.netId));
+        GUILayout.Space(8f);
+        GUILayout.Label($"서버 적 상황 | 현재 {enemies.Count}기", titleStyle);
+
+        NetworkEnemyWaveSpawner_MirrorTest waveSpawner = FindFirstObjectByType<NetworkEnemyWaveSpawner_MirrorTest>();
+        GUILayout.Label(
+            $"전투 누적 | 서버 사망={NetworkEnemyAuthority_MirrorTest.ServerDeathCount} | " +
+            $"처치 보상={NetworkEnemyAuthority_MirrorTest.ServerRewardCount} | " +
+            $"드롭={NetworkEnemyAuthority_MirrorTest.ServerDropCount} | " +
+            $"이 화면의 파괴 연출={NetworkEnemyAuthority_MirrorTest.LocalDeathPresentationCount} | " +
+            $"서버 투사체={NetworkEnemyProjectile_MirrorTest.ServerSpawnCount} | " +
+            $"확인한 투사체={NetworkEnemyProjectile_MirrorTest.ClientObservedCount}");
+        if (waveSpawner != null)
+        {
+            GUILayout.Label(
+                $"웨이브={waveSpawner.CurrentWave} | 생존 적={waveSpawner.AliveEnemyCount} | " +
+                $"누적 생성={waveSpawner.TotalSpawnCount} | 완료 웨이브={waveSpawner.CompletedWaveCount}");
+        }
+
+        if (enemies.Count == 0)
+        {
+            GUILayout.Label("- 생성된 네트워크 적 없음");
+            return;
+        }
+
+        foreach (NetworkEnemyAuthority_MirrorTest enemy in enemies)
+        {
+            GUILayout.Label(
+                $"적 netId={enemy.netId} | {enemy.EnemyInfo?.enemyName ?? "일반 적"} | " +
+                $"HP={enemy.CurrentHealth:0}/{enemy.MaxHealth:0} | {(enemy.IsDead ? "사망" : "생존")} | " +
+                $"대상 netId={enemy.TargetNetId} | 마지막 공격자 netId={enemy.LastAttackerNetId}",
+                enemy.IsDead ? failStyle : remoteStyle);
+            GUILayout.Label(
+                $"  상태 변경 번호={enemy.StateChangeNumber} | 공격 시작={enemy.AttackStartCount} | 플레이어 적중={enemy.HitCount} | " +
+                $"최근 받은 데미지={enemy.LastDamage:0.#} | 처치 보상={enemy.KillRewardCount} | 드랍={enemy.DropSpawnCount} | 파괴 연출={enemy.DestructionPresentationCount}");
         }
     }
 
@@ -633,6 +719,22 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             MirrorTestShopOperation.Sell => "판매",
             MirrorTestShopOperation.Reroll => "리롤",
             _ => "알 수 없는 상점 작업",
+        };
+    }
+
+    private static string GetCombatResultLabel(MirrorCombatRequestResult result)
+    {
+        return result switch
+        {
+            MirrorCombatRequestResult.Accepted => "접수",
+            MirrorCombatRequestResult.Hit => "적중",
+            MirrorCombatRequestResult.NoTarget => "대상 없음",
+            MirrorCombatRequestResult.Dead => "사망 상태",
+            MirrorCombatRequestResult.InvalidAim => "잘못된 조준",
+            MirrorCombatRequestResult.DuplicateRequest => "중복 요청",
+            MirrorCombatRequestResult.AttackOnCooldown => "공격 대기 중",
+            MirrorCombatRequestResult.InvalidTiming => "잘못된 공격 시각",
+            _ => "없음",
         };
     }
 

@@ -23,6 +23,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     [SerializeField] private InventoryPartView inventoryPartView;
     [SerializeField] private MirrorTestPlayerHud playerHud;
     [SerializeField] private WorldItemTooltipScanner worldItemScanner;
+    [SerializeField] private NetworkUpgradeButton_MirrorTest upgradeButton;
+    [SerializeField] private PlayerHudEventBridge_MirrorTest formalHudBridge;
+    [SerializeField] private KY_StatusPopup_MirrorTest statusPopup;
 
     private PlayerContext boundContext;
     private PlayerInventorySync_MirrorTest boundInventorySync;
@@ -37,6 +40,17 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         if (worldItemScanner == null)
             worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
+
+        if (upgradeButton == null && inventoryPartView != null)
+        {
+            upgradeButton =
+                inventoryPartView.GetComponentInChildren<NetworkUpgradeButton_MirrorTest>(true);
+        }
+
+        formalHudBridge ??= FindFirstObjectByType<PlayerHudEventBridge_MirrorTest>(
+            FindObjectsInactive.Include);
+        statusPopup ??= FindFirstObjectByType<KY_StatusPopup_MirrorTest>(
+            FindObjectsInactive.Include);
 
         if (networkManager == null || inventoryView == null || inventoryPartView == null)
         {
@@ -60,7 +74,11 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync?.UnbindLocalInventoryView(inventoryView);
         boundInventorySync = null;
         inventoryView?.Unbind();
+        upgradeButton?.Unbind();
         playerHud?.Unbind();
+        formalHudBridge?.Unbind();
+        statusPopup?.Unbind();
+        statusPopup?.CloseImmediate();
         worldItemScanner?.BindPlayer(null);
         boundContext = null;
     }
@@ -72,7 +90,11 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync?.UnbindLocalInventoryView(inventoryView);
         boundInventorySync = null;
         inventoryView.Unbind();
+        upgradeButton?.Unbind();
         playerHud?.Unbind();
+        formalHudBridge?.Unbind();
+        statusPopup?.Unbind();
+        statusPopup?.CloseImmediate();
         worldItemScanner?.BindPlayer(null);
         boundContext = null;
 
@@ -108,7 +130,10 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync?.BindLocalInventoryView(inventoryView);
         boundShopState = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(context, inventoryView);
+        upgradeButton?.Bind(context);
         playerHud?.Bind(context);
+        formalHudBridge?.Bind(context);
+        statusPopup?.Bind(context.Stats);
         worldItemScanner?.BindPlayer(context.transform);
 
         Debug.Assert(
@@ -124,20 +149,41 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            inventoryPartView.CloseAll();
+            if (statusPopup != null && statusPopup.IsOpen)
+                statusPopup.Close();
+            else
+                inventoryPartView.CloseAll();
         }
         else if (Keyboard.current.iKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.ToggleInventory();
         }
         else if (Keyboard.current.oKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.OpenShop();
         }
         else if (Keyboard.current.uKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.OpenUpgrade();
         }
+        else if (Keyboard.current.lKey.wasPressedThisFrame)
+        {
+            inventoryPartView.CloseAll();
+            statusPopup?.Toggle();
+        }
+    }
+
+    /// <summary>
+    /// Mirror 테스트에서는 인벤토리 계열 창과 MergeTest 스탯창이 동시에 열리지 않도록 한다.
+    /// 원본 KY 입력 Manager를 복제하지 않고 기존 로컬 UI 입력 경계에서만 창 우선순위를 정리한다.
+    /// </summary>
+    private void CloseStatusPopup()
+    {
+        if (statusPopup != null && statusPopup.IsOpen)
+            statusPopup.Close();
     }
 
     public bool AddItem(ItemInstance item)
