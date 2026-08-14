@@ -8,6 +8,7 @@ using ItemSystem;
 // 버프 표시 팝업의 슬롯 코드입니다.
 public class KY_BuffSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
+    [Header("구성요소")]
     public Image iconImage;
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI timeText;
