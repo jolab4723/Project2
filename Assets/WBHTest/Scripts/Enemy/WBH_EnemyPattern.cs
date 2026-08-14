@@ -1,4 +1,3 @@
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -34,6 +33,8 @@ public class WBH_EnemyPattern : MonoBehaviour
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
     protected float dashHitRadius = 3f;
+    private float rangedTurnSpeed = 360f;
+    private float facingDeadZone = 1f;
     private bool waitingForTarget;
 
     public WBH_EnemyMovement Movement => movement;
@@ -93,6 +94,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         else
         {
             UpdateMove(Distance);
+            UpdateFacing(Distance, Time.deltaTime);
             UpdateAttack(Distance);
         }
     }
@@ -117,6 +119,31 @@ public class WBH_EnemyPattern : MonoBehaviour
         combat.TryAttack();
     }
 
+    protected virtual void UpdateFacing(float distance, float deltaTime)
+    {
+        if (controller.Info.enemyType != EnemyType.Ranged || combat.IsActionInProgress)
+            return;
+        if (distance > status.AttackRange)
+            return;
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        float angle = Quaternion.Angle(transform.rotation, targetRotation);
+
+        if (angle <= facingDeadZone)
+            return;
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rangedTurnSpeed * deltaTime);
+    }
+
     public virtual void Hit()
     {
         enemyAnimation.PlayHit();
@@ -131,7 +158,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void ExecuteAttack()
     {
-        transform.LookAt(Target);
+        FaceTarget();
 
         switch (controller.Info.enemyType)
         {
@@ -145,6 +172,20 @@ public class WBH_EnemyPattern : MonoBehaviour
                 MeleeAttack();
                 break;
         }
+    }
+
+    private void FaceTarget()
+    {
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        transform.rotation = Quaternion.LookRotation(dir.normalized);
     }
 
     protected virtual void MeleeAttack()
