@@ -121,7 +121,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     protected virtual void UpdateFacing(float distance, float deltaTime)
     {
-        if (controller.Info.enemyType != EnemyType.Ranged || combat.IsActionInProgress)
+        if (combat.IsActionInProgress)
             return;
         if (distance > status.AttackRange)
             return;
