@@ -15,6 +15,7 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
     private Camera mainCamera;
     private T_PlayerController controller;
     private T_PlayerCombat combat;
+    private PlayerCombatAuthority_MirrorTest combatAuthority;
     private WorldItemPickupInteractor pickupItem;
     private PlayerInventorySync_MirrorTest inventorySync;
 
@@ -23,12 +24,15 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
         mainCamera = Camera.main;
         controller = GetComponent<T_PlayerController>();
         combat = GetComponent<T_PlayerCombat>();
+        combatAuthority = GetComponent<PlayerCombatAuthority_MirrorTest>();
         pickupItem = FindFirstObjectByType<WorldItemPickupInteractor>();
         inventorySync = GetComponent<PlayerInventorySync_MirrorTest>();
     }
 
     private void Update()
     {
+        mainCamera ??= Camera.main;
+
         if (controller == null || combat == null || !controller.IsControlEnabled)
             return;
 
@@ -64,7 +68,7 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
 
         Plane plane = new(Vector3.up, Vector3.zero);
         if (plane.Raycast(ray, out float distance))
-            combat.TryAttack(ray.GetPoint(distance));
+            combatAuthority?.TryBeginLocalAttack(ray.GetPoint(distance));
     }
 
     private void HandleDodgeInput()
