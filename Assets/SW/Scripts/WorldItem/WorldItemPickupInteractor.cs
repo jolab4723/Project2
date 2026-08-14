@@ -38,16 +38,6 @@ public sealed class WorldItemPickupInteractor : MonoBehaviour
         }
     }
 
-    // 테스트용 코드입니다.
-    // 정식 통합 시 WBH_PlayerInputHandler에서 담당할 부분입니다.
-    private void Update()
-    {
-        if (!Input.GetMouseButtonDown(0))
-            return;
-
-        TryHandleClick(Input.mousePosition);
-    }
-
     /// <summary>
     /// 클릭을 월드 아이템 상호작용으로 처리했으면 true.
     /// 획득 성공 여부가 아니라 클릭 소비 여부를 반환합니다.
