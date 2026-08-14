@@ -2104,7 +2104,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1097091493912021829, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1454895315265716891, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
       propertyPath: m_Name
@@ -2264,6 +2264,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1454895315265716891, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
       insertIndex: -1
       addedObject: {fileID: 115242645}
+    - targetCorrespondingSourceObject: {fileID: 2130924659637171576, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1488469225}
   m_SourcePrefab: {fileID: 100100000, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
 --- !u!1 &115242635 stripped
 GameObject:
@@ -21721,7 +21724,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 115242634}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 964734e06afd33542bb1109c5856a503, type: 3}
   m_Name: 
@@ -31753,6 +31756,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ShowMaskGraphic: 0
+--- !u!1 &1488469218 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2130924659637171576, guid: afe2206b332c82749b08c2a69cac04df, type: 3}
+  m_PrefabInstance: {fileID: 115242634}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1488469225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488469218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fcabd762b3b6ca4a81c7884044e63e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryController
+  playerWallet: {fileID: 0}
+  playerGrid: {fileID: 0}
+  equipmentSystem: {fileID: 0}
+  logText: {fileID: 0}
+  allEquipSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  goldText: {fileID: 0}
 --- !u!1 &1488953749
 GameObject:
   m_ObjectHideFlags: 0
@@ -38293,6 +38323,11 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 1024
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  effectSpawner: {fileID: 1569555025}
+  chargeEffectData: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
   skills:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}

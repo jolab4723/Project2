@@ -14,7 +14,7 @@ using ItemSystem;
 ///    PlayerStatManager는 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로 찾아서
 ///    쓴다 - 안 그러면 남의 캐릭터 버프가 내 캐릭터 스탯을 재계산시키는 문제가 생김.
 /// </summary>
-public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
+public class PlayerBuffManager : MonoBehaviour, IStatSetProvider, IBuffTarget
 {
     public static PlayerBuffManager Instance { get; private set; }
 

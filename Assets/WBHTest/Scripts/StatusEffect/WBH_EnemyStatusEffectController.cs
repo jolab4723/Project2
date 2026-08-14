@@ -26,6 +26,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     private WBH_EnemyMovement movement;
     private Coroutine knockbackRoutine;
     private Coroutine airborneRoutine;
+    private float airborneGroundY; // 에어본 시작 전 지면 높이. 도중에 넉백이 끼어들 때 지면으로 되돌리기 위해 기억해둔다.
 
     private void Awake()
     {
@@ -94,6 +95,19 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         if (knockbackRoutine != null)
             StopCoroutine(knockbackRoutine);
 
+        if (airborneRoutine != null)
+        {
+            // 에어본 도중 넉백이 끼어들면, 넉백은 수평 이동만 하고 Y를 안 건드리기 때문에
+            // 뜬 높이를 그대로 시작점으로 삼아 넉백이 끝나도 계속 공중에 남는 문제가 있었다.
+            // 넉백을 시작하기 전에 먼저 지면으로 되돌린다.
+            StopCoroutine(airborneRoutine);
+            airborneRoutine = null;
+
+            Vector3 grounded = transform.position;
+            grounded.y = airborneGroundY;
+            transform.position = grounded;
+        }
+
         knockbackRoutine = StartCoroutine(KnockbackRoutine(direction, force, duration));
     }
     private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
@@ -124,6 +138,13 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         if (airborneRoutine != null)
             StopCoroutine(airborneRoutine);
 
+        if (knockbackRoutine != null)
+        {
+            StopCoroutine(knockbackRoutine);
+            knockbackRoutine = null;
+        }
+
+        airborneGroundY = transform.position.y;
         airborneRoutine = StartCoroutine(AirborneRoutine(height, duration));
     }
     private IEnumerator AirborneRoutine(float height, float duration)

@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e909bbe1c75c883418094841f1a0fbd1, type: 3}
-  m_Name: UE_HasteAura
+  m_Name: UE_GravityFieldCore
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.FieldAuraUniqueEffectSO
-  effectName: "\uC601\uC5ED: \uAC00\uC18D\uD654"
-  icon: {fileID: 21300000, guid: c142e62e574cdde4089f7b2cf654b2db, type: 3}
-  effectDescription: "\uBC18\uACBD {0}\uC720\uB2DB \uC548\uC758 \uD50C\uB808\uC774\uC5B4\uB4E4\uC758
-    \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  effectName: "\uC911\uB825\uC7A5 \uBC1C\uC0DD"
+  icon: {fileID: 0}
+  effectDescription: "\uBC18\uACBD {0}\uC720\uB2DB \uC548\uC758 \uC801 \uC720\uB2DB\uC758
+    \uC774\uB3D9\uC18D\uB3C4\uAC00 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
   coefficients:
-  - 10
-  - 30
-  radius: 10
-  targetEnemies: 0
+  - 8
+  - 50
+  radius: 8
+  targetEnemies: 1
   buffSpec:
     statEffects:
     - statType: 7
-      value: 30
+      value: -50
     duration: 0
     stackBehavior: 2
     maxStack: 0

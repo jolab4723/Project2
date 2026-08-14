@@ -17,10 +17,11 @@ using UnityEngine.AI;
 /// 발동하기 때문에(이번 세션에서 이미 확인한 부분) 직접 WBH_DamageRequest를 새로 만들지 않는다.
 ///
 /// 진화(evolutions)는 스킬 슬롯별로 3가지 형태 중 하나를 선택한다(인스펙터 기본값 + K키
-/// SkillEvolutionSelectUI로 런타임 변경 가능). 투사체 제거/무적처럼 다른 팀원 파일(BH) 쪽
-/// 공개 API가 아직 없어서 못 만드는 진화만 이번에 빠졌다(SectorSlash 진화2, Dash 진화1) -
-/// 아래 각 Execute 메서드 주석에 표시. LineSlam 진화1(방어감소+기절)은 BH님 파일에
-/// MultiplyDefense/DefenseDown 상태이상을 직접 추가한 뒤 구현 완료됨.
+/// SkillEvolutionSelectUI로 런타임 변경 가능). 9개 전부 구현 완료됐다 - 다른 팀원 파일(BH)
+/// 쪽 공개 API가 필요했던 것들도 각각 작은 public 메서드를 추가해서 해결함: LineSlam 진화1
+/// (방어감소+기절)은 MultiplyDefense/DefenseDown 상태이상을, SectorSlash 진화2(투사체 제거)는
+/// WBH_Projectile.ForceRemove()를, Dash 진화1(무적)은 T_PlayerController.ApplyInvincibility()를
+/// 각각 BH님 파일에 직접 추가했다.
 /// </summary>
 public class FighterSkillController : MonoBehaviour
 {
@@ -31,6 +32,15 @@ public class FighterSkillController : MonoBehaviour
     [SerializeField] private WBH_PlayerStatus status;
     [SerializeField] private PlayerBuffManager buffManager;
     [SerializeField] private LayerMask enemyLayer;
+    [Tooltip("SectorSlash 진화2(투사체 제거)가 찾을 투사체 레이어. 보통 \"Projectile\" 레이어.")]
+    [SerializeField] private LayerMask projectileLayer;
+
+    [Tooltip("SectorSlash 진화3(원형+차징) 차징 중 재생할 지속형 이펙트를 생성하는 스포너.")]
+    [SerializeField] private WBH_EffectSpawner effectSpawner;
+    [Tooltip("차징 중 플레이어에게 붙는 지속형 이펙트 데이터.")]
+    [SerializeField] private WBH_EffectData chargeEffectData;
+    private WBH_Effect activeChargeEffect;
+    private GameObject activeChargeRangeVisual;
 
     [Tooltip("인덱스 0~2 = Skill1~3(A/S/D)")]
     [SerializeField] private SkillDefinitionSO[] skills = new SkillDefinitionSO[3];
@@ -124,6 +134,7 @@ public class FighterSkillController : MonoBehaviour
         {
             // 피격 등으로 스킬 상태가 풀리면 차징도 취소(발동하지 않음).
             chargingSkillIndex = -1;
+            StopChargeEffect();
             return;
         }
 
@@ -185,6 +196,8 @@ public class FighterSkillController : MonoBehaviour
             case SkillShapeType.SectorSlash:
                 if (evo == SkillEvolutionId.Evolution1)
                     ExecuteSectorSlashEvo1(def);
+                else if (evo == SkillEvolutionId.Evolution2)
+                    ExecuteSectorSlashEvo2(def);
                 else
                     ExecuteSectorSlash(def);
                 StartCoroutine(ReturnToIdleAfter(0.3f));
@@ -280,12 +293,36 @@ public class FighterSkillController : MonoBehaviour
         FaceCursor();
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
+
+        if (effectSpawner != null && chargeEffectData != null)
+            activeChargeEffect = effectSpawner.SpawnPersistentEffect(chargeEffectData, transform);
+
+        // 얇은 선이라 sectorVisualColor의 낮은 알파(플래시 채우기용, 0.35)로는 잘 안 보여서 불투명하게 조정해서 쓴다.
+        Color outlineColor = sectorVisualColor;
+        outlineColor.a = 1f;
+        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, def.sectorRange, 360f, outlineColor, lineWidth: 0.15f);
+    }
+
+    private void StopChargeEffect()
+    {
+        if (activeChargeRangeVisual != null)
+        {
+            Destroy(activeChargeRangeVisual);
+            activeChargeRangeVisual = null;
+        }
+
+        if (activeChargeEffect == null)
+            return;
+
+        activeChargeEffect.StopEffect();
+        activeChargeEffect = null;
     }
 
     private void ReleaseCharge()
     {
         int index = chargingSkillIndex;
         chargingSkillIndex = -1;
+        StopChargeEffect();
 
         if (index < 0)
             return;
@@ -309,10 +346,13 @@ public class FighterSkillController : MonoBehaviour
     }
 
     /// <summary>부채꼴 범위 안의 적 콜라이더 목록 - T_PlayerCombat.SectorAttack과 같은 방식(구체 오버랩 + 각도 필터).</summary>
-    private List<Collider> GetSectorTargets(float range, float angle)
+    private List<Collider> GetSectorTargets(float range, float angle) => GetSectorTargets(range, angle, enemyLayer);
+
+    /// <summary>부채꼴 범위 안의 콜라이더 목록 - 레이어를 직접 지정(투사체 제거 진화 등 적이 아닌 대상용).</summary>
+    private List<Collider> GetSectorTargets(float range, float angle, LayerMask layer)
     {
         var result = new List<Collider>();
-        Collider[] candidates = Physics.OverlapSphere(transform.position, range, enemyLayer);
+        Collider[] candidates = Physics.OverlapSphere(transform.position, range, layer);
 
         foreach (Collider c in candidates)
         {
@@ -355,13 +395,25 @@ public class FighterSkillController : MonoBehaviour
         }
     }
 
-    // 진화2(투사체 제거)는 WBH_Projectile.ReturnToPool()이 private라 외부에서 제거를 요청할
-    // 공개 API가 없다 - BH님 쪽에 public 메서드 추가를 확인받은 뒤 이어서 만든다.
+    /// <summary>진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.</summary>
+    private void ExecuteSectorSlashEvo2(SkillDefinitionSO def)
+    {
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, def.sectorAngle, sectorVisualColor);
 
-    /// <summary>진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 damageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.</summary>
+        foreach (Collider target in GetSectorTargets(def.sectorRange, def.sectorAngle))
+            ApplyHit(target, def, def.damageMultiplier);
+
+        foreach (Collider projectile in GetSectorTargets(def.sectorRange, def.sectorAngle, projectileLayer))
+        {
+            if (projectile.TryGetComponent<WBH_Projectile>(out var wbhProjectile))
+                wbhProjectile.ForceRemove();
+        }
+    }
+
+    /// <summary>진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.</summary>
     private void ExecuteSectorSlashEvo3(SkillDefinitionSO def, float chargeRatio)
     {
-        float multiplier = Mathf.Lerp(def.damageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
+        float multiplier = Mathf.Lerp(def.evoChargeMinDamageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
         SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, 360f, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(def.sectorRange, 360f))
@@ -456,13 +508,15 @@ public class FighterSkillController : MonoBehaviour
     /// T_PlayerController.TryDodge의 NavMeshAgent 이동 방식을 참고했다(그 메서드 자체는 회피 전용
     /// 상태/무적 처리가 섞여 있어 그대로 재사용하지 않고, 이동 부분만 같은 방식으로 새로 짰다).
     ///
-    /// 진화1(무적 부여)은 T_PlayerController.IsInvincible이 private set이라 외부에서 켤 수 없어서
-    /// 아직 못 만든다 - BH님 쪽에 공개 메서드 추가를 확인받은 뒤 이어서 만든다.
+    /// 진화1(무적 부여)은 대시 시작과 동시에 T_PlayerController.ApplyInvincibility를 호출한다.
     /// 진화2(2스택화)는 입력/쿨타임 쪽(IsSkillReady/ConsumeSkillUse)에서 이미 처리되고, 이동 자체는
     /// 기본 대시와 동일하다. 진화3(피해 증가 버프)는 대시가 끝난 직후 버프를 건다.
     /// </summary>
     private IEnumerator ExecuteDash(SkillDefinitionSO def, SkillEvolutionId evo)
     {
+        if (evo == SkillEvolutionId.Evolution1)
+            controller.ApplyInvincibility(def.evoInvincibleDuration);
+
         Vector3 dir = GetCursorDirection();
         SkillRangeVisual.ShowLine(transform.position, dir, def.dashDistance, 0.6f, dashVisualColor);
 

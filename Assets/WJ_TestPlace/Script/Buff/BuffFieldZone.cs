@@ -39,8 +39,11 @@ public class BuffFieldZone : MonoBehaviour
     [Tooltip("켜면 존이 비활성화·파괴될 때 안에 있던 대상의 버프를 정리한다.")]
     [SerializeField] private bool removeWhenZoneDisabled = true;
 
+    [Tooltip("켜면 플레이어 대신 적(EnemyBuffManager)에게 적용한다 - 디버프 오라용.")]
+    [SerializeField] private bool targetEnemies = false;
+
     /// <summary>지금 이 존 안에 있는 대상들. 나갈 때 정확히 그 대상에게서만 제거하려고 들고 있는다.</summary>
-    private readonly HashSet<PlayerBuffManager> inside = new HashSet<PlayerBuffManager>();
+    private readonly HashSet<IBuffTarget> inside = new HashSet<IBuffTarget>();
 
     /// <summary>
     /// 코드로 존을 생성할 때(예: 아이템 소유 시 자동 생성되는 오라) 인스펙터의 buff 필드 대신 쓸 소스.
@@ -51,9 +54,10 @@ public class BuffFieldZone : MonoBehaviour
     private IBuffSource ActiveBuff => runtimeBuffSource ?? (IBuffSource)buff;
 
     /// <summary>코드에서 존을 생성/구성할 때 사용. 인스펙터 buff 필드 대신 임의의 IBuffSource를 쓸 수 있게 한다.</summary>
-    public void ConfigureRuntime(IBuffSource source, bool removeOnExit = true, bool removeWhenZoneDisabled = true)
+    public void ConfigureRuntime(IBuffSource source, bool targetEnemies = false, bool removeOnExit = true, bool removeWhenZoneDisabled = true)
     {
         runtimeBuffSource = source;
+        this.targetEnemies = targetEnemies;
         this.removeOnExit = removeOnExit;
         this.removeWhenZoneDisabled = removeWhenZoneDisabled;
     }
@@ -83,7 +87,7 @@ public class BuffFieldZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        PlayerBuffManager target = Resolve(other);
+        IBuffTarget target = Resolve(other);
         IBuffSource activeBuff = ActiveBuff;
         if (target == null || activeBuff == null)
             return;
@@ -97,7 +101,7 @@ public class BuffFieldZone : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        PlayerBuffManager target = Resolve(other);
+        IBuffTarget target = Resolve(other);
         if (target == null)
             return;
 
@@ -118,7 +122,7 @@ public class BuffFieldZone : MonoBehaviour
             return;
         }
 
-        foreach (PlayerBuffManager target in inside)
+        foreach (IBuffTarget target in inside)
         {
             if (target != null)
                 target.RemoveBuff(activeBuff);
@@ -128,12 +132,17 @@ public class BuffFieldZone : MonoBehaviour
     }
 
     /// <summary>
-    /// 콜라이더에서 캐릭터의 PlayerBuffManager를 찾는다.
+    /// 콜라이더에서 캐릭터의 버프 대상(PlayerBuffManager 또는 EnemyBuffManager)을 찾는다.
     /// 콜라이더가 자식 오브젝트에 있을 수 있어 부모까지 올라가며 찾는다.
     /// </summary>
-    private static PlayerBuffManager Resolve(Collider other)
+    private IBuffTarget Resolve(Collider other)
     {
-        return other != null ? other.GetComponentInParent<PlayerBuffManager>() : null;
+        if (other == null)
+            return null;
+
+        return targetEnemies
+            ? (IBuffTarget)other.GetComponentInParent<EnemyBuffManager>()
+            : other.GetComponentInParent<PlayerBuffManager>();
     }
 
 #if UNITY_EDITOR

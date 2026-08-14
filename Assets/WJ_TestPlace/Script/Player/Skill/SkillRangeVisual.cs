@@ -25,6 +25,33 @@ public static class SkillRangeVisual
         Attach(go, BuildLineMesh(forward, length, width), color, duration);
     }
 
+    /// <summary>
+    /// 부채꼴(또는 angle=360이면 원형) 범위의 테두리를 지속적으로 표시한다. 차징처럼 끝나는 시점을
+    /// 미리 알 수 없는 경우에 쓰며, 자동으로 사라지지 않으므로 호출자가 반환된 GameObject를 직접
+    /// Destroy해서 종료 시점을 관리해야 한다. followTarget의 자식으로 붙어서 위치/회전을 따라간다.
+    /// </summary>
+    public static GameObject ShowPersistentSectorOutline(Transform followTarget, float range, float angle, Color color, float lineWidth = 0.08f)
+    {
+        var go = new GameObject("[SkillRangeVisual] ChargeOutline");
+        go.transform.SetParent(followTarget, false);
+        go.transform.localPosition = Vector3.up * 0.05f;
+        go.transform.localRotation = Quaternion.identity;
+
+        var lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = false;
+        lr.loop = angle >= 360f;
+        lr.widthMultiplier = lineWidth;
+        lr.material = CreateMaterial(color);
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows = false;
+
+        Vector3[] points = BuildOutlinePoints(range, angle);
+        lr.positionCount = points.Length;
+        lr.SetPositions(points);
+
+        return go;
+    }
+
     private static void Attach(GameObject go, Mesh mesh, Color color, float duration)
     {
         var mf = go.AddComponent<MeshFilter>();
@@ -75,6 +102,30 @@ public static class SkillRangeVisual
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
         return mesh;
+    }
+
+    /// <summary>부채꼴 테두리(또는 angle=360이면 원)를 구성하는 점 목록. 로컬 좌표(부모 forward = local +Z 기준).</summary>
+    private static Vector3[] BuildOutlinePoints(float range, float angle, int segments = 32)
+    {
+        bool isFullCircle = angle >= 360f;
+        var points = new System.Collections.Generic.List<Vector3>(segments + 3);
+
+        float startAngle = -angle * 0.5f;
+        float step = angle / segments;
+
+        if (!isFullCircle)
+            points.Add(Vector3.zero); // 부채꼴이면 중심에서 시작(파이 모양 테두리)
+
+        for (int i = 0; i <= segments; i++)
+        {
+            float a = (startAngle + step * i) * Mathf.Deg2Rad;
+            points.Add(new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * range);
+        }
+
+        if (!isFullCircle)
+            points.Add(Vector3.zero); // 다시 중심으로 닫기
+
+        return points.ToArray();
     }
 
     private static Mesh BuildLineMesh(Vector3 forward, float length, float width)
