@@ -34,7 +34,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private const double MinimumBackdateSeconds = 0.05d;
     private const double MaximumBackdateSeconds = 0.35d;
     private const double FutureTimeToleranceSeconds = 0.1d;
-    private const double CooldownBoundaryToleranceSeconds = 0.02d;
+    private const double CooldownBoundaryToleranceSeconds = 0.05d;
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private T_PlayerCombat combat;

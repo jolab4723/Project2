@@ -572,6 +572,9 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
 
         T_PlayerController controller = context.Controller;
         WBH_PlayerStateMachine stateMachine = context.StateMachine;
+        PlayerState stateBeforeApply = stateMachine != null
+            ? stateMachine.CurrentState
+            : PlayerState.Idle;
 
         if (dead)
         {
@@ -588,9 +591,17 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             if (controller != null)
                 controller.enabled = true;
 
-            stateMachine?.ChangeState(PlayerState.Idle);
-            if (forceReviveVisual)
+            bool shouldRevive = forceReviveVisual || stateBeforeApply == PlayerState.Dead;
+            if (shouldRevive)
+            {
+                stateMachine?.ChangeState(PlayerState.Idle);
                 GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativeRevive();
+            }
+
+            Debug.Assert(
+                shouldRevive || stateMachine == null || stateMachine.CurrentState == stateBeforeApply,
+                "[PlayerRuntimeStateSync_MirrorTest] 생존 스냅샷이 현재 플레이 상태를 변경했습니다.",
+                this);
             controller?.SetControlEnable(true);
         }
 
