@@ -18,6 +18,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
     [SerializeField] private PlayerRuntimeStateSync_MirrorTest runtimeState;
 
     public event Action<int> OnSkillKeyPressed;
+    public event Action<int> OnSkillKeyReleased;
 
     private GameInputActions inputActions;
 
@@ -56,6 +57,15 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
             OnSkillKeyPressed?.Invoke(2);
         if (inputActions.Player.Skill4.triggered)
             OnSkillKeyPressed?.Invoke(3);
+
+        if (inputActions.Player.Skill1.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(0);
+        if (inputActions.Player.Skill2.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(1);
+        if (inputActions.Player.Skill3.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(2);
+        if (inputActions.Player.Skill4.WasReleasedThisFrame())
+            OnSkillKeyReleased?.Invoke(3);
     }
 
     private void CreateInputActions()

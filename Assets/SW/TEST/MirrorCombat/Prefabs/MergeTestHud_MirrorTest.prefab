@@ -2314,6 +2314,7 @@ GameObject:
   - component: {fileID: 7712211578266913167}
   - component: {fileID: 7703757243607609595}
   - component: {fileID: 4969746410527154790}
+  - component: {fileID: 4503329667490647455}
   m_Layer: 5
   m_Name: HUDManager
   m_TagString: Untagged
@@ -2368,6 +2369,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c8aa090d2618d14ba9176d8f00b0d1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHudEventBridge_MirrorTest
+--- !u!114 &4503329667490647455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3454487605657794452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86ae839df000ca24f837ba4e959ae9a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MirrorCooldownHud_MirrorTest
+  uniqueEffectSlotPrefab: {fileID: 8814697750299451913, guid: 1a9ca440042115449875b68a495c21f7, type: 3}
+  uniqueEffectSlotParent: {fileID: 0}
 --- !u!1 &3461057433171955963
 GameObject:
   m_ObjectHideFlags: 0
