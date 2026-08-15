@@ -14,6 +14,7 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
     private PlayerHealthManager health;
     private PlayerManaManager mana;
     private PlayerStatManager stats;
+    private MirrorCooldownHud_MirrorTest cooldownHud;
 
     public PlayerContext BoundContext { get; private set; }
 
@@ -34,6 +35,7 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
         health = context.Health;
         mana = context.Mana;
         stats = context.Stats;
+        cooldownHud ??= GetComponent<MirrorCooldownHud_MirrorTest>();
 
         if (health != null)
             health.OnHealthChanged += PublishHealth;
@@ -43,6 +45,8 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
 
         if (stats?.Stat != null)
             stats.Stat.OnStatChanged += PublishExperience;
+
+        cooldownHud?.Bind(context);
 
         PublishAll();
     }
@@ -57,6 +61,8 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
 
         if (stats?.Stat != null)
             stats.Stat.OnStatChanged -= PublishExperience;
+
+        cooldownHud?.Unbind();
 
         BoundContext = null;
         health = null;

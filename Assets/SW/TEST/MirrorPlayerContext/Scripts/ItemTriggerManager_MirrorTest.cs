@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ItemSystem;
+using Mirror;
 using UnityEngine;
 
 /// <summary>
@@ -10,14 +11,29 @@ using UnityEngine;
 /// <para>고유 효과 SO에 있던 공유 쿨타임 대신 플레이어 컴포넌트의 딕셔너리에 아이템별 실행 시간을 보관한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
+public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 {
     [SerializeField] private InventoryController inventory;
     [SerializeField] private PlayerHealthManager health;
     [SerializeField] private PlayerBuffManager buffs;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
 
-    private readonly Dictionary<string, float> lastTriggerTimes = new();
+    private readonly SyncDictionary<string, double> cooldownEndTimes = new();
+
+    public int ActiveCooldownCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (KeyValuePair<string, double> pair in cooldownEndTimes)
+            {
+                if (pair.Value > NetworkTime.time)
+                    count++;
+            }
+
+            return count;
+        }
+    }
 
     private void Awake()
     {
@@ -47,7 +63,7 @@ public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
 
     public void Fire(TriggerCondition condition)
     {
-        if (inventory == null || buffs == null)
+        if (!isServer || inventory == null || buffs == null)
             return;
 
         if (inventory.EquipmentSystem != null)
@@ -72,8 +88,8 @@ public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
             return 0f;
 
         string key = GetCooldownKey(effect, item);
-        return lastTriggerTimes.TryGetValue(key, out float lastTime)
-            ? Mathf.Max(0f, lastTime + effect.cooldownSeconds - Time.time)
+        return cooldownEndTimes.TryGetValue(key, out double cooldownEnd)
+            ? Mathf.Max(0f, (float)(cooldownEnd - NetworkTime.time))
             : 0f;
     }
 
@@ -97,13 +113,13 @@ public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
         }
 
         string key = GetCooldownKey(effect, item);
-        if (lastTriggerTimes.TryGetValue(key, out float lastTime) &&
-            Time.time < lastTime + effect.cooldownSeconds)
+        double now = NetworkTime.time;
+        if (cooldownEndTimes.TryGetValue(key, out double cooldownEnd) && now < cooldownEnd)
         {
             return;
         }
 
-        lastTriggerTimes[key] = Time.time;
+        cooldownEndTimes[key] = now + Mathf.Max(0f, effect.cooldownSeconds);
         buffs.ApplyBuff(effect);
     }
 
@@ -113,6 +129,6 @@ public sealed class ItemTriggerManager_MirrorTest : MonoBehaviour
             ? item?.instanceId
             : null;
 
-        return effect.GetInstanceID() + ":" + (itemKey ?? "shared");
+        return effect.name + ":" + (itemKey ?? "shared");
     }
 }

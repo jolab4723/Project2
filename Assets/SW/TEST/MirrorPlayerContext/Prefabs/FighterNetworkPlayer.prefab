@@ -167,6 +167,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6253425073437732825}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3770454499868839698}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!114 &354411757978519734 stripped
 MonoBehaviour:
@@ -359,6 +362,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48cccb54a37f79d4ca8c54ab3c3fd29a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemTriggerManager_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   inventory: {fileID: 7746940822970853538}
   health: {fileID: 354411757978519734}
   buffs: {fileID: 1153837035469029928}
@@ -518,6 +524,39 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 1024
+--- !u!114 &3770454499868839698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bedf2010739ab044bcf655d4c87822c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FighterSkillAuthority_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  context: {fileID: 5412883201991654428}
+  inputHandler: {fileID: 792359749329208090}
+  combat: {fileID: 7392333230692009756}
+  controller: {fileID: 941499957347379877}
+  stateMachine: {fileID: 5869277213540180398}
+  status: {fileID: 9187465300744639497}
+  buffManager: {fileID: 1153837035469029928}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  skills:
+  - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
+  - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
+  - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
+  activeEvolutions: 010000000200000000000000
+  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
+  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
+  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
 --- !u!4 &3097475621473565046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
