@@ -47,6 +47,9 @@ internal static class MirrorLanTestBuilder
             scenes = new[] { TestScene },
             locationPathName = executablePath,
             target = BuildTarget.StandaloneWindows64,
+            // 직전에 전용 서버를 빌드했더라도 서버 하위 대상을 이어받지 않도록
+            // 화면과 입력을 사용하는 일반 Player 빌드를 명시한다.
+            subtarget = (int)StandaloneBuildSubtarget.Player,
             options = BuildOptions.Development | BuildOptions.DetailedBuildReport
         };
 

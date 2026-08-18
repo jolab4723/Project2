@@ -428,14 +428,20 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private void PlayDeathPresentationOnce()
     {
         destructionPresentationCount++;
-        PresentDeath(
-            transform.position,
-            transform.rotation,
-            transform.lossyScale,
-            lastImpactPoint,
-            lastAttackDirection,
-            lastDamage,
-            maxHealth);
+
+        // Host는 서버와 로컬 Client를 함께 가지므로 여기에서 한 번 직접 재생합니다.
+        // 화면이 없는 전용 서버는 파편 풀을 실행하지 않고 ClientRpc만 발행합니다.
+        if (NetworkClient.active)
+        {
+            PresentDeath(
+                transform.position,
+                transform.rotation,
+                transform.lossyScale,
+                lastImpactPoint,
+                lastAttackDirection,
+                lastDamage,
+                maxHealth);
+        }
 
         RpcPlayDeath(
             transform.position,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
+using UnityEngine;
 
 public sealed class MirrorTestNetworkManager : NetworkManager
 {
@@ -9,6 +10,18 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     public PlayerContext LocalPlayerContext { get; private set; }
     public event Action<PlayerContext> LocalPlayerContextChanged;
     public IReadOnlyCollection<PlayerContext> ServerPlayerContexts => serverPlayerContexts;
+
+    /// <summary>
+    /// 일반 Client/Host 빌드의 시작 방식은 그대로 유지하고, 전용 서버 빌드에서만
+    /// Mirror가 화면 없는 서버를 자동으로 시작하도록 설정합니다.
+    /// </summary>
+    public override void Start()
+    {
+#if UNITY_SERVER
+        headlessStartMode = HeadlessStartOptions.AutoStartServer;
+#endif
+        base.Start();
+    }
 
     internal void RegisterLocalPlayer(PlayerContext context)
     {
@@ -40,6 +53,24 @@ public sealed class MirrorTestNetworkManager : NetworkManager
             FindFirstObjectByType<NetworkShopState_MirrorTest>()?.ServerRefreshPartyBenefits();
     }
 
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        Debug.Log($"[MirrorTestNetworkManager] 서버 시작: UDP 포트 {GetServerPort()}");
+    }
+
+    public override void OnServerConnect(NetworkConnectionToClient connection)
+    {
+        base.OnServerConnect(connection);
+        Debug.Log($"[MirrorTestNetworkManager] Client 접속: connectionId={connection.connectionId}");
+    }
+
+    public override void OnServerDisconnect(NetworkConnectionToClient connection)
+    {
+        Debug.Log($"[MirrorTestNetworkManager] Client 접속 종료: connectionId={connection.connectionId}");
+        base.OnServerDisconnect(connection);
+    }
+
     public override void OnStopClient()
     {
         base.OnStopClient();
@@ -54,6 +85,14 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     public override void OnStopServer()
     {
         serverPlayerContexts.Clear();
+        Debug.Log("[MirrorTestNetworkManager] 서버 종료");
         base.OnStopServer();
+    }
+
+    private ushort GetServerPort()
+    {
+        return transport is PortTransport portTransport
+            ? portTransport.Port
+            : (ushort)0;
     }
 }
