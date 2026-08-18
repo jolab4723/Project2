@@ -479,6 +479,23 @@ MonoBehaviour:
     description: "\uC694\uB9AC \uB3C4\uAD6C\uC785\uB2C8\uB2E4. \uC801\uC774 \uCDA9\uBD84\uD788
       \uC775\uC5C8\uB294\uC9C0 \uB450\uB4DC\uB824 \uD655\uC778\uD560 \uB54C\uB3C4
       \uC4F8 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - itemId: item.potion.blue
+    name: "\uD30C\uB780 \uBB3C\uC57D"
+    description: "\uC774\uB3D9\uC18D\uB3C4\uB97C \uC62C\uB824\uC8FC\uB294 \uD3EC\uC158\uC785\uB2C8\uB2E4."
+  - itemId: item.potion.fire
+    name: "\uD654\uC5FC \uBB3C\uC57D"
+    description: "\uD654\uC5FC \uD53C\uD574 \uBCF4\uB108\uC2A4\uB97C 15 \uC62C\uB824\uC90D\uB2C8\uB2E4."
+  - itemId: item.potion.ice
+    name: "\uB0C9\uAE30 \uBB3C\uC57D"
+    description: "\uB0C9\uAE30 \uD53C\uD574 \uBCF4\uB108\uC2A4\uB97C 15 \uC62C\uB824\uC90D\uB2C8\uB2E4."
+  - itemId: item.potion.electric
+    name: "\uC804\uACA9 \uBB3C\uC57D"
+    description: "\uC804\uACA9 \uD53C\uD574 \uBCF4\uB108\uC2A4\uB97C 15 \uC62C\uB824\uC90D\uB2C8\uB2E4."
+  - itemId: item.relic.gravityfieldcore
+    name: "\uC911\uB825\uC7A5 \uC0DD\uC131 \uCF54\uC5B4"
+    description: "\uC8FC\uBCC0 \uACF5\uAC04\uC744 \uB4A4\uD2C0\uC5B4 \uC778\uACF5
+      \uC911\uB825\uC7A5\uC744 \uBC1C\uC0DD\uC2DC\uD0A4\uB294 \uC2E4\uD5D8\uC6A9
+      \uCF54\uC5B4\uC785\uB2C8\uB2E4."
   engLabels:
   - itemId: item.weapon.greatsword.basic
     name: Basic Greatsword
@@ -558,7 +575,7 @@ MonoBehaviour:
   - itemId: item.weapon.axe.heartofdebris
     name: Heart of Debris
     description: A legendary weapon forged from the condensed crystals of Debris-9.
-  - itemId: item.weapon.wasteheatcleaver
+  - itemId: item.weapon.greatsword.wasteheatcleaver
     name: Wasteheat Cleaver
     description: A massive blade that concentrates waste heat along its edge, allowing
       it to cut through even the toughest machinery.
@@ -861,6 +878,22 @@ MonoBehaviour:
     name: Frying Pan
     description: A cooking utensil. It also works for tapping enemies to check whether
       they're done.
+  - itemId: item.potion.blue
+    name: Blue Potion
+    description: A potion that increases movement speed.
+  - itemId: item.potion.fire
+    name: Fire Potion
+    description: Increases fire damage bonus by 15.
+  - itemId: item.potion.ice
+    name: Ice Potion
+    description: Increases ice damage bonus by 15.
+  - itemId: item.potion.electric
+    name: Electric Potion
+    description: Increases electric damage bonus by 15.
+  - itemId: item.relic.gravityfieldcore
+    name: Gravity Field Core
+    description: An experimental core that warps the surrounding space to generate
+      an artificial gravity field.
   jpnLabels:
   - itemId: item.weapon.greatsword.basic
     name: "\u57FA\u672C\u5927\u5263"
@@ -937,7 +970,7 @@ MonoBehaviour:
   - itemId: item.weapon.axe.heartofdebris
     name: "\u30C7\u30D6\u30EA\u30B9\u306E\u5FC3\u6838"
     description: "\u30C7\u30D6\u30EA\u30B99\u306E\u7D50\u6676\u3092\u51DD\u7E2E\u3057\u3066\u9020\u3089\u308C\u305F\u4F1D\u8AAC\u306E\u6B66\u5668\u3002"
-  - itemId: item.weapon.wasteheatcleaver
+  - itemId: item.weapon.greatsword.wasteheatcleaver
     name: "\u5EC3\u71B1\u65AD\u88C1\u5927\u5263"
     description: "\u5203\u306B\u5EC3\u71B1\u3092\u96C6\u4E2D\u3055\u305B\u3001\u5F37\u56FA\u306A\u6A5F\u68B0\u3059\u3089\u65AD\u3061\u5207\u308B\u5927\u5263\u3002"
   - itemId: item.weapon.axe.wildfire
@@ -1171,6 +1204,21 @@ MonoBehaviour:
   - itemId: item.weapon.blunt.fryingpan
     name: "\u30D5\u30E9\u30A4\u30D1\u30F3"
     description: "\u8ABF\u7406\u5668\u5177\u3067\u3059\u3002\u6575\u306B\u706B\u304C\u901A\u3063\u305F\u304B\u3001\u53E9\u3044\u3066\u78BA\u304B\u3081\u308B\u3053\u3068\u3082\u3067\u304D\u307E\u3059\u3002"
+  - itemId: item.potion.blue
+    name: "\u9752\u3044\u30DD\u30FC\u30B7\u30E7\u30F3"
+    description: "\u79FB\u52D5\u901F\u5EA6\u3092\u4E0A\u3052\u308B\u30DD\u30FC\u30B7\u30E7\u30F3\u3067\u3059\u3002"
+  - itemId: item.potion.fire
+    name: "\u706B\u708E\u306E\u30DD\u30FC\u30B7\u30E7\u30F3"
+    description: "\u706B\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u309215\u4E0A\u3052\u307E\u3059\u3002"
+  - itemId: item.potion.ice
+    name: "\u51B7\u6C17\u306E\u30DD\u30FC\u30B7\u30E7\u30F3"
+    description: "\u51B7\u6C17\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u309215\u4E0A\u3052\u307E\u3059\u3002"
+  - itemId: item.potion.electric
+    name: "\u96FB\u6483\u306E\u30DD\u30FC\u30B7\u30E7\u30F3"
+    description: "\u96FB\u6483\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u309215\u4E0A\u3052\u307E\u3059\u3002"
+  - itemId: item.relic.gravityfieldcore
+    name: "\u91CD\u529B\u5834\u751F\u6210\u30B3\u30A2"
+    description: "\u5468\u56F2\u306E\u7A7A\u9593\u3092\u6B6A\u3081\u3001\u4EBA\u5DE5\u91CD\u529B\u5834\u3092\u767A\u751F\u3055\u305B\u308B\u5B9F\u9A13\u7528\u30B3\u30A2\u3067\u3059\u3002"
   chnLabels:
   - itemId: item.weapon.greatsword.basic
     name: "\u57FA\u7840\u5927\u5251"
@@ -1247,7 +1295,7 @@ MonoBehaviour:
   - itemId: item.weapon.axe.heartofdebris
     name: "\u5FB7\u5E03\u91CC\u65AF\u4E4B\u5FC3"
     description: "\u63CF\u8FF0: \u7531\u5FB7\u5E03\u91CC\u65AF-9\u7684\u7ED3\u6676\u51DD\u805A\u800C\u6210\u7684\u4F20\u8BF4\u7EA7\u6B66\u5668\u3002"
-  - itemId: item.weapon.wasteheatcleaver
+  - itemId: item.weapon.greatsword.wasteheatcleaver
     name: "\u5E9F\u70ED\u65AD\u88C1\u5DE8\u5251"
     description: "\u5C06\u5E9F\u70ED\u6C47\u805A\u4E8E\u5251\u5203\u4E4B\u4E0A\uFF0C\u8FDE\u575A\u56FA\u7684\u673A\u68B0\u4E5F\u80FD\u8F7B\u6613\u65A9\u65AD\u3002"
   - itemId: item.weapon.axe.wildfire
@@ -1481,3 +1529,18 @@ MonoBehaviour:
   - itemId: item.weapon.blunt.fryingpan
     name: "\u5E73\u5E95\u9505"
     description: "\u4E00\u4EF6\u70F9\u996A\u7528\u5177\u3002\u4E5F\u53EF\u4EE5\u6572\u4E00\u6572\u654C\u4EBA\uFF0C\u786E\u8BA4\u662F\u5426\u5DF2\u7ECF\u719F\u900F\u3002"
+  - itemId: item.potion.blue
+    name: "\u84DD\u8272\u836F\u6C34"
+    description: "\u63D0\u5347\u79FB\u52A8\u901F\u5EA6\u7684\u836F\u6C34\u3002"
+  - itemId: item.potion.fire
+    name: "\u706B\u7130\u836F\u6C34"
+    description: "\u63D0\u534715\u70B9\u706B\u7130\u4F24\u5BB3\u52A0\u6210\u3002"
+  - itemId: item.potion.ice
+    name: "\u51B0\u971C\u836F\u6C34"
+    description: "\u63D0\u534715\u70B9\u51B0\u971C\u4F24\u5BB3\u52A0\u6210\u3002"
+  - itemId: item.potion.electric
+    name: "\u7535\u51FB\u836F\u6C34"
+    description: "\u63D0\u534715\u70B9\u7535\u51FB\u4F24\u5BB3\u52A0\u6210\u3002"
+  - itemId: item.relic.gravityfieldcore
+    name: "\u91CD\u529B\u573A\u751F\u6210\u6838\u5FC3"
+    description: "\u626D\u66F2\u5468\u56F4\u7A7A\u95F4\u4EE5\u4EA7\u751F\u4EBA\u5DE5\u91CD\u529B\u573A\u7684\u5B9E\u9A8C\u6027\u6838\u5FC3\u3002"
