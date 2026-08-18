@@ -115,7 +115,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
         }
     }
 
-    // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
+    // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드(현재는 화상만 있기에 result 매개변수로 Fire만 사용)
     public void TakeDamage(float damage)
     {
         if (IsDead)
@@ -127,6 +127,19 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
     }
+
+    // 자폭병 등 특수한 사망 처리.
+    //public void Kill()
+    //{
+    //    if (IsDead)
+    //        return;
+
+    //    currentHp = 0f;
+
+    //    OnHpChanged?.Invoke(currentHp, MaxHealth);
+
+    //    OnDead?.Invoke();
+    //}
 
     void Update()
     {

@@ -3465,7 +3465,7 @@ Transform:
   m_GameObject: {fileID: 4306151390367019180}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006197005, y: 0.0093165515, z: -0.007022988, w: 0.99993193}
-  m_LocalPosition: {x: 0.07309731, y: 0.16063644, z: -0.061683547}
+  m_LocalPosition: {x: 0.07309761, y: 0.1606365, z: -0.06168355}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5804,7 +5804,7 @@ Transform:
   m_GameObject: {fileID: 6319511063285921067}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.07758369, y: 0.16274357, z: -0.056084204}
+  m_LocalPosition: {x: -0.07758393, y: 0.16274357, z: -0.056084197}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7529,7 +7529,7 @@ Transform:
   m_GameObject: {fileID: 8033987866719858990}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: 0.026278257, y: 0.1612828, z: -0.09219008}
+  m_LocalPosition: {x: 0.026277838, y: 0.16128281, z: -0.09219007}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7656,7 +7656,7 @@ Transform:
   m_GameObject: {fileID: 8131167696511496113}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.031432368, y: 0.1620902, z: -0.08875212}
+  m_LocalPosition: {x: -0.03143201, y: 0.1620902, z: -0.08875212}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8411,6 +8411,8 @@ GameObject:
   - component: {fileID: 2223535990301607553}
   - component: {fileID: 2672501561618970072}
   - component: {fileID: 7905982457287239412}
+  - component: {fileID: 5706451159512571943}
+  - component: {fileID: 1008076329555474303}
   m_Layer: 15
   m_Name: Fighter _test
   m_TagString: Player
@@ -8588,6 +8590,9 @@ MonoBehaviour:
   inputBlockLayer:
     serializedVersion: 2
     m_Bits: 196640
+  worldItemLayer:
+    serializedVersion: 2
+    m_Bits: 65536
 --- !u!114 &859720171535124851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8643,16 +8648,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
-  maxHp: 5000
-  attackPower: 32
-  defensePower: 3
-  attackSpeed: 1
-  moveSpeed: 1
-  criticalChance: 1
-  criticalMultiplier: 1
-  fireBonus: 1
-  iceBonus: 1
-  electricBonus: 1
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
@@ -8804,6 +8799,41 @@ MonoBehaviour:
   leftHandContact: {fileID: 561595998067709146}
   leftHandIkTarget: {fileID: 8300197171277387021}
   leftHandIkConstraint: {fileID: 4442329938051152335}
+--- !u!114 &5706451159512571943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a8c0dfe044fa45489349ea318069733, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatusEffectController
+  statusEffectRoot: {fileID: 0}
+  effectSpawner: {fileID: 0}
+  burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
+  freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
+  electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  slowEffect: {fileID: 11400000, guid: 678a1ecf6bfb3ea4b9a5a63e743cf0bf, type: 2}
+  knockbackEffect: {fileID: 0}
+  airborneEffect: {fileID: 0}
+  stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+--- !u!114 &1008076329555474303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a1e4d6019da1e4e90402a1eb3081fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHudEventBridge
+  healthManager: {fileID: 6806792719965724779}
+  manaManager: {fileID: 6065535127318149145}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0

@@ -21,6 +21,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyPattern pattern;
     private WBH_EnemyStatusEffectController statusEffectController;
     private WBH_EnemyPoolManager poolManager; 
+    private WBHEnemyDestructionAdapter destructionAdapter;
 
     private WBH_EnemyInfo info;
 
@@ -38,6 +39,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         status = GetComponent<WBH_EnemyStatus>();
         pattern = GetComponent<WBH_EnemyPattern>();
         statusEffectController = GetComponent<WBH_EnemyStatusEffectController>();
+        destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
     }
 
     private void OnEnable()
@@ -100,6 +102,21 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         }
     }
 
+    // 스스로 데미지를 입는 특수한 사망 처리. (ex.자폭드론)
+    public void KillSelf()
+    {
+        if (isDying || status.IsDead)
+            return;
+
+        destructionAdapter?.RecordHit(transform.position, Vector3.zero);
+
+        float lethalDamage = Mathf.Max(1f, status.CurrentHp);
+
+        WBH_DamageResult result = new WBH_DamageResult(this, lethalDamage, isCritical: false, ItemSystem.ElementType.None);
+
+        status.TakeDamage(result);
+    }
+
     public void SetTarget(Transform target)
     {
         pattern.SetTarget(target);
@@ -125,10 +142,5 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         yield return new WaitForSeconds(3);
         poolManager.Return(this);
         // !@ 디졸브 효과 차후 추가 필요
-    }
-
-    public void KillSelf()
-    {
-
     }
 }
