@@ -312,6 +312,7 @@ GameObject:
   - component: {fileID: 7840020671138432021}
   - component: {fileID: 420549163450281}
   - component: {fileID: 7674870494096674304}
+  - component: {fileID: 7505980200098353255}
   m_Layer: 10
   m_Name: Normal_Range_MirrorTest
   m_TagString: Untagged
@@ -476,6 +477,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a59d7f0bc59589409838834cddaa148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
+  selfSettings:
+    startDelay: 1
+    triggerDistance: 1.25
+    fuseDuration: 2
+    explosionRadius: 3
+    damageMultiplier: 2
+    accelerationStartDistance: 8
+    maxSpeedMultiplier: 2.2
+    farBlinkInterval: 0.5
+    nearBlinkInterval: 0.08
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -1049,6 +1060,18 @@ MonoBehaviour:
   damageTextRoot: {fileID: 6949887319893321166}
   healthBarRoot: {fileID: 1459917115417315786}
   healthBarSlider: {fileID: 6356590335102948815}
+--- !u!114 &7505980200098353255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7354258622308962069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &7418149949931920296
 GameObject:
   m_ObjectHideFlags: 0
