@@ -32,13 +32,12 @@ public class WorldItemTooltipView : MonoBehaviour
             return;
         }
 
-        currentTarget = target;
-
         ItemDefinitionSO definition = item.definition;
         itemNameText.text = GetItemName(definition);
         ApplyRarityColor(definition.rarity);
 
         tooltipPanel.SetActive(true);
+        currentTarget = target;
         UpdatePosition();
     }
 
@@ -81,6 +80,13 @@ public class WorldItemTooltipView : MonoBehaviour
 
     private void UpdatePosition()
     {
+        Transform target = currentTarget;
+        if (target == null)
+        {
+            Hide();
+            return;
+        }
+
         if (worldCamera == null)
             worldCamera = Camera.main;
 
@@ -88,7 +94,7 @@ public class WorldItemTooltipView : MonoBehaviour
             return;
 
         Vector3 screenPosition = worldCamera.WorldToScreenPoint(
-            currentTarget.position + worldOffset);
+            target.position + worldOffset);
 
         if (screenPosition.z <= 0f)
         {
