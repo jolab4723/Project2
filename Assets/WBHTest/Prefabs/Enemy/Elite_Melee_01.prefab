@@ -1829,6 +1829,8 @@ GameObject:
   - component: {fileID: 120734796285309749}
   - component: {fileID: 6333269721959182114}
   - component: {fileID: 2615762037277796196}
+  - component: {fileID: 2328701373923703901}
+  - component: {fileID: 429746404433307404}
   m_Layer: 10
   m_Name: Elite_Melee_01
   m_TagString: Untagged
@@ -1993,12 +1995,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a59d7f0bc59589409838834cddaa148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
+  selfSettings:
+    startDelay: 1
+    triggerDistance: 1.25
+    fuseDuration: 2
+    explosionRadius: 3
+    damageMultiplier: 2
+    accelerationStartDistance: 8
+    maxSpeedMultiplier: 2.2
+    farBlinkInterval: 0.5
+    nearBlinkInterval: 0.08
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
   firePoint: {fileID: 6979028824434092731}
+  grenadePoint: {fileID: 0}
   meleeEffectPoint: {fileID: 0}
   normalMeleeEffect: {fileID: 0}
+  enemyAnimation: {fileID: 0}
 --- !u!114 &2251570876085871364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2116,6 +2130,30 @@ MonoBehaviour:
   effectSpawner: {fileID: 5098649128698489512}
   circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
+--- !u!114 &2328701373923703901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8343252582345304491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0bd70d3236423b4ea9e147fd316a773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyKillExpReward
+--- !u!114 &429746404433307404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8343252582345304491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &8449699787935935056
 GameObject:
   m_ObjectHideFlags: 0

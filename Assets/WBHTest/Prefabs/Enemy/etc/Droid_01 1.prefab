@@ -1539,6 +1539,9 @@ GameObject:
   - component: {fileID: 1932562817314288795}
   - component: {fileID: 5025398194320583428}
   - component: {fileID: 6453888425464919382}
+  - component: {fileID: 2818968809625392605}
+  - component: {fileID: 8988071688203156965}
+  - component: {fileID: 6980669801854298436}
   m_Layer: 10
   m_Name: Droid_01 1
   m_TagString: Untagged
@@ -1686,12 +1689,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a59d7f0bc59589409838834cddaa148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
+  selfSettings:
+    startDelay: 1
+    triggerDistance: 1.25
+    fuseDuration: 2
+    explosionRadius: 3
+    damageMultiplier: 2
+    accelerationStartDistance: 8
+    maxSpeedMultiplier: 2.2
+    farBlinkInterval: 0.5
+    nearBlinkInterval: 0.08
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
   firePoint: {fileID: 0}
+  grenadePoint: {fileID: 0}
   meleeEffectPoint: {fileID: 3207281568816389647}
   normalMeleeEffect: {fileID: 11400000, guid: 08a9d8ae06c3471458c9581cc26eb5ef, type: 2}
+  enemyAnimation: {fileID: 0}
 --- !u!114 &-5431423992665652879
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1720,6 +1735,7 @@ MonoBehaviour:
   useAttackAni: 0
   useHitAni: 0
   useDieAni: 0
+  useSkillAni: 1
 --- !u!136 &5025398194320583428
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1759,6 +1775,54 @@ MonoBehaviour:
   hpBarRoot: {fileID: 1153517598818201469}
   hpBarSlider: {fileID: 6662954695909192568}
   hpBarVisibleTime: 2
+  renderers: []
+  hitFlashDuration: 0.12
+  hitFlashIntensity: 1
+--- !u!114 &2818968809625392605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02594fae7c5d7e048b176477ec1c15f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
+  statusEffectRoot: {fileID: 0}
+  effectSpawner: {fileID: 0}
+  burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
+  freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
+  electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  slowEffect: {fileID: 11400000, guid: 678a1ecf6bfb3ea4b9a5a63e743cf0bf, type: 2}
+  knockbackEffect: {fileID: 0}
+  airborneEffect: {fileID: 0}
+  stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+--- !u!114 &8988071688203156965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0bd70d3236423b4ea9e147fd316a773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyKillExpReward
+--- !u!114 &6980669801854298436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &5851586039180471401
 GameObject:
   m_ObjectHideFlags: 0

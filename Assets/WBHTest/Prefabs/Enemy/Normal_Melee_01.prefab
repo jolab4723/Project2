@@ -1018,6 +1018,7 @@ GameObject:
   - component: {fileID: -5110046166782649534}
   - component: {fileID: 3517661445103982069}
   - component: {fileID: 4888220054464115330}
+  - component: {fileID: 54308533459198807}
   m_Layer: 10
   m_Name: Normal_Melee_01
   m_TagString: Untagged
@@ -1614,6 +1615,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0bd70d3236423b4ea9e147fd316a773, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyKillExpReward
+--- !u!114 &54308533459198807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0
@@ -2097,11 +2110,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4369432294793635458, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Direction

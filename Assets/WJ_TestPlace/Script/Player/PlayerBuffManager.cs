@@ -8,7 +8,7 @@ using ItemSystem;
 ///
 /// 실제 목록/틱/스탯 합산 로직은 BuffTracker(재사용 가능한 순수 C# 클래스)에 있고, 여기서는
 /// PlayerStatManager.Recalculate() 연동 + 멀티플레이 Instance 패턴만 얹는다 - 허수아비 등
-/// PlayerStatManager가 없는 대상은 DummyBuffManager처럼 BuffTracker를 직접 들고 쓰면 된다.
+/// PlayerStatManager가 없는 대상은 EnemyBuffManager처럼 BuffTracker를 직접 들고 쓰면 된다.
 ///
 /// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
 ///    PlayerStatManager는 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로 찾아서

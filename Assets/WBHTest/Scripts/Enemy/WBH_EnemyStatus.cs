@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
-public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
+public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
 {
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;

@@ -1024,6 +1024,7 @@ GameObject:
   - component: {fileID: 2668631643391966822}
   - component: {fileID: 7454581624532826259}
   - component: {fileID: 1704976161695319765}
+  - component: {fileID: 17425674188547550}
   m_Layer: 10
   m_Name: Normal_Melee_MirrorTest
   m_TagString: Untagged
@@ -1171,6 +1172,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a59d7f0bc59589409838834cddaa148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
+  selfSettings:
+    startDelay: 1
+    triggerDistance: 1.25
+    fuseDuration: 2
+    explosionRadius: 3
+    damageMultiplier: 2
+    accelerationStartDistance: 8
+    maxSpeedMultiplier: 2.2
+    farBlinkInterval: 0.5
+    nearBlinkInterval: 0.08
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -1623,7 +1634,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 4114823691
+  _assetId: 0
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -1761,6 +1772,18 @@ MonoBehaviour:
   damageTextRoot: {fileID: 7734316272648223314}
   healthBarRoot: {fileID: 8370071735663241610}
   healthBarSlider: {fileID: 4061675389082596751}
+--- !u!114 &17425674188547550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0
