@@ -9,6 +9,7 @@ using UnityEngine;
 public class WBH_EnemyPattern : MonoBehaviour
 {
     [System.Serializable]
+    [Tooltip("자폭 적 세팅")]
     public class SelfDestructSettings
     {
         [Min(0f)] public float startDelay = 1f; // 딜레이 이후 추격모드(반짝임 및 이동속도 증가) 돌입
@@ -27,7 +28,23 @@ public class WBH_EnemyPattern : MonoBehaviour
         [Min(0.1f)] public float nearBlinkInterval = 0.08f;
     }
 
+    [System.Serializable]
+    [Tooltip("히든 적 세팅")]
+    public class HiddenSettings
+    {
+        [Min(1f)] public float lifeTime = 60f; // 생존시간
+        [Min(1f)] public float damagedSpeedMultiplier = 1.5f; // 피격 시, 이속증가 배율
+        [Min(0.1f)] public float damagedSpeedDuration = 3f; // 피격 시, 이속증가 시간
+        [Min(0.05f)] public float repathInterval = 0.35f; // 경로 재탐색 간격
+        [Min(1f)] public float fleeDistance = 8f; // 도망 시작 거리
+        [Min(0.1f)] public float navMeshSampleRadius = 2f; 
+        [Range(1,9)] public int candidateCount = 5; // 도망 경로 후보
+        [Min(1f)] public float maxFleeAngle = 70f; // 도망 각도
+        [Min(0f)] public float initialDirectionWeight = 5f; // 방향 가중치
+    }
+
     [SerializeField] private SelfDestructSettings explodeSettings = new SelfDestructSettings();
+    [SerializeField] private HiddenSettings hiddenSettings = new HiddenSettings();
 
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
@@ -61,6 +78,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
+    public WBH_EnemyStatus Status => status;
     public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;
@@ -72,6 +90,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
     public SelfDestructSettings SelfDestructConfig => explodeSettings;
+    public HiddenSettings HiddenConfig => hiddenSettings;
     public WBH_EnemyView EnemyView => view;
     public float CurrentMoveSpeed => status.MoveSpeed;
 

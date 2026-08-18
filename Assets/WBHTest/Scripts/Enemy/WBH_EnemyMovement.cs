@@ -21,6 +21,8 @@ public class WBH_EnemyMovement : MonoBehaviour
     public event Action OnDashUpdate;
 
     public bool CanControl => canControl;
+    private int AreaMask => agent.areaMask;
+
 
     private void Awake()
     {
@@ -166,5 +168,17 @@ public class WBH_EnemyMovement : MonoBehaviour
         SetControlEnable(true);
 
         onCompleted?.Invoke();
+    }
+
+    // destination 까지 navMesh 경로가 있는지 체크
+    public bool TryCalculatePath(Vector3 destination, NavMeshPath path)
+    {
+        if(!agent.enabled || !agent.isOnNavMesh)
+            return false;
+
+        if (!agent.CalculatePath(destination, path))
+            return false;
+
+        return path.status == NavMeshPathStatus.PathComplete;
     }
 }
