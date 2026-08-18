@@ -6,22 +6,23 @@ public class WBH_IndicatorSpawner : MonoBehaviour
     [SerializeField] private WBH_EffectData circleIndicator;
     [SerializeField] private WBH_EffectData rectIndicator;
 
-    public void ShowCircle(Vector3 pos, float radius, float duration, bool growOverTime)
+    public WBH_Effect ShowCircle(Vector3 pos, float radius, float duration, bool growOverTime)
     {
         WBH_Effect effect = Spawn(circleIndicator, pos, Quaternion.identity);
 
         if (effect == null)
-            return;
+            return null;
 
         if(!effect.TryGetComponent<WBH_IndicatorView>(out WBH_IndicatorView view))
         {
             Log.Warning($"{circleIndicator.name}: WBH_IndicatorView가 없습니다.");
 
             effect.StopEffect();
-            return;
+            return null;
         }
 
         view.PlayCircle(radius, duration, growOverTime);
+        return effect;
     }
 
     public void ShowRect(Vector3 origin, Vector3 forward, float width, float length, float duration, bool growOverTime = false)
