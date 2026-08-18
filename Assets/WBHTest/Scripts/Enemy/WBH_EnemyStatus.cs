@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyMovement))]
-public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
+public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
 {
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;
@@ -162,7 +162,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus
         currentIceBonus = Combine(iceBonus, buffStatSet.iceBonusFlat, buffStatSet.iceBonusPercent);
         currentElectricBonus = Combine(electricBonus, buffStatSet.electricBonusFlat, buffStatSet.electricBonusPercent);
 
-        movement.SetMoveSpeed(currentMoveSpeed);
+        movement?.SetMoveSpeed(currentMoveSpeed);
     }
 
     /// <summary>아이템 고유효과/스킬 등 버프-디버프 시스템(BuffTracker 기반)이 계산한 합산 스탯을 반영한다.

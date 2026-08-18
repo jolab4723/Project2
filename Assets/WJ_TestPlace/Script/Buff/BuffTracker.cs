@@ -7,7 +7,7 @@ namespace ItemSystem
     /// PlayerBuffManager가 원래 직접 들고 있던 "버프 목록 적용/제거/틱/스탯 합산" 로직을 재사용
     /// 가능한 순수 C# 클래스로 뽑아낸 것. PlayerBuffManager는 이 클래스를 내부에 들고 쓰면서
     /// 버프가 바뀔 때마다 PlayerStatManager.Recalculate()를 추가로 호출하고, 허수아비처럼
-    /// PlayerStatManager가 없는 대상은 DummyBuffManager처럼 이 클래스를 직접 들고 쓰면 된다.
+    /// PlayerStatManager가 없는 대상은 EnemyBuffManager처럼 이 클래스를 직접 들고 쓰면 된다.
     ///
     /// MonoBehaviour가 아니라서 Update()를 직접 안 받는다 - 소유자(MonoBehaviour)가 매 프레임
     /// Tick(Time.deltaTime)을 불러줘야 한다.
