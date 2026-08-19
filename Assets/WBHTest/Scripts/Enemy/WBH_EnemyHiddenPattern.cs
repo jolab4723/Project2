@@ -12,7 +12,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
     private float nextRepathTime;
     private float speedBoostEndTime;
 
-    private bool droppedNarmal;
+    private bool droppedNormal;
     private bool droppedAdvanced;
     private bool droppedElite;
 
@@ -26,7 +26,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         nextRepathTime = 0f;
         speedBoostEndTime = 0f;
 
-        droppedNarmal = false;
+        droppedNormal = false;
         droppedAdvanced = false;
         droppedElite = false;
 
@@ -40,7 +40,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
     {
         if(Time.time >= despawnTime)
         {
-            //owner.Despawn(); !@
+            owner.Despawn();
             return;
         }
 
@@ -51,16 +51,12 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
 
         nextRepathTime = Time.time + settings.repathInterval;
 
-        //owner.TryS(); !@
+        owner.TrySelectNearTarget();
 
-        //TryS(); !@
+        TrySelectFleeDestination();
     }
-
-    private void HandleDamaged(WBH_DamageResult result)
-    {
-        speedBoostEndTime = Time.time + settings.damagedSpeedDuration;
-    }
-
+    
+    // 피격 시 이속증가
     private void UpdateMoveSpeed()
     {
         bool isBoosted = Time.time < speedBoostEndTime;
@@ -70,6 +66,13 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         owner.Movement.SetMoveSpeed(owner.CurrentMoveSpeed * multiplier);
     }
 
+    // 이속증가 중 피격 시 효과 연장
+    private void HandleDamaged(WBH_DamageResult result)
+    {
+        speedBoostEndTime = Time.time + settings.damagedSpeedDuration;
+    }
+
+    // Hp 비율에 따라 아이템 드랍. 추후 골드 추가 예정. !@
     private void HandleHpChanged(float currentHp, float maxHp)
     {
         if (maxHp <= 0f)
@@ -78,9 +81,9 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         float ratio = currentHp / maxHp;
         Vector3 dropPos = owner.transform.position;
 
-        if(!droppedNarmal && ratio <= 0.6f)
+        if(!droppedNormal && ratio <= 0.6f)
         {
-            droppedNarmal = true;
+            droppedNormal = true;
             DropItem(EnemyGrade.Normal, dropPos);
         }
 
@@ -108,6 +111,8 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         Core.ItemManager.Instance.DropRandomItem(grade, position);
     }
 
+    // 타겟 회피 방식.
+    // 가장 가까운 플레이어 선택 > 반대방향 위주로 부채꼴 후보 지점 생성 > NavMesh 가능여부 판단 > 플레이어로부터 멀고 첫 이동방향이 플레이어 방향이 아닌 후보 지점으로 이동 > repathInterval 마다 경로 재탐색
     private void TrySelectFleeDestination()
     {
         Transform target = owner.Target;
@@ -116,16 +121,89 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
             return;
 
         Vector3 origin = owner.transform.position;
-        Vector3 awayDirection = origin - target.position;
-        awayDirection.y = 0f;
+        Vector3 awayDir = origin - target.position;
+        awayDir.y = 0f;
 
-        if(awayDirection.sqrMagnitude < 0.001f)
+        if(awayDir.sqrMagnitude < 0.001f)
         {
-            awayDirection = owner.transform.forward;
+            awayDir = owner.transform.forward;
         }
 
-        awayDirection.Normalize();
+        awayDir.Normalize();
 
         int candidateCount = Mathf.Max(1, settings.candidateCount);
+
+        float bestScore = float.NegativeInfinity;
+
+        Vector3 bestDestination = default;
+        bool foundDestination = false;
+
+        for(int i = 0; i < candidateCount; i++)
+        {
+            float ratio = candidateCount == 1 ? 0.5f : i / (candidateCount - 1f);
+
+            float angle = Mathf.Lerp(-settings.maxFleeAngle, settings.maxFleeAngle, ratio);
+
+            Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * awayDir;
+
+            Vector3 candidate = origin + dir * settings.fleeDistance;
+
+            if (!NavMesh.SamplePosition(candidate, out NavMeshHit hit, settings.navMeshSampleRadius, owner.Movement.AreaMask))
+                continue;
+            if (!owner.Movement.TryCalculatePath(hit.position, fleePath))
+                continue;
+
+            float score = CalculateCandidateScore(origin,target.position, awayDir, hit.position,fleePath);
+
+            if (score <= bestScore)
+                continue;
+
+            bestScore = score;
+            bestDestination = hit.position;
+            foundDestination = true;
+        }
+
+        if(foundDestination)
+        {
+            owner.Movement.Move(bestDestination);
+        }
+    }
+
+    // 후보경로가 타겟과 멀더라도 첫번째 방향전환이 타겟쪽으로 꺾이는 후보경로가 있을 수 있기에 가중치 줘서 점수를 낮춤
+    private float CalculateCandidateScore(Vector3 origin, Vector3 targetPos, Vector3 awayDir, Vector3 candidate, NavMeshPath path)
+    {
+        float targetDistanceScore = (candidate - targetPos).sqrMagnitude;
+
+        float firstDirScore = 0f;
+
+        if(path.corners.Length >= 2)
+        {
+            Vector3 firstDir = path.corners[1] - origin; // 첫 번째 코너지점 - 현재 위치
+
+            firstDir.y = 0f;
+
+            if(firstDir.sqrMagnitude > 0.001f)
+            {
+                firstDir.Normalize();
+
+                firstDirScore = Vector3.Dot(firstDir, awayDir) * settings.initialDirectionWeight;
+            }
+        }
+
+        return targetDistanceScore + firstDirScore;
+    }
+
+    public void Cleanup()
+    {
+        if (owner == null)
+            return;
+
+        if(owner.Status != null)
+        {
+            owner.Status.OnDamaged -= HandleDamaged;
+            owner.Status.OnHpChanged -= HandleHpChanged;
+        }
+
+        owner.Movement.SetMoveSpeed(owner.CurrentMoveSpeed);
     }
 }

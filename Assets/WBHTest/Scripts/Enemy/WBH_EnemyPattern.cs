@@ -39,7 +39,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         [Min(1f)] public float fleeDistance = 8f; // 도망 시작 거리
         [Min(0.1f)] public float navMeshSampleRadius = 2f; 
         [Range(1,9)] public int candidateCount = 5; // 도망 경로 후보
-        [Min(1f)] public float maxFleeAngle = 70f; // 도망 각도
+        [Range(0f, 180f)] public float maxFleeAngle = 70f; // 도망 경로 탐색 각도
         [Min(0f)] public float initialDirectionWeight = 5f; // 방향 가중치
     }
 
@@ -108,8 +108,9 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void Initialize(WBH_EnemyController controller)
     {
-        this.controller = controller;
+        CleanCurrentPattern();
 
+        this.controller = controller;
         CreatePattern();
     }
 
@@ -147,6 +148,32 @@ public class WBH_EnemyPattern : MonoBehaviour
     private void OnDisable()
     {
         CleanCurrentPattern();
+    }
+
+    // patternID 혹은 EnemyType에 따라 고유패턴 실행 (normal, advanced 는 영향 X)
+    private void CreatePattern()
+    {
+        if (controller.Info.enemyType == EnemyType.SelfDestruct)
+        {
+            currentPattern = new WBH_EnemySelfDestructPattern();
+        }
+        else if(controller.Info.enemyType == EnemyType.Hidden)
+        {
+            currentPattern = new WBH_EnemyHiddenPattern();
+        }
+        else
+        {
+            switch (controller.Info.patternID)
+            {
+                case 1: // 엘리트 근접
+                    currentPattern = new WBH_EnemyElitePattern();
+                    break;
+                case 10: // 액트1 보스
+                    currentPattern = new WBH_EnemyBossPattern_Act1();
+                    break;
+            }
+        }
+        currentPattern?.Initialize(this);
     }
 
     protected virtual void UpdateMove(float distance)
@@ -296,6 +323,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         waitingForTarget = false;
     }
 
+    // 타겟 유효성 검사
     private bool IsTargetValid()
     {
         if(target == null)
@@ -306,6 +334,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         return target.TryGetComponent<T_PlayerController>(out T_PlayerController player) && player.isActiveAndEnabled;
     }
 
+    // 타겟 비유효 시, 근접한 다른 플레이어로 재설정.
     private bool EnsureTarget()
     {
         if(IsTargetValid())
@@ -348,26 +377,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         return false;
     }
 
-    private void CreatePattern()
-    {
-        if(controller.Info.enemyType == EnemyType.SelfDestruct)
-        {
-            currentPattern = new WBH_EnemySelfDestructPattern();
-        }
-        else
-        {
-            switch(controller.Info.patternID)
-            {
-                case 1:
-                    currentPattern = new WBH_EnemyElitePattern();
-                    break;
-                case 10:
-                    currentPattern = new WBH_EnemyBossPattern_Act1();
-                    break;
-            }
-        }
-        currentPattern?.Initialize(this);
-    }
+    
 
     // 랜덤 타겟 선택
     public bool TrySelectAnotherActivePlayer()
@@ -427,6 +437,34 @@ public class WBH_EnemyPattern : MonoBehaviour
         return true;
     }
 
+    // 가장 가까운 타겟 선택. 가까운 타겟이기에 TrySelectFarTarget 과 달리 유효거리를 매개변수로 받지 않음
+    public bool TrySelectNearTarget()
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform near = null;
+        float nearSqrDistance = float.MaxValue;
+
+        foreach (T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float sqrDistance = (player.transform.position - transform.position).sqrMagnitude;
+
+            if (sqrDistance >= nearSqrDistance)
+                continue;
+
+            nearSqrDistance = sqrDistance;
+            near = player.transform;
+        }
+        if (near == null)
+            return false;
+
+        SetTarget(near);
+        return true;
+    }
+
     public void KillSelf()
     {
         controller.KillSelf();
@@ -434,9 +472,23 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     private void CleanCurrentPattern()
     {
-        if(currentPattern is WBH_EnemySelfDestructPattern selfDestruct)
+        WBH_IEnemyPattern pattern = currentPattern;
+        currentPattern = null;
+
+        if(pattern is WBH_EnemySelfDestructPattern selfDestruct)
         {
             selfDestruct.Cancel();
         }
+        if(pattern is WBH_EnemyHiddenPattern hidden)
+        {
+            hidden.Cleanup();
+        }
+
+    }
+
+    // WBH_EnemyController.cs 의 DeSpawn 메서드를 WBH_IEnemyPattern 상속자들에게 전달
+    public void Despawn()
+    {
+        controller.Despawn();
     }
 }

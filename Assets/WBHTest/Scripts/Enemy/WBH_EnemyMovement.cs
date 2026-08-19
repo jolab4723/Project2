@@ -21,7 +21,7 @@ public class WBH_EnemyMovement : MonoBehaviour
     public event Action OnDashUpdate;
 
     public bool CanControl => canControl;
-    private int AreaMask => agent.areaMask;
+    public int AreaMask => agent.areaMask;
 
 
     private void Awake()
@@ -34,7 +34,12 @@ public class WBH_EnemyMovement : MonoBehaviour
     public void Initialize(WBH_EnemyInfo info)
     {
         agent ??= GetComponent<NavMeshAgent>();
+
+        canControl = true;
         agent.speed = info.moveSpeed;
+        agent.isStopped = false;
+
+        lastDestination = Vector3.zero;
     }
 
     // 목적지 이동
