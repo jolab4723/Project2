@@ -143,7 +143,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
-    // 보스 전용 사망연출. 사망 후 n초 뒤에 디졸브 걸고 사라짐.
+    // 보스 전용 사망연출(애니메이션 이벤트). 사망 후 n초 뒤에 디졸브 걸고 사라짐.
     public void OnDeathAnimationEnd()
     {
         if (!isDying)
