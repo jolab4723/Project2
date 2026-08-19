@@ -78,7 +78,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         if(currentWave >= waves.Length)
         {
             stageClear = true;
-            //portalActive.Active(true);
+            portalActive.Active(true);
             Log.Print("Stage Clear");
             return;
         }

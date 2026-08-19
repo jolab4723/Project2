@@ -519,13 +519,14 @@ GameObject:
   - component: {fileID: 7227819333306006560}
   - component: {fileID: -708020436224185504}
   - component: {fileID: -5426887194382989782}
+  - component: {fileID: 9072509643429721745}
   m_Layer: 10
   m_Name: Normal_Exploded_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8514186907447221161
 Transform:
   m_ObjectHideFlags: 0
@@ -715,6 +716,16 @@ MonoBehaviour:
     maxSpeedMultiplier: 2.2
     farBlinkInterval: 0.5
     nearBlinkInterval: 0.08
+  hiddenSettings:
+    lifeTime: 60
+    damagedSpeedMultiplier: 1.5
+    damagedSpeedDuration: 3
+    repathInterval: 0.35
+    fleeDistance: 8
+    navMeshSampleRadius: 2
+    candidateCount: 5
+    maxFleeAngle: 70
+    initialDirectionWeight: 5
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -1129,6 +1140,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBHEnemyDestructionAdapter
   targetCollider: {fileID: 8481830399793975359}
+--- !u!114 &9072509643429721745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3741057144801147515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
 --- !u!1 &5229987633369615628
 GameObject:
   m_ObjectHideFlags: 0
@@ -1610,11 +1633,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8130924080246504071, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Name
