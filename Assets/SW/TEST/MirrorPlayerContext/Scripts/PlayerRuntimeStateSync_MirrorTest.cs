@@ -734,6 +734,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         private readonly bool isPermanent;
 
         public string BuffDisplayName => displayName;
+        public string BuffDescription => string.Empty;
         public Sprite BuffIcon => null;
         public FixedStatValue[] StatEffects => statEffects;
         public float Duration => duration;

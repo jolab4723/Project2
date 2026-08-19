@@ -11,7 +11,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     [System.Serializable]
     public class SelfDestructSettings
     {
-        [Min(0f)] public float startDelay = 1f;
+        [Min(0f)] public float startDelay = 1f; // 딜레이 이후 추격모드(반짝임 및 이동속도 증가) 돌입
         [Tooltip("자폭 시퀀스 시작 거리")]
         [Min(0.1f)] public float triggerDistance = 1.25f;
         
@@ -27,7 +27,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         [Min(0.1f)] public float nearBlinkInterval = 0.08f;
     }
 
-    [SerializeField] private SelfDestructSettings selfSettings = new SelfDestructSettings();
+    [SerializeField] private SelfDestructSettings explodeSettings = new SelfDestructSettings();
 
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
@@ -71,7 +71,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     public float DashHitRadius => dashHitRadius;
 
     public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
-    public SelfDestructSettings SelfDestructConfig => selfSettings;
+    public SelfDestructSettings SelfDestructConfig => explodeSettings;
     public WBH_EnemyView EnemyView => view;
     public float CurrentMoveSpeed => status.MoveSpeed;
 
@@ -123,6 +123,11 @@ public class WBH_EnemyPattern : MonoBehaviour
             UpdateFacing(Distance, Time.deltaTime);
             UpdateAttack(Distance);
         }
+    }
+
+    private void OnDisable()
+    {
+        CleanCurrentPattern();
     }
 
     protected virtual void UpdateMove(float distance)
@@ -177,6 +182,8 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void Die()
     {
+        CleanCurrentPattern();
+
         movement.Stop();
         enemyAnimation.PlayDie();
         enabled = false;
@@ -324,14 +331,21 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     private void CreatePattern()
     {
-        switch(controller.Info.patternID)
+        if(controller.Info.enemyType == EnemyType.SelfDestruct)
         {
-            case 1:
-                currentPattern = new WBH_EnemyElitePattern();
-                break;
-            case 10:
-                currentPattern = new WBH_EnemyBossPattern_Act1();
-                break;
+            currentPattern = new WBH_EnemySelfDestructPattern();
+        }
+        else
+        {
+            switch(controller.Info.patternID)
+            {
+                case 1:
+                    currentPattern = new WBH_EnemyElitePattern();
+                    break;
+                case 10:
+                    currentPattern = new WBH_EnemyBossPattern_Act1();
+                    break;
+            }
         }
         currentPattern?.Initialize(this);
     }
@@ -397,5 +411,13 @@ public class WBH_EnemyPattern : MonoBehaviour
     public void KillSelf()
     {
         controller.KillSelf();
+    }
+
+    private void CleanCurrentPattern()
+    {
+        if(currentPattern is WBH_EnemySelfDestructPattern selfDestruct)
+        {
+            selfDestruct.Cancel();
+        }
     }
 }

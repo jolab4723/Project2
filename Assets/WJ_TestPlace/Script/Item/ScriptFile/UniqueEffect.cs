@@ -51,6 +51,9 @@ namespace ItemSystem
 
         public string EffectDescription => FormatDescription(effectDescription, coefficients, name);
 
+        /// <summary>IBuffSource를 구현하는 서브클래스(FieldAura 등)가 버프 툴팁에 쓸 설명. EffectDescription을 그대로 재사용한다.</summary>
+        public string BuffDescription => EffectDescription;
+
         /// <summary>
         /// 설명 템플릿의 {0}, {1}... 자리에 coefficients 값을 대입한다.
         /// UniqueEffectLabelDatabaseSO도 언어별 번역 템플릿에 같은 coefficients를 대입할 때 이 메서드를 그대로 쓴다
