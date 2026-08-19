@@ -694,7 +694,7 @@ MonoBehaviour:
     farBlinkInterval: 0.5
     nearBlinkInterval: 0.08
   hiddenSettings:
-    lifeTime: 60
+    lifeTime: 5
     damagedSpeedMultiplier: 1.5
     damagedSpeedDuration: 3
     repathInterval: 0.35
@@ -703,6 +703,7 @@ MonoBehaviour:
     candidateCount: 5
     maxFleeAngle: 70
     initialDirectionWeight: 5
+    despawnEffect: {fileID: 11400000, guid: 58d4c7d169120d545b70b188306b83f6, type: 2}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -787,7 +788,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 446203d7d0e89a440a4034c8ad72bb1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDestructionLink
-  destructionVisualPrefab: {fileID: 0}
+  destructionVisualPrefab: {fileID: 2461794562374318447, guid: 4b6b2869161c5da47930e4e07bec2cef, type: 3}
   baseDirectionalForce: 3
 --- !u!114 &7100457008379590137
 MonoBehaviour:
