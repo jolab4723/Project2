@@ -8,6 +8,8 @@ using UnityEngine.UI;
 /// 그대로 사용하는 PlayerContext 전용 복제본이다.
 /// <para>원본과의 차이는 <c>PlayerStatManager.Instance</c>를 찾지 않고
 /// <see cref="Bind"/>로 받은 로컬 플레이어의 Stat만 구독한다는 점이다.</para>
+/// <para>Mirror Scene 전환 중 파괴된 Popup 콜백이 남지 않도록 활성 상태에서만 구독하고,
+/// 실제로 구독한 PlayerStat 인스턴스를 따로 기억해 정확히 해제한다.</para>
 /// <para>팀원 원본 스크립트와 원본 Scene은 수정하지 않으며, MergeTest 스탯창 복제 프리팹에서만 사용한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -40,6 +42,7 @@ public sealed class KY_StatusPopup_MirrorTest : KY_PopupBase
 
     private KY_StatData currentData;
     private PlayerStatManager stats;
+    private PlayerStat subscribedStat;
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect curtainEffect;
     private bool isDetailed;
@@ -51,6 +54,16 @@ public sealed class KY_StatusPopup_MirrorTest : KY_PopupBase
     private void Awake()
     {
         EnsureInitialized();
+    }
+
+    private void OnEnable()
+    {
+        Subscribe();
+    }
+
+    private void OnDisable()
+    {
+        Unsubscribe();
     }
 
     private void OnDestroy()
@@ -72,7 +85,8 @@ public sealed class KY_StatusPopup_MirrorTest : KY_PopupBase
 
         Unsubscribe();
         stats = target;
-        Subscribe();
+        if (isActiveAndEnabled)
+            Subscribe();
 
         if (IsOpen)
             RefreshData();
@@ -143,14 +157,22 @@ public sealed class KY_StatusPopup_MirrorTest : KY_PopupBase
 
     private void Subscribe()
     {
-        if (stats?.Stat != null)
-            stats.Stat.OnStatChanged += HandleStatChanged;
+        PlayerStat targetStat = stats != null ? stats.Stat : null;
+        if (targetStat == null || subscribedStat == targetStat)
+            return;
+
+        Unsubscribe();
+        subscribedStat = targetStat;
+        subscribedStat.OnStatChanged += HandleStatChanged;
     }
 
     private void Unsubscribe()
     {
-        if (stats?.Stat != null)
-            stats.Stat.OnStatChanged -= HandleStatChanged;
+        if (subscribedStat == null)
+            return;
+
+        subscribedStat.OnStatChanged -= HandleStatChanged;
+        subscribedStat = null;
     }
 
     private void HandleStatChanged()

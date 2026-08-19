@@ -43,6 +43,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private void OnEnable()
     {
+#if UNITY_SERVER
+        // 전용 서버는 장비 상태만 처리하며 렌더링용 Addressables 무기 외형을 생성하지 않습니다.
+        enabled = false;
+#else
         if (equipmentSystem == null)
         {
             ShowDefaultVisual();
@@ -51,6 +55,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
         equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         RefreshFromEquipment();
+#endif
     }
 
     private void OnDisable()

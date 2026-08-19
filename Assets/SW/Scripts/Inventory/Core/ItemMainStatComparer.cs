@@ -68,6 +68,11 @@ public sealed class ItemMainStatComparisonResult
 /// - 플레이어 최종 스탯 계산 공식
 /// - UI 문자열 생성
 /// - 색상 결정
+///
+/// Mirror/PlayerContext 경계:
+/// 비교 대상 장비를 찾은 바로 그 <c>EquipmentSystem</c>을 계산에도 사용한다.
+/// <c>PlayerStatManager</c> 안에 직렬화된 별도 장비 Provider를 다시 찾지 않으므로,
+/// 다른 플레이어 또는 예전 Scene 참조가 섞여 후보와 현재값이 항상 같아지는 문제를 막는다.
 /// </summary>
 public static class ItemMainStatComparer
 {
@@ -87,16 +92,25 @@ public static class ItemMainStatComparer
         ItemInstance equippedItem,
         EquipSlotType comparisonSlot,
         PlayerStatManager playerStatManager,
+        EquipmentSystem equipmentSystem,
         out ItemMainStatComparisonResult result)
     {
         result = null;
 
-        if (!IsValid(candidateItem) || !IsValid(equippedItem) || playerStatManager == null)
+        if (!IsValid(candidateItem) ||
+            !IsValid(equippedItem) ||
+            playerStatManager == null ||
+            playerStatManager.Stat == null ||
+            equipmentSystem == null)
+        {
             return false;
+        }
 
-        if (!playerStatManager.TryCalculateStatsAfterReplacing(
+        if (!TryCalculateStatsAfterReplacing(
+                equipmentSystem,
                 comparisonSlot,
                 candidateItem,
+                playerStatManager,
                 out PlayerStat currentStats,
                 out PlayerStat candidateStats))
         {
@@ -161,6 +175,84 @@ public static class ItemMainStatComparer
                 new[] { row });
 
         return true;
+    }
+
+    /// <summary>
+    /// 전달받은 플레이어의 실제 장비 컬렉션으로 현재 구성과 교체 후 구성을 만든다.
+    /// 계산 중 장착 상태나 아이템 인스턴스를 변경하지 않으며, 캐릭터·버프·패시브 레이어는
+    /// 같은 <c>PlayerStatManager</c>에서 한 번만 읽어 두 비교에 똑같이 적용한다.
+    /// </summary>
+    private static bool TryCalculateStatsAfterReplacing(
+        EquipmentSystem equipmentSystem,
+        EquipSlotType replacingSlot,
+        ItemInstance candidateItem,
+        PlayerStatManager playerStatManager,
+        out PlayerStat currentStats,
+        out PlayerStat candidateStats)
+    {
+        currentStats = null;
+        candidateStats = null;
+
+        if (!EquipSlotRules.CanEquipTo(candidateItem.definition, replacingSlot))
+            return false;
+
+        StatSet currentEquipment = StatSet.Zero;
+        StatSet candidateEquipment = StatSet.Zero;
+
+        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair
+                 in equipmentSystem.GetEquippedItems())
+        {
+            EquipSlotType slot = pair.Key;
+            ItemInstance item = pair.Value?.itemData;
+
+            if (slot == EquipSlotType.Potion || !IsValid(item))
+                continue;
+
+            StatSet itemStats = ToStatSet(item);
+            currentEquipment += itemStats;
+
+            if (slot != replacingSlot)
+                candidateEquipment += itemStats;
+        }
+
+        candidateEquipment += ToStatSet(candidateItem);
+
+        playerStatManager.GetLayerStatSets(
+            out StatSet character,
+            out _,
+            out StatSet buff,
+            out StatSet passive);
+
+        int level = playerStatManager.Stat.currentLevel;
+        float exp = playerStatManager.Stat.currentExp;
+        currentStats = new PlayerStat(level, exp);
+        candidateStats = new PlayerStat(level, exp);
+        currentStats.Recalculate(character, currentEquipment, buff, passive);
+        candidateStats.Recalculate(character, candidateEquipment, buff, passive);
+        return true;
+    }
+
+    /// <summary>
+    /// 장비 한 개의 강화 적용 메인 옵션과 생성된 부가 옵션을 비교용 StatSet으로 합산한다.
+    /// 원본 <c>PlayerEquipManager</c>의 합산 규칙과 동일하되, 전달받은 PlayerContext 장비만 읽는다.
+    /// </summary>
+    private static StatSet ToStatSet(ItemInstance item)
+    {
+        StatSet result = StatSet.Zero;
+
+        foreach (RolledSubStat option in item.GetEffectiveMainOptions())
+        {
+            if (option != null)
+                StatSetMapper.AddStat(ref result, option.statType, option.value);
+        }
+
+        foreach (RolledSubStat subStat in item.rolledSubStats)
+        {
+            if (subStat != null)
+                StatSetMapper.AddStat(ref result, subStat.statType, subStat.value);
+        }
+
+        return result;
     }
 
     /// <summary>

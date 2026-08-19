@@ -69,17 +69,30 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (networkManager != null)
             networkManager.LocalPlayerContextChanged -= HandleLocalPlayerChanged;
 
-        boundShopState?.UnbindLocalView(boundContext);
+        // UnityEngine.Object는 파괴된 뒤 C# 참조가 남아 있어도 `obj != null` 비교에서는 null로 취급된다.
+        // 반면 null 조건 연산자(`?.`)는 Unity의 이 판정을 거치지 않아 Scene 전환 중 파괴된 HUD를
+        // 다시 호출할 수 있으므로, 해제 경계에서는 명시적인 Unity null 검사를 사용한다.
+        if (boundShopState != null)
+            boundShopState.UnbindLocalView(boundContext);
         boundShopState = null;
-        boundInventorySync?.UnbindLocalInventoryView(inventoryView);
+        if (boundInventorySync != null)
+            boundInventorySync.UnbindLocalInventoryView(inventoryView);
         boundInventorySync = null;
-        inventoryView?.Unbind();
-        upgradeButton?.Unbind();
-        playerHud?.Unbind();
-        formalHudBridge?.Unbind();
-        statusPopup?.Unbind();
-        statusPopup?.CloseImmediate();
-        worldItemScanner?.BindPlayer(null);
+        if (inventoryView != null)
+            inventoryView.Unbind();
+        if (upgradeButton != null)
+            upgradeButton.Unbind();
+        if (playerHud != null)
+            playerHud.Unbind();
+        if (formalHudBridge != null)
+            formalHudBridge.Unbind();
+        if (statusPopup != null)
+        {
+            statusPopup.Unbind();
+            statusPopup.CloseImmediate();
+        }
+        if (worldItemScanner != null)
+            worldItemScanner.BindPlayer(null);
         boundContext = null;
     }
 

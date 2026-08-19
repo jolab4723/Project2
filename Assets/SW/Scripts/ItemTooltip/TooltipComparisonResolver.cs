@@ -57,6 +57,7 @@ public static class TooltipComparisonResolver
                 equippedItem,
                 comparisonSlot,
                 playerStatManager,
+                equipmentSystem,
                 out comparisonResult))
         {
             comparisonResult = null;
