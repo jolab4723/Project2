@@ -7,21 +7,31 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Mirror 전투 통합 테스트 Scene 하나만 Windows 또는 Linux 전용 서버로 빌드합니다.
+/// 6-C 테스트 전용 선택·Camp·Stage1 Scene을 Windows 또는 Linux 전용 서버로 빌드합니다.
 /// 팀 공용 Build Settings와 운영 Scene은 변경하지 않습니다.
 /// </summary>
 internal static class MirrorDedicatedServerBuilder
 {
-    private const string TestScene =
-        "Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage1_MirrorCombatTest.unity";
+    private const string AddressablesBuildWithPlayerPreferenceKey =
+        "Addressables.BuildAddressablesWithPlayerBuild";
+    private static readonly string[] TestScenes =
+    {
+        MirrorTestNetworkManager.SessionCampScene,
+        MirrorTestNetworkManager.SessionCampGameplayScene,
+        MirrorTestNetworkManager.SessionCombatScene,
+    };
     private const string WindowsBuildDirectory = "Builds/MirrorDedicatedServer";
     private const string WindowsExecutableName = "MirrorDedicatedServer.exe";
     private const string WindowsLaunchFileName = "전용서버_실행.bat";
+    private const string WindowsGuideFileName = "전용서버_테스트_안내.txt";
     private const string LinuxBuildDirectory = "Builds/MirrorDedicatedServerLinux";
     private const string LinuxArchivePath = "Builds/MirrorDedicatedServerLinux.zip";
     private const string LinuxExecutableName = "MirrorDedicatedServer.x86_64";
-    private const string LinuxLaunchFileName = "전용서버_실행.sh";
-    private const string GuideFileName = "전용서버_테스트_안내.txt";
+    private const string LinuxLaunchFileName = "run_server.sh";
+    private const string LinuxGuideFileName = "server_test_guide_ko.txt";
+    private const string LegacyEmbeddedLinuxArchiveFileName = "MirrorDedicatedServerLinux.zip";
+    private const string LegacyLinuxLaunchFileName = "전용서버_실행.sh";
+    private const string LegacyLinuxGuideFileName = "전용서버_테스트_안내.txt";
 
     [MenuItem("SW/Mirror 테스트/Windows 전용 서버 빌드")]
     private static void BuildWindowsDedicatedServer()
@@ -46,7 +56,7 @@ internal static class MirrorDedicatedServerBuilder
     }
 
     /// <summary>
-    /// 선택한 운영체제의 전용 서버를 동일한 테스트 Scene과 설정으로 빌드합니다.
+    /// 선택한 운영체제의 전용 서버를 동일한 선택→Camp/Stage1 테스트 Scene과 설정으로 빌드합니다.
     /// </summary>
     private static void BuildDedicatedServer(
         BuildTarget target,
@@ -67,10 +77,13 @@ internal static class MirrorDedicatedServerBuilder
             return;
         }
 
-        if (!File.Exists(ToProjectPath(TestScene)))
+        foreach (string scene in TestScenes)
         {
-            Debug.LogError($"[MirrorDedicatedServerBuilder] 테스트 Scene을 찾을 수 없습니다: {TestScene}");
-            return;
+            if (!File.Exists(ToProjectPath(scene)))
+            {
+                Debug.LogError($"[MirrorDedicatedServerBuilder] 테스트 Scene을 찾을 수 없습니다: {scene}");
+                return;
+            }
         }
 
         string outputDirectory = ToProjectPath(buildDirectory);
@@ -79,7 +92,7 @@ internal static class MirrorDedicatedServerBuilder
 
         var options = new BuildPlayerOptions
         {
-            scenes = new[] { TestScene },
+            scenes = TestScenes,
             locationPathName = executablePath,
             target = target,
             subtarget = (int)StandaloneBuildSubtarget.Server,
@@ -87,6 +100,11 @@ internal static class MirrorDedicatedServerBuilder
             // 서버 동작 로그는 일반 빌드에서도 남으므로 이번 기능 검증에는 영향을 주지 않습니다.
             options = BuildOptions.DetailedBuildReport
         };
+
+        bool hadAddressablesBuildPreference = EditorPrefs.HasKey(AddressablesBuildWithPlayerPreferenceKey);
+        bool previousAddressablesBuildPreference =
+            EditorPrefs.GetBool(AddressablesBuildWithPlayerPreferenceKey, true);
+        EditorPrefs.SetBool(AddressablesBuildWithPlayerPreferenceKey, false);
 
         BuildReport report;
         try
@@ -97,6 +115,13 @@ internal static class MirrorDedicatedServerBuilder
         {
             Debug.LogException(exception);
             return;
+        }
+        finally
+        {
+            if (hadAddressablesBuildPreference)
+                EditorPrefs.SetBool(AddressablesBuildWithPlayerPreferenceKey, previousAddressablesBuildPreference);
+            else
+                EditorPrefs.DeleteKey(AddressablesBuildWithPlayerPreferenceKey);
         }
 
         if (report.summary.result != BuildResult.Succeeded)
@@ -110,12 +135,22 @@ internal static class MirrorDedicatedServerBuilder
         string archivePath = null;
         try
         {
+            RemoveClientOnlyAddressables(outputDirectory, executableName);
+
+            if (isLinux)
+            {
+                // 이전 수동 ZIP과 한글 파일명은 새 배포 ZIP에 중첩되거나 Linux에서 깨질 수 있어 제거합니다.
+                File.Delete(Path.Combine(outputDirectory, LegacyEmbeddedLinuxArchiveFileName));
+                File.Delete(Path.Combine(outputDirectory, LegacyLinuxLaunchFileName));
+                File.Delete(Path.Combine(outputDirectory, LegacyLinuxGuideFileName));
+            }
+
             File.WriteAllText(
                 Path.Combine(outputDirectory, launchFileName),
                 BuildLaunchCommand(isLinux),
                 new UTF8Encoding(false));
             File.WriteAllText(
-                Path.Combine(outputDirectory, GuideFileName),
+                Path.Combine(outputDirectory, isLinux ? LinuxGuideFileName : WindowsGuideFileName),
                 BuildGuide(isLinux),
                 new UTF8Encoding(false));
 
@@ -134,6 +169,19 @@ internal static class MirrorDedicatedServerBuilder
             $"({report.summary.totalSize / 1048576d:F1} MB)" +
             (archivePath == null ? string.Empty : $", GCP 업로드 ZIP: {archivePath}"));
         EditorUtility.RevealInFinder(archivePath ?? outputDirectory);
+    }
+
+    /// <summary>
+    /// 현재 Addressables 그룹은 클라이언트 무기 외형만 담고 있으므로 전용 서버 결과물에서 제거합니다.
+    /// PlayerWeaponVisualPresenter도 UNITY_SERVER에서 비활성화되어 서버 로직은 이 번들을 요청하지 않습니다.
+    /// 추후 서버 판정에 필요한 Addressables 데이터가 추가되면 그룹 단위 분리 방식으로 바꿔야 합니다.
+    /// </summary>
+    private static void RemoveClientOnlyAddressables(string outputDirectory, string executableName)
+    {
+        string dataDirectoryName = Path.GetFileNameWithoutExtension(executableName) + "_Data";
+        string addressablesPath = Path.Combine(outputDirectory, dataDirectoryName, "StreamingAssets", "aa");
+        if (Directory.Exists(addressablesPath))
+            Directory.Delete(addressablesPath, true);
     }
 
     /// <summary>
@@ -238,6 +286,7 @@ internal static class MirrorDedicatedServerBuilder
     {
         return relativePath.IndexOf("_BurstDebugInformation_DoNotShip/", StringComparison.OrdinalIgnoreCase) >= 0 ||
                relativePath.StartsWith("BackUpThisFolder_ButDontShipItWithYourGame/", StringComparison.OrdinalIgnoreCase) ||
+               relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(relativePath, "DedicatedServer.log", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -253,8 +302,8 @@ internal static class MirrorDedicatedServerBuilder
                 "==============================================\n\n" +
                 "1. 빌드와 함께 생성된 MirrorDedicatedServerLinux.zip을 Linux VM에 업로드합니다.\n" +
                 "2. 실행 권한을 한 번 설정합니다.\n" +
-                "   chmod +x MirrorDedicatedServer.x86_64 전용서버_실행.sh\n" +
-                "3. ./전용서버_실행.sh 로 서버를 실행합니다. Host 버튼은 누르지 않습니다.\n" +
+                "   chmod +x MirrorDedicatedServer.x86_64 run_server.sh\n" +
+                "3. ./run_server.sh 로 서버를 실행합니다. Host 버튼은 누르지 않습니다.\n" +
                 "4. Windows Client는 VM 외부 IPv4를 입력하고 Client를 누릅니다.\n" +
                 "5. KCP UDP 포트는 7777이며 Google Cloud 방화벽에서 허용되어야 합니다.\n" +
                 "6. 서버에는 로컬 플레이어, 카메라, HUD가 생기지 않는 것이 정상입니다.\n" +

@@ -6,13 +6,17 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// 현재 Mirror 전투 통합 테스트 Scene 하나만 Windows 실행 파일로 빌드합니다.
+/// 6-C 테스트 전용 선택·Camp·Stage1 Scene을 Windows 실행 파일로 빌드합니다.
 /// 팀 공용 Build Settings를 바꾸지 않고 학원 LAN 테스트용 출력물만 생성합니다.
 /// </summary>
 internal static class MirrorLanTestBuilder
 {
-    private const string TestScene =
-        "Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage1_MirrorCombatTest.unity";
+    private static readonly string[] TestScenes =
+    {
+        MirrorTestNetworkManager.SessionCampScene,
+        MirrorTestNetworkManager.SessionCampGameplayScene,
+        MirrorTestNetworkManager.SessionCombatScene,
+    };
     private const string BuildDirectory = "Builds/MirrorLanTest";
     private const string ExecutableName = "MirrorLanTest.exe";
     private const string GuideFileName = "LAN_테스트_안내.txt";
@@ -32,10 +36,13 @@ internal static class MirrorLanTestBuilder
             return;
         }
 
-        if (!File.Exists(ToProjectPath(TestScene)))
+        foreach (string scene in TestScenes)
         {
-            Debug.LogError($"[MirrorLanTestBuilder] 테스트 Scene을 찾을 수 없습니다: {TestScene}");
-            return;
+            if (!File.Exists(ToProjectPath(scene)))
+            {
+                Debug.LogError($"[MirrorLanTestBuilder] 테스트 Scene을 찾을 수 없습니다: {scene}");
+                return;
+            }
         }
 
         string outputDirectory = ToProjectPath(BuildDirectory);
@@ -44,7 +51,7 @@ internal static class MirrorLanTestBuilder
 
         var options = new BuildPlayerOptions
         {
-            scenes = new[] { TestScene },
+            scenes = TestScenes,
             locationPathName = executablePath,
             target = BuildTarget.StandaloneWindows64,
             // 직전에 전용 서버를 빌드했더라도 서버 하위 대상을 이어받지 않도록
@@ -97,6 +104,7 @@ internal static class MirrorLanTestBuilder
             "4. Host PC가 먼저 실행해 NetworkManagerHUD의 Host를 누릅니다.\r\n" +
             "5. Client 세 명은 주소 칸에 Host의 내부 IPv4를 입력하고 Client를 누릅니다.\r\n" +
             "6. KCP는 UDP 7777을 사용합니다. 같은 LAN에서는 포트 포워딩이 필요 없습니다.\r\n\r\n" +
+            "7. 접속 뒤 선택 화면에서 Camp 또는 Stage1을 고르고, 각 Scene에서 선택 화면 복귀까지 확인합니다.\r\n\r\n" +
             "Host UDP 확인:\r\n" +
             "  netstat -ano -p udp | findstr :7777\r\n\r\n" +
             "Host 임시 방화벽 허용(관리자 PowerShell):\r\n" +

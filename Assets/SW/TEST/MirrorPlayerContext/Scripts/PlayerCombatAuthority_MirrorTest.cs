@@ -14,13 +14,18 @@ public enum MirrorCombatRequestResult : byte
     DuplicateRequest = 6,
     AttackOnCooldown = 7,
     InvalidTiming = 8,
+    CanceledByMove = 9,
+    AnimationNotConfirmed = 10,
 }
 
 /// <summary>
 /// Fighter의 로컬 공격 연출과 서버의 실제 타격 판정을 분리하는 Mirror 테스트 컴포넌트다.
 /// <para>클라이언트는 요청 번호와 조준점만 보내며 대상·데미지·치명타는 보내지 않는다.</para>
 /// <para>서버가 공격속도를 반영한 타격 시각에 Physics 범위를 검사하고 같은 적의 여러 Collider를 한 번으로 합친다.</para>
-/// <para>AnimationEvent는 시각 효과와 로컬 상태 종료에만 사용하고 실제 피해를 실행하지 않는다.</para>
+/// <para>클릭 Command는 공격을 예약할 뿐이며, 실제 공격 클립의 타격 AnimationEvent가 로컬에서 발생해야
+/// 서버가 예약을 확정한다. Animator가 Attack 클립에 진입하지 못하면 서버 피해도 발생하지 않는다.</para>
+/// <para>이동 취소의 전·후 기준도 추정 시간이 아니라 실제 타격 AnimationEvent다.
+/// 이벤트 전 이동은 서버 예약까지 취소하고, 이벤트 후 이동은 다음 공격 가능 시각을 유지한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext), typeof(T_PlayerCombat))]
@@ -35,6 +40,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private const double MaximumBackdateSeconds = 0.35d;
     private const double FutureTimeToleranceSeconds = 0.1d;
     private const double CooldownBoundaryToleranceSeconds = 0.05d;
+    private const double MinimumImpactConfirmationGraceSeconds = 0.5d;
+    private const double MaximumImpactConfirmationGraceSeconds = 2d;
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private T_PlayerCombat combat;
@@ -47,16 +54,26 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private bool lastHitCritical;
     [SyncVar] private uint acceptedRequestCount;
     [SyncVar] private uint rejectedRequestCount;
+    [SyncVar] private uint canceledRequestCount;
+    [SyncVar] private uint unconfirmedAttackCount;
     [SyncVar] private float lastRequestBackdateSeconds;
     [SyncVar] private float lastCooldownRemainingSeconds;
     [SyncVar] private bool lastRejectedWhileImpactPending;
 
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
     private uint nextLocalRequestId;
+    private uint activeLocalRequestId;
     private uint lastServerRequestId;
+    private uint pendingServerRequestId;
     private bool attackPending;
+    private bool attackImpactConfirmed;
     private double impactAt;
+    private double expectedClientImpactAt;
+    private double impactConfirmationExpiresAt;
     private double nextAttackAt;
+    private double localImpactAt;
+    private double localImpactConfirmationExpiresAt;
+    private double localNextAttackAt;
 
     public MirrorCombatRequestResult LastResult => lastResult;
     public uint LastTargetNetId => lastTargetNetId;
@@ -64,6 +81,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     public bool LastHitCritical => lastHitCritical;
     public uint AcceptedRequestCount => acceptedRequestCount;
     public uint RejectedRequestCount => rejectedRequestCount;
+    public uint CanceledRequestCount => canceledRequestCount;
+    public uint UnconfirmedAttackCount => unconfirmedAttackCount;
     public float LastRequestBackdateSeconds => lastRequestBackdateSeconds;
     public float LastCooldownRemainingSeconds => lastCooldownRemainingSeconds;
     public bool LastRejectedWhileImpactPending => lastRejectedWhileImpactPending;
@@ -86,11 +105,39 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
     private void Update()
     {
-        if (isServer && attackPending && NetworkTime.time >= impactAt)
+        // 공격 클립이 재생되지 않아 AnimationEvent도 오지 않은 요청은 로컬에서 영구히 붙잡지 않는다.
+        // 이 정리는 서버 판정 권한과 무관하며, 다음 정상 공격의 요청 번호를 덮어쓰지 않게 하는 안전장치다.
+        if (isLocalPlayer &&
+            activeLocalRequestId != 0 &&
+            NetworkTime.time >= localImpactConfirmationExpiresAt)
         {
-            attackPending = false;
-            ResolveServerAttack();
+            activeLocalRequestId = 0;
+            localImpactAt = 0d;
+            localImpactConfirmationExpiresAt = 0d;
+            localNextAttackAt = System.Math.Min(localNextAttackAt, NetworkTime.time);
+
+            // 공격 클립이 시작되지 않았다면 EndAttack 이벤트도 오지 않는다.
+            // 미확인 요청을 정리할 때 로컬 상태도 Idle로 복구해야 이후 이동과 공격이 함께 풀린다.
+            if (context?.StateMachine?.Is(PlayerState.Attack) == true)
+                context.StateMachine.ChangeState(PlayerState.Idle);
         }
+
+        if (!isServer || !attackPending)
+            return;
+
+        if (!attackImpactConfirmed)
+        {
+            if (NetworkTime.time >= impactConfirmationExpiresAt)
+                ExpireUnconfirmedAttack();
+
+            return;
+        }
+
+        if (NetworkTime.time < impactAt)
+            return;
+
+        ClearServerAttackReservation();
+        ResolveServerAttack();
     }
 
     public bool TryBeginLocalAttack(Vector3 aimPoint)
@@ -99,12 +146,16 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             !NetworkClient.active ||
             !NetworkClient.ready ||
             context?.RuntimeState?.IsDead == true ||
+            status == null ||
             !IsFinite(aimPoint))
         {
             return false;
         }
 
         double localAttackStartedAt = NetworkTime.time;
+        if (localAttackStartedAt + CooldownBoundaryToleranceSeconds < localNextAttackAt)
+            return false;
+
         combat.TryAttack(aimPoint);
         if (context?.StateMachine == null || !context.StateMachine.Is(PlayerState.Attack))
             return false;
@@ -113,7 +164,72 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         if (nextLocalRequestId == 0)
             nextLocalRequestId++;
 
+        // 서버와 같은 애니메이션 속도식을 사용해 로컬에서도 거절될 공격 애니메이션이 먼저 나오지 않게 한다.
+        // 이 값은 판정 권한이 아니라 입력 예측값이며, 실제 피해와 최종 허용 여부는 항상 서버가 결정한다.
+        float effectiveAnimationSpeed = GetEffectiveAnimationSpeed();
+        activeLocalRequestId = nextLocalRequestId;
+        localImpactAt = localAttackStartedAt + BaseImpactSeconds / effectiveAnimationSpeed;
+        localImpactConfirmationExpiresAt =
+            localImpactAt + GetImpactConfirmationGraceSeconds();
+        localNextAttackAt = localAttackStartedAt + BaseAttackDurationSeconds / effectiveAnimationSpeed;
+
         CmdRequestAttack(nextLocalRequestId, aimPoint, localAttackStartedAt);
+        return true;
+    }
+
+    /// <summary>
+    /// 로컬 이동 입력이 들어왔을 때 아직 실제 타격 AnimationEvent가 발생하지 않은 평타만 취소 요청한다.
+    /// <para>타격 전 취소는 피해가 발생하지 않았으므로 즉시 다음 공격을 시작할 수 있다.</para>
+    /// <para>타격 AnimationEvent 이후에는 이동만 허용하고 <c>localNextAttackAt</c>은 그대로 두어
+    /// 이동을 반복해 평타 간격을 줄이는 후딜 캔슬 악용을 막는다.</para>
+    /// </summary>
+    public bool TryCancelLocalAttackForMove()
+    {
+        if (!isLocalPlayer ||
+            !NetworkClient.active ||
+            !NetworkClient.ready ||
+            activeLocalRequestId == 0)
+        {
+            return false;
+        }
+
+        double canceledAt = NetworkTime.time;
+        uint canceledRequestId = activeLocalRequestId;
+        activeLocalRequestId = 0;
+        localImpactAt = 0d;
+        localImpactConfirmationExpiresAt = 0d;
+        localNextAttackAt = canceledAt;
+        CmdCancelAttackForMove(canceledRequestId, canceledAt);
+        return true;
+    }
+
+    /// <summary>
+    /// 로컬 Fighter 공격 클립의 실제 타격 AnimationEvent가 발생했음을 서버에 알린다.
+    /// <para>클릭 입력만으로는 이 메서드가 호출되지 않으므로, Animator가 Attack 클립을 재생하지 못한 요청은 피해를 만들 수 없다.</para>
+    /// <para>대상과 피해량은 보내지 않으며 요청 번호와 이벤트 시각만 전달한다. 실제 대상 탐색과 피해 계산은 계속 서버가 담당한다.</para>
+    /// </summary>
+    public bool TryConfirmLocalAttackImpactFromAnimation()
+    {
+        if (!isLocalPlayer ||
+            !NetworkClient.active ||
+            !NetworkClient.ready ||
+            activeLocalRequestId == 0)
+        {
+            return false;
+        }
+
+        double animationImpactAt = NetworkTime.time;
+
+        // 너무 이른 이벤트는 잘못 연결된 클립이나 남아 있던 이벤트일 수 있으므로 서버에 보내지 않는다.
+        // 최종 검증은 서버가 다시 수행하며 이 로컬 검사는 불필요한 Command만 줄인다.
+        if (animationImpactAt + CooldownBoundaryToleranceSeconds < localImpactAt)
+            return false;
+
+        uint confirmedRequestId = activeLocalRequestId;
+        activeLocalRequestId = 0;
+        localImpactAt = 0d;
+        localImpactConfirmationExpiresAt = 0d;
+        CmdConfirmAttackAnimationImpact(confirmedRequestId, animationImpactAt);
         return true;
     }
 
@@ -145,27 +261,15 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             return;
         }
 
-        double now = NetworkTime.time;
-        if (!double.IsFinite(clientAttackStartedAt) ||
-            clientAttackStartedAt > now + FutureTimeToleranceSeconds)
+        if (!TryResolveAuthoritativeClientTime(
+                clientAttackStartedAt,
+                out double now,
+                out double authoritativeStartAt))
         {
             Reject(MirrorCombatRequestResult.InvalidTiming);
             return;
         }
 
-        // Client의 NetworkTime은 서버 시간 추정값이다. 실제 RTT 절반과 작은 프레임 여유만큼만
-        // 과거 시작 시각을 인정해 Command 전달 시간이 선딜·공격 대기시간에 다시 더해지지 않게 한다.
-        double estimatedOneWaySeconds = connectionToClient != null
-            ? connectionToClient.rtt * 0.5d
-            : 0d;
-        double allowedBackdateSeconds = System.Math.Clamp(
-            estimatedOneWaySeconds + MinimumBackdateSeconds,
-            MinimumBackdateSeconds,
-            MaximumBackdateSeconds);
-        double authoritativeStartAt = System.Math.Clamp(
-            clientAttackStartedAt,
-            now - allowedBackdateSeconds,
-            now);
         lastRequestBackdateSeconds = Mathf.Max(0f, (float)(now - clientAttackStartedAt));
         lastCooldownRemainingSeconds = Mathf.Max(0f, (float)(nextAttackAt - authoritativeStartAt));
         lastRejectedWhileImpactPending = attackPending;
@@ -181,14 +285,125 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         // Fighter Animator의 Attack 상태 자체가 2배속이며 AttackSpeed 파라미터가 여기에 다시 곱해진다.
         // 서버도 같은 최종 재생 속도를 사용해야 타격 시점과 다음 공격 허용 시점이 화면의 애니메이션과 일치한다.
-        float effectiveAnimationSpeed = Mathf.Max(0.01f, status.AttackSpeed * AnimatorAttackStateSpeed);
-        impactAt = System.Math.Max(now, authoritativeStartAt + BaseImpactSeconds / effectiveAnimationSpeed);
+        float effectiveAnimationSpeed = GetEffectiveAnimationSpeed();
+        expectedClientImpactAt =
+            authoritativeStartAt + BaseImpactSeconds / effectiveAnimationSpeed;
+        impactAt = System.Math.Max(now, expectedClientImpactAt);
+        impactConfirmationExpiresAt =
+            impactAt + GetImpactConfirmationGraceSeconds();
         nextAttackAt = authoritativeStartAt + BaseAttackDurationSeconds / effectiveAnimationSpeed;
         attackPending = true;
+        attackImpactConfirmed = false;
+        pendingServerRequestId = requestId;
         acceptedRequestCount++;
         lastCooldownRemainingSeconds = 0f;
         lastRejectedWhileImpactPending = false;
         lastResult = MirrorCombatRequestResult.Accepted;
+    }
+
+    /// <summary>
+    /// 클릭 요청과 같은 번호의 공격 AnimationEvent만 서버 예약을 실제 타격 가능 상태로 확정한다.
+    /// 클라이언트는 피해 결과를 결정하지 않으며, 서버가 예상한 타격 시각보다 비정상적으로 빠르거나
+    /// 확인 유예 시간이 지난 이벤트는 무시한다.
+    /// </summary>
+    [Command]
+    private void CmdConfirmAttackAnimationImpact(
+        uint requestId,
+        double clientAnimationImpactAt)
+    {
+        if (!attackPending ||
+            attackImpactConfirmed ||
+            requestId == 0 ||
+            requestId != pendingServerRequestId)
+        {
+            return;
+        }
+
+        if (!TryResolveAuthoritativeClientTime(
+                clientAnimationImpactAt,
+                out double now,
+                out double authoritativeImpactAt))
+        {
+            Reject(MirrorCombatRequestResult.InvalidTiming);
+            return;
+        }
+
+        if (now > impactConfirmationExpiresAt ||
+            authoritativeImpactAt + CooldownBoundaryToleranceSeconds < expectedClientImpactAt)
+        {
+            return;
+        }
+
+        attackImpactConfirmed = true;
+    }
+
+    /// <summary>
+    /// 같은 연결에서 먼저 접수된 공격 번호와 정확히 일치하는 타격 전 예약만 취소한다.
+    /// 클라이언트가 임의 번호를 보내거나 타격 시각 뒤에 취소해 이미 확정된 피해를 되돌릴 수는 없다.
+    /// </summary>
+    [Command]
+    private void CmdCancelAttackForMove(uint requestId, double clientCanceledAt)
+    {
+        if (!attackPending || requestId == 0 || requestId != pendingServerRequestId)
+            return;
+
+        if (!TryResolveAuthoritativeClientTime(
+                clientCanceledAt,
+                out _,
+                out double authoritativeCanceledAt))
+        {
+            Reject(MirrorCombatRequestResult.InvalidTiming);
+            return;
+        }
+
+        // 같은 연결의 Command는 순서를 보장한다. AnimationEvent 확인이 먼저 도착했다면 이미 실제 타격이므로
+        // 이후 이동은 모션만 끊고 피해와 다음 공격 가능 시각을 취소하지 않는다.
+        if (attackImpactConfirmed)
+            return;
+
+        ClearServerAttackReservation();
+        nextAttackAt = System.Math.Min(nextAttackAt, authoritativeCanceledAt);
+        canceledRequestCount++;
+        lastTargetNetId = 0;
+        lastDamage = 0f;
+        lastHitCritical = false;
+        lastCooldownRemainingSeconds = 0f;
+        lastRejectedWhileImpactPending = false;
+        lastResult = MirrorCombatRequestResult.CanceledByMove;
+
+        Debug.Assert(
+            !attackPending && pendingServerRequestId == 0 && nextAttackAt <= authoritativeCanceledAt,
+            "[PlayerCombatAuthority_MirrorTest] 이동 취소 뒤 서버 공격 예약이 남아 있습니다.",
+            this);
+    }
+
+    /// <summary>
+    /// 서버가 공격 요청은 받았지만 제한 시간 안에 실제 공격 클립의 타격 이벤트를 받지 못한 경우다.
+    /// 피해를 만들지 않고 예약과 대기시간을 해제하여, 보이지 않는 공격과 다음 입력 잠김을 함께 막는다.
+    /// </summary>
+    [Server]
+    private void ExpireUnconfirmedAttack()
+    {
+        ClearServerAttackReservation();
+        nextAttackAt = NetworkTime.time;
+        unconfirmedAttackCount++;
+        lastTargetNetId = 0;
+        lastDamage = 0f;
+        lastHitCritical = false;
+        lastCooldownRemainingSeconds = 0f;
+        lastRejectedWhileImpactPending = false;
+        lastResult = MirrorCombatRequestResult.AnimationNotConfirmed;
+    }
+
+    [Server]
+    private void ClearServerAttackReservation()
+    {
+        attackPending = false;
+        attackImpactConfirmed = false;
+        pendingServerRequestId = 0;
+        impactAt = 0d;
+        expectedClientImpactAt = 0d;
+        impactConfirmationExpiresAt = 0d;
     }
 
     [Server]
@@ -276,5 +491,56 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         return float.IsFinite(value.x) &&
                float.IsFinite(value.y) &&
                float.IsFinite(value.z);
+    }
+
+    /// <summary>
+    /// 클라이언트가 보낸 NetworkTime을 서버가 허용할 수 있는 짧은 과거 구간으로 제한한다.
+    /// 공격 시작과 이동 취소가 같은 시간 기준을 사용해야 지연 때문에 한쪽만 과도하게 불리해지지 않는다.
+    /// </summary>
+    private bool TryResolveAuthoritativeClientTime(
+        double clientTime,
+        out double now,
+        out double authoritativeTime)
+    {
+        now = NetworkTime.time;
+        authoritativeTime = now;
+
+        if (!double.IsFinite(clientTime) || clientTime > now + FutureTimeToleranceSeconds)
+            return false;
+
+        double estimatedOneWaySeconds = connectionToClient != null
+            ? connectionToClient.rtt * 0.5d
+            : 0d;
+        double allowedBackdateSeconds = System.Math.Clamp(
+            estimatedOneWaySeconds + MinimumBackdateSeconds,
+            MinimumBackdateSeconds,
+            MaximumBackdateSeconds);
+        authoritativeTime = System.Math.Clamp(
+            clientTime,
+            now - allowedBackdateSeconds,
+            now);
+        return true;
+    }
+
+    private float GetEffectiveAnimationSpeed()
+    {
+        return Mathf.Max(0.01f, status.AttackSpeed * AnimatorAttackStateSpeed);
+    }
+
+    /// <summary>
+    /// AnimationEvent 확인 Command가 왕복 지연 때문에 늦게 도착할 수 있는 범위를 서버 연결의 RTT에 맞춰 허용한다.
+    /// 유예 시간은 피해 시점을 늦추기 위한 값이 아니라, 정상 이벤트가 도착하기 전에 예약을 폐기하지 않기 위한 상한이다.
+    /// </summary>
+    private double GetImpactConfirmationGraceSeconds()
+    {
+        double roundTripSeconds = isServer && connectionToClient != null
+            ? connectionToClient.rtt
+            : NetworkTime.rtt;
+        roundTripSeconds = System.Math.Max(0d, roundTripSeconds);
+
+        return System.Math.Clamp(
+            roundTripSeconds + 0.25d,
+            MinimumImpactConfirmationGraceSeconds,
+            MaximumImpactConfirmationGraceSeconds);
     }
 }

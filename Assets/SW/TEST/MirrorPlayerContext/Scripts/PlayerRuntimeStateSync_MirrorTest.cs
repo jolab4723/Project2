@@ -350,8 +350,10 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Potions?.ApplyAuthoritativeCharges(snapshot.potionCharges);
             bool forceReviveVisual = latestSnapshot != null &&
                                      snapshot.reviveSequence != latestSnapshot.reviveSequence;
+            bool forceDeathVisual = snapshot.isDead &&
+                                    (latestSnapshot == null || !latestSnapshot.isDead);
             latestSnapshot = snapshot;
-            ApplyDeadState(snapshot.isDead, forceReviveVisual);
+            ApplyDeadState(snapshot.isDead, forceReviveVisual, forceDeathVisual);
         }
         finally
         {
@@ -561,11 +563,14 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     [Server]
     private void HandleServerDeath()
     {
-        ApplyDeadState(true);
+        ApplyDeadState(true, false, true);
         serverPublishQueued = true;
     }
 
-    private void ApplyDeadState(bool dead, bool forceReviveVisual = false)
+    private void ApplyDeadState(
+        bool dead,
+        bool forceReviveVisual = false,
+        bool forceDeathVisual = false)
     {
         if (context == null)
             return;
@@ -585,6 +590,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             }
 
             stateMachine?.ChangeState(PlayerState.Dead);
+            if (forceDeathVisual)
+                GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativeDeath();
         }
         else
         {
@@ -665,6 +672,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public byte sourceKind;
         public string sourceId;
         public string displayName;
+        public string description;
         public float remainingTime;
         public int stackCount;
         public float duration;
@@ -706,6 +714,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
                 sourceKind = kind,
                 sourceId = id,
                 displayName = source.BuffDisplayName,
+                description = source.BuffDescription,
                 remainingTime = active.remainingTime,
                 stackCount = active.stackCount,
                 duration = source.Duration,
@@ -727,6 +736,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     private sealed class SnapshotBuffSource : IBuffSource
     {
         private readonly string displayName;
+        private readonly string description;
         private readonly FixedStatValue[] statEffects;
         private readonly float duration;
         private readonly BuffStackBehavior stackBehavior;
@@ -734,7 +744,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         private readonly bool isPermanent;
 
         public string BuffDisplayName => displayName;
-        public string BuffDescription => string.Empty;
+        public string BuffDescription => description;
         public Sprite BuffIcon => null;
         public FixedStatValue[] StatEffects => statEffects;
         public float Duration => duration;
@@ -745,6 +755,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public SnapshotBuffSource(BuffSnapshot snapshot)
         {
             displayName = snapshot.displayName;
+            description = snapshot.description;
             duration = snapshot.duration;
             stackBehavior = snapshot.stackBehavior;
             maxStack = snapshot.maxStack;
