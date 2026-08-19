@@ -36,6 +36,7 @@ namespace ItemSystem
                 case StatType.mpMaxFlat: s.maxManaFlat += value; break;
                 case StatType.penetrationFlat: s.penFlat += value; break;
                 case StatType.skillRangeFlat: s.skillRangeFlat += value; break;
+                case StatType.skillRangePercent: s.skillRangePercent += value; break;
                 case StatType.fireBonusFlat: s.fireBonusFlat += value; break;
                 case StatType.iceBonusFlat: s.iceBonusFlat += value; break;
                 case StatType.electricBonusFlat: s.electricBonusFlat += value; break;

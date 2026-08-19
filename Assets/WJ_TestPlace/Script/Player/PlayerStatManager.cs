@@ -175,6 +175,20 @@ public class PlayerStatManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 스킬 범위 flat/% 보너스를 4단 공식(CalcFinal)을 거치지 않고 네 레이어에서 그대로 합산해서 낸다.
+    /// Stat.skillRange(CalcFinal 결과)를 그대로 쓰면 buff/equip의 % 가 이미 캐릭터의 작은 flat 값에
+    /// 한 번 곱해져 들어가 있어서, FighterSkillController가 스킬 자체 사거리에 %를 또 곱하면 같은
+    /// 보너스가 두 번 적용되는 문제가 있었다(직접 검증 중 발견). 그래서 이 스탯만 CalcFinal을 우회해서
+    /// 순수 원시 합으로 따로 낸다 - flat은 4개 레이어 전부, %는 캐릭터 레이어가 안 쓰는 걸 감안해 나머지 3개.
+    /// </summary>
+    public void GetSkillRangeBonus(out float flatBonus, out float percentBonus)
+    {
+        GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
+        flatBonus = character.skillRangeFlat + equipment.skillRangeFlat + buff.skillRangeFlat + passive.skillRangeFlat;
+        percentBonus = equipment.skillRangePercent + buff.skillRangePercent + passive.skillRangePercent;
+    }
+
+    /// <summary>
     /// 실제 플레이어와 장비 상태를 변경하지 않고 현재 장비 구성과 후보 장비 교체 후 구성의
     /// 최종 스탯을 각각 계산한다. 두 계산 모두 현재 캐릭터, 버프(유물 고유 효과 포함), 패시브 조건을 동일하게 사용한다.
     /// </summary>

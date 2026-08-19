@@ -7,6 +7,10 @@ public class KY_SkillView : MonoBehaviour
 {
     public KY_SkillSlot[] slots;
 
+    [Tooltip("Slot1~3(인덱스 0~2)의 실시간 쿨타임을 여기서 읽어와 라디얼 필로 표시한다. " +
+             "slots는 Skill1~4+Dodge까지 5개가 있지만, 실제 쿨타임 데이터가 있는 건 Skill1~3뿐이라 그만큼만 갱신한다.")]
+    public FighterSkillController skillController;
+
     private GameInputActions inputActions;
 
     void Start()
@@ -29,6 +33,25 @@ public class KY_SkillView : MonoBehaviour
         KY_GameEvents.OnSkillUnequipped -= OnSkillUnequipped;
         KY_GameEvents.OnKeyBindingChanged -= RefreshAllKeyTexts;
         //inputActions.Disable();
+    }
+
+    void Update()
+    {
+        if (skillController == null)
+            return;
+
+        int cooldownSlotCount = Mathf.Min(skillController.SkillCount, slots.Length);
+        for (int i = 0; i < cooldownSlotCount; i++)
+        {
+            float remaining = skillController.GetRemainingCooldown(i);
+            float total = skillController.GetEffectiveCooldown(i);
+            slots[i].SetCooldown(remaining, total);
+
+            if (skillController.TryGetStackInfo(i, out int stacks, out int maxStacks))
+                slots[i].SetStacks(stacks);
+            else
+                slots[i].SetStacks(null);
+        }
     }
 
     void OnSkillEquipped(int index, Sprite icon)
