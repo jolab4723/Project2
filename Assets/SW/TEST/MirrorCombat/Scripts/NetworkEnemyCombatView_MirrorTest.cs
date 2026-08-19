@@ -37,6 +37,10 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
             ? authority.ReceivedDamagePresentationCount
             : 0;
         initialized = true;
+
+        if (!Mirror.NetworkClient.active)
+            return;
+
         RefreshHealthBar();
     }
 
@@ -49,6 +53,9 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (!Mirror.NetworkClient.active)
+            return;
+
         mainCamera ??= Camera.main;
         RefreshHealthBar();
 

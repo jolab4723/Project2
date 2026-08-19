@@ -3,6 +3,7 @@ using ItemSystem;
 using Mirror;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 /// <summary>
@@ -25,6 +26,10 @@ using UnityEngine.UI;
 /// 서버 상황판에서 사망한 플레이어를 수동 부활시킨다.</para>
 /// <para>5-A 보완: 녹화 중에는 작은 열기 버튼만 남기고 종합상황실 본문을 접을 수 있다.
 /// 표시만 숨기며 PlayerContext 바인딩과 진단 이벤트 수집은 계속 유지한다.</para>
+/// <para>6-A 보완: Client·Server 빌드 호환 확인 결과와 전투 세션의 대기·진행·완료 상태를 표시한다.
+/// 대기 상태에서는 호환 확인과 로컬 PlayerContext 생성이 끝난 Client가 서버에 시작을 요청할 수 있다.</para>
+/// <para>6-C 보완: 테스트 전용 선택 화면에서 Camp 또는 전투를 요청하고, 두 플레이 Scene에서 다시
+/// 선택 화면으로 돌아오는 왕복 버튼과 로컬 조작 복구 상태를 같은 종합상황실에서 확인한다.</para>
 [DisallowMultipleComponent]
 public sealed class MirrorTestPlayerHud : MonoBehaviour
 {
@@ -320,6 +325,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         GUILayout.BeginArea(area, GUI.skin.box);
         GUILayout.Label("PLAYER CONTEXT MIRROR 테스트", titleStyle);
         GUILayout.Label("I 인벤토리 | O 상점 | U 강화 | ESC 닫기");
+        DrawCompatibilityAndSession();
 
         if (context == null)
         {
@@ -430,6 +436,108 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         GUILayout.EndArea();
     }
 
+    private void DrawCompatibilityAndSession()
+    {
+        MirrorTestNetworkManager manager =
+            NetworkManager.singleton as MirrorTestNetworkManager;
+
+        if (manager != null)
+        {
+            GUILayout.Label(
+                $"빌드 호환: {manager.CompatibilityStatusMessage}",
+                manager.ClientCompatibilityConfirmed ? passStyle : localStyle);
+        }
+
+        if (manager == null)
+        {
+            GUILayout.Label("세션 상태: NetworkManager를 기다리는 중", localStyle);
+            return;
+        }
+
+        bool canRequest = context != null && manager.ClientCompatibilityConfirmed;
+        switch (manager.CurrentSessionRoute)
+        {
+            case MirrorSessionRoute.StageSelect:
+                GUILayout.Label("세션 상태: 스테이지 선택 테스트", localStyle);
+                if (canRequest && GUILayout.Button("Camp 테스트 이동 요청"))
+                {
+                    AddEvent(manager.RequestSessionRoute(MirrorSessionRoute.Camp)
+                        ? "서버에 Camp 이동 요청"
+                        : "Camp 이동 요청 실패");
+                }
+
+                if (canRequest && GUILayout.Button("Stage1 전투 이동 요청"))
+                {
+                    AddEvent(manager.RequestSessionRoute(MirrorSessionRoute.Combat)
+                        ? "서버에 Stage1 이동·전투 시작 요청"
+                        : "Stage1 전투 이동 요청 실패");
+                }
+                return;
+
+            case MirrorSessionRoute.Camp:
+                GUILayout.Label("세션 상태: Camp 플레이 테스트", localStyle);
+                if (canRequest && GUILayout.Button("스테이지 선택으로 복귀 요청"))
+                {
+                    AddEvent(manager.RequestSessionRoute(MirrorSessionRoute.StageSelect)
+                        ? "서버에 스테이지 선택 복귀 요청"
+                        : "스테이지 선택 복귀 요청 실패");
+                }
+                return;
+
+            case MirrorSessionRoute.Combat:
+                DrawCombatSession(manager, canRequest);
+                if (canRequest && GUILayout.Button("스테이지 선택으로 복귀 요청"))
+                {
+                    AddEvent(manager.RequestSessionRoute(MirrorSessionRoute.StageSelect)
+                        ? "서버에 스테이지 선택 복귀 요청"
+                        : "스테이지 선택 복귀 요청 실패");
+                }
+                return;
+
+            default:
+                GUILayout.Label("세션 상태: 6-C 테스트 범위 밖 Scene", localStyle);
+                return;
+        }
+    }
+
+    private void DrawCombatSession(
+        MirrorTestNetworkManager manager,
+        bool canRequest)
+    {
+        NetworkEnemyWaveSpawner_MirrorTest waveSpawner =
+            FindFirstObjectByType<NetworkEnemyWaveSpawner_MirrorTest>();
+        if (waveSpawner == null)
+        {
+            GUILayout.Label("세션 상태: 웨이브 Spawner를 기다리는 중", localStyle);
+            return;
+        }
+
+        GUILayout.Label(
+            $"세션 상태: {GetSessionPhaseLabel(waveSpawner.SessionPhase)} | " +
+            $"상태 번호={waveSpawner.SessionStateRevision}",
+            waveSpawner.SessionPhase == MirrorTestSessionPhase.Playing
+                ? passStyle
+                : localStyle);
+
+        if (waveSpawner.SessionPhase == MirrorTestSessionPhase.Waiting &&
+            canRequest &&
+            GUILayout.Button("전투 세션 시작 요청"))
+        {
+            AddEvent(manager.RequestStartSession()
+                ? "서버에 전투 세션 시작 요청"
+                : "전투 세션 시작 요청 실패");
+        }
+        else if (waveSpawner.SessionPhase == MirrorTestSessionPhase.Completed)
+        {
+            GUILayout.Label(
+                "전투 완료: 모든 플레이어가 나가면 전용 서버가 새 세션으로 초기화됩니다.");
+        }
+        else if (waveSpawner.SessionPhase == MirrorTestSessionPhase.Resetting)
+        {
+            GUILayout.Label("세션 초기화 중");
+        }
+    }
+
     private void DrawContext(PlayerContext target, bool isLocal)
     {
         if (target == null)
@@ -452,13 +560,27 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         GUILayout.Label($"로컬 객체 번호: 장비 시스템#{target.Equipment?.GetInstanceID() ?? 0} | 스탯 시스템#{target.Stats?.GetInstanceID() ?? 0}");
         GUILayout.Label($"인벤토리 아이템={itemCount}개 | 장착={CountEquipment(target)}개 | 체력={health:0}/{maxHealth:0} | {(targetState?.IsDead == true ? "사망" : "생존")} | 공격={attack:0} | 방어={defense:0} | 전투 상태 번호={targetState?.StateRevision ?? 0}");
         GUILayout.Label(
-            $"공격 접수={combatAuthority?.AcceptedRequestCount ?? 0} | 거절={combatAuthority?.RejectedRequestCount ?? 0} | " +
+            $"공격 접수={combatAuthority?.AcceptedRequestCount ?? 0} | 이동 취소={combatAuthority?.CanceledRequestCount ?? 0} | " +
+            $"모션 미확인={combatAuthority?.UnconfirmedAttackCount ?? 0} | 거절={combatAuthority?.RejectedRequestCount ?? 0} | " +
             $"최근 결과={GetCombatResultLabel(combatAuthority?.LastResult ?? MirrorCombatRequestResult.None)} | 대상 netId={combatAuthority?.LastTargetNetId ?? 0} | " +
             $"데미지={combatAuthority?.LastDamage ?? 0f:0.#} | 치명타={(combatAuthority?.LastHitCritical == true ? "예" : "아니오")}");
         GUILayout.Label(
             $"요청 전달 시간={combatAuthority?.LastRequestBackdateSeconds * 1000f ?? 0f:0}ms | " +
             $"공격 대기 남음={combatAuthority?.LastCooldownRemainingSeconds ?? 0f:0.000}초 | " +
             $"이전 타격 처리 중={(combatAuthority?.LastRejectedWhileImpactPending == true ? "예" : "아니오")}");
+
+        if (isLocal)
+        {
+            MirrorSpawnedPlayerBinder binder = target.GetComponent<MirrorSpawnedPlayerBinder>();
+            WBH_PlayerInputHandler_MirrorTest movementInput =
+                target.GetComponent<WBH_PlayerInputHandler_MirrorTest>();
+            NavMeshAgent agent = target.Controller != null ? target.Controller.agent : null;
+            GUILayout.Label(
+                $"로컬 조작 | 입력={(movementInput != null && movementInput.enabled ? "켜짐" : "꺼짐")} | " +
+                $"Controller={(target.Controller != null && target.Controller.IsControlEnabled ? "허용" : "차단")} | " +
+                $"NavMesh={(agent != null && agent.enabled && agent.isOnNavMesh ? "연결" : "대기")} | " +
+                $"복구 담당={(binder != null ? "있음" : "없음")}");
+        }
     }
 
     private void DrawInventory(PlayerContext target)
@@ -560,7 +682,8 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                 $"공격={playerState?.AttackPower ?? 0f:0} | 방어={playerState?.DefensePower ?? 0f:0} | " +
                 $"버프={playerState?.ActiveBuffCount ?? 0}개 | 포션={playerState?.PotionCharges ?? 0}/{playerState?.MaxPotionCharges ?? 0}");
             GUILayout.Label(
-                $"  공격 접수={playerCombat?.AcceptedRequestCount ?? 0} | 거절={playerCombat?.RejectedRequestCount ?? 0} | " +
+                $"  공격 접수={playerCombat?.AcceptedRequestCount ?? 0} | 이동 취소={playerCombat?.CanceledRequestCount ?? 0} | " +
+                $"모션 미확인={playerCombat?.UnconfirmedAttackCount ?? 0} | 거절={playerCombat?.RejectedRequestCount ?? 0} | " +
                 $"최근 결과={GetCombatResultLabel(playerCombat?.LastResult ?? MirrorCombatRequestResult.None)} | 대상 netId={playerCombat?.LastTargetNetId ?? 0} | " +
                 $"데미지={playerCombat?.LastDamage ?? 0f:0.#}");
             GUILayout.Label(
@@ -734,7 +857,21 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             MirrorCombatRequestResult.DuplicateRequest => "중복 요청",
             MirrorCombatRequestResult.AttackOnCooldown => "공격 대기 중",
             MirrorCombatRequestResult.InvalidTiming => "잘못된 공격 시각",
+            MirrorCombatRequestResult.CanceledByMove => "이동으로 공격 취소",
+            MirrorCombatRequestResult.AnimationNotConfirmed => "공격 모션 미확인",
             _ => "없음",
+        };
+    }
+
+    private static string GetSessionPhaseLabel(MirrorTestSessionPhase phase)
+    {
+        return phase switch
+        {
+            MirrorTestSessionPhase.Waiting => "대기",
+            MirrorTestSessionPhase.Playing => "전투 중",
+            MirrorTestSessionPhase.Completed => "전투 완료",
+            MirrorTestSessionPhase.Resetting => "초기화 중",
+            _ => "알 수 없음",
         };
     }
 

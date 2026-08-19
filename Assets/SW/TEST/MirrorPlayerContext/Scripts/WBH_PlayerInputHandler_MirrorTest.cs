@@ -6,6 +6,10 @@ using UnityEngine.EventSystems;
 /// <para>원본: <c>Assets/WBHTest/Scripts/Player/WBH_PlayerInputHandler.cs</c></para>
 /// <para>원본의 <c>WorldItemPickupInteractor</c> 참조는 유지하되, 네트워크 픽업은 서버 판정을 위해 <c>PlayerInventorySync_MirrorTest</c>에 요청한다.</para>
 /// <para>카메라·Controller·Combat 누락 시 입력을 무시하도록 방어하며, 로컬 플레이어 여부는 <c>MirrorSpawnedPlayerBinder</c>가 컴포넌트 활성화로 보장한다.</para>
+/// <para>평타 도중 이동하면 서버 Authority에 먼저 같은 공격 번호의 취소를 알린다.
+/// 타격 전이면 예약 피해도 취소되고, 타격 후면 이동만 허용되며 공격 대기시간은 유지된다.</para>
+/// <para>6-C 전환 보완: Player는 Scene보다 오래 살아 있으므로 이전 Scene의 파괴된 Camera 참조를
+/// C# null 병합 연산자로 검사하지 않고, Unity의 null 판정으로 새 Scene의 Main Camera를 다시 찾는다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
@@ -31,7 +35,10 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
 
     private void Update()
     {
-        mainCamera ??= Camera.main;
+        // Unity에서 파괴된 Camera는 C# 참조 자체는 남아 있어 ??=로는 교체되지 않는다.
+        // Scene 전환 뒤 이동·공격 레이캐스트가 모두 멈추지 않도록 Unity의 == null 판정을 사용한다.
+        if (mainCamera == null)
+            mainCamera = Camera.main;
 
         if (controller == null || combat == null || !controller.IsControlEnabled)
             return;
@@ -50,6 +57,9 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
         if (!Physics.Raycast(ray, out RaycastHit hit) || IsBlocked(hit.collider.gameObject.layer))
             return;
 
+        // 원본 Controller는 Attack 상태에서도 곧바로 Move 상태로 바꿀 수 있다.
+        // 먼저 서버 예약을 정리하지 않으면 화면에서는 공격이 끊겼는데 서버 피해만 뒤늦게 들어가는 현상이 생긴다.
+        combatAuthority?.TryCancelLocalAttackForMove();
         combat.CancelChase();
         controller.MoveCommand(hit.point);
     }
