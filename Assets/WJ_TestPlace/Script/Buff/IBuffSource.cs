@@ -19,6 +19,9 @@ namespace ItemSystem
         /// <summary>버프 HUD 등에 표시할 이름.</summary>
         string BuffDisplayName { get; }
 
+        /// <summary>버프 아이콘에 마우스를 올렸을 때 툴팁에 표시할 설명. 없으면 빈 문자열이어도 된다.</summary>
+        string BuffDescription { get; }
+
         /// <summary>버프 HUD 등에 표시할 아이콘. 없으면 null.</summary>
         Sprite BuffIcon { get; }
 

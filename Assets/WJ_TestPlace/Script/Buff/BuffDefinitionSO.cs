@@ -50,6 +50,7 @@ namespace ItemSystem
         // ----- IBuffSource -----
         // 기존 필드 배치를 그대로 두고 인터페이스만 덧붙였다 (기존 버프 에셋의 직렬화 데이터 보존).
         string IBuffSource.BuffDisplayName => string.IsNullOrEmpty(buffName) ? name : buffName;
+        string IBuffSource.BuffDescription => description;
         Sprite IBuffSource.BuffIcon => icon;
         FixedStatValue[] IBuffSource.StatEffects => statEffects;
         float IBuffSource.Duration => duration;
