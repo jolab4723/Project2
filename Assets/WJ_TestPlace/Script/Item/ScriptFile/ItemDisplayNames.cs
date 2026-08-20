@@ -94,6 +94,7 @@ namespace ItemSystem
             { StatType.mpRegenPercent, "MP 재생력%" },
             { StatType.penetrationFlat, "관통력" },
             { StatType.skillRangeFlat, "스킬 범위" },
+            { StatType.skillRangePercent, "스킬 범위%" },
             { StatType.fireBonusFlat, "불 속성 보너스" },
             { StatType.iceBonusFlat, "얼음 속성 보너스" },
             { StatType.electricBonusFlat, "전기 속성 보너스" },

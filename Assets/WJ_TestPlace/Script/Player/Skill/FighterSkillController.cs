@@ -48,6 +48,9 @@ public class FighterSkillController : MonoBehaviour
     [Tooltip("스킬 슬롯별 진화 선택(None = 미진화). 진화 선택 UI가 없어서 지금은 여기서 직접 지정.")]
     [SerializeField] private SkillEvolutionId[] activeEvolutions = new SkillEvolutionId[3];
 
+    [Tooltip("스킬 슬롯별 강화 선택(None = 미강화). 진화와 별개의 축 - SkillEvolutionSelectUI(K키 패널)의 강화 버튼으로 런타임 변경 가능.")]
+    [SerializeField] private SkillEnhancementId[] activeEnhancements = new SkillEnhancementId[3];
+
     [Header("범위 표시(피드백용, 판정과 무관)")]
     [SerializeField] private Color sectorVisualColor = new Color(1f, 0.5f, 0.1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(1f, 0.15f, 0.1f, 0.35f);
@@ -143,16 +146,52 @@ public class FighterSkillController : MonoBehaviour
             ReleaseCharge(); // 최대 차징 도달 - 자동 발동
     }
 
-    /// <summary>남은 쿨타임(초). Dash 진화2(스택)면 다음 스택까지 남은 시간. 준비됐으면 0.</summary>
+    /// <summary>남은 쿨타임(초). Dash 진화2(스택)면 다음 스택까지 남은 시간. 스택이 최대치일 때만 0.
+    /// !! 스택이 1개 이상 있어도(사용은 가능해도) 최대치 미만이면 다음 스택 충전이 계속 진행 중이므로
+    /// 여기서 0을 반환하면 안 된다 - "스택 1개 남았을 때 회복 쿨타임이 안 도는 것처럼 보인다"는
+    /// 버그 리포트로 발견함(예전엔 dashStacks > 0이면 무조건 0을 반환해서 최대치 미만이어도
+    /// UI에 항상 "준비 완료"로만 보였음).</summary>
     public float GetRemainingCooldown(int index)
     {
         if (index < 0 || index >= cooldownRemaining.Length)
             return 0f;
 
         if (IsDashStackSlot(index))
-            return dashStacks > 0 ? 0f : Mathf.Max(0f, dashStackRechargeTimer);
+        {
+            SkillDefinitionSO def = GetSkillDefinition(index);
+            int max = def != null ? def.evoDashMaxStacks : 0;
+            return dashStacks >= max ? 0f : Mathf.Max(0f, dashStackRechargeTimer);
+        }
 
         return Mathf.Max(0f, cooldownRemaining[index]);
+    }
+
+    /// <summary>슬롯(0~2)의 "지금" 최대 쿨타임(강화로 감소돼 있으면 그 값). 쿨타임 UI가 GetRemainingCooldown과
+    /// 나눠서 남은 비율(라디얼 필 등)을 계산할 때 분모로 쓴다. Dash 진화2(스택)면 스택 충전 시간 기준.</summary>
+    public float GetEffectiveCooldown(int index)
+    {
+        SkillDefinitionSO def = GetSkillDefinition(index);
+        if (def == null)
+            return 0f;
+
+        float baseCooldown = IsDashStackSlot(index) ? def.evoDashStackRechargeSeconds : def.cooldownSeconds;
+        return ApplyCooldownEnhancement(def, index, baseCooldown);
+    }
+
+    /// <summary>슬롯(0~2)이 지금 스택 모드(Dash 진화2)인지, 맞다면 현재/최대 스택 수를 낸다.
+    /// 스택 모드가 아니면 false(쿨타임 UI가 스택 배지를 숨기는 신호로 씀).</summary>
+    public bool TryGetStackInfo(int index, out int current, out int max)
+    {
+        current = 0;
+        max = 0;
+
+        if (!IsDashStackSlot(index))
+            return false;
+
+        SkillDefinitionSO def = GetSkillDefinition(index);
+        current = dashStacks;
+        max = def != null ? def.evoDashMaxStacks : 0;
+        return true;
     }
 
     private void HandleSkillKeyPressed(int index)
@@ -195,28 +234,28 @@ public class FighterSkillController : MonoBehaviour
         {
             case SkillShapeType.SectorSlash:
                 if (evo == SkillEvolutionId.Evolution1)
-                    ExecuteSectorSlashEvo1(def);
+                    ExecuteSectorSlashEvo1(def, index);
                 else if (evo == SkillEvolutionId.Evolution2)
-                    ExecuteSectorSlashEvo2(def);
+                    ExecuteSectorSlashEvo2(def, index);
                 else
-                    ExecuteSectorSlash(def);
+                    ExecuteSectorSlash(def, index);
                 StartCoroutine(ReturnToIdleAfter(0.3f));
                 break;
 
             case SkillShapeType.LineSlam:
                 if (evo == SkillEvolutionId.Evolution1)
-                    ExecuteLineSlamEvo1(def);
+                    ExecuteLineSlamEvo1(def, index);
                 else if (evo == SkillEvolutionId.Evolution2)
-                    ExecuteLineSlamEvo2(def);
+                    ExecuteLineSlamEvo2(def, index);
                 else if (evo == SkillEvolutionId.Evolution3)
-                    ExecuteLineSlamEvo3(def);
+                    ExecuteLineSlamEvo3(def, index);
                 else
-                    ExecuteLineSlam(def);
+                    ExecuteLineSlam(def, index);
                 StartCoroutine(ReturnToIdleAfter(0.35f));
                 break;
 
             case SkillShapeType.Dash:
-                StartCoroutine(ExecuteDash(def, evo));
+                StartCoroutine(ExecuteDash(def, evo, index));
                 break;
         }
 
@@ -241,6 +280,19 @@ public class FighterSkillController : MonoBehaviour
         SkillDefinitionSO def = skills[index];
         if (def != null && def.shapeType == SkillShapeType.Dash && evolution == SkillEvolutionId.Evolution2 && dashStacks < 0)
             dashStacks = def.evoDashMaxStacks; // 대시 2스택 진화로 처음 전환할 때 스택을 초기화
+    }
+
+    /// <summary>스킬 슬롯(0~2)의 현재 강화. 범위 밖이면 None.</summary>
+    public SkillEnhancementId GetEnhancement(int index) =>
+        index >= 0 && index < activeEnhancements.Length ? activeEnhancements[index] : SkillEnhancementId.None;
+
+    /// <summary>스킬 슬롯(0~2)의 강화를 외부(강화 선택 UI 등)에서 변경한다.</summary>
+    public void SetEnhancement(int index, SkillEnhancementId enhancement)
+    {
+        if (index < 0 || index >= activeEnhancements.Length)
+            return;
+
+        activeEnhancements[index] = enhancement;
     }
 
     /// <summary>스킬 슬롯 개수(0~2). UI가 슬롯 수만큼 반복해서 그릴 때 사용.</summary>
@@ -275,11 +327,20 @@ public class FighterSkillController : MonoBehaviour
         {
             dashStacks--;
             if (dashStackRechargeTimer <= 0f)
-                dashStackRechargeTimer = def.evoDashStackRechargeSeconds;
+                dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = def.cooldownSeconds;
+        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+    }
+
+    /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임/스택 충전 시간을 줄인다.</summary>
+    private float ApplyCooldownEnhancement(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        if (GetEnhancement(index) != SkillEnhancementId.Enhance2)
+            return baseCooldown;
+
+        return baseCooldown * (1f - def.enhanceCooldownReductionPercent / 100f);
     }
 
     private void StartCharge(int index)
@@ -300,7 +361,26 @@ public class FighterSkillController : MonoBehaviour
         // 얇은 선이라 sectorVisualColor의 낮은 알파(플래시 채우기용, 0.35)로는 잘 안 보여서 불투명하게 조정해서 쓴다.
         Color outlineColor = sectorVisualColor;
         outlineColor.a = 1f;
-        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, def.sectorRange, 360f, outlineColor, lineWidth: 0.15f);
+        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+    }
+
+    /// <summary>PlayerStatManager의 "스킬 범위" 스탯 + 강화(Enhance3: 범위 강화)만큼 기본 판정 거리를 늘린다.
+    /// (기본거리 + flat 보너스) * (1 + % 보너스) 순서. flat/%는 PlayerStatManager.GetSkillRangeBonus()로
+    /// 4단 공식(CalcFinal)을 우회한 원시 합을 받는다 - Stat.skillRange(CalcFinal 결과)를 그대로 쓰면
+    /// buff/equip의 %가 이미 캐릭터의 작은 flat 값에 한 번 곱해져 들어가 있어서, 여기서 %를 또 곱하면
+    /// 같은 보너스가 두 번 적용되기 때문이다. 각도(sectorAngle)나 폭(lineWidth)은 이 스탯의 대상이 아니라서
+    /// 건드리지 않는다.</summary>
+    private float ApplySkillRangeBonus(SkillDefinitionSO def, int index, float baseRange)
+    {
+        float flatBonus = 0f;
+        float percentBonus = 0f;
+        if (PlayerStatManager.Instance != null)
+            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance3)
+            percentBonus += def.enhanceRangeBonusPercent;
+
+        return (baseRange + flatBonus) * (1f + percentBonus / 100f);
     }
 
     private void StopChargeEffect()
@@ -334,7 +414,7 @@ public class FighterSkillController : MonoBehaviour
         ConsumeSkillUse(index, def);
 
         float ratio = def.evoChargeMaxSeconds > 0f ? Mathf.Clamp01(chargeElapsed / def.evoChargeMaxSeconds) : 0f;
-        ExecuteSectorSlashEvo3(def, ratio);
+        ExecuteSectorSlashEvo3(def, ratio, index);
         StartCoroutine(ReturnToIdleAfter(0.3f));
     }
 
@@ -375,35 +455,38 @@ public class FighterSkillController : MonoBehaviour
     }
 
     /// <summary>기본 반원 베기 - 진화 미선택일 때.</summary>
-    private void ExecuteSectorSlash(SkillDefinitionSO def)
+    private void ExecuteSectorSlash(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, def.sectorAngle, sectorVisualColor);
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
-        foreach (Collider target in GetSectorTargets(def.sectorRange, def.sectorAngle))
-            ApplyHit(target, def, def.damageMultiplier);
+        foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
+            ApplyHit(target, def, def.damageMultiplier, index);
     }
 
     /// <summary>진화1: 밀치기 + 기절 - 기본 판정에 넉백/기절 상태이상을 추가로 건다.</summary>
-    private void ExecuteSectorSlashEvo1(SkillDefinitionSO def)
+    private void ExecuteSectorSlashEvo1(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, def.sectorAngle, sectorVisualColor);
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
-        foreach (Collider target in GetSectorTargets(def.sectorRange, def.sectorAngle))
+        foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
         {
-            ApplyHit(target, def, def.damageMultiplier);
+            ApplyHit(target, def, def.damageMultiplier, index);
             ApplyKnockbackAndStun(target, def);
         }
     }
 
     /// <summary>진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.</summary>
-    private void ExecuteSectorSlashEvo2(SkillDefinitionSO def)
+    private void ExecuteSectorSlashEvo2(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, def.sectorAngle, sectorVisualColor);
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
-        foreach (Collider target in GetSectorTargets(def.sectorRange, def.sectorAngle))
-            ApplyHit(target, def, def.damageMultiplier);
+        foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
+            ApplyHit(target, def, def.damageMultiplier, index);
 
-        foreach (Collider projectile in GetSectorTargets(def.sectorRange, def.sectorAngle, projectileLayer))
+        foreach (Collider projectile in GetSectorTargets(range, def.sectorAngle, projectileLayer))
         {
             if (projectile.TryGetComponent<WBH_Projectile>(out var wbhProjectile))
                 wbhProjectile.ForceRemove();
@@ -411,13 +494,14 @@ public class FighterSkillController : MonoBehaviour
     }
 
     /// <summary>진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.</summary>
-    private void ExecuteSectorSlashEvo3(SkillDefinitionSO def, float chargeRatio)
+    private void ExecuteSectorSlashEvo3(SkillDefinitionSO def, float chargeRatio, int index)
     {
         float multiplier = Mathf.Lerp(def.evoChargeMinDamageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, def.sectorRange, 360f, sectorVisualColor);
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, 360f, sectorVisualColor);
 
-        foreach (Collider target in GetSectorTargets(def.sectorRange, 360f))
-            ApplyHit(target, def, multiplier);
+        foreach (Collider target in GetSectorTargets(range, 360f))
+            ApplyHit(target, def, multiplier, index);
     }
 
     private void ApplyKnockbackAndStun(Collider target, SkillDefinitionSO def)
@@ -450,54 +534,62 @@ public class FighterSkillController : MonoBehaviour
     }
 
     /// <summary>기본 정면 직선 내려찍기 - 진화 미선택일 때.</summary>
-    private void ExecuteLineSlam(SkillDefinitionSO def)
+    private void ExecuteLineSlam(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, def.lineLength, def.lineWidth, lineVisualColor);
+        float length = ApplySkillRangeBonus(def, index, def.lineLength);
+        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
-        foreach (Collider target in GetLineTargets(def.lineLength, def.lineWidth))
-            ApplyHit(target, def, def.damageMultiplier);
+        foreach (Collider target in GetLineTargets(length, def.lineWidth))
+            ApplyHit(target, def, def.damageMultiplier, index);
     }
 
     /// <summary>진화1: 방어 감소 + 기절 - 기본 판정에 방어력 감소/기절 상태이상을 추가로 건다.</summary>
-    private void ExecuteLineSlamEvo1(SkillDefinitionSO def)
+    private void ExecuteLineSlamEvo1(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, def.lineLength, def.lineWidth, lineVisualColor);
+        float length = ApplySkillRangeBonus(def, index, def.lineLength);
+        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
-        foreach (Collider target in GetLineTargets(def.lineLength, def.lineWidth))
+        foreach (Collider target in GetLineTargets(length, def.lineWidth))
         {
-            ApplyHit(target, def, def.damageMultiplier);
+            ApplyHit(target, def, def.damageMultiplier, index);
             ApplyDefenseDownAndStun(target, def);
         }
     }
 
     /// <summary>진화2: 범위 증가 + 에어본.</summary>
-    private void ExecuteLineSlamEvo2(SkillDefinitionSO def)
+    private void ExecuteLineSlamEvo2(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, def.evoWideLineLength, def.evoWideLineWidth, lineVisualColor);
+        float length = ApplySkillRangeBonus(def, index, def.evoWideLineLength);
+        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoWideLineWidth, lineVisualColor);
 
         var airborne = new WBH_StatusEffectData(WBH_StatusEffectType.Airborne, duration: def.evoAirborneDuration, height: def.evoAirborneHeight);
 
-        foreach (Collider target in GetLineTargets(def.evoWideLineLength, def.evoWideLineWidth))
+        foreach (Collider target in GetLineTargets(length, def.evoWideLineWidth))
         {
-            ApplyHit(target, def, def.damageMultiplier);
+            ApplyHit(target, def, def.damageMultiplier, index);
             if (target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 combatTarget.AddStatusEffect(airborne);
         }
     }
 
     /// <summary>진화3: 범위 감소 + 강한 데미지.</summary>
-    private void ExecuteLineSlamEvo3(SkillDefinitionSO def)
+    private void ExecuteLineSlamEvo3(SkillDefinitionSO def, int index)
     {
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, def.evoNarrowLineLength, def.evoNarrowLineWidth, lineVisualColor);
+        float length = ApplySkillRangeBonus(def, index, def.evoNarrowLineLength);
+        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoNarrowLineWidth, lineVisualColor);
 
-        foreach (Collider target in GetLineTargets(def.evoNarrowLineLength, def.evoNarrowLineWidth))
-            ApplyHit(target, def, def.evoNarrowDamageMultiplier);
+        foreach (Collider target in GetLineTargets(length, def.evoNarrowLineWidth))
+            ApplyHit(target, def, def.evoNarrowDamageMultiplier, index);
     }
 
-    private void ApplyHit(Collider target, SkillDefinitionSO def, float damageMultiplier)
+    /// <summary>강화(Enhance1: 위력 강화)가 선택돼 있으면 데미지 계수에 보너스를 곱한다.</summary>
+    private void ApplyHit(Collider target, SkillDefinitionSO def, float damageMultiplier, int index)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
+
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
         WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
         WBH_CombatManager.ProcessDamage(request);
@@ -511,28 +603,36 @@ public class FighterSkillController : MonoBehaviour
     /// 진화1(무적 부여)은 대시 시작과 동시에 T_PlayerController.ApplyInvincibility를 호출한다.
     /// 진화2(2스택화)는 입력/쿨타임 쪽(IsSkillReady/ConsumeSkillUse)에서 이미 처리되고, 이동 자체는
     /// 기본 대시와 동일하다. 진화3(피해 증가 버프)는 대시가 끝난 직후 버프를 건다.
+    ///
+    /// 강화(Enhance1: 위력 강화)는 대시가 자체 피해를 안 입혀서 대신 이동 시간(dashDuration)을 줄여
+    /// 더 빠르게 대시하도록 한다. Enhance3(범위 강화)는 이동 거리에 적용된다(ApplySkillRangeBonus).
     /// </summary>
-    private IEnumerator ExecuteDash(SkillDefinitionSO def, SkillEvolutionId evo)
+    private IEnumerator ExecuteDash(SkillDefinitionSO def, SkillEvolutionId evo, int index)
     {
         if (evo == SkillEvolutionId.Evolution1)
             controller.ApplyInvincibility(def.evoInvincibleDuration);
 
         Vector3 dir = GetCursorDirection();
-        SkillRangeVisual.ShowLine(transform.position, dir, def.dashDistance, 0.6f, dashVisualColor);
+        float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
+        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
-        Vector3 targetPos = transform.position + dir * def.dashDistance;
+        Vector3 targetPos = transform.position + dir * distance;
         if (NavMesh.Raycast(transform.position, targetPos, out NavMeshHit hit, NavMesh.AllAreas))
             targetPos = hit.position;
+
+        float duration = GetEnhancement(index) == SkillEnhancementId.Enhance1
+            ? def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f)
+            : def.dashDuration;
 
         Vector3 start = transform.position;
         float elapsed = 0f;
 
-        while (elapsed < def.dashDuration)
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / def.dashDuration);
+            float t = Mathf.Clamp01(elapsed / duration);
             Vector3 next = Vector3.Lerp(start, targetPos, t);
             agent.Move(next - transform.position);
             yield return null;

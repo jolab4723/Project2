@@ -20,7 +20,7 @@ public enum SkillShapeType
 /// 진화(3가지 형태 중 선택)는 아래 evo* 필드로 시작했다 - 스킬마다 진화 3개의 효과가 서로 달라서
 /// 필드도 스킬 형태별로 나눠 정의한다("SectorSlash 진화용" 등 헤더 참고, 실제로 사용되는 필드는
 /// 그 스킬의 shapeType과 FighterSkillController에서 선택된 SkillEvolutionId에 따라 갈린다).
-/// 강화(피해량/쿨타임/범위 중 선택)는 아직 구체적인 형태가 안 정해져서 이 에셋에는 없음.
+/// 강화(위력/쿨타임/범위 중 선택, SkillEnhancementId)는 진화와 별개의 축으로 아래 enhance* 필드에 있다.
 /// </summary>
 [CreateAssetMenu(menuName = "Skill/SkillDefinition")]
 public class SkillDefinitionSO : ScriptableObject
@@ -90,4 +90,16 @@ public class SkillDefinitionSO : ScriptableObject
 
     [Header("Dash 진화3 전용 (대시 후 피해 증가 버프)")]
     public BuffDefinitionSO evoDashDamageBuff;
+
+    [Header("강화 - 위력(Enhance1), 전 스킬 공통이지만 shapeType별로 의미가 다름")]
+    [Tooltip("SectorSlash/LineSlam 전용: 데미지 계수(damageMultiplier)에 곱해지는 보너스(%).")]
+    public float enhanceDamageMultiplierBonusPercent = 15f;
+    [Tooltip("Dash 전용: 자체 피해가 없어서 대신 대시 이동 시간(dashDuration)을 줄이는 비율(%).")]
+    public float enhanceDashSpeedBonusPercent = 15f;
+
+    [Header("강화 - 쿨타임 감소(Enhance2), 전 스킬 공통")]
+    public float enhanceCooldownReductionPercent = 15f;
+
+    [Header("강화 - 범위 증가(Enhance3), 전 스킬 공통. FighterSkillController.ApplySkillRangeBonus의 % 항에 합류")]
+    public float enhanceRangeBonusPercent = 15f;
 }
