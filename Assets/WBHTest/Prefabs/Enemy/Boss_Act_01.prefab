@@ -5360,6 +5360,7 @@ GameObject:
   - component: {fileID: 5021685256685420365}
   - component: {fileID: 8473196466248690649}
   - component: {fileID: 5297122012163549294}
+  - component: {fileID: 6989811152614567399}
   - component: {fileID: 1921703893647549581}
   - component: {fileID: 1844394830141919937}
   - component: {fileID: -6500549865544642902}
@@ -5687,6 +5688,110 @@ MonoBehaviour:
   gravity: 12
   pieceLifetime: 2.5
   armorReleaseDuration: 3
+--- !u!114 &6989811152614567399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9109071794180357373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b86c17a2914d040409bd15bee40ec59a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+  dissolveRenderers:
+  - {fileID: 8576332353380055288}
+  - {fileID: 745376384176624063}
+  - {fileID: 3747653772768560910}
+  - {fileID: 6723198035161262422}
+  - {fileID: 2813984830789903020}
+  - {fileID: 7197261066683947372}
+  - {fileID: 3568825889392203726}
+  - {fileID: 8761784027353611795}
+  - {fileID: 8604769118728073745}
+  - {fileID: 2580438252241556730}
+  - {fileID: 5937029407958912151}
+  - {fileID: 2796564539154010698}
+  - {fileID: 6402344215379111267}
+  - {fileID: 3721059925993639810}
+  - {fileID: 12923364525163918}
+  - {fileID: 6920018507754356213}
+  - {fileID: 8074602421512857642}
+  - {fileID: 8268506324868027332}
+  - {fileID: 6738056840012181126}
+  - {fileID: 4277008276696208896}
+  - {fileID: 1918864693745410264}
+  - {fileID: 5204752619009233136}
+  - {fileID: 3507433298995443071}
+  - {fileID: 1624084980363639804}
+  - {fileID: 5781153521579805164}
+  - {fileID: 7039560616737608044}
+  - {fileID: 5622376620672070259}
+  - {fileID: 7078098079093078887}
+  - {fileID: 2670261243442579968}
+  - {fileID: 1270773434870724234}
+  - {fileID: 6686865748960648107}
+  - {fileID: 5683828119649571225}
+  - {fileID: 5486444058081952707}
+  - {fileID: 7416531652139065522}
+  - {fileID: 5301119656201335243}
+  - {fileID: 7905100151381309217}
+  - {fileID: 3555828396692995798}
+  - {fileID: 815218873014040846}
+  exceptionRenderers:
+  - {fileID: 4588589063486548775}
+  exceptionProperty: _opasity
+  startDelay: 0.5
+  effectDuration: 2.5
+  dissolveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  exceptionFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &1921703893647549581
 MonoBehaviour:
   m_ObjectHideFlags: 0

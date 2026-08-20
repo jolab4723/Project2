@@ -22,6 +22,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyStatusEffectController statusEffectController;
     private WBH_EnemyPoolManager poolManager; 
     private WBHEnemyDestructionAdapter destructionAdapter;
+    private WBH_EnemyBossDeathView bossDeathView;
 
     private WBH_EnemyInfo info;
 
@@ -40,6 +41,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern = GetComponent<WBH_EnemyPattern>();
         statusEffectController = GetComponent<WBH_EnemyStatusEffectController>();
         destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
+        bossDeathView = GetComponent<WBH_EnemyBossDeathView>();
     }
 
     private void OnEnable()
@@ -69,6 +71,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         combat.Initialize(info);
         enemyAnimation.Initialize();
         pattern.Initialize(this);
+        bossDeathView?.ResetVisual();
 
         Debug.Log(info.enemyName);
         isDying = false;
@@ -149,13 +152,14 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         if (!isDying)
             return;
 
-        StartCoroutine(CoDeath());
+        if(bossDeathView != null)
+        {
+            bossDeathView.PlayDeathEffect(ReturnAfterDeath);
+        }
     }
 
-    private IEnumerator CoDeath()
+    private void ReturnAfterDeath()
     {
-        yield return new WaitForSeconds(3);
         poolManager.Return(this);
-        // !@ 디졸브 효과 차후 추가 필요
     }
 }
