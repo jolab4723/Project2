@@ -1172,7 +1172,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a59d7f0bc59589409838834cddaa148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
-  selfSettings:
+  explodeSettings:
     startDelay: 1
     triggerDistance: 1.25
     fuseDuration: 2
@@ -1182,6 +1182,16 @@ MonoBehaviour:
     maxSpeedMultiplier: 2.2
     farBlinkInterval: 0.5
     nearBlinkInterval: 0.08
+  hiddenSettings:
+    lifeTime: 60
+    damagedSpeedMultiplier: 1.5
+    damagedSpeedDuration: 3
+    repathInterval: 0.35
+    fleeDistance: 8
+    navMeshSampleRadius: 2
+    candidateCount: 5
+    maxFleeAngle: 70
+    initialDirectionWeight: 5
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -1650,7 +1660,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ff3ba0becae47b8b9381191598957c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
-  syncDirection: 1
+  syncDirection: 0
   syncMode: 0
   syncInterval: 0
   target: {fileID: 1079042634644656969}

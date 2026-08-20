@@ -41,7 +41,6 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
 
     [Header("Player separation test")]
     [SerializeField] private ItemDefinitionSO[] distinctTestItems;
-    [SerializeField] private bool grantDistinctItemOnFirstBind = true;
     [SerializeField] private bool showDiagnostics = true;
 
     private PlayerContext context;
@@ -96,8 +95,9 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
 
         RefreshAll();
 
-        if (grantDistinctItemOnFirstBind && context.Inventory.GetAllInventoryItems().Count == 0)
-            GrantDistinctTestItem();
+        // 기본 테스트 아이템은 PlayerInventorySync_MirrorTest.OnStartServer에서 플레이어당 한 번만 지급한다.
+        // Scene UI Bind 시점에는 장착 중인 아이템이 인벤토리 Grid 목록에서 빠져 있으므로,
+        // Grid가 비었다는 이유로 다시 지급하면 Scene 왕복마다 기본 투구가 중복된다.
     }
 
     public void Unbind()
@@ -446,6 +446,9 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             GUILayout.Label(
                 $"빌드 호환: {manager.CompatibilityStatusMessage}",
                 manager.ClientCompatibilityConfirmed ? passStyle : localStyle);
+            GUILayout.Label(
+                $"세션 권한: {(manager.ClientIsSessionLeader ? "방장" : "참가자")}",
+                manager.ClientIsSessionLeader ? passStyle : localStyle);
         }
 
         if (manager == null)
@@ -454,7 +457,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
             return;
         }
 
-        bool canRequest = context != null && manager.ClientCompatibilityConfirmed;
+        bool canRequest = context != null && manager.CanLocalClientControlSession;
         switch (manager.CurrentSessionRoute)
         {
             case MirrorSessionRoute.StageSelect:
@@ -631,6 +634,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         GUILayout.Space(10f);
         GUILayout.Label("서버 종합상황실", titleStyle);
         GUILayout.Label("서버가 확정한 원본 | PlayerContext별 전투 상태와 적 타깃·보상·드랍을 함께 확인");
+        GUILayout.Label($"세션 방장 connectionId={manager.ServerSessionLeaderConnectionId}");
 
         NetworkShopState_MirrorTest sharedShop = FindFirstObjectByType<NetworkShopState_MirrorTest>();
         if (sharedShop != null)

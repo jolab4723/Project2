@@ -93,8 +93,11 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
         if (damage <= 0f)
             return;
 
-        damageTextPool ??=
-            FindFirstObjectByType<WBH_DamageTextPoolManager>(FindObjectsInactive.Exclude);
+        // 1. 카메라가 아직 없는 환경(서버/로딩 중)이면 표출 스킵
+        if (Camera.main == null) return;
+        
+        damageTextPool ??= FindFirstObjectByType<WBH_DamageTextPoolManager>(FindObjectsInactive.Exclude);
+
         if (damageTextPool == null)
         {
             if (!missingPoolReported)
@@ -104,17 +107,22 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
                     this);
                 missingPoolReported = true;
             }
-
             return;
         }
 
         WBH_DamageText damageText = damageTextPool.GetDamageText();
-        Vector3 position = damageTextRoot != null
-            ? damageTextRoot.position
-            : transform.position + Vector3.up * 1.5f;
-        damageText.Show(
-            position,
-            new WBH_DamageResult(null, damage, critical, ElementType.None));
+        if (damageText != null)
+        {
+            // 2. 풀에서 꺼낸 직후 Initialize를 호출해 현재 씬의 Camera.main을 재할당
+            damageText.Initialize(damageTextPool);
+            Vector3 position = damageTextRoot != null
+                ? damageTextRoot.position
+                : transform.position + Vector3.up * 1.5f;
+
+            damageText.Show(
+                position,
+                new WBH_DamageResult(null, damage, critical, ElementType.None));
+        }
     }
 
     private void ResolveReferences()

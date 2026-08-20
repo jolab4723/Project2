@@ -141,7 +141,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundContext = context;
         boundInventorySync = context.GetComponent<PlayerInventorySync_MirrorTest>();
         boundInventorySync?.BindLocalInventoryView(inventoryView);
-        boundShopState = FindFirstObjectByType<NetworkShopState_MirrorTest>();
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(context, inventoryView);
         upgradeButton?.Bind(context);
         playerHud?.Bind(context);
@@ -157,6 +157,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void Update()
     {
+        EnsureSceneShopBinding();
+
         if (boundContext == null || inventoryPartView == null || Keyboard.current == null)
             return;
 
@@ -187,6 +189,45 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             inventoryPartView.CloseAll();
             statusPopup?.Toggle();
         }
+    }
+
+    /// <summary>
+    /// Mirror Scene 전환에서는 로컬 UI Binder가 먼저 활성화되고 새 NetworkShopState의 Spawn이
+    /// 한두 프레임 뒤에 끝날 수 있다. 최초 Bind 때 상점 상태가 없었으면 같은 Scene의 상태가
+    /// 준비될 때까지만 다시 찾아 연결하며, 이전 Scene의 파괴 대기 객체는 선택하지 않는다.
+    /// </summary>
+    private void EnsureSceneShopBinding()
+    {
+        if (boundContext == null || inventoryView == null)
+            return;
+
+        if (boundShopState != null && boundShopState.gameObject.scene == gameObject.scene)
+            return;
+
+        if (boundShopState != null)
+            boundShopState.UnbindLocalView(boundContext);
+
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
+        boundShopState?.BindLocalView(boundContext, inventoryView);
+    }
+
+    /// <summary>
+    /// DontDestroyOnLoad와 이전 Scene의 종료 순서에 영향을 받지 않도록 이 Binder가 속한
+    /// 현재 Scene의 컴포넌트만 반환한다.
+    /// </summary>
+    private T FindInBinderScene<T>() where T : Component
+    {
+        T[] candidates = FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (T candidate in candidates)
+        {
+            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+                return candidate;
+        }
+
+        return null;
     }
 
     /// <summary>
