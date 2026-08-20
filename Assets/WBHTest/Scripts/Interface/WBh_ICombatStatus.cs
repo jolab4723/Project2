@@ -12,5 +12,7 @@ public interface WBH_ICombatStatus
     float FireBonus { get; }
     float IceBonus { get; }
     float ElectricBonus { get; }
+    /// <summary>Marked 등 "받는 데미지 배율" 상태이상의 최종 배율. 없으면 1(영향 없음).</summary>
+    float DamageTakenModifier { get; }
     bool IsDead { get; }
 }

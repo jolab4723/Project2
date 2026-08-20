@@ -25,6 +25,10 @@ public class WBH_CombatManager
         // 타겟 방어력 적용
         damage = CalculateDefense(damage, targetStat, attackerStat);
 
+        // Marked 등 "받는 데미지 배율" 상태이상 적용(없으면 1, 영향 없음) - 공격자가 누구든(플레이어/적
+        // 스킬 구분 없이) 이 지점 하나만 거치면 다 적용되도록 파이프라인 끝쪽에 둠(118번, WJ 이우진)
+        damage *= targetStat.DamageTakenModifier;
+
         // 최소 데미지 보장
         damage = Mathf.Max(1f, damage);
 
