@@ -23,6 +23,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyPoolManager poolManager; 
     private WBHEnemyDestructionAdapter destructionAdapter;
     private WBH_EnemyBossDeathView bossDeathView;
+    private WBH_EnemyGradeVisual gradeVisual;
 
     private WBH_EnemyInfo info;
 
@@ -42,6 +43,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         statusEffectController = GetComponent<WBH_EnemyStatusEffectController>();
         destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
         bossDeathView = GetComponent<WBH_EnemyBossDeathView>();
+        gradeVisual = GetComponent<WBH_EnemyGradeVisual>();
     }
 
     private void OnEnable()
@@ -71,9 +73,11 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         combat.Initialize(info);
         enemyAnimation.Initialize();
         pattern.Initialize(this);
+        gradeVisual?.ApplyGrade(info.enemyGrade);
+        
         bossDeathView?.ResetVisual();
 
-        Debug.Log(info.enemyName);
+        Log.Print(info.enemyName);
         isDying = false;
     }
 
