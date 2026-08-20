@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 using TMPro;
 
 /// <summary>
@@ -12,18 +11,16 @@ using TMPro;
 /// 슬롯마다 버튼 하나를 클릭할 때마다 없음→1→2→3→없음 순으로 돌아간다
 /// (드롭다운 대신 클릭 한 번으로 순환하는 방식이라 더 간단하게 만들 수 있었다).
 ///
-/// 캐릭터 클래스와 무관하게 재사용할 수 있도록 ISkillController(FighterSkillController가 구현)만
-/// 바라본다. Unity 인스펙터가 인터페이스 필드를 직접 드래그 못 받아서, PlayerStatManager의
-/// equipManagerBehaviour와 같은 방식으로 MonoBehaviour로 받아서 인터페이스로 캐스팅해 쓴다.
+/// 캐릭터 클래스와 무관하게 재사용할 수 있도록 ISkillController(FighterSkillController/
+/// GunnerSkillController가 각각 구현)만 바라본다. 예전엔 인스펙터에 MonoBehaviour 필드로 직접
+/// 연결해뒀는데(캐릭터를 바꿀 때마다 손으로 재연결해야 했음 - 109~112번 미해결 메모), 지금은
+/// ActiveSkillControllerLocator로 지금 활성 캐릭터의 컨트롤러를 그때그때 찾아서 쓴다(118번).
 /// </summary>
 public class SkillEvolutionSelectUI : MonoBehaviour
 {
-    [FormerlySerializedAs("skillController")]
-    [Tooltip("ISkillController를 구현한 컴포넌트(FighterSkillController 등).")]
-    [SerializeField] private MonoBehaviour skillControllerBehaviour;
-
-    /// <summary>PlayerStatManager.EquipProvider와 같은 패턴 - 인스펙터엔 MonoBehaviour로 받고 인터페이스로 캐스팅.</summary>
-    private ISkillController SkillController => skillControllerBehaviour as ISkillController;
+    /// <summary>매번 활성 캐릭터를 다시 찾는다 - 이 패널은 K키를 누를 때/버튼 클릭할 때만 쓰여서
+    /// (매 프레임 아님) 스캔 비용이 문제되지 않는다.</summary>
+    private ISkillController SkillController => ActiveSkillControllerLocator.Find();
 
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private Button[] cycleButtons = new Button[3];

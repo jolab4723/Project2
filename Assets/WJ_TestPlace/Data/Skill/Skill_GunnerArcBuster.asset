@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7fcae4d88ad6b74fa888f8b92664d7b, type: 3}
-  m_Name: Skill_Fighter_HalfCircleSlash
+  m_Name: Skill_GunnerArcBuster
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
-  skillId: 0
-  skillName: "\uBC18\uC6D0 \uBCA0\uAE30"
+  skillId: 3
+  skillName: "\uC544\uD06C \uBC84\uC2A4\uD130"
   icon: {fileID: 0}
-  cooldownSeconds: 5
-  damageMultiplier: 1.5
-  shapeType: 0
-  sectorRange: 4
-  sectorAngle: 180
+  cooldownSeconds: 1
+  damageMultiplier: 1.2
+  shapeType: 3
+  sectorRange: 12
+  sectorAngle: 0
   lineLength: 4
   lineWidth: 2
   dashDistance: 4
@@ -29,7 +29,7 @@ MonoBehaviour:
   explosionRadius: 1
   maxStacks: 6
   stackRechargeSeconds: 4
-  arcProjectilePrefab: {fileID: 0}
+  arcProjectilePrefab: {fileID: 3153587232811040294, guid: a0f8e234bab4e994381509d308675b04, type: 3}
   bombThrowRange: 6
   bombThrowSpeed: 10
   bombArcHeight: 2
@@ -58,7 +58,7 @@ MonoBehaviour:
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
-  enhanceDamageMultiplierBonusPercent: 55
-  enhanceDashSpeedBonusPercent: 55
-  enhanceCooldownReductionPercent: 35
-  enhanceRangeBonusPercent: 30
+  enhanceDamageMultiplierBonusPercent: 15
+  enhanceDashSpeedBonusPercent: 15
+  enhanceCooldownReductionPercent: 15
+  enhanceRangeBonusPercent: 15

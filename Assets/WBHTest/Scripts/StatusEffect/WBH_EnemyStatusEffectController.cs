@@ -74,6 +74,10 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     {
         status.MultiplyDefense(modifier);
     }
+    public override void ApplyDamageTakenModifier(float modifier)
+    {
+        status.MultiplyDamageTaken(modifier);
+    }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
     public override void SetControlEnable(bool enabled)

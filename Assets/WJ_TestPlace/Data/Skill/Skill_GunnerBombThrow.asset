@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7fcae4d88ad6b74fa888f8b92664d7b, type: 3}
-  m_Name: Skill_Fighter_HalfCircleSlash
+  m_Name: Skill_GunnerBombThrow
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
-  skillId: 0
-  skillName: "\uBC18\uC6D0 \uBCA0\uAE30"
+  skillId: 4
+  skillName: "\uD3ED\uD0C4 \uD22C\uCC99"
   icon: {fileID: 0}
-  cooldownSeconds: 5
+  cooldownSeconds: 8
   damageMultiplier: 1.5
-  shapeType: 0
+  shapeType: 4
   sectorRange: 4
   sectorAngle: 180
-  lineLength: 4
-  lineWidth: 2
+  lineLength: 10
+  lineWidth: 1.5
   dashDistance: 4
   dashDuration: 0.15
   projectileMaxDistance: 12
@@ -35,7 +35,7 @@ MonoBehaviour:
   bombArcHeight: 2
   bombFuseSeconds: 2
   bombExplosionRadius: 3
-  bombPrefab: {fileID: 0}
+  bombPrefab: {fileID: 2628153949981438602, guid: d06022baf0e81f74882d54a9451fdb67, type: 3}
   backstepDistance: 2
   backstepDuration: 0.15
   backstepConeRange: 5
@@ -58,7 +58,7 @@ MonoBehaviour:
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
-  enhanceDamageMultiplierBonusPercent: 55
-  enhanceDashSpeedBonusPercent: 55
-  enhanceCooldownReductionPercent: 35
-  enhanceRangeBonusPercent: 30
+  enhanceDamageMultiplierBonusPercent: 15
+  enhanceDashSpeedBonusPercent: 15
+  enhanceCooldownReductionPercent: 15
+  enhanceRangeBonusPercent: 15
