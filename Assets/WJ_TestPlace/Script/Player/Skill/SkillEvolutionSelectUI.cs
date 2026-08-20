@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using TMPro;
 
 /// <summary>
@@ -10,10 +11,20 @@ using TMPro;
 /// 아직 진화/강화 해금·재화 개념이 없어서 지금은 제한 없이 자유롭게 바꿀 수 있다.
 /// 슬롯마다 버튼 하나를 클릭할 때마다 없음→1→2→3→없음 순으로 돌아간다
 /// (드롭다운 대신 클릭 한 번으로 순환하는 방식이라 더 간단하게 만들 수 있었다).
+///
+/// 캐릭터 클래스와 무관하게 재사용할 수 있도록 ISkillController(FighterSkillController가 구현)만
+/// 바라본다. Unity 인스펙터가 인터페이스 필드를 직접 드래그 못 받아서, PlayerStatManager의
+/// equipManagerBehaviour와 같은 방식으로 MonoBehaviour로 받아서 인터페이스로 캐스팅해 쓴다.
 /// </summary>
 public class SkillEvolutionSelectUI : MonoBehaviour
 {
-    [SerializeField] private FighterSkillController skillController;
+    [FormerlySerializedAs("skillController")]
+    [Tooltip("ISkillController를 구현한 컴포넌트(FighterSkillController 등).")]
+    [SerializeField] private MonoBehaviour skillControllerBehaviour;
+
+    /// <summary>PlayerStatManager.EquipProvider와 같은 패턴 - 인스펙터엔 MonoBehaviour로 받고 인터페이스로 캐스팅.</summary>
+    private ISkillController SkillController => skillControllerBehaviour as ISkillController;
+
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private Button[] cycleButtons = new Button[3];
     [SerializeField] private TextMeshProUGUI[] cycleButtonLabels = new TextMeshProUGUI[3];
@@ -64,38 +75,38 @@ public class SkillEvolutionSelectUI : MonoBehaviour
 
     private void CycleEvolution(int index)
     {
-        if (skillController == null)
+        if (SkillController == null)
             return;
 
-        int current = (int)skillController.GetEvolution(index);
+        int current = (int)SkillController.GetEvolution(index);
         int next = (current + 1) % EvolutionLabels.Length;
-        skillController.SetEvolution(index, (SkillEvolutionId)next);
+        SkillController.SetEvolution(index, (SkillEvolutionId)next);
         RefreshLabels();
     }
 
     private void CycleEnhancement(int index)
     {
-        if (skillController == null)
+        if (SkillController == null)
             return;
 
-        int current = (int)skillController.GetEnhancement(index);
+        int current = (int)SkillController.GetEnhancement(index);
         int next = (current + 1) % EnhancementLabels.Length;
-        skillController.SetEnhancement(index, (SkillEnhancementId)next);
+        SkillController.SetEnhancement(index, (SkillEnhancementId)next);
         RefreshLabels();
     }
 
     private void RefreshLabels()
     {
-        if (skillController == null)
+        if (SkillController == null)
             return;
 
-        for (int i = 0; i < cycleButtonLabels.Length && i < skillController.SkillCount; i++)
+        for (int i = 0; i < cycleButtonLabels.Length && i < SkillController.SkillCount; i++)
         {
             if (cycleButtonLabels[i] != null)
-                cycleButtonLabels[i].text = EvolutionLabels[(int)skillController.GetEvolution(i)];
+                cycleButtonLabels[i].text = EvolutionLabels[(int)SkillController.GetEvolution(i)];
 
             if (i < enhanceCycleButtonLabels.Length && enhanceCycleButtonLabels[i] != null)
-                enhanceCycleButtonLabels[i].text = EnhancementLabels[(int)skillController.GetEnhancement(i)];
+                enhanceCycleButtonLabels[i].text = EnhancementLabels[(int)SkillController.GetEnhancement(i)];
         }
     }
 }

@@ -22,8 +22,12 @@ using UnityEngine.AI;
 /// (방어감소+기절)은 MultiplyDefense/DefenseDown 상태이상을, SectorSlash 진화2(투사체 제거)는
 /// WBH_Projectile.ForceRemove()를, Dash 진화1(무적)은 T_PlayerController.ApplyInvincibility()를
 /// 각각 BH님 파일에 직접 추가했다.
+///
+/// ISkillController를 구현해서 진화/강화/쿨타임/스택 조회 API를 캐릭터 클래스 무관 인터페이스로
+/// 노출한다 - SkillEvolutionSelectUI/KY_SkillView가 이 인터페이스만 보고 동작하므로, 나중에
+/// 거너용 스킬 컨트롤러가 생겨도 같은 UI를 그대로 재사용할 수 있다.
 /// </summary>
-public class FighterSkillController : MonoBehaviour
+public class FighterSkillController : MonoBehaviour, ISkillController
 {
     [SerializeField] private PlayerActionInputHandler inputHandler;
     [SerializeField] private T_PlayerCombat combat;
