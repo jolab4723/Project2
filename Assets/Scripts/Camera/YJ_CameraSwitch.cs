@@ -1,18 +1,24 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using System.Collections.Generic;
 
 public class YJ_CameraSwitch : MonoBehaviour
 {
-    [SerializeField] private CinemachineCamera originCam;
-    [SerializeField] private CinemachineCamera switchingCam;
+    [SerializeField] private List<CinemachineCamera> switchingCam;
+    [SerializeField] private int activeCamIndex = 0;
 
     void Start()
     {
-        if (originCam == null || switchingCam == null)
+        if (switchingCam == null || switchingCam.Count == 0)
             return;
 
-        originCam.gameObject.SetActive(true);
-        switchingCam.gameObject.SetActive(false);
+
+        foreach (CinemachineCamera cam in switchingCam)
+        {
+            cam.gameObject.SetActive(false);
+        }
+
+        switchingCam[0].gameObject.SetActive(true);
     }
 
     void OnTriggerEnter(Collider other)
@@ -20,16 +26,11 @@ public class YJ_CameraSwitch : MonoBehaviour
         if ( ! other.CompareTag("Player"))
             return;
 
-        originCam.gameObject.SetActive(false);
-        switchingCam.gameObject.SetActive(true);
-    }
+        foreach (CinemachineCamera cam in switchingCam)
+        {
+            cam.gameObject.SetActive(false);
+        }
 
-    void OnTriggerExit(Collider other)
-    {
-        if ( ! other.CompareTag("Player"))
-            return;
-
-        originCam.gameObject.SetActive(true);
-        switchingCam.gameObject.SetActive(false);
+        switchingCam[activeCamIndex].gameObject.SetActive(true);
     }
 }
