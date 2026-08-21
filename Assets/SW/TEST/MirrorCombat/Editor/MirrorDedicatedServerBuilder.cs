@@ -19,6 +19,7 @@ internal static class MirrorDedicatedServerBuilder
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
+        MirrorTestNetworkManager.SessionUnknownScene,
     };
     private const string WindowsBuildDirectory = "Builds/MirrorDedicatedServer";
     private const string WindowsExecutableName = "MirrorDedicatedServer.exe";

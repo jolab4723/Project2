@@ -406,6 +406,22 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     }
 
     /// <summary>
+    /// StageSelect에 복원된 pending 노드의 서버 확정 타입으로 재진입을 요청한다.
+    /// Client가 임의 Scene을 고르지 않고 기존 pending 검증과 Route 요청 경계를 그대로 재사용한다.
+    /// </summary>
+    public bool RequestPendingStageReentry()
+    {
+        if (!CanLocalClientControlSession ||
+            CurrentSessionRoute != MirrorSessionRoute.StageSelect ||
+            !TryGetPendingStageNode(out StageNodeSaveData pendingNode))
+        {
+            return false;
+        }
+
+        return RequestSessionRoute(GetRouteForStageNodeType(pendingNode.type));
+    }
+
+    /// <summary>
     /// 미지 Scene에서 방장이 고른 선택지 번호만 서버에 전달한다.
     /// 이벤트 ID와 실제 선택지 범위, pending 완료 여부는 서버 Snapshot과 데이터베이스로 판정한다.
     /// </summary>

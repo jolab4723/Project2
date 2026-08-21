@@ -1,7 +1,10 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Mirror;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// JYJ 원본 StageSelect의 노드 선택 이벤트를 Mirror 테스트 Scene 이동 요청으로 연결합니다.
@@ -50,6 +53,56 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
         {
             StopCoroutine(routeRequestRoutine);
             routeRequestRoutine = null;
+        }
+    }
+
+    private void Update()
+    {
+        if (!Input.GetMouseButtonDown(0) ||
+            stageSelectManager == null ||
+            EventSystem.current == null ||
+            stageSelectManager.SelectedNode == null)
+        {
+            return;
+        }
+
+        MirrorTestNetworkManager networkManager =
+            MirrorTestNetworkManager.singleton as MirrorTestNetworkManager;
+        if (networkManager == null ||
+            !networkManager.TryGetPendingStageNode(out StageNodeSaveData pendingNode) ||
+            stageSelectManager.SelectedNode.NodeData?.id != pendingNode.id)
+        {
+            return;
+        }
+
+        PointerEventData pointer = new(EventSystem.current)
+        {
+            position = Input.mousePosition,
+        };
+        var raycastResults = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointer, raycastResults);
+
+        foreach (RaycastResult result in raycastResults)
+        {
+            YJ_StageNodeHover clickedNode =
+                result.gameObject.GetComponentInParent<YJ_StageNodeHover>();
+            if (clickedNode != stageSelectManager.SelectedNode)
+                continue;
+
+            if (!networkManager.RequestPendingStageReentry())
+            {
+                Debug.LogWarning(
+                    $"[MirrorStageSelect] pending 노드 재진입 요청 실패: node={pendingNode.id}",
+                    this);
+            }
+            else
+            {
+                Debug.Log(
+                    $"[MirrorStageSelect] pending 노드 재진입 요청: node={pendingNode.id}",
+                    this);
+            }
+
+            return;
         }
     }
 
@@ -156,6 +209,7 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
             yield break;
 
         stageSelectManager.GenerateMap();
+        DisableUnsupportedBossGlow();
         StageMapSaveData initialSnapshot = stageSelectManager.CaptureSaveData();
         if (!networkManager.ServerPublishRunSnapshot(initialSnapshot))
         {
@@ -243,11 +297,47 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
             return;
         }
 
+        DisableUnsupportedBossGlow();
         lastAppliedRunRevision = revision;
         Debug.Log(
             $"[MirrorStageSelect] 런 스냅샷 복원 완료: " +
             $"revision={revision}, seed={snapshot.mapSeed}, nodes={snapshot.nodes.Count}",
             this);
+    }
+
+    /// <summary>
+    /// 공용 Boss 노드 프리팹의 IconGlow가 삭제된 Shader를 참조하면 Unity가 분홍색
+    /// Error Shader로 표시한다. 공용 프리팹/Material은 수정하지 않고 이 테스트 Scene에서
+    /// 생성된 Boss 노드의 깨진 보조 Glow만 숨긴다. 정상 Icon은 별도 Image라 유지된다.
+    /// </summary>
+    private void DisableUnsupportedBossGlow()
+    {
+        YJ_StageNodeHover[] nodes = FindObjectsByType<YJ_StageNodeHover>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (YJ_StageNodeHover node in nodes)
+        {
+            if (node == null ||
+                node.gameObject.scene != gameObject.scene ||
+                node.NodeData?.type != StageNodeType.Boss)
+            {
+                continue;
+            }
+
+            Image[] images = node.GetComponentsInChildren<Image>(true);
+            foreach (Image image in images)
+            {
+                if (image == null || image.name != "IconGlow" || image.material == null)
+                    continue;
+
+                Shader shader = image.material.shader;
+                if (shader != null && shader.isSupported && shader.name != "Hidden/InternalErrorShader")
+                    continue;
+
+                image.gameObject.SetActive(false);
+            }
+        }
     }
 
     /// <summary>

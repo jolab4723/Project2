@@ -54,13 +54,23 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        if (!Physics.Raycast(ray, out RaycastHit hit) || IsBlocked(hit.collider.gameObject.layer))
+        if (!Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                500f,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore) ||
+            IsBlocked(hit.collider.gameObject.layer))
             return;
 
-        // 원본 Controller는 Attack 상태에서도 곧바로 Move 상태로 바꿀 수 있다.
-        // 먼저 서버 예약을 정리하지 않으면 화면에서는 공격이 끊겼는데 서버 피해만 뒤늦게 들어가는 현상이 생긴다.
-        combatAuthority?.TryCancelLocalAttackForMove();
-        combat.CancelChase();
+        if (Input.GetMouseButtonDown(1))
+        {
+            // 최초 이동 입력에서만 추격과 예약 공격을 취소한다.
+            // 누르는 동안 매 프레임 CancelChase를 호출하면 새 NavMesh 경로도 계속 초기화된다.
+            combatAuthority?.TryCancelLocalAttackForMove();
+            combat.CancelChase();
+        }
+
         controller.MoveCommand(hit.point);
     }
 

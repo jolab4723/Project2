@@ -21,6 +21,15 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
     private const float MissileTargetSpreadRadius = 4f;
     private const float MissileMaxDistance = 100f;
     private const float MinimumMissileFlightTime = 1f;
+    private const float BarrageCooldown = 15f;
+    private const int BarrageBulletCount = 15;
+    private const float BarrageSpreadAngle = 180f;
+    private const float BarrageMaxDistance = 35f;
+    private const float BarrageRecoveryDuration = 0.5f;
+    private const float BurstCooldown = 3f;
+    private const int BurstBulletCount = 5;
+    private const float BurstInterval = 0.15f;
+    private const float BurstMaxDistance = 12f;
     private const int TransitionMissilesPerRing = 8;
     private const float TransitionInnerRadius = 7f;
     private const float TransitionOuterRadius = 13f;
@@ -51,6 +60,8 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
     private PlayerContext target;
     private Coroutine bossActionRoutine;
     private float missileTimer;
+    private float barrageTimer;
+    private float burstTimer;
     private float dashTimer;
     private float jumpTimer;
     private bool bossPhaseTransitionStarted;
@@ -81,6 +92,8 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
         bossActionRoutine = null;
         bossPhaseTransitionStarted = false;
         missileTimer = 0f;
+        barrageTimer = 0f;
+        burstTimer = 0f;
         dashTimer = 0f;
         jumpTimer = 0f;
         if (IsBoss)
@@ -144,6 +157,8 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
     private void TickBoss(float deltaTime)
     {
         missileTimer -= deltaTime;
+        barrageTimer -= deltaTime;
+        burstTimer -= deltaTime;
         dashTimer -= deltaTime;
         jumpTimer -= deltaTime;
 
@@ -188,7 +203,21 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
                 return;
             }
 
-            TryBasicBossAttack();
+            if (barrageTimer <= 0f && !authority.IsAttackPending)
+            {
+                barrageTimer = BarrageCooldown;
+                bossActionRoutine = StartCoroutine(CoBarrage(
+                    target.transform.position + Vector3.up));
+                return;
+            }
+
+            if (burstTimer <= 0f && !authority.IsAttackPending)
+            {
+                burstTimer = BurstCooldown;
+                bossActionRoutine = StartCoroutine(CoBurst());
+                return;
+            }
+
             return;
         }
 
@@ -337,6 +366,66 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
 
         if (authority != null && !authority.IsDead)
             authority.ServerLaunchBossMissile(impactPoint, flightDuration, explosionRadius);
+    }
+
+    [Server]
+    private IEnumerator CoBarrage(Vector3 targetPoint)
+    {
+        Vector3 baseDirection = targetPoint - FirePoint.position;
+        if (baseDirection.sqrMagnitude < 0.001f)
+            baseDirection = transform.forward;
+
+        Vector3 facing = baseDirection;
+        facing.y = 0f;
+        if (facing.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.LookRotation(facing.normalized);
+
+        authority.ServerRecordBossBarrage();
+        authority.ServerPlayBossSkill(3);
+        for (int index = 0; index < BarrageBulletCount; index++)
+        {
+            float normalizedIndex = BarrageBulletCount > 1
+                ? index / (float)(BarrageBulletCount - 1)
+                : 0.5f;
+            float angle = Mathf.Lerp(
+                -BarrageSpreadAngle * 0.5f,
+                BarrageSpreadAngle * 0.5f,
+                normalizedIndex);
+            Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * baseDirection.normalized;
+            authority.ServerLaunchBossProjectile(direction, BarrageMaxDistance);
+        }
+
+        yield return new WaitForSeconds(BarrageRecoveryDuration);
+        bossActionRoutine = null;
+    }
+
+    [Server]
+    private IEnumerator CoBurst()
+    {
+        authority.ServerRecordBossBurst();
+        authority.ServerPlayBossSkill(2);
+        for (int index = 0; index < BurstBulletCount; index++)
+        {
+            if (!IsCurrentTargetValid())
+                target = SelectNearestAlivePlayer();
+
+            if (target != null)
+            {
+                authority.ServerSetTarget(target);
+                Vector3 targetPoint = target.transform.position + Vector3.up;
+                Vector3 direction = targetPoint - FirePoint.position;
+                Vector3 facing = direction;
+                facing.y = 0f;
+                if (facing.sqrMagnitude > 0.001f)
+                    transform.rotation = Quaternion.LookRotation(facing.normalized);
+                authority.ServerLaunchBossProjectile(direction, BurstMaxDistance);
+            }
+
+            if (index < BurstBulletCount - 1)
+                yield return new WaitForSeconds(BurstInterval);
+        }
+
+        bossActionRoutine = null;
     }
 
     [Server]

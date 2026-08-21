@@ -84,7 +84,7 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private PassiveSkillDatabaseSO passiveSkillDatabase;
-    [SerializeField, Min(0)] private int startingTestGold = 1000;
+    [SerializeField, Min(0)] private int startingTestGold = 10000;
     [SerializeField, Min(0)] private int fallbackShopEnhanceLevel;
     [SerializeField, Min(0)] private int fallbackExtraRerollCount;
     [SerializeField, Range(0f, 0.95f)] private float fallbackDiscountPercent;

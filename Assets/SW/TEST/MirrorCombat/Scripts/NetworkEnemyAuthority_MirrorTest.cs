@@ -85,6 +85,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private int bossPhaseVisualSeed;
     [SyncVar] private uint bossMissileVolleyCount;
     [SyncVar] private uint bossMissileLaunchCount;
+    [SyncVar] private uint bossBarrageCount;
+    [SyncVar] private uint bossBurstCount;
+    [SyncVar] private uint bossBulletLaunchCount;
     [SyncVar] private uint bossDashCount;
     [SyncVar] private uint bossJumpCount;
 
@@ -130,6 +133,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public int BossPhaseVisualSeed => bossPhaseVisualSeed;
     public uint BossMissileVolleyCount => bossMissileVolleyCount;
     public uint BossMissileLaunchCount => bossMissileLaunchCount;
+    public uint BossBarrageCount => bossBarrageCount;
+    public uint BossBurstCount => bossBurstCount;
+    public uint BossBulletLaunchCount => bossBulletLaunchCount;
     public uint BossDashCount => bossDashCount;
     public uint BossJumpCount => bossJumpCount;
     public bool IsAttackPending => attackPending;
@@ -264,6 +270,20 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     }
 
     [Server]
+    public void ServerRecordBossBarrage()
+    {
+        bossBarrageCount++;
+        stateChangeNumber++;
+    }
+
+    [Server]
+    public void ServerRecordBossBurst()
+    {
+        bossBurstCount++;
+        stateChangeNumber++;
+    }
+
+    [Server]
     public void ServerRecordBossDash()
     {
         bossDashCount++;
@@ -298,6 +318,20 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         projectile.InitializeMissileServer(this, impactPoint, flightDuration, explosionRadius);
         NetworkServer.Spawn(projectile.gameObject);
         bossMissileLaunchCount++;
+        stateChangeNumber++;
+        return true;
+    }
+
+    [Server]
+    public bool ServerLaunchBossProjectile(Vector3 direction, float maxDistance)
+    {
+        if (isDead || projectilePrefab == null || networkPattern == null)
+            return false;
+
+        if (!SpawnStraightProjectile(direction, maxDistance))
+            return false;
+
+        bossBulletLaunchCount++;
         stateChangeNumber++;
         return true;
     }
@@ -365,6 +399,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     {
         string stateName = skillId switch
         {
+            2 => "Shoot",
+            3 => "Burrage",
             4 => "Missile",
             5 => "PhaseMissile",
             7 => "WaitDash",
@@ -500,13 +536,25 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         Transform firePoint = networkPattern.FirePoint;
         Vector3 targetPoint = target.transform.position + Vector3.up;
         Vector3 direction = (targetPoint - firePoint.position).normalized;
+        SpawnStraightProjectile(direction, status.AttackRange);
+    }
+
+    [Server]
+    private bool SpawnStraightProjectile(Vector3 direction, float maxDistance)
+    {
+        if (projectilePrefab == null || networkPattern == null || direction.sqrMagnitude < 0.001f)
+            return false;
+
+        direction.Normalize();
+        Transform firePoint = networkPattern.FirePoint;
         NetworkEnemyProjectile_MirrorTest projectile = Instantiate(
             projectilePrefab,
             firePoint.position,
             Quaternion.LookRotation(direction));
 
-        projectile.InitializeServer(this, direction, status.ProjectileSpeed, status.AttackRange);
+        projectile.InitializeServer(this, direction, status.ProjectileSpeed, maxDistance);
         NetworkServer.Spawn(projectile.gameObject);
+        return true;
     }
 
     [Server]

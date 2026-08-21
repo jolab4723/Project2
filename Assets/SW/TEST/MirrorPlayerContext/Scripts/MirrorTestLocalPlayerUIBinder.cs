@@ -1,6 +1,7 @@
 using System.Reflection;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -16,6 +17,10 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     private static readonly FieldInfo ShopControllerField =
         typeof(InventoryView).GetField(
             "shopController",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo NpcClickedEventField =
+        typeof(YJ_ClickNPC).GetField(
+            "onClicked",
             BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private MirrorTestNetworkManager networkManager;
@@ -62,6 +67,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         networkManager.LocalPlayerContextChanged += HandleLocalPlayerChanged;
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
+        BindCampNpcWindows();
     }
 
     private void OnDisable()
@@ -209,6 +215,74 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(boundContext, inventoryView);
+    }
+
+    /// <summary>
+    /// production Camp를 복제한 Mirror Scene에서는 Shop/Upgrade NPC의 UnityEvent 대상이
+    /// 복제 과정에서 끊어질 수 있다. 원본 NPC 스크립트와 Scene은 건드리지 않고, 현재 Scene의
+    /// InventoryPartView를 런타임 Listener로 다시 연결한다.
+    /// </summary>
+    private void BindCampNpcWindows()
+    {
+        if (inventoryPartView == null)
+            return;
+
+        if (NpcClickedEventField == null)
+        {
+            Debug.LogError(
+                "[MirrorTestLocalPlayerUIBinder] YJ_ClickNPC.onClicked를 찾지 못해 상점/강화 NPC를 연결할 수 없습니다.",
+                this);
+            return;
+        }
+
+        YJ_ClickNPC[] npcs = FindObjectsByType<YJ_ClickNPC>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+
+        foreach (YJ_ClickNPC npc in npcs)
+        {
+            if (npc == null ||
+                npc.gameObject.scene != gameObject.scene ||
+                NpcClickedEventField.GetValue(npc) is not UnityEvent clickedEvent)
+            {
+                continue;
+            }
+
+            switch (npc.name)
+            {
+                case "ShopNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenShop),
+                        inventoryPartView.OpenShop);
+                    break;
+
+                case "UpgradeNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenUpgrade),
+                        inventoryPartView.OpenUpgrade);
+                    break;
+            }
+        }
+    }
+
+    private void AddNpcListenerIfMissing(
+        UnityEvent clickedEvent,
+        string methodName,
+        UnityAction listener)
+    {
+        for (int index = 0; index < clickedEvent.GetPersistentEventCount(); index++)
+        {
+            if (clickedEvent.GetPersistentTarget(index) == inventoryPartView &&
+                clickedEvent.GetPersistentMethodName(index) == methodName)
+            {
+                return;
+            }
+        }
+
+        clickedEvent.RemoveListener(listener);
+        clickedEvent.AddListener(listener);
     }
 
     /// <summary>
