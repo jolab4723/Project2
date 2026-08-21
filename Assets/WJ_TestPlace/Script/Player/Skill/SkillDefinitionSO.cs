@@ -131,6 +131,26 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("전방 원뿔 공격 전체 각도. 사용자 스펙에 없어서 임의로 지정.")]
     public float backstepConeAngle = 90f;
 
+    [Header("BackstepShot 진화1 전용 (디코이 설치 - 원뿔 공격 대신 처음 위치에 디코이 설치)")]
+    [Tooltip("디코이 설치 후 자동 폭발까지 걸리는 시간(초).")]
+    public float evoDecoyFuseSeconds = 3f;
+    [Tooltip("디코이 폭발 반경.")]
+    public float evoDecoyExplosionRadius = 3f;
+    [Tooltip("디코이 폭발 데미지 배율.")]
+    public float evoDecoyDamageMultiplier = 1f;
+    [Tooltip("설치되는 디코이 프리팹(GunnerDecoy 컴포넌트 포함).")]
+    public GameObject evoDecoyPrefab;
+
+    [Header("BackstepShot 진화2 전용 (긴급 회피 - 백스탭 이동 중 무적)")]
+    [Tooltip("백스탭 시작과 동시에 부여되는 무적 시간(초). backstepDuration보다 길게 잡으면 착지 직후까지 무적 유지.")]
+    public float evoBackstepInvincibleDuration = 0.3f;
+
+    [Header("BackstepShot 진화3 전용 (제압 사격 - 원뿔 공격에 넉백 추가)")]
+    [Tooltip("넉백으로 밀려나는 거리.")]
+    public float evoSuppressKnockbackForce = 3f;
+    [Tooltip("넉백에 걸리는 시간(초).")]
+    public float evoSuppressKnockbackDuration = 0.3f;
+
     [Header("SectorSlash 진화1 전용 (밀치기 + 기절)")]
     [Tooltip("밀려나는 거리. WBH_StatusEffectPresets.Knockback1의 기본값(10)이 너무 멀어서 스킬 전용으로 따로 둠.")]
     public float evoKnockbackForce = 5f;

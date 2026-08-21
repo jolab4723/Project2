@@ -92,6 +92,37 @@ namespace ItemSystem
             return true;
         }
 
+        /// <summary>
+        /// 버프의 스택 수를 (증가가 아니라) 정확한 값으로 지정한다. 없으면 새로 만든다.
+        /// 아이템 인스턴스에 저장된 스택 수(세이브/로드로 복원되거나, 소유권 재획득 시 되살아나는 값)를
+        /// 그대로 반영할 때 쓴다 - ApplyBuff처럼 "+1"이 아니라 "이 값으로 맞춰라"가 필요한 경우.
+        /// 반환값은 소유자가 재계산이 필요한지 여부.
+        /// </summary>
+        public bool SetStack(IBuffSource source, int stackCount)
+        {
+            if (source == null)
+                return false;
+
+            int clamped = source.MaxStack > 0 ? Math.Min(stackCount, source.MaxStack) : stackCount;
+
+            var existing = activeBuffs.Find(b => ReferenceEquals(b.source, source));
+
+            if (existing != null)
+            {
+                bool changed = existing.stackCount != clamped;
+                existing.stackCount = clamped;
+                existing.remainingTime = source.Duration;
+                return changed;
+            }
+
+            if (clamped <= 0)
+                return false;
+
+            activeBuffs.Add(new BuffInstance(source) { stackCount = clamped });
+            OnBuffsChanged?.Invoke();
+            return true;
+        }
+
         /// <summary>해당 버프를 스택 상관없이 완전히 제거한다. 반환값은 실제로 제거된 게 있었는지.</summary>
         public bool RemoveBuff(IBuffSource source)
         {

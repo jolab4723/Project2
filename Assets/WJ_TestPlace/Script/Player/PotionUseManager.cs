@@ -56,6 +56,35 @@ public class PotionUseManager : MonoBehaviour
             Instance = null;
     }
 
+    // 기존엔 OnDestroy에서만 Instance를 비워서, SetActive(false)로 비활성화만 해도(파괴 아님) Instance가
+    // 계속 이 캐릭터를 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때 "이미 인스턴스가 있다"고 오판해서
+    // 새 캐릭터를 통째로 Destroy하는 문제가 있었다(PlayerStatManager에서 실측 확인, 125번).
+    private void OnDisable()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    // OnDisable과 짝을 이루는 재등록 - Awake는 생애 한 번만 돌아서, 한 번 비활성화됐다가 다시 활성화되는
+    // 캐릭터는 Awake가 재실행 안 되므로 여기서 다시 등록해줘야 Instance가 null로 안 남는다(125번).
+    private void OnEnable()
+    {
+        if (Instance == this)
+            return;
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
+        if (Instance != null)
+        {
+            Debug.LogWarning("[PotionUseManager] 이미 인스턴스가 존재해서 다시 활성화된 오브젝트를 등록하지 않습니다.");
+            return;
+        }
+
+        Instance = this;
+    }
+
     /// <summary>현재 장착된 포션을 사용한다. 장착된 포션이 없거나 공유 풀 충전이 없으면 조용히 실패한다.</summary>
     public bool TryUsePotion()
     {

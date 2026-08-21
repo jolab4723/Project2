@@ -30,16 +30,38 @@ MonoBehaviour:
   maxStacks: 6
   stackRechargeSeconds: 4
   arcProjectilePrefab: {fileID: 0}
+  evoLaserLength: 8
+  evoLaserWidth: 1
+  evoLaserDamagePerStackPercent: 50
+  evoLaserMaxBonusStacks: 3
+  evoTripleShotDamageMultiplier: 0.5
+  evoTripleShotInterval: 0.1
   bombThrowRange: 6
   bombThrowSpeed: 10
   bombArcHeight: 2
   bombFuseSeconds: 2
   bombExplosionRadius: 3
   bombPrefab: {fileID: 0}
+  evoClusterDelaySeconds: 0.5
+  evoClusterRadius: 4
+  evoClusterDamageMultiplier: 0.5
+  evoEnergyBurstRadius: 4
+  evoEnergyBurstStunDuration: 1
+  evoEnergyBurstSlowZoneDuration: 5
+  evoEnergyBurstSlowMultiplier: 0.6
+  evoGlitterMarkDuration: 7
+  evoGlitterMarkedDamageMultiplier: 1.25
   backstepDistance: 2
   backstepDuration: 0.15
   backstepConeRange: 5
   backstepConeAngle: 90
+  evoDecoyFuseSeconds: 3
+  evoDecoyExplosionRadius: 3
+  evoDecoyDamageMultiplier: 1
+  evoDecoyPrefab: {fileID: 8988828131704908570, guid: 6ef60dd3a510e0f44a6eb323d49fc609, type: 3}
+  evoBackstepInvincibleDuration: 0.3
+  evoSuppressKnockbackForce: 3
+  evoSuppressKnockbackDuration: 0.3
   evoKnockbackForce: 5
   evoKnockbackDuration: 0.3
   evoChargeMaxSeconds: 3
@@ -58,7 +80,7 @@ MonoBehaviour:
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
-  enhanceDamageMultiplierBonusPercent: 15
-  enhanceDashSpeedBonusPercent: 15
-  enhanceCooldownReductionPercent: 15
-  enhanceRangeBonusPercent: 15
+  enhanceDamageMultiplierBonusPercent: 55
+  enhanceDashSpeedBonusPercent: 55
+  enhanceCooldownReductionPercent: 35
+  enhanceRangeBonusPercent: 30

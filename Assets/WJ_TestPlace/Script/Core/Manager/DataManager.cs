@@ -247,6 +247,7 @@ namespace Core
             saved.rolledSubStats = itemData.rolledSubStats;
             saved.rolledElement = itemData.rolledElement;
             saved.upgradeLevel = itemData.upgradeLevel;
+            saved.persistedStackCount = itemData.persistedStackCount;
             saved.gridX = invItem.x;
             saved.gridY = invItem.y;
             saved.isRotated = invItem.isRotated;
@@ -301,6 +302,7 @@ namespace Core
                 itemInstance.rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>();
                 itemInstance.rolledElement = saved.rolledElement;
                 itemInstance.upgradeLevel = saved.upgradeLevel;
+                itemInstance.persistedStackCount = saved.persistedStackCount;
 
                 var invItem = new InventoryItem(itemInstance);
                 invItem.isRotated = saved.isRotated;

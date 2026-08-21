@@ -14,6 +14,11 @@ namespace ItemSystem
         public ElementType rolledElement = ElementType.None;
         public int upgradeLevel = 0; // 획득 이후 플레이어가 강화시키는 수치. 드랍 시점엔 항상 0
 
+        /// <summary>고유 효과(TriggeredBuffUniqueEffectSO의 persistStackOnItem)가 이 아이템에 저장하는
+        /// 스택 수(예: 유물 처치 스택). 세이브/로드로 유지되고, 인벤토리에서 빠져도(소유권 상실) 값 자체는
+        /// 아이템에 남아있는다 - 다시 얻으면 그 스택으로 복원된다. 해당 없는 효과는 항상 0.</summary>
+        public int persistedStackCount = 0;
+
         /// <summary>
         /// 강화 보너스가 적용된 메인 옵션 값. 강화 1당 definition.upgradeBonusPerLevel만큼 합연산으로 증가.
         /// (예: upgradeBonusPerLevel=0.1, upgradeLevel=3 → 기본값 × 1.3)
