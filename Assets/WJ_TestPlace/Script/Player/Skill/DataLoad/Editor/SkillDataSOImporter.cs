@@ -90,15 +90,19 @@ namespace DataSystem
                 asset = ScriptableObject.CreateInstance<SkillDefinitionSO>();
                 asset.skillId = skillId;
 
-                if (Enum.TryParse(row.shapeType, true, out SkillShapeType parsedShape))
-                    asset.shapeType = parsedShape;
-                else
-                    Debug.LogWarning($"[SkillData] shapeType '{row.shapeType}'를 해석하지 못해 기본값(SectorSlash)으로 둡니다. ({row.skillName})");
-
                 string fileName = SanitizeFileName("Skill_" + skillId);
                 string path = CombineAssetPath(OutputFolder, fileName + ".asset");
                 AssetDatabase.CreateAsset(asset, path);
             }
+
+            // shapeType은 생성 시점뿐 아니라 매번 시트 값으로 동기화한다 - 스킬 컨셉을 바꿔서 셰이프
+            // 자체를 교체하는 경우(예: 부채꼴 히트스캔 -> 스택형 투사체)도 다시 실행하면 반영되게 하기 위함.
+            // 기존엔 신규 생성 시에만 반영돼서, 이미 만든 에셋의 shapeType을 시트에서 바꿔도 무시되는
+            // 문제가 있었다(직접 겪어서 발견 - WJ 이우진).
+            if (Enum.TryParse(row.shapeType, true, out SkillShapeType parsedShape))
+                asset.shapeType = parsedShape;
+            else
+                Debug.LogWarning($"[SkillData] shapeType '{row.shapeType}'를 해석하지 못해 기존 값을 유지합니다. ({row.skillName})");
 
             asset.skillName = row.skillName;
             asset.damageMultiplier = row.damageMultiplier;
@@ -118,6 +122,25 @@ namespace DataSystem
 
                 case SkillShapeType.Dash:
                     asset.dashDistance = row.range;
+                    break;
+
+                case SkillShapeType.ArcProjectile:
+                    asset.projectileMaxDistance = row.range;
+                    // maxStacks/stackRechargeSeconds/projectileSpeed/explosionRadius/arcProjectilePrefab은
+                    // 이 시트의 2개 범용 컬럼(range/rangeWidthOrAngle)으로 표현하기엔 항목이 너무 많아서
+                    // SkillDefinitionSO의 C# 기본값(6스택/4초/15/1유닛)을 그대로 쓰고, 프리팹은 코드에서 직접 연결한다.
+                    break;
+
+                case SkillShapeType.BombThrow:
+                    asset.bombThrowRange = row.range;
+                    // bombThrowSpeed/bombArcHeight/bombFuseSeconds/bombExplosionRadius/bombPrefab도 ArcProjectile과
+                    // 같은 이유로 시트 컬럼에 안 담고 C# 기본값(10/2/2초/3유닛)을 그대로 쓰며, 프리팹은 코드에서 직접 연결한다.
+                    break;
+
+                case SkillShapeType.BackstepShot:
+                    asset.backstepDistance = row.range;
+                    // backstepDuration/backstepConeRange/backstepConeAngle도 같은 이유로 시트 컬럼에 안 담고
+                    // C# 기본값(0.15초/5유닛/90도)을 그대로 쓴다.
                     break;
             }
 

@@ -42,6 +42,9 @@ public static class WBH_StatusEffectFactory
             case WBH_StatusEffectType.DefenseDown:
                 return new WBH_DefenseDownEffect(controller, data);
 
+            case WBH_StatusEffectType.Marked:
+                return new WBH_MarkedEffect(controller, data);
+
             default:
                 Log.Error($"지원하지 않는 상태이상입니다. ({data.Type})");
                 return null;

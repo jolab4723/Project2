@@ -57,6 +57,11 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     {
         // !@
     }
+    // 플레이어를 대상으로 한 Marked(받는 데미지 증가) 디버프는 아직 사용하지 않음. 차후 구현 필요
+    public override void ApplyDamageTakenModifier(float modifier)
+    {
+        // !@
+    }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
     public override void SetControlEnable(bool enabled)
