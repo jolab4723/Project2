@@ -187,13 +187,24 @@ public class WBH_EnemyView : MonoBehaviour
 
     private void SetHitStrength(float value)
     {
-        foreach(Renderer renderer in renderers)
+        foreach(Renderer targetRenderer in renderers)
         {
-            renderer.GetPropertyBlock(propertyBlock);
+            if (targetRenderer == null)
+                continue;
 
-            propertyBlock.SetFloat(HitStrengthID, value);
+            Material[] materials = targetRenderer.sharedMaterials;
 
-            renderer.SetPropertyBlock(propertyBlock);
+            for(int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+            {
+                if (materials[materialIndex] == null)
+                    continue;
+
+                targetRenderer.GetPropertyBlock(propertyBlock, materialIndex);
+
+                propertyBlock.SetFloat(HitStrengthID, value);
+
+                targetRenderer.SetPropertyBlock(propertyBlock, materialIndex);
+            }
         }
     }
 

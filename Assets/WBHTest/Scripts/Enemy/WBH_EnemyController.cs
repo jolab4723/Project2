@@ -11,7 +11,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(WBH_EnemyAnimation))]
 [RequireComponent(typeof(WBH_EnemyPattern))]
 [RequireComponent(typeof(WBH_EnemyStatusEffectController))]
-[RequireComponent(typeof(EnemyKillExpReward))]
+[RequireComponent(typeof(EnemyKillReward))]
 public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 {
     private WBH_EnemyMovement movement;

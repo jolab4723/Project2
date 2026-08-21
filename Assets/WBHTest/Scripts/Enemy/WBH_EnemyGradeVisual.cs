@@ -20,10 +20,13 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float metallicBoost = 0.15f;
     [SerializeField, Range(0f, 1f)] private float smoothnessBoost = 0.1f;
 
+    [SerializeField] private ParticleSystem advancedEffect;
+
     private MaterialPropertyBlock propertyBlock;
 
     private Vector3 originalScale;
     private bool initialized;
+
 
     private void Awake()
     {
@@ -74,6 +77,12 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
         Color tintMultiplier = Color.Lerp(Color.white, advancedTint, tintStrength);
 
         ApplyMaterialProperties(tintMultiplier, metallicBoost, smoothnessBoost);
+
+        if (advancedEffect == null)
+            return;
+
+        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        advancedEffect.Play(withChildren: true);
     }
 
     private void ApplyNormal()
@@ -81,6 +90,10 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
         scaleTarget.localScale = originalScale;
 
         ApplyMaterialProperties(Color.white, metalicBoost: 0f, smoothnessBoost: 0f);
+
+        if (advancedEffect == null)
+
+        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
     }
 
     // 색상, 메탈릭, 부드러움 변환 및 적용.
@@ -133,4 +146,15 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
             }
         }
     }
+
+    // -- Advanced 적용 테스트용
+    //public bool test;
+
+    //private void Update()
+    //{
+    //    if (test)
+    //    {
+    //        ApplyGrade(EnemyGrade.Advanced);
+    //    }
+    //}
 }
