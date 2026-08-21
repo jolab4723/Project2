@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ public sealed class MirrorStagePortalAdapter_MirrorTest : MonoBehaviour
 
     private bool portalOpenRequested;
     private bool transitionRequested;
+    private readonly Dictionary<NetworkIdentity, int> campPlayerColliderCounts = new();
 
     private void Awake()
     {
@@ -63,10 +65,36 @@ public sealed class MirrorStagePortalAdapter_MirrorTest : MonoBehaviour
             return;
         }
 
+        if (manager.CurrentSessionRoute == MirrorSessionRoute.Camp)
+        {
+            campPlayerColliderCounts.TryGetValue(playerIdentity, out int colliderCount);
+            campPlayerColliderCounts[playerIdentity] = colliderCount + 1;
+            if (!HaveAllServerPlayersArrived(manager))
+                return;
+        }
+
         if (!manager.ServerTryCompletePendingStageAndReturnToSelection())
             return;
 
         transitionRequested = true;
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!NetworkServer.active)
+            return;
+
+        NetworkIdentity playerIdentity = ResolveServerPlayer(other);
+        if (playerIdentity == null ||
+            !campPlayerColliderCounts.TryGetValue(playerIdentity, out int colliderCount))
+        {
+            return;
+        }
+
+        if (colliderCount <= 1)
+            campPlayerColliderCounts.Remove(playerIdentity);
+        else
+            campPlayerColliderCounts[playerIdentity] = colliderCount - 1;
     }
 
     private void ResolveReferences()
@@ -95,6 +123,25 @@ public sealed class MirrorStagePortalAdapter_MirrorTest : MonoBehaviour
         bool hasServerPlayer)
     {
         return serverActive && portalOpen && !alreadyRequested && hasServerPlayer;
+    }
+
+    private bool HaveAllServerPlayersArrived(MirrorTestNetworkManager manager)
+    {
+        int playerCount = 0;
+        foreach (PlayerContext context in manager.ServerPlayerContexts)
+        {
+            NetworkIdentity identity = context != null
+                ? context.GetComponent<NetworkIdentity>()
+                : null;
+            if (identity == null || identity.connectionToClient == null)
+                continue;
+
+            playerCount++;
+            if (!campPlayerColliderCounts.ContainsKey(identity))
+                return false;
+        }
+
+        return playerCount > 0;
     }
 
     private static bool CanOpenPortal(

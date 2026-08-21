@@ -770,7 +770,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 targetY,
                 isRotated))
         {
-            return TrySynchronizeOwnedSnapshots()
+            return TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot)
                 ? MirrorTestInventoryRequestResult.Success
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
@@ -877,20 +877,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        if (TrySynchronizeOwnedSnapshots())
-        {
-            // Act 1 회귀 테스트용 임시 보정: 고체력 투구 장착 직후에는 서버가
-            // 새 최대 체력을 확정하고 현재 체력도 한 번 가득 채워 생존 테스트를 이어간다.
-            if (shouldBeEquipped &&
-                targetSlot == EquipSlotType.Helmet &&
-                context.Health != null)
-            {
-                context.Health.RefreshMaxHealth();
-                context.Health.FillHealth();
-            }
-
+        if (TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot))
             return MirrorTestInventoryRequestResult.Success;
-        }
 
         bool rebuildHostVisuals = isLocalPlayer && localItemSpawner != null;
         return TryRestoreOwnedStateFromSnapshots(beforeChange, rebuildHostVisuals)
@@ -1938,6 +1926,26 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             Debug.LogException(exception, this);
             return false;
         }
+    }
+
+    private bool TrySynchronizeEquipmentState(
+        bool shouldBeEquipped,
+        EquipSlotType targetSlot)
+    {
+        if (!TrySynchronizeOwnedSnapshots())
+            return false;
+
+        // Act 1 회귀 테스트용 임시 보정: Host의 사전 적용 경로를 포함해
+        // 서버가 승인한 투구 장착은 새 최대 체력으로 현재 체력을 한 번 가득 채운다.
+        if (shouldBeEquipped &&
+            targetSlot == EquipSlotType.Helmet &&
+            context.Health != null)
+        {
+            context.Health.RefreshMaxHealth();
+            context.Health.FillHealth();
+        }
+
+        return true;
     }
 
     private static Dictionary<InventoryItem, InventoryPlacementSnapshot> CaptureGridState(
