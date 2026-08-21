@@ -2,8 +2,8 @@ using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// 정식 스테이지 포탈 프리팹을 Mirror 테스트 전투 흐름에 연결한다.
-/// 웨이브 완료 상태는 이미 동기화된 Spawner의 SyncVar를 읽어 각 Client에서 같은 포탈을 열고,
+/// 정식 스테이지 포탈 프리팹을 Mirror 테스트 전투·캠프 흐름에 연결한다.
+/// 전투에서는 이미 동기화된 웨이브 완료 상태를 읽고, 캠프에서는 입장 즉시 포탈을 연다.
 /// 포탈 탑승 판정과 pending 노드 완료·Scene 이동은 서버에서만 수행한다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -27,9 +27,16 @@ public sealed class MirrorStagePortalAdapter_MirrorTest : MonoBehaviour
             return;
 
         ResolveReferences();
-        if (waveSpawner == null ||
-            portalActive == null ||
-            waveSpawner.SessionPhase != MirrorTestSessionPhase.Completed)
+        MirrorTestNetworkManager manager =
+            NetworkManager.singleton as MirrorTestNetworkManager;
+        bool combatCompleted = waveSpawner != null &&
+                               waveSpawner.SessionPhase == MirrorTestSessionPhase.Completed;
+        if (portalActive == null ||
+            manager == null ||
+            !CanOpenPortal(
+                manager.CurrentSessionRoute,
+                combatCompleted,
+                waveSpawner != null && waveSpawner.IsBossSession))
         {
             return;
         }
@@ -90,10 +97,24 @@ public sealed class MirrorStagePortalAdapter_MirrorTest : MonoBehaviour
         return serverActive && portalOpen && !alreadyRequested && hasServerPlayer;
     }
 
+    private static bool CanOpenPortal(
+        MirrorSessionRoute route,
+        bool combatCompleted,
+        bool bossSession)
+    {
+        return route == MirrorSessionRoute.Camp ||
+               (route == MirrorSessionRoute.Combat && combatCompleted && !bossSession);
+    }
+
 #if UNITY_EDITOR
     [ContextMenu("Mirror 테스트/포탈 서버 복귀 규칙 검사")]
     private void ValidatePortalReturnRule()
     {
+        Debug.Assert(CanOpenPortal(MirrorSessionRoute.Camp, false, false));
+        Debug.Assert(CanOpenPortal(MirrorSessionRoute.Combat, true, false));
+        Debug.Assert(!CanOpenPortal(MirrorSessionRoute.Combat, false, false));
+        Debug.Assert(!CanOpenPortal(MirrorSessionRoute.Combat, true, true));
+        Debug.Assert(!CanOpenPortal(MirrorSessionRoute.StageSelect, true, false));
         Debug.Assert(CanRequestStageReturn(true, true, false, true));
         Debug.Assert(!CanRequestStageReturn(false, true, false, true));
         Debug.Assert(!CanRequestStageReturn(true, false, false, true));
