@@ -59,6 +59,27 @@ public class PlayerStatManager : MonoBehaviour
 
     private void OnEnable()
     {
+        // Awake는 오브젝트 생애 동안 한 번만 돌아서, 한 번 비활성화됐다가(OnDisable에서 Instance 해제)
+        // 다시 활성화되는 경우(캐릭터 전환을 껐다 켰다로 반복) Awake가 재실행 안 되므로 여기서 다시
+        // 등록해줘야 한다 - 안 그러면 재활성화한 캐릭터의 Instance가 계속 null로 남는다(125번).
+        if (Instance != this)
+        {
+            var identity = GetComponent<Mirror.NetworkIdentity>();
+            bool isLocal = identity == null || identity.isLocalPlayer;
+
+            if (isLocal)
+            {
+                if (Instance != null)
+                {
+                    Debug.LogWarning("[PlayerStatManager] 이미 인스턴스가 존재해서 다시 활성화된 오브젝트를 등록하지 않습니다.");
+                }
+                else
+                {
+                    Instance = this;
+                }
+            }
+        }
+
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
 
@@ -73,6 +94,14 @@ public class PlayerStatManager : MonoBehaviour
 
         if (PassiveSkillManager.Instance != null)
             PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
+
+        // 기존엔 OnDestroy에서만 Instance를 비워서, 캐릭터를 SetActive(false)로 비활성화만 해도
+        // (파괴 아님) Instance가 그 캐릭터를 계속 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때
+        // "이미 인스턴스가 있다"고 오판해서 새 캐릭터를 통째로 Destroy하거나(124번에서 실측 확인),
+        // 장비/스탯을 읽는 쪽이 정적 Instance를 참조하면 비활성화된 캐릭터의 장비가 계속 표시되는
+        // 문제가 있었다. 비활성화 시점에도 즉시 자리를 비워준다.
+        if (Instance == this)
+            Instance = null;
     }
 
    
