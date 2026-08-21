@@ -82,9 +82,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int ProcessedRequestHistorySize = 64;
     private const int MaxInstanceIdLength = 128;
     private const float UpgradeCostMultiplier = 1.15f;
-    // 전투·강화·비교 툴팁을 눈으로 확인하기 쉽도록 현재 ItemDatabase에서
-    // 방어력 메인 옵션이 가장 높은 갑옷(태양의 은혜, 방어력 80)을 최초 테스트 장비로 지급한다.
-    private const string DefaultTestItemId = "item.armor.chest.solargrace";
+    // 장시간 Act 1 회귀 테스트에서 생존 여유를 확보하도록 현재 ItemDatabase의
+    // 고체력 전설 투구(우주 괴물 두개골, 최대 체력 230)를 최초 테스트 장비로 지급한다.
+    private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
@@ -878,7 +878,19 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
 
         if (TrySynchronizeOwnedSnapshots())
+        {
+            // Act 1 회귀 테스트용 임시 보정: 고체력 투구 장착 직후에는 서버가
+            // 새 최대 체력을 확정하고 현재 체력도 한 번 가득 채워 생존 테스트를 이어간다.
+            if (shouldBeEquipped &&
+                targetSlot == EquipSlotType.Helmet &&
+                context.Health != null)
+            {
+                context.Health.RefreshMaxHealth();
+                context.Health.FillHealth();
+            }
+
             return MirrorTestInventoryRequestResult.Success;
+        }
 
         bool rebuildHostVisuals = isLocalPlayer && localItemSpawner != null;
         return TryRestoreOwnedStateFromSnapshots(beforeChange, rebuildHostVisuals)

@@ -144,10 +144,12 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
             return false;
 
         MirrorTestNetworkManager manager = NetworkManager.singleton as MirrorTestNetworkManager;
-        bossSession = manager != null &&
-                      manager.TryGetPendingStageNode(out StageNodeSaveData pendingNode) &&
-                      pendingNode.type == StageNodeType.Boss;
-        activeWaveCount = ResolveWaveCount(bossSession, waveCount);
+        StageNodeSaveData pendingNode = null;
+        if (manager != null)
+            manager.TryGetPendingStageNode(out pendingNode);
+
+        bossSession = pendingNode?.type == StageNodeType.Boss;
+        activeWaveCount = ResolveWaveCount(pendingNode, waveCount);
         if (bossSession && bossPrefab == null)
         {
             Debug.LogError(
@@ -239,9 +241,22 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
         return phase == MirrorTestSessionPhase.Waiting && !hasRunningRoutine;
     }
 
-    private static int ResolveWaveCount(bool isBossSession, int configuredWaveCount)
+    private static int ResolveWaveCount(
+        StageNodeSaveData pendingNode,
+        int configuredMaximumWaveCount)
     {
-        return isBossSession ? 1 : Mathf.Max(1, configuredWaveCount);
+        int maximumWaveCount = Mathf.Max(1, configuredMaximumWaveCount);
+        if (pendingNode == null)
+            return maximumWaveCount;
+        if (pendingNode.type == StageNodeType.Boss)
+            return 1;
+
+        int floor = Mathf.Max(1, pendingNode.floor);
+        int floorWaveCount = 1 + (floor - 1) / 3;
+        if (pendingNode.type == StageNodeType.Elite)
+            floorWaveCount++;
+
+        return Mathf.Clamp(floorWaveCount, 1, maximumWaveCount);
     }
 
     private static int ResolveSpawnCount(bool isBossSession, int configuredEnemyCount)
@@ -277,9 +292,18 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
         Debug.Assert(!CanStartSession(MirrorTestSessionPhase.Playing, false));
         Debug.Assert(!CanStartSession(MirrorTestSessionPhase.Completed, false));
         Debug.Assert(!CanStartSession(MirrorTestSessionPhase.Resetting, false));
-        Debug.Assert(ResolveWaveCount(true, 100) == 1);
+        Debug.Assert(ResolveWaveCount(
+            new StageNodeSaveData { floor = 11, type = StageNodeType.Boss }, 3) == 1);
         Debug.Assert(ResolveSpawnCount(true, 8) == 1);
-        Debug.Assert(ResolveWaveCount(false, 100) == 100);
+        Debug.Assert(ResolveWaveCount(
+            new StageNodeSaveData { floor = 1, type = StageNodeType.Battle }, 3) == 1);
+        Debug.Assert(ResolveWaveCount(
+            new StageNodeSaveData { floor = 5, type = StageNodeType.Battle }, 3) == 2);
+        Debug.Assert(ResolveWaveCount(
+            new StageNodeSaveData { floor = 6, type = StageNodeType.Elite }, 3) == 3);
+        Debug.Assert(ResolveWaveCount(
+            new StageNodeSaveData { floor = 9, type = StageNodeType.Elite }, 3) == 3);
+        Debug.Assert(ResolveWaveCount(null, 3) == 3);
         Debug.Assert(ResolveSpawnCount(false, 8) == 8);
         Debug.Log("[NetworkEnemyWaveSpawner_MirrorTest] 세션 시작 규칙 검사 통과");
     }
