@@ -5,6 +5,16 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.AI;
 
+public enum MirrorAct1BossPhase : byte
+{
+    Inactive = 0,
+    PhaseOne = 1,
+    TransitionMissiles = 2,
+    TransitionArmor = 3,
+    PhaseTwo = 4,
+    Dead = 5,
+}
+
 /// <summary>
 /// 일반 적 한 개체의 체력·타깃·공격·사망·보상을 서버에서 한 번만 확정하는 Mirror 테스트 컴포넌트다.
 /// <para>BH 원본 Controller는 초기화 어댑터로만 사용하고 비활성 상태를 유지하므로
@@ -34,10 +44,12 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [SerializeField] private WBH_EnemyInfo enemyInfo;
     [SerializeField, Min(0.01f)] private float attackImpactDelay = 0.45f;
     [SerializeField, Min(0.05f)] private float destroyDelay = 0.35f;
+    [SerializeField] private bool useAnimatorOnlyDeathPresentation;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
 
     [Header("서버 투사체")]
     [SerializeField] private NetworkEnemyProjectile_MirrorTest projectilePrefab;
+    [SerializeField] private NetworkEnemyProjectile_MirrorTest bossMissilePrefab;
 
     [Header("원본 어댑터와 테스트 AI")]
     [SerializeField] private WBH_EnemyController controller;
@@ -48,9 +60,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [SerializeField] private WBH_EnemyAnimation originalAnimation;
     [SerializeField] private WBH_EnemyView originalView;
     [SerializeField] private WBH_EffectSpawner originalEffectSpawner;
+    [SerializeField] private WBH_IndicatorSpawner indicatorSpawner;
     [SerializeField] private WBH_EnemyPattern_MirrorTest networkPattern;
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private NetworkAnimator networkAnimator;
+    [SerializeField] private Animator animator;
     [SerializeField] private EnemyDestructionLink destructionLink;
 
     [SyncVar] private float currentHealth;
@@ -67,6 +81,12 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private uint killRewardCount;
     [SyncVar] private uint dropSpawnCount;
     [SyncVar] private uint destructionPresentationCount;
+    [SyncVar] private MirrorAct1BossPhase bossPhase;
+    [SyncVar] private int bossPhaseVisualSeed;
+    [SyncVar] private uint bossMissileVolleyCount;
+    [SyncVar] private uint bossMissileLaunchCount;
+    [SyncVar] private uint bossDashCount;
+    [SyncVar] private uint bossJumpCount;
 
     private readonly HashSet<PlayerContext> meleeTargets = new();
     private PlayerContext pendingAttackTarget;
@@ -78,6 +98,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private Vector3 lastImpactPoint;
     private Vector3 lastAttackDirection;
     private bool originalStatusEffectsReady;
+    private bool localEffectSpawnerInitialized;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
@@ -103,6 +124,15 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public uint DropSpawnCount => dropSpawnCount;
     public uint DestructionPresentationCount => destructionPresentationCount;
     public WBH_EnemyInfo EnemyInfo => enemyInfo;
+    public bool UsesAnimatorOnlyDeathPresentation => useAnimatorOnlyDeathPresentation;
+    public NetworkEnemyProjectile_MirrorTest BossMissilePrefab => bossMissilePrefab;
+    public MirrorAct1BossPhase BossPhase => bossPhase;
+    public int BossPhaseVisualSeed => bossPhaseVisualSeed;
+    public uint BossMissileVolleyCount => bossMissileVolleyCount;
+    public uint BossMissileLaunchCount => bossMissileLaunchCount;
+    public uint BossDashCount => bossDashCount;
+    public uint BossJumpCount => bossJumpCount;
+    public bool IsAttackPending => attackPending;
 
     private void Awake()
     {
@@ -133,11 +163,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         }
 
         controller.Initialize(enemyInfo, null);
-        WBH_EffectPoolManager effectPool =
-            FindFirstObjectByType<WBH_EffectPoolManager>(FindObjectsInactive.Exclude);
-        originalStatusEffectsReady = originalEffectSpawner != null && effectPool != null;
-        if (originalStatusEffectsReady)
-            originalEffectSpawner.Initialize(effectPool);
+        InitializeLocalEffectSpawner();
+        originalStatusEffectsReady = localEffectSpawnerInitialized;
 
         status.OnHpChanged += HandleHealthChanged;
         status.OnDamaged += HandleDamaged;
@@ -161,6 +188,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+        ResolveReferences();
+        InitializeLocalEffectSpawner();
         if (isServer)
             return;
 
@@ -201,6 +230,158 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         targetNetId = nextNetId;
         stateChangeNumber++;
+    }
+
+    public void RegisterClientPrefabs()
+    {
+        if (!NetworkClient.active || bossMissilePrefab == null ||
+            !bossMissilePrefab.TryGetComponent(out NetworkIdentity identity) ||
+            identity.assetId == 0 || NetworkClient.GetPrefab(identity.assetId, out _))
+        {
+            return;
+        }
+
+        NetworkClient.RegisterPrefab(bossMissilePrefab.gameObject);
+    }
+
+    [Server]
+    public void ServerSetBossPhase(MirrorAct1BossPhase phase)
+    {
+        if (bossPhase == phase)
+            return;
+
+        bossPhase = phase;
+        if (phase == MirrorAct1BossPhase.TransitionArmor && bossPhaseVisualSeed == 0)
+            bossPhaseVisualSeed = unchecked((int)(netId * 397u + stateChangeNumber + 1u));
+        stateChangeNumber++;
+    }
+
+    [Server]
+    public void ServerRecordBossMissileVolley()
+    {
+        bossMissileVolleyCount++;
+        stateChangeNumber++;
+    }
+
+    [Server]
+    public void ServerRecordBossDash()
+    {
+        bossDashCount++;
+        stateChangeNumber++;
+    }
+
+    [Server]
+    public void ServerRecordBossJump()
+    {
+        bossJumpCount++;
+        stateChangeNumber++;
+    }
+
+    [Server]
+    public bool ServerLaunchBossMissile(
+        Vector3 impactPoint,
+        float flightDuration,
+        float explosionRadius)
+    {
+        if (isDead || bossMissilePrefab == null || networkPattern == null)
+            return false;
+
+        Transform grenadePoint = networkPattern.GrenadePoint;
+        Vector3 launchDirection = impactPoint - grenadePoint.position;
+        Quaternion launchRotation = launchDirection.sqrMagnitude > 0.001f
+            ? Quaternion.LookRotation(launchDirection.normalized)
+            : transform.rotation;
+        NetworkEnemyProjectile_MirrorTest projectile = Instantiate(
+            bossMissilePrefab,
+            grenadePoint.position,
+            launchRotation);
+        projectile.InitializeMissileServer(this, impactPoint, flightDuration, explosionRadius);
+        NetworkServer.Spawn(projectile.gameObject);
+        bossMissileLaunchCount++;
+        stateChangeNumber++;
+        return true;
+    }
+
+    [Server]
+    public int ServerDamagePlayersInRadius(
+        Vector3 center,
+        float radius,
+        HashSet<PlayerContext> alreadyHit = null)
+    {
+        if (isDead)
+            return 0;
+
+        int damagedCount = 0;
+        meleeTargets.Clear();
+        Collider[] hits = Physics.OverlapSphere(
+            center,
+            Mathf.Max(0.01f, radius),
+            playerLayer,
+            QueryTriggerInteraction.Collide);
+
+        foreach (Collider hit in hits)
+        {
+            PlayerContext target = hit.GetComponentInParent<PlayerContext>();
+            if (!IsAliveTarget(target) || !meleeTargets.Add(target) ||
+                (alreadyHit != null && !alreadyHit.Add(target)))
+            {
+                continue;
+            }
+
+            if (ServerDamagePlayer(target))
+                damagedCount++;
+        }
+
+        return damagedCount;
+    }
+
+    [Server]
+    public void ServerShowBossCircleIndicator(
+        Vector3 position,
+        float radius,
+        float duration,
+        bool growOverTime)
+    {
+        if (NetworkClient.active)
+            ShowBossCircleIndicatorLocal(position, radius, duration, growOverTime);
+        RpcShowBossCircleIndicator(position, radius, duration, growOverTime);
+    }
+
+    [Server]
+    public void ServerShowBossRectIndicator(
+        Vector3 origin,
+        Vector3 forward,
+        float width,
+        float length,
+        float duration)
+    {
+        if (NetworkClient.active)
+            ShowBossRectIndicatorLocal(origin, forward, width, length, duration);
+        RpcShowBossRectIndicator(origin, forward, width, length, duration);
+    }
+
+    [Server]
+    public void ServerPlayBossSkill(int skillId)
+    {
+        string stateName = skillId switch
+        {
+            4 => "Missile",
+            5 => "PhaseMissile",
+            7 => "WaitDash",
+            _ => string.Empty,
+        };
+        if (string.IsNullOrEmpty(stateName))
+            return;
+
+        PlayBossStateLocal(stateName);
+        RpcPlayBossState(stateName);
+    }
+
+    [Server]
+    public void ServerPlayBossJumpAnimation()
+    {
+        PlayBossStateLocal("JumpAttack");
+        RpcPlayBossState("JumpAttack");
     }
 
     [Server]
@@ -373,6 +554,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         deathHandled = true;
         ServerDeathCount++;
         isDead = true;
+        if (enemyInfo?.enemyType == EnemyType.Boss)
+            bossPhase = MirrorAct1BossPhase.Dead;
         currentHealth = 0f;
         targetNetId = 0;
         attackPending = false;
@@ -427,6 +610,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private void PlayDeathPresentationOnce()
     {
+        // 우병헌 Act 1 보스는 자체 사망 애니메이션을 보존한다. 모델과 맞지 않는 Artificer
+        // 파괴 프리팹을 대신 재생하지 않고 NetworkAnimator가 동기화한 Die 뒤 서버가 제거한다.
+        if (useAnimatorOnlyDeathPresentation)
+            return;
+
         destructionPresentationCount++;
 
         // Host는 서버와 로컬 Client를 함께 가지므로 여기에서 한 번 직접 재생합니다.
@@ -540,6 +728,18 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             originalAnimation.enabled = false;
         if (originalView != null)
             originalView.enabled = false;
+
+        // 네트워크 Authority가 처치 트리거와 드롭을 한 번만 확정하므로,
+        // WBH 로컬 사망 이벤트를 구독하는 기존 테스트 어댑터는 함께 실행하지 않는다.
+        WBHEnemyItemDropAdapter originalItemDropAdapter =
+            GetComponent<WBHEnemyItemDropAdapter>();
+        if (originalItemDropAdapter != null)
+            originalItemDropAdapter.enabled = false;
+
+        WBHEnemyItemDropAdapter_MirrorTest mirrorTestItemDropAdapter =
+            GetComponent<WBHEnemyItemDropAdapter_MirrorTest>();
+        if (mirrorTestItemDropAdapter != null)
+            mirrorTestItemDropAdapter.enabled = false;
     }
 
     /// <summary>
@@ -564,6 +764,83 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     {
     }
 
+    [ClientRpc]
+    private void RpcShowBossCircleIndicator(
+        Vector3 position,
+        float radius,
+        float duration,
+        bool growOverTime)
+    {
+        if (isServer)
+            return;
+
+        ShowBossCircleIndicatorLocal(position, radius, duration, growOverTime);
+    }
+
+    [ClientRpc]
+    private void RpcShowBossRectIndicator(
+        Vector3 origin,
+        Vector3 forward,
+        float width,
+        float length,
+        float duration)
+    {
+        if (isServer)
+            return;
+
+        ShowBossRectIndicatorLocal(origin, forward, width, length, duration);
+    }
+
+    [ClientRpc]
+    private void RpcPlayBossState(string stateName)
+    {
+        if (isServer)
+            return;
+
+        PlayBossStateLocal(stateName);
+    }
+
+    private void ShowBossCircleIndicatorLocal(
+        Vector3 position,
+        float radius,
+        float duration,
+        bool growOverTime)
+    {
+        InitializeLocalEffectSpawner();
+        indicatorSpawner?.ShowCircle(position, radius, duration, growOverTime);
+    }
+
+    private void ShowBossRectIndicatorLocal(
+        Vector3 origin,
+        Vector3 forward,
+        float width,
+        float length,
+        float duration)
+    {
+        InitializeLocalEffectSpawner();
+        indicatorSpawner?.ShowRect(origin, forward, width, length, duration);
+    }
+
+    private void PlayBossStateLocal(string stateName)
+    {
+        if (animator != null)
+            animator.CrossFadeInFixedTime(stateName, 0.05f);
+    }
+
+    private void InitializeLocalEffectSpawner()
+    {
+        if (localEffectSpawnerInitialized || originalEffectSpawner == null)
+            return;
+
+        WBH_EffectPoolManager effectPool =
+            FindFirstObjectByType<WBH_EffectPoolManager>(FindObjectsInactive.Exclude);
+        if (effectPool == null)
+            return;
+
+        originalEffectSpawner.Initialize(effectPool);
+        localEffectSpawnerInitialized = true;
+    }
+
     private void ResolveReferences()
     {
         controller ??= GetComponent<WBH_EnemyController>();
@@ -574,9 +851,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         originalAnimation ??= GetComponent<WBH_EnemyAnimation>();
         originalView ??= GetComponent<WBH_EnemyView>();
         originalEffectSpawner ??= GetComponent<WBH_EffectSpawner>();
+        indicatorSpawner ??= GetComponent<WBH_IndicatorSpawner>();
         networkPattern ??= GetComponent<WBH_EnemyPattern_MirrorTest>();
         agent ??= GetComponent<NavMeshAgent>();
         networkAnimator ??= GetComponent<NetworkAnimator>();
+        animator ??= GetComponent<Animator>();
         destructionLink ??= GetComponent<EnemyDestructionLink>();
     }
 
