@@ -8,6 +8,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 {
     private const string LeftHandGripName = "LeftHandGrip";
+    private static readonly int LocomotionStateHash =
+        Animator.StringToHash("Locomotion");
+    private static readonly int AttackStateHash =
+        Animator.StringToHash("Attack");
 
     // Fighter 손가락이 만드는 실제 파지 고리의 중심입니다.
     // 기존 PalmContact 마커는 손바닥 표면 쪽이라 손잡이 중심축을 맞추는 기준으로는 부족합니다.
@@ -23,6 +27,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     [SerializeField] private Transform leftHandContact;
     [SerializeField] private Transform leftHandIkTarget;
     [SerializeField] private TwoBoneIKConstraint leftHandIkConstraint;
+    [SerializeField] private CharacterClass characterClass = CharacterClass.Fighter;
+    [SerializeField] private Animator characterAnimator;
+    [SerializeField, Min(0f)] private float leftHandIkBlendSpeed = 12f;
 
     private string currentItemId;
     private string pendingItemId;
@@ -34,11 +41,17 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private void Update()
     {
-        if (currentLeftHandGrip != null &&
-            currentLeftHandGrip.gameObject.activeInHierarchy)
+        bool hasActiveLeftHandGrip =
+            currentLeftHandGrip != null &&
+            currentLeftHandGrip.gameObject.activeInHierarchy;
+
+        if (hasActiveLeftHandGrip)
         {
             ApplyLeftHandIk(currentLeftHandGrip);
         }
+
+        if (characterClass == CharacterClass.Gunner)
+            UpdateGunnerLeftHandIkWeight(hasActiveLeftHandGrip);
     }
 
     private void OnEnable()
@@ -193,7 +206,8 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (defaultVisual == null)
             return;
 
-        CalibrateDefaultVisualToRightHand();
+        if (characterClass == CharacterClass.Fighter)
+            CalibrateDefaultVisualToRightHand();
         defaultVisual.SetActive(true);
         currentLeftHandGrip = defaultVisual.transform.Find(LeftHandGripName);
         ApplyLeftHandIk(currentLeftHandGrip);
@@ -358,7 +372,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             // 손잡이 중심축이 손가락 고리의 중심을 지나도록 손뼈 기준점을 역산한다.
             Vector3 localContactPosition = leftHandGripCenterLocalPosition;
             Quaternion localContactRotation = Quaternion.identity;
-            if (leftHandContact != null && leftHandContact.parent != handBone)
+            if (leftHandContact != null &&
+                (characterClass == CharacterClass.Gunner ||
+                 leftHandContact.parent != handBone))
             {
                 localContactPosition =
                     handBone.InverseTransformPoint(leftHandContact.position);
@@ -374,6 +390,34 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         }
 
         leftHandIkTarget.SetPositionAndRotation(targetPosition, targetRotation);
-        leftHandIkConstraint.weight = 1f;
+        if (characterClass == CharacterClass.Fighter)
+            leftHandIkConstraint.weight = 1f;
+    }
+
+    private void UpdateGunnerLeftHandIkWeight(bool hasActiveLeftHandGrip)
+    {
+        if (leftHandIkConstraint == null)
+            return;
+
+        float targetWeight =
+            hasActiveLeftHandGrip && IsGunnerHoldingWeapon() ? 1f : 0f;
+        leftHandIkConstraint.weight = Mathf.MoveTowards(
+            leftHandIkConstraint.weight,
+            targetWeight,
+            leftHandIkBlendSpeed * Time.deltaTime);
+    }
+
+    private bool IsGunnerHoldingWeapon()
+    {
+        if (characterAnimator == null || !characterAnimator.isActiveAndEnabled)
+            return true;
+
+        AnimatorStateInfo state = characterAnimator.IsInTransition(0)
+            ? characterAnimator.GetNextAnimatorStateInfo(0)
+            : characterAnimator.GetCurrentAnimatorStateInfo(0);
+        int stateHash = state.shortNameHash;
+        return stateHash == 0 ||
+               stateHash == LocomotionStateHash ||
+               stateHash == AttackStateHash;
     }
 }

@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -50,6 +53,9 @@ internal static class MirrorLanTestBuilder
         string executablePath = Path.Combine(outputDirectory, ExecutableName);
         Directory.CreateDirectory(outputDirectory);
 
+        if (!PrepareWindowsAddressables())
+            return;
+
         var options = new BuildPlayerOptions
         {
             scenes = TestScenes,
@@ -80,6 +86,9 @@ internal static class MirrorLanTestBuilder
             return;
         }
 
+        if (!ValidateWindowsAddressables(outputDirectory))
+            return;
+
         File.WriteAllText(
             Path.Combine(outputDirectory, GuideFileName),
             BuildGuide(),
@@ -89,6 +98,65 @@ internal static class MirrorLanTestBuilder
             $"[MirrorLanTestBuilder] LAN 빌드 완료: {executablePath} " +
             $"({report.summary.totalSize / 1048576d:F1} MB)");
         EditorUtility.RevealInFinder(outputDirectory);
+    }
+
+    private static bool PrepareWindowsAddressables()
+    {
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64 &&
+            !EditorUserBuildSettings.SwitchActiveBuildTarget(
+                BuildTargetGroup.Standalone,
+                BuildTarget.StandaloneWindows64))
+        {
+            Debug.LogError("[MirrorLanTestBuilder] Windows 빌드 대상으로 전환하지 못했습니다.");
+            return false;
+        }
+
+        if (AddressableAssetSettingsDefaultObject.Settings == null)
+        {
+            Debug.LogError("[MirrorLanTestBuilder] Addressables 설정을 찾을 수 없습니다.");
+            return false;
+        }
+
+        AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
+        if (result == null || !string.IsNullOrEmpty(result.Error))
+        {
+            Debug.LogError(
+                $"[MirrorLanTestBuilder] Windows Addressables 빌드 실패: {result?.Error ?? "결과 없음"}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool ValidateWindowsAddressables(string outputDirectory)
+    {
+        string addressablesPath = Path.Combine(
+            outputDirectory,
+            Path.GetFileNameWithoutExtension(ExecutableName) + "_Data",
+            "StreamingAssets",
+            "aa");
+        string settingsPath = Path.Combine(addressablesPath, "settings.json");
+        string catalogPath = Path.Combine(addressablesPath, "catalog.bin");
+        string bundlePath = Path.Combine(addressablesPath, "StandaloneWindows64");
+
+        bool hasWindowsSettings = File.Exists(settingsPath) &&
+                                  File.ReadAllText(settingsPath).Contains(
+                                      "\"m_buildTarget\":\"StandaloneWindows64\"");
+        string catalogText = File.Exists(catalogPath)
+            ? Encoding.UTF8.GetString(File.ReadAllBytes(catalogPath))
+            : string.Empty;
+        bool hasWindowsCatalog = catalogText.Contains("StandaloneWindows64") &&
+                                 !catalogText.Contains("StandaloneLinux64");
+        bool hasWindowsBundles = Directory.Exists(bundlePath) &&
+                                 Directory.GetFiles(bundlePath, "*.bundle").Length > 0;
+
+        if (hasWindowsSettings && hasWindowsCatalog && hasWindowsBundles)
+            return true;
+
+        Debug.LogError(
+            "[MirrorLanTestBuilder] Windows Addressables 검증 실패. " +
+            $"settings={hasWindowsSettings}, catalog={hasWindowsCatalog}, bundles={hasWindowsBundles}");
+        return false;
     }
 
     /// <summary>
