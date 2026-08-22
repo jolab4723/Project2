@@ -57,6 +57,16 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         statusPopup ??= FindFirstObjectByType<KY_StatusPopup_MirrorTest>(
             FindObjectsInactive.Include);
 
+#if UNITY_EDITOR
+        Canvas inventoryCanvas = inventoryView != null
+            ? inventoryView.GetComponentInParent<Canvas>(true)
+            : null;
+        Debug.Assert(
+            inventoryCanvas == null || inventoryCanvas.transform.localScale != Vector3.zero,
+            "[MirrorTestLocalPlayerUIBinder] 인벤토리 Canvas 스케일이 0입니다.",
+            this);
+#endif
+
         if (networkManager == null || inventoryView == null || inventoryPartView == null)
         {
             Debug.LogError(
