@@ -247,6 +247,7 @@ namespace Core
             saved.rolledSubStats = itemData.rolledSubStats;
             saved.rolledElement = itemData.rolledElement;
             saved.upgradeLevel = itemData.upgradeLevel;
+            saved.persistedStackCount = itemData.persistedStackCount;
             saved.gridX = invItem.x;
             saved.gridY = invItem.y;
             saved.isRotated = invItem.isRotated;
@@ -301,6 +302,7 @@ namespace Core
                 itemInstance.rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>();
                 itemInstance.rolledElement = saved.rolledElement;
                 itemInstance.upgradeLevel = saved.upgradeLevel;
+                itemInstance.persistedStackCount = saved.persistedStackCount;
 
                 var invItem = new InventoryItem(itemInstance);
                 invItem.isRotated = saved.isRotated;
@@ -612,19 +614,10 @@ namespace Core
             }
         }
 
-        /// <summary>씬에 있는 로컬 플레이어의 ISkillController를 찾는다. FighterSkillController가 지금
-        /// 유일한 구현체라도 타입을 직접 지정하지 않고 인터페이스로 찾아서, 거너 컨트롤러가 추가돼도
-        /// 이 메서드를 안 고쳐도 되게 했다.</summary>
-        private static ISkillController FindActiveSkillController()
-        {
-            foreach (MonoBehaviour behaviour in FindObjectsOfType<MonoBehaviour>())
-            {
-                if (behaviour is ISkillController controller)
-                    return controller;
-            }
-
-            return null;
-        }
+        /// <summary>씬에 있는 활성 캐릭터의 ISkillController를 찾는다. 실제 스캔 로직은
+        /// ActiveSkillControllerLocator로 뺐다(118번) - SkillEvolutionSelectUI(K키 설정창)도 같은
+        /// 로직이 필요해져서 공용 유틸로 공유한다.</summary>
+        private static ISkillController FindActiveSkillController() => ActiveSkillControllerLocator.Find();
 
         #endregion
 

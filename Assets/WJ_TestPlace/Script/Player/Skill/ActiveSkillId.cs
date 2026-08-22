@@ -9,4 +9,9 @@ public enum ActiveSkillId
     FighterHalfCircleSlash,
     FighterLineSlam,
     FighterCursorDash,
+
+    // Gunner
+    GunnerArcBuster,
+    GunnerBombThrow,
+    GunnerBackstepShot,
 }
