@@ -57,7 +57,7 @@ Game-ready stylized sci-fi two-handed [battle axe / hammer / maintenance tool], 
 ### 거너 총기
 
 ```text
-Game-ready stylized sci-fi two-handed [rifle / shotgun / grenade launcher], one single centered weapon, isolated. Use a clear production modeling orientation: muzzle pointing straight forward along +Z and weapon top aligned to +Y. Create a distinct right-hand trigger grip with a clean palm-sized contact area and an unobstructed trigger region. Create a separate straight left-hand support corridor on the fore-end, long enough for one full hand, with no spikes, cables, magazines, rails, or decorations crossing the contact zone. Keep the muzzle opening centered, circular or mechanically symmetric, fully visible, and unobstructed so a Muzzle marker can be placed at its exact center. Keep the stock, receiver, barrel, magazine, trigger grip, and fore-end physically connected with no floating pieces. [색상], [재질], [핵심 디자인 특징], clean readable silhouette from front, side, top, and rear, detailed PBR game asset.
+Game-ready realistic sci-fi two-handed [rifle / shotgun / grenade launcher], one single centered weapon, isolated. Use a clear production modeling orientation: muzzle pointing straight forward along +Z and weapon top aligned to +Y. Create a distinct right-hand trigger grip with a clean palm-sized contact area and an unobstructed trigger region. Create a separate straight left-hand support corridor on the fore-end, long enough for one full hand, with its contact center approximately 300 mm forward from the trigger-grip center in final character space. No spikes, cables, magazines, rails, moving parts, or decorations may cross either contact zone. Keep the muzzle opening centered, circular or mechanically symmetric, fully visible, and unobstructed so a Muzzle marker can be placed at its exact center. Keep the stock, receiver, barrel, magazine, trigger grip, and fore-end physically connected with no floating pieces. [색상], [재질], [핵심 디자인 특징], clean readable silhouette from front, side, top, and rear, detailed PBR game asset.
 ```
 
 ### Negative Prompt
@@ -80,6 +80,43 @@ character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rac
 - 측면 이미지에서 손잡이 두께가 과도하게 굵거나 납작하지 않은지 확인한다.
 
 Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타일, 품질 조건을 짧고 구조적으로 쓰고, 제외할 형상은 Negative Prompt로 분리한다.
+
+### Gunner 4-view 이미지 생성 규격
+
+실제 Gunner 프리팹의 양손 파지를 기준으로 한 이미지 생성 규격이다. 아래 프롬프트는 Codex 이미지 생성과 Tripo 웹 스튜디오 Multi-view 입력 이미지 제작에 공통으로 사용한다. 먼저 파지 구간을 재기 쉬운 `LEFT SIDE 90°` 한 장을 만들고 합격한 뒤, 그 이미지를 참조로 첨부해 나머지 세 장을 만든다. 이후 생성에서도 이미 합격한 이미지를 모두 함께 첨부하고 `[VIEW]`만 바꾼다.
+
+```text
+Create one production multiview reference PNG of a realistic sci-fi [RIFLE / SHOTGUN / GRENADE LAUNCHER].
+Design brief: [COLOR, MATERIAL, SILHOUETTE, AND KEY DESIGN FEATURES].
+If approved reference views are supplied, reproduce that exact weapon without redesigning it.
+
+Output requirements:
+- Canvas: exactly 2048 × 1024 pixels.
+- File format: PNG with a fully transparent background (alpha 0).
+- View: [FRONT 0°, muzzle facing the camera / REAR 180° / LEFT SIDE 90° / RIGHT SIDE 270°].
+- Orthographic product-reference view with no perspective distortion.
+- One complete weapon only, centered, level, and fully inside the canvas.
+- No hands, character, stand, floor, shadow, text, labels, floating effects, or detached parts.
+- Use realistic game-asset materials and physically plausible connected construction.
+
+Cross-view consistency:
+- All four images must depict the exact same physical weapon at the exact same scale and center.
+- Receiver, stock, barrel, muzzle, trigger, grips, magazine, seams, colors, decals, and every asymmetric detail must match logically between opposite views.
+- Do not mirror text or invent, remove, resize, or relocate parts between views.
+
+Gunner grip-fit requirements:
+- In both side views, keep the right-hand trigger grip clearly exposed and its visible thickness at or below 55 pixels.
+- Leave enough unobstructed trigger-grip length and clearance for a full gloved hand.
+- In both side views, place the center of the clean front support contact area 620 to 680 pixels toward the muzzle from the center of the trigger grip, measured along the weapon's main axis.
+- Make the clean front support corridor 160 to 220 pixels long and continuous.
+- Do not put magazines, cables, rails, guards, spikes, ornaments, moving parts, or abrupt thickness changes inside either hand-contact area.
+- Keep the muzzle opening clear, centered, mechanically symmetric, and unblocked.
+- The overall weapon length may vary by weapon type. Fit the complete silhouette inside the canvas without cropping, but do not shorten or stretch the grip-center spacing to normalize the total weapon length.
+
+Preserve the approved first-view design exactly. Change only the camera direction required for [VIEW].
+```
+
+프롬프트만으로 치수를 합격 처리하지 않는다. 전체 길이는 무기 종류에 따라 달라도 되며 무잘림만 확인한다. 측면 두 장에서는 방아쇠 손잡이 두께, 두 파지 중심 간 픽셀 거리와 앞손 파지 구간을 실제로 재고, 서로 다른 값이면 Tripo에 넘기기 전에 재생성한다. Tripo 웹 스튜디오에 네 장을 업로드한 뒤에도 아래 `거너 총기` 프롬프트와 Negative Prompt를 함께 사용한다.
 
 ## 4. 생성 설정 권장값
 
@@ -123,11 +160,13 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 
 1. 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용한다.
 2. 총구 방향은 Blender `+Z`, 무기 위쪽은 `+Y`로 맞춘다.
-3. `LeftHandGrip`은 앞손이 실제로 닿는 포어엔드 중심에 둔다.
-4. `Muzzle` Empty는 총구 끝의 정확한 중심에 두고 로컬 `+Z`가 발사 방향을 향하게 한다.
-5. root 직속에 `RightHandGrip`, `LeftHandGrip`, `Muzzle`을 두고 Transform을 적용한다.
-6. Camera, Light, 촬영용 오브젝트와 불필요한 Collider를 제외한 뒤 FBX로 내보낸다.
-7. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
+3. Project2 Gunner의 최종 캐릭터 공간 양손 파지 중심 거리는 약 `0.297 m`다. 현재 캐릭터 스케일을 반영한 무기 로컬 기준에서는 `RightHandGrip=(0, 0, 0)`, `LeftHandGrip=(0, 0, 약 0.326 m)`를 초깃값으로 사용한다.
+4. `LeftHandGrip`은 앞손이 실제로 닿는 포어엔드 중심에 둔다. 메시 형상 때문에 기준 위치를 바꿔야 한다면 실제 Idle·Run·Attack 장착 검증을 다시 수행하고 무기별 값으로 저장한다.
+5. `Muzzle` Empty는 총구 끝의 정확한 중심에 두고 로컬 `+Z`가 발사 방향을 향하게 한다.
+6. root 직속에 `RightHandGrip`, `LeftHandGrip`, `Muzzle`을 두고 Transform을 적용한다.
+7. Camera, Light, 촬영용 오브젝트와 불필요한 Collider를 제외한 뒤 FBX로 내보낸다.
+8. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
+9. 이 작업은 Empty 보존, 축 정리, Transform 적용, FBX 재임포트 검증이 단순한 Blender를 기본 후처리 도구로 사용한다. 3ds Max를 사용해도 결과 규격은 같아야 하며, 두 도구를 한 무기에 중복 적용하지 않는다.
 
 ### Unity
 
