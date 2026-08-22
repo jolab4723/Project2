@@ -17,12 +17,17 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
     [SerializeField] private Transform damageTextRoot;
     [SerializeField] private GameObject healthBarRoot;
     [SerializeField] private Slider healthBarSlider;
+    [SerializeField] private WBH_EnemyBossPhaseView_Act1 bossPhaseView;
 
     private WBH_DamageTextPoolManager damageTextPool;
     private Camera mainCamera;
     private uint observedDamagePresentationCount;
     private bool initialized;
     private bool missingPoolReported;
+    private bool bossPhaseTwoApplied;
+    private MirrorAct1BossPhase observedBossPhase;
+
+    public bool BossPhaseTwoApplied => bossPhaseTwoApplied;
 
     private void Awake()
     {
@@ -74,7 +79,11 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
 
     private void RefreshHealthBar()
     {
-        if (authority == null || healthBarRoot == null || healthBarSlider == null)
+        if (authority == null)
+            return;
+
+        RefreshBossPhaseView();
+        if (healthBarRoot == null || healthBarSlider == null)
             return;
 
         bool visible = !authority.IsDead && authority.MaxHealth > 0f;
@@ -88,13 +97,52 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
             : 0f;
     }
 
+    private void RefreshBossPhaseView()
+    {
+        if (bossPhaseView == null || authority.EnemyInfo?.enemyType != EnemyType.Boss)
+        {
+            return;
+        }
+
+        MirrorAct1BossPhase phase = authority.BossPhase;
+        if (phase == observedBossPhase)
+            return;
+
+        observedBossPhase = phase;
+        if (phase == MirrorAct1BossPhase.PhaseOne)
+        {
+            bossPhaseTwoApplied = false;
+            bossPhaseView.SetPhaseOne();
+            return;
+        }
+
+        if (phase == MirrorAct1BossPhase.TransitionArmor)
+        {
+            bossPhaseTwoApplied = true;
+            Random.State previousState = Random.state;
+            Random.InitState(authority.BossPhaseVisualSeed);
+            bossPhaseView.PlayPhaseTwoTransition(null);
+            Random.state = previousState;
+            return;
+        }
+
+        if (phase == MirrorAct1BossPhase.PhaseTwo && !bossPhaseTwoApplied)
+        {
+            bossPhaseTwoApplied = true;
+            bossPhaseView.SetPhaseTwo();
+        }
+    }
+
     private void ShowDamage(float damage, bool critical)
     {
         if (damage <= 0f)
             return;
 
-        damageTextPool ??=
-            FindFirstObjectByType<WBH_DamageTextPoolManager>(FindObjectsInactive.Exclude);
+        // 1. 카메라가 아직 없는 환경(서버/로딩 중)이면 표출 스킵
+        if (Camera.main == null) return;
+        
+        damageTextPool ??= FindFirstObjectByType<WBH_DamageTextPoolManager>(FindObjectsInactive.Exclude);
+
         if (damageTextPool == null)
         {
             if (!missingPoolReported)
@@ -104,22 +152,28 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
                     this);
                 missingPoolReported = true;
             }
-
             return;
         }
 
         WBH_DamageText damageText = damageTextPool.GetDamageText();
-        Vector3 position = damageTextRoot != null
-            ? damageTextRoot.position
-            : transform.position + Vector3.up * 1.5f;
-        damageText.Show(
-            position,
-            new WBH_DamageResult(null, damage, critical, ElementType.None));
+        if (damageText != null)
+        {
+            // 2. 풀에서 꺼낸 직후 Initialize를 호출해 현재 씬의 Camera.main을 재할당
+            damageText.Initialize(damageTextPool);
+            Vector3 position = damageTextRoot != null
+                ? damageTextRoot.position
+                : transform.position + Vector3.up * 1.5f;
+
+            damageText.Show(
+                position,
+                new WBH_DamageResult(null, damage, critical, ElementType.None));
+        }
     }
 
     private void ResolveReferences()
     {
         authority ??= GetComponent<NetworkEnemyAuthority_MirrorTest>();
+        bossPhaseView ??= GetComponent<WBH_EnemyBossPhaseView_Act1>();
 
         if (damageTextRoot == null)
         {

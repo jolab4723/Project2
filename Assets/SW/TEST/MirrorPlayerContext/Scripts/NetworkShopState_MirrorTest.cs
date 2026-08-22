@@ -155,11 +155,11 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
             return;
 
         localContext = context;
-        localShopController = FindFirstObjectByType<ShopController>(FindObjectsInactive.Include);
+        localShopController = FindInOwningScene<ShopController>();
         localItemSpawner = inventoryView.GetComponentInChildren<InventoryItemUISpawner>(true);
 
         ShopStockInitializer initializer =
-            FindFirstObjectByType<ShopStockInitializer>(FindObjectsInactive.Include);
+            FindInOwningScene<ShopStockInitializer>();
         if (initializer != null)
             initializer.enabled = false;
 
@@ -471,10 +471,8 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         gridWidth = 0;
         gridHeight = 0;
 
-        ShopStockInitializer initializer =
-            FindFirstObjectByType<ShopStockInitializer>(FindObjectsInactive.Include);
-        ShopController controller =
-            FindFirstObjectByType<ShopController>(FindObjectsInactive.Include);
+        ShopStockInitializer initializer = FindInOwningScene<ShopStockInitializer>();
+        ShopController controller = FindInOwningScene<ShopController>();
 
         if (initializer == null || controller?.ShopGrid == null ||
             ItemDatabaseField == null || InitialStockCountField == null || RarityChancesField == null)
@@ -489,6 +487,25 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         gridHeight = controller.ShopGrid.GridHeight;
         return itemDatabase != null && stockCount > 0 && rarityChances is { Length: > 0 } &&
                gridWidth > 0 && gridHeight > 0;
+    }
+
+    /// <summary>
+    /// Scene 전환 직후에는 이전 Scene 객체가 파괴 대기 중일 수 있으므로 이 네트워크 상점 상태와
+    /// 같은 Scene에 배치된 UI 설정만 선택한다. 전역 Find가 이전 상점 Grid를 집는 경합을 막는다.
+    /// </summary>
+    private T FindInOwningScene<T>() where T : Component
+    {
+        T[] candidates = FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (T candidate in candidates)
+        {
+            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+                return candidate;
+        }
+
+        return null;
     }
 
     private bool TryMarkOccupied(IReadOnlyList<string> snapshots, bool[,] occupied)

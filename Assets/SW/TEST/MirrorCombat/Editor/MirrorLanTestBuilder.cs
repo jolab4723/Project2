@@ -16,6 +16,7 @@ internal static class MirrorLanTestBuilder
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
+        MirrorTestNetworkManager.SessionUnknownScene,
     };
     private const string BuildDirectory = "Builds/MirrorLanTest";
     private const string ExecutableName = "MirrorLanTest.exe";

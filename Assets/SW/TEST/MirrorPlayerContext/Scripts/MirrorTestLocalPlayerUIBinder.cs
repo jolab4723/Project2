@@ -1,6 +1,7 @@
 using System.Reflection;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -16,6 +17,10 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     private static readonly FieldInfo ShopControllerField =
         typeof(InventoryView).GetField(
             "shopController",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo NpcClickedEventField =
+        typeof(YJ_ClickNPC).GetField(
+            "onClicked",
             BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private MirrorTestNetworkManager networkManager;
@@ -52,6 +57,16 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         statusPopup ??= FindFirstObjectByType<KY_StatusPopup_MirrorTest>(
             FindObjectsInactive.Include);
 
+#if UNITY_EDITOR
+        Canvas inventoryCanvas = inventoryView != null
+            ? inventoryView.GetComponentInParent<Canvas>(true)
+            : null;
+        Debug.Assert(
+            inventoryCanvas == null || inventoryCanvas.transform.localScale != Vector3.zero,
+            "[MirrorTestLocalPlayerUIBinder] 인벤토리 Canvas 스케일이 0입니다.",
+            this);
+#endif
+
         if (networkManager == null || inventoryView == null || inventoryPartView == null)
         {
             Debug.LogError(
@@ -62,6 +77,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         networkManager.LocalPlayerContextChanged += HandleLocalPlayerChanged;
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
+        BindCampNpcWindows();
     }
 
     private void OnDisable()
@@ -141,7 +157,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundContext = context;
         boundInventorySync = context.GetComponent<PlayerInventorySync_MirrorTest>();
         boundInventorySync?.BindLocalInventoryView(inventoryView);
-        boundShopState = FindFirstObjectByType<NetworkShopState_MirrorTest>();
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(context, inventoryView);
         upgradeButton?.Bind(context);
         playerHud?.Bind(context);
@@ -157,6 +173,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void Update()
     {
+        EnsureSceneShopBinding();
+
         if (boundContext == null || inventoryPartView == null || Keyboard.current == null)
             return;
 
@@ -187,6 +205,113 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             inventoryPartView.CloseAll();
             statusPopup?.Toggle();
         }
+    }
+
+    /// <summary>
+    /// Mirror Scene 전환에서는 로컬 UI Binder가 먼저 활성화되고 새 NetworkShopState의 Spawn이
+    /// 한두 프레임 뒤에 끝날 수 있다. 최초 Bind 때 상점 상태가 없었으면 같은 Scene의 상태가
+    /// 준비될 때까지만 다시 찾아 연결하며, 이전 Scene의 파괴 대기 객체는 선택하지 않는다.
+    /// </summary>
+    private void EnsureSceneShopBinding()
+    {
+        if (boundContext == null || inventoryView == null)
+            return;
+
+        if (boundShopState != null && boundShopState.gameObject.scene == gameObject.scene)
+            return;
+
+        if (boundShopState != null)
+            boundShopState.UnbindLocalView(boundContext);
+
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
+        boundShopState?.BindLocalView(boundContext, inventoryView);
+    }
+
+    /// <summary>
+    /// production Camp를 복제한 Mirror Scene에서는 Shop/Upgrade NPC의 UnityEvent 대상이
+    /// 복제 과정에서 끊어질 수 있다. 원본 NPC 스크립트와 Scene은 건드리지 않고, 현재 Scene의
+    /// InventoryPartView를 런타임 Listener로 다시 연결한다.
+    /// </summary>
+    private void BindCampNpcWindows()
+    {
+        if (inventoryPartView == null)
+            return;
+
+        if (NpcClickedEventField == null)
+        {
+            Debug.LogError(
+                "[MirrorTestLocalPlayerUIBinder] YJ_ClickNPC.onClicked를 찾지 못해 상점/강화 NPC를 연결할 수 없습니다.",
+                this);
+            return;
+        }
+
+        YJ_ClickNPC[] npcs = FindObjectsByType<YJ_ClickNPC>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+
+        foreach (YJ_ClickNPC npc in npcs)
+        {
+            if (npc == null ||
+                npc.gameObject.scene != gameObject.scene ||
+                NpcClickedEventField.GetValue(npc) is not UnityEvent clickedEvent)
+            {
+                continue;
+            }
+
+            switch (npc.name)
+            {
+                case "ShopNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenShop),
+                        inventoryPartView.OpenShop);
+                    break;
+
+                case "UpgradeNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenUpgrade),
+                        inventoryPartView.OpenUpgrade);
+                    break;
+            }
+        }
+    }
+
+    private void AddNpcListenerIfMissing(
+        UnityEvent clickedEvent,
+        string methodName,
+        UnityAction listener)
+    {
+        for (int index = 0; index < clickedEvent.GetPersistentEventCount(); index++)
+        {
+            if (clickedEvent.GetPersistentTarget(index) == inventoryPartView &&
+                clickedEvent.GetPersistentMethodName(index) == methodName)
+            {
+                return;
+            }
+        }
+
+        clickedEvent.RemoveListener(listener);
+        clickedEvent.AddListener(listener);
+    }
+
+    /// <summary>
+    /// DontDestroyOnLoad와 이전 Scene의 종료 순서에 영향을 받지 않도록 이 Binder가 속한
+    /// 현재 Scene의 컴포넌트만 반환한다.
+    /// </summary>
+    private T FindInBinderScene<T>() where T : Component
+    {
+        T[] candidates = FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (T candidate in candidates)
+        {
+            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+                return candidate;
+        }
+
+        return null;
     }
 
     /// <summary>

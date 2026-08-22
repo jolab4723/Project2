@@ -82,7 +82,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int ProcessedRequestHistorySize = 64;
     private const int MaxInstanceIdLength = 128;
     private const float UpgradeCostMultiplier = 1.15f;
-    private const string DefaultTestItemId = "item.armor.helmet.basic";
+    // 장시간 Act 1 회귀 테스트에서 생존 여유를 확보하도록 현재 ItemDatabase의
+    // 고체력 전설 투구(우주 괴물 두개골, 최대 체력 230)를 최초 테스트 장비로 지급한다.
+    private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
@@ -768,7 +770,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 targetY,
                 isRotated))
         {
-            return TrySynchronizeOwnedSnapshots()
+            return TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot)
                 ? MirrorTestInventoryRequestResult.Success
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
@@ -875,7 +877,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        if (TrySynchronizeOwnedSnapshots())
+        if (TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot))
             return MirrorTestInventoryRequestResult.Success;
 
         bool rebuildHostVisuals = isLocalPlayer && localItemSpawner != null;
@@ -1926,6 +1928,26 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         }
     }
 
+    private bool TrySynchronizeEquipmentState(
+        bool shouldBeEquipped,
+        EquipSlotType targetSlot)
+    {
+        if (!TrySynchronizeOwnedSnapshots())
+            return false;
+
+        // Act 1 회귀 테스트용 임시 보정: Host의 사전 적용 경로를 포함해
+        // 서버가 승인한 투구 장착은 새 최대 체력으로 현재 체력을 한 번 가득 채운다.
+        if (shouldBeEquipped &&
+            targetSlot == EquipSlotType.Helmet &&
+            context.Health != null)
+        {
+            context.Health.RefreshMaxHealth();
+            context.Health.FillHealth();
+        }
+
+        return true;
+    }
+
     private static Dictionary<InventoryItem, InventoryPlacementSnapshot> CaptureGridState(
         InventoryGrid grid)
     {
@@ -2078,8 +2100,13 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (string.IsNullOrWhiteSpace(itemId))
             return null;
 
-        ItemDefinitionSO definition =
-            ItemManager.Instance?.ItemDatabase?.GetById(itemId);
+        // StageSelect에는 실제 ItemManager Prefab이 아직 없다. 여기서 Singleton.Instance를 읽으면
+        // Singleton<T>가 데이터베이스가 비어 있는 임시 ItemManager를 생성하고 DontDestroyOnLoad로
+        // 남겨서, 다음 전투 Scene의 정상 ItemManager가 중복으로 제거된다. 존재하는 매니저만 조회하고
+        // 없으면 아래 Resources 경로로 해석해 Scene 전환 전에는 전역 상태를 만들지 않는다.
+        ItemManager itemManager =
+            UnityEngine.Object.FindFirstObjectByType<ItemManager>(FindObjectsInactive.Include);
+        ItemDefinitionSO definition = itemManager?.ItemDatabase?.GetById(itemId);
 
         if (definition != null)
             return definition;

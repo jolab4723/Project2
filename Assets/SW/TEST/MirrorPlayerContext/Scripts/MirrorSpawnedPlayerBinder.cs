@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Mirror가 생성한 테스트 플레이어의 로컬·서버 등록과 Scene 간 수명주기를 연결한다.
 /// <para>6-B 빌드 보완: Scene 전환 직후 한 프레임의 콜백에만 의존하지 않고, 로컬 PlayerContext를 다시
-/// 등록한 뒤 전투 Scene의 NavMeshAgent가 실제 NavMesh에 올라올 때까지 기다려 입력과 조작 권한을 복구한다.</para>
+/// 등록한 뒤 전투·캠프 Scene의 NavMeshAgent가 실제 NavMesh에 올라올 때까지 기다려 입력과 조작 권한을 복구한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext))]
@@ -21,14 +21,32 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [SerializeField] private Behaviour[] localOnlyBehaviours;
 
     private Coroutine localSceneRestoreRoutine;
+    private bool hasServerSceneStart;
+    private string serverSceneStartPath;
+    private Vector3 serverSceneStartPosition;
+    private Quaternion serverSceneStartRotation;
 
     public PlayerContext Context => context;
 
     private void Awake()
     {
         context ??= GetComponent<PlayerContext>();
+        DisableLegacyHudPublisher();
         ResolveLocalOnlyBehaviours();
         SetLocalOnlyBehaviours(false);
+    }
+
+    /// <summary>
+    /// 원본 Fighter의 PlayerHudEventBridge는 플레이어마다 Health/Mana를 전역 KY_GameEvents에 발행한다.
+    /// 네트워크 복제본에서 이를 그대로 켜면 원격 플레이어의 체력 변화가 이 Client의 하단 HUD까지
+    /// 덮어쓴다. Mirror 테스트에서는 Scene의 PlayerHudEventBridge_MirrorTest 하나만 로컬 Context에
+    /// Bind하므로, 플레이어 Prefab에 상속된 원본 발행기는 모든 복제본에서 비활성화한다.
+    /// </summary>
+    private void DisableLegacyHudPublisher()
+    {
+        PlayerHudEventBridge legacyBridge = GetComponent<PlayerHudEventBridge>();
+        if (legacyBridge != null)
+            legacyBridge.enabled = false;
     }
 
 #if UNITY_EDITOR
@@ -137,7 +155,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// <summary>
     /// Scene 전환 뒤 로컬 Context 등록, 입력 컴포넌트, Controller와 NavMeshAgent를 한 경로에서 복구한다.
     /// <para>빌드에서는 <c>OnClientSceneChanged</c>와 NavMesh 준비 순서가 Editor보다 늦을 수 있으므로,
-    /// 전투 Scene에 한해서 최대 120프레임 동안 실제 NavMesh 연결을 기다린다.</para>
+    /// 전투·캠프 Scene에서는 최대 120프레임 동안 실제 NavMesh 연결을 기다린다.</para>
     /// </summary>
     public void RestoreLocalGameplayAfterScene()
     {
@@ -154,7 +172,23 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [Server]
     public void ServerPlaceAtSceneStart(Vector3 position, Quaternion rotation)
     {
+        hasServerSceneStart = true;
+        serverSceneStartPath = SceneManager.GetActiveScene().path;
+        serverSceneStartPosition = position;
+        serverSceneStartRotation = rotation;
         ApplySceneStart(position, rotation);
+    }
+
+    /// <summary>
+    /// Client 권한 위치가 Scene 전환 중 서버 위치를 다시 덮어써도 서버가 처음 배정한 시작점을 보낸다.
+    /// </summary>
+    [Server]
+    public void ServerConfirmSceneStart(NetworkConnectionToClient target)
+    {
+        if (!hasServerSceneStart || serverSceneStartPath != SceneManager.GetActiveScene().path)
+            return;
+
+        TargetConfirmSceneStart(target, serverSceneStartPosition, serverSceneStartRotation);
     }
 
     /// <summary>
@@ -214,7 +248,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             controller.enabled = true;
 
         bool requiresNavMesh =
-            SceneManager.GetActiveScene().path == MirrorTestNetworkManager.SessionCombatScene;
+            SceneManager.GetActiveScene().path == MirrorTestNetworkManager.SessionCombatScene ||
+            SceneManager.GetActiveScene().path == MirrorTestNetworkManager.SessionCampGameplayScene;
 
         for (int frame = 0; frame < SceneRestoreFrameLimit; frame++)
         {
