@@ -43,6 +43,7 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
     private const float JumpDuration = 1.5f;
     private const float JumpRecoveryDuration = 1f;
     private const float JumpHeight = 4f;
+    private const float BossDestinationSampleDistance = 2f;
     private const float DashCooldown = 15f;
     private const float DashTargetRange = 30f;
     private const float DashMaxDistance = 30f;
@@ -431,7 +432,12 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
     [Server]
     private IEnumerator CoJumpAttack(Vector3 requestedLandingPoint)
     {
-        Vector3 landingPoint = ResolveBossDestination(requestedLandingPoint);
+        if (!TryResolveBossDestination(requestedLandingPoint, out Vector3 landingPoint))
+        {
+            bossActionRoutine = null;
+            yield break;
+        }
+
         Vector3 offset = landingPoint - transform.position;
         offset.y = 0f;
         if (offset.sqrMagnitude > 0.001f)
@@ -483,7 +489,12 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
                 new Vector3(start.x, 0f, start.z),
                 new Vector3(requestedTargetPoint.x, 0f, requestedTargetPoint.z)),
             DashMaxDistance);
-        Vector3 end = ResolveBossDestination(start + direction * distance);
+        if (!TryResolveBossDestination(start + direction * distance, out Vector3 end))
+        {
+            bossActionRoutine = null;
+            yield break;
+        }
+
         distance = Vector3.Distance(
             new Vector3(start.x, 0f, start.z),
             new Vector3(end.x, 0f, end.z));
@@ -544,13 +555,33 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
         agent.isStopped = false;
     }
 
-    private Vector3 ResolveBossDestination(Vector3 requestedPoint)
+    private bool TryResolveBossDestination(Vector3 requestedPoint, out Vector3 destination)
     {
-        if (NavMesh.SamplePosition(requestedPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            return hit.position;
+        destination = transform.position;
+        int areaMask = agent != null ? agent.areaMask : NavMesh.AllAreas;
+        if (!NavMesh.SamplePosition(
+                transform.position,
+                out NavMeshHit startHit,
+                BossDestinationSampleDistance,
+                areaMask) ||
+            !NavMesh.SamplePosition(
+                requestedPoint,
+                out NavMeshHit destinationHit,
+                BossDestinationSampleDistance,
+                areaMask))
+        {
+            return false;
+        }
 
-        requestedPoint.y = transform.position.y;
-        return requestedPoint;
+        float maximumHeightDifference = agent != null ? agent.height : 2f;
+        if (Mathf.Abs(destinationHit.position.y - startHit.position.y) > maximumHeightDifference)
+            return false;
+
+        if (NavMesh.Raycast(startHit.position, destinationHit.position, out _, areaMask))
+            return false;
+
+        destination = destinationHit.position;
+        return true;
     }
 
     private bool IsCurrentTargetValid()

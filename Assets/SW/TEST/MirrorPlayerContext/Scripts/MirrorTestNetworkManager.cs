@@ -85,6 +85,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     private const float CompatibilityTimeoutSeconds = 5f;
     private const float RejectionDeliveryDelaySeconds = 0.2f;
+    private const int ClientSceneRestoreFrameLimit = 120;
     private const string UnknownStageDatabaseResourcePath =
         "DataFiles/UnknownStageData/3. GeneratedAssets/AllUnknownStages";
 
@@ -94,6 +95,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     private readonly HashSet<int> compatibleConnectionIds = new();
     private Coroutine emptySessionResetRoutine;
     private Coroutine clientCompatibilityTimeoutRoutine;
+    private Coroutine clientSceneRestoreRoutine;
     private bool sessionHasStarted;
     private bool isEndingEmptySession;
     private bool clientCompatibilityConfirmed;
@@ -322,6 +324,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     public override void OnStopClient()
     {
         CancelClientCompatibilityTimeout();
+        CancelClientSceneRestore();
         NetworkClient.UnregisterHandler<MirrorCompatibilityResponseMessage>();
         NetworkClient.UnregisterHandler<MirrorSessionRunSnapshotMessage>();
         NetworkClient.UnregisterHandler<MirrorSessionLeadershipMessage>();
@@ -1220,10 +1223,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
         connection.identity
             .GetComponent<MirrorSpawnedPlayerBinder>()
-            ?.TargetConfirmSceneStart(
-                connection,
-                connection.identity.transform.position,
-                connection.identity.transform.rotation);
+            ?.ServerConfirmSceneStart(connection);
     }
 
     /// <summary>
@@ -1240,26 +1240,50 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     }
 
     /// <summary>
-    /// 새 Scene의 UI Binder가 동일한 로컬 PlayerContext를 즉시 받을 수 있도록 다시 알리고,
+    /// 새 Scene의 UI Binder가 동일한 로컬 PlayerContext를 받을 수 있도록 최대 120프레임 재시도하고,
     /// 서버 스냅샷의 사망 상태에 맞춰 입력을 복구한다.
     /// </summary>
     public override void OnClientSceneChanged()
     {
         base.OnClientSceneChanged();
 
-        // DontDestroyOnLoad 플레이어가 새 Scene에 재연결되는 동안 저장된 Context가 원격 복제본으로
-        // 잘못 바뀌었더라도, Mirror의 실제 localPlayer를 기준으로 UI와 입력 대상을 다시 확정한다.
-        PlayerContext mirrorLocalContext = ResolveMirrorLocalPlayerContext();
-        if (mirrorLocalContext != null)
-            LocalPlayerContext = mirrorLocalContext;
+        CancelClientSceneRestore();
+        clientSceneRestoreRoutine = StartCoroutine(RestoreClientSceneState());
+    }
 
-        if (LocalPlayerContext == null)
+    private IEnumerator RestoreClientSceneState()
+    {
+        for (int frame = 0; frame < ClientSceneRestoreFrameLimit; frame++)
+        {
+            // DontDestroyOnLoad 플레이어가 새 Scene에 재연결되는 동안 저장된 Context가 원격 복제본으로
+            // 잘못 바뀌었더라도, Mirror의 실제 localPlayer를 기준으로 UI와 입력 대상을 다시 확정한다.
+            PlayerContext mirrorLocalContext = ResolveMirrorLocalPlayerContext();
+            if (mirrorLocalContext != null)
+            {
+                LocalPlayerContext = mirrorLocalContext;
+                LocalPlayerContext
+                    .GetComponent<MirrorSpawnedPlayerBinder>()
+                    ?.RestoreLocalGameplayAfterScene();
+                LocalPlayerContextChanged?.Invoke(LocalPlayerContext);
+                clientSceneRestoreRoutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        clientSceneRestoreRoutine = null;
+        Debug.LogError(
+            "[MirrorTestNetworkManager] Scene 전환 뒤 로컬 PlayerContext를 다시 연결하지 못했습니다.");
+    }
+
+    private void CancelClientSceneRestore()
+    {
+        if (clientSceneRestoreRoutine == null)
             return;
 
-        LocalPlayerContext
-            .GetComponent<MirrorSpawnedPlayerBinder>()
-            ?.RestoreLocalGameplayAfterScene();
-        LocalPlayerContextChanged?.Invoke(LocalPlayerContext);
+        StopCoroutine(clientSceneRestoreRoutine);
+        clientSceneRestoreRoutine = null;
     }
 
     /// <summary>
