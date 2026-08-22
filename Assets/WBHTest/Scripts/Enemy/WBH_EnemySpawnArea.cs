@@ -31,7 +31,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            WBH_ProjectilePoolManager projectilePool, 
                            Transform localPlayer, 
                            Func<Vector3, Transform> findClosestPlayer,
-                           WBH_DamageTextPoolManager damagePool,
+                           WBH_FloatTextPoolManager damagePool,
                            WBH_HighEnemyHpbarView eliteView)
     {
         this.findClosestPlayer = findClosestPlayer;

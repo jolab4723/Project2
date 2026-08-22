@@ -31,28 +31,48 @@ public sealed class EnemyKillReward : MonoBehaviour
     private void OnEnable()
     {
         hasGrantedReward = false;
-        status.OnDead += GrantExp;
+        status.OnDamaged += HandleDamaged;
     }
 
     private void OnDisable()
     {
         if (status != null)
-            status.OnDead -= GrantExp;
+            status.OnDamaged -= HandleDamaged;
     }
 
-    private void HandleDamaged(float chp, float mhp)
+    private void HandleDamaged(WBH_DamageResult result)
     {
+        if (hasGrantedReward || status.CurrentHp > 0f)
+            return;
 
-    }
+        WBH_EnemyInfo enemyInfo = controller.Info;
 
-    private void GrantExp()
-    {
-        if (controller.Info == null)
+        if(enemyInfo == null)
         {
-            Debug.LogWarning("[EnemyKillExpReward] 적 정보가 없어 경험치를 지급하지 못했습니다.", this);
+            Log.Warning($"[EnemyKillExpReward] 적 정보가 없어 보상 지급에 실패하였습니다. {this}");
             return;
         }
 
+        hasGrantedReward = true;
+
+        GrantExp(enemyInfo.exp);
+        GrantCredit(enemyInfo.exp);
+    }
+
+    private void GrantExp(int amount)
+    {
+        if (amount <= 0)
+            return;
+
         PlayerStatManager.Instance?.GainExp(controller.Info.exp);
+    }
+
+    private void GrantCredit(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        wallet.AddGold(amount);
+        OnCreditGranted(amount);
     }
 }

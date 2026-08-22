@@ -8,7 +8,7 @@ public class WBH_EnemySpawner : MonoBehaviour
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
-    private WBH_DamageTextPoolManager damageTextPool;
+    private WBH_FloatTextPoolManager damageTextPool;
     private WBH_HighEnemyHpbarView eliteView;
 
     private float spawnNavSearchRadius = 2f;
@@ -20,7 +20,7 @@ public class WBH_EnemySpawner : MonoBehaviour
                            WBH_EffectPoolManager effectPool, 
                            WBH_ProjectilePoolManager projectilePool, 
                            Transform localPlayer, // eliteView 에만 사용
-                           WBH_DamageTextPoolManager damageTextPool,
+                           WBH_FloatTextPoolManager damageTextPool,
                            WBH_HighEnemyHpbarView eliteView)
     {
         this.enemyPool = poolManager;

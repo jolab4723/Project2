@@ -16,6 +16,7 @@ Knockback Motion (★★★★★)
 public class WBH_EnemyView : MonoBehaviour
 {
     [SerializeField] private Transform damageTextRoot;
+    [SerializeField] private Transform creditTextRoot;
 
     [Header("Hp Bar")]
     [SerializeField] private GameObject hpBarRoot;
@@ -30,10 +31,11 @@ public class WBH_EnemyView : MonoBehaviour
     private MaterialPropertyBlock propertyBlock;
     private static readonly int HitStrengthID = Shader.PropertyToID("_HitStrength");
 
-    private WBH_DamageTextPoolManager poolManager;
+    private WBH_FloatTextPoolManager poolManager;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
     private WBH_HighEnemyHpbarView highEnemyHpView; // !@ 차후 UI 와 합일 필요
+    private EnemyKillReward killReward;
     private Camera mainCamera;
 
     private Coroutine hideHpBarCoroutine;
@@ -52,6 +54,13 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
+        killReward = GetComponent<EnemyKillReward>();
+
+        if(creditTextRoot == null)
+        {
+            creditTextRoot = damageTextRoot;
+        }
+
         mainCamera = Camera.main;
 
         if(hpBarRoot != null)
@@ -67,6 +76,11 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status.OnDamaged += ViewOnDamaged;
         status.OnHpChanged += UpdateHpBar;
+
+        if(killReward != null)
+        {
+            killReward.OnCreditGranted += ShowCreditReward;
+        }
     }
 
     private void OnDisable()
@@ -74,7 +88,12 @@ public class WBH_EnemyView : MonoBehaviour
         status.OnDamaged -= ViewOnDamaged;
         status.OnHpChanged -= UpdateHpBar;
 
-        if(hitFlashCoroutine != null)
+        if (killReward != null)
+        {
+            killReward.OnCreditGranted -= ShowCreditReward;
+        }
+
+        if (hitFlashCoroutine != null)
         {
             StopCoroutine(hitFlashCoroutine);
             hitFlashCoroutine = null;
@@ -88,7 +107,7 @@ public class WBH_EnemyView : MonoBehaviour
         selfDestructFlashTargetElapsed = 0f;
         isSelfDestructFlashTransition = false;
 
-    SetHitStrength(0);
+        SetHitStrength(0);
     }
 
     // 메인카메라를 바라보는 코드
@@ -102,7 +121,7 @@ public class WBH_EnemyView : MonoBehaviour
         hpBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
     }
 
-    public void Initialize(WBH_DamageTextPoolManager poolManager, WBH_HighEnemyHpbarView eliteView)
+    public void Initialize(WBH_FloatTextPoolManager poolManager, WBH_HighEnemyHpbarView eliteView)
     {
         this.poolManager = poolManager;
         this.highEnemyHpView = eliteView;
@@ -132,6 +151,18 @@ public class WBH_EnemyView : MonoBehaviour
             return;
 
         highEnemyHpView?.BindElite(controller);
+    }
+
+    private void ShowCreditReward(int amount)
+    {
+        if (poolManager == null || amount <= 0)
+            return;
+
+        WBH_CreditText creditText = poolManager.GetCreditText();
+
+        Vector3 position = creditTextRoot != null ? creditTextRoot.position : transform.position + Vector3.up;
+
+        creditText.Show(position, amount);
     }
 
     // 노말, 어드밴스드 적 hp 바 갱신
