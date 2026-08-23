@@ -13,11 +13,13 @@ public sealed class MirrorTestLocalPlayerCameraBinder : MonoBehaviour
 {
     [SerializeField] private CinemachineCamera combatCamera;
 
+    private CameraOcclusionFader occlusionFader;
     private MirrorTestNetworkManager networkManager;
 
     private void Awake()
     {
         combatCamera ??= GetComponent<CinemachineCamera>();
+        PrepareOcclusionFader();
     }
 
     private void OnEnable()
@@ -29,6 +31,9 @@ public sealed class MirrorTestLocalPlayerCameraBinder : MonoBehaviour
     {
         if (networkManager == null)
             TryBindNetworkManager();
+
+        if (occlusionFader == null && PrepareOcclusionFader())
+            BindCamera(networkManager != null ? networkManager.LocalPlayerContext : null);
     }
 
     private void OnDisable()
@@ -61,7 +66,34 @@ public sealed class MirrorTestLocalPlayerCameraBinder : MonoBehaviour
 
     private void BindCamera(PlayerContext context)
     {
+        Transform target = context != null ? context.transform : null;
+
         if (combatCamera != null)
-            combatCamera.Follow = context != null ? context.transform : null;
+            combatCamera.Follow = target;
+
+        PrepareOcclusionFader();
+        if (occlusionFader == null)
+            return;
+
+        occlusionFader.target = target;
+        occlusionFader.enabled = target != null;
+    }
+
+    private bool PrepareOcclusionFader()
+    {
+        if (occlusionFader != null)
+            return true;
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+            return false;
+
+        occlusionFader = mainCamera.GetComponent<CameraOcclusionFader>();
+        if (occlusionFader == null)
+            return false;
+
+        // Mirror Player는 Scene Start 이후 생성될 수 있으므로 임의 Player 태그 검색 전에 대기한다.
+        occlusionFader.enabled = false;
+        return true;
     }
 }
