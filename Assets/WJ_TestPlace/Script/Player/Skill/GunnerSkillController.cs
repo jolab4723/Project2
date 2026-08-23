@@ -496,6 +496,12 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float showDuration = Mathf.Max(0.2f, Vector3.Distance(spawnPos, targetPos) / def.bombThrowSpeed) + def.bombFuseSeconds;
         SkillRangeVisual.ShowSector(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
 
+        // 진화1(집속 폭탄) - 2차 폭발 범위도 같은 자리에 겹쳐서 표시한다. 1차 원이 사라지는 시점(showDuration)에
+        // 맞춰 2차 원이 evoClusterDelaySeconds만큼 더 유지되다 사라지게 해서, "작은 원이 먼저 없어지고 큰 원이
+        // 그 다음에 없어짐"으로 두 번 터진다는 걸 시각적으로 알 수 있게 했다.
+        if (evo == SkillEvolutionId.Evolution1)
+            SkillRangeVisual.ShowSector(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
+
         float damageMultiplier = def.damageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
@@ -555,6 +561,22 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         WBH_CombatManager.ProcessDamage(request);
     }
 
+    /// <summary>백스탭 샷 진화3(제압 사격) 전용 - 맞은 적을 플레이어 반대 방향으로 밀쳐낸다. 기절은 안 걸어서
+    /// 순수 거리 제어 효과로만 둔다(FighterSkillController.ApplyKnockbackAndStun과 달리 스턴 없음).</summary>
+    private void ApplyBackstepKnockback(Collider target, SkillDefinitionSO def)
+    {
+        if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+            return;
+
+        Vector3 dir = (target.transform.position - transform.position).normalized;
+        dir.y = 0f;
+
+        var knockback = new WBH_StatusEffectData(WBH_StatusEffectType.KnockBack,
+            duration: def.evoSuppressKnockbackDuration, direction: dir, force: def.evoSuppressKnockbackForce);
+
+        combatTarget.AddStatusEffect(knockback);
+    }
+
     /// <summary>
     /// 후방 회피 - 커서 방향으로 짧게 대시한다. FighterSkillController.ExecuteDash와 이동 로직은 동일하고,
     /// 무적/스택/피해버프 같은 진화 전용 효과가 아직 없다는 점만 다르다.
@@ -601,13 +623,62 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// 강화(Enhance1: 위력 강화)는 ApplyHit을 통해 데미지에만 적용된다(이동 속도는 안 바뀜 - SectorSlash와
     /// 동일한 해석). 강화(Enhance3: 범위 강화)는 공격 사거리와 이동 거리 양쪽에 각각 적용된다.
     /// </summary>
+    /// <summary>
+    /// 진화1: 디코이 설치 - 원뿔 공격 대신 백스탭 이동 전 위치(spawnPosition)에 GunnerDecoy를 설치한다.
+    /// evoDecoyFuseSeconds 후 evoDecoyExplosionRadius 범위로 자동 폭발(GunnerDecoy 내부 처리). "적을
+    /// 도발"하는 부분은 구현하지 않았다(사용자 선택 - 120번 로그 참고, BH님 소유 적 AI 타겟팅을
+    /// 안 건드리기로 함).
+    /// </summary>
+    private void ExecuteDecoyDeploy(SkillDefinitionSO def, int index, Vector3 spawnPosition)
+    {
+        if (def.evoDecoyPrefab == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] evoDecoyPrefab이 연결되지 않았습니다.");
+            return;
+        }
+
+        SkillRangeVisual.ShowSector(spawnPosition, Vector3.forward, def.evoDecoyExplosionRadius, 360f, sectorVisualColor, def.evoDecoyFuseSeconds);
+
+        float damageMultiplier = def.evoDecoyDamageMultiplier;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+
+        GameObject decoyGO = Instantiate(def.evoDecoyPrefab, spawnPosition, Quaternion.identity);
+        GunnerDecoy decoy = decoyGO.GetComponent<GunnerDecoy>();
+        if (decoy == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] evoDecoyPrefab에 GunnerDecoy 컴포넌트가 없습니다.");
+            Destroy(decoyGO);
+            return;
+        }
+
+        decoy.Initialize(def.evoDecoyFuseSeconds, def.evoDecoyExplosionRadius, enemyLayer, request);
+    }
+
     private IEnumerator ExecuteBackstepShot(SkillDefinitionSO def, int index)
     {
-        float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+        SkillEvolutionId evo = GetEvolution(index);
 
-        foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
-            ApplyHit(target, def, def.damageMultiplier, index);
+        if (evo == SkillEvolutionId.Evolution1)
+            ExecuteDecoyDeploy(def, index, transform.position); // 처음 위치(백스탭 이동 전) - 원뿔 공격 대신
+        else
+        {
+            float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+
+            foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
+            {
+                ApplyHit(target, def, def.damageMultiplier, index);
+
+                if (evo == SkillEvolutionId.Evolution3) // 제압 사격 - 넉백 추가
+                    ApplyBackstepKnockback(target, def);
+            }
+        }
+
+        if (evo == SkillEvolutionId.Evolution2) // 긴급 회피 - 백스탭 이동 중 무적
+            controller.ApplyInvincibility(def.evoBackstepInvincibleDuration);
 
         Vector3 dir = -transform.forward; // FaceCursor 적용 후라 -forward = 커서 반대 방향(후방)
         float distance = ApplySkillRangeBonus(def, index, def.backstepDistance);

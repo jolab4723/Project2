@@ -47,6 +47,18 @@ public class ItemTriggerManager : MonoBehaviour
 
     private void OnEnable()
     {
+        // OnDisable과 짝을 이루는 재등록 - Awake는 생애 한 번만 돌아서, 한 번 비활성화됐다가 다시
+        // 활성화되는 캐릭터는 Awake가 재실행 안 되므로 여기서 다시 등록해줘야 Instance가 null로
+        // 안 남는다(125번).
+        if (Instance != this)
+        {
+            var identity = GetComponent<Mirror.NetworkIdentity>();
+            bool isLocal = identity == null || identity.isLocalPlayer;
+
+            if (isLocal && Instance == null)
+                Instance = this;
+        }
+
         // 로컬 인스턴스일 때만 실제로 구독한다 (Awake가 아직 안 돌았을 수도 있어 Instance==this로 체크).
         if (Instance != this)
             return;
@@ -71,6 +83,12 @@ public class ItemTriggerManager : MonoBehaviour
             subscribedStateMachine.OnEnterState -= HandleStateEntered;
             subscribedStateMachine = null;
         }
+
+        // 기존엔 OnDestroy에서만 Instance를 비워서, SetActive(false)로 비활성화만 해도(파괴 아님)
+        // Instance가 계속 이 캐릭터를 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때 "이미 인스턴스가
+        // 있다"고 오판해서 새 캐릭터를 통째로 Destroy하는 문제가 있었다(PlayerStatManager에서 실측 확인, 125번).
+        if (Instance == this)
+            Instance = null;
     }
 
     private void HandleHitTaken(float amount)

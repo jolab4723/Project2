@@ -49,6 +49,13 @@ namespace ItemSystem
         [Tooltip("조건 만족 시 적용될 효과. 보통 duration을 양수로 둬서 일정 시간만 유지되게 한다.")]
         public BuffSpec buffSpec = new BuffSpec();
 
+        [Header("스택 저장 (유물 처치 스택 등)")]
+        [Tooltip("체크하면 스택 수를 PlayerBuffManager가 아니라 아이템 인스턴스(ItemInstance.persistedStackCount)에 " +
+                 "저장한다 - 세이브/로드로 유지되고, 인벤토리에서 빠졌다가(소유권 상실) 다시 얻어도 그 스택으로 " +
+                 "복원된다. 체크 안 하면 기존처럼 PlayerBuffManager가 런타임에만 스택을 들고 있는다(재시작/재획득 시 리셋). " +
+                 "buffSpec.stackBehavior가 Stack일 때만 의미가 있다.")]
+        public bool persistStackOnItem = false;
+
         /// <summary>
         /// ShareCooldown일 때의 마지막 발동 시각. 소유 아이템을 알 수 없는 호출(테스트 등)도 여기로 처리한다.
         /// !! 에셋(SO)에 들고 있으므로 이 효과를 여러 캐릭터가 동시에 쓰면 쿨타임을 공유하게 된다.
@@ -80,7 +87,44 @@ namespace ItemSystem
                 return; // 쿨타임 중이면 조용히 무시 (매 발동 시도마다 로그가 쌓이지 않게)
 
             SetLastTriggerTime(ownerItem, Time.time);
-            PlayerBuffManager.Instance.ApplyBuff(this);
+
+            if (persistStackOnItem && ownerItem != null)
+            {
+                int next = ownerItem.persistedStackCount + 1;
+                ownerItem.persistedStackCount = buffSpec.maxStack > 0 ? Mathf.Min(next, buffSpec.maxStack) : next;
+                PlayerBuffManager.Instance.SetBuffStack(this, ownerItem.persistedStackCount);
+            }
+            else
+            {
+                PlayerBuffManager.Instance.ApplyBuff(this);
+            }
+        }
+
+        /// <summary>
+        /// persistStackOnItem이면 아이템에 저장된 스택으로 활성 버프를 복원한다(소유권 재획득, 세이브
+        /// 로드 후 인벤토리 재구성 등). PlayerRelicEffectProvider.OnEquip(=소유권 획득)이 이미 이 시점에
+        /// 호출해주므로 별도 배선 없이 그대로 동작한다.
+        /// </summary>
+        public override void OnEquip(ItemInstance ownerItem)
+        {
+            if (!persistStackOnItem || ownerItem == null || ownerItem.persistedStackCount <= 0)
+                return;
+
+            if (PlayerBuffManager.Instance == null)
+                return;
+
+            PlayerBuffManager.Instance.SetBuffStack(this, ownerItem.persistedStackCount);
+        }
+
+        /// <summary>
+        /// 소유권을 잃으면(인벤토리에서 제거) 활성 버프는 즉시 사라져야 한다 - 저장된 스택 수
+        /// (ownerItem.persistedStackCount)는 안 건드린다. 다시 얻으면 OnEquip이 그 값으로 복원한다.
+        /// persistStackOnItem 여부와 무관하게 항상 정리한다(기존엔 이 오버라이드 자체가 없어서 해제해도
+        /// 버프가 안 사라지는 버그가 있었다).
+        /// </summary>
+        public override void OnUnequip(ItemInstance ownerItem)
+        {
+            PlayerBuffManager.Instance?.RemoveBuff(this);
         }
 
         /// <summary>
