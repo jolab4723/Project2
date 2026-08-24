@@ -1,0 +1,24 @@
+Item ID: item.weapon.shotgun.thermobarrel
+Character Class: Gunner
+Weapon Type: Shotgun
+Handling: Two-handed
+
+Game-ready Advanced Shotgun: a fictional industrial-SF Thermobarrel with a simple strong silhouette. Use one triangular matte-black skeletal stock, a long straight charcoal chassis, a smooth continuous aged-copper upper heat shield, one sealed round hard-bounded amber thermal core, one long thin straight amber waveguide recessed inside the chassis, a compact copper honeycomb vent sleeve fully outside both hand zones, and a flared black thermal bell with sparse copper ribs. Keep every part physically connected. Amber appears only inside the sealed round core and recessed waveguide; no soft glow, aura, bloom, spill, cable, drum, magazine, ammunition, realistic firearm action, ejection port, scope, loose accessory, or floating part.
+
+The right trigger hand uses the slim straight black three-segment grip physically attached directly below the exposed copper trigger. The left support hand uses the separate horizontal black three-segment foregrip attached by two short copper struts. The left reference has about 190 px clean support contact. The approved opposite right view has about 175 px clean contact, which is functionally accepted; preserve the surface and normalize the final Blender LeftHandGrip to 0.32625 m from the root. If the generated 3D hand surface is too narrow for the palm, locally extend only that foregrip during Blender postprocess without moving its center or changing the weapon design. Keep the entire corridor between grips clear.
+
+View semantics are positional front,left,back,right. FRONT is the axial muzzle/heat-bell cross-section looking into the amber-lined barrel. BACK is the axial butt-end cross-section looking forward along the chassis. LEFT and RIGHT are opposite orthographic side views of the same stock-core-waveguide-vent-heat-bell assembly; small heat-tube/shield panel differences are accepted as asymmetric opposite-side panels.
+
+Neutral PBR materials: matte charcoal gunmetal, black rubber, warm aged copper, and solid hard-bounded amber glass/ceramic inserts with crisp BaseColor boundaries suitable for later emission-mask recovery.
+
+Negative prompt:
+character, person, hands, duplicate weapon, background, floor, shadow, checkerboard, floating part, detached part, soft glow, aura, bloom, amber spill, magazine, ammunition, ejection port, realistic firearm action, trigger guard, cable, drum, scope, heat shield inside either hand zone, blocked muzzle, text, logo, watermark
+
+H3 request:
+type=multiview_to_model
+model_version=v3.1-20260211
+geometry_quality=standard
+texture=true
+pbr=true
+export_uv=true
+view_order=front,left,back,right

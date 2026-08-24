@@ -5,8 +5,9 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Run Snapshot의 일반 전투 노드 하나에서만 보이고, 현재 접속한 플레이어가 모두 탑승했을 때
-/// 서버 권한으로 한 번 왕복하는 Mirror 테스트 엘리베이터다.
+/// Run Snapshot의 일반 전투 노드 하나에서만 보이는 Mirror 테스트 엘리베이터다.
+/// 현재 접속한 플레이어가 모두 탑승하면 서버가 상승시키고, 위에 도착한 즉시 각 플레이어의 조작을 복구한다.
+/// 잠시 뒤 엘리베이터만 출발 위치로 돌아오며, 내려온 뒤에는 같은 조건으로 횟수 제한 없이 다시 탈 수 있다.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(NetworkTransformReliable), typeof(Rigidbody))]
@@ -17,7 +18,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     [SerializeField] private Rigidbody platformRigidbody;
     [SerializeField] private Vector3 travelOffset = new(0f, 10.75f, 0f);
     [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
-    [SerializeField, Min(0f)] private float topWait = 1f;
+    [SerializeField, Min(0f)] private float topWait = 5f;
     [SerializeField, Min(0.1f)] private float navMeshSearchDistance = 1.5f;
 
     [SyncVar(hook = nameof(HandleAvailabilityChanged))]
@@ -25,7 +26,6 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
 
     private readonly HashSet<NetworkIdentity> boardedPlayers = new();
     private Coroutine serverRideRoutine;
-    private bool completedTrip;
 
     private Coroutine localRideRoutine;
     private Rigidbody localPlayerRigidbody;
@@ -82,7 +82,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     [ServerCallback]
     private void OnTriggerEnter(Collider other)
     {
-        if (!available || completedTrip || serverRideRoutine != null ||
+        if (!available || serverRideRoutine != null ||
             !TryGetNetworkPlayer(other, out NetworkIdentity player))
         {
             return;
@@ -104,6 +104,10 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         boardedPlayers.Remove(player);
     }
 
+    /// <summary>
+    /// 현재 연결되어 PlayerContext가 준비된 모든 플레이어가 탑승했을 때만 왕복을 시작한다.
+    /// 이전 왕복 완료 여부는 조건에 넣지 않아 테스트 중 같은 엘리베이터를 반복해서 검증할 수 있다.
+    /// </summary>
     [Server]
     private void TryStartRide()
     {
@@ -122,7 +126,6 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
 
         if (!CanStartRide(
                 available,
-                completedTrip,
                 serverRideRoutine != null,
                 connectedPlayerCount,
                 boardedPlayers.Count))
@@ -133,6 +136,11 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         serverRideRoutine = StartCoroutine(RideRoundTrip());
     }
 
+    /// <summary>
+    /// 상승 중에는 기존 방식대로 탑승자의 입력을 잠시 막아 플랫폼과 함께 이동시킨다.
+    /// 정상에 도착하면 곧바로 입력과 NavMesh 상태를 복구하여 플레이어가 위쪽 공간을 움직일 수 있게 한다.
+    /// 엘리베이터가 원위치로 돌아온 뒤에는 탑승 Trigger를 다시 열어 다음 왕복을 허용한다.
+    /// </summary>
     [Server]
     private IEnumerator RideRoundTrip()
     {
@@ -148,22 +156,22 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         Vector3 startPosition = platformRigidbody.position;
         yield return MovePlatform(startPosition + travelOffset);
 
-        if (topWait > 0f)
-            yield return new WaitForSeconds(topWait);
-
-        yield return MovePlatform(startPosition);
-        yield return waitForFixedUpdate;
-
         foreach (NetworkIdentity player in boardedPlayers)
         {
             if (player != null && player.connectionToClient != null)
                 TargetEndRide(player.connectionToClient);
         }
 
-        completedTrip = true;
+        if (topWait > 0f)
+            yield return new WaitForSeconds(topWait);
+
+        yield return MovePlatform(startPosition);
+        yield return waitForFixedUpdate;
+
         boardedPlayers.Clear();
         serverRideRoutine = null;
-        Debug.Log("[MirrorFourPlayerElevator] 접속 플레이어 전원 탑승 왕복 완료", this);
+        ApplyAvailability(available);
+        Debug.Log("[MirrorFourPlayerElevator] 접속 플레이어 전원 탑승 왕복 완료, 재탑승 가능", this);
     }
 
     [Server]
@@ -279,7 +287,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
             visualRoot.SetActive(isAvailable);
 
         if (boardingTrigger != null)
-            boardingTrigger.enabled = isAvailable && isServer && !completedTrip;
+            boardingTrigger.enabled = isAvailable && isServer && serverRideRoutine == null;
     }
 
     [Server]
@@ -331,13 +339,11 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
 
     private static bool CanStartRide(
         bool isAvailable,
-        bool hasCompletedTrip,
         bool isMoving,
         int connectedPlayerCount,
         int boardedPlayerCount)
     {
         return isAvailable &&
-               !hasCompletedTrip &&
                !isMoving &&
                connectedPlayerCount > 0 &&
                boardedPlayerCount == connectedPlayerCount;
@@ -388,14 +394,14 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
             elite,
             first,
         }) == first);
-        Debug.Assert(CanStartRide(true, false, false, 1, 1));
-        Debug.Assert(CanStartRide(true, false, false, 2, 2));
-        Debug.Assert(CanStartRide(true, false, false, 4, 4));
-        Debug.Assert(!CanStartRide(true, false, false, 4, 3));
-        Debug.Assert(!CanStartRide(true, false, false, 2, 1));
-        Debug.Assert(!CanStartRide(true, false, false, 0, 0));
-        Debug.Assert(!CanStartRide(true, true, false, 4, 4));
-        Debug.Log("[MirrorFourPlayerElevator] 노드 및 4인 탑승 규칙 검사 통과", this);
+        Debug.Assert(CanStartRide(true, false, 1, 1));
+        Debug.Assert(CanStartRide(true, false, 2, 2));
+        Debug.Assert(CanStartRide(true, false, 4, 4));
+        Debug.Assert(!CanStartRide(true, false, 4, 3));
+        Debug.Assert(!CanStartRide(true, false, 2, 1));
+        Debug.Assert(!CanStartRide(true, false, 0, 0));
+        Debug.Assert(!CanStartRide(true, true, 4, 4));
+        Debug.Log("[MirrorFourPlayerElevator] 노드, 전원 탑승 및 반복 사용 규칙 검사 통과", this);
     }
 #endif
 }

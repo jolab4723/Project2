@@ -1,0 +1,834 @@
+{
+  "item_id": "item.weapon.rifle.scrapline",
+  "generated_at": "2026-08-24T03:42:06.485981+00:00",
+  "blender_version": "5.1.1",
+  "source": {
+    "task_id": "759ee7dd-5700-4d00-9a14-790ece210a1c",
+    "type": "multiview_to_model",
+    "credits_consumed": 30,
+    "glb": "Tripo\\Downloaded\\item.weapon.rifle.scrapline_raw.glb",
+    "triangles": 1361144
+  },
+  "coordinate_contract": {
+    "raw_muzzle": "-X",
+    "raw_up": "+Z",
+    "final_muzzle": "+Z",
+    "final_up": "+Y",
+    "root_origin": "actual trigger-grip center"
+  },
+  "transform": {
+    "raw_bounds": {
+      "min": [
+        -0.5,
+        -0.084349,
+        -0.19539
+      ],
+      "max": [
+        0.5,
+        0.084349,
+        0.19539
+      ],
+      "dimensions": [
+        1.0,
+        0.168698,
+        0.390779
+      ]
+    },
+    "mapping": "raw (X,Y,Z) -> final (Y,Z,-X), scale 0.83653846",
+    "root_grip_raw": [
+      0.37,
+      0.0,
+      -0.11
+    ]
+  },
+  "root": "item.weapon.rifle.scrapline_root",
+  "mesh": "Scrapline_Body.001",
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.scrapline_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.scrapline_root",
+      "local_location": [
+        0.0,
+        0.129663,
+        0.32625
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.scrapline_root",
+      "local_location": [
+        0.0,
+        0.104567,
+        0.727788
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.070568,
+      -0.071473,
+      -0.108751
+    ],
+    "max": [
+      0.070564,
+      0.255469,
+      0.727767
+    ],
+    "dimensions": [
+      0.141131,
+      0.326943,
+      0.836518
+    ]
+  },
+  "decimation": {
+    "stages": [
+      {
+        "before": 1361144,
+        "target": 100000,
+        "after": 99999,
+        "ratio": 0.07346761
+      },
+      {
+        "before": 1361144,
+        "target": 60000,
+        "after": 59999,
+        "ratio": 0.04408057
+      },
+      {
+        "before": 1361144,
+        "target": 50000,
+        "after": 50000,
+        "ratio": 0.03673381
+      },
+      {
+        "before": 1361144,
+        "target": 40000,
+        "after": 40000,
+        "ratio": 0.02938705
+      }
+    ],
+    "selected": "40k",
+    "final_triangles": 40000,
+    "comparison_renders": {
+      "original": {
+        "side": {
+          "path": "Production\\QA\\decimate_original_side.png",
+          "camera_basis": {
+            "view_from": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "screen_up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "screen_right": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "isometric": {
+          "path": "Production\\QA\\decimate_original_isometric.png",
+          "camera_basis": {
+            "view_from": [
+              -0.594476,
+              0.484967,
+              0.641408
+            ],
+            "screen_up": [
+              0.329664,
+              0.874532,
+              -0.35569
+            ],
+            "screen_right": [
+              0.73343,
+              -0.0,
+              0.679765
+            ]
+          }
+        }
+      },
+      "100k": {
+        "side": {
+          "path": "Production\\QA\\decimate_100k_side.png",
+          "camera_basis": {
+            "view_from": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "screen_up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "screen_right": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "isometric": {
+          "path": "Production\\QA\\decimate_100k_isometric.png",
+          "camera_basis": {
+            "view_from": [
+              -0.594476,
+              0.484967,
+              0.641408
+            ],
+            "screen_up": [
+              0.329664,
+              0.874532,
+              -0.35569
+            ],
+            "screen_right": [
+              0.73343,
+              -0.0,
+              0.679765
+            ]
+          }
+        }
+      },
+      "60k": {
+        "side": {
+          "path": "Production\\QA\\decimate_60k_side.png",
+          "camera_basis": {
+            "view_from": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "screen_up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "screen_right": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "isometric": {
+          "path": "Production\\QA\\decimate_60k_isometric.png",
+          "camera_basis": {
+            "view_from": [
+              -0.594476,
+              0.484967,
+              0.641408
+            ],
+            "screen_up": [
+              0.329664,
+              0.874532,
+              -0.35569
+            ],
+            "screen_right": [
+              0.73343,
+              -0.0,
+              0.679765
+            ]
+          }
+        }
+      },
+      "50k": {
+        "side": {
+          "path": "Production\\QA\\decimate_50k_side.png",
+          "camera_basis": {
+            "view_from": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "screen_up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "screen_right": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "isometric": {
+          "path": "Production\\QA\\decimate_50k_isometric.png",
+          "camera_basis": {
+            "view_from": [
+              -0.594476,
+              0.484967,
+              0.641408
+            ],
+            "screen_up": [
+              0.329664,
+              0.874532,
+              -0.35569
+            ],
+            "screen_right": [
+              0.73343,
+              -0.0,
+              0.679765
+            ]
+          }
+        }
+      },
+      "40k": {
+        "side": {
+          "path": "Production\\QA\\decimate_40k_side.png",
+          "camera_basis": {
+            "view_from": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "screen_up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "screen_right": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "isometric": {
+          "path": "Production\\QA\\decimate_40k_isometric.png",
+          "camera_basis": {
+            "view_from": [
+              -0.594476,
+              0.484967,
+              0.641408
+            ],
+            "screen_up": [
+              0.329664,
+              0.874532,
+              -0.35569
+            ],
+            "screen_right": [
+              0.73343,
+              -0.0,
+              0.679765
+            ]
+          }
+        }
+      }
+    },
+    "selection_requires_visual_review": false,
+    "selection_basis": "Direct 1024px side/isometric review found 40k silhouette, octagonal emitter, long foregrip, activation lever, panel seams and status window visually equivalent to original; lowest lossless candidate selected."
+  },
+  "material": {
+    "name": "M_Scrapline_PBR",
+    "base_color_texture": "Color_759ee7dd-5700-4d00-9a14-790ece210a1c",
+    "normal_texture": "NormalGL_759ee7dd-5700-4d00-9a14-790ece210a1c",
+    "orm_texture": "ORM_759ee7dd-5700-4d00-9a14-790ece210a1c",
+    "emission_texture": "Scrapline_Status_Emission",
+    "emission_strength": 2.0,
+    "emission_geometry_added": false,
+    "principled": true
+  },
+  "textures": [
+    {
+      "source_name": "Color_759ee7dd-5700-4d00-9a14-790ece210a1c",
+      "path": "Production\\Textures\\item.weapon.rifle.scrapline_BaseColor.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB"
+    },
+    {
+      "source_name": "NormalGL_759ee7dd-5700-4d00-9a14-790ece210a1c",
+      "path": "Production\\Textures\\item.weapon.rifle.scrapline_Normal.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "source_name": "ORM_759ee7dd-5700-4d00-9a14-790ece210a1c",
+      "path": "Production\\Textures\\item.weapon.rifle.scrapline_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "path": "Production\\Textures\\item.weapon.rifle.scrapline_Emission.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "mode": "cyan",
+      "method": "object-space functional envelope -> original UV polygons -> hard color threshold -> connected components",
+      "functional_envelope": {
+        "space": "final root-local",
+        "min": [
+          -1.0,
+          -1.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "description": "all authored UV islands; strict cyan threshold uniquely selects the tiny status window"
+      },
+      "uv_polygon_count": 1361144,
+      "selected_pixels": 991,
+      "selected_fraction": 0.00023627,
+      "component_count": 6,
+      "component_areas": [
+        356,
+        255,
+        152,
+        116,
+        80,
+        32
+      ],
+      "thresholds_srgb": "B>0.48, G>0.42, R<0.26, B>2.25R, G>1.85R, saturation>0.48",
+      "minimum_component_area": 12,
+      "opening_pixels": 1,
+      "regions_path": "Production\\QA\\emission_uv_regions.json",
+      "report_path": "Production\\QA\\emission_mask_report.json"
+    }
+  ],
+  "qa": {
+    "neutral_pbr": {
+      "front": {
+        "path": "Production\\QA\\pbr_front.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            1.0,
+            -0.0,
+            0.0
+          ]
+        }
+      },
+      "back": {
+        "path": "Production\\QA\\pbr_back.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            -0.0,
+            -1.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            -0.0
+          ],
+          "screen_right": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "left": {
+        "path": "Production\\QA\\pbr_left.png",
+        "camera_basis": {
+          "view_from": [
+            -1.0,
+            -0.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "right": {
+        "path": "Production\\QA\\pbr_right.png",
+        "camera_basis": {
+          "view_from": [
+            1.0,
+            -0.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            0.0,
+            0.0,
+            -1.0
+          ]
+        }
+      },
+      "top": {
+        "path": "Production\\QA\\pbr_top.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            1.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "screen_right": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "iso_left": {
+        "path": "Production\\QA\\pbr_iso_left.png",
+        "camera_basis": {
+          "view_from": [
+            -0.594476,
+            0.484967,
+            0.641408
+          ],
+          "screen_up": [
+            0.329664,
+            0.874532,
+            -0.35569
+          ],
+          "screen_right": [
+            0.73343,
+            -0.0,
+            0.679765
+          ]
+        }
+      },
+      "iso_right": {
+        "path": "Production\\QA\\pbr_iso_right.png",
+        "camera_basis": {
+          "view_from": [
+            0.594476,
+            0.484967,
+            0.641408
+          ],
+          "screen_up": [
+            -0.329664,
+            0.874532,
+            -0.35569
+          ],
+          "screen_right": [
+            0.73343,
+            0.0,
+            -0.679765
+          ]
+        }
+      }
+    },
+    "emission_only": {
+      "front": {
+        "path": "Production\\QA\\emission_front.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            1.0,
+            -0.0,
+            0.0
+          ]
+        }
+      },
+      "back": {
+        "path": "Production\\QA\\emission_back.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            -0.0,
+            -1.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            -0.0
+          ],
+          "screen_right": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "left": {
+        "path": "Production\\QA\\emission_left.png",
+        "camera_basis": {
+          "view_from": [
+            -1.0,
+            -0.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "right": {
+        "path": "Production\\QA\\emission_right.png",
+        "camera_basis": {
+          "view_from": [
+            1.0,
+            -0.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "screen_right": [
+            0.0,
+            0.0,
+            -1.0
+          ]
+        }
+      },
+      "top": {
+        "path": "Production\\QA\\emission_top.png",
+        "camera_basis": {
+          "view_from": [
+            -0.0,
+            1.0,
+            -0.0
+          ],
+          "screen_up": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "screen_right": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "iso_left": {
+        "path": "Production\\QA\\emission_iso_left.png",
+        "camera_basis": {
+          "view_from": [
+            -0.594476,
+            0.484967,
+            0.641408
+          ],
+          "screen_up": [
+            0.329664,
+            0.874532,
+            -0.35569
+          ],
+          "screen_right": [
+            0.73343,
+            -0.0,
+            0.679765
+          ]
+        }
+      },
+      "iso_right": {
+        "path": "Production\\QA\\emission_iso_right.png",
+        "camera_basis": {
+          "view_from": [
+            0.594476,
+            0.484967,
+            0.641408
+          ],
+          "screen_up": [
+            -0.329664,
+            0.874532,
+            -0.35569
+          ],
+          "screen_right": [
+            0.73343,
+            0.0,
+            -0.679765
+          ]
+        }
+      }
+    }
+  },
+  "prohibited_objects": [],
+  "mesh_scales": {
+    "Scrapline_Body.001": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "checks": {
+    "single_root": true,
+    "root_direct_markers": true,
+    "right_grip_at_origin": true,
+    "left_grip_z_initial": true,
+    "muzzle_local_plus_z": true,
+    "positive_unit_mesh_scale": true,
+    "no_camera_light_armature_collider": true,
+    "pbr_textures_present": true,
+    "emission_uv_only_no_added_mesh": true,
+    "final_triangle_budget": true,
+    "visual_decimation_review": true,
+    "reimport_verified": true
+  },
+  "reimport": {
+    "status": "passed",
+    "report": "Production\\QA\\reimport_validation.json",
+    "triangles": 40000,
+    "root": "item.weapon.rifle.scrapline_root",
+    "markers": {
+      "RightHandGrip": {
+        "parent": "item.weapon.rifle.scrapline_root",
+        "local_location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "world_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "LeftHandGrip": {
+        "parent": "item.weapon.rifle.scrapline_root",
+        "local_location": [
+          0.0,
+          0.129663,
+          0.32625
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "world_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "Muzzle": {
+        "parent": "item.weapon.rifle.scrapline_root",
+        "local_location": [
+          0.0,
+          0.104567,
+          0.727788
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "world_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "grip_nearest_surface_distance_m": {
+      "RightHandGrip": 0.008912,
+      "LeftHandGrip": 0.003266
+    },
+    "errors": []
+  },
+  "pass": true
+}

@@ -1,0 +1,136 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Tripo\\Downloaded\\item.weapon.rifle.novalance_raw.glb",
+  "blender_version": "5.1.1",
+  "object_count": 1,
+  "mesh_count": 1,
+  "total_triangles": 1387304,
+  "bounds_min": [
+    -0.5,
+    -0.09736863523721695,
+    -0.10844128578901291
+  ],
+  "bounds_max": [
+    0.5,
+    0.09736863523721695,
+    0.10844128578901291
+  ],
+  "dimensions": [
+    1.0,
+    0.1947372704744339,
+    0.21688257157802582
+  ],
+  "objects": [
+    {
+      "name": "tripo_node_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+      "type": "MESH",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "parent": null,
+      "vertices": 718400,
+      "polygons": 1387304,
+      "triangles": 1387304,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": [
+        "tripo_material_27620ec6-158e-4d2d-a5fa-ba746f7059c6"
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "tripo_material_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+      "use_nodes": true,
+      "nodes": [
+        {
+          "name": "Principled BSDF",
+          "type": "ShaderNodeBsdfPrincipled"
+        },
+        {
+          "name": "Material Output",
+          "type": "ShaderNodeOutputMaterial"
+        },
+        {
+          "name": "Image Texture",
+          "type": "ShaderNodeTexImage",
+          "image": "Color_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+          "image_size": [
+            2048,
+            2048
+          ],
+          "packed": true
+        },
+        {
+          "name": "Separate Color",
+          "type": "ShaderNodeSeparateColor"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "ShaderNodeTexImage",
+          "image": "ORM_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+          "image_size": [
+            2048,
+            2048
+          ],
+          "packed": true
+        },
+        {
+          "name": "Normal Map",
+          "type": "ShaderNodeNormalMap"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "ShaderNodeTexImage",
+          "image": "NormalGL_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+          "image_size": [
+            2048,
+            2048
+          ],
+          "packed": true
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "name": "Color_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+      "size": [
+        2048,
+        2048
+      ],
+      "packed": true,
+      "source": "FILE"
+    },
+    {
+      "name": "NormalGL_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+      "size": [
+        2048,
+        2048
+      ],
+      "packed": true,
+      "source": "FILE"
+    },
+    {
+      "name": "ORM_27620ec6-158e-4d2d-a5fa-ba746f7059c6",
+      "size": [
+        2048,
+        2048
+      ],
+      "packed": true,
+      "source": "FILE"
+    }
+  ]
+}

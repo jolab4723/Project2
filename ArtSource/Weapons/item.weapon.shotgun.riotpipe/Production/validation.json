@@ -1,0 +1,433 @@
+{
+  "item_id": "item.weapon.shotgun.riotpipe",
+  "blender_version": "5.1.1",
+  "source_raw_glb": "Tripo\\Downloaded\\item.weapon.shotgun.riotpipe_raw.glb",
+  "source_preserved": true,
+  "axis_mapping": "RAW +X forward/+Z up -> final +Z muzzle/+Y up",
+  "right_grip_raw_center": [
+    -0.3895,
+    0.005,
+    -0.13
+  ],
+  "left_grip_raw_center": [
+    -0.073,
+    0.005,
+    -0.02
+  ],
+  "uniform_scale": 1.0308056872037914,
+  "grip_geometry_audit": "RAW contains the rear vertical activation column and a continuous brown underside support-pad surface. The spurious front projection stalk was two independent loose shells and was removed before decimation; the approved support surface remains intact.",
+  "comparison_100k": {
+    "raw_triangles": 1437242,
+    "triangles": 99998,
+    "blend": "Production\\item.weapon.shotgun.riotpipe_100k.blend",
+    "fbx": "Production\\item.weapon.shotgun.riotpipe_100k.fbx",
+    "bounds_min": [
+      -0.1261707991361618,
+      -0.07936620712280273,
+      -0.11387825757265091
+    ],
+    "bounds_max": [
+      0.1157870888710022,
+      0.34740349650382996,
+      0.9168699979782104
+    ],
+    "dimensions": [
+      0.241957888007164,
+      0.4267697036266327,
+      1.0307482481002808
+    ],
+    "material": {
+      "name": "Riotpipe_PBR",
+      "base_color": "Textures/BaseColor.png",
+      "orm": "Textures/ORM.png",
+      "normal": "Textures/NormalGL.png",
+      "emission": "Textures/Emission.png",
+      "emission_mask": "Textures/EmissionMask.png",
+      "emission_mask_coverage": 0.01475214958190918,
+      "emission_strength": 2.0,
+      "mask_rule": "R-G>0.10 and R-B>0.045 and R>0.16, then geometry-gated UV bake",
+      "mask_connected_components": [
+        226425,
+        113051,
+        97051,
+        48746,
+        43646,
+        35519,
+        33229,
+        28261,
+        28130,
+        17044,
+        12622,
+        7780,
+        7365,
+        6858,
+        5706,
+        5411,
+        4808,
+        4781,
+        4325,
+        4274,
+        3877,
+        3265,
+        3017,
+        2941,
+        2675,
+        2572,
+        2397,
+        2164,
+        1923,
+        1799,
+        1601,
+        1528,
+        1446,
+        1428,
+        1290,
+        1054,
+        961,
+        890,
+        823,
+        756,
+        739,
+        738,
+        709,
+        588,
+        572
+      ],
+      "mask_removed_isolated_pixels": 7182,
+      "roughness_source": "ORM green channel",
+      "roughness_remap": [
+        0.42,
+        0.82
+      ],
+      "metallic_source": "ORM blue channel",
+      "emission_mask_connected_components": [
+        21473,
+        11112,
+        8114,
+        6256,
+        5581,
+        3742,
+        2614,
+        964,
+        824,
+        748,
+        447
+      ],
+      "emission_mask_removed_pixels": 53,
+      "emission_geometry_gate": {
+        "front_diaphragm": "Z>0.82 and radius(X,Y-0.185)<0.0854",
+        "side_status_lens": "abs(X)>0.075, -0.075<Z<0.02, 0.13<Y<0.24",
+        "rear_center_lens": "Z<-0.09 and radius(X,Y-0.185)<0.03",
+        "allowed_triangles": 12085
+      }
+    },
+    "markers": {
+      "RightHandGrip": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "LeftHandGrip": [
+        0.0,
+        0.11338862776756287,
+        0.32624998688697815
+      ],
+      "Muzzle": [
+        -0.005154028534889221,
+        0.18554502725601196,
+        0.9169016480445862
+      ]
+    },
+    "marker_surface_distance_m": {
+      "RightHandGrip": 0.012065892107784748,
+      "LeftHandGrip": 0.004624266177415848
+    },
+    "marker_surface_distance_pass": true,
+    "mesh_transform": {
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "cleanup": {
+      "removed_components": 11,
+      "removed_triangles": 25004,
+      "front_projection_stalk_components": 2,
+      "tiny_loose_debris_components": 9
+    }
+  },
+  "final": {
+    "raw_triangles": 1437242,
+    "triangles": 49999,
+    "blend": "Production\\item.weapon.shotgun.riotpipe.blend",
+    "fbx": "Production\\item.weapon.shotgun.riotpipe.fbx",
+    "bounds_min": [
+      -0.12624211609363556,
+      -0.07935098558664322,
+      -0.11393669992685318
+    ],
+    "bounds_max": [
+      0.11575740575790405,
+      0.347486287355423,
+      0.9169769883155823
+    ],
+    "dimensions": [
+      0.2419995218515396,
+      0.4268372654914856,
+      1.0309137105941772
+    ],
+    "material": {
+      "name": "Riotpipe_PBR",
+      "base_color": "Textures/BaseColor.png",
+      "orm": "Textures/ORM.png",
+      "normal": "Textures/NormalGL.png",
+      "emission": "Textures/Emission.png",
+      "emission_mask": "Textures/EmissionMask.png",
+      "emission_mask_coverage": 0.014809131622314453,
+      "emission_strength": 2.0,
+      "mask_rule": "R-G>0.10 and R-B>0.045 and R>0.16, then geometry-gated UV bake",
+      "mask_connected_components": [
+        226425,
+        113051,
+        97051,
+        48746,
+        43646,
+        35519,
+        33229,
+        28261,
+        28130,
+        17044,
+        12622,
+        7780,
+        7365,
+        6858,
+        5706,
+        5411,
+        4808,
+        4781,
+        4325,
+        4274,
+        3877,
+        3265,
+        3017,
+        2941,
+        2675,
+        2572,
+        2397,
+        2164,
+        1923,
+        1799,
+        1601,
+        1528,
+        1446,
+        1428,
+        1290,
+        1054,
+        961,
+        890,
+        823,
+        756,
+        739,
+        738,
+        709,
+        588,
+        572
+      ],
+      "mask_removed_isolated_pixels": 7182,
+      "roughness_source": "ORM green channel",
+      "roughness_remap": [
+        0.42,
+        0.82
+      ],
+      "metallic_source": "ORM blue channel",
+      "emission_mask_connected_components": [
+        21438,
+        11110,
+        8116,
+        6256,
+        5494,
+        3914,
+        2734,
+        965,
+        827,
+        748,
+        512
+      ],
+      "emission_mask_removed_pixels": 39,
+      "emission_geometry_gate": {
+        "front_diaphragm": "Z>0.82 and radius(X,Y-0.185)<0.0854",
+        "side_status_lens": "abs(X)>0.075, -0.075<Z<0.02, 0.13<Y<0.24",
+        "rear_center_lens": "Z<-0.09 and radius(X,Y-0.185)<0.03",
+        "allowed_triangles": 5700
+      }
+    },
+    "markers": {
+      "RightHandGrip": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "LeftHandGrip": [
+        0.0,
+        0.11338862776756287,
+        0.32624998688697815
+      ],
+      "Muzzle": [
+        -0.005154028534889221,
+        0.18554502725601196,
+        0.9169016480445862
+      ]
+    },
+    "marker_surface_distance_m": {
+      "RightHandGrip": 0.012057816609740257,
+      "LeftHandGrip": 0.004595920909196138
+    },
+    "marker_surface_distance_pass": true,
+    "mesh_transform": {
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "cleanup": {
+      "removed_components": 11,
+      "removed_triangles": 25004,
+      "front_projection_stalk_components": 2,
+      "tiny_loose_debris_components": 9
+    }
+  },
+  "fbx_reimport": {
+    "single_root": true,
+    "root": "item.weapon.shotgun.riotpipe",
+    "direct_markers": true,
+    "markers": {
+      "RightHandGrip": {
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_euler": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "LeftHandGrip": {
+        "location": [
+          0.0,
+          0.11338862776756287,
+          0.32624998688697815
+        ],
+        "rotation_euler": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "Muzzle": {
+        "location": [
+          -0.005154028534889221,
+          0.18554502725601196,
+          0.9169016480445862
+        ],
+        "rotation_euler": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "mesh_count": 1,
+    "triangles": 49999,
+    "materials": [
+      "Riotpipe_PBR"
+    ],
+    "forbidden_objects": [],
+    "object_types": {
+      "EMPTY": 4,
+      "MESH": 1
+    },
+    "mesh_transform": {
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "orientation_pass": true,
+  "grip_spacing_m": 0.32625,
+  "muzzle_plus_z": true,
+  "applied_transforms": true,
+  "pbr_textures": true,
+  "uv_preserved": true,
+  "camera_light_armature_collider_absent": true,
+  "qa": {
+    "neutral_views": [
+      "QA/neutral_front.png",
+      "QA/neutral_left.png",
+      "QA/neutral_back.png",
+      "QA/neutral_right.png",
+      "QA/neutral_top.png",
+      "QA/neutral_bottom.png",
+      "QA/neutral_isometric.png"
+    ],
+    "emission_only": "QA/emission_only.png",
+    "comparison": [
+      "QA/compare_100k_left.png",
+      "QA/compare_100k_right.png"
+    ],
+    "grip_markers": [
+      "QA/grip_markers_left.png",
+      "QA/grip_markers_isometric.png"
+    ]
+  }
+}
