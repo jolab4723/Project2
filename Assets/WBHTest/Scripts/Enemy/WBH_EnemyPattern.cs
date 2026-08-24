@@ -1,4 +1,3 @@
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -9,6 +8,44 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_ProjectileSpawner))]
 public class WBH_EnemyPattern : MonoBehaviour
 {
+    [System.Serializable]
+    [Tooltip("자폭 적 세팅")]
+    public class SelfDestructSettings
+    {
+        [Min(0f)] public float startDelay = 1f; // 딜레이 이후 추격모드(반짝임 및 이동속도 증가) 돌입
+        [Tooltip("자폭 시퀀스 시작 거리")]
+        [Min(0.1f)] public float triggerDistance = 1.25f;
+        
+        [Min(0.1f)] public float fuseDuration = 2f;
+        [Min(0.1f)] public float explosionRadius = 3f;
+        [Min(0f)] public float damageMultiplier = 2f;
+
+        [Tooltip("가속 시퀀스 시작 거리")]
+        [Min(0.1f)] public float accelerationStartDistance = 8f;
+
+        [Min(1f)] public float maxSpeedMultiplier = 2.2f;
+        [Min(0.1f)] public float farBlinkInterval = 0.5f;
+        [Min(0.1f)] public float nearBlinkInterval = 0.08f;
+    }
+
+    [System.Serializable]
+    [Tooltip("히든 적 세팅")]
+    public class HiddenSettings
+    {
+        [Min(1f)] public float lifeTime = 60f; // 생존시간
+        [Min(1f)] public float damagedSpeedMultiplier = 1.5f; // 피격 시, 이속증가 배율
+        [Min(0.1f)] public float damagedSpeedDuration = 3f; // 피격 시, 이속증가 시간
+        [Min(0.05f)] public float repathInterval = 0.35f; // 경로 재탐색 간격
+        [Min(1f)] public float fleeDistance = 8f; // 도망 시작 거리
+        [Min(0.1f)] public float navMeshSampleRadius = 2f; 
+        [Range(1,9)] public int candidateCount = 5; // 도망 경로 후보
+        [Range(0f, 180f)] public float maxFleeAngle = 70f; // 도망 경로 탐색 각도
+        [Min(0f)] public float initialDirectionWeight = 5f; // 방향 가중치
+    }
+
+    [SerializeField] private SelfDestructSettings explodeSettings = new SelfDestructSettings();
+    [SerializeField] private HiddenSettings hiddenSettings = new HiddenSettings();
+
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
@@ -21,6 +58,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_EnemyCombat combat;
     private WBH_EnemyStatus status;
     private WBH_IndicatorSpawner indicatorSpawner;
+    private WBH_EnemyView view;
 
     private WBH_EffectSpawner effectSpawner;
 
@@ -34,10 +72,13 @@ public class WBH_EnemyPattern : MonoBehaviour
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
     protected float dashHitRadius = 3f;
+    private float rangedTurnSpeed = 360f;
+    private float facingDeadZone = 1f;
     private bool waitingForTarget;
 
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
+    public WBH_EnemyStatus Status => status;
     public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;
@@ -48,6 +89,10 @@ public class WBH_EnemyPattern : MonoBehaviour
     public float DashHitRadius => dashHitRadius;
 
     public float HealthRatio => status.MaxHealth > 0f ? status.CurrentHp / status.MaxHealth : 1f;
+    public SelfDestructSettings SelfDestructConfig => explodeSettings;
+    public HiddenSettings HiddenConfig => hiddenSettings;
+    public WBH_EnemyView EnemyView => view;
+    public float CurrentMoveSpeed => status.MoveSpeed;
 
     private void Awake()
     {
@@ -58,12 +103,14 @@ public class WBH_EnemyPattern : MonoBehaviour
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
         indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
+        view = GetComponent<WBH_EnemyView>();
     }
 
     public virtual void Initialize(WBH_EnemyController controller)
     {
-        this.controller = controller;
+        CleanCurrentPattern();
 
+        this.controller = controller;
         CreatePattern();
     }
 
@@ -93,8 +140,40 @@ public class WBH_EnemyPattern : MonoBehaviour
         else
         {
             UpdateMove(Distance);
+            UpdateFacing(Distance, Time.deltaTime);
             UpdateAttack(Distance);
         }
+    }
+
+    private void OnDisable()
+    {
+        CleanCurrentPattern();
+    }
+
+    // patternID 혹은 EnemyType에 따라 고유패턴 실행 (normal, advanced 는 영향 X)
+    private void CreatePattern()
+    {
+        if (controller.Info.enemyType == EnemyType.SelfDestruct)
+        {
+            currentPattern = new WBH_EnemySelfDestructPattern();
+        }
+        else if(controller.Info.enemyType == EnemyType.Hidden)
+        {
+            currentPattern = new WBH_EnemyHiddenPattern();
+        }
+        else
+        {
+            switch (controller.Info.patternID)
+            {
+                case 1: // 엘리트 근접
+                    currentPattern = new WBH_EnemyElitePattern();
+                    break;
+                case 10: // 액트1 보스
+                    currentPattern = new WBH_EnemyBossPattern_Act1();
+                    break;
+            }
+        }
+        currentPattern?.Initialize(this);
     }
 
     protected virtual void UpdateMove(float distance)
@@ -117,6 +196,31 @@ public class WBH_EnemyPattern : MonoBehaviour
         combat.TryAttack();
     }
 
+    protected virtual void UpdateFacing(float distance, float deltaTime)
+    {
+        if (combat.IsActionInProgress)
+            return;
+        if (distance > status.AttackRange)
+            return;
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        float angle = Quaternion.Angle(transform.rotation, targetRotation);
+
+        if (angle <= facingDeadZone)
+            return;
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rangedTurnSpeed * deltaTime);
+    }
+
     public virtual void Hit()
     {
         enemyAnimation.PlayHit();
@@ -124,6 +228,8 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void Die()
     {
+        CleanCurrentPattern();
+
         movement.Stop();
         enemyAnimation.PlayDie();
         enabled = false;
@@ -131,7 +237,7 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     public virtual void ExecuteAttack()
     {
-        transform.LookAt(Target);
+        FaceTarget();
 
         switch (controller.Info.enemyType)
         {
@@ -145,6 +251,20 @@ public class WBH_EnemyPattern : MonoBehaviour
                 MeleeAttack();
                 break;
         }
+    }
+
+    private void FaceTarget()
+    {
+        if (target == null)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        transform.rotation = Quaternion.LookRotation(dir.normalized);
     }
 
     protected virtual void MeleeAttack()
@@ -203,6 +323,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         waitingForTarget = false;
     }
 
+    // 타겟 유효성 검사
     private bool IsTargetValid()
     {
         if(target == null)
@@ -213,6 +334,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         return target.TryGetComponent<T_PlayerController>(out T_PlayerController player) && player.isActiveAndEnabled;
     }
 
+    // 타겟 비유효 시, 근접한 다른 플레이어로 재설정.
     private bool EnsureTarget()
     {
         if(IsTargetValid())
@@ -255,19 +377,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         return false;
     }
 
-    private void CreatePattern()
-    {
-        switch(controller.Info.patternID)
-        {
-            case 1:
-                currentPattern = new WBH_EnemyElitePattern();
-                break;
-            case 10:
-                currentPattern = new WBH_EnemyBossPattern_Act1();
-                break;
-        }
-        currentPattern?.Initialize(this);
-    }
+    
 
     // 랜덤 타겟 선택
     public bool TrySelectAnotherActivePlayer()
@@ -325,5 +435,60 @@ public class WBH_EnemyPattern : MonoBehaviour
 
         SetTarget(selected);
         return true;
+    }
+
+    // 가장 가까운 타겟 선택. 가까운 타겟이기에 TrySelectFarTarget 과 달리 유효거리를 매개변수로 받지 않음
+    public bool TrySelectNearTarget()
+    {
+        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        Transform near = null;
+        float nearSqrDistance = float.MaxValue;
+
+        foreach (T_PlayerController player in players)
+        {
+            if (!player.isActiveAndEnabled)
+                continue;
+
+            float sqrDistance = (player.transform.position - transform.position).sqrMagnitude;
+
+            if (sqrDistance >= nearSqrDistance)
+                continue;
+
+            nearSqrDistance = sqrDistance;
+            near = player.transform;
+        }
+        if (near == null)
+            return false;
+
+        SetTarget(near);
+        return true;
+    }
+
+    public void KillSelf()
+    {
+        controller.KillSelf();
+    }
+
+    private void CleanCurrentPattern()
+    {
+        WBH_IEnemyPattern pattern = currentPattern;
+        currentPattern = null;
+
+        if(pattern is WBH_EnemySelfDestructPattern selfDestruct)
+        {
+            selfDestruct.Cancel();
+        }
+        if(pattern is WBH_EnemyHiddenPattern hidden)
+        {
+            hidden.Cleanup();
+        }
+
+    }
+
+    // WBH_EnemyController.cs 의 DeSpawn 메서드를 WBH_IEnemyPattern 상속자들에게 전달
+    public void Despawn()
+    {
+        controller.Despawn();
     }
 }

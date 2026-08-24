@@ -12,6 +12,7 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     private readonly Dictionary<WBH_IStatusEffect, float> attackSpeedModifiers = new();
     private readonly Dictionary<WBH_IStatusEffect, float> attackModifiers = new();
     private readonly Dictionary<WBH_IStatusEffect, float> defenseModifiers = new();
+    private readonly Dictionary<WBH_IStatusEffect, float> damageTakenModifiers = new();
 
     // 상태이상 갱신
     protected virtual void Update()
@@ -183,6 +184,20 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
         RefreshModifier(defenseModifiers, ApplyDefenseModifier);
     }
 
+    // -- 받는 데미지 배율 조정치 계산(Marked 등)
+    public void SetDamageTakenModifier(WBH_IStatusEffect effect, float modifier)
+    {
+        SetModifier(damageTakenModifiers, effect, modifier, RefreshDamageTaken);
+    }
+    public void RemoveDamageTakenModifier(WBH_IStatusEffect effect)
+    {
+        RemoveModifier(damageTakenModifiers, effect, RefreshDamageTaken);
+    }
+    private void RefreshDamageTaken()
+    {
+        RefreshModifier(damageTakenModifiers, ApplyDamageTakenModifier);
+    }
+
     // ------------- 상태이상 적용 대상에 따라 다르게 구현할 메서드들
     // 상태이상 생성 - 플레이어와 적 다르게 구현
     protected abstract WBH_IStatusEffect CreateEffect(WBH_StatusEffectData data);
@@ -192,6 +207,7 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     public abstract void ApplyAttackSpeedModifier(float modifier);
     public abstract void ApplyAttackModifier(float modifier);
     public abstract void ApplyDefenseModifier(float modifier);
+    public abstract void ApplyDamageTakenModifier(float modifier);
 
     // 제어 및 입력
     public abstract void SetControlEnable(bool enabled);

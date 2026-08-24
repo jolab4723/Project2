@@ -24,10 +24,29 @@ MonoBehaviour:
   lineWidth: 2
   dashDistance: 4
   dashDuration: 0.15
+  projectileMaxDistance: 12
+  projectileSpeed: 15
+  explosionRadius: 1
+  maxStacks: 6
+  stackRechargeSeconds: 4
+  arcProjectilePrefab: {fileID: 0}
+  bombThrowRange: 6
+  bombThrowSpeed: 10
+  bombArcHeight: 2
+  bombFuseSeconds: 2
+  bombExplosionRadius: 3
+  bombPrefab: {fileID: 0}
+  backstepDistance: 2
+  backstepDuration: 0.15
+  backstepConeRange: 5
+  backstepConeAngle: 90
   evoKnockbackForce: 5
   evoKnockbackDuration: 0.3
   evoChargeMaxSeconds: 3
-  evoChargeMaxDamageMultiplier: 3.5
+  evoChargeMinDamageMultiplier: 1.2
+  evoChargeMaxDamageMultiplier: 1.6
+  evoDefenseDownMultiplier: 0.7
+  evoDefenseDownDuration: 4
   evoWideLineLength: 6
   evoWideLineWidth: 3
   evoAirborneHeight: 3
@@ -35,6 +54,11 @@ MonoBehaviour:
   evoNarrowLineLength: 2
   evoNarrowLineWidth: 1
   evoNarrowDamageMultiplier: 3.5
+  evoInvincibleDuration: 0.5
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
+  enhanceDamageMultiplierBonusPercent: 55
+  enhanceDashSpeedBonusPercent: 55
+  enhanceCooldownReductionPercent: 35
+  enhanceRangeBonusPercent: 30

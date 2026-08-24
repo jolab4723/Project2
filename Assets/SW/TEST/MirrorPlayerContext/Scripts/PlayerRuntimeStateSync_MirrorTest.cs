@@ -11,6 +11,8 @@ using UnityEngine;
 /// <para>서버에서는 같은 <see cref="PlayerContext"/>의 Manager만 읽고, 클라이언트에서는
 /// 서버 스냅샷을 그 Context의 기존 Manager에 투영해 HUD와 전투 어댑터가 같은 값을 읽게 한다.</para>
 /// <para>정식 계정 서버에서는 클라이언트가 보고한 패시브 StatSet 대신 인증된 프로필을 서버가 불러와야 한다.</para>
+/// <para>4-B 차이: 체력 0과 별도로 사망 여부를 스냅샷에 저장하고, 서버가 입력·Controller·타깃 제외 기준을 확정한다.
+/// 기존 <c>T_PlayerController.Update</c>의 자동 부활 대신 서버 상황판의 명시적 테스트 부활만 허용한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext), typeof(NetworkShopPlayerState_MirrorTest))]
@@ -39,6 +41,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     private bool recalculatingServerStats;
     private bool testMutationActive;
     private float nextTimedBuffPublishAt;
+    private uint reviveSequence;
 
     public bool HasSnapshot => latestSnapshot != null;
     public uint StateRevision => latestSnapshot?.revision ?? 0;
@@ -52,6 +55,9 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     public int PotionCharges => latestSnapshot?.potionCharges ?? context?.Potions?.CurrentCharges ?? 0;
     public int MaxPotionCharges => latestSnapshot?.maxPotionCharges ?? context?.Potions?.MaxCharges ?? 0;
     public bool TestMutationActive => latestSnapshot?.testMutationActive ?? testMutationActive;
+    public bool IsDead => isServer
+        ? (context?.Health?.CurrentHealth ?? 0f) <= 0f
+        : (latestSnapshot?.isDead ?? (context?.Health?.CurrentHealth ?? 0f) <= 0f);
 
     public event Action StateApplied;
 
@@ -144,6 +150,26 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             return false;
 
         CmdToggleTestMutation();
+        return true;
+    }
+
+    /// <summary>
+    /// 종합상황실에서만 호출하는 서버 전용 테스트 부활이다.
+    /// 이미 살아 있어도 체력과 사망 연출을 다시 초기화하므로 반복 검증에 횟수 제한이 없다.
+    /// </summary>
+    [Server]
+    public bool ServerReviveForTest()
+    {
+        if (context?.Health == null)
+            return false;
+
+        context.Health.FillHealth();
+        reviveSequence++;
+        if (reviveSequence == 0)
+            reviveSequence = 1;
+
+        ApplyDeadState(false, true);
+        serverPublishQueued = true;
         return true;
     }
 
@@ -277,6 +303,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             potionCharges = context.Potions?.CurrentCharges ?? 0,
             maxPotionCharges = context.Potions?.MaxCharges ?? 0,
             testMutationActive = testMutationActive,
+            isDead = IsDead,
+            reviveSequence = reviveSequence,
             buffs = buffs.ToArray(),
         };
     }
@@ -320,7 +348,12 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Mana.RefreshMaxMana();
             context.Mana.SetCurrentMana(snapshot.currentMana);
             context.Potions?.ApplyAuthoritativeCharges(snapshot.potionCharges);
+            bool forceReviveVisual = latestSnapshot != null &&
+                                     snapshot.reviveSequence != latestSnapshot.reviveSequence;
+            bool forceDeathVisual = snapshot.isDead &&
+                                    (latestSnapshot == null || !latestSnapshot.isDead);
             latestSnapshot = snapshot;
+            ApplyDeadState(snapshot.isDead, forceReviveVisual, forceDeathVisual);
         }
         finally
         {
@@ -455,7 +488,10 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         if (context?.Stats?.Stat != null)
             context.Stats.Stat.OnStatChanged += HandleServerStatChanged;
         if (context?.Health != null)
+        {
             context.Health.OnHealthChanged += QueueServerPublish;
+            context.Health.OnDeath += HandleServerDeath;
+        }
         if (context?.Mana != null)
             context.Mana.OnManaChanged += QueueServerPublish;
         if (context?.Buffs != null)
@@ -471,7 +507,10 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         if (context?.Stats?.Stat != null)
             context.Stats.Stat.OnStatChanged -= HandleServerStatChanged;
         if (context?.Health != null)
+        {
             context.Health.OnHealthChanged -= QueueServerPublish;
+            context.Health.OnDeath -= HandleServerDeath;
+        }
         if (context?.Mana != null)
             context.Mana.OnManaChanged -= QueueServerPublish;
         if (context?.Buffs != null)
@@ -521,6 +560,61 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         serverPublishQueued = true;
     }
 
+    [Server]
+    private void HandleServerDeath()
+    {
+        ApplyDeadState(true, false, true);
+        serverPublishQueued = true;
+    }
+
+    private void ApplyDeadState(
+        bool dead,
+        bool forceReviveVisual = false,
+        bool forceDeathVisual = false)
+    {
+        if (context == null)
+            return;
+
+        T_PlayerController controller = context.Controller;
+        WBH_PlayerStateMachine stateMachine = context.StateMachine;
+        PlayerState stateBeforeApply = stateMachine != null
+            ? stateMachine.CurrentState
+            : PlayerState.Idle;
+
+        if (dead)
+        {
+            if (controller != null)
+            {
+                controller.SetControlEnable(false);
+                controller.enabled = false;
+            }
+
+            stateMachine?.ChangeState(PlayerState.Dead);
+            if (forceDeathVisual)
+                GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativeDeath();
+        }
+        else
+        {
+            if (controller != null)
+                controller.enabled = true;
+
+            bool shouldRevive = forceReviveVisual || stateBeforeApply == PlayerState.Dead;
+            if (shouldRevive)
+            {
+                stateMachine?.ChangeState(PlayerState.Idle);
+                GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativeRevive();
+            }
+
+            Debug.Assert(
+                shouldRevive || stateMachine == null || stateMachine.CurrentState == stateBeforeApply,
+                "[PlayerRuntimeStateSync_MirrorTest] 생존 스냅샷이 현재 플레이 상태를 변경했습니다.",
+                this);
+            controller?.SetControlEnable(true);
+        }
+
+        GetComponent<MirrorSpawnedPlayerBinder>()?.SetLocalInputEnabled(!dead);
+    }
+
     private void HandleServerChargesChanged(int current, int max)
     {
         QueueServerPublish();
@@ -563,6 +657,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public int potionCharges;
         public int maxPotionCharges;
         public bool testMutationActive;
+        public bool isDead;
+        public uint reviveSequence;
         public BuffSnapshot[] buffs;
     }
 
@@ -576,6 +672,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public byte sourceKind;
         public string sourceId;
         public string displayName;
+        public string description;
         public float remainingTime;
         public int stackCount;
         public float duration;
@@ -617,6 +714,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
                 sourceKind = kind,
                 sourceId = id,
                 displayName = source.BuffDisplayName,
+                description = source.BuffDescription,
                 remainingTime = active.remainingTime,
                 stackCount = active.stackCount,
                 duration = source.Duration,
@@ -638,6 +736,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     private sealed class SnapshotBuffSource : IBuffSource
     {
         private readonly string displayName;
+        private readonly string description;
         private readonly FixedStatValue[] statEffects;
         private readonly float duration;
         private readonly BuffStackBehavior stackBehavior;
@@ -645,6 +744,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         private readonly bool isPermanent;
 
         public string BuffDisplayName => displayName;
+        public string BuffDescription => description;
         public Sprite BuffIcon => null;
         public FixedStatValue[] StatEffects => statEffects;
         public float Duration => duration;
@@ -655,6 +755,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public SnapshotBuffSource(BuffSnapshot snapshot)
         {
             displayName = snapshot.displayName;
+            description = snapshot.description;
             duration = snapshot.duration;
             stackBehavior = snapshot.stackBehavior;
             maxStack = snapshot.maxStack;

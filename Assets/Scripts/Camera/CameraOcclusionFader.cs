@@ -29,6 +29,14 @@ public class CameraOcclusionFader : MonoBehaviour
         public float currentAlpha = 1f;
     }
 
+    void Start()
+    {
+        if (target != null)
+            return;
+
+        target = GameObject.FindGameObjectWithTag("Player").transform;
+    }
+
     // 최적화: FixedUpdate(물리 프레임) 대신 LateUpdate(렌더링 직전) 사용
     void LateUpdate()
     {

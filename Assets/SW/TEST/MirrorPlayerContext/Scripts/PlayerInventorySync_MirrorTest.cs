@@ -13,6 +13,7 @@ public enum MirrorTestInventoryOperation : byte
     DropInventoryItem = 3,
     MoveGridItem = 4,
     ChangeEquipment = 5,
+    UpgradeItem = 6,
 }
 
 public enum MirrorTestInventoryRequestResult : byte
@@ -31,6 +32,8 @@ public enum MirrorTestInventoryRequestResult : byte
     SpawnFailed = 11,
     StateApplyFailed = 12,
     RecoveryFailed = 13,
+    UpgradeUnavailable = 14,
+    NotEnoughGold = 15,
 }
 
 public readonly struct MirrorTestInventoryRequestCompleted
@@ -70,25 +73,26 @@ public readonly struct MirrorTestInventoryRequestCompleted
 /// 교환으로 함께 움직인 아이템도 Owner 스냅샷에 반영하고, 거절된 요청은 해당 스냅샷으로 로컬 그리드를 복구한다.</para>
 /// <para>3-4 차이: 기존 장비 트랜잭션이 만든 장착·해제·교환 결과를 서버가 다시 검증하고 확정한다.
 /// 장비와 그리드를 하나의 소유 상태로 스냅샷에 기록하며, 거절되면 로컬 화면까지 서버 확정 상태로 복구한다.</para>
+/// <para>3-7 차이: 강화 요청도 같은 아이템 소유 기록과 상태 번호를 사용한다. 서버가 골드를 차감하고
+/// 강화 수치를 바꾼 뒤 Owner 스냅샷으로 돌려주므로 다른 플레이어 아이템이나 로컬 임시 골드가 원본이 되지 않는다.</para>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext))]
 public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 {
     private const int ProcessedRequestHistorySize = 64;
     private const int MaxInstanceIdLength = 128;
-
-    private static readonly string[] DistinctTestItemIds =
-    {
-        "item.weapon.greatsword.basic",
-        "item.armor.helmet.basic",
-        "item.potion.red",
-        "item.relic.mass-produced_core",
-    };
+    private const float UpgradeCostMultiplier = 1.15f;
+    // 장시간 Act 1 회귀 테스트에서 생존 여유를 확보하도록 현재 ItemDatabase의
+    // 고체력 전설 투구(우주 괴물 두개골, 최대 체력 230)를 최초 테스트 장비로 지급한다.
+    private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
     [SerializeField, Min(0.5f)] private float pickupDistance = 3.5f;
     [SerializeField, Min(0.5f)] private float dropDistance = 1.5f;
+
+    /// <summary>적 보상 드랍도 같은 네트워크 월드 아이템 Prefab을 쓰도록 읽기 전용으로 제공한다.</summary>
+    public NetworkWorldItem_MirrorTest WorldItemPrefab => worldItemPrefab;
 
     private readonly SyncList<string> itemSnapshots = new();
     private readonly HashSet<uint> pendingRequestIds = new();
@@ -378,6 +382,24 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 현재 로컬 플레이어가 소유한 아이템 하나의 강화를 서버에 요청한다.
+    /// 비용과 강화 수치는 서버가 다시 계산하며 클라이언트는 instance만 전달한다.
+    /// </summary>
+    public bool TryRequestUpgradeItem(string instanceId, out uint requestId)
+    {
+        requestId = 0;
+
+        if (!IsValidInstanceId(instanceId) ||
+            !TryBeginLocalRequest(out requestId, out uint requestedRevision))
+        {
+            return false;
+        }
+
+        CmdUpgradeItem(requestId, requestedRevision, instanceId);
+        return true;
+    }
+
     public bool TryRequestPickup(Ray ray)
     {
         if (!isLocalPlayer ||
@@ -537,6 +559,31 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     }
 
     [Command]
+    private void CmdUpgradeItem(
+        uint requestId,
+        uint requestedRevision,
+        string instanceId)
+    {
+        if (!TryValidateServerRequest(requestId, requestedRevision, out MirrorTestInventoryRequestResult result))
+        {
+            TargetCompleteInventoryRequest(
+                requestId,
+                MirrorTestInventoryOperation.UpgradeItem,
+                result,
+                requestedRevision,
+                stateRevision);
+            return;
+        }
+
+        result = ServerUpgradeItem(instanceId);
+        CompleteServerRequest(
+            requestId,
+            MirrorTestInventoryOperation.UpgradeItem,
+            result,
+            requestedRevision);
+    }
+
+    [Command]
     private void CmdTryPickup(uint requestId, uint requestedRevision, uint pickupNetId)
     {
         if (!TryValidateServerRequest(requestId, requestedRevision, out MirrorTestInventoryRequestResult result))
@@ -564,17 +611,11 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (context?.Inventory == null)
             return MirrorTestInventoryRequestResult.InventoryUnavailable;
 
-        // MPPM/Mirror connectionId는 큰 비연속 값일 수 있으므로 4인 눈검사용 순번으로 쓰지 않는다.
-        uint playerNetId = netIdentity != null ? netIdentity.netId : 0;
-        int testItemIndex = playerNetId > 0
-            ? (int)((playerNetId - 1) % DistinctTestItemIds.Length)
-            : 0;
-        string itemId = DistinctTestItemIds[testItemIndex];
-        ItemDefinitionSO definition = ResolveDefinition(itemId);
+        ItemDefinitionSO definition = ResolveDefinition(DefaultTestItemId);
 
         if (definition == null)
         {
-            Debug.LogError($"[PlayerInventorySync_MirrorTest] 테스트 아이템을 찾지 못했습니다: {itemId}", this);
+            Debug.LogError($"[PlayerInventorySync_MirrorTest] 테스트 아이템을 찾지 못했습니다: {DefaultTestItemId}", this);
             return MirrorTestInventoryRequestResult.ItemUnavailable;
         }
 
@@ -729,7 +770,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 targetY,
                 isRotated))
         {
-            return TrySynchronizeOwnedSnapshots()
+            return TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot)
                 ? MirrorTestInventoryRequestResult.Success
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
@@ -836,13 +877,89 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        if (TrySynchronizeOwnedSnapshots())
+        if (TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot))
             return MirrorTestInventoryRequestResult.Success;
 
         bool rebuildHostVisuals = isLocalPlayer && localItemSpawner != null;
         return TryRestoreOwnedStateFromSnapshots(beforeChange, rebuildHostVisuals)
             ? MirrorTestInventoryRequestResult.StateApplyFailed
             : MirrorTestInventoryRequestResult.RecoveryFailed;
+    }
+
+    /// <summary>
+    /// 원본 UpgradeController의 로컬 선택 화면은 유지하되 실제 결제와 강화 확정만 서버에서 처리한다.
+    /// 스냅샷 반영에 실패하면 강화 수치와 골드를 모두 되돌려 부분 적용을 남기지 않는다.
+    /// </summary>
+    [Server]
+    private MirrorTestInventoryRequestResult ServerUpgradeItem(string instanceId)
+    {
+        InventoryItem item = IsValidInstanceId(instanceId)
+            ? FindOwnedItem(instanceId)
+            : null;
+        NetworkShopPlayerState_MirrorTest playerState =
+            GetComponent<NetworkShopPlayerState_MirrorTest>();
+
+        if (item?.itemData == null)
+            return MirrorTestInventoryRequestResult.ItemUnavailable;
+
+        if (playerState == null || context?.Equipment == null)
+            return MirrorTestInventoryRequestResult.ServerSetupInvalid;
+
+        if (!UpgradeService.CanUpgrade(item.itemData) ||
+            !TryGetUpgradeCost(item.itemData, out int cost))
+        {
+            return MirrorTestInventoryRequestResult.UpgradeUnavailable;
+        }
+
+        int snapshotIndex = FindSnapshotIndex(instanceId);
+        if (snapshotIndex < 0 || !DoesOwnedStateMatchSnapshot(itemSnapshots[snapshotIndex]))
+            return MirrorTestInventoryRequestResult.StateApplyFailed;
+
+        bool isEquipped = TryFindEquippedSlot(
+            instanceId,
+            out EquipSlotType equippedSlot,
+            out InventoryItem equippedItem);
+
+        if (isEquipped && !ReferenceEquals(item, equippedItem))
+            return MirrorTestInventoryRequestResult.StateApplyFailed;
+
+        if (!playerState.ServerTrySpendGold(cost))
+            return MirrorTestInventoryRequestResult.NotEnoughGold;
+
+        int previousLevel = item.itemData.upgradeLevel;
+        string previousSnapshot = itemSnapshots[snapshotIndex];
+
+        try
+        {
+            item.itemData.upgradeLevel++;
+            itemSnapshots[snapshotIndex] = ToSnapshotJson(item, isEquipped, equippedSlot);
+
+            if (isEquipped)
+                context.Equipment.NotifyEquippedItemChanged(item.itemData);
+
+            return MirrorTestInventoryRequestResult.Success;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception, this);
+
+            try
+            {
+                item.itemData.upgradeLevel = previousLevel;
+                itemSnapshots[snapshotIndex] = previousSnapshot;
+                playerState.ServerAddGold(cost);
+
+                if (isEquipped)
+                    context.Equipment.NotifyEquippedItemChanged(item.itemData);
+
+                return MirrorTestInventoryRequestResult.StateApplyFailed;
+            }
+            catch (Exception recoveryException)
+            {
+                Debug.LogException(recoveryException, this);
+                return MirrorTestInventoryRequestResult.RecoveryFailed;
+            }
+        }
     }
 
     [Server]
@@ -882,11 +999,15 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 
         try
         {
-            pickup = Instantiate(worldItemPrefab, position, Quaternion.identity);
-            if (pickup == null)
+            if (!NetworkWorldItemSpawnService_MirrorTest.TryCreateUnspawned(
+                    worldItemPrefab,
+                    snapshot,
+                    position,
+                    out pickup))
+            {
                 return MirrorTestInventoryRequestResult.SpawnFailed;
+            }
 
-            pickup.InitializeServer(snapshot);
             removed = context.Inventory.TryRemoveInventoryItem(item) == InventoryRemoveResult.Success;
             if (!removed)
             {
@@ -894,8 +1015,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 return MirrorTestInventoryRequestResult.StateApplyFailed;
             }
 
-            NetworkServer.Spawn(pickup.gameObject);
-            if (pickup.netId == 0)
+            if (!NetworkWorldItemSpawnService_MirrorTest.TrySpawnCreated(pickup))
                 throw new InvalidOperationException("Mirror failed to assign a netId to the dropped item.");
 
             itemSnapshots.RemoveAt(snapshotIndex);
@@ -1056,6 +1176,25 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         return !string.IsNullOrWhiteSpace(instanceId) &&
                instanceId.Length <= MaxInstanceIdLength;
+    }
+
+    private static bool TryGetUpgradeCost(ItemInstance item, out int cost)
+    {
+        cost = 0;
+        if (item == null || item.upgradeLevel < 0 || item.upgradeLevel == int.MaxValue)
+            return false;
+
+        float rawCost = 500f * Mathf.Pow(UpgradeCostMultiplier, item.upgradeLevel);
+        if (float.IsNaN(rawCost) ||
+            float.IsInfinity(rawCost) ||
+            rawCost <= 0f ||
+            rawCost > int.MaxValue - 9f)
+        {
+            return false;
+        }
+
+        cost = Mathf.CeilToInt(rawCost / 10f) * 10;
+        return cost > 0;
     }
 
     [Server]
@@ -1295,7 +1434,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         ItemSaveData saved = FromSnapshotJson(snapshotJson);
         InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
-        if (item == null)
+        if (item?.itemData == null || item.itemData.upgradeLevel != saved.upgradeLevel)
             return false;
 
         if (saved.isEquipped)
@@ -1789,6 +1928,26 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         }
     }
 
+    private bool TrySynchronizeEquipmentState(
+        bool shouldBeEquipped,
+        EquipSlotType targetSlot)
+    {
+        if (!TrySynchronizeOwnedSnapshots())
+            return false;
+
+        // Act 1 회귀 테스트용 임시 보정: Host의 사전 적용 경로를 포함해
+        // 서버가 승인한 투구 장착은 새 최대 체력으로 현재 체력을 한 번 가득 채운다.
+        if (shouldBeEquipped &&
+            targetSlot == EquipSlotType.Helmet &&
+            context.Health != null)
+        {
+            context.Health.RefreshMaxHealth();
+            context.Health.FillHealth();
+        }
+
+        return true;
+    }
+
     private static Dictionary<InventoryItem, InventoryPlacementSnapshot> CaptureGridState(
         InventoryGrid grid)
     {
@@ -1941,8 +2100,13 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (string.IsNullOrWhiteSpace(itemId))
             return null;
 
-        ItemDefinitionSO definition =
-            ItemManager.Instance?.ItemDatabase?.GetById(itemId);
+        // StageSelect에는 실제 ItemManager Prefab이 아직 없다. 여기서 Singleton.Instance를 읽으면
+        // Singleton<T>가 데이터베이스가 비어 있는 임시 ItemManager를 생성하고 DontDestroyOnLoad로
+        // 남겨서, 다음 전투 Scene의 정상 ItemManager가 중복으로 제거된다. 존재하는 매니저만 조회하고
+        // 없으면 아래 Resources 경로로 해석해 Scene 전환 전에는 전역 상태를 만들지 않는다.
+        ItemManager itemManager =
+            UnityEngine.Object.FindFirstObjectByType<ItemManager>(FindObjectsInactive.Include);
+        ItemDefinitionSO definition = itemManager?.ItemDatabase?.GetById(itemId);
 
         if (definition != null)
             return definition;

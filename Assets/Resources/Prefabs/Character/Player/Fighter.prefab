@@ -8411,6 +8411,7 @@ GameObject:
   - component: {fileID: 2223535990301607553}
   - component: {fileID: 2672501561618970072}
   - component: {fileID: 7905982457287239412}
+  - component: {fileID: -1096857989463566006}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -8588,6 +8589,9 @@ MonoBehaviour:
   inputBlockLayer:
     serializedVersion: 2
     m_Bits: 196640
+  worldItemLayer:
+    serializedVersion: 2
+    m_Bits: 65536
 --- !u!114 &859720171535124851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8643,16 +8647,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
-  maxHp: 5000
-  attackPower: 32
-  defensePower: 3
-  attackSpeed: 1
-  moveSpeed: 1
-  criticalChance: 1
-  criticalMultiplier: 1
-  fireBonus: 1
-  iceBonus: 1
-  electricBonus: 1
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
@@ -8804,6 +8798,20 @@ MonoBehaviour:
   leftHandContact: {fileID: 561595998067709146}
   leftHandIkTarget: {fileID: 8300197171277387021}
   leftHandIkConstraint: {fileID: 4442329938051152335}
+--- !u!114 &-1096857989463566006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a1e4d6019da1e4e90402a1eb3081fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHudEventBridge
+  healthManager: {fileID: 6806792719965724779}
+  manaManager: {fileID: 6065535127318149145}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0

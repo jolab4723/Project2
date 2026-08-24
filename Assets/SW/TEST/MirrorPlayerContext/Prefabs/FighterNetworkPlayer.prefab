@@ -20,10 +20,38 @@ PrefabInstance:
       propertyPath: inventoryController
       value: 
       objectReference: {fileID: 7746940822970853538}
+    - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.026277838
+      objectReference: {fileID: 0}
+    - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.16128281
+      objectReference: {fileID: 0}
+    - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.09219007
+      objectReference: {fileID: 0}
+    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.03143201
+      objectReference: {fileID: 0}
     - target: {fileID: 4984542786249164771, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: equipmentSystem
       value: 
       objectReference: {fileID: 4170606954455266063}
+    - target: {fileID: 5095415882564276479, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.07309761
+      objectReference: {fileID: 0}
+    - target: {fileID: 5095415882564276479, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.1606365
+      objectReference: {fileID: 0}
+    - target: {fileID: 5095415882564276479, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.06168355
+      objectReference: {fileID: 0}
     - target: {fileID: 7905982457287239412, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: equipmentSystem
       value: 
@@ -67,6 +95,14 @@ PrefabInstance:
     - target: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8774070024012256093, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.07758393
+      objectReference: {fileID: 0}
+    - target: {fileID: 8774070024012256093, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.056084197
       objectReference: {fileID: 0}
     - target: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_Name
@@ -128,6 +164,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2327126826848467182}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6253425073437732825}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3770454499868839698}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4844431935736903393}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!114 &354411757978519734 stripped
 MonoBehaviour:
@@ -196,7 +241,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 3788426229
+  _assetId: 2511009531
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -256,6 +301,7 @@ MonoBehaviour:
   potions: {fileID: 1296911216832023797}
   itemTriggers: {fileID: 2083152719662638736}
   runtimeState: {fileID: 2327126826848467182}
+  combatAuthority: {fileID: 6253425073437732825}
   controller: {fileID: 941499957347379877}
   combat: {fileID: 7392333230692009756}
   stateMachine: {fileID: 5869277213540180398}
@@ -319,6 +365,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48cccb54a37f79d4ca8c54ab3c3fd29a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemTriggerManager_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   inventory: {fileID: 7746940822970853538}
   health: {fileID: 354411757978519734}
   buffs: {fileID: 1153837035469029928}
@@ -425,7 +474,7 @@ MonoBehaviour:
   syncInterval: 0
   context: {fileID: 5412883201991654428}
   passiveSkillDatabase: {fileID: 11400000, guid: e25982b2c8a6f8346aaacb1fd1e208a6, type: 2}
-  startingTestGold: 1000
+  startingTestGold: 10000
   fallbackShopEnhanceLevel: 0
   fallbackExtraRerollCount: 0
   fallbackDiscountPercent: 0
@@ -439,7 +488,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b08a095bcd593447998579b023402e9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatInitializationGuard_MirrorTest
 --- !u!114 &2327126826848467182
 MonoBehaviour:
@@ -451,17 +500,99 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98539d8c29255f34ea64b1b57ba579de, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRuntimeStateSync_MirrorTest
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
   context: {fileID: 5412883201991654428}
+--- !u!114 &6253425073437732825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 392204f2373d3e34f8bbb7fb5ee229d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombatAuthority_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  context: {fileID: 5412883201991654428}
+  combat: {fileID: 7392333230692009756}
+  status: {fileID: 9187465300744639497}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+--- !u!114 &3770454499868839698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bedf2010739ab044bcf655d4c87822c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FighterSkillAuthority_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  context: {fileID: 5412883201991654428}
+  inputHandler: {fileID: 792359749329208090}
+  combat: {fileID: 7392333230692009756}
+  controller: {fileID: 941499957347379877}
+  stateMachine: {fileID: 5869277213540180398}
+  status: {fileID: 9187465300744639497}
+  buffManager: {fileID: 1153837035469029928}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  skills:
+  - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
+  - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
+  - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
+  activeEvolutions: 010000000200000000000000
+  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
+  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
+  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+--- !u!114 &4844431935736903393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c80f89d78b0b8b54eaa7d9eae034c1d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerEquipmentVisualSync_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  context: {fileID: 5412883201991654428}
+  presenter: {fileID: 3975054903283207721}
 --- !u!4 &3097475621473565046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}
   m_PrefabInstance: {fileID: 6529527280875448541}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &3975054903283207721 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7905982457287239412, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 6529527280875448541}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3e62e499aade34c88735c644276eb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponVisualPresenter
 --- !u!114 &4669305021960324852 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
@@ -500,6 +631,17 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 2774735281992846289, guid: ac0352209e99eb446babcad427ac4372, type: 3}
   m_PrefabInstance: {fileID: 6529527280875448541}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &9187465300744639497 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2674546040288394452, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 6529527280875448541}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
 --- !u!1001 &8013638691066856665
 PrefabInstance:
   m_ObjectHideFlags: 0

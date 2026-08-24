@@ -1,6 +1,7 @@
 using System.Reflection;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -17,12 +18,19 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         typeof(InventoryView).GetField(
             "shopController",
             BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo NpcClickedEventField =
+        typeof(YJ_ClickNPC).GetField(
+            "onClicked",
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private MirrorTestNetworkManager networkManager;
     [SerializeField] private InventoryView inventoryView;
     [SerializeField] private InventoryPartView inventoryPartView;
     [SerializeField] private MirrorTestPlayerHud playerHud;
     [SerializeField] private WorldItemTooltipScanner worldItemScanner;
+    [SerializeField] private NetworkUpgradeButton_MirrorTest upgradeButton;
+    [SerializeField] private PlayerHudEventBridge_MirrorTest formalHudBridge;
+    [SerializeField] private KY_StatusPopup_MirrorTest statusPopup;
 
     private PlayerContext boundContext;
     private PlayerInventorySync_MirrorTest boundInventorySync;
@@ -38,6 +46,27 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (worldItemScanner == null)
             worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
 
+        if (upgradeButton == null && inventoryPartView != null)
+        {
+            upgradeButton =
+                inventoryPartView.GetComponentInChildren<NetworkUpgradeButton_MirrorTest>(true);
+        }
+
+        formalHudBridge ??= FindFirstObjectByType<PlayerHudEventBridge_MirrorTest>(
+            FindObjectsInactive.Include);
+        statusPopup ??= FindFirstObjectByType<KY_StatusPopup_MirrorTest>(
+            FindObjectsInactive.Include);
+
+#if UNITY_EDITOR
+        Canvas inventoryCanvas = inventoryView != null
+            ? inventoryView.GetComponentInParent<Canvas>(true)
+            : null;
+        Debug.Assert(
+            inventoryCanvas == null || inventoryCanvas.transform.localScale != Vector3.zero,
+            "[MirrorTestLocalPlayerUIBinder] 인벤토리 Canvas 스케일이 0입니다.",
+            this);
+#endif
+
         if (networkManager == null || inventoryView == null || inventoryPartView == null)
         {
             Debug.LogError(
@@ -48,6 +77,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         networkManager.LocalPlayerContextChanged += HandleLocalPlayerChanged;
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
+        BindCampNpcWindows();
     }
 
     private void OnDisable()
@@ -55,13 +85,30 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (networkManager != null)
             networkManager.LocalPlayerContextChanged -= HandleLocalPlayerChanged;
 
-        boundShopState?.UnbindLocalView(boundContext);
+        // UnityEngine.Object는 파괴된 뒤 C# 참조가 남아 있어도 `obj != null` 비교에서는 null로 취급된다.
+        // 반면 null 조건 연산자(`?.`)는 Unity의 이 판정을 거치지 않아 Scene 전환 중 파괴된 HUD를
+        // 다시 호출할 수 있으므로, 해제 경계에서는 명시적인 Unity null 검사를 사용한다.
+        if (boundShopState != null)
+            boundShopState.UnbindLocalView(boundContext);
         boundShopState = null;
-        boundInventorySync?.UnbindLocalInventoryView(inventoryView);
+        if (boundInventorySync != null)
+            boundInventorySync.UnbindLocalInventoryView(inventoryView);
         boundInventorySync = null;
-        inventoryView?.Unbind();
-        playerHud?.Unbind();
-        worldItemScanner?.BindPlayer(null);
+        if (inventoryView != null)
+            inventoryView.Unbind();
+        if (upgradeButton != null)
+            upgradeButton.Unbind();
+        if (playerHud != null)
+            playerHud.Unbind();
+        if (formalHudBridge != null)
+            formalHudBridge.Unbind();
+        if (statusPopup != null)
+        {
+            statusPopup.Unbind();
+            statusPopup.CloseImmediate();
+        }
+        if (worldItemScanner != null)
+            worldItemScanner.BindPlayer(null);
         boundContext = null;
     }
 
@@ -72,7 +119,11 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync?.UnbindLocalInventoryView(inventoryView);
         boundInventorySync = null;
         inventoryView.Unbind();
+        upgradeButton?.Unbind();
         playerHud?.Unbind();
+        formalHudBridge?.Unbind();
+        statusPopup?.Unbind();
+        statusPopup?.CloseImmediate();
         worldItemScanner?.BindPlayer(null);
         boundContext = null;
 
@@ -106,9 +157,12 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundContext = context;
         boundInventorySync = context.GetComponent<PlayerInventorySync_MirrorTest>();
         boundInventorySync?.BindLocalInventoryView(inventoryView);
-        boundShopState = FindFirstObjectByType<NetworkShopState_MirrorTest>();
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
         boundShopState?.BindLocalView(context, inventoryView);
+        upgradeButton?.Bind(context);
         playerHud?.Bind(context);
+        formalHudBridge?.Bind(context);
+        statusPopup?.Bind(context.Stats);
         worldItemScanner?.BindPlayer(context.transform);
 
         Debug.Assert(
@@ -119,25 +173,155 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void Update()
     {
+        EnsureSceneShopBinding();
+
         if (boundContext == null || inventoryPartView == null || Keyboard.current == null)
             return;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            inventoryPartView.CloseAll();
+            if (statusPopup != null && statusPopup.IsOpen)
+                statusPopup.Close();
+            else
+                inventoryPartView.CloseAll();
         }
         else if (Keyboard.current.iKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.ToggleInventory();
         }
         else if (Keyboard.current.oKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.OpenShop();
         }
         else if (Keyboard.current.uKey.wasPressedThisFrame)
         {
+            CloseStatusPopup();
             inventoryPartView.OpenUpgrade();
         }
+        else if (Keyboard.current.lKey.wasPressedThisFrame)
+        {
+            inventoryPartView.CloseAll();
+            statusPopup?.Toggle();
+        }
+    }
+
+    /// <summary>
+    /// Mirror Scene 전환에서는 로컬 UI Binder가 먼저 활성화되고 새 NetworkShopState의 Spawn이
+    /// 한두 프레임 뒤에 끝날 수 있다. 최초 Bind 때 상점 상태가 없었으면 같은 Scene의 상태가
+    /// 준비될 때까지만 다시 찾아 연결하며, 이전 Scene의 파괴 대기 객체는 선택하지 않는다.
+    /// </summary>
+    private void EnsureSceneShopBinding()
+    {
+        if (boundContext == null || inventoryView == null)
+            return;
+
+        if (boundShopState != null && boundShopState.gameObject.scene == gameObject.scene)
+            return;
+
+        if (boundShopState != null)
+            boundShopState.UnbindLocalView(boundContext);
+
+        boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
+        boundShopState?.BindLocalView(boundContext, inventoryView);
+    }
+
+    /// <summary>
+    /// production Camp를 복제한 Mirror Scene에서는 Shop/Upgrade NPC의 UnityEvent 대상이
+    /// 복제 과정에서 끊어질 수 있다. 원본 NPC 스크립트와 Scene은 건드리지 않고, 현재 Scene의
+    /// InventoryPartView를 런타임 Listener로 다시 연결한다.
+    /// </summary>
+    private void BindCampNpcWindows()
+    {
+        if (inventoryPartView == null)
+            return;
+
+        if (NpcClickedEventField == null)
+        {
+            Debug.LogError(
+                "[MirrorTestLocalPlayerUIBinder] YJ_ClickNPC.onClicked를 찾지 못해 상점/강화 NPC를 연결할 수 없습니다.",
+                this);
+            return;
+        }
+
+        YJ_ClickNPC[] npcs = FindObjectsByType<YJ_ClickNPC>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+
+        foreach (YJ_ClickNPC npc in npcs)
+        {
+            if (npc == null ||
+                npc.gameObject.scene != gameObject.scene ||
+                NpcClickedEventField.GetValue(npc) is not UnityEvent clickedEvent)
+            {
+                continue;
+            }
+
+            switch (npc.name)
+            {
+                case "ShopNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenShop),
+                        inventoryPartView.OpenShop);
+                    break;
+
+                case "UpgradeNPC":
+                    AddNpcListenerIfMissing(
+                        clickedEvent,
+                        nameof(InventoryPartView.OpenUpgrade),
+                        inventoryPartView.OpenUpgrade);
+                    break;
+            }
+        }
+    }
+
+    private void AddNpcListenerIfMissing(
+        UnityEvent clickedEvent,
+        string methodName,
+        UnityAction listener)
+    {
+        for (int index = 0; index < clickedEvent.GetPersistentEventCount(); index++)
+        {
+            if (clickedEvent.GetPersistentTarget(index) == inventoryPartView &&
+                clickedEvent.GetPersistentMethodName(index) == methodName)
+            {
+                return;
+            }
+        }
+
+        clickedEvent.RemoveListener(listener);
+        clickedEvent.AddListener(listener);
+    }
+
+    /// <summary>
+    /// DontDestroyOnLoad와 이전 Scene의 종료 순서에 영향을 받지 않도록 이 Binder가 속한
+    /// 현재 Scene의 컴포넌트만 반환한다.
+    /// </summary>
+    private T FindInBinderScene<T>() where T : Component
+    {
+        T[] candidates = FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (T candidate in candidates)
+        {
+            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+                return candidate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Mirror 테스트에서는 인벤토리 계열 창과 MergeTest 스탯창이 동시에 열리지 않도록 한다.
+    /// 원본 KY 입력 Manager를 복제하지 않고 기존 로컬 UI 입력 경계에서만 창 우선순위를 정리한다.
+    /// </summary>
+    private void CloseStatusPopup()
+    {
+        if (statusPopup != null && statusPopup.IsOpen)
+            statusPopup.Close();
     }
 
     public bool AddItem(ItemInstance item)

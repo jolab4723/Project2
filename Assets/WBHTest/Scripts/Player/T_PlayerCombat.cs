@@ -1,4 +1,3 @@
-using System.Data;
 using UnityEngine;
 
 
@@ -14,26 +13,29 @@ public class T_PlayerCombat : MonoBehaviour
     // 차후 무기 데이터에 폭발반경 포함되면 변수 삭제 및 GunnerAttack 메서드에서 해당 변수 내용 수정 필요
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
+    [SerializeField] private PlayerClass playerClass;
 
+    private Animator animator;
+    private WBH_PlayerStatus status;
+    private T_PlayerController controller;
+    private WBH_PlayerEffect effect;
+    private WBH_EnemyController chaseTarget;
+    private Collider chaseTargetCollider;
+    private Vector3 lastChaseDestination;
+    private Vector3 grenadePoint;
+
+    private bool hasChaseDestination;
     private float basicAttackMult = 1f;
 
+    private const float ChaseRefreshDistance = 0.25f;
 
+    public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
+    public float AttackRange => playerClass == PlayerClass.Fighter ? status.FighterAttackRange : status.GunnerAttackRange;
     private bool CanAttack => !stateMachine.IsAnyState(PlayerState.Hit,
                                                        PlayerState.Attack,
                                                        PlayerState.Skill,
                                                        PlayerState.Dodge,
                                                        PlayerState.Dead);
-
-    private Animator animator;
-    private WBH_PlayerStatus status;
-
-    public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
-
-    [SerializeField] private PlayerClass playerClass;
-    private T_PlayerController controller;
-    private WBH_PlayerEffect effect;
-    private Vector3 grenadePoint;
-
 
     private void Awake()
     {
@@ -47,8 +49,12 @@ public class T_PlayerCombat : MonoBehaviour
     private void Update()
     {
         if (status.IsDead)
+        {
+            CancelChase();
             return;
+        }
 
+        UpdateChase();
         TestMultiple();
     }
 
@@ -135,10 +141,86 @@ public class T_PlayerCombat : MonoBehaviour
         return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect);
     }
 
+    private void UpdateChase()
+    {
+        if (chaseTarget == null)
+            return;
+
+        if(!chaseTarget.gameObject.activeInHierarchy || chaseTarget.Status == null || chaseTarget.Status.IsDead)
+        {
+            CancelChase();
+            return;
+        }
+
+        if(stateMachine.IsAnyState(PlayerState.Skill,PlayerState.Dodge, PlayerState.Dead, PlayerState.Hit))
+        {
+            CancelChase();
+            return;
+        }
+
+        // 컬라이더 외곽부분부터 플레이어까지의 거리를 계산하여 공격사거리 판정
+        Vector3 targetPoint = chaseTargetCollider != null ? chaseTargetCollider.ClosestPoint(transform.position) : chaseTarget.transform.position;
+
+        Vector3 distanceVector = targetPoint - transform.position;
+
+        distanceVector.y = 0;
+        float attackRange = AttackRange;
+
+        if(distanceVector.sqrMagnitude <= attackRange * attackRange)
+        {
+            Vector3 attackPos = chaseTarget.transform.position;
+
+            CancelChase();
+            TryAttack(attackPos);
+            return;
+        }
+
+        Vector3 destination = chaseTarget.transform.position;
+
+        float refreshDistanceSqr = ChaseRefreshDistance * ChaseRefreshDistance;
+
+        bool shouldRefresh = !hasChaseDestination || (destination - lastChaseDestination).sqrMagnitude >= refreshDistanceSqr;
+
+        if (!shouldRefresh)
+            return;
+
+        float stoppingDistance = attackRange * 0.85f; // 공격 사거리의 85% 까지 접근
+
+        if(!controller.ChaseCommand(destination,stoppingDistance))
+        {
+            CancelChase();
+            return;
+        }
+
+        lastChaseDestination = destination; ;
+        hasChaseDestination = true;
+    }
+
+    // 적 추격 취소
     public void CancelChase()
     {
-        stateMachine.ChangeState(PlayerState.Idle);
-        controller.ResetStoppingDistance();
+        chaseTarget = null;
+        chaseTargetCollider = null;
+        hasChaseDestination = false;
+
+        controller.StopMovement();
+    }
+
+    public bool TryAtkTarget(WBH_EnemyController target)
+    {
+        if (!CanAttack || target == null || target.Status == null || target.Status.IsDead || !target.gameObject.activeInHierarchy)
+            return false;
+
+        CancelChase();
+
+        chaseTarget = target;
+        chaseTargetCollider = target.GetComponent<Collider>();
+
+        hasChaseDestination = false;
+
+        UpdateChase();
+
+        return true;
     }
 
     // -- 입력 시스템 호출용 메서드

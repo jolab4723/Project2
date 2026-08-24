@@ -22,7 +22,11 @@ public class WBH_DamageText : MonoBehaviour
 
     private void Update()
     {
-        transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (mainCamera != null)
+            transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
 
         timer += Time.deltaTime;
         float t = timer / duration;

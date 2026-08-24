@@ -20,7 +20,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     private float missileMaxDistance = 100f;
     private float minMissileFlightTime = 1f;
 
-    private readonly HashSet<WBH_ICombat> dashHitTargets = new();
+    private readonly HashSet<WBH_ICombat> dashHitTargets = new(); // 대쉬 피해 시, 플레이어가 여러 번 충돌하더라도 데미지 1번만 받도록 하기 위한 변수
+    private readonly HashSet<WBH_ICombat> areaHitTargets = new(); // 범위 피해 시, 플레이어가 여러 컬라이더 가져도 데미지 1번만
     public bool IsActionInProgress { get; private set; }
 
 
@@ -332,16 +333,25 @@ public class WBH_EnemyCombat : MonoBehaviour
         }
     }
 
-    private void ApplyAreaDamage(Vector3 center, float radius)
+    public void ApplyAreaDamage(Vector3 center, float radius, float damageMultiplier = 1f)
     {
+        areaHitTargets.Clear();
+
         Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer);
 
         foreach (Collider hit in hits)
         {
-            if (!hit.TryGetComponent<WBH_ICombat>(out var target))
+            T_PlayerController player = hit.GetComponent<T_PlayerController>();
+
+            if (player == null)
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(target, WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f));
+            if (!areaHitTargets.Add(player))
+                continue;
+
+            WBH_DamageRequest request = CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMultiplier);
+
+            WBH_CombatManager.ProcessDamage(request);
         }
     }
 }

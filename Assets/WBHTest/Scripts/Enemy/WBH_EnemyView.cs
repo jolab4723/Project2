@@ -33,11 +33,19 @@ public class WBH_EnemyView : MonoBehaviour
     private WBH_DamageTextPoolManager poolManager;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
-    private WBH_HighEnemyHpbarView eliteView; // !@ 차후 UI 와 합일 필요
+    private WBH_HighEnemyHpbarView highEnemyHpView; // !@ 차후 UI 와 합일 필요
     private Camera mainCamera;
 
     private Coroutine hideHpBarCoroutine;
     private Coroutine hitFlashCoroutine;
+
+    private float damageFlashStrength; // 피격 시, emission 값
+    private float selfDestructFlashStrength; // 자폭병 현재 eimission 값
+    private float selfDestructFlashStartStrength; // 자폭병 시작 eimission 값
+    private float selfDestructFlashTargetStrength; // 자폭병 최대 eimission 값
+    private float selfDestructFlashTargetDuration; // 자폭병 최대 emission 도달 시간 
+    private float selfDestructFlashTargetElapsed; 
+    private bool isSelfDestructFlashTransition; 
 
 
     private void Awake()
@@ -65,11 +73,29 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status.OnDamaged -= ViewOnDamaged;
         status.OnHpChanged -= UpdateHpBar;
+
+        if(hitFlashCoroutine != null)
+        {
+            StopCoroutine(hitFlashCoroutine);
+            hitFlashCoroutine = null;
+        }
+
+        damageFlashStrength = 0f;
+        selfDestructFlashStrength = 0f;
+        selfDestructFlashStartStrength = 0f;
+        selfDestructFlashTargetStrength = 0f;
+        selfDestructFlashTargetDuration = 0f;
+        selfDestructFlashTargetElapsed = 0f;
+        isSelfDestructFlashTransition = false;
+
+    SetHitStrength(0);
     }
 
     // 메인카메라를 바라보는 코드
     private void LateUpdate()
     {
+        UpdateSelfDestructFlash(Time.deltaTime); 
+
         if (hpBarRoot == null || !hpBarRoot.activeSelf || mainCamera == null)
             return;
 
@@ -79,19 +105,24 @@ public class WBH_EnemyView : MonoBehaviour
     public void Initialize(WBH_DamageTextPoolManager poolManager, WBH_HighEnemyHpbarView eliteView)
     {
         this.poolManager = poolManager;
-        this.eliteView = eliteView;
+        this.highEnemyHpView = eliteView;
     }
 
     // 피격 시 보여주는 처리
     private void ViewOnDamaged(WBH_DamageResult result)
     {
-        // 데미지 텍스트 처리
-        WBH_DamageText damageText = poolManager.GetDamageText();
+        bool isSelfAttack = ReferenceEquals(result.Attacker, controller);
 
-        damageText.Show(damageTextRoot.position, result);
+        if (!isSelfAttack)
+        {
+            // 데미지 텍스트 처리
+            WBH_DamageText damageText = poolManager.GetDamageText();
 
-        // 적 적색으로 깜빡임 처리
-        PlayHitFlash();
+            damageText.Show(damageTextRoot.position, result);
+
+            // 적 적색으로 깜빡임 처리
+            PlayHitFlash();
+        }
 
         // 엘리트 적일 경우 UI 갱신 !@ 차후 합일 시 수정
         if (!(result.Attacker is T_PlayerController))
@@ -100,9 +131,10 @@ public class WBH_EnemyView : MonoBehaviour
         if (controller.Info.enemyGrade != EnemyGrade.Elite)
             return;
 
-        eliteView?.BindElite(controller);
+        highEnemyHpView?.BindElite(controller);
     }
 
+    // 노말, 어드밴스드 적 hp 바 갱신
     private void UpdateHpBar(float currentHp, float maxHp)
     {
         if (hpBarSlider == null || hpBarRoot == null)
@@ -131,6 +163,7 @@ public class WBH_EnemyView : MonoBehaviour
         hideHpBarCoroutine = null;
     }
 
+    // 피격 시, 붉은 반짝임 처리.
     private void PlayHitFlash()
     {
         if (hitFlashCoroutine != null)
@@ -139,14 +172,15 @@ public class WBH_EnemyView : MonoBehaviour
         hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
     }
 
-
     private IEnumerator HitFlashRoutine()
     {
-        SetHitStrength(hitFlashIntensity);
+        damageFlashStrength = hitFlashIntensity;
+        ApplyFlashStrength();
 
         yield return new WaitForSeconds(hitFlashDuration);
 
-        SetHitStrength(0f);
+        damageFlashStrength = 0f;
+        ApplyFlashStrength();
 
         hitFlashCoroutine = null;
     }
@@ -161,5 +195,54 @@ public class WBH_EnemyView : MonoBehaviour
 
             renderer.SetPropertyBlock(propertyBlock);
         }
+    }
+
+    // 자폭병 반짝임
+    public void SetSelfDestructFlash(bool visible,float transitionDuration)
+    {
+        float targetStrength = visible ? 1f : 0f;
+
+        selfDestructFlashStartStrength = selfDestructFlashStrength;
+        selfDestructFlashTargetStrength = targetStrength;
+
+        selfDestructFlashTargetDuration = Mathf.Max(0.01f, transitionDuration);
+
+        selfDestructFlashTargetElapsed = 0f;
+        isSelfDestructFlashTransition = true;
+    }
+
+    public void SetSelfDestructFlash(bool visible)
+    {
+        selfDestructFlashStrength = visible ? 1f : 0f;
+        ApplyFlashStrength();
+    }
+
+    // 자폭병 반짝임 적용
+    private void ApplyFlashStrength()
+    {
+        SetHitStrength(Mathf.Max(damageFlashStrength, selfDestructFlashStrength));
+    }
+
+    private void UpdateSelfDestructFlash(float deltaTime)
+    {
+        if (!isSelfDestructFlashTransition)
+            return;
+
+        selfDestructFlashTargetElapsed += deltaTime;
+
+        float t = Mathf.Clamp01(selfDestructFlashTargetElapsed / selfDestructFlashTargetDuration); 
+
+        float easedT = t * t * (3f - 2f * t); // 시작과 끝 부드럽게 처리.
+
+        selfDestructFlashStrength = Mathf.Lerp(selfDestructFlashStartStrength, selfDestructFlashTargetStrength, easedT); // 일정속도의 선형변화는 easedT 대신 t 사용
+
+        ApplyFlashStrength() ;
+
+        if (t < 1f)
+            return;
+
+        selfDestructFlashStrength = selfDestructFlashTargetStrength;
+
+        isSelfDestructFlashTransition = false;
     }
 }

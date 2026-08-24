@@ -14,6 +14,7 @@ namespace Core
         private const string PlayerStatusSaveFileName = "playerstatus.json";
         private const string SkillTreeSaveFileName = "skilltree.json";
         private const string StageSaveFileName = "stage.json";
+        private const string ActiveSkillSaveFileName = "activeskill.json";
         private const string OptionsSaveFileName = "options.json";
 
         private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
@@ -172,6 +173,7 @@ namespace Core
             var data = new GameSaveData();
             data.status = BuildPlayerStatusData();
             data.inventory = BuildInventorySaveData();
+            data.activeSkill = BuildActiveSkillSaveData();
             // TODO : 스킬트리 데이터 세이브
             // TODO : 스테이지 데이터 세이브
 
@@ -187,6 +189,7 @@ namespace Core
 
             ApplyPlayerStatusData(data.status);
             ApplyInventorySaveData(data.inventory);
+            ApplyActiveSkillSaveData(data.activeSkill);
             // TODO : 스킬트리 데이터 로드
             // TODO : 스테이지 데이터 로드
         }
@@ -244,6 +247,7 @@ namespace Core
             saved.rolledSubStats = itemData.rolledSubStats;
             saved.rolledElement = itemData.rolledElement;
             saved.upgradeLevel = itemData.upgradeLevel;
+            saved.persistedStackCount = itemData.persistedStackCount;
             saved.gridX = invItem.x;
             saved.gridY = invItem.y;
             saved.isRotated = invItem.isRotated;
@@ -298,6 +302,7 @@ namespace Core
                 itemInstance.rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>();
                 itemInstance.rolledElement = saved.rolledElement;
                 itemInstance.upgradeLevel = saved.upgradeLevel;
+                itemInstance.persistedStackCount = saved.persistedStackCount;
 
                 var invItem = new InventoryItem(itemInstance);
                 invItem.isRotated = saved.isRotated;
@@ -545,6 +550,74 @@ namespace Core
         {
             Debug.Log("[DataManager] LoadStageData - 스테이지 시스템이 아직 없어서 실제로 복원할 데이터가 없습니다.");
         }
+
+        #endregion
+
+        #region ===================== 3-5. 액티브 스킬 진화/강화 =====================
+        // Skill1~3(A/S/D)의 진화(SkillEvolutionId)/강화(SkillEnhancementId) 선택 상태를 저장/복원한다.
+        // ISkillController(106번에서 뽑아낸 캐릭터 클래스 무관 인터페이스)만 바라봐서, 지금은
+        // FighterSkillController가 유일한 구현체지만 나중에 거너 컨트롤러가 생겨도 이 코드는 그대로 쓴다.
+
+        [ContextMenu("액티브 스킬 진화/강화 저장")]
+        public void SaveActiveSkillData()
+        {
+            WriteJson(GetSavePath(ActiveSkillSaveFileName), BuildActiveSkillSaveData());
+        }
+
+        [ContextMenu("액티브 스킬 진화/강화 불러오기")]
+        public void LoadActiveSkillData()
+        {
+            var data = ReadJson<ActiveSkillSaveData>(GetSavePath(ActiveSkillSaveFileName));
+            if (data != null)
+                ApplyActiveSkillSaveData(data);
+        }
+
+        private ActiveSkillSaveData BuildActiveSkillSaveData()
+        {
+            var data = new ActiveSkillSaveData();
+
+            ISkillController controller = FindActiveSkillController();
+            if (controller == null)
+            {
+                Debug.LogWarning("[DataManager] BuildActiveSkillSaveData - ISkillController를 찾을 수 없어 빈 데이터를 저장합니다.");
+                return data;
+            }
+
+            data.evolutions = new SkillEvolutionId[controller.SkillCount];
+            data.enhancements = new SkillEnhancementId[controller.SkillCount];
+            for (int i = 0; i < controller.SkillCount; i++)
+            {
+                data.evolutions[i] = controller.GetEvolution(i);
+                data.enhancements[i] = controller.GetEnhancement(i);
+            }
+
+            return data;
+        }
+
+        private void ApplyActiveSkillSaveData(ActiveSkillSaveData data)
+        {
+            if (data == null || data.evolutions == null || data.enhancements == null)
+                return;
+
+            ISkillController controller = FindActiveSkillController();
+            if (controller == null)
+            {
+                Debug.LogWarning("[DataManager] ApplyActiveSkillSaveData - ISkillController를 찾을 수 없어 복원하지 못했습니다.");
+                return;
+            }
+
+            int count = Mathf.Min(controller.SkillCount, Mathf.Min(data.evolutions.Length, data.enhancements.Length));
+            for (int i = 0; i < count; i++)
+            {
+                controller.SetEvolution(i, data.evolutions[i]);
+                controller.SetEnhancement(i, data.enhancements[i]);
+            }
+        }
+
+        /// <summary>씬에 있는 활성 캐릭터의 ISkillController를 찾는다. 실제 스캔 로직은
+        /// ActiveSkillControllerLocator로 뺐다(118번) - SkillEvolutionSelectUI(K키 설정창)도 같은
+        /// 로직이 필요해져서 공용 유틸로 공유한다.</summary>
+        private static ISkillController FindActiveSkillController() => ActiveSkillControllerLocator.Find();
 
         #endregion
 

@@ -18,6 +18,7 @@ namespace Core
         public List<RolledSubStat> rolledSubStats;
         public ItemSystem.ElementType rolledElement;
         public int upgradeLevel;
+        public int persistedStackCount; // 고유 효과가 아이템에 저장하는 스택 수(유물 처치 스택 등). 해당 없으면 0.
 
         [Header("그리드 위치 (장착 중이면 의미 없음)")]
         public int gridX;

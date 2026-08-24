@@ -1024,7 +1024,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1079042634644656969
 Transform:
   m_ObjectHideFlags: 0
@@ -1055,7 +1055,7 @@ Animator:
   m_GameObject: {fileID: 5577328161507397385}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 65a0cc72c85b8054eb178dae4da69dcf, type: 3}
-  m_Controller: {fileID: 9100000, guid: c825c33a13cec094a9a0b5cff3f81b08, type: 2}
+  m_Controller: {fileID: 9100000, guid: b84ddcd732036544d8cb244b6c233c85, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1198,10 +1198,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyAnimation
   useMoveAni: 0
-  useAttackAni: 0
+  useAttackAni: 1
   useHitAni: 0
   useDieAni: 0
-  useSkillAni: 1
+  useSkillAni: 0
 --- !u!136 &5025398194320583428
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2087,11 +2087,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4188367991465559905, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4369432294793635458, guid: b242be491c491cc42917c34c970c7831, type: 3}
       propertyPath: m_Direction

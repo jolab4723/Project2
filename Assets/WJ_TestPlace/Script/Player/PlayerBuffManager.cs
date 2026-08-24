@@ -8,13 +8,13 @@ using ItemSystem;
 ///
 /// 실제 목록/틱/스탯 합산 로직은 BuffTracker(재사용 가능한 순수 C# 클래스)에 있고, 여기서는
 /// PlayerStatManager.Recalculate() 연동 + 멀티플레이 Instance 패턴만 얹는다 - 허수아비 등
-/// PlayerStatManager가 없는 대상은 DummyBuffManager처럼 BuffTracker를 직접 들고 쓰면 된다.
+/// PlayerStatManager가 없는 대상은 EnemyBuffManager처럼 BuffTracker를 직접 들고 쓰면 된다.
 ///
 /// !! 멀티플레이 대비: Instance는 "내 캐릭터"만 가리킨다 (PlayerHealthManager와 동일 패턴).
 ///    PlayerStatManager는 "전역 Instance"가 아니라 같은 캐릭터의 컴포넌트를 GetComponent로 찾아서
 ///    쓴다 - 안 그러면 남의 캐릭터 버프가 내 캐릭터 스탯을 재계산시키는 문제가 생김.
 /// </summary>
-public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
+public class PlayerBuffManager : MonoBehaviour, IStatSetProvider, IBuffTarget
 {
     public static PlayerBuffManager Instance { get; private set; }
 
@@ -59,6 +59,35 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
             Instance = null;
     }
 
+    // 기존엔 OnDestroy에서만 Instance를 비워서, SetActive(false)로 비활성화만 해도(파괴 아님) Instance가
+    // 계속 이 캐릭터를 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때 "이미 인스턴스가 있다"고 오판해서
+    // 새 캐릭터를 통째로 Destroy하는 문제가 있었다(PlayerStatManager에서 실측 확인, 125번).
+    private void OnDisable()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    // OnDisable과 짝을 이루는 재등록 - Awake는 생애 한 번만 돌아서, 한 번 비활성화됐다가 다시 활성화되는
+    // 캐릭터는 Awake가 재실행 안 되므로 여기서 다시 등록해줘야 Instance가 null로 안 남는다(125번).
+    private void OnEnable()
+    {
+        if (Instance == this)
+            return;
+
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return;
+
+        if (Instance != null)
+        {
+            Debug.LogWarning("[PlayerBuffManager] 이미 인스턴스가 존재해서 다시 활성화된 오브젝트를 등록하지 않습니다.");
+            return;
+        }
+
+        Instance = this;
+    }
+
     private void Update()
     {
         if (tracker.Tick(Time.deltaTime))
@@ -82,6 +111,14 @@ public class PlayerBuffManager : MonoBehaviour, IStatSetProvider
     public void RemoveBuff(IBuffSource source)
     {
         if (tracker.RemoveBuff(source))
+            statManager?.Recalculate();
+    }
+
+    /// <summary>버프의 스택 수를 정확한 값으로 지정한다(증가가 아님). 아이템에 저장된 스택을 그대로
+    /// 복원할 때 쓴다(예: 유물 처치 스택 - OnTrigger에서 증가시킨 뒤, OnEquip에서 재획득 시 복원).</summary>
+    public void SetBuffStack(IBuffSource source, int stackCount)
+    {
+        if (tracker.SetStack(source, stackCount))
             statManager?.Recalculate();
     }
 

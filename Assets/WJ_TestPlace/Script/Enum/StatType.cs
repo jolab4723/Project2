@@ -33,6 +33,7 @@ namespace ItemSystem
         iceBonusFlat,
         electricBonusFlat,
         mpMaxFlat, // 마나 최대량. 기존 값 정수 안 밀리게 맨 끝에 추가.
+        skillRangePercent, // 스킬 범위 %. 기존 값 정수 안 밀리게 맨 끝에 추가.
     }
 
     public static class StatTypeUtility

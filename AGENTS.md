@@ -50,12 +50,14 @@
 | 담당자 | 브랜치 | 우선 탐색·작업 영역 |
 | --- | --- | --- |
 | 김성우 (SeongWoo/SW) | `feature/Seongwoo` | `Assets/SW/**` |
+| 김성우 (SeongWoo/SW, Unity 6000.3.22 테스트) | `codex/unity-6000-3-22-test` | `Assets/SW/**` |
 | 이우진 (WJ) | `feature/WJ` | `Assets/WJ_TestPlace/**` |
 | 우병헌 (BH) | `feature/BH` | `Assets/WBHTest/**` |
 | 조용준 (JYJ) | `feature/JYJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
 | 김관영 (KY) | `feature/KY` | `Assets/Scripts/UI/**` |
 
 - 표의 경로는 탐색 시작점이지 영구적인 소유권 장벽은 아니다. 정확한 주간 담당 내용은 일정표를 우선한다.
+- `codex/unity-6000-3-22-test`는 김성우의 Codex·Unity 6000.3.22 테스트 작업 공간이다. 담당 영역, 다른 담당자 파일 수정 승인, 개인 구현 로그 규칙은 `feature/Seongwoo`와 동일하게 적용한다.
 - 자기 담당 작업은 우선 자기 영역만 조사한다.
 - 공통 시스템 통합처럼 경계를 넘는 작업은 관련된 담당 영역만 추가로 읽고, 수정 전에 영향 파일과 연결 지점을 정리한다.
 - 다른 담당자의 우선 탐색·작업 영역에 속한 스크립트를 수정해야 하면, 해당 수정이 기존 사용자 요청에 포함되어 있더라도 수정 전에 대상 파일과 수정 이유를 밝히고 사용자에게 반드시 `이 스크립트를 수정할까요?`라고 명시적으로 되묻는다. 사용자가 그 질문에 승인하기 전에는 해당 스크립트를 수정하지 않는다.
@@ -215,6 +217,7 @@
 | 브랜치 | 로그 파일 |
 | --- | --- |
 | `feature/Seongwoo` | `Docs/Architecture/ImplementationLogs/김성우.md` |
+| `codex/unity-6000-3-22-test` | `Docs/Architecture/ImplementationLogs/김성우.md` |
 | `feature/WJ` | `Docs/Architecture/ImplementationLogs/이우진.md` |
 | `feature/BH` | `Docs/Architecture/ImplementationLogs/우병헌.md` |
 | `feature/JYJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |

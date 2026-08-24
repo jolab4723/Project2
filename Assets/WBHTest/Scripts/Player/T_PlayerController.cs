@@ -167,18 +167,19 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
-    // 움직임
+    // 이동명령
     public void MoveCommand(Vector3 destination)
     {
-        if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
             return;
 
-        if (!IsControlEnabled)
+        agent.isStopped = false;
+        agent.stoppingDistance = 0f;
+
+        if (!agent.SetDestination(destination))
             return;
 
         stateMachine.ChangeState(PlayerState.Move);
-
-        agent.SetDestination(destination);
 
         Vector3 dir = destination - transform.position;
         dir.y = 0;
@@ -207,9 +208,48 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.ChangeState(PlayerState.Dodge);
     }
 
-    public void ChaseCommand()
+    // 추적 명령
+    public bool ChaseCommand(Vector3 destination, float stoppingDistance)
     {
+        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+            return false;
 
+        agent.isStopped = false;
+        agent.stoppingDistance = Mathf.Max(0f, stoppingDistance);
+
+        if (!agent.SetDestination(destination))
+            return false;
+
+        stateMachine.ChangeState(PlayerState.Chase);
+
+        Vector3 dir = destination - transform.position;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude > 0.001f)
+        {
+            transform.forward = dir.normalized;
+        }
+
+        lookDir = transform.forward;
+
+        return true;
+    }
+
+    // 이동취소
+    public void StopMovement()
+    {
+        if(CanUseAgent)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+            agent.stoppingDistance = 0f;
+        }
+
+        if(stateMachine.IsAnyState(PlayerState.Move,PlayerState.Chase))
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+        }
     }
 
     // 목적지 도달 시 자동 Idle 상태 진입
@@ -218,10 +258,17 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         if (!CanUseAgent || !stateMachine.Is( PlayerState.Move))
             return;
 
+        if (agent.pathPending || agent.remainingDistance > agent.stoppingDistance + 0.05f)
+            return;
+
+        if (agent.hasPath && agent.velocity.sqrMagnitude > 0.01f)
+            return;
+
+        agent.ResetPath();
         stateMachine.ChangeState(PlayerState.Idle);
     }
 
-    public void Die() //!@ 사망처리. 이벤트 구독으로 리팩토링.
+    public void Die() // 사망처리. 
     {
         stateMachine.ChangeState(PlayerState.Dead);
         SetControlEnable(false);
@@ -282,6 +329,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
+    // 회피지점 검사 (벽뚫 방지)
     private bool TryGetDodgeEnd(Vector3 direction, out Vector3 dodgeEnd)
     {
         Vector3 start = transform.position;
@@ -310,15 +358,28 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
             stateMachine.ChangeState(PlayerState.Idle);
             SetControlEnable(true);
             status.Heal(status.MaxHealth * 1f);
-            StartCoroutine( BeInvincible(10));
+            ApplyInvincibility(10);
         }
     }
+
+    private Coroutine invincibilityRoutine;
+
+    /// <summary>외부(스킬 등)에서 일정 시간 무적을 걸 때 사용. 이미 무적이 진행 중이면 새 지속시간으로 갱신한다.</summary>
+    public void ApplyInvincibility(float duration)
+    {
+        if (invincibilityRoutine != null)
+            StopCoroutine(invincibilityRoutine);
+
+        invincibilityRoutine = StartCoroutine(BeInvincible(duration));
+    }
+
     // 무적 코루틴. duration 동안 IsInvincible 이며 TakeDamage 의 영향을 받지 않음.
     private IEnumerator BeInvincible(float duration)
     {
         IsInvincible = true;
         yield return new WaitForSeconds(duration);
         IsInvincible = false;
+        invincibilityRoutine = null;
     }
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드

@@ -1,3 +1,4 @@
+using ItemSystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -5,7 +6,8 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 {
     //[SerializeField] private PlayerSkillSystem skillSystem; // 우진님 스킬시스템 연결
 
-    [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어. !@ worldItem 레이어 추가
+    [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어. 
+    [SerializeField] private LayerMask worldItemLayer; // 아이템 레이어
 
     private Camera mainCamera;
 
@@ -13,6 +15,11 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     private T_PlayerCombat combat;
 
     private WorldItemPickupInteractor pickupInteractor;
+    private ItemDataStorage pendingItem; // 아이템 정보 임시저장. 추적해서 획득하면 초기화.
+    private Vector3 lastItemPos;
+    private bool hasItemDestination;
+    private float itemPickupDistance = 2.3f; // 아이템 픽업 가능 거리.
+    private float itemDestinationRefreshDistance = 0.25f; // 드랍된 아이템 움직일 때 경로 갱신 조건.
 
 
     private void Awake()
@@ -28,20 +35,22 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         ResolvePickupInteractor(); // UI 실행 순서 보장을 위한 Start 에서 호출
     }
 
-    void Update()
+    private void Update()
     {
         if (!controller.IsControlEnabled)
             return;
+
         HandleMoveInput();
         HandleAttackInput();
         HandleDodgeInput();
 
+        UpdateItemChase();
         //HandlePortionInput();
         //HandleOpenUIInput();
         //HandleSkillInput(); // 스킬 연결 시, 활성화
     }
 
-    // 이동
+    // 이동. 아이템 우클릭 시, collider 무시하고 아이템이 있던 위치로 이동.
     private void HandleMoveInput()
     {
         if (!Input.GetMouseButton(1) || IsPointerOverUI())
@@ -49,14 +58,21 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            if (((1 << hit.collider.gameObject.layer) & inputBlockLayer) != 0)
-                return;
+        int moveRaycastMask = Physics.DefaultRaycastLayers & ~worldItemLayer.value;
 
+        if (!Physics.Raycast(ray, out RaycastHit hit, 500f, moveRaycastMask, QueryTriggerInteraction.Ignore))
+            return;
+
+        if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
+            return;
+
+        if(Input.GetMouseButtonDown(1))
+        {
+            CancelItemChase();
             combat.CancelChase();
-            controller.MoveCommand(hit.point);
         }
+            
+        controller.MoveCommand(hit.point);
     }
 
     // 공격 및 아이템 획득
@@ -67,24 +83,42 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         Vector2 screenPos = Input.mousePosition;
 
-        if (TryHandWorldItemClick(screenPos))
-            return;
-
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if(Physics.Raycast(ray, out RaycastHit hit))
+        if(Physics.Raycast(ray, out RaycastHit hit, 500f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
         {
-            if (((1 << hit.collider.gameObject.layer) & inputBlockLayer) != 0)
+            bool isWorldItem = IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer);
+
+            if(isWorldItem)
+            {
+                ItemDataStorage item = hit.collider.GetComponentInParent<ItemDataStorage>();
+
+                if(item != null && IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer))
+                {
+                    TryHandleWorldItemClick(screenPos, item);
+                    return;
+                }
+            }
+
+            if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
                 return;
+
+            WBH_EnemyController enemy = hit.collider.GetComponentInParent<WBH_EnemyController>();
+
+            if (enemy != null)
+            {
+                CancelItemChase();
+                combat.TryAtkTarget(enemy);
+                return;
+            }
         }
 
         Plane plane = new Plane(Vector3.up, Vector3.zero);
 
         if(plane.Raycast(ray, out float distance))
         {
-            Vector3 mousePos = ray.GetPoint(distance);
-
-            combat.TryAttack(mousePos);
+            CancelItemChase();
+            combat.TryAttack(ray.GetPoint(distance));
         }
     }
 
@@ -93,7 +127,55 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
+            CancelItemChase();
+            combat.CancelChase(); // 회피 쿨타임이어도 추적은 중지됨.
             controller.TryDodge();
+        }
+    }
+
+    // 아이템 위치 추적
+    private void UpdateItemChase()
+    {
+        if(pendingItem == null || !pendingItem.gameObject.activeInHierarchy)
+        {
+            CancelItemChase(true); // 아이템 소실 (다른 플레이어가 먼저 습득 등)하면 이동정지
+            return;
+        }
+
+        float pickupDistanceSqr = itemPickupDistance * itemPickupDistance;
+
+        if(GetItemSqrDistance(pendingItem) > pickupDistanceSqr)
+        {
+            RefreshItemDestination();
+            return;
+        }
+
+        controller.StopMovement();
+
+        if (IsPointerOverUI())
+            return;
+
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(pendingItem.transform.position);
+
+        if(screenPos.z <= 0f )
+        {
+            CancelItemChase();
+            return;
+        }
+
+        ItemDataStorage attemptedItem = pendingItem;
+
+        pickupInteractor.TryHandleClick(new Vector2(screenPos.x, screenPos.y));
+
+        bool acquired = attemptedItem == null || !attemptedItem.gameObject.activeInHierarchy; // 아이템 획득 가능 여부 판단.
+
+        // 획득 완료 시, 임시로 저장된 아이템 데이터 초기화
+        pendingItem = null;
+        hasItemDestination = false;
+
+        if(!acquired)
+        {
+            Log.Print("아이템 위치까지 이동했지만 획득하지 못하였습니다.");
         }
     }
 
@@ -120,12 +202,88 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     }
 
     // 좌클릭 시, 참조가 없다면 다시 탐색. 있다면 아이템 획득 메서드 호출
-    private bool TryHandWorldItemClick(Vector2 screenPos)
+    private bool TryHandleWorldItemClick(Vector2 screenPos, ItemDataStorage clickedItem)
     {
-        if (!ResolvePickupInteractor())
+        if(clickedItem == null || clickedItem.Item?.definition == null)
             return false;
 
-        return pickupInteractor.TryHandleClick(screenPos);
+        if (!ResolvePickupInteractor())
+            return true;
+
+        CancelItemChase();
+        combat.CancelChase();
+
+        float pickupDistanceSqr = itemPickupDistance * itemPickupDistance;
+
+        if(GetItemSqrDistance(clickedItem) <= pickupDistanceSqr)
+        {
+            pickupInteractor.TryHandleClick(screenPos);
+
+            return true;
+        }
+
+        pendingItem = clickedItem;
+        hasItemDestination = false;
+
+        RefreshItemDestination();
+
+        return true;
+    }
+
+    // 아이템이 이동할 경우 플레이어 이동경로 갱신
+    // (8/14 기준 아이템은 Layer 로 스킬 등의 효과에서 예외처리하나 혹시 모를 예외처리 실수로 아이템이 움직일 때 방지. 혹은 차후 미지스테이지 등에서 움직이는 아이템을 구현할 때 사용.)
+    private void RefreshItemDestination()
+    {
+        if (pendingItem == null)
+            return;
+
+        Vector3 destination = pendingItem.transform.position;
+
+        float refreshDistanceSqr = itemDestinationRefreshDistance * itemDestinationRefreshDistance;
+
+        bool shouldRefresh = !hasItemDestination || (destination - lastItemPos).sqrMagnitude >= refreshDistanceSqr;
+
+        if (!shouldRefresh)
+            return;
+
+        float stoppingDistance = itemPickupDistance * 0.8f;
+
+        if(!controller.ChaseCommand(destination, stoppingDistance))
+        {
+            CancelItemChase();
+            return;
+        }
+        lastItemPos = destination;
+        hasItemDestination = true;
+    }
+
+    // 아이템과의 거리 계산
+    private float GetItemSqrDistance(ItemDataStorage item)
+    {
+        if (item == null)
+            return float.PositiveInfinity; // 예외처리.
+
+        return (item.transform.position - transform.position).sqrMagnitude;
+    }
+
+    // 아이템 추적 취소 (아이템 데이터 및 위치 초기화)
+    private void CancelItemChase(bool stopMovement = false)
+    {
+        bool wasChasing = hasItemDestination;
+
+        pendingItem = null;
+        hasItemDestination = false;
+
+        if(stopMovement && wasChasing)
+        {
+            controller.StopMovement();
+        }
+    }
+
+    // 레이어가 layerMask 와 일치하는지 체크
+    private bool IsInLayerMask(int layer, LayerMask mask)
+    {
+        return (mask.value & (1 << layer) ) != 0;
     }
 
     //// 포션 사용
@@ -133,10 +291,10 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     //{
     //    if (Input.GetKeyDown(KeyCode.Q))
     //    {
-            
+
     //    }
     //}
-    
+
     //// UI 단축키
     //private void HandleOpenUIInput()
     //{

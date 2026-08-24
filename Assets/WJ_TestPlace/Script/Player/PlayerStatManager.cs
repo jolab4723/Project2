@@ -59,6 +59,27 @@ public class PlayerStatManager : MonoBehaviour
 
     private void OnEnable()
     {
+        // Awake는 오브젝트 생애 동안 한 번만 돌아서, 한 번 비활성화됐다가(OnDisable에서 Instance 해제)
+        // 다시 활성화되는 경우(캐릭터 전환을 껐다 켰다로 반복) Awake가 재실행 안 되므로 여기서 다시
+        // 등록해줘야 한다 - 안 그러면 재활성화한 캐릭터의 Instance가 계속 null로 남는다(125번).
+        if (Instance != this)
+        {
+            var identity = GetComponent<Mirror.NetworkIdentity>();
+            bool isLocal = identity == null || identity.isLocalPlayer;
+
+            if (isLocal)
+            {
+                if (Instance != null)
+                {
+                    Debug.LogWarning("[PlayerStatManager] 이미 인스턴스가 존재해서 다시 활성화된 오브젝트를 등록하지 않습니다.");
+                }
+                else
+                {
+                    Instance = this;
+                }
+            }
+        }
+
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
 
@@ -73,6 +94,14 @@ public class PlayerStatManager : MonoBehaviour
 
         if (PassiveSkillManager.Instance != null)
             PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
+
+        // 기존엔 OnDestroy에서만 Instance를 비워서, 캐릭터를 SetActive(false)로 비활성화만 해도
+        // (파괴 아님) Instance가 그 캐릭터를 계속 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때
+        // "이미 인스턴스가 있다"고 오판해서 새 캐릭터를 통째로 Destroy하거나(124번에서 실측 확인),
+        // 장비/스탯을 읽는 쪽이 정적 Instance를 참조하면 비활성화된 캐릭터의 장비가 계속 표시되는
+        // 문제가 있었다. 비활성화 시점에도 즉시 자리를 비워준다.
+        if (Instance == this)
+            Instance = null;
     }
 
    
@@ -172,6 +201,20 @@ public class PlayerStatManager : MonoBehaviour
         equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
         buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
         passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
+    }
+
+    /// <summary>
+    /// 스킬 범위 flat/% 보너스를 4단 공식(CalcFinal)을 거치지 않고 네 레이어에서 그대로 합산해서 낸다.
+    /// Stat.skillRange(CalcFinal 결과)를 그대로 쓰면 buff/equip의 % 가 이미 캐릭터의 작은 flat 값에
+    /// 한 번 곱해져 들어가 있어서, FighterSkillController가 스킬 자체 사거리에 %를 또 곱하면 같은
+    /// 보너스가 두 번 적용되는 문제가 있었다(직접 검증 중 발견). 그래서 이 스탯만 CalcFinal을 우회해서
+    /// 순수 원시 합으로 따로 낸다 - flat은 4개 레이어 전부, %는 캐릭터 레이어가 안 쓰는 걸 감안해 나머지 3개.
+    /// </summary>
+    public void GetSkillRangeBonus(out float flatBonus, out float percentBonus)
+    {
+        GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
+        flatBonus = character.skillRangeFlat + equipment.skillRangeFlat + buff.skillRangeFlat + passive.skillRangeFlat;
+        percentBonus = equipment.skillRangePercent + buff.skillRangePercent + passive.skillRangePercent;
     }
 
     /// <summary>

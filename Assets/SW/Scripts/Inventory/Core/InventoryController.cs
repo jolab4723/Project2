@@ -112,6 +112,74 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     }
 
     /// <summary>
+    /// 대상 플레이어의 Grid에서 무작위 아이템을 최대 count개 제거한다.
+    /// 보유 수량이 부족하거나 제거에 실패하면 실제 제거된 개수를 반환한다.
+    /// </summary>
+    public int RemoveRandomInventoryItems(int count)
+    {
+        if (count <= 0)
+            return 0;
+
+        var candidates = new List<InventoryItem>(GetAllInventoryItems());
+        int removedCount = 0;
+
+        while (removedCount < count && candidates.Count > 0)
+        {
+            int index = Random.Range(0, candidates.Count);
+            InventoryItem item = candidates[index];
+            candidates[index] = candidates[candidates.Count - 1];
+            candidates.RemoveAt(candidates.Count - 1);
+
+            if (TryRemoveInventoryItem(item) == InventoryRemoveResult.Success)
+                removedCount++;
+        }
+
+        return removedCount;
+    }
+
+    /// <summary>
+    /// ItemManager의 데이터베이스에서 무작위 아이템을 최대 count개 생성해 대상 플레이어의 Grid에 추가한다.
+    /// 빈 공간이나 유효한 후보가 부족하면 실제 추가된 개수를 반환한다.
+    /// </summary>
+    public int AddRandomInventoryItems(int count)
+    {
+        if (count <= 0)
+            return 0;
+
+        IReadOnlyList<ItemDefinitionSO> definitions =
+            Core.ItemManager.Instance?.ItemDatabase?.allItems;
+
+        if (definitions == null)
+            return 0;
+
+        var candidates = new List<ItemDefinitionSO>(definitions.Count);
+        for (int i = 0; i < definitions.Count; i++)
+        {
+            if (definitions[i] != null)
+                candidates.Add(definitions[i]);
+        }
+
+        int addedCount = 0;
+        while (addedCount < count && candidates.Count > 0)
+        {
+            int index = Random.Range(0, candidates.Count);
+            InventoryAddResultData result = TryAddItemData(
+                ItemDataCreator.CreateItemData(candidates[index]));
+
+            if (result.Result == InventoryAddResult.Success)
+            {
+                addedCount++;
+                continue;
+            }
+
+            candidates[index] = candidates[candidates.Count - 1];
+            candidates.RemoveAt(candidates.Count - 1);
+        }
+
+        return addedCount;
+    }
+
+    /// <summary>
     /// 대상 플레이어의 Grid 아이템을 제거하고 UI·소유권 이벤트를 함께 발행한다.
     /// 장착 아이템 제거 정책은 별도 합의 대상이므로 이 경로에서 처리하지 않는다.
     /// </summary>

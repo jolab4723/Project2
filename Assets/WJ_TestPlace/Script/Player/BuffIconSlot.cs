@@ -2,13 +2,14 @@ using System.Linq;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
 /// 버프 아이콘 UI 한 칸. 아이콘·남은 지속시간(라디얼)·스택 수·디버프 테두리색 표시를 담당한다.
 /// BuffIconUIContainer가 활성 버프 하나당 이 컴포넌트를 인스턴스화해서 값만 채운다.
 /// </summary>
-public class BuffIconSlot : MonoBehaviour
+public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Image iconImage;
     [SerializeField] private Image borderImage;
@@ -78,5 +79,26 @@ public class BuffIconSlot : MonoBehaviour
     private static bool IsDebuff(IBuffSource source)
     {
         return source?.StatEffects != null && source.StatEffects.Any(effect => effect.value < 0f);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        IBuffSource source = boundInstance?.source;
+        if (source == null || BuffTooltipUI.Instance == null)
+            return;
+
+        BuffTooltipUI.Instance.Show(source.BuffDisplayName, source.BuffDescription);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        BuffTooltipUI.Instance?.Hide();
+    }
+
+    private void OnDisable()
+    {
+        // 슬롯이 목록 재구성 등으로 비활성화될 때 마우스가 그 위에 있었다면 OnPointerExit이
+        // 호출되지 않고 사라질 수 있어서, 툴팁이 화면에 남는 것을 막기 위해 여기서도 닫는다.
+        BuffTooltipUI.Instance?.Hide();
     }
 }

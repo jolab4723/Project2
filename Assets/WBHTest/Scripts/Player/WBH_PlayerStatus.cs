@@ -46,6 +46,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float FireBonus => PercentToFraction(statManager.Stat.fireBonus);
     public float IceBonus => PercentToFraction(statManager.Stat.iceBonus);
     public float ElectricBonus => PercentToFraction(statManager.Stat.electricBonus);
+    // 플레이어를 대상으로 한 Marked(받는 데미지 증가) 디버프는 아직 안 쓰여서 항상 1(영향 없음).
+    public float DamageTakenModifier => 1f;
     public float CurrentLevel => statManager.CurrentLevel;
     public float CurrentExp => statManager.CurrentExp;
     public float MaxExp => statManager.ExpToNextLevel;

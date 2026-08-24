@@ -43,6 +43,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private void OnEnable()
     {
+#if UNITY_SERVER
+        // 전용 서버는 장비 상태만 처리하며 렌더링용 Addressables 무기 외형을 생성하지 않습니다.
+        enabled = false;
+#else
         if (equipmentSystem == null)
         {
             ShowDefaultVisual();
@@ -51,6 +55,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
         equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         RefreshFromEquipment();
+#endif
     }
 
     private void OnDisable()
@@ -65,6 +70,18 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     private void HandleEquipmentChanged(EquippedItemInfo[] _)
     {
         RefreshFromEquipment();
+    }
+
+    /// <summary>
+    /// Mirror 테스트의 서버 확정 무기 itemId를 이 플레이어 복제본 외형에 적용한다.
+    /// 로컬 장비 모델이 없는 원격 플레이어도 같은 Presenter와 Addressables 풀을 재사용한다.
+    /// 전용 서버에서는 렌더링 자산을 생성하지 않는다.
+    /// </summary>
+    public void ApplyAuthoritativeWeaponItemId(string itemId)
+    {
+#if !UNITY_SERVER
+        ApplyVisual(itemId);
+#endif
     }
 
     private void RefreshFromEquipment()

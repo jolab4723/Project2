@@ -12,8 +12,11 @@ using UnityEngine.UI;
 ///
 /// !! "적 0번"으로 만들려고 WBH_ 접두사를 뗀 복사본 프레임워크(EnemyStatus/StatusEffectController 등)를
 ///    한 번 붙였다가 다시 뗐다 - 실제 적 적용은 결국 BH님 파일(WBH_EnemyStatus 등)을 직접 수정하는
-///    쪽으로 방향이 정해져서, 복사본 전용으로 만들었던 부분은 다시 정리했다. 방어감소만 예외로
-///    BuffTracker 기반 버프 경로(DummyBuffManager)는 WBH 복사본과 무관하게 독립적이라 그대로 남겨둠.
+///    쪽으로 방향이 정해져서, 복사본 전용으로 만들었던 부분은 다시 정리했다.
+///
+/// 버프(EnemyBuffManager)는 실제 적과 같은 컴포넌트를 그대로 쓴다 - WBH_EnemyStatus와 이 클래스가
+/// 둘 다 IStatBuffTarget(ApplyBuffStatSet)을 구현해서, EnemyBuffManager가 대상 타입을 몰라도
+/// 똑같이 동작한다(예전엔 DummyBuffManager라는 별도 컴포넌트였는데, 실제 적과 중복 구현이라 통합함).
 ///
 /// 이 컴포넌트 하나만 붙이면 그 자체로 공격 대상이 된다. 플레이어의 근접 공격(SectorAttack)과
 /// 투사체는 Physics.OverlapSphere + TryGetComponent&lt;WBH_ICombat&gt;로 대상을 찾으므로,
@@ -27,7 +30,7 @@ using UnityEngine.UI;
 ///   그걸 갱신하던 WBH_EnemyView는 붙일 수 없으므로(WBH_EnemyStatus 전용), 여기서 같은 방식으로
 ///   직접 갱신한다. 이름으로 자동 탐색하므로 별도 인스펙터 연결이 필요 없다.
 /// </summary>
-public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
+public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus, ItemSystem.IStatBuffTarget
 {
     [Tooltip("허수아비의 기초 체력.")]
     [SerializeField] private float maxHp = 3000f;
@@ -53,6 +56,7 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     private Coroutine hideHpBarCoroutine;
     private Coroutine knockbackRoutine;
     private Coroutine airborneRoutine;
+    private float airborneGroundY; // 에어본 시작 전 지면 높이. 도중에 넉백이 끼어들 때 지면으로 되돌리기 위해 기억해둔다.
 
     // ----- WBH_ICombat -----
     public WBH_ICombatStatus Status => this;
@@ -76,12 +80,14 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
 
     private float buffDefensePercent;
     private float buffDefenseFlat;
+    private float buffMoveSpeedPercent;
 
-    /// <summary>PlayerBuffManager와 같은 BuffTracker 기반 버프 레이어 결과를 반영한다. DummyBuffManager가 호출한다.</summary>
+    /// <summary>PlayerBuffManager와 같은 BuffTracker 기반 버프 레이어 결과를 반영한다. EnemyBuffManager가 호출한다.</summary>
     public void ApplyBuffStatSet(StatSet statSet)
     {
         buffDefensePercent = statSet.defensePowerPercent;
         buffDefenseFlat = statSet.defensePowerFlat;
+        buffMoveSpeedPercent = statSet.moveSpeedPercent;
         RecalculateDefense();
     }
 
@@ -89,6 +95,11 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     {
         currentDefensePower = Mathf.Max(0f, defensePower * (1f + buffDefensePercent / 100f) + buffDefenseFlat);
     }
+
+    /// <summary>버프로 인한 이동속도 배율(1 = 변화 없음). 허수아비는 자체 이동속도 스탯이 없어서(DummyFollowPlayer의
+    /// followSpeed가 유일한 이동속도 값) moveSpeedFlat 가산은 반영할 기준값이 없어 percent만 배율로 반영한다.
+    /// DummyFollowPlayer가 자신의 followSpeed에 이 값을 곱해서 쓴다.</summary>
+    public float MoveSpeedMultiplier => Mathf.Max(0f, 1f + buffMoveSpeedPercent / 100f);
 
     /// <summary>
     /// 허수아비는 이동 AI/공격이 없어서 실제로 눈에 보이는 반응이 있는 넉백/에어본(위치 이동)만
@@ -102,12 +113,34 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
             case WBH_StatusEffectType.KnockBack:
                 if (knockbackRoutine != null)
                     StopCoroutine(knockbackRoutine);
+
+                if (airborneRoutine != null)
+                {
+                    // 에어본 도중 넉백이 끼어들면, 넉백은 수평 이동만 하고 Y를 안 건드리기 때문에
+                    // 뜬 높이를 그대로 시작점으로 삼아 넉백이 끝나도 계속 공중에 남는 문제가 있었다.
+                    // 넉백을 시작하기 전에 먼저 지면으로 되돌린다.
+                    StopCoroutine(airborneRoutine);
+                    airborneRoutine = null;
+
+                    Vector3 grounded = transform.position;
+                    grounded.y = airborneGroundY;
+                    transform.position = grounded;
+                }
+
                 knockbackRoutine = StartCoroutine(KnockbackRoutine(data.Direction, data.Force, data.Duration));
                 break;
 
             case WBH_StatusEffectType.Airborne:
                 if (airborneRoutine != null)
                     StopCoroutine(airborneRoutine);
+
+                if (knockbackRoutine != null)
+                {
+                    StopCoroutine(knockbackRoutine);
+                    knockbackRoutine = null;
+                }
+
+                airborneGroundY = transform.position.y;
                 airborneRoutine = StartCoroutine(AirborneRoutine(data.Height, data.Duration));
                 break;
         }
@@ -162,6 +195,8 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     public float FireBonus => 0f;
     public float IceBonus => 0f;
     public float ElectricBonus => 0f;
+    /// <summary>허수아비는 Marked(받는 데미지 증가) 디버프를 반영하지 않아서 항상 1(영향 없음).</summary>
+    public float DamageTakenModifier => 1f;
 
     /// <summary>허수아비는 죽지 않고 체력만 초기화되므로 항상 false.</summary>
     public bool IsDead => false;
