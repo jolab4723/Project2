@@ -1,0 +1,70 @@
+{
+  "item_id": "item.weapon.rifle.novalance",
+  "rarity": "Rare",
+  "weapon_type": "Rifle",
+  "status": "prepared_network_hold",
+  "multiview": {
+    "type": "multiview_to_model",
+    "view_order": ["front", "left", "back", "right"],
+    "model_version": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "texture": true,
+    "pbr": true,
+    "export_uv": true,
+    "expected_credits": 30
+  },
+  "grip_qa_final_2048x1024": {
+    "left": {
+      "rear_contact_perpendicular_px": 64.88,
+      "front_support_contact_px": 306.0,
+      "rear_to_support_center_px": 592.93,
+      "physical_connection": true,
+      "corridor_clear": true
+    },
+    "right": {
+      "rear_contact_perpendicular_px": 36.94,
+      "rear_contact_opaque_core_px": 34.63,
+      "front_support_contact_px": 356.7,
+      "rear_to_support_center_px": 665.0,
+      "physical_connection": true,
+      "corridor_clear": true
+    }
+  },
+  "grip_exception_approval": {
+    "reason": "Opposite-side perspective-free inputs bracket the target; Blender postprocess must normalize markers to the actual generated grip surfaces.",
+    "mean_rear_contact_px": 50.91,
+    "mean_rear_to_support_center_px": 628.97,
+    "approved": true
+  },
+  "blue_boundary_qa": {
+    "definition": "saturated-blue pixels with 0<alpha<=64 farther than 3px from the alpha>=128 silhouette",
+    "front": {"pixels": 128, "largest_connected_component_px": 49, "max_distance_px": 9.4},
+    "left": {"pixels": 32, "largest_connected_component_px": 8, "max_distance_px": 5.39},
+    "back": {"pixels": 10, "largest_connected_component_px": 3, "max_distance_px": 7.4},
+    "right": {"pixels": 158, "largest_connected_component_px": 29, "max_distance_px": 12.0},
+    "assessment": "pass: only isolated antialias fragments; no coherent soft halo band, aura, background bloom or floating energy component",
+    "main_blue_surfaces": "opaque hard-edged physical inset plates inside white/black housing"
+  },
+  "visual_consistency": {
+    "connected_energy_spine": true,
+    "solid_white_spear_tip": true,
+    "front_recessed_plate_projection_logical": true,
+    "back_butt_pad_projection_logical": true,
+    "support_grips_physically_connected": true,
+    "ballistic_magazine_and_receiver_absent": true
+  },
+  "files": {
+    "front": {"sha256": "2a427860fa98356de06277e9cccf6ec9de3a0434129793c3766b5176a9c9c59f", "size_bytes": 603188},
+    "left": {"sha256": "740651308853becc61beeb2ff12e16f7eab8cd162121b72867bcfac0bbded7e9", "size_bytes": 721524},
+    "back": {"sha256": "f0b9c6093d996b463351527d20013b754a2f95bdac39c9986f9e5c2c8f4c03c8", "size_bytes": 431086},
+    "right": {"sha256": "ecaa188a8e3803e1584f521ef7c33483cdfe54644dbeb9794a18721fff8cc3a6", "size_bytes": 717156}
+  },
+  "image_contract": {
+    "format": "PNG",
+    "mode": "RGBA",
+    "size": [2048, 1024],
+    "alpha_extrema": [0, 255],
+    "crop_or_stretch": false,
+    "genuine_transparency": true
+  }
+}

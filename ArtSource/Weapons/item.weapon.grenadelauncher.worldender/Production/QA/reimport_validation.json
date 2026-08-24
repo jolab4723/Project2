@@ -1,0 +1,351 @@
+{
+  "verified_at": "2026-08-24T04:12:46.992156+00:00",
+  "blender_version": "5.1.1",
+  "method": "factory empty scene -> FBX import -> hierarchy/axis/transform/material/triangle audit",
+  "fbx": "Production\\item.weapon.grenadelauncher.worldender.fbx",
+  "root": "item.weapon.grenadelauncher.worldender_root",
+  "top_level_roots": [
+    "item.weapon.grenadelauncher.worldender_root"
+  ],
+  "direct_children": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip",
+    "Worldender_Body"
+  ],
+  "direct_markers": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip"
+  ],
+  "root_world_plus_y": [
+    0.0,
+    1.0,
+    -0.0
+  ],
+  "object_count": 5,
+  "mesh_count": 1,
+  "triangles": 55300,
+  "material_slots": 3,
+  "materials": [
+    {
+      "slot": "M_Worldender_PBR",
+      "material": "M_Worldender_PBR",
+      "use_nodes": true,
+      "image_textures": [
+        {
+          "node": "Image Texture",
+          "image": "Color_6ffde46a-3c8e-49cd-afb9-dc73afce4e68",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.worldender\\Production\\item.weapon.grenadelauncher.worldender.fbm\\item.weapon.grenadelauncher.worldender_BaseColor.png"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "NormalGL_6ffde46a-3c8e-49cd-afb9-dc73afce4e68",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.worldender\\Production\\item.weapon.grenadelauncher.worldender.fbm\\item.weapon.grenadelauncher.worldender_Normal.png"
+        }
+      ]
+    },
+    {
+      "slot": "M_Worldender_SealedCore_PBR_Emission",
+      "material": "M_Worldender_SealedCore_PBR_Emission",
+      "use_nodes": true,
+      "image_textures": [
+        {
+          "node": "Image Texture",
+          "image": "Color_6ffde46a-3c8e-49cd-afb9-dc73afce4e68",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.worldender\\Production\\item.weapon.grenadelauncher.worldender.fbm\\item.weapon.grenadelauncher.worldender_BaseColor.png"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "Worldender_Status_Emission",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.worldender\\Production\\item.weapon.grenadelauncher.worldender.fbm\\item.weapon.grenadelauncher.worldender_Emission.png"
+        },
+        {
+          "node": "Image Texture.002",
+          "image": "NormalGL_6ffde46a-3c8e-49cd-afb9-dc73afce4e68",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.worldender\\Production\\item.weapon.grenadelauncher.worldender.fbm\\item.weapon.grenadelauncher.worldender_Normal.png"
+        }
+      ]
+    },
+    {
+      "slot": "M_Worldender_StockPadCap_PBR",
+      "material": "M_Worldender_StockPadCap_PBR",
+      "use_nodes": true,
+      "image_textures": []
+    }
+  ],
+  "material_face_usage": {
+    "M_Worldender_PBR": {
+      "face_count": 44776,
+      "center_bounds": {
+        "min": [
+          -0.12136,
+          -0.070344,
+          -0.312008
+        ],
+        "max": [
+          0.121444,
+          0.244418,
+          0.701103
+        ]
+      }
+    },
+    "M_Worldender_SealedCore_PBR_Emission": {
+      "face_count": 9695,
+      "center_bounds": {
+        "min": [
+          -0.074913,
+          0.055,
+          -0.079993
+        ],
+        "max": [
+          0.085596,
+          0.189988,
+          0.079983
+        ]
+      }
+    },
+    "M_Worldender_StockPadCap_PBR": {
+      "face_count": 130,
+      "center_bounds": {
+        "min": [
+          -0.052272,
+          0.027728,
+          -0.312089
+        ],
+        "max": [
+          0.052272,
+          0.172272,
+          -0.300089
+        ]
+      }
+    },
+    "sealed_core_outside_envelope_faces": 0
+  },
+  "external_pbr_textures": {
+    "BaseColor": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.worldender_BaseColor.png",
+      "exists": true
+    },
+    "Normal": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.worldender_Normal.png",
+      "exists": true
+    },
+    "ORM": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.worldender_ORM.png",
+      "exists": true
+    },
+    "Emission": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.worldender_Emission.png",
+      "exists": true
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.121587,
+      -0.070356,
+      -0.312089
+    ],
+    "max": [
+      0.121613,
+      0.244663,
+      0.701144
+    ],
+    "dimensions": [
+      0.2432,
+      0.315019,
+      1.013233
+    ]
+  },
+  "structural_repair_reimport": {
+    "bell_first_hit_root_local": [
+      0.0,
+      0.108,
+      0.509971
+    ],
+    "bell_clear_depth_m": 0.191173,
+    "stock_first_hit_root_local": [
+      0.0,
+      0.1,
+      -0.312089
+    ],
+    "stock_cap_hit_distance_m": 0.02,
+    "topology": {
+      "boundary_edges": 19690,
+      "non_manifold_edges_including_boundaries": 19690,
+      "loose_edges": 0,
+      "degenerate_faces": 0
+    }
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.grenadelauncher.worldender_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.grenadelauncher.worldender_root",
+      "local_location": [
+        0.0,
+        0.07295,
+        0.32625
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.grenadelauncher.worldender_root",
+      "local_location": [
+        0.0,
+        0.108007,
+        0.701133
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "grip_nearest_surface_distance_m": {
+    "RightHandGrip": 0.010633,
+    "LeftHandGrip": 0.006667
+  },
+  "transforms": {
+    "LeftHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.07295,
+        0.32625
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.108007,
+        0.701133
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "RightHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Worldender_Body": {
+      "type": "MESH",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "item.weapon.grenadelauncher.worldender_root": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "prohibited_objects": [],
+  "non_positive_or_non_uniform": [],
+  "errors": [],
+  "pass": true
+}

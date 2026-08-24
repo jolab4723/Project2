@@ -1,0 +1,45 @@
+{
+  "item_id": "item.weapon.rifle.scrapline",
+  "character_class": "Gunner",
+  "weapon_type": "Rifle",
+  "view_order": ["front", "left", "back", "right"],
+  "final_image_contract": {
+    "size": [2048, 1024],
+    "format": "PNG",
+    "mode": "RGBA",
+    "corner_alpha": 0,
+    "normalization": "uniform 2:1 resize from 1774x887; no crop or aspect stretch"
+  },
+  "side_measurements": {
+    "interval_convention": "half-open [start, end)",
+    "left": {
+      "trigger_grip_x": [399, 426],
+      "trigger_grip_width_px": 27,
+      "trigger_grip_center_x": 412.5,
+      "support_corridor_x": [967, 1157],
+      "support_corridor_length_px": 190,
+      "support_center_x": 1062.0,
+      "support_center_delta_px": 649.5,
+      "support_component": "continuous matte-charcoal cylindrical-oval underside sleeve"
+    },
+    "right": {
+      "trigger_grip_x": [1581, 1618],
+      "trigger_grip_width_px": 37,
+      "trigger_grip_center_x": 1599.5,
+      "support_corridor_x": [855, 1045],
+      "support_corridor_length_px": 190,
+      "support_center_x": 950.0,
+      "support_center_delta_px": 649.5,
+      "support_component": "continuous matte-charcoal cylindrical-oval underside sleeve"
+    }
+  },
+  "cross_view_logic": {
+    "status": "pass_pending_parent_visual_review",
+    "notes": [
+      "Both sides retain the same clean salvaged-steel frame family, fork muzzle, hard-edged cyan rail, needle-thin rear stem, and long continuous underside support sleeve.",
+      "The clamped irregular-hexagon scrap-energy cell is deliberately visible only on the left; the right rear housing is a plain steel cover.",
+      "Front and back end elevations preserve the fork/core axis, narrow rear stem, left-side energy-cell asymmetry, and low panel density.",
+      "No selected view contains a cartridge magazine, ejection port, iron sight, muzzle brake, ammunition, or recognizable real-firearm operating structure."
+    ]
+  }
+}

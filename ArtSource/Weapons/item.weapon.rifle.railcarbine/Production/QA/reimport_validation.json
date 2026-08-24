@@ -1,0 +1,260 @@
+{
+  "verified_at": "2026-08-24T08:25:30.734891+00:00",
+  "blender_version": "5.1.1",
+  "method": "factory empty scene -> FBX import -> hierarchy/axis/transform/material/triangle/contact audit",
+  "fbx": "Production\\item.weapon.rifle.railcarbine.fbx",
+  "root": "item.weapon.rifle.railcarbine_root",
+  "top_level_roots": [
+    "item.weapon.rifle.railcarbine_root"
+  ],
+  "direct_children": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RailCarbine_Body",
+    "RightHandGrip"
+  ],
+  "direct_markers": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip"
+  ],
+  "root_world_plus_y": [
+    0.0,
+    1.0,
+    -0.0
+  ],
+  "object_count": 5,
+  "mesh_count": 1,
+  "triangles": 59999,
+  "material_slots": 1,
+  "materials": [
+    {
+      "slot": "M_RailCarbine_PBR",
+      "material": "M_RailCarbine_PBR",
+      "use_nodes": true,
+      "image_textures": [
+        {
+          "node": "Image Texture",
+          "image": "Color_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.railcarbine\\Production\\item.weapon.rifle.railcarbine.fbm\\item.weapon.rifle.railcarbine_BaseColor.png"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "RailCarbine_Emission",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.railcarbine\\Production\\item.weapon.rifle.railcarbine.fbm\\item.weapon.rifle.railcarbine_Emission.png"
+        },
+        {
+          "node": "Image Texture.002",
+          "image": "NormalGL_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.railcarbine\\Production\\item.weapon.rifle.railcarbine.fbm\\item.weapon.rifle.railcarbine_Normal.png"
+        }
+      ]
+    }
+  ],
+  "external_pbr_textures": {
+    "BaseColor": {
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_BaseColor.png",
+      "exists": true
+    },
+    "Normal": {
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_Normal.png",
+      "exists": true
+    },
+    "ORM": {
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_ORM.png",
+      "exists": true
+    },
+    "Emission": {
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_Emission.png",
+      "exists": true
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.050836,
+      -0.050338,
+      -0.26521
+    ],
+    "max": [
+      0.050961,
+      0.15644,
+      0.514765
+    ],
+    "dimensions": [
+      0.101797,
+      0.206778,
+      0.779975
+    ]
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        -0.024,
+        0.09,
+        0.32625
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        0.0,
+        0.07644,
+        0.5148
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "grip_nearest_surface_distance_m": {
+    "RightHandGrip": 0.015398,
+    "LeftHandGrip": 0.002226
+  },
+  "transforms": {
+    "LeftHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        -0.024,
+        0.09,
+        0.32625
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -3.141593
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.07644,
+        0.5148
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "RailCarbine_Body": {
+      "type": "MESH",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "RightHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "item.weapon.rifle.railcarbine_root": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "prohibited_objects": [],
+  "non_positive_or_non_uniform": [],
+  "errors": [],
+  "pass": true
+}

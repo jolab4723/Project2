@@ -1,0 +1,50 @@
+{
+  "item_id": "item.weapon.rifle.railcarbine",
+  "status": "prepared_only_no_api_submit",
+  "references": {
+    "order": ["front", "left", "back", "right"],
+    "size": [2048, 1024],
+    "mode": "RGBA",
+    "genuine_alpha": true,
+    "normalization": "native 1774x887 center-padded at [137,68] with scale 1.0; no crop, resize, stretch, keying, or scripted background removal"
+  },
+  "design": {
+    "fictional_policy_review": "pass",
+    "reason": "sealed twin magnetic rails and paired hex emitters; no magazine, chamber, bolt, ejection, gas system, optic rail, round barrel, or conventional receiver action",
+    "cross_view_consistency": "pass",
+    "palette": "matte navy gunmetal and graphite with restrained cyan rails/lever/power cell",
+    "floating_parts_or_vfx": false
+  },
+  "side_grip_measurements_final_2048x1024": {
+    "left": {
+      "RightHandGrip_contact_center_px": [790, 606],
+      "RightHandGrip_contact_width_px": 41,
+      "LeftHandGrip_contact_center_px": [1429, 559],
+      "LeftHandGrip_selected_corridor_px": [180, 55],
+      "center_spacing_px": 639,
+      "obstacles_in_contact_regions": false
+    },
+    "right": {
+      "RightHandGrip_contact_center_px": [1336, 596],
+      "RightHandGrip_contact_width_px": 50,
+      "LeftHandGrip_contact_center_px": [670, 538],
+      "LeftHandGrip_selected_corridor_px": [180, 55],
+      "center_spacing_px": 666,
+      "obstacles_in_contact_regions": false
+    }
+  },
+  "h3_submission": {
+    "allowed": false,
+    "reason": "Railcarbine remains explicitly submit-forbidden pending parent visual approval and a new item-specific API_SUBMIT_GO",
+    "required_if_approved": {
+      "type": "multiview_to_model",
+      "model_version": "v3.1-20260211",
+      "geometry_quality": "standard",
+      "texture": true,
+      "pbr": true,
+      "export_uv": true,
+      "expected_cost": 30
+    }
+  },
+  "pass": true
+}

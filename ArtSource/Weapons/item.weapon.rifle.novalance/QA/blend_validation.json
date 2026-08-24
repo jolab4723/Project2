@@ -1,0 +1,102 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Blender\\item.weapon.rifle.novalance.blend",
+  "blender_version": "5.1.1",
+  "root": "item.weapon.rifle.novalance",
+  "objects": [
+    {
+      "name": "item.weapon.rifle.novalance_Mesh",
+      "type": "MESH",
+      "parent": "item.weapon.rifle.novalance"
+    },
+    {
+      "name": "item.weapon.rifle.novalance",
+      "type": "EMPTY",
+      "parent": null
+    },
+    {
+      "name": "RightHandGrip",
+      "type": "EMPTY",
+      "parent": "item.weapon.rifle.novalance"
+    },
+    {
+      "name": "LeftHandGrip",
+      "type": "EMPTY",
+      "parent": "item.weapon.rifle.novalance"
+    },
+    {
+      "name": "Muzzle",
+      "type": "EMPTY",
+      "parent": "item.weapon.rifle.novalance"
+    }
+  ],
+  "triangles": 55000,
+  "material": "item.weapon.rifle.novalance_PBR",
+  "emission_strength": 4.0,
+  "linked_inputs": {
+    "Base Color": true,
+    "Metallic": true,
+    "Roughness": true,
+    "Normal": true,
+    "Emission Color": true
+  },
+  "images": {
+    "BaseColor": {
+      "name": "item.weapon.rifle.novalance_BaseColor.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "filepath": "//..\\Textures\\item.weapon.rifle.novalance_BaseColor.png",
+      "resolved": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Blender\\..\\Textures\\item.weapon.rifle.novalance_BaseColor.png",
+      "exists": true
+    },
+    "ORM": {
+      "name": "item.weapon.rifle.novalance_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color",
+      "filepath": "//..\\Textures\\item.weapon.rifle.novalance_ORM.png",
+      "resolved": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Blender\\..\\Textures\\item.weapon.rifle.novalance_ORM.png",
+      "exists": true
+    },
+    "NormalGL": {
+      "name": "item.weapon.rifle.novalance_NormalGL.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color",
+      "filepath": "//..\\Textures\\item.weapon.rifle.novalance_NormalGL.png",
+      "resolved": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Blender\\..\\Textures\\item.weapon.rifle.novalance_NormalGL.png",
+      "exists": true
+    },
+    "EmissionMap": {
+      "name": "item.weapon.rifle.novalance_Emission.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "filepath": "//..\\Textures\\item.weapon.rifle.novalance_Emission.png",
+      "resolved": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.novalance\\Blender\\..\\Textures\\item.weapon.rifle.novalance_Emission.png",
+      "exists": true
+    }
+  },
+  "forbidden": [],
+  "checks": {
+    "one_root": true,
+    "one_mesh": true,
+    "triangles_40k_to_60k": true,
+    "required_direct_children": true,
+    "no_forbidden_objects": true,
+    "positive_uniform_transforms": true,
+    "pbr_inputs_linked": true,
+    "required_image_nodes": true,
+    "images_2k_and_resolved": true,
+    "colorspaces": true
+  },
+  "pass": true
+}

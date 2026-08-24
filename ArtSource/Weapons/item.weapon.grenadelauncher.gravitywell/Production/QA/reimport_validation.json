@@ -1,0 +1,260 @@
+{
+  "verified_at": "2026-08-24T02:52:38.434847+00:00",
+  "blender_version": "5.1.1",
+  "method": "factory empty scene -> FBX import -> hierarchy/axis/transform/material/triangle audit",
+  "fbx": "Production\\item.weapon.grenadelauncher.gravitywell.fbx",
+  "root": "item.weapon.grenadelauncher.gravitywell_root",
+  "top_level_roots": [
+    "item.weapon.grenadelauncher.gravitywell_root"
+  ],
+  "direct_children": [
+    "GravityWell_Body",
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip"
+  ],
+  "direct_markers": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip"
+  ],
+  "root_world_plus_y": [
+    0.0,
+    1.0,
+    -0.0
+  ],
+  "object_count": 5,
+  "mesh_count": 1,
+  "triangles": 60000,
+  "material_slots": 1,
+  "materials": [
+    {
+      "slot": "M_GravityWell_PBR",
+      "material": "M_GravityWell_PBR",
+      "use_nodes": true,
+      "image_textures": [
+        {
+          "node": "Image Texture",
+          "image": "Color_2ef5edaf-65d1-4777-ad98-c96aa487231b",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.gravitywell\\Production\\item.weapon.grenadelauncher.gravitywell.fbm\\item.weapon.grenadelauncher.gravitywell_BaseColor.png"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "GravityWell_Emission",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.gravitywell\\Production\\item.weapon.grenadelauncher.gravitywell.fbm\\item.weapon.grenadelauncher.gravitywell_Emission.png"
+        },
+        {
+          "node": "Image Texture.002",
+          "image": "NormalGL_2ef5edaf-65d1-4777-ad98-c96aa487231b",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.gravitywell\\Production\\item.weapon.grenadelauncher.gravitywell.fbm\\item.weapon.grenadelauncher.gravitywell_Normal.png"
+        }
+      ]
+    }
+  ],
+  "external_pbr_textures": {
+    "BaseColor": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.gravitywell_BaseColor.png",
+      "exists": true
+    },
+    "Normal": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.gravitywell_Normal.png",
+      "exists": true
+    },
+    "ORM": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.gravitywell_ORM.png",
+      "exists": true
+    },
+    "Emission": {
+      "path": "Production\\Textures\\item.weapon.grenadelauncher.gravitywell_Emission.png",
+      "exists": true
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.105584,
+      -0.123109,
+      -0.34791
+    ],
+    "max": [
+      0.105727,
+      0.43032,
+      0.831933
+    ],
+    "dimensions": [
+      0.211311,
+      0.55343,
+      1.179844
+    ]
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.grenadelauncher.gravitywell_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.grenadelauncher.gravitywell_root",
+      "local_location": [
+        0.0,
+        0.1121,
+        0.32625
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.grenadelauncher.gravitywell_root",
+      "local_location": [
+        0.0,
+        0.1534,
+        0.8319
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "grip_nearest_surface_distance_m": {
+    "RightHandGrip": 0.019328,
+    "LeftHandGrip": 0.027624
+  },
+  "transforms": {
+    "GravityWell_Body": {
+      "type": "MESH",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.1121,
+        0.32625
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.1534,
+        0.8319
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "RightHandGrip": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "item.weapon.grenadelauncher.gravitywell_root": {
+      "type": "EMPTY",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "prohibited_objects": [],
+  "non_positive_or_non_uniform": [],
+  "errors": [],
+  "pass": true
+}

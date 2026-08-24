@@ -1,0 +1,47 @@
+{
+  "item_id": "item.weapon.rifle.railcarbine",
+  "status": "WORKFLOW_READY_HOLD",
+  "reason": "Parent visual QA passed 4/4, but Scrapline is the required preceding item and no item-specific Railcarbine API_SUBMIT_GO has been issued",
+  "inputs": {
+    "order": ["front", "left", "back", "right"],
+    "paths": [
+      "../Prepared/TripoInput/front.png",
+      "../Prepared/TripoInput/left.png",
+      "../Prepared/TripoInput/back.png",
+      "../Prepared/TripoInput/right.png"
+    ],
+    "size": [2048, 1024],
+    "mode": "RGBA",
+    "genuine_alpha": true,
+    "checkerboard_or_background": false,
+    "local_validation": {
+      "command": "python Tripo/h3_workflow.py validate",
+      "result": "pass",
+      "network_used": false,
+      "sha256": {
+        "front": "5dbd234a09152083bd8489ac1dda1cf541027f87939a211b9b44be9b35657f21",
+        "left": "a8390ace515d9a1253f3b1fe374170d337b4a6261db38ee31026b9d122564def",
+        "back": "c83185f3201b3b3a2af0f21fff3dd42297222c33d5da00ab125bbcdc74c88327",
+        "right": "e69e7ba348cf674160184c1b3b73b03ce6e07f7aeb06117eaf9efa8581c38da0"
+      }
+    }
+  },
+  "future_request_guard": {
+    "type": "multiview_to_model",
+    "model_version": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "texture": true,
+    "pbr": true,
+    "export_uv": true,
+    "expected_cost": 30,
+    "require_fresh_balance_check": true,
+    "require_item_specific_API_SUBMIT_GO": true,
+    "local_guard_tests": {
+      "wrong_confirm_rejected_before_network": true,
+      "wrong_expected_cost_rejected_before_network": true
+    }
+  },
+  "uploads": [],
+  "task_id": null,
+  "credits_consumed": 0
+}
