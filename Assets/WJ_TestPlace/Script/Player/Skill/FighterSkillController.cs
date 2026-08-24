@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -74,6 +75,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
         PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
 
+    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
+    public event Action<int, bool> OnSkillAniRequested;
+    public event Action<bool> OnChargeAniChanged;
+
+    private int pendingSkillIndex = -1;
+    private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
+    private float pendingChargeRatio;
+    private bool pendingSkillExcuted; // 중복 실행 방지 변수
+    //-------
+
     private void OnEnable()
     {
         if (inputHandler != null)
@@ -140,8 +151,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (def == null || !stateMachine.Is(PlayerState.Skill))
         {
             // 피격 등으로 스킬 상태가 풀리면 차징도 취소(발동하지 않음).
-            chargingSkillIndex = -1;
-            StopChargeEffect();
+            //chargingSkillIndex = -1; 
+            //StopChargeEffect(); // 8.24 WBH 수정. CancelCharge() 로 메서드화 진행.
+            CancelCharge();
             return;
         }
 
@@ -218,6 +230,55 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     }
 
     /// <summary>인덱스(0~2 = Skill1~3)에 해당하는 스킬을 사용한다. 쿨타임 중이거나 행동 불가 상태면 조용히 실패.</summary>
+    //public bool TryUseSkill(int index)
+    //{
+    //    if (index < 0 || index >= skills.Length)
+    //        return false;
+
+    //    SkillDefinitionSO def = skills[index];
+    //    if (def == null || !CanUseSkill || !IsSkillReady(index))
+    //        return false;
+
+    //    ConsumeSkillUse(index, def);
+    //    FaceCursor();
+    //    combat.CancelChase();
+    //    stateMachine.ChangeState(PlayerState.Skill);
+
+    //    SkillEvolutionId evo = GetEvolution(index);
+
+    //    switch (def.shapeType)
+    //    {
+    //        case SkillShapeType.SectorSlash:
+    //            if (evo == SkillEvolutionId.Evolution1)
+    //                ExecuteSectorSlashEvo1(def, index);
+    //            else if (evo == SkillEvolutionId.Evolution2)
+    //                ExecuteSectorSlashEvo2(def, index);
+    //            else
+    //                ExecuteSectorSlash(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.3f));
+    //            break;
+
+    //        case SkillShapeType.LineSlam:
+    //            if (evo == SkillEvolutionId.Evolution1)
+    //                ExecuteLineSlamEvo1(def, index);
+    //            else if (evo == SkillEvolutionId.Evolution2)
+    //                ExecuteLineSlamEvo2(def, index);
+    //            else if (evo == SkillEvolutionId.Evolution3)
+    //                ExecuteLineSlamEvo3(def, index);
+    //            else
+    //                ExecuteLineSlam(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.35f));
+    //            break;
+
+    //        case SkillShapeType.Dash:
+    //            StartCoroutine(ExecuteDash(def, evo, index));
+    //            break;
+    //    }
+
+    //    return true;
+    //}
+
+    //------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 코드
     public bool TryUseSkill(int index)
     {
         if (index < 0 || index >= skills.Length)
@@ -230,41 +291,106 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         ConsumeSkillUse(index, def);
         FaceCursor();
         combat.CancelChase();
-        stateMachine.ChangeState(PlayerState.Skill);
 
-        SkillEvolutionId evo = GetEvolution(index);
+        SkillEvolutionId evolution = GetEvolution(index);
+
+        PreparePendingSkill(index, evolution);
+        stateMachine.ChangeState(PlayerState.Skill);
+        RequestSkillAni(index, false);
+
+        return true;
+    }
+
+    // 기존 WJ님의 TryUseSkill 메서드에서 즉시 데미지가 들어가는 부분 분리. WBH_PlayerAnimation 의 AniEvent_ExecuteSkill 에서 실행.
+    public void ExecutePendingSkill()
+    {
+        if (pendingSkillIndex < 0 || pendingSkillExcuted || !stateMachine.Is(PlayerState.Skill))
+            return;
+
+        int index = pendingSkillIndex;
+        SkillDefinitionSO def = skills[index];
+
+        if(def == null)
+        {
+            ClearPendingSkill();
+            return;
+        }
+
+        pendingSkillExcuted = true;
 
         switch (def.shapeType)
         {
             case SkillShapeType.SectorSlash:
-                if (evo == SkillEvolutionId.Evolution1)
+                if (pendingEvo == SkillEvolutionId.Evolution1)
                     ExecuteSectorSlashEvo1(def, index);
-                else if (evo == SkillEvolutionId.Evolution2)
+                else if (pendingEvo == SkillEvolutionId.Evolution2)
                     ExecuteSectorSlashEvo2(def, index);
+                else if (pendingEvo == SkillEvolutionId.Evolution3)
+                    ExecuteSectorSlashEvo3(def, pendingChargeRatio, index);
                 else
                     ExecuteSectorSlash(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.3f));
                 break;
 
             case SkillShapeType.LineSlam:
-                if (evo == SkillEvolutionId.Evolution1)
+                if (pendingEvo == SkillEvolutionId.Evolution1)
                     ExecuteLineSlamEvo1(def, index);
-                else if (evo == SkillEvolutionId.Evolution2)
+                else if (pendingEvo == SkillEvolutionId.Evolution2)
                     ExecuteLineSlamEvo2(def, index);
-                else if (evo == SkillEvolutionId.Evolution3)
+                else if (pendingEvo == SkillEvolutionId.Evolution3)
                     ExecuteLineSlamEvo3(def, index);
                 else
                     ExecuteLineSlam(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.35f));
                 break;
 
             case SkillShapeType.Dash:
-                StartCoroutine(ExecuteDash(def, evo, index));
+                StartCoroutine(ExecuteDash(def, pendingEvo, index));
                 break;
         }
-
-        return true;
     }
+
+    // 스킬 종료 후 Idle 상태로 복귀.
+    public void EndPendingSkillAni()
+    {
+        if (pendingSkillIndex < 0)
+            return;
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def != null && def.shapeType == SkillShapeType.Dash)
+            return;
+
+        ClearPendingSkill();
+
+        if(stateMachine.Is(PlayerState.Skill))
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+        }
+    }
+
+    // 
+    private void PreparePendingSkill(int index, SkillEvolutionId evolution, float chargeRatio = 0f)
+    {
+        pendingSkillIndex = index;
+        pendingEvo = evolution;
+        pendingChargeRatio = chargeRatio;
+        pendingSkillExcuted = false;
+    }
+
+    // 스킬 애니메이션 실행을 위한 이벤트 요청.
+    private void RequestSkillAni(int index, bool isCharging)
+    {
+        OnSkillAniRequested?.Invoke(index + 1, isCharging); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
+    }
+
+    // 초기화
+    private void ClearPendingSkill()
+    {
+        pendingSkillIndex = -1;
+        pendingEvo = SkillEvolutionId.None;
+        pendingChargeRatio = 0f;
+        pendingSkillExcuted = false;
+    }
+    // ------
 
     /// <summary>스킬 슬롯(0~2)의 현재 진화. 범위 밖이면 None.</summary>
     public SkillEvolutionId GetEvolution(int index) =>
@@ -277,7 +403,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return;
 
         if (chargingSkillIndex == index)
-            chargingSkillIndex = -1; // 진화 변경 시 진행 중이던 차징은 취소
+            //chargingSkillIndex = -1; // 진화 변경 시 진행 중이던 차징은 취소
+            CancelCharge(); // 8.24 WBH 추가. 차징 취소 + 이펙트 중단
 
         activeEvolutions[index] = evolution;
 
@@ -359,6 +486,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
 
+        RequestSkillAni(index, true); // 8.24 WBH 추가
+
         if (effectSpawner != null && chargeEffectData != null)
             activeChargeEffect = effectSpawner.SpawnPersistentEffect(chargeEffectData, transform);
 
@@ -418,15 +547,29 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         ConsumeSkillUse(index, def);
 
         float ratio = def.evoChargeMaxSeconds > 0f ? Mathf.Clamp01(chargeElapsed / def.evoChargeMaxSeconds) : 0f;
-        ExecuteSectorSlashEvo3(def, ratio, index);
-        StartCoroutine(ReturnToIdleAfter(0.3f));
+
+        PreparePendingSkill(index, SkillEvolutionId.Evolution3, ratio);
+        OnChargeAniChanged?.Invoke(false);
+
+        //ExecuteSectorSlashEvo3(def, ratio, index);
+        //StartCoroutine(ReturnToIdleAfter(0.3f));
     }
 
-    private IEnumerator ReturnToIdleAfter(float seconds)
+    // 8.24 WBH 수정 : seconds 뒤 전환이 애니메이션 이벤트로 이뤄짐.
+    //private IEnumerator ReturnToIdleAfter(float seconds)
+    //{
+    //    yield return new WaitForSeconds(seconds);
+    //    if (stateMachine.Is(PlayerState.Skill))
+    //        stateMachine.ChangeState(PlayerState.Idle);
+    //}
+
+    private void CancelCharge()
     {
-        yield return new WaitForSeconds(seconds);
-        if (stateMachine.Is(PlayerState.Skill))
-            stateMachine.ChangeState(PlayerState.Idle);
+        chargingSkillIndex = -1;
+        chargeElapsed = 0f;
+
+        StopChargeEffect();
+        OnChargeAniChanged?.Invoke(false);
     }
 
     /// <summary>부채꼴 범위 안의 적 콜라이더 목록 - T_PlayerCombat.SectorAttack과 같은 방식(구체 오버랩 + 각도 필터).</summary>
@@ -646,6 +789,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         if (evo == SkillEvolutionId.Evolution3 && def.evoDashDamageBuff != null && buffManager != null)
             buffManager.ApplyBuff(def.evoDashDamageBuff);
+
+        ClearPendingSkill(); // 8.24 WBH 추가. 대쉬 종료 시, 기존 스킬
 
         if (stateMachine.Is(PlayerState.Skill))
             stateMachine.ChangeState(PlayerState.Idle);
