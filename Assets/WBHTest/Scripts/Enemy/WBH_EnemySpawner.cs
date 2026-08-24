@@ -8,8 +8,9 @@ public class WBH_EnemySpawner : MonoBehaviour
     private WBH_EnemyPoolManager enemyPool;
     private WBH_EffectPoolManager effectPool;
     private WBH_ProjectilePoolManager projectilePool;
-    private WBH_FloatTextPoolManager damageTextPool;
+    private WBH_FloatTextPoolManager floatTextPool;
     private WBH_HighEnemyHpbarView eliteView;
+    private PlayerWallet wallet;
 
     private float spawnNavSearchRadius = 2f;
 
@@ -20,15 +21,17 @@ public class WBH_EnemySpawner : MonoBehaviour
                            WBH_EffectPoolManager effectPool, 
                            WBH_ProjectilePoolManager projectilePool, 
                            Transform localPlayer, // eliteView 에만 사용
-                           WBH_FloatTextPoolManager damageTextPool,
-                           WBH_HighEnemyHpbarView eliteView)
+                           WBH_FloatTextPoolManager floatTextPool,
+                           WBH_HighEnemyHpbarView eliteView,
+                           PlayerWallet wallet)
     {
         this.enemyPool = poolManager;
         this.effectPool = effectPool;
         this.projectilePool = projectilePool;
-        this.damageTextPool = damageTextPool;
+        this.floatTextPool = floatTextPool;
         this.eliteView = eliteView;
         this.eliteView.Initialize(localPlayer);
+        this.wallet = wallet;
     }
 
     public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint, Transform target)
@@ -63,7 +66,8 @@ public class WBH_EnemySpawner : MonoBehaviour
 
         enemy.GetComponent<WBH_EffectSpawner>().Initialize(effectPool);
         enemy.GetComponent<WBH_ProjectileSpawner>().Initialize(projectilePool);
-        enemy.GetComponent<WBH_EnemyView>().Initialize(damageTextPool, eliteView);
+        enemy.GetComponent<EnemyKillReward>()?.Initialize(wallet);
+        enemy.GetComponent<WBH_EnemyView>().Initialize(floatTextPool, eliteView);
 
         enemy.Initialize(info, enemyPool);
 

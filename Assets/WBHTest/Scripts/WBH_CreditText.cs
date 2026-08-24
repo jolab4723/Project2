@@ -44,7 +44,7 @@ public class WBH_CreditText : MonoBehaviour
         transform.position = startPos;
         transform.localScale = Vector3.one * startScale;
 
-        creditText.text = $"+{amount: N0} Credit";
+        creditText.text = $"+{amount} Credit";
 
         Color initialColor = textColor;
         initialColor.a = 0f;

@@ -16,7 +16,7 @@ Knockback Motion (★★★★★)
 public class WBH_EnemyView : MonoBehaviour
 {
     [SerializeField] private Transform damageTextRoot;
-    [SerializeField] private Transform creditTextRoot;
+    [SerializeField] private Vector2 creditTextOffset = new Vector2(1f, -0.25f);
 
     [Header("Hp Bar")]
     [SerializeField] private GameObject hpBarRoot;
@@ -55,11 +55,6 @@ public class WBH_EnemyView : MonoBehaviour
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
         killReward = GetComponent<EnemyKillReward>();
-
-        if(creditTextRoot == null)
-        {
-            creditTextRoot = damageTextRoot;
-        }
 
         mainCamera = Camera.main;
 
@@ -160,9 +155,15 @@ public class WBH_EnemyView : MonoBehaviour
 
         WBH_CreditText creditText = poolManager.GetCreditText();
 
-        Vector3 position = creditTextRoot != null ? creditTextRoot.position : transform.position + Vector3.up;
+        Vector3 basePosition = damageTextRoot != null ? damageTextRoot.position : transform.position + Vector3.up;
 
-        creditText.Show(position, amount);
+        Camera targetCam = mainCamera != null ? mainCamera : Camera.main;
+
+        Vector3 offset = targetCam != null ? 
+            targetCam.transform.right * creditTextOffset.x + targetCam.transform.up * creditTextOffset.y 
+            : Vector3.right * creditTextOffset.x + Vector3.down * - creditTextOffset.y;
+
+        creditText.Show(basePosition + offset, amount);
     }
 
     // 노말, 어드밴스드 적 hp 바 갱신

@@ -24,7 +24,7 @@ public class WBH_EnemyInfo
 
     // 보상
     public int exp;
-    public int gold;
+    public int credit;
 
     // 패턴
     public int patternID;

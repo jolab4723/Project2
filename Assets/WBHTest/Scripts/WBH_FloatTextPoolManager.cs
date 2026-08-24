@@ -63,7 +63,7 @@ public class WBH_FloatTextPoolManager : MonoBehaviour
 
     public void ReturnDamageText(WBH_DamageText instance)
     {
-        if (instance = null)
+        if (instance == null)
             return;
 
         instance.gameObject.SetActive(false);
@@ -72,7 +72,7 @@ public class WBH_FloatTextPoolManager : MonoBehaviour
 
     public void ReturnCreditText(WBH_CreditText instance)
     {
-        if (instance = null)
+        if (instance == null)
             return;
 
         instance.gameObject.SetActive(false);

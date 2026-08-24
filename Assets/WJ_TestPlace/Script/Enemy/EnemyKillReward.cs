@@ -40,6 +40,11 @@ public sealed class EnemyKillReward : MonoBehaviour
             status.OnDamaged -= HandleDamaged;
     }
 
+    public void Initialize(PlayerWallet wallet)
+    {
+        this.wallet = wallet;
+    }
+
     private void HandleDamaged(WBH_DamageResult result)
     {
         if (hasGrantedReward || status.CurrentHp > 0f)
@@ -56,7 +61,7 @@ public sealed class EnemyKillReward : MonoBehaviour
         hasGrantedReward = true;
 
         GrantExp(enemyInfo.exp);
-        GrantCredit(enemyInfo.exp);
+        GrantCredit(enemyInfo.credit);
     }
 
     private void GrantExp(int amount)
@@ -73,6 +78,6 @@ public sealed class EnemyKillReward : MonoBehaviour
             return;
 
         wallet.AddGold(amount);
-        OnCreditGranted(amount);
+        OnCreditGranted?.Invoke(amount);
     }
 }

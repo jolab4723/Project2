@@ -29,6 +29,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private WBH_FloatTextPoolManager damagePool;
     
     private YJ_PortalActive portalActive;
+    private PlayerWallet wallet;
 
     private int currentWave = -1;
     private int aliveEnemyCount;
@@ -46,6 +47,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         player = FindAnyObjectByType<T_PlayerController>().transform;
 
         portalActive = FindAnyObjectByType<YJ_PortalActive>();
+        wallet = FindFirstObjectByType < PlayerWallet>();
     }
 
     private void OnEnable()
@@ -67,7 +69,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView);
+            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView, wallet);
         }
     }
 
