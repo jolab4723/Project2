@@ -1959,7 +1959,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514707019182875549, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00092163554
+      value: 0.0010102626
       objectReference: {fileID: 0}
     - target: {fileID: 3700761160952745310, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -2368,7 +2368,6 @@ Transform:
   - {fileID: 246044473}
   - {fileID: 2088954052}
   - {fileID: 1041979786}
-  - {fileID: 8934350094353018308}
   - {fileID: 1428467201}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3711,7 +3710,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8934350094353018308}
   m_Father: {fileID: 1375811228}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1025098537758885
@@ -5410,7 +5410,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1375811228}
+    m_TransformParent: {fileID: 2088954052}
     m_Modifications:
     - target: {fileID: 234443895279649271, guid: 35e7f8aa6395b2248bebaed516a2a57e, type: 3}
       propertyPath: m_Name

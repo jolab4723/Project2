@@ -5,6 +5,7 @@ using Core;
 public class YJ_PortalSceneLoader : MonoBehaviour
 {
     public string loadSceneName = "StageSelect";
+    [SerializeField] private string clearSceneName = "ClearScene";
     [SerializeField] private bool completePendingStage = true;
     [SerializeField] private YJ_StageManager stageManager;
     [SerializeField] private YJ_PortalEffect portalEffect;
@@ -31,29 +32,37 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
         transitionRequested = true;
 
-        if (completePendingStage && ! CompletePendingStage())
+        string destinationSceneName = loadSceneName;
+        if (completePendingStage &&
+            ! CompletePendingStage(out destinationSceneName))
         {
             transitionRequested = false;
             return;
         }
 
-        StartCoroutine(PlayEffectAndLoadScene(other.gameObject));
+        StartCoroutine(PlayEffectAndLoadScene(
+            other.gameObject,
+            destinationSceneName));
     }
 
-    private IEnumerator PlayEffectAndLoadScene(GameObject player)
+    private IEnumerator PlayEffectAndLoadScene(
+        GameObject player,
+        string destinationSceneName)
     {
         if (portalEffect != null)
             yield return portalEffect.PlayOnce(player);
 
-        LoadScene(loadSceneName);
+        LoadScene(destinationSceneName);
     }
 
     /// <summary>
     /// 로컬 JSON의 pending 노드를 완료 처리합니다.
     /// 저장 파일이 없는 직접 실행 테스트에서는 완료 처리를 생략합니다.
     /// </summary>
-    private bool CompletePendingStage()
+    private bool CompletePendingStage(out string destinationSceneName)
     {
+        destinationSceneName = loadSceneName;
+
         YJ_StageSaveService saveService =
             FindFirstObjectByType<YJ_StageSaveService>();
         if (saveService == null)
@@ -65,7 +74,48 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
         }
 
-        return saveService.CompletePendingNode();
+        if (!saveService.CompletePendingNode(
+                out StageNodeSaveData completedNode,
+                out StageActType completedAct))
+        {
+            return false;
+        }
+
+        if (completedNode == null || completedNode.type != StageNodeType.Boss)
+            return true;
+
+        if (TryGetNextAct(completedAct, out StageActType nextAct))
+            return saveService.PrepareNewAct(nextAct);
+
+        if (completedAct == StageActType.Act3)
+        {
+            destinationSceneName = clearSceneName;
+            return true;
+        }
+
+        Log.Error($"보스 클리어 후 이동 경로가 없는 Act입니다: {completedAct}");
+        return false;
+    }
+
+    /// <summary>
+    /// Act1과 Act2의 다음 Act를 반환합니다. Act3은 클리어 씬으로 이동하므로 false입니다.
+    /// </summary>
+    private static bool TryGetNextAct(
+        StageActType completedAct,
+        out StageActType nextAct)
+    {
+        switch (completedAct)
+        {
+            case StageActType.Act1:
+                nextAct = StageActType.Act2;
+                return true;
+            case StageActType.Act2:
+                nextAct = StageActType.Act3;
+                return true;
+            default:
+                nextAct = default;
+                return false;
+        }
     }
 
     /// <summary>
