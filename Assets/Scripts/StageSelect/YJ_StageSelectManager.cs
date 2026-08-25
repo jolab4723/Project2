@@ -78,6 +78,10 @@ public class YJ_StageSelectManager : MonoBehaviour
     [Header("Scene Transition")]
     // Reticle 애니메이션 종료 후 선택한 노드의 씬을 불러오는 테스트용 로더입니다.
     [SerializeField] private YJ_TestSceneLoader testSceneLoader;
+    // Normal/Elite, Camp, Boss 노드에서 사용할 씬 이름을 Act별로 관리합니다.
+    [FormerlySerializedAs("combatScenesByAct")]
+    [SerializeField] private List<ActSceneList> stageScenesByAct =
+        CreateDefaultStageSceneLists();
     // Event 노드에 맵 생성 시점부터 고정 이벤트를 배정할 데이터베이스입니다.
     [SerializeField] private YJ_UnknownStageDatabaseSO unknownStageDatabase;
 
@@ -265,6 +269,38 @@ public class YJ_StageSelectManager : MonoBehaviour
         Canvas.ForceUpdateCanvases();
         if (mapScrollRect != null)
             mapScrollRect.verticalNormalizedPosition = 0f;
+    }
+
+    /// <summary>
+    /// 이전 Act의 진행 상태를 제거하고 지정한 Act의 첫 층부터 시작하는 새 맵을 생성합니다.
+    /// </summary>
+    public bool GenerateNewActMap(StageActType act)
+    {
+        if (!Enum.IsDefined(typeof(StageActType), act))
+        {
+            Debug.LogError($"Unknown Act value {act}.", this);
+            return false;
+        }
+
+        currentAct = act;
+        mapSeed = 0;
+        clearedFloor = 0;
+        lastClearedNodeId = string.Empty;
+
+        nodeReticle?.Hide();
+        mapScrollRect?.StopMovement();
+        GenerateMap();
+
+        if (generatedFloors.Count != currentRules.floorCount)
+            return false;
+
+        foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
+        {
+            if (floorNodes == null || floorNodes.Count == 0)
+                return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1074,10 +1110,12 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     private string ResolveInitialNodeSceneName(StageNodeType nodeType)
     {
+        ActSceneList sceneList = GetStageSceneList(currentAct);
+
         return nodeType switch
         {
-            StageNodeType.Camp => $"{currentAct}_Camp",
-            StageNodeType.Boss => $"{currentAct}_BossStage",
+            StageNodeType.Camp => sceneList?.CampSceneName ?? string.Empty,
+            StageNodeType.Boss => sceneList?.BossSceneName ?? string.Empty,
             StageNodeType.Event => UnknownMasterSceneName,
             _ => string.Empty
         };
@@ -1251,8 +1289,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 현재 Act의 전투 씬 중 아직 사용하지 않은 씬을 무작위로 선택합니다.
-    /// 모든 씬을 사용했다면 전체 전투 씬 중 하나를 다시 선택합니다.
+    /// Inspector에 등록된 현재 Act의 전투 씬 중 아직 사용하지 않은 씬을 무작위로 선택합니다.
+    /// 모든 등록 씬을 사용했다면 현재 Act 목록 중 하나를 다시 선택합니다.
     /// </summary>
     private string GetUnusedCombatSceneName()
     {
@@ -1264,13 +1302,10 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         availableStageSceneNames.Clear();
 
-        int sceneCount = GetCombatSceneCount(currentAct);
-        for (int sceneNumber = 1; sceneNumber <= sceneCount; sceneNumber++)
-        {
-            string sceneName = CreateCombatSceneName(currentAct, sceneNumber);
-            if (!usedStageSceneNames.Contains(sceneName))
-                availableStageSceneNames.Add(sceneName);
-        }
+        CollectConfiguredCombatSceneNames(
+            currentAct,
+            false,
+            availableStageSceneNames);
 
         string selectedSceneName;
         if (availableStageSceneNames.Count > 0)
@@ -1280,8 +1315,20 @@ public class YJ_StageSelectManager : MonoBehaviour
         }
         else
         {
-            int sceneNumber = random.Next(1, sceneCount + 1);
-            selectedSceneName = CreateCombatSceneName(currentAct, sceneNumber);
+            CollectConfiguredCombatSceneNames(
+                currentAct,
+                true,
+                availableStageSceneNames);
+
+            if (availableStageSceneNames.Count == 0)
+            {
+                Log.Error(
+                    $"{currentAct}에 등록된 Normal/Elite 전투 씬이 없습니다.");
+                return string.Empty;
+            }
+
+            selectedSceneName =
+                availableStageSceneNames[random.Next(availableStageSceneNames.Count)];
             Log.Warning(
                 $"{currentAct}의 미사용 전투 씬이 없어 {selectedSceneName} 씬을 다시 사용합니다.");
         }
@@ -1304,7 +1351,7 @@ public class YJ_StageSelectManager : MonoBehaviour
         {
             foreach (string sceneName in saveData.usedStageSceneNames)
             {
-                if (IsCombatSceneNameForAct(sceneName, currentAct))
+                if (IsConfiguredCombatSceneName(sceneName, currentAct))
                     usedStageSceneNames.Add(sceneName);
             }
         }
@@ -1319,7 +1366,7 @@ public class YJ_StageSelectManager : MonoBehaviour
                 || nodeData.id == saveData.pendingNodeId;
 
             if (hasBeenUsed &&
-                IsCombatSceneNameForAct(nodeData.sceneName, currentAct))
+                IsConfiguredCombatSceneName(nodeData.sceneName, currentAct))
             {
                 usedStageSceneNames.Add(nodeData.sceneName);
                 continue;
@@ -1339,41 +1386,79 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Act별 전투 스테이지 씬 개수를 반환합니다.
+    /// 현재 Act에 등록된 전투 씬을 결과 목록에 중복 없이 추가합니다.
+    /// 아직 사용하지 않은 씬만 필요하면 includeUsedScenes를 false로 전달합니다.
     /// </summary>
-    private static int GetCombatSceneCount(StageActType act)
-    {
-        return GetRules(act).floorCount;
-    }
-
-    /// <summary>
-    /// Act와 번호를 이용해 Act1_Stage1 형식의 전투 씬 이름을 만듭니다.
-    /// </summary>
-    private static string CreateCombatSceneName(
+    private void CollectConfiguredCombatSceneNames(
         StageActType act,
-        int sceneNumber)
+        bool includeUsedScenes,
+        List<string> result)
     {
-        return $"{act}_Stage{sceneNumber}";
+        result.Clear();
+
+        ActSceneList sceneList = GetStageSceneList(act);
+        if (sceneList == null || sceneList.CombatSceneNames == null)
+            return;
+
+        foreach (string configuredSceneName in sceneList.CombatSceneNames)
+        {
+            if (string.IsNullOrWhiteSpace(configuredSceneName))
+                continue;
+
+            string sceneName = configuredSceneName.Trim();
+            if ((!includeUsedScenes && usedStageSceneNames.Contains(sceneName)) ||
+                result.Contains(sceneName))
+            {
+                continue;
+            }
+
+            result.Add(sceneName);
+        }
     }
 
     /// <summary>
-    /// 씬 이름이 해당 Act의 유효한 전투 씬 범위에 포함되는지 확인합니다.
+    /// 지정한 Act에 대응하는 Inspector 전투 씬 목록을 반환합니다.
     /// </summary>
-    private static bool IsCombatSceneNameForAct(
+    private ActSceneList GetStageSceneList(StageActType act)
+    {
+        if (stageScenesByAct == null)
+            return null;
+
+        foreach (ActSceneList sceneList in stageScenesByAct)
+        {
+            if (sceneList != null && sceneList.Act == act)
+                return sceneList;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 씬 이름이 해당 Act의 Inspector 전투 씬 목록에 포함되는지 확인합니다.
+    /// </summary>
+    private bool IsConfiguredCombatSceneName(
         string sceneName,
         StageActType act)
     {
         if (string.IsNullOrWhiteSpace(sceneName))
             return false;
 
-        string prefix = $"{act}_Stage";
-        if (!sceneName.StartsWith(prefix, StringComparison.Ordinal))
+        ActSceneList sceneList = GetStageSceneList(act);
+        if (sceneList == null || sceneList.CombatSceneNames == null)
             return false;
 
-        string numberText = sceneName.Substring(prefix.Length);
-        return int.TryParse(numberText, out int sceneNumber)
-            && sceneNumber >= 1
-            && sceneNumber <= GetCombatSceneCount(act);
+        foreach (string configuredSceneName in sceneList.CombatSceneNames)
+        {
+            if (string.Equals(
+                configuredSceneName?.Trim(),
+                sceneName.Trim(),
+                StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -1632,6 +1717,47 @@ public class YJ_StageSelectManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 현재 프로젝트에 존재하는 Act별 전투 씬을 Inspector 기본값으로 제공합니다.
+    /// 새 전투 씬은 Inspector의 해당 Act 목록에 추가할 수 있습니다.
+    /// </summary>
+    private static List<ActSceneList> CreateDefaultStageSceneLists()
+    {
+        return new List<ActSceneList>
+        {
+            new(
+                StageActType.Act1,
+                "Act1_Camp",
+                "Act1_BossStage",
+                "Act1_Stage1",
+                "Act1_Stage2",
+                "Act1_Stage3",
+                "Act1_Stage4",
+                "Act1_Stage5",
+                "Act1_Stage6"),
+            new(
+                StageActType.Act2,
+                "Act2_Camp",
+                "Act2_BossStage",
+                "Act2_Stage1",
+                "Act2_Stage2",
+                "Act2_Stage3",
+                "Act2_Stage4",
+                "Act2_Stage5",
+                "Act2_Stage6"),
+            new(
+                StageActType.Act3,
+                "Act3_Camp",
+                "Act3_BossStage",
+                "Act3_Stage1",
+                "Act3_Stage2",
+                "Act3_Stage3",
+                "Act3_Stage4",
+                "Act3_Stage5",
+                "Act3_Stage6")
+        };
+    }
+
+    /// <summary>
     /// 요청한 Act에 대응하는 고정 생성 규칙을 반환합니다.
     /// </summary>
     private static ActRules GetRules(StageActType act)
@@ -1680,6 +1806,38 @@ public class YJ_StageSelectManager : MonoBehaviour
             this.eliteWeight = eliteWeight;
             this.campWeight = campWeight;
             this.eventWeight = eventWeight;
+        }
+    }
+
+    /// <summary>
+    /// 한 Act와 해당 Act의 Normal/Elite, Camp, Boss 씬을 묶는 Inspector 데이터입니다.
+    /// </summary>
+    [Serializable]
+    private sealed class ActSceneList
+    {
+        [SerializeField] private StageActType act;
+        [FormerlySerializedAs("sceneNames")]
+        [SerializeField] private List<string> combatSceneNames = new();
+        [SerializeField] private string campSceneName;
+        [SerializeField] private string bossSceneName;
+
+        public StageActType Act => act;
+        public List<string> CombatSceneNames => combatSceneNames;
+        public string CampSceneName => campSceneName?.Trim();
+        public string BossSceneName => bossSceneName?.Trim();
+
+        public ActSceneList(
+            StageActType act,
+            string campSceneName,
+            string bossSceneName,
+            params string[] combatSceneNames)
+        {
+            this.act = act;
+            this.campSceneName = campSceneName;
+            this.bossSceneName = bossSceneName;
+            this.combatSceneNames = combatSceneNames != null
+                ? new List<string>(combatSceneNames)
+                : new List<string>();
         }
     }
 }

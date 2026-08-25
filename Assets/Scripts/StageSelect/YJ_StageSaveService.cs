@@ -88,8 +88,23 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     public bool CompletePendingNode()
     {
+        return CompletePendingNode(out _, out _);
+    }
+
+    /// <summary>
+    /// pending 노드를 완료하고 완료한 노드 및 Act를 씬 전환 흐름에 전달합니다.
+    /// </summary>
+    public bool CompletePendingNode(
+        out StageNodeSaveData completedNode,
+        out StageActType completedAct)
+    {
+        completedNode = null;
+        completedAct = default;
+
         if (!TryLoadSaveData(out StageMapSaveData saveData))
             return false;
+
+        completedAct = saveData.act;
 
         if (string.IsNullOrWhiteSpace(saveData.pendingNodeId))
         {
@@ -97,7 +112,7 @@ public class YJ_StageSaveService : MonoBehaviour
             return true;
         }
 
-        StageNodeSaveData completedNode = saveData.nodes.Find(
+        completedNode = saveData.nodes.Find(
             node => node != null && node.id == saveData.pendingNodeId);
         if (completedNode == null)
         {
@@ -117,6 +132,26 @@ public class YJ_StageSaveService : MonoBehaviour
             completedNode.floor);
         saveData.lastClearedNodeId = completedNode.id;
         saveData.pendingNodeId = string.Empty;
+
+        return WriteSaveData(saveData);
+    }
+
+    /// <summary>
+    /// 다음 StageSelect 진입 시 지정한 Act의 새 맵을 생성하도록 저장 상태를 교체합니다.
+    /// </summary>
+    public bool PrepareNewAct(StageActType nextAct)
+    {
+        if (!Enum.IsDefined(typeof(StageActType), nextAct))
+        {
+            Log.Error($"새로 시작할 Act 값이 올바르지 않습니다: {nextAct}");
+            return false;
+        }
+
+        StageMapSaveData saveData = new()
+        {
+            act = nextAct,
+            startNewAct = true
+        };
 
         return WriteSaveData(saveData);
     }
@@ -198,6 +233,24 @@ public class YJ_StageSaveService : MonoBehaviour
         if (!TryLoadSaveData(out StageMapSaveData saveData))
             return false;
 
+        if (saveData.startNewAct)
+        {
+            if (!stageSelectManager.GenerateNewActMap(saveData.act))
+            {
+                Log.Error($"{saveData.act}의 새 스테이지 맵 생성에 실패했습니다.");
+                return false;
+            }
+
+            if (!SaveCurrentMap())
+            {
+                Log.Error($"{saveData.act}의 새 스테이지 맵 저장에 실패했습니다.");
+                return false;
+            }
+
+            Log.Print($"{saveData.act}의 첫 층부터 새 스테이지 맵을 시작합니다.");
+            return true;
+        }
+
         bool restored = stageSelectManager.RestoreMap(saveData);
         if (restored)
             Log.Print($"스테이지 맵 불러오기 완료: {SavePath}");
@@ -235,7 +288,22 @@ public class YJ_StageSaveService : MonoBehaviour
                 json,
                 SerializerSettings);
 
-            if (saveData == null || saveData.nodes == null || saveData.nodes.Count == 0)
+            if (saveData == null)
+            {
+                Log.Error("스테이지 맵 저장 파일의 데이터가 비어 있습니다.");
+                return false;
+            }
+
+            if (saveData.saveVersion != 1 ||
+                !Enum.IsDefined(typeof(StageActType), saveData.act))
+            {
+                Log.Error("스테이지 맵 저장 파일의 버전 또는 Act 값이 올바르지 않습니다.");
+                saveData = null;
+                return false;
+            }
+
+            if (!saveData.startNewAct &&
+                (saveData.nodes == null || saveData.nodes.Count == 0))
             {
                 Log.Error("스테이지 맵 저장 파일에 노드 데이터가 없습니다.");
                 saveData = null;
