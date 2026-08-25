@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import bpy
+import bmesh
 from mathutils import Vector
 
 
@@ -24,8 +25,10 @@ VALIDATION_PATH = PRODUCTION / "validation.json"
 MODEL_SCALE = 0.78
 TARGET_STAGE_1 = 100_000
 TARGET_STAGE_2 = 60_000
+LOWER_MUZZLE_OFFSET_Y = -0.08
 
-# H3 raw: +X muzzle, +Z up, +Y width. Final: +Z muzzle, +Y up, +X width.
+# H3 raw: the real muzzle is -X; Tripo incorrectly added muzzle-like stock details at +X.
+# Final: +Z real muzzle, +Y up, +X width.
 # Both grip coordinates are visually measured centers of real modeled grip surfaces.
 ROOT_GRIP_RAW = Vector((-0.160000, 0.0, -0.068000))
 MUZZLE_RAW = Vector((0.500000, 0.0, 0.030000))
@@ -87,7 +90,7 @@ def import_and_transform() -> tuple[bpy.types.Object, dict]:
     obj.scale = (1.0, 1.0, 1.0)
     return obj, {
         "raw_bounds": {"min": v3(raw_min), "max": v3(raw_max), "dimensions": v3(raw_max - raw_min)},
-        "mapping": "raw (X,Y,Z) -> final (Y,Z,X), scale 0.78, origin at physical rear activation grip center",
+        "mapping": "raw (X,Y,Z) -> working (Y,Z,X), scale 0.78, trigger-grip origin; final repair bakes working Y=180 degrees so actual raw -X muzzle becomes final +Z",
     }
 
 
@@ -130,61 +133,19 @@ def save_image(image: bpy.types.Image, destination: Path, colorspace: str) -> di
     return {"source_name": image.name, "path": str(destination.relative_to(ROOT)), "size": list(image.size), "colorspace": colorspace}
 
 
-def in_functional_envelope(center: Vector) -> bool:
-    # Final root-local coordinates. These volumes contain only the connected
-    # twin magnetic rail strips, the central hex core and the paired muzzle
-    # cores. The production FBX is visually flipped by Model Y=180 in the Unity
-    # wrapper, so the authored barrel/rail geometry is on local -Z, not +Z.
-    rail = -0.265 <= center.z <= -0.015 and 0.030 <= center.y <= 0.150
-    hex_core = -0.030 <= center.z <= 0.030 and -0.060 <= center.y <= 0.170
-    muzzle_core = -0.265 <= center.z <= -0.220 and 0.020 <= center.y <= 0.160
-    return rail or hex_core or muzzle_core
-
-
-def create_emission(body: bpy.types.Object, base_path: Path) -> tuple[bpy.types.Image, dict]:
-    base = find_image("Color_")
-    width, height = base.size
-    uv_layer = body.data.uv_layers.active
-    if uv_layer is None:
-        raise RuntimeError("Emission reconstruction requires original H3 UVs")
-    original_uv_index = body.data.uv_layers.active_index
-    emission_uv = body.data.uv_layers.get("RailEmissionUV")
-    if emission_uv is None:
-        emission_uv = body.data.uv_layers.new(name="RailEmissionUV", do_init=True)
-    polygons = []
-    for polygon in body.data.polygons:
-        functional = in_functional_envelope(polygon.center)
-        if not functional:
-            for loop_index in polygon.loop_indices:
-                emission_uv.data[loop_index].uv = (0.001, 0.001)
-            continue
-        uv_points = []
-        for loop_index in polygon.loop_indices:
-            uv = uv_layer.data[loop_index].uv
-            uv_points.append([round(float(uv.x * (width - 1)), 3), round(float((1.0 - uv.y) * (height - 1)), 3)])
-        if len(uv_points) >= 3:
-            polygons.append(uv_points)
-    body.data.uv_layers.active_index = original_uv_index
-    uv_layer.active_render = True
-    envelopes = [
-        {"name": "twin_magnetic_rails", "z": [-0.265, -0.015], "y": [0.030, 0.150]},
-        {"name": "receiver_hex_core", "z": [-0.030, 0.030], "y": [-0.060, 0.170]},
-        {"name": "paired_muzzle_hex_cores", "z": [-0.265, -0.220], "y": [0.020, 0.160]},
-    ]
-    region_path = QA / "emission_uv_functional_regions.json"
+def create_emission(base_path: Path) -> tuple[bpy.types.Image, dict]:
     report_path = QA / "emission_mask_report.json"
     output_path = TEXTURES / f"{ITEM_ID}_Emission.png"
-    region_path.write_text(json.dumps({"functional_envelopes": envelopes, "uv_polygons": polygons}, ensure_ascii=False), encoding="utf-8")
     subprocess.run([
         "python", str(PRODUCTION / "build_emission_mask.py"),
-        "--base", str(base_path), "--regions", str(region_path),
+        "--base", str(base_path),
         "--output", str(output_path), "--report", str(report_path),
     ], check=True)
     emission = bpy.data.images.load(str(output_path), check_existing=False)
     emission.name = "RailCarbine_Emission"
     emission.colorspace_settings.name = "sRGB"
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    report.update({"path": str(output_path.relative_to(ROOT)), "regions_path": str(region_path.relative_to(ROOT)), "report_path": str(report_path.relative_to(ROOT))})
+    report.update({"path": str(output_path.relative_to(ROOT)), "report_path": str(report_path.relative_to(ROOT))})
     return emission, report
 
 
@@ -200,7 +161,7 @@ def configure_material(body: bpy.types.Object) -> tuple[dict, list[dict]]:
         save_image(normal, TEXTURES / f"{ITEM_ID}_Normal.png", "Non-Color"),
         save_image(orm, TEXTURES / f"{ITEM_ID}_ORM.png", "Non-Color"),
     ]
-    emission, emission_record = create_emission(body, base_path)
+    emission, emission_record = create_emission(base_path)
     records.append(emission_record)
     nodes, links = material.node_tree.nodes, material.node_tree.links
     principled = next((node for node in nodes if node.bl_idname == "ShaderNodeBsdfPrincipled"), None)
@@ -208,14 +169,10 @@ def configure_material(body: bpy.types.Object) -> tuple[dict, list[dict]]:
         raise RuntimeError("No Principled BSDF in imported material")
     node = nodes.new("ShaderNodeTexImage")
     node.name = "RailCarbine Emission Map"
-    node.label = "UV-bounded cyan magnetic rails and hex cores"
+    node.label = "Base Color cyan material mask"
     node.image = emission
     node.interpolation = "Linear"
     node.extension = "CLIP"
-    uv_node = nodes.new("ShaderNodeUVMap")
-    uv_node.name = "RailCarbine Emission UV"
-    uv_node.uv_map = "RailEmissionUV"
-    links.new(uv_node.outputs["UV"], node.inputs["Vector"])
     links.new(node.outputs["Color"], principled.inputs["Emission Color"])
     principled.inputs["Emission Strength"].default_value = 4.0
     principled.inputs["Alpha"].default_value = 1.0
@@ -242,6 +199,166 @@ def decimate(body: bpy.types.Object, target: int, label: str) -> dict:
     bpy.ops.object.modifier_apply(modifier=modifier.name)
     body.select_set(False)
     return {"label": label, "before": before, "target": target, "after": triangle_count(body), "ratio": round(target / float(before), 8)}
+
+
+def connected_components(body: bpy.types.Object) -> list[dict]:
+    mesh = body.data
+    parent = list(range(len(mesh.vertices)))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parent[right_root] = left_root
+
+    for edge in mesh.edges:
+        union(edge.vertices[0], edge.vertices[1])
+
+    grouped: dict[int, list[int]] = {}
+    for vertex in mesh.vertices:
+        grouped.setdefault(find(vertex.index), []).append(vertex.index)
+
+    records = []
+    for root_index, indices in grouped.items():
+        points = [mesh.vertices[index].co for index in indices]
+        minimum = Vector((min(point[axis] for point in points) for axis in range(3)))
+        maximum = Vector((max(point[axis] for point in points) for axis in range(3)))
+        records.append({
+            "root_vertex": root_index,
+            "vertex_indices": indices,
+            "vertices": len(indices),
+            "min": minimum,
+            "max": maximum,
+            "center": (minimum + maximum) * 0.5,
+            "dimensions": maximum - minimum,
+        })
+    return records
+
+
+def select_vertices(body: bpy.types.Object, indices: set[int]) -> None:
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = body
+    body.select_set(True)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for vertex in body.data.vertices:
+        vertex.select = vertex.index in indices
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.context.tool_settings.mesh_select_mode = (True, False, False)
+
+
+def delete_mesh_vertices(body: bpy.types.Object, indices: set[int]) -> None:
+    mesh = body.data
+    work = bmesh.new()
+    work.from_mesh(mesh)
+    work.verts.ensure_lookup_table()
+    targets = [work.verts[index] for index in sorted(indices)]
+    bmesh.ops.delete(work, geom=targets, context="VERTS")
+    work.to_mesh(mesh)
+    work.free()
+    mesh.update()
+
+
+def repair_tripo_geometry(body: bpy.types.Object, muzzle: bpy.types.Object) -> dict:
+    before_triangles = triangle_count(body)
+    before_components = connected_components(body)
+    rear_fake_indices = {vertex.index for vertex in body.data.vertices if vertex.co.z > 0.49}
+    malformed_lower_front_components = [
+        component
+        for component in before_components
+        if (
+            component["max"].z < -0.055
+            and 0.02 <= component["center"].y < 0.105
+        ) or (
+            component["min"].z < -0.05
+            and component["max"].z < 0.04
+            and 0.07 <= component["center"].y < 0.105
+        )
+    ]
+    malformed_lower_front_indices = {
+        index
+        for component in malformed_lower_front_components
+        for index in component["vertex_indices"]
+    }
+    intact_upper_front_components = [
+        component
+        for component in before_components
+        if component["min"].z < 0.08
+        # The reusable rail itself ends at z~=0.02 in the working mesh.  The
+        # positive-z junction pieces are receiver geometry; duplicating them
+        # produced the white rectangular slab seen between the two rails.
+        and component["max"].z < 0.03
+        and 0.105 <= component["center"].y <= 0.15
+    ]
+    intact_upper_front_indices = {
+        index
+        for component in intact_upper_front_components
+        for index in component["vertex_indices"]
+    }
+    if not rear_fake_indices or not malformed_lower_front_indices or not intact_upper_front_indices:
+        raise RuntimeError(
+            "Railcarbine repair targets missing: "
+            f"rear_fake_vertices={len(rear_fake_indices)} "
+            f"malformed_lower_front_vertices={len(malformed_lower_front_indices)} "
+            f"intact_upper_front_vertices={len(intact_upper_front_indices)}"
+        )
+
+    # Copy the intact upper-front slab to a separate mesh first. This preserves its
+    # UVs/material exactly and avoids Edit Mode reindexing the original selection.
+    donor = body.copy()
+    donor.data = body.data.copy()
+    donor.name = "RailCarbine_LowerFront_Donor"
+    donor.data.name = "RailCarbine_LowerFront_Donor_Mesh"
+    bpy.context.scene.collection.objects.link(donor)
+    donor_remove = {
+        vertex.index for vertex in donor.data.vertices
+        if vertex.index not in intact_upper_front_indices
+    }
+    delete_mesh_vertices(donor, donor_remove)
+    for vertex in donor.data.vertices:
+        vertex.co.y += LOWER_MUZZLE_OFFSET_Y
+    donor.data.update()
+
+    delete_mesh_vertices(body, rear_fake_indices | malformed_lower_front_indices)
+
+    if not body.data.vertices or not donor.data.vertices:
+        raise RuntimeError(
+            f"Railcarbine repair unexpectedly emptied mesh: "
+            f"body={len(body.data.vertices)} donor={len(donor.data.vertices)}"
+        )
+
+    bpy.ops.object.select_all(action="DESELECT")
+    body.select_set(True)
+    donor.select_set(True)
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.join()
+    body.name = "RailCarbine_Body"
+    body.data.name = "RailCarbine_Body_Mesh"
+
+    for vertex in body.data.vertices:
+        vertex.co.x = -vertex.co.x
+        vertex.co.z = -vertex.co.z
+    body.data.update()
+    front_z = max(vertex.co.z for vertex in body.data.vertices)
+    muzzle.location = (0.0, 0.085, front_z)
+
+    after_triangles = triangle_count(body)
+    return {
+        "method": "remove Tripo fake rear muzzle vertices and whole disconnected malformed lower-front components; copy the intact upper rail/muzzle connected components as the lower rail with identical UV/material; bake 180-degree Y correction into mesh",
+        "rear_fake_vertices_removed": len(rear_fake_indices),
+        "malformed_lower_front_components_removed": len(malformed_lower_front_components),
+        "malformed_lower_front_vertices_removed": len(malformed_lower_front_indices),
+        "intact_upper_front_vertices_duplicated": len(intact_upper_front_indices),
+        "lower_muzzle_offset_y": LOWER_MUZZLE_OFFSET_Y,
+        "mesh_y_rotation_baked_degrees": 180,
+        "muzzle_local": v3(muzzle.location),
+        "triangles_before": before_triangles,
+        "triangles_after": after_triangles,
+    }
 
 
 def setup_qa(center: Vector, longest: float):
@@ -414,9 +531,13 @@ def main() -> None:
     export_fbx(root, backup)
     stage_2 = decimate(body, TARGET_STAGE_2, "60k")
     comparisons["60k"] = render_compare(scene, camera, center, longest, "60k")
+    geometry_repair = repair_tripo_geometry(body, bpy.data.objects["Muzzle"])
     final_triangles = triangle_count(body)
+    repaired_minimum, repaired_maximum = bounds([body])
+    repaired_center = (repaired_minimum + repaired_maximum) * 0.5
+    repaired_longest = max(repaired_maximum - repaired_minimum)
     material_record, texture_records = configure_material(body)
-    pbr_qa, emission_qa = render_final(scene, camera, center, longest, body)
+    pbr_qa, emission_qa = render_final(scene, camera, repaired_center, repaired_longest, body)
     grip_overlay = render_grip_overlay(scene, camera, root)
     bpy.ops.object.select_all(action="DESELECT")
     for obj in temporary:
@@ -446,16 +567,20 @@ def main() -> None:
         "no_camera_light_armature": not any(obj.type in {"CAMERA", "LIGHT", "ARMATURE"} for obj in bpy.context.scene.objects),
         "pbr_textures_present": all((ROOT / record["path"]).is_file() for record in texture_records),
         "emission_uv_only_no_added_mesh": not material_record["emission_geometry_added"],
+        "fake_rear_muzzles_removed": geometry_repair["rear_fake_vertices_removed"] > 0,
+        "malformed_front_attachment_removed": geometry_repair["malformed_lower_front_vertices_removed"] > 0,
+        "lower_muzzle_reuses_upper_front": geometry_repair["intact_upper_front_vertices_duplicated"] > 0,
         "under_100k_triangles": final_triangles <= 100_000,
         "reimport_verified": False,
     }
     validation = {
         "item_id": ITEM_ID, "generated_at": now(), "blender_version": bpy.app.version_string,
         "source": {"task_id": "00ad43b2-b329-4d92-a0b0-4976b07fc3ad", "type": "multiview_to_model", "credits_consumed": 30, "glb": str(RAW_GLB.relative_to(ROOT)), "triangles": imported_triangles},
-        "coordinate_contract": {"raw_muzzle": "+X", "raw_up": "+Z", "final_muzzle": "+Z", "final_up": "+Y", "root_origin": "actual rear activation-grip center"},
+        "coordinate_contract": {"raw_muzzle": "-X (the +X twin hex forms were erroneous stock decorations)", "raw_up": "+Z", "final_muzzle": "+Z", "final_up": "+Y", "root_origin": "actual trigger-grip center"},
         "transform": transform_record, "root": root.name, "mesh": body.name, "markers": marker_records,
         "bounds_root_local": {"min": v3(final_min), "max": v3(final_max), "dimensions": v3(final_max - final_min)},
-        "decimation": {"stages": [stage_1, stage_2], "selected": "60k", "final_triangles": final_triangles, "comparison_renders": comparisons, "selection_requires_visual_review": False, "selection_basis": "Direct side/isometric comparison confirms the 59,999-triangle result preserves the twin-rail silhouette, both physical grips, paired hex muzzle emitters and rear brace; 100k retained as backup", "backup_100k_fbx": str(backup.relative_to(ROOT))},
+        "decimation": {"stages": [stage_1, stage_2], "selected": "60k plus targeted component repair", "final_triangles": final_triangles, "comparison_renders": comparisons, "selection_requires_visual_review": False, "selection_basis": "60k preserves the twin-rail silhouette and both physical grips; targeted disconnected-component repair then removes the fake rear muzzles and malformed front attachment while reusing the intact upper muzzle cap for the lower rail", "backup_100k_fbx": str(backup.relative_to(ROOT))},
+        "geometry_repair": geometry_repair,
         "material": material_record, "textures": texture_records,
         "qa": {"neutral_pbr": pbr_qa, "emission_only": emission_qa, "grip_overlay_closeup": grip_overlay},
         "prohibited_objects": [obj.name for obj in bpy.context.scene.objects if obj.type in {"CAMERA", "LIGHT", "ARMATURE"}],

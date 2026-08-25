@@ -1,0 +1,148 @@
+{
+  "item_id": "item.weapon.shotgun.echovault",
+  "authoritative_design": "References/WebPreferred four-view set",
+  "source_task_id": "116ae7d0-7022-4808-9332-dda26f365bbd",
+  "source_retry": "front/back input slots swapped only; left/right unchanged",
+  "webpreferred_integrity": {
+    "front_sha256": "0f8e4b801501b135d3bff9835b715dbf36c84175daf6ff53a2b73645724db1c5",
+    "back_sha256": "3f841a2df2890e71cd9e5743a9ef71563fafd60744783c677d7865a0cc3a7978",
+    "left_sha256": "7b394adb80b6b00e6ac2ad30ea2165390c678685f5974900fcec45e4f665df57",
+    "right_sha256": "35006fb88912b72a1337592790238cccca2fd4bc0bcfbfb276abba75933aff80",
+    "prepared_active_matches_webpreferred": true,
+    "retry_left_right_byte_identical_to_webpreferred": true,
+    "new_design_or_rgb_mix": false
+  },
+  "webpreferred_visual_comparison": {
+    "front": "Matched: large centered circular muzzle, open bore, cyan segmented inner resonator ring, graphite outer collar.",
+    "rear": "Matched: neutral graphite ribbed buttpad in the deep-teal stock frame; no cyan oval fake face.",
+    "left_right": "Matched: skeletonized compact stock, slim trigger grip, black receiver bridge, smooth deep-teal fore-end, long segmented cyan resonance chamber, restrained muzzle clamp.",
+    "materials": "Matched graphite black, deep teal, restrained gunmetal, and designated cyan family. PBR reconstruction changes only lighting and micro-surface response, not the chosen design.",
+    "other_candidate_designs_mixed": false
+  },
+  "raw_gate": {
+    "status": "passed",
+    "muzzle_endpoint": "raw world -X",
+    "stock_endpoint": "raw world +X",
+    "muzzle_open_cavity": true,
+    "stock_neutral_buttpad": true,
+    "evidence": "../Tripo/RetryFrontBackSwap/RawQA/raw_world_*.png"
+  },
+  "production_model": {
+    "blend": {
+      "path": "item.weapon.shotgun.echovault.blend",
+      "bytes": 8732226,
+      "sha256": "fd902eeaefd2dfa2285741fc675107142445bbf6ca92551987be814b90d733a8"
+    },
+    "fbx": {
+      "path": "item.weapon.shotgun.echovault.fbx",
+      "bytes": 6961564,
+      "sha256": "799e9be43a24143bf04d7a4efd48e0064cc840be1c4a6888d6094b33d3e1e674"
+    },
+    "raw_triangles": 1440216,
+    "optimized_triangles": 179999,
+    "uv_layers": 1,
+    "material_slots": 1,
+    "root_count": 1,
+    "root_name": "item.weapon.shotgun.echovault",
+    "root_origin": [0.0, 0.0, 0.0],
+    "axis_contract": "+Z muzzle, +Y up",
+    "transforms_applied": true,
+    "negative_or_nonuniform_scale": false,
+    "camera_light_armature_collider": false,
+    "hierarchy": [
+      "item.weapon.shotgun.echovault/WeaponMesh",
+      "item.weapon.shotgun.echovault/RightHandGrip",
+      "item.weapon.shotgun.echovault/LeftHandGrip",
+      "item.weapon.shotgun.echovault/Muzzle"
+    ],
+    "markers": {
+      "RightHandGrip": {
+        "location": [0.0, 0.0, 0.0],
+        "rotation_euler_radians": [0.575959, 0.0, 0.0],
+        "basis": "actual trigger-grip center axis"
+      },
+      "LeftHandGrip": {
+        "location": [0.0, 0.045, 0.326],
+        "rotation_euler_radians": [0.0, 0.0, 0.0],
+        "basis": "fore-end contact center, 0.326 m muzzleward"
+      },
+      "Muzzle": {
+        "location": [0.0, 0.13, 0.67],
+        "rotation_euler_radians": [0.0, 0.0, 0.0],
+        "forward": [0.0, 0.0, 1.0],
+        "basis": "verified open bore center"
+      }
+    }
+  },
+  "textures": {
+    "BaseColor": {
+      "path": "Textures/BaseColor.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "colorspace": "sRGB",
+      "sha256": "89ad40a503526a54144148c1d74a53f8f2e227b00f5c971740ae4ff489f47084"
+    },
+    "Normal": {
+      "path": "Textures/Normal.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "colorspace": "Non-Color",
+      "sha256": "5b756e229a9314c3220e8a9b0a4288ad0598b6ca1d882f54333543da62b1d6eb"
+    },
+    "ORM": {
+      "path": "Textures/ORM.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "colorspace": "Non-Color",
+      "sha256": "6b8dfb1bf47bbde65bfb7006073dd3d234a7d1f4f86049ec5171b65b3a67c932"
+    },
+    "EmissionMask": {
+      "path": "Textures/EmissionMask.png",
+      "size": [2048, 2048],
+      "mode": "L",
+      "colorspace": "Non-Color",
+      "unique_values": [0, 255],
+      "selected_pixels": 119665,
+      "selected_percent": 2.85303593,
+      "sha256": "d473b865fad18f6baafd913d130e6ee5c56c1d5a7f1a7f880ff665c6b68a5430"
+    }
+  },
+  "emission": {
+    "source": "global BaseColor PNG texels only",
+    "srgb_threshold": "G>=175; B>=195; R<=125; G-R>=75; B-R>=90; HSV H=82..100; S>=100",
+    "uv_or_spatial_restriction": false,
+    "mesh_split_or_separate_uv": false,
+    "morphology_blur_dilation_erosion_raycast": false,
+    "target_srgb": [62, 217, 235],
+    "target_linear": [0.0481718242, 0.6938717613, 0.8307698768],
+    "strength": 2.5,
+    "same_family_secondary_emission": "Small receiver-ring and grip-foot texels remain included because they use the same authored bright-cyan family; gray, white, and weaker teal reflections are excluded by RGB-only thresholds."
+  },
+  "fbx_reimport": {
+    "status": "passed",
+    "evidence_blend": "QA/item.weapon.shotgun.echovault_fbx_reimport.blend",
+    "root_count": 1,
+    "object_count": 5,
+    "triangles": 179999,
+    "uv_layers": 1,
+    "material_slots": 1,
+    "dimensions": [0.136137, 0.283572, 0.999981],
+    "marker_positions_and_rotations_preserved": true,
+    "muzzle_forward": [0.0, 0.0, 1.0],
+    "negative_or_nonuniform_scale": false,
+    "camera_light_armature_collider": false,
+    "fbx_material_note": "FBX reimport resolves BaseColor and Normal. ORM and the binary EmissionMask remain explicit external handoff textures and the complete PBR/emission node setup is preserved in the production .blend for Unity material remap."
+  },
+  "qa_renders": [
+    "QA/production_muzzle_pos_z.png",
+    "QA/production_stock_neg_z.png",
+    "QA/production_left_neg_x.png",
+    "QA/production_right_pos_x.png",
+    "QA/production_muzzle_left.png",
+    "QA/production_muzzle_right.png",
+    "QA/production_stock_left.png",
+    "QA/production_stock_right.png"
+  ],
+  "unity_modified": false,
+  "new_tripo_submission_after_retry": false
+}

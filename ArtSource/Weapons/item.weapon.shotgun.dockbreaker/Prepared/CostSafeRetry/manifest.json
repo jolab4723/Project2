@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.shotgun.dockbreaker",
+  "purpose": "Cost-free H3 retry candidate with ambiguous trigger-area structures removed before any paid submission.",
+  "design": "Charcoal and safety orange broad simple shockwave shotgun; no emission.",
+  "sourceDirectory": "ArtSource/Weapons/item.weapon.shotgun.dockbreaker/Prepared/TripoInput",
+  "sourceHashes": {
+    "front": "d249f300a8024c0556fa354ab977bb11ddf6c5d2f548685b05a464f39bac3f3d",
+    "back": "16f67c95ad20e09015fe6a6763821949cae82be913ff2f31ec3b96bdeb87c8f2",
+    "left": "9f7a793294493d7eb61684fda44f9dcbae8a17278fe77eb0c338753851dc2a18",
+    "right": "6a77cb2ad9839e6f4670005c220f005fea6fa55ae74510a2da7f411c215fd23f"
+  },
+  "operations": [
+    "Preserve the approved weapon body, palette, material rendering, muzzle, stock, and support fore-end.",
+    "Normalize every fully transparent pixel to RGBA(0,0,0,0), removing all hidden RGB including discarded mini-view pixels.",
+    "Remove the Dust Sparrow source's opaque near-black 120x190 grip-background rectangle; Dock Breaker has no matching opaque rectangle.",
+    "Remove the complete trigger and trigger-guard loop from LEFT so the slim palm grip is isolated in alpha space with no guard, paddle, magazine, slab, or closed negative-space cue.",
+    "Create RIGHT only as the exact horizontal mirror of the accepted LEFT.",
+    "Apply one uniform 1.185 scale to all Dock Breaker views to restore the previously validated grip-to-support pixel spacing; Dust Sparrow remains at scale 1.0."
+  ],
+  "guardRemovalPolygon": [
+    [
+      800,
+      460
+    ],
+    [
+      1042,
+      460
+    ],
+    [
+      1042,
+      612
+    ],
+    [
+      798,
+      612
+    ]
+  ],
+  "removedForegroundPixelsFromLeft": 10162,
+  "opaqueBlackCleanup": null,
+  "removedOpaqueBlackPixelsFromLeft": 0,
+  "removedSmallForegroundFragments": {
+    "front": 2,
+    "back": 11,
+    "left": 87,
+    "right": 87
+  },
+  "files": {
+    "front": "39ad230e551f8014a1d721bc4d5d73194cafc6ea621d268b049024df952cd9e2",
+    "back": "cadb0eeaf943c1e8157a19538af6f22ca564d077732e2a2ae38b1d52e130154e",
+    "left": "e126c6ec08cf7484be4f372a64cfc7c69449d963e5537451a931c448cd61093f",
+    "right": "5701f84d809b54da36dd884b6be748a7a2687f99124add35b237149a375340f8"
+  },
+  "contactSheet": "contact_sheet.png",
+  "contactSheetSha256": "401b054d12390acf5cd71124e4676bf35d1d3abd3f85482d34b12c35658606a8",
+  "paidServicesCalled": false,
+  "tripoSubmitted": false
+}

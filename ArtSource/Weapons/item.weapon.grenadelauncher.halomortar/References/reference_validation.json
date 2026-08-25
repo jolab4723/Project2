@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.grenadelauncher.halomortar",
+  "validatedAt": "2026-08-25",
+  "status": "phase1_reference_gate_ready",
+  "format": {
+    "allViews2048x1024": true,
+    "allViewsPng": true,
+    "allViewsRgba": true,
+    "transparentCornerAlpha": 0,
+    "alphaRangeObserved": [0, 255],
+    "uncropped": true,
+    "centered": true
+  },
+  "sideOrthographicGate": {
+    "leftStrict90Degree": true,
+    "rightIsExactLeftMirror": true,
+    "barrelCenterlineParallelToCanvasX": true,
+    "muzzleCutParallelToCanvasY": true,
+    "sideViewMuzzleHoleVisible": false,
+    "sideViewInternalBoreVisible": false,
+    "sideViewEllipticalFrontRimVisible": false,
+    "generatedRightDiscarded": true,
+    "generatedRightDiscardReason": "structure and camera orientation drift; exact left mirror used per final gate"
+  },
+  "leftGripMeasurementPx": {
+    "triggerGripContactCenterX": 613,
+    "supportCorridor": {"startX": 1168, "endXExclusive": 1358, "length": 190, "centerX": 1263},
+    "centerDistanceMuzzleward": 650,
+    "contactWidthSamples": [34, 33, 35, 35, 36, 35],
+    "maximumContactWidth": 36,
+    "limit": 55,
+    "pass": true
+  },
+  "rightGripMeasurementPx": {
+    "method": "exact horizontal mirror in 2048-wide canvas",
+    "triggerGripContactCenterX": 1435,
+    "supportCorridor": {"startX": 690, "endXExclusive": 880, "length": 190, "centerX": 785},
+    "centerDistanceMuzzleward": 650,
+    "maximumContactWidth": 36,
+    "pass": true
+  },
+  "construction": {
+    "oneCompleteWeapon": true,
+    "physicallyConnectedSilhouette": true,
+    "frontMuzzleOpenCenteredUnblocked": true,
+    "singleSealedAnnularProjector": true,
+    "singleConnectedAnnularEmissionGroove": true,
+    "noHandsCharacterStandFloorShadowTextEffects": true,
+    "paletteFaithful": true,
+    "emissionOnlyOnDesignatedConnectedSurface": true,
+    "whitePaintOrEmission": false,
+    "floatingOrDetachedParts": false
+  },
+  "crossView": {
+    "sameDesign": true,
+    "sameCanvasCenter": true,
+    "rightExactMirror": true,
+    "frontRearUniformScaleAdjusted": true,
+    "concerns": ["Front/rear are generated reconstructions; final 3D structural authority remains the accepted strict side pair and direct muzzle/rear silhouettes."]
+  },
+  "tripoSubmitted": false
+}

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "status": "pass_for_root_image_gate",
+  "automated_checks": {
+    "all_views_exact_2048x1024_rgba": true,
+    "all_views_have_actual_alpha_zero": true,
+    "all_alpha_zero_pixels_have_hidden_rgb_0_0_0": true,
+    "all_four_corner_alpha_zero": true,
+    "right_is_exact_left_rgba_horizontal_mirror": true,
+    "front_visible_pixels_preserved_from_accepted": true,
+    "left_visible_weapon_pixels_preserved_from_accepted": true,
+    "left_detached_alpha_pixels_cleared": 1242,
+    "rear_magenta_family_pixels_alpha_ge_128": 0,
+    "rear_cyan_family_pixels_alpha_ge_128": 0
+  },
+  "views": {
+    "front": {
+      "alpha_bbox": [911, 347, 1137, 677],
+      "transparent_margins_ltrb": [911, 347, 911, 347],
+      "hidden_rgb_nonzero_when_alpha_zero": 0,
+      "magenta_family_pixels_alpha_ge_128": 935,
+      "sha256": "467edafc3effabc575a42586c77d55ad9c44112eac04d03174f1170071f550cc"
+    },
+    "back": {
+      "alpha_bbox": [958, 350, 1090, 673],
+      "transparent_margins_ltrb": [958, 350, 958, 351],
+      "hidden_rgb_nonzero_when_alpha_zero": 0,
+      "magenta_family_pixels_alpha_ge_128": 0,
+      "cyan_family_pixels_alpha_ge_128": 0,
+      "sha256": "2b7e15f90da4e600ec6174032adf839295b24c3d1965d549feba68f87cd05a06"
+    },
+    "left": {
+      "alpha_bbox": [74, 350, 1974, 673],
+      "transparent_margins_ltrb": [74, 350, 74, 351],
+      "hidden_rgb_nonzero_when_alpha_zero": 0,
+      "magenta_family_pixels_alpha_ge_128": 2135,
+      "sha256": "a935ff0e0468ec7b8d92384726edd7dda06da5bfd6e422d25d7746b07262ca39"
+    },
+    "right": {
+      "alpha_bbox": [74, 350, 1974, 673],
+      "transparent_margins_ltrb": [74, 350, 74, 351],
+      "hidden_rgb_nonzero_when_alpha_zero": 0,
+      "magenta_family_pixels_alpha_ge_128": 2135,
+      "sha256": "46362682cc5e25969b8010c5a95ba734c51b112d830e91506e5f734978244130"
+    }
+  },
+  "side_measurements_px": {
+    "trigger_grip_width": [47, 48],
+    "trigger_grip_max_allowed": 55,
+    "trigger_to_support_center_muzzleward": 650,
+    "required_range": [620, 680],
+    "support_corridor_length": 190,
+    "support_corridor_clear": true
+  },
+  "visual_checks": {
+    "front_only_has_open_orchid_muzzle": true,
+    "front_petal_armor_connected_low_profile_and_not_spiked": true,
+    "rear_is_solid_neutral_graphite_ribbed_buttpad": true,
+    "rear_has_no_orchid_petals_magenta_channels_circular_ring_or_bore": true,
+    "side_views_strict_orthographic": true,
+    "side_barrel_centerline_parallel_to_canvas_x": true,
+    "side_muzzle_cut_plane_parallel_to_canvas_y": true,
+    "side_muzzle_front_face_internal_bore_and_ellipse_absent": true,
+    "left_right_scale_structure_and_part_placement_match": true,
+    "one_complete_weapon_or_endpoint_per_file": true,
+    "uncropped_with_clear_margins": true,
+    "hands_character_stand_floor_shadow_text_effects_absent": true
+  },
+  "cross_view_logic": {
+    "front_and_rear_axis_centered": true,
+    "front_height_px": 330,
+    "rear_height_px": 323,
+    "endpoint_scale_consistent": true,
+    "front_is_only_view_with_open_bore": true,
+    "rear_maps_to_side_stock_buttpad": true,
+    "right_derivation": "exact LEFT mirror",
+    "design_palette_preserved": true
+  },
+  "remaining_gate": "Root visual approval required. Tripo, Blender production, and Unity remain prohibited."
+}

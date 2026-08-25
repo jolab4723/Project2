@@ -1,0 +1,46 @@
+{
+  "rule": "global RGB-family only on final BaseColor; no UV, mesh, position, morphology, blur, or connectivity used for mask generation",
+  "thresholds": {
+    "R": [
+      48,
+      155
+    ],
+    "G_max": 95,
+    "B_min": 120,
+    "B_minus_R_min": 50,
+    "B_minus_G_min": 72,
+    "R_minus_G_min": 12
+  },
+  "precleanup_family_pixels": 81564,
+  "non_annular_basecolor_reuse_recolored_to_navy": 67404,
+  "final_selected_pixels": 14160,
+  "final_selected_outside_annulus_audit": 0,
+  "binary_values": [
+    0,
+    255
+  ],
+  "selected_rgb_min": [
+    48,
+    0,
+    120
+  ],
+  "selected_rgb_max": [
+    145,
+    84,
+    245
+  ],
+  "selected_rgb_median": [
+    119,
+    54,
+    192
+  ],
+  "selected_rgb_mean": [
+    112,
+    51,
+    185
+  ],
+  "gold_white_selected": 0,
+  "bore_cap_selected": 0,
+  "base_color": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.halomortar\\ProductionSalvage\\Textures\\item.weapon.grenadelauncher.halomortar_BaseColor.png",
+  "emission": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.halomortar\\ProductionSalvage\\Textures\\item.weapon.grenadelauncher.halomortar_Emission.png"
+}

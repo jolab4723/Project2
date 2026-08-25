@@ -1,0 +1,317 @@
+{
+  "item_id": "item.weapon.grenadelauncher.sunfallengine",
+  "generated_at": "2026-08-25T04:31:36.801819+00:00",
+  "blender_version": "5.1.1",
+  "source": {
+    "task_id": "216c0d80-4f54-41ca-a29d-86587428d01a",
+    "type": "multiview_to_model",
+    "model": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "texture": true,
+    "pbr": true,
+    "export_uv": true,
+    "credits_consumed": 30,
+    "glb": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\Tripo\\RetryFrontBackSwap\\Downloaded\\model.glb",
+    "triangles": 1462395
+  },
+  "coordinate_contract": {
+    "raw_muzzle": "-X",
+    "raw_up": "+Z",
+    "final_muzzle": "+Z",
+    "final_up": "+Y",
+    "root_origin": "actual trigger-grip center"
+  },
+  "transform": {
+    "raw_bounds": {
+      "min": [
+        -0.5,
+        -0.084476,
+        -0.148884
+      ],
+      "max": [
+        0.5,
+        0.084476,
+        0.148884
+      ],
+      "dimensions": [
+        1.0,
+        0.168951,
+        0.297769
+      ]
+    },
+    "mapping": "raw (X,Y,Z) -> final (Y,Z,-X), translated to trigger-grip origin",
+    "uniform_scale": 0.8306851424,
+    "root_grip_raw": [
+      0.1489425982,
+      0.0,
+      -0.097
+    ]
+  },
+  "grip_reference": {
+    "alpha_bbox": [
+      191,
+      289,
+      1847,
+      751
+    ],
+    "trigger_center_px": [
+      772.0,
+      668.0
+    ],
+    "support_center_px": [
+      1421.5,
+      480.0
+    ],
+    "trigger_to_support_px": 649.5
+  },
+  "root": "item.weapon.grenadelauncher.sunfallengine_root",
+  "mesh": "SunfallEngine_Body",
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.102174,
+        0.326
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.088883,
+        0.539067
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.070179,
+      -0.043106,
+      -0.29165
+    ],
+    "max": [
+      0.070172,
+      0.204268,
+      0.539066
+    ],
+    "dimensions": [
+      0.140351,
+      0.247374,
+      0.830715
+    ]
+  },
+  "decimation": {
+    "source_triangles": 1462395,
+    "target_triangles": 100000,
+    "final_triangles": 99999,
+    "ratio": 0.06838098,
+    "reason": "The H3 standard source exceeded 1.4M triangles; 100k is required for a practical Unity weapon asset.",
+    "comparison_renders": {
+      "original_side": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\decimate_original_side.png",
+      "original_iso": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\decimate_original_iso.png",
+      "100k_side": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\decimate_100k_side.png",
+      "100k_iso": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\decimate_100k_iso.png"
+    },
+    "visual_review": "accepted: direct original/100k side and isometric comparison preserves silhouette, muzzle opening, grip, core and major surface structure"
+  },
+  "material": {
+    "name": "M_item.weapon.grenadelauncher.sunfallengine_PBR",
+    "principled_bsdf": true,
+    "pbr_preserved": true,
+    "base_color_path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_BaseColor.png",
+    "normal_path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_Normal.png",
+    "orm_path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_ORM.png",
+    "emission": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_Emission.png",
+      "method": "single global BaseColor sRGB RGB-family threshold",
+      "source_image": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_BaseColor.png",
+      "threshold_srgb_8bit": {
+        "r_min": 190,
+        "g_min": 65,
+        "b_max": 70,
+        "r_minus_g_min": 45,
+        "g_minus_b_min": 15,
+        "r_minus_b_min": 120
+      },
+      "selected_pixels": 2556,
+      "selected_fraction": 0.0006094,
+      "representative_srgb_8bit": [
+        227,
+        167,
+        56
+      ],
+      "unity_linear_rgb_target": [
+        0.7681511,
+        0.3864294,
+        0.0395462
+      ],
+      "formula": "c<=0.04045 ? c/12.92 : ((c+0.055)/1.055)^2.4, c=sRGB/255",
+      "binary_values": [
+        0,
+        255
+      ],
+      "spatial_or_uv_restriction": false,
+      "morphology_blur_component_raycast_mesh_split": false,
+      "exception": null
+    },
+    "emission_strength": 3.0,
+    "glow_designation": "solar amber; only the sun core and muzzle groove",
+    "added_geometry": false
+  },
+  "textures": [
+    {
+      "source_name": "Color_216c0d80-4f54-41ca-a29d-86587428d01a",
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_BaseColor.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB"
+    },
+    {
+      "source_name": "NormalGL_216c0d80-4f54-41ca-a29d-86587428d01a",
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_Normal.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "source_name": "ORM_216c0d80-4f54-41ca-a29d-86587428d01a",
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_Emission.png",
+      "method": "single global BaseColor sRGB RGB-family threshold",
+      "source_image": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\Textures\\item.weapon.grenadelauncher.sunfallengine_BaseColor.png",
+      "threshold_srgb_8bit": {
+        "r_min": 190,
+        "g_min": 65,
+        "b_max": 70,
+        "r_minus_g_min": 45,
+        "g_minus_b_min": 15,
+        "r_minus_b_min": 120
+      },
+      "selected_pixels": 2556,
+      "selected_fraction": 0.0006094,
+      "representative_srgb_8bit": [
+        227,
+        167,
+        56
+      ],
+      "unity_linear_rgb_target": [
+        0.7681511,
+        0.3864294,
+        0.0395462
+      ],
+      "formula": "c<=0.04045 ? c/12.92 : ((c+0.055)/1.055)^2.4, c=sRGB/255",
+      "binary_values": [
+        0,
+        255
+      ],
+      "spatial_or_uv_restriction": false,
+      "morphology_blur_component_raycast_mesh_split": false,
+      "exception": null
+    }
+  ],
+  "qa": {
+    "pbr": {
+      "front": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_front.png",
+      "back": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_back.png",
+      "left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_left.png",
+      "right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_right.png",
+      "top": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_top.png",
+      "iso_left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_iso_left.png",
+      "iso_right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\pbr_iso_right.png"
+    },
+    "emission_only": {
+      "front": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_front.png",
+      "back": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_back.png",
+      "left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_left.png",
+      "right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_right.png",
+      "top": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_top.png",
+      "iso_left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_iso_left.png",
+      "iso_right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\emission_iso_right.png"
+    }
+  },
+  "prohibited_objects": [],
+  "checks": {
+    "single_root": true,
+    "one_mesh": true,
+    "right_grip_origin": true,
+    "left_grip_distance": true,
+    "muzzle_forward_of_left_grip": true,
+    "muzzle_plus_z": true,
+    "positive_unit_mesh_scale": true,
+    "no_prohibited_objects": true,
+    "pbr_textures_present": true,
+    "binary_global_rgb_emission": true,
+    "triangle_budget": true,
+    "reimport_verified": true
+  },
+  "pass": true,
+  "reimport": {
+    "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\reimport_validation.json",
+    "pass": true
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.grenadelauncher.pulsecask",
+  "displayName": "펄스 챔버",
+  "englishName": "Pulse Chamber",
+  "tier": "Advanced",
+  "characterClass": "Gunner",
+  "weaponType": "GrenadeLauncher",
+  "generator": "built-in image_gen",
+  "generatedAt": "2026-08-25",
+  "design": {
+    "palette": ["slate", "cobalt"],
+    "emissionColor": "cyan",
+    "emissionSurface": "one bounded connected inner surface inside the rounded sealed chamber",
+    "transparentCover": true,
+    "whiteEmissionAllowed": false,
+    "emissionColorReusedOnPaint": false
+  },
+  "finalCanvas": {
+    "width": 2048,
+    "height": 1024,
+    "format": "PNG",
+    "mode": "RGBA",
+    "outsideAlpha": 0,
+    "resizeApplied": false,
+    "cropApplied": false,
+    "normalization": "center padding only; deterministic background extraction on RGB sources"
+  },
+  "views": [
+    {
+      "view": "FRONT_0",
+      "final": "front.png",
+      "chosenSource": "SourceGenerated/front_source_v2.png",
+      "sha256": "aa53d4e604638edfdcbc9a15faa4920c81acd726b31eb36ac0749edab0912707",
+      "normalization": ["background_extraction", "center_pad"]
+    },
+    {
+      "view": "LEFT_90",
+      "final": "left.png",
+      "chosenSource": "SourceGenerated/left_source_v4.png",
+      "sha256": "79a54e6e65e9ca8a945cd082d761290bb4b0bcd9b3f32ae894a50ee4926cdc2b",
+      "normalization": ["background_extraction", "center_pad"]
+    },
+    {
+      "view": "REAR_180",
+      "final": "back.png",
+      "chosenSource": "SourceGenerated/back_source_v1.png",
+      "sha256": "4437be9fbfed8000787e52d470b30d9dc4d08151119c5809963e02bac349ede8",
+      "normalization": ["background_extraction", "center_pad"]
+    },
+    {
+      "view": "RIGHT_270",
+      "final": "right.png",
+      "chosenSource": "left.png",
+      "sha256": "9c1e412d5337ac43c985c9f8eb82a23b4b45a3f4de0cfec3762d4eb711135bc6",
+      "normalization": ["exact_horizontal_mirror_of_final_left"]
+    }
+  ],
+  "sourceOutputs": [
+    {"path": "SourceGenerated/left_source_v1.png", "status": "rejected", "reason": "muzzle bore/front-face information visible; not strict LEFT 90 degrees"},
+    {"path": "SourceGenerated/left_source_v3_camera_test.png", "status": "rejected", "reason": "strict camera passed but original slotted muzzle shroud was simplified"},
+    {"path": "SourceGenerated/left_source_v4.png", "status": "chosen", "note": "strict side camera; vertical muzzle terminal edge; no visible bore/front face"},
+    {"path": "SourceGenerated/front_source_v1.png", "status": "rejected", "reason": "earlier axial attempt and baked checker background"},
+    {"path": "SourceGenerated/front_source_v2.png", "status": "chosen"},
+    {"path": "SourceGenerated/back_source_v1.png", "status": "chosen"},
+    {"path": "SourceGenerated/right_source_v1.png", "status": "rejected", "reason": "visible receiver/grip proportion and part-placement drift from approved LEFT"},
+    {"path": "SourceGenerated/right_source_v2.png", "status": "rejected", "reason": "visible proportional drift and insufficient exact design identity"}
+  ],
+  "tripoGate": {
+    "rootVisualApprovalRequired": true,
+    "approved": false,
+    "submitted": false,
+    "taskId": null
+  }
+}

@@ -75,9 +75,20 @@ character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rac
 
 정확한 손잡이 비율이 중요하면 Text-to-3D 단독보다 Image-to-3D 또는 Multi-view를 우선한다. Tripo의 현재 공식 Multi-view 안내는 같은 대상을 찍은 2~4개 뷰를 사용하고, 프레임·조명·크기를 일치시키라고 설명한다.
 
+투명 배경은 프롬프트 문장만으로 요구하지 말고 생성 기능의 **네이티브 알파 옵션**을 함께 사용한다.
+
+- OpenAI Image API는 `background: "transparent"`와 `output_format: "png"`를 명시한다. 웹 스튜디오는 실제 투명 배경 옵션이 있을 때만 활성화한다.
+- Codex가 ChatGPT 웹 Images를 사용할 때는 한 프롬프트에서 정면 0°·후면 180°·좌측 90°·우측 270°를 요청하되, **2048×1024 RGBA PNG 파일 4개를 각각 별도 첨부**하라고 명시한다. 한 장짜리 4면 시트·그리드·콜라주·연속 프레임은 Tripo 입력으로 승인하지 않는다.
+- 웹 응답이 네 파일을 모두 만들지 못하면 누락된 뷰만 별도 파일로 다시 생성한다. 승인된 좌측면과 우측면의 형상이 다르면 우측면을 새로 해석하게 하지 않고 승인된 좌측면의 정확한 수평 반전본을 사용한다.
+- 현재 사용하는 도구가 `background` 옵션을 노출하지 않으면 체크보드나 흰 배경 결과를 후처리로 지우지 말고 생성 경로를 중단한다. 프롬프트의 `transparent`를 체크보드 무늬로 그린 RGB 이미지는 투명 PNG가 아니다.
+- 생성 직후 PNG가 RGBA인지, 캔버스 네 모서리와 무기 내부의 실제 구멍이 alpha 0인지 검사한다. 체크보드 픽셀, 흰 폐곡선 내부, 가장자리 halo가 하나라도 있으면 Tripo 입력으로 사용하지 않는다.
+- 해상도 맞춤을 위한 균일 리사이즈와 패딩만 허용한다. 배경 추출·색상 임계값 투명화·반복 마스킹은 허용하지 않는다.
+
 - 정면·후면·좌우 측면 중 2~4장을 사용하고, 모든 이미지는 같은 무기·비율·크기여야 한다. 상단 형상이 중요하면 상단 뷰를 추가하되 다른 뷰와 축을 일치시킨다.
 - 무기를 화면 중앙에 수직으로 세우고 날·헤드는 위, 손잡이 끝은 아래로 둔다.
 - 원근이 강한 전투 구도 대신 정사영 제품 시트처럼 만든다.
+- 좌·우측면은 총열 중심선이 이미지 가로축과 평행한 정확한 90° 직교도여야 한다. 측면에서 총구 내부 구멍이나 타원형 앞면이 보이면 3/4 시점이므로 사용하지 않는다.
+- 생성한 우측면의 구조·길이·부품 배치가 합격한 좌측면과 눈에 띄게 다르면 우측면을 반복 생성하지 않고 좌측면을 정확히 수평 반전해 사용한다. 문자·한쪽 전용 장식처럼 실제 비대칭이 필수인 경우만 별도로 판단한다.
 - 손, 캐릭터, 받침대, 그림자, 오라, 잘린 칼끝을 넣지 않는다.
 - 손잡이 전체와 가드·폼멜 사이의 빈 공간이 모든 뷰에서 보여야 한다.
 - 측면 이미지에서 손잡이 두께가 과도하게 굵거나 납작하지 않은지 확인한다.
@@ -98,16 +109,18 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 1. 이미지 사이즈: 2048×1024.
 2. 확장자: PNG.
 3. 배경: 완전 투명(알파 0), 그림자·바닥·글자·손·캐릭터·효과 없음.
-4. 현재 면: [정면 0°/뒷면 180°/좌측면 90°/우측면 270°], 원근 왜곡 없는 직교 제품도. 무기 전체가 수평으로 잘리지 않게 들어갈 것.
+4. 현재 면: [정면 0°/뒷면 180°/좌측면 90°/우측면 270°], 원근 왜곡 없는 직교 제품도. 좌·우측면은 총열 중심선이 수평이고 총구 절단면이 수직인 정확한 90°이며 총구 내부나 타원형 앞면이 보이지 않을 것. 무기 전체가 수평으로 잘리지 않게 들어갈 것.
 5. 네 면은 같은 무기의 같은 비율이어야 하며 총구·개머리판·방아쇠·손잡이·색·비대칭 디테일이 논리적으로 일치할 것.
 6. 측면에서 방아쇠 손잡이의 보이는 두께는 55픽셀 이하이고, 장갑 낀 오른손 전체가 들어갈 길이와 빈 공간을 확보할 것.
 7. 측면에서 방아쇠 손잡이 중심부터 총구 방향 620~680픽셀 지점에 160~220픽셀 길이의 깨끗하고 연속된 앞손 파지 구간을 둘 것.
 8. 두 손 파지 구간에는 탄창·케이블·가드·레일·스파이크·장식·가동부·급격한 두께 변화를 넣지 말 것. 전체 무기 길이는 자유롭게 할 것.
-9. 총구 방향과 열린 총구 중심을 명확히 하고, 분리되거나 떠 있는 파츠를 만들지 말 것.
+9. 열린 총구 중심은 정면에서만 명확히 보이고, 좌·우측면에서는 총구의 옆 실루엣만 보일 것. 분리되거나 떠 있는 파츠를 만들지 말 것.
 10. 발광은 콘셉트에 지정된 색만 코어·튜브·홈처럼 경계가 분명한 연결 표면에 넣을 것. 지정하지 않은 흰색 발광이나 도장면 전체 발광은 금지.
 
 첨부한 확정 이미지가 있으면 디자인을 바꾸지 말고 현재 면만 정확히 재현해줘.
 ```
+
+우측면 생성본이 좌측면과 눈에 띄게 다르면 우측면 생성본은 폐기하고 합격한 좌측면 PNG를 픽셀 단위로 수평 반전해 사용한다.
 
 치수·면 일치·투명 배경을 더 엄격하게 통제해야 할 때만 아래 상세 영문본을 사용한다.
 
@@ -121,6 +134,7 @@ Output requirements:
 - File format: PNG with a fully transparent background (alpha 0).
 - View: [FRONT 0°, muzzle facing the camera / REAR 180° / LEFT SIDE 90° / RIGHT SIDE 270°].
 - Orthographic product-reference view with no perspective distortion.
+- For LEFT/RIGHT SIDE, keep the barrel centerline exactly horizontal and the muzzle cut plane exactly vertical. Show no bore interior, elliptical muzzle opening, or front-face foreshortening in a side view.
 - One complete weapon only, centered, level, and fully inside the canvas.
 - No hands, character, stand, floor, shadow, text, labels, floating effects, or detached parts.
 - Use realistic game-asset materials and physically plausible connected construction.
@@ -137,12 +151,15 @@ Gunner grip-fit requirements:
 - Make the clean front support corridor 160 to 220 pixels long and continuous.
 - Do not put magazines, cables, rails, guards, spikes, ornaments, moving parts, or abrupt thickness changes inside either hand-contact area.
 - Keep the muzzle opening clear, centered, mechanically symmetric, and unblocked.
+- Show the open bore only in FRONT. In LEFT/RIGHT SIDE, show only the strict side silhouette of the muzzle.
 - The overall weapon length may vary by weapon type. Fit the complete silhouette inside the canvas without cropping, but do not shorten or stretch the grip-center spacing to normalize the total weapon length.
 
 Preserve the approved first-view design exactly. Change only the camera direction required for [VIEW].
 ```
 
 프롬프트만으로 치수를 합격 처리하지 않는다. 전체 길이는 무기 종류에 따라 달라도 되며 무잘림만 확인한다. 측면 두 장에서는 방아쇠 손잡이 두께, 두 파지 중심 간 픽셀 거리와 앞손 파지 구간을 실제로 재고, 서로 다른 값이면 Tripo에 넘기기 전에 재생성한다. Tripo 웹 스튜디오에 네 장을 업로드한 뒤에도 아래 `거너 총기` 프롬프트와 Negative Prompt를 함께 사용한다.
+
+측면 검수에서는 총구 끝의 검은 구멍이나 타원형 테두리가 보이는지 먼저 확인한다. 보이면 측면이 아니라 3/4 시점이므로 즉시 폐기한다. 합격한 좌측면과 우측면의 형상이 다르면 우측면을 좌측면 수평 반전본으로 교체하고, 네 장의 파일명과 manifest에 이 사실을 기록한다.
 
 ## 4. 생성 설정 권장값
 
@@ -164,7 +181,10 @@ Preserve the approved first-view design exactly. Change only the camera directio
 - 정면뿐 아니라 측면에서도 손잡이 두께와 여유가 유지된다.
 - 떠 있는 파츠와 내부를 관통하는 파츠가 없다.
 - 정면·후면 축방향 화면에서 총구가 막힌 판이나 찢어진 방사형 조각으로 변하지 않고, 요구한 깊이의 열린 구멍과 연속된 둘레를 유지한다.
+- 좌·우측면에서 총열 축은 수평이고 총구 끝면은 수직이며, 총구 내부 구멍·타원형 앞면·비스듬한 절단면이 전혀 보이지 않는다.
 - 네 입력 이미지의 무기 크기와 화면 점유율이 같아야 한다. 특히 정면·후면만 확대된 이미지는 H3가 무기 앞뒤를 한 평면으로 융합할 수 있으므로 사용하지 않는다.
+- 정면의 열린 총구와 후면의 막힌 개머리판은 좌·우 측면의 같은 끝에 있는 색·외곽 프레임·비대칭 표식을 각각 공유해야 한다. 정면 총구와 후면 개머리판이 서로 닮은 사각 링이거나, 측면 끝단과 색·비율이 맞지 않으면 H3가 열린 구조를 반대쪽 끝에 배정할 수 있으므로 제출하지 않는다.
+- H3 raw에서 열린 구멍이 실제 개머리판 쪽에 생기고 실제 총구가 막혔다면 축 회전이나 감량 문제가 아니다. 업로드 token과 `front,left,back,right` 순서를 먼저 대조하고, 순서가 맞으면 앞뒤 의미 결합 실패로 판정해 Blender에서 양 끝을 대규모 재구축하지 않는다.
 
 하나라도 실패하면 Blender에서 억지로 맞추기 전에 프롬프트·참조 이미지를 고쳐 다시 생성하는 편이 낫다.
 
@@ -196,13 +216,24 @@ Preserve the approved first-view design exactly. Change only the camera directio
 8. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
 9. 이 작업은 Empty 보존, 축 정리, Transform 적용, FBX 재임포트 검증이 단순한 Blender를 기본 후처리 도구로 사용한다. 3ds Max를 사용해도 결과 규격은 같아야 하며, 두 도구를 한 무기에 중복 적용하지 않는다.
 
+### 메시 감량과 백페이스 검수
+
+1. `100k`처럼 고정된 triangle 목표를 먼저 정하지 않는다. 원본, 중간 감량본, 최종 후보를 단계별로 만들고 총구 캡·총열 측벽·손잡이·개머리판의 실루엣이 처음으로 안정적으로 유지되는 가장 가벼운 단계만 채택한다.
+2. 원본에서 정상이던 형상이 감량 뒤 깨지면 Tripo 실패가 아니라 후처리 실패다. 원본을 다시 생성하지 말고 감량률을 낮춘다. 총구와 얇은 레일처럼 작은 폐쇄면이 있는 무기는 과도한 감량을 금지한다.
+3. 각 단계는 동일 카메라의 일반 렌더와 백페이스 컬링 렌더를 정면·후면·좌측·우측·상하·사선에서 한 쌍씩 비교한다. 일반 렌더에서 닫혀 보여도 컬링 렌더에서 내부가 비치거나 면이 사라지면 실패다.
+4. 총구 끝 5~6 cm와 얇은 측면 셸은 boundary edge 수와 연결 컴포넌트를 별도로 기록한다. 원본보다 열린 경계가 늘었거나 Unity 정면·측면에서 실루엣이 달라지면 FBX로 전달하지 않는다.
+5. 보강이 필요하면 원본 하우징 안에 실제로 맞물리는 폐쇄형 메시로 만든다. 표면과 무관하게 떠 있는 Cube·Quad, 한쪽 면만 있는 캡, 깊이 없는 임시 발광판은 최종 산출물로 사용하지 않는다.
+
 ### 발광 마스크
 
-1. Base Color에서 발광으로 확정한 부위의 실제 sRGB RGB를 샘플링하고, 그 RGB와 허용 오차 안의 픽셀만 흰색 Emission Mask로 만든다.
-2. 같은 색이 다른 도장면에도 있으면 해당 발광부의 UV 섬 또는 최소 사각 구역으로 범위를 제한한다. 연결된 면 전체를 칠하거나 메시를 억지로 분리하지 않는다.
-3. 색 선택이 정확히 작동하면 팽창·블러·레이캐스트 같은 추가 보정은 하지 않는다. 정확한 RGB만으로 복구할 수 없다는 시각 근거가 있을 때만 최소 보정을 검토한다.
-4. Unity에서는 Emission Map과 함께 콘셉트의 HDR 발광색을 사용한다. 임시 흰색 HDR tint를 그대로 두지 않는다.
-5. 양쪽 측면과 발광부 근접 화면에서 마스크 삐져나옴, 내부 구멍, 중간 흐려짐, 백색화를 확인하고 하나라도 보이면 실패로 판정한다.
+1. 기본 처리는 Blender가 아니라 Base Color PNG에서 한다. 사용자가 핀포인트로 지정한 대표 sRGB RGB와 실제 샘플 색 목록을 기준으로, 사용자가 승인한 좁은 채널 범위만 Base Color 전체에서 골라 흰색 Emission Mask로 만든다. `청록 계열`, `푸른 빛`처럼 넓은 색상 범위를 임의로 추정하지 않는다.
+2. 앞으로 제작할 무기에도 이 전역 RGB 추출을 첫 번째이자 기본 방식으로 적용한다. UV 영역, 메시 분리, 형상 판정, 연결 보정은 먼저 사용하지 않는다.
+3. 같은 재질의 밝고 어두운 음영까지 넓혀야 하거나 같은 RGB가 비발광 도장면에도 쓰였다면 먼저 대표색, 확대할 채널 범위와 예상 픽셀 수를 보고한다. 사용자가 판단한 뒤에만 범위를 넓히거나 해당 UV 구역을 최소한으로 제한한다. 연결된 면 전체를 칠하거나 메시를 억지로 분리하지 않는다.
+4. 정확한 색 선택이 작동하면 팽창·침식·블러·레이캐스트·컴포넌트 필터 같은 추가 보정은 하지 않는다.
+5. Unity에서는 Emission Map과 함께 콘셉트의 발광색을 사용한다. 이미지에서 읽은 sRGB를 `0~1`로만 나눠 Unity 선형 색 슬롯에 그대로 넣지 말고 sRGB→Linear 변환 뒤 `_EmissionColor`에 지정한다. Bloom 세기가 더 필요하면 변환된 색의 채도를 유지한 채 강도만 올리며, 임시 흰색 HDR tint를 그대로 두지 않는다.
+6. 양쪽 측면과 발광부 근접 화면에서 마스크 삐져나옴, 내부 구멍, 중간 흐려짐, 백색화를 확인하고 하나라도 보이면 실패로 판정한다.
+7. 작업 완료·인계 때 무기마다 다음 값을 핀포인트로 기록한다: Base Color 원본 경로, 수정할 Emission Mask 경로, 대표 sRGB RGB와 샘플 색 목록, 사용한 채널별 선택 조건, 선택 픽셀 수, 지정색 누락 픽셀 수, 비지정색 오검출 픽셀 수, 예외적으로 제한한 UV 좌표, Unity 머터리얼 경로, 최종 HDR `_EmissionColor`. 누락·오검출 수를 계산하지 않은 마스크는 합격시키지 않는다.
+8. Emission Mask 자체는 색상을 정하는 텍스처가 아니다. 발광 픽셀은 흰색 `RGB(255,255,255)`, 비발광 픽셀은 검정 `RGB(0,0,0)`으로 두고, 실제 발광색은 Unity 머터리얼의 `_EmissionColor`에서 지정한다.
 
 ### Unity
 
@@ -222,8 +253,9 @@ Preserve the approved first-view design exactly. Change only the camera directio
 12. 작은 손가락·손잡이 겹침은 허용한다. 다만 손 전체가 뜨거나, 손이 가드·폼멜·무기 헤드를 잡거나, 손목이 손잡이를 크게 관통하면 실패다.
 13. 런타임 보정 저장 후 Addressables에서 프리팹을 새로 로드해 root, `Model` 회전, 양손 접촉과 `Muzzle` 방향이 그대로 보존되는지 확인한다. 현재 Gunner 10개의 참고 합격 범위는 오른손 grip-center 오차 약 3.8mm, 왼손 접촉 오차 0.9~2.4mm, Muzzle 방향 내적 0.956 이상이다. 이 수치는 다음 모델의 자동 합격 기준이 아니라 현재 배치의 회귀 비교값이다.
 14. 인벤토리 원본은 모델링을 위해 처음 GPT Image로 만든 0° 정면 샷을 우선 사용한다.
-   - 배경이 있으면 형상과 색을 바꾸지 않는 범위에서 한 번 투명 처리한다.
-   - 가장자리 찌꺼기·색 번짐·배경 잔상이 남거나 이를 없애기 위해 반복 보정이 필요하면 해당 투명화를 폐기하고, 동일한 디자인·정면 구도의 투명 배경 이미지를 새로 생성한다.
+   - 생성 단계에서 네이티브 투명 배경을 지정한다. 불투명 RGB·체크보드·흰 배경 결과를 배경 제거 후처리로 바꾸지 않는다.
+   - PNG가 RGBA인지, 외곽과 방아쇠울·개머리판 등 내부 구멍의 alpha가 0인지 실제 픽셀 값으로 확인한다. 실패하면 동일 디자인·구도의 네이티브 투명 이미지를 새로 생성한다.
+   - 검은 화면에서만 보지 않는다. 중간 회색 단색 배경과 밝은 체크보드에 각각 합성해 검정·흰색 불투명 사각형이나 링 주변 배경 조각이 없는지 확인한다. 배경 조각을 제거할 때는 무기 RGB를 다시 칠하지 말고 해당 조각의 alpha만 0으로 바꾸며, alpha 0 픽셀의 hidden RGB도 0으로 정리한다.
    - 최종 원본에는 배경·바닥 그림자·프레임 밖으로 번지는 오라가 없어야 하며 무회전·무잘림 상태를 유지한다.
 15. 마지막에 `SW/Equipment/인벤토리 무기 아이콘 변환기`로 `OriginalImage/{itemId}.png`를 변환하고 ItemDefinitionSO의 아이콘 연결과 `itemWidth × 128`·`itemHeight × 128` 출력 크기를 확인한다.
 

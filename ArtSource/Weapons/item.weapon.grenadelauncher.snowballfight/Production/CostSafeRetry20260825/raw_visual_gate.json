@@ -1,0 +1,34 @@
+{
+  "item_id": "item.weapon.grenadelauncher.snowballfight",
+  "task_id": "80c3f948-2931-468c-b16e-93d3c9b4082c",
+  "gate_status": "passed",
+  "reviewed_views": [
+    "left_side_minus_y",
+    "right_side_plus_y",
+    "top_plus_z",
+    "bottom_minus_z",
+    "muzzle_plus_x",
+    "rear_minus_x",
+    "iso_muzzle_right_top",
+    "iso_rear_left_top"
+  ],
+  "standard_and_backface_culled_reviewed": true,
+  "evidence": {
+    "single_rabbit_chamber_position_consistent": true,
+    "rabbit_and_snow_enclosed": true,
+    "muzzle_open_and_deep": true,
+    "rear_neutral_stock": true,
+    "trigger_grip_clear": true,
+    "forward_support_grip_clear": true,
+    "visible_open_outer_patches": false,
+    "side_transparency_from_inverted_faces": false,
+    "reference_identity_preserved": true
+  },
+  "topology": {
+    "source_triangles": 1447087,
+    "connected_components": 158,
+    "boundary_edges": 46449,
+    "note": "H3 contains many enclosed decorative/chamber components and seams, but standard and culled renders show no disappearing outer shell or gross open patch."
+  },
+  "decision": "PASS for bounded Blender optimization/orientation/marker/material processing; no rabbit chamber or muzzle remodeling required."
+}

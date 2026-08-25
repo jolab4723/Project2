@@ -1,0 +1,35 @@
+PHASE ORCHID — RETRY NEUTRAL STOCK IMAGEGEN RECORD
+
+Built-in imagegen was used in precise-object-edit mode. The accepted REAR image
+was the edit target; accepted FRONT/LEFT/RIGHT images were design, scale, and
+endpoint references. FRONT and LEFT final visible pixels were preserved, and
+RIGHT was derived as the exact final LEFT mirror.
+
+PROMPT 1 — NEUTRAL REAR EDIT
+
+Use case: precise-object-edit
+Asset type: Project2 Tripo orthographic weapon endpoint reference, REAR 180 degree view only.
+Input images: Image 1 is the REAR edit target. Image 2 is the FRONT muzzle identity reference and is a strict negative reference for the rear. Images 3 and 4 are LEFT/RIGHT side structure, scale, palette, and stock references.
+Primary request: minimally edit only Image 1 into a clean, unmistakable rear view of the same Phase Orchid rifle stock. Preserve the same centered scale, axis, dark jade and black material language, realistic Project2 subculture sci-fi finish, and the exact stock identity shown at the stock end of the side references. Replace the rear endpoint with one simple neutral straight buttpad: a vertically oriented low-profile graphite-black rubber pad, gently rounded rectangular silhouette, restrained shallow horizontal ribs, a narrow dark-jade metal perimeter collar, and no other rear-facing ornament.
+View: exact orthographic REAR 180 degrees, looking directly at the buttpad along the weapon centerline. The buttpad face is centered and vertically aligned. Show only the rear endpoint, not the full rifle.
+Canvas/output: one independent 2048x1024 PNG, RGBA with genuine transparent background. Actual background pixels must be alpha 0 and hidden RGB 0,0,0. No checkerboard pattern, no white/gray/black painted backdrop.
+Strict invariants: do not redesign the rifle or stock; do not change the palette; no magenta pixels anywhere in this REAR image; no cyan; no orchid petals; no petal-like lobes; no emission channels; no circular muzzle ring; no tube; no open bore; no hole aimed at camera; no muzzle component copied from Image 2. The rear is a solid neutral buttpad only.
+Composition: centered, horizontal weapon axis perpendicular to canvas; complete endpoint uncropped with generous transparent margins; match Image 2 endpoint scale and center as closely as possible.
+Avoid: hands, character, stand, floor, shadow, text, watermark, effects, glow, detached parts, extra views, contact sheet, grid, labels.
+
+PROMPT 2 — TARGETED TRANSPARENCY RETRY
+
+Use case: background-extraction
+Asset type: Project2 Tripo orthographic weapon REAR reference.
+Input image: the immediately preceding generated neutral Phase Orchid buttpad rear view is the exact edit target.
+Primary request: change only the background encoding. Preserve the weapon endpoint exactly pixel-for-pixel in design, silhouette, scale, center, palette, ribs, dark-jade collar, and orthographic camera. Output the same single neutral rear buttpad with a genuinely transparent background.
+Output: one independent 2048x1024 PNG in RGBA. Every background pixel must have alpha 0 and hidden RGB exactly 0,0,0. Do not render, draw, simulate, or bake a checkerboard. Do not use a white, gray, or black opaque background.
+Strict invariants: keep the rear solid and neutral; zero magenta/cyan; no orchid petals; no circular muzzle ring; no bore; no tube; no glow; no new parts; no shadow; no text; no watermark; no crop; no scale or center change.
+
+RESULT NOTE
+
+Both built-in outputs were 1774x887 opaque RGB with a baked light checkerboard,
+so neither was accepted directly. Both originals are archived in SourceGenerated.
+The second output's neutral buttpad subject was retained; only edge-connected
+bright neutral checker/halo pixels were cleared, hidden transparent RGB was set
+to 0, and the subject was uniformly scaled and centered on a 2048x1024 canvas.

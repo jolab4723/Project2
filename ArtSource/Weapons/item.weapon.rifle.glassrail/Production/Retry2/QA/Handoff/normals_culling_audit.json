@@ -1,0 +1,94 @@
+{
+  "blend": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\item.weapon.rifle.glassrail.blend",
+  "root_count": 1,
+  "root_names": [
+    "item.weapon.rifle.glassrail_root"
+  ],
+  "mesh": "GlassRail_Body",
+  "triangle_count": 149999,
+  "signed_volume": -0.0024704187971283666,
+  "signed_volume_note": "Diagnostic only: the Tripo mesh contains multiple open/internal shells, so global sign does not determine visible exterior winding; five-view backface-culling renders are authoritative.",
+  "degenerate_triangles": 0,
+  "centroid_normal_heuristic": {
+    "outward": 50178,
+    "inward": 99821,
+    "ambiguous": 0,
+    "outward_fraction": 0.334522230148201,
+    "note": "Concave textured weapon; centroid heuristic is supplemental to five-view backface-culling renders"
+  },
+  "bounds": {
+    "min": [
+      -0.032984,
+      -0.044879,
+      -0.230101
+    ],
+    "max": [
+      0.032998,
+      0.130704,
+      0.549901
+    ],
+    "dimensions": [
+      0.065983,
+      0.175583,
+      0.780001
+    ]
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.glassrail_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.glassrail_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.326
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.glassrail_root",
+      "local_location": [
+        -7.7e-05,
+        0.086901,
+        0.5499
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "culling_renders": {
+    "front": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\QA\\Handoff\\culling_front.png",
+    "back": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\QA\\Handoff\\culling_back.png",
+    "left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\QA\\Handoff\\culling_left.png",
+    "right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\QA\\Handoff\\culling_right.png",
+    "iso": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.glassrail\\Production\\Retry2\\QA\\Handoff\\culling_iso.png"
+  },
+  "checks": {
+    "single_root": true,
+    "single_mesh": true,
+    "nonzero_signed_volume_diagnostic": true,
+    "no_degenerate_triangles": true,
+    "required_markers": true,
+    "muzzle_plus_z": true,
+    "culling_views_rendered": true
+  },
+  "pass": true
+}

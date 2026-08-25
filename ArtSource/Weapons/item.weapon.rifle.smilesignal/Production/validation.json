@@ -1,0 +1,231 @@
+{
+  "item_id": "item.weapon.rifle.smilesignal",
+  "generated_at": "2026-08-25T08:45:26.355991+00:00",
+  "blender_version": "5.1.1",
+  "source": {
+    "task_id": "1fa3dd59-189c-4160-b050-36cd85e529d4",
+    "status": "success",
+    "consumed_credit": 30,
+    "raw_glb": "Tripo\\RetryAfterExpired20260825\\Downloaded\\item.weapon.rifle.smilesignal_raw.glb",
+    "raw_gate": "Tripo/RetryAfterExpired20260825/RawQA/raw_gate.json",
+    "source_triangles": 1489914
+  },
+  "coordinate_contract": {
+    "raw_muzzle": "-X",
+    "raw_up": "+Z",
+    "production_muzzle": "+Z",
+    "production_up": "+Y",
+    "root_origin": "RightHandGrip / trigger grip center"
+  },
+  "scale_meters": 0.82,
+  "root": "item.weapon.rifle.smilesignal",
+  "mesh": "SmileSignal_Body",
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.smilesignal",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.smilesignal",
+      "local_location": [
+        0.0,
+        -0.03,
+        0.27
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.smilesignal",
+      "local_location": [
+        0.0,
+        0.0861,
+        0.6068
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.092914,
+      -0.099363,
+      -0.213197
+    ],
+    "max": [
+      0.092918,
+      0.271569,
+      0.606807
+    ],
+    "dimensions": [
+      0.185833,
+      0.370932,
+      0.820004
+    ]
+  },
+  "decimation": {
+    "source_triangles": 1489914,
+    "selected_triangles": 249999,
+    "candidate_targets": [
+      600000,
+      400000,
+      250000
+    ],
+    "fixed_100k_target_used": false,
+    "selection_report": "Production/decimation_selection.json"
+  },
+  "material": {
+    "name": "M_SmileSignal_PBR",
+    "shader": "Principled BSDF / Unity URP Lit handoff",
+    "textures": [
+      "Production\\Textures\\item.weapon.rifle.smilesignal_BaseColor.png",
+      "Production\\Textures\\item.weapon.rifle.smilesignal_Normal.png",
+      "Production\\Textures\\item.weapon.rifle.smilesignal_ORM.png",
+      "Production\\Textures\\item.weapon.rifle.smilesignal_Occlusion.png",
+      "Production\\Textures\\item.weapon.rifle.smilesignal_MetallicSmoothness.png",
+      "Production\\Textures\\item.weapon.rifle.smilesignal_Emission.png"
+    ],
+    "emission_strength_blender_qa": 2.5,
+    "emission_report": "Production/QA/emission_mask_report.json"
+  },
+  "qa": {
+    "pbr_8_view": {
+      "front": "Production\\QA\\pbr_front.png",
+      "back": "Production\\QA\\pbr_back.png",
+      "left": "Production\\QA\\pbr_left.png",
+      "right": "Production\\QA\\pbr_right.png",
+      "top": "Production\\QA\\pbr_top.png",
+      "bottom": "Production\\QA\\pbr_bottom.png",
+      "iso_left": "Production\\QA\\pbr_iso_left.png",
+      "iso_right": "Production\\QA\\pbr_iso_right.png"
+    },
+    "emission_8_view": {
+      "front": "Production\\QA\\emission_front.png",
+      "back": "Production\\QA\\emission_back.png",
+      "left": "Production\\QA\\emission_left.png",
+      "right": "Production\\QA\\emission_right.png",
+      "top": "Production\\QA\\emission_top.png",
+      "bottom": "Production\\QA\\emission_bottom.png",
+      "iso_left": "Production\\QA\\emission_iso_left.png",
+      "iso_right": "Production\\QA\\emission_iso_right.png"
+    },
+    "marker_overlay": "Production\\QA\\marker_overlay_left.png"
+  },
+  "prohibited_objects": [],
+  "checks": {
+    "single_root": true,
+    "single_mesh": true,
+    "root_identity_transform": true,
+    "mesh_identity_transform": true,
+    "right_hand_grip_at_root": true,
+    "left_hand_grip_27cm_forward": true,
+    "muzzle_forward_positive_z": true,
+    "no_camera_light_armature": true,
+    "preservation_selected_250k": true,
+    "pbr_texture_set_complete": true,
+    "emission_binary_global_rgb_family": true,
+    "white_not_emissive": true,
+    "no_added_emission_geometry": true,
+    "reimport_verified": true
+  },
+  "reimport": {
+    "status": "passed",
+    "report": "Production\\QA\\Reimport\\reimport_validation.json",
+    "triangles": 249999,
+    "root": "item.weapon.rifle.smilesignal",
+    "markers": {
+      "RightHandGrip": {
+        "parent": "item.weapon.rifle.smilesignal",
+        "local_location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "LeftHandGrip": {
+        "parent": "item.weapon.rifle.smilesignal",
+        "local_location": [
+          0.0,
+          -0.03,
+          0.27
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "Muzzle": {
+        "parent": "item.weapon.rifle.smilesignal",
+        "local_location": [
+          0.0,
+          0.0861,
+          0.6068
+        ],
+        "local_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "local_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "marker_nearest_surface_distance_m": {
+      "RightHandGrip": 0.031027,
+      "LeftHandGrip": 0.005363,
+      "Muzzle": 0.001014
+    },
+    "errors": [],
+    "visual_gate": "PASS: manual inspection of all reimported PBR, emission, and backface-culling views confirmed open +Z muzzle, solid rear, symmetric sides, intact decal, limited red emission, and no unintended holes"
+  },
+  "pass": true
+}

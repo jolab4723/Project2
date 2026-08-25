@@ -14,7 +14,6 @@ ITEM_ID = "item.weapon.rifle.railcarbine"
 FBX = PRODUCTION / f"{ITEM_ID}.fbx"
 VALIDATION = PRODUCTION / "validation.json"
 REPORT = PRODUCTION / "QA" / "reimport_validation.json"
-EXPECTED_TRIANGLES = 59_999
 
 
 def v3(value) -> list[float]:
@@ -36,6 +35,8 @@ def nearest_surface_distance(root: bpy.types.Object, mesh: bpy.types.Object, mar
 
 
 def main() -> None:
+    validation = json.loads(VALIDATION.read_text(encoding="utf-8"))
+    expected_triangles = validation["decimation"]["final_triangles"]
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=str(FBX), use_custom_normals=True)
     objects = list(bpy.context.scene.objects)
@@ -54,8 +55,8 @@ def main() -> None:
         errors.append("missing one or more direct marker empties")
     mesh = meshes[0] if len(meshes) == 1 else None
     triangles = triangle_count(mesh) if mesh else None
-    if triangles != EXPECTED_TRIANGLES:
-        errors.append(f"triangle mismatch: expected {EXPECTED_TRIANGLES}, got {triangles}")
+    if triangles != expected_triangles:
+        errors.append(f"triangle mismatch: expected {expected_triangles}, got {triangles}")
 
     marker_records, contacts = {}, {}
     if root is not None:
@@ -152,7 +153,6 @@ def main() -> None:
         "errors": errors, "pass": not errors,
     }
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    validation = json.loads(VALIDATION.read_text(encoding="utf-8"))
     validation["reimport"] = {"status": "passed" if report["pass"] else "failed", "report": str(REPORT.relative_to(ROOT)), "triangles": triangles, "root": report["root"], "markers": marker_records, "grip_nearest_surface_distance_m": contacts, "errors": errors}
     validation["checks"]["reimport_verified"] = report["pass"]
     validation["pass"] = all(validation["checks"].values())

@@ -1,0 +1,27 @@
+{
+  "item_id": "item.weapon.grenadelauncher.pulsecask",
+  "review": "pass",
+  "pbr_views_reviewed": [
+    "Final/pbr_front.png",
+    "Final/pbr_back.png",
+    "Final/pbr_left.png",
+    "Final/pbr_right.png",
+    "Final/pbr_top.png",
+    "Final/pbr_iso.png"
+  ],
+  "emission_views_reviewed": [
+    "Final/emission_front.png",
+    "Final/emission_back.png",
+    "Final/emission_left.png",
+    "Final/emission_right.png",
+    "Final/emission_top.png",
+    "Final/emission_iso.png"
+  ],
+  "geometry": "pass: decimation preserves the continuous barrel, trigger grip, chamber housing, fore-end and stock without gross collapse or floating parts",
+  "muzzle": "pass: final +Z is the muzzle axis; the vented annular opening and dark bore are clear in the isometric view. The non-emissive gray rear bore surface visible axially is recessed behind the opening and is not a fused cyan cap",
+  "grips": "pass: RightHandGrip is the trigger-grip palm center at the root origin; LeftHandGrip is 0.326 m muzzleward and its overlay touches the unobstructed fore-end support surface",
+  "material": "pass: slate/silver and cobalt PBR appearance retained; no white material collapse",
+  "emission": "pass after tightened RGB-only revision: one saturated cyan chamber surface is visible in left/front/iso; cobalt paint, gray/white reflection edges and unrelated outlines remain black. Global binary family selected 10061 pixels and excluded 27586 pixels from the prior broad candidate",
+  "fbx_reimport": "pass: one root, one mesh, three required empties, 150000 triangles, uniform positive unit scales, one PBR material, no camera/light/armature/collider",
+  "unity_modified": false
+}

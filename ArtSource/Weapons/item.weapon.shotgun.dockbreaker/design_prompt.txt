@@ -1,0 +1,88 @@
+ITEM CARD
+Item ID: item.weapon.shotgun.dockbreaker
+Display name: 부두의 철퇴
+Character Class: Gunner
+Weapon Type: Shotgun
+Rarity: Common
+Handling: Two-handed
+Emission: none
+
+BUILT-IN IMAGEGEN MODE
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3 modeling
+
+SUPERSEDED LEFT DESIGN-ANCHOR PROMPT (SourceGenerated/left_v3.png)
+Use case: stylized-concept
+Asset type: exact orthographic game-weapon modeling reference
+Primary request: Generate a new LEFT SIDE 90° production view of the realistic sci-fi shotgun "Dockbreaker".
+Design: common-tier clean shockwave shotgun; charcoal metal/polymer with safety-orange ordinary painted panels. Simple Solar-Blade-like readability and restrained subculture sci-fi. Broad open shockwave muzzle is the single dominant shape; receiver and barrel remain slim and smooth. No emission/glow and no white accents.
+Strict geometry on the final 2048×1024 canvas: one complete horizontal weapon, stock LEFT and muzzle RIGHT, orthographic zero perspective. Weapon approximately x=140..1900. Trigger-grip center near x=650. The long straight pistol grip must be intentionally unusually narrow, only 38–45 px side-profile thickness everywhere along the palm section and never over 55 px, with full-glove length and a large open trigger guard.
+Support contact: exactly one small distinct smooth charcoal support pad only 160–190 px long, centered x=1280, about 630 px right/muzzleward from the trigger-grip center. The pad must look approximately one-third as long as a conventional pump fore-end, not a long pump sleeve. It is a fixed hand-contact patch on an otherwise plain safety-orange lower fore-end. No magazine, pump ribbing, cable, guard, rail, spikes, vents, ornament, moving parts, or abrupt thickness changes anywhere inside it.
+Muzzle: broad simple short rounded-octagonal shockwave muzzle housing, physically connected, fully open centered circular bore with a continuous rim and visible dark interior depth. No cap, plug, radial spokes, blockage, flash, smoke or effect.
+Output: exactly 2048×1024 PNG RGBA with genuine alpha-0 transparency outside weapon; do not draw/checker/bake a transparency grid. Centered and level, full silhouette no crop, same intended scale/center for four views. No hands, character, stand, floor, shadow, reflection, text, labels, watermark, UI, border, effects, aura, particles, extra objects, detached parts, rail clutter, scope, bipod, cable, canister, spikes, bayonet, oversized magazine, emission, luminous orange, or white.
+Keep the design realistic and connected but very simple: broad muzzle, slim barrel, compact receiver, narrow grip, short contact pad.
+
+SUPERSEDED LEFT FIRST GRIP-CORRECTION PROMPT (SourceGenerated/left_v6.png)
+Use case: precise-object-edit
+Asset type: exact orthographic game-weapon modeling reference
+Input images: Image 1 is the edit target and exact Dockbreaker design anchor.
+Primary request: Change ONLY the side-profile thickness of the existing pistol grip below the receiver. Preserve every other part exactly: stock, receiver, trigger loop, barrel, small black support pad and its placement, orange fore-end, broad open muzzle housing, silhouette, colors, materials, wear, scale, center and LEFT SIDE 90° camera.
+Pistol-grip correction: keep the same grip centerline, angle and long full-glove length, but narrow its palm-contact shaft horizontally to HALF its current width. Make the long shaft exactly 40–48 pixels wide in the generated 1774×887 image and never above 50 pixels below the receiver. Use smooth nearly parallel sides. Do not change the trigger loop and do not make the handle shorter.
+Output: same 2:1 framing, one full connected weapon, actual alpha-0 transparent background; never draw checkerboard. No crop, shadow, text, hands, effects, emission, extra objects, detached parts or redesign.
+The one and only allowed design change is reducing the pistol-grip shaft width by approximately 50 percent.
+
+SUPERSEDED LEFT FINAL GRIP-CORRECTION PROMPT (SourceGenerated/left_v7.png)
+Use case: precise-object-edit
+Input images: Image 1 is the exact edit target.
+Change only the long pistol-grip shaft below the receiver. It is still too wide. Reduce its horizontal side-view thickness by another 40 percent, keeping its exact centerline, angle, length, material and attachment. The final long palm-contact shaft must be 35–45 pixels wide in this 1774×887 output, with parallel edges and no flare except the tiny bottom cap. Preserve every other pixel/design element conceptually: full Dockbreaker shotgun, stock, trigger guard, receiver, short black fore-end pad, barrel, broad open muzzle, charcoal/orange palette, scale, centering and LEFT 90° orthographic camera.
+Output actual RGBA alpha-0 transparency, no checkerboard, no redesign, no crop, no new parts, no hands, text, shadow, effects, white or emission.
+
+SUPERSEDED FRONT PROMPT (SourceGenerated/front_v1.png)
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3
+Input images: Image 1 is the approved LEFT SIDE 90° anchor of the exact Dockbreaker shotgun, including charcoal/safety-orange palette, compact stock/receiver, narrow grip, short support pad and broad open muzzle.
+Primary request: Render the exact same physical weapon from FRONT 0°, looking straight into its broad shockwave muzzle. No redesign/add/remove/resize/recolor; preserve logical asymmetry and ordinary non-emissive materials.
+Camera: true orthographic axial front view, zero perspective, same world scale and exact center as Image 1. Do not enlarge to fill the frame. Muzzle housing outer cross-section should be physically consistent with its approved side-view height (roughly 180–260 px), compact at canvas center. Clearly show a broad rounded-octagonal continuous rim and fully open centered dark bore; barrel/receiver/stock align behind it.
+Output exactly 2048×1024 PNG RGBA true alpha-0 transparent background, never checkerboard. One complete centered weapon, full no crop.
+No hands/character/stand/floor/shadow/reflection/text/labels/logo/watermark/UI/effects/smoke/aura/particles/floating parts/extra objects/white accents/emission/glow. Muzzle fully clear and unblocked.
+
+SUPERSEDED REAR PROMPT (SourceGenerated/back_v1.png)
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3
+Input images: approved Dockbreaker LEFT 90° and FRONT 0° views; immutable design/scale anchors.
+Primary request: render exact same shotgun from REAR 180°, looking straight forward from behind the buttstock along the barrel. Show compact stock buttpad centered, with receiver/barrel/muzzle aligned and largely occluded. Preserve charcoal/safety-orange design, materials, proportions and asymmetry logically; no redesign.
+True orthographic axial rear, zero perspective, same world scale and exact center. Do not enlarge to fill canvas. Rear stock cross-section consistent with approved side/front scale, compact around center.
+Exactly 2048×1024 PNG RGBA true alpha-0 transparent background, no checkerboard. One complete weapon full inside canvas, no crop. No hands, character, stand, floor, shadow, reflection, text, labels, watermark, UI, effects, smoke, particles, detached parts, extra objects, white accents or emission/glow.
+
+FINAL SELECTED STRICT LEFT PROMPT (SourceGenerated/left_v10_strict.png)
+Use case: stylized-concept
+Asset type: strict 90-degree side-view game modeling reference
+Create Dockbreaker, one realistic common sci-fi shockwave shotgun, exact orthographic LEFT SIDE 90°. Stock LEFT, muzzle RIGHT. Charcoal + safety-orange paint, simple connected clean subculture sci-fi, no emission.
+STRICT CAMERA/MUZZLE: zero perspective/yaw/pitch/roll. Barrel centerline horizontal. Muzzle terminal cut edge is one perfectly straight VERTICAL line. Side view shows NO bore hole, NO inner black area, NO rim ellipse/circle/octagon, NO front face. Only lateral housing surfaces. Broad simple muzzle side housing is a short block ending vertically.
+MANDATORY STOCK: complete practical shoulder stock physically connected on the left, never omit it.
+ULTRA-THIN GRIP OVERCOMPENSATION: do not draw a normal pistol grip. Draw a long narrow wrapped handle shaft like a 18-mm tool rod, only 18–28 pixels wide on 2048 canvas, 190–220 px long, below receiver. Large open trigger loop separate above/front. The generated result must remain at or below 55 px after measurement.
+TINY SUPPORT PAD OVERCOMPENSATION: exactly one short black fixed oval pad only 75–95 pixels long on orange fore-end, not a long pump sleeve. Place its center approximately 640 px muzzleward/rightward from trigger-handle center. It must remain 160–220 px or less after measurement. Contact zones free of magazine/cable/rail/guard/spikes/vents/ornament/moving parts/thickness changes.
+Canvas exactly 2048×1024 RGBA PNG true alpha 0, never checkerboard. One horizontal full weapon x≈140..1900, centered level uncropped. Broad muzzle, slim barrel, compact receiver, full stock, thin grip, tiny pad.
+No hands/character/floor/stand/shadow/reflection/text/logo/watermark/UI/effects/aura/smoke/particles/detached parts/scope/bipod/cables/canisters/spikes/bayonet/white accents/glow/blocked trigger.
+
+FINAL SELECTED FRONT PROMPT (SourceGenerated/front_v2.png)
+Use case: stylized-concept
+Asset type: Project2 production FRONT 0° reference
+Input images: Image 1 is the newly approved strict LEFT 90° Dockbreaker shotgun. Reproduce this exact physical weapon without redesign.
+Render FRONT 0°, looking straight into the muzzle along the barrel axis. This is the ONLY view where the muzzle hole is visible. Show a broad simple safety-orange/charcoal rectangular-rounded outer housing consistent with Image 1 side height, with a fully open centered circular or rounded-octagonal black bore, continuous rim and visible inner depth. Align barrel, compact receiver, ultra-thin trigger handle and stock directly behind.
+True orthographic axial view, zero perspective, same world scale and center; do not enlarge. Outer muzzle width/height roughly 150–230 px, compact centered on 2048×1024.
+Exactly PNG RGBA alpha-0 transparent, no checkerboard. Complete weapon no crop. Preserve ordinary orange/charcoal materials, no white/emission. No hands/character/floor/stand/shadow/reflection/text/logo/watermark/UI/effects/smoke/particles/detached parts/extra objects/blocked bore.
+
+FINAL SELECTED REAR PROMPT (SourceGenerated/back_v2.png)
+Use case: stylized-concept
+Asset type: Project2 production REAR 180° reference
+Input images: Image 1 approved strict LEFT 90° and Image 2 approved FRONT 0° of the new exact Dockbreaker shotgun.
+Render exact same physical weapon from REAR 180°, camera directly behind the buttstock looking forward along barrel. Show the stock buttpad rear cross-section centered; receiver/barrel/muzzle align and are largely occluded. Preserve exact charcoal/safety-orange materials, stock geometry and logical asymmetry, no redesign.
+True orthographic axial rear, zero perspective, same world scale and center. Do not enlarge; buttpad cross-section roughly consistent with left stock height (about 200–280 px) and front scale. Complete weapon compact at center.
+Exactly 2048×1024 PNG RGBA true alpha 0, no checkerboard. No crop/hands/character/floor/stand/shadow/reflection/text/logo/watermark/UI/effects/particles/detached parts/white/emission.
+
+RIGHT VIEW FINALIZATION
+Generated right-side attempts were rejected because their receiver/stock detail and part placement visibly diverged from the approved left design. Per the final approval criterion, References/right.png is an exact pixel-for-pixel horizontal flip of References/left.png. No additional generation prompt produced the adopted right.png.
+
+COMMON NEGATIVE CONSTRAINTS
+character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rack, pedestal, ground, floor, background, checkerboard, shadow, reflection, floating parts, detached pieces, blocked muzzle, obstructed trigger, text, logo, watermark, white accents, emission, glow, aura, particles, excessive rails, pipes, cables, canisters, spikes, bayonet, scope, bipod, oversized magazine, needless accessories
