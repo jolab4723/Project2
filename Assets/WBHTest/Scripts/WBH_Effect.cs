@@ -11,10 +11,13 @@ public class WBH_Effect : MonoBehaviour
     private Coroutine returnCoroutine;
     private ParticleSystem[] particles;
 
+    private Vector3 initialLocalScale;
+
 
     private void Awake()
     {
         particles = GetComponentsInChildren<ParticleSystem>(true);
+        initialLocalScale = transform.localScale;
     }
 
     public void Initialize(WBH_EffectPoolManager poolManager)
@@ -24,12 +27,17 @@ public class WBH_Effect : MonoBehaviour
 
     public void Play(WBH_EffectData data, bool autoReturn = true) 
     {
-        effectData = data;
+        if (data == null)
+            return;
 
+        effectData = data;
         IsPlaying = true;
 
         if (returnCoroutine != null)
+        {
             StopCoroutine(returnCoroutine);
+            returnCoroutine = null;
+        }
 
         foreach(ParticleSystem particle in particles)
         {
@@ -45,16 +53,6 @@ public class WBH_Effect : MonoBehaviour
 
     public void StopEffect()
     {
-        if(returnCoroutine != null)
-        {
-            StopCoroutine(returnCoroutine);
-            returnCoroutine = null;
-        }
-        foreach(ParticleSystem particle in particles)
-        {
-            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-
         ReturnToPool();
     }
 
@@ -62,6 +60,7 @@ public class WBH_Effect : MonoBehaviour
     {
         yield return new WaitForSeconds(effectData.autoReturnTime);
 
+        returnCoroutine = null;
         ReturnToPool();
     }
 
@@ -86,5 +85,13 @@ public class WBH_Effect : MonoBehaviour
         poolManager.ReturnEffect(this);
 
         effectData = null;
+    }
+
+    public void ResetForPool(Transform poolRoot)
+    {
+        transform.SetParent(poolRoot, false);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
+        transform.localScale = initialLocalScale;
     }
 }
