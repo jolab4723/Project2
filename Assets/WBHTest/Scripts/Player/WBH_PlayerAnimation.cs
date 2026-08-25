@@ -12,6 +12,9 @@ public class WBH_PlayerAnimation : MonoBehaviour
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
 
+    [Header("Skill")]
+    [SerializeField] private AnimationClip fighterDash;
+
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
     private Animator animator;
@@ -21,6 +24,12 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private NavMeshAgent agent;
     private WBH_PlayerEffect effect;
     private WBH_PlayerStatus status;
+    private FighterSkillController fighterSkillController;
+
+    private readonly int SkillHash = Animator.StringToHash("Skill");
+    private readonly int SkillIdHash = Animator.StringToHash("SkillID");
+    private readonly int IsChargingHash = Animator.StringToHash("IsCharging");
+    private readonly int SkillSpeedHash = Animator.StringToHash("SkillSpeed");
     
 
     void Awake()
@@ -32,17 +41,35 @@ public class WBH_PlayerAnimation : MonoBehaviour
         controller = GetComponent<T_PlayerController>();
         effect = GetComponent<WBH_PlayerEffect>();
         status = GetComponent<WBH_PlayerStatus>();
+        fighterSkillController = GetComponent<FighterSkillController>();
     }
 
     private void OnEnable()
     {
         stateMachine.OnEnterState += HandleEnterState;
         status.OnAtkSpeedChanged += SetAtkAnimationSpeed;
+
+        if(fighterSkillController != null)
+        {
+            fighterSkillController.OnSkillAniRequested += PlaySkillAnimation;
+            fighterSkillController.OnChargeAniChanged += SetChargingAnimation;
+        }
     }
     private void OnDisable()
     {
         stateMachine.OnEnterState -= HandleEnterState;
         status.OnAtkSpeedChanged -= SetAtkAnimationSpeed;
+
+        if (fighterSkillController != null)
+        {
+            fighterSkillController.OnSkillAniRequested -= PlaySkillAnimation;
+            fighterSkillController.OnChargeAniChanged -= SetChargingAnimation;
+        }
+
+        if(animator != null)
+        {
+            animator.SetBool(IsChargingHash, false);
+        }
     }
 
     private void Start()
@@ -55,16 +82,13 @@ public class WBH_PlayerAnimation : MonoBehaviour
         UpdateMoveAnimation();
     }
 
+    // 스킬은 별도 이벤트로 제어.
     private void HandleEnterState(PlayerState now)
     {
         switch(now)
         {
             case PlayerState.Attack:
                 animator.SetTrigger("Attack");
-                break;
-
-            case PlayerState.Skill:
-                PlaySkillAnimation();
                 break;
 
             case PlayerState.Dodge:
@@ -103,9 +127,27 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetFloat("MoveSpeed", speed);
     }
 
-    private void PlaySkillAnimation()
+    public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
+        float skillSpeed = 1f;
+        const int DashSkillId = 3;
 
+        if(skillId == DashSkillId && fighterDash != null && targetDuration > 0f)
+        {
+            skillSpeed = fighterDash.length / targetDuration;
+        }
+
+        animator.SetFloat(SkillSpeedHash, skillSpeed);
+        animator.SetInteger(SkillIdHash, skillId);
+        animator.SetBool(IsChargingHash, isCharging);
+
+        animator.ResetTrigger(SkillHash);
+        animator.SetTrigger(SkillHash);
+    }
+
+    public void SetChargingAnimation(bool isCharging)
+    {
+        animator.SetBool(IsChargingHash, isCharging);
     }
 
 
@@ -123,6 +165,15 @@ public class WBH_PlayerAnimation : MonoBehaviour
     {
         stateMachine.ChangeState(PlayerState.Idle);
     }
+    public void AniEvent_ExecuteSkill()
+    {
+        fighterSkillController?.ExecutePendingSkill();
+    }
+    public void AniEvent_EndSkill()
+    {
+        fighterSkillController?.EndPendingSkillAni();
+    }
+
 
 
     //--- (이펙트)
