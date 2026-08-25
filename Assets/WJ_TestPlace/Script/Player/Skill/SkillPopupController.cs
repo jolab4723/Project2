@@ -2,24 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// KY님이 만든 SkillPopup(진화/강화 선택 UI)을 실제 ISkillController(현재 활성 캐릭터)에 연결한다.
-/// 기존 K키 패널(SkillEvolutionSelectUI)과 같은 데이터(GetEvolution/SetEvolution/GetEnhancement/
-/// SetEnhancement, ActiveSkillControllerLocator로 활성 캐릭터 자동 탐색)를 쓰지만, 조작 방식은 다르다 -
-/// K키 패널은 슬롯 하나당 버튼 하나로 순환(없음→1→2→3→없음)하는 반면, 이 팝업은 SkillSlot(1~3)로
-/// "어떤 스킬을 설정할지" 먼저 고른 뒤 EvolSelect(1~3)/UpgradeSelect(1~3)로 그 스킬의 진화/강화를
-/// 직접 지정하는 방식이다(127번).
-///
-/// KY님 스크립트(KY_PassiveSkillSlot/KY_SkillPopup)는 전혀 안 건드리고, 이미 있는 Button과
-/// KY_PassiveSkillSlot.activeHighlight(각 슬롯의 OutLine 자식)만 외부에서 참조해서 선택 표시에 쓴다.
-///
-/// SkillSlot_4는 대응하는 4번째 스킬이 없어서(ISkillController.SkillCount==3, Skill1~3만 존재)
-/// 선택 대상에서 제외했다 - KY_SkillView 주석("Skill1~4+Dodge")에 따르면 이 자리는 Dodge용으로 보인다.
-///
-/// Bottom 영역(Name/that/Description 3개 TMP)에는 SkillLabelDatabaseSO(128번 - 스킬/진화/강화 설명
-/// 라벨 테이블)에서 읽어온 텍스트를 표시한다(129번). Name=스킬 이름, that=기본 설명, Description=
-/// 지금 선택된 진화/강화가 있을 때만 "진화 : ~"/"강화 : ~" 줄을 추가한다(둘 다 없으면 빈칸).
-/// </summary>
 public class SkillPopupController : MonoBehaviour
 {
     [Tooltip("스킬 슬롯 1~3(SkillSlot_1~3). 클릭하면 그 스킬이 '지금 설정 중인 스킬'로 선택된다.")]
@@ -34,14 +16,17 @@ public class SkillPopupController : MonoBehaviour
     [Tooltip("스킬/진화/강화 설명 라벨 테이블(SkillLabelDatabase.asset).")]
     [SerializeField] private SkillLabelDatabaseSO labelDatabase;
 
-    [Tooltip("Bottom/Name - 스킬 이름 표시.")]
-    [SerializeField] private TextMeshProUGUI nameText;
+    [Tooltip("Bottom/SkillNameText - 스킬 이름 표시")]
+    [SerializeField] private TextMeshProUGUI skillNameText;
 
-    [Tooltip("Bottom/that - 기본 스킬 설명 표시.")]
-    [SerializeField] private TextMeshProUGUI summaryText;
+    [Tooltip("Bottom/SkillCostText - 스킬 코스트 및 마나 정보")]
+    [SerializeField] private TextMeshProUGUI skillCostText;
 
-    [Tooltip("Bottom/Description - 선택된 진화/강화 설명 표시(둘 다 없으면 빈칸).")]
-    [SerializeField] private TextMeshProUGUI descriptionText;
+    [Tooltip("Bottom/skillDescriptionText - 기본 스킬 설명 표시")]
+    [SerializeField] private TextMeshProUGUI skillDescriptionText;
+
+    [Tooltip("Bottom/SkillExtraText - 선택된 진화/강화 설명 표시(둘 다 없으면 빈칸)")]
+    [SerializeField] private TextMeshProUGUI skillExtraText;
 
     private int selectedSkillIndex = 0;
 
@@ -125,13 +110,16 @@ public class SkillPopupController : MonoBehaviour
         if (def == null || labelDatabase == null)
             return;
 
-        if (nameText != null)
-            nameText.text = def.skillName;
+        if (skillNameText != null)
+            skillNameText.text = def.skillName;
 
-        if (summaryText != null)
-            summaryText.text = labelDatabase.GetSkillDescription(def.skillId);
+        if (skillCostText != null)
+            skillCostText.text = BuildCostSummary(controller, def);
 
-        if (descriptionText == null)
+        if (skillDescriptionText != null)
+            skillDescriptionText.text = labelDatabase.GetSkillDescription(def.skillId);
+
+        if (skillExtraText == null)
             return;
 
         string evoLine = currentEvo == SkillEvolutionId.None
@@ -143,11 +131,21 @@ public class SkillPopupController : MonoBehaviour
             : "강화 : " + labelDatabase.GetEnhancementDescription(def.skillId, currentEnh);
 
         if (string.IsNullOrEmpty(evoLine))
-            descriptionText.text = enhLine;
+            skillExtraText.text = enhLine;
         else if (string.IsNullOrEmpty(enhLine))
-            descriptionText.text = evoLine;
+            skillExtraText.text = evoLine;
         else
-            descriptionText.text = evoLine + "\n" + enhLine;
+            skillExtraText.text = evoLine + "\n" + "\n" + enhLine;
+    }
+
+    private string BuildCostSummary(ISkillController controller, SkillDefinitionSO def)
+    {
+        float cooldown = controller.GetEffectiveCooldown(selectedSkillIndex);
+
+        if (def.shapeType == SkillShapeType.Dash)
+            return $"쿨타임 {cooldown:0.#}초";
+
+        return $"피해 배율 {def.damageMultiplier * 100f:0}% · 쿨타임 {cooldown:0.#}초";
     }
 
     private static void SetHighlight(Button button, bool active)
