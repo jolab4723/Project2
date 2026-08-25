@@ -11,7 +11,7 @@ using UnityEngine.AI;
 ///
 /// 전용 스킬 애니메이션이 아직 없어서, 기존 공격처럼 애니메이션 이벤트로 타이밍을 맞추는 대신
 /// 코루틴으로 "스킬 진행 시간"만큼 PlayerState.Skill을 유지했다가 Idle로 돌아간다 - 기능은
-/// 정상 동작하지만 시각적으로는 애니메이션 없이 즉시 판정된다.
+/// 정상 동작하지만 시각적으로는 애니메이션 없이 즉시 판정된다. > 8.25 WBH 애니메이션 연결 완료.
 ///
 /// 피해 적용은 T_PlayerCombat.CreateDamageRequest + WBH_CombatManager.ProcessDamage를 그대로
 /// 재사용한다 - Attacker가 T_PlayerController여야 OnDamageDealt/OnCrit 아이템 트리거가 제대로
@@ -76,13 +76,14 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
 
     // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
-    public event Action<int, bool> OnSkillAniRequested;
+    public event Action<int, bool, float> OnSkillAniRequested;
     public event Action<bool> OnChargeAniChanged;
 
     private int pendingSkillIndex = -1;
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
-    private bool pendingSkillExcuted; // 중복 실행 방지 변수
+    private bool pendingSkillExecuted; // 중복 실행 방지 변수
+    private float pendingDashDuration; 
     //-------
 
     private void OnEnable()
@@ -230,7 +231,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     }
 
     /// <summary>인덱스(0~2 = Skill1~3)에 해당하는 스킬을 사용한다. 쿨타임 중이거나 행동 불가 상태면 조용히 실패.</summary>
-    //public bool TryUseSkill(int index)
+    //public bool TryUseSkill(int index) // 8.24 WBH 주석화. 스킬이 시전되어 데미지가 적용되는 코드를 애니메이션 이벤트로 옮기기 위해 아래에 스킬 실행 가능 여부와 스킬 실행 기능 분리 처리.
     //{
     //    if (index < 0 || index >= skills.Length)
     //        return false;
@@ -296,7 +297,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         PreparePendingSkill(index, evolution);
         stateMachine.ChangeState(PlayerState.Skill);
-        RequestSkillAni(index, false);
+        RequestSkillAni(index, false, pendingDashDuration);
 
         return true;
     }
@@ -304,7 +305,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 기존 WJ님의 TryUseSkill 메서드에서 즉시 데미지가 들어가는 부분 분리. WBH_PlayerAnimation 의 AniEvent_ExecuteSkill 에서 실행.
     public void ExecutePendingSkill()
     {
-        if (pendingSkillIndex < 0 || pendingSkillExcuted || !stateMachine.Is(PlayerState.Skill))
+        if (pendingSkillIndex < 0 || pendingSkillExecuted || !stateMachine.Is(PlayerState.Skill))
             return;
 
         int index = pendingSkillIndex;
@@ -316,7 +317,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return;
         }
 
-        pendingSkillExcuted = true;
+        pendingSkillExecuted = true;
 
         switch (def.shapeType)
         {
@@ -343,7 +344,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
                 break;
 
             case SkillShapeType.Dash:
-                StartCoroutine(ExecuteDash(def, pendingEvo, index));
+                StartCoroutine(ExecuteDash(def, pendingEvo, index, pendingDashDuration));
                 break;
         }
     }
@@ -367,19 +368,32 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
     }
 
-    // 
+    // ExecutePendingSkill 메서드로 임시 값을 넘겨주기 위한 메서드
     private void PreparePendingSkill(int index, SkillEvolutionId evolution, float chargeRatio = 0f)
     {
         pendingSkillIndex = index;
         pendingEvo = evolution;
         pendingChargeRatio = chargeRatio;
-        pendingSkillExcuted = false;
+        pendingSkillExecuted = false;
+
+        SkillDefinitionSO def = skills[index];
+
+        pendingDashDuration = def != null && def.shapeType == SkillShapeType.Dash ? GetEffectiveDashDuration(def, index) : 0f;
+    }
+
+    // 대쉬시간을 계산하기 위한 메서드
+    private float GetEffectiveDashDuration(SkillDefinitionSO def, int index)
+    {
+        if (GetEnhancement(index) != SkillEnhancementId.Enhance1)
+            return def.dashDuration;
+
+        return def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f);
     }
 
     // 스킬 애니메이션 실행을 위한 이벤트 요청.
-    private void RequestSkillAni(int index, bool isCharging)
+    private void RequestSkillAni(int index, bool isCharging, float targetDuration = 0f)
     {
-        OnSkillAniRequested?.Invoke(index + 1, isCharging); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
+        OnSkillAniRequested?.Invoke(index + 1, isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
     }
 
     // 초기화
@@ -388,7 +402,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
         pendingChargeRatio = 0f;
-        pendingSkillExcuted = false;
+        pendingSkillExecuted = false;
+        pendingDashDuration = 0f;
     }
     // ------
 
@@ -754,7 +769,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     /// 강화(Enhance1: 위력 강화)는 대시가 자체 피해를 안 입혀서 대신 이동 시간(dashDuration)을 줄여
     /// 더 빠르게 대시하도록 한다. Enhance3(범위 강화)는 이동 거리에 적용된다(ApplySkillRangeBonus).
     /// </summary>
-    private IEnumerator ExecuteDash(SkillDefinitionSO def, SkillEvolutionId evo, int index)
+    private IEnumerator ExecuteDash(SkillDefinitionSO def, SkillEvolutionId evo, int index, float duration)
     {
         if (evo == SkillEvolutionId.Evolution1)
             controller.ApplyInvincibility(def.evoInvincibleDuration);
@@ -769,9 +784,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (NavMesh.Raycast(transform.position, targetPos, out NavMeshHit hit, NavMesh.AllAreas))
             targetPos = hit.position;
 
-        float duration = GetEnhancement(index) == SkillEnhancementId.Enhance1
-            ? def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f)
-            : def.dashDuration;
+        //float duration = GetEnhancement(index) == SkillEnhancementId.Enhance1 // 8.25 WBH 수정. GetEffectiveDashDuration 메서드에서 계산하여 임시 저장변수 pendingDashDuration 에 할당
+        //    ? def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f)
+        //    : def.dashDuration;
 
         Vector3 start = transform.position;
         float elapsed = 0f;

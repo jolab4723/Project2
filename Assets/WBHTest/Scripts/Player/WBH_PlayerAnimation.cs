@@ -12,6 +12,9 @@ public class WBH_PlayerAnimation : MonoBehaviour
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
 
+    [Header("Skill")]
+    [SerializeField] private AnimationClip fighterDash;
+
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
     private Animator animator;
@@ -26,6 +29,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
     private readonly int IsChargingHash = Animator.StringToHash("IsCharging");
+    private readonly int SkillSpeedHash = Animator.StringToHash("SkillSpeed");
     
 
     void Awake()
@@ -123,8 +127,17 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetFloat("MoveSpeed", speed);
     }
 
-    public void PlaySkillAnimation(int skillId, bool isCharging)
+    public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
+        float skillSpeed = 1f;
+        const int DashSkillId = 3;
+
+        if(skillId == DashSkillId && fighterDash != null && targetDuration > 0f)
+        {
+            skillSpeed = fighterDash.length / targetDuration;
+        }
+
+        animator.SetFloat(SkillSpeedHash, skillSpeed);
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetBool(IsChargingHash, isCharging);
 
