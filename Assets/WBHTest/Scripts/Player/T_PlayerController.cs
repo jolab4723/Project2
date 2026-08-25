@@ -170,7 +170,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 이동명령
     public void MoveCommand(Vector3 destination)
     {
-        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+        if (!CanUseAgent || !IsControlEnabled || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Skill,PlayerState.Dead))
             return;
 
         agent.isStopped = false;

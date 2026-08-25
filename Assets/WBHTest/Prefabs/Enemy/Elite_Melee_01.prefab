@@ -1851,7 +1851,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.45, y: 0.45, z: 0.45}
+  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4848528645510220416}
@@ -2008,6 +2008,17 @@ MonoBehaviour:
     maxSpeedMultiplier: 2.2
     farBlinkInterval: 0.5
     nearBlinkInterval: 0.08
+  hiddenSettings:
+    lifeTime: 60
+    damagedSpeedMultiplier: 1.5
+    damagedSpeedDuration: 3
+    repathInterval: 0.35
+    fleeDistance: 8
+    navMeshSampleRadius: 2
+    candidateCount: 5
+    maxFleeAngle: 70
+    initialDirectionWeight: 5
+    despawnEffect: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
