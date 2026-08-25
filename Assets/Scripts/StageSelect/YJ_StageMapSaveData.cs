@@ -8,6 +8,7 @@ public class StageMapSaveData
 
     public StageActType act; // 현재 Act
     public int mapSeed; // 디버깅과 맵 식별용
+    public bool startNewAct; // 다음 StageSelect 진입 시 해당 Act의 새 맵을 생성할지 여부
 
     public int clearedFloor; // 실제 클리어한 노드
     public string lastClearedNodeId; // 현재 플레이어 위치
