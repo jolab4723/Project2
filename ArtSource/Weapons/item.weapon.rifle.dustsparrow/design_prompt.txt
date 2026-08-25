@@ -1,0 +1,91 @@
+ITEM CARD
+Item ID: item.weapon.rifle.dustsparrow
+Display name: 모래 참새
+Character Class: Gunner
+Weapon Type: Rifle
+Rarity: Common
+Handling: Two-handed
+Emission: none
+
+BUILT-IN IMAGEGEN MODE
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3 modeling
+
+SUPERSEDED LEFT DESIGN-ANCHOR PROMPT (SourceGenerated/left_v3.png)
+Use case: stylized-concept
+Asset type: exact orthographic game-weapon modeling reference
+Primary request: Generate a new LEFT SIDE 90° production view of the realistic sci-fi rifle "Dust Sparrow". This must be a new clean design, not a collage.
+Design: common-tier slim integrated pulse carbine; warm-gray metal/polymer body and muted-mustard painted composite panels only. One clean continuous silhouette, restrained subculture sci-fi, simple readable forms, minimal seams, no industrial bulges or accessories. No emission or glow.
+Strict orthographic geometry: one horizontal full rifle, muzzle RIGHT, stock LEFT. In the final 2048×1024 canvas, weapon runs approximately x=140..1900. Trigger-grip center at x=650. The pistol grip is a long extremely slender straight slightly swept grip whose side-profile palm-contact cross-section is visibly only 38–48 px thick everywhere, never over 55 px. It is not a fat ergonomic grip. Leave a large open trigger loop and full-glove clearance.
+Front-hand support: one visually distinct smooth charcoal support pad from x=1205 to x=1395 only, center x=1300, length 190 px. Its center is exactly 650 px right/muzzleward from trigger-grip center. The entire 190 px pad is straight, continuous and free of magazine, cable, guard, rail, spikes, ornament, moving part, vent, or thickness change. Before and after it, resume plain mustard fore-end.
+Muzzle: narrow connected barrel ending in a clearly open centered hollow muzzle with continuous rim and visible dark interior, no cap or blockage.
+Output: exactly 2048×1024 PNG RGBA with a genuinely transparent alpha-0 background. Do not draw, bake, or simulate a checkerboard transparency grid; pixels outside the weapon must have alpha 0. Orthographic zero perspective, one complete centered level weapon, same scale planned for four views, no crop.
+No hands, character, floor, stand, shadow, reflection, text, labels, watermark, border, UI, detached parts, floating parts, white accents, bright luminous accents, effects, smoke, aura, particles, scope, bipod, cable, canister, spike, bayonet, oversized magazine, or blocked trigger/muzzle.
+
+SUPERSEDED LEFT GEOMETRY-CORRECTION PROMPT (SourceGenerated/left_v4.png)
+Use case: precise-object-edit
+Asset type: exact orthographic game-weapon modeling reference
+Input images: Image 1 is the edit target. Preserve it exactly except for the two geometry corrections below.
+Primary request: Keep the exact same Dust Sparrow design, silhouette, stock, receiver, no-magazine integrated pulse-carbine construction, barrel, open muzzle, colors, materials, orthographic LEFT SIDE view, scale, position and transparency. Change only:
+1) Narrow the entire long pistol-grip palm section to exactly 40 native pixels of side-profile thickness from top to bottom, with smooth parallel edges. It must never exceed 45 native pixels anywhere below the receiver. Keep the same grip centerline, length, swept angle, trigger opening and full-glove clearance. This is intentionally slimmer than a normal firearm grip.
+2) Shorten the black front support pad to exactly 150 native pixels long while retaining its current center. Replace the removed left/right pad portions with plain mustard fore-end. The support pad must be a single straight clean palm-contact segment.
+Output must be RGBA with actual alpha-0 transparency outside the rifle. Never draw a checkerboard pattern; do not bake any background. One complete weapon, no crop, no shadow, no text, no hands, no effects, no emission, no white accents, no detached pieces.
+Do not alter any other pixels/design features conceptually. The only edits are the slimmer pistol grip and shorter support pad.
+
+FINAL SELECTED STRICT LEFT PROMPT (SourceGenerated/left_v8_strict.png)
+Use case: precise-object-edit
+Asset type: strict orthographic LEFT SIDE 90° modeling reference
+Input images: Image 1 is the exact Dust Sparrow left-side edit target. Image 2 defines the muzzle bore that exists physically but must be visible ONLY in front view.
+Primary request: Preserve every part of Image 1 exactly except correct the muzzle camera/termination to a mathematically strict 90-degree side projection.
+Nonnegotiable side-view muzzle gate: barrel centerline perfectly parallel to image X-axis. Muzzle cut plane perfectly vertical, parallel to image Y-axis. From this exact side direction, show only the lateral cylindrical barrel surface and one straight vertical terminal edge. Absolutely NO black muzzle hole, NO interior bore, NO oval/circular front rim, NO inner wall, and NO visible front-facing surface at the muzzle. Remove the tiny dark opening currently visible at the far-right tip. Do not shorten the barrel; cap the 2D silhouette only as a vertical side edge while the front reference retains the physical bore.
+Preserve exact weapon length, warm-gray/mustard design, stock, receiver, narrow grip 50–53 px, support pad 165 px and 625 px grip-center spacing, scale, center, materials and wear. Orthographic zero perspective, horizontal level.
+Output same 2:1 complete RGBA alpha-0 transparent weapon, no checkerboard/background/shadow/text/hands/effects/white/emission. Only muzzle side-projection correction; no other redesign.
+
+SELECTED FRONT PROMPT (SourceGenerated/front_v1.png)
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3
+Input images: Image 1 is the approved LEFT SIDE 90° anchor of the exact Dust Sparrow rifle. It defines the immutable design, proportions, warm-gray/muted-mustard palette, materials, wear, narrow grip, short front support pad, open muzzle, and scale.
+Primary request: Render that exact same physical weapon from FRONT 0°, looking straight into the muzzle along the barrel axis. Do not redesign, simplify, mirror, recolor, add, remove, resize or relocate any part. Preserve all asymmetry logically.
+Camera/composition: true orthographic axial front view, zero perspective. Same world scale and same weapon center as Image 1 on a 2048×1024 canvas. Do NOT enlarge the front view to fill the frame: because it is viewed along its length, its cross-section should remain compact around canvas center, with its outer width/height consistent with the side-view receiver/muzzle thickness (roughly 100–220 pixels, not hundreds of pixels tall). Show the open muzzle rim and centered dark hollow bore clearly, with connected barrel/receiver/stock silhouettes receding directly behind it.
+Output: exactly 2048×1024 PNG RGBA with genuine alpha-0 transparent background, no checkerboard. One complete weapon only, fully inside canvas, no crop.
+Invariants: exact Dust Sparrow warm gray + muted mustard, no white accents, no emission/glow. No hands, character, stand, floor, shadow, reflection, text, labels, watermark, UI, effects, aura, smoke, particles, floating/detached pieces, blocked muzzle or extra object.
+
+SELECTED REAR PROMPT (SourceGenerated/back_v1.png)
+Use case: stylized-concept
+Asset type: Project2 production multiview reference for Tripo H3
+Input images: Image 1 approved LEFT SIDE 90° and Image 2 approved FRONT 0° of the exact Dust Sparrow rifle. Together they are immutable design/scale anchors.
+Primary request: Render the exact same weapon from REAR 180°, camera looking straight forward along the barrel from behind the buttstock. Show the rear buttpad centered, with receiver/barrel/muzzle aligned and largely occluded behind it. No redesign, mirroring error, added/removal/resizing/recoloring of parts; preserve warm-gray/muted-mustard construction and all asymmetry logically.
+Camera/composition: orthographic axial rear view, zero perspective, same world scale and exact canvas center as approved images. Do not enlarge to fill the frame. Rear cross-section width/height must be physically consistent with Image 1 stock/receiver thickness and Image 2 muzzle scale, compact at canvas center.
+Output exactly 2048×1024 PNG RGBA with true alpha-0 transparent background, no checkerboard. One complete weapon only, fully inside no crop.
+No white accents, emission/glow, hands, character, stand, floor, shadow, reflection, text, labels, watermark, UI, effects, smoke, particles, floating/detached parts or extra objects. Keep muzzle path mechanically aligned and unblocked behind the weapon.
+
+RIGHT VIEW FINALIZATION
+Generated right-side attempts were rejected because their receiver/stock detail and part spacing visibly diverged from the approved left design. Per the final approval criterion, References/right.png is an exact pixel-for-pixel horizontal flip of References/left.png. No additional generation prompt produced the adopted right.png.
+
+COMMON NEGATIVE CONSTRAINTS
+character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rack, pedestal, ground, floor, background, checkerboard, shadow, reflection, floating parts, detached pieces, blocked muzzle, obstructed trigger, text, logo, watermark, white accents, emission, glow, aura, particles, excessive rails, pipes, cables, canisters, spikes, bayonet, scope, bipod, oversized magazine, needless accessories
+
+NATIVE-ALPHA GATE ATTEMPTS (NOT ADOPTED; generation stopped by root)
+
+SourceGenerated/left_v9_truealpha.png
+Prompt: Create one exact Dust Sparrow game-asset reference: warm-gray plus muted-mustard slim integrated non-emissive pulse carbine; strict LEFT 90-degree orthographic side elevation; horizontal barrel axis; vertical muzzle cut; no visible bore/rim/front face; no accessories. Exactly 2048x1024 PNG RGBA with actual transparent alpha-0 pixels from the start, no checkerboard or colored backdrop. Thin trigger grip at most 55 px. Front support pad/corridor 160-220 px centered 620-680 px muzzleward from trigger-grip center, unobstructed. One full centered weapon, no crop/hands/character/stand/floor/shadow/text/effects/detached parts.
+Result: native RGBA, but rejected because trigger grip and support-contact geometry exceeded limits.
+
+SourceGenerated/left_v10_truealpha_attempt.png
+Prompt: Edit left_v9 while preserving its identity; correct grip to 48-52 px and support pad to 170-190 px centered about 650 px muzzleward; keep strict side projection and genuine RGBA alpha-0 transparency with no checkerboard/backdrop.
+Result: rejected: 24bpp RGB with an opaque baked checkerboard.
+
+SourceGenerated/left_v11_truealpha.png
+Prompt: Generate a new strict-left Dust Sparrow cutout; exceptionally thin 45-50 px blade grip; exactly one 175 px dark rubber support pad centered exactly 650 px muzzleward; strict horizontal side projection with flat vertical muzzle terminal and no bore/front face; actual 2048x1024 PNG RGBA alpha-0 background/open holes, no checkerboard/backdrop.
+Result: native RGBA, but rejected because support-pad placement/extent did not satisfy the measured corridor gate.
+
+SourceGenerated/left_v12_truealpha_attempt.png
+Prompt: Edit only left_v11 hand-contact geometry; keep grip 45-50 px and shorten/move the only support pad to 180 px centered 650 px muzzleward; preserve design/strict side; output genuine 2048x1024 RGBA alpha-0 background/open holes, no checkerboard/backdrop.
+Result: rejected: 24bpp RGB with an opaque baked checkerboard.
+
+SourceGenerated/left_v13_truealpha_attempt.png
+Prompt: Generate a true-transparent strict-left Dust Sparrow cutout with flat vertical muzzle edge/no bore; thin 48 px grip; one 180 px pad exactly 650 px muzzleward in a plain unobstructed corridor; warm gray plus muted mustard, no emission/accessories; actual 2048x1024 RGBA alpha-0 background/open holes, no depicted checkerboard/backdrop.
+Result: native RGBA, but rejected because trigger-grip and support-pad geometry exceeded limits. No further ImageGen calls after root stop instruction.
+
+CURRENT NATIVE-ALPHA GATE STATUS
+The previously adopted front/left/back finals were derived from RGB/checker or RGB/black sources through background extraction and are not submission-eligible under the updated gate. right.png mirrors the ineligible left.png. Tripo remains blocked until a native-alpha path and fully compliant measured four-view set are approved.

@@ -1,0 +1,39 @@
+{
+  "item_id": "item.weapon.rifle.glassrail",
+  "task_id": "d8d5f54a-76ab-4daf-bb76-4d7e91d564fa",
+  "gate": "reject",
+  "views_reviewed": [
+    "raw_pos_x.png",
+    "raw_neg_x.png",
+    "raw_pos_y.png",
+    "raw_neg_y.png",
+    "raw_pos_z.png",
+    "raw_neg_z.png",
+    "raw_iso_pos.png",
+    "raw_iso_neg.png"
+  ],
+  "accepted_aspects": {
+    "muzzle": "raw -X muzzle is open and mechanically readable in raw_neg_x and raw_iso_neg",
+    "main_silhouette": "rifle body, stock, trigger grip, fore-end and conduit are otherwise coherent",
+    "palette": "smoked silver, azure paint and cyan-blue conduit remain recognizable"
+  },
+  "blocking_defect": {
+    "type": "gross disconnected floating geometry",
+    "location": "beside the buttstock, offset laterally from the main body",
+    "evidence": [
+      "raw_pos_x.png: detached vertical metal piece left of the stock axial silhouette",
+      "raw_neg_x.png: detached vertical metal piece right of the muzzle axial silhouette",
+      "raw_pos_z.png and raw_neg_z.png: isolated small component outside the longitudinal body silhouette",
+      "raw_iso_pos.png and raw_iso_neg.png: visibly floating component beside the buttstock with an air gap"
+    ]
+  },
+  "policy": "Do not remove, rebuild, merge, or hide gross Tripo errors in Blender. Postprocess and FBX export are blocked for this task result.",
+  "credits": {
+    "available_before": 165,
+    "available_after": 135,
+    "frozen_before": 0,
+    "frozen_after": 0,
+    "consumed": 30
+  },
+  "unity_modified": false
+}

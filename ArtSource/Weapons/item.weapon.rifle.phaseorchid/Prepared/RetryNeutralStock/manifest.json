@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "display_name": "허공에 핀 난초",
+  "item_type": "Rifle",
+  "rarity": "Unique",
+  "status": "candidate_waiting_for_root_image_approval",
+  "purpose": "Remove rear endpoint ambiguity before any further Tripo consideration; keep the approved Phase Orchid design.",
+  "authoritative_candidate_files": {
+    "front_0": "front.png",
+    "rear_180": "back.png",
+    "left_90": "left.png",
+    "right_270": "right.png"
+  },
+  "design_invariants": {
+    "palette": "dark jade and black",
+    "front_only_feature": "open muzzle with connected low-profile orchid-petal armor and sharply bounded magenta channels",
+    "rear_only_feature": "solid neutral graphite-black ribbed buttpad with restrained dark-jade collar",
+    "side_feature": "strict orthographic edge-on muzzle termination; no visible front face, bore, or elliptical muzzle ring",
+    "right_derivation": "exact horizontal RGBA mirror of final left",
+    "emission_color_family": "magenta only; absent from rear and ordinary paint"
+  },
+  "source_mapping": {
+    "front": "../TripoInput/front.png with visible pixels preserved and hidden RGB normalized to zero",
+    "left": "../TripoInput/left.png with visible weapon pixels preserved, detached alpha remnants removed, and hidden RGB normalized to zero",
+    "right": "exact mirror of final left.png",
+    "back": "SourceGenerated/rear_neutral_v2_rgb_checker.png neutral buttpad subject; baked checker background removed; uniformly normalized to accepted endpoint scale"
+  },
+  "imagegen": {
+    "mode": "built-in imagegen",
+    "use_case": "precise-object-edit followed by targeted background-extraction retry",
+    "prompt_record": "imagegen_prompts.txt",
+    "generated_sources": {
+      "rear_neutral_v1_rgb_checker.png": {
+        "size": [1774, 887],
+        "mode": "RGB",
+        "sha256": "8bb8b8863c62043713ad3af69cf5977cd6d97f770739b9fd55d3f3b8aef7b5f6",
+        "direct_acceptance": false,
+        "reason": "opaque baked checkerboard; no alpha channel"
+      },
+      "rear_neutral_v2_rgb_checker.png": {
+        "size": [1774, 887],
+        "mode": "RGB",
+        "sha256": "9907a5523171c6da1c3920bc0cbb211535c998953fc630b94e6284e2cd8f10f4",
+        "direct_acceptance": false,
+        "reason": "opaque baked checkerboard; neutral buttpad subject retained for deterministic extraction"
+      }
+    }
+  },
+  "rear_normalization": {
+    "source_foreground_bbox": [812, 260, 964, 632],
+    "background_pixels_cleared": 1532390,
+    "edge_connected_baked_halo_pixels_cleared": 468,
+    "detached_pixels_cleared": 0,
+    "uniform_scale": 0.8682795698924731,
+    "normalized_subject_size": [132, 323],
+    "normalized_origin": [958, 350],
+    "stretch_or_nonuniform_scale_used": false,
+    "crop_of_subject_used": false
+  },
+  "files": {
+    "front.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_bbox": [911, 347, 1137, 677],
+      "sha256": "467edafc3effabc575a42586c77d55ad9c44112eac04d03174f1170071f550cc"
+    },
+    "back.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_bbox": [958, 350, 1090, 673],
+      "sha256": "2b7e15f90da4e600ec6174032adf839295b24c3d1965d549feba68f87cd05a06"
+    },
+    "left.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_bbox": [74, 350, 1974, 673],
+      "sha256": "a935ff0e0468ec7b8d92384726edd7dda06da5bfd6e422d25d7746b07262ca39"
+    },
+    "right.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_bbox": [74, 350, 1974, 673],
+      "sha256": "46362682cc5e25969b8010c5a95ba734c51b112d830e91506e5f734978244130"
+    }
+  },
+  "qa": {
+    "validation": "reference_validation.json",
+    "contact_sheet": "QA/contact_sheet.png",
+    "contact_sheet_sha256": "7bb3f1ef3b9e2cc4cb88b41f141d373a4b671f3ab40472a57b290de9a8e59dbf"
+  },
+  "cost_guard": {
+    "tripo_called": false,
+    "tripo_credits_consumed": 0,
+    "blender_production_started": false,
+    "unity_modified": false,
+    "next_gate": "Root must visually approve this four-view set before any Tripo action."
+  }
+}

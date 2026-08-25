@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "purpose": "One approved H3 retry with front/back endpoint slot correction only",
+  "source_design": "Prepared/TripoInput accepted Phase Orchid four-view set",
+  "design_regenerated": false,
+  "slot_mapping": {
+    "front.png": "../TripoInput/back.png",
+    "back.png": "../TripoInput/front.png",
+    "left.png": "../TripoInput/left.png with only detached alpha remnants cleared",
+    "right.png": "exact horizontal RGBA mirror of retry left.png"
+  },
+  "files": {
+    "front": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [933, 350, 1115, 673],
+      "sha256": "391e24d911ce07a46903fc9183fe97dfb5ac63dfd7c0b79ff35e9eaba2123c63",
+      "source_back_byte_identical": true
+    },
+    "back": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [911, 347, 1137, 677],
+      "sha256": "2e3162350c4015ef0f77d9e0797a91e177c1ff631bd65a45052d91b4d1206575",
+      "source_front_byte_identical": true
+    },
+    "left": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [74, 350, 1974, 673],
+      "sha256": "f8f0c6b2825129cc43f52986e04c1867b266f680c1b9a8e081a3d39480130a54",
+      "accepted_visible_rgba_pixels_changed": 0,
+      "detached_alpha_pixels_cleared": 1242,
+      "rejected_miniview_regions_nonzero_alpha_pixels": [0, 0]
+    },
+    "right": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [74, 350, 1974, 673],
+      "sha256": "52235858ec62ffee560fb5af278ac304ba1dab3c941a67f824ac1a429a5cbd78",
+      "exact_left_rgba_mirror": true
+    }
+  },
+  "qa": {
+    "all_four_corner_alpha_zero": true,
+    "left_right_design_scale_and_part_placement_match": true,
+    "side_views_strict_horizontal_orthographic": true,
+    "side_muzzle_face_or_bore_visible": false,
+    "open_muzzle_view_present": true,
+    "neutral_stock_view_present": true,
+    "dark_jade_black_and_magenta_design_unchanged": true
+  },
+  "submission_guard": {
+    "checked_at": "2026-08-25T13:23:33.5123821+09:00",
+    "balance": 185,
+    "frozen": 30,
+    "expected_cost": 30,
+    "decision": "blocked; no submission while frozen credits are nonzero"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.grenadelauncher.sunfallengine",
+  "status": "approved_and_used_for_front_back_swap_retry",
+  "tripoGate": "completed",
+  "files": {
+    "front.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alphaExtrema": [0, 255],
+      "alphaBoundingBoxExclusive": [869, 232, 1171, 796],
+      "sha256": "afeda3e918e371d29be0919a7cdb5a04ab02f0d01bb290a3627acf5c41342217"
+    },
+    "left.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alphaExtrema": [0, 255],
+      "alphaBoundingBoxExclusive": [191, 289, 1847, 751],
+      "sha256": "7e972f4be632d9daf6ac6939a09573b11a5d328aa8811d86e4d2cf0f14f79b7c"
+    },
+    "back.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alphaExtrema": [0, 255],
+      "alphaBoundingBoxExclusive": [908, 268, 1137, 759],
+      "sha256": "23905d7a5888c71d0ba58976b112dc1cf465173f84cdf541af5a1ea76fbdb4f3"
+    },
+    "right.png": {
+      "size": [2048, 1024],
+      "mode": "RGBA",
+      "alphaExtrema": [0, 255],
+      "alphaBoundingBoxExclusive": [201, 289, 1857, 751],
+      "sha256": "c7d9b61c3fec711f8140701b0177ae8e2e8c8fec1c716db704b5b90713466923"
+    }
+  },
+  "sideMeasurements": {
+    "left90": {
+      "triggerGripBoundsX": [747, 797],
+      "triggerGripMaxWidthPx": 51,
+      "triggerCenterX": 772.0,
+      "supportCorridorBoundsX": [1327, 1516],
+      "supportCorridorLengthPx": 190,
+      "supportCenterX": 1421.5,
+      "gripToSupportDistancePx": 649.5
+    },
+    "right270": {
+      "triggerGripBoundsX": [1250, 1300],
+      "triggerGripMaxWidthPx": 51,
+      "triggerCenterX": 1275.0,
+      "supportCorridorBoundsX": [531, 720],
+      "supportCorridorLengthPx": 190,
+      "supportCenterX": 625.5,
+      "gripToSupportDistancePx": 649.5
+    }
+  },
+  "checks": {
+    "exactDimensions": true,
+    "pngRgba": true,
+    "genuineAlphaZeroBackground": true,
+    "uncroppedWithMargins": true,
+    "singleCenteredWeapon": true,
+    "orthographicHorizontalSideViews": true,
+    "sideBarrelAxisParallelToCanvasX": true,
+    "sideMuzzleCutPlaneParallelToCanvasY": true,
+    "sideViewsShowNoMuzzleBoreOrInterior": true,
+    "triggerGripAtMost55PxBothSides": true,
+    "supportDistance620To680PxBothSides": true,
+    "supportCorridor160To220PxBothSides": true,
+    "supportCorridorsOpaqueAndContinuousAtContactBand": true,
+    "rightIsExactPixelMirrorOfLeft": true,
+    "muzzleOpenDeepCenteredAndContinuous": true,
+    "designatedGlowOnly": true,
+    "noWhiteGlow": true,
+    "noDetachedPartsOrEffects": true,
+    "noResizeStretchOrCrop": true
+  },
+  "visualNotes": [
+    "Front and rear are independently generated axial references; right is deliberately the exact horizontal mirror of left for structural identity.",
+    "Final alpha is binary after one connected-background cleanup because the built-in generator returned opaque checkerboard/black raw backgrounds.",
+    "Maximum alpha-bounding-box center offset from canvas center is 5 pixels and is visually negligible; no scaling or crop was used."
+  ]
+}

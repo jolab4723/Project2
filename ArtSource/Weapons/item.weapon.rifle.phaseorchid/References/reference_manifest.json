@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "display_name_ko": "허공에 핀 난초",
+  "rarity": "Unique",
+  "character_class": "Gunner",
+  "weapon_type": "Rifle",
+  "phase": "reference_gate_waiting_for_root_visual_approval",
+  "generation_mode": "built-in image_gen",
+  "generation_date": "2026-08-25",
+  "canvas": {
+    "source_generated_size": [1774, 887],
+    "final_size": [2048, 1024],
+    "final_mode": "RGBA",
+    "resize": "uniform aspect-preserving 2:1 resample only",
+    "cropping": false,
+    "nonuniform_stretch": false
+  },
+  "postprocess": {
+    "passes": 1,
+    "reason": "Built-in derived views returned a rendered light checker/white background instead of usable alpha.",
+    "method": "Border-connected light-neutral background removal, then uniform 1774x887 to 2048x1024 Lanczos resample.",
+    "implementation": "References/build_reference_final.py",
+    "alpha_policy": "Only the border-connected light-neutral background was cleared; weapon color and geometry were not repainted."
+  },
+  "final_views": {
+    "front": {
+      "path": "References/front.png",
+      "source": "References/SourceGenerated/front_generated_v3.png",
+      "view": "FRONT 0"
+    },
+    "left": {
+      "path": "References/left.png",
+      "source": "References/SourceGenerated/left_generated_v4.png",
+      "view": "LEFT SIDE 90"
+    },
+    "back": {
+      "path": "References/back.png",
+      "source": "References/SourceGenerated/back_generated_v3.png",
+      "view": "REAR 180"
+    },
+    "right": {
+      "path": "References/right.png",
+      "source": "References/left.png",
+      "view": "RIGHT SIDE 270",
+      "derivation": "pixel-exact horizontal mirror of accepted left.png",
+      "reason": "Production lead prioritized exact structure, color, scale, muzzle, grip, and part-placement identity over a visibly drifting generated-right view."
+    }
+  },
+  "generated_right_disposition": {
+    "accepted": false,
+    "discarded_sources": [
+      "References/SourceGenerated/right_generated_v1.png",
+      "References/SourceGenerated/right_generated_v3.png",
+      "References/SourceGenerated/right_generated_rejected_v3.png"
+    ],
+    "final_policy": "left_mirror"
+  },
+  "strict_side_projection": {
+    "accepted_left_source": "References/SourceGenerated/left_generated_v4.png",
+    "prior_left_source_discarded": "References/SourceGenerated/left_generated_v3.png",
+    "reason": "The prior side candidate exposed an elliptical muzzle face and bore. V4 uses an edge-on vertical muzzle cut with no visible internal bore.",
+    "right_policy": "exact horizontal mirror of strict accepted left"
+  },
+  "other_generation_history": [
+    "References/SourceGenerated/left_generated_v1.png",
+    "References/SourceGenerated/left_generated_v2.png",
+    "References/SourceGenerated/front_generated_v1.png",
+    "References/SourceGenerated/front_generated_rejected_v2.png",
+    "References/SourceGenerated/back_generated_v1.png"
+  ],
+  "emission": {
+    "surface": "connected recessed channels between muzzle petal armor",
+    "reserved_color": "magenta",
+    "representative_srgb_rgb": [229, 99, 180],
+    "bright_quarter_srgb_rgb": [250, 165, 228],
+    "normal_paint_reuse_allowed": false,
+    "white_emission_allowed": false
+  },
+  "tripo_submission": {
+    "submitted": false,
+    "blocked_by_gate": true,
+    "required_next_action": "root visual approval of all four final reference views"
+  }
+}

@@ -1,0 +1,35 @@
+Item ID: item.weapon.grenadelauncher.pulsecask
+Display name: 펄스 챔버 / Pulse Chamber
+Character class: Gunner
+Weapon type: GrenadeLauncher
+Tier: Advanced
+Generator: built-in image_gen, one generation call per requested view (retries retained in SourceGenerated)
+
+LOCKED DESIGN BRIEF
+Realistic production-ready Project2 sci-fi grenade launcher with a clean, simple, readable silhouette. Restrained slate structural housing and cobalt secondary panels. One rounded sealed pulse chamber is integrated into the receiver. Cyan emission exists only on one clearly bounded connected inner surface inside that chamber, beneath a dark non-emissive transparent cover. No white emission; the exact cyan glow color is not reused on non-emissive paint. No forced white, over-industrial bulges, accessory clutter, loose cables, or decorative greebles.
+
+LEFT 90° ACCEPTED PROMPT
+Create the LEFT SIDE 90° orthographic view of one exact Pulse Chamber weapon. Target 2048x1024 PNG RGBA with genuine alpha-0 outside the weapon. The weapon is horizontal and centered, stock left and muzzle right, complete and uncropped. Use realistic PBR game-asset materials. The exposed trigger grip is <=55 px thick perpendicular to its axis with full gloved-hand clearance. Put a 200 px clean continuous support corridor 620-680 px muzzleward from trigger-grip center, clear of magazine, cable, guard, rail, spikes, ornaments, moving parts, and abrupt thickness changes. Strict camera gate: barrel centerline exactly parallel to image X, muzzle cut plane exactly parallel to image Y, camera perpendicular to barrel axis, zero yaw/pitch/perspective/foreshortening. In side view preserve the original slotted cylindrical muzzle shroud but show only its outer lateral wall and a single straight vertical terminal edge: no black muzzle hole, inner bore, oval/elliptical/circular front rim, end face, or visible inner wall. The bore appears only in FRONT. Keep one physically connected weapon and exactly one bounded cyan inner-chamber emissive surface. No hands, character, stand, floor, shadow, text, labels, effects, aura, floating parts, diagonal pose, forced white, or additional glow.
+
+FRONT 0° ACCEPTED PROMPT
+Using the accepted LEFT 90° anchor, render the exact same Pulse Chamber from FRONT 0° with the open muzzle facing the camera. Preserve all geometry, proportions, slate/cobalt allocation, chamber, seams, trigger grip, and emission. True orthographic axial view at the same physical scale and canvas center; do not enlarge it. The muzzle opening is fully open, centered and mechanically symmetric, with a continuous rim and visible dark bore depth. No cap, plate, shards, obstruction, detached ring, redesign, extra part, text, shadow, floor, background, or additional emission.
+
+REAR 180° ACCEPTED PROMPT
+Using the accepted LEFT and FRONT anchors, render the exact same Pulse Chamber from REAR 180°, looking directly into the stock. Preserve the same physical scale, center, geometry, materials, seams, chamber and restrained asymmetry. Use a closed mechanically continuous butt/stock; do not invent a rear muzzle opening or detached plate. The cyan chamber surface may appear only where physically visible. No redesign, extra geometry, background, text, shadow, effects, or additional emission.
+
+RIGHT 270° ACCEPTED PROMPT
+Using the accepted LEFT, FRONT and REAR anchors, render the true opposite-side RIGHT 270° surface of the exact same Pulse Chamber. Keep the same physical length, center, stock, receiver, rounded chamber, barrel, open muzzle, trigger grip, support region, slate/cobalt palette, seams and emission rule. The generated opposite-side attempts visibly drifted in receiver/grip proportions and seam placement, so the root consistency rule rejects them. Final right.png is the accepted final left.png mirrored exactly at pixel level. No geometry was stretched or cropped.
+
+NEGATIVE CONSTRAINTS
+character, person, hands, fingers, duplicate weapon, crossed weapons, rack, pedestal, stand, floor, background, shadow, floating parts, detached pieces, blocked muzzle, obstructed trigger, oversized grip, tiny grip, spikes or ornaments in either grip zone, magazine or cable in the support corridor, perspective, foreshortening, diagonal pose, text, logo, watermark, white emission, cyan paint matching the emission, bloom spill, forced white panels, over-industrial clutter
+
+FINAL MEASUREMENTS (final 2048x1024 pixel coordinates)
+LEFT: trigger-grip center x=720; perpendicular visible thickness=52 px; support corridor x=1250..1450 (200 px), center x=1350; muzzleward center distance=630 px.
+RIGHT: trigger-grip center x=1328; perpendicular visible thickness=52 px; support corridor x=598..798 (200 px), center x=698; muzzleward (screen-left) center distance=630 px.
+Both side views retain full-hand trigger clearance, a mechanically continuous support surface, and a clear open muzzle. Measurements were made on the final, un-stretched side sheets.
+
+NORMALIZATION
+Native image_gen sources are 1774x887 and are preserved unchanged under SourceGenerated. The strict-side accepted source is left_source_v4.png; left_source_v3_camera_test.png proved the camera rule but simplified the muzzle and was rejected. Accepted finals are center-padded, never stretched or cropped, to exactly 2048x1024 RGBA. Baked checker backgrounds were deterministically extracted while preserving the two intentional stock/trigger cutouts and bright material highlights. Per the root consistency rule, right.png is an exact pixel-level horizontal mirror of final left.png; generated RIGHT attempts remain preserved but rejected.
+
+GATE
+Tripo submission is prohibited until the root visually approves this complete set.

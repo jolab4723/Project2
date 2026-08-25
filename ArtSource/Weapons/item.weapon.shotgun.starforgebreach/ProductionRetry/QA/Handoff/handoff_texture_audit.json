@@ -1,0 +1,101 @@
+{
+  "item_id": "item.weapon.shotgun.starforgebreach",
+  "size": [
+    2048,
+    2048
+  ],
+  "source_orm": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\Textures\\item.weapon.shotgun.starforgebreach_ORM.png",
+  "orm_contract": {
+    "R": "ambient occlusion",
+    "G": "roughness",
+    "B": "metallic"
+  },
+  "outputs": {
+    "metallic_smoothness": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\Textures\\item.weapon.shotgun.starforgebreach_MetallicSmoothness.png",
+      "channels": {
+        "R": "metallic",
+        "G": "0",
+        "B": "0",
+        "A": "smoothness = 255 - roughness"
+      }
+    },
+    "occlusion": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\Textures\\item.weapon.shotgun.starforgebreach_Occlusion.png",
+      "channels": {
+        "RGB": "ambient occlusion",
+        "A": "255"
+      }
+    },
+    "combined_mos": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\Textures\\item.weapon.shotgun.starforgebreach_UnityMask_MOS.png",
+      "channels": {
+        "R": "metallic",
+        "G": "ambient occlusion",
+        "B": "0",
+        "A": "smoothness"
+      }
+    }
+  },
+  "unity_import": "All packed textures: Default with sRGB disabled. MetallicSmoothness is URP Lit Metallic Map; Occlusion has AO in green.",
+  "channel_ranges": {
+    "ao": [
+      212,
+      255
+    ],
+    "roughness": [
+      0,
+      194
+    ],
+    "metallic": [
+      2,
+      255
+    ],
+    "smoothness": [
+      61,
+      255
+    ]
+  },
+  "emission_rgb_audit": {
+    "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\Textures\\item.weapon.shotgun.starforgebreach_Emission.png",
+    "thresholds_srgb_8bit": {
+      "r_min": 165,
+      "g_min": 45,
+      "b_max": 55,
+      "r_minus_g_min": 60,
+      "g_minus_b_min": 5,
+      "r_minus_b_min": 125
+    },
+    "selected_pixels": 4063,
+    "raw_png_direct_match": false,
+    "raw_png_note": "Informational only: the authored mask was selected from Blender color-managed image pixels. Exact RGB-family identity is recomputed authoritatively in normals_culling_audit.json.",
+    "checks": {
+      "rgba_binary_white_black": true,
+      "rgb_channels_identical": true,
+      "alpha_opaque": true,
+      "selected_pixel_count_matches_validation": true
+    },
+    "pass": true
+  },
+  "sha256": {
+    "source_orm": "90acb2d841b4ef9bd0bab9c674e089dba8be0f90cbea05b499005efe2c6c0d8a",
+    "metallic_smoothness": "8b9a2fa7e7e4ad3ac36f59eae5abc3fe8aae7d97e9fdc223214c925083fd1d46",
+    "occlusion": "03c1c02d7efd4028f195d2dc5764f8e61c378f08760d42aa5d322c75d3b1f5a1",
+    "combined_mos": "856c421d530585ea66c9f6211e47db4a2b9d66c3d225d85f7c05f4dc9d8f83e6",
+    "emission": "1f4cbe502fbc01efa8fd538e651057245a48b209bf7d96298c054a684ff956f2",
+    "contact_sheet": "8a6f43cd0fe5e57187508910d1cf9ca8baa5b44f849367792bdaf9a28353ecf1"
+  },
+  "checks": {
+    "metallic_smoothness_r_equals_orm_b": true,
+    "metallic_smoothness_gb_zero": true,
+    "metallic_smoothness_a_equals_one_minus_roughness": true,
+    "occlusion_rgb_equals_orm_r": true,
+    "occlusion_alpha_opaque": true,
+    "combined_r_equals_metallic": true,
+    "combined_g_equals_ao": true,
+    "combined_b_zero": true,
+    "combined_a_equals_smoothness": true
+  },
+  "contact_sheet": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.starforgebreach\\ProductionRetry\\QA\\Handoff\\contact_sheet_pbr_emission.png",
+  "pass": true
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.shotgun.embercoil",
+  "displayNameKo": "잔불 고리",
+  "rarity": "Rare",
+  "characterClass": "Gunner",
+  "weaponType": "Shotgun",
+  "generationTool": "built-in image_gen",
+  "finalCanvas": {
+    "width": 2048,
+    "height": 1024,
+    "format": "PNG",
+    "pixelFormat": "RGBA / Format32bppArgb",
+    "background": "alpha 0 outside weapon"
+  },
+  "views": {
+    "front": {
+      "file": "front.png",
+      "view": "FRONT 0°",
+      "source": "SourceGenerated/front_generated_v2.png",
+      "postprocess": ["neutral-background alpha extraction", "uniform center scale 0.55", "2048x1024 resample"]
+    },
+    "left": {
+      "file": "left.png",
+      "view": "LEFT SIDE 90°",
+      "source": "SourceGenerated/left_generated_v4_strict_side.png",
+      "postprocess": ["neutral-background alpha extraction", "2048x1024 uniform resample"]
+    },
+    "back": {
+      "file": "back.png",
+      "view": "REAR 180°",
+      "source": "SourceGenerated/back_generated_v2.png",
+      "postprocess": ["neutral-background alpha extraction", "uniform center scale 0.55", "2048x1024 resample"]
+    },
+    "right": {
+      "file": "right.png",
+      "view": "RIGHT SIDE 270°",
+      "source": "exact horizontal mirror of SourceGenerated/left_generated_v4_strict_side.png",
+      "postprocess": ["generated-right rejected", "exact left mirror", "neutral-background alpha extraction", "2048x1024 uniform resample"]
+    }
+  },
+  "designatedEmission": {
+    "colorFamily": "orange-red",
+    "allowedSurface": "one connected recessed coil surface only",
+    "normalPaintReuse": false
+  },
+  "sourceDirectory": "SourceGenerated",
+  "tripoSubmitted": false,
+  "approvalGate": "awaiting root visual approval"
+}

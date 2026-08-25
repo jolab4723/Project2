@@ -1,0 +1,35 @@
+{
+  "item_id": "item.weapon.rifle.railcarbine",
+  "purpose": "Retry H3 after the first task projected source FRONT features onto the rear stock and source BACK features onto the rail front.",
+  "slot_mapping": {
+    "front.png": {
+      "source": "../TripoInput/back.png",
+      "sha256": "89fbd42d4950f74bad32f840ade13cd1b4dcb4dedfe8e6dac0a55714e1b3544a"
+    },
+    "back.png": {
+      "source": "../TripoInput/front.png",
+      "sha256": "a8e7c34587a60ccf0f275dceb3906be35910dd696e5b694b8682eca4e7c1d78d"
+    },
+    "left.png": {
+      "source": "../TripoInput/left.png",
+      "sha256": "52b48f11ae608bcc49e5fc98b244f46f4183007e9bdf760e46bdf53303a84a89"
+    },
+    "right.png": {
+      "source": "../TripoInput/right.png",
+      "sha256": "44f816383de0ee7897fc1369563d934e52b498debcb741dee31e58e3b84992a7"
+    }
+  },
+  "copy_validation": "All four destination hashes equal their mapped source hashes.",
+  "image_validation": {
+    "dimensions": [2048, 1024],
+    "mode": "RGBA",
+    "alpha_extrema": [0, 255],
+    "all_borders_alpha_zero": true
+  },
+  "credit_guard_before_submission": {
+    "available": 345,
+    "frozen": 0,
+    "required": 30,
+    "pass": true
+  }
+}

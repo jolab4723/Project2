@@ -1,0 +1,417 @@
+{
+  "item_id": "item.weapon.shotgun.embercoil",
+  "status": "pass",
+  "scope": "ArtSource handoff QA only; no Unity Assets were modified",
+  "production_files": {
+    "blend": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\item.weapon.shotgun.embercoil.blend",
+      "exists": true,
+      "sha256": "d351266f03751db708b273549dcf517628cd4465cf81e44e299bdcda6afbe1d4"
+    },
+    "fbx": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\item.weapon.shotgun.embercoil.fbx",
+      "exists": true,
+      "sha256": "88fde5384fc3cd59222650388ecc4d8eaacd71208369c31839237f7dc4db7003"
+    },
+    "base_color": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\Textures\\item.weapon.shotgun.embercoil_BaseColor.png",
+      "exists": true,
+      "sha256": "32d065888d1da3f7257cc56dcd9d5af6043a5ac61c76a6d87c495b683fa274e2"
+    },
+    "normal_gl": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\Textures\\item.weapon.shotgun.embercoil_Normal.png",
+      "exists": true,
+      "sha256": "a9d1daa3835430fec03390bd036a8b8a71924d7c730b4764a387b9e2df438f40"
+    },
+    "orm": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\Textures\\item.weapon.shotgun.embercoil_MetallicRoughness.png",
+      "exists": true,
+      "sha256": "11559f9035ba2b032f86c58e43f8c978bf7fdd780b5522490769c5a0fcfa0285"
+    },
+    "emission_binary": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\Textures\\item.weapon.shotgun.embercoil_Emission.png",
+      "exists": true,
+      "sha256": "371b19ad3fa03c76937f0db9d8e07c0f60c80e14aa0ee9ce99457f083c6be378"
+    },
+    "reimport_blend": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\QA\\Reimport\\item.weapon.shotgun.embercoil_reimport.blend",
+      "exists": true,
+      "sha256": "7516e1cccb6ad930326441625ce29714b0a75cb74293ff50ce764f48e60f88a0"
+    }
+  },
+  "unity_texture_handoff": {
+    "MetallicSmoothness": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\UnityTextures\\item.weapon.shotgun.embercoil_MetallicSmoothness.png",
+      "contract": "R=Metallic, G=0, B=0, A=Smoothness(255-Roughness)",
+      "channel_extrema": {
+        "R": [
+          0,
+          255
+        ],
+        "G": [
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0
+        ],
+        "A": [
+          104,
+          255
+        ]
+      },
+      "sha256": "c4439ed059cf6d030d49a23003c8f52ed6d01f1b8f339ebf14d7c19c963d242b",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA"
+    },
+    "Occlusion": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\UnityTextures\\item.weapon.shotgun.embercoil_Occlusion.png",
+      "contract": "RGB=Occlusion(ORM.R), A=255",
+      "channel_extrema": {
+        "R": [
+          228,
+          255
+        ],
+        "G": [
+          228,
+          255
+        ],
+        "B": [
+          228,
+          255
+        ],
+        "A": [
+          255,
+          255
+        ]
+      },
+      "sha256": "a481cf3651fcd0050f0ecd695ea45d6d9e941d0eb2d67fa1264badb65bfad2fc",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA"
+    },
+    "MOS": {
+      "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\UnityTextures\\item.weapon.shotgun.embercoil_MOS.png",
+      "contract": "R=Metallic(ORM.B), G=Occlusion(ORM.R), B=Smoothness(255-ORM.G), A=255",
+      "channel_extrema": {
+        "R": [
+          0,
+          255
+        ],
+        "G": [
+          228,
+          255
+        ],
+        "B": [
+          104,
+          255
+        ],
+        "A": [
+          255,
+          255
+        ]
+      },
+      "sha256": "8eab58bbc7fadae4de97d52d592b77066067fcbffd385d5cabe136206ad4a137",
+      "size": [
+        2048,
+        2048
+      ],
+      "mode": "RGBA"
+    }
+  },
+  "unity_import_contract": {
+    "BaseColor": "Default texture, sRGB enabled",
+    "NormalGL": "Normal Map, sRGB disabled; source is tangent-space NormalGL. Leave Flip Green disabled unless the project shader explicitly uses the opposite handedness",
+    "MetallicSmoothness": "Default texture, sRGB disabled; URP Lit Metallic Map uses R and Smoothness Source=Metallic Alpha",
+    "Occlusion": "Default texture, sRGB disabled; grayscale AO in RGB",
+    "MOS": "Default texture, sRGB disabled; custom packed R=Metallic G=Occlusion B=Smoothness",
+    "Emission": "Default texture, sRGB disabled for binary mask; HDR color #FF4A1A, enable _EMISSION"
+  },
+  "emission": {
+    "designated_srgb": [
+      255,
+      74,
+      26
+    ],
+    "designated_hex": "#FF4A1A",
+    "global_binary_rule": {
+      "r_min": 235,
+      "g_min": 90,
+      "g_max": 120,
+      "b_max": 45,
+      "r_minus_g_min": 115,
+      "g_greater_than_or_equal_to_b": true
+    },
+    "selected_pixels": 13610,
+    "selected_percent": 0.32448768615722656,
+    "nonbinary_pixels": 0,
+    "selected_outside_global_rule": 0,
+    "global_rule_missing_from_mask": 0,
+    "exact_designated_rgb_total": 0,
+    "exact_designated_rgb_selected": 0,
+    "family_colored_selected_pixels": 13610,
+    "top_selected_base_colors": [
+      {
+        "srgb": [
+          255,
+          115,
+          36
+        ],
+        "count": 39
+      },
+      {
+        "srgb": [
+          255,
+          114,
+          42
+        ],
+        "count": 34
+      },
+      {
+        "srgb": [
+          255,
+          109,
+          32
+        ],
+        "count": 33
+      },
+      {
+        "srgb": [
+          255,
+          116,
+          37
+        ],
+        "count": 33
+      },
+      {
+        "srgb": [
+          255,
+          118,
+          39
+        ],
+        "count": 30
+      },
+      {
+        "srgb": [
+          255,
+          111,
+          41
+        ],
+        "count": 30
+      },
+      {
+        "srgb": [
+          255,
+          117,
+          42
+        ],
+        "count": 29
+      },
+      {
+        "srgb": [
+          255,
+          114,
+          43
+        ],
+        "count": 27
+      },
+      {
+        "srgb": [
+          255,
+          120,
+          39
+        ],
+        "count": 27
+      },
+      {
+        "srgb": [
+          255,
+          111,
+          38
+        ],
+        "count": 27
+      },
+      {
+        "srgb": [
+          255,
+          110,
+          43
+        ],
+        "count": 26
+      },
+      {
+        "srgb": [
+          255,
+          112,
+          42
+        ],
+        "count": 26
+      },
+      {
+        "srgb": [
+          251,
+          119,
+          34
+        ],
+        "count": 26
+      },
+      {
+        "srgb": [
+          255,
+          109,
+          39
+        ],
+        "count": 25
+      },
+      {
+        "srgb": [
+          254,
+          118,
+          42
+        ],
+        "count": 25
+      },
+      {
+        "srgb": [
+          254,
+          106,
+          32
+        ],
+        "count": 24
+      }
+    ],
+    "contamination_interpretation": "Pixel QA: zero mask pixels outside the approved bounded global RGB family and zero approved-family pixels omitted. The bounded family separates the coil from the lower-green receiver fleck and higher-green copper trim. Geometry-projected five-view emission-only renders provide the visual contamination gate.",
+    "uv_exception": false,
+    "mesh_spatial_morphology_blur_filtering": false
+  },
+  "geometry_and_anchors": {
+    "bounds_min_m": [
+      -0.04680740833282471,
+      -0.03965151682496071,
+      -0.29501840472221375
+    ],
+    "bounds_max_m": [
+      0.046961527317762375,
+      0.18966200947761536,
+      0.705020546913147
+    ],
+    "dimensions_m": [
+      0.09376893937587738,
+      0.22931352257728577,
+      1.000038981437683
+    ],
+    "triangles": 120000,
+    "vertices": 72360,
+    "anchors_world": {
+      "RightHandGrip": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "LeftHandGrip": [
+        0.0,
+        0.06000005453824997,
+        0.32600000500679016
+      ],
+      "Muzzle": [
+        0.0051376353949308395,
+        0.15391257405281067,
+        0.7049999833106995
+      ],
+      "Muzzle_forward": [
+        0.0,
+        1.6292068494294654e-07,
+        1.0
+      ],
+      "Top_forward": [
+        0.0,
+        1.0,
+        -1.6292068494294654e-07
+      ]
+    },
+    "muzzle_probe": {
+      "origin": [
+        0.0051376353949308395,
+        0.15391257405281067,
+        0.7249999642372131
+      ],
+      "direction": [
+        -0.0,
+        -1.6292068494294654e-07,
+        -1.0
+      ],
+      "first_hit": [
+        0.0051376353949308395,
+        0.15391255915164948,
+        0.6510415077209473
+      ],
+      "first_hit_normal": [
+        0.2252132147550583,
+        0.005409308709204197,
+        0.9742944836616516
+      ],
+      "face_index": 58552,
+      "depth_behind_muzzle_plane_m": 0.05395848631858825,
+      "open_threshold_m": 0.045
+    }
+  },
+  "normals_and_backface": {
+    "zero_area_faces": 0,
+    "invalid_normal_faces": 0,
+    "shared_edge_winding_conflicts": 0,
+    "boundary_edges_single_face": 24402,
+    "watertight": false,
+    "nonmanifold_edges_more_than_two_faces": 0,
+    "maximum_culling_lost_ratio": 4.454938299104557e-05,
+    "retained_source_topology_risk": "The Tripo-derived realtime mesh is not watertight and retains single-face boundary edges. No edge has more than two incident faces, shared-edge winding is consistent, and matched five-view culling renders are the handoff visibility gate."
+  },
+  "render_hashes": {
+    "Renders/PBR_Emission/left_x_pos.png": "965182fa801c9c7023751274766af676ac7aa0b64db519833d3406bf3d25dda7",
+    "Renders/PBR_Emission/right_x_neg.png": "efd6e2a6caec1fa344daeba75e5d25cb96f64ecc9cc6f875d98df4b145375b6d",
+    "Renders/PBR_Emission/top_y_pos.png": "1961f7ba6160642092803b78150f5c05f489ebab87a376eb8b2228225b6bde2a",
+    "Renders/PBR_Emission/muzzle_z_pos.png": "57fba1892be45ec08850c4fbe7fb5494015738953a5593c4b5b47d4232e7b1db",
+    "Renders/PBR_Emission/iso_muzzle.png": "9e6827fae1a099949f922066c514c297b35a887e2f695446ef1452f8ca8cd456",
+    "Renders/EmissionOnly/left_x_pos.png": "839e99a5dfa19ba57d4a113e3cfcaaef5c2ef8ca903b05279de0497597f0e42a",
+    "Renders/EmissionOnly/right_x_neg.png": "a0f504ce65fed1e354c1a7ffcf8b950779acb897042ec488243d731517c34aeb",
+    "Renders/EmissionOnly/top_y_pos.png": "b388cbc63ba42ab9b7d32d1ff154b268e9a81b99808fbee8df84441706403de3",
+    "Renders/EmissionOnly/muzzle_z_pos.png": "cbdca80e5dc1a159eb51b4cd26efa617d6be0f472044f6300b01921424552351",
+    "Renders/EmissionOnly/iso_muzzle.png": "c1c6388ce1384f8754922d394c19cdeb63c8fafe0dec26d0b8ab231bf5e69462",
+    "Renders/NormalsBackfaceCulled/left_x_pos.png": "eb4ec6640e31814d97e6efb8b625c9b90a3694c5b47499e93539652c630aacad",
+    "Renders/NormalsBackfaceCulled/right_x_neg.png": "ba4e07ddf3b7308485fa7a6e370ca04af9dfcb675becb35e5436cb8225f4c414",
+    "Renders/NormalsBackfaceCulled/top_y_pos.png": "b4b6118cac9ab9d02614c7643bcd051220604ede9fccca56c923ebfbf0bb974c",
+    "Renders/NormalsBackfaceCulled/muzzle_z_pos.png": "df181c292a8b9b560588628d6d77bac3f2c5fdbc338199cc82fb64c60889541e",
+    "Renders/NormalsBackfaceCulled/iso_muzzle.png": "eefd76b0e83e27abc656bc98afbde9836f6261501233f57b04e2cce8518ee257"
+  },
+  "reports": {
+    "texture_and_emission": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\texture_and_emission_validation.json",
+    "fbx_geometry_normals": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\fbx_geometry_normals_validation.json",
+    "backface_culling": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\backface_culling_comparison.json",
+    "contact_sheet": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\contact_sheet.png",
+    "contact_sheet_sha256": "dfffc80e919573a3557f45e07ad2c3ce92a3f11d521c21f25a85916cce7c365c"
+  },
+  "regeneration": {
+    "entrypoint": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.embercoil\\Production\\HandoffQA\\run_handoff_qa.ps1",
+    "steps": [
+      "../build_emission_mask.py",
+      "build_unity_handoff_textures.py",
+      "render_fbx_handoff_qa.py in Blender 5.1 background mode",
+      "finalize_handoff_qa.py"
+    ]
+  },
+  "checks": {
+    "production_files_exist": true,
+    "texture_and_emission_pixel_checks_pass": true,
+    "fbx_geometry_anchor_normal_checks_pass": true,
+    "backface_culling_render_comparison_pass": true,
+    "five_pbr_emission_views_exist": true,
+    "five_emission_only_views_exist": true,
+    "five_normal_culled_views_exist": true
+  },
+  "all_checks_passed": true
+}

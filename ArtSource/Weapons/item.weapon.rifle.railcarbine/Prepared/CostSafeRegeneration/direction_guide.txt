@@ -1,0 +1,22 @@
+item.weapon.rifle.railcarbine — CostSafeRegeneration minimal hardening
+
+Canonical view semantics
+- Canonical/front.png: muzzle-facing 0-degree view, looking from the paired cyan emitter faces toward the stock.
+- Canonical/left.png: strict LEFT 90-degree orthographic side; stock at image left, emitter end at image right.
+- Canonical/back.png: rear 180-degree view, looking from the neutral stock face toward the emitter end; no cyan emitter face.
+- Canonical/right.png: exact horizontal pixel mirror of Canonical/left.png; emitter end at image left, stock at image right.
+
+Prepared Tripo service slots
+- TripoSlots/front.png = Canonical/back.png
+- TripoSlots/left.png = Canonical/left.png
+- TripoSlots/back.png = Canonical/front.png
+- TripoSlots/right.png = Canonical/right.png
+
+The front/back service-slot swap is intentional. Both prior H3 tasks demonstrated that this service workflow projected the submitted FRONT slot toward the model rear and the submitted BACK slot toward the rail front. No API call is authorized by this preparation pass.
+
+Hardening scope
+- Existing accepted design, colors, silhouette, grip locations, rail proportions, and asymmetry are unchanged.
+- LEFT authority pixels are preserved except RGB values hidden behind alpha 0 are cleared to zero.
+- RIGHT is regenerated only as an exact pixel mirror of hardened LEFT.
+- FRONT and BACK are uniformly scaled to the LEFT alpha-bbox height and centered; no non-uniform stretch, crop loss, repaint, or redesign.
+- All canonical and slot images are 2048x1024 RGBA with alpha-zero borders and hidden RGB zero.

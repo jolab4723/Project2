@@ -1,0 +1,112 @@
+{
+  "item_id": "item.weapon.grenadelauncher.sunfallengine",
+  "blend": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\item.weapon.grenadelauncher.sunfallengine.blend",
+  "root_count": 1,
+  "root_names": [
+    "item.weapon.grenadelauncher.sunfallengine_root"
+  ],
+  "mesh": "SunfallEngine_Body",
+  "triangle_count": 99999,
+  "signed_volume": -0.005672116981680339,
+  "signed_volume_note": "Diagnostic only: Tripo meshes can contain multiple open/internal shells, so global sign is not used as the exterior-winding gate; five-view backface-culling renders are authoritative.",
+  "degenerate_triangles": 0,
+  "centroid_normal_heuristic": {
+    "outward": 24359,
+    "inward": 75640,
+    "ambiguous": 0,
+    "outward_fraction": 0.24359243592435925,
+    "note": "Supplemental only for concave/open weapon geometry."
+  },
+  "bounds": {
+    "min": [
+      -0.070179,
+      -0.043106,
+      -0.29165
+    ],
+    "max": [
+      0.070172,
+      0.204268,
+      0.539066
+    ],
+    "dimensions": [
+      0.140351,
+      0.247374,
+      0.830715
+    ]
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.102174,
+        0.326
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.grenadelauncher.sunfallengine_root",
+      "local_location": [
+        0.0,
+        0.088883,
+        0.539067
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "emission_rgb_audit_authoritative": {
+    "base_color_image": "//Textures\\item.weapon.grenadelauncher.sunfallengine_BaseColor.png",
+    "emission_image": "//Textures\\item.weapon.grenadelauncher.sunfallengine_Emission.png",
+    "thresholds_srgb_8bit": {
+      "r_min": 190,
+      "g_min": 65,
+      "b_max": 70,
+      "r_minus_g_min": 45,
+      "g_minus_b_min": 15,
+      "r_minus_b_min": 120
+    },
+    "expected_pixels": 2556,
+    "actual_pixels": 2556,
+    "binary_rgb": true,
+    "opaque_alpha": true,
+    "exact_global_rgb_family_match": true
+  },
+  "culling_renders": {
+    "front": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\Handoff\\culling_front.png",
+    "back": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\Handoff\\culling_back.png",
+    "left": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\Handoff\\culling_left.png",
+    "right": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\Handoff\\culling_right.png",
+    "iso": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.sunfallengine\\ProductionRetry\\QA\\Handoff\\culling_iso.png"
+  },
+  "checks": {
+    "single_root": true,
+    "single_mesh": true,
+    "no_degenerate_triangles": true,
+    "required_markers": true,
+    "muzzle_plus_z": true,
+    "culling_views_rendered": true,
+    "emission_exact_global_rgb_family": true
+  },
+  "pass": true
+}
