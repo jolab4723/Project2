@@ -11,6 +11,9 @@ public interface ISkillController
     /// <summary>이 컨트롤러가 가진 스킬 슬롯 개수.</summary>
     int SkillCount { get; }
 
+    /// <summary>슬롯(0~2)의 스킬 데이터. UI가 이름/설명 등을 표시할 때 사용. 범위 밖이면 null.</summary>
+    SkillDefinitionSO GetSkillDefinition(int index);
+
     /// <summary>스킬 슬롯의 현재 진화. 범위 밖이면 None.</summary>
     SkillEvolutionId GetEvolution(int index);
 

@@ -130,7 +130,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (dashStacks < 0 || dashStackRechargeTimer <= 0f)
             return;
 
-        SkillDefinitionSO def = FindDashStackDef();
+        int index = FindDashStackSlotIndex();
+        SkillDefinitionSO def = index >= 0 ? skills[index] : null;
         if (def == null)
             return;
 
@@ -140,7 +141,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         dashStacks = Mathf.Min(dashStacks + 1, def.evoDashMaxStacks);
         if (dashStacks < def.evoDashMaxStacks)
-            dashStackRechargeTimer = def.evoDashStackRechargeSeconds; // 아직 최대치 미만이면 다음 스택도 이어서 충전
+            dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화(쿨감) 반영)
     }
 
     private void UpdateCharge()
@@ -454,14 +455,14 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return def != null && def.shapeType == SkillShapeType.Dash && GetEvolution(index) == SkillEvolutionId.Evolution2;
     }
 
-    private SkillDefinitionSO FindDashStackDef()
+    private int FindDashStackSlotIndex()
     {
         for (int i = 0; i < skills.Length; i++)
         {
             if (IsDashStackSlot(i))
-                return skills[i];
+                return i;
         }
-        return null;
+        return -1;
     }
 
     private bool IsSkillReady(int index) =>
