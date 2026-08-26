@@ -1,11 +1,12 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // 스킬 입력 키 안내.
 // 옵션에서 설정한 스킬 키가 반영된다.
 public class KY_SkillView : MonoBehaviour
 {
-    public KY_SkillSlot[] slots;
+    [SerializeField] private KY_SkillSlot[] skillSlots; // Slot1~4
+    [SerializeField] private KY_SkillSlot dodgeSlot;
+    [SerializeField] private KY_SkillSlot itemSlot;
 
     // ISkillController를 구현한 컴포넌트(FighterSkillController/GunnerSkillController 등)에서 Slot1~3
     // (인덱스 0~2)의 실시간 쿨타임을 읽어와 라디얼 필로 표시한다. slots는 Skill1~4+Dodge까지 5개가 있지만,
@@ -18,9 +19,14 @@ public class KY_SkillView : MonoBehaviour
     private ISkillController SkillController => ActiveSkillControllerLocator.Find();
 
     private GameInputActions inputActions;
+    private T_PlayerController playerController;
+    private WBH_PlayerStatus playerStatus;
 
     void Start()
     {
+        playerController = FindFirstObjectByType<T_PlayerController>();
+        playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
+
         inputActions = KY_RebindManager.Instance.GetInputActions();
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
         RefreshAllKeyTexts();
@@ -46,28 +52,32 @@ public class KY_SkillView : MonoBehaviour
         if (SkillController == null)
             return;
 
-        int cooldownSlotCount = Mathf.Min(SkillController.SkillCount, slots.Length);
+        int cooldownSlotCount = Mathf.Min(SkillController.SkillCount, skillSlots.Length);
         for (int i = 0; i < cooldownSlotCount; i++)
         {
-            float remaining = SkillController.GetRemainingCooldown(i);
-            float total = SkillController.GetEffectiveCooldown(i);
-            slots[i].SetCooldown(remaining, total);
+            float skillRemaining = SkillController.GetRemainingCooldown(i);
+            float skillTotal = SkillController.GetEffectiveCooldown(i);
+            skillSlots[i].SetCooldown(skillRemaining, skillTotal);
 
             if (SkillController.TryGetStackInfo(i, out int stacks, out int maxStacks))
-                slots[i].SetStacks(stacks);
+                skillSlots[i].SetStacks(stacks);
             else
-                slots[i].SetStacks(null);
+                skillSlots[i].SetStacks(null);
         }
+
+        float dodgeRemaining = playerController.currentDodgeCooltime;
+        float dodgeTotal = playerStatus.DodgeCooltime;
+        dodgeSlot.SetCooldown(dodgeRemaining, dodgeTotal);
     }
 
     void OnSkillEquipped(int index, Sprite icon)
     {
-        slots[index].SetIcon(icon);
+        skillSlots[index].SetIcon(icon);
     }
 
     void OnSkillUnequipped(int index)
     {
-        slots[index].ClearIcon();
+        skillSlots[index].ClearIcon();
     }
 
     void RefreshAllKeyTexts()
@@ -75,11 +85,12 @@ public class KY_SkillView : MonoBehaviour
         Debug.Log("RefreshAllKeyTexts 호출됨");
         string skill1Key = KY_KeyTextUtil.GetKeyText(inputActions, "Skill1");
         Debug.Log("Skill1 키: " + skill1Key);
-        slots[0].SetKeyText(skill1Key);
-        slots[0].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill1"));
-        slots[1].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill2"));
-        slots[2].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill3"));
-        slots[3].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill4"));
-        slots[4].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Dodge"));
+        skillSlots[0].SetKeyText(skill1Key);
+        skillSlots[0].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill1"));
+        skillSlots[1].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill2"));
+        skillSlots[2].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill3"));
+        skillSlots[3].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill4"));
+        dodgeSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Dodge"));
+        itemSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Potion"));
     }
 }
