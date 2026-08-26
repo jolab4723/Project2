@@ -526,7 +526,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8514186907447221161
 Transform:
   m_ObjectHideFlags: 0
@@ -726,6 +726,7 @@ MonoBehaviour:
     candidateCount: 5
     maxFleeAngle: 70
     initialDirectionWeight: 5
+    despawnEffect: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -792,6 +793,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 2457101030512705263}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 1745680497723154411}
   hpBarSlider: {fileID: 6074345392006611950}
   hpBarVisibleTime: 2
@@ -860,7 +862,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 6051598319964563576}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
