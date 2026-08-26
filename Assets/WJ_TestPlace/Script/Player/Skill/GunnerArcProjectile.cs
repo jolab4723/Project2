@@ -23,9 +23,11 @@ public class GunnerArcProjectile : MonoBehaviour
     private bool initialized;
 
     /// <summary>explodeOnHit=false면 폭발 반경 판정 없이 실제로 맞은 대상 하나에게만 데미지를 준다
-    /// (아크 버스터 진화2 "트리플 슈팅"이 폭발 속성을 빼기 위해 사용 - 118번).</summary>
+    /// (아크 버스터 진화2 "아크 불릿"이 폭발 속성을 빼기 위해 사용 - 118번).
+    /// visualScale은 프리팹 원본 크기에 곱하는 배율(기본 1 = 그대로) - 아크 캐논(진화3)처럼 폭발 반경이
+    /// 커진 진화가 실제 판정 크기에 맞게 더 커 보이도록 쓴다(133번 후속).</summary>
     public void Initialize(Vector3 direction, float speed, float maxDistance, float explosionRadius,
-        LayerMask targetLayer, WBH_DamageRequest damageRequest, bool explodeOnHit = true)
+        LayerMask targetLayer, WBH_DamageRequest damageRequest, bool explodeOnHit = true, float visualScale = 1f)
     {
         this.direction = direction.normalized;
         this.speed = speed;
@@ -34,6 +36,9 @@ public class GunnerArcProjectile : MonoBehaviour
         this.targetLayer = targetLayer;
         this.damageRequest = damageRequest;
         this.explodeOnHit = explodeOnHit;
+
+        if (!Mathf.Approximately(visualScale, 1f))
+            transform.localScale *= visualScale;
 
         startPosition = transform.position;
         initialized = true;

@@ -19,7 +19,7 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
     [SerializeField] private Slider healthBarSlider;
     [SerializeField] private WBH_EnemyBossPhaseView_Act1 bossPhaseView;
 
-    private WBH_DamageTextPoolManager damageTextPool;
+    private WBH_FloatTextPoolManager damageTextPool;
     private Camera mainCamera;
     private uint observedDamagePresentationCount;
     private bool initialized;
@@ -141,7 +141,7 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
         // 1. 카메라가 아직 없는 환경(서버/로딩 중)이면 표출 스킵
         if (Camera.main == null) return;
         
-        damageTextPool ??= FindFirstObjectByType<WBH_DamageTextPoolManager>(FindObjectsInactive.Exclude);
+        damageTextPool ??= FindFirstObjectByType<WBH_FloatTextPoolManager>(FindObjectsInactive.Exclude);
 
         if (damageTextPool == null)
         {
