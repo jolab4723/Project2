@@ -1,0 +1,219 @@
+{
+  "source": "TripoAttempt2\\Downloaded\\item.weapon.grenadelauncher.worldender_raw.glb",
+  "blender_version": "5.1.1",
+  "object_count": 1,
+  "mesh_count": 1,
+  "material_count": 1,
+  "image_count": 3,
+  "totals": {
+    "vertices": 768712,
+    "polygons": 1484345,
+    "triangles": 1484345
+  },
+  "bounds": {
+    "min": [
+      -0.5,
+      -0.129917,
+      -0.172147
+    ],
+    "max": [
+      0.5,
+      0.129917,
+      0.172147
+    ],
+    "dimensions": [
+      1.0,
+      0.259834,
+      0.344295
+    ],
+    "center": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "objects": [
+    {
+      "name": "tripo_node_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+      "type": "MESH",
+      "parent": null,
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.0,
+        0.259834,
+        0.344295
+      ],
+      "vertices": 768712,
+      "polygons": 1484345,
+      "triangles": 1484345,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "material_slots": [
+        "tripo_material_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc"
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "tripo_material_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+      "use_nodes": true,
+      "diffuse_color": [
+        0.8,
+        0.8,
+        0.8,
+        1.0
+      ],
+      "nodes": [
+        {
+          "name": "Principled BSDF",
+          "type": "ShaderNodeBsdfPrincipled",
+          "inputs": {
+            "Base Color": {
+              "linked": true,
+              "default": [
+                0.8,
+                0.8,
+                0.8,
+                1.0
+              ],
+              "from": [
+                "Image Texture.Color"
+              ]
+            },
+            "Metallic": {
+              "linked": true,
+              "default": 0.0,
+              "from": [
+                "Separate Color.Blue"
+              ]
+            },
+            "Roughness": {
+              "linked": true,
+              "default": 0.5,
+              "from": [
+                "Separate Color.Green"
+              ]
+            },
+            "Alpha": {
+              "linked": false,
+              "default": 1.0,
+              "from": []
+            },
+            "Normal": {
+              "linked": true,
+              "default": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "from": [
+                "Normal Map.Normal"
+              ]
+            },
+            "Emission Color": {
+              "linked": false,
+              "default": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "from": []
+            },
+            "Emission Strength": {
+              "linked": false,
+              "default": 0.0,
+              "from": []
+            }
+          }
+        },
+        {
+          "name": "Material Output",
+          "type": "ShaderNodeOutputMaterial"
+        },
+        {
+          "name": "Image Texture",
+          "type": "ShaderNodeTexImage",
+          "image": "Color_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+          "colorspace": "sRGB"
+        },
+        {
+          "name": "Separate Color",
+          "type": "ShaderNodeSeparateColor"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "ShaderNodeTexImage",
+          "image": "ORM_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+          "colorspace": "Non-Color"
+        },
+        {
+          "name": "Normal Map",
+          "type": "ShaderNodeNormalMap"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "ShaderNodeTexImage",
+          "image": "NormalGL_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+          "colorspace": "Non-Color"
+        }
+      ],
+      "links": [
+        "Principled BSDF.BSDF -> Material Output.Surface",
+        "Image Texture.Color -> Principled BSDF.Base Color",
+        "Separate Color.Blue -> Principled BSDF.Metallic",
+        "Separate Color.Green -> Principled BSDF.Roughness",
+        "Image Texture.001.Color -> Separate Color.Color",
+        "Normal Map.Normal -> Principled BSDF.Normal",
+        "Image Texture.002.Color -> Normal Map.Color"
+      ]
+    }
+  ],
+  "images": [
+    {
+      "name": "Color_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+      "size": [
+        2048,
+        2048
+      ],
+      "file_format": "JPEG",
+      "colorspace": "sRGB",
+      "packed": true
+    },
+    {
+      "name": "NormalGL_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+      "size": [
+        2048,
+        2048
+      ],
+      "file_format": "JPEG",
+      "colorspace": "Non-Color",
+      "packed": true
+    },
+    {
+      "name": "ORM_4139ba6f-60c3-41fd-8374-cb1e38c8e7bc",
+      "size": [
+        2048,
+        2048
+      ],
+      "file_format": "JPEG",
+      "colorspace": "Non-Color",
+      "packed": true
+    }
+  ]
+}
