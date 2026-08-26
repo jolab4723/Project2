@@ -31,6 +31,8 @@ public class WBH_Projectile : MonoBehaviour
     private float minFlightTime = 1f;
     private Vector3 previousPos;
 
+    private static int ObstacleLayerMask; // 장애물 레이어(투사체 충돌 시 반환 및 폭발)
+
     // 투사체에 각 변수 할당
     public void Initialize(WBH_DamageRequest request, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
                            WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
@@ -62,6 +64,8 @@ public class WBH_Projectile : MonoBehaviour
         this.explosionRadius = explosionRadius;
         this.effectSpawner = spawner;
         this.hitEffectData = data;
+
+        ObstacleLayerMask = LayerMask.GetMask("Prop", "Ground", "Wall");
 
         startPosition = transform.position;
         previousPos = startPosition;
@@ -154,28 +158,31 @@ public class WBH_Projectile : MonoBehaviour
         this.poolManager = poolManager;
     }
 
+    private static bool ContainLayer(int mask, int layer)
+    {
+        return (mask & (1 << layer)) != 0;
+    }
+
     // 컬라이더 충돌 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"투사체 충돌 :{other.name}");
-        Debug.Log($"{name} 충돌");
-        Debug.Log($"상대 : {other.name}");
-        Debug.Log($"Layer : {LayerMask.LayerToName(other.gameObject.layer)}");
+        int otherLayer = other.gameObject.layer;
 
-        if(isExplosion)
+        bool isTarget = ContainLayer(targetLayer.value, otherLayer);
+        bool isObstacle = ContainLayer(ObstacleLayerMask, otherLayer);
+
+        if (!isTarget && !isObstacle)
+            return;
+
+        //Debug.Log($"투사체 충돌 :{other.name}"); // 디버깅용도
+        //Debug.Log($"{name} 충돌");
+        //Debug.Log($"상대 : {other.name}");
+        //Debug.Log($"Layer : {LayerMask.LayerToName(other.gameObject.layer)}");
+
+        if (isExplosion)
         {
-            if (projectileType == ProjectileType.Missile)
-                return;
-
             Debug.Log("유탄 폭발");
             Explode();
-            return;
-        }
-
-        // 충돌레이어가 타겟레이어에 포함되지 않으면 관통
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
-        {
-            ReturnToPool();
             return;
         }
 
@@ -189,9 +196,11 @@ public class WBH_Projectile : MonoBehaviour
 
     private void Explode()
     {
+        Vector3 explosionPos = transform.position;
+
         if(effectSpawner != null && hitEffectData != null)
         {
-            effectSpawner.SpawnEffect(hitEffectData, targetPosition);
+            effectSpawner.SpawnEffect(hitEffectData, explosionPos);
         }
 
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);
