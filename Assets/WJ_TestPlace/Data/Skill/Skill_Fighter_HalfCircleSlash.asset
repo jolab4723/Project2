@@ -17,6 +17,10 @@ MonoBehaviour:
   icon: {fileID: 0}
   cooldownSeconds: 5
   damageMultiplier: 1.5
+  manaCost: 25
+  evolution1ManaCost: 0
+  evolution2ManaCost: 0
+  evolution3ManaCost: 0
   shapeType: 0
   sectorRange: 4
   sectorAngle: 180
@@ -30,16 +34,42 @@ MonoBehaviour:
   maxStacks: 6
   stackRechargeSeconds: 4
   arcProjectilePrefab: {fileID: 0}
+  evoLaserLength: 8
+  evoLaserWidth: 1
+  evoLaserDamagePerStackPercent: 50
+  evoLaserMaxBonusStacks: 3
+  evoArcBulletDamageMultiplier: 0.5
+  evoArcBulletInterval: 0.1
+  evoCannonExplosionRadius: 3
+  evoCannonDamageMultiplier: 2.5
+  evoCannonStackCost: 2
+  evoCannonProjectilePrefab: {fileID: 0}
   bombThrowRange: 6
   bombThrowSpeed: 10
   bombArcHeight: 2
   bombFuseSeconds: 2
   bombExplosionRadius: 3
   bombPrefab: {fileID: 0}
+  evoClusterDelaySeconds: 0.5
+  evoClusterRadius: 4
+  evoClusterDamageMultiplier: 0.5
+  evoEnergyBurstRadius: 4
+  evoEnergyBurstStunDuration: 1
+  evoEnergyBurstSlowZoneDuration: 5
+  evoEnergyBurstSlowMultiplier: 0.6
+  evoGlitterMarkDuration: 7
+  evoGlitterMarkedDamageMultiplier: 1.25
   backstepDistance: 2
   backstepDuration: 0.15
   backstepConeRange: 5
   backstepConeAngle: 90
+  evoDecoyFuseSeconds: 3
+  evoDecoyExplosionRadius: 3
+  evoDecoyDamageMultiplier: 1
+  evoDecoyPrefab: {fileID: 0}
+  evoBackstepInvincibleDuration: 0.3
+  evoSuppressKnockbackForce: 3
+  evoSuppressKnockbackDuration: 0.3
   evoKnockbackForce: 5
   evoKnockbackDuration: 0.3
   evoChargeMaxSeconds: 3

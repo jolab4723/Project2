@@ -35865,7 +35865,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514707019182875549, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00016155066
+      value: 0.0006427879
       objectReference: {fileID: 0}
     - target: {fileID: 2781217662282863153, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -49151,7 +49151,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1509208521
 Transform:
   m_ObjectHideFlags: 0
@@ -58623,7 +58623,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1704221822
 Transform:
   m_ObjectHideFlags: 0
@@ -58854,7 +58854,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f0d59ef7cd92ee40847217acd984b91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerEquipManager
-  equipmentSystem: {fileID: 0}
+  equipmentSystem: {fileID: 2116389741407391824}
 --- !u!114 &1704221836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58880,7 +58880,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelManager
   statDataJson: {fileID: 4900000, guid: 7aadd889b989ef14ea384bae286d2dc6, type: 3}
-  testLevel: 1
+  testLevel: 10
 --- !u!114 &1704221838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58897,7 +58897,7 @@ MonoBehaviour:
   equipManagerBehaviour: {fileID: 1704221835}
   buffManagerBehaviour: {fileID: 1704221839}
   startLevel: 1
-  equipmentSystem: {fileID: 0}
+  equipmentSystem: {fileID: 2116389741407391824}
 --- !u!114 &1704221839
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59024,7 +59024,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::T_PlayerController
   agent: {fileID: 1704221849}
-  stateMachine: {fileID: 0}
+  stateMachine: {fileID: 1704221843}
   reviveCount: 3
 --- !u!54 &1704221847
 Rigidbody:

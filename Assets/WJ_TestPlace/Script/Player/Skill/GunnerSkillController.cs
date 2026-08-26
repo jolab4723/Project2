@@ -59,7 +59,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private float arcBusterStackTimer;
 
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
-        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
+        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
     private void OnEnable()
     {
@@ -147,6 +147,14 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (def == null || !CanUseSkill || !IsSkillReady(index))
             return false;
 
+        SkillEvolutionId evo = GetEvolution(index);
+
+        // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
+        // 쿨타임/스택은 전혀 건드리지 않는다(138번 후속 - manaCost 수치 자체는 137/138번에서 이미 반영됨).
+        // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
+        if (status != null && !status.TryUseMana(def.GetManaCost(evo)))
+            return false;
+
         // 아크 레이저(진화1)가 "현재 스택을 모두" 소모하므로, ConsumeSkillUse가 스택을 지우기 전에
         // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
         int arcBusterStacksBeforeConsume = arcBusterStacks;
@@ -155,8 +163,6 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         FaceCursor();
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
-
-        SkillEvolutionId evo = GetEvolution(index);
 
         switch (def.shapeType)
         {
