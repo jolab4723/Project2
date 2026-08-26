@@ -6,7 +6,6 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
     [Header("explode Effect")]
     [SerializeField] private WBH_EffectSpawner effectSpawner;
-    [SerializeField] private WBH_EffectData effectData;
 
 
     public void FireProjectile(ProjectileType projectileType, 
@@ -29,7 +28,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
     public void FireGrenade(ProjectileType projectileType,
                             Vector3 spawnPosition, Vector3 targetPosition,
                                WBH_DamageRequest request, float speed, float maxDistance, float explosionRadius,
-                               LayerMask targetLayer)
+                               LayerMask targetLayer, WBH_EffectData explosionEffect)
     {
         WBH_Projectile projectile = poolManager.GetProjectile(projectileType);
 
@@ -38,7 +37,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
         projectile.transform.position = spawnPosition;
 
-        projectile.InitializeGrenade(request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, effectData);
+        projectile.InitializeGrenade(request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, explosionEffect);
     }
 
     public void FireMultipleProjectile(ProjectileType projectileType,
@@ -70,7 +69,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
     public void FireMultipleGrenade(ProjectileType projectileType, 
                                     Vector3 spawnPos, Vector3 targetPos, 
                                     int projectileCount, float spreadAngle, WBH_DamageRequest request, float speed, float maxDistance, float explosionRadius, 
-                                    LayerMask targetLayer)
+                                    LayerMask targetLayer, WBH_EffectData explosionEffect)
     {
         for(int i = 0; i < projectileCount; i++)
         {
@@ -80,14 +79,9 @@ public class WBH_ProjectileSpawner : MonoBehaviour
 
             Vector3 spreadTarget = spawnPos + direction * Vector3.Distance(spawnPos, targetPos);
 
-            FireGrenade(projectileType, spawnPos, spreadTarget, request, speed, maxDistance, explosionRadius, targetLayer);
+            FireGrenade(projectileType, spawnPos, spreadTarget, request, speed, maxDistance, explosionRadius, targetLayer, explosionEffect);
             
         }
-    }
-
-    public void Initialize(WBH_ProjectilePoolManager projectilePool)
-    {
-        this.poolManager = projectilePool;
     }
 
     // ------ 예비 코드

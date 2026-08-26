@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.GameCenter;
 
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
@@ -9,6 +8,8 @@ using UnityEngine.SocialPlatforms.GameCenter;
 
 public class WBH_EnemyCombat : MonoBehaviour
 {
+    [SerializeField] private WBH_EffectData bossMissileEffect;
+
     private WBH_EnemyController controller;
     private WBH_EnemyStatus status;
     private WBH_EnemyAnimation enemyAnimation;
@@ -32,8 +33,6 @@ public class WBH_EnemyCombat : MonoBehaviour
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
         pattern = GetComponent<WBH_EnemyPattern>();
         movement = GetComponent<WBH_EnemyMovement>();
-        projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
-
     }
 
     private void OnEnable()
@@ -57,8 +56,10 @@ public class WBH_EnemyCombat : MonoBehaviour
         attackTimer = Mathf.Max(attackTimer, 0f);
     }
 
-    public void Initialize(WBH_EnemyInfo info)
+    public void Initialize(WBH_EnemyInfo info, WBH_ProjectileSpawner projectileSpawner)
     {
+        this.projectileSpawner = projectileSpawner;
+
         attackTimer = 0f;
         dashHitTargets.Clear();
         IsActionInProgress = false;
@@ -279,7 +280,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer);
+        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, bossMissileEffect);
     }
 
 

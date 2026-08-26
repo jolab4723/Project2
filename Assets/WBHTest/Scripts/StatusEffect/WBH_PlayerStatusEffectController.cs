@@ -32,6 +32,11 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
         controller = GetComponent<T_PlayerController>();
     }
     
+    public void Initialize(WBH_EffectSpawner effectSpawner)
+    {
+        this.effectSpawner = effectSpawner;
+    }
+
     // 상태이상 생성 요청
     protected override WBH_IStatusEffect CreateEffect(WBH_StatusEffectData data)
     {

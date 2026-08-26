@@ -56,7 +56,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         status.OnDead -= Dead;
     }
 
-    public void Initialize(WBH_EnemyInfo info, WBH_EnemyPoolManager poolManager)
+    public void Initialize(WBH_EnemyInfo info, WBH_EnemyPoolManager poolManager, WBH_EffectSpawner effectSpawner, WBH_ProjectileSpawner projectileSpawner)
     {
         this.info = info;
         this.poolManager = poolManager;
@@ -70,10 +70,13 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         status.Initialize(info);
         movement.Initialize(info);
-        combat.Initialize(info);
+        combat.Initialize(info, projectileSpawner);
         enemyAnimation.Initialize();
-        pattern.Initialize(this);
+        pattern.Initialize(this, effectSpawner, projectileSpawner);
         gradeVisual?.ApplyGrade(info.enemyGrade);
+        statusEffectController?.Initialize(effectSpawner);
+
+        GetComponent<WBH_IndicatorSpawner>()?.Initialize(effectSpawner);
         
         bossDeathView?.ResetVisual();
 

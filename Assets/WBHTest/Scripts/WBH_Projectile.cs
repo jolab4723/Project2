@@ -33,6 +33,11 @@ public class WBH_Projectile : MonoBehaviour
 
     private static int ObstacleLayerMask; // 장애물 레이어(투사체 충돌 시 반환 및 폭발)
 
+    private void Awake()
+    {
+        ObstacleLayerMask = LayerMask.GetMask("Prop", "Ground", "Wall");
+    }
+
     // 투사체에 각 변수 할당
     public void Initialize(WBH_DamageRequest request, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
                            WBH_EffectSpawner spawner = null, WBH_EffectData data = null)
@@ -65,7 +70,6 @@ public class WBH_Projectile : MonoBehaviour
         this.effectSpawner = spawner;
         this.hitEffectData = data;
 
-        ObstacleLayerMask = LayerMask.GetMask("Prop", "Ground", "Wall");
 
         startPosition = transform.position;
         previousPos = startPosition;

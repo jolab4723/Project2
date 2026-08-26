@@ -27,8 +27,8 @@ public class WBH_EnemySpawnArea : MonoBehaviour
     }
 
     public void Initialize(WBH_EnemyPoolManager enemyPool, 
-                           WBH_EffectPoolManager effectPool, 
-                           WBH_ProjectilePoolManager projectilePool, 
+                           WBH_EffectSpawner effectSpawner, 
+                           WBH_ProjectileSpawner projectileSpawner, 
                            Transform localPlayer, 
                            Func<Vector3, Transform> findClosestPlayer,
                            WBH_FloatTextPoolManager damagePool,
@@ -36,7 +36,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            PlayerWallet playerWallet)
     {
         this.findClosestPlayer = findClosestPlayer;
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, localPlayer, damagePool, eliteView, playerWallet);
+        enemySpawner.Initialize(enemyPool, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
         //view.Initialize(damagePool);
     }
 
