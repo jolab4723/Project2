@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // 스킬 입력 키 안내.
 // 옵션에서 설정한 스킬 키가 반영된다.
@@ -20,9 +19,14 @@ public class KY_SkillView : MonoBehaviour
     private ISkillController SkillController => ActiveSkillControllerLocator.Find();
 
     private GameInputActions inputActions;
+    private T_PlayerController playerController;
+    private WBH_PlayerStatus playerStatus;
 
     void Start()
     {
+        playerController = FindFirstObjectByType<T_PlayerController>();
+        playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
+
         inputActions = KY_RebindManager.Instance.GetInputActions();
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
         RefreshAllKeyTexts();
@@ -51,15 +55,19 @@ public class KY_SkillView : MonoBehaviour
         int cooldownSlotCount = Mathf.Min(SkillController.SkillCount, skillSlots.Length);
         for (int i = 0; i < cooldownSlotCount; i++)
         {
-            float remaining = SkillController.GetRemainingCooldown(i);
-            float total = SkillController.GetEffectiveCooldown(i);
-            skillSlots[i].SetCooldown(remaining, total);
+            float skillRemaining = SkillController.GetRemainingCooldown(i);
+            float skillTotal = SkillController.GetEffectiveCooldown(i);
+            skillSlots[i].SetCooldown(skillRemaining, skillTotal);
 
             if (SkillController.TryGetStackInfo(i, out int stacks, out int maxStacks))
                 skillSlots[i].SetStacks(stacks);
             else
                 skillSlots[i].SetStacks(null);
         }
+
+        float dodgeRemaining = playerController.currentDodgeCooltime;
+        float dodgeTotal = playerStatus.DodgeCooltime;
+        dodgeSlot.SetCooldown(dodgeRemaining, dodgeTotal);
     }
 
     void OnSkillEquipped(int index, Sprite icon)
