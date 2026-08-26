@@ -41,6 +41,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         [Range(1,9)] public int candidateCount = 5; // 도망 경로 후보
         [Range(0f, 180f)] public float maxFleeAngle = 70f; // 도망 경로 탐색 각도
         [Min(0f)] public float initialDirectionWeight = 5f; // 방향 가중치
+        public WBH_EffectData despawnEffect; // 역소환 이펙트
     }
 
     [SerializeField] private SelfDestructSettings explodeSettings = new SelfDestructSettings();
@@ -79,6 +80,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
     public WBH_EnemyStatus Status => status;
+    public WBH_EffectSpawner EffectSpawner => effectSpawner;
     public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
     public Transform Target => target;

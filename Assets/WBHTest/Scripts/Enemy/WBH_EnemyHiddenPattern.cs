@@ -5,6 +5,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
 {
     private WBH_EnemyPattern owner;
     private WBH_EnemyPattern.HiddenSettings settings;
+    private WBH_EffectSpawner effectSpawner;
 
     private readonly NavMeshPath fleePath = new NavMeshPath();
 
@@ -19,6 +20,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
     public void Initialize(WBH_EnemyPattern owner)
     {
         this.owner = owner;
+        effectSpawner = owner.EffectSpawner;
         settings = owner.HiddenConfig;
 
         despawnTime = Time.time + settings.lifeTime;
@@ -40,6 +42,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
     {
         if(Time.time >= despawnTime)
         {
+            PlayDespawnEffect();
             owner.Despawn();
             return;
         }
@@ -169,7 +172,7 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         }
     }
 
-    // 후보경로가 타겟과 멀더라도 첫번째 방향전환이 타겟쪽으로 꺾이는 후보경로가 있을 수 있기에 가중치 줘서 점수를 낮춤
+    // 후보경로가 타겟과 멀더라도 첫번째 방향전환이 타겟쪽으로 꺾이는 후보경로가 있을 수 있기에 해당 경우에 속하지 않는 경로에 가중치 줘서 점수를 올림
     private float CalculateCandidateScore(Vector3 origin, Vector3 targetPos, Vector3 awayDir, Vector3 candidate, NavMeshPath path)
     {
         float targetDistanceScore = (candidate - targetPos).sqrMagnitude;
@@ -193,6 +196,15 @@ public class WBH_EnemyHiddenPattern : WBH_IEnemyPattern
         return targetDistanceScore + firstDirScore;
     }
 
+    private void PlayDespawnEffect()
+    {
+        if (settings.despawnEffect == null || effectSpawner == null)
+            return;
+
+        effectSpawner.SpawnEffect(settings.despawnEffect, owner.transform.position, owner.transform.rotation);
+    }
+
+    // 비활성화 시, 초기화
     public void Cleanup()
     {
         if (owner == null)

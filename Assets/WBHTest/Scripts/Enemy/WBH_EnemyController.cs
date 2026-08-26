@@ -11,7 +11,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(WBH_EnemyAnimation))]
 [RequireComponent(typeof(WBH_EnemyPattern))]
 [RequireComponent(typeof(WBH_EnemyStatusEffectController))]
-[RequireComponent(typeof(EnemyKillExpReward))]
+[RequireComponent(typeof(EnemyKillReward))]
 public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 {
     private WBH_EnemyMovement movement;
@@ -22,6 +22,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyStatusEffectController statusEffectController;
     private WBH_EnemyPoolManager poolManager; 
     private WBHEnemyDestructionAdapter destructionAdapter;
+    private WBH_EnemyBossDeathView bossDeathView;
+    private WBH_EnemyGradeVisual gradeVisual;
 
     private WBH_EnemyInfo info;
 
@@ -40,6 +42,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern = GetComponent<WBH_EnemyPattern>();
         statusEffectController = GetComponent<WBH_EnemyStatusEffectController>();
         destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
+        bossDeathView = GetComponent<WBH_EnemyBossDeathView>();
+        gradeVisual = GetComponent<WBH_EnemyGradeVisual>();
     }
 
     private void OnEnable()
@@ -69,8 +73,11 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         combat.Initialize(info);
         enemyAnimation.Initialize();
         pattern.Initialize(this);
+        gradeVisual?.ApplyGrade(info.enemyGrade);
+        
+        bossDeathView?.ResetVisual();
 
-        Debug.Log(info.enemyName);
+        Log.Print(info.enemyName);
         isDying = false;
     }
 
@@ -143,19 +150,20 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         statusEffectController.AddStatusEffect(data);
     }
 
-    // 보스 전용 사망연출. 사망 후 n초 뒤에 디졸브 걸고 사라짐.
+    // 보스 전용 사망연출(애니메이션 이벤트). 사망 후 n초 뒤에 디졸브 걸고 사라짐.
     public void OnDeathAnimationEnd()
     {
         if (!isDying)
             return;
 
-        StartCoroutine(CoDeath());
+        if(bossDeathView != null)
+        {
+            bossDeathView.PlayDeathEffect(ReturnAfterDeath);
+        }
     }
 
-    private IEnumerator CoDeath()
+    private void ReturnAfterDeath()
     {
-        yield return new WaitForSeconds(3);
         poolManager.Return(this);
-        // !@ 디졸브 효과 차후 추가 필요
     }
 }

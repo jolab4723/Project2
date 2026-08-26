@@ -44,9 +44,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 029ded0cce4c64a4b954dba825bf3873, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_DamageTextPoolManager
-  textPrefab: {fileID: 4822161471106044782, guid: 957ec26a3c59dde4cacbc621a32a136f, type: 3}
+  damageTextPrefab: {fileID: 4822161471106044782, guid: 957ec26a3c59dde4cacbc621a32a136f, type: 3}
+  damagePoolSize: 20
+  creditTextPrefab: {fileID: -5062744939063027347, guid: b09ae996f6294d744bfb0e63b60a15ff, type: 3}
+  creditPoolSize: 20
   poolRoot: {fileID: 159743663706535264}
-  poolSize: 20
 --- !u!1 &5827125434940220221
 GameObject:
   m_ObjectHideFlags: 0
@@ -182,10 +184,9 @@ MonoBehaviour:
   spawnAreas: []
   player: {fileID: 0}
   waves:
-  - normalCount: 5
-    eliteCount: 0
-  - normalCount: 5
-    eliteCount: 0
+  - enemies: []
+  - enemies: []
+  eliteView: {fileID: 0}
 --- !u!1 &7523798715022432636
 GameObject:
   m_ObjectHideFlags: 0

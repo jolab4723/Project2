@@ -14,7 +14,7 @@ public class WBH_DamageText : MonoBehaviour
     [SerializeField] private float peakScale = 1.2f;
     [SerializeField] private float endScale = 1.0f;
 
-    private WBH_DamageTextPoolManager poolManager;
+    private WBH_FloatTextPoolManager poolManager;
     private Camera mainCamera;
     private float timer;
     private Vector3 startPos; // 데미지 폰트 시작 위치
@@ -34,11 +34,11 @@ public class WBH_DamageText : MonoBehaviour
 
         if(timer >= duration)
         {
-            poolManager.ReturnPool(this);
+            poolManager.ReturnDamageText(this);
         }
     }
 
-    public void Initialize(WBH_DamageTextPoolManager poolManager)
+    public void Initialize(WBH_FloatTextPoolManager poolManager)
     {
         this.poolManager = poolManager;
         mainCamera = Camera.main;

@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 
 public class WBH_EffectPoolManager : MonoBehaviour
 {
-    [SerializeField] WBH_EffectData[] effectDatas;
+    [Header("Optional Preload")]
+    [Tooltip("자주 자용하는 이펙트(기본공격 등) 등록. 등록되지 않은 이펙트는 최초 요청 시 자동생성")]
+    [FormerlySerializedAs("effectDatas")]
+    [SerializeField] WBH_EffectData[] preloadEffectDatas;
 
     private Dictionary<WBH_EffectData, Queue<WBH_Effect>> effectPools;
 
@@ -14,56 +18,79 @@ public class WBH_EffectPoolManager : MonoBehaviour
     {
         effectPools = new();
 
-        CreatePools();
+        PreLoadEffects();
     }
 
-    private void CreatePools()
+    private void PreLoadEffects()
     {
-        foreach (WBH_EffectData data in effectDatas)
-        {
-            Queue<WBH_Effect> pool = new();
+        if (preloadEffectDatas == null)
+            return;
 
-            for(int i = 0; i < data.poolSize; i++)
+        foreach(WBH_EffectData data in preloadEffectDatas)
+        {
+            if (!IsValid(data))
+                continue;
+
+            if(effectPools.ContainsKey(data))
+            {
+                Log.Warning($"{data.name}이 preloadEffectDatas 에 중복 등록되어 있습니다.");
+                continue;
+            }
+            Queue<WBH_Effect> pool = CreateEmptyPool(data);
+
+            for(int i= 0; i < data.poolSize; i++)
             {
                 pool.Enqueue(CreateEffect(data));
             }
-
-            effectPools.Add(data, pool);
         }
     }
 
     public WBH_Effect GetEffect(WBH_EffectData data)
     {
-        if(!effectPools.TryGetValue(data, out Queue<WBH_Effect> pool))
-        {
-            Debug.LogWarning($"{data.name} Pool 없음");
+        if (!IsValid(data))
             return null;
-        }
 
-        WBH_Effect effect;
-
-        if(pool.Count == 0)
+        // 사전 등록되지 않은 EffectData는 최초 요청 시, 빈 풀 생성
+        if (!effectPools.TryGetValue(data, out Queue<WBH_Effect> pool))
         {
-            Debug.Log($"{data.name} Pool 자동확장");
+            pool = CreateEmptyPool(data);
+        }
 
-            effect = CreateEffect(data);
-        }
-        else
-        {
-            effect = pool.Dequeue();
-        }
+        WBH_Effect effect = pool.Count >0 ? pool.Dequeue() : CreateEffect(data);
 
         effect.gameObject.SetActive(true);
-
         return effect;
     }
 
     public void ReturnEffect(WBH_Effect effect)
     {
-        effect.transform.SetParent(transform, false);
-        effect.gameObject.SetActive(false);
+        if (effect == null)
+            return;
 
-        effectPools[effect.Data].Enqueue(effect);
+        WBH_EffectData data = effect.Data;
+
+        if(!IsValid(data))
+        {
+            Log.Error($"{effect.name}의 EffectData 가 없어 풀에 반환할 수 없습니다.");
+            effect.gameObject.SetActive(false);
+            return;
+        }
+
+        if(!effectPools.TryGetValue(data, out Queue<WBH_Effect> pool))
+        {
+            pool = CreateEmptyPool(data);
+        }
+
+        effect.ResetForPool(transform);
+        effect.gameObject.SetActive(false);
+        pool.Enqueue(effect);
+    }
+
+    private Queue<WBH_Effect> CreateEmptyPool(WBH_EffectData data)
+    {
+        Queue<WBH_Effect> pool = new();
+        effectPools.Add(data, pool);
+        return pool;
     }
 
     private WBH_Effect CreateEffect(WBH_EffectData data)
@@ -75,5 +102,22 @@ public class WBH_EffectPoolManager : MonoBehaviour
         effect.gameObject.SetActive(false);
 
         return effect;
+    }
+
+    private bool IsValid(WBH_EffectData data)
+    {
+        if(data == null)
+        {
+            Log.Warning($"EffectData 가 저장되지 않았습니다.");
+            return false;
+        }
+
+        if(data.effectPrefab == null)
+        {
+            Log.Warning($"{data.name} 에 이펙트 프리팹이 없습니다.");
+            return false;
+        }
+
+        return true;
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using ItemSystem;
 
 /// <summary>스킬 하나가 실제로 어떤 모양의 판정을 쓰는지.</summary>
@@ -77,11 +78,23 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("피해 증가 계산에 반영되는 소모 스택 수의 최대치. 이보다 많이 소모해도 이 값까지만 계산에 들어간다.")]
     public int evoLaserMaxBonusStacks = 3;
 
-    [Header("ArcProjectile 진화2 전용 (트리플 슈팅 - 같은 스택 1개로 약한 투사체 3발 연사)")]
+    [Header("ArcProjectile 진화2 전용 (아크 불릿 - 같은 스택 1개로 약한 투사체 3발 연사)")]
     [Tooltip("발당 피해 배율. 기본 damageMultiplier 대신 이 값을 그대로 쓴다.")]
-    public float evoTripleShotDamageMultiplier = 0.5f;
+    [FormerlySerializedAs("evoTripleShotDamageMultiplier")]
+    public float evoArcBulletDamageMultiplier = 0.5f;
     [Tooltip("3발 사이의 발사 간격(초). 사용자 스펙에 없어서 임의로 지정.")]
-    public float evoTripleShotInterval = 0.1f;
+    [FormerlySerializedAs("evoTripleShotInterval")]
+    public float evoArcBulletInterval = 0.1f;
+
+    [Header("ArcProjectile 진화3 전용 (아크 캐논 - 확장 폭발, 스택 2개 소모)")]
+    [Tooltip("폭발 반경. 기본 explosionRadius 대신 이 값을 쓴다.")]
+    public float evoCannonExplosionRadius = 3f;
+    [Tooltip("피해 배율. 기본 damageMultiplier 대신 이 값을 그대로 쓴다.")]
+    public float evoCannonDamageMultiplier = 2.5f;
+    [Tooltip("발사 1회당 소모하는 스택 수. 기본(1) 대신 이 값만큼 소모한다.")]
+    public int evoCannonStackCost = 2;
+    [Tooltip("에너지 뭉치 형태의 전용 투사체 프리팹. 비워두면 기본 arcProjectilePrefab을 그대로 쓴다.")]
+    public GameObject evoCannonProjectilePrefab;
 
     [Header("BombThrow일 때만 사용 (거너 폭탄 투척 - 커서 위치로 포물선 투척, 적 접촉/착지 후 퓨즈 경과 시 폭발)")]
     [Tooltip("플레이어로부터 이 거리보다 먼 커서 위치는 이 거리로 clamp된다. 스킬 범위 스탯/강화(범위)가 이 값에 적용된다.")]
