@@ -68,19 +68,16 @@ public class WBH_EffectSpawner : MonoBehaviour
         if (!ValidateRequest(data))
             return null;
 
-        if(data.attachType == EffectAttachType.World)
+        if (data.attachType == EffectAttachType.World)
         {
-            if (data.attachType == EffectAttachType.World)
-            {
-                Log.Warning($"{data.name} 은 world 타입입니다. Vector3 오버로드를 사용하세요");
-                return null;
-            }
+            Log.Warning($"{data.name} 은 world 타입입니다. Vector3 오버로드를 사용하세요");
+            return null;
+        }
 
-            if (attachTarget == null)
-            {
-                Log.Warning($"{data.name} 의 부착 대상이 없습니다.");
-                return null;
-            }
+        if (attachTarget == null)
+        {
+            Log.Warning($"{data.name} 의 부착 대상이 없습니다.");
+            return null;
         }
 
         WBH_Effect effect = poolManager.GetEffect(data);
@@ -130,10 +127,12 @@ public class WBH_EffectSpawner : MonoBehaviour
         if(poolManager == null)
         {
             Log.Error($"{name} 의 이펙트 풀 매니저가 초기화되지 않았습니다.");
+            return false;
         }
         if(data == null)
         {
             Log.Warning($"{name} 에서 EffectData 없이 EffectData 없이 재생을 요청하였습니다.");
+            return false;
         }
         return true;
     }
