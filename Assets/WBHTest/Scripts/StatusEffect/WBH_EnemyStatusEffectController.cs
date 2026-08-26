@@ -205,8 +205,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         if (!activeEffects.TryGetValue(type, out var effect))
             return;
 
-        effect.transform.localScale = Vector3.one;
-
         effect.StopEffect();
 
         activeEffects.Remove(type);

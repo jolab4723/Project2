@@ -4,39 +4,40 @@ public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
 
+    public void Initialize(WBH_EffectPoolManager effectPool)
+    {
+        this.poolManager = effectPool;
+    }
+
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
     {
+        if (!ValidateRequest(data))
+            return;
+
+        if(data.attachType == EffectAttachType.World)
+        {
+            Log.Warning($"{data.name} 은 world 타입입니다. Vector3 오버로드를 사용하세요");
+            return;
+        }
+
+        if (attachTarget == null)
+        {
+            Log.Warning($"{data.name} 의 부착 대상이 없습니다.");
+            return;
+        }
+
         WBH_Effect effect = poolManager.GetEffect(data);
 
         if (effect == null)
             return;
 
-        switch(data.attachType)
+        SetAttachedTransform(effect.transform, data, attachTarget);
+
+        if(data.attachType == EffectAttachType.AttachOnce)
         {
-            case EffectAttachType.World:
-                if(attachTarget == null)
-                {
-                    Debug.LogWarning($"{data.name} : World 타입은 Vector3 오버로드를 사용하세요.");
-                    return;
-                }
-                break;
-            case EffectAttachType.AttachOnce:
-                effect.transform.SetParent(attachTarget);
-                effect.transform.localPosition = data.localPos;
-                effect.transform.localRotation = Quaternion.Euler(data.localRot);
-                effect.transform.SetParent(null, true);
-                break;
-            case EffectAttachType.Follow:
-                if (attachTarget == null)
-                {
-                    Debug.LogWarning($"{data.name} : Local / Follow 타입은 attachTarget 이 필요합니다.");
-                    return;
-                }
-                effect.transform.SetParent(attachTarget);
-                effect.transform.localPosition = data.localPos;
-                effect.transform.localRotation = Quaternion.Euler(data.localRot);
-                break;
+            effect.transform.SetParent(null, true);
         }
+
         effect.Play(data);
     }
 
@@ -47,6 +48,9 @@ public class WBH_EffectSpawner : MonoBehaviour
 
     public void SpawnEffect (WBH_EffectData data, Vector3 position, Quaternion rotation)
     {
+        if (!ValidateRequest(data))
+            return;
+
         WBH_Effect effect = poolManager.GetEffect(data);
 
         if (effect == null)
@@ -54,36 +58,41 @@ public class WBH_EffectSpawner : MonoBehaviour
 
         effect.transform.SetParent(null);
 
-        effect.transform.position = position;
-        effect.transform.rotation = rotation;
-
+        effect.transform.SetPositionAndRotation(position, rotation);
         effect.Play(data);
     }
 
     // 상태이상 같은 일정시간 동안 지속형 이펙트
     public WBH_Effect SpawnPersistentEffect(WBH_EffectData data, Transform attachTarget)
     {
+        if (!ValidateRequest(data))
+            return null;
+
+        if (data.attachType == EffectAttachType.World)
+        {
+            Log.Warning($"{data.name} 은 world 타입입니다. Vector3 오버로드를 사용하세요");
+            return null;
+        }
+
+        if (attachTarget == null)
+        {
+            Log.Warning($"{data.name} 의 부착 대상이 없습니다.");
+            return null;
+        }
+
         WBH_Effect effect = poolManager.GetEffect(data);
 
         if(effect == null)
             return null;
 
-        switch (data.attachType)
-        {
-            case EffectAttachType.AttachOnce:
-                effect.transform.SetParent(attachTarget);
-                effect.transform.localPosition = data.localPos;
-                effect.transform.localRotation = Quaternion.Euler(data.localRot);
-                effect.transform.SetParent(null, true);
-                break;
+        SetAttachedTransform(effect.transform, data, attachTarget);
 
-            case EffectAttachType.Follow:
-                effect.transform.SetParent(attachTarget);
-                effect.transform.localPosition = data.localPos;
-                effect.transform.localRotation = Quaternion.Euler(data.localRot);
-                break;
+        if(data.attachType == EffectAttachType.AttachOnce)
+        {
+            effect.transform.SetParent(null, true);
         }
-        effect.Play(data,false);
+
+        effect.Play(data, autoReturn: false);
 
         return effect;
     }
@@ -91,6 +100,9 @@ public class WBH_EffectSpawner : MonoBehaviour
     // 인디케이터를 위한 오버로드
     public WBH_Effect SpawnPersistentEffect(WBH_EffectData data, Vector3 positon, Quaternion rotation)
     {
+        if (!ValidateRequest(data))
+            return null;
+
         WBH_Effect effect = poolManager.GetEffect(data);
 
         if (effect == null)
@@ -103,8 +115,25 @@ public class WBH_EffectSpawner : MonoBehaviour
         return effect;
     }
 
-    public void Initialize(WBH_EffectPoolManager effectPool)
+    private void SetAttachedTransform(Transform effectTransform, WBH_EffectData data, Transform attachTarget)
     {
-        this.poolManager = effectPool;
+        effectTransform.SetParent(attachTarget, false);
+        effectTransform.localPosition = data.localPos;
+        effectTransform.localRotation = Quaternion.Euler(data.localRot);
+    }
+
+    private bool ValidateRequest(WBH_EffectData data)
+    {
+        if(poolManager == null)
+        {
+            Log.Error($"{name} 의 이펙트 풀 매니저가 초기화되지 않았습니다.");
+            return false;
+        }
+        if(data == null)
+        {
+            Log.Warning($"{name} 에서 EffectData 없이 EffectData 없이 재생을 요청하였습니다.");
+            return false;
+        }
+        return true;
     }
 }
