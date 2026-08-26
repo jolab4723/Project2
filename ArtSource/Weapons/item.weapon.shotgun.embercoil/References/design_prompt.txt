@@ -1,0 +1,22 @@
+Item ID: item.weapon.shotgun.embercoil
+Korean name: 잔불 고리
+Rarity / class / type: Rare / Gunner / Shotgun
+Generation mode: built-in image_gen, one call per view or corrective iteration
+
+FINAL LEFT 90° ANCHOR PROMPT
+Create the exact same slim-grip Embercoil as a mathematically strict orthographic LEFT SIDE 90° elevation. Preserve the matte-black connected stock, receiver and barrel, restrained copper structure, short electromagnetic coil recessed inside one copper heat shield, slender straight trigger grip, long clean fore-end, materials and centered scale. Barrel centerline must be parallel to canvas X. Muzzle cut plane must be parallel to canvas Y. Show no muzzle hole, internal bore, oval/circular rim or front-facing muzzle surface; terminate the exterior at one vertical edge on the right. Keep the trigger grip contact width at or below 55 px. Put a 190 px unobstructed support corridor exactly 650 px muzzleward from the trigger-grip center. Orange-red emission is restricted to the connected recessed COIL SURFACE ONLY. Output one complete uncropped weapon on a genuine alpha-0 2048x1024 RGBA PNG. No hands, character, stand, floor, shadow, text, effects, detached parts, white paint/emission, perspective or three-quarter view.
+
+FRONT 0° DERIVATION PROMPT
+Using the accepted left anchor, reproduce the exact weapon directly muzzle-on, strict orthographic, top up and centered. Keep the open bore deep, opaque black, centered and unobstructed. Preserve scale and all cross-sections. Coil emission remains coil-only and appears only when physically visible.
+
+REAR 180° DERIVATION PROMPT
+Using all accepted earlier views, reproduce the exact weapon directly buttstock-on, strict orthographic and centered. Preserve butt-pad cross-section and scale. Do not point the muzzle at the camera or invent emission.
+
+RIGHT 270° POLICY
+Generated right-side attempts were rejected because their camera direction and/or structure drifted. Per the final gate, right.png is the exact horizontal mirror of the accepted strict left.png, prioritizing identical length, muzzle cut, grip, palette and component placement.
+
+COMMON NEGATIVE PROMPT
+character, hands, duplicate weapon, stand, floor, shadow, background, checkerboard, text, logo, watermark, floating parts, detached pieces, perspective, three-quarter view, muzzle bore visible in a side view, blocked muzzle in front view, thick trigger grip, corridor obstruction, extra coils, white paint, white emission, orange-red normal paint, glow outside the recessed coil
+
+POSTPROCESS
+Built-in outputs were 1774x887. Final files were uniformly resampled to 2048x1024 without aspect distortion. Neutral generated backdrops were converted to alpha 0. Front and rear were uniformly scaled about canvas center to preserve side-view physical scale. No weapon part was non-uniformly stretched.

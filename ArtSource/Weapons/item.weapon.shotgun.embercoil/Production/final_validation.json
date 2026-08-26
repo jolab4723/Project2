@@ -1,0 +1,114 @@
+{
+  "item_id": "item.weapon.shotgun.embercoil",
+  "status": "pass",
+  "tripo": {
+    "task_id": "c3e6d5e5-09f2-4456-bf22-2b80d3e608b7",
+    "credits_consumed": 30,
+    "account_before": {
+      "balance": 135,
+      "frozen": 0
+    },
+    "account_after": {
+      "balance": 105,
+      "frozen": 0
+    },
+    "raw_glb": "../Tripo/Downloaded/model.glb",
+    "preview": "../Tripo/Downloaded/preview.png",
+    "raw_8_view_gate": "pass",
+    "raw_gate_report": "../Tripo/RawGate/raw_gate_inspection.json"
+  },
+  "production_outputs": {
+    "blend": "item.weapon.shotgun.embercoil.blend",
+    "fbx": "item.weapon.shotgun.embercoil.fbx",
+    "base_color_srgb": "Textures/item.weapon.shotgun.embercoil_BaseColor.png",
+    "normal_gl_non_color": "Textures/item.weapon.shotgun.embercoil_Normal.png",
+    "orm_non_color": "Textures/item.weapon.shotgun.embercoil_MetallicRoughness.png",
+    "emission_binary_non_color": "Textures/item.weapon.shotgun.embercoil_Emission.png",
+    "clean_fbx_reimport_blend": "QA/Reimport/item.weapon.shotgun.embercoil_reimport.blend"
+  },
+  "geometry": {
+    "single_top_level_root": true,
+    "root": "item.weapon.shotgun.embercoil",
+    "direct_children": [
+      "Model",
+      "RightHandGrip",
+      "LeftHandGrip",
+      "Muzzle"
+    ],
+    "triangles": 120000,
+    "vertices": 72360,
+    "uv_layers": [
+      "UVMap"
+    ],
+    "dimensions_m": [
+      0.09376893937587738,
+      0.22931352257728577,
+      1.000038981437683
+    ],
+    "muzzle_axis": "+Z",
+    "top_axis": "+Y",
+    "right_hand_grip_world_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "right_hand_grip_axis_rotation_x_degrees": 30.0,
+    "left_hand_grip_world_m": [
+      0.0,
+      0.06000005453824997,
+      0.32600000500679016
+    ],
+    "muzzle_world_m": [
+      0.0051376353949308395,
+      0.15391257405281067,
+      0.7049999833106995
+    ],
+    "muzzle_open_depth_probe_m": 0.05395848631858825,
+    "unit_local_scales": true,
+    "negative_or_nonuniform_world_scales": false,
+    "camera_light_armature_collider_in_final": false
+  },
+  "emission": {
+    "designated_surface": "recessed coil ribs only",
+    "designated_srgb": [
+      255,
+      74,
+      26
+    ],
+    "designated_srgb_hex": "#FF4A1A",
+    "designated_linear": [
+      1.0,
+      0.06847816984440017,
+      0.010329823029626936
+    ],
+    "base_color_path": "Textures/item.weapon.shotgun.embercoil_BaseColor.png",
+    "mask_path": "Textures/item.weapon.shotgun.embercoil_Emission.png",
+    "global_binary_rule": {
+      "r_min": 235,
+      "g_min": 90,
+      "g_max": 120,
+      "b_max": 45,
+      "r_minus_g_min": 115,
+      "g_greater_than_or_equal_to_b": true
+    },
+    "mask_unique_channel_values": [
+      0,
+      255
+    ],
+    "white_pixels": 13610,
+    "white_percent": 0.32448768615722656,
+    "global_only": true,
+    "uv_exception": false,
+    "mesh_or_spatial_filtering": false,
+    "morphology_blur_raycast_component_filtering": false,
+    "visual_qa": "pass; five-view emission-only QA confirms coil-only output, including the expected front-view coil arcs; receiver fleck and copper trim do not emit"
+  },
+  "fbx_reimport": {
+    "all_automated_checks_passed": true,
+    "report": "QA/Reimport/fbx_reimport_validation.json",
+    "visual_qa": "pass; opaque PBR BaseColor/Normal appearance and open double muzzle preserved",
+    "fbx_embedded_material_note": "FBX reimport retains BaseColor and Normal. ORM and Emission are delivered as exact external textures for Unity material remap."
+  },
+  "unity_modified": false,
+  "remaining_handoff": "Use Production/HandoffQA/handoff_manifest.json and its UnityTextures outputs for Unity import/remap."
+}

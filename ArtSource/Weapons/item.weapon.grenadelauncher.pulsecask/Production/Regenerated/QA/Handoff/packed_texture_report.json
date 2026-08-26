@@ -1,0 +1,81 @@
+{
+  "item_id": "item.weapon.grenadelauncher.pulsecask",
+  "source_orm": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.pulsecask\\Production\\Regenerated\\Textures\\item.weapon.grenadelauncher.pulsecask_ORM.png",
+  "orm_contract": {
+    "R": "ambient occlusion",
+    "G": "roughness",
+    "B": "metallic"
+  },
+  "metallic_smoothness": {
+    "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.pulsecask\\Production\\Regenerated\\Textures\\item.weapon.grenadelauncher.pulsecask_MetallicSmoothness.png",
+    "channels": {
+      "R": "metallic",
+      "G": "0",
+      "B": "0",
+      "A": "smoothness = 255 - roughness"
+    },
+    "unity_import": "Default texture, sRGB disabled; assign to URP Lit Metallic Map"
+  },
+  "occlusion": {
+    "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.pulsecask\\Production\\Regenerated\\Textures\\item.weapon.grenadelauncher.pulsecask_Occlusion.png",
+    "channels": {
+      "R": "ambient occlusion",
+      "G": "ambient occlusion",
+      "B": "ambient occlusion",
+      "A": "255"
+    },
+    "unity_import": "Default texture, sRGB disabled; assign to URP Lit Occlusion Map (green channel is populated)"
+  },
+  "combined_mos": {
+    "path": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.pulsecask\\Production\\Regenerated\\Textures\\item.weapon.grenadelauncher.pulsecask_UnityMask_MOS.png",
+    "channels": {
+      "R": "metallic",
+      "G": "ambient occlusion",
+      "B": "0",
+      "A": "smoothness"
+    },
+    "unity_import": "Optional custom packed mask; sRGB disabled"
+  },
+  "size": [
+    2048,
+    2048
+  ],
+  "channel_ranges": {
+    "ao": [
+      232,
+      255
+    ],
+    "roughness": [
+      10,
+      163
+    ],
+    "metallic": [
+      0,
+      255
+    ],
+    "smoothness": [
+      92,
+      245
+    ]
+  },
+  "sha256": {
+    "source_orm": "d094d8ad92ca31605b9e3e8f4daa8d8452a7c2b3452b496ffa9d921eb2274d54",
+    "metallic_smoothness": "728b0fa9ec74cd144c7a7ae460be60247515f4a460d044906b800b5171454ee8",
+    "occlusion": "cfee5cc6affa119ad0cfaa4575aca068958ed2bc0c834776eb2b8fa96776026c",
+    "combined_mos": "e66dc9a7565f4fd5814ba35517627203638c48d945b65507aecb5004acefb14e",
+    "contact_sheet": "294f9a2c35d19168394932874a329a6628d2ab6f46891c62d9da0f4524b1b4db"
+  },
+  "checks": {
+    "metallic_smoothness_r_equals_orm_b": true,
+    "metallic_smoothness_gb_zero": true,
+    "metallic_smoothness_a_equals_one_minus_roughness": true,
+    "occlusion_rgb_equals_orm_r": true,
+    "occlusion_alpha_opaque": true,
+    "combined_r_equals_metallic": true,
+    "combined_g_equals_ao": true,
+    "combined_b_zero": true,
+    "combined_a_equals_smoothness": true
+  },
+  "pass": true,
+  "contact_sheet": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.grenadelauncher.pulsecask\\Production\\Regenerated\\QA\\Handoff\\contact_sheet_pbr_emission.png"
+}

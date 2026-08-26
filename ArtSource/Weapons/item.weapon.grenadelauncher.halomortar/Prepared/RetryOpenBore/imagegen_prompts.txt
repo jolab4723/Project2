@@ -1,0 +1,24 @@
+IMAGEGEN BUILT-IN EDIT CALL 1
+Use case: precise-object-edit
+Asset type: orthographic four-view 3D modeling reference, FRONT 0-degree view only
+Input images: Image 1 is the edit target and exact design/material reference.
+Primary request: Change only the central muzzle bore so it is unmistakably a deep, physically open cylindrical tunnel rather than a flat black disk. Show the circular inner wall receding backward with a narrow near rim, subtle dark-indigo/black wall shading, strong depth occlusion, and a clearly empty black void continuing deeper inside. Preserve the exact outer silhouette, proportions, antique-gold projector housing, deep-indigo details, and the single purple annular groove from Image 1.
+Style/medium: clean realistic PBR sci-fi game weapon reference, strict orthographic FRONT 0 degrees.
+Composition/framing: exactly centered at the same scale; one complete front muzzle end only; generous transparent margins; no crop.
+Lighting/mood: neutral PBR reference lighting that reveals bore depth without glow bloom.
+Constraints: genuine transparent alpha background; fully transparent pixels; no checkerboard; preserve all geometry outside the central bore; purple emission only on the one annular groove; no purple paint elsewhere; no white paint; no hands, character, stand, floor, shadow, text, effects, floating or detached parts.
+Avoid: flat black muzzle disk, sealed cap, visible rear surface inside the bore, shallow recess, perspective view, 3/4 view, asymmetrical redesign, extra rings, extra emitters, bloom, background.
+
+RESULT 1
+Rejected as a final input because the generated file was RGB 1774x887 with a baked light/checker background. Bore geometry content was acceptable.
+
+IMAGEGEN BUILT-IN EDIT CALL 2
+Use case: background-extraction
+Asset type: orthographic FRONT 0-degree 3D modeling reference
+Input images: Image 1 is the edit target with the approved deep open bore. Image 2 is the exact original design/material reference.
+Primary request: Change only the background of Image 1 to genuine transparent alpha. Preserve the entire centered annular projector and its deep open cylindrical bore exactly as shown in Image 1; preserve the antique-gold outer housing and single purple annular groove.
+Constraints: output must contain true transparent pixels with alpha 0 outside the weapon, not a visual checkerboard, not white, not gray, not any baked background; clean antialiased edge; no halo; no shadow; no floor; no crop; no rescale of the weapon; no geometry or color changes; no extra parts, text, effects, or glow bloom.
+Avoid: checkerboard pixels, white background pixels, background removal residue, flat black bore disk, sealed cap, shallow recess, rear surface visible inside bore.
+
+RESULT 2
+Rejected as a final input because the generated file was again RGB 1774x887 with a baked checker background. Only its central, fully opaque bore content is used inside the original front image's existing opaque muzzle aperture. The original native alpha and all pixels outside that aperture remain authoritative.

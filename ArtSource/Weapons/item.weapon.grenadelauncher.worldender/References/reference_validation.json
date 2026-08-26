@@ -1,0 +1,46 @@
+{
+  "item_id": "item.weapon.grenadelauncher.worldender",
+  "character_class": "Gunner",
+  "weapon_type": "GrenadeLauncher",
+  "view_order": ["front", "left", "back", "right"],
+  "final_image_contract": {
+    "size": [2048, 1024],
+    "format": "PNG",
+    "mode": "RGBA",
+    "corner_alpha": 0,
+    "normalization": "uniform 2:1 resize from 1774x887; no crop or aspect stretch"
+  },
+  "side_measurements": {
+    "interval_convention": "half-open [start, end)",
+    "left": {
+      "trigger_grip_x": [622, 654],
+      "trigger_grip_width_px": 32,
+      "trigger_grip_center_x": 638.0,
+      "support_corridor_x": [1193, 1383],
+      "support_corridor_length_px": 190,
+      "support_center_x": 1288.0,
+      "support_center_delta_px": 650.0,
+      "support_rod_thickness_px": 52
+    },
+    "right": {
+      "trigger_grip_x": [1485, 1523],
+      "trigger_grip_width_px": 38,
+      "trigger_grip_center_x": 1504.0,
+      "support_corridor_x": [759, 949],
+      "support_corridor_length_px": 190,
+      "support_center_x": 854.0,
+      "support_center_delta_px": 650.0,
+      "support_rod_thickness_px": 51
+    }
+  },
+  "cross_view_logic": {
+    "status": "pass_pending_parent_visual_review",
+    "notes": [
+      "Both sides preserve the same five large volumes: triangular rear stock, sealed rounded-rect core housing, single black barrel with two crimson bands, straight bronze lower rod, and wide bronze bell muzzle.",
+      "Side proportions mirror consistently, including the core-window placement, bell flare, stock opening, rod endpoints, activation stem, and selected support position.",
+      "Front is the direct projection of the wide concentric bell and black bore, with the bronze support-rod cap below; back is the direct projection of the black buttpad and triangular crimson stock.",
+      "No view contains a rotary drum, chamber array, ammunition, multiple barrel, upper superstructure, real-firearm sight/rail, or floating VFX."
+    ]
+  },
+  "blender_postprocess_note": "If extra anti-slip readability is needed, add only shallow rings or a rubber material treatment to the bronze support rod. Preserve the approved side-view silhouette, 190 px selected corridor, and marker placement on the actual rod surface."
+}

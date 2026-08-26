@@ -1,0 +1,157 @@
+{
+  "item_id": "item.weapon.rifle.antimatterlance",
+  "blender_version": "5.1.1",
+  "source_fbx": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.antimatterlance\\Production\\item.weapon.rifle.antimatterlance.fbx",
+  "top_level_roots": [
+    {
+      "name": "item.weapon.rifle.antimatterlance",
+      "type": "EMPTY"
+    }
+  ],
+  "root_children": [
+    "LeftHandGrip",
+    "Muzzle",
+    "RightHandGrip",
+    "item.weapon.rifle.antimatterlance_Mesh"
+  ],
+  "root_transform": {
+    "location": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rotation_euler": [
+      -0.0,
+      0.0,
+      0.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.antimatterlance",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "world_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.antimatterlance",
+      "local_location": [
+        -0.000424,
+        0.022477,
+        0.32625
+      ],
+      "world_location": [
+        -0.000424,
+        0.022477,
+        0.32625
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.antimatterlance",
+      "local_location": [
+        0.003968,
+        0.093921,
+        0.705515
+      ],
+      "world_location": [
+        0.003968,
+        0.093921,
+        0.705515
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "world_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "grip_spacing_z_m": 0.32625,
+  "muzzle_plus_z_dot_global_plus_z": 1.0,
+  "muzzle_semantics": "axial four ivory prongs capturing a faceted magenta crystal tip",
+  "mesh_objects": [
+    "item.weapon.rifle.antimatterlance_Mesh"
+  ],
+  "total_triangles": 59999,
+  "materials": [
+    {
+      "name": "item.weapon.rifle.antimatterlance_PBR",
+      "images": [
+        {
+          "node": "Image Texture",
+          "image": "item.weapon.rifle.antimatterlance_BaseColor",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.antimatterlance\\Production\\item.weapon.rifle.antimatterlance.fbm\\item.weapon.rifle.antimatterlance_BaseColor.png",
+          "colorspace": "sRGB"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "item.weapon.rifle.antimatterlance_NormalGL",
+          "filepath": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.antimatterlance\\Production\\item.weapon.rifle.antimatterlance.fbm\\item.weapon.rifle.antimatterlance_NormalGL.png",
+          "colorspace": "Non-Color"
+        }
+      ]
+    }
+  ],
+  "forbidden_objects": [],
+  "checks": {
+    "single_root": true,
+    "markers_direct_children": true,
+    "grip_spacing_exact": true,
+    "muzzle_points_plus_z": true,
+    "triangle_budget": true,
+    "no_forbidden_objects": true,
+    "root_transform_applied": true
+  },
+  "passed": true
+}

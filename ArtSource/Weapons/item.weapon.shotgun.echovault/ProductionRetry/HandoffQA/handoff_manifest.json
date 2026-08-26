@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.shotgun.echovault",
+  "status": "ready_for_root_unity_handoff_review",
+  "design_authority": {
+    "name": "References/WebPreferred four-view set",
+    "webpreferred_sha256": {
+      "front.png": "0f8e4b801501b135d3bff9835b715dbf36c84175daf6ff53a2b73645724db1c5",
+      "back.png": "3f841a2df2890e71cd9e5743a9ef71563fafd60744783c677d7865a0cc3a7978",
+      "left.png": "7b394adb80b6b00e6ac2ad30ea2165390c678685f5974900fcec45e4f665df57",
+      "right.png": "35006fb88912b72a1337592790238cccca2fd4bc0bcfbfb276abba75933aff80"
+    },
+    "prepared_active_matches_webpreferred": true,
+    "retry_left_right_byte_identical_to_webpreferred": true,
+    "retry_front_back_change": "input slots swapped only; RGB and geometry references unchanged",
+    "source_task_id": "116ae7d0-7022-4808-9332-dda26f365bbd",
+    "visual_match": {
+      "front": "Open centered muzzle with cyan segmented inner resonator ring and graphite collar.",
+      "rear": "Neutral graphite ribbed buttpad within the deep-teal stock frame; no fake cyan muzzle face.",
+      "sides": "Skeletonized stock, slim trigger grip, black receiver bridge, smooth deep-teal fore-end, long segmented cyan chamber, and restrained muzzle clamp match the selected WebPreferred design.",
+      "materials": "Graphite black, deep teal, restrained gunmetal, and the designated cyan family match; PBR changes only lighting and micro-surface response.",
+      "other_candidate_designs_mixed": false
+    },
+    "comparison_contact_sheet": {
+      "path": "contact_sheet_webpreferred_comparison.png",
+      "size": [2400, 1200],
+      "sha256": "8ec5ef08f74388df17b32c7b2dd1d439ab598e4682b759772ac7bd10ee259904"
+    }
+  },
+  "production": {
+    "blend": {
+      "path": "../item.weapon.shotgun.echovault.blend",
+      "bytes": 8732226,
+      "sha256": "fd902eeaefd2dfa2285741fc675107142445bbf6ca92551987be814b90d733a8"
+    },
+    "fbx": {
+      "path": "../item.weapon.shotgun.echovault.fbx",
+      "bytes": 6961564,
+      "sha256": "799e9be43a24143bf04d7a4efd48e0064cc840be1c4a6888d6094b33d3e1e674"
+    },
+    "root": "item.weapon.shotgun.echovault",
+    "children": ["WeaponMesh", "RightHandGrip", "LeftHandGrip", "Muzzle"],
+    "object_count": 5,
+    "axis_contract": "+Z muzzle, +Y up",
+    "bounds_min": [-0.068073, -0.051779, -0.329976],
+    "bounds_max": [0.068064, 0.231793, 0.670005],
+    "dimensions_m": [0.136137, 0.283571, 0.999981],
+    "triangles": 179999,
+    "uv_layers": 1,
+    "material_slots": 1,
+    "transforms_applied": true,
+    "negative_or_nonuniform_scale": false,
+    "forbidden_objects": [],
+    "markers": {
+      "RightHandGrip": {
+        "location": [0.0, 0.0, 0.0],
+        "rotation_euler_radians": [0.575959, 0.0, 0.0]
+      },
+      "LeftHandGrip": {
+        "location": [0.0, 0.045, 0.326],
+        "rotation_euler_radians": [0.0, 0.0, 0.0]
+      },
+      "Muzzle": {
+        "location": [0.0, 0.13, 0.67],
+        "rotation_euler_radians": [0.0, 0.0, 0.0],
+        "forward_plus_z": [0.0, 0.0, 1.0]
+      }
+    }
+  },
+  "source_textures": {
+    "BaseColor": {
+      "path": "../Textures/BaseColor.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "container": "JPEG",
+      "colorspace": "sRGB",
+      "sha256": "89ad40a503526a54144148c1d74a53f8f2e227b00f5c971740ae4ff489f47084"
+    },
+    "Normal": {
+      "path": "../Textures/Normal.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "container": "JPEG",
+      "colorspace": "Non-Color",
+      "sha256": "5b756e229a9314c3220e8a9b0a4288ad0598b6ca1d882f54333543da62b1d6eb"
+    },
+    "ORM": {
+      "path": "../Textures/ORM.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "container": "JPEG",
+      "colorspace": "Non-Color",
+      "packing": "R=Occlusion, G=Roughness, B=Metallic",
+      "sha256": "6b8dfb1bf47bbde65bfb7006073dd3d234a7d1f4f86049ec5171b65b3a67c932"
+    },
+    "EmissionMask": {
+      "path": "../Textures/EmissionMask.png",
+      "size": [2048, 2048],
+      "mode": "L",
+      "container": "PNG",
+      "colorspace": "Non-Color",
+      "sha256": "d473b865fad18f6baafd913d130e6ee5c56c1d5a7f1a7f880ff665c6b68a5430"
+    }
+  },
+  "unity_packed_textures": {
+    "BaseColor": {
+      "path": "UnityTextures/BaseColor.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "container": "PNG",
+      "decoded_texels_identical_to_source": true,
+      "sha256": "150e20f33f2de42eec2317d029541c96180aecd0fb64d8c7b0e78863835a2b92",
+      "unity_import": "sRGB on; white material tint"
+    },
+    "Normal": {
+      "path": "UnityTextures/Normal.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "container": "PNG",
+      "decoded_texels_identical_to_source": true,
+      "sha256": "24c717a037aca1fa4f5c479fc9a19c30f8bfdc560d0b69475e8250f3722e5201",
+      "unity_import": "Normal Map; sRGB off"
+    },
+    "EmissionMask": {
+      "path": "UnityTextures/EmissionMask.png",
+      "size": [2048, 2048],
+      "mode": "L",
+      "container": "PNG",
+      "decoded_texels_identical_to_source": true,
+      "sha256": "bf283c255cb2625e6e67828fb5dfe4efc8c441749d60219ef4baf0f9a1ba836d",
+      "unity_import": "sRGB off; URP Lit Emission Map"
+    },
+    "MetallicSmoothness": {
+      "path": "UnityTextures/MetallicSmoothness.png",
+      "size": [2048, 2048],
+      "mode": "RGBA",
+      "packing": "R=Metallic, G=0, B=0, A=Smoothness",
+      "sha256": "476d1dedddb03cf648f85d6e4444ef8f5b0e5fd5e08d76fab6a0b52ef6905c1b",
+      "unity_import": "sRGB off; URP Lit Metallic Map; Smoothness Source=Metallic Alpha"
+    },
+    "Occlusion": {
+      "path": "UnityTextures/Occlusion.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "packing": "RGB=Occlusion; Unity URP reads G",
+      "sha256": "b7ad8cda64a07cc6aaeba8c91edf4db867cc299df778df520db705725539e68a",
+      "unity_import": "sRGB off; URP Lit Occlusion Map"
+    },
+    "MOS": {
+      "path": "UnityTextures/MOS.png",
+      "size": [2048, 2048],
+      "mode": "RGB",
+      "packing": "R=Metallic, G=Occlusion, B=Smoothness",
+      "sha256": "c3add9cdebe66547531a9ca434bdef5357dc27ff4532face762c05253ca1a8e4",
+      "unity_import": "sRGB off; alternative for a shader with the documented MOS channel contract"
+    },
+    "regeneration_script": "Scripts/build_unity_packed_textures.py",
+    "detailed_manifest": "unity_texture_pack_manifest.json"
+  },
+  "emission": {
+    "mask_contract": "global BaseColor sRGB RGB-only binary selection",
+    "threshold": "G>=175; B>=195; R<=125; G-R>=75; B-R>=90; OpenCV HSV H=82..100; S>=100",
+    "target_srgb": [62, 217, 235],
+    "target_linear": [0.0481718242, 0.6938717613, 0.8307698768],
+    "strength": 2.5,
+    "unique_mask_values": [0, 255],
+    "selected_pixels": 119665,
+    "selected_percent": 2.85303593,
+    "mask_selected_not_matching_threshold": 0,
+    "threshold_pixels_missing_from_mask": 0,
+    "uv_or_spatial_restriction": false,
+    "component_or_morphology_filter": false,
+    "contamination_verdict": "pass; same-family receiver-ring and grip-foot pixels are intentionally included, while gray, white, and weaker teal reflections are excluded",
+    "analysis": "emission_analysis.json",
+    "overlay": "Emission/emission_rgb_overlay.png",
+    "selected_only": "Emission/emission_selected_only.png"
+  },
+  "geometry_and_reimport_gate": {
+    "status": "pass_with_documented_open-boundary_caveat",
+    "fbx_clean_reimport": "pass",
+    "root_hierarchy_markers_bounds_triangles_uv_materials_preserved": true,
+    "muzzle_forward_plus_z_preserved": true,
+    "inconsistent_manifold_winding_edges": 0,
+    "overconnected_edges": 0,
+    "zero_area_faces": 0,
+    "zero_length_edges": 0,
+    "boundary_edges": 32277,
+    "boundary_caveat": "The decimated Tripo mesh is not watertight and contains open boundaries, including the authored open muzzle and layered surfaces. Five principal views with backface culling enabled show no missing or reversed exterior patches.",
+    "backface_culling_visual_gate": "pass",
+    "validation_script": "Scripts/validate_blend_fbx_normals.py",
+    "detailed_validation": "blend_fbx_validation.json"
+  },
+  "visual_qa": {
+    "pbr_and_emission_five_view_contact_sheet": {
+      "path": "contact_sheet_pbr_emission_5view.png",
+      "size": [2500, 900],
+      "sha256": "65eaa04b407d785f46b14b17775a8fc59349c036c3ad079e531734e870e2a516"
+    },
+    "views": ["muzzle", "stock", "left", "right", "top"],
+    "render_sha256": {
+      "Renders/pbr_muzzle.png": "00b0acc2674e9d44228557ec6321e64309fc6de0f58368c7fc7ccd3acfb730e8",
+      "Renders/pbr_stock.png": "e31f2a1990503fe991b5786a79e5c590d45ed6290918e0d464d97bebb3503ab2",
+      "Renders/pbr_left.png": "a77d6fba7d4be6475608251a9a88d8d27b5b578afca9584e6f9e2542b16297bc",
+      "Renders/pbr_right.png": "cc5f7cb961987d4270588e9a4e016cf073d724fadda6f7eef34e663f0ee0a9d5",
+      "Renders/pbr_top.png": "5e1650e95add2a5cb226a511a16ef2d53a55836733eccaff7bc052bafc417bbe",
+      "Renders/emission_muzzle.png": "b4b30dd0bc72ad5c322ebed8369e215f2f2790ed7741b15ca5ad487a93c63b68",
+      "Renders/emission_stock.png": "bcb7d89755fedf8237d83ebd70e7ede3016602e7f1724e6c8c75d698df6e5197",
+      "Renders/emission_left.png": "5e03c4ac2839f6366915d25ff6430575c65f4cb9f18fe965da03747c0fb6cc8a",
+      "Renders/emission_right.png": "1671bd2d5efe1679d93b62239d56f400416a2d22b379c571d27423ff6195f028",
+      "Renders/emission_top.png": "a16c0d44d9b4202ff644981d61378e2ec768d946656bf6bc906875c82235ab66"
+    },
+    "pbr_result": "pass; graphite and deep-teal surfaces remain readable, muzzle is open, and stock is neutral",
+    "emission_result": "pass; segmented resonance chamber and authored same-family accents are sharply bounded with no bloom or spatial expansion",
+    "render_script": "Scripts/render_pbr_emission_5view.py",
+    "contact_sheet_script": "Scripts/build_contact_sheets.py"
+  },
+  "scope_guards": {
+    "new_tripo_submission": false,
+    "unity_assets_modified": false,
+    "phase_orchid_modified": false,
+    "shared_docs_modified": false
+  }
+}

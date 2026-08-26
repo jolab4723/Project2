@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.rifle.dustsparrow",
+  "decision": "reuse_unchanged_inputs_for_single_h3_retry",
+  "reason": "The failed raw model's large black trigger-grip slab is absent from every source view. The four inputs remain mutually consistent, so the failure is classified as a gross stochastic H3 hallucination rather than an input defect.",
+  "views": {
+    "front": {"path": "TripoInput/front.png", "sha256": "b77432eb2186fbab1a9979ef63df7cdd46b0bb5bfe29519f056d3353dd348044", "role": "muzzle-facing", "muzzleOpen": true},
+    "back": {"path": "TripoInput/back.png", "sha256": "957f3175a3d5b4769e22c3234316aee79579d1b1729d3441788fc9392fd121d8", "role": "stock-facing", "stockVisible": true},
+    "left": {"path": "TripoInput/left.png", "sha256": "a9ce4599d575c9a26437801ca578e89481a5b894ff9c9d4d0524fc18bff438d2", "role": "strict-side", "barrelHorizontal": true, "muzzleCutVertical": true, "muzzleFrontHidden": true, "triggerGripExposed": true},
+    "right": {"path": "TripoInput/right.png", "sha256": "0b2d23f2c27b15542c8179bc40941d82acad2442474d9b05ae6e7bd397ef799b", "role": "exact-left-mirror", "barrelHorizontal": true, "muzzleCutVertical": true, "muzzleFrontHidden": true, "triggerGripExposed": true}
+  },
+  "checks": {
+    "all2048x1024PngRgba": true,
+    "allContainAlpha0And255": true,
+    "uncropped": true,
+    "frontAndBackSeparated": true,
+    "rightExactHorizontalMirrorOfLeft": true,
+    "mirrorDifferentValueCount": 0,
+    "unrequestedSlabOrMagazineVisibleInAnyInput": false,
+    "safeForSingleRetry": true
+  }
+}

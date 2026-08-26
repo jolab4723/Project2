@@ -1,0 +1,54 @@
+{
+  "item_id": "item.weapon.rifle.railcarbine",
+  "status": "ready_for_api_submit",
+  "references": {
+    "order": ["front", "left", "back", "right"],
+    "size": [2048, 1024],
+    "mode": "RGBA",
+    "genuine_alpha": true,
+    "background_alpha_zero": true,
+    "internal_holes_alpha_zero": true,
+    "normalization": "native web RGBA; left was center-padded without rescaling, alpha-1 numerical noise was clamped to 0, and right is an exact horizontal mirror"
+  },
+  "design": {
+    "fictional_policy_review": "pass",
+    "reason": "sealed twin magnetic rails and paired hex emitters; no magazine, chamber, bolt, ejection, gas system, optic rail, round barrel, or conventional receiver action",
+    "cross_view_consistency": "pass",
+    "front": "exactly two vertically aligned cyan muzzle faces",
+    "back": "stock butt and logical rear cross-section only; no cyan muzzle face",
+    "side_orthographic": "pass; parallel horizontal rails, vertical terminal edges, no bore or front-face foreshortening",
+    "right_source": "exact horizontal mirror of approved left",
+    "palette": "matte navy gunmetal and graphite with cyan restricted to the designed energy surfaces",
+    "floating_parts_or_vfx": false
+  },
+  "side_grip_measurements_final_2048x1024": {
+    "left": {
+      "RightHandGrip_contact_center_px": [779, 596],
+      "RightHandGrip_max_visible_width_px": 48,
+      "LeftHandGrip_contact_center_px": [1458, 565],
+      "LeftHandGrip_selected_corridor_px": [180, 55],
+      "center_spacing_px": 679,
+      "obstacles_in_contact_regions": false
+    },
+    "right": {
+      "RightHandGrip_contact_center_px": [1268, 596],
+      "RightHandGrip_max_visible_width_px": 48,
+      "LeftHandGrip_contact_center_px": [589, 565],
+      "LeftHandGrip_selected_corridor_px": [180, 55],
+      "center_spacing_px": 679,
+      "obstacles_in_contact_regions": false
+    }
+  },
+  "h3_submission": {
+    "allowed": true,
+    "reason": "user explicitly requested formal production regeneration and the replacement four-view set passed visual and pixel QA",
+    "type": "multiview_to_model",
+    "model_version": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "texture": true,
+    "pbr": true,
+    "export_uv": true,
+    "expected_cost": 30
+  },
+  "pass": true
+}

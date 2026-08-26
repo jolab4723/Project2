@@ -1,0 +1,26 @@
+{
+  "item_id": "item.weapon.rifle.glassrail",
+  "retry": 2,
+  "root_cause": "front.png contained 752 non-black RGB pixels underneath alpha=0 at the detached artifact location; Tripo interpreted those hidden colors as a floating stock-side component",
+  "minimal_fix": "Set RGB to [0,0,0] only where alpha is already 0 in front.png. No visible or opaque pixel, alpha value, silhouette, material, scale, or body geometry changed.",
+  "front_visible_rgba_identical": true,
+  "front_alpha_identical": true,
+  "front_changed_pixels": 752,
+  "front_only_alpha0_pixels_changed": true,
+  "all_views": {
+    "size": [2048, 1024],
+    "mode": "RGBA",
+    "alpha_extrema": [0, 255],
+    "border_alpha_max": 0,
+    "hidden_rgb_under_alpha0": 0
+  },
+  "view_order": ["front", "left", "back", "right"],
+  "right_exact_horizontal_mirror_of_left": true,
+  "front_sha256": "12c1a273344e70e4e33c34c1f3cfb2f3cf33f5174f54513d91b954bd623a99b6",
+  "left_sha256": "ba569ad7970d0a9d4100efa891a99f5942e10a39345efc1c455594e32bb9f171",
+  "back_sha256": "79227777d5e5d7ff9d4da858fecd7ff3bbbc1d5ae85ec9b775f19fa27852f4c3",
+  "right_sha256": "ddf83f226234b455ef275e384178214c7f9f242583fc075a658e2295686d5d47",
+  "side_projection": "pass: horizontal barrel centerline, vertical edge-on muzzle cut plane, no side-visible bore or elliptical front rim",
+  "connectivity": "pass: exactly one visible weapon body per view; no visible or hidden detached RGB component remains",
+  "emission_design": "single cyan-blue energy conduit under the transparent cover; non-emissive azure paint remains a separate darker RGB family"
+}

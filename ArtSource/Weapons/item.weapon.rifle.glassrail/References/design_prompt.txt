@@ -1,0 +1,35 @@
+Item ID: item.weapon.rifle.glassrail
+Display name: 유리빛 궤도 / Glass Rail
+Character class: Gunner
+Weapon type: Rifle
+Tier: Advanced
+Generator: built-in image_gen, one generation call per requested view (retries retained in SourceGenerated)
+
+LOCKED DESIGN BRIEF
+Realistic production-ready Project2 sci-fi rifle with a simple clean readable silhouette. Smoked-silver structural receiver and barrel shroud with restrained azure-blue secondary panels. Exactly one straight blue energy conduit is integrated along the fore-end beneath one dark transparent protective cover. Blue emission exists only on that one clearly bounded connected conduit surface. The exact glow blue is not reused on paint. No white emission, forced white panels, over-industrial bulges, exposed cables, unnecessary rails, or accessory clutter.
+
+LEFT 90° ACCEPTED PROMPT
+Create the LEFT SIDE 90° orthographic view of one exact Glass Rail rifle. Target 2048x1024 PNG RGBA with alpha-0 outside. Horizontal and centered, stock left and muzzle right, complete and uncropped. Use realistic PBR game-asset materials. Trigger grip <=55 px thick perpendicular to its axis with full gloved-hand clearance. Put a 190 px clean continuous lower fore-end support corridor 620-680 px muzzleward from trigger-grip center, clear of magazine, cable, guard, rail, spikes, ornaments, moving parts and abrupt thickness changes. The covered conduit sits above and does not interrupt support contact. Strict camera gate: barrel centerline exactly parallel to image X, muzzle cut plane exactly parallel to image Y, camera perpendicular to barrel axis, zero yaw/pitch/perspective/foreshortening. Preserve the short smoked-silver cylindrical muzzle shroud and lateral ventilation slots, but show only the lateral wall, rounded top/bottom profile and one straight vertical terminal edge: no black muzzle hole, inner bore, oval/elliptical/circular front rim, end face or visible inner wall. The bore appears only in FRONT. Keep one physically connected weapon and exactly one bounded blue conduit emissive surface. No hands, character, stand, floor, shadow, text, effects, aura, floating parts, forced white, or other glow.
+
+FRONT 0° ACCEPTED PROMPT
+Using the accepted LEFT anchor, render the exact same Glass Rail from FRONT 0° with the open muzzle facing camera. Preserve geometry, scale, center, smoked-silver/azure allocation, conduit cover, stock, trigger grip, seams and proportions. True orthographic axial view; do not enlarge. Muzzle fully open, centered and symmetric, with continuous rim and visible bore depth. No cap, plate, shards, obstruction, redesign, background, text, floor, shadow, floating part, or additional emission.
+
+REAR 180° ACCEPTED PROMPT
+Using the accepted LEFT and FRONT anchors, render the exact same Glass Rail from REAR 180°, looking directly into the buttstock. Preserve scale, center, structure, materials, seams and asymmetry. The butt pad and stock remain closed and mechanically continuous; do not invent a rear muzzle opening or detached plate. The conduit may appear only where physically visible. No redesign, background, text, shadow, effects, extra geometry, or extra emission.
+
+RIGHT 270° ACCEPTED PROMPT
+Using the accepted LEFT, FRONT and REAR anchors, render the true opposite-side RIGHT 270° surface of the exact same Glass Rail. Preserve length, stock, receiver, barrel, muzzle, trigger grip, support corridor, smoked-silver/azure materials, transparent conduit cover and sole blue emissive conduit. The generated opposite-side attempt visibly drifted in stock, bracket and seam placement, so the root consistency rule rejects it. Final right.png is the accepted final left.png mirrored exactly at pixel level. No geometry was stretched or cropped.
+
+NEGATIVE CONSTRAINTS
+character, person, hands, duplicate weapon, rack, pedestal, stand, floor, background, shadow, floating parts, detached pieces, blocked muzzle, obstructed trigger, oversized grip, tiny grip, magazine/cable/guard/rail/spike/ornament/moving part in the support corridor, perspective, foreshortening, diagonal pose, text, logo, watermark, white emission, glow-blue paint, bloom spill, forced white panels, over-industrial clutter
+
+FINAL MEASUREMENTS (final 2048x1024 pixel coordinates)
+LEFT: trigger-grip center x=660; perpendicular visible thickness=50 px; support corridor x=1200..1390 (190 px), center x=1295; muzzleward center distance=635 px.
+RIGHT: trigger-grip center x=1388; perpendicular visible thickness=50 px; support corridor x=658..848 (190 px), center x=753; muzzleward (screen-left) center distance=635 px.
+Both side views retain full-hand trigger clearance, a smooth mechanically continuous lower fore-end support surface, and a clear open muzzle. Measurements were made on final un-stretched side sheets.
+
+NORMALIZATION
+Native image_gen sources are 1774x887 and are preserved unchanged under SourceGenerated. The strict-side accepted source is left_source_v3.png. Accepted finals are center-padded, never stretched or cropped, to exactly 2048x1024 RGBA. Baked checker backgrounds were deterministically extracted while preserving the two intentional stock/trigger cutouts and bright material highlights. Per the root consistency rule, right.png is an exact pixel-level horizontal mirror of final left.png; the generated RIGHT attempt remains preserved but rejected.
+
+GATE
+Tripo submission is prohibited until the root visually approves this complete set.

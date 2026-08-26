@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.shotgun.echovault",
+  "files": {
+    "blend": {
+      "path": "../item.weapon.shotgun.echovault.blend",
+      "bytes": 8732226,
+      "sha256": "fd902eeaefd2dfa2285741fc675107142445bbf6ca92551987be814b90d733a8"
+    },
+    "fbx": {
+      "path": "../item.weapon.shotgun.echovault.fbx",
+      "bytes": 6961564,
+      "sha256": "799e9be43a24143bf04d7a4efd48e0064cc840be1c4a6888d6094b33d3e1e674"
+    }
+  },
+  "production_blend": {
+    "root": "item.weapon.shotgun.echovault",
+    "object_count": 5,
+    "children": ["WeaponMesh", "RightHandGrip", "LeftHandGrip", "Muzzle"],
+    "bounds_min": [-0.068073, -0.051779, -0.329976],
+    "bounds_max": [0.068064, 0.231793, 0.670005],
+    "dimensions": [0.136137, 0.283571, 0.999981],
+    "triangles": 179999,
+    "uv_layers": 1,
+    "material_slots": 1,
+    "mesh_scale": [1.0, 1.0, 1.0],
+    "mesh_world_determinant": 1.0,
+    "forbidden_objects": [],
+    "backface_culling_saved_flag": true
+  },
+  "topology_and_normals": {
+    "mesh_validate_invalid_data_found": false,
+    "boundary_edges": 32277,
+    "wire_edges_in_blend": 2,
+    "wire_edges_after_fbx_reimport": 0,
+    "overconnected_edges": 0,
+    "inconsistent_manifold_winding_edges": 0,
+    "zero_area_faces": 0,
+    "zero_length_edges": 0,
+    "boundary_note": "The decimated Tripo surface contains open boundaries, including the authored open muzzle and layered surface shells. Backface-culling renders from five principal views show no missing reversed-face patches.",
+    "backface_culling_visual_gate": "pass"
+  },
+  "markers": {
+    "RightHandGrip": {
+      "location": [0.0, 0.0, 0.0],
+      "rotation_euler_radians": [0.575959, 0.0, 0.0]
+    },
+    "LeftHandGrip": {
+      "location": [0.0, 0.045, 0.326],
+      "rotation_euler_radians": [0.0, 0.0, 0.0]
+    },
+    "Muzzle": {
+      "location": [0.0, 0.13, 0.67],
+      "rotation_euler_radians": [0.0, 0.0, 0.0],
+      "forward_plus_z": [0.0, 0.0, 1.0]
+    }
+  },
+  "fbx_clean_reimport": {
+    "status": "pass",
+    "single_root_exact_name": true,
+    "object_count": 5,
+    "triangles_preserved": true,
+    "uv_layer_preserved": true,
+    "bounds_dimensions": [0.136137, 0.283572, 0.999981],
+    "bounds_match_within_0_00001": true,
+    "marker_locations_and_rotations_preserved": true,
+    "muzzle_forward_plus_z_preserved": true,
+    "no_negative_or_nonuniform_scale": true,
+    "no_camera_light_armature_or_collider": true,
+    "material_note": "FBX carries BaseColor and Normal references. ORM, EmissionMask, and Unity packed textures are explicit external handoff files."
+  },
+  "validation_script": "Scripts/validate_blend_fbx_normals.py"
+}

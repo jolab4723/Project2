@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.rifle.glassrail",
+  "status": "ready_for_root_visual_review",
+  "validatedAt": "2026-08-25",
+  "files": {
+    "front.png": {"size": [2048, 1024], "mode": "RGBA", "alphaExtrema": [0, 255], "borderAlphaZero": true, "contentBox": [958, 277, 1086, 740], "uncropped": true},
+    "left.png": {"size": [2048, 1024], "mode": "RGBA", "alphaExtrema": [0, 255], "borderAlphaZero": true, "contentBox": [228, 360, 1815, 662], "uncropped": true},
+    "back.png": {"size": [2048, 1024], "mode": "RGBA", "alphaExtrema": [0, 255], "borderAlphaZero": true, "contentBox": [957, 284, 1092, 738], "uncropped": true},
+    "right.png": {"size": [2048, 1024], "mode": "RGBA", "alphaExtrema": [0, 255], "borderAlphaZero": true, "contentBox": [233, 360, 1820, 662], "uncropped": true}
+  },
+  "sideMeasurements": {
+    "left": {"triggerGripCenterX": 660, "triggerGripPerpendicularThicknessPx": 50, "supportCorridor": [1200, 1390], "supportCorridorLengthPx": 190, "supportCenterX": 1295, "muzzlewardCenterDistancePx": 635, "passes": true},
+    "right": {"triggerGripCenterX": 1388, "triggerGripPerpendicularThicknessPx": 50, "supportCorridor": [658, 848], "supportCorridorLengthPx": 190, "supportCenterX": 753, "muzzlewardDirection": "screen-left", "muzzlewardCenterDistancePx": 635, "passes": true}
+  },
+  "checks": {
+    "singleConnectedWeapon": true,
+    "horizontalAndCentered": true,
+    "noCrop": true,
+    "orthographicIntent": true,
+    "sideLengthDifferencePx": 0,
+    "sideLengthDifferencePercent": 0.0,
+    "rightIsExactPixelMirrorOfLeft": true,
+    "leftStrictOrthographic90": true,
+    "rightStrictOrthographic270ByExactMirror": true,
+    "sideBarrelCenterlineParallelToImageX": true,
+    "sideMuzzleCutEdgeParallelToImageY": true,
+    "sideMuzzleBoreOrFrontFaceVisible": false,
+    "frontMuzzleOpenCenteredContinuous": true,
+    "rearStockClosed": true,
+    "noHandsCharacterStandFloorShadowTextEffects": true,
+    "oneBoundedConnectedEmissionSurface": true,
+    "emissionOnlyOnCoveredConduit": true,
+    "whiteEmissionAbsent": true,
+    "glowBluePaintReuseAbsent": true,
+    "supportCorridorsUnobstructed": true
+  },
+  "concerns": [
+    "Earlier LEFT and generated RIGHT attempts were rejected; final LEFT is the strict-side regeneration and RIGHT is its exact mirror.",
+    "FRONT and REAR sources baked checker backgrounds despite repeated alpha requests; finals use deterministic largest-connected-weapon background extraction and retain alpha-0 borders.",
+    "Final right.png is the exact pixel-level horizontal mirror of final left.png, so muzzle direction is screen-left in RIGHT."
+  ],
+  "tripoSubmitted": false
+}

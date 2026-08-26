@@ -1,0 +1,61 @@
+{
+  "item_id": "item.weapon.rifle.antimatterlance",
+  "stage": "production_complete_fbx_reimport_passed",
+  "reference_validation": {
+    "canvas": [2048, 1024],
+    "mode": "RGBA",
+    "genuine_alpha": true,
+    "view_order": ["front", "left", "back", "right"],
+    "uniform_resize_only": true,
+    "cropped": false,
+    "stretched": false,
+    "single_weapon_per_view": true,
+    "muzzle_unobstructed": true,
+    "double_armored_barrel_count": 2,
+    "black_bridge_collar_count": 3,
+    "double_armored_barrel_connected": true,
+    "front_semantics": "axial muzzle cross-section: four ivory prongs around the small captured faceted magenta crystal; not the rear circular capacitor",
+    "back_semantics": "axial butt-end cross-section looking forward along the barrel"
+  },
+  "side_view_measurements_final_pixels": {
+    "left": {
+      "physical_rear_part": "slim exposed black three-segment trigger grip directly below the trigger and sealed round capacitor",
+      "trigger_grip_contact_width_px": 52,
+      "physical_support_part": "separate horizontal black three-segment foregrip on two short struts",
+      "support_clean_contact_length_px": 208,
+      "palm_center_spacing_px": 646
+    },
+    "right": {
+      "physical_rear_part": "slim exposed black three-segment trigger grip directly below the trigger and sealed round capacitor",
+      "trigger_grip_contact_width_px": 53,
+      "physical_support_part": "separate horizontal black three-segment foregrip on two short struts",
+      "support_clean_contact_length_px": 202,
+      "palm_center_spacing_px": 680,
+      "normalization_note": "Accepted at +4.6% from the 650px image target; normalize the Blender LeftHandGrip anchor to 0.32625 m."
+    }
+  },
+  "tripo": {
+    "type": "multiview_to_model",
+    "model_version": "v3.1-20260211",
+    "geometry_quality": "standard",
+    "texture": true,
+    "pbr": true,
+    "export_uv": true,
+    "expected_cost_credits": 30,
+    "uploaded": true,
+    "submitted": true,
+    "task_id": "511d4bad-b10e-403a-b032-1550686be91b"
+  },
+  "production_validation": {
+    "single_root": true,
+    "triangle_count": 59999,
+    "right_hand_grip": {"location_m": [0.0, 0.0, 0.0], "surface_distance_m": 0.012984, "contact_width_m": 0.05412},
+    "left_hand_grip": {"location_m": [-0.000424, 0.022477, 0.32625], "surface_distance_m": 0.014118, "continuous_contact_m": 0.132004},
+    "muzzle_marker": {"location_m": [0.003968, 0.093921, 0.705515], "forward_axis": "+Z", "semantics": "axial four ivory prongs capturing a faceted magenta crystal tip"},
+    "axis_plus_z_muzzle_plus_y_up": true,
+    "pbr_textures": ["BaseColor", "NormalGL", "ORM", "Emission"],
+    "emission_scope": "hard UV mask on the physical magenta beam, rear core, and captured crystal only; ivory, black, and gold non-emissive",
+    "fbx_empty_scene_reimport": true,
+    "reimport_validation": "Production/QA/fbx_reimport_validation.json"
+  }
+}

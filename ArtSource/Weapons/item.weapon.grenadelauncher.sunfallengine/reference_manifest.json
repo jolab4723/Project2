@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.grenadelauncher.sunfallengine",
+  "displayName": "일식 기관",
+  "englishName": "Sunfall Engine",
+  "characterClass": "Gunner",
+  "weaponType": "GrenadeLauncher",
+  "rarity": "Legendary",
+  "phase": "production_complete_front_back_swap_retry",
+  "generationTool": "built-in image_gen",
+  "tripoSubmitted": true,
+  "finalCanvas": {
+    "width": 2048,
+    "height": 1024,
+    "format": "PNG",
+    "mode": "RGBA",
+    "backgroundAlpha": 0
+  },
+  "views": {
+    "front0": {
+      "path": "References/front.png",
+      "sourceRaw": "References/SourceGenerated/front_raw_v2.png",
+      "method": "generated from accepted left and axial reference"
+    },
+    "left90": {
+      "path": "References/left.png",
+      "sourceRaw": "References/SourceGenerated/left_raw_v5_strict_side.png",
+      "method": "generated anchor after grip-width and strict side-orthography correction"
+    },
+    "rear180": {
+      "path": "References/back.png",
+      "sourceRaw": "References/SourceGenerated/back_raw_v2.png",
+      "method": "generated from accepted left and front"
+    },
+    "right270": {
+      "path": "References/right.png",
+      "sourceRaw": "References/left.png",
+      "method": "exact_horizontal_mirror_of_accepted_left"
+    }
+  },
+  "discardedGeneratedRights": [
+    "References/SourceGenerated/right_raw.png",
+    "References/SourceGenerated/right_raw_scale_v2.png",
+    "References/SourceGenerated/right_raw_scale_v3.png"
+  ],
+  "discardReason": "Generated right-side variants changed camera scale and visible part placement relative to the approved left anchor. Per the final identity-first rule, right.png is the exact horizontal mirror of left.png.",
+  "otherRetainedRawOutputs": [
+    "References/SourceGenerated/left_raw.png",
+    "References/SourceGenerated/left_raw_v2.png",
+    "References/SourceGenerated/left_raw_v3.png",
+    "References/SourceGenerated/left_raw_v4.png",
+    "References/SourceGenerated/front_raw.png",
+    "References/SourceGenerated/back_raw.png"
+  ],
+  "normalization": {
+    "resize": false,
+    "crop": false,
+    "stretch": false,
+    "method": "Native 1774x887 render centered without scaling on a transparent 2048x1024 canvas.",
+    "transparencyCleanup": "One connected-background extraction removed only the generated opaque checkerboard/black backdrop before transparent padding. Final files contain only alpha values 0 and 255."
+  }
+}

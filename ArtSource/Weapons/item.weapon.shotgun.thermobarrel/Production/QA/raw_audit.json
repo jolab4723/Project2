@@ -1,0 +1,264 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.thermobarrel\\Tripo\\Downloaded\\item.weapon.shotgun.thermobarrel_raw.glb",
+  "blender_version": "5.1.1",
+  "scene_objects": [
+    {
+      "name": "tripo_node_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "type": "MESH"
+    }
+  ],
+  "mesh_object_count": 1,
+  "total_triangles": 1435624,
+  "world_bounds_min": [
+    -0.5,
+    -0.079747,
+    -0.128076
+  ],
+  "world_bounds_max": [
+    0.5,
+    0.079747,
+    0.128076
+  ],
+  "world_dimensions": [
+    1.0,
+    0.159495,
+    0.256153
+  ],
+  "objects": [
+    {
+      "name": "tripo_node_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "vertices": 744174,
+      "polygons": 1435624,
+      "triangles": 1435624,
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "world_bounds_min": [
+        -0.5,
+        -0.079747,
+        -0.128076
+      ],
+      "world_bounds_max": [
+        0.5,
+        0.079747,
+        0.128076
+      ],
+      "materials": [
+        "tripo_material_e717ab56-c4a6-4ec3-91c7-69f343e6cc90"
+      ],
+      "uv_layers": [
+        "UVMap"
+      ]
+    }
+  ],
+  "grip_regions": {
+    "right_hand_vertical_grip": {
+      "vertex_count": 21047,
+      "bounds_min": [
+        0.160004,
+        -0.018982,
+        -0.128076
+      ],
+      "bounds_max": [
+        0.214699,
+        0.01815,
+        -0.018016
+      ],
+      "centroid": [
+        0.196956,
+        -0.000647,
+        -0.075454
+      ]
+    },
+    "right_hand_vertical_grip_positive_z": {
+      "vertex_count": 47967,
+      "bounds_min": [
+        0.160027,
+        -0.057912,
+        0.018004
+      ],
+      "bounds_max": [
+        0.269998,
+        0.033788,
+        0.100986
+      ],
+      "centroid": [
+        0.214333,
+        -0.009539,
+        0.056961
+      ]
+    },
+    "left_hand_foregrip": {
+      "vertex_count": 7370,
+      "bounds_min": [
+        -0.217709,
+        -0.016205,
+        -0.040492
+      ],
+      "bounds_max": [
+        -0.073323,
+        0.015593,
+        -0.035002
+      ],
+      "centroid": [
+        -0.14523,
+        -0.000304,
+        -0.037766
+      ]
+    },
+    "left_hand_foregrip_positive_z": {
+      "vertex_count": 106507,
+      "bounds_min": [
+        -0.279998,
+        -0.051603,
+        0.035003
+      ],
+      "bounds_max": [
+        -0.030309,
+        0.065141,
+        0.111313
+      ],
+      "centroid": [
+        -0.161476,
+        -0.007711,
+        0.073322
+      ]
+    },
+    "muzzle_tip": {
+      "vertex_count": 50707,
+      "bounds_min": [
+        -0.5,
+        -0.07619,
+        -0.008119
+      ],
+      "bounds_max": [
+        -0.470002,
+        0.076429,
+        0.124588
+      ],
+      "centroid": [
+        -0.484689,
+        -0.001279,
+        0.056657
+      ]
+    }
+  },
+  "materials": [
+    {
+      "name": "tripo_material_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "use_nodes": true,
+      "blend_method": "DITHERED",
+      "nodes": [
+        {
+          "name": "Principled BSDF",
+          "type": "ShaderNodeBsdfPrincipled",
+          "Emission Color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Emission Strength": 0.0
+        },
+        {
+          "name": "Material Output",
+          "type": "ShaderNodeOutputMaterial"
+        },
+        {
+          "name": "Image Texture",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "Color_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+            "filepath": "",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "sRGB",
+            "packed": true
+          }
+        },
+        {
+          "name": "Separate Color",
+          "type": "ShaderNodeSeparateColor"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "ORM_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+            "filepath": "",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "Non-Color",
+            "packed": true
+          }
+        },
+        {
+          "name": "Normal Map",
+          "type": "ShaderNodeNormalMap"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "NormalGL_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+            "filepath": "",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "Non-Color",
+            "packed": true
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "name": "Color_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "filepath": "",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "packed": true
+    },
+    {
+      "name": "NormalGL_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "filepath": "",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color",
+      "packed": true
+    },
+    {
+      "name": "ORM_e717ab56-c4a6-4ec3-91c7-69f343e6cc90",
+      "filepath": "",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color",
+      "packed": true
+    }
+  ]
+}

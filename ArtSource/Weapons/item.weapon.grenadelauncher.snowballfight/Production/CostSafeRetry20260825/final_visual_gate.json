@@ -1,0 +1,37 @@
+{
+  "item_id": "item.weapon.grenadelauncher.snowballfight",
+  "task_id": "80c3f948-2931-468c-b16e-93d3c9b4082c",
+  "status": "PASS",
+  "source_triangles": 1447087,
+  "final_triangles": 100000,
+  "decimation_visual_comparison": "PASS; no silhouette, rabbit/snow chamber, muzzle, stock, or grip identity change observed.",
+  "final_fbx_8view": "QA/FinalGate",
+  "standard_vs_backface_culled": "PASS; no disappearing outer panel, chamber wall, barrel wall, grip surface, muzzle housing, or stock surface.",
+  "final_topology": {
+    "connected_components": 163,
+    "boundary_edges": 28676,
+    "interpretation": "Enclosed chamber/decorative components and seams remain, but direct culled review shows no visible outer-shell opening."
+  },
+  "coordinate_contract": {
+    "muzzle_axis": "+Z",
+    "up_axis": "+Y",
+    "RightHandGrip": [0.0, 0.0, 0.0],
+    "LeftHandGrip": [0.0, 0.019649, 0.326],
+    "Muzzle": [0.0, 0.14737, 0.562685]
+  },
+  "emission": {
+    "source": "Textures/item.weapon.grenadelauncher.snowballfight_BaseColor.png",
+    "mask": "Textures/item.weapon.grenadelauncher.snowballfight_Emission.png",
+    "global_binary_rgb_only": true,
+    "selected_family": "saturated red inset core, tube, and groove pixels",
+    "representative_srgb_8bit": [179, 38, 34],
+    "unity_linear_rgb_target": [0.4507858, 0.0193824, 0.0159963],
+    "selected_pixels": 12138,
+    "exception_used": false
+  },
+  "transparent_ice_note": "H3 returned one UV/material slot. The chamber remains visually identifiable, but no material/mesh split was introduced; later true Unity transparency requires an authored isolated material region rather than an automatic spatial or UV exception.",
+  "fbx_material_policy": "BaseColor and Normal are embedded as standard FBX-compatible texture links; ORM and binary Emission are delivered as Unity textures. Complex emission nodes stay in the blend and are intentionally disabled only during FBX export to prevent whole-material white emission fallback.",
+  "empty_blender_reimport": "PASS; see reimport_validation.json",
+  "unity_modified": false,
+  "additional_cost_calls": 0
+}

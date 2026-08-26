@@ -13,6 +13,9 @@
 - Blender의 Fighter `+Y` 주축과 Grip 로컬 `+X` 규격은 FBX 좌표 변환 뒤 Unity Inspector에서 다른 Euler 값으로 표시될 수 있다. 이 표시값을 맞추려고 Blender 축을 임의로 바꾸지 않으며, 생성기는 두 Grip의 **위치 벡터**를 사용해 Fighter `+Y` 장착축을 계산한다.
 - 모든 무기에 같은 거리 보정을 적용하지 않는다. 모델마다 원본 피벗과 손잡이 장식 구간이 다르므로 실제 Fighter 장착 근접 화면에서 손잡이 끝과 중간 사이의 적절한 파지점을 찾는다. 이 Unity 프리팹 보정을 Tripo 결과나 원본 FBX에 중복 적용하지 않으며, 전설 무기의 직속 오라·글로우처럼 모델과 함께 움직여야 하는 VFX는 같은 거리로 함께 이동한다.
 - 따라서 Tripo 결과에 그립이 없어도 생성 실패는 아니지만, **그립 기준점을 추가하고 실제 Fighter 장착을 확인하기 전에는 완성품이 아니다.**
+- Gunner FBX에 `RightHandGrip`이 없어 외형 생성기가 메시 경계나 원본 피벗을 `자동 장착점`으로 사용했다면 이는 초깃값일 뿐이다. 실제 방아쇠 손잡이 중심을 다시 지정하고 Gunner 장착을 확인하기 전에는 최종 프리팹으로 승인하지 않는다.
+- Gunner의 `LeftHandGrip`은 실제 앞손의 손바닥 접촉점이다. Presenter는 이 점과 `LeftWeaponPalmContact`의 손뼈 상대 오프셋을 이용해 `LeftHandIKTarget`을 역산하므로, `LeftHandGrip`과 IK Target의 월드 좌표를 직접 일치시키지 않는다.
+- 현재 Gunner의 `WeaponSocket`과 실제 방아쇠 grip-center 사이에는 차이가 있다. 2026-08-24 신규 10개는 캐릭터 프리팹이나 Fighter를 바꾸지 않고 각 생성 외형 root에 동일한 Gunner 전용 보정 `(-0.031290, -0.012951, 0.053416)`을 저장했다. 이 값은 현재 리그에 대한 Unity 전달값이며 Blender 원본 root, Tripo 이미지, 다른 캐릭터에 굽지 않는다.
 - 프롬프트의 mm 수치는 설계 목표다. 생성형 모델이 치수를 정확히 지킨다고 보장할 수 없으므로 다운로드 뒤 Blender에서 재고, 부족하면 재생성하거나 후처리한다.
 
 ## 1. 생성 전에 확정할 내용
@@ -57,7 +60,7 @@ Game-ready stylized sci-fi two-handed [battle axe / hammer / maintenance tool], 
 ### 거너 총기
 
 ```text
-Game-ready stylized sci-fi two-handed [rifle / shotgun / grenade launcher], one single centered weapon, isolated. Use a clear production modeling orientation: muzzle pointing straight forward along +Z and weapon top aligned to +Y. Create a distinct right-hand trigger grip with a clean palm-sized contact area and an unobstructed trigger region. Create a separate straight left-hand support corridor on the fore-end, long enough for one full hand, with no spikes, cables, magazines, rails, or decorations crossing the contact zone. Keep the muzzle opening centered, circular or mechanically symmetric, fully visible, and unobstructed so a Muzzle marker can be placed at its exact center. Keep the stock, receiver, barrel, magazine, trigger grip, and fore-end physically connected with no floating pieces. [색상], [재질], [핵심 디자인 특징], clean readable silhouette from front, side, top, and rear, detailed PBR game asset.
+Game-ready realistic sci-fi two-handed [rifle / shotgun / grenade launcher], one single centered weapon, isolated. Use a clear production modeling orientation: muzzle pointing straight forward along +Z and weapon top aligned to +Y. Create a distinct right-hand trigger grip with a clean palm-sized contact area and an unobstructed trigger region. Create a separate straight left-hand support corridor on the fore-end, long enough for one full hand, with its contact center approximately 300 mm forward from the trigger-grip center in final character space. No spikes, cables, magazines, rails, moving parts, or decorations may cross either contact zone. Keep the muzzle opening centered, circular or mechanically symmetric, fully visible, and unobstructed so a Muzzle marker can be placed at its exact center. Keep the stock, receiver, barrel, magazine, trigger grip, and fore-end physically connected with no floating pieces. [색상], [재질], [핵심 디자인 특징], clean readable silhouette from front, side, top, and rear, detailed PBR game asset.
 ```
 
 ### Negative Prompt
@@ -72,14 +75,91 @@ character, person, hands, fingers, duplicate weapon, crossed weapons, weapon rac
 
 정확한 손잡이 비율이 중요하면 Text-to-3D 단독보다 Image-to-3D 또는 Multi-view를 우선한다. Tripo의 현재 공식 Multi-view 안내는 같은 대상을 찍은 2~4개 뷰를 사용하고, 프레임·조명·크기를 일치시키라고 설명한다.
 
+투명 배경은 프롬프트 문장만으로 요구하지 말고 생성 기능의 **네이티브 알파 옵션**을 함께 사용한다.
+
+- OpenAI Image API는 `background: "transparent"`와 `output_format: "png"`를 명시한다. 웹 스튜디오는 실제 투명 배경 옵션이 있을 때만 활성화한다.
+- Codex가 ChatGPT 웹 Images를 사용할 때는 한 프롬프트에서 정면 0°·후면 180°·좌측 90°·우측 270°를 요청하되, **2048×1024 RGBA PNG 파일 4개를 각각 별도 첨부**하라고 명시한다. 한 장짜리 4면 시트·그리드·콜라주·연속 프레임은 Tripo 입력으로 승인하지 않는다.
+- 웹 응답이 네 파일을 모두 만들지 못하면 누락된 뷰만 별도 파일로 다시 생성한다. 승인된 좌측면과 우측면의 형상이 다르면 우측면을 새로 해석하게 하지 않고 승인된 좌측면의 정확한 수평 반전본을 사용한다.
+- 현재 사용하는 도구가 `background` 옵션을 노출하지 않으면 체크보드나 흰 배경 결과를 후처리로 지우지 말고 생성 경로를 중단한다. 프롬프트의 `transparent`를 체크보드 무늬로 그린 RGB 이미지는 투명 PNG가 아니다.
+- 생성 직후 PNG가 RGBA인지, 캔버스 네 모서리와 무기 내부의 실제 구멍이 alpha 0인지 검사한다. 체크보드 픽셀, 흰 폐곡선 내부, 가장자리 halo가 하나라도 있으면 Tripo 입력으로 사용하지 않는다.
+- 해상도 맞춤을 위한 균일 리사이즈와 패딩만 허용한다. 배경 추출·색상 임계값 투명화·반복 마스킹은 허용하지 않는다.
+
 - 정면·후면·좌우 측면 중 2~4장을 사용하고, 모든 이미지는 같은 무기·비율·크기여야 한다. 상단 형상이 중요하면 상단 뷰를 추가하되 다른 뷰와 축을 일치시킨다.
 - 무기를 화면 중앙에 수직으로 세우고 날·헤드는 위, 손잡이 끝은 아래로 둔다.
 - 원근이 강한 전투 구도 대신 정사영 제품 시트처럼 만든다.
+- 좌·우측면은 총열 중심선이 이미지 가로축과 평행한 정확한 90° 직교도여야 한다. 측면에서 총구 내부 구멍이나 타원형 앞면이 보이면 3/4 시점이므로 사용하지 않는다.
+- 생성한 우측면의 구조·길이·부품 배치가 합격한 좌측면과 눈에 띄게 다르면 우측면을 반복 생성하지 않고 좌측면을 정확히 수평 반전해 사용한다. 문자·한쪽 전용 장식처럼 실제 비대칭이 필수인 경우만 별도로 판단한다.
 - 손, 캐릭터, 받침대, 그림자, 오라, 잘린 칼끝을 넣지 않는다.
 - 손잡이 전체와 가드·폼멜 사이의 빈 공간이 모든 뷰에서 보여야 한다.
 - 측면 이미지에서 손잡이 두께가 과도하게 굵거나 납작하지 않은지 확인한다.
 
 Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타일, 품질 조건을 짧고 구조적으로 쓰고, 제외할 형상은 Negative Prompt로 분리한다.
+
+### Gunner 4-view 이미지 생성 규격
+
+실제 Gunner 프리팹의 양손 파지를 기준으로 한 이미지 생성 규격이다. 아래 프롬프트는 Codex 이미지 생성과 Tripo 웹 스튜디오 Multi-view 입력 이미지 제작에 공통으로 사용한다. 먼저 파지 구간을 재기 쉬운 `LEFT SIDE 90°` 한 장을 만들고 합격한 뒤, 그 이미지를 참조로 첨부해 나머지 세 장을 만든다. 이후 생성에서도 이미 합격한 이미지를 모두 함께 첨부하고 `[VIEW]`만 바꾼다.
+
+#### 팀원 Codex용 간결 최종본
+
+아래 블록을 그대로 붙여넣고 대괄호의 콘셉트와 현재 면만 바꾼다. 먼저 좌측면을 확정하고, 확정 이미지를 계속 첨부하면서 정면·뒷면·우측면을 만든다.
+
+```text
+[무기 이름과 색상·재질·핵심 실루엣]의 사실적인 게임용 SF [라이플/산탄총/유탄발사기]를 그려줘.
+
+1. 이미지 사이즈: 2048×1024.
+2. 확장자: PNG.
+3. 배경: 완전 투명(알파 0), 그림자·바닥·글자·손·캐릭터·효과 없음.
+4. 현재 면: [정면 0°/뒷면 180°/좌측면 90°/우측면 270°], 원근 왜곡 없는 직교 제품도. 좌·우측면은 총열 중심선이 수평이고 총구 절단면이 수직인 정확한 90°이며 총구 내부나 타원형 앞면이 보이지 않을 것. 무기 전체가 수평으로 잘리지 않게 들어갈 것.
+5. 네 면은 같은 무기의 같은 비율이어야 하며 총구·개머리판·방아쇠·손잡이·색·비대칭 디테일이 논리적으로 일치할 것.
+6. 측면에서 방아쇠 손잡이의 보이는 두께는 55픽셀 이하이고, 장갑 낀 오른손 전체가 들어갈 길이와 빈 공간을 확보할 것.
+7. 측면에서 방아쇠 손잡이 중심부터 총구 방향 620~680픽셀 지점에 160~220픽셀 길이의 깨끗하고 연속된 앞손 파지 구간을 둘 것.
+8. 두 손 파지 구간에는 탄창·케이블·가드·레일·스파이크·장식·가동부·급격한 두께 변화를 넣지 말 것. 전체 무기 길이는 자유롭게 할 것.
+9. 열린 총구 중심은 정면에서만 명확히 보이고, 좌·우측면에서는 총구의 옆 실루엣만 보일 것. 분리되거나 떠 있는 파츠를 만들지 말 것.
+10. 발광은 콘셉트에 지정된 색만 코어·튜브·홈처럼 경계가 분명한 연결 표면에 넣을 것. 지정하지 않은 흰색 발광이나 도장면 전체 발광은 금지.
+
+첨부한 확정 이미지가 있으면 디자인을 바꾸지 말고 현재 면만 정확히 재현해줘.
+```
+
+우측면 생성본이 좌측면과 눈에 띄게 다르면 우측면 생성본은 폐기하고 합격한 좌측면 PNG를 픽셀 단위로 수평 반전해 사용한다.
+
+치수·면 일치·투명 배경을 더 엄격하게 통제해야 할 때만 아래 상세 영문본을 사용한다.
+
+```text
+Create one production multiview reference PNG of a realistic sci-fi [RIFLE / SHOTGUN / GRENADE LAUNCHER].
+Design brief: [COLOR, MATERIAL, SILHOUETTE, AND KEY DESIGN FEATURES].
+If approved reference views are supplied, reproduce that exact weapon without redesigning it.
+
+Output requirements:
+- Canvas: exactly 2048 × 1024 pixels.
+- File format: PNG with a fully transparent background (alpha 0).
+- View: [FRONT 0°, muzzle facing the camera / REAR 180° / LEFT SIDE 90° / RIGHT SIDE 270°].
+- Orthographic product-reference view with no perspective distortion.
+- For LEFT/RIGHT SIDE, keep the barrel centerline exactly horizontal and the muzzle cut plane exactly vertical. Show no bore interior, elliptical muzzle opening, or front-face foreshortening in a side view.
+- One complete weapon only, centered, level, and fully inside the canvas.
+- No hands, character, stand, floor, shadow, text, labels, floating effects, or detached parts.
+- Use realistic game-asset materials and physically plausible connected construction.
+
+Cross-view consistency:
+- All four images must depict the exact same physical weapon at the exact same scale and center.
+- Receiver, stock, barrel, muzzle, trigger, grips, magazine, seams, colors, decals, and every asymmetric detail must match logically between opposite views.
+- Do not mirror text or invent, remove, resize, or relocate parts between views.
+
+Gunner grip-fit requirements:
+- In both side views, keep the right-hand trigger grip clearly exposed and its visible thickness at or below 55 pixels.
+- Leave enough unobstructed trigger-grip length and clearance for a full gloved hand.
+- In both side views, place the center of the clean front support contact area 620 to 680 pixels toward the muzzle from the center of the trigger grip, measured along the weapon's main axis.
+- Make the clean front support corridor 160 to 220 pixels long and continuous.
+- Do not put magazines, cables, rails, guards, spikes, ornaments, moving parts, or abrupt thickness changes inside either hand-contact area.
+- Keep the muzzle opening clear, centered, mechanically symmetric, and unblocked.
+- Show the open bore only in FRONT. In LEFT/RIGHT SIDE, show only the strict side silhouette of the muzzle.
+- The overall weapon length may vary by weapon type. Fit the complete silhouette inside the canvas without cropping, but do not shorten or stretch the grip-center spacing to normalize the total weapon length.
+
+Preserve the approved first-view design exactly. Change only the camera direction required for [VIEW].
+```
+
+프롬프트만으로 치수를 합격 처리하지 않는다. 전체 길이는 무기 종류에 따라 달라도 되며 무잘림만 확인한다. 측면 두 장에서는 방아쇠 손잡이 두께, 두 파지 중심 간 픽셀 거리와 앞손 파지 구간을 실제로 재고, 서로 다른 값이면 Tripo에 넘기기 전에 재생성한다. Tripo 웹 스튜디오에 네 장을 업로드한 뒤에도 아래 `거너 총기` 프롬프트와 Negative Prompt를 함께 사용한다.
+
+측면 검수에서는 총구 끝의 검은 구멍이나 타원형 테두리가 보이는지 먼저 확인한다. 보이면 측면이 아니라 3/4 시점이므로 즉시 폐기한다. 합격한 좌측면과 우측면의 형상이 다르면 우측면을 좌측면 수평 반전본으로 교체하고, 네 장의 파일명과 manifest에 이 사실을 기록한다.
 
 ## 4. 생성 설정 권장값
 
@@ -100,6 +180,11 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 - 손잡이가 사람 손보다 지나치게 굵거나 가늘지 않다.
 - 정면뿐 아니라 측면에서도 손잡이 두께와 여유가 유지된다.
 - 떠 있는 파츠와 내부를 관통하는 파츠가 없다.
+- 정면·후면 축방향 화면에서 총구가 막힌 판이나 찢어진 방사형 조각으로 변하지 않고, 요구한 깊이의 열린 구멍과 연속된 둘레를 유지한다.
+- 좌·우측면에서 총열 축은 수평이고 총구 끝면은 수직이며, 총구 내부 구멍·타원형 앞면·비스듬한 절단면이 전혀 보이지 않는다.
+- 네 입력 이미지의 무기 크기와 화면 점유율이 같아야 한다. 특히 정면·후면만 확대된 이미지는 H3가 무기 앞뒤를 한 평면으로 융합할 수 있으므로 사용하지 않는다.
+- 정면의 열린 총구와 후면의 막힌 개머리판은 좌·우 측면의 같은 끝에 있는 색·외곽 프레임·비대칭 표식을 각각 공유해야 한다. 정면 총구와 후면 개머리판이 서로 닮은 사각 링이거나, 측면 끝단과 색·비율이 맞지 않으면 H3가 열린 구조를 반대쪽 끝에 배정할 수 있으므로 제출하지 않는다.
+- H3 raw에서 열린 구멍이 실제 개머리판 쪽에 생기고 실제 총구가 막혔다면 축 회전이나 감량 문제가 아니다. 업로드 token과 `front,left,back,right` 순서를 먼저 대조하고, 순서가 맞으면 앞뒤 의미 결합 실패로 판정해 Blender에서 양 끝을 대규모 재구축하지 않는다.
 
 하나라도 실패하면 Blender에서 억지로 맞추기 전에 프롬프트·참조 이미지를 고쳐 다시 생성하는 편이 낫다.
 
@@ -121,13 +206,34 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 
 ### Gunner 총기
 
-1. 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용한다.
+1. 방아쇠를 잡는 오른손 위치를 root와 `RightHandGrip` 기준으로 사용한다. 기준점은 방아쇠 구멍, 손목, 손바닥 표면이나 개머리판이 아니라 중지·약지·소지가 감싸는 권총 손잡이의 실제 중심축 위에 둔다.
 2. 총구 방향은 Blender `+Z`, 무기 위쪽은 `+Y`로 맞춘다.
-3. `LeftHandGrip`은 앞손이 실제로 닿는 포어엔드 중심에 둔다.
-4. `Muzzle` Empty는 총구 끝의 정확한 중심에 두고 로컬 `+Z`가 발사 방향을 향하게 한다.
-5. root 직속에 `RightHandGrip`, `LeftHandGrip`, `Muzzle`을 두고 Transform을 적용한다.
-6. Camera, Light, 촬영용 오브젝트와 불필요한 Collider를 제외한 뒤 FBX로 내보낸다.
-7. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
+3. Project2 Gunner의 최종 캐릭터 공간 양손 파지 중심 거리는 약 `0.297 m`다. 현재 캐릭터 스케일을 반영한 무기 로컬 기준에서는 `RightHandGrip=(0, 0, 0)`, `LeftHandGrip=(0, 0, 약 0.326 m)`를 초깃값으로 사용한다.
+4. `LeftHandGrip`은 앞손이 실제로 닿는 포어엔드 중심에 둔다. 메시 형상 때문에 기준 위치를 바꿔야 한다면 실제 Idle·Run·Attack 장착 검증을 다시 수행하고 무기별 값으로 저장한다.
+5. `Muzzle` Empty는 총구 끝의 정확한 중심에 두고 로컬 `+Z`가 발사 방향을 향하게 한다.
+6. root 직속에 `RightHandGrip`, `LeftHandGrip`, `Muzzle`을 두고 Transform을 적용한다.
+7. Camera, Light, 촬영용 오브젝트와 불필요한 Collider를 제외한 뒤 FBX로 내보낸다.
+8. 빈 Blender 씬 재임포트에서 세 Empty, `+Z` 총구 방향, `+Y` 위쪽, 크기와 scale을 다시 확인한다.
+9. 이 작업은 Empty 보존, 축 정리, Transform 적용, FBX 재임포트 검증이 단순한 Blender를 기본 후처리 도구로 사용한다. 3ds Max를 사용해도 결과 규격은 같아야 하며, 두 도구를 한 무기에 중복 적용하지 않는다.
+
+### 메시 감량과 백페이스 검수
+
+1. `100k`처럼 고정된 triangle 목표를 먼저 정하지 않는다. 원본, 중간 감량본, 최종 후보를 단계별로 만들고 총구 캡·총열 측벽·손잡이·개머리판의 실루엣이 처음으로 안정적으로 유지되는 가장 가벼운 단계만 채택한다.
+2. 원본에서 정상이던 형상이 감량 뒤 깨지면 Tripo 실패가 아니라 후처리 실패다. 원본을 다시 생성하지 말고 감량률을 낮춘다. 총구와 얇은 레일처럼 작은 폐쇄면이 있는 무기는 과도한 감량을 금지한다.
+3. 각 단계는 동일 카메라의 일반 렌더와 백페이스 컬링 렌더를 정면·후면·좌측·우측·상하·사선에서 한 쌍씩 비교한다. 일반 렌더에서 닫혀 보여도 컬링 렌더에서 내부가 비치거나 면이 사라지면 실패다.
+4. 총구 끝 5~6 cm와 얇은 측면 셸은 boundary edge 수와 연결 컴포넌트를 별도로 기록한다. 원본보다 열린 경계가 늘었거나 Unity 정면·측면에서 실루엣이 달라지면 FBX로 전달하지 않는다.
+5. 보강이 필요하면 원본 하우징 안에 실제로 맞물리는 폐쇄형 메시로 만든다. 표면과 무관하게 떠 있는 Cube·Quad, 한쪽 면만 있는 캡, 깊이 없는 임시 발광판은 최종 산출물로 사용하지 않는다.
+
+### 발광 마스크
+
+1. 기본 처리는 Blender가 아니라 Base Color PNG에서 한다. 사용자가 핀포인트로 지정한 대표 sRGB RGB와 실제 샘플 색 목록을 기준으로, 사용자가 승인한 좁은 채널 범위만 Base Color 전체에서 골라 흰색 Emission Mask로 만든다. `청록 계열`, `푸른 빛`처럼 넓은 색상 범위를 임의로 추정하지 않는다.
+2. 앞으로 제작할 무기에도 이 전역 RGB 추출을 첫 번째이자 기본 방식으로 적용한다. UV 영역, 메시 분리, 형상 판정, 연결 보정은 먼저 사용하지 않는다.
+3. 같은 재질의 밝고 어두운 음영까지 넓혀야 하거나 같은 RGB가 비발광 도장면에도 쓰였다면 먼저 대표색, 확대할 채널 범위와 예상 픽셀 수를 보고한다. 사용자가 판단한 뒤에만 범위를 넓히거나 해당 UV 구역을 최소한으로 제한한다. 연결된 면 전체를 칠하거나 메시를 억지로 분리하지 않는다.
+4. 정확한 색 선택이 작동하면 팽창·침식·블러·레이캐스트·컴포넌트 필터 같은 추가 보정은 하지 않는다.
+5. Unity에서는 Emission Map과 함께 콘셉트의 발광색을 사용한다. 이미지에서 읽은 sRGB를 `0~1`로만 나눠 Unity 선형 색 슬롯에 그대로 넣지 말고 sRGB→Linear 변환 뒤 `_EmissionColor`에 지정한다. Bloom 세기가 더 필요하면 변환된 색의 채도를 유지한 채 강도만 올리며, 임시 흰색 HDR tint를 그대로 두지 않는다.
+6. 양쪽 측면과 발광부 근접 화면에서 마스크 삐져나옴, 내부 구멍, 중간 흐려짐, 백색화를 확인하고 하나라도 보이면 실패로 판정한다.
+7. 작업 완료·인계 때 무기마다 다음 값을 핀포인트로 기록한다: Base Color 원본 경로, 수정할 Emission Mask 경로, 대표 sRGB RGB와 샘플 색 목록, 사용한 채널별 선택 조건, 선택 픽셀 수, 지정색 누락 픽셀 수, 비지정색 오검출 픽셀 수, 예외적으로 제한한 UV 좌표, Unity 머터리얼 경로, 최종 HDR `_EmissionColor`. 누락·오검출 수를 계산하지 않은 마스크는 합격시키지 않는다.
+8. Emission Mask 자체는 색상을 정하는 텍스처가 아니다. 발광 픽셀은 흰색 `RGB(255,255,255)`, 비발광 픽셀은 검정 `RGB(0,0,0)`으로 두고, 실제 발광색은 Unity 머터리얼의 `_EmissionColor`에서 지정한다.
 
 ### Unity
 
@@ -137,17 +243,21 @@ Tripo 공식 프롬프트 안내처럼 주 대상, 형상 특징, 재질, 스타
 4. Unity FBX Inspector에서 Blender의 Grip 로컬 `+X`가 예를 들어 `Z=270°`처럼 보이는 것은 좌표계 변환 결과일 수 있다. Euler 숫자만 보고 Empty를 다시 돌리지 말고, 생성 프리팹에서 `RightHandGrip → LeftHandGrip` 위치 벡터가 root의 `+Y`와 평행한지 확인한다.
    - 표준 Fighter 대검의 예시는 `RightHandGrip=(0, 0, 0)`, `LeftHandGrip=(0, 약 0.22282, 0)`이다.
    - 생성 결과가 `(약 -0.22282, 0, 0)`처럼 `-X`로 눕는다면 원본 Blender 축을 바꾸지 않는다. 위치 벡터가 아닌 Grip 회전을 정렬축으로 사용한 구형 생성기인지 먼저 확인한다.
-5. 자동 배치와 방향 반전은 초깃값으로 사용한다. 세로 보정이 필요하면 공통 거리를 일괄 적용하지 말고, root나 Grip을 움직이지 않은 채 무기별 `Model`과 그 직속 VFX만 같은 손잡이 축으로 이동한다.
+5. 자동 배치와 방향 반전은 초깃값으로 사용한다. 먼저 캐릭터의 실제 방아쇠 grip-center와 `WeaponSocket` 차이를 생성 외형 root의 캐릭터 전용 보정으로 해결한다. 이 보정은 원본 FBX root에 굽지 않으며 Fighter/Gunner 공용 프리팹을 바꾸지 않는다. 그 뒤에도 특정 모델의 손잡이 형상만 어긋나면 무기별 `Model`을 보정하고, `LeftHandGrip`, `Muzzle`과 모델 직속 VFX가 같은 모델 상대 위치를 유지하는지 다시 확인한다.
 6. 실제 Fighter에 장착해 무기 root에서 뻗는 손잡이 중심축이 오른손 손가락 고리 내부를 통과하고, 손 아래쪽에 짧은 손잡이 여유가 남는지 확인한다. 손목 피벗이나 손바닥 표면 마커 일치만으로 합격 처리하지 않는다.
 7. Fighter 무기는 `LeftHandGrip`에서 뻗는 같은 중심축이 왼손 손가락 고리 내부도 통과하고, 두 손 모두 장식이 아닌 깨끗한 파지 구간을 감싸는지 확인한다.
-8. 정면 한 장만 보지 말고 8방위 × 3고도 24방향과 손 근접 각도를 확인한다.
-9. 작은 손가락·손잡이 겹침은 허용한다. 다만 손 전체가 뜨거나, 손이 가드·폼멜·무기 헤드를 잡거나, 손목이 손잡이를 크게 관통하면 실패다.
-10. 런타임 보정 저장 시 팀원이 선택한 root와 Model scale이 그대로 보존되는지 확인한다. scale 변경 자체는 허용한다.
-11. 인벤토리 원본은 모델링을 위해 처음 GPT Image로 만든 0° 정면 샷을 우선 사용한다.
-   - 배경이 있으면 형상과 색을 바꾸지 않는 범위에서 한 번 투명 처리한다.
-   - 가장자리 찌꺼기·색 번짐·배경 잔상이 남거나 이를 없애기 위해 반복 보정이 필요하면 해당 투명화를 폐기하고, 동일한 디자인·정면 구도의 투명 배경 이미지를 새로 생성한다.
+8. Gunner 무기는 실제 Gunner의 Idle·Run·Attack에서 오른손 손바닥과 중지·약지·소지가 방아쇠 손잡이를 감싸는지 확인한다. 손가락이 수신기·탄창·방아쇠울만 통과하거나, 손바닥 표면 마커만 맞고 손잡이와 손 전체가 떨어져 있으면 실패다.
+9. Gunner 왼손은 외형의 `LeftHandGrip`과 캐릭터의 `LeftWeaponPalmContact`를 비교한다. IK Target은 손뼈 위치이므로 Grip과 직접 비교하지 않는다. 접촉 수치가 작아도 화면에서 손 전체가 포어엔드와 떨어지면 실패로 판정한다.
+10. Gunner에서 root 또는 `Model`을 보정한 뒤에는 `LeftHandGrip`이 실제 앞손 접촉면에, `Muzzle`이 실제 총구 끝과 발사 방향에 남아 있는지 다시 확인한다. Grip 마커 회전을 전체 `Model` 회전으로 복사하지 않는다. 그렇게 하면 소총이 거꾸로 들리거나 창·칼처럼 세워질 수 있다.
+11. 정면 한 장만 보지 말고 8방위 × 3고도 24방향과 양손 근접 각도를 확인한다.
+12. 작은 손가락·손잡이 겹침은 허용한다. 다만 손 전체가 뜨거나, 손이 가드·폼멜·무기 헤드를 잡거나, 손목이 손잡이를 크게 관통하면 실패다.
+13. 런타임 보정 저장 후 Addressables에서 프리팹을 새로 로드해 root, `Model` 회전, 양손 접촉과 `Muzzle` 방향이 그대로 보존되는지 확인한다. 현재 Gunner 10개의 참고 합격 범위는 오른손 grip-center 오차 약 3.8mm, 왼손 접촉 오차 0.9~2.4mm, Muzzle 방향 내적 0.956 이상이다. 이 수치는 다음 모델의 자동 합격 기준이 아니라 현재 배치의 회귀 비교값이다.
+14. 인벤토리 원본은 모델링을 위해 처음 GPT Image로 만든 0° 정면 샷을 우선 사용한다.
+   - 생성 단계에서 네이티브 투명 배경을 지정한다. 불투명 RGB·체크보드·흰 배경 결과를 배경 제거 후처리로 바꾸지 않는다.
+   - PNG가 RGBA인지, 외곽과 방아쇠울·개머리판 등 내부 구멍의 alpha가 0인지 실제 픽셀 값으로 확인한다. 실패하면 동일 디자인·구도의 네이티브 투명 이미지를 새로 생성한다.
+   - 검은 화면에서만 보지 않는다. 중간 회색 단색 배경과 밝은 체크보드에 각각 합성해 검정·흰색 불투명 사각형이나 링 주변 배경 조각이 없는지 확인한다. 배경 조각을 제거할 때는 무기 RGB를 다시 칠하지 말고 해당 조각의 alpha만 0으로 바꾸며, alpha 0 픽셀의 hidden RGB도 0으로 정리한다.
    - 최종 원본에는 배경·바닥 그림자·프레임 밖으로 번지는 오라가 없어야 하며 무회전·무잘림 상태를 유지한다.
-12. 마지막에 `SW/Equipment/인벤토리 무기 아이콘 변환기`로 `OriginalImage/{itemId}.png`를 변환하고 ItemDefinitionSO의 아이콘 연결과 `itemWidth × 128`·`itemHeight × 128` 출력 크기를 확인한다.
+15. 마지막에 `SW/Equipment/인벤토리 무기 아이콘 변환기`로 `OriginalImage/{itemId}.png`를 변환하고 ItemDefinitionSO의 아이콘 연결과 `itemWidth × 128`·`itemHeight × 128` 출력 크기를 확인한다.
 
 ## 7. 생성 작업 전달 묶음
 
@@ -159,7 +269,9 @@ API나 웹에서 생성만 담당한 작업자는 다음을 한 묶음으로 전
 - 사용한 정면·측면·후면 참조 이미지
 - 원본 GLB/FBX와 텍스처
 - Tripo 360° 미리보기 캡처
-- 아직 `RightHandGrip`/`LeftHandGrip`을 추가하지 않았다면 그 사실을 명시한 메모
+- 빈 Blender 씬 재임포트에서 `RightHandGrip`, `LeftHandGrip`, Gunner의 `Muzzle`이 보존된 계층 확인
+- 실제 대상 캐릭터의 Idle·Run·Attack 손 근접 검증 이미지
+- 아직 `RightHandGrip`/`LeftHandGrip`을 추가하지 않았다면 그 사실을 명시한다. 이 상태는 후처리 대기 산출물이며 최종 완료품으로 전달하지 않는다.
 
 ## 공식 참고 자료
 

@@ -1,0 +1,37 @@
+{
+  "item_id": "item.weapon.grenadelauncher.worldender",
+  "task_id": "e9b68686-5f63-4247-a4cf-f8f81bd54d53",
+  "workflow": "traditional H3 multiview_to_model",
+  "consumed_credit": 30,
+  "decision": "reject_raw_stop_before_blender_postprocess",
+  "reason": "The regenerated H3 raw mesh still does not contain the required continuous open bell. It must not replace the current production or Unity asset.",
+  "measured_evidence": {
+    "raw_triangles": 1458352,
+    "boundary_edges": 40074,
+    "degenerate_faces": 3,
+    "muzzle_axis_clear_depth_m": 0.000972,
+    "required_minimum_clear_depth_m": 0.08,
+    "radial_probe_contract": "24 directions x 3 depths",
+    "radial_hits_by_depth": [10, 24, 24],
+    "radial_coverage_complete": false
+  },
+  "visual_evidence": {
+    "side_views": "The throat-to-mouth bell silhouette exists from both sides.",
+    "axial_front": "The muzzle center is capped and the projected end reads as fused stock/receiver forms instead of one gold annular frustum and one closed crimson ring.",
+    "isometric": "The bell has no reliable deep open black bore even though the side flare is present.",
+    "forbidden_failure": "missing radial sectors / sealed bore"
+  },
+  "cause_analysis": [
+    "The previous camera-scale inconsistency was removed, so it is no longer the direct cause of this attempt's failure.",
+    "H3 still interpreted the dark axial bore as an opaque recessed cap instead of an open tunnel and fused the front/back axial projections through the weapon length.",
+    "The deep concave annular bell is strongly self-occluded in both side views; four orthographic cardinal views do not provide enough oblique depth evidence for H3 to preserve the inner and outer walls as one continuous thick shell.",
+    "The generated side silhouette can look correct while the axial topology remains capped or sector-incomplete, which is why side-only or thumbnail review is insufficient."
+  ],
+  "cost_guard": "No second Tripo task was submitted after this failed raw result.",
+  "downstream_state": {
+    "blender_production_rebuilt": false,
+    "unity_model_replaced": false,
+    "unity_prefab_modified": false,
+    "existing_wrapper_transform_preserved_by_no_change": [-0.03129, -0.012951, 0.053416]
+  }
+}

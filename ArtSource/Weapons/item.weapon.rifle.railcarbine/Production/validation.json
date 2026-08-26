@@ -1,0 +1,289 @@
+{
+  "item_id": "item.weapon.rifle.railcarbine",
+  "generated_at": "2026-08-25T01:40:54.867020+00:00",
+  "blender_version": "5.1.1",
+  "source": {
+    "task_id": "00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+    "type": "multiview_to_model",
+    "credits_consumed": 30,
+    "glb": "Tripo\\Downloaded\\item.weapon.rifle.railcarbine_raw.glb",
+    "triangles": 1452150
+  },
+  "coordinate_contract": {
+    "raw_muzzle": "-X (the +X twin hex forms were erroneous stock decorations)",
+    "raw_up": "+Z",
+    "final_muzzle": "+Z",
+    "final_up": "+Y",
+    "root_origin": "actual trigger-grip center"
+  },
+  "transform": {
+    "raw_bounds": {
+      "min": [
+        -0.5,
+        -0.065177,
+        -0.132551
+      ],
+      "max": [
+        0.5,
+        0.065177,
+        0.132551
+      ],
+      "dimensions": [
+        1.0,
+        0.130353,
+        0.265102
+      ]
+    },
+    "mapping": "raw (X,Y,Z) -> working (Y,Z,X), scale 0.78, trigger-grip origin; final repair bakes working Y=180 degrees so actual raw -X muzzle becomes final +Z"
+  },
+  "root": "item.weapon.rifle.railcarbine_root",
+  "mesh": "RailCarbine_Body",
+  "markers": {
+    "RightHandGrip": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "LeftHandGrip": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        -0.024,
+        0.09,
+        0.32625
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        3.141593
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "Muzzle": {
+      "parent": "item.weapon.rifle.railcarbine_root",
+      "local_location": [
+        0.0,
+        0.085,
+        0.264943
+      ],
+      "local_rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_plus_z": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "bounds_root_local": {
+    "min": [
+      -0.035827,
+      -0.050338,
+      -0.489984
+    ],
+    "max": [
+      0.038673,
+      0.15644,
+      0.264943
+    ],
+    "dimensions": [
+      0.0745,
+      0.206778,
+      0.754927
+    ]
+  },
+  "decimation": {
+    "stages": [
+      {
+        "label": "100k",
+        "before": 1452150,
+        "target": 100000,
+        "after": 100000,
+        "ratio": 0.06886341
+      },
+      {
+        "label": "60k",
+        "before": 100000,
+        "target": 60000,
+        "after": 59999,
+        "ratio": 0.6
+      }
+    ],
+    "selected": "60k plus targeted component repair",
+    "final_triangles": 52309,
+    "comparison_renders": {
+      "original": {
+        "side": "Production\\QA\\decimate_original_side.png",
+        "isometric": "Production\\QA\\decimate_original_isometric.png"
+      },
+      "100k": {
+        "side": "Production\\QA\\decimate_100k_side.png",
+        "isometric": "Production\\QA\\decimate_100k_isometric.png"
+      },
+      "60k": {
+        "side": "Production\\QA\\decimate_60k_side.png",
+        "isometric": "Production\\QA\\decimate_60k_isometric.png"
+      }
+    },
+    "selection_requires_visual_review": false,
+    "selection_basis": "60k preserves the twin-rail silhouette and both physical grips; targeted disconnected-component repair then removes the fake rear muzzles and malformed front attachment while reusing the intact upper muzzle cap for the lower rail",
+    "backup_100k_fbx": "Production\\Backup\\item.weapon.rifle.railcarbine_100k.fbx"
+  },
+  "geometry_repair": {
+    "method": "remove Tripo fake rear muzzle vertices and whole disconnected malformed lower-front components; copy the intact upper rail/muzzle connected components as the lower rail with identical UV/material; bake 180-degree Y correction into mesh",
+    "rear_fake_vertices_removed": 2851,
+    "malformed_lower_front_components_removed": 24,
+    "malformed_lower_front_vertices_removed": 7212,
+    "intact_upper_front_vertices_duplicated": 5200,
+    "lower_muzzle_offset_y": -0.08,
+    "mesh_y_rotation_baked_degrees": 180,
+    "muzzle_local": [
+      0.0,
+      0.085,
+      0.264943
+    ],
+    "triangles_before": 59999,
+    "triangles_after": 52309
+  },
+  "material": {
+    "name": "M_RailCarbine_PBR",
+    "base_color_texture": "Color_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+    "normal_texture": "NormalGL_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+    "orm_texture": "ORM_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+    "emission_texture": "RailCarbine_Emission",
+    "emission_strength": 4.0,
+    "emission_geometry_added": false,
+    "principled": true
+  },
+  "textures": [
+    {
+      "source_name": "Color_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_BaseColor.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB"
+    },
+    {
+      "source_name": "NormalGL_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_Normal.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "source_name": "ORM_00ad43b2-b329-4d92-a0b0-4976b07fc3ad",
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "Non-Color"
+    },
+    {
+      "path": "Production\\Textures\\item.weapon.rifle.railcarbine_Emission.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "colorspace": "sRGB",
+      "method": "global user-confirmed cyan material RGB selection to binary white emission mask; includes shaded pixels of the same material; no Blender geometry, UV envelope, morphology, blur, or component filtering",
+      "representative_rgb_srgb": [
+        100,
+        231,
+        239
+      ],
+      "selection_rule_srgb": {
+        "red_max": 140,
+        "green_min": 150,
+        "blue_min": 170,
+        "green_minus_red_min": 45,
+        "blue_minus_red_min": 55
+      },
+      "mask_on_rgb_srgb": [
+        255,
+        255,
+        255
+      ],
+      "mask_off_rgb_srgb": [
+        0,
+        0,
+        0
+      ],
+      "selected_pixels": 208674,
+      "selected_fraction": 0.04975176,
+      "report_path": "Production\\QA\\emission_mask_report.json"
+    }
+  ],
+  "qa": {
+    "neutral_pbr": {
+      "front": "Production\\QA\\pbr_front.png",
+      "back": "Production\\QA\\pbr_back.png",
+      "left": "Production\\QA\\pbr_left.png",
+      "right": "Production\\QA\\pbr_right.png",
+      "top": "Production\\QA\\pbr_top.png",
+      "iso_left": "Production\\QA\\pbr_iso_left.png",
+      "iso_right": "Production\\QA\\pbr_iso_right.png"
+    },
+    "emission_only": {
+      "front": "Production\\QA\\emission_front.png",
+      "back": "Production\\QA\\emission_back.png",
+      "left": "Production\\QA\\emission_left.png",
+      "right": "Production\\QA\\emission_right.png",
+      "top": "Production\\QA\\emission_top.png",
+      "iso_left": "Production\\QA\\emission_iso_left.png",
+      "iso_right": "Production\\QA\\emission_iso_right.png"
+    },
+    "grip_overlay_closeup": "Production\\QA\\grip_overlay_left_closeup.png"
+  },
+  "prohibited_objects": [],
+  "mesh_scales": {
+    "RailCarbine_Body": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "checks": {
+    "single_root": true,
+    "root_direct_markers": true,
+    "right_grip_at_origin": true,
+    "left_grip_z_initial": true,
+    "muzzle_local_plus_z": true,
+    "positive_unit_mesh_scale": true,
+    "no_camera_light_armature": true,
+    "pbr_textures_present": true,
+    "emission_uv_only_no_added_mesh": true,
+    "fake_rear_muzzles_removed": true,
+    "malformed_front_attachment_removed": true,
+    "lower_muzzle_reuses_upper_front": true,
+    "under_100k_triangles": true,
+    "reimport_verified": false
+  },
+  "reimport": {
+    "status": "pending"
+  },
+  "pass": false
+}
