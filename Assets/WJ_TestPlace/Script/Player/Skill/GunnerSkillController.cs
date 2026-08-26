@@ -18,9 +18,9 @@ using UnityEngine.AI;
 ///    (판정 타이밍/데미지 로직은 그대로 두고 SkillRangeVisual 대신 실제 발사체를 스폰하면 됨).
 ///
 /// 진화(evolution)는 슬롯마다 선택 가능(UI에 뜸)하고, 아크 버스터(Skill1)는 진화1(아크 레이저)/진화2
-/// (트리플 슈팅)까지 구현됐다(115번) - 진화3은 아직 미정. 폭탄 투척/백스탭 샷(Skill2~3)은 아직 진화별
-/// 효과가 없다 - 파이터도 처음엔 진화 없이 스킬 3개만 만들고(63번) 나중에 하나씩 만들었던 것과 같은
-/// 순서(66번 이후). 강화(enhancement)는 파이터와 완전히 동일한 방식(위력/쿨타임감소/범위)으로 스킬
+/// (아크 불릿)/진화3(아크 캐논)까지 구현됐다(115번, 133번). 폭탄 투척/백스탭 샷(Skill2~3)도 진화 3종
+/// 전부 구현됐다(118~121번) - 파이터도 처음엔 진화 없이 스킬 3개만 만들고(63번) 나중에 하나씩 만들었던
+/// 것과 같은 순서(66번 이후). 강화(enhancement)는 파이터와 완전히 동일한 방식(위력/쿨타임감소/범위)으로 스킬
 /// 3개 전부 이미 실제 효과가 있다.
 /// </summary>
 public class GunnerSkillController : MonoBehaviour, ISkillController
@@ -178,7 +178,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                 if (evo == SkillEvolutionId.Evolution1)
                     ExecuteArcLaser(def, index, arcBusterStacksBeforeConsume);
                 else if (evo == SkillEvolutionId.Evolution2)
-                    StartCoroutine(ExecuteTripleShot(def, index));
+                    StartCoroutine(ExecuteArcBullet(def, index));
+                else if (evo == SkillEvolutionId.Evolution3)
+                    ExecuteArcCannon(def, index);
                 else
                     ExecuteArcBuster(def, index);
                 StartCoroutine(ReturnToIdleAfter(0.2f));
@@ -269,7 +271,10 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private bool IsSkillReady(int index)
     {
         if (IsArcBusterSlot(index))
-            return arcBusterStacks > 0 && cooldownRemaining[index] <= 0f;
+        {
+            int requiredStacks = GetEvolution(index) == SkillEvolutionId.Evolution3 ? skills[index].evoCannonStackCost : 1;
+            return arcBusterStacks >= requiredStacks && cooldownRemaining[index] <= 0f;
+        }
 
         return cooldownRemaining[index] <= 0f;
     }
@@ -278,8 +283,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     {
         if (IsArcBusterSlot(index))
         {
-            if (GetEvolution(index) == SkillEvolutionId.Evolution1)
+            SkillEvolutionId evo = GetEvolution(index);
+            if (evo == SkillEvolutionId.Evolution1)
                 arcBusterStacks = 0; // 아크 레이저 - "현재의 모든 스택을 소모"
+            else if (evo == SkillEvolutionId.Evolution3)
+                arcBusterStacks -= def.evoCannonStackCost; // 아크 캐논 - 스택 2개 소모
             else
                 arcBusterStacks--;
 
@@ -398,6 +406,49 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     }
 
     /// <summary>
+    /// 진화3: 아크 캐논 - 기본 아크 버스터와 발사 로직은 동일하지만, 스택 2개를 소모하는 대신(ConsumeSkillUse에서
+    /// 이미 처리) 피해 배율을 evoCannonDamageMultiplier(250%)로, 폭발 반경을 evoCannonExplosionRadius(3,
+    /// 기본 explosionRadius=1의 3배)로 각각 키운 확장 폭발탄을 발사한다. 사거리(Enhance3)는 기본과 동일하게
+    /// projectileMaxDistance에 적용되고, 폭발 반경 자체는(기본 아크 버스터와 마찬가지로) 범위 강화의 영향을
+    /// 받지 않는다.
+    /// </summary>
+    private void ExecuteArcCannon(SkillDefinitionSO def, int index)
+    {
+        GameObject prefab = def.evoCannonProjectilePrefab != null ? def.evoCannonProjectilePrefab : def.arcProjectilePrefab;
+        if (prefab == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] arcProjectilePrefab이 연결되지 않았습니다.");
+            return;
+        }
+
+        Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
+        Vector3 dir = transform.forward;
+        float maxDistance = ApplySkillRangeBonus(def, index, def.projectileMaxDistance);
+
+        float damageMultiplier = def.evoCannonDamageMultiplier;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+
+        GameObject projectileGO = Instantiate(prefab, spawnPos, Quaternion.LookRotation(dir));
+        GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
+        if (projectile == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] arcProjectilePrefab에 GunnerArcProjectile 컴포넌트가 없습니다.");
+            Destroy(projectileGO);
+            return;
+        }
+
+        // 전용 에너지 뭉치 프리팹을 쓸 때는 이미 그 자체로 크게 디자인돼 있어서 추가 배율이 필요 없고,
+        // 기본 프리팹으로 폴백된 경우에만 폭발 반경 비율(기본의 3배)만큼 시각 크기를 키운다.
+        float visualScale = def.evoCannonProjectilePrefab == null && def.explosionRadius > 0f
+            ? def.evoCannonExplosionRadius / def.explosionRadius
+            : 1f;
+        projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.evoCannonExplosionRadius, enemyLayer, request, visualScale: visualScale);
+    }
+
+    /// <summary>
     /// 진화1: 아크 레이저 - 현재 스택을 전부 소모해서(ConsumeSkillUse에서 이미 처리) 직선(evoLaserLength x
     /// evoLaserWidth) 범위를 즉시 명중시킨다. 투사체 없이 판정 즉시 명중(다른 거너 스킬의 히트스캔 판정과
     /// 동일한 방식 - GetLineTargets 재사용). 소모한 스택마다(최대 evoLaserMaxBonusStacks) 피해 배율에
@@ -416,13 +467,13 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     }
 
     /// <summary>
-    /// 진화2: 트리플 슈팅 - 같은 스택 1개(ConsumeSkillUse에서 이미 1 차감)로 GunnerArcProjectile을
-    /// evoTripleShotInterval 간격으로 3번 연달아 발사한다. 발당 피해 배율은 기본 damageMultiplier 대신
-    /// evoTripleShotDamageMultiplier를 그대로 쓴다. 기본 아크 버스터(ExecuteArcBuster)와 발사 로직은
+    /// 진화2: 아크 불릿 - 같은 스택 1개(ConsumeSkillUse에서 이미 1 차감)로 GunnerArcProjectile을
+    /// evoArcBulletInterval 간격으로 3번 연달아 발사한다. 발당 피해 배율은 기본 damageMultiplier 대신
+    /// evoArcBulletDamageMultiplier를 그대로 쓴다. 기본 아크 버스터(ExecuteArcBuster)와 발사 로직은
     /// 동일하지만, 폭발 속성은 뺐다(사용자 요청 - 118번) - explodeOnHit=false로 넘겨서 맞은 대상
     /// 하나에게만 데미지가 들어가고 explosionRadius 범위 판정은 하지 않는다.
     /// </summary>
-    private IEnumerator ExecuteTripleShot(SkillDefinitionSO def, int index)
+    private IEnumerator ExecuteArcBullet(SkillDefinitionSO def, int index)
     {
         if (def.arcProjectilePrefab == null)
         {
@@ -432,7 +483,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         float maxDistance = ApplySkillRangeBonus(def, index, def.projectileMaxDistance);
 
-        float damageMultiplier = def.evoTripleShotDamageMultiplier;
+        float damageMultiplier = def.evoArcBulletDamageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
@@ -455,7 +506,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             projectile.Initialize(dir, def.projectileSpeed, maxDistance, 0f, enemyLayer, request, explodeOnHit: false);
 
             if (shot < 2)
-                yield return new WaitForSeconds(def.evoTripleShotInterval);
+                yield return new WaitForSeconds(def.evoArcBulletInterval);
         }
     }
 
