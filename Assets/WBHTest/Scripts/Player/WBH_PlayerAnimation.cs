@@ -12,7 +12,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
 
-    [Header("Skill")]
+    [Header("SkillAni")]
     [SerializeField] private AnimationClip fighterDash;
 
     [SerializeField] private WBH_EffectSpawner effectSpawner;
@@ -176,11 +176,34 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
 
 
-    //--- (이펙트)
-    public void AniEvent_FighterAttackEvent()
+    //--- 애니메이션 클립 이벤트 (이펙트)
+    public void AniEvent_PlayEffect(int effectCue)
     {
-        effectSpawner.SpawnEffect(Eff_fighterAtk, fighterEffectRoot);
+        if (effectCue == 200)
+        {
+            if (combat.currentWeapon == GunnerWeaponType.Shotgun)
+                effect?.PlayEffect(effectCue);
+        }
+        else
+        {
+            effect?.PlayEffect(effectCue);
+        }
     }
+
+    public void AniEvent_PlayFighterChargeEffect()
+    {
+        effect?.PlayFighterChargeEffect();
+    }
+    public void AniEvent_StopFighterChargeEffect()
+    {
+        effect?.StopFighterChargeEffect();
+    }
+
+
+    //public void AniEvent_FighterAttackEvent()
+    //{
+    //    effectSpawner.SpawnEffect(Eff_fighterAtk, fighterEffectRoot);
+    //}
 
     public void AniEvent_GunnerAttackEvent()
     {
