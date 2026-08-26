@@ -40,6 +40,28 @@ public class SkillDefinitionSO : ScriptableObject
     [Header("공통")]
     public float cooldownSeconds = 5f;
     public float damageMultiplier = 1.5f;
+    [Tooltip("스킬 사용 시 소모하는 마나(진화 없음일 때 기준). 0이면 마나 소모 없음.")]
+    public float manaCost = 0f;
+    [Tooltip("진화1 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다 - 진화별로 다른 코스트가 필요할 때만 0 초과 값을 넣는다.")]
+    public float evolution1ManaCost = 0f;
+    [Tooltip("진화2 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다.")]
+    public float evolution2ManaCost = 0f;
+    [Tooltip("진화3 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다.")]
+    public float evolution3ManaCost = 0f;
+
+    /// <summary>지금 선택된 진화 기준 실제 마나 코스트. 해당 진화 전용 코스트가 0(미설정)이면 기본 manaCost로 대체한다.</summary>
+    public float GetManaCost(SkillEvolutionId evolution)
+    {
+        float evoCost = evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evolution1ManaCost,
+            SkillEvolutionId.Evolution2 => evolution2ManaCost,
+            SkillEvolutionId.Evolution3 => evolution3ManaCost,
+            _ => 0f,
+        };
+
+        return evoCost > 0f ? evoCost : manaCost;
+    }
     public SkillShapeType shapeType;
 
     [Header("SectorSlash일 때만 사용 (부채꼴 범위)")]

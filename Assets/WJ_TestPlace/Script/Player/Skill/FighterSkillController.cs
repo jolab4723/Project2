@@ -73,7 +73,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
     // T_PlayerCombat.CanAttack과 같은 조건 - 그 필드는 private라 직접 재사용할 수 없어 그대로 옮겨왔다.
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
-        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
+        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
     // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
     public event Action<int, bool, float> OnSkillAniRequested;
@@ -290,11 +290,17 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (def == null || !CanUseSkill || !IsSkillReady(index))
             return false;
 
+        SkillEvolutionId evolution = GetEvolution(index);
+
+        // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
+        // 쿨타임/스택/애니메이션 전부 건드리지 않는다(138번 후속 - manaCost 수치는 137/138번에서 이미 반영됨).
+        // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
+        if (status != null && !status.TryUseMana(def.GetManaCost(evolution)))
+            return false;
+
         ConsumeSkillUse(index, def);
         FaceCursor();
         combat.CancelChase();
-
-        SkillEvolutionId evolution = GetEvolution(index);
 
         PreparePendingSkill(index, evolution);
         stateMachine.ChangeState(PlayerState.Skill);
@@ -496,6 +502,13 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (def == null || !CanUseSkill || !IsSkillReady(index))
             return;
 
+        // 즉발 스킬(TryUseSkill)과 동일하게 마나가 부족하면 아예 차징을 시작할 수 없다. 여기선 소모는 안 하고
+        // 확인만 한다(HasEnoughMana에 대응하는 WBH_PlayerStatus API가 없어서 CurrentMp를 직접 비교) -
+        // 실제 소모는 쿨타임/스택과 마찬가지로 릴리즈 시점(ReleaseCharge)에 커밋해서, 차징 중 피격 등으로
+        // 취소(CancelCharge)되면 마나를 그대로 돌려주는 셈이 된다.
+        if (status != null && status.CurrentMp < def.GetManaCost(SkillEvolutionId.Evolution3))
+            return;
+
         chargingSkillIndex = index;
         chargeElapsed = 0f;
         FaceCursor();
@@ -560,11 +573,32 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (def == null)
             return;
 
+        // StartCharge에서 확인만 하고 소모는 안 했으므로 실제 커밋은 여기서 한다(쿨타임/스택과 같은 시점).
+        // 이 시점에 실패하는 건 이론상 거의 없지만(StartCharge 이후 마나가 줄어들 수단이 현재 없음), 혹시
+        // 실패해도 이미 PlayerState.Skill로 들어와 있으므로 Idle로 되돌려서 멈추지 않게 한다.
+        if (status != null && !status.TryUseMana(def.GetManaCost(SkillEvolutionId.Evolution3)))
+        {
+            if (stateMachine.Is(PlayerState.Skill))
+                stateMachine.ChangeState(PlayerState.Idle);
+            return;
+        }
+
         ConsumeSkillUse(index, def);
 
         float ratio = def.evoChargeMaxSeconds > 0f ? Mathf.Clamp01(chargeElapsed / def.evoChargeMaxSeconds) : 0f;
 
         PreparePendingSkill(index, SkillEvolutionId.Evolution3, ratio);
+
+        // (140번 최초 수정에서 여기 RequestSkillAni(index, false, ...)를 추가했었는데, 애니메이터
+        // FighterController를 직접 열어보니 원인이 달랐다 - Fighter_Skill_Charging -> Fighter_Skill_ChargeSlash
+        // 전환은 IsCharging 값만 보고(트리거 불필요, hasExitTime=false) 이미 정상 동작하도록 구성돼 있었고,
+        // ChargeSlash 클립에도 AniEvent_ExecuteSkill/AniEvent_EndSkill이 전부 붙어있었다. RequestSkillAni가
+        // 내부적으로 SetTrigger(Skill)까지 다시 쏘는 게 문제였다 - 이 트리거가 Charging->ChargeSlash
+        // 전환(트리거 조건 없음)에서는 소모되지 않고 계속 "켜진" 채로 남아있다가, ChargeSlash가 끝나고
+        // Locomotion으로 돌아가는 순간 Locomotion의 진입 조건(Skill 트리거 + SkillID==1)과 우연히 맞아떨어져서
+        // 반원 베기(Fighter_Skill_HalfSlash)가 한 번 더 재생되는 원인이었다("차징 공격 후 반원베기가 한 번 더
+        // 나온다" 버그 리포트로 발견). 트리거 재발사 없이 이 이벤트(IsCharging=false 설정)만으로도 충분해서
+        // RequestSkillAni 호출을 제거했다.
         OnChargeAniChanged?.Invoke(false);
 
         //ExecuteSectorSlashEvo3(def, ratio, index);

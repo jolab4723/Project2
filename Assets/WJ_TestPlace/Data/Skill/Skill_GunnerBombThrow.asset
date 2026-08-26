@@ -17,6 +17,10 @@ MonoBehaviour:
   icon: {fileID: 0}
   cooldownSeconds: 8
   damageMultiplier: 1.5
+  manaCost: 40
+  evolution1ManaCost: 0
+  evolution2ManaCost: 0
+  evolution3ManaCost: 0
   shapeType: 4
   sectorRange: 4
   sectorAngle: 180
@@ -34,8 +38,12 @@ MonoBehaviour:
   evoLaserWidth: 1
   evoLaserDamagePerStackPercent: 50
   evoLaserMaxBonusStacks: 3
-  evoTripleShotDamageMultiplier: 0.5
-  evoTripleShotInterval: 0.1
+  evoArcBulletDamageMultiplier: 0.5
+  evoArcBulletInterval: 0.1
+  evoCannonExplosionRadius: 3
+  evoCannonDamageMultiplier: 2.5
+  evoCannonStackCost: 2
+  evoCannonProjectilePrefab: {fileID: 0}
   bombThrowRange: 6
   bombThrowSpeed: 10
   bombArcHeight: 2
