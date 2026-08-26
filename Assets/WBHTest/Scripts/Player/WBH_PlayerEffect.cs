@@ -44,6 +44,11 @@ public class WBH_PlayerEffect : MonoBehaviour
         BuildBindindMap();
     }
 
+    public void Initialize(WBH_EffectSpawner effectSpawner)
+    {
+        spawner = effectSpawner;
+    }
+
     private void BuildBindindMap()
     {
         bindingMap.Clear();

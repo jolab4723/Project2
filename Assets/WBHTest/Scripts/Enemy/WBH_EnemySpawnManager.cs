@@ -22,10 +22,10 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     [SerializeField] private WaveData[] waves;
 
     [SerializeField] private WBH_HighEnemyHpbarView eliteView;
+    [SerializeField] private WBH_EffectSpawner effectSpawner;
+    [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
 
     private WBH_EnemyPoolManager enemyPool;
-    private WBH_EffectPoolManager effectPool;
-    private WBH_ProjectilePoolManager projectilePool;
     private WBH_FloatTextPoolManager damagePool;
     
     private YJ_PortalActive portalActive;
@@ -38,9 +38,6 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private void Awake()
     {
         enemyPool = GetComponent<WBH_EnemyPoolManager>();
-
-        effectPool = FindFirstObjectByType<WBH_EffectPoolManager>();
-        projectilePool = FindFirstObjectByType<WBH_ProjectilePoolManager>();
         damagePool = FindFirstObjectByType<WBH_FloatTextPoolManager>();
 
         spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
@@ -69,7 +66,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     {
         foreach (WBH_EnemySpawnArea area in spawnAreas)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView, wallet);
+            area.Initialize(enemyPool, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, eliteView, wallet);
         }
     }
 

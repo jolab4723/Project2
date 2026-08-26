@@ -8,7 +8,6 @@ using UnityEngine;
 public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 {
     [SerializeField] private Transform statusEffectRoot;
-    [SerializeField] private WBH_EffectSpawner effectSpawner;
 
     [Header("Status Effect")]
     [SerializeField] private WBH_EffectData burnEffect;
@@ -21,6 +20,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
 
+    private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;
@@ -33,7 +33,11 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
         movement = GetComponent<WBH_EnemyMovement>();
-        effectSpawner = GetComponent<WBH_EffectSpawner>();
+    }
+
+    public void Initialize(WBH_EffectSpawner effectSpawner)
+    {
+        this.effectSpawner = effectSpawner;
     }
 
     // 몬스터 등급별 예외처리

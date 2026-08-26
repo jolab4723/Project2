@@ -7,19 +7,20 @@ public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 public class T_PlayerCombat : MonoBehaviour
 {
     [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
     [SerializeField] private Transform firePoint;
     [SerializeField] public GunnerWeaponType currentWeapon;
     // 차후 무기 데이터에 폭발반경 포함되면 변수 삭제 및 GunnerAttack 메서드에서 해당 변수 내용 수정 필요
     [SerializeField] private float explosionRadius = 3f;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
     [SerializeField] private PlayerClass playerClass;
+    [SerializeField] private WBH_EffectData basicGrenadeEffect;
 
     private Animator animator;
     private WBH_PlayerStatus status;
     private T_PlayerController controller;
     private WBH_PlayerEffect effect;
     private WBH_EnemyController chaseTarget;
+    private WBH_ProjectileSpawner projectileSpawner;
     private Collider chaseTargetCollider;
     private Vector3 lastChaseDestination;
     private Vector3 grenadePoint;
@@ -58,6 +59,11 @@ public class T_PlayerCombat : MonoBehaviour
         TestMultiple();
     }
 
+    public void Initialize(WBH_ProjectileSpawner projectileSpawner)
+    {
+        this.projectileSpawner = projectileSpawner;
+    }
+
     public void NormalAttack()
     {
         if (status.IsDead || !CanAttack) // 피격 상태에서 공격을 못하게 할 경우 조건 추가 필요
@@ -90,7 +96,7 @@ public class T_PlayerCombat : MonoBehaviour
                 break;
             case GunnerWeaponType.GrenadeLauncher:
                 {
-                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, grenadePoint, request, status.GunnerBulletSpeed, status.GunnerAttackRange, explosionRadius, enemyLayer);
+                    projectileSpawner.FireGrenade(ProjectileType.Grenade, firePoint.position, grenadePoint, request, status.GunnerBulletSpeed, status.GunnerAttackRange, explosionRadius, enemyLayer, basicGrenadeEffect);
                 }
                 break;
         }

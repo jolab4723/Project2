@@ -2,9 +2,15 @@ using UnityEngine;
 
 public class WBH_IndicatorSpawner : MonoBehaviour
 {
-    [SerializeField] private WBH_EffectSpawner effectSpawner;
     [SerializeField] private WBH_EffectData circleIndicator;
     [SerializeField] private WBH_EffectData rectIndicator;
+
+    private WBH_EffectSpawner effectSpawner;
+
+    public void Initialize(WBH_EffectSpawner effectSpawner)
+    {
+        this.effectSpawner = effectSpawner;
+    }
 
     public WBH_Effect ShowCircle(Vector3 pos, float radius, float duration, bool growOverTime)
     {

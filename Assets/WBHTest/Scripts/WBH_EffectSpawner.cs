@@ -4,11 +4,6 @@ public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
 
-    public void Initialize(WBH_EffectPoolManager effectPool)
-    {
-        this.poolManager = effectPool;
-    }
-
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
     {
         if (!ValidateRequest(data))
