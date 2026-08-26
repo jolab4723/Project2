@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_ThunderCoil
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uC5F0\uC1C4 \uCDA9\uC804"
+  icon: {fileID: 21300000, guid: 56dca7f2407cc5246ab837a2d0bba6b0, type: 3}
+  effectDescription: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+    {1}%, \uC804\uAE30 \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {2} \uC99D\uAC00\uD569\uB2C8\uB2E4.
+    (\uCFE8\uD0C0\uC784 {3}\uCD08)"
+  coefficients:
+  - 6
+  - 30
+  - 15
+  - 4
+  triggerCondition: 3
+  cooldownSeconds: 4
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 9
+      value: 30
+    - statType: 19
+      value: 15
+    duration: 6
+    stackBehavior: 0
+    maxStack: 1
+  persistStackOnItem: 0
