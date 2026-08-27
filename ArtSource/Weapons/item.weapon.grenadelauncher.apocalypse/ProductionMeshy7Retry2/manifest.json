@@ -1,0 +1,26 @@
+{
+  "itemId": "item.weapon.grenadelauncher.apocalypse",
+  "stage": "Meshy7 Retry2 raw",
+  "taskId": "01a04198-913b-736d-85c2-b4a06f67edbf",
+  "consumedCredits": 20,
+  "inputOrder": ["left.png", "right.png", "front.png", "back.png"],
+  "settings": {
+    "aiModel": "meshy-7",
+    "modelType": "standard",
+    "shouldTexture": false,
+    "shouldRemesh": false,
+    "imageEnhancement": false,
+    "targetFormats": ["glb"]
+  },
+  "rawModel": "Raw/item.weapon.grenadelauncher.apocalypse_meshy7_retry2_raw.glb",
+  "qa": "QA/raw_geometry_qa.json",
+  "gate": "FAIL",
+  "failure": {
+    "muzzleEnd": "positive X",
+    "muzzleInsetRawUnits": 0.003074824810028076,
+    "requiredNormalizedMeters": 0.08,
+    "visual": "front cap is nearly flush; no reconstructable firing tunnel"
+  },
+  "downstreamActionsPerformed": []
+}
+

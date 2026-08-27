@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "generator": "Meshy 7 Standard Multi-Image",
+  "task_id": "01a040a3-a911-7c9c-83b9-4c837ae7c8df",
+  "credits_spent": 20,
+  "paid_calls_in_this_run": 1,
+  "retry_count": 0,
+  "source_glb": {
+    "path": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/Raw/item.weapon.rifle.phaseorchid_meshy7_raw.glb",
+    "size_bytes": 17453496,
+    "sha256": "824109fd1ebe500eedfa65ce5f1e3b36d6d0dd69732557d997b7f2346fc46328"
+  },
+  "request": {
+    "image_order": ["left", "right", "front", "back"],
+    "ai_model": "latest",
+    "model_type": "standard",
+    "should_texture": false,
+    "should_remesh": false,
+    "image_enhancement": false,
+    "target_format": "glb"
+  },
+  "automated_geometry_qa": {
+    "triangles": 969604,
+    "vertices": 484788,
+    "connected_components": 1,
+    "largest_component_vertex_ratio": 1.0,
+    "boundary_edges": 0,
+    "non_manifold_edges_including_boundaries": 0,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "material_slots": 0,
+    "uv_layers": 0,
+    "report": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/QA/raw_geometry_report.json"
+  },
+  "muzzle_bore_qa": {
+    "muzzle_end": "X minimum",
+    "fire_direction_before_axis_cleanup": "-X",
+    "required_clear_depth_m": 0.08,
+    "center_region_median_clear_depth_m": 0.181386,
+    "center_region_deepest_clear_depth_m": 0.185435,
+    "center_region_samples_at_or_over_threshold": 105,
+    "probe": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/QA/muzzle_bore_probe.json",
+    "decision": "pass"
+  },
+  "visual_qa": {
+    "six_direction_and_isometric_renders_present": true,
+    "left_right_side_shapes_coherent": true,
+    "not_flat_or_2_5d": true,
+    "stock_receiver_barrel_and_both_grips_connected": true,
+    "trigger_guard_open_and_readable": true,
+    "front_support_grip_clear_of_muzzle_axis": true,
+    "muzzle_bore_visibly_open": true,
+    "flower_calyx_connected_and_clear_of_bore": true,
+    "detached_flower_fragments": false,
+    "render_directory": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/QA/renders_solid"
+  },
+  "decision": {
+    "raw_geometry": "accepted_for_blender_cleanup",
+    "blender_salvageability": "high",
+    "reason": "The raw model is one watertight connected component, preserves the rifle and orchid-calyx identity across all views, and has a centered bore with more than twice the required clear depth. The high triangle count is a normal cleanup/controlled-decimation task rather than a reconstruction failure.",
+    "remaining_unpaid_work": [
+      "controlled decimation without collapsing the calyx, bore, trigger guard or grips",
+      "orient muzzle to +Z and weapon up to +Y",
+      "place RightHandGrip, LeftHandGrip and Muzzle markers",
+      "UV and material authoring only after cleanup approval"
+    ],
+    "forbidden_followups_without_new_approval": [
+      "Meshy retry",
+      "Meshy remesh",
+      "Meshy texture generation"
+    ]
+  }
+}

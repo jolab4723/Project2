@@ -1,0 +1,38 @@
+{
+  "itemId": "item.weapon.grenadelauncher.apocalypse",
+  "date": "2026-08-27",
+  "stage": "Retry3Input",
+  "status": "pass_for_final_meshy7_retry",
+  "trigger": {
+    "retry2TaskId": "01a04198-913b-736d-85c2-b4a06f67edbf",
+    "retry2MuzzleInsetRawUnits": 0.003074824810028076,
+    "requiredNormalizedMeters": 0.08
+  },
+  "inputOrder": ["left.png", "right.png", "front.png", "back.png"],
+  "views": {
+    "left.png": {"size": [1835, 857], "mode": "RGBA", "alphaRange": [0, 255], "borderOpaquePixels": 0, "alphaComponents": 1, "largestAlphaComponentRatio": 1.0, "sha256": "bf79338d23c72f78d198987270469f6ea2c60691254de96b3d84d06607d3842b"},
+    "right.png": {"size": [1835, 857], "mode": "RGBA", "alphaRange": [0, 255], "borderOpaquePixels": 0, "alphaComponents": 1, "largestAlphaComponentRatio": 1.0, "sha256": "d181e2b4d8fdfbdde01ca6361c00522b0a9db544cdc8df8dd8e9f8c022109060"},
+    "front.png": {"size": [1075, 1579], "mode": "RGBA", "alphaRange": [0, 255], "borderOpaquePixels": 0, "alphaComponents": 1, "largestAlphaComponentRatio": 1.0, "sha256": "0dd3419839951bc41e95489344619b0439038e17fb09189152f469a214b2ed2c"},
+    "back.png": {"size": [1024, 1536], "mode": "RGBA", "alphaRange": [0, 255], "borderOpaquePixels": 0, "alphaComponents": 1, "largestAlphaComponentRatio": 1.0, "sha256": "6ab7d3aaa5ca11cb0472a5ca75234dd8f125371d619c9f9d3c17847935bcb421"}
+  },
+  "crossView": {
+    "orthographic": true,
+    "centeredAndUnclipped": true,
+    "rightIsExactHorizontalFlipOfLeft": true,
+    "identityConsistent": true,
+    "muzzleSignal": "front stepped tunnel plus side cutaway and open mouth expose one continuous empty octagonal launch tube",
+    "worldEnderSeparation": "receiver fracture prism remains non-circular; muzzle is non-emissive and contains no round energy core or halo"
+  },
+  "alphaQA": {
+    "genuineTransparentBackground": true,
+    "rgbZeroWhereAlphaZero": true,
+    "frontDistantVoidIsTransparent": true,
+    "sideCutawayAndMouthVoidsAreTransparent": true,
+    "exteriorAuraRemoved": true
+  },
+  "knownLimitations": [
+    "The side cutaway is a stronger utilitarian reconstruction cue than the original uninterrupted barrel shell.",
+    "This is the last authorized retry; a raw gate failure will end processing without PBR or Blender delivery."
+  ]
+}
+

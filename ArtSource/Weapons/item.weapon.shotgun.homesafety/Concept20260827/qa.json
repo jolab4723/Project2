@@ -1,0 +1,76 @@
+{
+  "itemId": "item.weapon.shotgun.homesafety",
+  "weaponType": "Shotgun",
+  "outputPath": "ArtSource/Weapons/item.weapon.shotgun.homesafety/Concept20260827/",
+  "generatedAt": "2026-08-27",
+  "generator": "built-in imagegen",
+  "views": {
+    "left": {
+      "file": "left.png",
+      "dimensions": { "width": 2073, "height": 758 },
+      "orientation": "canonical left elevation; stock left; muzzle right",
+      "alpha": {
+        "pixelFormat": "Format32bppArgb",
+        "cornerAlpha": 0,
+        "zeroAlphaPixels": 925756,
+        "partialAlphaPixels": 644495,
+        "opaquePixels": 1083,
+        "bakedCheckerboardDetected": false
+      }
+    },
+    "right": {
+      "file": "right.png",
+      "dimensions": { "width": 2048, "height": 768 },
+      "orientation": "opposite right elevation; muzzle left; stock right",
+      "alpha": {
+        "pixelFormat": "Format32bppArgb",
+        "cornerAlpha": 0,
+        "zeroAlphaPixels": 967076,
+        "partialAlphaPixels": 605788,
+        "opaquePixels": 0,
+        "bakedCheckerboardDetected": false
+      }
+    },
+    "front": {
+      "file": "front.png",
+      "dimensions": { "width": 1024, "height": 1536 },
+      "orientation": "coaxial muzzle-front elevation",
+      "alpha": {
+        "pixelFormat": "Format32bppArgb",
+        "cornerAlpha": 0,
+        "zeroAlphaPixels": 1099444,
+        "partialAlphaPixels": 473420,
+        "opaquePixels": 0,
+        "bakedCheckerboardDetected": false
+      }
+    },
+    "back": {
+      "file": "back.png",
+      "dimensions": { "width": 1024, "height": 1536 },
+      "orientation": "coaxial stock-back elevation",
+      "alpha": {
+        "pixelFormat": "Format32bppArgb",
+        "cornerAlpha": 0,
+        "zeroAlphaPixels": 1270784,
+        "partialAlphaPixels": 302080,
+        "opaquePixels": 0,
+        "bakedCheckerboardDetected": false
+      }
+    }
+  },
+  "visualQa": {
+    "fourSeparatePngFiles": "pass",
+    "orthographicRead": "pass",
+    "centeredAndUncropped": "pass",
+    "connectedSilhouette": "pass",
+    "paletteAndSafetyDeviceIdentityConsistency": "pass",
+    "frontRearMechanicalReadability": "pass",
+    "crossViewConsistency": "pass_with_limitations",
+    "notes": [
+      "The front muzzle uses a centered dark sealed face inside a teal collar and is mechanically readable.",
+      "Side canvases differ slightly in generated dimensions; front and rear share 1024x1536.",
+      "To keep true alpha, the right/front/rear views were independently generated from the locked design specification after reference edits baked a checkerboard. Palette, protective-bridge motif and consumer-industrial identity match, but small stock, bridge, handguard, muzzle and panel-detail differences remain across views.",
+      "Generated cutout edges contain partially transparent antialiasing/soft studio-edge pixels; the outer background and all four corners are alpha 0."
+    ]
+  }
+}

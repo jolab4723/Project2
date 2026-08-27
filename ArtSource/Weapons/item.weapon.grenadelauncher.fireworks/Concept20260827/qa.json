@@ -1,0 +1,64 @@
+{
+  "itemId": "item.weapon.grenadelauncher.fireworks",
+  "weaponType": "GrenadeLauncher",
+  "conceptPath": "ArtSource/Weapons/item.weapon.grenadelauncher.fireworks/Concept20260827/",
+  "date": "2026-08-27",
+  "generationMode": "built-in image generation",
+  "status": "pass_with_noted_limits",
+  "views": {
+    "left.png": {
+      "mode": "RGBA",
+      "size": [1920, 819],
+      "alphaExtrema": [0, 255],
+      "alphaZeroPercent": 62.40,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [7, 16, 8, 106],
+      "view": "orthographic left, stock-left/muzzle-right",
+      "unclipped": true
+    },
+    "right.png": {
+      "mode": "RGBA",
+      "size": [1959, 803],
+      "alphaExtrema": [0, 255],
+      "alphaZeroPercent": 62.78,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [16, 33, 31, 73],
+      "view": "orthographic right, muzzle-left/stock-right",
+      "unclipped": true
+    },
+    "front.png": {
+      "mode": "RGBA",
+      "size": [1024, 1536],
+      "alphaExtrema": [0, 254],
+      "alphaZeroPercent": 51.23,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [19, 16, 21, 15],
+      "view": "orthographic front/muzzle",
+      "unclipped": true
+    },
+    "rear.png": {
+      "mode": "RGBA",
+      "size": [1024, 1536],
+      "alphaExtrema": [0, 254],
+      "alphaZeroPercent": 67.35,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [198, 12, 200, 7],
+      "view": "orthographic rear/stock",
+      "unclipped": true
+    }
+  },
+  "crossViewQA": {
+    "samePrimarySilhouette": true,
+    "sameStockAndGripLanguage": true,
+    "sameStarburstMuzzleIdentity": true,
+    "sameCrimsonNavyBrassPalette": true,
+    "oneConnectedMeshyFriendlyObject": true,
+    "noCharacterHandsTextFloorOrShadow": true,
+    "actualTransparentBackground": true
+  },
+  "limitations": [
+    "The long side elevations have narrow horizontal edge padding, although the opaque subject remains inside the canvas.",
+    "Front and rear alpha-cleanup outputs top out at alpha 254 rather than 255 on solid pixels; their exterior background is still alpha 0.",
+    "The views are AI-generated modeling references, so small fastener-level asymmetries should not be treated as authoritative geometry."
+  ]
+}

@@ -1,0 +1,145 @@
+[
+  {
+    "name": "item.weapon.grenadelauncher.worldender_root",
+    "type": "EMPTY",
+    "parent": null,
+    "location": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "materials": []
+  },
+  {
+    "name": "LeftHandGrip",
+    "type": "EMPTY",
+    "parent": "item.weapon.grenadelauncher.worldender_root",
+    "location": [
+      0.0,
+      -0.001834,
+      0.33017
+    ],
+    "materials": []
+  },
+  {
+    "name": "Muzzle",
+    "type": "EMPTY",
+    "parent": "item.weapon.grenadelauncher.worldender_root",
+    "location": [
+      0.0,
+      0.190756,
+      0.632222
+    ],
+    "materials": []
+  },
+  {
+    "name": "RightHandGrip",
+    "type": "EMPTY",
+    "parent": "item.weapon.grenadelauncher.worldender_root",
+    "location": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "materials": []
+  },
+  {
+    "name": "Worldender_Body",
+    "type": "MESH",
+    "parent": "item.weapon.grenadelauncher.worldender_root",
+    "location": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "materials": [
+      "M_Worldender_PBR",
+      "M_Worldender_SealedCore_PBR_Emission"
+    ],
+    "vertices": 149984,
+    "polygons": 300000,
+    "uv_layers": [
+      "UVMap"
+    ],
+    "bounds": [
+      [
+        -0.082705,
+        -0.058421,
+        -0.363246
+      ],
+      [
+        0.082705,
+        0.299989,
+        0.649952
+      ]
+    ],
+    "uv_bounds": [
+      7e-06,
+      2.7e-05,
+      0.999481,
+      0.999997
+    ],
+    "material_polygon_counts": {
+      "0": 83090,
+      "1": 216910
+    },
+    "material_images": {
+      "M_Worldender_PBR": [
+        "//Textures\\item.weapon.grenadelauncher.worldender_BaseColor.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_Normal.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_ORM.png"
+      ],
+      "M_Worldender_SealedCore_PBR_Emission": [
+        "//Textures\\item.weapon.grenadelauncher.worldender_BaseColor.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_Normal.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_ORM.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_Emission.png"
+      ]
+    }
+  },
+  {
+    "name": "Worldender_CoreLens",
+    "type": "MESH",
+    "parent": "item.weapon.grenadelauncher.worldender_root",
+    "location": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "materials": [
+      "M_Worldender_CoreLens_Emission"
+    ],
+    "vertices": 322,
+    "polygons": 384,
+    "uv_layers": [
+      "CorePlanarUV"
+    ],
+    "bounds": [
+      [
+        -0.009119,
+        0.153446,
+        0.075187
+      ],
+      [
+        0.009119,
+        0.22133,
+        0.143071
+      ]
+    ],
+    "uv_bounds": [
+      0.0,
+      0.0,
+      1.0,
+      1.0
+    ],
+    "material_polygon_counts": {
+      "0": 384
+    },
+    "material_images": {
+      "M_Worldender_CoreLens_Emission": [
+        "//Textures\\item.weapon.grenadelauncher.worldender_CoreBaseColor.png",
+        "//Textures\\item.weapon.grenadelauncher.worldender_CoreEmission.png"
+      ]
+    }
+  }
+]

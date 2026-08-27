@@ -1,0 +1,60 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "concept_set": "Concept20260827",
+  "generated_with": "built-in image_gen",
+  "status": "pass_with_limitations",
+  "canonical_view": "left.png",
+  "views": {
+    "left.png": {
+      "view": "left_side",
+      "orientation": "stock_left_muzzle_right",
+      "dimensions_px": [1672, 941],
+      "rgba": true,
+      "alpha_extrema": [0, 255],
+      "corner_alpha": [0, 0, 0, 0],
+      "unclipped": true
+    },
+    "right.png": {
+      "view": "right_side",
+      "orientation": "muzzle_left_stock_right",
+      "dimensions_px": [1672, 941],
+      "rgba": true,
+      "alpha_extrema": [0, 255],
+      "corner_alpha": [0, 0, 0, 0],
+      "unclipped": true
+    },
+    "front.png": {
+      "view": "front_muzzle",
+      "dimensions_px": [1254, 1254],
+      "rgba": true,
+      "alpha_extrema": [0, 255],
+      "corner_alpha": [0, 0, 0, 0],
+      "unclipped": true
+    },
+    "rear.png": {
+      "view": "rear_stock",
+      "dimensions_px": [1254, 1254],
+      "rgba": true,
+      "alpha_extrema": [0, 255],
+      "corner_alpha": [0, 0, 0, 0],
+      "unclipped": true
+    }
+  },
+  "visual_checks": {
+    "single_connected_silhouette": true,
+    "strict_orthographic_intent": true,
+    "paired_heavy_fire_chambers": true,
+    "ceramic_heat_shields": true,
+    "scorched_material_read": true,
+    "controlled_orange_emission": true,
+    "reconstruction_friendly_major_forms": true,
+    "no_characters_text_floor_shadow_or_flame_fx": true,
+    "actual_transparent_background": true
+  },
+  "limitations": [
+    "These are generative multi-view concept references, so minor fastener, vent-count, soot-pattern, and end-view cross-section details are not mathematically identical across views; use left.png as canonical during reconstruction.",
+    "The orange chamber treatment is a visual material cue, not a final emission-mask specification; final 3D emission should remain confined to chamber windows and vent interiors.",
+    "Secondary-view alpha was reconstructed from a baked neutral checker background; the final files have verified alpha=0 corners, but very bright neutral ceramic highlights may carry reduced alpha."
+  ],
+  "scope_stop": "Concept/reference generation only. No Meshy, Tripo, Blender, or Unity work performed."
+}

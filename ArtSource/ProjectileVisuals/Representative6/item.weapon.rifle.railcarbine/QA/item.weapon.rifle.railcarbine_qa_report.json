@@ -1,0 +1,318 @@
+{
+  "assetId": "item.weapon.rifle.railcarbine",
+  "design": {
+    "description": "Twin rail projectile visual: paired +Z needle-lances with cyan emissive cores, dark shell rails/collars, and bridging arc-rings.",
+    "logicalProjectileCount": 1,
+    "visualLaneCount": 2,
+    "laneSpacing": 0.42,
+    "origin": "center between lanes at (0,0,0)",
+    "axisForward": "+Z",
+    "axisUp": "+Y",
+    "materialSlots": [
+      "Shell",
+      "EmissiveCore",
+      "Ring"
+    ],
+    "triangleTarget": [
+      2000,
+      6000
+    ]
+  },
+  "outputs": {
+    "sourceBlend": "ArtSource/ProjectileVisuals/Representative6/item.weapon.rifle.railcarbine/Production/item.weapon.rifle.railcarbine.blend",
+    "unityFbx": "Assets/SW/Models/ProjectileVisuals/Representative6/item.weapon.rifle.railcarbine/item.weapon.rifle.railcarbine.fbx",
+    "previews": [
+      "ArtSource/ProjectileVisuals/Representative6/item.weapon.rifle.railcarbine/QA/item.weapon.rifle.railcarbine_front.png",
+      "ArtSource/ProjectileVisuals/Representative6/item.weapon.rifle.railcarbine/QA/item.weapon.rifle.railcarbine_threequarter.png",
+      "ArtSource/ProjectileVisuals/Representative6/item.weapon.rifle.railcarbine/QA/item.weapon.rifle.railcarbine_top.png"
+    ]
+  },
+  "source": {
+    "objectCount": 4,
+    "meshObjectCount": 3,
+    "triangleCount": 2860,
+    "vertexCount": 1464,
+    "boundsMin": [
+      -0.286,
+      -0.076,
+      -1.24
+    ],
+    "boundsMax": [
+      0.286,
+      0.083,
+      1.44
+    ],
+    "spansXYZ": [
+      0.572,
+      0.159,
+      2.68
+    ],
+    "materials": [
+      "EmissiveCore",
+      "Ring",
+      "Shell"
+    ],
+    "uvLayers": {
+      "Shell": 1,
+      "EmissiveCore": 1,
+      "Ring": 1
+    },
+    "forbiddenObjectTypes": [],
+    "objects": [
+      {
+        "name": "Shell",
+        "triangles": 1696,
+        "vertices": 864,
+        "uvLayers": 1,
+        "location": [
+          -0.21,
+          -0.056,
+          0.06
+        ],
+        "rotationEuler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "materials": [
+          "Shell"
+        ]
+      },
+      {
+        "name": "EmissiveCore",
+        "triangles": 552,
+        "vertices": 288,
+        "uvLayers": 1,
+        "location": [
+          -0.21,
+          0.0,
+          -1.12
+        ],
+        "rotationEuler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "materials": [
+          "EmissiveCore"
+        ]
+      },
+      {
+        "name": "Ring",
+        "triangles": 612,
+        "vertices": 312,
+        "uvLayers": 1,
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEuler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "materials": [
+          "Ring"
+        ]
+      }
+    ],
+    "laneSymmetry": {
+      "coreObjects": [
+        "EmissiveCore"
+      ],
+      "leftMeanX": -0.21,
+      "rightMeanX": 0.21,
+      "laneSeparation": 0.42,
+      "symmetryError": 0.0,
+      "zMin": -1.24,
+      "zMax": 1.44,
+      "passed": true
+    }
+  },
+  "reimport": {
+    "imported": true,
+    "stats": {
+      "objectCount": 4,
+      "meshObjectCount": 3,
+      "triangleCount": 2860,
+      "vertexCount": 1464,
+      "boundsMin": [
+        -0.286,
+        -0.083,
+        -1.24
+      ],
+      "boundsMax": [
+        0.286,
+        0.076,
+        1.44
+      ],
+      "spansXYZ": [
+        0.572,
+        0.159,
+        2.68
+      ],
+      "materials": [
+        "EmissiveCore",
+        "Ring",
+        "Shell"
+      ],
+      "uvLayers": {
+        "EmissiveCore": 1,
+        "Ring": 1,
+        "Shell": 1
+      },
+      "forbiddenObjectTypes": [],
+      "objects": [
+        {
+          "name": "EmissiveCore",
+          "triangles": 552,
+          "vertices": 288,
+          "uvLayers": 1,
+          "location": [
+            -0.21,
+            0.0,
+            -1.12
+          ],
+          "rotationEuler": [
+            0.0,
+            -0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "materials": [
+            "EmissiveCore"
+          ]
+        },
+        {
+          "name": "Ring",
+          "triangles": 612,
+          "vertices": 312,
+          "uvLayers": 1,
+          "location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotationEuler": [
+            0.0,
+            -0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "materials": [
+            "Ring"
+          ]
+        },
+        {
+          "name": "Shell",
+          "triangles": 1696,
+          "vertices": 864,
+          "uvLayers": 1,
+          "location": [
+            -0.21,
+            -0.056,
+            0.06
+          ],
+          "rotationEuler": [
+            0.0,
+            -0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "materials": [
+            "Shell"
+          ]
+        }
+      ]
+    },
+    "laneSymmetry": {
+      "coreObjects": [
+        "EmissiveCore"
+      ],
+      "leftMeanX": -0.21,
+      "rightMeanX": 0.21,
+      "laneSeparation": 0.42,
+      "symmetryError": 0.0,
+      "zMin": -1.24,
+      "zMax": 1.44,
+      "passed": true
+    },
+    "meshScales": [
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ]
+    ],
+    "transformsApplied": true,
+    "axisCheck": {
+      "forwardAxis": "+Z",
+      "upAxis": "+Y",
+      "zSpan": 2.68,
+      "xSpan": 0.572,
+      "ySpan": 0.159,
+      "zIsLongest": true,
+      "positiveZTip": true,
+      "negativeZTail": true
+    }
+  },
+  "checks": {
+    "sourceTriangleRange": true,
+    "sourceNoForbiddenObjects": true,
+    "sourceLaneSymmetry": {
+      "coreObjects": [
+        "EmissiveCore"
+      ],
+      "leftMeanX": -0.21,
+      "rightMeanX": 0.21,
+      "laneSeparation": 0.42,
+      "symmetryError": 0.0,
+      "zMin": -1.24,
+      "zMax": 1.44,
+      "passed": true
+    },
+    "reimportTriangleRange": true,
+    "reimportNoForbiddenObjects": true,
+    "reimportLaneSymmetry": true,
+    "reimportAxes": true,
+    "reimportTransformsApplied": true
+  }
+}

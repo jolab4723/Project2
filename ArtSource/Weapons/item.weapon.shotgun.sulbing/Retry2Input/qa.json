@@ -1,0 +1,63 @@
+{
+  "itemId": "item.weapon.shotgun.sulbing",
+  "weaponType": "Shotgun",
+  "revision": "Retry2",
+  "status": "PASS_INPUT_GATE",
+  "sourceGeneratedImageId": "01a0413c-ae0c-7fb0-8868-d2d95e44057c",
+  "sourceSheet": "source_sheet.png",
+  "views": {
+    "left.png": {
+      "sha256": "0ea04d3fa639390c75bb4df25833ece4fb17b1ed89ea1ab6d1c8d1994455b73b",
+      "size": [1024, 1024],
+      "alphaZeroPixels": 904656,
+      "foregroundBounds": [72, 331, 952, 693],
+      "visual": "PASS: stock-left/muzzle-right; three broad adjacent red-yellow-mint exterior bowl rails; clean blue-white ice"
+    },
+    "right.png": {
+      "sha256": "4ac6acc5ce936c7183e19488a381cfe638bfbdb782904beb851f513b79c127f1",
+      "size": [1024, 1024],
+      "alphaZeroPixels": 905355,
+      "foregroundBounds": [72, 332, 952, 692],
+      "visual": "PASS: muzzle-left/stock-right; rail order and placement match opposite side; clean blue-white ice"
+    },
+    "front.png": {
+      "sha256": "c28ce6cc2bfbfbc0adc284f9b4167321598335e767a203190403ec457ecf24f5",
+      "size": [1024, 1024],
+      "alphaZeroPixels": 877712,
+      "foregroundBounds": [349, 72, 674, 952],
+      "visual": "PASS: centered twin stacked bores; bowl and three-tier ice centered; no color rails projected onto ice"
+    },
+    "rear.png": {
+      "sha256": "eb7c21083b9870d1f87c54f4c5add0f05403deab2288264696d5c967cc76e229",
+      "size": [1024, 1024],
+      "alphaZeroPixels": 868562,
+      "foregroundBounds": [352, 72, 671, 952],
+      "visual": "PASS: centered stock view; blue-white bowl and ice remain uncolored"
+    }
+  },
+  "alpha": {
+    "actualAlphaZero": true,
+    "borderAlphaZero": true,
+    "checkerboardRemoved": true,
+    "method": "deterministic 48px checker template subtraction, contour silhouette and edge antialias; enclosed checker patches locally inpainted"
+  },
+  "crossView": {
+    "sameSourceSheet": true,
+    "geometryProportionsConsistent": true,
+    "leftRightRailPlacementConsistent": true,
+    "twinBoreLayoutConsistent": true,
+    "threeTierIceConsistent": true,
+    "centeredAndUnclipped": true
+  },
+  "designGate": {
+    "bowlExteriorOnlyRails": "PASS",
+    "redYellowMintSeparated": "PASS",
+    "iceColorContamination": "NONE OBSERVED",
+    "combatShotgunRead": "PASS",
+    "meshyFriendlyConnectedSilhouette": "PASS"
+  },
+  "limitations": [
+    "The generated source sheet baked a visual checker pattern instead of real transparency; it was removed locally and verified by alpha-zero pixel counts.",
+    "The rear view does not expose the side rails because they are correctly confined to the bowl sides."
+  ]
+}

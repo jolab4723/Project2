@@ -1,0 +1,79 @@
+{
+  "itemId": "item.weapon.shotgun.sulbing",
+  "weaponType": "Shotgun",
+  "status": "PASS",
+  "meshy": {
+    "meshTaskId": "01a0418a-e84b-7736-800d-07f4db9334c5",
+    "meshCredits": 20,
+    "textureTaskId": "01a0418d-06f7-7fab-bdf2-8587c2591343",
+    "textureCredits": 10,
+    "generationCount": 1,
+    "textureCount": 1,
+    "remeshCredits": 0
+  },
+  "inputViews": [
+    "Concept20260827/left.png",
+    "Concept20260827/right.png",
+    "Concept20260827/front.png",
+    "Concept20260827/rear.png"
+  ],
+  "raw": {
+    "file": "Raw/item.weapon.shotgun.sulbing_raw.glb",
+    "bytes": 23216708,
+    "dimensions": [1.901309, 0.291248, 0.632679],
+    "triangles": 1289800,
+    "vertices": 644860,
+    "edges": 1934700,
+    "faces": 1289800,
+    "connectedComponents": 1,
+    "largestComponentRatio": 1.0,
+    "boundaryEdges": 0,
+    "nonManifoldEdges": 0,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "muzzleEnd": "raw -X",
+    "muzzleProbeDeepHits": "66/121",
+    "muzzleProbeMaxDepthMeters": 1.735251,
+    "muzzleProbeMaxDepthRatio": 0.912661,
+    "shapeGate": "PASS: open twin bores; round bingsu-bowl receiver, three shaved-ice tiers and integrated syrup bands remain readable from orthographic and isometric views"
+  },
+  "candidateReduction": [
+    {"target": 300000, "resultTriangles": 299998, "visual": "PASS"},
+    {"target": 200000, "resultTriangles": 199998, "visual": "PASS"},
+    {"target": 140000, "resultTriangles": 139998, "visual": "PASS_SELECTED"}
+  ],
+  "emission": {
+    "mask": "Textures/item.weapon.shotgun.sulbing_EmissionMask.png",
+    "allowedRegion": "upper recessed muzzle cooling ring: raw X<=-0.76, abs(Y)<=0.075, 0.005<=Z<=0.13",
+    "criteria": "R<=180, G>=125, B>=155, B-R>=18, B-G>=5",
+    "representativeSrgbRgb": [100, 202, 239],
+    "selectedPixels": 88167,
+    "missedAllowedPixels": 0,
+    "falsePositivePixelsOutsideAllowedRegion": 0,
+    "morphology": "none",
+    "note": "Atlas pixel coverage is larger than apparent screen area; only the geometrically selected small upper muzzle indicator uses these UV islands. Bowl, ice tiers and syrup bands are outside the allowed region."
+  },
+  "final": {
+    "blend": "item.weapon.shotgun.sulbing.blend",
+    "fbx": "item.weapon.shotgun.sulbing.fbx",
+    "fbxBytes": 5055228,
+    "triangles": 139998,
+    "vertices": 69958,
+    "connectedComponents": 1,
+    "boundaryEdges": 1,
+    "nonManifoldEdges": 4,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "axis": "Blender +Z muzzle, +Y up",
+    "root": "item.weapon.shotgun.sulbing_root",
+    "markers": ["RightHandGrip", "LeftHandGrip", "Muzzle"],
+    "rightToLeftGripDistanceMeters": 0.372891,
+    "transformsApplied": true,
+    "cleanFbxReimport": true,
+    "qaViews": "QA_FinalFBX: x-/x+/y-/y+/z-/z+ plus two isometric renders"
+  },
+  "limitations": [
+    "The source raw GLB is closed/manifold. Meshy retexture UV export leaves a tiny residue after seam weld and FBX round-trip: 1 boundary and 4 non-manifold edges out of 209997 edges; the model remains one connected component with no loose or degenerate geometry.",
+    "Unity import and character attachment validation were intentionally not performed."
+  ]
+}

@@ -1,0 +1,11 @@
+Built-in ImageGen workflow: precise-object-edit.
+
+Primary front edit
+Preserve the existing Apocalypse launcher identity, orthographic front camera, silhouette, proportions, worn dark gunmetal material, and the non-circular electric-violet fracture-prism side insets. Change only the central muzzle into one simple, visibly deep, near-black firing tunnel with recessed cylindrical inner walls and one continuous thick faceted/octagonal rim. Do not add a circular glowing energy core, halo, eclipse disk, lens, cap, plug, second ring, or new ornament. Keep the fracture-prism language separate from World Ender's round core language. Output isolated, centered, unclipped RGBA with alpha=0 outside the weapon; no checkerboard, backdrop, floor, cast shadow, aura, text, character, hands, or floating parts.
+
+Conditional left-side edit
+Preserve the entire stock-left/muzzle-right Apocalypse side design and edit only the final muzzle assembly. Replace the perforated shroud with a slightly longer straight heavy barrel neck ending in one compact faceted/octagonal muzzle housing, one continuous rim, and a recessed dark open launch tunnel. Keep the receiver fracture prism unchanged. The accepted right view is an exact horizontal flip of the accepted left view.
+
+Postprocess
+ImageGen preserved the requested shape but returned a painted RGB checkerboard. The checkerboard was removed deterministically by retaining the largest connected non-background subject component, restoring only small enclosed highlight regions, zeroing RGB wherever alpha=0, and writing a genuine RGBA PNG. No weapon geometry or color was repainted during alpha reconstruction.
+

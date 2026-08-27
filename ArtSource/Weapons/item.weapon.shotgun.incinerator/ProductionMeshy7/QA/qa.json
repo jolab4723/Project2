@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.shotgun.incinerator",
+  "status": "PASS",
+  "meshy": {
+    "geometryTaskId": "01a04183-a206-7cbb-81bf-9c1a88ffaedd",
+    "geometryModel": "Meshy latest / Meshy 7",
+    "geometryCredits": 20,
+    "textureTaskId": "01a0418e-95b3-7825-9d3c-1c57555b589f",
+    "textureCredits": 10,
+    "totalCredits": 30,
+    "inputOrder": [
+      "../Input/left.png",
+      "../Input/right.png",
+      "../Input/front.png",
+      "../Input/back.png"
+    ]
+  },
+  "rawPreserved": true,
+  "authorizedLocalCorrection": {
+    "method": "Delete only the thin terminal cap faces over the two pre-existing deep bores; no vertices were moved or added and no tube or barrel was reconstructed.",
+    "rawGeometryGateDeletedFaces": 19031,
+    "texturedProductionDeletedFaces": 18998,
+    "correctedGeometryGatePass": true,
+    "boundaryLoops": 8,
+    "boundaryLocation": "All boundary loops are local to the two muzzle apertures.",
+    "culledRenderPass": true
+  },
+  "final": {
+    "blend": "../Production/item.weapon.shotgun.incinerator.blend",
+    "fbx": "../Production/item.weapon.shotgun.incinerator.fbx",
+    "vertices": 90291,
+    "triangles": 179999,
+    "connectedComponents": 1,
+    "largestComponentVertexRatio": 1.0,
+    "boundaryEdges": 749,
+    "nonManifoldEdgesIncludingBoundaries": 749,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "gripDistanceMeters": 0.32625001,
+    "dimensionsMeters": [
+      0.117484,
+      0.309919,
+      1.094919
+    ],
+    "muzzleForwardDotPlusZ": 1.0,
+    "weaponUpDotPlusY": 1.0,
+    "fbxReimportPass": true
+  },
+  "finalBoreProbes": {
+    "gridPerBore": "21x21",
+    "upper": {
+      "samples": 441,
+      "openThrough": 357,
+      "qualifyingDeepOrOpen": 357,
+      "openThroughLowerBoundMeters": 0.46,
+      "passes": true
+    },
+    "lower": {
+      "samples": 441,
+      "openThrough": 235,
+      "deepAtLeast0_08m": 139,
+      "qualifyingDeepOrOpen": 374,
+      "centerDepthMeters": 0.37381787,
+      "deepestDepthMeters": 0.37604869,
+      "passes": true
+    }
+  },
+  "textures": {
+    "resolution": 2048,
+    "pbr": true,
+    "emissionMaskNonzeroPixelRatio": 0.00750089,
+    "emissionMaskPeak": 1.0
+  },
+  "visualInspection": {
+    "views": [
+      "x_plus",
+      "x_minus",
+      "y_plus",
+      "y_minus",
+      "z_plus_muzzle_front",
+      "z_minus_rear",
+      "iso_muzzle",
+      "iso_stock",
+      "muzzle_front_backface_culled"
+    ],
+    "result": "PASS",
+    "notes": "Twin-bore heavy shotgun silhouette, heat-shielded chambers, pale scorched metal/ceramic, and sparse controlled orange emission remain legible after decimation and FBX reimport."
+  },
+  "limitations": [
+    "The approved muzzle openings intentionally leave boundary-only non-manifold edges; all such edges are localized to the two bores and there are no loose or degenerate elements.",
+    "The lower bore terminates against the pre-existing deep internal chamber rather than being open-through on every sample.",
+    "Unity import, prefab creation, and character mounting were intentionally not performed."
+  ]
+}

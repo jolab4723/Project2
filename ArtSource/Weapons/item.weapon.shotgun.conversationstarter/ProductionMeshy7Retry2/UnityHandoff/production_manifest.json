@@ -1,0 +1,57 @@
+{
+  "itemId": "item.weapon.shotgun.conversationstarter",
+  "weaponType": "Shotgun",
+  "result": "PASS",
+  "meshy": {
+    "rawTaskId": "01a041a4-2e83-75b8-9b8e-8b1ff303a778",
+    "rawCredits": 20,
+    "pbrTaskId": "01a041a8-3624-768a-8888-d119310ea7a6",
+    "pbrCredits": 10,
+    "totalCredits": 30,
+    "model": "meshy-7",
+    "mode": "Standard Multi-Image",
+    "inputOrder": ["left.png", "right.png", "front.png", "back.png"],
+    "textureResolution": "2K PBR"
+  },
+  "geometry": {
+    "rawTriangles": 1252320,
+    "rawVertices": 626144,
+    "rawComponents": 1,
+    "rawLargestComponentRatio": 1.0,
+    "finalTriangles": 187772,
+    "finalVertices": 93870,
+    "finalBoundaryEdges": 0,
+    "finalNonManifoldEdges": 0,
+    "finalLooseEdges": 0,
+    "finalDegenerateFaces": 0,
+    "muzzleDepthMeters": 0.2064543664,
+    "muzzleDepthGateMeters": 0.08
+  },
+  "blender": {
+    "axis": {"muzzle": "+Z", "up": "+Y"},
+    "singleRoot": "item.weapon.shotgun.conversationstarter",
+    "markers": ["RightHandGrip", "LeftHandGrip", "Muzzle"],
+    "transformApplied": true,
+    "stagedDecimationRatios": [0.5, 0.5, 0.6],
+    "cleanFbxReimport": true,
+    "topologyCleanup": "Near-duplicate weld plus removal of one isolated redundant triangle flap; no silhouette change in staged QA."
+  },
+  "textures": {
+    "baseColor": "Textures/item.weapon.shotgun.conversationstarter_BaseColor.png",
+    "normal": "Textures/item.weapon.shotgun.conversationstarter_Normal.png",
+    "orm": "Textures/item.weapon.shotgun.conversationstarter_ORM.png",
+    "emission": "Textures/item.weapon.shotgun.conversationstarter_Emission.png",
+    "emissionCoveragePercent": 0.034785,
+    "emissionRule": "Only authored electric-violet/magenta pixels; broad royal-purple body enamel remains non-emissive."
+  },
+  "outputs": {
+    "blend": "item.weapon.shotgun.conversationstarter.blend",
+    "fbx": "item.weapon.shotgun.conversationstarter.fbx",
+    "productionQa": "QA/production_report.json",
+    "fbxReimportQa": "QA/fbx_reimport_report.json"
+  },
+  "limitations": [
+    "No Unity Assets, prefabs, catalogs, scenes, spreadsheets, or attachment validation were touched.",
+    "The procedural marker positions are production handoff anchors and still require later character-specific attachment validation outside this task."
+  ]
+}

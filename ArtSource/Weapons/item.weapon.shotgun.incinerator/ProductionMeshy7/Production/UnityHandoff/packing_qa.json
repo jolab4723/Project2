@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.shotgun.incinerator",
+  "purpose": "Non-destructive Unity handoff derivatives from the approved 2K production textures.",
+  "sourceDirectory": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\Textures",
+  "outputDirectory": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff",
+  "dimensions": {
+    "width": 2048,
+    "height": 2048
+  },
+  "packing": {
+    "MetallicSmoothness": {
+      "R": "Metallic",
+      "G": "Metallic",
+      "B": "Metallic",
+      "A": "1 - Roughness",
+      "metallicMaxAbsByteError": 0,
+      "smoothnessMaxAbsByteError": 0
+    },
+    "Occlusion": "RGB white because no authored occlusion map exists",
+    "Emission": {
+      "method": "EmissionMask multiplied by the approved production lava-orange emission color",
+      "colorLinearNormalized": [
+        1.0,
+        0.11999999731779099,
+        0.00800000037997961
+      ],
+      "colorByteAtFullMask": [
+        255,
+        31,
+        2
+      ],
+      "maxAbsByteError": 0
+    },
+    "EmissionMask": {
+      "format": "single-channel grayscale PNG",
+      "maxAbsByteErrorFromSource": 0,
+      "minByte": 0,
+      "maxByte": 255,
+      "meanByte": 1.1420493125915527,
+      "pixelCount": 4194304,
+      "nonzeroPixelCount": 31461,
+      "nonzeroPixelRatio": 0.007500886917114258
+    }
+  },
+  "sourceSha256Before": {
+    "BaseColor": "8ff08305f2909a0d035ce423734ee7f70537a475546bfbfd9ef8751b0f7fae48",
+    "Normal": "2193ea8732751a24f060712776b3de3b386a23dd07c46caa1d557a876b95bc24",
+    "Metallic": "2aac74ae015fda8c6ee89093024c2d5249a32e3c03c741a989a0d2ee11d1c62f",
+    "Roughness": "cfa9b61d86ffbee5a4f5bc03d39450690936ef53c214299cb8d6f9eaabee77c8",
+    "EmissionMask": "b4f1b380c4a5ace59fbed163224252c872b6a6b91fb3d89af91417e1e838faa1"
+  },
+  "sourceSha256After": {
+    "BaseColor": "8ff08305f2909a0d035ce423734ee7f70537a475546bfbfd9ef8751b0f7fae48",
+    "Normal": "2193ea8732751a24f060712776b3de3b386a23dd07c46caa1d557a876b95bc24",
+    "Metallic": "2aac74ae015fda8c6ee89093024c2d5249a32e3c03c741a989a0d2ee11d1c62f",
+    "Roughness": "cfa9b61d86ffbee5a4f5bc03d39450690936ef53c214299cb8d6f9eaabee77c8",
+    "EmissionMask": "b4f1b380c4a5ace59fbed163224252c872b6a6b91fb3d89af91417e1e838faa1"
+  },
+  "outputSha256": {
+    "BaseColor": "78f23f46e1563d1ea46af0ac8738c61268536a78bb7b9a45292fe3e85105bea6",
+    "Normal": "39c97c28f0b7f13d6b6a9a8b92cde4c329cd5a4123b388a8d7232243af688c62",
+    "MetallicSmoothness": "568d876c957fc6c31d7515be6050c349f62fe8916a941732064965b67d9e12ea",
+    "Occlusion": "c7d7c5f378d70acd58dccd3352883f1a16d227e14acbe3a43846b580186f81ee",
+    "Emission": "f095d8d39a4a492f92a5f0442ba2bfce27da10ae12bab5bfe025cdc5e01275ae",
+    "EmissionMask": "c2d1b7089c47cb168c865488380ad14cb12a3db00b70faedaf18be05f9553133"
+  },
+  "outputs": {
+    "BaseColor": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_BaseColor.png",
+    "Normal": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_Normal.png",
+    "MetallicSmoothness": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_MetallicSmoothness.png",
+    "Occlusion": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_Occlusion.png",
+    "Emission": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_Emission.png",
+    "EmissionMask": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.incinerator\\ProductionMeshy7\\Production\\UnityHandoff\\item.weapon.shotgun.incinerator_EmissionMask.png"
+  },
+  "checks": {
+    "sourceTexturesUnchanged": true,
+    "allDimensionsMatch": true,
+    "baseColorPreserved": true,
+    "normalPreserved": true,
+    "metallicRgbPackedExactly": true,
+    "smoothnessAlphaPackedExactly": true,
+    "occlusionIsWhite": true,
+    "emissionMaskPreserved": true,
+    "emissionDerivedExactlyFromMaskAndColor": true,
+    "emissionIsSparse": true,
+    "all": true
+  },
+  "limitations": [
+    "Occlusion is intentionally white because the approved production set has no authored occlusion texture.",
+    "Unity import settings and material assignment were not changed or tested in this handoff-only step."
+  ]
+}

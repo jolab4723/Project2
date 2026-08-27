@@ -1,0 +1,77 @@
+{
+  "itemId": "item.weapon.grenadelauncher.fireworks",
+  "weaponType": "GrenadeLauncher",
+  "status": "PASS",
+  "meshy": {
+    "meshTaskId": "01a04171-d67c-7078-b92b-2c1c7e5da713",
+    "meshCredits": 20,
+    "textureTaskId": "01a04176-4ada-7378-a0c2-1e6d3a2464a9",
+    "textureCredits": 10,
+    "generationCount": 1,
+    "textureCount": 1,
+    "remeshCredits": 0
+  },
+  "inputViews": [
+    "Concept20260827/left.png",
+    "Concept20260827/right.png",
+    "Concept20260827/front.png",
+    "Concept20260827/rear.png"
+  ],
+  "raw": {
+    "file": "Raw/item.weapon.grenadelauncher.fireworks_raw.glb",
+    "bytes": 35964132,
+    "dimensions": [1.901421, 0.636962, 0.724298],
+    "triangles": 1998014,
+    "vertices": 998931,
+    "edges": 2997021,
+    "faces": 1998014,
+    "connectedComponents": 1,
+    "largestComponentRatio": 1.0,
+    "boundaryEdges": 0,
+    "nonManifoldEdges": 0,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "muzzleEnd": "raw -X",
+    "muzzleDepthMeters": 0.421212,
+    "muzzleDepthRatio": 0.221525,
+    "shapeGate": "PASS: true 3D festival/starburst grenade launcher, stock/grips/muzzle intact, visually distinct from Worldender"
+  },
+  "candidateReduction": [
+    {"target": 400000, "resultTriangles": 399998, "visual": "PASS"},
+    {"target": 260000, "resultTriangles": 259998, "visual": "PASS"},
+    {"target": 190000, "resultTriangles": 189998, "visual": "PASS_SELECTED"}
+  ],
+  "emission": {
+    "mask": "Textures/item.weapon.grenadelauncher.fireworks_EmissionMask.png",
+    "allowedRegion": "raw face center X<=-0.54 and radial distance sqrt(Y^2+Z^2)<=0.145",
+    "criteria": "R>=175, 55<=G<=150, B<=100, R-G>=60, G-B>=15",
+    "representativeSrgbRgb": [216, 119, 67],
+    "selectedPixels": 21426,
+    "missedAllowedPixels": 0,
+    "falsePositivePixelsOutsideAllowedRegion": 0,
+    "morphology": "none"
+  },
+  "final": {
+    "blend": "item.weapon.grenadelauncher.fireworks.blend",
+    "fbx": "item.weapon.grenadelauncher.fireworks.fbx",
+    "fbxBytes": 6961628,
+    "triangles": 189998,
+    "vertices": 94923,
+    "connectedComponents": 1,
+    "boundaryEdges": 9,
+    "nonManifoldEdges": 20,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "axis": "Blender +Z muzzle, +Y up",
+    "root": "item.weapon.grenadelauncher.fireworks_root",
+    "markers": ["RightHandGrip", "LeftHandGrip", "Muzzle"],
+    "rightToLeftGripDistanceMeters": 0.277683,
+    "transformsApplied": true,
+    "cleanFbxReimport": true,
+    "qaViews": "QA_FinalFBX: x-/x+/y-/y+/z-/z+ plus two isometric renders"
+  },
+  "limitations": [
+    "The source raw GLB is closed/manifold. Meshy retexture UV export leaves a very small residue after seam weld and FBX round-trip: 9 boundary and 20 non-manifold edges out of 284995 edges; the model remains one connected component with no loose or degenerate geometry.",
+    "Unity import and character attachment validation were intentionally not performed."
+  ]
+}

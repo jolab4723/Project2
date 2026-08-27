@@ -1,0 +1,119 @@
+{
+  "asset": "item.weapon.rifle.massproduced",
+  "generated_at": "2026-08-27T07:00:22.359313+00:00",
+  "blender_version": "5.1.1",
+  "method": "factory empty scene -> FBX import -> hierarchy/axis/dimension/material/triangle/transform audit",
+  "source_fbx": "Assets\\SW\\Models\\ProjectileVisuals\\Representative6\\item.weapon.rifle.massproduced\\item.weapon.rifle.massproduced.fbx",
+  "source_fbx_sha256": "13ec15510445d533af55cec14d62ee353ff2e67d37bd60925626b02d311e01b0",
+  "top_level_objects": [
+    "item.weapon.rifle.massproduced"
+  ],
+  "root": "item.weapon.rifle.massproduced",
+  "root_children": [
+    "EmissiveCore",
+    "Shell"
+  ],
+  "bounds": {
+    "min": [
+      -0.370899,
+      -0.370899,
+      -1.17
+    ],
+    "max": [
+      0.370899,
+      0.370899,
+      1.17
+    ],
+    "dimensions": [
+      0.741798,
+      0.741798,
+      2.34
+    ]
+  },
+  "triangle_count": 2072,
+  "mesh_count": 2,
+  "meshes": [
+    {
+      "name": "EmissiveCore",
+      "parent": "item.weapon.rifle.massproduced",
+      "triangles": 248,
+      "vertices": 160,
+      "polygons": 120,
+      "materials": [
+        "EmissiveCore"
+      ],
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "uv_layers": [
+        "UVMap"
+      ],
+      "zero_area_polygons": 0
+    },
+    {
+      "name": "Shell",
+      "parent": "item.weapon.rifle.massproduced",
+      "triangles": 1824,
+      "vertices": 933,
+      "polygons": 960,
+      "materials": [
+        "Shell",
+        "EmissiveCore"
+      ],
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "uv_layers": [
+        "UVMap"
+      ],
+      "zero_area_polygons": 0
+    }
+  ],
+  "materials": [
+    "EmissiveCore",
+    "Shell"
+  ],
+  "missing_material_slots": [],
+  "forbidden_objects": [],
+  "checks": {
+    "single_top_level_root": true,
+    "root_is_empty": true,
+    "required_meshes": true,
+    "mesh_children_under_root": true,
+    "plus_z_forward_dimensions": true,
+    "root_origin_model_centre": true,
+    "expected_dimensions": true,
+    "triangle_budget_1k_to_4k": true,
+    "required_material_names": true,
+    "all_mesh_material_slots_non_null": true,
+    "all_meshes_have_uvs": true,
+    "clean_nonzero_normals": true,
+    "no_camera_light_armature": true,
+    "all_transforms_applied": true
+  },
+  "pass": true
+}

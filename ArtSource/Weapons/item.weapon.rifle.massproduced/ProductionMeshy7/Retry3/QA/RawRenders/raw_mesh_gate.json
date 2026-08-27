@@ -1,0 +1,85 @@
+{
+  "itemId": "item.weapon.rifle.massproduced",
+  "sourceGlb": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\Original\\item.weapon.rifle.massproduced_retry3_raw.glb",
+  "meshStats": {
+    "vertex_count": 598885,
+    "triangle_count": 1197910,
+    "edge_count": 1796865,
+    "connected_components": 1,
+    "largest_component_vertices": 598885,
+    "largest_component_vertex_ratio": 1.0,
+    "component_vertex_counts_desc": [
+      598885
+    ],
+    "boundary_edges": 0,
+    "nonmanifold_edges_over_two_faces": 0,
+    "nonmanifold_edges_including_boundary_and_loose": 0,
+    "loose_edges": 0,
+    "degenerate_triangles": 2,
+    "objects": [
+      {
+        "name": "mesh_node",
+        "vertices": 598885,
+        "triangles": 1197910,
+        "edges": 1796865,
+        "boundary_edges": 0,
+        "nonmanifold_edges_over_two_faces": 0,
+        "loose_edges": 0,
+        "degenerate_triangles": 2
+      }
+    ]
+  },
+  "muzzleAxisProbe": {
+    "principal_axis_world": [
+      -0.9977264669612428,
+      -9.985689413746779e-05,
+      0.06739352456755066
+    ],
+    "principal_length_raw": 1.9053057088924863,
+    "normalization": "principal length treated as 1.0 m",
+    "muzzle_end_inference": "principal_high",
+    "muzzle_end_slice_vertex_count": 7168,
+    "muzzle_end_slice_rms_radius_normalized": 0.013294564654638357,
+    "opposite_end_slice_rms_radius_normalized": 0.05523086890922897,
+    "muzzle_center_world_raw": [
+      -0.9519513351507729,
+      0.0003169851249515116,
+      0.09821222272862036
+    ],
+    "muzzle_out_axis_world": [
+      -0.9977264669612428,
+      -9.985689413746779e-05,
+      0.06739352456755066
+    ],
+    "first_collision_from_outside_normalized_m": 0.17967461785384115,
+    "open_muzzle_depth_normalized_m": 0.15467461785384115,
+    "required_open_muzzle_depth_m": 0.08,
+    "open_muzzle_depth_pass": true
+  },
+  "renders": [
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_pos_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_neg_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_pos_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_neg_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_pos_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_neg_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_iso_pos.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Retry3\\QA\\RawRenders\\raw_iso_neg.png"
+  ],
+  "automaticImmediateRejectReasons": [],
+  "automaticGate": "requires_visual_review",
+  "visualGate": "passed",
+  "visualReview": {
+    "reviewedViews": 8,
+    "silhouetteReadable": true,
+    "singleConnectedWeaponAppearance": true,
+    "muzzleIsOpenAndRecessed": true,
+    "majorReconstructionArtifacts": false,
+    "decision": "pass_for_pbr_and_finalization"
+  },
+  "notes": [
+    "Muzzle end is inferred as the narrower principal-axis end and must be visually confirmed.",
+    "The longest principal-axis dimension is normalized to 1.0 m for the 0.08 m muzzle-depth gate.",
+    "Nonmanifold edges over two faces are reported separately from boundary and loose edges."
+  ]
+}

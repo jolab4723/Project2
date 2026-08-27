@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "item_id": "item.weapon.rifle.phaseorchid",
+  "source": "Browser GPT tab: 라이플 콘셉트 디자인",
+  "status": "pass_for_meshy7_geometry_only_submission",
+  "validated_at": "2026-08-26",
+  "paid_meshy_call_submitted": true,
+  "credits_spent_by_validation": 0,
+  "upload_order": [
+    "left.png",
+    "right.png",
+    "front.png",
+    "back.png"
+  ],
+  "views": {
+    "left": {
+      "path": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/Input/left.png",
+      "size_bytes": 208882,
+      "sha256": "e58ebbdba683a1361de97c06bcf9dc21df467e896d24458c497f3b2f7fc25df9",
+      "mode": "RGBA",
+      "dimensions": [1254, 1254],
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [188, 522, 1066, 731],
+      "corner_alpha": [0, 0, 0, 0]
+    },
+    "right": {
+      "path": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/Input/right.png",
+      "size_bytes": 209689,
+      "sha256": "c878e28c21a33c3ff374b1d2888188d0a48ade65bc2cdd263b24ff8c0717377e",
+      "mode": "RGBA",
+      "dimensions": [1254, 1254],
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [188, 521, 1066, 732],
+      "corner_alpha": [0, 0, 0, 0]
+    },
+    "front": {
+      "path": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/Input/front.png",
+      "size_bytes": 27221,
+      "sha256": "21856d674961283412b1199281fbc68a1a54c7da5c2ac9bf31f6900749e9ac71",
+      "mode": "RGBA",
+      "dimensions": [1254, 1254],
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [574, 568, 680, 685],
+      "corner_alpha": [0, 0, 0, 0]
+    },
+    "back": {
+      "path": "ArtSource/Weapons/item.weapon.rifle.phaseorchid/Regeneration_20260826/Subculture/ProductionMeshy7/Input/back.png",
+      "size_bytes": 23432,
+      "sha256": "18930a0d976b468df1efcdb320322702e0eaed91f7c04b87ec7dc769ca8bb66a",
+      "mode": "RGBA",
+      "dimensions": [1254, 1254],
+      "alpha_extrema": [0, 255],
+      "alpha_bbox": [597, 544, 656, 709],
+      "corner_alpha": [0, 0, 0, 0]
+    }
+  },
+  "automated_checks": {
+    "same_dimensions": true,
+    "all_png_rgba": true,
+    "all_alpha_extrema_0_255": true,
+    "all_four_corner_alpha_zero": true,
+    "right_exact_horizontal_mirror_of_left": false,
+    "right_is_separately_generated_browser_view": true,
+    "right_mirror_difference_bbox": [188, 521, 1066, 732],
+    "left_right_mirrored_alpha_mask_iou_over_16": 0.965946,
+    "left_right_bbox_width_match": true,
+    "left_right_bbox_height_delta_px": 2,
+    "all_views_uncropped": true
+  },
+  "visual_checks": {
+    "one_complete_rifle_per_view": true,
+    "strict_orthographic_readability": true,
+    "left_right_barrel_axis_horizontal": true,
+    "left_right_muzzle_cut_plane_vertical": true,
+    "left_right_bore_interior_hidden": true,
+    "front_bore_fully_open_and_centered": true,
+    "short_black_muzzle_tube_protrudes_beyond_calyx": true,
+    "front_has_six_large_connected_calyx_lobes": true,
+    "each_side_shows_three_paired_lobe_profiles_consistent_with_six_radial_lobes": true,
+    "calyx_does_not_occlude_bore": true,
+    "calyx_has_no_detached_small_petals": true,
+    "front_support_grip_visible_only_in_side_views": true,
+    "front_axis_not_obstructed_by_grips": true,
+    "back_is_stock_end_and_not_muzzle": true,
+    "stock_receiver_barrel_grips_and_muzzle_are_cross_view_consistent": true,
+    "separate_right_view_preserves_left_scale_and_component_placement": true,
+    "no_character_hands_floor_shadow_text_checkerboard_or_effects": true
+  },
+  "decision": {
+    "approved_for": "one Meshy 7 Standard Multi-Image geometry-only call after root/user paid-call approval",
+    "input_order": "left -> right -> front(muzzle) -> back(stock)",
+    "not_approved_for": [
+      "texture generation before raw geometry QA",
+      "remesh before raw geometry QA",
+      "Unity import before raw geometry QA"
+    ],
+    "submitted_task_id": "01a040a3-a911-7c9c-83b9-4c837ae7c8df",
+    "submission_result": "succeeded; raw geometry QA passed and no texture, remesh or retry call was made"
+  }
+}

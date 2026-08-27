@@ -1,0 +1,236 @@
+{
+  "itemId": "item.weapon.shotgun.homesafety",
+  "retry": 3,
+  "inputOrder": [
+    "left",
+    "right",
+    "front",
+    "back"
+  ],
+  "backgroundRemovalPolicy": "one deterministic checker removal; preserve foreground RGB; zero RGB only where alpha=0",
+  "records": {
+    "left": {
+      "raw": "RawGenerated\\left_checker_rgb.png",
+      "rawMode": "RGB",
+      "rawSize": [
+        1821,
+        864
+      ],
+      "targetExteriorBounds": [
+        53,
+        190,
+        1715,
+        474
+      ],
+      "referenceForDesignCrossCheck": "Retry2Input\\left.png",
+      "rawEnclosedCheckerHoleAreas": [
+        14245,
+        8635
+      ],
+      "foregroundRgbPreservedExactly": true,
+      "backgroundRgbZeroedOnlyWhereAlphaZero": true
+    },
+    "right": {
+      "operation": "pixel-exact horizontal mirror of prepared left"
+    },
+    "front": {
+      "raw": "RawGenerated\\front_checker_rgb.png",
+      "rawMode": "RGB",
+      "rawSize": [
+        1024,
+        1536
+      ],
+      "targetExteriorBounds": [
+        272,
+        32,
+        478,
+        1476
+      ],
+      "referenceForDesignCrossCheck": "Retry2Input\\front.png",
+      "rawEnclosedCheckerHoleAreas": [
+        7807
+      ],
+      "foregroundRgbPreservedExactly": true,
+      "backgroundRgbZeroedOnlyWhereAlphaZero": true
+    },
+    "back": {
+      "source": "Retry2Input\\back.png",
+      "sourceMode": "RGBA",
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "operation": "binary alpha normalization, transparent RGB zero, uniform resize and centering"
+    }
+  },
+  "views": {
+    "left": {
+      "path": "Retry3Input\\left.png",
+      "sha256": "02743bc1d9bfc2b93e7fdfdbdabe735d02c9f0fbcb385fab161905ca75e30c67",
+      "mode": "RGBA",
+      "size": [
+        2048,
+        1024
+      ],
+      "alphaValues": [
+        0,
+        255
+      ],
+      "alphaBinary": true,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foregroundBounds": [
+        166,
+        275,
+        1881,
+        749
+      ],
+      "unclippedMargins": [
+        166,
+        275,
+        167,
+        275
+      ],
+      "transparentRgbNonzeroPixels": 0,
+      "opaquePixels": 369699,
+      "transparentPixels": 1727453
+    },
+    "right": {
+      "path": "Retry3Input\\right.png",
+      "sha256": "ec732394373537e1e6c849341668cf4c2014e3b0a3edac91377af16becb24f5e",
+      "mode": "RGBA",
+      "size": [
+        2048,
+        1024
+      ],
+      "alphaValues": [
+        0,
+        255
+      ],
+      "alphaBinary": true,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foregroundBounds": [
+        167,
+        275,
+        1882,
+        749
+      ],
+      "unclippedMargins": [
+        167,
+        275,
+        166,
+        275
+      ],
+      "transparentRgbNonzeroPixels": 0,
+      "opaquePixels": 369699,
+      "transparentPixels": 1727453
+    },
+    "front": {
+      "path": "Retry3Input\\front.png",
+      "sha256": "25be6dff3d84a0eb7761dd5a8252b11d8d82cc395d42439615b421535ac7fa8a",
+      "mode": "RGBA",
+      "size": [
+        2048,
+        1024
+      ],
+      "alphaValues": [
+        0,
+        255
+      ],
+      "alphaBinary": true,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foregroundBounds": [
+        947,
+        275,
+        1101,
+        749
+      ],
+      "unclippedMargins": [
+        947,
+        275,
+        947,
+        275
+      ],
+      "transparentRgbNonzeroPixels": 0,
+      "opaquePixels": 46812,
+      "transparentPixels": 2050340
+    },
+    "back": {
+      "path": "Retry3Input\\back.png",
+      "sha256": "90473a26b6583477d3dfda283c40029e20659a1b51bf791a32f3e57dc1a473a5",
+      "mode": "RGBA",
+      "size": [
+        2048,
+        1024
+      ],
+      "alphaValues": [
+        0,
+        255
+      ],
+      "alphaBinary": true,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foregroundBounds": [
+        978,
+        275,
+        1069,
+        749
+      ],
+      "unclippedMargins": [
+        978,
+        275,
+        979,
+        275
+      ],
+      "transparentRgbNonzeroPixels": 0,
+      "opaquePixels": 33684,
+      "transparentPixels": 2063468
+    }
+  },
+  "sideMuzzleSignal": {
+    "exposedCylinderLengthPixels": 261,
+    "weaponLengthPixels": 1715,
+    "ratio": 0.1521865889212828,
+    "minimum": 0.1
+  },
+  "gates": {
+    "all2048x1024": true,
+    "allRgbaBinaryAlpha": true,
+    "allCornersTransparent": true,
+    "allTransparentRgbZero": true,
+    "allViewsUnclipped": true,
+    "rightIsExactHorizontalMirrorOfLeft": true,
+    "sharedForegroundHeight": true,
+    "sideMuzzleCylinderLengthRatioAtLeast0.10": true,
+    "paidMeshyCallAllowed": true
+  },
+  "visualQaRenders": [
+    "Retry3Input\\QA\\left_checker.png",
+    "Retry3Input\\QA\\left_enlarged.png",
+    "Retry3Input\\QA\\right_checker.png",
+    "Retry3Input\\QA\\right_enlarged.png",
+    "Retry3Input\\QA\\front_checker.png",
+    "Retry3Input\\QA\\front_enlarged.png",
+    "Retry3Input\\QA\\back_checker.png",
+    "Retry3Input\\QA\\back_enlarged.png"
+  ],
+  "visualReview": "pass: strict side silhouette; mirrored opposite side; deep open concentric front bore; closed stock rear; one connected unclipped weapon; no checker or edge fringe on gray/checker enlarged QA"
+}

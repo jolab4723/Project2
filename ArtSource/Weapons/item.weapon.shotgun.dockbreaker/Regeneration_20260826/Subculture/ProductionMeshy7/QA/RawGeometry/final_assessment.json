@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "itemId": "item.weapon.shotgun.dockbreaker",
+  "taskId": "01a040a1-ba92-7c36-93e3-24621ae8121b",
+  "result": "PASS_RAW_GEOMETRY_ONLY",
+  "consumedCredits": 20,
+  "sourceGlb": "../../Raw/item.weapon.shotgun.dockbreaker_meshy7_raw.glb",
+  "fileSizeBytes": 24062904,
+  "bounds": {
+    "dimensions": [
+      1.90078,
+      0.181909,
+      0.624229
+    ],
+    "longestAxis": "X"
+  },
+  "geometry": {
+    "triangles": 1336820,
+    "vertices": 668356,
+    "connectedComponents": 1,
+    "largestVertexRatio": 1.0,
+    "boundaryEdges": 0,
+    "nonManifoldEdgesIncludingBoundaries": 0,
+    "looseEdges": 0,
+    "degenerateFaces": 0,
+    "watertight": true
+  },
+  "visualGate": {
+    "sideAxisReconstruction": "PASS",
+    "folded2_5D": false,
+    "stockReceiverBarrelMuzzleContinuous": true,
+    "anchorSilhouetteReadableBothSides": true,
+    "upperAnchorCrescentOpen": true,
+    "lowerAnchorCutout": "Open recess with an internal vent grille; not a collapsed exterior plate.",
+    "triggerGripUsable": true,
+    "foregripUsable": true,
+    "muzzleProngsAttached": true,
+    "muzzleProngsCrossBore": false,
+    "rearButtClosed": true
+  },
+  "muzzle": {
+    "end": "minimum X",
+    "centerProbeApproximateYZ": [
+      0.000382,
+      0.092929
+    ],
+    "firstHitDepthFromForwardBoundMeters": 0.098352,
+    "projectMinimumMeters": 0.08,
+    "passesMinimum": true,
+    "appearance": "One centered recessed bore with a continuous rim and visible dark depth; no cap, duplicate bore, floating ring, or crossing prong."
+  },
+  "renders": {
+    "sixAxisAndIsoSolid": "contact_solid.png",
+    "sixAxisAndIsoUntextured": "contact_textured.png",
+    "muzzleClose": "Details/muzzle_front_close.png",
+    "rearClose": "Details/stock_rear_close.png",
+    "anchorClose": "Details/anchor_stock_side_close.png"
+  },
+  "blenderSalvage": {
+    "requiredNow": false,
+    "possibleLocalWorkOnly": [
+      "If an entirely empty lower anchor cutout is later preferred, the recessed vent insert can be removed locally without rebuilding the stock silhouette.",
+      "Grip empties, Project2 axes, scale, root, and Muzzle marker still require the normal post-acceptance Blender handoff pass."
+    ],
+    "largeScaleRebuildRequired": false
+  },
+  "stopPolicy": {
+    "retryCalled": false,
+    "remeshCalled": false,
+    "textureCalled": false,
+    "unityImportCalled": false
+  }
+}

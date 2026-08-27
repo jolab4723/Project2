@@ -1,0 +1,20 @@
+itemId: item.weapon.shotgun.sulbing
+weaponType: Shotgun
+date: 2026-08-27
+
+Mesh generation
+- Engine: Meshy 7 / latest, Standard Multi-Image
+- Input order: Concept20260827/left.png -> right.png -> front.png -> rear.png (rear image used as the required back/stock view)
+- should_texture: false
+- should_remesh: false
+- image_enhancement: false
+- target_formats: glb
+- Cost: 20 credits, one generation only
+
+Retexture
+Stylized Korean bingsu rare shotgun. Round bowl receiver: insulated white ceramic and pale ice-blue metal. Three stacked shaved-ice tiers: snowy white with cool-blue creases. Two broad integrated syrup bands: strawberry pink and mango amber, plus a few small berry accents. Short twin barrels: dark cold steel. Ribbed pump: frost-blue rubber. Stock: white insulated polymer with ice-blue trim. Keep bowl, three tiers and syrup bands immediately readable and combat-ready. Only one tiny recessed cyan cold-status indicator ring may glow; ice, syrup, fruit, barrels, bowl and trim are non-emissive.
+
+- Meshy 7 retexture, original UV, 2K PBR, remove lighting
+- target_formats: glb, fbx
+- Cost: 10 credits, one texture task only
+- Emission postprocess: only the upper recessed muzzle cooling-indicator geometry AND the documented cyan channel criteria; no dilation/blur/erosion.

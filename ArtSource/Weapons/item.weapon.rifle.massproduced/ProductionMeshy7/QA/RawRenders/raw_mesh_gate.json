@@ -1,0 +1,91 @@
+{
+  "itemId": "item.weapon.rifle.massproduced",
+  "sourceGlb": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\Original\\item.weapon.rifle.massproduced_raw.glb",
+  "meshStats": {
+    "vertex_count": 520581,
+    "triangle_count": 1041302,
+    "edge_count": 1561953,
+    "connected_components": 2,
+    "largest_component_vertices": 497435,
+    "largest_component_vertex_ratio": 0.9555381391176397,
+    "component_vertex_counts_desc": [
+      497435,
+      23146
+    ],
+    "boundary_edges": 0,
+    "nonmanifold_edges_over_two_faces": 0,
+    "nonmanifold_edges_including_boundary_and_loose": 0,
+    "loose_edges": 0,
+    "degenerate_triangles": 2,
+    "objects": [
+      {
+        "name": "mesh_node",
+        "vertices": 520581,
+        "triangles": 1041302,
+        "edges": 1561953,
+        "boundary_edges": 0,
+        "nonmanifold_edges_over_two_faces": 0,
+        "loose_edges": 0,
+        "degenerate_triangles": 2
+      }
+    ]
+  },
+  "muzzleAxisProbe": {
+    "principal_axis_world": [
+      -0.9972509458595654,
+      -0.000436517515213397,
+      0.07409696643359431
+    ],
+    "principal_length_raw": 1.9089955317727885,
+    "normalization": "principal length treated as 1.0 m",
+    "muzzle_end_inference": "principal_high",
+    "muzzle_end_slice_vertex_count": 7946,
+    "muzzle_end_slice_rms_radius_normalized": 0.011950451652672549,
+    "opposite_end_slice_rms_radius_normalized": 0.0538399993125166,
+    "muzzle_center_world_raw": [
+      -0.9523476239000218,
+      0.00045509041310726347,
+      0.09740391018513672
+    ],
+    "muzzle_out_axis_world": [
+      -0.9972509458595654,
+      -0.000436517515213397,
+      0.07409696643359431
+    ],
+    "first_collision_from_outside_normalized_m": 0.09186661532959614,
+    "open_muzzle_depth_normalized_m": 0.06686661532959615,
+    "required_open_muzzle_depth_m": 0.08,
+    "open_muzzle_depth_pass": false
+  },
+  "renders": [
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_pos_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_neg_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_pos_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_neg_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_pos_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_neg_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_iso_pos.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.massproduced\\ProductionMeshy7\\QA\\RawRenders\\raw_iso_neg.png"
+  ],
+  "automaticImmediateRejectReasons": [
+    "open muzzle depth below 0.08 m after 1.0 m normalization"
+  ],
+  "automaticGate": "reject",
+  "visualGate": "reject",
+  "visualReview": {
+    "sixAxisAndIsometricReviewed": true,
+    "twoPointFiveDCollapseDetected": false,
+    "majorSpatialDisconnectionDetected": false,
+    "duplicateOrFloatingMuzzleDetected": false,
+    "rightHandGripZoneLocallyUsable": true,
+    "leftHandSupportZoneLocallyUsable": true,
+    "muzzleOpeningVisible": true,
+    "decision": "reject",
+    "decisionReason": "Normalized muzzle depth is 0.0668666 m, below the mandatory 0.08 m immediate-reject threshold."
+  },
+  "notes": [
+    "Muzzle end is inferred as the narrower principal-axis end and must be visually confirmed.",
+    "The longest principal-axis dimension is normalized to 1.0 m for the 0.08 m muzzle-depth gate.",
+    "Nonmanifold edges over two faces are reported separately from boundary and loose edges."
+  ]
+}
