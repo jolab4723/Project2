@@ -177,17 +177,19 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
 
     //--- 애니메이션 클립 이벤트 (이펙트)
-    public void AniEvent_PlayEffect(int effectCue)
+
+    // 일반 공격용.
+    public void AniEvent_PlayEffect(int cueValue) 
     {
-        if (effectCue == 200)
-        {
-            if (combat.currentWeapon == GunnerWeaponType.Shotgun)
-                effect?.PlayEffect(effectCue);
-        }
-        else
-        {
-            effect?.PlayEffect(effectCue);
-        }
+        WBH_PlayerEffectCue cue = (WBH_PlayerEffectCue)cueValue;
+
+        effect?.PlayEffect(cue, Vector3.one);
+    }
+
+    // 스킬용. SkillEffectPart enum 의 파트별로 분기 재생이 가능하다.
+    public void AniEvent_PlaySkillEffect(int partValue)
+    {
+        fighterSkillController?.PlayPendingSkillEffect(partValue);
     }
 
     public void AniEvent_PlayFighterChargeEffect()
