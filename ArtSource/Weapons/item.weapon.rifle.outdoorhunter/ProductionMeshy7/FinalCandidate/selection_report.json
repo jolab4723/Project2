@@ -1,0 +1,83 @@
+{
+  "item_id": "item.weapon.rifle.outdoorhunter",
+  "selected_candidate": "180k",
+  "selected_triangles": 180000,
+  "selection_reason": "The 180k stage is the lightest allowed candidate and preserved the hunting-rifle silhouette, scope, stock, muzzle, grip contract and UV appearance.",
+  "source_high_density_preserved": {
+    "blend": "../Blender/item.weapon.rifle.outdoorhunter.blend",
+    "fbx": "../FBX/item.weapon.rifle.outdoorhunter.fbx",
+    "triangles": 642802,
+    "note": "Preserved without overwrite. Its reflected axis conversion left face winding inverted; all promoted candidates correct winding once before decimation."
+  },
+  "candidate_comparison": [
+    {
+      "stage": "300k",
+      "triangles": 300000,
+      "vertices": 149978,
+      "connected_components": 1,
+      "boundary_edges": 0,
+      "non_manifold_edges_including_boundaries": 0,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_max_m": 0.081451,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    },
+    {
+      "stage": "220k",
+      "triangles": 220000,
+      "vertices": 109978,
+      "connected_components": 1,
+      "boundary_edges": 0,
+      "non_manifold_edges_including_boundaries": 0,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_max_m": 0.081577,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    },
+    {
+      "stage": "180k",
+      "triangles": 180000,
+      "vertices": 89978,
+      "connected_components": 1,
+      "boundary_edges": 0,
+      "non_manifold_edges_including_boundaries": 0,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_max_m": 0.081577,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    }
+  ],
+  "visual_qa": {
+    "views_per_stage": "six orthographic axes plus two isometric views",
+    "pbr_uv_comparison": "pass; forest-green stock, walnut inserts and metal surfaces remain continuous without visible UV tears",
+    "silhouette": "pass; stock, stock wrist grip, trigger guard, magazine, receiver, scope, fore-end, thin barrel and muzzle device remain stable at 180k",
+    "muzzle": "pass; opening remains legible and measured depth stays above 0.08m",
+    "backface": "pass after one face-winding correction; green exterior in all eight views, magenta limited to legitimately visible interior/rear-facing surfaces",
+    "qa_directory": "../Candidates/180k/QA"
+  },
+  "promoted_files": {
+    "blend": {
+      "path": "item.weapon.rifle.outdoorhunter.blend",
+      "bytes": 8088498,
+      "sha256": "282929695F24667C220027C5A05F8A11B6B776809EFEA3195BD682758E474FF5"
+    },
+    "fbx": {
+      "path": "item.weapon.rifle.outdoorhunter.fbx",
+      "bytes": 6320828,
+      "sha256": "21CC6758B55544FE93D8A9C9CBD6F3FDFE6028EAE44FA2B81EB397BE63EC5ABD"
+    }
+  },
+  "unity_or_mounting_verification": "not performed"
+}

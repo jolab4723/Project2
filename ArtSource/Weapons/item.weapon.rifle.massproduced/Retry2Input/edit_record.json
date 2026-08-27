@@ -1,0 +1,60 @@
+{
+  "itemId": "item.weapon.rifle.massproduced",
+  "retry": 2,
+  "sourceConcept": "../Concept20260827/",
+  "sourcePreserved": true,
+  "imageEditing": {
+    "skill": "imagegen",
+    "mode": "built-in precise-object-edit",
+    "reason": "Retry2 requires a deeper, mechanically explicit muzzle bore while preserving the approved weapon design.",
+    "plannedChange": "Modify only front.png muzzle geometry so it reads as a dark internal tunnel at least 80 mm deep with a continuous thick rim.",
+    "lockedInvariants": [
+      "design",
+      "color palette",
+      "proportions",
+      "outer silhouette",
+      "orthographic camera",
+      "centering and scale",
+      "transparent RGBA background"
+    ],
+    "forbidden": [
+      "checkerboard",
+      "white background",
+      "halo",
+      "shadow",
+      "redesign outside muzzle"
+    ],
+    "status": "normalized_and_input_gate_passed",
+    "attempts": [
+      {
+        "candidate": "C:/Users/user/.codex/generated_images/01a0413c-444c-7df3-b91a-5ead4dd60e38/exec-9c2803a4-c9de-48eb-9593-9ed30e0fe83f.png",
+        "result": "rejected",
+        "dimensions": [1024, 1536],
+        "pixelFormat": "Format24bppRgb",
+        "reason": "Checkerboard was baked into an opaque RGB image; true alpha=0 background is absent."
+      },
+      {
+        "candidate": "C:/Users/user/.codex/generated_images/01a0413c-444c-7df3-b91a-5ead4dd60e38/exec-f369de96-938b-4d39-8f67-9d96ba3bc8c3.png",
+        "result": "rejected",
+        "dimensions": [1024, 1536],
+        "pixelFormat": "Format24bppRgb",
+        "reason": "Second precise edit improved bore depth but again baked checkerboard into opaque RGB."
+      }
+    ]
+  },
+  "normalization": {
+    "policyChange": "Parent explicitly authorized deterministic dimension/alpha normalization after generation.",
+    "method": "Only the deep-muzzle RGB patch from attempt 2 was blended into the approved Concept20260827 front RGBA inside a central high-alpha region; the complete original alpha plane and all low-alpha edge RGB were preserved byte-for-byte.",
+    "qa": "front_alpha_qa.json",
+    "fourViewQa": "retry2_input_qa.json"
+  },
+  "inputGate": "passed",
+  "meshyRetryCreated": true,
+  "meshyTaskId": "01a04193-0ba8-7167-b5f4-eebf5687ebfd",
+  "creditsSpent": 20,
+  "shapeGate": "failed",
+  "measuredMuzzleDepthMeters": 0.0697682277033082,
+  "requiredMuzzleDepthMeters": 0.08,
+  "textureCreated": false,
+  "finalizationPerformed": false
+}

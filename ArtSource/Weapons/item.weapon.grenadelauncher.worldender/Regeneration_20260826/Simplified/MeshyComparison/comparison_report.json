@@ -1,0 +1,51 @@
+{
+  "itemId": "item.weapon.grenadelauncher.worldender",
+  "date": "2026-08-26",
+  "decision": "Neither trial is suitable for Blender repair or Unity import. Use Meshy 7 Standard Multi-Image for the production pipeline, but place the orthographic side view first and run an untextured geometry gate before paying for texture. Do not use Meshy T2 as the primary generator for long Gunner weapons.",
+  "creditBalanceBefore": 1100,
+  "creditsConsumed": 45,
+  "trials": [
+    {
+      "name": "Meshy 7 Standard Multi-Image",
+      "taskId": "01a03cff-e0c3-7188-a1ab-5889f73de545",
+      "credits": 30,
+      "inputs": ["front", "left", "back", "right"],
+      "texture": "2K PBR",
+      "glbBytes": 55996168,
+      "fbxBytes": 72863244,
+      "triangles": 1680878,
+      "vertices": 873930,
+      "connectedComponents": 320,
+      "largestComponentVertexRatio": 0.014522,
+      "boundaryEdges": 66350,
+      "nonManifoldEdgesIncludingBoundaries": 66350,
+      "visualResult": "Color and surface detail are substantially better than T2, but the long weapon is reconstructed as a broken 2.5D assembly. The stock, receiver ornaments and muzzle separate in the actual side views.",
+      "verdict": "reject"
+    },
+    {
+      "name": "Meshy T2 Smart Topology",
+      "taskId": "01a03d05-dad9-7330-9b5b-041dc010d612",
+      "credits": 15,
+      "inputs": ["left"],
+      "texture": "2K PBR",
+      "targetTriangles": 15000,
+      "glbBytes": 8032812,
+      "fbxBytes": 14215820,
+      "triangles": 14889,
+      "vertices": 11673,
+      "connectedComponents": 572,
+      "largestComponentVertexRatio": 0.01405,
+      "boundaryEdges": 7313,
+      "nonManifoldEdgesIncludingBoundaries": 7313,
+      "visualResult": "The polygon budget is excellent, but the result loses hard-surface definition and becomes an even more fragmented single-image extrusion. It is not cheaper after accounting for the amount of reconstruction required.",
+      "verdict": "reject"
+    }
+  ],
+  "productionChoice": {
+    "generator": "Meshy 7 Standard Multi-Image",
+    "primaryImageOrder": ["left", "right", "front", "back"],
+    "geometryFirst": true,
+    "textureOnlyAfterRawPass": true,
+    "t2Use": "Compact props or optional LOD experiments only"
+  }
+}

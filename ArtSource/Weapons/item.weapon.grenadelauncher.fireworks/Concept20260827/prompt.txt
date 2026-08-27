@@ -1,0 +1,25 @@
+Use case: stylized-concept
+Asset type: four-view orthographic 3D weapon modeling reference
+Item ID: item.weapon.grenadelauncher.fireworks
+Weapon type: GrenadeLauncher
+Concept path: ArtSource/Weapons/item.weapon.grenadelauncher.fireworks/Concept20260827/
+
+Design anchor
+- Rare fire grenade launcher with an unmistakable colorful pyrotechnic/festival-launcher identity; a large-caliber launcher rather than a generic real rifle.
+- One connected, durable, Meshy-friendly silhouette with a sturdy compact stock, pistol grip, connected foregrip, thick launch chamber, and an integrated flared starburst mortar muzzle.
+- Lacquered crimson and deep navy body, brass/gold reinforcement, restrained cyan/magenta festival bands, and one sealed orange ember window.
+- Solid radial burst embossing and reinforced rings only; no flags, ribbons, sparks, flames, loose ammunition, wires, charms, floating or fragile pieces.
+
+View contract
+- left.png: true orthographic left elevation, stock left / muzzle right.
+- right.png: true orthographic opposite side, muzzle left / stock right.
+- front.png: true orthographic muzzle view, camera centered on the barrel axis.
+- rear.png: true orthographic stock view, camera centered on the butt pad.
+- Identical major geometry, proportions, colors, material zones, and starburst identity across all views.
+- Exactly one centered, fully visible weapon; no character, hands, text, label, logo, floor, ground plane, cast shadow, frame, or scene.
+- Genuine RGBA output with alpha=0 outside the weapon; no baked checkerboard.
+
+Generation method
+- Built-in image generation mode.
+- Left view generated as the canonical anchor; right/front/rear derived by identity-preserving rotations.
+- RGB checkerboard results were rejected and reprocessed through background extraction until the selected files contained real alpha.

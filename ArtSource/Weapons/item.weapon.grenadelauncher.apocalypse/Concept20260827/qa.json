@@ -1,0 +1,29 @@
+{
+  "itemId": "item.weapon.grenadelauncher.apocalypse",
+  "displayName": "Apocalyptic Destruction",
+  "revision": "user-feedback redesign",
+  "generatedAt": "2026-08-27",
+  "generator": "built-in image_gen",
+  "scope": "concept/reference only; no Meshy, Tripo, or Unity changes",
+  "images": {
+    "left.png": {"view":"left; stock-left muzzle-right","mode":"RGBA","size":[1834,858],"alphaExtrema":[0,255],"transparentPixelRatio":0.647864,"solidAlphaBboxThreshold128":[23,113,1810,734],"opaqueBorderPixelsThreshold128":0,"alpha0":"pass","unclippedSolidSilhouette":"pass"},
+    "right.png": {"view":"right; stock-right muzzle-left","mode":"RGBA","size":[1851,850],"alphaExtrema":[0,255],"transparentPixelRatio":0.675651,"solidAlphaBboxThreshold128":[27,97,1826,715],"opaqueBorderPixelsThreshold128":0,"alpha0":"pass","unclippedSolidSilhouette":"pass"},
+    "front.png": {"view":"front muzzle","mode":"RGBA","size":[1024,1536],"alphaExtrema":[0,254],"transparentPixelRatio":0.676050,"solidAlphaBboxThreshold128":[233,9,791,1526],"opaqueBorderPixelsThreshold128":0,"alpha0":"pass","unclippedSolidSilhouette":"pass"},
+    "rear.png": {"view":"rear stock","mode":"RGBA","size":[1024,1536],"alphaExtrema":[0,254],"transparentPixelRatio":0.685115,"solidAlphaBboxThreshold128":[258,25,767,1506],"opaqueBorderPixelsThreshold128":0,"alpha0":"pass","unclippedSolidSilhouette":"pass"}
+  },
+  "manualCrossViewQa": {
+    "directionLabels":"pass",
+    "worldEnderSeparation":"pass: non-circular violet collapse fissure, no red-black round core or concentric rings",
+    "identityAndPalette":"pass",
+    "connectedMeshyFriendlySilhouette":"pass",
+    "stockRearGripForegripMuzzleReadability":"pass",
+    "detailReduction":"pass: few broad slabs and no jewelry/ornament cluster",
+    "exactGeometryLock":"limited",
+    "notes":[
+      "All final PNGs contain real alpha=0 transparency and no threshold-128 opaque border pixels.",
+      "The side views consistently use skeletal stock, thick cylindrical barrel, black/slate/silver materials and a non-circular violet fissure receiver.",
+      "Independent image generation preserves the design language and primary proportions but does not provide CAD-identical panel topology; use as concept guidance before 3D reconstruction.",
+      "Front and rear solid silhouettes are close to the vertical canvas limits but remain unclipped."
+    ]
+  }
+}

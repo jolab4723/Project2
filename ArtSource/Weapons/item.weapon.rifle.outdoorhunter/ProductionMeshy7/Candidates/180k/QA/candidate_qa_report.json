@@ -1,0 +1,87 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.outdoorhunter\\ProductionMeshy7\\Candidates\\180k\\item.weapon.rifle.outdoorhunter_180k_candidate.fbx",
+  "item_id": "item.weapon.rifle.outdoorhunter",
+  "body": "OutdoorHunter_Body",
+  "root": "item.weapon.rifle.outdoorhunter_root",
+  "root_children": [
+    "LeftHandGrip",
+    "Muzzle",
+    "OutdoorHunter_Body",
+    "RightHandGrip"
+  ],
+  "topology": {
+    "vertices": 89978,
+    "triangles": 180000,
+    "boundary_edges": 0,
+    "non_manifold_edges_including_boundaries": 0,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1,
+    "largest_component_vertex_ratio": 1.0
+  },
+  "uv": {
+    "layers": 1,
+    "active": "UVMap",
+    "loop_values": 540000,
+    "finite": true,
+    "min": [
+      4.3000000005122274e-05,
+      7.098913192749023e-05
+    ],
+    "max": [
+      0.9999889731407166,
+      0.9962459802627563
+    ]
+  },
+  "bounds": {
+    "min": [
+      -0.048373,
+      -0.094272,
+      -0.350798
+    ],
+    "max": [
+      0.048365,
+      0.183343,
+      0.924905
+    ],
+    "dimensions": [
+      0.096738,
+      0.277615,
+      1.275703
+    ]
+  },
+  "grip_distance_m": 0.326,
+  "muzzle_bore": {
+    "sample_count": 64,
+    "median_depth_m": 0.000648,
+    "max_depth_m": 0.081577,
+    "samples_at_or_over_0_08_m": 1,
+    "forward_plus_z": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "pass": true
+  },
+  "checks": {
+    "one_root_and_body": true,
+    "direct_children": true,
+    "single_connected_component": true,
+    "no_loose_or_degenerate_geometry": true,
+    "triangles_match_target": true,
+    "uv_layer_preserved_and_finite": true,
+    "right_grip_at_origin": true,
+    "grip_distance_0_326m": true,
+    "muzzle_plus_z": true,
+    "muzzle_depth_at_least_0_08m": true,
+    "identity_root_and_body": true
+  },
+  "automated_pass": true,
+  "visual_checks_pending": [
+    "six-axis and two-isometric silhouette/detail comparison",
+    "muzzle opening shape",
+    "scope/stock/grip stability",
+    "PBR UV continuity",
+    "backface diagnostic: green exterior with no magenta leaks"
+  ]
+}

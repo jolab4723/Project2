@@ -1,0 +1,119 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.fieldmod\\ProductionMeshy7\\FBX\\item.weapon.rifle.fieldmod.fbx",
+  "hierarchy": {
+    "root": "item.weapon.rifle.fieldmod_root",
+    "mesh": "FieldMod_Body",
+    "root_children": [
+      "FieldMod_Body",
+      "LeftHandGrip",
+      "Muzzle",
+      "RightHandGrip"
+    ],
+    "markers": {
+      "Muzzle": {
+        "location": [
+          0.0,
+          0.165131,
+          0.860125
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.fieldmod_root"
+      },
+      "LeftHandGrip": {
+        "location": [
+          0.0,
+          0.130685,
+          0.298659
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.fieldmod_root"
+      },
+      "RightHandGrip": {
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.fieldmod_root"
+      }
+    }
+  },
+  "topology": {
+    "vertices": 562285,
+    "triangles": 1124934,
+    "boundary_edges": 2,
+    "non_manifold_edges_including_boundaries": 7,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1,
+    "largest_component_vertex_ratio": 1.0
+  },
+  "topology_note": "The textured source retains 2 boundary edges and 7 non-manifold edges after UV-seam welding; preserved raw geometry was closed/manifold.",
+  "bounds": {
+    "min": [
+      -0.045796,
+      -0.108934,
+      -0.334464
+    ],
+    "max": [
+      0.045796,
+      0.313168,
+      0.860125
+    ],
+    "dimensions": [
+      0.091592,
+      0.422102,
+      1.194589
+    ]
+  },
+  "right_to_left_grip_distance_m": 0.326,
+  "muzzle_bore": {
+    "sample_count": 81,
+    "median_depth_m": 0.09438,
+    "max_depth_m": 0.098241,
+    "samples_at_or_over_0_08_m": 42,
+    "forward_plus_z": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "pass": true,
+    "pass_basis": "At least one bore-center patch ray reaches >=0.08m; raw gate center depth was 0.156554m."
+  },
+  "transforms": {
+    "root_identity": true,
+    "body_identity": true
+  },
+  "texture_directory": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.fieldmod\\ProductionMeshy7\\Textures",
+  "material_slots_before_qa_override": [
+    "M_FieldMod_PBR"
+  ],
+  "checks": {
+    "single_root": true,
+    "one_body_mesh": true,
+    "markers_are_direct_root_children": true,
+    "body_is_direct_root_child": true,
+    "single_connected_component": true,
+    "no_loose_or_degenerate_geometry": true,
+    "triangles_preserved": true,
+    "right_grip_at_origin": true,
+    "grip_distance_matches_contract": true,
+    "muzzle_forward_is_plus_z": true,
+    "muzzle_bore_depth_pass": true,
+    "root_and_body_transforms_identity": true
+  },
+  "overall_pass": true
+}

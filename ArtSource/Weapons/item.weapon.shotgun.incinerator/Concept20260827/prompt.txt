@@ -1,0 +1,24 @@
+Use case: stylized-concept
+Asset type: game weapon orthographic reconstruction reference
+Item: item.weapon.shotgun.incinerator — Unique "Incinerator"
+
+Canonical design
+A bold, heavy, reconstruction-friendly incendiary shotgun. One robust connected silhouette: compact heavy stock and pistol grip, thick rectangular receiver, paired large connected cylindrical fire chambers integrated around a short vertically stacked double muzzle, and broad vented ceramic heat shields wrapping the forward half. Use a few large coherent forms, not ornate fantasy detail. Materials are scorched dark gunmetal, dark graphite, heat-stained brown steel, matte pale/charcoal heat-resistant ceramic, and dark rubber. Controlled deep-orange emission appears only through broad chamber windows and thick vent slits.
+
+Shared render constraints
+Polished stylized 3D game-asset concept render. Strict orthographic projection with zero perspective or foreshortening. One view per PNG, centered and fully unclipped with generous margin. Genuine alpha=0 transparent background; no checkerboard pixels, floor, shadow, pedestal, environment, hands, characters, text, labels, logos, annotations, measurement lines, flames, smoke, sparks, particles, or extra objects. No excessive greebles, fragile pipes, tiny wires, floating tanks, or hair-thin parts.
+
+left.png
+Canonical left-side elevation. Stock on the left, muzzle on the right, weapon horizontal, optical axis perpendicular to the weapon.
+
+right.png
+Opposite physical side of the same unchanged weapon, rotated 180 degrees around its vertical axis. Muzzle on the left, stock on the right. Preserve the canonical length, proportions, paired chambers, ceramic shield shapes and vents, grip, stock, palette, and controlled orange emission.
+
+front.png
+Exact axial muzzle view of the same weapon. The two vertically stacked wide muzzle openings are centered and face the camera head-on; stock and receiver align directly behind them. Preserve the paired chamber layout, pale ceramic side shields, thick scorched metal bands, width, depth, and restrained orange heat.
+
+rear.png
+Exact axial stock/butt view of the same weapon. Buttstock centered and facing the camera head-on; twin muzzle axis pointing directly away behind it. Preserve the compact skeletal stock, thick dark rubber butt pad, scorched frame, grip alignment, paired receiver depth, and partial ceramic/chamber visibility.
+
+Post-generation processing
+Opaque checker-pattern backgrounds produced in secondary views were removed locally into a real RGBA alpha channel without changing the intended weapon design. Visual and alpha-channel QA followed.

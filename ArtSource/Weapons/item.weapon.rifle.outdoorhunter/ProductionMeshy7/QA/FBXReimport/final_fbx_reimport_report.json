@@ -1,0 +1,119 @@
+{
+  "source": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.outdoorhunter\\ProductionMeshy7\\FBX\\item.weapon.rifle.outdoorhunter.fbx",
+  "hierarchy": {
+    "root": "item.weapon.rifle.outdoorhunter_root",
+    "mesh": "OutdoorHunter_Body",
+    "root_children": [
+      "LeftHandGrip",
+      "Muzzle",
+      "OutdoorHunter_Body",
+      "RightHandGrip"
+    ],
+    "markers": {
+      "Muzzle": {
+        "location": [
+          -0.011099,
+          0.080258,
+          0.924906
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.outdoorhunter_root"
+      },
+      "LeftHandGrip": {
+        "location": [
+          0.0,
+          0.049846,
+          0.322167
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.outdoorhunter_root"
+      },
+      "RightHandGrip": {
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "forward_plus_z": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "parent": "item.weapon.rifle.outdoorhunter_root"
+      }
+    }
+  },
+  "topology": {
+    "vertices": 321379,
+    "triangles": 642802,
+    "boundary_edges": 0,
+    "non_manifold_edges_including_boundaries": 0,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1,
+    "largest_component_vertex_ratio": 1.0
+  },
+  "topology_note": "Textured-source seam topology is recorded; preserved raw geometry was closed/manifold.",
+  "bounds": {
+    "min": [
+      -0.048376,
+      -0.094264,
+      -0.350798
+    ],
+    "max": [
+      0.048376,
+      0.183341,
+      0.924906
+    ],
+    "dimensions": [
+      0.096752,
+      0.277605,
+      1.275705
+    ]
+  },
+  "right_to_left_grip_distance_m": 0.326,
+  "muzzle_bore": {
+    "sample_count": 64,
+    "median_depth_m": 0.000648,
+    "max_depth_m": 0.081444,
+    "samples_at_or_over_0_08_m": 1,
+    "forward_plus_z": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "pass": true,
+    "pass_basis": "At least one bore-center patch ray reaches >=0.08m; raw minimum-X muzzle center first collision was 1.001072m."
+  },
+  "transforms": {
+    "root_identity": true,
+    "body_identity": true
+  },
+  "texture_directory": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.rifle.outdoorhunter\\ProductionMeshy7\\Textures",
+  "material_slots_before_qa_override": [
+    "M_OutdoorHunter_PBR"
+  ],
+  "checks": {
+    "single_root": true,
+    "one_body_mesh": true,
+    "markers_are_direct_root_children": true,
+    "body_is_direct_root_child": true,
+    "single_connected_component": true,
+    "no_loose_or_degenerate_geometry": true,
+    "triangles_preserved": true,
+    "right_grip_at_origin": true,
+    "grip_distance_matches_contract": true,
+    "muzzle_forward_is_plus_z": true,
+    "muzzle_bore_depth_pass": true,
+    "root_and_body_transforms_identity": true
+  },
+  "overall_pass": true
+}

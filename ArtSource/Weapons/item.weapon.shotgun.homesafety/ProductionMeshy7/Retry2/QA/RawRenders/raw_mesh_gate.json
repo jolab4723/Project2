@@ -1,0 +1,80 @@
+{
+  "itemId": "item.weapon.shotgun.homesafety",
+  "sourceGlb": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\Original\\item.weapon.shotgun.homesafety_retry2_raw.glb",
+  "meshStats": {
+    "vertex_count": 642782,
+    "triangle_count": 1285688,
+    "edge_count": 1928532,
+    "connected_components": 1,
+    "largest_component_vertices": 642782,
+    "largest_component_vertex_ratio": 1.0,
+    "component_vertex_counts_desc": [
+      642782
+    ],
+    "boundary_edges": 0,
+    "nonmanifold_edges_over_two_faces": 0,
+    "nonmanifold_edges_including_boundary_and_loose": 0,
+    "loose_edges": 0,
+    "degenerate_triangles": 2,
+    "objects": [
+      {
+        "name": "mesh_node",
+        "vertices": 642782,
+        "triangles": 1285688,
+        "edges": 1928532,
+        "boundary_edges": 0,
+        "nonmanifold_edges_over_two_faces": 0,
+        "loose_edges": 0,
+        "degenerate_triangles": 2
+      }
+    ]
+  },
+  "muzzleAxisProbe": {
+    "principal_axis_world": [
+      -0.9984892141568622,
+      3.100195686762953e-05,
+      0.05494805047761459
+    ],
+    "principal_length_raw": 1.9133466287643461,
+    "normalization": "principal length treated as 1.0 m",
+    "muzzle_end_inference": "principal_high",
+    "muzzle_end_slice_vertex_count": 16964,
+    "muzzle_end_slice_rms_radius_normalized": 0.018142365538590922,
+    "opposite_end_slice_rms_radius_normalized": 0.061530904714505306,
+    "muzzle_center_world_raw": [
+      -0.9551591931655696,
+      0.0008180308612275223,
+      0.09685818567721213
+    ],
+    "muzzle_out_axis_world": [
+      -0.9984892141568622,
+      3.100195686762953e-05,
+      0.05494805047761459
+    ],
+    "first_collision_from_outside_normalized_m": 0.10115179306483273,
+    "open_muzzle_depth_normalized_m": 0.07615179306483273,
+    "required_open_muzzle_depth_m": 0.08,
+    "open_muzzle_depth_pass": false
+  },
+  "renders": [
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_pos_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_neg_x.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_pos_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_neg_y.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_pos_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_neg_z.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_iso_pos.png",
+    "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.homesafety\\ProductionMeshy7\\Retry2\\QA\\RawRenders\\raw_iso_neg.png"
+  ],
+  "automaticImmediateRejectReasons": [
+    "open muzzle depth below 0.08 m after 1.0 m normalization"
+  ],
+  "automaticGate": "reject",
+  "visualGate": "reject",
+  "visualReview": "Six axial and two isometric renders reviewed. Overall weapon silhouette is coherent, but the mandatory 0.08 m muzzle-depth gate fails.",
+  "notes": [
+    "Muzzle end is inferred as the narrower principal-axis end and must be visually confirmed.",
+    "The longest principal-axis dimension is normalized to 1.0 m for the 0.08 m muzzle-depth gate.",
+    "Nonmanifold edges over two faces are reported separately from boundary and loose edges."
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "itemId": "item.weapon.shotgun.sulbing",
+  "weaponType": "Shotgun",
+  "sourceTexturedGlb": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.sulbing\\ProductionMeshy7\\Retry2\\Salvage\\Textured\\item.weapon.shotgun.sulbing_retry2_textured.glb",
+  "sourceRailBlend": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.sulbing\\ProductionMeshy7\\Retry2\\Salvage\\Correction_20260827\\Geometry_1535\\item.weapon.shotgun.sulbing_retry2_salvage_geometry.blend",
+  "axisContract": "Blender +Z muzzle, +Y up",
+  "finalLengthMeters": 1.08,
+  "targetTotalTriangles": 300000,
+  "trianglesBeforeDecimate": 1672605,
+  "bodyTargetTriangles": 296904,
+  "bodyFinal": {
+    "vertices": 148379,
+    "edges": 445358,
+    "faces": 296903,
+    "triangles": 296903,
+    "boundary_edges": 7,
+    "non_manifold_edges_including_boundaries": 7,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1
+  },
+  "railTriangles": 3096,
+  "totalFinalTriangles": 299999,
+  "mergeUvSeams": {
+    "before_vertices": 873582,
+    "after_vertices": 836230
+  },
+  "topologyAfterMerge": {
+    "vertices": 836230,
+    "edges": 2508908,
+    "faces": 1672602,
+    "triangles": 1672605,
+    "boundary_edges": 7,
+    "non_manifold_edges_including_boundaries": 7,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1
+  },
+  "topologyAfterDecimate": {
+    "vertices": 148379,
+    "edges": 445358,
+    "faces": 296903,
+    "triangles": 296903,
+    "boundary_edges": 7,
+    "non_manifold_edges_including_boundaries": 7,
+    "loose_edges": 0,
+    "degenerate_faces": 0,
+    "connected_components": 1
+  },
+  "markersFinal": {
+    "RightHandGrip": [
+      -0.0,
+      0.0,
+      -0.0
+    ],
+    "LeftHandGrip": [
+      -0.0,
+      0.06475113332271576,
+      0.3187001943588257
+    ],
+    "Muzzle": [
+      -0.0,
+      0.17599734663963318,
+      0.6820213794708252
+    ]
+  },
+  "rightToLeftGripDistanceMeters": 0.32521150952460987,
+  "glowFaceCount": 67624,
+  "iceTintFaceCount": 364083,
+  "bowlTintFaceCount": 411361,
+  "railMaterialSlots": [
+    {
+      "object": "Sulbing_Rail_Yellow_PositiveY",
+      "material": "M_Sulbing_Rail_Yellow_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.8199999928474426,
+        0.25999999046325684,
+        0.0020000000949949026,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    },
+    {
+      "object": "Sulbing_Rail_Yellow_NegativeY",
+      "material": "M_Sulbing_Rail_Yellow_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.8199999928474426,
+        0.25999999046325684,
+        0.0020000000949949026,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    },
+    {
+      "object": "Sulbing_Rail_Red_PositiveY",
+      "material": "M_Sulbing_Rail_Red_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.6200000047683716,
+        0.006000000052154064,
+        0.003000000026077032,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    },
+    {
+      "object": "Sulbing_Rail_Red_NegativeY",
+      "material": "M_Sulbing_Rail_Red_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.6200000047683716,
+        0.006000000052154064,
+        0.003000000026077032,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    },
+    {
+      "object": "Sulbing_Rail_Mint_PositiveY",
+      "material": "M_Sulbing_Rail_Mint_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.009999999776482582,
+        0.5199999809265137,
+        0.17000000178813934,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    },
+    {
+      "object": "Sulbing_Rail_Mint_NegativeY",
+      "material": "M_Sulbing_Rail_Mint_NonEmissivePBR",
+      "emissionStrength": 0.0,
+      "baseColor": [
+        0.009999999776482582,
+        0.5199999809265137,
+        0.17000000178813934,
+        1.0
+      ],
+      "midpointWidthMetersRaw": 0.012
+    }
+  ],
+  "railGate": {
+    "objects": 6,
+    "location": "muzzle-side upper transition panel between bowl and receiver/barrel",
+    "xRangeRawMeters": [
+      -0.405,
+      -0.315
+    ],
+    "midpointWidthMetersRaw": 0.012,
+    "endTaperFraction": 0.35,
+    "gapMetersRaw": 0.007,
+    "outwardHeightMetersRaw": 0.0025,
+    "curveArchMetersRaw": 0.012,
+    "colorsPerSide": [
+      "Red",
+      "Yellow",
+      "Mint"
+    ],
+    "meshyBaseColorAppliedToRails": false,
+    "allNonEmissive": true,
+    "closeViews": [
+      "QA_PBR/bowl_x_minus_close.png",
+      "QA_PBR/bowl_x_plus_close.png"
+    ]
+  },
+  "outputs": {
+    "blend": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.sulbing\\ProductionMeshy7\\Retry2\\Salvage\\Correction_20260827\\Candidates\\300k_v2_1535\\item.weapon.shotgun.sulbing.blend",
+    "fbx": "C:\\Users\\user\\Desktop\\Project2_test\\Project2\\ArtSource\\Weapons\\item.weapon.shotgun.sulbing\\ProductionMeshy7\\Retry2\\Salvage\\Correction_20260827\\Candidates\\300k_v2_1535\\item.weapon.shotgun.sulbing.fbx"
+  }
+}

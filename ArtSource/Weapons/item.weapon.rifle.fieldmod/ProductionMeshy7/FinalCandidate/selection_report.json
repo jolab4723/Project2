@@ -1,0 +1,86 @@
+{
+  "item_id": "item.weapon.rifle.fieldmod",
+  "selected_candidate": "180k",
+  "selected_triangles": 180000,
+  "selection_reason": "The 180k stage is the lightest allowed candidate and remained visually indistinguishable at the requested inspection scale while preserving muzzle, grip, UV and hierarchy checks.",
+  "source_high_density_preserved": {
+    "blend": "../Blender/item.weapon.rifle.fieldmod.blend",
+    "fbx": "../FBX/item.weapon.rifle.fieldmod.fbx",
+    "triangles": 1124934,
+    "note": "Preserved without overwrite. Its reflected axis conversion left face winding inverted; all promoted candidates correct winding once before decimation."
+  },
+  "candidate_comparison": [
+    {
+      "stage": "300k",
+      "triangles": 300000,
+      "vertices": 149818,
+      "connected_components": 1,
+      "boundary_edges": 2,
+      "non_manifold_edges_including_boundaries": 7,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_median_m": 0.094349,
+      "muzzle_depth_max_m": 0.098247,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    },
+    {
+      "stage": "220k",
+      "triangles": 220000,
+      "vertices": 109818,
+      "connected_components": 1,
+      "boundary_edges": 2,
+      "non_manifold_edges_including_boundaries": 7,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_median_m": 0.094314,
+      "muzzle_depth_max_m": 0.098243,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    },
+    {
+      "stage": "180k",
+      "triangles": 180000,
+      "vertices": 89818,
+      "connected_components": 1,
+      "boundary_edges": 2,
+      "non_manifold_edges_including_boundaries": 7,
+      "loose_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "uv_finite": true,
+      "grip_distance_m": 0.326,
+      "muzzle_depth_median_m": 0.094303,
+      "muzzle_depth_max_m": 0.09824,
+      "automated_result": "pass",
+      "visual_result": "pass"
+    }
+  ],
+  "visual_qa": {
+    "views_per_stage": "six orthographic axes plus two isometric views",
+    "pbr_uv_comparison": "pass; no texture jumps, visible tears or collapsed UV regions",
+    "silhouette": "pass; stock, pistol grip, magazine, receiver, handguard, optic, barrel and muzzle device remain stable at 180k",
+    "muzzle": "pass; opening and recessed surfaces remain legible",
+    "backface": "pass after one face-winding correction; green exterior in all eight views, magenta limited to legitimately visible interior/rear-facing surfaces",
+    "qa_directory": "../Candidates/180k/QA"
+  },
+  "promoted_files": {
+    "blend": {
+      "path": "item.weapon.rifle.fieldmod.blend",
+      "bytes": 8342661,
+      "sha256": "3D4D4D6128CBF4BDDDDDD0E9F17402DFFE9FAC9F82BECDC7A8C9F0EDC9FA031D"
+    },
+    "fbx": {
+      "path": "item.weapon.rifle.fieldmod.fbx",
+      "bytes": 6498060,
+      "sha256": "F9879262FAC661B011C8348E8F33EA1F3DFCA0961F0CCDE1E4C3E846B4DB7D53"
+    }
+  },
+  "unity_or_mounting_verification": "not performed"
+}

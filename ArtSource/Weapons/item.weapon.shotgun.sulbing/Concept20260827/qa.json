@@ -1,0 +1,65 @@
+{
+  "itemId": "item.weapon.shotgun.sulbing",
+  "date": "2026-08-27",
+  "generationMode": "built-in image generation",
+  "status": "pass_with_noted_limits",
+  "views": {
+    "left.png": {
+      "mode": "RGBA",
+      "size": [1774, 887],
+      "alphaExtrema": [0, 255],
+      "alphaZeroPercent": 71.46,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [28, 122, 24, 172],
+      "view": "orthographic left, stock-left/muzzle-right",
+      "unclipped": true
+    },
+    "right.png": {
+      "mode": "RGBA",
+      "size": [1973, 797],
+      "alphaExtrema": [0, 255],
+      "alphaZeroPercent": 66.78,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [16, 82, 31, 79],
+      "view": "orthographic right, muzzle-left/stock-right",
+      "unclipped": true
+    },
+    "front.png": {
+      "mode": "RGBA",
+      "size": [929, 1693],
+      "alphaExtrema": [0, 255],
+      "alphaZeroPercent": 63.36,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [161, 34, 161, 65],
+      "view": "orthographic front/muzzle",
+      "unclipped": true
+    },
+    "rear.png": {
+      "mode": "RGBA",
+      "size": [1024, 1536],
+      "alphaExtrema": [0, 254],
+      "alphaZeroPercent": 67.56,
+      "cornerAlpha": [0, 0, 0, 0],
+      "opaqueSubjectPaddingLTRB": [246, 12, 246, 18],
+      "view": "orthographic rear/stock",
+      "unclipped": true
+    }
+  },
+  "crossViewQA": {
+    "samePrimarySilhouette": true,
+    "sameShortThickShotgunStructure": true,
+    "sameRoundedBingsuBowlReceiver": true,
+    "sameThreeTierSnowflakeIceMound": true,
+    "sameWhiteIceBlueSilverNavyPalette": true,
+    "sameSyrupBandOnSideViews": true,
+    "oneConnectedMeshyFriendlyObject": true,
+    "noCharacterHandsTextFloorOrShadow": true,
+    "actualTransparentBackground": true
+  },
+  "limitations": [
+    "The rear view was regenerated rather than alpha-extracted because repeated extractions baked a checkerboard; it preserves the large bowl, tiered ice, stock, and palette but has minor small-detail drift from the side anchors.",
+    "The rear output tops out at alpha 254 rather than 255 on solid pixels; its exterior background is alpha 0.",
+    "The right elevation has narrower horizontal padding than the left, although the opaque subject remains inside the canvas.",
+    "The views are AI-generated modeling references, so small fastener-level asymmetries should not be treated as authoritative geometry."
+  ]
+}
