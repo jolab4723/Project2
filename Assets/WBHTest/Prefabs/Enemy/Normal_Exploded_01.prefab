@@ -506,8 +506,6 @@ GameObject:
   - component: {fileID: 7573034669775987292}
   - component: {fileID: 3051388428331540509}
   - component: {fileID: 7012215298101022493}
-  - component: {fileID: 2649417925550240669}
-  - component: {fileID: 823656425593665200}
   - component: {fileID: 4089908584023179054}
   - component: {fileID: 6928898347433218325}
   - component: {fileID: 2401937654382776921}
@@ -526,7 +524,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8514186907447221161
 Transform:
   m_ObjectHideFlags: 0
@@ -666,34 +664,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
---- !u!114 &2649417925550240669
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3741057144801147515}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
-  poolManager: {fileID: 0}
---- !u!114 &823656425593665200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3741057144801147515}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27e17d330003664b8f6ad78081eaf2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
-  poolManager: {fileID: 0}
-  effectSpawner: {fileID: 2649417925550240669}
-  effectData: {fileID: 0}
+  bossMissileEffect: {fileID: 0}
 --- !u!114 &4089908584023179054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -726,6 +697,7 @@ MonoBehaviour:
     candidateCount: 5
     maxFleeAngle: 70
     initialDirectionWeight: 5
+    despawnEffect: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -747,7 +719,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 6241930933595273619}
-  effectSpawner: {fileID: 2649417925550240669}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -792,6 +763,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 2457101030512705263}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 1745680497723154411}
   hpBarSlider: {fileID: 6074345392006611950}
   hpBarVisibleTime: 2
@@ -810,7 +782,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b7e15b96c6b62842981894d8f4cf160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
-  effectSpawner: {fileID: 2649417925550240669}
   circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
 --- !u!114 &3302628651622257774
@@ -860,7 +831,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 6051598319964563576}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295

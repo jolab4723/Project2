@@ -14,7 +14,11 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private Animator animator;
     private WBH_PlayerIndicator indicator;
     private WBH_PlayerStatus status;
+    private T_PlayerCombat combat;
+    private WBH_PlayerEffect playerEffect;
     private WBH_PlayerStatusEffectController statusEffectController;
+    private WBH_EffectSpawner effectSpawner;
+    private WBH_ProjectileSpawner projectileSpawner;
     private Vector3 dodgeDir;
     public int reviveCount = 3;
 
@@ -32,10 +36,15 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         mainCamera = Camera.main;
         animator = GetComponent<Animator>();
+        combat = GetComponent<T_PlayerCombat>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         indicator = GetComponentInChildren<WBH_PlayerIndicator>();
         status = GetComponent<WBH_PlayerStatus>();
+        playerEffect = GetComponent<WBH_PlayerEffect>();
         statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
+
+        effectSpawner = FindFirstObjectByType<WBH_EffectSpawner>();
+        projectileSpawner = FindFirstObjectByType<WBH_ProjectileSpawner>();
 
         agent.autoBraking = false;
         agent.updateRotation = false;
@@ -45,6 +54,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private void Start()
     {
         status.Initialize(this);
+        combat.Initialize(projectileSpawner);
+        statusEffectController.Initialize(effectSpawner);
+        playerEffect.Initialize(effectSpawner);
     }
 
     private void OnEnable()

@@ -12,6 +12,7 @@ public class KY_RebindManager : MonoBehaviour
     private GameInputActions inputActions;
     private InputActionRebindingExtensions.RebindingOperation rebindOperation;
 
+
     void Awake()
     {
         Instance = this;

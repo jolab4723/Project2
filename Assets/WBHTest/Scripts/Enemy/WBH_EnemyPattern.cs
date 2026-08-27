@@ -4,8 +4,6 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemyCombat))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
 [RequireComponent(typeof(WBH_EnemyAnimation))]
-[RequireComponent(typeof(WBH_EffectSpawner))]
-[RequireComponent(typeof(WBH_ProjectileSpawner))]
 public class WBH_EnemyPattern : MonoBehaviour
 {
     [System.Serializable]
@@ -108,11 +106,14 @@ public class WBH_EnemyPattern : MonoBehaviour
         view = GetComponent<WBH_EnemyView>();
     }
 
-    public virtual void Initialize(WBH_EnemyController controller)
+    public virtual void Initialize(WBH_EnemyController controller, WBH_EffectSpawner effectSpawner, WBH_ProjectileSpawner projectileSpawner)
     {
         CleanCurrentPattern();
 
         this.controller = controller;
+        this.effectSpawner = effectSpawner;
+        this.projectileSpawner= projectileSpawner;
+
         CreatePattern();
     }
 

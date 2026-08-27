@@ -30,6 +30,11 @@ public class SkillPopupController : MonoBehaviour
 
     private int selectedSkillIndex = 0;
 
+    /// <summary>이 팝업이 지금 열려있는지(활성 상태인지). 열려있는 동안은 스킬 사용을 막는 데 쓴다
+    /// (FighterSkillController/GunnerSkillController.CanUseSkill에서 참조) - 팝업 하나만 쓰는 구조라
+    /// static으로 간단히 노출한다.</summary>
+    public static bool IsOpen { get; private set; }
+
     private ISkillController SkillController => ActiveSkillControllerLocator.Find();
 
     private void Awake()
@@ -56,7 +61,13 @@ public class SkillPopupController : MonoBehaviour
         }
     }
 
-    private void OnEnable() => RefreshAll();
+    private void OnEnable()
+    {
+        IsOpen = true;
+        RefreshAll();
+    }
+
+    private void OnDisable() => IsOpen = false;
 
     private void SelectSkill(int index)
     {

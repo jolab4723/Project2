@@ -107,7 +107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64ea23032d6732f4f9790f4ded5a348d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectPoolManager
-  effectDatas:
+  preloadEffectDatas:
   - {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
   - {fileID: 11400000, guid: 0749a5a78135aa34db0f417ddb3c8a92, type: 2}
   - {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
@@ -187,6 +187,8 @@ MonoBehaviour:
   - enemies: []
   - enemies: []
   eliteView: {fileID: 0}
+  effectSpawner: {fileID: 8756550498913179854}
+  projectileSpawner: {fileID: 5045398631486137927}
 --- !u!1 &7523798715022432636
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,7 +258,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
   poolManager: {fileID: 7943419587965501061}
   effectSpawner: {fileID: 8756550498913179854}
-  effectData: {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
 --- !u!1 &8782526777149981499
 GameObject:
   m_ObjectHideFlags: 0

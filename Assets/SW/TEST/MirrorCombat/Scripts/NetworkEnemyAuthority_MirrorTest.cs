@@ -103,6 +103,25 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private bool originalStatusEffectsReady;
     private bool localEffectSpawnerInitialized;
 
+    private WBH_EffectSpawner sharedEffectSpawner;
+    private WBH_ProjectileSpawner sharedProjectileSpawner;
+
+    private bool ResolveSharedSpawners()
+    {
+        sharedEffectSpawner ??=FindFirstObjectByType<WBH_EffectSpawner>(FindObjectsInactive.Exclude);
+
+        sharedProjectileSpawner ??=FindFirstObjectByType<WBH_ProjectileSpawner>(FindObjectsInactive.Exclude);
+
+        if (sharedEffectSpawner == null)
+            return false;
+
+        GetComponent<WBH_EnemyStatusEffectController>()?.Initialize(sharedEffectSpawner);
+
+        indicatorSpawner?.Initialize(sharedEffectSpawner);
+
+        return true;
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
     {
@@ -168,8 +187,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             return;
         }
 
-        controller.Initialize(enemyInfo, null);
-        InitializeLocalEffectSpawner();
+        bool effectReady = ResolveSharedSpawners(); // @!@
+        controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner); // @!@
+        //InitializeLocalEffectSpawner(); @!@
         originalStatusEffectsReady = localEffectSpawnerInitialized;
 
         status.OnHpChanged += HandleHealthChanged;
@@ -195,7 +215,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     {
         base.OnStartClient();
         ResolveReferences();
-        InitializeLocalEffectSpawner();
+        //InitializeLocalEffectSpawner(); @!@
+        ResolveSharedSpawners(); // @!@
         if (isServer)
             return;
 
@@ -875,7 +896,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             animator.CrossFadeInFixedTime(stateName, 0.05f);
     }
 
-    private void InitializeLocalEffectSpawner()
+    private void InitializeLocalEffectSpawner() // @!@ effectSpawner 가 인스펙터에서 effectPool 을 참조하게끔 변경했기에 불필요할 것으로 생각됩니다. 삭제 검토 요청드립니다.
     {
         if (localEffectSpawnerInitialized || originalEffectSpawner == null)
             return;
@@ -885,7 +906,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         if (effectPool == null)
             return;
 
-        originalEffectSpawner.Initialize(effectPool);
+        //originalEffectSpawner.Initialize(effectPool); @!@
         localEffectSpawnerInitialized = true;
     }
 
@@ -913,4 +934,6 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             ? identity.netId
             : 0;
     }
+
+
 }

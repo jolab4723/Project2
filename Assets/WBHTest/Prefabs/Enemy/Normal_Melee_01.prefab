@@ -1029,8 +1029,6 @@ GameObject:
   - component: {fileID: 5827602817927617593}
   - component: {fileID: -1532668858091577115}
   - component: {fileID: -971529780127043745}
-  - component: {fileID: -2777707044376071587}
-  - component: {fileID: -2997808910522100489}
   - component: {fileID: -4878034140046804760}
   - component: {fileID: -5431423992665652879}
   - component: {fileID: 1932562817314288795}
@@ -1151,34 +1149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
---- !u!114 &-2777707044376071587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5577328161507397385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
-  poolManager: {fileID: 0}
---- !u!114 &-2997808910522100489
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5577328161507397385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27e17d330003664b8f6ad78081eaf2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
-  poolManager: {fileID: 0}
-  effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
+  bossMissileEffect: {fileID: 0}
 --- !u!114 &-4878034140046804760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1305,7 +1276,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 3207281568816389647}
-  effectSpawner: {fileID: -2777707044376071587}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -1420,7 +1390,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 5760751288365932448}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1582,7 +1552,7 @@ MonoBehaviour:
   targetFXCornerLength: 0.25
   targetFXFrameMinOpacity: 0
   targetFXGroundMinAltitude: -1000
-  targetFXTexture: {fileID: 0}
+  targetFXTexture: {fileID: 2800000, guid: 1de3c566a6c8c405b9f6f453137273ec, type: 3}
   targetFXColor: {r: 1, g: 1, b: 1, a: 1}
   targetFXCenter: {fileID: 0}
   targetFXRotationSpeed: 50
@@ -1666,7 +1636,7 @@ MonoBehaviour:
   seeThroughTextureUVSpace: 0
   seeThroughTextureScale: 1
   seeThroughChildrenSortingMode: 0
-  rmsCount: 8
+  rmsCount: 1
   hitFxInitialIntensity: 0
   hitFxMode: 0
   hitFXTriggerMode: 0

@@ -107,6 +107,10 @@ namespace DataSystem
             asset.skillName = row.skillName;
             asset.damageMultiplier = row.damageMultiplier;
             asset.cooldownSeconds = row.cooldownSeconds;
+            asset.manaCost = row.manaCost;
+            asset.evolution1ManaCost = row.evolution1ManaCost;
+            asset.evolution2ManaCost = row.evolution2ManaCost;
+            asset.evolution3ManaCost = row.evolution3ManaCost;
 
             switch (asset.shapeType)
             {
