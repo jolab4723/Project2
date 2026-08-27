@@ -347,17 +347,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0901a95b77b61144971c4558b8097e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryGrid
---- !u!114 &899199609 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2493027214598642673, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
-  m_PrefabInstance: {fileID: 3655277239142877994}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &1075076833
 GameObject:
   m_ObjectHideFlags: 0
@@ -666,11 +655,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!1 &1893303990 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8231867078214498734, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
-  m_PrefabInstance: {fileID: 3655277239142877994}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &2124997962 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1067034471444788017, guid: 4b52ce7308bd36345bf89de1b2e875aa, type: 3}
@@ -704,11 +688,11 @@ PrefabInstance:
     - target: {fileID: 1439283079035885446, guid: fd897fadff361e041ad4b786cb2073de, type: 3}
       propertyPath: rebindText
       value: 
-      objectReference: {fileID: 899199609}
+      objectReference: {fileID: 0}
     - target: {fileID: 1439283079035885446, guid: fd897fadff361e041ad4b786cb2073de, type: 3}
       propertyPath: rebindOverlay
       value: 
-      objectReference: {fileID: 1893303990}
+      objectReference: {fileID: 0}
     - target: {fileID: 7233256827911719565, guid: fd897fadff361e041ad4b786cb2073de, type: 3}
       propertyPath: m_Name
       value: SettingsManager
@@ -1124,7 +1108,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2514707019182875549, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000022233859
+      value: 0.00008991368
       objectReference: {fileID: 0}
     - target: {fileID: 2781217662282863153, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1196,6 +1180,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5277699329281127270, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5277699329281127270, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMin.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5349086256751169567, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
