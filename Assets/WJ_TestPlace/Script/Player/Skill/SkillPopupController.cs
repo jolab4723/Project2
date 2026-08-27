@@ -65,9 +65,21 @@ public class SkillPopupController : MonoBehaviour
     {
         IsOpen = true;
         RefreshAll();
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += OnLanguageChanged;
     }
 
-    private void OnDisable() => IsOpen = false;
+    private void OnDisable()
+    {
+        IsOpen = false;
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    // 팝업이 열려있는 동안 설정에서 언어를 바꾸면 다음에 새로 열 때가 아니라 바로 반영되게 한다.
+    private void OnLanguageChanged(GameLanguage _) => RefreshAll();
 
     private void SelectSkill(int index)
     {
