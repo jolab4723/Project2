@@ -70,10 +70,14 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 
         instance = this as T;
 
-        if (transform.parent != null && transform.root != null)
-            DontDestroyOnLoad(transform.root.gameObject);
-        else
-            DontDestroyOnLoad(gameObject);
+        // 예전엔 transform.root.gameObject(부모 오브젝트 전체)를 DontDestroyOnLoad했는데, 그러면
+        // 같은 부모 밑에 있는 씬 로컬 형제 오브젝트(예: EventSystem, StageManager처럼 매번 새 씬에서
+        // 새로 시작해야 하는 것들)까지 통째로 다음 씬으로 끌려가서, 씬 전환마다 그 형제들이 새 씬의
+        // 사본과 중복으로 쌓이는 문제가 있었다(Docs/Architecture/Structure_Cleanup_TODO.md 4번 항목).
+        // 부모를 통째로 살리는 대신 나 자신을 부모에서 분리해 독립 루트로 만든 뒤 나만 살린다 - 이러면
+        // 형제 오브젝트는 평범한 씬 전환(Single 모드)에 맞춰 정상적으로 정리·재생성된다.
+        transform.SetParent(null, true);
+        DontDestroyOnLoad(gameObject);
     }
 
     protected virtual void OnDestroy()
