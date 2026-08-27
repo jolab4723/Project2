@@ -20,6 +20,11 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    [Header("Dialog")]
+    [SerializeField] private KY_ConfirmDialog confirmDialog;
+    [SerializeField] private KY_AlertDialog alertDialog;
+    [SerializeField] private KY_ToastDialog toastDialog;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -140,5 +145,20 @@ public class KY_PopupManager : MonoBehaviour
         KY_QuestDetailPopup detailPopup = popupDict[PopupType.QuestDetail] as KY_QuestDetailPopup;
         detailPopup.SetData(data);
         Show(PopupType.QuestDetail);
+    }
+
+    public void ShowConfirm(KY_DialogData data)
+    {
+        confirmDialog.Show(data);
+    }
+
+    public void ShowAlert(KY_AlertData data)
+    {
+        alertDialog.Show(data);
+    }
+
+    public void ShowToast(string message)
+    {
+        toastDialog.Show(message);
     }
 }
