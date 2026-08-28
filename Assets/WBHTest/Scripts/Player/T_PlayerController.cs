@@ -19,18 +19,23 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_PlayerStatusEffectController statusEffectController;
     private WBH_EffectSpawner effectSpawner;
     private WBH_ProjectileSpawner projectileSpawner;
+
     private Vector3 dodgeDir;
-    public int reviveCount = 3;
     private Coroutine invincibilityRoutine;
+
+    public int reviveCount = 3;
+    private bool canControl = true;
+    private bool isStatusEffectControlBlocked;
 
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
-    public bool IsControlEnabled { get; private set; } = true;
     public bool IsInvincible { get; private set; } = false; // 무적여부
 
     public WBH_ICombatStatus Status => status;
     public bool canDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked;
+
 
 
     private void Awake()
@@ -316,14 +321,24 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 현재 조작가능한 상태인지 판단
     public void SetControlEnable(bool enabled)
     {
+        canControl = enabled;
+        RefreshControlState();
+    }
+    // 상태이상이 조작을 막고 있는지 판단
+    public void SetStatusEffectControlBlock(bool block)
+    {
+        isStatusEffectControlBlocked = block;
+        RefreshControlState();
+    }
+    // 조작 상태 갱신
+    private void RefreshControlState()
+    {
         if (!CanUseAgent)
             return;
 
-        IsControlEnabled = enabled;
-
-        if (!enabled)
+        if (!IsControlEnabled)
         {
-            if(!stateMachine.IsAnyState(PlayerState.Dead, PlayerState.Revive))
+            if (!stateMachine.IsAnyState(PlayerState.Dead, PlayerState.Revive))
             {
                 stateMachine.ChangeState(PlayerState.Idle);
             }

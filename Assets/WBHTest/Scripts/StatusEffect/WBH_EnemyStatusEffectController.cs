@@ -19,6 +19,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     [SerializeField] private WBH_EffectData stunEffect;
 
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
+    private readonly HashSet<WBH_StatusEffectType> controlBlockingEffects = new();
 
     private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyStatus status;
@@ -38,6 +39,9 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     public void Initialize(WBH_EffectSpawner effectSpawner)
     {
         this.effectSpawner = effectSpawner;
+
+        controlBlockingEffects.Clear();
+        movement.SetStatusEffectControlBlock(false);
     }
 
     // 몬스터 등급별 예외처리
@@ -57,7 +61,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     // 상태이상 생성 요청
     protected override WBH_IStatusEffect CreateEffect(WBH_StatusEffectData data)
     {
-        //return WBH_StatusEffectFactory.Create(data, this); // !@
         return WBH_StatusEffectFactory.Create(this, data); // !@
     }
 
@@ -84,11 +87,15 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
-    public override void SetControlEnable(bool enabled)
+    public override void SetStatusControlBlock(WBH_StatusEffectType source, bool block)
     {
-        movement.SetControlEnable(enabled);
+        if (block)
+            controlBlockingEffects.Add(source);
+        else 
+            controlBlockingEffects.Remove(source);
 
-        //animator.enabled = enabled; // 애니메이션 사용을 막고 싶을 경우 추가
+        movement.SetStatusEffectControlBlock(controlBlockingEffects.Count > 0);
+        //animator.enabled = enabled; // 애니메이션 사용을 막고 싶을 경우 위의 조건으로 if문 작성하여 추가
     }
 
     // 도트데미지 (화상)
@@ -120,8 +127,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     }
     private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
     {
-        SetControlEnable(false);
-
         Vector3 start = transform.position;
         Vector3 end = start + direction.normalized * force;
 
@@ -136,7 +141,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
             yield return null;
         }
 
-        SetControlEnable(true);
         knockbackRoutine = null;
     }
 
@@ -157,8 +161,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     }
     private IEnumerator AirborneRoutine(float height, float duration)
     {
-        SetControlEnable(false);
-
         Vector3 start = transform.position;
 
         float time = 0f;
@@ -178,7 +180,6 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 
         transform.position = start;
 
-        SetControlEnable(true);
         airborneRoutine = null;
     }
 

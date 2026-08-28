@@ -6,6 +6,7 @@ public class WBH_KnockbackEffect : WBH_StatusEffectBase
 
     public override void Apply()
     {
+        controller.SetStatusControlBlock(EffectType, true);
         controller.ApplyKnockback(data.Direction, data.Force, data.Duration);
 
         controller.PlayStatusEffect(EffectType);
@@ -14,6 +15,7 @@ public class WBH_KnockbackEffect : WBH_StatusEffectBase
 
     public override void Remove()
     {
+        controller.SetStatusControlBlock(EffectType, false);
         controller.StopStatusEffect(EffectType);
     }
 }
