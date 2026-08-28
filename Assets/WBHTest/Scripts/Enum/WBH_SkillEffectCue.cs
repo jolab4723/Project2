@@ -11,8 +11,7 @@ public enum SkillEffectPart
 public enum WBH_PlayerEffectCue
 {
     None = 0,
-
-    FighterBasicAtk = 1000,
+    F_normal0_evo0_etc0 = 1000,  // 평타
     F_skill1_evo0_etc0 = 1100,  // 1번스킬 기본
     F_skill1_evo1_etc0 = 1110,  // 1번스킬 1변형
     F_skill1_evo2_etc0 = 1120,  // 1번스킬 2변형
