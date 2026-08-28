@@ -4,25 +4,6 @@ using UnityEngine;
 
 public class WBH_PlayerEffect : MonoBehaviour
 {
-    public enum WBH_PlayerEffectCue
-    {
-        None = 0,
-
-        FighterBasicAtk = 100,
-        FighterHalfSlash = 101,
-        FighterLineSlamWeapon = 102,
-        FighterLineSlamGround = 103,
-        FighterChargeSlash = 104,
-        FighterUltimate = 199,
-
-
-        GunnerShotgunAtk = 200,
-        GunnerSkill1 = 201,
-        GunnerSkill2 = 202,
-        GunnerSkill3 = 203,
-        GunnerUltimate = 299,
-    }
-
     [Serializable]
     private class EffectBinding
     {
@@ -68,41 +49,29 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
     }
 
-    // 애니메이션 이벤트에서 이펙트 재생을 위한 형변환
-    public void PlayEffect(int cueValue)
+    // 스케일을 적용해 이펙트 재생
+    public void PlayEffect( WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
     {
-        PlayEffect((WBH_PlayerEffectCue)cueValue);
-    }
-
-    // 이펙트 재생 시, 오류처리
-    public void PlayEffect(WBH_PlayerEffectCue cue)
-    {
-        if(spawner == null)
+        if (spawner == null)
         {
-            Log.Error($"{name} 의 이펙트스포너가 등록되지 않았습니다.");
-            return;
-        }
-        if(!bindingMap.TryGetValue(cue, out EffectBinding binding))
-        {
-            Log.Warning($"{name} dp {cue} 이펙트가 등록되지 않았습니다.");
-            return;
-        }
-        if(binding.data == null)
-        {
-            Log.Warning($"{cue} 에 이펙트데이터가 없습니다.");
-            return;
-        }
-        if(binding.anchor == null)
-        {
-            Log.Warning($"{cue} 에 anchor(이펙트 재생 위치)가 지정되지 않았습니다.");
+            Log.Error($"{name}의 이펙트 스포너가 등록되지 않았습니다.");
             return;
         }
 
-        PlayBinding(binding);
+        if (!bindingMap.TryGetValue(cue, out EffectBinding binding))
+        {
+            Log.Warning($"{name}에 {cue} 이펙트가 등록되지 않았습니다.");
+            return;
+        }
+
+        if (binding.data == null || binding.anchor == null)
+            return;
+
+        PlayBinding(binding, scaleMultiplier);
     }
 
     // 실질적인 이펙트 재생
-    private void PlayBinding(EffectBinding binding)
+    private void PlayBinding(EffectBinding binding, Vector3 scaleMultiplier)
     {
         switch (binding.data.attachType)
         {
@@ -111,13 +80,13 @@ public class WBH_PlayerEffect : MonoBehaviour
                     Vector3 position = binding.anchor.TransformPoint(binding.data.localPos);
                     Quaternion rotation = binding.anchor.rotation * Quaternion.Euler(binding.data.localRot);
 
-                    spawner.SpawnEffect(binding.data, position, rotation);
+                    spawner.SpawnEffect(binding.data, position, rotation, scaleMultiplier);
                     
                     break;
                 }
             case EffectAttachType.AttachOnce:
             case EffectAttachType.Follow:
-                spawner.SpawnEffect(binding.data, binding.anchor);
+                spawner.SpawnEffect(binding.data, binding.anchor,scaleMultiplier);
                 break;
         }
     }
