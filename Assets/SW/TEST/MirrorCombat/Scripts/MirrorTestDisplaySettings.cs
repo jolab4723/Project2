@@ -1,4 +1,5 @@
 using System.Collections;
+using Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -48,7 +49,7 @@ public sealed class MirrorTestDisplaySettings : MonoBehaviour
 #if UNITY_EDITOR
         return;
 #else
-        var settingsManager = KY_SettingsManager.Instance;
+        var settingsManager = SettingManager.Instance;
         if (settingsManager == null)
         {
             var current = Screen.currentResolution;
@@ -84,7 +85,7 @@ public sealed class MirrorTestDisplaySettings : MonoBehaviour
 
     private void ApplyMappedQuality(bool force)
     {
-        var settingsManager = KY_SettingsManager.Instance;
+        var settingsManager = SettingManager.Instance;
         if (settingsManager == null)
             return;
 

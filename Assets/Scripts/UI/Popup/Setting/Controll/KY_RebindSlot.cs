@@ -10,15 +10,17 @@ public class KY_RebindSlot : MonoBehaviour
     public Button rebindButton;
 
     private InputAction action;
+    private KY_SettingsPopup owner;
 
     void Awake()
     {
         rebindButton.onClick.AddListener(OnClickRebind);
     }
 
-    public void Init(InputAction inputAction)
+    public void Init(InputAction inputAction, KY_SettingsPopup owningPopup)
     {
         action = inputAction;
+        owner = owningPopup;
         RefreshKeyText();
     }
 
@@ -29,6 +31,6 @@ public class KY_RebindSlot : MonoBehaviour
 
     void OnClickRebind()
     {
-        KY_RebindManager.Instance.StartRebind(action, this);
+        owner.StartRebind(action, this);
     }
 }
