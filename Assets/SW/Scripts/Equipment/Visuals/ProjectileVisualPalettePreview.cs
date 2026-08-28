@@ -87,10 +87,24 @@ public sealed class ProjectileVisualPalettePreview : MonoBehaviour
                 emissionScale = 0.28f;
                 alpha = 0.24f;
                 return true;
+            case "GunnerProjectileShell":
+                baseScale = 0.06f;
+                emissionScale = 0.16f;
+                return true;
             case "GunnerProjectileGlass":
                 baseScale = 0.04f;
                 emissionScale = 0.12f;
                 alpha = 0.13f;
+                return true;
+            case "GunnerProjectileFlameCore":
+                baseScale = 0.35f;
+                emissionScale = 1.4f;
+                alpha = 0.92f;
+                return true;
+            case "GunnerProjectileFlameOuter":
+                baseScale = 0.18f;
+                emissionScale = 0.85f;
+                alpha = 0.65f;
                 return true;
             default:
                 return false;
