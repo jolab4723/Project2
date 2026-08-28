@@ -1,3 +1,4 @@
+using NUnit.Framework.Internal;
 using UnityEngine;
 
 public class WBH_EffectSpawner : MonoBehaviour
@@ -54,6 +55,53 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetParent(null);
 
         effect.transform.SetPositionAndRotation(position, rotation);
+        effect.Play(data);
+    }
+
+    // 월드 이펙트 스케일 조정용 오버로딩
+    public void SpawnEffect(WBH_EffectData data, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
+    {
+        if (!ValidateRequest(data))
+            return;
+
+        WBH_Effect effect = poolManager.GetEffect(data);
+
+        if (effect == null)
+            return;
+
+        Transform effectTransform = effect.transform;
+
+        effect.transform.SetParent(null);
+
+        effect.transform.SetPositionAndRotation(position, rotation);
+        effectTransform.localScale = Vector3.Scale(effectTransform.localScale, scaleMultiplier);
+
+        effect.Play(data);
+    }
+
+    // 부착형 이펙트 스케일 조정을 위한 오버로딩
+    public void SpawnEffect(WBH_EffectData data, Transform attachTarget, Vector3 scaleMultiplier)
+    {
+        if (!ValidateRequest(data))
+            return;
+        
+        if (attachTarget == null)
+            return;
+
+        WBH_Effect effect = poolManager.GetEffect(data);
+
+        if (effect == null)
+            return;
+
+        SetAttachedTransform(effect.transform, data, attachTarget);
+
+        effect.transform.localScale = Vector3.Scale(effect.transform.localScale, scaleMultiplier);
+
+        if(data.attachType == EffectAttachType.AttachOnce)
+        {
+            effect.transform.SetParent(null, true);
+        }
+
         effect.Play(data);
     }
 

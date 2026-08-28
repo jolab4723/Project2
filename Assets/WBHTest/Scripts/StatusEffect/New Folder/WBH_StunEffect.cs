@@ -6,7 +6,7 @@ public class WBH_StunEffect : WBH_StatusEffectBase
 
     public override void Apply()
     {
-        controller.SetControlEnable(false);
+        controller.SetStatusControlBlock(EffectType, true);
 
         controller.PlayStatusEffect(EffectType);
         controller.PlayStatusSound(EffectType);
@@ -14,7 +14,7 @@ public class WBH_StunEffect : WBH_StatusEffectBase
 
     public override void Remove()
     {
-        controller.SetControlEnable(true);
+        controller.SetStatusControlBlock(EffectType, false);
 
         controller.StopStatusEffect(EffectType);
     }

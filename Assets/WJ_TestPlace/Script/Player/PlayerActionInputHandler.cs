@@ -16,10 +16,6 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class PlayerActionInputHandler : MonoBehaviour
 {
-    // KY_RebindManager가 저장하는 PlayerPrefs 키와 동일하다 - 설정에서 바꾼 키를 그대로 반영하려고
-    // 직접 로드한다(다른 화면에 KY_RebindManager 인스턴스가 없어도 리바인딩이 항상 적용되게).
-    private const string KeyBindingsPrefKey = "KeyBindings";
-
     /// <summary>스킬 키(1~4)가 눌렸을 때 발행. 인자는 0~3 (Skill1~4).</summary>
     public event Action<int> OnSkillKeyPressed;
 
@@ -27,29 +23,16 @@ public class PlayerActionInputHandler : MonoBehaviour
     /// 떼면 발동)에서 사용 - 차지가 아닌 스킬은 이 이벤트를 무시하면 됨.</summary>
     public event Action<int> OnSkillKeyReleased;
 
+    // 예전엔 여기서 자체 GameInputActions를 만들고 PlayerPrefs("KeyBindings")를 직접 로드했다 -
+    // 당시엔 KY_RebindManager 인스턴스가 씬마다 없을 수 있어서 그걸 우회하려고 중복 구현한 것이었다.
+    // KeyBindingService(순수 static, 앱 전체 공유)로 이관하면서 이 중복이 사라졌고, 설정에서 리바인드한
+    // 값도 같은 인스턴스를 보므로 씬과 무관하게 항상 반영된다. 공유 인스턴스라 더 이상 이 컴포넌트가
+    // Enable/Disable/Dispose하지 않는다(그러면 이 인스턴스를 같이 쓰는 다른 화면에도 영향을 준다).
     private GameInputActions inputActions;
 
     private void Awake()
     {
-        inputActions = new GameInputActions();
-
-        if (PlayerPrefs.HasKey(KeyBindingsPrefKey))
-            inputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(KeyBindingsPrefKey));
-    }
-
-    private void OnEnable()
-    {
-        inputActions.Enable();
-    }
-
-    private void OnDisable()
-    {
-        inputActions.Disable();
-    }
-
-    private void OnDestroy()
-    {
-        inputActions.Dispose();
+        inputActions = KeyBindingService.InputActions;
     }
 
     private void Update()

@@ -49,13 +49,23 @@ public class PlayerStatUIManager : MonoBehaviour
 
         Stat.OnStatChanged += Refresh;
         Refresh();
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += OnLanguageChanged;
     }
 
     private void OnDisable()
     {
         if (Stat != null)
             Stat.OnStatChanged -= Refresh;
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
     }
+
+    // 창이 열려있는 동안 설정에서 언어를 바꾸면 라벨(statLabels 기반 텍스트)이 다음에 새로 열 때가
+    // 아니라 바로 반영되게 한다. 수치 자체는 언어와 무관하지만 Label() 호출부 전체가 다시 그려진다.
+    private void OnLanguageChanged(GameLanguage _) => Refresh();
 
     private void Refresh()
     {
