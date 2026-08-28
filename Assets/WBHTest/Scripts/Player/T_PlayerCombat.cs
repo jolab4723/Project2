@@ -36,7 +36,8 @@ public class T_PlayerCombat : MonoBehaviour
                                                        PlayerState.Attack,
                                                        PlayerState.Skill,
                                                        PlayerState.Dodge,
-                                                       PlayerState.Dead);
+                                                       PlayerState.Dead,
+                                                       PlayerState.Revive);
 
     private void Awake()
     {

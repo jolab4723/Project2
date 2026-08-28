@@ -53,7 +53,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     // 이동. 아이템 우클릭 시, collider 무시하고 아이템이 있던 위치로 이동.
     private void HandleMoveInput()
     {
-        if (!Input.GetMouseButton(1) || IsPointerOverUI())
+        if (!Input.GetMouseButton(1) || IsPointerOverUI() || !controller.IsControlEnabled)
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);

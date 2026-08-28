@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Coffee.UIExtensions.UIParticleAttractor;
 
 [RequireComponent(typeof(WBH_PlayerStatus))]
 [RequireComponent(typeof(T_PlayerController))]
@@ -19,6 +20,7 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     [SerializeField] private WBH_EffectData stunEffect;
 
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
+    private readonly HashSet<WBH_StatusEffectType> controlBlockingEffects = new();
 
     private WBH_PlayerStatus status;
     private T_PlayerController controller;
@@ -35,6 +37,9 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     public void Initialize(WBH_EffectSpawner effectSpawner)
     {
         this.effectSpawner = effectSpawner;
+
+        controlBlockingEffects.Clear();
+        controller.SetStatusEffectControlBlock(false);
     }
 
     // 상태이상 생성 요청
@@ -69,9 +74,15 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     }
 
     // 움직임 가능 여부 판단 (에어본, 스턴 등)
-    public override void SetControlEnable(bool enabled)
+    public override void SetStatusControlBlock(WBH_StatusEffectType source, bool block)
     {
-        controller.SetControlEnable(enabled); //!@
+        if (block)
+            controlBlockingEffects.Add(source);
+        else
+            controlBlockingEffects.Remove(source);
+
+        controller.SetStatusEffectControlBlock(controlBlockingEffects.Count > 0);
+        //animator.enabled = enabled; // 애니메이션 사용을 막고 싶을 경우 위의 조건으로 if문 작성하여 추가
     }
 
     // 도트데미지 (화상)
@@ -104,8 +115,6 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     }
     private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
     {
-        SetControlEnable(false);
-
         Vector3 start = transform.position;
         Vector3 end = start + direction.normalized * force;
 
@@ -120,7 +129,6 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
             yield return null;
         }
 
-        SetControlEnable(true);
         knockbackRoutine = null;
     }
 
@@ -141,8 +149,6 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     }
     private IEnumerator AirborneRoutine(float height, float duration)
     {
-        SetControlEnable(false);
-
         Vector3 start = transform.position;
 
         float time = 0f;
@@ -162,7 +168,6 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
 
         transform.position = start;
 
-        SetControlEnable(true);
         airborneRoutine = null;
     }
 

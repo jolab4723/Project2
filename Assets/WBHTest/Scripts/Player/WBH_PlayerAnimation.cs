@@ -101,6 +101,10 @@ public class WBH_PlayerAnimation : MonoBehaviour
             case PlayerState.Dead:
                 animator.SetTrigger("Dead");
                 break;
+
+            case PlayerState.Revive:
+                animator.SetTrigger("Revive");
+                break;
         }
     }
 
@@ -115,6 +119,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
         {
             case PlayerState.Dodge:
             case PlayerState.Dead:
+            case PlayerState.Revive:
                 return;
         }
 
@@ -171,6 +176,14 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_EndSkill()
     {
         fighterSkillController?.EndPendingSkillAni();
+    }
+    public void AniEvent_EndDead()
+    {
+        controller?.TryRevive();
+    }
+    public void AniEvent_EndRevive()
+    {
+        controller?.CompleteRevive();
     }
 
 

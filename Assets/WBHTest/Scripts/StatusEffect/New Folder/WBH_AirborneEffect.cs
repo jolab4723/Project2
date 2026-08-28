@@ -6,7 +6,7 @@ public class WBH_AirborneEffect : WBH_StatusEffectBase
 
     public override void Apply()
     {
-        controller.SetControlEnable(false);
+        controller.SetStatusControlBlock(EffectType,true);
 
         controller.ApplyAirborne(data.Height, data.Duration);
 
@@ -16,7 +16,7 @@ public class WBH_AirborneEffect : WBH_StatusEffectBase
 
     public override void Remove()
     {
-        controller.SetControlEnable(true);
+        controller.SetStatusControlBlock(EffectType, false);
 
         controller.StopStatusEffect(EffectType);
     }
