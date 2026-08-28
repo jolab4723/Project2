@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
+  m_Name: UE_Incinerator
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
+  effectName: "\uC18C\uAC01 \uC555\uB825"
+  icon: {fileID: 21300000, guid: 2b5eb8296e8c4cd42a879e2f9a97bb2c, type: 3}
+  effectDescription: "\uC7A5\uCC29 \uC911 \uACF5\uACA9\uB825\uC774 {0}%, \uD654\uC5FC
+    \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {1} \uC99D\uAC00\uD558\uC9C0\uB9CC \uBC29\uC5B4\uB825\uC774
+    {2}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 8
+  - 12
+  - 6
+  buffSpec:
+    statEffects:
+    - statType: 3
+      value: 8
+    - statType: 17
+      value: 12
+    - statType: 5
+      value: -6
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1

@@ -57,6 +57,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     [SerializeField] private SkillEnhancementId[] activeEnhancements = new SkillEnhancementId[3];
 
     [Header("범위 표시(피드백용, 판정과 무관)")]
+
+    [SerializeField] private bool visibleSkillArea = true; // 2026.08.07 조용준 추가 - 스킬 범위 볼 것인지 선택가능하게 bool 항목 처리 
     [SerializeField] private Color sectorVisualColor = new Color(1f, 0.5f, 0.1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(1f, 0.15f, 0.1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
@@ -75,16 +77,26 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
         PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
-    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
+    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
     public event Action<int, bool, float> OnSkillAniRequested;
     public event Action<bool> OnChargeAniChanged;
 
+    private WBH_PlayerEffect playerEffect;
+
     private int pendingSkillIndex = -1;
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
+    private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
     private bool pendingSkillExecuted; // 중복 실행 방지 변수
-    private float pendingDashDuration; 
+    private float pendingDashDuration;
+
+
     //-------
+
+    private void Awake()
+    {
+        playerEffect = GetComponent<WBH_PlayerEffect>();
+    }
 
     private void OnEnable()
     {
@@ -380,6 +392,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         pendingSkillIndex = index;
         pendingEvo = evolution;
+        pendingEnhance = GetEnhancement(index);
         pendingChargeRatio = chargeRatio;
         pendingSkillExecuted = false;
 
@@ -408,9 +421,90 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
+        pendingEnhance = SkillEnhancementId.None;
         pendingChargeRatio = 0f;
         pendingSkillExecuted = false;
         pendingDashDuration = 0f;
+    }
+
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if(!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            Log.Warning($"알수 없는 스킬 이펙트 부가정보 : {partValue}");
+            return;
+        }
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def == null || playerEffect == null)
+            return;
+
+        SkillEffectPart part = (SkillEffectPart)partValue;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1, pendingEvo, part);
+
+        Vector3 scaleMultiplier = CalculatePendingEffectScale(def);
+
+        playerEffect.PlayEffect(cue, scaleMultiplier);
+    }
+
+    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO def)
+    {
+        if(def == null || pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+        {
+            return Vector3.one;
+        }
+
+        float baseRange = GetPendingBaseRange(def);
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float effectiveRange = ApplySkillRangeBonus(def, pendingSkillIndex, baseRange);
+
+        float rangeScale = effectiveRange / baseRange;
+
+        // 스킬 타입에 따라 다른 방향 확대
+        return def.shapeType switch
+        {
+            SkillShapeType.SectorSlash => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.LineSlam => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.Dash => new Vector3(rangeScale, rangeScale, rangeScale),
+
+            _ => Vector3.one
+        };
+    }
+
+    // 기초 스킬 범위
+    private float GetPendingBaseRange(SkillDefinitionSO def)
+    {
+            return def.shapeType switch
+            {
+                SkillShapeType.SectorSlash =>
+                    def.sectorRange,
+
+                SkillShapeType.LineSlam =>
+                    pendingEvo switch
+                    {
+                        SkillEvolutionId.Evolution2 =>
+                            def.evoWideLineLength,
+
+                        SkillEvolutionId.Evolution3 =>
+                            def.evoNarrowLineLength,
+
+                        _ =>
+                            def.lineLength,
+                    },
+
+                SkillShapeType.Dash =>
+                    def.dashDistance,
+
+                _ => 0f,
+            };
     }
     // ------
 
@@ -655,7 +749,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteSectorSlash(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -665,7 +761,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteSectorSlashEvo1(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
         {
@@ -678,7 +776,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteSectorSlashEvo2(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -695,7 +795,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         float multiplier = Mathf.Lerp(def.evoChargeMinDamageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, 360f, sectorVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, 360f, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, 360f))
             ApplyHit(target, def, multiplier, index);
@@ -734,7 +836,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlam(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -744,7 +848,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo1(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
         {
@@ -757,7 +863,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo2(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoWideLineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoWideLineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoWideLineWidth, lineVisualColor);
 
         var airborne = new WBH_StatusEffectData(WBH_StatusEffectType.Airborne, duration: def.evoAirborneDuration, height: def.evoAirborneHeight);
 
@@ -773,7 +881,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo3(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoNarrowLineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoNarrowLineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoNarrowLineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.evoNarrowLineWidth))
             ApplyHit(target, def, def.evoNarrowDamageMultiplier, index);
@@ -811,7 +921,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         Vector3 dir = GetCursorDirection();
         float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 

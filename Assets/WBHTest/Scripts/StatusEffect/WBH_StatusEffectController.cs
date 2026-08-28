@@ -5,7 +5,6 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
 {
     // 현재 적용 중인 상태이상 및 (활성화된 상태이상 이펙트)
     protected readonly Dictionary<WBH_StatusEffectType, WBH_IStatusEffect> effects = new();
-    //protected readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
 
     // 능력치 조정치
     private readonly Dictionary<WBH_IStatusEffect, float> moveSpeedModifiers = new();
@@ -97,7 +96,6 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
             RemoveStatusEffect(type);
         }
     }
-
 
     // 조정치 계산. 동일 상태이상이면 지속시간 갱신. 다른 상태이상이면 효과 곱연산.
     private float CalculateModifier(Dictionary<WBH_IStatusEffect, float> modifiers)
@@ -209,8 +207,8 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     public abstract void ApplyDefenseModifier(float modifier);
     public abstract void ApplyDamageTakenModifier(float modifier);
 
-    // 제어 및 입력
-    public abstract void SetControlEnable(bool enabled);
+    // 제어 및 입력. 상태이상 종류별 행동제어 차단. 넉백, 에어본, 스턴 3가지중 하나라도 걸려있다면 행동불가.
+    public abstract void SetStatusControlBlock(WBH_StatusEffectType source, bool block);
 
     // 피격 이동
     public abstract void ApplyKnockback(Vector3 direction, float force, float duration);

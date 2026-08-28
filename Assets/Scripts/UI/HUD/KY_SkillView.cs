@@ -27,7 +27,7 @@ public class KY_SkillView : MonoBehaviour
         playerController = FindFirstObjectByType<T_PlayerController>();
         playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
 
-        inputActions = KY_RebindManager.Instance.GetInputActions();
+        inputActions = KeyBindingService.InputActions;
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
         RefreshAllKeyTexts();
     }
