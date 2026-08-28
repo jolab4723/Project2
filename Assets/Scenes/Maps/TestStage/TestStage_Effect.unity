@@ -475,7 +475,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0008935858
+      value: 0.0009385657
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -779,6 +779,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79cd268afda7a83448ec904c9d0c664a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
+--- !u!4 &542658369 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5022215380906037386, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1512621466}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &546924842 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2493027214598642673, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
@@ -2802,13 +2807,41 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: effectBindings.Array.data[0].cue
       value: 101
+      objectReference: {fileID: 0}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[1].cue
+      value: 103
+      objectReference: {fileID: 0}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[2].cue
+      value: 299
       objectReference: {fileID: 0}
     - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: effectBindings.Array.data[0].data
       value: 
       objectReference: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[1].data
+      value: 
+      objectReference: {fileID: 11400000, guid: e9831c3fd0dd95342bec5a558120798b, type: 2}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[2].data
+      value: 
+      objectReference: {fileID: 11400000, guid: e9831c3fd0dd95342bec5a558120798b, type: 2}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[1].anchor
+      value: 
+      objectReference: {fileID: 542658369}
+    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: effectBindings.Array.data[2].anchor
+      value: 
+      objectReference: {fileID: 542658369}
     - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: equipmentSystem
       value: 
