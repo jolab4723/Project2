@@ -471,9 +471,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         // 스킬 타입에 따라 다른 방향 확대
         return def.shapeType switch
         {
-            SkillShapeType.SectorSlash => new Vector3(rangeScale, 1f, rangeScale),
-            SkillShapeType.LineSlam => new Vector3(1f, 1f, rangeScale),
-            SkillShapeType.Dash => new Vector3(1f, 1f, rangeScale),
+            SkillShapeType.SectorSlash => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.LineSlam => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.Dash => new Vector3(rangeScale, rangeScale, rangeScale),
 
             _ => Vector3.one
         };
