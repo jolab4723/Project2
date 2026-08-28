@@ -16,8 +16,7 @@ public class KY_KeyGuideView : MonoBehaviour
 
     void Start()
     {
-        Debug.Log(KY_RebindManager.Instance);
-        inputActions = KY_RebindManager.Instance.GetInputActions();
+        inputActions = KeyBindingService.InputActions;
         RefreshAllKeyTexts();
     }
 

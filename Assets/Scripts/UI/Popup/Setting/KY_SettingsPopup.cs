@@ -1,5 +1,7 @@
+using Core;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 
 public class KY_SettingsPopup : KY_PopupBase
@@ -18,6 +20,12 @@ public class KY_SettingsPopup : KY_PopupBase
     public KY_RebindSlot skill4Slot;
     public KY_RebindSlot potionSlot;
     public KY_RebindSlot dodgeSlot;
+
+    [Header("리바인드 오버레이 (예전 KY_RebindManager에서 이관)")]
+    public GameObject rebindOverlay;
+    public TextMeshProUGUI rebindText;
+
+    private InputActionRebindingExtensions.RebindingOperation rebindOperation;
 
     [Header("게임 플레이")]
     public TMP_Dropdown languageDropdown;
@@ -50,13 +58,43 @@ public class KY_SettingsPopup : KY_PopupBase
 
     void InitRebindSlots()
     {
-        var actions = KY_RebindManager.Instance.GetInputActions();
-        skill1Slot.Init(actions.Player.Skill1);
-        skill2Slot.Init(actions.Player.Skill2);
-        skill3Slot.Init(actions.Player.Skill3);
-        skill4Slot.Init(actions.Player.Skill4);
-        potionSlot.Init(actions.Player.Potion);
-        dodgeSlot.Init(actions.Player.Dodge);
+        var actions = KeyBindingService.InputActions;
+        skill1Slot.Init(actions.Player.Skill1, this);
+        skill2Slot.Init(actions.Player.Skill2, this);
+        skill3Slot.Init(actions.Player.Skill3, this);
+        skill4Slot.Init(actions.Player.Skill4, this);
+        potionSlot.Init(actions.Player.Potion, this);
+        dodgeSlot.Init(actions.Player.Dodge, this);
+    }
+
+    /// <summary>키 하나를 새로 리바인드한다(예전 KY_RebindManager.StartRebind 이관). 오버레이를 띄우고
+    /// 완료/취소 시 정리한다. 완료 시 슬롯 텍스트 갱신 + 저장 + KeyBindingChanged 이벤트 발행까지 처리.</summary>
+    public void StartRebind(InputAction action, KY_RebindSlot slot)
+    {
+        rebindOverlay.SetActive(true);
+        rebindText.text = "변경할 키를 입력해주세요";
+
+        action.Disable();
+
+        rebindOperation = action.PerformInteractiveRebinding()
+            .WithControlsExcluding("Mouse")
+            .WithCancelingThrough("<Keyboard>/escape")
+            .OnComplete(operation =>
+            {
+                action.Enable();
+                rebindOverlay.SetActive(false);
+                slot.RefreshKeyText();
+                KeyBindingService.Save();
+                KY_GameEvents.KeyBindingChanged();
+                rebindOperation.Dispose();
+            })
+            .OnCancel(operation =>
+            {
+                action.Enable();
+                rebindOverlay.SetActive(false);
+                rebindOperation.Dispose();
+            })
+            .Start();
     }
 
     public override void Open()
@@ -67,7 +105,7 @@ public class KY_SettingsPopup : KY_PopupBase
 
     void LoadCurrentSettings()
     {
-        tempData = KY_SettingsManager.Instance.GetData();
+        tempData = SettingManager.Instance.GetData();
 
         // 해상도
         resolutionDropdown.value = tempData.resolutionIndex;
@@ -107,7 +145,7 @@ public class KY_SettingsPopup : KY_PopupBase
 
     public void OnClickReset()
     {
-        KY_SettingsManager.Instance.Apply(new KY_SettingsData());
+        SettingManager.Instance.Apply(new KY_SettingsData());
         LoadCurrentSettings();
     }
 
@@ -123,6 +161,6 @@ public class KY_SettingsPopup : KY_PopupBase
         for (int i = 0; i < frameToggles.Length; i++)
             if (frameToggles[i].isOn) tempData.targetFrameRate = i;
 
-        KY_SettingsManager.Instance.Apply(tempData);
+        SettingManager.Instance.Apply(tempData);
     }
 }
