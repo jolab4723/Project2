@@ -5804,7 +5804,7 @@ Transform:
   m_GameObject: {fileID: 6319511063285921067}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000062061925, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.07758348, y: 0.16274357, z: -0.05608464}
+  m_LocalPosition: {x: -0.07758378, y: 0.16274334, z: -0.056084327}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7656,7 +7656,7 @@ Transform:
   m_GameObject: {fileID: 8131167696511496113}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000062061925, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.031431604, y: 0.16209024, z: -0.08875249}
+  m_LocalPosition: {x: -0.0314319, y: 0.16208999, z: -0.088752225}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8657,7 +8657,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerEffect
   spawner: {fileID: 0}
   effectBindings:
-  - cue: 100
+  - cue: 1000
+    data: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1100
+    data: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1110
     data: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
     anchor: {fileID: 5022215380906037386}
   chargeEffect: {fileID: 0}
@@ -8918,6 +8924,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
   activeEvolutions: 000000000000000000000000
   activeEnhancements: 000000000000000000000000
+  visibleSkillArea: 1
   sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
   lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}

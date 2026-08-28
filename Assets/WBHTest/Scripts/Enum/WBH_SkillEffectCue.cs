@@ -15,6 +15,7 @@ public enum WBH_PlayerEffectCue
     FighterBasicAtk = 1000,
 
     F_skill1_evo0_etc0 = 1100,
+    F_skill1_evo1_etc0 = 1110,
 
 }
 

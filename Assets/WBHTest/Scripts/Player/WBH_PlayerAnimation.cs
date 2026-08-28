@@ -12,7 +12,6 @@ public class WBH_PlayerAnimation : MonoBehaviour
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
 
-    [Header("SkillAni")]
     [SerializeField] private AnimationClip fighterDash;
 
     [SerializeField] private WBH_EffectSpawner effectSpawner;
