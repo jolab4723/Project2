@@ -475,7 +475,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0009385657
+      value: 0.0009506432
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -779,11 +779,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79cd268afda7a83448ec904c9d0c664a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
---- !u!4 &542658369 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5022215380906037386, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-  m_PrefabInstance: {fileID: 1512621466}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &546924842 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2493027214598642673, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
@@ -1062,17 +1057,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
---- !u!114 &798402217 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7902732325712632462, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
-  m_PrefabInstance: {fileID: 1585243185}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64ea23032d6732f4f9790f4ded5a348d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectPoolManager
 --- !u!1001 &831655962
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1765,11 +1749,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8651155701320206978, guid: 85b9068d3a97be149a2d2ae3507ee3ff, type: 3}
       propertyPath: testInfos.Array.data[0].maxHP
-      value: 10
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 8651155701320206978, guid: 85b9068d3a97be149a2d2ae3507ee3ff, type: 3}
       propertyPath: testInfos.Array.data[1].maxHP
-      value: 10
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 8651155701320206978, guid: 85b9068d3a97be149a2d2ae3507ee3ff, type: 3}
       propertyPath: testInfos.Array.data[0].attack
@@ -2802,73 +2786,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1522336687}
     m_Modifications:
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: spawner
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[0].cue
-      value: 101
-      objectReference: {fileID: 0}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[1].cue
-      value: 103
-      objectReference: {fileID: 0}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[2].cue
-      value: 299
-      objectReference: {fileID: 0}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[0].data
-      value: 
-      objectReference: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[1].data
-      value: 
-      objectReference: {fileID: 11400000, guid: e9831c3fd0dd95342bec5a558120798b, type: 2}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[2].data
-      value: 
-      objectReference: {fileID: 11400000, guid: e9831c3fd0dd95342bec5a558120798b, type: 2}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[1].anchor
-      value: 
-      objectReference: {fileID: 542658369}
-    - target: {fileID: 245515211961115271, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectBindings.Array.data[2].anchor
-      value: 
-      objectReference: {fileID: 542658369}
     - target: {fileID: 1896365474940792361, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: equipmentSystem
       value: 
       objectReference: {fileID: 1192462389}
-    - target: {fileID: 2223535990301607553, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: inventoryController
-      value: 
-      objectReference: {fileID: 920321538}
     - target: {fileID: 2312052604114874023, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: effectSpawner
       value: 
       objectReference: {fileID: 798402216}
-    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.031431604
-      objectReference: {fileID: 0}
-    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.16209024
-      objectReference: {fileID: 0}
-    - target: {fileID: 3468044698436032842, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.08875249
-      objectReference: {fileID: 0}
-    - target: {fileID: 4896227351667689570, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: effectSpawner
-      value: 
+    - target: {fileID: 2774735281992846289, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'Arm_L'\n\tTransform 'forearm_L'\n\tTransform
+        'hand_L'\n\tTransform 'Arm_L'\n\tTransform 'forearm_L'\n\tTransform 'hand_L'\n\tTransform
+        'Arm_L'\n\tTransform 'forearm_L'\n\tTransform 'hand_L'"
       objectReference: {fileID: 0}
     - target: {fileID: 4984542786249164771, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: equipmentSystem
@@ -2918,29 +2850,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8763091135803698569, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: poolManager
-      value: 
-      objectReference: {fileID: 798402217}
-    - target: {fileID: 8774070024012256093, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.07758348
-      objectReference: {fileID: 0}
-    - target: {fileID: 8774070024012256093, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.16274357
-      objectReference: {fileID: 0}
-    - target: {fileID: 8774070024012256093, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.05608464
-      objectReference: {fileID: 0}
     - target: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_Name
       value: Fighter
-      objectReference: {fileID: 0}
-    - target: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
