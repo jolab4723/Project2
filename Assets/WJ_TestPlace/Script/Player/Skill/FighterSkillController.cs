@@ -324,7 +324,10 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 기존 WJ님의 TryUseSkill 메서드에서 즉시 데미지가 들어가는 부분 분리. WBH_PlayerAnimation 의 AniEvent_ExecuteSkill 에서 실행.
     public void ExecutePendingSkill()
     {
-        if (pendingSkillIndex < 0 || pendingSkillExecuted || !stateMachine.Is(PlayerState.Skill))
+        //if (pendingSkillIndex < 0 || pendingSkillExecuted || !stateMachine.Is(PlayerState.Skill))
+        //    return;
+
+        if (pendingSkillIndex < 0 || !stateMachine.Is(PlayerState.Skill))
             return;
 
         int index = pendingSkillIndex;
@@ -336,7 +339,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return;
         }
 
-        pendingSkillExecuted = true;
+        //pendingSkillExecuted = true;
 
         switch (def.shapeType)
         {
