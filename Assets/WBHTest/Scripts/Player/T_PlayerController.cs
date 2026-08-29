@@ -19,17 +19,23 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_PlayerStatusEffectController statusEffectController;
     private WBH_EffectSpawner effectSpawner;
     private WBH_ProjectileSpawner projectileSpawner;
+
     private Vector3 dodgeDir;
+    private Coroutine invincibilityRoutine;
+
     public int reviveCount = 3;
+    private bool canControl = true;
+    private bool isStatusEffectControlBlocked;
 
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
-    public bool IsControlEnabled { get; private set; } = true;
     public bool IsInvincible { get; private set; } = false; // 무적여부
 
     public WBH_ICombatStatus Status => status;
     public bool canDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked;
+
 
 
     private void Awake()
@@ -78,7 +84,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         CheckDodge();
         // 이동 종료 시, Idle 상태로 변환
         UpdateMoveState();
-        Revive();
     }
 
     // 상태 진입 행동
@@ -86,7 +91,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         if(state == PlayerState.Dodge)
         {
-            this.gameObject.transform.LookAt(dodgeDir);
+            transform.forward = dodgeDir;
+            lookDir = dodgeDir;
             StartCoroutine(Dodge(dodgeDir));
         }
         switch (state)
@@ -282,8 +288,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void Die() // 사망처리. 
     {
-        stateMachine.ChangeState(PlayerState.Dead);
         SetControlEnable(false);
+        stateMachine.ChangeState(PlayerState.Dead);
     }
 
     public void ResetStoppingDistance()
@@ -315,14 +321,27 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 현재 조작가능한 상태인지 판단
     public void SetControlEnable(bool enabled)
     {
+        canControl = enabled;
+        RefreshControlState();
+    }
+    // 상태이상이 조작을 막고 있는지 판단
+    public void SetStatusEffectControlBlock(bool block)
+    {
+        isStatusEffectControlBlocked = block;
+        RefreshControlState();
+    }
+    // 조작 상태 갱신
+    private void RefreshControlState()
+    {
         if (!CanUseAgent)
             return;
 
-        IsControlEnabled = enabled;
-
-        if (!enabled)
+        if (!IsControlEnabled)
         {
-            stateMachine.ChangeState(PlayerState.Idle);
+            if (!stateMachine.IsAnyState(PlayerState.Dead, PlayerState.Revive))
+            {
+                stateMachine.ChangeState(PlayerState.Idle);
+            }
 
             agent.ResetPath();
             agent.isStopped = true;
@@ -361,20 +380,47 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     // --- 테스트용 메서드
     // 부활
-    public void Revive()
+
+    private void BeginRevive(float healthRatio, float invincibleDuration)
     {
-        if(status.IsDead && reviveCount > 0)
-        {
-            reviveCount--;
-            animator.SetTrigger("Revive");
-            stateMachine.ChangeState(PlayerState.Idle);
-            SetControlEnable(true);
-            status.Heal(status.MaxHealth * 1f);
-            ApplyInvincibility(10);
-        }
+        float clampRatio = Mathf.Clamp01(healthRatio);
+
+        float healAmount = status.MaxHealth * clampRatio;
+
+        status.Heal(healAmount);
+
+        ApplyInvincibility(invincibleDuration);
+
+        stateMachine.ChangeState(PlayerState.Revive);
     }
 
-    private Coroutine invincibilityRoutine;
+    public void TryRevive()
+    {
+        if (!stateMachine.Is(PlayerState.Dead) || !status.IsDead || reviveCount <= 0)
+            return;
+
+        reviveCount--;
+
+        BeginRevive(1f, 10f);
+    }
+
+    public void CompleteRevive()
+    {
+        if (!stateMachine.Is(PlayerState.Revive))
+            return;
+
+        stateMachine.ChangeState(PlayerState.Idle);
+        SetControlEnable(true);
+    }
+
+    public void ReviveForStageClear()
+    {
+        if (!status.IsDead)
+            return;
+
+        BeginRevive(0.1f, 3f);
+    }
+
 
     /// <summary>외부(스킬 등)에서 일정 시간 무적을 걸 때 사용. 이미 무적이 진행 중이면 새 지속시간으로 갱신한다.</summary>
     public void ApplyInvincibility(float duration)

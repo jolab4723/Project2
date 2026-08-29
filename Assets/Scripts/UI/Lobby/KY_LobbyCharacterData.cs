@@ -9,7 +9,6 @@ public class KY_LobbyCharacterData
     public string characterName;
     public Sprite portraitImage;
     [TextArea] public string description;
-    public bool isUnlocked;
 
     public int powerGrade;
     public int healthGrade;

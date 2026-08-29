@@ -9,5 +9,6 @@ public enum PlayerState
     Skill,
     Dodge,
     Hit,
-    Dead
+    Dead,
+    Revive
 }

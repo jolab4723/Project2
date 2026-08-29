@@ -9,6 +9,7 @@ public class KY_SlideAnimator : MonoBehaviour
     public Ease inEase = Ease.OutBack;  // 나가는 속도
     public Ease outEase = Ease.InBack;  // 들어오는 속도
     public float hiddenOffsetX = 0f;    // 들어가는 위치
+    public float hiddenOffsetY = 0f;    // 들어가는 높이
 
     [Header("일시정지 영향 여부")]
     public bool ignoreTimeScale = false; 
@@ -22,7 +23,8 @@ public class KY_SlideAnimator : MonoBehaviour
         rectTransform = GetComponent<RectTransform>();
         originalPosition = rectTransform.anchoredPosition;
         hiddenPosition = new Vector2(
-        originalPosition.x + rectTransform.rect.width + hiddenOffsetX, originalPosition.y);
+        originalPosition.x + rectTransform.rect.width + hiddenOffsetX,
+        originalPosition.y + hiddenOffsetY);
         rectTransform.anchoredPosition = hiddenPosition;
     }
 

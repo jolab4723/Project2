@@ -77,18 +77,26 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
         PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
-    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
+    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
     public event Action<int, bool, float> OnSkillAniRequested;
     public event Action<bool> OnChargeAniChanged;
 
+    private WBH_PlayerEffect playerEffect;
+
     private int pendingSkillIndex = -1;
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
+    private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
     private bool pendingSkillExecuted; // 중복 실행 방지 변수
     private float pendingDashDuration;
 
 
     //-------
+
+    private void Awake()
+    {
+        playerEffect = GetComponent<WBH_PlayerEffect>();
+    }
 
     private void OnEnable()
     {
@@ -384,6 +392,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         pendingSkillIndex = index;
         pendingEvo = evolution;
+        pendingEnhance = GetEnhancement(index);
         pendingChargeRatio = chargeRatio;
         pendingSkillExecuted = false;
 
@@ -412,9 +421,90 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
+        pendingEnhance = SkillEnhancementId.None;
         pendingChargeRatio = 0f;
         pendingSkillExecuted = false;
         pendingDashDuration = 0f;
+    }
+
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if(!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            Log.Warning($"알수 없는 스킬 이펙트 부가정보 : {partValue}");
+            return;
+        }
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def == null || playerEffect == null)
+            return;
+
+        SkillEffectPart part = (SkillEffectPart)partValue;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1, pendingEvo, part);
+
+        Vector3 scaleMultiplier = CalculatePendingEffectScale(def);
+
+        playerEffect.PlayEffect(cue, scaleMultiplier);
+    }
+
+    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO def)
+    {
+        if(def == null || pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+        {
+            return Vector3.one;
+        }
+
+        float baseRange = GetPendingBaseRange(def);
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float effectiveRange = ApplySkillRangeBonus(def, pendingSkillIndex, baseRange);
+
+        float rangeScale = effectiveRange / baseRange;
+
+        // 스킬 타입에 따라 다른 방향 확대
+        return def.shapeType switch
+        {
+            SkillShapeType.SectorSlash => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.LineSlam => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.Dash => new Vector3(rangeScale, rangeScale, rangeScale),
+
+            _ => Vector3.one
+        };
+    }
+
+    // 기초 스킬 범위
+    private float GetPendingBaseRange(SkillDefinitionSO def)
+    {
+            return def.shapeType switch
+            {
+                SkillShapeType.SectorSlash =>
+                    def.sectorRange,
+
+                SkillShapeType.LineSlam =>
+                    pendingEvo switch
+                    {
+                        SkillEvolutionId.Evolution2 =>
+                            def.evoWideLineLength,
+
+                        SkillEvolutionId.Evolution3 =>
+                            def.evoNarrowLineLength,
+
+                        _ =>
+                            def.lineLength,
+                    },
+
+                SkillShapeType.Dash =>
+                    def.dashDistance,
+
+                _ => 0f,
+            };
     }
     // ------
 

@@ -14,13 +14,14 @@ public class WBH_EnemyMovement : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 lastDestination;
     private bool canControl = true;
+    private bool isStatusEffectControlBlocked; // 상태이상으로 인한 움직임 불가처리
     private float jumpHeight = 3f;
     private float landingNavSearchRadius = 2f;
     
     private Coroutine jumpCoroutine;
     public event Action OnDashUpdate;
 
-    public bool CanControl => canControl;
+    public bool CanControl => canControl && !isStatusEffectControlBlocked;
     public int AreaMask => agent.areaMask;
 
 
@@ -36,6 +37,8 @@ public class WBH_EnemyMovement : MonoBehaviour
         agent ??= GetComponent<NavMeshAgent>();
 
         canControl = true;
+        isStatusEffectControlBlocked = false;
+
         agent.speed = info.moveSpeed;
         agent.isStopped = false;
 
@@ -45,6 +48,9 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 목적지 이동
     public void Move(Vector3 destination)
     {
+        if (!CanControl)
+            return;
+
         if ((destination - lastDestination).sqrMagnitude < 0.01f)
             return;
 
@@ -77,11 +83,24 @@ public class WBH_EnemyMovement : MonoBehaviour
     public void SetControlEnable(bool enable)
     {
         canControl = enable;
+        RefreshControlState();
+    }
 
-        if (!enable)
+    // 상태이상으로 인한 움직임 불가
+    public void SetStatusEffectControlBlock(bool block)
+    {
+        isStatusEffectControlBlocked = block;
+        RefreshControlState();
+    }
+
+    private void RefreshControlState()
+    {
+        if(!CanControl)
+        {
             Stop();
-        else
-            agent.isStopped = false;
+            return;
+        }
+        agent.isStopped = false;
     }
 
     // 돌진 (데미지 X)
