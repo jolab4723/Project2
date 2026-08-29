@@ -27,7 +27,9 @@ public enum WBH_PlayerEffectCue
     F_skill3_evo0_etc0 = 1300,  // 3번스킬 기본
     F_skill3_evo1_etc0 = 1310,  // 3번스킬 1변형
     F_skill3_evo1_etc1 = 1311,  // 3번스킬 1변형, 쉴드 이펙트
-
+    F_skill3_evo2_etc0 = 1320,  // 3번스킬 2변형
+    F_skill3_evo3_etc0 = 1330,  // 3번스킬 3변형
+    F_skill3_evo3_etc1 = 1331,  // 3번스킬 3변형, 공증버프 이펙트
 }
 
 public static class PlayerEffectCueUtility
