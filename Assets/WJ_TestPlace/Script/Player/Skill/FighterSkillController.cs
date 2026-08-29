@@ -58,7 +58,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
     [Header("범위 표시(피드백용, 판정과 무관)")]
 
-    [SerializeField] private bool visibleSkillArea = true; // 2026.08.07 조용준 추가 - 스킬 범위 볼 것인지 선택가능하게 bool 항목 처리 
+    [SerializeField] private bool visibleSkillArea = false; // 2026.08.07 조용준 추가 - 스킬 범위 볼 것인지 선택가능하게 bool 항목 처리 
     [SerializeField] private Color sectorVisualColor = new Color(1f, 0.5f, 0.1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(1f, 0.15f, 0.1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
