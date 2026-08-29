@@ -30,6 +30,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float dodgeCooltime = 6f;
 
     [SerializeField] private float fighterAttackRange = 2f;
+    [SerializeField] private const float fighterAttackAngle = 230f;
     [SerializeField] private float gunnerAttackRange = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
@@ -67,6 +68,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float DodgeDuration => dodgeDuration;
     public float DodgeCooltime => dodgeCooltime;
     public float FighterAttackRange => fighterAttackRange;
+    public float FighterAttackAngle => fighterAttackAngle;
+
     public float GunnerAttackRange => gunnerAttackRange;
     public float GunnerBulletSpeed => gunnerBulletSpeed;
     public bool IsDead => healthManager.CurrentHealth <= 0f;

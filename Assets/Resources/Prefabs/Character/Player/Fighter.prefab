@@ -8595,6 +8595,9 @@ MonoBehaviour:
   stateMachine: {fileID: 859720171535124851}
   playerClass: 0
   basicGrenadeEffect: {fileID: 0}
+  showAtkRange: 1
+  atkAreaColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
+  showDuration: 0.25
 --- !u!114 &509176117159171171
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8657,6 +8660,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerEffect
   spawner: {fileID: 0}
   effectBindings:
+  - cue: 1000
+    data: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
+    anchor: {fileID: 5022215380906037386}
   - cue: 1100
     data: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
     anchor: {fileID: 5022215380906037386}
@@ -8668,6 +8674,9 @@ MonoBehaviour:
     anchor: {fileID: 5022215380906037386}
   - cue: 1130
     data: {fileID: 11400000, guid: b37e2957662935a47983951c060910fd, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1131
+    data: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
     anchor: {fileID: 5022215380906037386}
   - cue: 1200
     data: {fileID: 11400000, guid: d3ec493c7fa6326429ec67c37dbebee4, type: 2}
@@ -8701,6 +8710,15 @@ MonoBehaviour:
     anchor: {fileID: 5022215380906037386}
   - cue: 1311
     data: {fileID: 11400000, guid: 71a5d40f56709ca4095b33015fc22092, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1320
+    data: {fileID: 11400000, guid: f98762d38dc76c348b60aaa6c890adcb, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1330
+    data: {fileID: 11400000, guid: 22168e8b572940c40b4c1015dd783575, type: 2}
+    anchor: {fileID: 5022215380906037386}
+  - cue: 1331
+    data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
     anchor: {fileID: 5022215380906037386}
   chargeEffect: {fileID: 0}
 --- !u!114 &2674546040288394452
