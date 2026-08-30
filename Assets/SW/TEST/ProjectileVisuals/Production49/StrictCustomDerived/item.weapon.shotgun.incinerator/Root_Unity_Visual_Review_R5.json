@@ -1,0 +1,63 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R6_TEXTURED_FLAME_STRUCTURE_PASS",
+  "technical_gate": {
+    "result": "PASS_FOUNDATION_ONLY_NO_CYCLES_AUTHORIZED",
+    "unity_version": "6000.3.22f1",
+    "approved_fbx_hash_unchanged": true,
+    "mesh_renderers": 83,
+    "evaluated_triangles": 34500,
+    "material_remaps": 8,
+    "particle_systems": {
+      "muzzle": 4,
+      "flight": 8,
+      "impact": 6
+    },
+    "thirty_cycle_residue": "NOT_RUN_BY_ROOT_VISUAL_STOP",
+    "console_errors": 0,
+    "scene_dirty_after": false,
+    "runtime_catalog_mfi": false,
+    "note": "R5 solved the black gaps, bead chain, pointed impact and card-edge issues, but the resulting untextured soft-lobe hierarchy remains below the commercial VFX floor."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures/M_ignition_0.025_1024x768.png",
+    "Captures/M_peak_0.070_1024x768.png",
+    "Captures/M_near_peak_0.120_1024x768.png",
+    "Captures/F_hero_3Q_0.120_1024x768.png",
+    "Captures/F_true_macro_0.120_1024x768.png",
+    "Captures/F_gameplay_read_0.120_1024x768.png",
+    "Captures/F_rear_wake_0.120_1024x768.png",
+    "Captures/I_contact_0.040_1024x768.png",
+    "Captures/I_peak_0.120_1024x768.png",
+    "Captures/I_decay_0.440_1024x768.png",
+    "Captures/I_decay_macro_0.440_1024x768.png",
+    "Captures/Proof_Black_M_peak_0.070_1024x768.png",
+    "Captures/Proof_NeutralGray_M_peak_0.070_1024x768.png",
+    "Captures/Proof_Black_F_peak_0.120_1024x768.png",
+    "Captures/Proof_NeutralGray_F_peak_0.120_1024x768.png",
+    "Captures/Proof_Black_I_peak_0.120_1024x768.png",
+    "Captures/Proof_NeutralGray_I_peak_0.120_1024x768.png"
+  ],
+  "visual_findings": [
+    "Muzzle is readable and warm but remains a broad defocused glow with weak internal flame structure.",
+    "Flight is now body-contacting and continuous, but it is built from several large blurred orange circles. It reads as a fused puff train rather than a shaped high-temperature plume.",
+    "The yellow center is another soft blob and does not create the crisp tapered white-hot pressure path visible in the user's school-quality fire reference.",
+    "Impact is broad and rounded with no star or ring, but it remains a single soft orange mass containing two red pill-like folds; the event lacks a structured contact core and turbulent flame edges.",
+    "The two terminal embers are restrained, yet they cannot compensate for the low-frequency, textureless main masses.",
+    "R5 is technically cleaner than R4 but is still below the commercial VFX floor, so expensive lifecycle cycles are correctly withheld."
+  ],
+  "r6_visual_contract": {
+    "body_freeze": "Preserve the approved normalized FBX bytes/hash, 83 renderers, 34500-triangle disclosed import result, eight remaps, all body GUIDs, transforms and R4-frozen body material values.",
+    "texture_source_rule": "Do not generate another low-resolution radial/blob texture and do not use AI imagery. Reuse a read-only artist-authored or already-approved transparent flame-mask family already in Assets/SW, cloned only into item-local StrictCustomDerived materials. The existing `Sol4Repair1/VFX_Flame_HotCore_Repair1.mat` and its `Sol4_FlameLobeMask_Repair1_512x128.asset` are authorized candidates for a proof because they provide a tapered structured alpha mask. Source assets remain unmodified.",
+    "muzzle": "Retain the current compact envelope but replace the featureless hot center with one or two tapered structured flame-mask cores, offset and overlapped inside a softer orange pressure shoulder. No opaque card, ring, radial spoke, needle or white clipping.",
+    "flight": "Keep body contact and the 0.75 to 0.95 body-length envelope. Replace the fused circular puff train with three to five overlapping unequal tapered flame-mask lobes whose visible alpha shapes interlock into one continuous plume. Use a clear white-yellow tapered center, orange shoulder and dark-red outer fold. Keep only two terminal embers. No black gaps, equal beads, smoke wall or detached tongue.",
+    "impact": "Build a compact asymmetric thermal contact event from three or four unequal rotated tapered flame-mask lobes around one displaced crisp hot core, with one soft low-alpha outer fold. It must have structured turbulent edges and internal value hierarchy while remaining rounded overall. No pills, kite, star, ring, spokes, beam or screen-filling cloud.",
+    "proof_gate": "Before any 30-cycle run, provide original 1024x768 M/F/I timing, black and neutral-gray single-renderer proofs for every distinct material/texture role, body visibility proof and unchanged benchmark comparison.",
+    "fallback": "If the authorized existing flame-mask family cannot produce a clean transparent structured result without card edges, stop and report the limitation; do not fall back to more radial blobs or opaque geometry."
+  },
+  "required_r6_offline_first": true,
+  "root_visual_go_required_before_cycles": true,
+  "runtime_catalog_mfi_forbidden": true
+}

@@ -1,0 +1,73 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "revision": "Unity_R3",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-30",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R4_MUZZLE_IMPACT_SHAPE_CORRECTION",
+  "technical_gate": {
+    "result": "PASS_AS_FOUNDATION_ONLY",
+    "unity_version": "6000.3.22f1",
+    "console_entries": 0,
+    "scene_dirty_before_after": "false_to_false",
+    "mesh_renderers": 83,
+    "imported_triangles": 34500,
+    "source_zero_length_edge_disclosure": "accepted_delta_minus_10_triangles_source_frozen",
+    "material_remaps": 8,
+    "m_f_i_30_cycle": "PASS",
+    "runtime_catalog_mfi_binding": false
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures/Body_Unity_R3_hero_3Q_1024x768.png",
+    "Captures/Body_Unity_R3_chamber_macro_1024x768.png",
+    "Captures/Incinerator_R11_Blender_vs_Unity_R3_Material_Comparison_2048x1536.png",
+    "Captures/M_ignition_0.025_1024x768.png",
+    "Captures/M_peak_0.070_1024x768.png",
+    "Captures/M_near_peak_0.120_1024x768.png",
+    "Captures/F_hero_3Q_0.120_1024x768.png",
+    "Captures/F_true_macro_0.120_1024x768.png",
+    "Captures/F_gameplay_read_0.120_1024x768.png",
+    "Captures/F_rear_wake_0.120_1024x768.png",
+    "Captures/I_contact_0.040_1024x768.png",
+    "Captures/I_peak_0.120_1024x768.png",
+    "Captures/I_decay_0.440_1024x768.png",
+    "Captures/Incinerator_vs_GunnerBullet_FighterAttack_Comparison_3072x1536.png",
+    "Captures/stage_clean_M_0.360_1024x768.png",
+    "Captures/stage_clean_F_0.550_1024x768.png",
+    "Captures/stage_clean_I_0.780_1024x768.png"
+  ],
+  "retained_results": [
+    "Opaque card failure is fixed and all clean frames are empty.",
+    "Flight is now body-contacting and approximately 0.75 body length; retain its core placement and overall envelope.",
+    "The Unity body is technically intact and materially more readable than R2; preserve the frozen normalized FBX and all GUIDs."
+  ],
+  "visual_blockers": [
+    "Muzzle ignition is a soft oval with one pointed tail, while peak and near-peak collapse into two or three straight prongs. The sequence reads as a line-star/needle effect rather than a layered fire ignition.",
+    "Flight has the correct attachment and length but remains a clean spear/beam with hard straight edges; it needs a broken flame contour without changing the accepted envelope.",
+    "Impact peak is dominated by five straight radial prongs. This directly violates the no-line-star requirement and is visibly below the supplied school fire and commercial floor.",
+    "Impact decay is effectively invisible at 0.440 seconds, so there is no readable soot/ember tail.",
+    "Unity body panels and brass braces remain flatter and darker than the approved Blender R11 comparison, particularly on the top strap and front frame."
+  ],
+  "r4_constraints": {
+    "preserve": [
+      "normalized FBX bytes and SHA256",
+      "83 renderer hierarchy, eight remaps and all prefab GUIDs",
+      "accepted 34500 imported triangle disclosure",
+      "Flight attachment point and 0.75-body-length envelope",
+      "R2/R3 evidence and runtime/catalog/MFI absence"
+    ],
+    "body_material": "Raise only the top strap, machined frame and copper-brace readability toward the approved Blender R11 comparison. Do not alter geometry or turn the black shell gray.",
+    "muzzle": "Use a coherent 3-to-5-lobe fire mass with a short directional base, warm outer contour and compact white-yellow core. Peak and near-peak must retain curved/lobed silhouettes; remove every straight radial prong.",
+    "flight": "Keep contact and length but break the spear edges with two overlapping curved outer lobes, one shorter offset tongue and a sparse soot shoulder. No beam, needle or symmetric cone read.",
+    "impact": "Replace the radial prongs with a broad 3-to-5-lobe asymmetrical fireball, two or three short curved fragments and a visible brown-red soot/ember decay at 0.44 seconds. Decay must be readable without becoming a residue card.",
+    "capture": "Repeat all R3 original-resolution body/M/F/I/comparison/clean frames plus one closer impact-decay macro and rerun 30-cycle."
+  },
+  "forbidden": [
+    "line stars or straight radial prongs",
+    "beam/spear-dominant flight",
+    "rings or arc-dominant cards",
+    "opaque cards",
+    "FBX or body geometry mutation",
+    "runtime, catalog or MFI hookup"
+  ],
+  "root_approval_required": true
+}

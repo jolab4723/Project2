@@ -1,0 +1,37 @@
+status=ROOT_R10_PROOF_REJECTED_EARLY_STOPPED
+decision=ROOT EARLY STOP after first two R10 roles; flat opaque vector arrow/ribbon and long closed capsule/wedge are below proof floor
+editorInstance=Project2@4cf8d861
+unityVersion=6000.3.22f1
+scope=proof-only; composites=false; prefabTimeline=false; lifecycle=false; cycles=0
+
+proofDirectory=Assets/SW/TEST/ProjectileVisuals/Production49/StrictCustomDerived/item.weapon.shotgun.scrapdrum/Captures_R10_Proof/LayerProofs
+completedRoles=2
+completedProofPngs=4
+proofAggregateSha256=8910e95c26b5916bf08235f332fa21fc4fc6ecf7738d6a01353f8922da25a82e
+proof.M_OffsetWhiteHotCore.black.sha256=11a8d91b40d742936cbb38c56303f66c68d529252246a4ed87b7921800eb1086
+proof.M_OffsetWhiteHotCore.neutralGray.sha256=b6eeb218cd8275f03f91c7db74b1aa792b933399403c1beaae0015e40f9326f2
+proof.M_AxialJetLong.black.sha256=bc174c4581c4732cffb7195ac1b47aea5221f0a6a5a688dc4f0661a6834ab04f
+proof.M_AxialJetLong.neutralGray.sha256=d8abda66e699fb8195f53bcc9b8376549cf8429dbcd26c9af824a6a719fbaae7
+
+newItemLocalTextures=11
+newItemLocalMaterials=11
+remainingRoleProofs=NOT_RUN_ROOT_EARLY_STOP
+composite=NOT_RUN_ROOT_EARLY_STOP
+prefabBuild=NOT_RUN_ROOT_EARLY_STOP
+lifecycle30Cycle=NOT_RUN_ROOT_EARLY_STOP
+
+technicalPreflight=first two roles produced isolated selected-renderer black/neutral-gray frames at 1024x768 with no body, other VFX, gizmos, labels or overlays
+visualGate=FAIL M_OffsetWhiteHotCore is a flat opaque vector arrow/ribbon with hard polygon edge
+visualGate=FAIL M_AxialJetLong is a long closed capsule/wedge with vertical cutoff and flat sticker depth
+localGateStop=M_AxialJetShort raw/source transparent RGB gate initially observed one-LSB GPU decode delta; no proof was written for this role
+
+consoleBaseline=one pre-existing GunnerWeaponRigIntegrityGuard error before R10 compilation
+consoleDelta=one new ScrapDrum InvalidOperationException from the intentional proof preflight stop at M_AxialJetShort; no compilation errors
+
+frozenFbxSha256=9edbf8a09901c215d5cdeecbeef40b93f8b7555d1099f60327d88fd7e47e2be5
+frozenProjectilePrefabSha256=c7ea2d590e907092d02cb2dda5fba3e3c37bae9895d69c545a90d8244e70ec60
+frozenR8WakeSpriteSha256=aef13a1ccd763a73399303abd02e159276dabd2bd3a7c1c48aa062d9cf52299d
+frozenR8WakeMaterialSha256=f87aed40079712356785b0cdc2d2578f3cd808f4a85aa9dacb54c6e44a551fa5
+sceneDirtyBefore=false
+prefabStageOpenBefore=false
+releaseRequired=UNITY_EDITOR_SLOT_RELEASED_SCRAPDRUM_R10_PROOF

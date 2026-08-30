@@ -1,0 +1,56 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "authority": "root_sol",
+  "review_date": "2026-08-30",
+  "review_type": "ROOT_FIXED_RIG_ORIGINAL_RESOLUTION_UNITY_VISUAL_REVIEW",
+  "revision": "R4_item_scoped_sprite_rebuild",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R5_COMPOSITION_AND_GAMEPLAY_READABILITY_REFINE",
+  "terminal_for_revision": true,
+  "unity_visual_approved": false,
+  "reviewed_captures": [
+    "Captures_R4/M_peak_0.045_1024x768.png",
+    "Captures_R4/M_near_peak_0.080_1024x768.png",
+    "Captures_R4/F_hero_3Q_0.080_1024x768.png",
+    "Captures_R4/F_true_macro_0.080_1024x768.png",
+    "Captures_R4/F_gameplay_0.080_1024x768.png",
+    "Captures_R4/F_wake_rear_3Q_0.080_1024x768.png",
+    "Captures_R4/I_contact_0.040_1024x768.png",
+    "Captures_R4/I_peak_0.085_1024x768.png",
+    "Captures_R4/I_decay_0.380_1024x768.png",
+    "Captures_R4/ScrapDrum_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures_R4/stage_clean_M_0.330_1024x768.png",
+    "Captures_R4/stage_clean_F_terminated_plus0.100_1024x768.png",
+    "Captures_R4/stage_clean_I_0.950_1024x768.png"
+  ],
+  "accepted_foundation": [
+    "The approved ScrapDrum body, normalized FBX, six external URP/Lit remaps, derived ownership boundary and nested standalone hierarchy remain accepted and must not change.",
+    "All three clean frames are visually empty after termination, consistent with the reported thirty-cycle residue, trail, material-growth and instance gates.",
+    "R4 replaces the enormous R2 cones and improves on R3 by introducing soft-core and broken-arc sprites, but the resulting composition is still below the user-supplied commercial floor."
+  ],
+  "visual_rejection_findings": [
+    "Muzzle is materially smaller and weaker than the comparison baseline. The cyan broken ring dominates the tiny white core while the orange and white particles still read as thin straight needles rather than a compact pressure flash.",
+    "Muzzle near-peak loses the hot core almost completely and leaves a reticle-like arc plus line bundle, so neither volume nor authored temporal falloff is proven.",
+    "Flight hero, macro and gameplay views show virtually no attached wake. Only the rear three-quarter view reveals several rounded orange capsules, which read as floating pills on the rear cap rather than a coherent wake extending behind the body.",
+    "Impact remains compositionally too close to Muzzle: the same cyan broken ring, small central core and a few straight orange lines. It does not read as a contact event with expanding fan, debris hierarchy and residue.",
+    "Impact decay is nearly black at the fixed review exposure and therefore fails the readable controlled-residue requirement.",
+    "The comparison sheet shows that the new Muzzle and Impact occupy substantially less visual area and have less intensity hierarchy than Gunner_Bullet and Fighter_Attack, while Flight lacks a visible in-motion signature.",
+    "Technical cleanliness and correct item-scoped ownership cannot substitute for the failed commercial visual gate."
+  ],
+  "required_r5_refine": [
+    "Freeze R4 evidence and preserve the approved body, normalized FBX, textures, body materials, remaps, hierarchy, GUIDs and runtime isolation. Change only item-scoped derived VFX recipes, VFX sprites and VFX materials.",
+    "Muzzle: enlarge the compact flash envelope to approximately 1.5 to 2 times R4 while keeping it shorter than the body. Layer a broad soft white-hot core, a warm brass/orange pressure wedge and a faint irregular halo. Remove the cyan reticle reading and replace hairline needles with 6 to 10 visibly tapered sparks of unequal width and length, biased behind/beside +Z.",
+    "Flight: create a clearly visible but disciplined rear wake in hero and gameplay views. Use two or three overlapping tapered soft lobes forming a continuous pale-brass plume about one-third to one-half body length, with 3 to 5 unequal micro-streaks and sparse dark particulate. Eliminate rounded pill sprites and keep every element behind the rear seat.",
+    "Impact: separate the design from Muzzle with a larger asymmetric contact fan, one bright compressed contact core, an expanding broken warm arc, 8 to 12 unequal tapered debris sparks and a readable low-alpha warm-gray residue cloud. Do not reuse a cyan reticle silhouette.",
+    "Raise decay visibility enough to remain legible on the fixed black rig without becoming a lingering opaque blob. Preserve full cleanup by the existing clean-frame times.",
+    "Use camera-facing tapered sprites with smooth alpha gradients, size/color over lifetime and randomized rotation/velocity. No full rings, line-renderer-looking needles, capsule pills, giant blur, neon rods or forward wake.",
+    "Submit isolated R5 captures at M ignition/peak/near-peak, F hero/macro/gameplay/rear, I contact/peak/decay, three clean frames and the same baseline comparison. Root will review every frame at original resolution before any approval."
+  ],
+  "authorization": {
+    "r5_item_scoped_vfx_refine": true,
+    "approved_body_or_transport_changes": false,
+    "legacy_source_changes": false,
+    "runtime_or_catalog_binding": false,
+    "final_critic_gate": false
+  },
+  "root_note": "R4 is technically clean but not visually complete. The next pass is a bounded composition and readability correction, not a body rebuild or broad pipeline rewrite."
+}

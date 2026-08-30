@@ -1,5 +1,7 @@
 # Production49 Home Resume Checkpoint — 2026-08-29
 
+> 2026-08-31 최신 학원 재개 기준은 [Production49_School_Handoff_2026-08-31.md](Production49_School_Handoff_2026-08-31.md)이다. 아래는 과거 학원→집 체크포인트를 보존한 이력이며, 이후 Root 재오픈/철회된 PASS를 현재 승인으로 사용하지 않는다.
+
 이 문서는 학원 작업을 안전하게 중단한 시점의 재개 기준이다. 기존 미커밋 파일은 정리하거나 되돌리지 말고 그대로 복사한다. 설치 절차는 `Docs/Blender_Agent_Studio_Home_Setup_Guide.md`를 따른다.
 
 ## 안전한 종료 상태
