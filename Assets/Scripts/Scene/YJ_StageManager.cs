@@ -47,6 +47,9 @@ public class YJ_StageManager : MonoBehaviour
         if ( ! TryGetDataManager())
             return;
 
+        // 런(게임플레이) 데이터는 새로 시작하지만, 영구 프로필(골드/패시브 스킬트리)은 런과 무관하게
+        // 항상 이어져야 하므로 리셋하지 않고 그대로 불러온다.
+        dataManager.LoadPassiveData();
         dataManager.ResetGameplayData();
         Log.Print("ResetGameplayData");
     }
@@ -56,6 +59,10 @@ public class YJ_StageManager : MonoBehaviour
         if ( ! TryGetDataManager())
             return;
 
+        // Start.unity(bootScene)를 거치지 않고 이 씬으로 바로 들어온 경우(에디터 테스트 등)에도
+        // 영구 프로필이 로드돼 있도록 여기서도 같이 불러온다. LoadPassiveData는 매번 다시 불러도
+        // 안전하다(파일과 항상 동기화돼 있음 - PassiveSkillManager가 변경 시마다 즉시 저장).
+        dataManager.LoadPassiveData();
         dataManager.LoadGameplayData();
     }
 

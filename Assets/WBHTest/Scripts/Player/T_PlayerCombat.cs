@@ -214,13 +214,16 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
     // 적 추격 취소
-    public void CancelChase()
+    public void CancelChase(bool stopMovement = true)
     {
         chaseTarget = null;
         chaseTargetCollider = null;
         hasChaseDestination = false;
 
-        controller.StopMovement();
+        if(stopMovement)
+        {
+            controller.StopMovement();
+        }
     }
 
     public bool TryAtkTarget(WBH_EnemyController target)
