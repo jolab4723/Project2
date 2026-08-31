@@ -66,10 +66,11 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
             return;
 
-        if(Input.GetMouseButtonDown(1))
+        // 이동 멈추지 않고 아이템과 적 추적 정보만 초기화.
+        if (Input.GetMouseButtonDown(1))
         {
             CancelItemChase();
-            combat.CancelChase();
+            combat.CancelChase(stopMovement:false);
         }
             
         controller.MoveCommand(hit.point);

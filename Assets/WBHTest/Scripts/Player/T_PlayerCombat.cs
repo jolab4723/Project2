@@ -15,6 +15,12 @@ public class T_PlayerCombat : MonoBehaviour
     [SerializeField] private PlayerClass playerClass;
     [SerializeField] private WBH_EffectData basicGrenadeEffect;
 
+    [Header("Fighter Basic Atk Range Visual")]
+    [SerializeField] private bool showAtkRange = true;
+    [SerializeField] private Color atkAreaColor = new Color(1f, 0.2f, 0.1f, 0.25f);
+    [SerializeField] private float showDuration = 0.25f;
+
+
     private Animator animator;
     private WBH_PlayerStatus status;
     private T_PlayerController controller;
@@ -75,7 +81,11 @@ public class T_PlayerCombat : MonoBehaviour
 
     private void FighterAttack()
     {
-        SectorAttack(status.FighterAttackRange, 230f);
+        if(showAtkRange)
+        {
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, status.FighterAttackRange, status.FighterAttackAngle, atkAreaColor, showDuration);
+        }
+        SectorAttack(status.FighterAttackRange, status.FighterAttackAngle);
     }
     private void GunnerAttack()
     {
@@ -204,13 +214,16 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
     // 적 추격 취소
-    public void CancelChase()
+    public void CancelChase(bool stopMovement = true)
     {
         chaseTarget = null;
         chaseTargetCollider = null;
         hasChaseDestination = false;
 
-        controller.StopMovement();
+        if(stopMovement)
+        {
+            controller.StopMovement();
+        }
     }
 
     public bool TryAtkTarget(WBH_EnemyController target)

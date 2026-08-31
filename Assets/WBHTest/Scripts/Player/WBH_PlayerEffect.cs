@@ -16,13 +16,27 @@ public class WBH_PlayerEffect : MonoBehaviour
     [SerializeField] private EffectBinding[] effectBindings;
 
     [Header("Local Persistent Effects")]
-    [SerializeField] private ParticleSystem chargeEffect;
+    [SerializeField] private WBH_EffectData chargeEffect;
 
     private readonly Dictionary<WBH_PlayerEffectCue, EffectBinding> bindingMap = new();
+    private readonly Dictionary<WBH_EffectData, WBH_Effect> activeLocalEffects = new();
 
     private void Awake()
     {
         BuildBindindMap();
+    }
+
+    // 사망 시, 기존 이펙트 종료
+    private void OnDisable()
+    {
+        foreach (WBH_Effect effect in activeLocalEffects.Values)
+        {
+            if (effect != null)
+            {
+                effect.StopEffect();
+            }
+        }
+        activeLocalEffects.Clear();
     }
 
     public void Initialize(WBH_EffectSpawner effectSpawner)
@@ -30,6 +44,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         spawner = effectSpawner;
     }
 
+    // WBH_PlayerEffectCue 와 EffectData, 재생위치를 바인딩.
     private void BuildBindindMap()
     {
         bindingMap.Clear();
@@ -91,22 +106,37 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
     }
 
-    private void PlayLocalEffect(ParticleSystem localEffect)
+    private void PlayLocalEffect(WBH_EffectData effectData)
     {
-        if (localEffect == null)
+        if (spawner == null || effectData == null)
             return;
 
-        localEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if(effectData.attachType != EffectAttachType.Follow)
+        {
+            Log.Warning($"플레이어 로컬 이펙트로 사용하실 경우{effectData.name} 은 {EffectAttachType.Follow} 타입을 권장합니다.");
+        }
 
-        localEffect.Play(true);
+        StopLocalEffect(effectData);
+
+        WBH_Effect effect = spawner.SpawnPersistentEffect(effectData, transform);
+
+        if(effect != null)
+        {
+            activeLocalEffects.Add(effectData, effect);
+        }
     }
 
-    private void StopLocalEffect(ParticleSystem localEffect)
+    private void StopLocalEffect(WBH_EffectData effectData)
     {
-        if (localEffect == null)
+        if (effectData == null || !activeLocalEffects.TryGetValue(effectData, out WBH_Effect effect))
             return;
 
-        localEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (effect != null)
+        {
+            effect.StopEffect();
+        }
+
+        activeLocalEffects.Remove(effectData);
     }
 
     // --- 애니메이션 이벤트 연결용
@@ -118,4 +148,6 @@ public class WBH_PlayerEffect : MonoBehaviour
     {
         StopLocalEffect(chargeEffect);
     }
+
+    
 }

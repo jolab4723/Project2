@@ -14,7 +14,7 @@ public class KY_ElementRow : MonoBehaviour
         totalValueText.text = data.Total.ToString("0.##");
     }
 
-    public void SetActive(bool isActive)
+    public void SetElementActive(bool isActive)
     {
         Color c = backgroundImage.color;
         c.a = isActive ? 1f : dimAlpha;
