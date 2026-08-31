@@ -21,6 +21,10 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [SerializeField] private Behaviour[] localOnlyBehaviours;
 
     private Coroutine localSceneRestoreRoutine;
+    private bool gameplayInputEnabled;
+    private bool textInputBlocked;
+    private Coroutine textInputReleaseRoutine;
+    private int textInputReleaseFrame = -1;
     private bool hasServerSceneStart;
     private string serverSceneStartPath;
     private Vector3 serverSceneStartPosition;
@@ -130,13 +134,43 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void SetLocalOnlyBehaviours(bool enabled)
     {
+        gameplayInputEnabled = enabled;
+        RefreshLocalInput();
+    }
+
+    public void SetTextInputBlocked(bool blocked)
+    {
+        if (textInputBlocked == blocked) return;
+        textInputBlocked = blocked;
+        if (textInputReleaseRoutine != null) StopCoroutine(textInputReleaseRoutine);
+        textInputReleaseRoutine = null;
+        if (blocked && isLocalPlayer)
+            GetComponent<PlayerActionInputHandler_MirrorTest>()?.ReleaseHeldSkills();
+        if (!blocked)
+        {
+            textInputReleaseFrame = Time.frameCount;
+            if (isActiveAndEnabled) textInputReleaseRoutine = StartCoroutine(ReleaseTextInputNextFrame());
+        }
+        RefreshLocalInput();
+    }
+
+    private IEnumerator ReleaseTextInputNextFrame()
+    {
+        yield return null;
+        RefreshLocalInput();
+        textInputReleaseRoutine = null;
+    }
+
+    private void RefreshLocalInput()
+    {
         if (localOnlyBehaviours == null)
             return;
 
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = enabled;
+                behaviour.enabled = isLocalPlayer && gameplayInputEnabled && !textInputBlocked &&
+                    Time.frameCount > textInputReleaseFrame;
         }
     }
 
