@@ -2,9 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Displays the selected lobby character's three stat grades as a filled radar chart.
-/// </summary>
 public class KY_LobbyRadarChart : MaskableGraphic
 {
     [SerializeField, Min(1f)] private float maxValue = 5f;

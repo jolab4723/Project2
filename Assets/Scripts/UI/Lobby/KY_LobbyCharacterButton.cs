@@ -14,7 +14,6 @@ public class KY_LobbyCharacterButton : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
         KY_LobbyCharacterData data = KY_LobbyCharacterDatabase.GetById(characterId);
-        data.portraitImage = portraitImage;
         OnClicked?.Invoke(data);
     }
 }
