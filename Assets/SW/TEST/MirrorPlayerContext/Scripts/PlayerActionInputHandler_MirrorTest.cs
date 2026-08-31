@@ -21,6 +21,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
     public event Action<int> OnSkillKeyReleased;
 
     private GameInputActions inputActions;
+    private readonly bool[] heldSkills = new bool[4];
 
     private void Awake()
     {
@@ -36,6 +37,7 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
 
     private void OnDisable()
     {
+        ReleaseHeldSkills();
         inputActions?.Disable();
     }
 
@@ -50,22 +52,40 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
             runtimeState?.RequestUsePotion();
 
         if (inputActions.Player.Skill1.triggered)
-            OnSkillKeyPressed?.Invoke(0);
+            PressSkill(0);
         if (inputActions.Player.Skill2.triggered)
-            OnSkillKeyPressed?.Invoke(1);
+            PressSkill(1);
         if (inputActions.Player.Skill3.triggered)
-            OnSkillKeyPressed?.Invoke(2);
+            PressSkill(2);
         if (inputActions.Player.Skill4.triggered)
-            OnSkillKeyPressed?.Invoke(3);
+            PressSkill(3);
 
         if (inputActions.Player.Skill1.WasReleasedThisFrame())
-            OnSkillKeyReleased?.Invoke(0);
+            ReleaseSkill(0);
         if (inputActions.Player.Skill2.WasReleasedThisFrame())
-            OnSkillKeyReleased?.Invoke(1);
+            ReleaseSkill(1);
         if (inputActions.Player.Skill3.WasReleasedThisFrame())
-            OnSkillKeyReleased?.Invoke(2);
+            ReleaseSkill(2);
         if (inputActions.Player.Skill4.WasReleasedThisFrame())
-            OnSkillKeyReleased?.Invoke(3);
+            ReleaseSkill(3);
+    }
+
+    private void PressSkill(int index)
+    {
+        heldSkills[index] = true;
+        OnSkillKeyPressed?.Invoke(index);
+    }
+
+    private void ReleaseSkill(int index)
+    {
+        if (!heldSkills[index]) return;
+        heldSkills[index] = false;
+        OnSkillKeyReleased?.Invoke(index);
+    }
+
+    public void ReleaseHeldSkills()
+    {
+        for (int i = 0; i < heldSkills.Length; i++) ReleaseSkill(i);
     }
 
     private void CreateInputActions()
