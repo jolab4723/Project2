@@ -2,7 +2,7 @@
 
 이 문서는 새 Windows PC의 Codex에 그대로 전달해 Project2의 Blender 제작 환경을 자동으로 준비하고, 현재 작업을 안전하게 이어가기 위한 인계문이다.
 
-2026-08-29 Production49 제작 상태와 자산별 정확한 재개 지점은 `Docs/Production49_Home_Resume_Checkpoint_2026-08-29.md`를 함께 전달한다. 설치가 끝난 뒤 해당 체크포인트의 `재개 시 첫 순서`부터 진행한다.
+**2026-08-31 최신 이동/재개는 `Docs/Production54_Home_Transfer_2026-08-31.md`와 `Docs/Production49_Resume_2026-08-31.md`를 먼저 따른다.** 8월29일 체크포인트와 아래 설치 요청문의 예전 폴더 목록은 현재 제작 큐를 덮어쓰지 않는다. 설치가 이미 돼 있는 집 PC는 새 설치보다 현지 버전/연결 검증부터 한다.
 
 ## 기준 환경
 
@@ -11,12 +11,15 @@
 - Blender: `5.2.1 LTS`
 - Bun: `1.4.0`
 - Unity 프로젝트 저장소: `Project2`
-- 저장소 밖 Blender 작업 폴더: `Project2_BlenderWork`
+- 현재 저장소 밖 제작 원본: 형제 `ArtSource/Production49_Rebuild_2026-08-29/` 전체(`_consolidated`와 `_school_2026-08-31` 모두)
+- 이전 Blender 작업 보관: 형제 `Project2_BlenderWork`, `Production49_Sol2_Blender`
 
-Blender만 설치해서는 다른 PC에서 완전히 재개할 수 없다. 아래 두 폴더를 모두 옮기고, 그 PC의 Codex에 플러그인과 Bun 의존성을 설치해야 한다.
+Blender만 설치해서는 다른 PC에서 완전히 재개할 수 없다. 아래 자료를 전달하고 그 PC의 플러그인/Bun/MCP 상태도 확인해야 한다. 정확한 복사·LFS·경로 변경 절차는 최신 Home_Transfer 문서가 우선한다.
 
-1. `Project2` 전체 작업 트리와 현재 미커밋 파일
-2. `Project2_BlenderWork` 전체 폴더
+1. `Project2`의 현재 작업 결과와 `.meta`(사용자 commit/push 및 Git LFS 수신, 또는 전체 작업본 별도 전달)
+2. **형제 `ArtSource` 전체, 최소 `Production49_Rebuild_2026-08-29` 전체 별도 복사**
+3. 이전 원본 `Project2_BlenderWork`·`Production49_Sol2_Blender` 보존 권장
+4. Git 제외 `Assets/Resources_GoogleDrive` 등은 집의 동일 원본·GUID/meta 존재 확인 또는 별도 전달
 
 `.meta` 파일을 포함해 원래 파일을 보존한다. Git 정리, reset, checkout 되돌리기, commit, push는 사용자가 별도로 지시하지 않는 한 수행하지 않는다.
 
@@ -51,7 +54,7 @@ https://github.com/ifBars/blender-agent-studio
 8. Codex를 다시 시작해야 플러그인/스킬/MCP가 로드된다면 설치를 끝낸 뒤 그 사실을 분명히 알리고, 재시작 후 이어서 검증하세요.
 9. 재시작 후 다음 스킬이 실제로 노출되는지 확인하세요: blender-art-direction-intake, blender-modeling-workflow, blender-asset-validation, blender-rendering-workflow, blender-iterative-refinement, blender-mcp-integration.
 10. Blender MCP로 exact version을 조회해 5.2.1 LTS인지 확인하고, 간단한 읽기 전용 asset/version 검증까지 수행하세요.
-11. Project2와 Project2_BlenderWork 폴더가 모두 존재하는지 확인하세요. 경로가 이전 PC와 다르면 스크립트·인계문에 박힌 절대 경로를 검색해 새 경로로 안전하게 매핑하되, 생성된 Unity Scene/Prefab YAML을 직접 편집하지 마세요.
+11. Project2와 형제 ArtSource/Production49_Rebuild_2026-08-29 전체(_consolidated/_school_2026-08-31 포함), 과거 보관 Project2_BlenderWork/Production49_Sol2_Blender를 확인하세요. 현재 필수 전달 목록은 Docs/Production54_Home_Transfer_2026-08-31.md를 따르세요. 경로가 다르면 현지 실행용 복사본에서 매핑하고 동결 원본/script/manifest의 hash를 일괄 치환하지 마세요. Unity Scene/Prefab YAML도 직접 편집하지 마세요.
 12. 기존 미커밋 작업과 .meta를 보존하고, 외부 원본 Assets/Resources_GoogleDrive/**는 수정하지 마세요.
 
 설치가 끝나면 다음을 표가 아닌 짧은 목록으로 보고하세요:
@@ -60,7 +63,7 @@ https://github.com/ifBars/blender-agent-studio
 - 설치된 Blender Agent Studio 버전과 설치 경로
 - 플러그인 테스트 결과
 - 노출된 필수 스킬과 MCP exact-version 결과
-- Project2와 Project2_BlenderWork 확인 경로
+- Project2와 형제 ArtSource 전체 및 이전 Blender 보관 폴더 확인 경로
 - 재개를 막는 누락 항목
 
 검증이 하나라도 실패하면 성공했다고 말하지 말고 원인을 수정한 뒤 같은 검증을 다시 실행하세요.
@@ -71,13 +74,14 @@ https://github.com/ifBars/blender-agent-studio
 환경 검증까지 통과한 뒤에는 기존 작업의 최신 전체 인계문과 함께 아래 문장을 전달한다.
 
 ```text
-Project2의 현재 미커밋 작업과 Project2_BlenderWork를 그대로 사용해 이전 작업을 이어가세요. 새 작업을 시작하기 전에 Blender Agent Studio의 art-direction intake, modeling workflow, asset validation, rendering workflow, iterative refinement, MCP integration SKILL.md를 각각 완전히 읽고 적용하세요. Blender 5.2.1 LTS에서 authored multiview, fresh FBX/GLB import, critic→targeted repair→동일 evidence 재검증을 유지하세요. Unity Scene/Prefab은 Unity Editor/MCP로만 수정하고 사용자가 열어 둔 Dirty 자산은 저장하지 마세요.
+Docs/Production54_Home_Transfer_2026-08-31.md를 최신 시작점으로 Project2의 현재 작업본과 형제 ArtSource 전체를 사용해 이어가세요. Project2_BlenderWork는 과거 보관 이력이지 현재 ArtSource 대체본이 아닙니다. 새 작업 전 Blender Agent Studio의 art-direction intake, modeling workflow, asset validation, rendering workflow, iterative refinement, MCP integration SKILL.md를 각각 완전히 읽고 적용하세요. Blender 5.2.1 LTS에서 authored multiview, fresh FBX/GLB import, critic→targeted repair→동일 evidence 재검증을 유지하세요. Unity Scene/Prefab은 Unity Editor/MCP로만 수정하고 사용자 Dirty 자산을 저장하지 마세요.
 ```
 
 ## 재개 전 최종 체크
 
 - `git status`에서 옮겨 온 미커밋 자산과 `.meta`가 사라지지 않았는가
-- `Project2_BlenderWork`의 `.blend`, 생성 Python, authored/fresh evidence가 모두 있는가
+- 형제 `ArtSource/Production49_Rebuild_2026-08-29`의 `_consolidated`와 `_school_2026-08-31`, `.blend`·텍스처·생성 코드·authored/fresh evidence가 모두 있는가
+- 이전 `Project2_BlenderWork`/`Production49_Sol2_Blender` 보관본을 최신 채택본과 구분했는가
 - Blender exact version이 `5.2.1 LTS`인가
 - `BLENDER_EXECUTABLE`이 새 PC의 실제 경로를 가리키는가
 - Bun과 플러그인 의존성 설치 후 전체 테스트가 통과했는가

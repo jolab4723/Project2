@@ -1,5 +1,7 @@
 # Production49 학원 재개 인계 — 2026-08-31
 
+> **과거 집→학원 인계 이력이다. 8월31일 학원 작업 후 집으로 돌아갈 때는 `Production54_Home_Transfer_2026-08-31.md` → `Production49_Resume_2026-08-31.md` → `Production49_FourFamily_Mapping_2026-08-31.md`가 우선한다.** 아래49종/최대4Blender/옛 큐·승인 상태로 현재54종 작업을 덮어쓰지 않는다.
+
 상태: **사용자 요청으로 제작 중지 / 학원 재개 대기**. 이 문서는 완료 보고가 아니라, 현재 저장된 작업을 손실 없이 이어가기 위한 Root 인계다. 예전 작업자의 `PASS`, `FINAL`, `ready`라는 파일명만 보고 채택하지 않는다.
 
 바로가기: [49종 상태표](../ArtSource/Production49_Rebuild_2026-08-29/_consolidated/handoffs/2026-08-31_school/item_status_49.md) · [임시파일 이동·복구 목록](../ArtSource/Production49_Rebuild_2026-08-29/_consolidated/handoffs/2026-08-31_school/cleanup_manifest.json) · [최종 검증](../ArtSource/Production49_Rebuild_2026-08-29/_consolidated/handoffs/2026-08-31_school/handoff_verification.json).
