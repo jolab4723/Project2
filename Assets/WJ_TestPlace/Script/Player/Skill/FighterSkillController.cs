@@ -620,7 +620,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         // 얇은 선이라 sectorVisualColor의 낮은 알파(플래시 채우기용, 0.35)로는 잘 안 보여서 불투명하게 조정해서 쓴다.
         Color outlineColor = sectorVisualColor;
         outlineColor.a = 1f;
-        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+        if (visibleSkillArea)
+            activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
     }
 
     /// <summary>PlayerStatManager의 "스킬 범위" 스탯 + 강화(Enhance3: 범위 강화)만큼 기본 판정 거리를 늘린다.
