@@ -13,6 +13,10 @@ public class KY_LobbySceneManager : MonoBehaviour
 
     [Header("연출")]
     [SerializeField] private KY_SlideAnimator[] lobbySlideAnimators;
+    [SerializeField] private KY_CurtainEffect radarChartCurtain;
+
+    [Header("캐릭터 프리뷰")]
+    [SerializeField] private KY_CharacterPreviewController previewController;
 
     public KY_LobbyCharacterButton[] buttons;
     public KY_LobbyCharacterSlot slot;
@@ -37,11 +41,15 @@ public class KY_LobbySceneManager : MonoBehaviour
             if (slideAnimator != null)
                 slideAnimator.SlideIn();
         }
+
+        if (radarChartCurtain != null)
+            radarChartCurtain.Open();
     }
 
     void OnCharacterSelected(KY_LobbyCharacterData data)
     {
         slot.Show(data);
+        previewController.ShowCharacter(data.characterId); // 추가
     }
 
     void OnClickPassiveSkill()

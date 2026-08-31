@@ -7,7 +7,6 @@ public class KY_LobbyCharacterData
 {
     public KY_CharacterId characterId;
     public string characterName;
-    public Sprite portraitImage;
     [TextArea] public string description;
 
     public int powerGrade;
