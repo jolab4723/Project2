@@ -78,6 +78,7 @@ public class ItemEquipHandler : MonoBehaviour
 
             if (result.HasRecoveryFailure)
             {
+                inventoryController.ReportEquipmentRejection(result.Result);
                 Debug.LogError(
                     "[ItemEquipHandler] 장착 실패 후 " +
                     "인벤토리 상태 복구에 실패했습니다.");
@@ -97,7 +98,7 @@ public class ItemEquipHandler : MonoBehaviour
         if (swapSlot != null)
             return TryRightClickSwapWithEquipSlot(swapSlot);
 
-        inventoryController.PrintLog("장착할 수 있는 슬롯이 없거나 꽉 찼습니다!");
+        inventoryController.ReportEquipmentRejection(EquipResult.InvalidSlot);
         return false;
     }
 
@@ -114,8 +115,7 @@ public class ItemEquipHandler : MonoBehaviour
                 out int foundY,
                 out bool targetRotated))
         {
-            inventoryController.PrintLog(
-                EquipMessageMapper.GetMessage(EquipResult.NoReturnSpace));
+            inventoryController.ReportEquipmentRejection(EquipResult.NoReturnSpace);
             return false;
         }
 
@@ -275,7 +275,10 @@ public class ItemEquipHandler : MonoBehaviour
             return false;
 
         if (!slot.CanAcceptType(itemUI.Item.itemData))
+        {
+            inventoryController.ReportEquipmentRejection(EquipResult.InvalidSlot);
             return false;
+        }
 
         InventoryGrid returnGrid = itemUI.OriginalGrid;
         InventoryItem outgoingItem = equippedUI.Item;
@@ -632,7 +635,7 @@ public class ItemEquipHandler : MonoBehaviour
         EquipmentTransactionResult result,
         string recoveryFailureMessage)
     {
-        inventoryController.PrintLog(EquipMessageMapper.GetMessage(result.Result));
+        inventoryController.ReportEquipmentRejection(result.Result);
 
         if (result.HasRecoveryFailure)
             Debug.LogError(recoveryFailureMessage);

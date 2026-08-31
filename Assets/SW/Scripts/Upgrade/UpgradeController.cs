@@ -65,6 +65,7 @@ public class UpgradeController : MonoBehaviour
         if (!UpgradeService.CanUpgrade(item))
         {
             Debug.LogWarning("[UpgradeController] 강화할 수 없는 아이템입니다.");
+            ReportRejection(UpgradeMessageMapper.GetMessage(UpgradeResult.InvalidItem, "아이템", 0));
 
             return false;
         }
@@ -99,6 +100,7 @@ public class UpgradeController : MonoBehaviour
         if (selectedItem == null)
         {
             ShowMessage(UpgradeMessageMapper.SelectionRequired);
+            ReportRejection(UpgradeMessageMapper.SelectionRequired);
             return;
         }
 
@@ -133,11 +135,19 @@ public class UpgradeController : MonoBehaviour
                 ? selectedItem.upgradeLevel
                 : 0;
 
-        ShowMessage(
-            UpgradeMessageMapper.GetMessage(
+        string message = UpgradeMessageMapper.GetMessage(
                 result,
                 itemName,
-                upgradeLevel));
+                upgradeLevel);
+        ShowMessage(message);
+        if (result != UpgradeResult.Success) ReportRejection(message);
+    }
+
+    private void ReportRejection(string message)
+    {
+        InventoryController owner = InventoryController.Instance;
+        if (owner != null && owner.PlayerWallet == playerWallet)
+            owner.ReportSinglePlayerMessage(ChatKind.Warning, message);
     }
 
     private void ShowMessage(string message)

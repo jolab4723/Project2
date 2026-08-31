@@ -133,7 +133,9 @@ public sealed class WorldItemPickupInteractor : MonoBehaviour
         if (!pickupClaim.TryClaim())
             return false;
 
-        bool success = ItemAcquisition.Acquire(pickup.Item, Receiver);
+        bool success = Receiver is InventoryController inventory
+            ? inventory.AddWorldItem(pickup.Item)
+            : ItemAcquisition.Acquire(pickup.Item, Receiver);
 
         if (!success)
         {

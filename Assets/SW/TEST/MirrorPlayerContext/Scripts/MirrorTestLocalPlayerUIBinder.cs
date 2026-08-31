@@ -175,6 +175,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     {
         EnsureSceneShopBinding();
 
+        if (networkManager != null && networkManager.Chat.ConsumesInputThisFrame)
+            return;
+
         if (boundContext == null || inventoryPartView == null || Keyboard.current == null)
             return;
 
