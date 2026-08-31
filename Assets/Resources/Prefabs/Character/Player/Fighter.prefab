@@ -8417,6 +8417,7 @@ GameObject:
   - component: {fileID: 4210524801797139003}
   - component: {fileID: 7151127679895332328}
   - component: {fileID: 4896227351667689570}
+  - component: {fileID: 1175140551478561070}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -8595,7 +8596,7 @@ MonoBehaviour:
   stateMachine: {fileID: 859720171535124851}
   playerClass: 0
   basicGrenadeEffect: {fileID: 0}
-  showAtkRange: 1
+  showAtkRange: 0
   atkAreaColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showDuration: 0.25
 --- !u!114 &509176117159171171
@@ -8642,7 +8643,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerAnimation
   fighterEffectRoot: {fileID: 5022215380906037386}
   gunnerEffectRoot: {fileID: 0}
-  Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
+  Eff_fighterAtk: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
   Eff_gunnerShotgunAtk: {fileID: 0}
   fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
   effectSpawner: {fileID: 0}
@@ -8720,7 +8721,7 @@ MonoBehaviour:
   - cue: 1331
     data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
     anchor: {fileID: 5022215380906037386}
-  chargeEffect: {fileID: 0}
+  chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
 --- !u!114 &2674546040288394452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8978,10 +8979,30 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
   activeEvolutions: 000000000000000000000000
   activeEnhancements: 000000000000000000000000
-  visibleSkillArea: 1
+  visibleSkillArea: 0
   sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
   lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+--- !u!114 &1175140551478561070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
+  activeTime: 0.3
+  meshRefreshRate: 0.03
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  targetRenderer: {fileID: 1568587813550854273}
+  mat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0
