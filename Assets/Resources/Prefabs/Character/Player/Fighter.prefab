@@ -2086,6 +2086,58 @@ Transform:
   - {fileID: 2715028267472976130}
   m_Father: {fileID: 1744103943709653081}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2526860346358717833
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5592455072744210258}
+  - component: {fileID: 4109029087705640609}
+  m_Layer: 15
+  m_Name: MeshTrailEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5592455072744210258
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8098030532292546987}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4109029087705640609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
+  activeTime: 0.23
+  meshRefreshRate: 0.03
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  targetRenderer: {fileID: 1568587813550854273}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &2567066902221745068
 GameObject:
   m_ObjectHideFlags: 0
@@ -8417,7 +8469,6 @@ GameObject:
   - component: {fileID: 4210524801797139003}
   - component: {fileID: 7151127679895332328}
   - component: {fileID: 4896227351667689570}
-  - component: {fileID: 1175140551478561070}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -8448,6 +8499,7 @@ Transform:
   - {fileID: 4637028926645814265}
   - {fileID: 4732446686621099127}
   - {fileID: 8074093019407928163}
+  - {fileID: 5592455072744210258}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &2774735281992846289
@@ -8983,26 +9035,6 @@ MonoBehaviour:
   sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
   lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
---- !u!114 &1175140551478561070
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8874953783023553297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
-  activeTime: 0.3
-  meshRefreshRate: 0.03
-  meshDestroyDelay: 0.5
-  shaderVarRef: _Alpha
-  shaderVarRate: 0.1
-  shaderVarRefreshRate: 0.03
-  targetRenderer: {fileID: 1568587813550854273}
-  mat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0
