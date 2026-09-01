@@ -1,0 +1,251 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using ItemSystem;
+
+/// <summary>
+/// 퀘스트 시작/진행/완료/보상을 전담하는 매니저. 한 퀘스트가 여러 조건(QuestConditionType)을 동시에
+/// 가질 수 있고, 그 조건 전부가 충족되면 자동으로 완료 처리하고 보상을 지급한다(별도 "수령" 조작 없음 -
+/// NPC 대화/turn-in 흐름이 아직 없어서 우선 자동 완료로 구현. 나중에 필요해지면 completed와
+/// rewardClaimed를 분리하면 됨).
+///
+/// !! 저장/불러오기는 DataManager가 전담한다(DataManager.SaveQuestData/LoadQuestData). 이 클래스는
+///    GetSaveData()/ApplySaveData()로 데이터만 내어주고 받을 뿐, 파일 입출력은 하지 않는다
+///    (SettingManager/PassiveSkillManager와 동일한 역할 분리).
+///
+/// !! 보상 골드/아이템은 InventoryController.Instance(로컬 플레이어)로 지급한다. InventoryController가
+///    비활성 인벤토리 팝업 안에 있어서 팝업을 한 번도 안 열면 Instance가 계속 null일 수 있다는 게 이미
+///    확인된 구조적 한계다(158번 작업 로그 참고) - 그 문제 자체는 이 클래스가 고치지 않는다.
+/// </summary>
+public class QuestManager : Singleton<QuestManager>
+{
+    [Tooltip("프로젝트에 존재하는 모든 퀘스트 정의. 인스펙터에서 QuestDatabaseSO 에셋을 연결해야 한다.")]
+    [SerializeField] private QuestDatabaseSO database;
+
+    private readonly List<ActiveQuestData> activeQuests = new List<ActiveQuestData>();
+    private bool subscribedToInventory;
+
+    /// <summary>진행 중/완료된 퀘스트 전체 목록(읽기 전용). UI 조회용.</summary>
+    public IReadOnlyList<ActiveQuestData> ActiveQuests => activeQuests;
+
+    /// <summary>퀘스트 목록 구성이 바뀔 때(시작/완료) 발행. UI가 전체 목록을 다시 그릴 때 사용.</summary>
+    public event Action OnQuestListChanged;
+
+    /// <summary>특정 퀘스트의 조건 진행도만 바뀔 때 발행(목록 구성은 그대로). UI가 진행도 숫자만 갱신할 때 사용.</summary>
+    public event Action<ActiveQuestData> OnQuestProgressChanged;
+
+    /// <summary>퀘스트가 완료(보상 지급까지 끝남)됐을 때 발행.</summary>
+    public event Action<ActiveQuestData> OnQuestCompleted;
+
+    private void OnEnable()
+    {
+        WBH_EnemyController.OnEnemyDead += HandleEnemyDead;
+    }
+
+    private void OnDisable()
+    {
+        WBH_EnemyController.OnEnemyDead -= HandleEnemyDead;
+
+        if (subscribedToInventory && InventoryController.Instance != null)
+            InventoryController.Instance.OnItemAdded -= HandleItemAdded;
+
+        subscribedToInventory = false;
+    }
+
+    private void Update()
+    {
+        // InventoryController가 비활성 인벤토리 팝업 안에 있어서 시작 시점엔 Instance가 null일 수 있다
+        // (158번에서 확인한 구조적 한계) - 매 프레임 가볍게 확인하다가 준비되는 순간 한 번만 구독한다.
+        if (!subscribedToInventory && InventoryController.Instance != null)
+        {
+            InventoryController.Instance.OnItemAdded += HandleItemAdded;
+            subscribedToInventory = true;
+        }
+    }
+
+    private void HandleEnemyDead()
+    {
+        ReportKillEnemy();
+    }
+
+    private void HandleItemAdded(InventoryItem item)
+    {
+        string itemId = item?.itemData?.definition?.itemId;
+        if (!string.IsNullOrEmpty(itemId))
+            ReportItemCollected(itemId);
+    }
+
+    /// <summary>
+    /// 아직 시작 안 했고 완료도 안 한 퀘스트 중 하나를 무작위로 뽑는다(의뢰 NPC의 제시/리롤용).
+    /// excludeQuestId를 넘기면 그 퀘스트는 후보에서 제외한다(리롤 시 방금 보여준 것과 같은 게 다시
+    /// 뽑히지 않게). 후보가 하나도 없으면 null.
+    /// </summary>
+    public QuestDefinitionSO GetRandomAvailableQuest(string excludeQuestId = null)
+    {
+        if (database == null || database.allQuests == null)
+            return null;
+
+        var candidates = new List<QuestDefinitionSO>();
+        foreach (QuestDefinitionSO quest in database.allQuests)
+        {
+            if (quest == null || string.IsNullOrEmpty(quest.questId))
+                continue;
+
+            if (quest.questId == excludeQuestId)
+                continue;
+
+            if (FindActive(quest.questId) != null)
+                continue;
+
+            candidates.Add(quest);
+        }
+
+        if (candidates.Count == 0)
+            return null;
+
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+    }
+
+    /// <summary>퀘스트를 시작한다. questId가 없거나 이미 시작(진행 중/완료)된 퀘스트면 아무 것도 안 하고 false.</summary>
+    public bool StartQuest(QuestDefinitionSO definition)
+    {
+        if (definition == null || string.IsNullOrEmpty(definition.questId))
+        {
+            Debug.LogWarning("[QuestManager] questId가 없는 퀘스트는 시작할 수 없습니다.");
+            return false;
+        }
+
+        if (FindActive(definition.questId) != null)
+            return false;
+
+        var data = new ActiveQuestData { questId = definition.questId };
+        for (int i = 0; i < definition.conditions.Length; i++)
+            data.conditionProgress.Add(0);
+
+        activeQuests.Add(data);
+        OnQuestListChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>적 처치 조건 진행. targetId를 비워두면(현재 유일하게 지원되는 방식) targetId가 빈 모든
+    /// KillEnemy 조건에 반영된다 - QuestConditionType 주석 참고.</summary>
+    public void ReportKillEnemy(string targetId = null)
+    {
+        ReportProgress(QuestConditionType.KillEnemy, targetId, 1);
+    }
+
+    /// <summary>아이템 획득 조건 진행.</summary>
+    public void ReportItemCollected(string itemId, int amount = 1)
+    {
+        ReportProgress(QuestConditionType.CollectItem, itemId, amount);
+    }
+
+    private void ReportProgress(QuestConditionType type, string targetId, int amount)
+    {
+        if (database == null || amount <= 0)
+            return;
+
+        for (int i = 0; i < activeQuests.Count; i++)
+        {
+            ActiveQuestData active = activeQuests[i];
+            if (active.isCompleted)
+                continue;
+
+            QuestDefinitionSO def = database.FindById(active.questId);
+            if (def == null)
+                continue;
+
+            bool changed = false;
+
+            for (int c = 0; c < def.conditions.Length && c < active.conditionProgress.Count; c++)
+            {
+                QuestConditionDefinition condition = def.conditions[c];
+                if (condition.conditionType != type)
+                    continue;
+
+                // targetId가 비어있는 조건은 어떤 대상이든 인정, 그 외엔 정확히 일치해야 진행된다.
+                bool matches = string.IsNullOrEmpty(condition.targetId) || condition.targetId == targetId;
+                if (!matches)
+                    continue;
+
+                if (active.conditionProgress[c] >= condition.requiredCount)
+                    continue;
+
+                active.conditionProgress[c] = Mathf.Min(active.conditionProgress[c] + amount, condition.requiredCount);
+                changed = true;
+            }
+
+            if (!changed)
+                continue;
+
+            OnQuestProgressChanged?.Invoke(active);
+
+            if (IsAllConditionsMet(def, active))
+                CompleteQuest(def, active);
+        }
+    }
+
+    private static bool IsAllConditionsMet(QuestDefinitionSO def, ActiveQuestData active)
+    {
+        for (int c = 0; c < def.conditions.Length; c++)
+        {
+            if (active.conditionProgress[c] < def.conditions[c].requiredCount)
+                return false;
+        }
+        return true;
+    }
+
+    private void CompleteQuest(QuestDefinitionSO def, ActiveQuestData active)
+    {
+        active.isCompleted = true;
+        GrantReward(def);
+        OnQuestCompleted?.Invoke(active);
+        OnQuestListChanged?.Invoke();
+    }
+
+    private void GrantReward(QuestDefinitionSO def)
+    {
+        if (InventoryController.Instance == null)
+        {
+            Debug.LogWarning($"[QuestManager] InventoryController를 찾을 수 없어 '{def.questName}' 보상을 지급하지 못했습니다.");
+            return;
+        }
+
+        if (def.rewardGold > 0 && InventoryController.Instance.PlayerWallet != null)
+            InventoryController.Instance.PlayerWallet.AddGold(def.rewardGold);
+
+        if (def.rewardItem != null)
+        {
+            for (int i = 0; i < def.rewardItemCount; i++)
+                InventoryController.Instance.AddItem(ItemDataCreator.CreateItemData(def.rewardItem));
+        }
+    }
+
+    private ActiveQuestData FindActive(string questId)
+    {
+        foreach (ActiveQuestData q in activeQuests)
+        {
+            if (q.questId == questId)
+                return q;
+        }
+        return null;
+    }
+
+    // ===================== 저장/불러오기 (DataManager 전담) =====================
+
+    public QuestSaveData GetSaveData()
+    {
+        var data = new QuestSaveData();
+        data.quests.AddRange(activeQuests);
+        return data;
+    }
+
+    public void ApplySaveData(QuestSaveData data)
+    {
+        activeQuests.Clear();
+        if (data?.quests != null)
+            activeQuests.AddRange(data.quests);
+
+        OnQuestListChanged?.Invoke();
+    }
+}

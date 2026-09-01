@@ -83,9 +83,20 @@ public class T_PlayerCombat : MonoBehaviour
     {
         if(showAtkRange)
         {
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, status.FighterAttackRange, status.FighterAttackAngle, atkAreaColor, showDuration);
+            SkillRangeVisual.ShowSector(transform.position,
+                                        transform.forward,
+                                        status.FighterAttackRange,
+                                        status.FighterAttackAngle,
+                                        atkAreaColor,
+                                        showDuration);
         }
-        SectorAttack(status.FighterAttackRange, status.FighterAttackAngle);
+
+        WBH_EffectData effectData = null;
+
+        if (effect != null)
+            effect.TryGetEffectData(WBH_PlayerEffectCue.F_normal0_evo0_etc0, out effectData);
+
+        SectorAttack(status.FighterAttackRange, status.FighterAttackAngle, effectData);
     }
     private void GunnerAttack()
     {
@@ -125,7 +136,7 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
 
-    private void SectorAttack(float range, float angle)
+    private void SectorAttack(float range, float angle, WBH_EffectData effectData = null)
     {
         Collider[] targets = Physics.OverlapSphere(transform.position, range, enemyLayer);
 
@@ -142,20 +153,36 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_CombatManager.ProcessDamage(CreateDamageRequest(combatTarget, WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Slow1)); // Slow1은 아직 테스트값
+            WBH_DamageRequest request = CreateDamageRequest(combatTarget,
+                                                            WBH_AttackType.Normal,
+                                                            status.CurrentElement,
+                                                            basicAttackMult,
+                                                            statusEffect: WBH_StatusEffectPresets.Slow1, // Slow1은 아직 테스트값
+                                                            effectData: effectData);
+
+            WBH_CombatManager.ProcessDamage(request);
         }
     }
 
     // 투사체 외
-    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target, WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
+    public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target,
+                                                 WBH_AttackType atkType,
+                                                 ItemSystem.ElementType elementType,
+                                                 float damageMult,
+                                                 WBH_StatusEffectData? statusEffect = null,
+                                                 WBH_EffectData effectData = null)
     {
-        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult, statusEffect);
+        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult, statusEffect, effectData);
     }
 
     // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
-    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType, ItemSystem.ElementType elementType, float damageMult, WBH_StatusEffectData? statusEffect = null)
+    public WBH_DamageRequest CreateDamageRequest(WBH_AttackType atkType,
+                                                 ItemSystem.ElementType elementType,
+                                                 float damageMult,
+                                                 WBH_StatusEffectData? statusEffect = null,
+                                                 WBH_EffectData effectData = null)
     {
-        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect);
+        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect, effectData);
     }
 
     private void UpdateChase()
