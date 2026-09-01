@@ -2096,8 +2096,9 @@ GameObject:
   m_Component:
   - component: {fileID: 5592455072744210258}
   - component: {fileID: 4109029087705640609}
+  - component: {fileID: 3601197162848192652}
   m_Layer: 15
-  m_Name: MeshTrailEffect
+  m_Name: TrailEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2137,6 +2138,27 @@ MonoBehaviour:
   shaderVarRate: 0.1
   shaderVarRefreshRate: 0.03
   targetRenderer: {fileID: 1568587813550854273}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
+--- !u!114 &3601197162848192652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a129f64a00555944093cb27e6efa9e64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_WeaponTrailTut
+  activeTime: 0.1
+  meshRefreshRate: 0.01
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  weaponRoot: {fileID: 6757565152260833919}
+  targetRenderer: {fileID: 0}
   defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &2567066902221745068
 GameObject:
@@ -5856,7 +5878,7 @@ Transform:
   m_GameObject: {fileID: 6319511063285921067}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000062061925, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.07758348, y: 0.16274357, z: -0.05608464}
+  m_LocalPosition: {x: -0.07758378, y: 0.16274334, z: -0.056084327}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7708,7 +7730,7 @@ Transform:
   m_GameObject: {fileID: 8131167696511496113}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000062061925, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.031431604, y: 0.16209024, z: -0.08875249}
+  m_LocalPosition: {x: -0.0314319, y: 0.16208999, z: -0.088752225}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9026,6 +9048,7 @@ MonoBehaviour:
     m_Bits: 2048
   effectSpawner: {fileID: 0}
   chargeEffectData: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  weaponTrailTut: {fileID: 0}
   skills:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
