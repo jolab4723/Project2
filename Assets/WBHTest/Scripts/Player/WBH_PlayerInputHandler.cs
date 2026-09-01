@@ -126,7 +126,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     // 회피
     private void HandleDodgeInput()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.Space) && controller.CanDodge)
         {
             CancelItemChase();
             combat.CancelChase(); // 회피 쿨타임이어도 추적은 중지됨.

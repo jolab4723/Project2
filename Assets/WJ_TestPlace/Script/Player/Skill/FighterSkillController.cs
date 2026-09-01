@@ -87,7 +87,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
     private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
-    private bool pendingSkillExecuted; // 중복 실행 방지 변수
     private float pendingDashDuration;
 
 
@@ -397,7 +396,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         pendingEvo = evolution;
         pendingEnhance = GetEnhancement(index);
         pendingChargeRatio = chargeRatio;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
 
         SkillDefinitionSO def = skills[index];
 
@@ -426,7 +425,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         pendingEvo = SkillEvolutionId.None;
         pendingEnhance = SkillEnhancementId.None;
         pendingChargeRatio = 0f;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
         pendingDashDuration = 0f;
     }
 

@@ -33,7 +33,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public bool IsInvincible { get; private set; } = false; // 무적여부
 
     public WBH_ICombatStatus Status => status;
-    public bool canDodge => currentDodgeCooltime <= 0f;
+    public bool CanDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
     public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked;
 
@@ -128,7 +128,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 회피 쿨타임 판단
     private void CheckDodge()
     {
-        if (canDodge)
+        if (CanDodge)
             return;
 
         currentDodgeCooltime -= Time.deltaTime;
@@ -216,7 +216,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 회피
     public void TryDodge()
     {
-        if (!IsControlEnabled || !canDodge)
+        if (!IsControlEnabled || !CanDodge)
             return;
 
         dodgeDir = GetMouseDirection();
