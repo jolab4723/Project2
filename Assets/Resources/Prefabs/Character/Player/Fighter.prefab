@@ -8455,7 +8455,6 @@ GameObject:
   - component: {fileID: 245515211961115271}
   - component: {fileID: 2674546040288394452}
   - component: {fileID: 4655314278586303533}
-  - component: {fileID: 2017357833712916932}
   - component: {fileID: 5376958052108856053}
   - component: {fileID: 1896365474940792361}
   - component: {fileID: 2188125559027323366}
@@ -8816,27 +8815,6 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
---- !u!114 &2017357833712916932
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8874953783023553297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a8c0dfe044fa45489349ea318069733, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatusEffectController
-  statusEffectRoot: {fileID: 0}
-  effectSpawner: {fileID: 0}
-  burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
-  freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
-  electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
-  slowEffect: {fileID: 11400000, guid: 678a1ecf6bfb3ea4b9a5a63e743cf0bf, type: 2}
-  knockbackEffect: {fileID: 0}
-  airborneEffect: {fileID: 0}
-  stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
 --- !u!114 &5376958052108856053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9049,6 +9027,7 @@ MonoBehaviour:
     m_Bits: 2048
   effectSpawner: {fileID: 0}
   chargeEffectData: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  weaponTrailTut: {fileID: 0}
   skills:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
