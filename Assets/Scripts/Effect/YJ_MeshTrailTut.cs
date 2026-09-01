@@ -14,7 +14,7 @@ public class YJ_MeshTrailTut : MonoBehaviour
     [SerializeField] private float shaderVarRefreshRate = 0.05f;
 
     [SerializeField] private SkinnedMeshRenderer targetRenderer;
-    [SerializeField] private Material mat;
+    [SerializeField] private Material defaultMat;
 
     private bool isTrailActive;
 
@@ -35,15 +35,21 @@ public class YJ_MeshTrailTut : MonoBehaviour
         }
     }
 
-    public void Trail()
+    public void Trail(Material mat = null, float duration = 0)
     {
         if (isTrailActive)
             return;
 
-        StartCoroutine(ActivateTrail());
+        if (mat == null)
+            mat = defaultMat;
+
+        if (duration <= 0)
+            duration = activeTime;
+
+        StartCoroutine(ActivateTrail(mat, duration));
     }
 
-    private IEnumerator ActivateTrail()
+    private IEnumerator ActivateTrail(Material material, float duration)
     {
         if (targetRenderer == null)
         {
@@ -51,18 +57,18 @@ public class YJ_MeshTrailTut : MonoBehaviour
             yield break;
         }
 
-        if (mat == null)
+        if (defaultMat == null)
         {
             Debug.LogWarning("잔상에 사용할 Material이 연결되지 않았습니다.");
             yield break;
         }
 
         isTrailActive = true;
-        float timeActive = activeTime;
+        float timeActive = duration;
 
         while (timeActive > 0f)
         {
-            CreateTrailMesh();
+            CreateTrailMesh(material);
 
             timeActive -= meshRefreshRate;
             yield return new WaitForSeconds(meshRefreshRate);
@@ -71,7 +77,7 @@ public class YJ_MeshTrailTut : MonoBehaviour
         isTrailActive = false;
     }
 
-    private void CreateTrailMesh()
+    private void CreateTrailMesh(Material material)
     {
         GameObject trailObject = new GameObject($"{targetRenderer.name}_Trail");
 
@@ -86,7 +92,7 @@ public class YJ_MeshTrailTut : MonoBehaviour
 
         meshFilter.sharedMesh = bakedMesh;
 
-        Material trailMaterial = new Material(mat);
+        Material trailMaterial = new Material(material);
         meshRenderer.sharedMaterial = trailMaterial;
 
         StartCoroutine(AnimateMaterialFloat(trailMaterial, 0f, shaderVarRate, shaderVarRefreshRate));

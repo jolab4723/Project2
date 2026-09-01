@@ -17,6 +17,7 @@ public enum WBH_PlayerEffectCue
     F_skill1_evo2_etc0 = 1120,  // 1번스킬 2변형
     F_skill1_evo3_etc0 = 1130,  // 1번스킬 3변형
     F_skill1_evo3_etc1 = 1131,  // 1번스킬 3변형, 차징 이펙트
+    F_skill1_evo3_etc2 = 1132,  // 1번스킬 3변형, 범위 인디케이터 이펙트
     F_skill2_evo0_etc0 = 1200,  // 2번스킬 기본, 슬래쉬 이펙트
     F_skill2_evo0_etc2 = 1202,  // 2번스킬 기본, 그라운드 이펙트
     F_skill2_evo1_etc0 = 1210,  // 2번스킬 1변형, 슬래쉬 이펙트
