@@ -15,6 +15,7 @@ namespace Core
         private const string SkillTreeSaveFileName = "skilltree.json";
         private const string StageSaveFileName = "stage.json";
         private const string ActiveSkillSaveFileName = "activeskill.json";
+        private const string QuestSaveFileName = "quest.json";
         private const string OptionsSaveFileName = "options.json";
 
         private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
@@ -618,6 +619,38 @@ namespace Core
         /// ActiveSkillControllerLocator로 뺐다(118번) - SkillEvolutionSelectUI(K키 설정창)도 같은
         /// 로직이 필요해져서 공용 유틸로 공유한다.</summary>
         private static ISkillController FindActiveSkillController() => ActiveSkillControllerLocator.Find();
+
+        #endregion
+
+        #region ===================== 3-6. 퀘스트 =====================
+        // 진행 중/완료된 퀘스트 목록(ActiveQuestData)을 저장/복원한다. 디자인 데이터(조건/보상)는
+        // QuestDatabaseSO에 있고 questId로만 연결하므로 여기선 진행 상태만 다룬다.
+
+        [ContextMenu("퀘스트 저장")]
+        public void SaveQuestData()
+        {
+            if (QuestManager.Instance == null)
+            {
+                Debug.LogWarning("[DataManager] SaveQuestData - QuestManager.Instance가 없습니다.");
+                return;
+            }
+
+            WriteJson(GetSavePath(QuestSaveFileName), QuestManager.Instance.GetSaveData());
+        }
+
+        [ContextMenu("퀘스트 불러오기")]
+        public void LoadQuestData()
+        {
+            if (QuestManager.Instance == null)
+            {
+                Debug.LogWarning("[DataManager] LoadQuestData - QuestManager.Instance가 없습니다.");
+                return;
+            }
+
+            var data = ReadJson<QuestSaveData>(GetSavePath(QuestSaveFileName));
+            if (data != null)
+                QuestManager.Instance.ApplySaveData(data);
+        }
 
         #endregion
 
