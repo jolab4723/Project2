@@ -49,7 +49,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         status = GetComponent<WBH_PlayerStatus>();
         playerEffect = GetComponent<WBH_PlayerEffect>();
         statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
-        meshTrailTut = GetComponent<YJ_MeshTrailTut>(); // 2026.08.31 조용준 추가
+        meshTrailTut = GetComponentInChildren<YJ_MeshTrailTut>(); // 2026.08.31 조용준 추가
 
         effectSpawner = FindFirstObjectByType<WBH_EffectSpawner>();
         projectileSpawner = FindFirstObjectByType<WBH_ProjectileSpawner>();

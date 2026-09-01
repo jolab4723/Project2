@@ -450,26 +450,33 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1, pendingEvo, part);
 
-        Vector3 scaleMultiplier = CalculatePendingEffectScale(def);
+        Vector3 scaleMultiplier = CalculatePendingEnhancementEffectScale(def);
 
         playerEffect.PlayEffect(cue, scaleMultiplier);
     }
 
-    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO def)
+    /// <summary>
+    /// Converts the pending Enhance3 range bonus to an effect scale multiplier.
+    /// GetPendingBaseRange selects the base range for Skill1~3 and each evolution.
+    /// Each WBH_EffectData decides whether to use the multiplier.
+    /// </summary>
+    private Vector3 CalculatePendingEnhancementEffectScale(SkillDefinitionSO def)
     {
         if(def == null || pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
         {
             return Vector3.one;
         }
 
+        if (pendingEnhance != SkillEnhancementId.Enhance3)
+            return Vector3.one;
+
         float baseRange = GetPendingBaseRange(def);
 
         if (baseRange <= Mathf.Epsilon)
             return Vector3.one;
 
-        float effectiveRange = ApplySkillRangeBonus(def, pendingSkillIndex, baseRange);
-
-        float rangeScale = effectiveRange / baseRange;
+        float enhancedRange = baseRange * (1f + def.enhanceRangeBonusPercent / 100f);
+        float rangeScale = enhancedRange / baseRange;
 
         // 스킬 타입에 따라 다른 방향 확대
         return def.shapeType switch
@@ -612,6 +619,13 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
 
+        Vector3 chargeEffectScale =
+            GetEnhancement(index) == SkillEnhancementId.Enhance3
+                ? Vector3.one * (1f + def.enhanceRangeBonusPercent / 100f)
+                : Vector3.one;
+
+        playerEffect?.SetChargeEnhancementScale(chargeEffectScale);
+
         RequestSkillAni(index, true); // 8.24 WBH 추가
 
         if (effectSpawner != null && chargeEffectData != null)
@@ -620,7 +634,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         // 얇은 선이라 sectorVisualColor의 낮은 알파(플래시 채우기용, 0.35)로는 잘 안 보여서 불투명하게 조정해서 쓴다.
         Color outlineColor = sectorVisualColor;
         outlineColor.a = 1f;
-        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+        if (visibleSkillArea)
+            activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
     }
 
     /// <summary>PlayerStatManager의 "스킬 범위" 스탯 + 강화(Enhance3: 범위 강화)만큼 기본 판정 거리를 늘린다.
