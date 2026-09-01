@@ -20,7 +20,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_EffectSpawner effectSpawner;
     private WBH_ProjectileSpawner projectileSpawner;
     private YJ_MeshTrailTut meshTrailTut; // 2026.08.31 조용준 추가
-
     private Vector3 dodgeDir;
     private Coroutine invincibilityRoutine;
 
@@ -49,6 +48,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         status = GetComponent<WBH_PlayerStatus>();
         playerEffect = GetComponent<WBH_PlayerEffect>();
         statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
+
         meshTrailTut = GetComponentInChildren<YJ_MeshTrailTut>(); // 2026.08.31 조용준 추가
 
         effectSpawner = FindFirstObjectByType<WBH_EffectSpawner>();
