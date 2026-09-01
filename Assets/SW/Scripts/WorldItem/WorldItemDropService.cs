@@ -80,6 +80,12 @@ public sealed class WorldItemDropService : MonoBehaviour
         spawnedPickup.Init(item);
 
         if (spawnedPickup.TryGetComponent(
+                out WorldItemCategoryVisualView categoryVisualView))
+        {
+            categoryVisualView.Apply(item.definition);
+        }
+
+        if (spawnedPickup.TryGetComponent(
                 out WorldItemRarityColorView rarityColorView))
         {
             rarityColorView.Apply(item.definition.rarity);

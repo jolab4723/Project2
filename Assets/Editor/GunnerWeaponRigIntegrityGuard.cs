@@ -114,7 +114,7 @@ public sealed class GunnerWeaponRigIntegrityGuard : AssetPostprocessor, IPreproc
             return Fail("LeftArmIK의 본, Target 또는 Hint 참조가 끊어졌습니다.", out error);
         }
 
-        Rig constraintRig = constraint.GetComponentInParent<Rig>();
+        Rig constraintRig = constraint.GetComponentInParent<Rig>(true);
         if (constraintRig == null || rigBuilder.layers.All(layer => layer.rig != constraintRig))
             return Fail("LeftArmIK가 RigBuilder의 WeaponIKRig 레이어에 연결되지 않았습니다.", out error);
 
