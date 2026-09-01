@@ -11,7 +11,8 @@ public enum EffectAttachType
 public class WBH_EffectData : ScriptableObject
 {
     [Header("Effect")]
-    public WBH_Effect effectPrefab;
+    public WBH_Effect attackEffectPrefab;
+    public ParticleSystem hitEffectPrefab;
 
     [Header("Pool")]
     [Min(1)]

@@ -916,7 +916,15 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(index + 1, pendingEvo, SkillEffectPart.Main);
+
+        playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                               WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
         WBH_CombatManager.ProcessDamage(request);
     }
 
