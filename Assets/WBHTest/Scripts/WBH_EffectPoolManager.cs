@@ -95,7 +95,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
 
     private WBH_Effect CreateEffect(WBH_EffectData data)
     {
-        WBH_Effect effect = Instantiate(data.effectPrefab, transform);
+        WBH_Effect effect = Instantiate(data.attackEffectPrefab, transform);
 
         effect.Initialize(this);
 
@@ -112,7 +112,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
             return false;
         }
 
-        if(data.effectPrefab == null)
+        if(data.attackEffectPrefab == null)
         {
             Log.Warning($"{data.name} 에 이펙트 프리팹이 없습니다.");
             return false;

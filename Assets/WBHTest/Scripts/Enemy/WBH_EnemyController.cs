@@ -24,7 +24,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBHEnemyDestructionAdapter destructionAdapter;
     private WBH_EnemyBossDeathView bossDeathView;
     private WBH_EnemyGradeVisual gradeVisual;
-
+    private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyInfo info;
 
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
@@ -56,10 +56,14 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         status.OnDead -= Dead;
     }
 
-    public void Initialize(WBH_EnemyInfo info, WBH_EnemyPoolManager poolManager, WBH_EffectSpawner effectSpawner, WBH_ProjectileSpawner projectileSpawner)
+    public void Initialize(WBH_EnemyInfo info,
+                           WBH_EnemyPoolManager poolManager,
+                           WBH_EffectSpawner effectSpawner,
+                           WBH_ProjectileSpawner projectileSpawner)
     {
         this.info = info;
         this.poolManager = poolManager;
+        this.effectSpawner = effectSpawner;
 
         status ??= GetComponent<WBH_EnemyStatus>();
         movement ??= GetComponent<WBH_EnemyMovement>();
@@ -86,10 +90,17 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
+        if (status.IsDead)
+            return;
+
+        Vector3 hitPosition = transform.position;
+
+        if (result.EffectData != null && result.EffectData.hitEffectPrefab != null)
+        {
+            effectSpawner?.SpawnHitEffect(result.EffectData, hitPosition);
+        }
+
         status.TakeDamage(result);
-
-        // 애니메이션 피격 !@
-
     }
 
     private void Dead()
