@@ -2079,6 +2079,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: -4440
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &119146190
 MonoBehaviour:
@@ -5167,52 +5168,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 427073581}
   m_CullTransparentMesh: 1
---- !u!1 &428893862
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 428893864}
-  - component: {fileID: 428893863}
-  m_Layer: 0
-  m_Name: RebindManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &428893863
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 428893862}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af76ada22d33dba448c3b8afbfeaf813, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KY_RebindManager
-  rebindOverlay: {fileID: 0}
-  rebindText: {fileID: 0}
---- !u!4 &428893864
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 428893862}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1677853113}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &441568439
 GameObject:
   m_ObjectHideFlags: 0
@@ -5472,7 +5427,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
 --- !u!4 &444835144 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 6006724857144226378, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
+  m_CorrespondingSourceObject: {fileID: 358557126352903044, guid: 4892f91c07cc05541ba405ffd0b48d65, type: 3}
   m_PrefabInstance: {fileID: 444835143}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &449736584
@@ -6430,6 +6385,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: -4440
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &477114010
 MonoBehaviour:
@@ -8057,6 +8013,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: 600
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &592603519
 MonoBehaviour:
@@ -26090,7 +26047,6 @@ Transform:
   - {fileID: 954277749}
   - {fileID: 1585243186}
   - {fileID: 770990540}
-  - {fileID: 428893864}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1684343876
