@@ -29,7 +29,7 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float dodgeDuration = 0.5f;
     [SerializeField] private float dodgeCooltime = 6f;
 
-    [SerializeField] private float fighterAttackRange = 2f;
+    [SerializeField] private float fighterAttackRange = 3f;
     [SerializeField] private const float fighterAttackAngle = 230f;
     [SerializeField] private float gunnerAttackRange = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
