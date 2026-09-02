@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7795726722329424810}
+  - component: {fileID: 9096173774440925224}
   m_Layer: 0
   m_Name: item.weapon.shotgun.conversationstarter_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4609183604739996147}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9096173774440925224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3220139166885404445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 4609183604739996147}
+  muzzleVisualPrefab: {fileID: 2840566675031971926, guid: 147449e1f72a5534a8d0a090962efcfd, type: 3}
+  projectileVisualPrefab: {fileID: 8176050933531679139, guid: 8689fe2669b30024fbb85fe353ee9ab5, type: 3}
+  impactVisualPrefab: {fileID: 6908003962337133731, guid: 5cf4b75a9b4a4d54699e88f3c1429c46, type: 3}
 --- !u!1 &7766211670861455449
 GameObject:
   m_ObjectHideFlags: 0

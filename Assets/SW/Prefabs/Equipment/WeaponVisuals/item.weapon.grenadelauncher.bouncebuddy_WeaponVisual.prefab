@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9035284755647985542}
+  - component: {fileID: 6071572338520848887}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.bouncebuddy_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4641427388363717879}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6071572338520848887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1870376712760049955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 4641427388363717879}
+  muzzleVisualPrefab: {fileID: 7810130885929378039, guid: 38aaa4b78a1e6e843b9b69c1a7226836, type: 3}
+  projectileVisualPrefab: {fileID: 4733747995409832908, guid: f6fadae04390bee468421abe966c9089, type: 3}
+  impactVisualPrefab: {fileID: 7763298018015839986, guid: 56c8f6a5d4dbdff438a636128c06261b, type: 3}
 --- !u!1 &6031125117345310635
 GameObject:
   m_ObjectHideFlags: 0

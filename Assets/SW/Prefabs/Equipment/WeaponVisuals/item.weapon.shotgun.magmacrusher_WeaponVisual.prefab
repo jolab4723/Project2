@@ -40,6 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3344847580435176353}
+  - component: {fileID: 8161840086539347396}
   m_Layer: 0
   m_Name: item.weapon.shotgun.magmacrusher_WeaponVisual
   m_TagString: Untagged
@@ -65,6 +66,23 @@ Transform:
   - {fileID: 5833910137811002382}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8161840086539347396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8163225606657706104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 5833910137811002382}
+  muzzleVisualPrefab: {fileID: 4785095663553822569, guid: 8412709419d1de7498833ad136995557, type: 3}
+  projectileVisualPrefab: {fileID: 1648545637501636298, guid: bf3f083f56827f245b87c0be67fb9394, type: 3}
+  impactVisualPrefab: {fileID: 3688541494378529937, guid: f107d95cfba54e0409939af0a71e28ca, type: 3}
 --- !u!1 &9007997090625829468
 GameObject:
   m_ObjectHideFlags: 0

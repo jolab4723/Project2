@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4598654408350729977}
+  - component: {fileID: 7737820549853658178}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.apocalypse_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 8919698485531724869}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7737820549853658178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7314402184971701290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 8919698485531724869}
+  muzzleVisualPrefab: {fileID: 161340585580957847, guid: b770500dfe846bc41b294a7216f15e2b, type: 3}
+  projectileVisualPrefab: {fileID: 7980885444806034567, guid: 08a198bd39189cb49b733ff767b903e2, type: 3}
+  impactVisualPrefab: {fileID: 8021226585911837150, guid: c733965e1c235294c921cbe0783e3f80, type: 3}
 --- !u!1001 &3262391578464079726
 PrefabInstance:
   m_ObjectHideFlags: 0

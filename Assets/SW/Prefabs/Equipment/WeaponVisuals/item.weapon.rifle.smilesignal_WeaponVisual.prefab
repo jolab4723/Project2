@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8040371808460573718}
+  - component: {fileID: 603551601462862782}
   m_Layer: 0
   m_Name: item.weapon.rifle.smilesignal_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 3505633292580279345}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &603551601462862782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7724974777079031720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 3505633292580279345}
+  muzzleVisualPrefab: {fileID: 4731791454018406383, guid: c455c6688d7fe4146939ca86cfd13053, type: 3}
+  projectileVisualPrefab: {fileID: 5878508177201830305, guid: efe392a8b8f87474f80d7695a6d14d88, type: 3}
+  impactVisualPrefab: {fileID: 7093139552203291752, guid: 077403b530bf207498192e93b832d84c, type: 3}
 --- !u!1001 &703559649218902118
 PrefabInstance:
   m_ObjectHideFlags: 0

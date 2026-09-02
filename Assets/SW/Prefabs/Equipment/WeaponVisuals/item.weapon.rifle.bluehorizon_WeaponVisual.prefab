@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 990215212867191180}
+  - component: {fileID: 5452830531499383039}
   m_Layer: 0
   m_Name: item.weapon.rifle.bluehorizon_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 7249020979072535550}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5452830531499383039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3331251046923164446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 7249020979072535550}
+  muzzleVisualPrefab: {fileID: 1441808444578282081, guid: 9cb4ec2ba322fcb43898a1bb7b18d5d6, type: 3}
+  projectileVisualPrefab: {fileID: 2526518059247183154, guid: d2723a3a73f764a49b46a3c76eb8a9bd, type: 3}
+  impactVisualPrefab: {fileID: 4691337548192902286, guid: ec909a77fc9f6db45b5196491bbd925d, type: 3}
 --- !u!1 &4395364208216500668
 GameObject:
   m_ObjectHideFlags: 0

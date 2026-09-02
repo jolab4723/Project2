@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4351433056235245630}
+  - component: {fileID: 9008032534663677258}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.sunfallengine_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 7445015097445338027}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9008032534663677258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1115228447311792742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 7445015097445338027}
+  muzzleVisualPrefab: {fileID: 83357048723931281, guid: 182ac820f6d50f14d845b4319571d61d, type: 3}
+  projectileVisualPrefab: {fileID: 7000018573895723745, guid: 95f88ce3123ea2f4ba920edd2f9c9d73, type: 3}
+  impactVisualPrefab: {fileID: 7287917127738617264, guid: ecf04aff8da7c944faa32106c8e6be04, type: 3}
 --- !u!1 &5884299801705586324
 GameObject:
   m_ObjectHideFlags: 0

@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 155676589704249818}
+  - component: {fileID: 8385777204909505361}
   m_Layer: 0
   m_Name: item.weapon.rifle.redsingularity_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 5540857723345662318}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8385777204909505361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1929021148905938142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 5540857723345662318}
+  muzzleVisualPrefab: {fileID: 29055216968653205, guid: 447bc4ce4619d4f4d979d4e0e4766758, type: 3}
+  projectileVisualPrefab: {fileID: 6073035594134309472, guid: 740bc19a08c3e8a459e7726ed8a5dd67, type: 3}
+  impactVisualPrefab: {fileID: 5424998177609790770, guid: a7fd87512828b1e4fa0f37a4e70fa013, type: 3}
 --- !u!1001 &6068245319379855881
 PrefabInstance:
   m_ObjectHideFlags: 0

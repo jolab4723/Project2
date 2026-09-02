@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4626371807018437464}
+  - component: {fileID: 5471723037013840443}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.snowballfight_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 1943306368264227106}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5471723037013840443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7290411850366605055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 1943306368264227106}
+  muzzleVisualPrefab: {fileID: 5452804212546650351, guid: 032af763aea8aa0419a0e6f11dd260fd, type: 3}
+  projectileVisualPrefab: {fileID: 3651094736133867518, guid: 0b757df4b7958cf4c80ce3a0b4311176, type: 3}
+  impactVisualPrefab: {fileID: 4848570744365935256, guid: 486a5c11303ab6b4c98875c86a4ab0cc, type: 3}
 --- !u!1001 &6079475750323905142
 PrefabInstance:
   m_ObjectHideFlags: 0

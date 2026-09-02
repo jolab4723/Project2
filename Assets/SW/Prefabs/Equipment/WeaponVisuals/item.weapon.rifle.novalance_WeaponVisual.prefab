@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8232270563127426430}
+  - component: {fileID: 5627582853743905055}
   m_Layer: 0
   m_Name: item.weapon.rifle.novalance_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 4219790073203427346}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5627582853743905055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5551350388220918419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 4219790073203427346}
+  muzzleVisualPrefab: {fileID: 162423782126336504, guid: 200d78df7cca6634e883e7a7d03ad4a7, type: 3}
+  projectileVisualPrefab: {fileID: 9190928356305477576, guid: 80e6b110559661246b9e40876e995bf4, type: 3}
+  impactVisualPrefab: {fileID: 895496159211972664, guid: 2d93bdb10f6637f49bb03ffd8d045202, type: 3}
 --- !u!1001 &96671650359032068
 PrefabInstance:
   m_ObjectHideFlags: 0

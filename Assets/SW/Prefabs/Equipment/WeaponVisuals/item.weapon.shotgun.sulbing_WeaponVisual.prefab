@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2152244949372017508}
+  - component: {fileID: 8053834338429882251}
   m_Layer: 0
   m_Name: item.weapon.shotgun.sulbing_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4962720042690667186}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8053834338429882251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4404549900815808679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 4962720042690667186}
+  muzzleVisualPrefab: {fileID: 2259214929308957500, guid: a645fa27d413c3d41ac7ffe984342488, type: 3}
+  projectileVisualPrefab: {fileID: 1584069905526069204, guid: 3fa974784d3abef4b940f70431c7eceb, type: 3}
+  impactVisualPrefab: {fileID: 8607834919549572307, guid: 8bc784cfaec860845ba1b30a749bd7df, type: 3}
 --- !u!1 &6335820934537683788
 GameObject:
   m_ObjectHideFlags: 0

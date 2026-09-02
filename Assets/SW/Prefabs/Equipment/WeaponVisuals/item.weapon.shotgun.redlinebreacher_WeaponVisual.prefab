@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1423324400341377654}
+  - component: {fileID: 425656810991124028}
   m_Layer: 0
   m_Name: item.weapon.shotgun.redlinebreacher_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 1328078987061513121}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &425656810991124028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8725533486975165491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 1328078987061513121}
+  muzzleVisualPrefab: {fileID: 3894317842930663769, guid: bdad67df599dba0448a97b49dd600596, type: 3}
+  projectileVisualPrefab: {fileID: 8909763375568872274, guid: 219887099cf62a04a9c7d6a0b8da74b0, type: 3}
+  impactVisualPrefab: {fileID: 565323864006178601, guid: 8911848bc0e9613408f65327165149b3, type: 3}
 --- !u!1001 &8325818854977140688
 PrefabInstance:
   m_ObjectHideFlags: 0

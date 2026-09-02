@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3850893169135926517}
+  - component: {fileID: 1650397582722569154}
   m_Layer: 0
   m_Name: item.weapon.shotgun.voidbarrage_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 325368836700602223}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1650397582722569154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1785390060002916403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 325368836700602223}
+  muzzleVisualPrefab: {fileID: 6102399433415848143, guid: dfd04c42fd9efd141b1ed1bf0d2d0a28, type: 3}
+  projectileVisualPrefab: {fileID: 9017101197198352170, guid: 9f9f7b3b7320e2042ac2282e17b21481, type: 3}
+  impactVisualPrefab: {fileID: 1141801753560561275, guid: a1c5fe606aa6b1544b9cd9dc62b4a708, type: 3}
 --- !u!1 &2655469826425435699
 GameObject:
   m_ObjectHideFlags: 0

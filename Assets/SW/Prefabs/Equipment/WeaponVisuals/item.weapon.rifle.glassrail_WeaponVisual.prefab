@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9154715179037351424}
+  - component: {fileID: 5347852917367676217}
   m_Layer: 0
   m_Name: item.weapon.rifle.glassrail_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 2219096775544866947}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5347852917367676217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4968155720112647396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 2219096775544866947}
+  muzzleVisualPrefab: {fileID: 1585494319437531110, guid: 55d313c52533f9c4fbf5669d806238c8, type: 3}
+  projectileVisualPrefab: {fileID: 2295845005922480158, guid: 4207a59fd4e4120458346b8868b32e83, type: 3}
+  impactVisualPrefab: {fileID: 4662598322083997722, guid: 400ca6e4518ca004fa7c109cbb26c858, type: 3}
 --- !u!1 &7159662835146366091
 GameObject:
   m_ObjectHideFlags: 0

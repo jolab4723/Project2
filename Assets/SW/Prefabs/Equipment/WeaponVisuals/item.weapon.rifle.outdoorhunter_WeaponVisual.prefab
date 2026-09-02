@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7559409583556400920}
+  - component: {fileID: 2872105197333912458}
   m_Layer: 0
   m_Name: item.weapon.rifle.outdoorhunter_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 4329098511439628061}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2872105197333912458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7916229724917558566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 4329098511439628061}
+  muzzleVisualPrefab: {fileID: 3136409273616035895, guid: 27d87bed70655f241b11c74d4a8bc498, type: 3}
+  projectileVisualPrefab: {fileID: 562006883009941296, guid: a9c334088615def4496e34f3ef8491b5, type: 3}
+  impactVisualPrefab: {fileID: 8187654663176254213, guid: 61872fb5362919844a2ee1735d61fbf0, type: 3}
 --- !u!1001 &8800961453995707470
 PrefabInstance:
   m_ObjectHideFlags: 0

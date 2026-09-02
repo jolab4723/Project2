@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum EffectAttachType
 {
@@ -11,6 +12,10 @@ public enum EffectAttachType
 public class WBH_EffectData : ScriptableObject
 {
     [Header("Effect")]
+    // SW 추가:
+    // 기존 EffectData 자산에는 이 값이 effectPrefab이라는 이름으로 저장되어 있습니다.
+    // 필드 이름이 attackEffectPrefab으로 바뀐 뒤에도 기존 프리팹 연결을 그대로 읽도록 이전 이름을 알려 줍니다.
+    [FormerlySerializedAs("effectPrefab")]
     public WBH_Effect attackEffectPrefab;
     public ParticleSystem hitEffectPrefab;
 

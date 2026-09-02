@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 414503048625997975}
+  - component: {fileID: 1008246261270613191}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.clusterpop_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4589498195345329804}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1008246261270613191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 589835482622270218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 4589498195345329804}
+  muzzleVisualPrefab: {fileID: 4536655827789202676, guid: 20743171c12cf104dae8100d48bb7b89, type: 3}
+  projectileVisualPrefab: {fileID: 5132882094192612031, guid: 7c6ec8896b5a3dc4f93fd1ba83bf075b, type: 3}
+  impactVisualPrefab: {fileID: 5700483448094922443, guid: 11a57fe34bfe02a49af2fe5900a26b9f, type: 3}
 --- !u!1 &3191144116524575444
 GameObject:
   m_ObjectHideFlags: 0
