@@ -241,6 +241,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_PlaySkillEffect(int partValue)
     {
         fighterSkillController?.PlayPendingSkillEffect(partValue);
+        gunnerSkillController?.PlayPendingSkillEffect(partValue);
     }
 
     public void AniEvent_PlayFighterChargeEffect()

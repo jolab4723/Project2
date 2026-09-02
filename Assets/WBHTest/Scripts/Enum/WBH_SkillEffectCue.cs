@@ -37,13 +37,21 @@ public enum WBH_PlayerEffectCue
 public static class PlayerEffectCueUtility
 {
     private const int FighterClassCode = 1;
+    private const int GunnerClassCode = 2;
 
-    public static WBH_PlayerEffectCue CreateFighterSkillCue(
-        int skillNumber,
-        SkillEvolutionId evolution,
-        SkillEffectPart part)
+    public static WBH_PlayerEffectCue CreateFighterSkillCue(int skillNumber, SkillEvolutionId evo, SkillEffectPart part)
     {
-        int evolutionCode = evolution switch
+        return CreateSkillCue(FighterClassCode, skillNumber, evo, part);
+    }
+
+    public static WBH_PlayerEffectCue CreateGunnerSkillCue(int skillNumber, SkillEvolutionId evo, SkillEffectPart part)
+    {
+        return CreateSkillCue(GunnerClassCode, skillNumber, evo, part);
+    }
+
+    private static WBH_PlayerEffectCue CreateSkillCue(int classCode, int skillNumber, SkillEvolutionId evo, SkillEffectPart part)
+    {
+        int evolutionCode = evo switch
         {
             SkillEvolutionId.Evolution1 => 1,
             SkillEvolutionId.Evolution2 => 2,
@@ -51,11 +59,7 @@ public static class PlayerEffectCueUtility
             _ => 0,
         };
 
-        int cueValue =
-            FighterClassCode * 1000
-            + skillNumber * 100
-            + evolutionCode * 10
-            + (int)part;
+        int cueValue = classCode * 1000 + skillNumber * 100 + evolutionCode * 10 + (int)part;
 
         return (WBH_PlayerEffectCue)cueValue;
     }

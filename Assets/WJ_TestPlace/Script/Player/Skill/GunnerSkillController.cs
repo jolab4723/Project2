@@ -78,6 +78,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
     //-------
 
+    private void Awake()
+    {
+        playerEffect = GetComponent<WBH_PlayerEffect>();
+    }
+
     private void OnEnable()
     {
         if (inputHandler != null)
@@ -372,6 +377,29 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             default: ExecuteArcBuster(def, index);
                 break;
         }
+    }
+
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            Log.Warning($"알수 없는 스킬 이펙트 부가정보 : {partValue}");
+            return;
+        }
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def == null || playerEffect == null)
+            return;
+
+        SkillEffectPart part = (SkillEffectPart)partValue;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, part);
+
+        playerEffect.PlayEffect(cue, Vector3.one);
     }
 
     // -------
