@@ -8,8 +8,10 @@ using UnityEngine;
 /// 1. PlayerWeaponVisualPresenter가 장착한 무기 외형 프리팹을 캐릭터 손에 표시합니다.
 /// 2. T_PlayerCombat은 현재 활성화된 무기 외형에서 이 컴포넌트를 찾습니다.
 /// 3. 공격 순간에는 PlayMuzzle()로 총구 VFX를 재생합니다.
-/// 4. WBH_ProjectileSpawner에는 ProjectileVisualPrefab과 ImpactVisualPrefab을 전달합니다.
-/// 5. WBH_Projectile은 기존 오브젝트 풀과 이동·충돌·데미지 흐름을 그대로 사용하면서,
+/// 4. 라이플과 유탄발사기는 WBH_ProjectileSpawner에 ProjectileVisualPrefab과 ImpactVisualPrefab을 전달합니다.
+/// 5. 산탄총은 중앙 투사체를 만들지 않으므로 ProjectileVisualPrefab을 비워 두고,
+///    총구의 부채꼴 연출과 실제 피해 대상 위치의 ImpactVisualPrefab만 사용합니다.
+/// 6. WBH_Projectile은 기존 오브젝트 풀과 이동·충돌·데미지 흐름을 그대로 사용하면서,
 ///    전달받은 시각 프리팹만 붙여 재생합니다.
 ///
 /// 이 컴포넌트가 하지 않는 일:
@@ -30,7 +32,7 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     [Tooltip("발사 순간 Muzzle 위치에서 짧게 재생되는 VFX입니다. 공격 판정과 투사체 이동에는 관여하지 않습니다.")]
     [SerializeField] private GameObject muzzleVisualPrefab;
 
-    [Tooltip("기존 WBH_Projectile 풀 오브젝트에 붙어 비행 중 표시되는 순수 시각 프리팹입니다.")]
+    [Tooltip("라이플·유탄발사기의 기존 WBH_Projectile 풀 오브젝트에 붙는 비행 VFX입니다. 산탄총은 중앙 탄환을 사용하지 않으므로 비워 둡니다.")]
     [SerializeField] private GameObject projectileVisualPrefab;
 
     [Tooltip("WBH_Projectile이 충돌하거나 폭발한 위치에서 한 번 재생하는 순수 시각 프리팹입니다.")]

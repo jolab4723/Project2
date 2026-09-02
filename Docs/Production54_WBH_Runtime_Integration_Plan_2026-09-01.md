@@ -2,7 +2,7 @@
 
 ## 1. 현재 정지점
 
-- 현재 Unity 후보는 `Home54FinalR6`의 거너 54종, Muzzle/Flight/Impact 162개다.
+- 현재 런타임 연결 기준은 거너 54종, Muzzle 54개, Flight 36개, Impact 54개로 총 144개다. 산탄총 18종의 Flight 후보는 중앙 탄환 제거 결정에 따라 제작 원본으로만 보존하고 WeaponVisual에서는 참조하지 않는다.
 - Flight R6 Editor QA는 새 후보 54개와 `Gunner_Bullet` 기준 1개를 합쳐 55/55 통과했다.
 - Impact R6 Editor QA도 새 후보 54개와 `Fighter_Attack` 기준 1개를 합쳐 55/55 통과했다.
 - 마지막 확인 시 Unity 6000.3.22f1, Console error 0, `Act1_Camp` clean, Edit Mode, Prefab Stage 없음이었다.
@@ -29,7 +29,7 @@
 장착 무기 itemId
   -> PlayerWeaponVisualPresenter가 기존 Addressable WeaponVisual 로드
   -> 로드된 WeaponVisual의 루트 직속 Muzzle과 itemId를 한 번 알림
-  -> GunnerCombatVfxController가 현재 M/F/I 3개만 미리 로드
+  -> 라이플·유탄은 현재 M/F/I 3개, 산탄총은 M/I 2개만 미리 로드
 
 AniEvent_ExecuteAttack
   -> T_PlayerCombat.GunnerAttack
@@ -91,10 +91,10 @@ AniEvent_ExecuteAttack
 | 종류 | 수 | 판정 | Flight 연결 | Impact 연결 |
 | --- | ---: | --- | --- | --- |
 | Rifle | 21 | 기존 직선 projectile | 기존 Normal 풀의 실제 `WBH_Projectile`에 F 동기화 | 실제 trigger 명중 직전 I |
-| Shotgun | 18 | 기존 `SectorAttack` 유지 | WBH 승인 후 같은 Normal 풀을 `visualOnly`로 한 발 사용하며 추가 피해 0 | 시각 projectile의 첫 충돌 또는 사거리 끝 정책을 별도 검증 |
+| Shotgun | 18 | 기존 `SectorAttack` 유지 | 중앙 Flight 없음. Muzzle 안의 다중 펠릿·파편·속성 입자가 10m·90도 부채꼴을 표시 | 실제 `SectorAttack` 피해 대상 위치에서 즉시 I |
 | GrenadeLauncher | 15 | 기존 포물선 grenade | 기존 Grenade 풀의 실제 `WBH_Projectile`에 F 동기화 | `Explode()` 직전 I |
 
-Shotgun은 기존 판정을 projectile damage로 몰래 교체하지 않는다. `visualOnly` 모드는 Collider를 이용해 첫 접촉 위치만 얻고 피해 처리는 하지 않는다. 이것으로 Flamethrower도 근접 고정 화염이 아니라 총구에서 분리되어 전방으로 날아가는 F를 갖는다.
+Shotgun은 기존 판정을 projectile damage로 몰래 교체하지 않으며 중앙 Flight도 만들지 않는다. 일반·얼음·전기는 Muzzle 안의 여러 짧은 streak·결정·번개 갈래가 부채꼴로 이동하고, Flamethrower 계열은 `+Z`로 전진하는 연속 화염 입자가 실제 10m 범위를 채운다. 따라서 화염이 총구 앞에 고정된 근접 연출로 보이지 않으면서도 한 발짜리 중앙 탄환과 부채꼴 판정이 어긋나지 않는다.
 
 RailCarbine은 한 발 판정과 gameplay Muzzle 하나를 유지한다. R6 M wrapper 안의 상하 두 시각 emitter만 동시에 재생한다.
 
@@ -112,9 +112,9 @@ RailCarbine은 한 발 판정과 gameplay Muzzle 하나를 유지한다. R6 M wr
 현재 R6는 QA 후보 경로에 있으므로 실전 코드가 `Assets/SW/TEST/**`를 직접 경로 문자열로 읽게 만들지 않는다.
 
 1. 최종 구현 직전에 R6 wrapper와 필요한 SharedFamilies를 Unity Editor에서 안정된 Production49 하위 runtime 폴더로 이동한다. 복사본을 하나 더 만들지 않고 `.meta`와 GUID를 보존한다.
-2. 새 Addressables 그룹 `SW Gunner VFX`에 162 endpoint를 등록한다.
+2. 새 Addressables 그룹 `SW Gunner VFX`에는 Muzzle 54, Flight 36, Impact 54로 총 144 endpoint만 등록한다.
 3. 주소는 54개 itemId에서 결정적으로 파생하고 수동 이름표를 만들지 않는다.
-4. 에디터 빌드 검증으로 54 itemId × 3 주소의 누락·중복을 0으로 만든다.
+4. 에디터 빌드 검증으로 54 Muzzle, 라이플·유탄 36 Flight, 54 Impact의 누락·중복을 0으로 만들고 산탄 Flight 참조가 0인지 확인한다.
 
 Addressables 설정과 Prefab은 Unity Editor API로만 변경한다. YAML을 직접 편집하지 않는다.
 
@@ -142,7 +142,7 @@ Addressables 설정과 Prefab은 Unity Editor API로만 변경한다. YAML을 �
 
 대표 3종 통과 뒤에는 무기별 코드를 추가하지 않고 같은 itemId 주소 규칙으로 54종을 일괄 검증한다.
 
-- 54/54 장착 외형, root-direct Muzzle, M/F/I 주소 로드
+- 54/54 장착 외형과 root-direct Muzzle, Muzzle 54/54, Flight 36/36, Impact 54/54 주소 로드, 산탄 Flight 0/18
 - Rifle 20발, Shotgun burst 8회, Grenade impact 6회 동시 재생
 - 30회 활성/비활성, Missing/forbidden/+Z/잔류/워밍업 후 할당
 - Normal 39 / Fire 6 / Ice 3 / Electric 6 색상 구분과 Bloom
