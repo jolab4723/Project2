@@ -44,6 +44,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     [SerializeField] private WBH_EffectSpawner effectSpawner;
     [Tooltip("차징 중 플레이어에게 붙는 지속형 이펙트 데이터.")]
     [SerializeField] private WBH_EffectData chargeEffectData;
+    [SerializeField] private YJ_WeaponTrailTut weaponTrailTut; // 2026.09.01 조용준 추가
     private WBH_Effect activeChargeEffect;
     private GameObject activeChargeRangeVisual;
 
@@ -87,7 +88,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
     private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
-    private bool pendingSkillExecuted; // 중복 실행 방지 변수
     private float pendingDashDuration;
 
 
@@ -96,6 +96,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void Awake()
     {
         playerEffect = GetComponent<WBH_PlayerEffect>();
+
+        if (weaponTrailTut == null)
+            weaponTrailTut = GetComponentInChildren<YJ_WeaponTrailTut>(true);
     }
 
     private void OnEnable()
@@ -397,11 +400,13 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         pendingEvo = evolution;
         pendingEnhance = GetEnhancement(index);
         pendingChargeRatio = chargeRatio;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
 
         SkillDefinitionSO def = skills[index];
 
         pendingDashDuration = def != null && def.shapeType == SkillShapeType.Dash ? GetEffectiveDashDuration(def, index) : 0f;
+
+        weaponTrailTut?.StartTrail(); // 2026.09.01 조용준 추가 
     }
 
     // 대쉬시간을 계산하기 위한 메서드
@@ -422,11 +427,13 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 초기화
     private void ClearPendingSkill()
     {
+        weaponTrailTut?.StopTrail(); // 2026.09.01 조용준 추가
+
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
         pendingEnhance = SkillEnhancementId.None;
         pendingChargeRatio = 0f;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
         pendingDashDuration = 0f;
     }
 
@@ -916,7 +923,15 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(index + 1, pendingEvo, SkillEffectPart.Main);
+
+        playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                               WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
         WBH_CombatManager.ProcessDamage(request);
     }
 

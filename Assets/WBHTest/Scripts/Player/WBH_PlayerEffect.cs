@@ -172,5 +172,14 @@ public class WBH_PlayerEffect : MonoBehaviour
         chargeEnhancementScale = Vector3.one;
     }
 
-    
+    public bool TryGetEffectData(WBH_PlayerEffectCue cue, out WBH_EffectData data)
+    {
+        data = null;
+
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+            return false;
+
+        data = binding.data;
+        return data != null;
+    }
 }

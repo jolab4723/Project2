@@ -468,7 +468,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb23ea5b42168f4489a343ddf52af291, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_QuestSlot
-  questNameText: {fileID: 2815976225732522202}
+  titleText: {fileID: 2815976225732522202}
+  subText: {fileID: 0}
 --- !u!1 &1612592905775714128
 GameObject:
   m_ObjectHideFlags: 0
@@ -1643,6 +1644,7 @@ GameObject:
   - component: {fileID: 7968568904147494793}
   - component: {fileID: 9077484284368052113}
   - component: {fileID: 8170548724254669900}
+  - component: {fileID: 861605055862489246}
   m_Layer: 5
   m_Name: QuestPopup
   m_TagString: Untagged
@@ -1685,16 +1687,19 @@ MonoBehaviour:
   slotPrefab: {fileID: 7504057229615616307, guid: 520fc52b0bdda5a48b1c14e7c40ec799, type: 3}
   content: {fileID: 3516606207417782248}
   quests:
-  - questName: 면도기 모터가 필요해
-    description: 어우, 오랫동안 면도를 못했네. 로봇들에게서 면도기 모터로 쓸 만한 작은 모터를 좀 가져와 줘.
+  - questName: "\uBA74\uB3C4\uAE30 \uBAA8\uD130\uAC00 \uD544\uC694\uD574"
+    description: "\uC5B4\uC6B0, \uC624\uB7AB\uB3D9\uC548 \uBA74\uB3C4\uB97C \uBABB\uD588\uB124.
+      \uB85C\uBD07\uB4E4\uC5D0\uAC8C\uC11C \uBA74\uB3C4\uAE30 \uBAA8\uD130\uB85C
+      \uC4F8 \uB9CC\uD55C \uC791\uC740 \uBAA8\uD130\uB97C \uC880 \uAC00\uC838\uC640
+      \uC918."
     conditions:
-    - description: 고장난 로봇 처치
+    - description: "\uACE0\uC7A5\uB09C \uB85C\uBD07 \uCC98\uCE58"
       current: 0
       required: 5
-    - description: 면도기 모터 수집
+    - description: "\uBA74\uB3C4\uAE30 \uBAA8\uD130 \uC218\uC9D1"
       current: 0
       required: 3
-    reward: 골드 500, 경험치 300
+    reward: "\uACE8\uB4DC 500, \uACBD\uD5D8\uCE58 300"
 --- !u!114 &8170548724254669900
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1711,7 +1716,22 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: 600
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
+--- !u!114 &861605055862489246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8507021494647253720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acef6279449f444408211bccd3d19b91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestPopupBridge
+  database: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
+  questPopup: {fileID: 9077484284368052113}
 --- !u!1 &8507622015924287135
 GameObject:
   m_ObjectHideFlags: 0

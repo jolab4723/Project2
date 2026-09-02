@@ -8454,7 +8454,7 @@ GameObject:
   - component: {fileID: 2312052604114874023}
   - component: {fileID: 245515211961115271}
   - component: {fileID: 2674546040288394452}
-  - component: {fileID: 2017357833712916932}
+  - component: {fileID: 4655314278586303533}
   - component: {fileID: 5376958052108856053}
   - component: {fileID: 1896365474940792361}
   - component: {fileID: 2188125559027323366}
@@ -8475,7 +8475,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8098030532292546987
 Transform:
   m_ObjectHideFlags: 0
@@ -8698,6 +8698,7 @@ MonoBehaviour:
   Eff_fighterAtk: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
   Eff_gunnerShotgunAtk: {fileID: 0}
   fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
+  gunnerBackstepMove: {fileID: 0}
   effectSpawner: {fileID: 0}
 --- !u!114 &245515211961115271
 MonoBehaviour:
@@ -8774,6 +8775,7 @@ MonoBehaviour:
     data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
     anchor: {fileID: 5022215380906037386}
   chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
+  chargeRangeEffect: {fileID: 0}
 --- !u!114 &2674546040288394452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8789,10 +8791,10 @@ MonoBehaviour:
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
-  fighterAttackRange: 2
+  fighterAttackRange: 3
   gunnerAttackRange: 10
   gunnerBulletSpeed: 10
---- !u!114 &2017357833712916932
+--- !u!114 &4655314278586303533
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9025,6 +9027,7 @@ MonoBehaviour:
     m_Bits: 2048
   effectSpawner: {fileID: 0}
   chargeEffectData: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  weaponTrailTut: {fileID: 0}
   skills:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}

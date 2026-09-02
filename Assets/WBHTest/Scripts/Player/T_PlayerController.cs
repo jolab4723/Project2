@@ -20,7 +20,6 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private WBH_EffectSpawner effectSpawner;
     private WBH_ProjectileSpawner projectileSpawner;
     private YJ_MeshTrailTut meshTrailTut; // 2026.08.31 조용준 추가
-
     private Vector3 dodgeDir;
     private Coroutine invincibilityRoutine;
 
@@ -33,7 +32,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public bool IsInvincible { get; private set; } = false; // 무적여부
 
     public WBH_ICombatStatus Status => status;
-    public bool canDodge => currentDodgeCooltime <= 0f;
+    public bool CanDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
     public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked;
 
@@ -49,6 +48,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         status = GetComponent<WBH_PlayerStatus>();
         playerEffect = GetComponent<WBH_PlayerEffect>();
         statusEffectController = GetComponent<WBH_PlayerStatusEffectController>();
+
         meshTrailTut = GetComponentInChildren<YJ_MeshTrailTut>(); // 2026.08.31 조용준 추가
 
         effectSpawner = FindFirstObjectByType<WBH_EffectSpawner>();
@@ -128,7 +128,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 회피 쿨타임 판단
     private void CheckDodge()
     {
-        if (canDodge)
+        if (CanDodge)
             return;
 
         currentDodgeCooltime -= Time.deltaTime;
@@ -216,7 +216,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 회피
     public void TryDodge()
     {
-        if (!IsControlEnabled || !canDodge)
+        if (!IsControlEnabled || !CanDodge)
             return;
 
         dodgeDir = GetMouseDirection();
