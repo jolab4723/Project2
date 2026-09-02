@@ -16,7 +16,7 @@ public class YJ_MeshTrailTut : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer targetRenderer;
     [SerializeField] private Material defaultMat;
 
-    private bool isTrailActive;
+    private Coroutine trailCoroutine;
 
     private void Awake()
     {
@@ -35,49 +35,74 @@ public class YJ_MeshTrailTut : MonoBehaviour
         }
     }
 
-    public void Trail(Material mat = null, float duration = 0)
+    public void Trail(
+        Material mat = null,
+        float duration = 0f,
+        float refreshRate = 0f,
+        float destroyDelay = -1f)
     {
-        if (isTrailActive)
-            return;
-
         if (mat == null)
             mat = defaultMat;
 
         if (duration <= 0)
             duration = activeTime;
 
-        StartCoroutine(ActivateTrail(mat, duration));
+        if (refreshRate <= 0f)
+            refreshRate = meshRefreshRate;
+
+        if (destroyDelay < 0f)
+            destroyDelay = meshDestroyDelay;
+
+        if (trailCoroutine != null)
+            StopCoroutine(trailCoroutine);
+
+        trailCoroutine = StartCoroutine(ActivateTrail(mat, duration, refreshRate, destroyDelay));
     }
 
-    private IEnumerator ActivateTrail(Material material, float duration)
+    private IEnumerator ActivateTrail(
+        Material material,
+        float duration,
+        float refreshRate,
+        float destroyDelay)
     {
         if (targetRenderer == null)
         {
             Debug.LogWarning("smP02_Body의 SkinnedMeshRenderer를 찾지 못했습니다.");
+            trailCoroutine = null;
             yield break;
         }
 
-        if (defaultMat == null)
+        if (material == null)
         {
             Debug.LogWarning("잔상에 사용할 Material이 연결되지 않았습니다.");
+            trailCoroutine = null;
             yield break;
         }
 
-        isTrailActive = true;
         float timeActive = duration;
+        float interval = Mathf.Max(0.01f, refreshRate);
 
         while (timeActive > 0f)
         {
-            CreateTrailMesh(material);
+            CreateTrailMesh(material, destroyDelay);
 
-            timeActive -= meshRefreshRate;
-            yield return new WaitForSeconds(meshRefreshRate);
+            timeActive -= interval;
+            yield return new WaitForSeconds(interval);
         }
 
-        isTrailActive = false;
+        trailCoroutine = null;
     }
 
-    private void CreateTrailMesh(Material material)
+    private void OnDisable()
+    {
+        if (trailCoroutine == null)
+            return;
+
+        StopCoroutine(trailCoroutine);
+        trailCoroutine = null;
+    }
+
+    private void CreateTrailMesh(Material material, float destroyDelay)
     {
         GameObject trailObject = new GameObject($"{targetRenderer.name}_Trail");
 
@@ -100,9 +125,11 @@ public class YJ_MeshTrailTut : MonoBehaviour
         trailObject.transform.SetPositionAndRotation(targetRenderer.transform.position, targetRenderer.transform.rotation);
         trailObject.transform.localScale = Vector3.one;
 
-        Destroy(trailObject, meshDestroyDelay);
-        Destroy(bakedMesh, meshDestroyDelay);
-        Destroy(trailMaterial, meshDestroyDelay);
+        float cleanupDelay = Mathf.Max(0f, destroyDelay);
+
+        Destroy(trailObject, cleanupDelay);
+        Destroy(bakedMesh, cleanupDelay);
+        Destroy(trailMaterial, cleanupDelay);
     }
 
     private IEnumerator AnimateMaterialFloat(Material material, float goal, float rate, float refreshRate)
@@ -120,11 +147,15 @@ public class YJ_MeshTrailTut : MonoBehaviour
 
         while ( ! Mathf.Approximately(valueToAnimate, goal))
         {
+            if (material == null)
+                yield break;
+
             valueToAnimate = Mathf.MoveTowards(valueToAnimate, goal, rate);
             material.SetFloat(shaderVarRef, valueToAnimate);
-            yield return new WaitForSeconds(refreshRate);
+            yield return new WaitForSeconds(Mathf.Max(0.01f, refreshRate));
         }
 
-        material.SetFloat(shaderVarRef, goal);
+        if (material != null)
+            material.SetFloat(shaderVarRef, goal);
     }
 }

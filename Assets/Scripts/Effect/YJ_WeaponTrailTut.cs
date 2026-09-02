@@ -28,7 +28,11 @@ public class YJ_WeaponTrailTut : MonoBehaviour
         ResolveWeaponRenderer();
     }
 
-    public void Trail(Material mat = null, float duration = 0)
+    public void Trail(
+        Material mat = null,
+        float duration = 0f,
+        float refreshRate = 0f,
+        float destroyDelay = -1f)
     {
         if (mat == null)
             mat = defaultMat;
@@ -36,7 +40,13 @@ public class YJ_WeaponTrailTut : MonoBehaviour
         if (duration <= 0)
             duration = activeTime;
 
-        if (!TryStartTrail(mat))
+        if (refreshRate <= 0f)
+            refreshRate = meshRefreshRate;
+
+        if (destroyDelay < 0f)
+            destroyDelay = meshDestroyDelay;
+
+        if (!TryStartTrail(mat, refreshRate, destroyDelay))
             return;
 
         CancelTimedStop();
@@ -50,7 +60,7 @@ public class YJ_WeaponTrailTut : MonoBehaviour
         if (mat == null)
             mat = defaultMat;
 
-        TryStartTrail(mat);
+        TryStartTrail(mat, meshRefreshRate, meshDestroyDelay);
     }
 
     public void StopTrail()
@@ -64,11 +74,8 @@ public class YJ_WeaponTrailTut : MonoBehaviour
         trailCoroutine = null;
     }
 
-    private bool TryStartTrail(Material material)
+    private bool TryStartTrail(Material material, float refreshRate, float destroyDelay)
     {
-        if (trailCoroutine != null)
-            return true;
-
         if (material == null)
         {
             Debug.LogWarning("잔상에 사용할 Material이 연결되지 않았습니다.", this);
@@ -83,19 +90,22 @@ public class YJ_WeaponTrailTut : MonoBehaviour
             return false;
         }
 
-        trailCoroutine = StartCoroutine(GenerateTrail(material));
+        if (trailCoroutine != null)
+            StopCoroutine(trailCoroutine);
+
+        trailCoroutine = StartCoroutine(GenerateTrail(material, refreshRate, destroyDelay));
         return true;
     }
 
-    private IEnumerator GenerateTrail(Material material)
+    private IEnumerator GenerateTrail(Material material, float refreshRate, float destroyDelay)
     {
-        float refreshRate = Mathf.Max(0.01f, meshRefreshRate);
-        WaitForSeconds wait = new WaitForSeconds(refreshRate);
+        float interval = Mathf.Max(0.01f, refreshRate);
+        WaitForSeconds wait = new WaitForSeconds(interval);
 
         while (true)
         {
             if (ResolveWeaponRenderer())
-                CreateTrailMesh(material);
+                CreateTrailMesh(material, destroyDelay);
 
             yield return wait;
         }
@@ -176,7 +186,7 @@ public class YJ_WeaponTrailTut : MonoBehaviour
             && meshFilter.sharedMesh != null;
     }
 
-    private void CreateTrailMesh(Material material)
+    private void CreateTrailMesh(Material material, float destroyDelay)
     {
         if (!targetRenderer.TryGetComponent(out MeshFilter sourceMeshFilter)
             || sourceMeshFilter.sharedMesh == null)
@@ -209,8 +219,28 @@ public class YJ_WeaponTrailTut : MonoBehaviour
         trailObject.transform.SetPositionAndRotation(targetRenderer.transform.position, targetRenderer.transform.rotation);
         trailObject.transform.localScale = targetRenderer.transform.lossyScale;
 
-        Destroy(trailObject, meshDestroyDelay);
-        Destroy(trailMaterial, meshDestroyDelay);
+        float cleanupDelay = Mathf.Max(
+            Mathf.Max(0f, destroyDelay),
+            GetMaterialAnimationDuration(trailMaterial, 0f, shaderVarRate, shaderVarRefreshRate));
+
+        Destroy(trailObject, cleanupDelay);
+        Destroy(trailMaterial, cleanupDelay);
+    }
+
+    private float GetMaterialAnimationDuration(Material material, float goal, float rate, float refreshRate)
+    {
+        if (material == null
+            || string.IsNullOrEmpty(shaderVarRef)
+            || !material.HasFloat(shaderVarRef)
+            || rate <= 0f)
+            return 0f;
+
+        float interval = Mathf.Max(0.01f, refreshRate);
+        float distance = Mathf.Abs(material.GetFloat(shaderVarRef) - goal);
+        int stepCount = Mathf.CeilToInt(distance / rate);
+
+        // 마지막 SetFloat와 같은 프레임에 Material이 파괴되지 않도록 한 주기의 여유를 둔다.
+        return (stepCount + 1) * interval;
     }
 
     private IEnumerator AnimateMaterialFloat(Material material, float goal, float rate, float refreshRate)
@@ -229,11 +259,15 @@ public class YJ_WeaponTrailTut : MonoBehaviour
 
         while (!Mathf.Approximately(valueToAnimate, goal))
         {
+            if (material == null)
+                yield break;
+
             valueToAnimate = Mathf.MoveTowards(valueToAnimate, goal, rate);
             material.SetFloat(shaderVarRef, valueToAnimate);
             yield return wait;
         }
 
-        material.SetFloat(shaderVarRef, goal);
+        if (material != null)
+            material.SetFloat(shaderVarRef, goal);
     }
 }

@@ -1,9 +1,9 @@
 using UnityEngine;
 
-public class YJ_MeshTrail : MonoBehaviour
+public class YJ_WeaponTrail : MonoBehaviour
 {
     [SerializeField] private GameObject player;
-    [SerializeField] private YJ_MeshTrailTut meshTrailTut;
+    [SerializeField] private YJ_WeaponTrailTut weaponTrailTut;
     [SerializeField] private Material mat;
     [SerializeField] private float activeTime = 2f;
     [SerializeField] private float meshRefreshRate = 0.1f;
@@ -30,10 +30,10 @@ public class YJ_MeshTrail : MonoBehaviour
 
     private void PlayTrail()
     {
-        if (meshTrailTut == null)
+        if (weaponTrailTut == null)
             FindPlayer();
 
-        meshTrailTut?.Trail(mat, activeTime, meshRefreshRate, meshDestroyDelay);
+        weaponTrailTut?.Trail(mat, activeTime, meshRefreshRate, meshDestroyDelay);
     }
 
     private void FindPlayer()
@@ -44,6 +44,6 @@ public class YJ_MeshTrail : MonoBehaviour
             return;
 
         player = playerController.gameObject;
-        meshTrailTut = player.GetComponentInChildren<YJ_MeshTrailTut>(true);
+        weaponTrailTut = player.GetComponentInChildren<YJ_WeaponTrailTut>(true);
     }
 }

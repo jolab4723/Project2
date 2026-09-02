@@ -44,7 +44,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     [SerializeField] private WBH_EffectSpawner effectSpawner;
     [Tooltip("차징 중 플레이어에게 붙는 지속형 이펙트 데이터.")]
     [SerializeField] private WBH_EffectData chargeEffectData;
-    [SerializeField] private YJ_WeaponTrailTut weaponTrailTut; // 2026.09.01 조용준 추가
     private WBH_Effect activeChargeEffect;
     private GameObject activeChargeRangeVisual;
 
@@ -96,9 +95,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void Awake()
     {
         playerEffect = GetComponent<WBH_PlayerEffect>();
-
-        if (weaponTrailTut == null)
-            weaponTrailTut = GetComponentInChildren<YJ_WeaponTrailTut>(true);
     }
 
     private void OnEnable()
@@ -406,7 +402,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         pendingDashDuration = def != null && def.shapeType == SkillShapeType.Dash ? GetEffectiveDashDuration(def, index) : 0f;
 
-        weaponTrailTut?.StartTrail(); // 2026.09.01 조용준 추가 
     }
 
     // 대쉬시간을 계산하기 위한 메서드
@@ -427,8 +422,6 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 초기화
     private void ClearPendingSkill()
     {
-        weaponTrailTut?.StopTrail(); // 2026.09.01 조용준 추가
-
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
         pendingEnhance = SkillEnhancementId.None;
