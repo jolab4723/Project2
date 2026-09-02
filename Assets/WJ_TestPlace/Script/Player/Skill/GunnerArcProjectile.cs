@@ -11,6 +11,8 @@ using UnityEngine;
 /// </summary>
 public class GunnerArcProjectile : MonoBehaviour
 {
+    [Header("폭발 범위 표시")]
+
     private Vector3 direction;
     private float speed;
     private float maxDistance;

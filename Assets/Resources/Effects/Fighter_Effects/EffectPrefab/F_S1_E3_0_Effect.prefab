@@ -4913,6 +4913,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2823892994790538863}
   - component: {fileID: -1401841834595148419}
+  - component: {fileID: -2375872224137358374}
+  - component: {fileID: -2315792324972233290}
   m_Layer: 0
   m_Name: F_S1_E3_0_Effect
   m_TagString: Untagged
@@ -4949,6 +4951,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc3aaa83ac1742d47ad5e32e114a5928, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_Effect
+--- !u!114 &-2375872224137358374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134382210254734156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d42963a61f6e7e0448e36a747a751311, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrail
+  player: {fileID: 0}
+  meshTrailTut: {fileID: 0}
+  mat: {fileID: 2100000, guid: 124a6cea81d963d429f8958f7149b390, type: 2}
+  activeTime: 0.4
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.75
+--- !u!114 &-2315792324972233290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134382210254734156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43f148eec7808174a8708a5cc613af03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_WeaponTrail
+  player: {fileID: 0}
+  weaponTrailTut: {fileID: 0}
+  mat: {fileID: 2100000, guid: 124a6cea81d963d429f8958f7149b390, type: 2}
+  activeTime: 0.4
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.75
 --- !u!1 &1390035393606035703
 GameObject:
   m_ObjectHideFlags: 0

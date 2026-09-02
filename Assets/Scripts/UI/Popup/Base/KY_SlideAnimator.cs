@@ -37,6 +37,11 @@ public class KY_SlideAnimator : MonoBehaviour
     }
 
     // 팝업이 나갈 때 호출
+    public Tween SlideOut()
+    {
+        return SlideOut(null);
+    }
+
     public Tween SlideOut(System.Action onComplete)
     {
         return rectTransform.DOAnchorPos(hiddenPosition, duration)
