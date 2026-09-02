@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 43383738054014167}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.031431355, y: 0.16209018, z: -0.088752136}
+  m_LocalPosition: {x: -0.031432368, y: 0.1620902, z: -0.08875212}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -207,7 +207,7 @@ Transform:
   m_GameObject: {fileID: 123431896400024867}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006197005, y: 0.0093165515, z: -0.007022988, w: 0.99993193}
-  m_LocalPosition: {x: 0.07309838, y: 0.16063648, z: -0.061683565}
+  m_LocalPosition: {x: 0.07309731, y: 0.16063644, z: -0.061683547}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13176,7 +13176,7 @@ Transform:
   m_GameObject: {fileID: 3196788911959201898}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00006215555, y: 0.00931655, z: -0.007022799, w: 0.99993193}
-  m_LocalPosition: {x: -0.077584706, y: 0.16274358, z: -0.056084186}
+  m_LocalPosition: {x: -0.07758369, y: 0.16274357, z: -0.056084204}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13565,7 +13565,6 @@ GameObject:
   - component: {fileID: 6049755122172918978}
   - component: {fileID: 7545624182888009642}
   - component: {fileID: 4489042031379611030}
-  - component: {fileID: 6707463550239582100}
   m_Layer: 15
   m_Name: Gunner
   m_TagString: Player
@@ -13596,6 +13595,7 @@ Transform:
   - {fileID: 7458931148239949045}
   - {fileID: 2911119012415087943}
   - {fileID: 3402494798110775104}
+  - {fileID: 7690192611134675998}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &4287175214796011596
@@ -13608,7 +13608,7 @@ Animator:
   m_GameObject: {fileID: 3433699924133273942}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 271fb3111643439479e51ecb5e1fcdb0, type: 3}
-  m_Controller: {fileID: 9100000, guid: 4990397f59c75374793a123f0cf4c0e8, type: 2}
+  m_Controller: {fileID: 9100000, guid: 8e3f96481b13dbb44b7cb7d15c22c51f, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -13793,7 +13793,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerEffect
   spawner: {fileID: 0}
-  effectBindings: []
+  effectBindings:
+  - cue: 2000
+    data: {fileID: 11400000, guid: 767cfae72eadb764cad2bca1e93ff3d4, type: 2}
+    anchor: {fileID: 1567172518342530222}
+  - cue: 2100
+    data: {fileID: 11400000, guid: a154d87d9ecfc2a4d88ba29f11f1b994, type: 2}
+    anchor: {fileID: 1567172518342530222}
   chargeEffect: {fileID: 0}
   chargeRangeEffect: {fileID: 0}
 --- !u!114 &3956834942408191873
@@ -14055,26 +14061,6 @@ MonoBehaviour:
   sectorVisualColor: {r: 0.2, g: 0.6, b: 1, a: 0.35}
   lineVisualColor: {r: 0.2, g: 0.9, b: 1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
---- !u!114 &6707463550239582100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3433699924133273942}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
-  activeTime: 2
-  meshRefreshRate: 0.1
-  meshDestroyDelay: 0.5
-  shaderVarRef: 
-  shaderVarRate: 0.1
-  shaderVarRefreshRate: 0.05
-  targetRenderer: {fileID: 0}
-  defaultMat: {fileID: 0}
 --- !u!1 &3517197199581817610
 GameObject:
   m_ObjectHideFlags: 0
@@ -19520,7 +19506,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: eaa676d794329d14ba75c01981afc6e5, type: 2}
+  - {fileID: 2100000, guid: fefa7e144c238de4288944693026f41b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -26321,6 +26307,80 @@ Transform:
   - {fileID: 7260517591125635683}
   m_Father: {fileID: 2686080287042882887}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6036247235585681403
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7690192611134675998}
+  - component: {fileID: 202002109729497860}
+  - component: {fileID: 224024644799831189}
+  m_Layer: 15
+  m_Name: MeshTrailEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7690192611134675998
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6036247235585681403}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2686080287042882887}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &202002109729497860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6036247235585681403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
+  activeTime: 0.3
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  targetRenderer: {fileID: 3566827855895128077}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
+--- !u!114 &224024644799831189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6036247235585681403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a129f64a00555944093cb27e6efa9e64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_WeaponTrailTut
+  activeTime: 0.25
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  weaponRoot: {fileID: 42545183829629810}
+  targetRenderer: {fileID: 0}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &6117531848580181202
 GameObject:
   m_ObjectHideFlags: 0
