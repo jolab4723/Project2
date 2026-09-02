@@ -1,0 +1,5 @@
+Sol4 Sulbing Repair4 QA / 2026-08-28 16:23:46
+Execution provenance: in-memory Unity Editor fallback using loaded SaveTarget/ExactClone/Capture helpers because unrelated TempGrenadeExpansionBatch12Builder.cs prevents Assembly-CSharp-Editor reload; patched TempSol4Repair3Builder.cs itself validates with 0 diagnostics.
+Lifecycle cause repaired: three source systems previously used ringBufferMode=PauseUntilReplaced and retained five particles after each 5-second simulation; all retained Sulbing source systems now serialize Disabled.
+sulbing | GUID=f1a1b749415b86347a63c99a2683614b | expectedGUID=f1a1b749415b86347a63c99a2683614b | guidUnchanged=True | FBX_GUID=6e52117ae3ef7b34aa5253c5e163f4c8 | renderers=19 | enabledRendererMissing=0 | particles=4 | particleLimit=True | forbidden=0 | particleIssues=0 | exactSources=True | flowBehindMinusZ=True | ringCentered=True | ringNormalPlusZ=True | crystalsCenteredOnSampledCore=True | +ZMarker=True | naturalResidue30=0 | residue30=0
+ringBufferModes=G:Disabled;lizi2:Disabled;CasualRPG_Orbs_frost_ExactSource:Disabled;orbs:Disabled;

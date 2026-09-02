@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 625131138046600509}
+  - component: {fileID: 8244705872841064929}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.halomortar_WeaponVisual
   m_TagString: Untagged
@@ -25,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 384746035872135249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.03129, y: -0.012951, z: 0.42341602}
+  m_LocalPosition: {x: -0.03129, y: -0.012951, z: 0.053416}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 113801397457581969}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8244705872841064929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 384746035872135249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 113801397457581969}
+  muzzleVisualPrefab: {fileID: 5547010935124985625, guid: cf4b023bcbb7351459d80defd7d385af, type: 3}
+  projectileVisualPrefab: {fileID: 1859541176687008884, guid: 7beeddf96151d4642ba7716cca1eed0f, type: 3}
+  impactVisualPrefab: {fileID: 5149690652916799243, guid: fc15168f1f61c0847bce9c1ee52e7bc8, type: 3}
 --- !u!1 &484496144959727917
 GameObject:
   m_ObjectHideFlags: 0
@@ -59,7 +77,7 @@ Transform:
   m_GameObject: {fileID: 484496144959727917}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.014578711, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.015, z: 0.192}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -126,7 +144,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 361e41798e7467d4484abe482141e658, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 0.44749
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 361e41798e7467d4484abe482141e658, type: 3}
       propertyPath: m_LocalRotation.w

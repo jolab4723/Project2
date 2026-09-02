@@ -33,10 +33,12 @@ public sealed class WorldItemTooltipScanner : MonoBehaviour
     {
         ItemDataStorage hoveredItem = FindHoveredItem();
 
-        if (hoveredItem == currentTarget)
+        if (object.ReferenceEquals(hoveredItem, currentTarget))
             return;
 
+        SetHovered(currentTarget, false);
         currentTarget = hoveredItem;
+        SetHovered(currentTarget, true);
 
         if (currentTarget == null)
         {
@@ -124,13 +126,24 @@ public sealed class WorldItemTooltipScanner : MonoBehaviour
             return;
 
         player = targetPlayer;
+        SetHovered(currentTarget, false);
         currentTarget = null;
         tooltipView?.Hide();
     }
 
     private void OnDisable()
     {
+        SetHovered(currentTarget, false);
         currentTarget = null;
         tooltipView?.Hide();
+    }
+
+    private static void SetHovered(ItemDataStorage target, bool hovered)
+    {
+        if (target != null &&
+            target.TryGetComponent(out WorldItemCategoryVisualView visualView))
+        {
+            visualView.SetHovered(hovered);
+        }
     }
 }

@@ -16,6 +16,8 @@ public enum MirrorSkillRequestResult : byte
     InvalidAim = 6,
     DuplicateRequest = 7,
     SkillOnCooldown = 8,
+    SkillAlreadyPending = 9,
+    AnimationImpactMissing = 10,
 }
 
 /// <summary>
@@ -29,6 +31,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 {
     private const float MaxAimDistance = 1000f;
     private const int SkillSlotCount = 3;
+    private const float AnimationImpactTimeoutSeconds = 4f;
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private PlayerActionInputHandler_MirrorTest inputHandler;
@@ -37,6 +40,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
     [SerializeField] private WBH_PlayerStatus status;
     [SerializeField] private PlayerBuffManager buffManager;
+    [SerializeField] private WBH_PlayerAnimation_MirrorTest animationView;
+    [SerializeField] private WBH_PlayerEffect playerEffect;
     [SerializeField] private LayerMask enemyLayer = 1 << 10;
 
     [Tooltip("WJ SkillDefinitionSO. 인덱스 0~2 = A/S/D")]
@@ -68,8 +73,18 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     private readonly double[] predictedReadyAt = new double[SkillSlotCount];
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
     private uint nextLocalRequestId;
+    private uint activeLocalRequestId;
+    private byte activeLocalSlot = byte.MaxValue;
+    private Vector3 activeLocalAim;
+    private double localAnimationExpiresAt;
     private uint lastServerRequestId;
+    private uint pendingServerRequestId;
+    private byte pendingServerSlot = byte.MaxValue;
+    private Vector3 pendingServerAim;
+    private double serverAnimationExpiresAt;
     private Coroutine localSkillRoutine;
+    private int presentationSkillIndex = -1;
+    private SkillEvolutionId presentationEvolution;
 
     public int SkillCount => Mathf.Min(SkillSlotCount, skills?.Length ?? 0);
     public MirrorSkillRequestResult LastResult => lastResult;
@@ -82,6 +97,25 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     private void Awake()
     {
         ResolveReferences();
+    }
+
+    private void Update()
+    {
+        if (isLocalPlayer &&
+            activeLocalRequestId != 0 &&
+            NetworkTime.time >= localAnimationExpiresAt)
+        {
+            ClearLocalPendingSkill(restoreIdle: true);
+        }
+
+        if (isServer &&
+            pendingServerRequestId != 0 &&
+            NetworkTime.time >= serverAnimationExpiresAt)
+        {
+            ClearServerPendingSkill();
+            rejectedSkillCount++;
+            lastResult = MirrorSkillRequestResult.AnimationImpactMissing;
+        }
     }
 
 #if UNITY_EDITOR
@@ -106,12 +140,16 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     public override void OnStopLocalPlayer()
     {
         UnbindLocalInput();
+        ClearLocalPendingSkill(restoreIdle: false);
         base.OnStopLocalPlayer();
     }
 
     private void OnDisable()
     {
         UnbindLocalInput();
+
+        if (isLocalPlayer)
+            ClearLocalPendingSkill(restoreIdle: false);
     }
 
     public SkillDefinitionSO GetSkillDefinition(int index)
@@ -159,13 +197,10 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         combat?.CancelChase();
         stateMachine?.ChangeState(PlayerState.Skill);
 
-        if (localSkillRoutine != null)
-            StopCoroutine(localSkillRoutine);
-
-        if (definition.shapeType == SkillShapeType.Dash)
-            localSkillRoutine = StartCoroutine(ExecuteLocalDash(definition, aimDirection));
-        else
-            localSkillRoutine = StartCoroutine(ReturnLocalStateToIdle(definition.shapeType == SkillShapeType.LineSlam ? 0.35f : 0.3f));
+        activeLocalRequestId = nextLocalRequestId;
+        activeLocalSlot = (byte)index;
+        activeLocalAim = aimDirection;
+        localAnimationExpiresAt = NetworkTime.time + AnimationImpactTimeoutSeconds;
 
         CmdRequestSkill(nextLocalRequestId, (byte)index, aimDirection);
         return true;
@@ -214,6 +249,12 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         }
 
         double now = NetworkTime.time;
+        if (pendingServerRequestId != 0)
+        {
+            Reject(requestId, slotIndex, MirrorSkillRequestResult.SkillAlreadyPending);
+            return;
+        }
+
         if (now < GetServerReadyAt(slotIndex))
         {
             Reject(requestId, slotIndex, MirrorSkillRequestResult.SkillOnCooldown);
@@ -230,8 +271,79 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         lastStatusEffectCount = 0;
         acceptedSkillCount++;
 
+        pendingServerRequestId = requestId;
+        pendingServerSlot = slotIndex;
+        pendingServerAim = aimDirection;
+        serverAnimationExpiresAt = now + AnimationImpactTimeoutSeconds;
+        RpcBeginSkillPresentation(
+            slotIndex,
+            GetEvolution(slotIndex),
+            definition.shapeType == SkillShapeType.Dash
+                ? Mathf.Max(0.01f, definition.dashDuration)
+                : 0f);
+    }
+
+    /// <summary>
+    /// 최신 Fighter 애니메이션 클립의 <c>AniEvent_ExecuteSkill</c>이 실제로 도착한 요청만
+    /// 서버 판정으로 확정한다. 입력만으로는 피해가 발생하지 않는다.
+    /// </summary>
+    public bool TryConfirmLocalSkillImpactFromAnimation()
+    {
+        if (!isLocalPlayer ||
+            !NetworkClient.active ||
+            !NetworkClient.ready ||
+            activeLocalRequestId == 0 ||
+            activeLocalSlot >= SkillCount)
+        {
+            return false;
+        }
+
+        SkillDefinitionSO definition = skills[activeLocalSlot];
+        if (definition == null)
+            return false;
+
+        uint requestId = activeLocalRequestId;
+        byte slotIndex = activeLocalSlot;
+        Vector3 aimDirection = activeLocalAim;
+
+        activeLocalRequestId = 0;
+        activeLocalSlot = byte.MaxValue;
+        activeLocalAim = Vector3.zero;
+        localAnimationExpiresAt = 0d;
+
+        if (definition.shapeType == SkillShapeType.Dash)
+        {
+            if (localSkillRoutine != null)
+                StopCoroutine(localSkillRoutine);
+
+            localSkillRoutine = StartCoroutine(ExecuteLocalDash(definition, aimDirection));
+        }
+
+        CmdConfirmSkillAnimationImpact(requestId);
+        return true;
+    }
+
+    [Command]
+    private void CmdConfirmSkillAnimationImpact(uint requestId)
+    {
+        if (requestId == 0 ||
+            requestId != pendingServerRequestId ||
+            pendingServerSlot >= SkillCount ||
+            NetworkTime.time > serverAnimationExpiresAt)
+        {
+            return;
+        }
+
+        byte slotIndex = pendingServerSlot;
+        Vector3 aimDirection = pendingServerAim;
+        SkillDefinitionSO definition = skills[slotIndex];
+        ClearServerPendingSkill();
+
+        if (definition == null)
+            return;
+
         ResolveServerSkill(slotIndex, definition, aimDirection);
-        RpcPresentSkill(slotIndex, transform.position, aimDirection);
+        RpcPresentSkillImpact(slotIndex, transform.position, aimDirection);
     }
 
     [Server]
@@ -394,7 +506,21 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void RpcPresentSkill(byte slotIndex, Vector3 origin, Vector3 aimDirection)
+    private void RpcBeginSkillPresentation(
+        byte slotIndex,
+        SkillEvolutionId evolution,
+        float dashDuration)
+    {
+        if (slotIndex >= SkillCount || skills[slotIndex] == null)
+            return;
+
+        presentationSkillIndex = slotIndex;
+        presentationEvolution = evolution;
+        animationView?.PlaySkillAnimation(slotIndex + 1, false, dashDuration);
+    }
+
+    [ClientRpc]
+    private void RpcPresentSkillImpact(byte slotIndex, Vector3 origin, Vector3 aimDirection)
     {
         if (slotIndex >= SkillCount || skills[slotIndex] == null)
             return;
@@ -429,11 +555,77 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         }
     }
 
+    public void EndPendingSkillAnimation()
+    {
+        if (presentationSkillIndex < 0)
+            return;
+
+        SkillDefinitionSO definition = GetSkillDefinition(presentationSkillIndex);
+        presentationSkillIndex = -1;
+        presentationEvolution = SkillEvolutionId.None;
+
+        if (!isLocalPlayer || definition?.shapeType == SkillShapeType.Dash)
+            return;
+
+        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+            stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (presentationSkillIndex < 0 ||
+            presentationSkillIndex >= SkillCount ||
+            !System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            return;
+        }
+
+        SkillDefinitionSO definition = skills[presentationSkillIndex];
+        if (definition == null || playerEffect == null)
+            return;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(
+            presentationSkillIndex + 1,
+            presentationEvolution,
+            (SkillEffectPart)partValue);
+        playerEffect.PlayEffect(cue, CalculatePendingEffectScale(definition));
+    }
+
+    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO definition)
+    {
+        float baseRange = definition.shapeType switch
+        {
+            SkillShapeType.SectorSlash => definition.sectorRange,
+            SkillShapeType.LineSlam => presentationEvolution switch
+            {
+                SkillEvolutionId.Evolution2 => definition.evoWideLineLength,
+                SkillEvolutionId.Evolution3 => definition.evoNarrowLineLength,
+                _ => definition.lineLength,
+            },
+            SkillShapeType.Dash => definition.dashDistance,
+            _ => 0f,
+        };
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float flatBonus = 0f;
+        float percentBonus = 0f;
+        if (context?.Stats != null)
+            context.Stats.GetSkillRangeBonus(out flatBonus, out percentBonus);
+
+        float rangeScale = (baseRange + flatBonus) * (1f + percentBonus / 100f) / baseRange;
+        return Vector3.one * rangeScale;
+    }
+
     [TargetRpc]
     private void TargetRejectSkill(NetworkConnectionToClient target, uint requestId, byte slotIndex)
     {
         if (slotIndex < predictedReadyAt.Length && requestId == nextLocalRequestId)
             predictedReadyAt[slotIndex] = 0d;
+
+        if (requestId == activeLocalRequestId)
+            ClearLocalPendingSkill(restoreIdle: true);
     }
 
     [Server]
@@ -450,6 +642,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         if (agent == null || !agent.enabled)
         {
             stateMachine?.ChangeState(PlayerState.Idle);
+            presentationSkillIndex = -1;
+            presentationEvolution = SkillEvolutionId.None;
             yield break;
         }
 
@@ -472,15 +666,37 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
             agent.Warp(target);
 
         stateMachine?.ChangeState(PlayerState.Idle);
+        presentationSkillIndex = -1;
+        presentationEvolution = SkillEvolutionId.None;
         localSkillRoutine = null;
     }
 
-    private IEnumerator ReturnLocalStateToIdle(float delay)
+    private void ClearLocalPendingSkill(bool restoreIdle)
     {
-        yield return new WaitForSeconds(delay);
-        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+        activeLocalRequestId = 0;
+        activeLocalSlot = byte.MaxValue;
+        activeLocalAim = Vector3.zero;
+        localAnimationExpiresAt = 0d;
+        presentationSkillIndex = -1;
+        presentationEvolution = SkillEvolutionId.None;
+
+        if (localSkillRoutine != null)
+        {
+            StopCoroutine(localSkillRoutine);
+            localSkillRoutine = null;
+        }
+
+        if (restoreIdle && stateMachine != null && stateMachine.Is(PlayerState.Skill))
             stateMachine.ChangeState(PlayerState.Idle);
-        localSkillRoutine = null;
+    }
+
+    [Server]
+    private void ClearServerPendingSkill()
+    {
+        pendingServerRequestId = 0;
+        pendingServerSlot = byte.MaxValue;
+        pendingServerAim = Vector3.zero;
+        serverAnimationExpiresAt = 0d;
     }
 
     private bool CanUseLocalSkill()
@@ -490,7 +706,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
             PlayerState.Attack,
             PlayerState.Skill,
             PlayerState.Dodge,
-            PlayerState.Dead);
+            PlayerState.Dead,
+            PlayerState.Revive);
     }
 
     private Vector3 GetCursorDirection()
@@ -575,6 +792,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         stateMachine ??= GetComponent<WBH_PlayerStateMachine>();
         status ??= GetComponent<WBH_PlayerStatus>();
         buffManager ??= GetComponent<PlayerBuffManager>();
+        animationView ??= GetComponent<WBH_PlayerAnimation_MirrorTest>();
+        playerEffect ??= GetComponent<WBH_PlayerEffect>();
     }
 
     private static bool IsFinite(Vector3 value)

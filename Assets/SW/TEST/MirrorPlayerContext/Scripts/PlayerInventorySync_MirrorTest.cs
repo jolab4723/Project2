@@ -1117,7 +1117,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         }
 
         feedbackText = InventoryMessageMapper.GetColoredAcquisitionMessage(item.definition.itemName, item.definition.rarity);
-        NetworkServer.Destroy(pickup.gameObject);
+        pickup.PlayPickupAndDestroy(netId);
         return MirrorTestInventoryRequestResult.Success;
     }
 

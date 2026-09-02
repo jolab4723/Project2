@@ -645,7 +645,10 @@ public static class WeaponInventoryIconConverter
             float automaticFit;
             if (resolvedMode == WeaponInventoryIconLayoutMode.ShowWhole)
             {
-                automaticFit = Mathf.Min(1f, wholeFit);
+                // 원본 PNG 안의 실제 무기가 작고 투명 여백이 넓으면 wholeFit은 1보다 커집니다.
+                // 이 값을 1로 제한하면 출력 PNG에도 원본 여백이 그대로 남아 장착 슬롯에서 아이콘이 작게 보입니다.
+                // 계산된 공통 여백 안에서 무기 전체가 최대한 크게 보이도록 필요한 확대도 그대로 적용합니다.
+                automaticFit = wholeFit;
             }
             else if (resolvedMode == WeaponInventoryIconLayoutMode.FocusTop)
             {

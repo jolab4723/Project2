@@ -252,17 +252,11 @@ public class ItemEquipHandler : MonoBehaviour
         slot.SetItemUI(itemUI);
         itemUI.SetCurrentEquipSlot(slot);
 
-        itemUI.ResetRotationForEquipSlot();
-
-        RectTransform itemRect = itemUI.Rect;
         RectTransform slotRect = slot.transform as RectTransform;
-        RectTransform iconRect = itemUI.ItemTransform as RectTransform;
+        itemUI.ResetRotationForEquipSlot(slotRect.sizeDelta);
 
         transform.SetParent(slot.transform);
         transform.position = slot.transform.position;
-
-        itemRect.sizeDelta = slotRect.sizeDelta;
-        iconRect.sizeDelta = slotRect.sizeDelta;
     }
 
     private bool TrySwapWithEquipSlot(EquipSlotUI slot)

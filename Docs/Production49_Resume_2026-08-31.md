@@ -1,6 +1,18 @@
 # Production49 — 학원 재개 기록 (2026-08-31)
 
-이 문서는 `Production49_School_Handoff_2026-08-31.md` 이후 실제 재개 결과다. 전체 49종 완료 보고가 아니다. 집에서 확정한 본체와 최신 승인/철회 기록이 이전 학교 후보보다 우선한다.
+이 문서는 `Production49_School_Handoff_2026-08-31.md` 이후 실제 재개 결과다. 최신 사용자 요청으로 대상은 54종이며 전체 완료 보고가 아니다. 집에서 확정한 본체와 최신 승인/철회 기록이 이전 학교 후보보다 우선한다. 아래 시간순 과거 기록의 49종·HOLD는 해당 시점의 이력이며 최신 체크포인트가 우선한다. 기존 `Production49` 자산 경로/GUID는 유지한다.
+
+## 귀가 최종 체크포인트 — 이 절이 아래 시간순 기록보다 최신
+
+**이동·재개 시작점은 [Production54_Home_Transfer_2026-08-31.md](Production54_Home_Transfer_2026-08-31.md)**다. 사용자가 귀가/전체 커밋 예정으로 전환해 새 제작을 멈췄다. 외부 ArtSource 별도 복사가 필요하며 문서나 Git만으로 Blender 원본이 전달되지 않는다. 사용자 대신 commit/push/복사/삭제는 하지 않았다.
+
+- 공용 일반5 본체 `shared_body_normal_r1/repair_r2`(16896tri/4mesh/3재질)와 정밀3 본체 `shared_body_precision_r1/refined_r2`(15088tri/3mesh/3재질)는 실제 Blender/BAS/fresh 산출물·인계 완료, Unity import0. Root는 최초hero/side 형태를 확인했고 final Unity 검증은 남는다.
+- 전기3 `shared_body_electric_r1/repair2`(14832tri/3mesh/4재질)는 크림색·top잘림/최신fresh미완료 상태를 HANDOFF에 남겼다. 미열람 색관리대조는 승인 근거가 아니다.
+- Ice MI03은 기존 M 재저장 없이 보존하고 I 신규 저장 완료. M.14/I.45 입자·blank0, 역할당3회 명시적 정리0. Root는 실제 I3phase 원본과 live Editor를 확인했다. 자연Player수명·전체30회는 아직이다. 실제 I SHA `b1d29222ccef45c34308a1efb0563183f4657cd2bf7bf4929dfe90cd03af62c9`.
+- Ice F 큰glow/구슬 문제는 아직. G-off+Orbs.25/.40 대조를 실제 확인했으나 고정뷰에서 너무 약했다. 다음 compact-glow(G크기.2/.4,Orbs.375)8뷰 cold는 Root diff/runner 검토만 완료, 실행0/저장0.
+- 신규GL5 공용 .42m는 크기FAIL. 실제 동일10뷰의 transient .12m를 Root가 전부 확인해 크기를 채택했다. 새 `LowTierGL5R2/CommonGrenade_Body.prefab` 저장+대표2뷰 cold는 Root diff/runner 검토만 완료, 실행0. 기존 .42m를 덮지 않는다.
+- 마지막 Root 실제 Editor: Act1_Camp handle-95948/root6/clean, StageNULL/Edit idle. IceM/I/F+FireF+ElectricF5개 missing/금지0. Console에는 NavMesh 생성 실패 및 기존 참조/저장파일 경고가 있어 프로젝트 오류0으로 기록하지 않는다. 해당 타인 코드는 수정하지 않았다.
+- Unity writer callback/실행0·슬롯 반환, Blender 프로세스0 확인. 재개 때 메모리helper/절대경로/instanceID는 새 현지 검증이 필요하다. 최종0/54·Luna5미실행·개인 구현 로그 미갱신 유지.
 
 ## 실제 전달 위치와 보존
 
@@ -24,20 +36,32 @@
 
 ### 최신 사용자 우선순위 — Unity 합성 VFX 우선
 
+- **최신 범위 추가: 저등급 유탄발사기5종 포함, 총54종.** Root가 현재 JSON에서 고유 거너54개(라이플21/샷건18/유탄15), 일반39/불6/얼음3/전기6을 직접 확인했다. 추가 `shellcourier`·`bouncebuddy`·`scraphopper`는 Common, `clusterpop`·`smartfuse`는 Advanced이며 전부 None이다. 사용자 승인대로 공용 탄체·일반 M/F/I 우선 재사용, 무기별 총열 맞춤은 별도 검증한다. 신규5 WeaponVisual/직속 Muzzle의 정적 존재는5/5이나 합성 PASS가 아니다. 경로를 Production54로 일괄 이동하지 않는다.
+- **기존 세션 재인계 반영: 전체54종은 공용 탄체 사용20종 / 전용 주 실루엣34종이다.** 공용20은 일반탄5·정밀탄3·전기탄3·산탄4·신규유탄5의 기본형5계열이며 무기별 최종 ProjectileVisual wrapper는54개다. 이 배분은 제작 완료 수나 FBX 개수와 다르다. 직전의 `신규5만 확정 / 기존49 미분류`는 인계 누락 당시 조사 결과로 대체한다. 전체 ID는 `Production49_FourFamily_Mapping_2026-08-31.md` 참조. 신규5는 Halo R15 공용후보1개/.42m/실제총구앞 비교10뷰로 검수하며 기존모델 복제5벌이나 새5모델을 만들지 않는다.
+- **재인계는 빠졌던 배분만 보완한다.** 사용자 지시대로 현재 제작물·채택 결과와 충돌하는 옛 규칙을 되살리지 않는다. 일반 냉백색 고정, 총구8/명중10계열 별도 제작, Flamethrower 고정 근접 제트는 철회된 상태를 유지한다. 4공용 VFX와 분리형 화염탄이 우선하며 ScrapDrum 등 기존 본체 후보도 삭제·롤백하지 않는다.
+- 재인계 배분54개를 현재 ItemData JSON과 직접 다시 대조해 고유54/누락0/미등록0을 확인했다. 공용 일반탄·정밀탄·전기탄의 미완성 대표는 각각 Sol/high에게 `shared_body_normal_r1`·`shared_body_precision_r1`·`shared_body_electric_r1` 외부 ArtSource 경로로 나눠 배정했다. 기존 무기별 미승인 custom-spec은 참고/거절 이력으로 보존하되, 그 안의 `모든 몸체 독립·공유금지`를 최신 공용 배분을 뒤집는 사용자 승인으로 취급하지 않는다. 대표부터 BAS 다각도·fresh import·동일증거 수리 루프를 거치며 아직 제작/Unity 승인 완료가 아니다.
 - **추가 사용자 확정: 총구(M)는 루트 직속 Muzzle 위치에서 짧게 재생하고, 투사체(F)는 별도 루트가 +Z로 이동하며, 명중(I)은 피격 지점에서 독립 재생한다. Flamethrower도 발사된 화염 투사체이지 근거리 고정 화염 분사기가 아니다.** 기존 StandaloneR3의 긴 고정 제트/무기 접촉 캡처는 역사적 소스·총구 접촉 증거만 남기며 이 새 요구사항의 완료 증거로 세지 않는다.
 - **최신 병렬 한도: 실제 Blender 프로세스 최대 5개.** 이전의 최대 4개 기록을 대체한다. 서로 다른 외부 ArtSource 파일은 Sol/high가 병렬 제작하고, Unity Editor/공유 Unity 자산 작성은 지정한 Sol/high 한 명만 수행한다. Root는 채택과 최종 Editor 검증을 소유한다.
-- 진행률은 준비 자료, 실제 Unity 생성·검증, 49종 최종 승인으로 구분해 주요 단계 완료/장시간 작업 중 보고한다. cold helper·정적 컴파일·이미지 수만으로 완성률을 올리지 않는다. 현재 최종 49종 승인은 0/49이며, 아래 과거 게이트와 개별 후보 준비를 최종 완료로 해석하지 않는다.
-- Root가 현재 ItemDataTable JSON과 명시 49종을 직접 재대조했다: **일반 34 / 불 6 / 얼음 3 / 전기 6**, 중복·미확인 0. 무기 이름으로 속성을 추론하지 않는다. `embercoil`은 일반, `fireworks`는 불, `glasscannon`은 전기다. 전체 명단은 `Production49_FourFamily_Mapping_2026-08-31.md`를 참조한다.
+- 진행률은 준비 자료, 실제 Unity 생성·검증, 54종 최종 승인으로 구분해 주요 단계 완료/장시간 작업 중 보고한다. cold helper·정적 컴파일·이미지 수만으로 완성률을 올리지 않는다. 현재 최종 승인은 **0/54**이며, 아래 과거 게이트와 개별 후보 준비를 최종 완료로 해석하지 않는다.
+- 기존49종 직접 대조 결과는 일반34/불6/얼음3/전기6이었다. 신규5종을 더한 최신 일반은39다. 무기 이름으로 속성을 추론하지 않는다. `embercoil`은 일반, `fireworks`는 불, `glasscannon`은 전기다. 전체 명단은 `Production49_FourFamily_Mapping_2026-08-31.md`를 참조한다.
 - 네 공용 계열의 M/F/I **첫 Unity 후보 생성은 12/12(100%)**다. 이는 첫 후보 생성률이며 시각 최종 합격률이나 49종 완성률이 아니다. Normal 총구 R2B, Fire 투사체 중력 보완 R2, Ice 재질 수리 R3, Electric 실제 이동 검수를 진행한다. 기존 source와 실패 후보는 보존한다.
 - **최신 반복 검사: 일반·불·전기의 M/F/I 9개 × 각30회 = 실제270회 명시적 정리 통과.** 공유12역할 중 이 기술 게이트의 검사 범위는9/12(75%)다. 동일 인스턴스의 TTL-stop15/중도중단15, PS StopClear·TrailRenderer.Clear·root inactive 후 즉시/다음 Editor update의 blank와 재질 인스턴스 보존을 확인했다. F의 .8초는 QA 외부정리 계약이지 실제 전투 수명이 아니다. 자연 Player 생명주기·실제 GC/Bloom/최종 시각 PASS로 확대하지 않는다.
 - 위 검사에서 Normal F의 cycle1/30 이미지107pixels가 달라 전체 픽셀 해시 일치는 실패로 유지한다. Root 직접 두 프레임을 확인했고 가는 장식선의 위상만 달랐다. 원본 MaskBlend의 UV scroll과 설치 URP의 카메라별 GPU 시간 세팅이 강한 설명이지만 GPU clock 고정 대조는 하지 않았다. CPU `_Time` 기록 일치만으로 GPU 시간 동일을 주장하지 않는다. 모든 inactive blank는0이며 잔류 통과와 이 위상 차이를 구분한다. `shared_four_vfx/Root_NFE30_and_Ice_Review_2026-08-31.json` 참조.
-- Fire 실제 이동에서 .3~.5초에 연출이 급격히 작아져 F의 원본3PS loop만 켜는 신규 파생을 준비했다. M/I는 유지한다. Electric F는 원본 blast 플레어 Renderer 하나만 일시 숨기는 A/B를 승인했으며 영구 제외는 아직 승인하지 않았다. 일반20발/산탄8버스트/명중6개 동시 예비검사를 승인했고 수리 후보 확정 뒤 재검사한다.
+- Fire F R3는 원본3PS의 loop만 켠 새 파생을 실제 저장했고 동일5m/s 이동 .1/.3/.5/1초에서21/45/47/49입자를 확인했다. 이어 Root가 동일뷰의 uniform scale2를 채택해 `FireR4/Fire_Flight.prefab` SHA `0eac9f318eaa3a759004c319717f6fd930d60b1f046b0492d9994673b93e399b`를 저장했다. 파일명에 따른 root 이름 변경 때문에 최초 저장 후 검사만 실패했으며, 재저장 없이 읽기전용 continuation에서 scale2+root 이름 이외 전체 직렬화 불변을 검증했다. `shared_four_vfx/fire_r1/flight_scale_r4/ContinuationEvidence/BuildAudit.json` 참조. Root가 새 F30/F20/F8 보고서와 대표3프레임을 직접 확인: errors0/replay차이0/정리 직후·다음update+.1초 화면차이0, material signature 유지. 동일 원점 스트레스에서 흰 코어 겹침은 관측됐으며 실제 분산 발사/Bloom·Player수명·할당·54개 합성 PASS는 아니다.
+- Fire M R3는 두PS의 X/Y velocity mode 네 필드만 Constant→TwoConstants로 맞추고 0값은 유지했다. 실제 VelocityModule 경고68→0, Root 전후 시각 확인 후 재사용30회와20개 동시재생 모두 errors/잔류/재질변경0. 동일 Editor 수동 Simulate 예비20개 측정은80.8317ms→2.1073ms였으며 단일 Editor fixture이지 Player FPS/할당 측정이 아니다. `shared_four_vfx/qa_r1/execution_ready_r3/FireM_R3_WriterSummary.json` 참조.
+- Electric F는 원본 blast 플레어 Renderer 하나만 끈 A/B를 Root가 직접 비교·채택했고 새 `ElectricR2/Electric_Flight.prefab`에 enabled=false 하나만 실제 저장했다. SHA `5dedae15cbb585aec9a0059a017bae4a91348e05d044286d9d1b27da1bb9d17b`. 전체canonical비교·8PS/활성Renderer7·원본참조 보존. 신규R2의 F30/20/8 재검사도 완료: errors0/replay차이0/명시적정리후blank0, TrailRenderer.Clear 후positionCount0. Root가 보고서와 cycle1/30 해시 일치를 직접 확인했다. 본체 부착/방향성·Player 성능 최종 PASS와 구분한다.
+- 일반/불/전기 각 M20·F20·F8·I6, 총12가지 동시 예비검사가 실제 실행됐고 명시적 정리·보호핀·재질 보존을 통과했다. 한 원점에 겹친 최악조건 화면의 Normal/Electric 총구는 백색 클리핑이 강해 실제 총구 분포/밝기 검수가 남는다. 이 검사만으로 최종 시각·Player 성능 PASS로 올리지 않는다.
 - Root가 `shared_four_vfx/Root_Direct_Unity_Snapshot_2026-08-31.json`에 실제 12개 Prefab SHA·컴포넌트·재질·수명·+Z·Ice MPB를 기록했다. 모두 저장 clean, Missing Script/활성 Renderer 누락/dirty Material 0. Electric F의 초기 금지 카운터1은 원본 `TrailRenderer`를 목록에서 빠뜨린 false positive이며 실제 타입을 직접 확인했다. 재사용 QA는 PS 정리와 별도로 이 TrailRenderer.Clear/positionCount를 검사한다.
 - 유효 baseline은 `shared_four_vfx/baseline_r1/AttemptUnityR3/`: 원본 시각 TRS를 유지한 Gunner 2뷰와 Fighter 2뷰. Fighter .15는 보이지 않고 .30에서 2PS의 실제 입자5개가 보임을 확인했다. 고정1024×768/ortho7.5/같은 방향광·NoBloom 격리 비교다. 실제 맵 Bloom 검증을 대체하지 않는다.
 - FireR2는 기존 파생 F의 두 PS 음수 중력만0으로 보완해 위로 솟는 횃불 인상을 줄였다. Root가 실제 확대/고정뷰를 확인했고 연속 이동 검수로 넘겼다. 밝기·초기/말기 크기·무기 부착 최종 승인은 별도다. `GravityRepairAudit.json`의 미초기화 bool 두 개는 `ReceiptClarification.json`에 정정했으며 원본 audit를 덮어쓰지 않았다.
-- Ice R3의 재질 수리는 실제 실행됐고 source/Scene 보존과 색·합성 수정은 확인했다. 그러나 Root의 실제 시각 판정은 F의 넓은 평면 막, M/I의 두꺼운 링·사각 조각 때문에 불합격이다. R4 exact ice21/Hit_frost/ice22 source6뷰를 Root가 직접 확인했으며 ice22의 막은 원본에도 존재했다. 원본은 보존한 채 M/I의 추가 시간대와 F static-renderer-off 대조만 준비한다. 별도 Blender5.2 R5 core는 입체 결정3개/5286tri의 형태 후보를 Root가 채택했고, 균일한 발광망을 낮추는 재질1회 수리 후 Unity 합성으로 넘긴다. 얼음30회 PASS는 아직 없다.
+- Ice R3는 F 평면 막·M/I 두꺼운 링/사각 조각으로 Root 시각 FAIL을 유지한다. 원본 ice21/Hit_frost/ice22 추가 시간대와 static-renderer-off 대조를 실제 실행했다. PS-only ice22는 너무 약해 단독F로 채택하지 않는다. 새M은 ice21의 입체 서리, 새I는 Hit_frost의 눈송이/서리 구조를 기본으로 청록색·수명만 좁혀 수리한다. 얼음30회 PASS는 아직 없다.
+- IceCore R5/R3: Blender5.2.1/BAS에서 입체 결정3개/5286tri/6segmentbevel 제작, 균일한 발광망의 기여만35%로 낮췄다. Root가 source/fresh FBX 동일뷰를 직접 확인했고 source/FBX/GLB/맵 해시를 재검산했다. FBX `25f3caa67a2168a5206f570319a252ce7fadb98de58f7ff24d7afadb9c1d78bd`를 새TEST `SharedFamilies/IceCoreR5Candidate`에 실제 임포트해1Lit/4맵·Unity +Z·(.22,.25,.45)m를 확인했다. 첫 프리뷰 양성실패는 기록 보존 후 다음호출에서 같은조건의4뷰를 확인했다. Root는 작은side/확대3Q 직접검수. 새로운 F R6는 이코어와 약한 -Z ice22후류/중앙 +Z-normal Orbs링을 조립하는 단계다.
+- Ice F R6 `IceR6_FlightCore/FlightPrototype01.prefab` SHA `43e23e058067c7d06c049b970ffff28d6d1e83230e67f68c3ec66e22fdb1c360` 실제 저장·4뷰 검수 완료. 코어와 -Z후류 배치는 유지하지만 큰 G glow와 Orbs의 부착 구슬 인상은 Root 시각 FAIL이다. `flight_core_r6/UnityAblation05`의 G-off/Orbs-off 대조 두 원본으로 원인을 분리했다. G를 끄고 Orbs 입자크기만 줄이는 transient 비교를 준비하며, 원본/현재후보 영구변경·전체30회 검사는 아직 하지 않는다. M/I 새 후보는 ice21/Hit_frost의 지정11RGB·9simulationSpeed·M source90X만 바꾸는 R2 cold를 Root가 코드/diff 검토 후 승인했으며 실제 대표검수 대기다.
+- Ice M은 실제 새 `IceR6_MI/Prefabs/IceR6_Muzzle.prefab` SHA `fca03170f3e32433647de9af407feee3a9821761b586a4d638d15ccd18fc03ae` 저장과8phase/TTL2뷰가 나왔다. 첫 저장 실패는 새 camera-clone wrapper의 HideAndDontSave 때문이며 source를 바꾸지 않고 새 wrapper GO/Transform의 hideFlags만 None으로 고쳤다. MI02의 .14초에는3PS입자0/화면0이지만 수동Simulate의 paused/IsAlive는true라 자연종료 hardguard를 통과하지 못했다. 이 실패를 보존하고 자연Player수명 미검증과 명시적정리 검사를 구분해 이어간다. Root는 RESULT와 대표3PNG를 직접 확인했으며 총구 맞춤/최종 시각 승인은 아직이다.
 - GTS 새 TEST 모델은 재질14개 저장·remap14를 실제 완료했다. 디스크 userData marker와 native importer의 불일치는 정확히 남아 있던14개 재질을 재사용해 marker/remap을 함께 명시하는1회 reimport로 해소했다. 15mesh/68052tri, raw geometry/TRS fingerprint 불변, material 파일·meta/source/user/native Shader drift0. 최종 본체 시각 검수와 VFX 결합은 별도다.
-- 본체 전달: Halo R15만 Root 격리 Unity 본체 채택. Fireworks R05는 실제 import/12재질 저장 완료 후 Root 시각 대기. GTS/Ember의 정확히 특정된 4/10삼각형 누락은 작은 비영면적 누락을 공개한 import-only 한정 승인으로 처리하고 재질 단계 진행을 승인했다. Apocalypse/Incinerator도 Root가 동결 본체·fresh transport와 cold import 코드를 검토해 새 TEST import를 승인했다. 이를 전체 49종/게임 크기/VFX 결합 PASS로 세지 않는다.
+- 본체 전달: Halo R15와 GTS R04의 격리Unity 본체뷰를 Root가 채택했다. GTS +Z wrapper/게임크기/공용VFX 결합은 남았다. Fireworks R06은 압력몸통 면·노멀만 교정한19mesh/27478tri/기존12재질로 실제 새TEST 임포트 완료했고 Root가 실제3뷰에서 빈 몸통 문제가 사라진 것을 확인했다. Ember19mesh/215476tri/6remap, Apocalypse35mesh/477542tri/8remap, Incinerator69mesh/97428tri/9remap도 실제 임포트 완료했다. Root가 Ember/Apocalypse native3뷰씩 직접 열었으며 Apoc의 넓은 shell이 내부를 가리는 인상은 원본 같은 방향 대조가 필요하다. Incinerator의 실제3뷰는 writer 완료 보고 후 Root검수 대기다. 사용자 Scene/보호파일 불변 receipt를 유지한다. 이들은 게임크기·+Z·공용VFX 합성 최종 승인이 아니며 높은 triangle수의 동시성 위험도 남는다.
+- 이어 Apocalypse native -X 단일 추가뷰에서 source의5cell면이 실제로 드러나는 것을 Root가 확인했다. 이전3뷰는 반대 shell 방향으로 보였으며 누락으로 단정하거나 본체를 재수리하지 않는다. Incinerator side/3Q/chamber 원본도 Root 직접검수했다. 형태 전달과 최종 게임 조명/재질·VFX 품질 승인은 분리한다.
+- 신규GL5 공용 후보 `LowTierGL5R1/CommonGrenade_Body.prefab` SHA `f517eac32a674752c187323aa2501d3864af10fc10b263c89382d7524ff79c3e` 실제 저장·fresh load: Halo nested14mesh/19112tri/6Lit 유지, 길이.42m/중앙0/+Z 측정. 실제무기5×2뷰에서 총열 대비 너무 굵어 Root가 크기 FAIL로 판정했다. 원본/저장후보를 보존하고 private clone만 길이.12m로 균일축소해 기존10카메라를 그대로 재사용하는 후속 비교를 승인했다. 공용 재사용 자체나 .12m 최종 채택·MFI 합성을 완료했다는 뜻은 아니다.
 - **최신 사용자 직접 재확인(이하 집 명세/이전 색상 계약보다 우선): VFX 제작은 일반·불·얼음·전기 4공용 계열을 재사용한다. 49개 무기마다 독립적인 새 M/F/I 리소스를 제작하는 방향이 아니다.** 본체와 실제 무기별 부착 위치는 유지하고 필요한 크기·방향·발사 형태를 맞춘다. 본체별 별도 고유 VFX 확장은 보류한다.
 - **일반은 냉백색 고정이 아니라 비속성 연출이다.** 사용자는 일반 Gunner_Bullet의 붉은 기운을 예로 들어 무기에 적합한 색을 허용했다. 일반 공용 기반의 색·강도 조절은 가능하되 불꽃·서리·노란 번개와 형태/움직임까지 구분한다. 기존 일반 `#DCEBFF` 의무는 철회되었고 참고색으로만 남는다. 불/얼음/전기는 각 속성의 일관된 시각 언어를 유지한다.
 - 집의 무기별 standalone_vfx_specs와 Halo 보라/금색·GTS·Fireworks 전용 builder는 이 범위의 사용자 승인으로 간주하지 않는다. 준비 파일과 실패 이력은 보존하고, 4공용 계열에 필요한 부분만 다시 채택한다. Halo 전용 M/F/I 실행은 0회이며 현재 HOLD. 기존 Flame R3는 불 계열의 재사용 후보이지 전 무기용 확정 결과는 아니다.
@@ -47,7 +71,9 @@
 - Incinerator 남은6개 정밀 구조수리와 Apocalypse 추가 미세 노멀 진단은 기록을 보존하고 우선 대기한다. GoldenTwinStar와 Fireworks는 이미 검토한 후보의 Unity 전달 준비에 집중한다. ScrapDrum 실제 합성 대표 검수와 no-body Flamethrower 전체suite를 먼저 닫는다.
 - 사용자가 선호한 기존 결과4장을 `../ArtSource/Production49_Rebuild_2026-08-29/_school_2026-08-31/user_visual_references/`에 byte-exact 보존했다. 단순 원통/링을 일률적으로 불합격시키지 않고 작은 화면의 정돈된 실루엣·일관된 금속 마감·필요한 깊이를 긍정 기준으로 삼는다. 전체suite 승인이나 기존자산 자동교체를 뜻하지 않는다.
 
-| 대상 | 이번 확인/작업 | 현재 게이트 |
+다음 표는 재개 초반의 과거 체크포인트다. 현재 상태는 위 최신 항목과 각 실제 실행 receipt가 우선한다.
+
+| 대상 | 이번 확인/작업 | 당시 게이트 |
 |---|---|---|
 | HaloMortar R15 | 본체 승인 후 76개 동일-rig transport 뷰와 BAS 별도 진단, 실제32bit EXR 비교 완료. Root가 hash4개 재계산, native128/contact 및 원본 hero/macro 비교를 직접 확인 | `halomortar_r15/root_transport_review.json` 전달 승인. Root의 격리 Unity 본체 QA만 허용; Unity/전체 MFI 미승인 |
 | Incinerator R12 | 좌상단 socket trial4 국소 수리 채택. 다른 7개 실제 접힘 458쌍은 미해결 | Right Upper Long 립 하나의 보호 anchor/이동 mask와 position-only dry solve를 우선 검토. transport 보류 |
@@ -125,4 +151,4 @@
 - GoldenTwinStar: Root가 저장 R04의17개 전체 뷰와 fresh/BAS/보존 결과를 검수하고 본체를 **별도 transport 검증용으로 채택**했다. `gts_r13/finish_repair3/persistent_candidate4/root_authored_review.json` 참조. SHA `10ac6f025ba3bb32a0d44000a95d2d6b9a506fc63ea1aa5f5716399873bf6fe7`. 국소 희미한 응답·microbrush·UV overlap 제한을 숨기지 않으며 transport/Unity/전체suite 승인은 아니다.
 - Incinerator: 7corner normal 교정 후 원래 NormalMap PBR/clay와 native 전후를 Root가 확인해 국소 채택했다. 새 후보 SHA `940de63a93b2d1d9c1f67a37b35e493c14e1a87d2305c0369d8ff162b03c4c36`. 나머지6223corner delta0, fresh self0이며 다른6문제mesh는 미해결이다. 다음은 그6개 구조수리 범위를 묶어서 결정한다.
 
-현재 완료된 49종 전체 suite는 **0/49**, 최종 독립 Luna 5명 만장일치 게이트도 미실시다. 실제 공격/이동/데미지/전투 스크립트·catalog 등록은 범위 밖이다. Blender 본체 승인, 파일 전달 검증, Unity 소재/시각 검증, 전체 MFI·stress/lifecycle/할당 검증을 별개로 기록한다. 김성우 개인 구현 로그는 아직 갱신하지 않았다.
+현재 완료된 54종 전체 suite는 **0/54**, 최종 독립 Luna 5명 만장일치 게이트도 미실시다. 실제 공격/이동/데미지/전투 스크립트·catalog 등록은 범위 밖이다. Blender 본체 승인, 파일 전달 검증, Unity 소재/시각 검증, 전체 MFI·stress/lifecycle/할당 검증을 별개로 기록한다. 김성우 개인 구현 로그는 아직 갱신하지 않았다.

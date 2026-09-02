@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8339447293937539386}
+  - component: {fileID: 3438612229040664746}
   m_Layer: 0
   m_Name: item.weapon.rifle.rusthound_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 32000147443544204}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3438612229040664746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3053272683097113713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 32000147443544204}
+  muzzleVisualPrefab: {fileID: 2948326242591921562, guid: 4e9b70bede1bfdf4389af5eee776ea63, type: 3}
+  projectileVisualPrefab: {fileID: 6431092852898666409, guid: fdc895eb02ba3a54aaafb3a750a9f967, type: 3}
+  impactVisualPrefab: {fileID: 4990436582026770073, guid: 72bc37c93cb20fc4e83974fce6722331, type: 3}
 --- !u!1 &4731963927657592619
 GameObject:
   m_ObjectHideFlags: 0
@@ -90,7 +108,7 @@ Transform:
   m_GameObject: {fileID: 4788595370506749567}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.018607246, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.018607246, z: 0.195592}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

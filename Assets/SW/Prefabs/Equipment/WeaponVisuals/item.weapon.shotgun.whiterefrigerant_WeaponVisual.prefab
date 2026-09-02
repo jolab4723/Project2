@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 604036732862391182}
+  - component: {fileID: 4712756248599919872}
   m_Layer: 0
   m_Name: item.weapon.shotgun.whiterefrigerant_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4842975854929656920}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4712756248599919872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4636768284189648417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 4842975854929656920}
+  muzzleVisualPrefab: {fileID: 787264211848964267, guid: d2b8602ef12d591409c493e0c2f22d70, type: 3}
+  projectileVisualPrefab: {fileID: 732123172434176503, guid: f2def8d36764a5249bdbfc6495b2f0dc, type: 3}
+  impactVisualPrefab: {fileID: 1630963809021324720, guid: 73f17cb4c5ef3f44a94db2b8e59c3603, type: 3}
 --- !u!1 &4742124438427635799
 GameObject:
   m_ObjectHideFlags: 0
@@ -90,7 +108,7 @@ Transform:
   m_GameObject: {fileID: 5154480189185838056}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.0135281235, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.0135281235, z: 0.191533}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 4483950940737766757}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.019348191, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.019348191, z: 0.196169}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 659215827834177200}
+  - component: {fileID: 8030245367096220445}
   m_Layer: 0
   m_Name: item.weapon.rifle.emberline_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 2479433768248593383}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8030245367096220445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7349511585931595191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 2479433768248593383}
+  muzzleVisualPrefab: {fileID: 1181109611274011482, guid: fdd1f8901a3abed47b75067ccd8aa0c2, type: 3}
+  projectileVisualPrefab: {fileID: 5861577738068199374, guid: 6ac472e16a3131d4b9c84ad38bca5962, type: 3}
+  impactVisualPrefab: {fileID: 6913523187063981545, guid: 8683730c1c6e9ac4cb187b19b8201844, type: 3}
 --- !u!1001 &486759672926376968
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -160,11 +160,16 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = new Vector2(0, 1);
 
+        // 장비 칸에서만 사용한 비율 유지 설정이 인벤토리로 돌아온 뒤 남지 않게 원래 표시 방식으로 되돌립니다.
+        if (itemIcon != null)
+            itemIcon.preserveAspect = false;
+
         UpdateRotationUI();
     }
 
     void UpdateRotationUI()
     {
+        const float inventoryIconFill = 0.9f;
         float itemWidth = (inventoryItem.CurrentWidth * cellSize) + ((inventoryItem.CurrentWidth - 1) * cellSpacing);
         float itemHeight = (inventoryItem.CurrentHeight * cellSize) + ((inventoryItem.CurrentHeight - 1) * cellSpacing);
         rect.sizeDelta = new Vector2(itemWidth, itemHeight);
@@ -172,12 +177,16 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
         if (inventoryItem.isRotated)
         {
             itemTransform.localRotation = Quaternion.Euler(0, 0, -90f);
-            (itemTransform as RectTransform).sizeDelta = new Vector2(itemHeight, itemWidth);
+            (itemTransform as RectTransform).sizeDelta = new Vector2(
+                itemHeight * inventoryIconFill,
+                itemWidth * inventoryIconFill);
         }
         else
         {
             itemTransform.localRotation = Quaternion.Euler(0, 0, 0);
-            (itemTransform as RectTransform).sizeDelta = new Vector2(itemWidth, itemHeight);
+            (itemTransform as RectTransform).sizeDelta = new Vector2(
+                itemWidth * inventoryIconFill,
+                itemHeight * inventoryIconFill);
         }
     }
 
@@ -397,26 +406,54 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// 장착 시 데이터와 아이콘을 항상 정방향으로 맞춘다.
-    /// 트랜잭션이 데이터의 회전값을 먼저 초기화했더라도 아이콘 회전은 별도로 남을 수 있으므로
-    /// 기존 회전값과 관계없이 시각 상태까지 매번 초기화한다.
+    /// 장착 시 인벤토리 칸에서 사용하던 회전 데이터를 초기화하고 장착 슬롯용 아이콘 방향을 적용한다.
+    /// 파이터 무기는 정방향, 가로로 긴 거너 무기는 +90도로 세워 표시한다.
+    /// 이 회전은 아이콘에만 적용되며 실제 무기의 장착 방향이나 인벤토리 점유 칸은 바꾸지 않는다.
     /// </summary>
-    public void ResetRotationForEquipSlot()
+    public void ResetRotationForEquipSlot(Vector2 slotSize)
     {
         if (inventoryItem == null)
             return;
 
         inventoryItem.isRotated = false;
 
+        bool isGunnerWeapon =
+            inventoryItem.itemData != null &&
+            inventoryItem.itemData.definition != null &&
+            inventoryItem.itemData.definition.category == ItemCategory.Weapon &&
+            inventoryItem.itemData.definition.characterClass == CharacterClass.Gunner;
+
         if (itemTransform != null)
-            itemTransform.localRotation = Quaternion.identity;
+        {
+            // 거너 무기 아이콘은 가로가 길어 정방향으로 정사각 장착 슬롯에 넣으면 폭이 눌려 보입니다.
+            // 장착 슬롯에서만 +90도로 세우고, 다시 인벤토리로 돌아가면 RestoreGridSettings가 원래 방향을 복구합니다.
+            itemTransform.localRotation = Quaternion.Euler(
+                0f,
+                0f,
+                isGunnerWeapon ? 90f : 0f);
+        }
+
+        if (itemIcon != null)
+        {
+            // 회전 뒤에도 원본 아이콘의 가로세로 비율을 유지해 정사각 슬롯 크기에 억지로 늘어나지 않게 합니다.
+            itemIcon.preserveAspect = true;
+        }
 
         if (rect != null)
         {
-            rect.sizeDelta = new Vector2(
-                inventoryItem.CurrentWidth * cellSize,
-                inventoryItem.CurrentHeight * cellSize
-            );
+            rect.sizeDelta = slotSize;
+        }
+
+        if (itemTransform is RectTransform iconRect)
+        {
+            // 무기 장착 칸은 세로로 긴 180×360 크기입니다.
+            // 가로로 긴 거너 아이콘을 90도 돌릴 때 그림 영역까지 같은 180×360으로 두면,
+            // 회전 전의 짧은 180 길이만 사용해서 장착 칸 위아래에 큰 여백이 생깁니다.
+            // 거너 무기만 그림 영역의 가로세로를 먼저 360×180으로 바꾸면,
+            // 회전한 뒤에는 장착 칸의 긴 세로 길이를 자연스럽게 채웁니다.
+            iconRect.sizeDelta = isGunnerWeapon
+                ? new Vector2(slotSize.y, slotSize.x)
+                : slotSize;
         }
     }
 

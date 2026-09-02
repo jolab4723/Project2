@@ -1,0 +1,35 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "candidate": "R7_ProofGate",
+  "review_authority": "ROOT_SOL",
+  "review_scope": "all ten original-resolution individual-renderer black and neutral-gray proofs",
+  "decision": "ROOT_UNITY_R7_PROOF_REJECTED_REQUIRES_R8_DISTINCT_FOLDED_FLAME_SILHOUETTES",
+  "capture_pipeline_status": "PASS",
+  "composite_authorized": false,
+  "timeline_authorized": false,
+  "lifecycle_30_cycle_authorized": false,
+  "root_findings": [
+    "Isolation, centering, clipping, background visibility and render-texture cleanup are corrected and accepted for reuse.",
+    "All five roles have essentially the same low horizontal closed oval silhouette, differing mainly by color and minor edge noise.",
+    "The complete-ellipse or pill reading is explicit and fails the mandatory individual-renderer shape gate.",
+    "Hot core, shoulder, overturn fold, low fold and terminal ember are not visually distinguishable as separate flame functions.",
+    "The shapes are too small and flat for commercial inspection and do not demonstrate layered flame depth or directional flow.",
+    "No composite, timing, prefab completion or lifecycle work is authorized from this proof."
+  ],
+  "r8_binding_requirements": {
+    "hot_core": "A compact forward-tapered axial lick with an uneven fork or concave trailing bite; no closed oval.",
+    "orange_shoulder": "A broader asymmetric teardrop shoulder with unequal upper and lower reach and one compressed side; no pill.",
+    "dark_red_overturn_fold": "A taller curling overturn lobe or open hook with a visible directional fold; it may not close into a ring or ellipse.",
+    "low_soft_fold": "A lower sagging wedge-lobe with a distinct baseline and soft broken tail, visibly different from the upper fold.",
+    "terminal_ember": "A small irregular rounded fragment or short torn wisp with unequal axes and a broken perimeter; not a fifth recolored oval.",
+    "depth_and_falloff": "Each role must contain an independently visible bright-to-soft falloff and enough internal variation to avoid a flat opaque sticker read.",
+    "proof_scale": "Use the accepted clean proof-camera pipeline, but frame each complete silhouette large enough for edge, falloff and asymmetry review with consistent padding.",
+    "stage_limit": "Return only the corrected five black/gray pairs. No composite, timeline, 30-cycle, prefab completion or self approval before a new Root decision."
+  },
+  "immutable_hashes": {
+    "normalized_fbx_sha256": "fcc6a2257e0f7eb8e925e209559e69be8018194688cc872c9e92b70fd254793d",
+    "source_material_sha256": "85d3e47fd00e3decb7af8eb1f3595d899a6ff9b4c1327f76ee76395323dced8a",
+    "source_mask_sha256": "68fd417d3b0e767c9c1f7ad7a8bd4bbce715ad5b9cb754b9ec3bda9144b361ea"
+  },
+  "self_approval": "PROHIBITED"
+}

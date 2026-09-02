@@ -20,6 +20,7 @@ public class ItemDragHandler : MonoBehaviour,
 
     private Vector2 lastPointerPosition;
     private Camera lastEventCamera;
+    private GameObject lastPointerTarget;
     private DragState dragState;
 
     public bool IsDragging =>
@@ -43,7 +44,8 @@ public class ItemDragHandler : MonoBehaviour,
             itemUI.RotateDraggingItem();
             dragHighlighter.RefreshHighlight(
                 lastPointerPosition,
-                lastEventCamera);
+                lastEventCamera,
+                lastPointerTarget);
         }
     }
     public void OnBeginDrag(PointerEventData eventData)
@@ -100,7 +102,8 @@ public class ItemDragHandler : MonoBehaviour,
         dragVisual.BeginDragVisual();
         dragHighlighter.RefreshHighlight(
             lastPointerPosition,
-            lastEventCamera);
+            lastEventCamera,
+            lastPointerTarget);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -112,7 +115,8 @@ public class ItemDragHandler : MonoBehaviour,
         itemUI.MoveByDelta(eventData.delta);
         dragHighlighter.RefreshHighlight(
             lastPointerPosition,
-            lastEventCamera);
+            lastEventCamera,
+            lastPointerTarget);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -123,7 +127,8 @@ public class ItemDragHandler : MonoBehaviour,
         UpdatePointerContext(eventData);
         dragHighlighter.RefreshHighlight(
             lastPointerPosition,
-            lastEventCamera);
+            lastEventCamera,
+            lastPointerTarget);
 
         dragState = DragState.Resolving;
 
@@ -180,5 +185,6 @@ public class ItemDragHandler : MonoBehaviour,
 
         lastPointerPosition = eventData.position;
         lastEventCamera = eventData.pressEventCamera;
+        lastPointerTarget = eventData.pointerCurrentRaycast.gameObject;
     }
 }

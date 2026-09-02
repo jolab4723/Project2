@@ -1,0 +1,43 @@
+WORLDENDER BATCH C1 QA
+unity=6000.3.22f1
+scope=item.weapon.grenadelauncher.worldender only
+architecture=separate ProjectileVisuals/MuzzleVisuals/ImpactVisuals; projectile has body only; shared muzzle external-only
+fbx_source=C:\Users\user\Desktop\Project2_test\Project2_BlenderWork\Production49_ParallelSolHigh\worldender_alt\exports\final\item.weapon.grenadelauncher.worldender_ProjectileVisual_Alt_final.fbx
+fbx_asset=Assets/SW/Models/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/item.weapon.grenadelauncher.worldender_ProjectileVisual.fbx
+projectile=Assets/SW/Prefabs/Equipment/ProjectileVisuals/Weapons/Production49/item.weapon.grenadelauncher.worldender_ProjectileVisual.prefab
+reuse_muzzle_exact=Assets/SW/Prefabs/Equipment/MuzzleVisuals/Production49/GunnerMuzzle_Apocalypse.prefab
+dedicated_impact=Assets/SW/Prefabs/Equipment/ImpactVisuals/Production49/GunnerImpact_Worldender.prefab
+impact_core_nested_prefab=Assets/SW/Prefabs/Equipment/ImpactVisuals/Production49/GunnerImpact_Apocalypse.prefab
+impact_pulse_exact=Assets/Resources_GoogleDrive/VFX/FORGE3D/Sci-Fi Effects/Effects/Pulsewave/pulsewave_001.prefab scale:.42 helper:FORGE3D.F3DPulsewave
+impact_timing_clip=Assets/SW/Animations/ImpactVisuals/Production49/GunnerImpact_Worldender/Worldender_Pulsewave001_Timing.anim .08:22%/.28alpha .35:100%/.62alpha .55:renderer-off .75:blank
+scene=Assets/SW/TEST/ProjectileVisuals/Production49/WorldenderRepresentative/WorldenderRepresentative_QA.unity
+fbx_guid=35ae097372194ca4d9f988e48f93feec previous=35ae097372194ca4d9f988e48f93feec preserved=True
+projectile_guid=f4e0141bedfe93642a4a87acb8e43587 previous=f4e0141bedfe93642a4a87acb8e43587 preserved=True
+impact_guid=b6dcead5ea155304593811b757d4fc6c previous=b6dcead5ea155304593811b757d4fc6c preserved=True
+fbx_import=globalScale:1.000 useFileScale:True importAnimation:False importLights:False importCameras:False remaps:7
+projectile_fresh_import=bounds:1.698240,1.698240,1.410128 max:1.698240 outerScale:1.000000,1.000000,1.000000 nestedFbxScale:1.000000,1.000000,1.000000 axis:+Z frontApertureZ:0.4644 rearCradleZ:-0.4896 PS:0 triangles:40240
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_BezelSteel.mat shader=Universal Render Pipeline/Lit base=0.6012,0.6422,0.6872,1.0000 metallic=0.84 smoothness=0.82 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_LoadRibs.mat shader=Universal Render Pipeline/Lit base=0.2060,0.2427,0.2828,1.0000 metallic=0.82 smoothness=0.81 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_SatinArmor.mat shader=Universal Render Pipeline/Lit base=0.4614,0.5010,0.5420,1.0000 metallic=0.68 smoothness=0.73 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_SeamVoid.mat shader=Universal Render Pipeline/Lit base=0.0702,0.0932,0.1232,1.0000 metallic=0.35 smoothness=0.54 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_TungstenShell.mat shader=Universal Render Pipeline/Lit base=0.3575,0.4030,0.4492,1.0000 metallic=0.76 smoothness=0.76 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_VentCeramic.mat shader=Universal Render Pipeline/Lit base=0.1428,0.1641,0.1863,1.0000 metallic=0.12 smoothness=0.44 emission=0.0000,0.0000,0.0000,1.0000
+body_material=Assets/SW/Materials/ProjectileVisuals/Production49/item.weapon.grenadelauncher.worldender/MAT_Worldender_Witness_DCEBFF.mat shader=Universal Render Pipeline/Lit base=0.8627,0.9216,1.0000,1.0000 metallic=0.05 smoothness=0.80 emission=1.1647,1.2441,1.3500,1.0000
+shared_muzzle_prefab=Assets/SW/Prefabs/Equipment/MuzzleVisuals/Production49/GunnerMuzzle_Apocalypse.prefab enabledRendererMissing:0 PS:2 lights:0 colliders:0 rigidbodies:0 cameras:0
+worldender_impact_prefab=Assets/SW/Prefabs/Equipment/ImpactVisuals/Production49/GunnerImpact_Worldender.prefab enabledRendererMissing:0 PS:6 lights:0 colliders:0 rigidbodies:0 cameras:0
+projectile_nonTransform_components=UnityEngine.MeshFilter,UnityEngine.MeshRenderer forbidden:0
+shared_muzzle_nonTransform_components=UnityEngine.ParticleSystem,UnityEngine.ParticleSystemRenderer forbidden:0
+worldender_impact_nonTransform_components=FORGE3D.F3DPulsewave,SciFiArsenal.SciFiPitchRandomizer,UnityEngine.Animation,UnityEngine.AudioSource,UnityEngine.MeshFilter,UnityEngine.MeshRenderer,UnityEngine.ParticleSystem,UnityEngine.ParticleSystemRenderer forbidden:0
+shared_muzzle_commercial_source_preservation=hierarchy:2 TSA_mismatch:0 shader_mismatch:0 texture_mismatch:0 source:Assets/Resources_GoogleDrive/VFX/Sci-Fi Arsenal/Sci-Fi Effects/Prefabs/Combat/MuzzleFlash/Rocket/RocketMuzzleFlashBlue.prefab
+accepted_core_commercial_source_preservation=hierarchy:6 TSA_mismatch:0 shader_mismatch:0 texture_mismatch:0 source:Assets/Resources_GoogleDrive/VFX/Sci-Fi Arsenal/Sci-Fi Effects/Prefabs/Combat/Explosions/Rockets/Impact v1/ModularRocketImpact.prefab
+nested_accepted_core_source_preservation=hierarchy:8 TSA_mismatch:0 shader_mismatch:0 texture_mismatch:0 source:Assets/SW/Prefabs/Equipment/ImpactVisuals/Production49/GunnerImpact_Apocalypse.prefab
+nested_pulsewave001_source_preservation=hierarchy:1 TSA_mismatch:0 shader_mismatch:0 texture_mismatch:0 source:Assets/Resources_GoogleDrive/VFX/FORGE3D/Sci-Fi Effects/Effects/Pulsewave/pulsewave_001.prefab
+pulse_material=Assets/SW/Materials/ImpactVisuals/Production49/GunnerImpact_Worldender/MAT_Worldender_Pulse_DCEBFF.mat shader=FORGE3D/URP/Additive tint=0.8627,0.9216,1.0000,1.0000 sourceTexturesExact:true TSA:none emission:black
+pulse_helper_exact=FORGE3D.F3DPulsewave fields_preserved:true animation=legacy visual-only scale008:0.092400,0.018480,0.092400 scale035:0.420000,0.084000,0.420000 renderer055:false renderer075:false clipLength:0.800
+shared_muzzle_residue_30cycle=PASS systems:2 trails:0 pulseRendererAfter075:false
+worldender_impact_residue_30cycle=PASS systems:6 trails:0 pulseRendererAfter075:false
+runtime_ps=projectile:0 muzzle:2 impact:6+mesh-helper peak:6 budget:PASS<=12
+captures=projectile fixed-rig 3-view; impact t=.08/.35/.75; isolated 3x2 Worldender/Gunner/Fighter full-chain sheet
+scene_state=active WorldenderRepresentative_QA dirty:false prefabStage:false
+console=external MCP Console error check required after builder completion
+status=PASS_PENDING_ROOT_VISUAL_GATE

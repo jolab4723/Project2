@@ -1,0 +1,62 @@
+{
+  "item_id": "item.weapon.shotgun.goldentwinstar",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_BEFORE_CYCLES_REQUIRES_BODY_R8_AND_VFX_R2",
+  "technical_gate": {
+    "result": "PASS_FOUNDATION_ONLY_NO_CYCLES_AUTHORIZED",
+    "unity_version": "6000.3.22f1",
+    "approved_fbx_hash_unchanged": true,
+    "mesh_renderers": 13,
+    "evaluated_triangles": 13216,
+    "material_remaps": 6,
+    "particle_systems": {
+      "muzzle": 3,
+      "flight": 3,
+      "impact": 4
+    },
+    "thirty_cycle_residue": "NOT_RUN_BY_ROOT_VISUAL_STOP",
+    "runtime_catalog_mfi": false,
+    "note": "The isolated import and prefab foundation are technically intact, but the Root Unity-scale visual gate fails. The package-owned domain-reload token deletion error is recorded as baseline external noise and is not attributed to this builder."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures_R1/M_peak_0.045_1024x768.png",
+    "Captures_R1/F_body_attached_hero_0.090_1024x768.png",
+    "Captures_R1/F_body_attached_macro_midbody_0.090_1024x768.png",
+    "Captures_R1/F_body_attached_gameplay_0.090_1024x768.png",
+    "Captures_R1/I_contact_peak_0.080_1024x768.png",
+    "Captures_R1/RendererProof_M_peak_black_0.045_1024x768.png",
+    "Captures_R1/RendererProof_M_peak_neutralgray_0.045_1024x768.png",
+    "Captures_R1/RendererProof_F_hero_black_0.090_1024x768.png",
+    "Captures_R1/RendererProof_F_hero_neutralgray_0.090_1024x768.png",
+    "Captures_R1/RendererProof_I_contact_black_0.080_1024x768.png",
+    "Captures_R1/RendererProof_I_contact_neutralgray_0.080_1024x768.png",
+    "Captures_R1/GoldenTwinStar_vs_GunnerBullet_FighterAttack_Unscaled_7168x800.png"
+  ],
+  "visual_findings": [
+    "Muzzle is dominated by large hard white triangular wedges and thin needle-like streaks. The black and neutral-gray renderer proofs confirm these are the visible authored forms rather than a background artifact; they read as clipped cards or primitive spikes, not a polished twin-energy launch.",
+    "The imported body preserves the two-star count, but at Unity hero scale it reads as two thick brown flower/cog plates attached to bulky black polygonal pucks. The stepped carrier is visually heavy, the load path is obscure and the surface response is below the user's commercial close-up floor.",
+    "The warm brown star faces have broad flat areas and weak metal hierarchy, while the surrounding dark masses crush together. Neutral-gray proof loses additional silhouette separation instead of proving a clean manufactured assembly.",
+    "Flight contains small pure-white triangular attached forms with obvious hard edges between the bodies. They do not become a coherent attached trail or controlled twin-core energy flow.",
+    "Impact is a low-detail radial fan of long golden needles. It is sparse, small and primitive, and violates the no-needle/no-generic-radial-star direction for a commercial contact event.",
+    "R1 is technically organized but visually far below the user's supplied minimum reference and therefore cannot proceed to lifecycle testing."
+  ],
+  "body_r8_contract": {
+    "status": "ROOT_UNITY_SCALE_REOPENED_BODY_GATE",
+    "source_rule": "Freeze all R7 authored and transport artifacts. Create a separate R8 authored Blender revision; do not overwrite or copy back into the approved/frozen source paths.",
+    "identity": "Keep exactly two unequal five-lobed impact anvils and one connected asymmetric twin carrier, but redesign the visible Unity-scale assembly so it reads as a premium twin penetrator rather than flower plates on polygonal pucks.",
+    "star_profiles": "Refine each anvil into a thick manufactured penetrator with tapered lobe roots, controlled broad bevels, a recessed face tier and a deeply captured non-circular key. Remove cookie/flower softness and flat brown plate dominance.",
+    "carrier": "Replace the bulky near-circular dark back masses with a directional tapered yoke/carrier, a lower center valley and two visibly changing-section load webs that seat each anvil across multiple faces. The silhouette must show forward cutoff, unequal end mass and a compressed rear receiver.",
+    "materials": "Use commercial lit satin gunmetal, restrained brushed warm brass/bronze and pale tempered key faces. Remove wood-like brown streaking, crushed black values and white clipping. Bevel highlights must remain visible under Unity reconstruction.",
+    "evidence": "Follow Blender Agent Studio authored refinement and validation with original-resolution material/clay hero/opposite/six orthographics, star-seat/load-web/rear-receiver macros, gameplay and exact128 evidence. Stop for Root body review before new FBX/GLB/Unity transport."
+  },
+  "vfx_r2_contract": {
+    "dependency": "Do not rebuild or attach final Flight until the R8 body and new three-branch transport pass Root. Offline Muzzle/Impact exploration may proceed without Assets writes.",
+    "muzzle": "Replace hard triangular wedges and needles with two unequal converging tapered transparent energy lobes, one compact warm core and a soft shared pressure shoulder. No visible card boundary, pure-white clipping, spike fan or detached line set.",
+    "flight": "Use two body-contact tapered wake lobes that originate behind the unequal anvils and merge into one restrained warm-gold tail, plus at most two tiny sparks. No white triangles, needles, equal beads, star mesh or detached ribbon.",
+    "impact": "Use two offset short rounded gold contact lobes around one displaced hot core and one low-alpha asymmetric fold. Preserve a twin event without a radial star, spokes, long needles, ring or screen-filling cloud.",
+    "proof_gate": "Before any 30-cycle run, provide original 1024x768 M/F/I timing, body-only and body+Flight hero/gameplay, black and neutral-gray single-renderer proofs for every distinct role, and the unchanged benchmark comparison."
+  },
+  "root_visual_go_required_before_cycles": true,
+  "runtime_catalog_mfi_forbidden": true
+}

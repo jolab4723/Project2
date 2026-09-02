@@ -35,22 +35,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void Awake()
     {
         context ??= GetComponent<PlayerContext>();
-        DisableLegacyHudPublisher();
         ResolveLocalOnlyBehaviours();
         SetLocalOnlyBehaviours(false);
-    }
-
-    /// <summary>
-    /// 원본 Fighter의 PlayerHudEventBridge는 플레이어마다 Health/Mana를 전역 KY_GameEvents에 발행한다.
-    /// 네트워크 복제본에서 이를 그대로 켜면 원격 플레이어의 체력 변화가 이 Client의 하단 HUD까지
-    /// 덮어쓴다. Mirror 테스트에서는 Scene의 PlayerHudEventBridge_MirrorTest 하나만 로컬 Context에
-    /// Bind하므로, 플레이어 Prefab에 상속된 원본 발행기는 모든 복제본에서 비활성화한다.
-    /// </summary>
-    private void DisableLegacyHudPublisher()
-    {
-        PlayerHudEventBridge legacyBridge = GetComponent<PlayerHudEventBridge>();
-        if (legacyBridge != null)
-            legacyBridge.enabled = false;
     }
 
 #if UNITY_EDITOR
@@ -64,6 +50,18 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void Reset()
     {
         context = GetComponent<PlayerContext>();
+    }
+
+    [ContextMenu("Validate Mirror Player Configuration")]
+    private void ValidateMirrorPlayerConfiguration()
+    {
+        Debug.Assert(GetComponent<WBH_PlayerInputHandler>() == null, "원본 이동 입력기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<WBH_PlayerAnimation>() == null, "원본 애니메이션 이벤트 수신기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerActionInputHandler>() == null, "원본 액션 입력기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<FighterSkillController>() == null, "원본 로컬 스킬 판정기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PotionUseManager>() == null, "원본 로컬 포션 관리자가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerRelicEffectProvider>() == null, "원본 로컬 유물 적용기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerHudEventBridge>() == null, "원본 전역 HUD 발행기가 남아 있습니다.", this);
     }
 
     public override void OnStartLocalPlayer()
