@@ -1,42 +1,61 @@
-using System;
+using EnemySystem;
 using System.Collections.Generic;
 using UnityEngine;
-
-[Serializable]
-public sealed class WBH_EnemyStatTable
-{
-    public WBH_EnemyInfo[] enemies;
-}
-
-[Serializable]
-public sealed class WBH_FloorScalingTable
-{
-    public WBH_EnemyInfo[] enemies;
-}
-
-[Serializable]
-public sealed class WBH_FloorScalingRow
-{
-    public int floor;
-    public float maxHpMultiplier = 1f;
-    public float atkMultiplier = 1f;
-    public float defMultiplier = 1f;
-}
 
 [DisallowMultipleComponent] // 중복금지 속성
 public class WBH_EnemyDataProvider : MonoBehaviour
 {
-    [SerializeField] private TextAsset enemyStatJson;
+    [Header("Generated Enemy Data")]
+    [SerializeField] private EnemyDatabaseSO enemyDatabase;
+    //[SerializeField] private 
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    private bool isLoaded;
+
+    private void Awake()
     {
-        
+        Load();
     }
 
-    // Update is called once per frame
-    void Update()
+    //public bool TryCreateEnemyInfo(int runtimeId, int floor, out WBH_EnemyInfo result)
+    //{
+    //    result = null;
+
+    //    if(!isLoaded && !Load())
+    //        return false;
+
+    //    if(!enemiesById.TryGetValue(runtimeId, out WBH_EnemyDataRow enemyRow))
+    //    {
+    //        Log.Error($"EnemyData 에 {runtimeId} 가 없습니다.");
+    //        return false;
+    //    }
+
+    //    if(!scalesByFloor.TryGetValue(floor, out WBH_FloorStatScaleRow floorScale))
+    //    {
+    //        Log.Error($"FloorStatScale 에 {floor}층 데이터가 없습니다.");
+    //        return false;
+    //    }
+    //    if(!Enum.TryParse(enemyRow.enemyGrade, true, out EnemyGrade enemyGrade))
+    //    {
+    //        Log.Error($"잘못된 enemyGrade 입니다. ID = {runtimeId}, 값 = {enemyRow.enemyGrade}");
+    //        return false;
+    //    }
+    //    if(!Enum.TryParse(enemyRow.attackType, true, out EnemyType enemyType))
+    //    {
+    //        Log.Error($"잘못된 attackType 입니다. ID = {runtimeId}, 값 = {enemyRow.attackType}");
+    //        return false;
+    //    }
+
+    //    result = new WBH_EnemyInfo
+    //    {
+    //        id = enemyRow.runtimeId,
+    //        enemyName = enemyRow.enemyId, // !@ 차후 EnemyLabel
+
+    //    }
+    //}
+
+    private void Load()
     {
-        
+
     }
 }
