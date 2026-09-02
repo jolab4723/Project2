@@ -22,7 +22,7 @@
 - `Weapon Type`: 실제 공격 방식입니다. `Rifle`, `Shotgun`, `GrenadeLauncher` 중 하나를 고릅니다.
 - `Muzzle`: 총열 끝에 있는 기준점입니다. 무기 루트 바로 아래의 `Muzzle`을 연결합니다.
 - `Muzzle Visual Prefab`: 발사 순간 총구에서 짧게 보이는 연출입니다.
-- `Projectile Visual Prefab`: 탄환과 함께 날아가는 외형과 꼬리 연출입니다.
+- `Projectile Visual Prefab`: 라이플·유탄의 탄환과 함께 날아가는 외형과 꼬리 연출입니다. 산탄총 18종은 중앙 탄환을 사용하지 않으므로 비워 둡니다.
 - `Impact Visual Prefab`: 벽, 적 또는 지면에 닿았을 때 보이는 연출입니다.
 
 `Muzzle`의 파란 축인 `+Z`가 탄환이 나가는 방향을 향해야 합니다. 위치가 맞아도 축이 옆이나 뒤를 보면 총구 연출과 탄환이 돌아가 보입니다.
@@ -75,8 +75,8 @@
 
 - 공격해도 아무것도 나오지 않음: 장착 무기가 있는지, `GunnerTestProjectileService/ProjectilePoolManagaer`가 켜져 있는지 확인합니다.
 - 총구 연출이 옆으로 나감: 무기 루트 아래 `Muzzle`의 파란 축 `+Z`를 확인합니다.
-- 예전 탄환과 새 탄환이 겹침: `GunnerWeaponVfxBinding`의 비행 프리팹이 비어 있지 않은지 확인합니다.
-- 산탄 데미지가 두 번 들어가거나 중앙 탄환이 보임: `T_PlayerCombat`의 Shotgun 분기에서 `SectorAttack` 뒤에 `FireProjectile`을 호출하고 있지 않은지 확인합니다.
+- 라이플·유탄에서 예전 탄환과 새 탄환이 겹침: `GunnerWeaponVfxBinding`의 비행 프리팹과 기존 투사체 Renderer 숨김 처리를 확인합니다.
+- 산탄 데미지가 두 번 들어가거나 중앙 탄환이 보임: `T_PlayerCombat`의 Shotgun 분기에서 `SectorAttack` 뒤에 `FireProjectile`을 호출하고 있지 않은지, 산탄 WeaponVisual의 `Projectile Visual Prefab`이 비어 있는지 확인합니다.
 - 산탄이 중앙 한 점으로만 보임: 산탄총 18종의 총구 프리팹에서 두 팬 레이어의 Cone 반각이 45도인지 확인합니다. 일반·얼음·전기는 최장 파티클의 속도 `74.074`, 수명 `0.135초`로 10m를 표시합니다. 화염 3종은 최장 속도 `28.571`, 수명 `0.35초`로 10m를 표시하며 Burst 수는 0이고 연속 방출이어야 합니다.
 - 유탄이 데미지를 주지 않고 바닥에 남음: `ProjectilePoolManagaer`의 `Effect Spawner`가 활성 Scene 루트의 `EffectManager`를 가리키는지 확인합니다. 선택적인 폭발 연출에서 오류가 나더라도 데미지 처리와 풀 반환은 계속되어야 합니다.
 - 거너 무기 아이콘이 장착 슬롯에서 작거나 눌려 보임: `ItemUI.ResetRotationForEquipSlot`이 거너 무기만 `+90도`로 돌리고 `Image.preserveAspect`를 켜는지 확인합니다. 세로 2칸짜리 무기 장착 슬롯이 `180×360`이라면 회전 전 아이콘 영역은 반대로 `360×180`이어야 합니다. 인벤토리로 돌아왔을 때는 `preserveAspect`가 꺼지고 아이콘 영역이 칸 크기의 90%로 복구되는지도 확인합니다.
