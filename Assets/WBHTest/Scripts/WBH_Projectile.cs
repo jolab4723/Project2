@@ -5,6 +5,11 @@ public class WBH_Projectile : MonoBehaviour
     [SerializeField] private bool isExplosion;
     [SerializeField] private float explosionRadius;
 
+    [Header("폭발 범위 표시")]
+    [SerializeField] private bool showExplosionRange = true;
+    [SerializeField] private Color explosionRangeColor = new Color(1f, 0.45f, 0.1f, 0.35f);
+    [SerializeField] private float explosionRangeDuration = 0.25f;
+
     private WBH_DamageRequest request;
     private float speed;
     private float maxDistance;
@@ -201,6 +206,11 @@ public class WBH_Projectile : MonoBehaviour
     private void Explode()
     {
         Vector3 explosionPos = transform.position;
+
+        if(showExplosionRange)
+        {
+            SkillRangeVisual.ShowSector(explosionPos, Vector3.forward, explosionRadius, 360, explosionRangeColor, explosionRangeDuration);
+        }
 
         if(effectSpawner != null && hitEffectData != null)
         {
