@@ -1,0 +1,76 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "revision": "Unity StrictCustomDerived R9",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_BEFORE_CYCLES_REQUIRES_R10_AUTHORED_PRESSURE_EVENT",
+  "technical_gate": {
+    "result": "PASS_PREFLIGHT_EVIDENCE_ONLY",
+    "thirty_cycle_muzzle_flight_impact": "DEFERRED_BY_ROOT_VISUAL_FAILURE",
+    "body_frozen": true,
+    "flight_frozen_from_r8": true,
+    "transparency_proofs": "PASS_12_OF_12_NO_CARD_EDGE",
+    "source_and_guid_fixtures": "PASS",
+    "dirty_scene": false,
+    "note": "Correct RGBA, clean material setup and fixture stability do not offset the failed visible design. Lifecycle cycles were intentionally not run after the pre-lifecycle visual failure."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures_R9/ScrapDrum_R9_GameplayScale_MFI_Comparison_1024x768.png",
+    "Captures_R9/M_ignition_0.020_1024x768.png",
+    "Captures_R9/M_asym_peak_0.085_1024x768.png",
+    "Captures_R9/M_peel_0.180_1024x768.png",
+    "Captures_R9/M_decay_0.340_1024x768.png",
+    "Captures_R9/F_side_hero_0.180_1024x768.png",
+    "Captures_R9/F_wake_rear_3Q_0.180_1024x768.png",
+    "Captures_R9/I_contact_0.025_1024x768.png",
+    "Captures_R9/I_compound_peak_0.130_1024x768.png",
+    "Captures_R9/I_side_fold_transition_0.300_1024x768.png",
+    "Captures_R9/I_decay_masses_0.700_1024x768.png",
+    "Captures_R9/TransparencyProof/DisplacedCoreFold_single_billboard_black_1024x768.png",
+    "Captures_R9/TransparencyProof/DisplacedCoreFold_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R9/TransparencyProof/IrregularWarmLobeA_single_billboard_black_1024x768.png",
+    "Captures_R9/TransparencyProof/IrregularWarmLobeA_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R9/TransparencyProof/IrregularWarmLobeB_single_billboard_black_1024x768.png",
+    "Captures_R9/TransparencyProof/IrregularWarmLobeB_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R9/TransparencyProof/BroadHeatedFragment_single_billboard_black_1024x768.png",
+    "Captures_R9/TransparencyProof/BroadHeatedFragment_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R9/TransparencyProof/LowSootFold_single_billboard_black_1024x768.png",
+    "Captures_R9/TransparencyProof/LowSootFold_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R9/TransparencyProof/I_LowSideFold_R9_bound_system_black_1024x768.png",
+    "Captures_R9/TransparencyProof/I_LowSideFold_R9_bound_system_neutral_gray_1024x768.png"
+  ],
+  "root_visual_gate": {
+    "result": "FAIL",
+    "accepted_and_frozen_for_r10": [
+      "The Root-approved ScrapDrum body, orientation, import, renderer/material remaps and GUIDs remain frozen.",
+      "The R8 Flight wake remains accepted and frozen for the next revision.",
+      "The R9 RGBA and black/gray isolated-proof discipline is technically clean and must be preserved."
+    ],
+    "failed_findings": [
+      "Muzzle and Impact still read as small dim red amorphous blobs. The new sprite family removed card edges but did not create a designed commercial pressure event.",
+      "The isolated DisplacedCoreFold is a soft bean or puddle silhouette with one diffuse yellow center. The other lobes share the same blurred value language, so overlap produces a muddy cluster rather than depth or mechanism.",
+      "Ignition, peak, peel and decay primarily scale, rearrange and fade the same soft masses. They do not communicate compression, directional release, peel, fracture and decay as distinct authored phases.",
+      "The peak shapes resemble abstract red petals or a small flower. They lack a crisp white-hot core hierarchy, coherent forward axis, substantial pressure envelope and restrained but readable fragments.",
+      "Impact contact is a single short soft slug; the peak is a loose petal cluster; the transition and decay become dark indistinct stains. No convincing surface contact, fold, ejecta or material breakup is visible.",
+      "At gameplay comparison scale the Muzzle and Impact are far weaker than the body and below the user's school/commercial quality floor. Technical transparency success cannot be treated as visual completion."
+    ]
+  },
+  "r10_contract": {
+    "scope": "Keep the body, R8 Flight and all frozen import/GUID state. Rebuild Muzzle and Impact from a clear event silhouette and phase sequence, not by overlapping more blurred bean sprites.",
+    "authoring_strategy": "Use a small layered combination of one authored high-resolution tapered pressure sheet, one darker asymmetric envelope and a few substantial mesh or streak elements that are broad, short and tapered. Each layer must have a distinct job and remain clean on black and neutral gray. Do not use a family of visually interchangeable blobs.",
+    "muzzle": "Create a compact seven-well discharge identity: one offset white-hot pressure core, two larger unequal amber jets that establish the forward axis, three or four subordinate orange port blooms with staggered timing, and one dark soot compression envelope. The silhouette must begin compressed at the muzzle, stretch forward at peak, then split into two unequal peel masses. No flower, radial layout, ring, star, needle, pill or soft red puddle.",
+    "impact": "Create a readable contact-to-breakup sequence: a thin but broad contact flash compressed against an implied plane, a forward-overturning main pressure fold, one low heavy rebound fold, two or three short substantial ejecta fragments, and two separated late decay masses. The peak must be wider and structurally different from contact; the transition must visibly overturn or split instead of merely fading.",
+    "value_and_color": "Use a small near-white contact/core area, an amber structural body, orange-red outer pressure, and restrained dark soot. Preserve internal contrast at gameplay scale; do not let every layer collapse to the same dark red value.",
+    "proof_gate": "Render one isolated proof for each proposed layer and one composite frame for Muzzle and Impact first. Stop for Root proof review before building the full timeline or running lifecycle cycles. This avoids another full implementation around a weak sprite silhouette.",
+    "evidence_after_proof_approval": "Only after Root accepts the isolated and composite proof, produce original 1024x768 phase captures, black/gray proofs, M/F/I gameplay comparison, reference comparison, 30 natural and interrupted cycles per stage, residue/material-growth/console/GUID/prefab/dirty-state audits."
+  },
+  "still_forbidden": [
+    "runtime binding",
+    "catalog registration",
+    "MFI integration",
+    "combat hookup",
+    "original asset mutation",
+    "source copy-back"
+  ],
+  "root_visual_approval_required_after_r10": true
+}

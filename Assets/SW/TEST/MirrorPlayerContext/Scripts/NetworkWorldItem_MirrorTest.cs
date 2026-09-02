@@ -1,3 +1,4 @@
+using System.Collections;
 using ItemSystem;
 using Mirror;
 using UnityEngine;
@@ -58,6 +59,17 @@ public sealed class NetworkWorldItem_MirrorTest : NetworkBehaviour
         pickupClaim?.Release();
     }
 
+    /// <summary>
+    /// 서버 획득 성공 후 모든 Client에 동일한 흡수 연출을 시작하고, 연출 종료 뒤 서버에서만 제거한다.
+    /// </summary>
+    [Server]
+    public void PlayPickupAndDestroy(uint pickerNetId)
+    {
+        WorldItemPickupPresentation.Prepare(gameObject);
+        RpcPlayPickup(pickerNetId);
+        StartCoroutine(DestroyAfterPickupPresentation());
+    }
+
     public ItemInstance CreateItemInstance()
     {
         return PlayerInventorySync_MirrorTest.CreateItemInstance(snapshotJson);
@@ -68,6 +80,37 @@ public sealed class NetworkWorldItem_MirrorTest : NetworkBehaviour
         ApplySnapshot(newSnapshotJson);
     }
 
+    /// <summary>
+    /// 각 Client가 획득 플레이어를 찾아 네트워크 루트가 아닌 로컬 시각만 이동시킨다.
+    /// </summary>
+    [ClientRpc]
+    private void RpcPlayPickup(uint pickerNetId)
+    {
+        Transform target =
+            NetworkClient.spawned.TryGetValue(
+                pickerNetId,
+                out NetworkIdentity picker)
+                ? picker.transform
+                : null;
+
+        StartCoroutine(WorldItemPickupPresentation.Play(
+            gameObject,
+            target));
+    }
+
+    /// <summary>
+    /// ClientRpc가 표시될 짧은 시간을 보장한 뒤 네트워크 오브젝트를 권한 있는 서버에서 제거한다.
+    /// </summary>
+    [Server]
+    private IEnumerator DestroyAfterPickupPresentation()
+    {
+        yield return new WaitForSecondsRealtime(
+            WorldItemPickupPresentation.Duration);
+
+        if (gameObject != null)
+            NetworkServer.Destroy(gameObject);
+    }
+
     private void ApplySnapshot(string value)
     {
         ItemInstance item = PlayerInventorySync_MirrorTest.CreateItemInstance(value);
@@ -75,6 +118,9 @@ public sealed class NetworkWorldItem_MirrorTest : NetworkBehaviour
             return;
 
         storage.Init(item);
+        if (TryGetComponent(out WorldItemCategoryVisualView categoryVisualView))
+            categoryVisualView.Apply(item.definition);
+
         if (TryGetComponent(out WorldItemRarityColorView rarityView))
             rarityView.Apply(item.definition.rarity);
     }

@@ -1,0 +1,68 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "revision": "unity_strict_custom_r5",
+  "authority": "root_sol",
+  "review_date": "2026-08-30",
+  "review_type": "ROOT_UNITY_ORIGINAL_RESOLUTION_VISUAL_REVIEW",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R6_READABILITY_AND_EFFECT_REBUILD",
+  "technical_gate": {
+    "fbx_renderers": 120,
+    "fbx_triangles": 144096,
+    "external_material_remaps": 6,
+    "prefab_guids_preserved": true,
+    "thirty_cycle_muzzle_flight_impact": "PASS",
+    "console_new_errors": 0,
+    "user_scene_dirty": false,
+    "runtime_catalog_mfi_binding": false,
+    "technical_pass_does_not_override_visual_rejection": true
+  },
+  "reviewed_original_1024x768_captures": [
+    "Captures_R5/M_ignition_0.025_1024x768.png",
+    "Captures_R5/M_peak_0.060_1024x768.png",
+    "Captures_R5/M_near_peak_0.115_1024x768.png",
+    "Captures_R5/F_hero_3Q_0.100_1024x768.png",
+    "Captures_R5/F_true_macro_0.100_1024x768.png",
+    "Captures_R5/F_gameplay_0.100_1024x768.png",
+    "Captures_R5/F_wake_rear_3Q_0.100_1024x768.png",
+    "Captures_R5/I_contact_0.035_1024x768.png",
+    "Captures_R5/I_peak_0.095_1024x768.png",
+    "Captures_R5/I_decay_0.380_1024x768.png",
+    "Captures_R5/ScrapDrum_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures_R5/stage_clean_M_0.330_1024x768.png",
+    "Captures_R5/stage_clean_F_terminated_plus0.100_1024x768.png",
+    "Captures_R5/stage_clean_I_0.950_1024x768.png"
+  ],
+  "visual_findings": [
+    "The imported body remains too dark and low-contrast in hero, macro, gameplay, and comparison views. Navy, black, gunmetal, ribs, latches, and the outer ring collapse into one near-black mass instead of reproducing the approved Blender hierarchy.",
+    "The evidence does not present the signature +Z center-plus-six deep-well face in a readable front three-quarter, front macro, or gameplay shot. The dominant approved identity is therefore absent from the Unity gate; current side/rear framing cannot prove correct flight orientation.",
+    "Muzzle is a tiny white core with one narrow orange cone, uniform round glow, and a few straight white bars. It is materially smaller and simpler than the Gunner_Bullet/Fighter_Attack comparison and does not read as a heavy seven-chamber discharge.",
+    "Attached Flight is reduced to three small tapered lobes plus white needle bars. It lacks a compact layered pressure wake, body-contact glow, velocity mass, and gameplay readability; rear and side views make it look pasted to one end.",
+    "Impact is still a tiny core with two broken circular arc fragments and sparse needle rays. Contact and peak are almost the same scale and composition, while decay becomes a faint patterned card. It does not read as a broad multi-chamber scrap-metal impact.",
+    "The suite remains below the user commercial body floor, the supplied school projectile/VFX references, and the Gunner_Bullet/Fighter_Attack comparison despite a clean technical audit."
+  ],
+  "r6_authorization": {
+    "scope": "UNITY_DERIVED_MATERIAL_CAPTURE_AND_VFX_ONLY",
+    "preserve_approved_fbx_geometry_and_source_hashes": true,
+    "preserve_existing_derived_prefab_guids_and_hierarchy_contract": true,
+    "do_not_modify_original_or_transport_assets": true,
+    "first_prove_plus_z_front_orientation": "Add fixed-rig +Z front orthographic, +Z front three-quarter, and +Z well macro captures. If the seven wells are not the true +Z flight face, correct only the derived prefab/model-child orientation and revalidate bounds/hierarchy; never mutate the FBX source.",
+    "body_material_requirement": "Recalibrate the six external URP/Lit materials from the approved Blender runtime hero so dark blue, black, brushed silver, gunmetal and brass remain distinctly readable without whitewash.",
+    "muzzle_requirement": "Build a larger compact asymmetric seven-port pressure discharge with layered soft core, short unequal exhaust wedges and restrained sparks; no uniform halo, full ring, white bars, or opaque cards.",
+    "flight_requirement": "Create a continuous rear-contact layered wake with 5-7 unequal chamber pulses or scalloped lobes tied to the body, plus restrained scrap-hot particles; no three cloned cones or needle bars.",
+    "impact_requirement": "Create a materially broader asymmetric seven-chamber shock with broken pressure lobes, hot fragments, soot and readable decay; no circular arc fragments as the main identity, no line-star, no patterned residue card.",
+    "required_evidence": [
+      "M ignition peak near-peak",
+      "F front +Z three-quarter",
+      "F +Z well macro",
+      "F side hero",
+      "F gameplay",
+      "F rear wake",
+      "I contact peak decay",
+      "clean M F I",
+      "Gunner_Bullet and Fighter_Attack comparison"
+    ],
+    "run_30_cycle_validation_again": true,
+    "runtime_catalog_mfi_authorized": false
+  },
+  "root_note": "R5 is technically clean but visually rejected. Preserve it as before evidence. Root approval requires the seven-well face to read in Unity at the true flight front and all three VFX phases to meet the supplied commercial minimum without cards, rings, needles, or dark collapse."
+}

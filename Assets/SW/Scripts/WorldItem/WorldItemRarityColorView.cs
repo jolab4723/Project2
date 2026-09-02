@@ -59,6 +59,9 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
     public void Apply(ItemRarity rarity)
     {
         if (targetRenderer == null)
+            targetRenderer = GetComponent<MeshRenderer>();
+
+        if (targetRenderer == null)
             return;
 
         string colorHex = ItemDisplayNames.GradeColorHex.TryGetValue(
@@ -70,24 +73,40 @@ public sealed class WorldItemRarityColorView : MonoBehaviour
         if (!ColorUtility.TryParseHtmlString(colorHex, out Color color))
             color = Color.white;
 
-        propertyBlock ??= new MaterialPropertyBlock();
-        targetRenderer.GetPropertyBlock(propertyBlock);
+        ApplyRendererColor(targetRenderer, color);
 
-        Material material = targetRenderer.sharedMaterial;
+        MeshRenderer[] activeRenderers = GetComponentsInChildren<MeshRenderer>(false);
+        foreach (MeshRenderer renderer in activeRenderers)
+        {
+            if (renderer != null && renderer != targetRenderer)
+                ApplyRendererColor(renderer, color);
+        }
+
+        ApplyEffectDetail(rarity);
+        ApplyParticleColor(color, GetBeamIntensity(rarity));
+    }
+
+    private void ApplyRendererColor(MeshRenderer renderer, Color color)
+    {
+        propertyBlock ??= new MaterialPropertyBlock();
+        propertyBlock.Clear();
+        renderer.GetPropertyBlock(propertyBlock);
+
+        Material material = renderer.sharedMaterial;
         if (material != null && material.HasProperty(BaseColorId))
             propertyBlock.SetColor(BaseColorId, color);
 
         if (material != null && material.HasProperty(ColorId))
             propertyBlock.SetColor(ColorId, color);
 
-        targetRenderer.SetPropertyBlock(propertyBlock);
-
-        ApplyEffectDetail(rarity);
-        ApplyParticleColor(color, GetBeamIntensity(rarity));
+        renderer.SetPropertyBlock(propertyBlock);
     }
 
     private void ApplyEffectDetail(ItemRarity rarity)
     {
+        if (enhancedEffects == null)
+            return;
+
         bool showEnhancedEffects =
             rarity == ItemRarity.Unique ||
             rarity == ItemRarity.Legendary;

@@ -71,7 +71,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 {
     // ponytail: 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026082102;
+    public const int CompatibilityVersion = 2026083102;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =
@@ -108,6 +108,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     private string compatibilityStatusMessage = "서버 연결 전";
 
     public PlayerContext LocalPlayerContext { get; private set; }
+    public ChatSession Chat { get; } = new();
     public event Action<PlayerContext> LocalPlayerContextChanged;
     public event Action<uint> RunSnapshotChanged;
     public event Action<bool> ClientSessionLeaderChanged;
@@ -172,6 +173,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
             return;
 
         LocalPlayerContext = context;
+        Chat.BindLocalPlayer(context);
         LocalPlayerContextChanged?.Invoke(context);
     }
 
@@ -181,6 +183,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
             return;
 
         LocalPlayerContext = null;
+        Chat.BindLocalPlayer(null);
         LocalPlayerContextChanged?.Invoke(null);
     }
 
@@ -221,6 +224,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     public override void OnStartServer()
     {
         base.OnStartServer();
+        Chat.StartServer(connection => compatibleConnectionIds.Contains(connection.connectionId));
         NetworkServer.RegisterHandler<MirrorCompatibilityRequestMessage>(
             HandleServerCompatibilityRequest,
             false);
@@ -246,6 +250,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
     public override void OnStartClient()
     {
         base.OnStartClient();
+        Chat.StartClient();
         NetworkClient.RegisterHandler<MirrorCompatibilityResponseMessage>(
             HandleClientCompatibilityResponse,
             false);
@@ -296,6 +301,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     public override void OnServerDisconnect(NetworkConnectionToClient connection)
     {
+        Chat.ForgetConnection(connection.connectionId);
         bool leaderDisconnected = sessionLeaderConnectionId == connection.connectionId;
         compatibleConnectionIds.Remove(connection.connectionId);
         Debug.Log($"[MirrorTestNetworkManager] Client 접속 종료: connectionId={connection.connectionId}");
@@ -315,6 +321,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     public override void OnClientDisconnect()
     {
+        Chat.StopClient();
         CancelClientCompatibilityTimeout();
         clientCompatibilityConfirmed = false;
         SetClientSessionLeader(false);
@@ -323,6 +330,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     public override void OnStopClient()
     {
+        Chat.StopClient();
         CancelClientCompatibilityTimeout();
         CancelClientSceneRestore();
         NetworkClient.UnregisterHandler<MirrorCompatibilityResponseMessage>();
@@ -344,6 +352,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
 
     public override void OnStopServer()
     {
+        Chat.StopServer();
         CancelEmptySessionReset();
         NetworkServer.UnregisterHandler<MirrorCompatibilityRequestMessage>();
         NetworkServer.UnregisterHandler<MirrorSessionRouteRequestMessage>();
@@ -1020,6 +1029,7 @@ public sealed class MirrorTestNetworkManager : NetworkManager
             return;
 
         clientCompatibilityConfirmed = true;
+        Chat.ConfirmConnection();
         Debug.Log($"[MirrorTestNetworkManager] {compatibilityStatusMessage}");
 
         // 서버 Scene을 처리 중이거나 이미 Ready/AddPlayer를 요청한 상태라면

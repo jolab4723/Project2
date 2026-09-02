@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 2713036302233106490}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.036047, y: 0.044741, z: 0.277346}
+  m_LocalPosition: {x: -0.036047, y: 0.044741, z: 0.246889}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -40,6 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 171511900467090616}
+  - component: {fileID: 4565994860598679718}
   m_Layer: 0
   m_Name: item.weapon.grenadelauncher.singularitymortar_WeaponVisual
   m_TagString: Untagged
@@ -65,6 +66,23 @@ Transform:
   - {fileID: 1304253012621691270}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4565994860598679718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5763743136765962503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 2
+  muzzle: {fileID: 1304253012621691270}
+  muzzleVisualPrefab: {fileID: 1442189316453319036, guid: 57350a4aa7d44d54babd356a985d3e3c, type: 3}
+  projectileVisualPrefab: {fileID: 8223257605885614703, guid: 0f2e16185f8ba1249af47d9fa1dde07b, type: 3}
+  impactVisualPrefab: {fileID: 6135163535600079544, guid: 710a1b5d93afcfa4e90de032af3d8df6, type: 3}
 --- !u!1 &7734766869919287812
 GameObject:
   m_ObjectHideFlags: 0

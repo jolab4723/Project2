@@ -17,9 +17,11 @@ public class WBH_PlayerEffect : MonoBehaviour
 
     [Header("Local Persistent Effects")]
     [SerializeField] private WBH_EffectData chargeEffect;
+    [SerializeField] private WBH_EffectData chargeRangeEffect;
 
     private readonly Dictionary<WBH_PlayerEffectCue, EffectBinding> bindingMap = new();
     private readonly Dictionary<WBH_EffectData, WBH_Effect> activeLocalEffects = new();
+    private Vector3 chargeEnhancementScale = Vector3.one;
 
     private void Awake()
     {
@@ -37,6 +39,7 @@ public class WBH_PlayerEffect : MonoBehaviour
             }
         }
         activeLocalEffects.Clear();
+        chargeEnhancementScale = Vector3.one;
     }
 
     public void Initialize(WBH_EffectSpawner effectSpawner)
@@ -88,6 +91,10 @@ public class WBH_PlayerEffect : MonoBehaviour
     // 실질적인 이펙트 재생
     private void PlayBinding(EffectBinding binding, Vector3 scaleMultiplier)
     {
+        Vector3 appliedScale = binding.data.applyEnhancementScale
+            ? scaleMultiplier
+            : Vector3.one;
+
         switch (binding.data.attachType)
         {
             case EffectAttachType.World:
@@ -95,18 +102,18 @@ public class WBH_PlayerEffect : MonoBehaviour
                     Vector3 position = binding.anchor.TransformPoint(binding.data.localPos);
                     Quaternion rotation = binding.anchor.rotation * Quaternion.Euler(binding.data.localRot);
 
-                    spawner.SpawnEffect(binding.data, position, rotation, scaleMultiplier);
+                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale);
                     
                     break;
                 }
             case EffectAttachType.AttachOnce:
             case EffectAttachType.Follow:
-                spawner.SpawnEffect(binding.data, binding.anchor,scaleMultiplier);
+                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale);
                 break;
         }
     }
 
-    private void PlayLocalEffect(WBH_EffectData effectData)
+    private void PlayLocalEffect(WBH_EffectData effectData, Vector3 scaleMultiplier)
     {
         if (spawner == null || effectData == null)
             return;
@@ -120,10 +127,18 @@ public class WBH_PlayerEffect : MonoBehaviour
 
         WBH_Effect effect = spawner.SpawnPersistentEffect(effectData, transform);
 
-        if(effect != null)
-        {
-            activeLocalEffects.Add(effectData, effect);
-        }
+        if (effect == null)
+            return;
+
+        Vector3 appliedScale = effectData.applyEnhancementScale
+            ? scaleMultiplier
+            : Vector3.one;
+
+        effect.transform.localScale = Vector3.Scale(
+            effect.transform.localScale,
+            appliedScale);
+
+        activeLocalEffects.Add(effectData, effect);
     }
 
     private void StopLocalEffect(WBH_EffectData effectData)
@@ -140,14 +155,31 @@ public class WBH_PlayerEffect : MonoBehaviour
     }
 
     // --- 애니메이션 이벤트 연결용
+    public void SetChargeEnhancementScale(Vector3 scaleMultiplier)
+    {
+        chargeEnhancementScale = scaleMultiplier;
+    }
+
     public void PlayFighterChargeEffect()
     {
-        PlayLocalEffect(chargeEffect);
+        PlayLocalEffect(chargeEffect, chargeEnhancementScale);
+        PlayLocalEffect(chargeRangeEffect, chargeEnhancementScale);
     }
     public void StopFighterChargeEffect()
     {
         StopLocalEffect(chargeEffect);
+        StopLocalEffect(chargeRangeEffect);
+        chargeEnhancementScale = Vector3.one;
     }
 
-    
+    public bool TryGetEffectData(WBH_PlayerEffectCue cue, out WBH_EffectData data)
+    {
+        data = null;
+
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+            return false;
+
+        data = binding.data;
+        return data != null;
+    }
 }

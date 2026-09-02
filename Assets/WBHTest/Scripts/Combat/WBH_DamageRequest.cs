@@ -10,6 +10,7 @@ public readonly struct WBH_DamageRequest
     public readonly ElementType ElementType;
 
     public readonly WBH_StatusEffectData? StatusEffect;
+    public readonly WBH_EffectData EffectData;
 
     // 스킬 데미지 계수
     public readonly float DamageMultiplier;
@@ -19,7 +20,8 @@ public readonly struct WBH_DamageRequest
                              WBH_AttackType attackType,
                              ElementType elementType,
                              float damageMultiplier,
-                             WBH_StatusEffectData? statusEffect = null)
+                             WBH_StatusEffectData? statusEffect = null,
+                             WBH_EffectData effectData = null)
     {
         Attacker = attacker;
         Target = target;
@@ -27,5 +29,6 @@ public readonly struct WBH_DamageRequest
         ElementType = elementType;
         DamageMultiplier = damageMultiplier;
         StatusEffect = statusEffect;
+        EffectData = effectData;
     }
 }

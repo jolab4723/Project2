@@ -1,0 +1,66 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-30",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R8_TRANSPARENCY_AND_CONNECTED_WAKE_PASS",
+  "technical_gate": {
+    "result": "PASS_AS_FOUNDATION_ONLY",
+    "unity_version": "6000.3.22f1",
+    "compile_errors": 0,
+    "item_console_errors": 0,
+    "scene_dirty_before": false,
+    "scene_dirty_after": false,
+    "approved_fbx_hash_unchanged": true,
+    "mesh_renderers": 120,
+    "evaluated_triangles": 144096,
+    "material_remaps": 6,
+    "thirty_cycle_residue": "PASS_M_F_I",
+    "runtime_binding": false,
+    "note": "The scale correction is visible and all lifecycle gates pass, but the rendered cards and disconnected wake are disqualifying visual failures."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures_R7/ScrapDrum_R7_GameplayScale_MFI_Comparison_1024x768.png",
+    "Captures_R7/ScrapDrum_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures_R7/M_ignition_0.030_1024x768.png",
+    "Captures_R7/M_peak_0.075_1024x768.png",
+    "Captures_R7/M_near_peak_0.145_1024x768.png",
+    "Captures_R7/F_side_hero_0.120_1024x768.png",
+    "Captures_R7/F_gameplay_0.120_1024x768.png",
+    "Captures_R7/F_wake_rear_3Q_0.120_1024x768.png",
+    "Captures_R7/I_contact_0.040_1024x768.png",
+    "Captures_R7/I_peak_0.120_1024x768.png",
+    "Captures_R7/I_decay_0.560_1024x768.png"
+  ],
+  "visual_findings": [
+    "Muzzle and Impact expose large opaque square ParticleSystem billboard boundaries. The orange rectangles dominate the event and make the effect unusable.",
+    "Inside those rectangles the seven bright cores are still seven equal soft dots rather than one coherent asymmetric seven-port discharge mass.",
+    "The Flight wake begins with a visible gap behind the body, then collapses into a few dim detached brown puffs and tiny terminal sparks.",
+    "The body itself remains correct: the true +Z front clearly shows the center plus six deep wells, orientation is right, and the R5/R6 body must not be rotated or replaced.",
+    "Impact decay is a very dark amorphous blot with a card edge and a thin line artifact; it does not retain a clean pressure-cloud hierarchy."
+  ],
+  "r8_preflight_transparency_gate": {
+    "requirement": "Before building M/F/I, render every new VFX texture and material once as a single billboard against pure black and neutral gray at original resolution.",
+    "texture": "Use true RGBA textures with corner and outer-edge alpha exactly zero, no colored RGB bleed into transparent pixels, no opaque background, no premultiplied fringe and no rectangular or polygonal crop edge.",
+    "material": "Use an explicit URP Particles/Unlit transparent additive or alpha-blended setup with ZWrite off and verified texture alpha. Record shader, Surface/Blend/SrcBlend/DstBlend/ZWrite/Cull/keyword values in the audit.",
+    "pass_condition": "The isolated test must show only the intended soft irregular lobe silhouette with zero visible card boundary on both backgrounds. Preserve these proof images in Captures_R8/TransparencyProof."
+  },
+  "r8_visual_contract": {
+    "muzzle": "Build one coherent asymmetric seven-port discharge: one warm irregular outer pressure mass, a displaced hot center and six unequal hot well cores embedded inside it. Cores may vary in size and spacing but must merge perceptually into the outer mass. No seven equal dots or separate radial flower.",
+    "flight": "Start the wake directly on the rear surface with no visible gap. Maintain a continuous tapered 0.75 to 1.0 body-length warm core and soot envelope using overlapping local-space particles whose emission spacing is less than one third of their visible diameter. Only two or three tiny terminal embers may separate after the continuous section.",
+    "impact": "Use one broad asymmetric pressure cloud containing seven unequal internal punches, a short directional fragment fan and a readable soot/warm decay. No card edge, line artifact, ring, radial spokes or equal dot flower.",
+    "screen_mass": "Retain approximately the successful R7 overall M and I screen mass after transparency is fixed. Do not shrink back toward R6.",
+    "body_freeze": "Preserve FBX bytes/hash/GUID, all 120 renderers, 144096 triangles, six remaps, body transforms, +Z orientation, center-plus-six front wells and all R5-R7 evidence.",
+    "forbidden": "No visible billboard/card boundary, ring, arc, pill, line-star, needle, radial spoke crown, straight beam, detached puff chain, equal blobs or long isolated streak.",
+    "cleanup": "Retain M/F/I 30-cycle natural/interrupted teardown, one-frame and plus-0.10 checkpoints, zero residue/trails/material or object growth, clean Editor state and runtime/catalog/MFI false."
+  },
+  "required_r8_evidence": [
+    "per-texture black and neutral-gray transparency proofs",
+    "M ignition/peak/near-peak",
+    "Flight side/gameplay/rear-3Q showing direct body contact and continuous taper",
+    "Impact contact/peak/decay",
+    "M/F/I clean frames",
+    "gameplay-scale M/F/I comparison and unscaled Gunner_Bullet/Fighter_Attack comparison",
+    "30-cycle audit plus immutable body/GUID/hash/remap report"
+  ],
+  "root_approval_required": true
+}

@@ -1,0 +1,44 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "candidate": "R8_ProofGate",
+  "review_authority": "ROOT_SOL",
+  "review_scope": "all ten original-resolution individual-renderer black and neutral-gray proofs",
+  "decision": "ROOT_UNITY_R8_PROOF_REJECTED_REQUIRES_R9_VOLUMETRIC_LAYERED_FLAME_PROTOTYPE",
+  "capture_pipeline_status": "PASS",
+  "commercial_visual_approval": false,
+  "composite_authorized": false,
+  "timeline_authorized": false,
+  "prefab_completion_authorized": false,
+  "lifecycle_30_cycle_authorized": false,
+  "accepted_technical_findings": [
+    "Isolation, centering, clipping, dual-background capture, render-texture cleanup, Console state and protected hashes pass and may be reused.",
+    "The five outer silhouettes are now different from one another.",
+    "These technical and silhouette distinctions do not establish commercial visual approval."
+  ],
+  "root_findings": [
+    "Every role still renders as a single uniformly colored flat alpha silhouette with almost no internal hot core, depth, turbulence, breakup or material layering.",
+    "The forked core is a thin orange spear-like sticker; its long flat body and sharp tip do not read as living flame volume.",
+    "The asymmetric shoulder is a broad solid red-orange diamond or leaf with no shoulder fold, compression, hot center or soft outer body.",
+    "The overturn fold is a smooth constant-width dark-red arc that reads as a bent stroke rather than a curling flame volume.",
+    "The sagging tail is an extremely dark flat torn wedge that becomes nearly invisible on neutral gray and still resembles a mask cutout.",
+    "The terminal ember is another solid coral flat wisp with no volumetric ember core, rim breakup or depth transition.",
+    "R8 changes the outline but repeats the rejected picture-plus-mask workflow and remains far below the supplied school-example flame and commercial VFX quality floor."
+  ],
+  "r9_binding_requirements": {
+    "prototype_limit": "Build only two representative roles first: HotCoreForkedLick and DarkRedOpenOverturnFold. Do not propagate to all five until these two pass Root review.",
+    "geometry": "Each prototype must use real shallow closed or crossed 3D flame geometry with a readable curved cross-section and perspective depth. A single quad, flat billboard, alpha-only silhouette or uniformly extruded card is forbidden.",
+    "layering": "Each prototype must contain at least three visually separate depth/value layers: compact white-yellow hot inner core, orange/red mid body and softer darker outer falloff or smoke-edge layer. The layers may be submeshes or nested volumes but must remain readable when isolated.",
+    "hot_core": "Create a compact forked flame tongue with one dominant curved lobe, one shorter unequal split, thicker captured root and tapered forward tip. It must show depth and uneven internal flow from a three-quarter proof view.",
+    "overturn_fold": "Create an open curling overturn volume with a thick root, expanding outer shoulder, narrowing hooked return and visible inner hollow or fold. It may not read as a constant-width arc, ring segment or tube.",
+    "surface": "Use authored gradient/noise breakup or multiple layered materials to remove the solid sticker fill, while keeping edges clean and avoiding random grain, banding or dirty alpha fringes.",
+    "visibility": "Both roles must remain clearly visible and retain internal layer separation on black and neutral gray without excessive bloom.",
+    "proof": "Return exactly four original-resolution isolated proofs: the two prototype roles on black and neutral gray at a fixed three-quarter camera. No body, other renderer, label, gizmo, overlay, composite, timeline, final prefab or 30-cycle work.",
+    "immutability": "Keep normalized FBX, authored body, R1-R8, source material/masks/GUIDs and original weapon assets read-only. Use a new item-local R9 path only."
+  },
+  "immutable_hashes": {
+    "normalized_fbx_sha256": "fcc6a2257e0f7eb8e925e209559e69be8018194688cc872c9e92b70fd254793d",
+    "source_material_sha256": "85d3e47fd00e3decb7af8eb1f3595d899a6ff9b4c1327f76ee76395323dced8a",
+    "source_mask_sha256": "68fd417d3b0e767c9c1f7ad7a8bd4bbce715ad5b9cb754b9ec3bda9144b361ea"
+  },
+  "self_approval": "PROHIBITED"
+}

@@ -43,19 +43,22 @@ public readonly struct MirrorTestInventoryRequestCompleted
     public MirrorTestInventoryRequestResult Result { get; }
     public uint RequestedRevision { get; }
     public uint AuthoritativeRevision { get; }
+    public string FeedbackText { get; }
 
     public MirrorTestInventoryRequestCompleted(
         uint requestId,
         MirrorTestInventoryOperation operation,
         MirrorTestInventoryRequestResult result,
         uint requestedRevision,
-        uint authoritativeRevision)
+        uint authoritativeRevision,
+        string feedbackText = null)
     {
         RequestId = requestId;
         Operation = operation;
         Result = result;
         RequestedRevision = requestedRevision;
         AuthoritativeRevision = authoritativeRevision;
+        FeedbackText = feedbackText;
     }
 }
 
@@ -432,7 +435,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.GrantDistinctItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -454,7 +458,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.DropFirstItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -479,7 +484,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.DropInventoryItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -510,7 +516,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.MoveGridItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -540,7 +547,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.ChangeEquipment,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -550,12 +558,14 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             targetSlot,
             targetX,
             targetY,
-            isRotated);
+            isRotated,
+            out string feedbackText);
         CompleteServerRequest(
             requestId,
             MirrorTestInventoryOperation.ChangeEquipment,
             result,
-            requestedRevision);
+            requestedRevision,
+            feedbackText);
     }
 
     [Command]
@@ -571,7 +581,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.UpgradeItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
@@ -593,16 +604,18 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 MirrorTestInventoryOperation.PickupWorldItem,
                 result,
                 requestedRevision,
-                stateRevision);
+                stateRevision,
+                null);
             return;
         }
 
-        result = ServerTryPickup(pickupNetId);
+        result = ServerTryPickup(pickupNetId, out string feedbackText);
         CompleteServerRequest(
             requestId,
             MirrorTestInventoryOperation.PickupWorldItem,
             result,
-            requestedRevision);
+            requestedRevision,
+            feedbackText);
     }
 
     [Server]
@@ -720,8 +733,10 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         EquipSlotType targetSlot,
         int targetX,
         int targetY,
-        bool isRotated)
+        bool isRotated,
+        out string feedbackText)
     {
+        feedbackText = null;
         InventoryController inventory = context?.Inventory;
         InventoryGrid grid = inventory?.PlayerGrid;
         EquipmentSystem equipment = context?.Equipment;
@@ -741,6 +756,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             if (targetSlot == EquipSlotType.None ||
                 !EquipSlotRules.CanEquipTo(item.itemData.definition, targetSlot))
             {
+                feedbackText = EquipMessageMapper.GetMessage(EquipResult.InvalidSlot);
                 return MirrorTestInventoryRequestResult.InvalidRequest;
             }
         }
@@ -873,9 +889,12 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         }
 
         if (!transactionResult.IsSuccess)
+        {
+            feedbackText = EquipMessageMapper.GetMessage(transactionResult.Result);
             return transactionResult.HasRecoveryFailure
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
+        }
 
         if (TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot))
             return MirrorTestInventoryRequestResult.Success;
@@ -1060,8 +1079,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     }
 
     [Server]
-    private MirrorTestInventoryRequestResult ServerTryPickup(uint pickupNetId)
+    private MirrorTestInventoryRequestResult ServerTryPickup(uint pickupNetId, out string feedbackText)
     {
+        feedbackText = null;
         if (context?.Inventory == null)
             return MirrorTestInventoryRequestResult.InventoryUnavailable;
 
@@ -1096,7 +1116,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             return addResult;
         }
 
-        NetworkServer.Destroy(pickup.gameObject);
+        feedbackText = InventoryMessageMapper.GetColoredAcquisitionMessage(item.definition.itemName, item.definition.rarity);
+        pickup.PlayPickupAndDestroy(netId);
         return MirrorTestInventoryRequestResult.Success;
     }
 
@@ -1234,7 +1255,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         uint requestId,
         MirrorTestInventoryOperation operation,
         MirrorTestInventoryRequestResult result,
-        uint requestedRevision)
+        uint requestedRevision,
+        string feedbackText = null)
     {
         if (result == MirrorTestInventoryRequestResult.Success)
             AdvanceStateRevision();
@@ -1244,7 +1266,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             operation,
             result,
             requestedRevision,
-            stateRevision);
+            stateRevision,
+            feedbackText);
     }
 
     [Server]
@@ -1261,14 +1284,16 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         MirrorTestInventoryOperation operation,
         MirrorTestInventoryRequestResult result,
         uint requestedRevision,
-        uint authoritativeRevision)
+        uint authoritativeRevision,
+        string feedbackText)
     {
         MirrorTestInventoryRequestCompleted completed = new(
             requestId,
             operation,
             result,
             requestedRevision,
-            authoritativeRevision);
+            authoritativeRevision,
+            feedbackText);
 
         if (stateRevision < authoritativeRevision)
         {

@@ -13,6 +13,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
 
     [SerializeField] private AnimationClip fighterDash;
+    [SerializeField] private AnimationClip gunnerBackstepMove;
 
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
@@ -24,11 +25,14 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private WBH_PlayerEffect effect;
     private WBH_PlayerStatus status;
     private FighterSkillController fighterSkillController;
+    private GunnerSkillController gunnerSkillController;
 
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
     private readonly int IsChargingHash = Animator.StringToHash("IsCharging");
     private readonly int SkillSpeedHash = Animator.StringToHash("SkillSpeed");
+    private readonly int BackstepMoveSpeedHash = Animator.StringToHash("BackstepMoveSpeed");
+    private readonly int EvoNumberHash = Animator.StringToHash("EvoNumber"); // 진화 번호 파라미터, 현재(9/1)는 거너 애니메이션 컨트롤러에서만 활용중
     
 
     void Awake()
@@ -41,6 +45,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
         effect = GetComponent<WBH_PlayerEffect>();
         status = GetComponent<WBH_PlayerStatus>();
         fighterSkillController = GetComponent<FighterSkillController>();
+        gunnerSkillController = GetComponent<GunnerSkillController>();
     }
 
     private void OnEnable()
@@ -50,8 +55,13 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
         if(fighterSkillController != null)
         {
-            fighterSkillController.OnSkillAniRequested += PlaySkillAnimation;
+            fighterSkillController.OnSkillAniRequested += PlayFighterSkillAnimation;
             fighterSkillController.OnChargeAniChanged += SetChargingAnimation;
+        }
+
+        if(gunnerSkillController != null)
+        {
+            gunnerSkillController.OnSkillAniRequested += PlayGunnerSkillAni;
         }
     }
     private void OnDisable()
@@ -61,13 +71,18 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
         if (fighterSkillController != null)
         {
-            fighterSkillController.OnSkillAniRequested -= PlaySkillAnimation;
+            fighterSkillController.OnSkillAniRequested -= PlayFighterSkillAnimation;
             fighterSkillController.OnChargeAniChanged -= SetChargingAnimation;
         }
 
         if(animator != null)
         {
             animator.SetBool(IsChargingHash, false);
+        }
+
+        if (gunnerSkillController != null)
+        {
+            gunnerSkillController.OnSkillAniRequested -= PlayGunnerSkillAni;
         }
     }
 
@@ -131,7 +146,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetFloat("MoveSpeed", speed);
     }
 
-    public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
+    public void PlayFighterSkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
         float skillSpeed = 1f;
         const int DashSkillId = 3;
@@ -154,6 +169,25 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetBool(IsChargingHash, isCharging);
     }
 
+    public void PlayGunnerSkillAni(int skillId, int evoNumber, float backstepDuration)
+    {
+        animator.SetFloat(SkillSpeedHash, 1f);
+
+        float backstepMoveSpeed = 1f;
+
+        if (gunnerBackstepMove != null && backstepDuration > 0f)
+        {
+            backstepMoveSpeed = gunnerBackstepMove.length / backstepDuration;
+        }
+
+        animator.SetFloat(BackstepMoveSpeedHash, backstepMoveSpeed);
+
+        animator.SetInteger(SkillIdHash, skillId);
+        animator.SetInteger(EvoNumberHash, evoNumber);
+
+        animator.ResetTrigger(SkillHash);
+        animator.SetTrigger(SkillHash);
+    }
 
     // --- 애니메이션 클립 이벤트 (상태 및 인게임에 영향)
     public void AniEvent_ExecuteAttack()
@@ -162,7 +196,6 @@ public class WBH_PlayerAnimation : MonoBehaviour
     }
     public void AniEvent_EndAttack()
     {
-        Debug.Log($"EndAttack 호출 / 현재 상태 : {stateMachine.CurrentState}");
         stateMachine.ChangeState(PlayerState.Idle);
     }
     public void AniEvent_HitEnd()
@@ -172,10 +205,16 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_ExecuteSkill()
     {
         fighterSkillController?.ExecutePendingSkill();
+        gunnerSkillController?.ExecutePendingSkill();
+    }
+    public void AniEvent_ExecuteBackstepMove() // 거너 스킬 중 사격 후 백스텝의 동작 분리를 위해 예외적으로 별도 메서드 작성.
+    {
+        gunnerSkillController?.ExecutePendingBackstepMove();
     }
     public void AniEvent_EndSkill()
     {
         fighterSkillController?.EndPendingSkillAni();
+        gunnerSkillController?.EndPendingSkillAni();
     }
     public void AniEvent_EndDead()
     {
@@ -202,6 +241,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_PlaySkillEffect(int partValue)
     {
         fighterSkillController?.PlayPendingSkillEffect(partValue);
+        gunnerSkillController?.PlayPendingSkillEffect(partValue);
     }
 
     public void AniEvent_PlayFighterChargeEffect()

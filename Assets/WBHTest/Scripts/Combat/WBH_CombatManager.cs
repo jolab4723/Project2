@@ -33,8 +33,12 @@ public class WBH_CombatManager
         damage = Mathf.Max(1f, damage);
 
         // 데미지 결과 구조체 생성
-        WBH_DamageResult result = new WBH_DamageResult(request.Attacker, damage, isCritical, request.ElementType);
-
+        WBH_DamageResult result = new WBH_DamageResult(request.Attacker,
+                                                       damage,
+                                                       isCritical,
+                                                       request.ElementType,
+                                                       request.StatusEffect,
+                                                       request.EffectData);
         request.Target.TakeDamage(result);
 
         // 플레이어가 가한 피해일 때만 플레이어 장착템의 발동형 고유 효과를 건드린다.

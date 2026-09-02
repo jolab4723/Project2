@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1188550049329341311}
+  - component: {fileID: 1650653330660940560}
   m_Layer: 0
   m_Name: item.weapon.rifle.siegeframe_WeaponVisual
   m_TagString: Untagged
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 2429732623078032884}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1650653330660940560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090233555359264092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 2429732623078032884}
+  muzzleVisualPrefab: {fileID: 8521910936015957096, guid: af2f08860403d3c4ba32566a9e13aaa8, type: 3}
+  projectileVisualPrefab: {fileID: 7680810162476818943, guid: 9202cf86752e2ff418ebf4546994a0cc, type: 3}
+  impactVisualPrefab: {fileID: 6573774404937808200, guid: 14f048f05c1048b4787e224ea63912a5, type: 3}
 --- !u!1 &6610121482335598141
 GameObject:
   m_ObjectHideFlags: 0
@@ -90,7 +108,7 @@ Transform:
   m_GameObject: {fileID: 7238743126408119736}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.0031238343, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.0031238343, z: 0.182647}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

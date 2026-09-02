@@ -1,4 +1,5 @@
 using NUnit.Framework.Internal;
+using System.Collections;
 using UnityEngine;
 
 public class WBH_EffectSpawner : MonoBehaviour
@@ -178,5 +179,24 @@ public class WBH_EffectSpawner : MonoBehaviour
             return false;
         }
         return true;
+    }
+
+    public void SpawnHitEffect(WBH_EffectData data, Vector3 position)
+    {
+        if (data == null || data.hitEffectPrefab == null)
+            return;
+
+        ParticleSystem instance = Instantiate(data.hitEffectPrefab, position, Quaternion.identity);
+        instance.Play(true);
+        StartCoroutine(DestroyHitEffect(instance));
+    }
+
+    private IEnumerator DestroyHitEffect(ParticleSystem effect)
+    {
+        while (effect != null && effect.IsAlive(true))
+            yield return null;
+
+        if (effect != null)
+            Destroy(effect.gameObject);
     }
 }

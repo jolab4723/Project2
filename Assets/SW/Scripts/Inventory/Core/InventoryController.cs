@@ -9,12 +9,30 @@ using UnityEngine;
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
+    internal ChatSession SinglePlayerMessages { get; } = new();
+
+    internal void ReportSinglePlayerMessage(ChatKind kind, string text)
+    {
+        if (Instance != this || Mirror.NetworkClient.active || Mirror.NetworkServer.active ||
+            GetComponentInParent<Mirror.NetworkIdentity>() != null) return;
+        SinglePlayerMessages.Append(kind, text);
+    }
 
     public event System.Action<InventoryItem> OnItemAdded;
     public event System.Action<InventoryItem> OnItemRemoved;
     public event System.Action<InventoryItem> OnItemOwnershipGained;
     public event System.Action<InventoryItem> OnItemOwnershipLost;
     public event System.Action<string> OnLogMessage;
+    // 서버 요청 전에 끝나는 실제 장비 UI 거절만 전달한다. 복제/복원 로그와 분리한다.
+    public event System.Action<EquipResult> EquipmentRejected;
+
+    public void ReportEquipmentRejection(EquipResult result)
+    {
+        if (result == EquipResult.Success || result == EquipResult.Swapped) return;
+        PrintLog(EquipMessageMapper.GetMessage(result));
+        ReportSinglePlayerMessage(ChatKind.Warning, EquipMessageMapper.GetMessage(result));
+        EquipmentRejected?.Invoke(result);
+    }
 
     private static readonly List<InventoryController> all = new List<InventoryController>();
 
@@ -202,7 +220,11 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
         return InventoryRemoveResult.Success;
     }
-    public bool AddItem(ItemInstance itemData)
+    public bool AddItem(ItemInstance itemData) => AddItem(itemData, false);
+
+    public bool AddWorldItem(ItemInstance itemData) => AddItem(itemData, true);
+
+    private bool AddItem(ItemInstance itemData, bool fromWorld)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
 
@@ -215,6 +237,13 @@ public class InventoryController : MonoBehaviour, IItemReceiver
                 result.X,
                 result.Y));
 
+        if (fromWorld)
+        {
+            bool acquired = result.Result == InventoryAddResult.Success;
+            ReportSinglePlayerMessage(acquired ? ChatKind.Acquisition : ChatKind.Warning,
+                acquired ? InventoryMessageMapper.GetColoredAcquisitionMessage(itemName, itemData.definition.rarity) :
+                InventoryMessageMapper.GetMessage(result.Result, itemName, result.X, result.Y));
+        }
         return result.Result == InventoryAddResult.Success;
     }
 

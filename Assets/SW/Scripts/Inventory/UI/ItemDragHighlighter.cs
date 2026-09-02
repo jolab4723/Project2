@@ -1,13 +1,21 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ItemDragHighlighter : MonoBehaviour
 {
+    private static readonly Color EquipMoveColor = new Color(0.34f, 0.84f, 0.64f, 0.68f);
+    private static readonly Color EquipInvalidColor = new Color(1f, 0.42f, 0.42f, 0.68f);
+    private static readonly Color EquipSwapColor = new Color(1f, 0.82f, 0.40f, 0.68f);
+
     [SerializeField] private ItemUI itemUI;
 
     private InventoryGrid activeHighlightGrid;
+    private Image activeEquipSlotImage;
+    private Color activeEquipSlotColor;
     private bool hasPointerContext;
     private Vector2 lastScreenPosition;
     private Camera lastEventCamera;
+    private GameObject lastPointerTarget;
 
     public InventorySwapPlan CurrentSwapPlan { get; private set; }
 
@@ -19,16 +27,31 @@ public class ItemDragHighlighter : MonoBehaviour
 
     public void RefreshHighlight(
         Vector2 screenPosition,
-        Camera eventCamera)
+        Camera eventCamera,
+        GameObject pointerTarget)
     {
         hasPointerContext = true;
         lastScreenPosition = screenPosition;
         lastEventCamera = eventCamera;
+        lastPointerTarget = pointerTarget;
         RefreshHighlight();
     }
 
     public void RefreshHighlight()
     {
+        EquipSlotUI targetEquipSlot = lastPointerTarget != null
+            ? lastPointerTarget.GetComponentInParent<EquipSlotUI>()
+            : null;
+
+        if (targetEquipSlot != null)
+        {
+            HideActiveGridHighlight();
+            ShowEquipSlotPreview(targetEquipSlot);
+            return;
+        }
+
+        HideActiveEquipSlotPreview();
+
         InventoryGrid targetGrid = GetHighlightTargetGrid();
 
         if (targetGrid == null || !IsItemOverGrid(targetGrid))
@@ -126,11 +149,58 @@ public class ItemDragHighlighter : MonoBehaviour
 
     public void HideActiveHighlight()
     {
+        HideActiveGridHighlight();
+        HideActiveEquipSlotPreview();
+        CurrentSwapPlan = default;
+    }
+
+    private void ShowEquipSlotPreview(EquipSlotUI slot)
+    {
+        Image slotImage = slot.GetComponent<Image>();
+        if (slotImage == null)
+        {
+            HideActiveEquipSlotPreview();
+            return;
+        }
+
+        if (activeEquipSlotImage != slotImage)
+        {
+            HideActiveEquipSlotPreview();
+            activeEquipSlotImage = slotImage;
+            activeEquipSlotColor = slotImage.color;
+        }
+
+        bool isShopItem =
+            itemUI.OriginalGrid == ShopController.Instance?.ShopGrid;
+
+        bool canAccept = itemUI.OriginalWasEquipped
+            ? slot == itemUI.OriginalEquipSlot
+            : !isShopItem && slot.CanAcceptType(itemUI.Item?.itemData);
+
+        activeEquipSlotImage.color = !canAccept
+            ? EquipInvalidColor
+            : slot.IsEmpty
+                ? EquipMoveColor
+                : EquipSwapColor;
+
+        CurrentSwapPlan = default;
+    }
+
+    private void HideActiveGridHighlight()
+    {
         if (activeHighlightGrid != null && activeHighlightGrid.Highlight != null)
             activeHighlightGrid.Highlight.HideHighlight();
 
         activeHighlightGrid = null;
-        CurrentSwapPlan = default;
+    }
+
+    private void HideActiveEquipSlotPreview()
+    {
+        if (activeEquipSlotImage != null)
+            activeEquipSlotImage.color = activeEquipSlotColor;
+
+        activeEquipSlotImage = null;
+        activeEquipSlotColor = default;
     }
 
     private InventoryGrid GetHighlightTargetGrid()

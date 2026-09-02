@@ -56,7 +56,7 @@ Transform:
   m_GameObject: {fileID: 6546110525359001197}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.036169108, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.036169108, z: 0.208355}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8078504128428634845}
+  - component: {fileID: 2490159809196877774}
   m_Layer: 0
   m_Name: item.weapon.rifle.ioncascade_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 8520522920324203629}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2490159809196877774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8421499572640840554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 8520522920324203629}
+  muzzleVisualPrefab: {fileID: 8997339187350936557, guid: e3b4dd25cba76ed4c82596a5953d1188, type: 3}
+  projectileVisualPrefab: {fileID: 4221426155989171193, guid: c012362392e63464bbb469d896d44473, type: 3}
+  impactVisualPrefab: {fileID: 911144822961526467, guid: c8e34acb64884b446a8f2ed3f5bb023e, type: 3}
 --- !u!1001 &5939474660738352936
 PrefabInstance:
   m_ObjectHideFlags: 0

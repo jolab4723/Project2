@@ -24,8 +24,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4584419093417116679}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.28401545, y: -0, z: -0, w: 0.95881975}
-  m_LocalPosition: {x: 0, y: 0.42655, z: 0.4420039}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.11700221, z: 0.6030115}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -40,6 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7627669503728749689}
+  - component: {fileID: 712430234894525346}
   m_Layer: 0
   m_Name: item.weapon.shotgun.echovault_WeaponVisual
   m_TagString: Untagged
@@ -65,6 +66,23 @@ Transform:
   - {fileID: 2107717055606229991}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &712430234894525346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4609420085143128255}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 2107717055606229991}
+  muzzleVisualPrefab: {fileID: 5590770772916093572, guid: 1d4aa387608bb5d4d847ee00c5ce1dc6, type: 3}
+  projectileVisualPrefab: {fileID: 0}
+  impactVisualPrefab: {fileID: 6846677679897373611, guid: 059e1c7e50c8538418ec74201774c175, type: 3}
 --- !u!1 &7271575590373477038
 GameObject:
   m_ObjectHideFlags: 0
@@ -89,8 +107,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7271575590373477038}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.28401545, y: -0, z: -0, w: 0.95881975}
-  m_LocalPosition: {x: 0, y: 0.193767, z: 0.22401227}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.040500782, z: 0.211224}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -130,19 +148,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a13ab644b3a627429f64c792d40b9bc, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.95881975
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a13ab644b3a627429f64c792d40b9bc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.28401545
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a13ab644b3a627429f64c792d40b9bc, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a13ab644b3a627429f64c792d40b9bc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5a13ab644b3a627429f64c792d40b9bc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

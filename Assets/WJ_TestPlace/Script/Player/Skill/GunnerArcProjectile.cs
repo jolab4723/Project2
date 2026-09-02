@@ -11,6 +11,12 @@ using UnityEngine;
 /// </summary>
 public class GunnerArcProjectile : MonoBehaviour
 {
+    [Header("폭발 범위 표시")]
+    [SerializeField] private bool showExplosionRange = true;
+    [SerializeField] private Color explosionRangeColor = new Color(1f, 0.45f, 0.1f, 0.35f);
+    [SerializeField] private float explosionRangeDuration = 0.25f;
+
+
     private Vector3 direction;
     private float speed;
     private float maxDistance;
@@ -71,6 +77,11 @@ public class GunnerArcProjectile : MonoBehaviour
 
     private void Explode()
     {
+        if(showExplosionRange)
+        {
+            SkillRangeVisual.ShowSector(transform.position, Vector3.forward, explosionRadius, 360, explosionRangeColor, explosionRangeDuration);
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);
 
         foreach (Collider hit in hits)

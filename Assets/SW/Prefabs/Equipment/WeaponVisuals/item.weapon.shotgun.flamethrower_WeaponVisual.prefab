@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 2509378296812163750}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.032779, y: 0.054192, z: 0.282287}
+  m_LocalPosition: {x: -0.032779, y: 0.054192, z: 0.249353}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2761002980329775325}
+  - component: {fileID: 7756786320681213076}
   m_Layer: 0
   m_Name: item.weapon.shotgun.flamethrower_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 8508571236258815661}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7756786320681213076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7933597949929088689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 8508571236258815661}
+  muzzleVisualPrefab: {fileID: 5891466692416930568, guid: 8e859006491d6f9458922b997b34c290, type: 3}
+  projectileVisualPrefab: {fileID: 0}
+  impactVisualPrefab: {fileID: 1639021536855443233, guid: de1f288eb9dd1c141b5487aa40150608, type: 3}
 --- !u!1001 &7652243210211747450
 PrefabInstance:
   m_ObjectHideFlags: 0

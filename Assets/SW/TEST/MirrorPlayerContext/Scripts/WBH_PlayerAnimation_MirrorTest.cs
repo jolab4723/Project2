@@ -26,6 +26,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     [Header("Attack")]
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
+    [SerializeField] private AnimationClip fighterDash;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
     private Animator animator;
@@ -33,9 +34,16 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     private WBH_PlayerStateMachine stateMachine;
     private T_PlayerCombat combat;
     private PlayerCombatAuthority_MirrorTest combatAuthority;
+    private FighterSkillAuthority_MirrorTest skillAuthority;
+    private WBH_PlayerEffect playerEffect;
     private NavMeshAgent agent;
     private WBH_PlayerStatus status;
     private bool localEventsBound;
+
+    private readonly int skillHash = Animator.StringToHash("Skill");
+    private readonly int skillIdHash = Animator.StringToHash("SkillID");
+    private readonly int isChargingHash = Animator.StringToHash("IsCharging");
+    private readonly int skillSpeedHash = Animator.StringToHash("SkillSpeed");
 
     private void Awake()
     {
@@ -44,6 +52,8 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         combat = GetComponent<T_PlayerCombat>();
         combatAuthority = GetComponent<PlayerCombatAuthority_MirrorTest>();
+        skillAuthority = GetComponent<FighterSkillAuthority_MirrorTest>();
+        playerEffect = GetComponent<WBH_PlayerEffect>();
         agent = GetComponent<NavMeshAgent>();
         status = GetComponent<WBH_PlayerStatus>();
     }
@@ -103,10 +113,6 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
                 networkAnimator.SetTrigger("Attack");
                 break;
 
-            case PlayerState.Skill:
-                PlaySkillAnimation();
-                break;
-
             case PlayerState.Dodge:
                 networkAnimator.SetTrigger("Dodge");
                 break;
@@ -117,6 +123,10 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
             case PlayerState.Dead:
                 networkAnimator.SetTrigger("Dead");
+                break;
+
+            case PlayerState.Revive:
+                networkAnimator.SetTrigger("Revive");
                 break;
         }
     }
@@ -133,7 +143,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     private void UpdateMoveAnimation()
     {
-        if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead))
+        if (stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Dead, PlayerState.Revive))
             return;
 
         float speed = agent.speed > 0f
@@ -146,8 +156,24 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         animator.SetFloat("MoveSpeed", speed);
     }
 
-    private void PlaySkillAnimation()
+    public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
+        float skillSpeed = 1f;
+        const int DashSkillId = 3;
+
+        if (skillId == DashSkillId && fighterDash != null && targetDuration > 0f)
+            skillSpeed = fighterDash.length / targetDuration;
+
+        animator.SetFloat(skillSpeedHash, skillSpeed);
+        animator.SetInteger(skillIdHash, skillId);
+        animator.SetBool(isChargingHash, isCharging);
+        animator.ResetTrigger(skillHash);
+        animator.SetTrigger(skillHash);
+    }
+
+    public void SetChargingAnimation(bool isCharging)
+    {
+        animator.SetBool(isChargingHash, isCharging);
     }
 
     public void AniEvent_ExecuteAttack()
@@ -168,10 +194,63 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
             stateMachine.ChangeState(PlayerState.Idle);
     }
 
+    public void AniEvent_ExecuteSkill()
+    {
+        if (isLocalPlayer)
+            skillAuthority?.TryConfirmLocalSkillImpactFromAnimation();
+    }
+
+    public void AniEvent_EndSkill()
+    {
+        skillAuthority?.EndPendingSkillAnimation();
+    }
+
+    public void AniEvent_EndDead()
+    {
+        // Mirror 사망/부활은 PlayerRuntimeStateSync_MirrorTest의 서버 스냅샷만 확정한다.
+    }
+
+    public void AniEvent_EndRevive()
+    {
+        // 서버 부활 스냅샷이 입력 복구까지 함께 처리한다.
+    }
+
     /// <summary>Fighter_Hit 클립에 남아 있는 기존 이벤트 이름을 테스트 복제본에서 호환한다.</summary>
     public void AniEvent_EndHit()
     {
         AniEvent_HitEnd();
+    }
+
+    public void AniEvent_PlayEffect(int cueValue)
+    {
+        WBH_PlayerEffectCue cue = (WBH_PlayerEffectCue)cueValue;
+
+        // 최신 원본 Fighter의 기본 공격 클립은 1000 cue를 보내지만 현재 원본 프리팹에는
+        // 해당 binding이 없다. 기존 공격 EffectData만 이 Mirror 어댑터에서 재사용한다.
+        if (cue == WBH_PlayerEffectCue.F_normal0_evo0_etc0)
+        {
+            WBH_EffectSpawner spawner = ResolveSceneEffectSpawner();
+            if (spawner != null && Eff_fighterAtk != null && fighterEffectRoot != null)
+                spawner.SpawnEffect(Eff_fighterAtk, fighterEffectRoot);
+            return;
+        }
+
+        playerEffect?.PlayEffect(cue, Vector3.one);
+    }
+
+    public void AniEvent_PlaySkillEffect(int partValue)
+    {
+        skillAuthority?.PlayPendingSkillEffect(partValue);
+    }
+
+    public void AniEvent_PlayFighterChargeEffect()
+    {
+        playerEffect?.PlayFighterChargeEffect();
+    }
+
+    public void AniEvent_StopFighterChargeEffect()
+    {
+        playerEffect?.StopFighterChargeEffect();
     }
 
     public void AniEvent_FighterAttackEvent()

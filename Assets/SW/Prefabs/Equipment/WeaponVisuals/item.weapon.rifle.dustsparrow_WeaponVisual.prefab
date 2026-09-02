@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 973787120794705119}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.07647304, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.07647304, z: 0.23133}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5432151396418220144}
+  - component: {fileID: 2936505430829532125}
   m_Layer: 0
   m_Name: item.weapon.rifle.dustsparrow_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 3707167777826518915}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2936505430829532125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6807997222694202236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 3707167777826518915}
+  muzzleVisualPrefab: {fileID: 3259182027441396912, guid: 154275c499ee43c44815eeb83e5aae46, type: 3}
+  projectileVisualPrefab: {fileID: 5523235962256605853, guid: a0616983e6964f5468f0a988144693a2, type: 3}
+  impactVisualPrefab: {fileID: 1422031897310391654, guid: 80c624fb006984a41a09b378306df593, type: 3}
 --- !u!1001 &4155949763734423103
 PrefabInstance:
   m_ObjectHideFlags: 0

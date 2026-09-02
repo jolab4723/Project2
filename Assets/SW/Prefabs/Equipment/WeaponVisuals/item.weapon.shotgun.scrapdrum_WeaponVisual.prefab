@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 3024045315171842080}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.027806155, z: 0.285}
+  m_LocalPosition: {x: 0, y: 0.027806155, z: 0.202512}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6838162721443837893}
+  - component: {fileID: 7908667929320714517}
   m_Layer: 0
   m_Name: item.weapon.shotgun.scrapdrum_WeaponVisual
   m_TagString: Untagged
@@ -96,6 +97,23 @@ Transform:
   - {fileID: 2016527608081256551}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7908667929320714517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5799987755644158262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 2016527608081256551}
+  muzzleVisualPrefab: {fileID: 3171648867698413118, guid: 44ae24f67a627cd49a7db51d790c12a5, type: 3}
+  projectileVisualPrefab: {fileID: 0}
+  impactVisualPrefab: {fileID: 990168151855034924, guid: 242602bb1a4314343a6b75185e1591da, type: 3}
 --- !u!1001 &6175631781080902793
 PrefabInstance:
   m_ObjectHideFlags: 0

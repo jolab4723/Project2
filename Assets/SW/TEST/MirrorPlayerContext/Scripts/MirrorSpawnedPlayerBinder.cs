@@ -21,6 +21,10 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [SerializeField] private Behaviour[] localOnlyBehaviours;
 
     private Coroutine localSceneRestoreRoutine;
+    private bool gameplayInputEnabled;
+    private bool textInputBlocked;
+    private Coroutine textInputReleaseRoutine;
+    private int textInputReleaseFrame = -1;
     private bool hasServerSceneStart;
     private string serverSceneStartPath;
     private Vector3 serverSceneStartPosition;
@@ -31,22 +35,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void Awake()
     {
         context ??= GetComponent<PlayerContext>();
-        DisableLegacyHudPublisher();
         ResolveLocalOnlyBehaviours();
         SetLocalOnlyBehaviours(false);
-    }
-
-    /// <summary>
-    /// 원본 Fighter의 PlayerHudEventBridge는 플레이어마다 Health/Mana를 전역 KY_GameEvents에 발행한다.
-    /// 네트워크 복제본에서 이를 그대로 켜면 원격 플레이어의 체력 변화가 이 Client의 하단 HUD까지
-    /// 덮어쓴다. Mirror 테스트에서는 Scene의 PlayerHudEventBridge_MirrorTest 하나만 로컬 Context에
-    /// Bind하므로, 플레이어 Prefab에 상속된 원본 발행기는 모든 복제본에서 비활성화한다.
-    /// </summary>
-    private void DisableLegacyHudPublisher()
-    {
-        PlayerHudEventBridge legacyBridge = GetComponent<PlayerHudEventBridge>();
-        if (legacyBridge != null)
-            legacyBridge.enabled = false;
     }
 
 #if UNITY_EDITOR
@@ -60,6 +50,18 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void Reset()
     {
         context = GetComponent<PlayerContext>();
+    }
+
+    [ContextMenu("Validate Mirror Player Configuration")]
+    private void ValidateMirrorPlayerConfiguration()
+    {
+        Debug.Assert(GetComponent<WBH_PlayerInputHandler>() == null, "원본 이동 입력기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<WBH_PlayerAnimation>() == null, "원본 애니메이션 이벤트 수신기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerActionInputHandler>() == null, "원본 액션 입력기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<FighterSkillController>() == null, "원본 로컬 스킬 판정기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PotionUseManager>() == null, "원본 로컬 포션 관리자가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerRelicEffectProvider>() == null, "원본 로컬 유물 적용기가 남아 있습니다.", this);
+        Debug.Assert(GetComponent<PlayerHudEventBridge>() == null, "원본 전역 HUD 발행기가 남아 있습니다.", this);
     }
 
     public override void OnStartLocalPlayer()
@@ -132,13 +134,43 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void SetLocalOnlyBehaviours(bool enabled)
     {
+        gameplayInputEnabled = enabled;
+        RefreshLocalInput();
+    }
+
+    public void SetTextInputBlocked(bool blocked)
+    {
+        if (textInputBlocked == blocked) return;
+        textInputBlocked = blocked;
+        if (textInputReleaseRoutine != null) StopCoroutine(textInputReleaseRoutine);
+        textInputReleaseRoutine = null;
+        if (blocked && isLocalPlayer)
+            GetComponent<PlayerActionInputHandler_MirrorTest>()?.ReleaseHeldSkills();
+        if (!blocked)
+        {
+            textInputReleaseFrame = Time.frameCount;
+            if (isActiveAndEnabled) textInputReleaseRoutine = StartCoroutine(ReleaseTextInputNextFrame());
+        }
+        RefreshLocalInput();
+    }
+
+    private IEnumerator ReleaseTextInputNextFrame()
+    {
+        yield return null;
+        RefreshLocalInput();
+        textInputReleaseRoutine = null;
+    }
+
+    private void RefreshLocalInput()
+    {
         if (localOnlyBehaviours == null)
             return;
 
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = enabled;
+                behaviour.enabled = isLocalPlayer && gameplayInputEnabled && !textInputBlocked &&
+                    Time.frameCount > textInputReleaseFrame;
         }
     }
 

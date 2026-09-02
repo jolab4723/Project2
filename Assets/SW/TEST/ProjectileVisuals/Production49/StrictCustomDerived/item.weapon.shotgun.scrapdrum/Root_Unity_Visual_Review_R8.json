@@ -1,0 +1,74 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "revision": "Unity StrictCustomDerived R8",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R9_COMPOUND_MUZZLE_AND_IMPACT",
+  "technical_gate": {
+    "result": "PASS_AS_EVIDENCE_ONLY",
+    "console_errors": 0,
+    "thirty_cycle_muzzle_flight_impact": "PASS",
+    "residual_live_particles_after_deactivate": 0,
+    "material_growth": 0,
+    "dirty_scene": false,
+    "body_frozen": true,
+    "body_renderers": 120,
+    "body_triangles": 144096,
+    "material_remaps": 6,
+    "transparency_proofs": "PASS_6_OF_6_NO_CARD_EDGE",
+    "note": "R8 resolves the R7 transparency/card artifact and wake connectivity defects, but Root visual approval remains independent of technical pass."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures_R8/ScrapDrum_R8_GameplayScale_MFI_Comparison_1024x768.png",
+    "Captures_R8/ScrapDrum_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures_R8/M_ignition_0.030_1024x768.png",
+    "Captures_R8/M_peak_0.075_1024x768.png",
+    "Captures_R8/M_near_peak_0.145_1024x768.png",
+    "Captures_R8/F_side_hero_0.180_1024x768.png",
+    "Captures_R8/F_wake_rear_3Q_0.180_1024x768.png",
+    "Captures_R8/F_gameplay_0.180_1024x768.png",
+    "Captures_R8/I_contact_0.040_1024x768.png",
+    "Captures_R8/I_peak_0.120_1024x768.png",
+    "Captures_R8/I_decay_0.560_1024x768.png",
+    "Captures_R8/TransparencyProof/M_SevenPortMass_single_billboard_black_1024x768.png",
+    "Captures_R8/TransparencyProof/M_SevenPortMass_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R8/TransparencyProof/F_ContinuousWakeLobe_single_billboard_black_1024x768.png",
+    "Captures_R8/TransparencyProof/F_ContinuousWakeLobe_single_billboard_neutral_gray_1024x768.png",
+    "Captures_R8/TransparencyProof/I_SevenPunchCloud_single_billboard_black_1024x768.png",
+    "Captures_R8/TransparencyProof/I_SevenPunchCloud_single_billboard_neutral_gray_1024x768.png"
+  ],
+  "root_visual_gate": {
+    "result": "FAIL",
+    "accepted_and_frozen_for_r9": [
+      "The approved body FBX, renderer count, triangle count, external URP material remaps, orientation and GUIDs remain frozen.",
+      "The R8 Flight is accepted as a connected body-contact tapered warm/soot wake: rear gap zero, coherent overlap, readable length and restrained terminal embers.",
+      "The RGBA transparency/material configuration and six black/gray proof method are accepted and must be preserved."
+    ],
+    "failed_findings": [
+      "Muzzle and Impact each read primarily as one large soft rounded-square/red blob with bright dots embedded in it. The transparency is correct, but the visible design remains a flat texture rather than a commercial compound effect.",
+      "The bright port dots are distributed like a soft UI marker cluster and do not read as six unequal pressure lobes captured around a displaced core.",
+      "The center uses thin angular fragments that read as a small star or zigzag. This contradicts the no-line-star/no-needle/no-radial-spoke visual contract.",
+      "Muzzle ignition, peak and near-peak do not develop a directional compression/release shape; they mostly scale the same blob.",
+      "Impact contact and peak lack a clear forward-biased pressure fold, unequal macro lobes and material fragments. The late decay becomes a dim undifferentiated stain rather than readable breakup.",
+      "Against Gunner_Bullet, Fighter_Attack and the user's school example, R8 solves artifacts but is still too generic and under-authored to pass the commercial quality floor."
+    ]
+  },
+  "r9_contract": {
+    "scope": "Freeze body and R8 Flight exactly. Rebuild Muzzle and Impact only as compound layered effects while preserving clean transparency and lifecycle behavior.",
+    "sprite_policy": "No single giant rounded-square sprite may carry an entire Muzzle or Impact. Use a small family of clean irregular soft lobe textures, each proven alone on black and neutral gray with true RGBA, transparent RGB zero and no card edge. Overlap them in depth and rotation so the combined mass has a designed silhouette.",
+    "muzzle": "Create one compact directional pressure release at the muzzle using one elongated displaced hot core plus four to six unequal overlapping warm lobes, with the center-plus-six-well identity implied by position and timing rather than seven soft dots printed into one image. Add at most three short broad heated fragments with unequal curves/angles. Ignition must compress near the muzzle, peak must expand asymmetrically, and near-peak must visibly peel away. No star, spoke, needle, ring, arc, card, pill or radial flower.",
+    "impact": "Build a two-stage broad forward-biased impact: compressed contact fold, then a compound peak of three to five unequal rounded lobes around an offset core, one low side fold and two or three short substantial debris fragments. Decay must separate into two or three readable fading masses and restrained embers rather than one dim stain. No kite/star silhouette, equal radial punches, rings, arcs or line fragments.",
+    "scale_and_value": "Keep the gameplay footprint comparable to the R8 body height, but reveal internal depth with white-hot/amber core, orange structural lobes, darker red/soot envelope and deliberate occlusion. Avoid a uniform red disc.",
+    "evidence": "Provide original 1024x768 ignition/contact, peak, transition and decay frames; M/F/I gameplay comparison; Gunner_Bullet and Fighter_Attack comparison; body plus accepted Flight views; every new sprite isolated on black and neutral gray; 30 natural and interrupted cycles per stage; console, GUID, prefab, residue, material-growth and dirty-state audits.",
+    "iteration_rule": "Use the existing unique ScrapDrum builder and item-only assets. Do not modify R5-R8 evidence or accepted body/Flight files except where an R9-specific duplicate is required."
+  },
+  "still_forbidden": [
+    "runtime binding",
+    "catalog registration",
+    "MFI integration",
+    "combat hookup",
+    "original asset mutation",
+    "source copy-back"
+  ],
+  "root_visual_approval_required_after_r9": true
+}

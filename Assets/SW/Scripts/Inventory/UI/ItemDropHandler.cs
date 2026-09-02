@@ -223,7 +223,10 @@ public class ItemDropHandler : MonoBehaviour
             case InventoryMoveResult.Success:
             case InventoryMoveResult.ReturnedToOriginal:
             case InventoryMoveResult.MovedToEmptySpace:
-                itemUI.SetGridPosition(itemUI.CurrentGrid, result.MovedX, result.MovedY);
+                itemUI.SetGridPositionAnimated(
+                    itemUI.CurrentGrid,
+                    result.MovedX,
+                    result.MovedY);
                 break;
 
             case InventoryMoveResult.Swapped:

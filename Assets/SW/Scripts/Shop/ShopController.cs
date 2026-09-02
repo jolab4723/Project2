@@ -385,18 +385,18 @@ public class ShopController : MonoBehaviour
         InventoryItem item,
         bool isBuying)
     {
-        if (logText == null)
-            return;
-
         string itemName =
             item?.itemData?.definition != null
                 ? item.itemData.definition.itemName
                 : "아이템";
 
-        logText.text = ShopMessageMapper.GetMessage(
+        string message = ShopMessageMapper.GetMessage(
             result,
             itemName,
             isBuying);
+        if (logText != null) logText.text = message;
+        if (result != TradeResult.Success)
+            inventoryController?.ReportSinglePlayerMessage(ChatKind.Warning, message);
     }
 
     /// <summary>

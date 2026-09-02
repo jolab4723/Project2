@@ -2086,6 +2086,80 @@ Transform:
   - {fileID: 2715028267472976130}
   m_Father: {fileID: 1744103943709653081}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2526860346358717833
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5592455072744210258}
+  - component: {fileID: 4109029087705640609}
+  - component: {fileID: 4474983280575774252}
+  m_Layer: 15
+  m_Name: MeshTrailEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5592455072744210258
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8098030532292546987}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4109029087705640609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
+  activeTime: 0.25
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  targetRenderer: {fileID: 1568587813550854273}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
+--- !u!114 &4474983280575774252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2526860346358717833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a129f64a00555944093cb27e6efa9e64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_WeaponTrailTut
+  activeTime: 0.25
+  meshRefreshRate: 0.025
+  meshDestroyDelay: 0.5
+  shaderVarRef: _Alpha
+  shaderVarRate: 0.1
+  shaderVarRefreshRate: 0.03
+  weaponRoot: {fileID: 6757565152260833919}
+  targetRenderer: {fileID: 0}
+  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &2567066902221745068
 GameObject:
   m_ObjectHideFlags: 0
@@ -8402,7 +8476,7 @@ GameObject:
   - component: {fileID: 2312052604114874023}
   - component: {fileID: 245515211961115271}
   - component: {fileID: 2674546040288394452}
-  - component: {fileID: 2017357833712916932}
+  - component: {fileID: 4655314278586303533}
   - component: {fileID: 5376958052108856053}
   - component: {fileID: 1896365474940792361}
   - component: {fileID: 2188125559027323366}
@@ -8447,6 +8521,7 @@ Transform:
   - {fileID: 4637028926645814265}
   - {fileID: 4732446686621099127}
   - {fileID: 8074093019407928163}
+  - {fileID: 5592455072744210258}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &2774735281992846289
@@ -8459,7 +8534,7 @@ Animator:
   m_GameObject: {fileID: 8874953783023553297}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 271fb3111643439479e51ecb5e1fcdb0, type: 3}
-  m_Controller: {fileID: 9100000, guid: 2661ac03f03909344a250f485c1e0398, type: 2}
+  m_Controller: {fileID: 9100000, guid: d76cabc2a94ce734eb51f071bade2136, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -8595,7 +8670,7 @@ MonoBehaviour:
   stateMachine: {fileID: 859720171535124851}
   playerClass: 0
   basicGrenadeEffect: {fileID: 0}
-  showAtkRange: 1
+  showAtkRange: 0
   atkAreaColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showDuration: 0.25
 --- !u!114 &509176117159171171
@@ -8642,9 +8717,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerAnimation
   fighterEffectRoot: {fileID: 5022215380906037386}
   gunnerEffectRoot: {fileID: 0}
-  Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
+  Eff_fighterAtk: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
   Eff_gunnerShotgunAtk: {fileID: 0}
   fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
+  gunnerBackstepMove: {fileID: 0}
   effectSpawner: {fileID: 0}
 --- !u!114 &245515211961115271
 MonoBehaviour:
@@ -8720,7 +8796,8 @@ MonoBehaviour:
   - cue: 1331
     data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
     anchor: {fileID: 5022215380906037386}
-  chargeEffect: {fileID: 0}
+  chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
+  chargeRangeEffect: {fileID: 0}
 --- !u!114 &2674546040288394452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8736,10 +8813,10 @@ MonoBehaviour:
   dodgeDistance: 5
   dodgeDuration: 0.5
   dodgeCooltime: 6
-  fighterAttackRange: 2
+  fighterAttackRange: 3
   gunnerAttackRange: 10
   gunnerBulletSpeed: 10
---- !u!114 &2017357833712916932
+--- !u!114 &4655314278586303533
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8978,7 +9055,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
   activeEvolutions: 000000000000000000000000
   activeEnhancements: 000000000000000000000000
-  visibleSkillArea: 1
+  visibleSkillArea: 0
   sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
   lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}

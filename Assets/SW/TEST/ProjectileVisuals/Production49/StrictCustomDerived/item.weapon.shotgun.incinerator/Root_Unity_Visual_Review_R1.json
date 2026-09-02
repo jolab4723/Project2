@@ -1,0 +1,57 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "authority": "root_sol",
+  "review_date": "2026-08-30",
+  "review_type": "ROOT_FIXED_RIG_ORIGINAL_RESOLUTION_UNITY_VISUAL_REVIEW",
+  "revision": "R1_strict_custom_derived_unity_suite",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R2_MATERIAL_AND_VFX_REBUILD",
+  "terminal_for_revision": true,
+  "unity_visual_approved": false,
+  "reviewed_captures": [
+    "Captures/M_peak_0.050_1024x768.png",
+    "Captures/F_hero_3Q_0.100_1024x768.png",
+    "Captures/F_true_macro_0.100_1024x768.png",
+    "Captures/F_gameplay_read_0.100_1024x768.png",
+    "Captures/F_rear_wake_0.100_1024x768.png",
+    "Captures/I_contact_0.080_1024x768.png",
+    "Captures/I_decay_0.420_1024x768.png",
+    "Captures/Incinerator_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures/stage_clean_M_0.330_1024x768.png",
+    "Captures/stage_clean_F_0.520_1024x768.png",
+    "Captures/stage_clean_I_0.720_1024x768.png"
+  ],
+  "accepted_technical_foundation": [
+    "The approved R11 normalized FBX is copied into the item-scoped StrictCustomDerived path with the recorded source SHA-256 unchanged.",
+    "Unity resolves 83 renderers, 83 filters and all eight external URP/Lit remaps with identity root, +Z forward, +Y up, no null material slots and intact bounds.",
+    "The Unity-imported 34,500 triangle count is accepted only as a documented importer limitation relative to the frozen 34,510 evaluated source; the source retains 112 zero-length warning edges and is not mutated to chase the ten-triangle delta.",
+    "Muzzle, attached Flight and Impact each pass thirty natural/interrupted cleanup cycles with zero live residue, trail points, material growth and instance growth; user scene dirty state remains false.",
+    "Runtime, catalog, MFI and combat binding remain absent and all legacy sources remain read-only."
+  ],
+  "visual_rejection_findings": [
+    "The eight Unity body materials collapse most of the approved R11 construction into nearly uniform black. Heat-blued steel, machined edges, copper, ceramic and refractory recesses do not separate at hero, macro or gameplay distance, so the body reads as a rounded black service canister instead of the approved furnace-pressure mechanism.",
+    "Muzzle is dominated by an enormous complete golden torus and a flat opaque red square. These are exactly the primitive ring and flat glued-panel readings prohibited by the commercial body/VFX gate and obscure the pressure-flash hierarchy.",
+    "Muzzle sparks are thin uniform lines crossing both directions and do not establish a compact +Z-biased ignition wedge.",
+    "Flight has no readable attached wake in hero, macro or gameplay views. The rear frame shows only a few tiny disconnected red polygons on the cap, not a continuous contained-fire plume or heat-shear signature.",
+    "Impact is a full golden ring with a nearly uniform radial line star and stacked red cards. It lacks a compressed contact core, asymmetric fire fan, tapered ejecta hierarchy and expanding soot/ember residue.",
+    "Impact decay is essentially black apart from two dim squares, so a controlled readable residue phase is not demonstrated.",
+    "The comparison sheet is substantially below Gunner_Bullet and Fighter_Attack in material readability, volumetric hierarchy, direction and finish. Technical cleanliness cannot substitute for this failed visual gate."
+  ],
+  "required_r2_rebuild": [
+    "Freeze R1 evidence and preserve the approved R11 FBX, source hashes, geometry, object/material-slot names, remap count, prefab hierarchy, derived GUIDs where possible, runtime isolation and thirty-cycle lifecycle contract. Do not edit Blender or any legacy/source asset.",
+    "Recalibrate all eight external URP/Lit role materials by direct visual comparison to the approved R11 original-resolution Blender material renders. Apply the project-correct linear/gamma conversion instead of copying Blender linear swatches verbatim. Raise blackened and heat-blued steel values enough to preserve continuous form without gray plastic; make machined edges, oxidized copper, warm ceramic, refractory backing, furnace core and copper gasket independently legible under the fixed neutral rig.",
+    "Keep furnace-core emission recessed and supportive. It may reveal chamber depth but must not flatten windows into opaque red squares or replace material/geometry readability.",
+    "Muzzle: remove the complete torus and every opaque square/card reading. Build a compact layered white-hot ignition core, short asymmetric orange-red pressure wedge, thin broken heat-shock arc and 7 to 11 unequal tapered sparks. All elements must share a clear +Z bias and occupy a disciplined envelope no larger than needed for gameplay readability.",
+    "Flight: attach a continuous rear-only contained-fire wake approximately one-third to one-half body length using two or three overlapping tapered soft orange-red lobes, a restrained heat-shear distortion-colored halo substitute, 4 to 6 unequal ember streaks and sparse dark soot. It must remain visible in hero and gameplay while leaving the body readable and never extending in front.",
+    "Impact: use a compressed white/orange contact core, one asymmetric expanding fire fan, one broken warm shock arc, 9 to 14 unequal tapered ejecta sparks, a few ember fragments and a short readable warm-gray soot cloud. Its silhouette and timing must be clearly different from Muzzle.",
+    "Use smooth radial/tapered alpha sprites, size/color over lifetime, randomized rotation and velocity, and soft additive blending. No full rings, opaque cards, primitive rectangles, uniform line stars, giant blur, neon rods, forward wake or disconnected pill particles.",
+    "Capture R2 at M ignition/peak/near-peak, F hero/macro/gameplay/rear, I contact/peak/decay, all three clean frames and the same comparison. Root will review all frames at original resolution; thirty-cycle and zero-Console evidence must be regenerated after the visual correction."
+  ],
+  "authorization": {
+    "r2_item_scoped_unity_material_and_vfx_rebuild": true,
+    "approved_body_or_transport_changes": false,
+    "legacy_source_changes": false,
+    "runtime_or_catalog_binding": false,
+    "final_critic_gate": false
+  },
+  "root_note": "R1 proves the safe derived Unity pipeline but not the visual result. R2 is a bounded Unity material/VFX correction around the frozen approved R11 body, not a new body or transport revision."
+}
