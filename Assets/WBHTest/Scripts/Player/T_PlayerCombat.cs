@@ -107,21 +107,21 @@ public class T_PlayerCombat : MonoBehaviour
             GetComponentInChildren<GunnerWeaponVfxBinding>();
 
         // SW 추가:
-        // 모든 신규 거너 WeaponVisual은 root 직속 Muzzle을 가지고 있으며 그 Transform의 +Z(forward)가 발사 방향입니다.
-        // 아직 바인딩되지 않은 테스트 프리팹도 공격이 멈추지 않도록 기존 firePoint를 두 번째 선택지로 남깁니다.
-        Transform resolvedMuzzle = vfxBinding != null && vfxBinding.Muzzle != null
-            ? vfxBinding.Muzzle
-            : firePoint;
+        // 실제 투사체와 공격 판정은 무기마다 움직이는 Muzzle이 아니라 Gunner 루트 직속 FirePoint에서 시작합니다.
+        // FirePoint는 모든 총이 공유하는 중앙 기준점이므로 총의 길이, 손목 회전, 공격 모션이 달라도
+        // 라이플·산탄총·유탄발사기의 실제 공격 시작 위치가 바뀌지 않습니다.
+        Transform resolvedFirePoint = firePoint != null
+            ? firePoint
+            : transform;
+        Vector3 spawnPosition = resolvedFirePoint.position;
 
         // SW 추가:
-        // 실제 장착 무기의 총열 끝 위치와 +Z를 우선 사용합니다. Muzzle과 기존 firePoint가 모두 없는 비정상 테스트 상태에서는
-        // 플레이어 위치/정면을 마지막 대신 값으로 사용하여 빈 참조 오류 없이 기존 공격 흐름을 계속 진행합니다.
-        Vector3 spawnPosition = resolvedMuzzle != null
-            ? resolvedMuzzle.position
-            : transform.position;
-        Vector3 direction = resolvedMuzzle != null
-            ? resolvedMuzzle.forward
-            : transform.forward;
+        // 캐릭터가 보고 있는 수평 정면만 발사 방향으로 사용합니다. 애니메이션이 Muzzle을 위·아래·옆으로 돌려도
+        // 실제 탄환과 산탄 판정은 플레이어 정면에서 벗어나지 않습니다.
+        Vector3 direction = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        direction = direction.sqrMagnitude > 0.0001f
+            ? direction.normalized
+            : Vector3.forward;
         // SW 추가:
         // 장착 외형마다 저장된 Rifle/Shotgun/GrenadeLauncher 값을 사용하면 Inspector의 currentWeapon을 매 장비 교체마다
         // 별도로 맞춰 주지 않아도 됩니다. 예전 테스트 프리팹에는 이 정보가 없을 수 있으므로 currentWeapon을 대신 사용합니다.
@@ -140,9 +140,10 @@ public class T_PlayerCombat : MonoBehaviour
             : null;
 
         // SW 추가:
-        // 총구 연출은 장착 외형의 root 직속 Muzzle 아래에 한 번만 생성되고, 이후 공격에서는 Particle/Trail만 초기화해 재생합니다.
+        // 총구 섬광은 실제 무기의 Muzzle 위치와 회전을 따라갑니다. 이 섬광은 총열에서만 보이는 장식이므로
+        // 애니메이션을 그대로 따르되, 실제 투사체와 공격 판정은 위에서 계산한 공통 FirePoint·플레이어 정면을 사용합니다.
         // VFX 연결 정보가 없는 예전 테스트 프리팹에서는 총구 연출만 건너뛰고 공격은 계속됩니다.
-        vfxBinding?.PlayMuzzle();
+        vfxBinding?.PlayMuzzle(spawnPosition, direction, status.GunnerAttackRange);
 
         // 투사체용 데미지 요청 생성. ElementType은 현재 장착 무기에 인챈트된 속성을 그대로 사용한다.
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Burn1); // Burn1은 아직 테스트값
@@ -165,7 +166,9 @@ public class T_PlayerCombat : MonoBehaviour
                     SectorAttack(
                         status.GunnerAttackRange,
                         90f,
-                        impactVisualPrefab: impactVisual);
+                        impactVisualPrefab: impactVisual,
+                        attackOrigin: spawnPosition,
+                        attackForward: direction);
                     // SW 추가:
                     // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
                     // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
@@ -202,16 +205,29 @@ public class T_PlayerCombat : MonoBehaviour
         WBH_EffectData effectData = null,
         // SW 추가:
         // 거너 샷건만 사용하는 선택 값입니다. Fighter 호출은 값을 넘기지 않으므로 기존 동작이 그대로 유지됩니다.
-        GameObject impactVisualPrefab = null)
+        GameObject impactVisualPrefab = null,
+        // SW 추가:
+        // 거너 샷건은 모든 총이 공유하는 FirePoint 위치와 플레이어 정면을 전달합니다.
+        // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
+        Vector3? attackOrigin = null,
+        Vector3? attackForward = null)
     {
-        Collider[] targets = Physics.OverlapSphere(transform.position, range, enemyLayer);
+        Vector3 origin = attackOrigin ?? transform.position;
+        Vector3 forward = attackForward ?? transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude <= 0.0001f)
+            forward = Vector3.forward;
+        else
+            forward.Normalize();
+
+        Collider[] targets = Physics.OverlapSphere(origin, range, enemyLayer);
 
         foreach (Collider target in targets)
         {
-            Vector3 dirToTarget = (target.transform.position - transform.position).normalized;
+            Vector3 dirToTarget = (target.transform.position - origin).normalized;
 
             dirToTarget.y = 0;
-            float targetAngle = Vector3.Angle(transform.forward, dirToTarget);
+            float targetAngle = Vector3.Angle(forward, dirToTarget);
 
             if (targetAngle > angle * 0.5f)
                 continue;
