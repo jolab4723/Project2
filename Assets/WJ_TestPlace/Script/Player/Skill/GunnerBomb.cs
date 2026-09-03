@@ -50,6 +50,16 @@ public class GunnerBomb : MonoBehaviour
     private bool landed;
     private bool initialized;
 
+    // 폭발 이펙트 재생을 위한 변수들
+    private WBH_PlayerEffect effectOwner;
+    private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 explosionEffectScale = Vector3.one;
+    private WBH_EffectData explosionEffectData;
+
+    private WBH_PlayerEffectCue secondExplosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 secondExplosionEffectScale = Vector3.one;
+    private WBH_EffectData secondExplosionEffectData;
+
     public void Initialize(Vector3 targetPosition, float throwSpeed, float arcHeight, float fuseSeconds,
         float explosionRadius, LayerMask targetLayer, WBH_DamageRequest damageRequest,
         float secondExplosionDelay = 0f, float secondExplosionRadius = 0f, float secondExplosionDamageMultiplier = 0f,
@@ -132,7 +142,7 @@ public class GunnerBomb : MonoBehaviour
     {
         foreach (Collider hit in Physics.OverlapSphere(transform.position, explosionRadius, targetLayer))
         {
-            DealDamage(hit, damageRequest.DamageMultiplier);
+            DealDamage(hit, damageRequest.DamageMultiplier,explosionEffectData);
 
             if (!hit.TryGetComponent<WBH_ICombat>(out var effectTarget))
                 continue;
@@ -151,6 +161,8 @@ public class GunnerBomb : MonoBehaviour
             zoneGO.AddComponent<GunnerSlowZone>().Initialize(slowZoneRadius, slowZoneDuration, slowSpeedMultiplier, targetLayer);
         }
 
+        PlayExplosionEffect(explosionEffectCue, explosionEffectScale);
+
         initialized = false;
 
         if (secondExplosionDelay > 0f)
@@ -165,18 +177,54 @@ public class GunnerBomb : MonoBehaviour
         yield return new WaitForSeconds(secondExplosionDelay);
 
         foreach (Collider hit in Physics.OverlapSphere(transform.position, secondExplosionRadius, targetLayer))
-            DealDamage(hit, damageRequest.DamageMultiplier * secondExplosionDamageMultiplier);
+            DealDamage(hit, damageRequest.DamageMultiplier * secondExplosionDamageMultiplier, secondExplosionEffectData);
+
+        PlayExplosionEffect(secondExplosionEffectCue, secondExplosionEffectScale);
 
         Destroy(gameObject);
     }
 
-    private void DealDamage(Collider target, float damageMultiplier)
+    private void DealDamage(Collider target, float damageMultiplier, WBH_EffectData effectData)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
 
         WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-            damageRequest.AttackType, damageRequest.ElementType, damageMultiplier, damageRequest.StatusEffect);
+            damageRequest.AttackType, damageRequest.ElementType, damageMultiplier, damageRequest.StatusEffect,effectData);
         WBH_CombatManager.ProcessDamage(hitRequest);
+    }
+
+    // 이펙트 재생을 위한 준비 메서드
+    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, WBH_PlayerEffectCue cue, Vector3 scaleMultiplier, WBH_PlayerEffectCue secondExplosionCue = WBH_PlayerEffectCue.None,
+        Vector3? secondExplosionScale = null)
+    {
+        this.effectOwner = effectOwner;
+
+        explosionEffectCue = cue;
+        explosionEffectScale = scaleMultiplier;
+
+        secondExplosionEffectCue = secondExplosionCue;
+        secondExplosionEffectScale = secondExplosionScale ?? Vector3.one;
+
+        explosionEffectData = null;
+        secondExplosionEffectData = null;
+
+        if (effectOwner == null)
+            return;
+
+        effectOwner.TryGetEffectData(explosionEffectCue, out explosionEffectData);
+
+        if(secondExplosionEffectCue != WBH_PlayerEffectCue.None)
+        {
+            effectOwner.TryGetEffectData(secondExplosionEffectCue, out secondExplosionEffectData);
+        }
+    }
+
+    private void PlayExplosionEffect(WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
+    {
+        if (effectOwner == null || explosionEffectCue == WBH_PlayerEffectCue.None)
+            return;
+
+        effectOwner.PlayWorldEffect(cue, transform.position, Quaternion.identity, scaleMultiplier);
     }
 }

@@ -379,6 +379,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
     }
 
+    // 이펙트 스케일 조정, 재생 메서드 호출
     public void PlayPendingSkillEffect(int partValue)
     {
         if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
@@ -399,7 +400,79 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, part);
 
-        playerEffect.PlayEffect(cue, Vector3.one);
+        Vector3 scaleMultiPlier = CalculatePendingEffectScale(def, part);
+
+        playerEffect.PlayEffect(cue, scaleMultiPlier);
+    }
+
+    // 기본 스킬 범위와 스킬범위 보너스 스탯이 적용된 스킬범위 비교해서 이펙트 크기 결정
+    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO def, SkillEffectPart part)
+    {
+        if (def == null)
+            return Vector3.one;
+
+        if (part != SkillEffectPart.Main && part != SkillEffectPart.Ground)
+            return Vector3.one;
+
+        float baseRange = GetPendingEffectBaseRange(def);
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float appliedRange = ApplyPendingSkillRangeBonus(def, baseRange);
+
+        float rangeScale = appliedRange / baseRange;
+
+        return Vector3.one * rangeScale;
+    }
+
+    // 기본 스킬 범위 가져오는 메서드
+    private float GetPendingEffectBaseRange(SkillDefinitionSO def)
+    {
+        return def.shapeType switch
+        {
+            SkillShapeType.SectorSlash => def.sectorRange,
+            SkillShapeType.LineSlam => def.lineLength,
+            SkillShapeType.Dash => def.dashDistance,
+
+            // 아크레이저 진화 1의 직선 범위 이펙트 확대
+            SkillShapeType.ArcProjectile when pendingEvo == SkillEvolutionId.Evolution1 => def.evoLaserLength,
+
+            // 백스텝의 공격 범위 이펙트 확대
+            SkillShapeType.BackstepShot => def.backstepConeRange,
+
+            // 폭탄 투척은 최대 사거리만 늘어나기에 이펙트 확대X
+            SkillShapeType.BombThrow => 0f,
+
+            _ => 0f,
+        };
+    }
+
+    // 스킬 범위 보너스 적용 메서드
+    private float ApplyPendingSkillRangeBonus(SkillDefinitionSO def, float baseRange)
+    {
+        float flatBonus = 0f;
+        float percentBonus = 0f;
+
+        if(PlayerStatManager.Instance != null)
+        {
+            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        }
+
+        if(pendingEnhance == SkillEnhancementId.Enhance3)
+        {
+            percentBonus += def.enhanceRangeBonusPercent;
+        }
+
+        return (baseRange + flatBonus) * (1f + percentBonus / 100f);
+    }
+
+    // arkbuster 사격 시, 폭발이펙트 재생을 위해 이펙트데이터와 크기, 기초 설정을 세팅하는 메서드
+    private void ConfigureArcProjectileEffect(GunnerArcProjectile projectile, SkillDefinitionSO def)
+    {
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, SkillEffectPart.Projectile);
+        Vector3 scaleMultiplier = CalculatePendingEffectScale(def, SkillEffectPart.Projectile);
+        projectile.ConfigureExplosionEffect(playerEffect, cue, scaleMultiplier);
     }
 
     // -------
@@ -608,6 +681,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.explosionRadius, enemyLayer, request);
+        ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
     }
 
     /// <summary>
@@ -651,6 +725,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             ? def.evoCannonExplosionRadius / def.explosionRadius
             : 1f;
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.evoCannonExplosionRadius, enemyLayer, request, visualScale: visualScale);
+        ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
     }
 
     /// <summary>
@@ -773,6 +848,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return;
         }
 
+        
+
         if (evo == SkillEvolutionId.Evolution1) // 집속 폭탄
         {
             bomb.Initialize(targetPos, def.bombThrowSpeed, def.bombArcHeight, def.bombFuseSeconds,
@@ -802,6 +879,12 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             bomb.Initialize(targetPos, def.bombThrowSpeed, def.bombArcHeight, def.bombFuseSeconds,
                 explosionRadius, enemyLayer, request);
         }
+
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.Ground); // 1차 폭발 이펙트
+        WBH_PlayerEffectCue secondExplosionCue = evo == SkillEvolutionId.Evolution1 ?
+            PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.Ground) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
+
+        bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one, secondExplosionCue, Vector3.one);
     }
 
     /// <summary>강화(Enhance1: 위력 강화)가 선택돼 있으면 데미지 계수에 곱해지는 보너스를 곱한다.</summary>
