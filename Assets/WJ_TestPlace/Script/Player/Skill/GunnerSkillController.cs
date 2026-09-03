@@ -47,6 +47,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     [SerializeField] private SkillEnhancementId[] activeEnhancements = new SkillEnhancementId[3];
 
     [Header("범위 표시(피드백용, 판정과 무관)")]
+    [SerializeField] private bool visibleSkillArea = false; 
     [SerializeField] private Color sectorVisualColor = new Color(0.2f, 0.6f, 1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(0.2f, 0.9f, 1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
@@ -470,8 +471,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     // arkbuster 사격 시, 폭발이펙트 재생을 위해 이펙트데이터와 크기, 기초 설정을 세팅하는 메서드
     private void ConfigureArcProjectileEffect(GunnerArcProjectile projectile, SkillDefinitionSO def)
     {
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, SkillEffectPart.Projectile);
-        Vector3 scaleMultiplier = CalculatePendingEffectScale(def, SkillEffectPart.Projectile);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, SkillEffectPart.ProjectileExplosion1);
+        Vector3 scaleMultiplier = CalculatePendingEffectScale(def, SkillEffectPart.ProjectileExplosion1);
         projectile.ConfigureExplosionEffect(playerEffect, cue, scaleMultiplier);
     }
 
@@ -632,7 +633,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private void ExecuteSectorShot(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -642,7 +645,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineShot(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -737,7 +742,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private void ExecuteArcLaser(SkillDefinitionSO def, int index, int consumedStacks)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoLaserLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoLaserWidth, lineVisualColor);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoLaserWidth, lineVisualColor);
 
         int bonusStacks = Mathf.Min(consumedStacks, def.evoLaserMaxBonusStacks);
         float damageMultiplier = def.damageMultiplier * (1f + def.evoLaserDamagePerStackPercent / 100f * bonusStacks);
@@ -825,12 +832,14 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         // 폭발 반경 표시 - 원형이라 angle=360으로 ShowSector 재사용, forward는 원이라 무의미.
         // 표시 시간은 폭탄이 실제로 위협인 구간(비행 시간 + 퓨즈)만큼 - GunnerBomb.Initialize의 travelTime 계산과 동일.
         float showDuration = Mathf.Max(0.2f, Vector3.Distance(spawnPos, targetPos) / def.bombThrowSpeed) + def.bombFuseSeconds;
-        SkillRangeVisual.ShowSector(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowSector(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
 
         // 진화1(집속 폭탄) - 2차 폭발 범위도 같은 자리에 겹쳐서 표시한다. 1차 원이 사라지는 시점(showDuration)에
         // 맞춰 2차 원이 evoClusterDelaySeconds만큼 더 유지되다 사라지게 해서, "작은 원이 먼저 없어지고 큰 원이
         // 그 다음에 없어짐"으로 두 번 터진다는 걸 시각적으로 알 수 있게 했다.
-        if (evo == SkillEvolutionId.Evolution1)
+        if (evo == SkillEvolutionId.Evolution1 && visibleSkillArea)
             SkillRangeVisual.ShowSector(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
 
         float damageMultiplier = def.damageMultiplier;
@@ -880,9 +889,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                 explosionRadius, enemyLayer, request);
         }
 
-        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.Ground); // 1차 폭발 이펙트
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.ProjectileExplosion1); // 1차 폭발 이펙트
         WBH_PlayerEffectCue secondExplosionCue = evo == SkillEvolutionId.Evolution1 ?
-            PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.Ground) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
+            PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.ProjectileExplosion2) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
 
         bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one, secondExplosionCue, Vector3.one);
     }
@@ -926,7 +935,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     {
         Vector3 dir = direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+        
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
@@ -979,7 +990,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return;
         }
 
-        SkillRangeVisual.ShowSector(spawnPosition, Vector3.forward, def.evoDecoyExplosionRadius, 360f, sectorVisualColor, def.evoDecoyFuseSeconds);
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowSector(spawnPosition, Vector3.forward, def.evoDecoyExplosionRadius, 360f, sectorVisualColor, def.evoDecoyFuseSeconds);
 
         float damageMultiplier = def.evoDecoyDamageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
@@ -997,6 +1009,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         decoy.Initialize(def.evoDecoyFuseSeconds, def.evoDecoyExplosionRadius, enemyLayer, request);
+
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, SkillEvolutionId.Evolution1, SkillEffectPart.ProjectileExplosion1);
+        decoy.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
     }
 
     // 9.1 WBH 추가. 매개변수로 진화를 전달받게끔 변경. 공격부분과 이동부분 분리를 위해 주석 처리
@@ -1064,7 +1079,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
 
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
         {
@@ -1100,7 +1116,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         Vector3 dir = -aimDir; // 커서 반대 방향(후방)으로 움직임.
         float distance = ApplySkillRangeBonus(def, index, def.backstepDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+        
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
