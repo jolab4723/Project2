@@ -2096,7 +2096,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5592455072744210258}
   - component: {fileID: 4109029087705640609}
-  - component: {fileID: 4474983280575774252}
   m_Layer: 15
   m_Name: MeshTrailEffect
   m_TagString: Untagged
@@ -2131,34 +2130,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8aa19a191b4acb84d94cf5513d44c942, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_MeshTrailTut
-  activeTime: 0.25
-  meshRefreshRate: 0.025
+  activeTime: 0.23
+  meshRefreshRate: 0.03
   meshDestroyDelay: 0.5
   shaderVarRef: _Alpha
   shaderVarRate: 0.1
   shaderVarRefreshRate: 0.03
   targetRenderer: {fileID: 1568587813550854273}
-  defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
---- !u!114 &4474983280575774252
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2526860346358717833}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a129f64a00555944093cb27e6efa9e64, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YJ_WeaponTrailTut
-  activeTime: 0.25
-  meshRefreshRate: 0.025
-  meshDestroyDelay: 0.5
-  shaderVarRef: _Alpha
-  shaderVarRate: 0.1
-  shaderVarRefreshRate: 0.03
-  weaponRoot: {fileID: 6757565152260833919}
-  targetRenderer: {fileID: 0}
   defaultMat: {fileID: 2100000, guid: 0709a3eca0e76b64c8a779fdeb8e1b84, type: 2}
 --- !u!1 &2567066902221745068
 GameObject:
@@ -8534,7 +8512,7 @@ Animator:
   m_GameObject: {fileID: 8874953783023553297}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 271fb3111643439479e51ecb5e1fcdb0, type: 3}
-  m_Controller: {fileID: 9100000, guid: d76cabc2a94ce734eb51f071bade2136, type: 2}
+  m_Controller: {fileID: 9100000, guid: 2661ac03f03909344a250f485c1e0398, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
