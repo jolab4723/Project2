@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using DG.Tweening;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
@@ -8,6 +9,11 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class TooltipUI : MonoBehaviour
 {
+    private const float FadeDuration = 0.1f;
+    private const string ItemLabelResourcePath =
+        "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
+    private const string UniqueEffectLabelResourcePath =
+        "DataFiles/ItemData/3. GeneratedAssets/LabelData/UniqueEffectLabelDatabase";
     private const string IncreaseColorHex = "#55D66B";
     private const string DecreaseColorHex = "#FF5B5B";
     private const string EqualColorHex = "#9A9A9A";
@@ -70,6 +76,9 @@ public class TooltipUI : MonoBehaviour
     private float section4BaseHeight;
     private float uniqueEffectDescriptionBaseHeight;
 
+    private readonly List<CanvasGroup> fadeGroups = new List<CanvasGroup>();
+    private Tween fadeTween;
+    private float fadeAlpha;
     private bool initialized;
 
     public RectTransform RootRect => transform as RectTransform;
@@ -81,6 +90,11 @@ public class TooltipUI : MonoBehaviour
         EnsureInitialized();
     }
 
+    private void OnDisable()
+    {
+        StopFade();
+    }
+
     /// <summary>
     /// 처음 배치된 UI 높이를 기준값으로 저장한다.
     /// Show가 여러 번 호출돼도 최초 한 번만 실행한다.
@@ -89,6 +103,12 @@ public class TooltipUI : MonoBehaviour
     {
         if (initialized)
             return;
+
+        InitializeFadeGroups();
+        SetFadeAlpha(0f);
+        itemLabels ??= Resources.Load<ItemLabelDatabaseSO>(ItemLabelResourcePath);
+        uniqueEffectLabels ??=
+            Resources.Load<UniqueEffectLabelDatabaseSO>(UniqueEffectLabelResourcePath);
 
         subStatTexts = new[]
         {
@@ -159,6 +179,8 @@ public class TooltipUI : MonoBehaviour
 
         EnsureInitialized();
 
+        StopFade();
+        SetFadeAlpha(0f);
         gameObject.SetActive(true);
 
         ItemDefinitionSO definition =
@@ -223,12 +245,81 @@ public class TooltipUI : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(
             RootRect);
 
+        FadeTo(1f);
+
         return true;
     }
 
+    /// <summary>
+    /// 표시 중인 툴팁을 짧게 페이드아웃한 뒤 비활성화한다.
+    /// </summary>
     public void Hide()
     {
-        gameObject.SetActive(false);
+        if (!gameObject.activeSelf)
+            return;
+
+        EnsureInitialized();
+        FadeTo(0f, () => gameObject.SetActive(false));
+    }
+
+    /// <summary>
+    /// 루트 Canvas 경계 아래의 실제 시각 자식마다 CanvasGroup을 준비한다.
+    /// 현재 World Space Canvas 구성에서는 루트 그룹의 중간 알파가 자식 UI에 반영되지 않아 직접 적용한다.
+    /// </summary>
+    private void InitializeFadeGroups()
+    {
+        fadeGroups.Clear();
+
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            CanvasGroup group = child.GetComponent<CanvasGroup>();
+
+            if (group == null)
+                group = child.gameObject.AddComponent<CanvasGroup>();
+
+            fadeGroups.Add(group);
+        }
+    }
+
+    /// <summary>
+    /// 하나의 DOTween 값으로 모든 시각 자식의 알파를 함께 변경한다.
+    /// </summary>
+    private void FadeTo(float targetAlpha, TweenCallback onComplete = null)
+    {
+        StopFade();
+
+        fadeTween = DOTween
+            .To(
+                () => fadeAlpha,
+                SetFadeAlpha,
+                targetAlpha,
+                FadeDuration)
+            .SetEase(Ease.Linear)
+            .SetUpdate(true)
+            .SetLink(gameObject)
+            .OnComplete(() =>
+            {
+                fadeTween = null;
+                onComplete?.Invoke();
+            });
+    }
+
+    private void StopFade()
+    {
+        fadeTween?.Kill();
+        fadeTween = null;
+    }
+
+    private void SetFadeAlpha(float alpha)
+    {
+        fadeAlpha = alpha;
+
+        foreach (CanvasGroup group in fadeGroups)
+        {
+            if (group != null)
+                group.alpha = alpha;
+        }
     }
 
     /// <summary>라벨 DB에 itemId가 없는 아이템(예: 구 스킴의 TEST 아이템)은 definition.itemName으로 그대로 폴백한다.</summary>

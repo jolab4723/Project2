@@ -84,6 +84,8 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
 
             if (weaponType == GunnerWeaponType.Shotgun)
                 KeepOnlyShotgunParticleGroup(muzzleVisualInstance, keepAttackGroup: false);
+
+            DisableProjectileLikeMuzzleParticles(muzzleVisualInstance);
         }
 
         GunnerVfxPlayback.Restart(muzzleVisualInstance);
@@ -191,8 +193,31 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     }
 
     /// <summary>
+    /// 총구 프리팹 안에 섞여 들어온 장거리 투사체 파티클만 총구 복사본에서 끕니다.
+    /// 얼음 원본의 liz01은 총구 장식이 아니라 5~7m를 날아가는 얼음 흐름이며,
+    /// 라이플과 유탄발사기는 별도의 ProjectileVisual에서 같은 역할을 이미 재생합니다.
+    /// 원본 프리팹과 실제 투사체 VFX는 그대로 두므로 총구 근처의 얼음 링과 점화 입자는 유지됩니다.
+    /// </summary>
+    private static void DisableProjectileLikeMuzzleParticles(GameObject instance)
+    {
+        foreach (ParticleSystem particleSystem in instance.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            if (particleSystem.name != "liz01")
+                continue;
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.enabled = false;
+
+            ParticleSystemRenderer particleRenderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+            if (particleRenderer != null)
+                particleRenderer.enabled = false;
+        }
+    }
+
+    /// <summary>
     /// 실제 산탄 범위를 보여 주며 멀리 뻗는 파티클 이름만 한곳에서 구분합니다.
-    /// 여기에 없는 접촉 섬광, 압력 연기, 노즐 불꽃, 얼음 링과 전기 코어는 실제 총구를 따라갑니다.
+    /// 불꽃 계열의 Nozzle은 이름과 달리 총구 섬광이 아니라 수 미터를 이동하는 화염 줄기이므로 공격 연출에 포함합니다.
+    /// 여기에 없는 접촉 섬광, 압력 연기, 짧은 점화 불꽃, 얼음 링과 전기 코어는 실제 총구를 따라갑니다.
     /// </summary>
     private static bool IsShotgunAttackParticle(string particleName)
     {
@@ -205,6 +230,7 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
             case "ShotgunFan_Accent":
             case "SFA_V2_ModularIgnition_Derived":
             case "DustLinger":
+            case "Nozzle":
             case "liz01":
             case "SecondaryForks":
             case "FarForks":
