@@ -29,4 +29,5 @@ public class WBH_EffectData : ScriptableObject
     public Vector3 localPos;
     public Vector3 localRot;
     public bool applyEnhancementScale = true;
+    public bool applyAttackSpeed = true;
 }

@@ -1,12 +1,11 @@
-using NUnit.Framework.Internal;
 using System.Collections;
 using UnityEngine;
 
 public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
-
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
+
     {
         if (!ValidateRequest(data))
             return;
@@ -35,7 +34,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data);
+        effect.Play(data, autoReturn: true, 1f);
     }
 
     public void SpawnEffect(WBH_EffectData data, Vector3 position)
@@ -56,7 +55,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetParent(null);
 
         effect.transform.SetPositionAndRotation(position, rotation);
-        effect.Play(data);
+        effect.Play(data, autoReturn: true, 1f);
     }
 
     // 월드 이펙트 스케일 조정용 오버로딩
@@ -77,7 +76,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetPositionAndRotation(position, rotation);
         effectTransform.localScale = Vector3.Scale(effectTransform.localScale, scaleMultiplier);
 
-        effect.Play(data);
+        effect.Play(data, autoReturn: true, 1f);
     }
 
     // 부착형 이펙트 스케일 조정을 위한 오버로딩
@@ -103,7 +102,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data);
+        effect.Play(data, autoReturn: true, 1f);
     }
 
     // 상태이상 같은 일정시간 동안 지속형 이펙트

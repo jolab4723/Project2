@@ -5,18 +5,26 @@ public class WBH_Effect : MonoBehaviour
 {
     public bool IsPlaying { get; private set;}
     public WBH_EffectData Data => effectData;
-
     private WBH_EffectPoolManager poolManager;
     private WBH_EffectData effectData;
     private Coroutine returnCoroutine;
     private ParticleSystem[] particles;
-
+    private float[] initialSimulationSpeeds;
     private Vector3 initialLocalScale;
+    private float currentAttackSpeed = 1f;
 
 
     private void Awake()
     {
         particles = GetComponentsInChildren<ParticleSystem>(true);
+
+        initialSimulationSpeeds = new float[particles.Length];
+
+        for (int i = 0; i < particles.Length; i++)
+        {
+            initialSimulationSpeeds[i] = particles[i].main.simulationSpeed;
+        }
+
         initialLocalScale = transform.localScale;
     }
 
@@ -25,7 +33,7 @@ public class WBH_Effect : MonoBehaviour
         this.poolManager = poolManager;
     }
 
-    public void Play(WBH_EffectData data, bool autoReturn = true) 
+    public void Play(WBH_EffectData data, bool autoReturn = true, float attackSpeed = 1f) 
     {
         if (data == null)
             return;
@@ -33,19 +41,25 @@ public class WBH_Effect : MonoBehaviour
         effectData = data;
         IsPlaying = true;
 
+        currentAttackSpeed = data.applyAttackSpeed ? Mathf.Max(0.01f, attackSpeed) : 1f;
+
         if (returnCoroutine != null)
         {
             StopCoroutine(returnCoroutine);
             returnCoroutine = null;
         }
 
-        foreach(ParticleSystem particle in particles)
+        for (int i = 0; i < particles.Length; i++)
         {
+            ParticleSystem particle = particles[i];
+
             particle.Clear(true);
+            ParticleSystem.MainModule main = particle.main;
+            main.simulationSpeed = initialSimulationSpeeds[i] * currentAttackSpeed;
             particle.Play(true);
         }
 
-        if(autoReturn)
+        if (autoReturn)
         {
             returnCoroutine = StartCoroutine(AutoReturn());
         }
@@ -94,4 +108,18 @@ public class WBH_Effect : MonoBehaviour
         transform.localRotation = Quaternion.identity;
         transform.localScale = initialLocalScale;
     }
+
+    //private void SetParticleSpeed(float speed)
+    //{
+    //    if ( ! applyAttackSpeed)
+    //        return;
+
+    //    ParticleSystem[] particles = GetComponentsInChildren<ParticleSystem>(true);
+
+    //    foreach (ParticleSystem particle in particles)
+    //    {
+    //        ParticleSystem.MainModule main = particle.main;
+    //        main.simulationSpeed = speed;
+    //    }
+    //}
 }
