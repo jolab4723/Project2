@@ -920,11 +920,19 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
 
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = -transform.forward;
+
         WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
                                                                WBH_AttackType.Skill,
                                                                status.CurrentElement,
                                                                damageMultiplier,
-                                                               effectData: effectData);
+                                                               effectData: effectData,
+                                                               hitPosition: hitPosition,
+                                                               hitEffectDirection: lookDirection);
         WBH_CombatManager.ProcessDamage(request);
     }
 

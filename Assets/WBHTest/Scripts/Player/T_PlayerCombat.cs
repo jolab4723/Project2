@@ -145,8 +145,31 @@ public class T_PlayerCombat : MonoBehaviour
         // VFX 연결 정보가 없는 예전 테스트 프리팹에서는 총구 연출만 건너뛰고 공격은 계속됩니다.
         vfxBinding?.PlayMuzzle(spawnPosition, direction, status.GunnerAttackRange);
 
+        WBH_PlayerEffectCue hitCue = resolvedWeapon switch
+        {
+            GunnerWeaponType.Rifle
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc0,
+
+            GunnerWeaponType.Shotgun
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc1,
+
+            GunnerWeaponType.GrenadeLauncher
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc2,
+
+            _ => WBH_PlayerEffectCue.None
+        };
+
+        WBH_EffectData effectData = null;
+
+        if (effect != null && hitCue != WBH_PlayerEffectCue.None)
+            effect.TryGetEffectData(hitCue, out effectData);
+
         // 투사체용 데미지 요청 생성. ElementType은 현재 장착 무기에 인챈트된 속성을 그대로 사용한다.
-        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, status.CurrentElement, basicAttackMult, WBH_StatusEffectPresets.Burn1); // Burn1은 아직 테스트값
+        WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal,
+                                                        status.CurrentElement,
+                                                        basicAttackMult,
+                                                        WBH_StatusEffectPresets.Burn1, // Burn1은 아직 테스트값
+                                                        effectData: effectData); 
 
         // SW 추가:
         // 아래 switch의 피해 방식은 팀원 기존 구현을 그대로 사용합니다. 달라지는 것은 발사 위치와 전달되는 시각 프리팹뿐입니다.
@@ -156,24 +179,32 @@ public class T_PlayerCombat : MonoBehaviour
                 // SW 추가:
                 // 라이플은 기존 Normal 풀 투사체의 이동, Trigger 충돌, 단일 대상 피해를 그대로 사용합니다.
                 // 마지막 두 인수는 해당 장착 무기의 비행/명중 외형이며 실제 전투 수치에는 관여하지 않습니다.
-                projectileSpawner.FireProjectile(ProjectileType.Normal, spawnPosition, direction, request, status.GunnerBulletSpeed, status.GunnerAttackRange, enemyLayer, projectileVisual, impactVisual);
+                projectileSpawner.FireProjectile(ProjectileType.Normal,
+                                                 spawnPosition,
+                                                 direction,
+                                                 request,
+                                                 status.GunnerBulletSpeed,
+                                                 status.GunnerAttackRange,
+                                                 enemyLayer,
+                                                 projectileVisual,
+                                                 impactVisual);
                 break;
             case GunnerWeaponType.Shotgun:
                 {
                     // SW 추가:
                     // WBH 샷건은 여러 물리 탄환이 아니라 90도 부채꼴 안의 대상에게 즉시 피해를 줍니다.
                     // 따라서 명중 VFX도 중앙 투사체가 나중에 충돌할 때가 아니라 실제 피해를 받은 각 대상 위치에서 바로 재생합니다.
-                    SectorAttack(
-                        status.GunnerAttackRange,
-                        90f,
-                        impactVisualPrefab: impactVisual,
-                        attackOrigin: spawnPosition,
-                        attackForward: direction);
-                    // SW 추가:
-                    // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
-                    // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
-                    // 데미지는 바로 위 SectorAttack이 이미 처리했기 때문에 이 변경은 공격 범위와 피해량에 영향을 주지 않습니다.
-                    //effect.ShotGunEffect();
+                    SectorAttack(status.GunnerAttackRange,
+                                 90f,
+                                 effectData: effectData,
+                                 impactVisualPrefab: impactVisual,
+                                 attackOrigin: spawnPosition,
+                                 attackForward: direction);
+                                 // SW 추가:
+                                 // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
+                                 // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
+                                 // 데미지는 바로 위 SectorAttack이 이미 처리했기 때문에 이 변경은 공격 범위와 피해량에 영향을 주지 않습니다.
+                                 //effect.ShotGunEffect();
                 }
                 break;
             case GunnerWeaponType.GrenadeLauncher:
@@ -181,13 +212,25 @@ public class T_PlayerCombat : MonoBehaviour
                     // SW 추가:
                     // 유탄은 기존 FireGrenade의 포물선, 도착 지점, 폭발 반경, 광역 피해를 그대로 사용합니다.
                     // 팀원이 만든 basicGrenadeEffect도 그대로 두었으므로 기존 폭발 효과와 새 무기별 명중 효과가 함께 재생됩니다.
-                    projectileSpawner.FireGrenade(ProjectileType.Grenade, spawnPosition, grenadePoint, request, status.GunnerBulletSpeed, status.GunnerAttackRange, explosionRadius, enemyLayer, basicGrenadeEffect, projectileVisual, impactVisual);
+                    projectileSpawner.FireGrenade(ProjectileType.Grenade,
+                                                  spawnPosition,
+                                                  grenadePoint,
+                                                  request,
+                                                  status.GunnerBulletSpeed,
+                                                  status.GunnerAttackRange, 
+                                                  explosionRadius,
+                                                  enemyLayer,
+                                                  basicGrenadeEffect,
+                                                  projectileVisual,
+                                                  impactVisual);
                 }
                 break;
         }
 
+
+
         // -- 즉발 공격 시 사용할 예비 코드
-        //Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
+        //Ray ray = new Ray(transform.position + Vector3.up, transform.forward)s;
 
         //if (Physics.Raycast(ray, out RaycastHit hit, gunnerAttackRange, enemyLayer))
         //{
@@ -199,21 +242,21 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
 
-    private void SectorAttack(
-        float range,
-        float angle,
-        WBH_EffectData effectData = null,
-        // SW 추가:
-        // 거너 샷건만 사용하는 선택 값입니다. Fighter 호출은 값을 넘기지 않으므로 기존 동작이 그대로 유지됩니다.
-        GameObject impactVisualPrefab = null,
-        // SW 추가:
-        // 거너 샷건은 모든 총이 공유하는 FirePoint 위치와 플레이어 정면을 전달합니다.
-        // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
-        Vector3? attackOrigin = null,
-        Vector3? attackForward = null)
+    private void SectorAttack(float range,
+                              float angle,
+                              WBH_EffectData effectData = null,
+                              // SW 추가:
+                              // 거너 샷건만 사용하는 선택 값입니다. Fighter 호출은 값을 넘기지 않으므로 기존 동작이 그대로 유지됩니다.
+                              GameObject impactVisualPrefab = null,
+                              // SW 추가:
+                              // 거너 샷건은 모든 총이 공유하는 FirePoint 위치와 플레이어 정면을 전달합니다.
+                              // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
+                              Vector3? attackOrigin = null,
+                              Vector3? attackForward = null)
     {
         Vector3 origin = attackOrigin ?? transform.position;
         Vector3 forward = attackForward ?? transform.forward;
+
         forward.y = 0f;
         if (forward.sqrMagnitude <= 0.0001f)
             forward = Vector3.forward;
@@ -235,12 +278,20 @@ public class T_PlayerCombat : MonoBehaviour
             if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
+            Vector3 hitPosition = target.ClosestPoint(transform.position);
+            Vector3 lookDirection = transform.position - hitPosition;
+
+            if (lookDirection.sqrMagnitude <= 0.0001f)
+                lookDirection = -transform.forward;
+
             WBH_DamageRequest request = CreateDamageRequest(combatTarget,
                                                             WBH_AttackType.Normal,
                                                             status.CurrentElement,
                                                             basicAttackMult,
                                                             statusEffect: WBH_StatusEffectPresets.Slow1, // Slow1은 아직 테스트값
-                                                            effectData: effectData);
+                                                            effectData: effectData,
+                                                            hitPosition: hitPosition,
+                                                            hitEffectDirection: lookDirection);
 
             WBH_CombatManager.ProcessDamage(request);
 
@@ -260,9 +311,19 @@ public class T_PlayerCombat : MonoBehaviour
                                                  ItemSystem.ElementType elementType,
                                                  float damageMult,
                                                  WBH_StatusEffectData? statusEffect = null,
-                                                 WBH_EffectData effectData = null)
+                                                 WBH_EffectData effectData = null,
+                                                 Vector3? hitPosition = null,
+                                                 Vector3? hitEffectDirection = null)
     {
-        return new WBH_DamageRequest(controller, target, atkType, elementType, damageMult, statusEffect, effectData);
+        return new WBH_DamageRequest(controller,
+                                     target,
+                                     atkType, 
+                                     elementType,
+                                     damageMult, 
+                                     statusEffect, 
+                                     effectData, 
+                                     hitPosition, 
+                                     hitEffectDirection);
     }
 
     // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
@@ -270,9 +331,19 @@ public class T_PlayerCombat : MonoBehaviour
                                                  ItemSystem.ElementType elementType,
                                                  float damageMult,
                                                  WBH_StatusEffectData? statusEffect = null,
-                                                 WBH_EffectData effectData = null)
+                                                 WBH_EffectData effectData = null,
+                                                 Vector3? hitPosition = null,
+                                                 Vector3? hitEffectDirection = null)
     {
-        return new WBH_DamageRequest(controller, null, atkType, elementType, damageMult, statusEffect, effectData);
+        return new WBH_DamageRequest(controller,
+                                     null, 
+                                     atkType,
+                                     elementType, 
+                                     damageMult, 
+                                     statusEffect, 
+                                     effectData, 
+                                     hitPosition, 
+                                     hitEffectDirection);
     }
 
     private void UpdateChase()

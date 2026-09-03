@@ -181,12 +181,12 @@ public class WBH_EffectSpawner : MonoBehaviour
         return true;
     }
 
-    public void SpawnHitEffect(WBH_EffectData data, Vector3 position)
+    public void SpawnHitEffect(WBH_EffectData data, Vector3 position, Quaternion rotation)
     {
         if (data == null || data.hitEffectPrefab == null)
             return;
 
-        ParticleSystem instance = Instantiate(data.hitEffectPrefab, position, Quaternion.identity);
+        ParticleSystem instance = Instantiate(data.hitEffectPrefab, position, rotation);
         instance.Play(true);
         StartCoroutine(DestroyHitEffect(instance));
     }

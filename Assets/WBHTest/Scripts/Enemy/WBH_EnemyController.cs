@@ -93,11 +93,17 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         if (status.IsDead)
             return;
 
-        Vector3 hitPosition = transform.position;
+        Vector3 hitPosition = result.HitPosition ?? transform.position;
+
+        Vector3 direction = result.HitEffectDirection ?? Vector3.zero;
+
+        Quaternion hitRotation = direction.sqrMagnitude > 0.0001f
+                                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
+                                 : Quaternion.identity;
 
         if (result.EffectData != null && result.EffectData.hitEffectPrefab != null)
         {
-            effectSpawner?.SpawnHitEffect(result.EffectData, hitPosition);
+            effectSpawner?.SpawnHitEffect(result.EffectData, hitPosition, hitRotation);
         }
 
         status.TakeDamage(result);
