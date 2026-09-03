@@ -29,6 +29,7 @@ public class GunnerArcProjectile : MonoBehaviour
     private bool initialized;
 
     private WBH_PlayerEffect effectOwner;
+    private WBH_EffectData explosionEffectData;
     private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
     private Vector3 explosionEffectScale = Vector3.one;
 
@@ -36,8 +37,14 @@ public class GunnerArcProjectile : MonoBehaviour
     /// (아크 버스터 진화2 "아크 불릿"이 폭발 속성을 빼기 위해 사용 - 118번).
     /// visualScale은 프리팹 원본 크기에 곱하는 배율(기본 1 = 그대로) - 아크 캐논(진화3)처럼 폭발 반경이
     /// 커진 진화가 실제 판정 크기에 맞게 더 커 보이도록 쓴다(133번 후속).</summary>
-    public void Initialize(Vector3 direction, float speed, float maxDistance, float explosionRadius,
-        LayerMask targetLayer, WBH_DamageRequest damageRequest, bool explodeOnHit = true, float visualScale = 1f)
+    public void Initialize(Vector3 direction,
+                           float speed,
+                           float maxDistance,
+                           float explosionRadius,
+                           LayerMask targetLayer,
+                           WBH_DamageRequest damageRequest,
+                           bool explodeOnHit = true,
+                           float visualScale = 1f)
     {
         this.direction = direction.normalized;
         this.speed = speed;
@@ -111,8 +118,23 @@ public class GunnerArcProjectile : MonoBehaviour
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
 
-        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-            damageRequest.AttackType, damageRequest.ElementType, damageRequest.DamageMultiplier, damageRequest.StatusEffect);
+        WBH_EffectData hitEffectData = explosionEffectData ?? damageRequest.EffectData;
+
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = transform.position - target.bounds.center;
+
+        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                             combatTarget,
+                                                             damageRequest.AttackType,
+                                                             damageRequest.ElementType,
+                                                             damageRequest.DamageMultiplier,
+                                                             damageRequest.StatusEffect,
+                                                             hitEffectData,
+                                                             hitPosition,
+                                                             lookDirection);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 
@@ -122,6 +144,9 @@ public class GunnerArcProjectile : MonoBehaviour
         this.effectOwner = effectOwner;
         explosionEffectCue = cue;
         explosionEffectScale = scaleMultiplier;
+
+        explosionEffectData = null;
+        effectOwner?.TryGetEffectData(cue, out explosionEffectData);
     }
 
     private void PlayExplosionEffect()

@@ -249,7 +249,10 @@ public class WBH_Projectile : MonoBehaviour
 
         if (other.TryGetComponent<WBH_ICombat>(out var combatTarget))
         {
-            ProcessHit(combatTarget);
+            Vector3 hitPosition = other.ClosestPoint(transform.position);
+            Vector3 lookDirection = -movedirection.normalized;
+
+            ProcessHit(combatTarget, hitPosition, lookDirection);
         }
 
     // SW 추가:
@@ -272,13 +275,12 @@ public class WBH_Projectile : MonoBehaviour
 
         if (showExplosionRange)
         {
-            SkillRangeVisual.ShowSector(
-                explosionPos,
-                Vector3.forward,
-                explosionRadius,
-                360,
-                explosionRangeColor,
-                explosionRangeDuration);
+            SkillRangeVisual.ShowSector(explosionPos,
+                                        Vector3.forward,
+                                        explosionRadius,
+                                        360,
+                                        explosionRangeColor,
+                                        explosionRangeDuration);
         }
 
         // SW 추가:
@@ -293,7 +295,13 @@ public class WBH_Projectile : MonoBehaviour
                 if (!hit.TryGetComponent<WBH_ICombat>(out var combatTarget))
                     continue;
 
-                ProcessHit(combatTarget);
+                Vector3 hitPosition = hit.ClosestPoint(explosionPos);
+                Vector3 lookDirection = explosionPos - hitPosition;
+
+                if (lookDirection.sqrMagnitude <= 0.0001f)
+                    lookDirection = explosionPos - hit.bounds.center;
+
+                ProcessHit(combatTarget, hitPosition, lookDirection);
             }
 
             if(effectSpawner != null && hitEffectData != null)
@@ -314,7 +322,7 @@ public class WBH_Projectile : MonoBehaviour
         }
     }
 
-    private void ProcessHit(WBH_ICombat target)
+    private void ProcessHit(WBH_ICombat target, Vector3 hitPosition, Vector3 hitEffectDirection)
     {
     // SW 추가:
         // 산탄은 T_PlayerCombat.SectorAttack에서 이미 실제 피해를 처리합니다. 산탄의 이동 VFX가 적 Trigger에 닿더라도
@@ -328,11 +336,13 @@ public class WBH_Projectile : MonoBehaviour
                                                                  request.ElementType,
                                                                  request.DamageMultiplier,
                                                                  request.StatusEffect,
-    // SW 추가:
+                                                                 request.EffectData,
+                                                                 hitPosition,
+                                                                 hitEffectDirection);
+                                                                 // SW 추가:
                                                                  // 메인 머지에서 WBH_DamageRequest에 EffectData가 추가됐습니다.
                                                                  // 원본 요청을 명중 대상용 요청으로 복제할 때 이 값도 넘겨야
                                                                  // WBH_EnemyController의 새 명중 효과 흐름이 소실되지 않습니다.
-                                                                 request.EffectData);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 

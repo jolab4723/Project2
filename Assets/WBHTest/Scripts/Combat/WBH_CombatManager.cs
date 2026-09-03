@@ -38,7 +38,9 @@ public class WBH_CombatManager
                                                        isCritical,
                                                        request.ElementType,
                                                        request.StatusEffect,
-                                                       request.EffectData);
+                                                       request.EffectData,
+                                                       request.HitPosition,
+                                                       request.HitEffectDirection);
         request.Target.TakeDamage(result);
 
         // 플레이어가 가한 피해일 때만 플레이어 장착템의 발동형 고유 효과를 건드린다.

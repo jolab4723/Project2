@@ -11,6 +11,8 @@ public readonly struct WBH_DamageRequest
 
     public readonly WBH_StatusEffectData? StatusEffect;
     public readonly WBH_EffectData EffectData;
+    public readonly Vector3? HitPosition;
+    public readonly Vector3? HitEffectDirection;
 
     // 스킬 데미지 계수
     public readonly float DamageMultiplier;
@@ -21,7 +23,9 @@ public readonly struct WBH_DamageRequest
                              ElementType elementType,
                              float damageMultiplier,
                              WBH_StatusEffectData? statusEffect = null,
-                             WBH_EffectData effectData = null)
+                             WBH_EffectData effectData = null,
+                             Vector3? hitPosition = null,
+                             Vector3? hitEffectDirection = null)
     {
         Attacker = attacker;
         Target = target;
@@ -30,5 +34,7 @@ public readonly struct WBH_DamageRequest
         DamageMultiplier = damageMultiplier;
         StatusEffect = statusEffect;
         EffectData = effectData;
+        HitPosition = hitPosition;
+        HitEffectDirection = hitEffectDirection;
     }
 }

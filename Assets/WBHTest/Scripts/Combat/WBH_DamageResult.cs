@@ -8,6 +8,8 @@ public readonly struct WBH_DamageResult
     public readonly bool IsCritical;
     public readonly WBH_StatusEffectData? StatusEffect;
     public readonly WBH_EffectData EffectData;
+    public readonly Vector3? HitPosition;
+    public readonly Vector3? HitEffectDirection;
 
     // -- 차후 넉백, 고정데미지 등 추가
     //-- 아직 미활용 상태이상 적용 시 활용하면 될 것
@@ -18,7 +20,9 @@ public readonly struct WBH_DamageResult
                             bool isCritical,
                             ElementType elementType,
                             WBH_StatusEffectData? statusEffect = null,
-                            WBH_EffectData effectData = null)
+                            WBH_EffectData effectData = null,
+                            Vector3? hitPosition = null,
+                            Vector3? hitEffectDirection = null)
     {
         Attacker = attacker;
         FinalDamage = finalDamage;
@@ -26,5 +30,7 @@ public readonly struct WBH_DamageResult
         ElementType = elementType;
         StatusEffect = statusEffect;
         EffectData = effectData;
+        HitPosition = hitPosition;
+        HitEffectDirection = hitEffectDirection;
     }
 }

@@ -142,7 +142,9 @@ public class GunnerBomb : MonoBehaviour
     {
         foreach (Collider hit in Physics.OverlapSphere(transform.position, explosionRadius, targetLayer))
         {
-            DealDamage(hit, damageRequest.DamageMultiplier,explosionEffectData);
+            DealDamage(hit,
+                       damageRequest.DamageMultiplier,
+                       explosionEffectData ?? damageRequest.EffectData);
 
             if (!hit.TryGetComponent<WBH_ICombat>(out var effectTarget))
                 continue;
@@ -177,7 +179,9 @@ public class GunnerBomb : MonoBehaviour
         yield return new WaitForSeconds(secondExplosionDelay);
 
         foreach (Collider hit in Physics.OverlapSphere(transform.position, secondExplosionRadius, targetLayer))
-            DealDamage(hit, damageRequest.DamageMultiplier * secondExplosionDamageMultiplier, secondExplosionEffectData);
+            DealDamage(hit,
+                       damageRequest.DamageMultiplier * secondExplosionDamageMultiplier, 
+                       secondExplosionEffectData ?? damageRequest.EffectData);
 
         PlayExplosionEffect(secondExplosionEffectCue, secondExplosionEffectScale);
 
@@ -189,14 +193,30 @@ public class GunnerBomb : MonoBehaviour
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
 
-        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-            damageRequest.AttackType, damageRequest.ElementType, damageMultiplier, damageRequest.StatusEffect,effectData);
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = transform.position - target.bounds.center;
+
+        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                             combatTarget,
+                                                             damageRequest.AttackType, 
+                                                             damageRequest.ElementType, 
+                                                             damageMultiplier,
+                                                             damageRequest.StatusEffect,
+                                                             effectData,
+                                                             hitPosition,
+                                                             lookDirection);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 
     // 이펙트 재생을 위한 준비 메서드
-    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, WBH_PlayerEffectCue cue, Vector3 scaleMultiplier, WBH_PlayerEffectCue secondExplosionCue = WBH_PlayerEffectCue.None,
-        Vector3? secondExplosionScale = null)
+    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, 
+                                         WBH_PlayerEffectCue cue,
+                                         Vector3 scaleMultiplier,
+                                         WBH_PlayerEffectCue secondExplosionCue = WBH_PlayerEffectCue.None,
+                                         Vector3? secondExplosionScale = null)
     {
         this.effectOwner = effectOwner;
 

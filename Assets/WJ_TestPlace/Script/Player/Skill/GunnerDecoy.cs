@@ -56,8 +56,23 @@ public class GunnerDecoy : MonoBehaviour
             if (!hit.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-                damageRequest.AttackType, damageRequest.ElementType, damageRequest.DamageMultiplier, damageRequest.StatusEffect);
+            WBH_EffectData hitEffectData = explosionEffectData ?? damageRequest.EffectData;
+
+            Vector3 hitPosition = hit.ClosestPoint(transform.position);
+            Vector3 lookDirection = transform.position - hitPosition;
+
+            if (lookDirection.sqrMagnitude <= 0.0001f)
+                lookDirection = transform.position - hit.bounds.center;
+
+            WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                                 combatTarget,
+                                                                 damageRequest.AttackType,
+                                                                 damageRequest.ElementType, 
+                                                                 damageRequest.DamageMultiplier, 
+                                                                 damageRequest.StatusEffect,
+                                                                 hitEffectData,
+                                                                 hitPosition,
+                                                                 lookDirection);
             WBH_CombatManager.ProcessDamage(hitRequest);
         }
 
