@@ -222,7 +222,7 @@ public class GunnerBomb : MonoBehaviour
 
     private void PlayExplosionEffect(WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
     {
-        if (effectOwner == null || explosionEffectCue == WBH_PlayerEffectCue.None)
+        if (effectOwner == null || cue == WBH_PlayerEffectCue.None)
             return;
 
         effectOwner.PlayWorldEffect(cue, transform.position, Quaternion.identity, scaleMultiplier);
