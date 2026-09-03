@@ -1,0 +1,72 @@
+{
+  "item_id": "item.weapon.shotgun.scrapdrum",
+  "revision": "Unity_R6",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-30",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R7_EFFECT_SHAPE_AND_SCALE_PASS",
+  "technical_gate": {
+    "result": "PASS_AS_FOUNDATION_ONLY",
+    "unity_version": "6000.3.22f1",
+    "console_errors": 0,
+    "scene_dirty_before_after": "false_to_false",
+    "mesh_renderers": 120,
+    "triangles": 144096,
+    "material_remaps": 6,
+    "residue_cycles": 30,
+    "m_f_i_residue": "PASS",
+    "runtime_catalog_mfi_binding": false
+  },
+  "body_result": {
+    "orientation": "PASS",
+    "plus_z_signature": "PASS_center_plus_six_deep_wells",
+    "material_readability": "PASS_WITH_MINOR_DARKNESS",
+    "note": "R6 finally proves the real flight-front and preserves the accepted FBX orientation. Do not rotate or replace the body."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures_R6/M_ignition_0.030_1024x768.png",
+    "Captures_R6/M_peak_0.070_1024x768.png",
+    "Captures_R6/M_near_peak_0.130_1024x768.png",
+    "Captures_R6/F_plusZ_front_ortho_body_1024x768.png",
+    "Captures_R6/F_plusZ_front_3Q_body_1024x768.png",
+    "Captures_R6/F_plusZ_well_macro_body_1024x768.png",
+    "Captures_R6/F_side_hero_0.110_1024x768.png",
+    "Captures_R6/F_gameplay_0.110_1024x768.png",
+    "Captures_R6/F_wake_rear_3Q_0.110_1024x768.png",
+    "Captures_R6/I_contact_0.040_1024x768.png",
+    "Captures_R6/I_peak_0.115_1024x768.png",
+    "Captures_R6/I_decay_0.520_1024x768.png",
+    "Captures_R6/ScrapDrum_vs_GunnerBullet_FighterAttack_Comparison_1024x768.png",
+    "Captures_R6/stage_clean_M_0.380_1024x768.png",
+    "Captures_R6/stage_clean_F_terminated_plus0.100_1024x768.png",
+    "Captures_R6/stage_clean_I_1.120_1024x768.png"
+  ],
+  "visual_blockers": [
+    "Muzzle reads as a small cluster of round white eggs with soft halos; it lacks a decisive seven-port shotgun pressure silhouette and remains materially smaller than the body identity demands.",
+    "Flight is three or four detached blurry puffs behind the body. It does not make continuous body contact, does not taper into a wake, and reads like repeated sprites rather than propulsion from seven chambers.",
+    "Impact remains a small irregular blob with curved bright strips; its contact, peak and fragment fan do not establish a broad seven-chamber hit at gameplay scale.",
+    "The comparison frame shows the effect stages as tiny isolated marks around a large body, so the complete suite still falls below the user commercial floor despite the now-good body proof."
+  ],
+  "r7_constraints": {
+    "preserve": [
+      "approved FBX bytes and SHA256",
+      "FBX, Muzzle, Projectile, Impact and suite GUIDs",
+      "120 renderers, 144096 triangles and six remaps",
+      "body orientation, hierarchy and R5/R6 evidence",
+      "runtime/catalog/MFI absent"
+    ],
+    "muzzle": "Build one 1.6x to 2.0x larger asymmetric seven-port pressure burst. The seven hot cores must sit inside one coherent warm outer mass; use short varied wedges/fragments only as accents. Avoid equal round blobs, rings, bars, needles and line stars.",
+    "flight": "Replace detached puff beads with one continuous tapered rear-contact wake at least 0.75 body lengths. It must visibly originate from the rear chamber plane, use an overlapping hot-core/warm-outer/soot hierarchy, and break into only two or three small terminal embers.",
+    "impact": "Create a 1.8x to 2.3x larger broad contact burst with seven unequal hot punches embedded in one asymmetrical pressure cloud, a short forward-and-side fragment fan and readable soot decay. Remove curved strip/ring impressions.",
+    "capture": "Preserve the +Z body proofs and add M/F/I gameplay-scale comparison panels where each effect occupies enough screen area to judge its shape; rerun all original 1024x768 timing frames and 30-cycle residue."
+  },
+  "forbidden": [
+    "FBX or body transform edits",
+    "equal circular blob array",
+    "detached repeated puff beads",
+    "full rings or arc-dominant strips",
+    "white bars, needles or line stars",
+    "opaque residue cards",
+    "runtime, catalog or MFI hookup"
+  ],
+  "root_approval_required": true
+}

@@ -1,0 +1,56 @@
+{
+  "item_id": "item.weapon.shotgun.dockbreaker",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_R2_VISUAL_REJECTED_REQUIRES_R3_SEPARATED_HYDRAULIC_BREACH_EVENT",
+  "commercial_visual_approval": false,
+  "lifecycle_authorized": false,
+  "evidence_reviewed_at_original_resolution": [
+    "R2/Captures/R2_M_peak_0.080_1024x768.png",
+    "R2/Captures/R2_I_contact_0.050_1024x768.png",
+    "R2/Captures/R2_I_peak_0.120_1024x768.png",
+    "R2/Captures/R2_I_decay_0.380_1024x768.png",
+    "R2/Captures/R2_Dockbreaker_vs_GunnerBullet_FighterAttack_Comparison_5120x768.png",
+    "R2/Captures/R2_SoftBluePressure_singleRenderer_black_0.080_1024x768.png",
+    "R2/Captures/R2_SoftBluePressure_singleRenderer_neutralgray_0.080_1024x768.png",
+    "R2/Captures/R2_CompressedCyanCore_singleRenderer_black_0.080_1024x768.png",
+    "R2/Captures/R2_CompressedCyanCore_singleRenderer_neutralgray_0.080_1024x768.png"
+  ],
+  "visual_failures": [
+    "Muzzle peak reads as one blurred blue two-lobed bean. The captured core, unequal pressure lobes, and hydraulic direction are not separately legible.",
+    "Impact contact, peak, and decay repeat almost the same soft two-lobed bean with only brightness changes; the event has no readable contact, overturn, debris, or decay sequence.",
+    "The single-renderer proofs confirm that bloom and broad soft alpha erase the custom mesh identity instead of revealing a closed volumetric pressure form.",
+    "The comparison increases screen width relative to R1 but still supplies materially less structure than Gunner_Bullet and no DockBreaker-specific breach identity.",
+    "The result is a generic blue glow endpoint and remains far below the user-supplied commercial and school-example VFX quality floor."
+  ],
+  "binding_r3_visual_contract": {
+    "muzzle": [
+      "Create a compact asymmetric hydraulic release with three visibly separated depth layers: a short bright captured contact seam, two unequal body-attached pressure jaws, and 2-3 subordinate blue exhaust wedges.",
+      "Use custom closed 3D meshes with restrained bloom and sufficiently hard internal value breaks that every layer remains readable on black and neutral gray.",
+      "The whole event must show a clear forward axis and one-sided pressure bias; it may not collapse to a bean, oval, pill, ring, star, spoke crown, or detached dot cluster."
+    ],
+    "flight": [
+      "Keep the approved body-only Flight exact: zero particle systems, trails, wake, garnish, rotation, body-root rescale, geometry change, or FBX change."
+    ],
+    "impact": [
+      "Build a broad low breaching sequence from a bright anchored contact plate volume, one large forward-overturning pressure slab, one smaller counter-fold, and exactly 3 unequal heavy debris chunks with short ballistic separation.",
+      "Contact, peak, and 0.380-second decay must have different silhouettes. The late frame must retain a restrained directional blue pressure remnant without becoming a soft blob.",
+      "Use depth offsets, uneven timing, and restrained bloom so the slab faces, torn edges, and debris silhouettes remain separately readable at gameplay scale."
+    ],
+    "hard_rejects": [
+      "Any bean, peanut, oval glow, repeated equal lobe, opaque card, flat billboard boundary, ring, arc, line-star, needle, radial spokes, pill, straight beam, spear, long streak, or purely brightness-driven phase change.",
+      "Any proof where individual authored layers disappear when composited, or where Muzzle and Impact share the same silhouette family."
+    ]
+  },
+  "required_r3_gate": [
+    "Show every distinct new renderer individually on black and neutral gray at original resolution.",
+    "Then show Muzzle contact/peak/decay and Impact contact/peak/decay plus the body-only Flight hero/gameplay/rear/macro.",
+    "Show an unscaled Gunner_Bullet | Muzzle | Flight | Impact | Fighter_Attack comparison.",
+    "Stop for Root visual review before any new 30-cycle run. R2 technical residue evidence remains history and cannot approve R3."
+  ],
+  "immutability": [
+    "The approved normalized FBX SHA-256 b8b9f4325be5c1f78469a09a5c3baa033647555f1786c05da76aad3561294848 is frozen.",
+    "R1/R2 prefabs, captures, audits, original endpoints, vendor assets, source materials, GUIDs, and all original weapon assets remain read-only.",
+    "R3 writes must remain in new item-local StrictCustomDerived R3 paths only; no runtime, catalog, MFI, combat, or shared generator integration is authorized."
+  ]
+}

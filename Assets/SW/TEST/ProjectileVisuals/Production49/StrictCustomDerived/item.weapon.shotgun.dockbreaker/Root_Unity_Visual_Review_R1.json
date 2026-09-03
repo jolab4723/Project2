@@ -1,0 +1,71 @@
+{
+  "item_id": "item.weapon.shotgun.dockbreaker",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-30",
+  "decision": "ROOT_UNITY_VISUAL_REJECTED_REQUIRES_R2_CUSTOM_ENDPOINT_READABILITY_PASS",
+  "technical_gate": {
+    "result": "PASS_AS_FOUNDATION_ONLY",
+    "unity_version": "6000.3.22f1",
+    "console_errors": 0,
+    "scene_dirty_before": false,
+    "scene_dirty_after": false,
+    "approved_fbx_exact_copy": true,
+    "mesh_renderers": 28,
+    "evaluated_triangles": 11072,
+    "material_remaps": 6,
+    "particle_systems": {
+      "muzzle": 3,
+      "flight": 0,
+      "impact": 3
+    },
+    "thirty_cycle_residue": "PASS_M_F_I",
+    "runtime_binding": false,
+    "note": "All technical checks pass, but technical correctness does not override the failed fixed-rig visual read."
+  },
+  "evidence_reviewed_at_original_resolution": [
+    "Captures/Dockbreaker_vs_GunnerBullet_FighterAttack_Comparison_5120x768.png",
+    "Captures/M_ignition_0.020_1024x768.png",
+    "Captures/M_peak_0.080_1024x768.png",
+    "Captures/M_decay_0.130_1024x768.png",
+    "Captures/F_hero_3Q_0.120_1024x768.png",
+    "Captures/F_gameplay_0.120_1024x768.png",
+    "Captures/F_rear_0.120_1024x768.png",
+    "Captures/F_true_macro_0.120_1024x768.png",
+    "Captures/I_contact_0.050_1024x768.png",
+    "Captures/I_peak_0.120_1024x768.png",
+    "Captures/I_decay_0.380_1024x768.png",
+    "Captures/stage_clean_M_0.310_1024x768.png",
+    "Captures/stage_clean_F_terminated_plus0.100_1024x768.png",
+    "Captures/stage_clean_I_0.830_1024x768.png"
+  ],
+  "visual_findings": [
+    "Muzzle ignition and peak collapse to a near-white speck under the immutable ortho-7.5 rig; no nested pressure structure, silhouette or hydraulic identity is readable.",
+    "Impact contact and peak also collapse to a tiny white dash. It is materially below Gunner_Bullet screen mass and does not read as the required broad DockBreaker shock event.",
+    "Impact decay is effectively invisible, so the event has no readable pressure release or fragment hierarchy.",
+    "The approved body remains legible and correctly body-only during Flight, but its dark material response needs a small readability lift without changing geometry, FBX, transforms or remaps.",
+    "The clean frames are genuinely empty and all residue gates pass; this strength must be preserved in R2."
+  ],
+  "contract_resolution": {
+    "finding": "The exact retained endpoint recipe is technically reproduced but visibly inadequate at the mandated fixed rig and current commercial quality floor.",
+    "authority": "The original endpoint prefabs and their materials remain immutable read-only evidence. R1 and the StandaloneVFXRecipe-1 document remain preserved history, but they may not be used as final visual acceptance evidence.",
+    "r2_rule": "Create new StrictCustomDerived endpoint prefabs and materials in the item staging path. Do not modify, overwrite or reserialize any source endpoint, vendor asset, approved FBX, existing R1 prefab, GUID or evidence."
+  },
+  "r2_visual_contract": {
+    "muzzle": "A coherent asymmetric cool-white/ice-blue hydraulic vent mass at least 2.5 to 3.5 times the current visible width and height, with one bright captured core and three to five unequal broad pressure lobes. It must visibly exceed the generic Gunner_Bullet flash while remaining well below Fighter_Attack mass.",
+    "flight": "Preserve the approved static body-only Flight exactly: zero Flight particle systems, zero trails, zero wake and zero garnish. Do not rotate, replace or rescale the body root.",
+    "impact": "A broad low asymmetric hydraulic breach event at least 3 to 4 times the current visible diameter, with one cool-white compressed core, three to five thick blue pressure lobes and two to three short unequal debris pulses. Keep a readable restrained blue decay at 0.380 seconds.",
+    "forbidden_shapes": "No ring, arc, line-star, needle, card, pill, radial spoke crown, detached dot cluster, straight beam, spear, repeated equal blobs or long streak.",
+    "body_material": "Only a restrained lift to pale steel/brass/pressure-pocket readability is allowed. Preserve FBX bytes, renderer count, geometry, dimensions, material-slot mapping, GUIDs and orientation.",
+    "screen_mass": "Judge from the original 1024x768 captures and the unscaled 5120x768 comparison. Muzzle and Impact must be unmistakable at normal viewing size, broader than Gunner_Bullet and well below Fighter_Attack.",
+    "cleanup": "Retain the full-root 30-cycle natural/interrupted gate, one-frame and plus-0.10 checkpoints, zero residue/trail/material or object growth, no runtime/catalog/MFI binding and clean Editor state."
+  },
+  "required_r2_evidence": [
+    "M ignition/peak/decay",
+    "Flight hero/gameplay/rear/true macro",
+    "Impact contact/peak/decay",
+    "M/F/I clean frames",
+    "unscaled Gunner_Bullet | M | F | I | Fighter_Attack comparison",
+    "30-cycle audit and unchanged approved-FBX hash/GUID/remap report"
+  ],
+  "root_approval_required": true
+}

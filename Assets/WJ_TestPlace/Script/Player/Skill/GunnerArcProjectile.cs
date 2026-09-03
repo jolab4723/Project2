@@ -28,10 +28,6 @@ public class GunnerArcProjectile : MonoBehaviour
     private Vector3 startPosition;
     private bool initialized;
 
-    private WBH_PlayerEffect effectOwner;
-    private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
-    private Vector3 explosionEffectScale = Vector3.one;
-
     /// <summary>explodeOnHit=false면 폭발 반경 판정 없이 실제로 맞은 대상 하나에게만 데미지를 준다
     /// (아크 버스터 진화2 "아크 불릿"이 폭발 속성을 빼기 위해 사용 - 118번).
     /// visualScale은 프리팹 원본 크기에 곱하는 배율(기본 1 = 그대로) - 아크 캐논(진화3)처럼 폭발 반경이
@@ -91,8 +87,6 @@ public class GunnerArcProjectile : MonoBehaviour
         foreach (Collider hit in hits)
             DealDamage(hit);
 
-        PlayExplosionEffect();
-
         initialized = false;
         Destroy(gameObject);
     }
@@ -114,21 +108,5 @@ public class GunnerArcProjectile : MonoBehaviour
         WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
             damageRequest.AttackType, damageRequest.ElementType, damageRequest.DamageMultiplier, damageRequest.StatusEffect);
         WBH_CombatManager.ProcessDamage(hitRequest);
-    }
-
-    // 이펙트 재생을 위한 준비 메서드
-    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
-    {
-        this.effectOwner = effectOwner;
-        explosionEffectCue = cue;
-        explosionEffectScale = scaleMultiplier;
-    }
-
-    private void PlayExplosionEffect()
-    {
-        if (effectOwner == null || explosionEffectCue == WBH_PlayerEffectCue.None)
-            return;
-
-        effectOwner.PlayWorldEffect(explosionEffectCue, transform.position, Quaternion.identity, explosionEffectScale);
     }
 }

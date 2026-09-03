@@ -1,0 +1,43 @@
+{
+  "item_id": "item.weapon.shotgun.incinerator",
+  "reviewer": "Root Sol",
+  "review_date": "2026-08-31",
+  "decision": "ROOT_UNITY_R6_SINGLE_RENDERER_GATE_REJECTED_REQUIRES_R7_ITEM_LOCAL_ALPHA_NORMALIZATION",
+  "commercial_visual_approval": false,
+  "composite_authorized": false,
+  "lifecycle_authorized": false,
+  "editor_slot": "UNITY_EDITOR_SLOT_RELEASED_INCINERATOR_R6",
+  "evidence_reviewed_at_original_resolution": [
+    "R6_VisualGate/RendererProofs/Proof_Black_TaperedHotCore_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_NeutralGray_TaperedHotCore_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_Black_TaperedOrangeShoulder_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_NeutralGray_TaperedOrangeShoulder_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_Black_TaperedDarkRedFold_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_NeutralGray_TaperedDarkRedFold_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_Black_TaperedLowSoftFold_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_NeutralGray_TaperedLowSoftFold_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_Black_TaperedTerminalEmber_0.120_1024x768.png",
+    "R6_VisualGate/RendererProofs/Proof_NeutralGray_TaperedTerminalEmber_0.120_1024x768.png"
+  ],
+  "findings": [
+    "The tapered alpha silhouette has no rectangular card boundary, but visibility is far below the required commercial floor.",
+    "Hot core, orange shoulder, and terminal ember are extremely dark on black and only faint gray sheets on the neutral background.",
+    "Dark-red fold and low soft fold are effectively invisible in both proof backgrounds.",
+    "The raw mask alpha maximum of 1 is being interpreted as approximately 1/255 normalized opacity. This is a derived-texture transfer failure, not a reason to mutate or overwrite the authorized source mask.",
+    "No Muzzle/Flight/Impact composite or 30-cycle run is valid until all individual roles survive the proof gate."
+  ],
+  "binding_r7_contract": [
+    "Keep the authorized source mask/material and all original assets permanently read-only.",
+    "Create a new item-local StrictCustomDerived R7 mask family by deterministically remapping the source alpha support into a commercially usable 0-255 falloff while preserving transparent RGB zero, zero outer-border alpha, and the approved tapered silhouette.",
+    "Do not merely make alpha binary. Retain a soft but readable internal falloff with at least 64 occupied alpha levels after derivation, unless the source support mathematically prevents it; document the histogram and transformation.",
+    "Create separate derived role masks or role parameters for hot core, orange shoulder, dark-red overturn fold, low soft fold, and terminal ember so they do not collapse to one identical flat sheet.",
+    "First recapture each distinct renderer alone on black and neutral gray at original 1024x768. Every role must have a visible tapered internal gradient, no rectangular edge, and no faint-sheet failure.",
+    "After Root passes the individual renderer proof, build Muzzle, body-attached Flight, and Impact composites with different silhouettes and phase changes. Use depth offsets and unequal timing to create volume; no visible crossed-card edge, ring, radial star, needle, pill, detached bead trail, or generic blob.",
+    "Stop for Root original-resolution composite review before 30-cycle lifecycle validation."
+  ],
+  "immutability": [
+    "Approved normalized FBX SHA-256 fcc6a2257e0f7eb8e925e209559e69be8018194688cc872c9e92b70fd254793d remains frozen.",
+    "All existing M/F/I/Standalone prefab GUIDs, R1-R6 evidence, source materials, source textures, original weapons, ProjectSettings, runtime, catalog, MFI, and combat integrations remain unchanged.",
+    "R7 writes may occur only in new item-local StrictCustomDerived R7 paths after an explicit Editor slot grant."
+  ]
+}

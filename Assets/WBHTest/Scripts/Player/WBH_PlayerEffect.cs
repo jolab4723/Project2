@@ -67,7 +67,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
     }
 
-    // 스케일을 적용해 Cue 에 바인딩 된 위치에 이펙트 재생
+    // 스케일을 적용해 이펙트 재생
     public void PlayEffect( WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
     {
         if (spawner == null)
@@ -113,7 +113,6 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
     }
 
-    // 플레이어 위치에 조작없을 때까지 유지할 이펙트 재생방식
     private void PlayLocalEffect(WBH_EffectData effectData, Vector3 scaleMultiplier)
     {
         if (spawner == null || effectData == null)
@@ -153,35 +152,6 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
 
         activeLocalEffects.Remove(effectData);
-    }
-
-    public void PlayWorldEffect(WBH_PlayerEffectCue cue, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
-    {
-        if (spawner == null)
-            return;
-
-        if(!bindingMap.TryGetValue(cue, out EffectBinding binding))
-        {
-            Log.Warning($"{name} 에 {cue} 이펙트가 등록되지 않았습니다.");
-            return;
-        }
-
-        if (binding.data == null)
-            return;
-
-        if(binding.data.attachType == EffectAttachType.Follow)
-        {
-            Log.Warning($"{binding.data.name}은 월드 이펙트로 사용할 수 없습니다.");
-            return;
-        }
-
-        Vector3 appliedScale = binding.data.applyEnhancementScale ? scaleMultiplier : Vector3.one;
-
-        Vector3 spawnPos = position + rotation * binding.data.localPos;
-
-        Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
-
-        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale);
     }
 
     // --- 애니메이션 이벤트 연결용

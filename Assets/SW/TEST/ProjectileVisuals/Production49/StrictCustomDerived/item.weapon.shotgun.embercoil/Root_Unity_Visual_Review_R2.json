@@ -1,0 +1,27 @@
+{
+  "item_id": "item.weapon.shotgun.embercoil",
+  "candidate": "R2Proof",
+  "review_authority": "ROOT_SOL",
+  "review_scope": "original-resolution individual-renderer black/gray proof gate",
+  "decision": "ROOT_UNITY_R2_PROOF_REJECTED_REQUIRES_R3_VALID_ISOLATION_AND_VOLUMETRIC_SHAPE_PASS",
+  "composite_authorized": false,
+  "timeline_authorized": false,
+  "lifecycle_30_cycle_authorized": false,
+  "root_findings": [
+    "The individual-renderer captures are not isolated: approved body pieces and unrelated scene objects remain visible, and several target shapes are clipped outside the frame.",
+    "The Flight spiral proof contains Scene-view framing or overlay artifacts and does not provide a clean camera-space audit image.",
+    "Multiple gray-background fragment and spark proofs are effectively blank, so visibility and edge quality cannot be verified on both mandatory backgrounds.",
+    "Visible lobes and ripple spans read as oversized flat polygon sheets with layered alpha banding rather than authored volumetric energy forms.",
+    "The capture scale is inconsistent across roles and prevents a meaningful comparison of silhouette, falloff, depth, and body attachment.",
+    "The proof gate therefore fails before composite, timing, prefab completion, or lifecycle validation."
+  ],
+  "r3_binding_requirements": {
+    "capture_isolation": "Render only the selected derived renderer against a clean proof camera; no body, other VFX renderers, scene gizmos, labels, handles, overlays, or unrelated objects.",
+    "framing": "Center the complete selected silhouette with consistent padding and no clipping on both black and neutral gray backgrounds.",
+    "visibility": "Every individual role must remain visibly auditable on both backgrounds without becoming blank or merging into the backdrop.",
+    "shape_quality": "Replace broad hard-edged polygon sheets and visible alpha stacking with restrained rounded falloff, layered depth, and role-specific silhouettes that still read at gameplay scale.",
+    "flight": "Keep the approved body unobscured. The attached flight structure must be open, discontinuous, tapered, and visibly connected without reading as a complete ring, cage, flat ribbon, or detached bead trail.",
+    "stage_limit": "Return only corrected individual black/gray proofs. Do not generate composite captures, implement the timeline, run lifecycle cycles, or claim prefab completion before a new Root proof decision."
+  },
+  "self_approval": "PROHIBITED"
+}
