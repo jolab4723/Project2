@@ -9,41 +9,27 @@ using DataSystem.Excel;
 namespace DataSystem
 {
     /// <summary>
-    /// 적 기본 스탯 엑셀(EnemyData.xlsx)을 JSON으로 변환한다.
+    /// EnemyData.xlsx의 FloorStatScale 시트(두 번째 시트)를 JSON으로 변환한다. EnemyData 시트와
+    /// 같은 엑셀 파일을 쓰지만 SO를 만들지 않고 JSON만 만든다 - 층별 배율은 적 하나하나가 아니라
+    /// 조회 테이블이라 SO화할 필요가 없다(FloorStatScaleTable이 런타임에 이 JSON을 직접 읽는다).
     ///
-    /// !! 아이템 쪽 변환기(ItemDataTableExcelToJson 등)와 시트 구조가 다르다.
-    ///    아이템 시트: 1행 헤더, (선택) 2행 타입 힌트  -> ExcelSheetReader.ReadSheetRows 사용
-    ///    이 시트: 1행 타입, 2행 헤더                  -> 아래 ReadTypesFirstSheet 사용
-    ///    (CharStatTableExcelToJson.cs와 동일한 패턴)
-    ///
-    /// 첫 번째 시트(EnemyData)만 읽는다. FloorStatScale/ComboBox 시트는 각각 별도 변환기
-    /// (FloorStatScaleExcelToJson) 또는 드롭다운 검증용이라 여기서 건너뛴다.
-    /// 완전히 빈 행(표 아래 여분 행)은 ReadTypesFirstSheet가 이미 걸러낸다.
+    /// 시트 구조는 EnemyData와 동일하게 1행 타입 / 2행 헤더 / 3행부터 데이터다.
     /// </summary>
-    public static class EnemyDataExcelToJson
+    public static class FloorStatScaleExcelToJson
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
         private const string DefaultExcelPath = "Assets/Resources/DataFiles/EnemyData/1. ExcelFile/EnemyData.xlsx";
+        private const string OutputFileName = "FloorStatScale.json";
+        private const string SheetName = "FloorStatScale";
 
-        [MenuItem("DataLoader/Enemy Data/1. Convert Excel To JSON")]
-        public static void ConvertExcelToJsonFromMenu()
+        [MenuItem("DataLoader/Enemy Data/3. Convert FloorStatScale To JSON")]
+        public static void ConvertFromMenu()
         {
-            string excelPath = ResolveExcelPath();
-            if (string.IsNullOrEmpty(excelPath))
-                return;
-
-            EnsureAssetFolder(DefaultJsonFolder);
-            string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
-            string suggestedJsonFileName = Path.GetFileNameWithoutExtension(excelPath) + ".json";
-            string jsonPath = EditorUtility.SaveFilePanel("Save enemy data JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
-            if (string.IsNullOrEmpty(jsonPath))
-                return;
-
-            Convert(excelPath, jsonPath);
+            ConvertWithDefaultPaths();
         }
 
         /// <summary>
-        /// 대화상자 없이 기본 경로만으로 변환한다. 통합 실행(0. Run All Steps)처럼 중간에 멈추면 안 되는 곳에서 쓴다.
+        /// 대화상자 없이 기본 경로만으로 변환한다. 통합 실행(0. Run All Steps)에서 쓴다.
         /// </summary>
         /// <returns>생성된 JSON의 절대 경로. 엑셀이 없거나 실패하면 null.</returns>
         public static string ConvertWithDefaultPaths()
@@ -51,62 +37,51 @@ namespace DataSystem
             string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogWarning($"[EnemyData] 적 데이터 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                Debug.LogWarning($"[FloorStatScale] 적 데이터 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
                 return null;
             }
 
             EnsureAssetFolder(DefaultJsonFolder);
-            string jsonAbsolutePath = Path.Combine(
-                AssetPathToAbsolutePath(DefaultJsonFolder),
-                Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
+            string jsonAbsolutePath = Path.Combine(AssetPathToAbsolutePath(DefaultJsonFolder), OutputFileName);
 
             Convert(excelAbsolutePath, jsonAbsolutePath);
 
             return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
         }
 
-        /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
-        private static string ResolveExcelPath()
-        {
-            string defaultAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
-            if (File.Exists(defaultAbsolutePath))
-            {
-                Debug.Log("[EnemyData] 사전 설정된 엑셀 파일을 사용합니다: " + DefaultExcelPath);
-                return defaultAbsolutePath;
-            }
-
-            return EditorUtility.OpenFilePanel("Select enemy data table", Application.dataPath, "xlsx");
-        }
-
         public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
         {
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogError($"[EnemyData] Excel file not found: {excelAbsolutePath}");
+                Debug.LogError($"[FloorStatScale] Excel file not found: {excelAbsolutePath}");
                 return;
             }
 
-            List<EnemyDataRow> allRows;
+            List<Dictionary<string, string>> rawRows;
 
             using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
             {
-                // 첫 번째 시트(EnemyData)만 사용한다. FloorStatScale/ComboBox 시트는 읽지 않는다.
-                List<Dictionary<string, string>> rows = ReadTypesFirstSheet(reader);
-                allRows = ExcelSheetReader.MapRows<EnemyDataRow>(rows);
+                if (!SeekToSheet(reader, SheetName))
+                {
+                    Debug.LogError($"[FloorStatScale] '{SheetName}' 시트를 찾지 못했습니다: {excelAbsolutePath}");
+                    return;
+                }
+
+                rawRows = ReadTypesFirstSheet(reader);
             }
 
-            if (allRows.Count == 0)
+            if (rawRows.Count == 0)
             {
-                Debug.LogError("[EnemyData] 변환할 데이터 행이 없습니다. 시트 구조(1행 타입 / 2행 헤더 / 3행부터 데이터)를 확인해주세요.");
+                Debug.LogError("[FloorStatScale] 변환할 데이터 행이 없습니다. 시트 구조(1행 타입 / 2행 헤더 / 3행부터 데이터)를 확인해주세요.");
                 return;
             }
 
-            List<string> missingIds = allRows.FindAll(row => string.IsNullOrWhiteSpace(row.enemyId)).ConvertAll(row => row.enemyId ?? "(null)");
-            if (missingIds.Count > 0)
-                Debug.LogWarning($"[EnemyData] enemyId가 비어있는 행이 {missingIds.Count}개 있습니다. 해당 행은 SO 생성 단계에서 건너뜁니다.");
+            ApplyDifficultyCarryForward(rawRows);
 
-            string json = JsonConvert.SerializeObject(allRows, Formatting.Indented);
+            List<FloorStatScaleRow> rows = ExcelSheetReader.MapRows<FloorStatScaleRow>(rawRows);
+
+            string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -114,10 +89,46 @@ namespace DataSystem
             File.WriteAllText(jsonAbsolutePath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"[EnemyData] JSON generated: {jsonAbsolutePath}\n적 {allRows.Count}개");
+            Debug.Log($"[FloorStatScale] JSON generated: {jsonAbsolutePath}\n층 {rows.Count}개");
         }
 
-        /// <summary>1행이 타입, 2행이 헤더인 시트를 읽어서 "헤더 이름 -> 셀 값" 딕셔너리 목록으로 반환한다.</summary>
+        /// <summary>
+        /// 엑셀에서 difficulty는 값이 바뀌는 행에만 적혀있고 그 아래는 빈 셀로 남겨두는 표기 방식을 쓴다
+        /// (병합 셀 아님). 빈 칸은 바로 위에서 마지막으로 채워진 값을 그대로 이어받는다.
+        /// 맨 첫 행부터 비어있으면(엑셀 작성 실수) 1로 둔다.
+        /// </summary>
+        private static void ApplyDifficultyCarryForward(List<Dictionary<string, string>> rows)
+        {
+            string lastDifficulty = "1";
+
+            foreach (Dictionary<string, string> row in rows)
+            {
+                if (row.TryGetValue("difficulty", out string value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    lastDifficulty = value;
+                }
+                else
+                {
+                    row["difficulty"] = lastDifficulty;
+                }
+            }
+        }
+
+        /// <summary>워크북의 시트를 이름으로 찾아 그 시트가 현재 결과셋이 되도록 커서를 이동한다.</summary>
+        private static bool SeekToSheet(IExcelDataReader reader, string sheetName)
+        {
+            do
+            {
+                if (reader.Name == sheetName)
+                    return true;
+            }
+            while (reader.NextResult());
+
+            return false;
+        }
+
+        /// <summary>1행이 타입, 2행이 헤더인 시트를 읽어서 "헤더 이름 -> 셀 값" 딕셔너리 목록으로 반환한다.
+        /// EnemyDataExcelToJson.ReadTypesFirstSheet와 같은 패턴(시트마다 독립된 변환기로 두는 기존 방침).</summary>
         private static List<Dictionary<string, string>> ReadTypesFirstSheet(IExcelDataReader reader)
         {
             var result = new List<Dictionary<string, string>>();
@@ -126,13 +137,13 @@ namespace DataSystem
 
             while (reader.Read())
             {
-                if (rowIndex == 0) // 타입 행 - 건너뜀
+                if (rowIndex == 0)
                 {
                     rowIndex++;
                     continue;
                 }
 
-                if (rowIndex == 1) // 헤더 행
+                if (rowIndex == 1)
                 {
                     for (int i = 0; i < reader.FieldCount; i++)
                         headers.Add(CellToString(reader.GetValue(i)));
@@ -159,7 +170,7 @@ namespace DataSystem
 
                 rowIndex++;
 
-                if (!hasData) // 표 아래 빈 행
+                if (!hasData)
                     continue;
 
                 result.Add(row);
