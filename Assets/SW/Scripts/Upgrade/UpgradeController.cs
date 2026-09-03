@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class UpgradeController : MonoBehaviour
 {
     [SerializeField] private PlayerWallet playerWallet;
-    [SerializeField] private float upgradeCostMultiplier = 1.15f;
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private TextMeshProUGUI upgradeLevelText;
     [SerializeField] private TextMeshProUGUI costText;
@@ -23,6 +22,9 @@ public class UpgradeController : MonoBehaviour
 
     public PlayerWallet BoundPlayerWallet => playerWallet;
     public EquipmentSystem BoundEquipment => equipmentSystem;
+
+    /// <summary>현재 강화 화면에서 선택한 아이템을 읽기 전용으로 제공한다.</summary>
+    public ItemInstance SelectedItem => selectedItem;
 
     private void Awake()
     {
@@ -104,10 +106,8 @@ public class UpgradeController : MonoBehaviour
             return;
         }
 
-        int cost = GetUpgradeCost(selectedItem);
-
         UpgradeResult result =
-            upgradeService.TryUpgrade(selectedItem, cost);
+            upgradeService.TryUpgrade(selectedItem);
 
         if (result == UpgradeResult.Success)
         {
@@ -150,18 +150,13 @@ public class UpgradeController : MonoBehaviour
             owner.ReportSinglePlayerMessage(ChatKind.Warning, message);
     }
 
-    private void ShowMessage(string message)
+    /// <summary>강화 화면의 결과 메시지를 갱신한다.</summary>
+    public void ShowMessage(string message)
     {
         if (logText != null)
         {
             logText.text = message;
         }
-    }
-    private int GetUpgradeCost(ItemInstance item)
-    {
-        // 추후 연동
-        int upgradeCost = Mathf.CeilToInt(500 * Mathf.Pow(upgradeCostMultiplier, item.upgradeLevel) / 10)  * 10;
-        return upgradeCost;
     }
 
     private float GetMainOptionValue(ItemInstance item, int previewUpgradeLevel)
@@ -201,7 +196,9 @@ public class UpgradeController : MonoBehaviour
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
         currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {currentValue:0.#}";
         nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {nextValue:0.#}";
-        costText.text = $"강화비용 : {GetUpgradeCost(selectedItem)}";
+        costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
+            ? $"강화비용 : {cost}"
+            : "강화비용 : -";
     }
 
     private void ShowEmptyState()

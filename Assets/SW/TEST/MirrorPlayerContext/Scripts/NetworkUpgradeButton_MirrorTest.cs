@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using System.Reflection;
 using Core;
 using ItemSystem;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -13,21 +11,11 @@ using UnityEngine.UI;
 /// 이 컴포넌트가 원본 버튼의 로컬 <c>TryUpgrade</c> 호출을 실행 중에 끄고,
 /// <see cref="PlayerInventorySync_MirrorTest"/>의 서버 강화 요청을 대신 보낸다.</para>
 /// <para>서버 응답이 올 때까지 버튼을 잠그고, 성공하면 서버 스냅샷으로 교체된 같은 instance를
-/// 다시 선택해 강화 수치와 비용을 갱신한다. 운영 강화 스크립트와 운영 프리팹은 수정하지 않는다.</para>
+/// 다시 선택해 강화 수치와 비용을 갱신한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class NetworkUpgradeButton_MirrorTest : MonoBehaviour
 {
-    private static readonly FieldInfo SelectedItemField =
-        typeof(UpgradeController).GetField(
-            "selectedItem",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
-    private static readonly FieldInfo LogTextField =
-        typeof(UpgradeController).GetField(
-            "logText",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
     [SerializeField] private UpgradeController upgradeController;
     [SerializeField] private Button upgradeButton;
 
@@ -142,8 +130,7 @@ public sealed class NetworkUpgradeButton_MirrorTest : MonoBehaviour
         if (pendingRequestId != 0)
             return;
 
-        ItemInstance selectedItem =
-            SelectedItemField?.GetValue(upgradeController) as ItemInstance;
+        ItemInstance selectedItem = upgradeController.SelectedItem;
 
         if (selectedItem?.definition == null)
         {
@@ -234,8 +221,7 @@ public sealed class NetworkUpgradeButton_MirrorTest : MonoBehaviour
 
     private void ShowMessage(string message)
     {
-        if (LogTextField?.GetValue(upgradeController) is TextMeshProUGUI logText)
-            logText.text = message;
+        upgradeController?.ShowMessage(message);
     }
 
     private static string GetFailureMessage(MirrorTestInventoryRequestResult result)
