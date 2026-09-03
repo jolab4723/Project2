@@ -84,7 +84,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 {
     private const int ProcessedRequestHistorySize = 64;
     private const int MaxInstanceIdLength = 128;
-    private const float UpgradeCostMultiplier = 1.15f;
     // 장시간 Act 1 회귀 테스트에서 생존 여유를 확보하도록 현재 ItemDatabase의
     // 고체력 전설 투구(우주 괴물 두개골, 최대 체력 230)를 최초 테스트 장비로 지급한다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
@@ -924,8 +923,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (playerState == null || context?.Equipment == null)
             return MirrorTestInventoryRequestResult.ServerSetupInvalid;
 
-        if (!UpgradeService.CanUpgrade(item.itemData) ||
-            !TryGetUpgradeCost(item.itemData, out int cost))
+        if (!UpgradeService.TryGetUpgradeCost(item.itemData, out int cost))
         {
             return MirrorTestInventoryRequestResult.UpgradeUnavailable;
         }
@@ -1197,25 +1195,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         return !string.IsNullOrWhiteSpace(instanceId) &&
                instanceId.Length <= MaxInstanceIdLength;
-    }
-
-    private static bool TryGetUpgradeCost(ItemInstance item, out int cost)
-    {
-        cost = 0;
-        if (item == null || item.upgradeLevel < 0 || item.upgradeLevel == int.MaxValue)
-            return false;
-
-        float rawCost = 500f * Mathf.Pow(UpgradeCostMultiplier, item.upgradeLevel);
-        if (float.IsNaN(rawCost) ||
-            float.IsInfinity(rawCost) ||
-            rawCost <= 0f ||
-            rawCost > int.MaxValue - 9f)
-        {
-            return false;
-        }
-
-        cost = Mathf.CeilToInt(rawCost / 10f) * 10;
-        return cost > 0;
     }
 
     [Server]
