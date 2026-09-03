@@ -674,7 +674,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject projectileGO = Instantiate(def.arcProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
         GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -713,7 +717,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, 
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject projectileGO = Instantiate(prefab, spawnPos, Quaternion.LookRotation(dir));
         GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -779,7 +787,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
             Vector3 dir = transform.forward;
 
-            WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+            WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+            WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                                   status.CurrentElement,
+                                                                   damageMultiplier,
+                                                                   effectData: effectData);
 
             GameObject projectileGO = Instantiate(def.arcProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
             GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -846,7 +858,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject bombGO = Instantiate(def.bombPrefab, spawnPos, Quaternion.identity);
         GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
@@ -905,7 +921,21 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = -transform.forward;
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                               WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData,
+                                                               hitPosition: hitPosition,
+                                                               hitEffectDirection: lookDirection);
         WBH_CombatManager.ProcessDamage(request);
     }
 
@@ -991,13 +1021,22 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         if(visibleSkillArea)
-            SkillRangeVisual.ShowSector(spawnPosition, Vector3.forward, def.evoDecoyExplosionRadius, 360f, sectorVisualColor, def.evoDecoyFuseSeconds);
+            SkillRangeVisual.ShowSector(spawnPosition,
+                                        Vector3.forward,
+                                        def.evoDecoyExplosionRadius,
+                                        360f,
+                                        sectorVisualColor,
+                                        def.evoDecoyFuseSeconds);
 
         float damageMultiplier = def.evoDecoyDamageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject decoyGO = Instantiate(def.evoDecoyPrefab, spawnPosition, Quaternion.identity);
         GunnerDecoy decoy = decoyGO.GetComponent<GunnerDecoy>();
@@ -1010,7 +1049,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         decoy.Initialize(def.evoDecoyFuseSeconds, def.evoDecoyExplosionRadius, enemyLayer, request);
 
-        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, SkillEvolutionId.Evolution1, SkillEffectPart.ProjectileExplosion1);
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1,
+                                                                                       SkillEvolutionId.Evolution1,
+                                                                                       SkillEffectPart.ProjectileExplosion1);
         decoy.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
     }
 
@@ -1188,5 +1229,16 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return ray.GetPoint(distance);
 
         return transform.position + transform.forward;
+    }
+    private WBH_EffectData GetSkillEffectData(int index,
+                                              SkillEvolutionId evolution,
+                                              SkillEffectPart part)
+    {
+        if (playerEffect == null)
+            return null;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evolution, part);
+        playerEffect.TryGetEffectData(cue, out WBH_EffectData data);
+        return data;
     }
 }
