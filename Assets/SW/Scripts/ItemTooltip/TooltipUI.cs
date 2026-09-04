@@ -36,6 +36,7 @@ public class TooltipUI : MonoBehaviour
 
     [Header("스탯")]
     [SerializeField] private TextMeshProUGUI mainStatText;
+    [SerializeField] private TextMeshProUGUI subOptionLabel;
     [SerializeField] private TextMeshProUGUI subStat1Text;
     [SerializeField] private TextMeshProUGUI subStat2Text;
     [SerializeField] private TextMeshProUGUI subStat3Text;
@@ -45,6 +46,9 @@ public class TooltipUI : MonoBehaviour
     [Header("고유 효과")]
     [SerializeField] private TextMeshProUGUI uniqueEffectNameText;
     [SerializeField] private TextMeshProUGUI uniqueEffectDescriptionText;
+
+    [Header("아이템 설명")]
+    [SerializeField] private TextMeshProUGUI itemDescriptionText;
 
     [Header("가격 / 사이즈")]
     [SerializeField] private TextMeshProUGUI itemPriceText;
@@ -59,7 +63,10 @@ public class TooltipUI : MonoBehaviour
     [Tooltip("고유 효과가 없으면 비활성화되고 높이가 0이 된다.")]
     [SerializeField] private RectTransform section3;
 
+    [Tooltip("아이템 설명이 없으면 비활성화되고 높이가 0이 된다.")]
     [SerializeField] private RectTransform section4;
+
+    [SerializeField] private RectTransform section5;
 
     [Tooltip("배경 이미지 RectTransform")]
     [SerializeField] private RectTransform backgroundRect;
@@ -74,7 +81,9 @@ public class TooltipUI : MonoBehaviour
     private float section2BaseHeight;
     private float section3BaseHeight;
     private float section4BaseHeight;
+    private float section5BaseHeight;
     private float uniqueEffectDescriptionBaseHeight;
+    private float itemDescriptionBaseHeight;
 
     private readonly List<CanvasGroup> fadeGroups = new List<CanvasGroup>();
     private Tween fadeTween;
@@ -122,11 +131,17 @@ public class TooltipUI : MonoBehaviour
         section2BaseHeight = GetRectHeight(section2);
         section3BaseHeight = GetRectHeight(section3);
         section4BaseHeight = GetRectHeight(section4);
+        section5BaseHeight = GetRectHeight(section5);
 
         uniqueEffectDescriptionBaseHeight =
             uniqueEffectDescriptionText != null
                 ? GetRectHeight(
                     uniqueEffectDescriptionText.rectTransform)
+                : 0f;
+
+        itemDescriptionBaseHeight =
+            itemDescriptionText != null
+                ? GetRectHeight(itemDescriptionText.rectTransform)
                 : 0f;
 
         initialized = true;
@@ -223,9 +238,16 @@ public class TooltipUI : MonoBehaviour
         }
 
         var (regularSubStats, elementalSubStat) = SplitSubStats(itemData);
+        bool hasSubOptions =
+            regularSubStats.Count > 0 || elementalSubStat != null;
+
+        if (subOptionLabel != null && subOptionLabel.transform.parent != null)
+            subOptionLabel.transform.parent.gameObject.SetActive(hasSubOptions);
+
         ApplySubStats(regularSubStats);
         ApplyElementBonus(elementalSubStat);
         ApplyUniqueEffect(definition);
+        bool hasDescription = ApplyItemDescription(definition);
 
         if (itemPriceText != null)
         {
@@ -240,7 +262,9 @@ public class TooltipUI : MonoBehaviour
         }
 
         ApplyLayout(
-            definition.uniqueEffect != null);
+            hasSubOptions,
+            definition.uniqueEffect != null,
+            hasDescription);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(
             RootRect);
@@ -329,6 +353,38 @@ public class TooltipUI : MonoBehaviour
             return name;
 
         return definition.itemName;
+    }
+
+    /// <summary>
+    /// 현재 언어의 아이템 설명을 사용하고, 라벨 DB에 설명이 없으면
+    /// ItemDefinitionSO의 기본 설명으로 폴백한다.
+    /// </summary>
+    private string GetItemDescription(ItemDefinitionSO definition)
+    {
+        if (itemLabels != null)
+        {
+            string localizedDescription =
+                itemLabels.GetDescription(definition.itemId);
+
+            if (!string.IsNullOrWhiteSpace(localizedDescription))
+                return localizedDescription;
+        }
+
+        return definition.description;
+    }
+
+    /// <summary>
+    /// 한국어 설명에서 종결형 '다.' 뒤에 다음 문장이 이어질 때만 줄을 바꾼다.
+    /// 문장 끝이나 이미 줄바꿈된 구간은 그대로 유지한다.
+    /// </summary>
+    private static string FormatItemDescription(string description)
+    {
+        return string.IsNullOrEmpty(description)
+            ? description
+            : System.Text.RegularExpressions.Regex.Replace(
+                description,
+                @"다\.[ \t]*(?=\S)",
+                "다.\n");
     }
 
     /// <summary>라벨 DB에 없는 고유 효과(예: 번역 전/테스트용)는 effect.EffectName으로 그대로 폴백한다.</summary>
@@ -621,6 +677,30 @@ public class TooltipUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 설명 텍스트를 채우고 실제 표시할 문구가 있는지를 반환한다.
+    /// 빈 설명은 섹션 높이까지 제거할 수 있도록 텍스트 오브젝트도 비활성화한다.
+    /// </summary>
+    private bool ApplyItemDescription(ItemDefinitionSO definition)
+    {
+        string description = FormatItemDescription(
+            GetItemDescription(definition));
+        bool hasDescription =
+            !string.IsNullOrWhiteSpace(description);
+
+        if (itemDescriptionText != null)
+        {
+            itemDescriptionText.text =
+                hasDescription ? description : string.Empty;
+            itemDescriptionText.gameObject.SetActive(hasDescription);
+
+            if (hasDescription)
+                itemDescriptionText.ForceMeshUpdate();
+        }
+
+        return hasDescription;
+    }
+
     private string FormatStat(
         StatType statType,
         float value)
@@ -642,7 +722,14 @@ public class TooltipUI : MonoBehaviour
             : value.ToString();
     }
 
-    private void ApplyLayout(bool hasUniqueEffect)
+    /// <summary>
+    /// 표시 가능한 섹션만 위에서부터 순서대로 배치하고
+    /// 툴팁 루트와 배경 높이를 최종 콘텐츠 높이에 맞춘다.
+    /// </summary>
+    private void ApplyLayout(
+        bool hasSubOptions,
+        bool hasUniqueEffect,
+        bool hasDescription)
     {
         float hiddenHeight = 0f;
 
@@ -653,18 +740,37 @@ public class TooltipUI : MonoBehaviour
 
         float section1Height = section1BaseHeight;
 
-        float section2Height = Mathf.Max(0f, section2BaseHeight - hiddenHeight);
+        float section2Height = hasSubOptions
+            ? Mathf.Max(0f, section2BaseHeight - hiddenHeight)
+            : mainStatText != null
+                ? GetRectHeight(mainStatText.rectTransform.parent as RectTransform)
+                : section2BaseHeight;
         float section3Height = hasUniqueEffect
-            ? CalculateUniqueEffectSectionHeight()
+            ? CalculateTextSectionHeight(
+                section3BaseHeight,
+                uniqueEffectDescriptionText,
+                uniqueEffectDescriptionBaseHeight,
+                0f)
             : 0f;
 
-        float section4Height = section4BaseHeight;
+        float section4Height = hasDescription
+            ? CalculateTextSectionHeight(
+                section4BaseHeight,
+                itemDescriptionText,
+                itemDescriptionBaseHeight,
+                itemDescriptionBaseHeight)
+            : 0f;
+        float section5Height = section5BaseHeight;
 
         if (section3 != null)
             section3.gameObject.SetActive(hasUniqueEffect);
 
+        if (section4 != null)
+            section4.gameObject.SetActive(hasDescription);
+
         SetHeight(section2, section2Height);
         SetHeight(section3, section3Height);
+        SetHeight(section4, section4Height);
 
         float currentY = topPadding;
 
@@ -672,6 +778,7 @@ public class TooltipUI : MonoBehaviour
         currentY += PlaceSection(section2, section2Height, currentY);
         currentY += PlaceSection(section3, section3Height, currentY);
         currentY += PlaceSection(section4, section4Height, currentY);
+        currentY += PlaceSection(section5, section5Height, currentY);
 
         float totalHeight = currentY - sectionSpacing + bottomPadding;
 
@@ -682,37 +789,37 @@ public class TooltipUI : MonoBehaviour
         AlignBackdrop(borderImage != null ? borderImage.rectTransform : null, totalHeight);
     }
 
-    private float CalculateUniqueEffectSectionHeight()
+    /// <summary>
+    /// 현재 언어의 설명 높이에 맞춰 텍스트와 섹션을 함께 조절한다.
+    /// 최소 높이는 영역별 기존 여백 정책을 유지하고, 최대 높이는 제한하지 않는다.
+    /// </summary>
+    private float CalculateTextSectionHeight(
+        float sectionBaseHeight,
+        TextMeshProUGUI descriptionText,
+        float descriptionBaseHeight,
+        float minimumDescriptionHeight)
     {
-        float descriptionHeight = uniqueEffectDescriptionBaseHeight;
+        if (descriptionText == null)
+            return sectionBaseHeight;
 
-        if (uniqueEffectDescriptionText != null)
-        {
-            descriptionHeight = Mathf.Clamp(
-                uniqueEffectDescriptionText.preferredHeight,
-                0f,
-                uniqueEffectDescriptionBaseHeight);
+        float descriptionHeight = Mathf.Max(
+            minimumDescriptionHeight,
+            descriptionText.preferredHeight);
 
-            RectTransform descriptionRect =
-                uniqueEffectDescriptionText.rectTransform;
+        RectTransform descriptionRect =
+            descriptionText.rectTransform;
 
-            float oldPivotY = descriptionRect.pivot.y;
+        float preservedTopY =
+            descriptionRect.anchoredPosition.y +
+            (1f - descriptionRect.pivot.y) *
+            descriptionRect.sizeDelta.y;
 
-            float oldHeight = descriptionRect.sizeDelta.y;
-
-            float oldAnchoredY = descriptionRect.anchoredPosition.y;
-
-            float preservedTopY =
-                oldAnchoredY +
-                (1f - oldPivotY) * oldHeight;
-
-            AlignToTop(descriptionRect, preservedTopY);
-            SetHeight(descriptionRect, descriptionHeight);
-        }
+        AlignToTop(descriptionRect, preservedTopY);
+        SetHeight(descriptionRect, descriptionHeight);
 
         float fixedHeight =
-            section3BaseHeight -
-            uniqueEffectDescriptionBaseHeight;
+            sectionBaseHeight -
+            descriptionBaseHeight;
 
         return fixedHeight + descriptionHeight;
     }
