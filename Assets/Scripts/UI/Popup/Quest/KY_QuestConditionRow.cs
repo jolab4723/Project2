@@ -1,15 +1,19 @@
 using UnityEngine;
 using TMPro;
 
-// 퀘스트 달성 조건을 표시하는 코드
+/// <summary>퀘스트 조건의 설명과 진행도를 한 행으로 표시한다.</summary>
 public class KY_QuestConditionRow : MonoBehaviour
 {
-    public TextMeshProUGUI conditionText;
-    public TextMeshProUGUI progressText;
+    [SerializeField] private TextMeshProUGUI conditionText;
+    [SerializeField] private TextMeshProUGUI progressText;
 
+    /// <summary>조건 설명과 현재 진행도를 화면에 표시한다.</summary>
     public void SetData(KY_QuestConditionData data)
     {
-        conditionText.text = data.description;
-        progressText.text = $"{data.current} / {data.required}";
+        if (conditionText != null)
+            conditionText.text = data?.description ?? string.Empty;
+
+        if (progressText != null)
+            progressText.text = data == null ? string.Empty : $"{data.current} / {data.required}";
     }
 }
