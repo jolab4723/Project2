@@ -5,18 +5,21 @@ public class InventoryPartView : MonoBehaviour
     [SerializeField] private KY_PopupBase inventory;
     [SerializeField] private KY_PopupBase shop;
     [SerializeField] private KY_PopupBase upgrade;
+    [SerializeField] private KY_PopupBase quest;
 
     private void Awake()
     {
         SetClosedImmediately(inventory);
         SetClosedImmediately(shop);
         SetClosedImmediately(upgrade);
+        SetClosedImmediately(quest);
     }
 
     public bool HasOpenWindow =>
         IsOpen(inventory) ||
         IsOpen(shop) ||
-        IsOpen(upgrade);
+        IsOpen(upgrade) ||
+        IsOpen(quest);
 
     public void ToggleInventory()
     {
