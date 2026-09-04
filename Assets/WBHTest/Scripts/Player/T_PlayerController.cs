@@ -26,6 +26,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public int reviveCount = 3;
     private bool canControl = true;
     private bool isStatusEffectControlBlocked;
+    private bool isCutSceneControlBlocked;
+    private bool isCutSceneDamageBlocked;
 
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
@@ -34,7 +36,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public WBH_ICombatStatus Status => status;
     public bool CanDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
-    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked;
+    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked && !isCutSceneControlBlocked;
 
 
 
@@ -309,7 +311,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
-        if (IsInvincible || stateMachine.Is(PlayerState.Dead))
+        if (IsInvincible || isCutSceneDamageBlocked ||stateMachine.Is(PlayerState.Dead))
             return;
 
         status.TakeDamage(result);
@@ -381,9 +383,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         return Vector3.Distance(start, dodgeEnd) > 0.01f;
     }
 
-    // --- 테스트용 메서드
     // 부활
-
     private void BeginRevive(float healthRatio, float invincibleDuration)
     {
         float clampRatio = Mathf.Clamp01(healthRatio);
@@ -442,6 +442,19 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         IsInvincible = false;
         invincibilityRoutine = null;
     }
+
+    // 컷씬 동안 행동불가
+    public void SetCutSceneControlBlock(bool block)
+    {
+        isCutSceneControlBlocked = block;
+        RefreshControlState();
+    }
+    public void SetCutSceneDamageBlock(bool block)
+    {
+        isCutSceneDamageBlocked = block;
+    }
+
+    // --- 테스트용 메서드
 
     // 캐릭터가 마우스 위치를 바라보게하고 해당 방향을 반환하는 메서드
     //private void PlayerViewDir()

@@ -15,13 +15,15 @@ public class WBH_EnemyMovement : MonoBehaviour
     private Vector3 lastDestination;
     private bool canControl = true;
     private bool isStatusEffectControlBlocked; // 상태이상으로 인한 움직임 불가처리
+    private bool isCutSceneControlBlocked;
     private float jumpHeight = 3f;
     private float landingNavSearchRadius = 2f;
     
     private Coroutine jumpCoroutine;
     public event Action OnDashUpdate;
 
-    public bool CanControl => canControl && !isStatusEffectControlBlocked;
+    public bool CanControl => canControl && !isStatusEffectControlBlocked && ! isCutSceneControlBlocked;
+    private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
     public int AreaMask => agent.areaMask;
 
 
@@ -62,6 +64,9 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 정지
     public void Stop()
     {
+        if (!CanUseAgent)
+            return;
+
         agent.ResetPath();
         agent.isStopped = true;
         agent.velocity = Vector3.zero;
@@ -95,6 +100,9 @@ public class WBH_EnemyMovement : MonoBehaviour
 
     private void RefreshControlState()
     {
+        if (!CanUseAgent)
+            return;
+
         if(!CanControl)
         {
             Stop();
@@ -204,5 +212,12 @@ public class WBH_EnemyMovement : MonoBehaviour
             return false;
 
         return path.status == NavMeshPathStatus.PathComplete;
+    }
+
+    // 컷씬 동안 행동불가
+    public void SetCutSceneControlBlock(bool block)
+    {
+        isCutSceneControlBlocked = block;
+        RefreshControlState();
     }
 }

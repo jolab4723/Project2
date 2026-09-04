@@ -14,6 +14,8 @@ public class WBH_EnemySpawner : MonoBehaviour
 
     private float spawnNavSearchRadius = 2f;
 
+    public event System.Action<WBH_EnemyController> BossSpawn;
+
 
     //!@ 데이터 매니저 연결
 
@@ -75,6 +77,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         if(info.enemyGrade == EnemyGrade.Boss)
         {
             eliteView?.BindBoss(enemy);
+            BossSpawn?.Invoke(enemy);
         }
 
         return enemy;
