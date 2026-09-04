@@ -4,7 +4,6 @@ using ExcelDataReader;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
-using DataSystem.Excel;
 
 namespace DataSystem
 {
@@ -79,7 +78,7 @@ namespace DataSystem
 
             ApplyDifficultyCarryForward(rawRows);
 
-            List<FloorStatScaleRow> rows = ExcelSheetReader.MapRows<FloorStatScaleRow>(rawRows);
+            List<FloorStatScaleRow> rows = MapRows(rawRows);
 
             string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
@@ -112,6 +111,54 @@ namespace DataSystem
                     row["difficulty"] = lastDifficulty;
                 }
             }
+        }
+
+        /// <summary>
+        /// ExcelSheetReader.MapRows(리플렉션으로 고정된 필드 이름만 매핑)를 안 쓰고 직접 매핑한다.
+        /// difficulty/floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
+        /// 그대로 FloorStatScaleRow.multipliers에 담는다 - 새 배율 컬럼을 엑셀에 추가해도
+        /// FloorStatScaleRow에 필드를 새로 안 만들어도 자동으로 JSON에 실린다.
+        /// </summary>
+        private static List<FloorStatScaleRow> MapRows(List<Dictionary<string, string>> rawRows)
+        {
+            var result = new List<FloorStatScaleRow>();
+
+            foreach (Dictionary<string, string> rawRow in rawRows)
+            {
+                if (!rawRow.TryGetValue("floor", out string floorText) || string.IsNullOrWhiteSpace(floorText))
+                {
+                    Debug.LogWarning("[FloorStatScale] floor 값이 없는 행을 건너뜁니다.");
+                    continue;
+                }
+
+                var row = new FloorStatScaleRow
+                {
+                    floor = ParseInt(floorText),
+                    difficulty = rawRow.TryGetValue("difficulty", out string difficultyText) ? ParseFloat(difficultyText) : 1f,
+                };
+
+                foreach (KeyValuePair<string, string> cell in rawRow)
+                {
+                    if (cell.Key == "floor" || cell.Key == "difficulty")
+                        continue;
+
+                    row.multipliers[cell.Key] = ParseFloat(cell.Value);
+                }
+
+                result.Add(row);
+            }
+
+            return result;
+        }
+
+        private static int ParseInt(string value)
+        {
+            return int.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out int result) ? result : 0;
+        }
+
+        private static float ParseFloat(string value)
+        {
+            return float.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float result) ? result : 0f;
         }
 
         /// <summary>워크북의 시트를 이름으로 찾아 그 시트가 현재 결과셋이 되도록 커서를 이동한다.</summary>
