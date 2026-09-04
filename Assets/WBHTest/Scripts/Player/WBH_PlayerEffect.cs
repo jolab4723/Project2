@@ -13,6 +13,7 @@ public class WBH_PlayerEffect : MonoBehaviour
     }
 
     [SerializeField] private WBH_EffectSpawner spawner;
+    [SerializeField] private WBH_PlayerStatus playerStatus;
     [SerializeField] private EffectBinding[] effectBindings;
 
     [Header("Local Persistent Effects")]
@@ -22,9 +23,13 @@ public class WBH_PlayerEffect : MonoBehaviour
     private readonly Dictionary<WBH_PlayerEffectCue, EffectBinding> bindingMap = new();
     private readonly Dictionary<WBH_EffectData, WBH_Effect> activeLocalEffects = new();
     private Vector3 chargeEnhancementScale = Vector3.one;
+    private float PlaybackSpeed => playerStatus != null ? Mathf.Max(0.01f, playerStatus.AttackSpeed) : 1f;
 
     private void Awake()
     {
+        if (playerStatus == null)
+            playerStatus = GetComponent<WBH_PlayerStatus>();
+
         BuildBindindMap();
     }
 
@@ -38,6 +43,7 @@ public class WBH_PlayerEffect : MonoBehaviour
                 effect.StopEffect();
             }
         }
+
         activeLocalEffects.Clear();
         chargeEnhancementScale = Vector3.one;
     }
@@ -102,13 +108,13 @@ public class WBH_PlayerEffect : MonoBehaviour
                     Vector3 position = binding.anchor.TransformPoint(binding.data.localPos);
                     Quaternion rotation = binding.anchor.rotation * Quaternion.Euler(binding.data.localRot);
 
-                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale);
+                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale, PlaybackSpeed);
                     
                     break;
                 }
             case EffectAttachType.AttachOnce:
             case EffectAttachType.Follow:
-                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale);
+                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed);
                 break;
         }
     }
@@ -135,10 +141,7 @@ public class WBH_PlayerEffect : MonoBehaviour
             ? scaleMultiplier
             : Vector3.one;
 
-        effect.transform.localScale = Vector3.Scale(
-            effect.transform.localScale,
-            appliedScale);
-
+        effect.transform.localScale = Vector3.Scale(effect.transform.localScale, appliedScale);
         activeLocalEffects.Add(effectData, effect);
     }
 
@@ -176,12 +179,11 @@ public class WBH_PlayerEffect : MonoBehaviour
         }
 
         Vector3 appliedScale = binding.data.applyEnhancementScale ? scaleMultiplier : Vector3.one;
-
         Vector3 spawnPos = position + rotation * binding.data.localPos;
-
         Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
 
-        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale);
+
+        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed);
     }
 
     // --- 애니메이션 이벤트 연결용
