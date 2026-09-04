@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
+/// <summary>진행 중인 퀘스트 목록을 슬롯으로 표시하는 사이드 팝업이다.</summary>
 public class KY_QuestPopup : KY_PopupBase
 {
     [Header("References")]
@@ -15,7 +16,8 @@ public class KY_QuestPopup : KY_PopupBase
     private ObjectPool<KY_QuestSlot> slotPool;
     private readonly List<KY_QuestSlot> activeSlots = new List<KY_QuestSlot>();
 
-    void Awake()
+    /// <summary>필수 참조와 퀘스트 슬롯 풀을 준비한다.</summary>
+    private void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
 
@@ -34,6 +36,7 @@ public class KY_QuestPopup : KY_PopupBase
         );
     }
 
+    /// <summary>팝업을 열고 최신 퀘스트 목록을 그린다.</summary>
     public override void Open()
     {
         gameObject.SetActive(true);
@@ -44,6 +47,7 @@ public class KY_QuestPopup : KY_PopupBase
         RefreshList();
     }
 
+    /// <summary>팝업을 닫고 슬라이드 애니메이션을 적용한다.</summary>
     public override void Close()
     {
         if (slideAnimator != null)
@@ -52,6 +56,7 @@ public class KY_QuestPopup : KY_PopupBase
             gameObject.SetActive(false);
     }
 
+    /// <summary>현재 퀘스트 데이터로 슬롯 목록을 다시 구성한다.</summary>
     private void RefreshList()
     {
         if (slotPool == null)

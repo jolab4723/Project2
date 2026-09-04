@@ -59,6 +59,14 @@ public class GunnerBomb : MonoBehaviour
     private WBH_PlayerEffectCue secondExplosionEffectCue = WBH_PlayerEffectCue.None;
     private Vector3 secondExplosionEffectScale = Vector3.one;
     private WBH_EffectData secondExplosionEffectData;
+    private int wallLayerMask;
+    private int propLayerMask;
+
+    private void Awake()
+    {
+        wallLayerMask = LayerMask.GetMask("Wall");
+        propLayerMask = LayerMask.GetMask("Prop");
+    }
 
     public void Initialize(Vector3 targetPosition, float throwSpeed, float arcHeight, float fuseSeconds,
         float explosionRadius, LayerMask targetLayer, WBH_DamageRequest damageRequest,
@@ -132,8 +140,13 @@ public class GunnerBomb : MonoBehaviour
         if (!initialized)
             return;
 
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
-            return; // 대상 레이어가 아니면 무시
+        int otherLayer = other.gameObject.layer;
+        bool isTarget = (targetLayer.value & (1 << otherLayer)) != 0;
+        bool isWall = (wallLayerMask & (1 << otherLayer)) != 0;
+        bool isProp = (propLayerMask & (1 << otherLayer)) != 0;
+
+        if (!isTarget && !isWall &&!isProp)
+            return;
 
         Explode();
     }

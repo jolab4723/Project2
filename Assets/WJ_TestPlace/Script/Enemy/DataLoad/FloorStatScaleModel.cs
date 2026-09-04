@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace DataSystem
 {
@@ -6,6 +8,10 @@ namespace DataSystem
     /// EnemyData.xlsx의 FloorStatScale 시트 한 줄. 층(floor)별로 EnemyDefinitionSO의 기본 스탯에
     /// 곱해줄 배율을 담는다 - SO로 만들지 않고 JSON 그대로 두고 런타임에 FloorStatScaleTable이 읽는다
     /// (적 하나당 SO를 만드는 EnemyData와 달리, 층 배율은 단순 조회 테이블이라 SO화할 필요가 없음).
+    ///
+    /// difficulty/floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
+    /// multipliers 딕셔너리에 담긴다 - 엑셀에 새 배율 컬럼을 추가하고 파이프라인만 다시 돌리면 코드
+    /// 수정 없이 자동으로 반영된다(FloorStatScaleExcelToJson 참고).
     ///
     /// difficulty는 엑셀에서 값이 바뀌는 행에만 적어두고 그 아래는 비워두는 표기 방식을 쓴다
     /// (병합 셀이 아니라 진짜 빈 셀) - FloorStatScaleExcelToJson이 변환 시점에 바로 위 행의 값으로
@@ -16,10 +22,21 @@ namespace DataSystem
     {
         public float difficulty;
         public int floor;
-        public float hpMultiplier;
-        public float atkMultiplier;
-        public float defMultiplier;
-        public float expMultiplier;
-        public float creditMultiplier;
+
+        /// <summary>difficulty/floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
+        public Dictionary<string, float> multipliers = new Dictionary<string, float>();
+
+        /// <summary>컬럼 이름으로 배율을 조회한다. 없으면 배율 없음(1배)으로 취급한다.</summary>
+        public float GetMultiplier(string columnName, float defaultValue = 1f) =>
+            multipliers != null && multipliers.TryGetValue(columnName, out float value) ? value : defaultValue;
+
+        // 자주 쓰는 배율은 이름으로 바로 접근할 수 있게 편의 프로퍼티를 둔다 - 값 자체는 multipliers에
+        // 그대로 있고 이건 그걸 그대로 읽어오는 것뿐이라, 엑셀에 이 컬럼이 없어져도 그냥 1배로 동작한다.
+        // [JsonIgnore]: multipliers와 값이 중복되므로 JSON에는 안 실리게 한다.
+        [JsonIgnore] public float HpMultiplier => GetMultiplier("hpMultiplier");
+        [JsonIgnore] public float AtkMultiplier => GetMultiplier("atkMultiplier");
+        [JsonIgnore] public float DefMultiplier => GetMultiplier("defMultiplier");
+        [JsonIgnore] public float ExpMultiplier => GetMultiplier("expMultiplier");
+        [JsonIgnore] public float CreditMultiplier => GetMultiplier("creditMultiplier");
     }
 }

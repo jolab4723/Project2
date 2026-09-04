@@ -28,16 +28,8 @@ namespace EnemySystem
                 return row;
 
             Debug.LogWarning($"[FloorStatScaleTable] {floor}층 배율 데이터가 없습니다. 기본값(1배)을 사용합니다.");
-            return new FloorStatScaleRow
-            {
-                difficulty = 1f,
-                floor = floor,
-                hpMultiplier = 1f,
-                atkMultiplier = 1f,
-                defMultiplier = 1f,
-                expMultiplier = 1f,
-                creditMultiplier = 1f,
-            };
+            // multipliers를 비워두면 GetMultiplier가 컬럼별로 알아서 1배(기본값)를 돌려준다.
+            return new FloorStatScaleRow { difficulty = 1f, floor = floor };
         }
 
         /// <summary>테이블이 로드됐는지. 데이터 없이도 GetByFloor는 안전하게 기본값을 주지만, 로드 자체가 실패했는지 확인할 때 쓴다.</summary>
