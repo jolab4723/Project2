@@ -2,7 +2,8 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class KY_LobbyRadarChart : MaskableGraphic
+/// <summary>캐릭터의 공격력, 체력, 난이도를 애니메이션 삼각형 차트로 표시한다.</summary>
+public class KY_CharacterStatRadarChart : MaskableGraphic
 {
     [SerializeField, Min(1f)] private float maxValue = 5f;
     [SerializeField, Min(0f)] private float animationDuration = 0.3f;
@@ -12,6 +13,7 @@ public class KY_LobbyRadarChart : MaskableGraphic
     private float difficulty;
     private Coroutine animationCoroutine;
 
+    /// <summary>새 능력치 목표로 차트 채움 애니메이션을 시작한다.</summary>
     public void SetValues(float powerValue, float healthValue, float difficultyValue)
     {
         if (animationCoroutine != null)
@@ -25,6 +27,7 @@ public class KY_LobbyRadarChart : MaskableGraphic
         animationCoroutine = StartCoroutine(AnimateValues(powerValue, healthValue, difficultyValue));
     }
 
+    /// <summary>0에서 목표 능력치까지 차트 값을 보간한다.</summary>
     private IEnumerator AnimateValues(float targetPower, float targetHealth, float targetDifficulty)
     {
         if (animationDuration <= 0f)
@@ -59,6 +62,7 @@ public class KY_LobbyRadarChart : MaskableGraphic
         animationCoroutine = null;
     }
 
+    /// <summary>현재 능력치에 맞는 삼각형 메쉬를 다시 그린다.</summary>
     protected override void OnPopulateMesh(VertexHelper vertexHelper)
     {
         vertexHelper.Clear();
@@ -80,6 +84,7 @@ public class KY_LobbyRadarChart : MaskableGraphic
         vertexHelper.AddTriangle(0, 1, 2);
     }
 
+    /// <summary>차트 축의 각도와 값을 UI 좌표로 변환한다.</summary>
     private Vector2 GetPoint(Vector2 center, float radius, float angle, float value)
     {
         float normalizedValue = Mathf.Clamp01(value / maxValue);

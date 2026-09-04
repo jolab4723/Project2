@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 
-public static class KY_LobbyCharacterDatabase
+/// <summary>현재 선택 가능한 캐릭터의 표시 정보를 제공한다.</summary>
+public static class KY_CharacterDatabase
 {
-    public static List<KY_LobbyCharacterData> GetAllCharacters()
+    /// <summary>모든 캐릭터의 표시 정보를 새 목록으로 반환한다.</summary>
+    public static List<KY_CharacterInfoData> GetAllCharacters()
     {
-        return new List<KY_LobbyCharacterData>
+        return new List<KY_CharacterInfoData>
         {
-            new KY_LobbyCharacterData
+            new KY_CharacterInfoData
             {
                 characterId = KY_CharacterId.Fighter,
                 characterName = "파이터",
@@ -15,7 +17,7 @@ public static class KY_LobbyCharacterDatabase
                 healthGrade = 5,
                 difficultyGrade = 2
             },
-            new KY_LobbyCharacterData
+            new KY_CharacterInfoData
             {
                 characterId = KY_CharacterId.Gunner,
                 characterName = "거너",
@@ -27,7 +29,8 @@ public static class KY_LobbyCharacterDatabase
         };
     }
 
-    public static KY_LobbyCharacterData GetById(KY_CharacterId id)
+    /// <summary>캐릭터 ID에 일치하는 표시 정보를 반환한다.</summary>
+    public static KY_CharacterInfoData GetById(KY_CharacterId id)
     {
         foreach (var c in GetAllCharacters())
             if (c.characterId == id) return c;
