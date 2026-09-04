@@ -32,11 +32,20 @@ public class GunnerArcProjectile : MonoBehaviour
     private WBH_EffectData explosionEffectData;
     private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
     private Vector3 explosionEffectScale = Vector3.one;
+    private int wallLayerMask;
+    private int propLayerMask;
 
     /// <summary>explodeOnHit=false면 폭발 반경 판정 없이 실제로 맞은 대상 하나에게만 데미지를 준다
     /// (아크 버스터 진화2 "아크 불릿"이 폭발 속성을 빼기 위해 사용 - 118번).
     /// visualScale은 프리팹 원본 크기에 곱하는 배율(기본 1 = 그대로) - 아크 캐논(진화3)처럼 폭발 반경이
     /// 커진 진화가 실제 판정 크기에 맞게 더 커 보이도록 쓴다(133번 후속).</summary>
+    /// 
+    private void Awake()
+    {
+        wallLayerMask = LayerMask.GetMask("Wall");
+        propLayerMask = LayerMask.GetMask("Prop");
+    }
+
     public void Initialize(Vector3 direction,
                            float speed,
                            float maxDistance,
@@ -77,13 +86,29 @@ public class GunnerArcProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
-            return; // 대상 레이어가 아니면 무시(적이 아니면 관통)
+        int otherLayer = other.gameObject.layer;
+        bool isTarget = (targetLayer.value & (1 << otherLayer)) != 0;
+        bool isWall = (wallLayerMask & (1 << otherLayer)) != 0;
+        bool isProp = (propLayerMask & (1 << otherLayer)) != 0;
 
+        if (!isTarget && !isWall && !isProp)
+            return;
+
+        // 폭발형 탄환은 Enemy와 Wall 모두 충돌 즉시 폭발
         if (explodeOnHit)
+        {
             Explode();
-        else
+            return;
+        }
+
+        // 비폭발형 탄환은 Enemy에만 피해 적용
+        if (isTarget)
             HitSingleTarget(other);
+        else
+        {
+            initialized = false;
+            Destroy(gameObject);
+        }
     }
 
     private void Explode()
