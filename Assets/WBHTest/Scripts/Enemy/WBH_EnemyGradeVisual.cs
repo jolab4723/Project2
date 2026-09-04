@@ -31,29 +31,6 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
     private void Awake()
     {
         propertyBlock = new MaterialPropertyBlock();
-    }
-
-    public void ApplyGrade(EnemyGrade grade)
-    {
-        CacheOriginalState();
-
-        switch(grade)
-        {
-            case EnemyGrade.Advanced:
-                ApplyAdvanced();
-                break;
-
-            default:
-                ApplyNormal();
-                break;
-        }
-    }
-
-    // 기존 scale 저장
-    private void CacheOriginalState()
-    {
-        if (initialized)
-            return;
 
         if(scaleTarget == null)
         {
@@ -62,38 +39,43 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
 
         originalScale = scaleTarget.localScale;
 
-        if(targetRenderers == null || targetRenderers.Length == 0)
+        if (targetRenderers == null || targetRenderers.Length == 0)
         {
             targetRenderers = scaleTarget.GetComponentsInChildren<Renderer>(includeInactive: true);
         }
-
-        initialized = true;
     }
 
-    private void ApplyAdvanced()
+    public void ApplyGrade(EnemyGrade grade)
     {
+        ResetForPool();
+
+        if (grade != EnemyGrade.Advanced)
+            return;
+
         scaleTarget.localScale = originalScale * advancedScaleMul;
 
         Color tintMultiplier = Color.Lerp(Color.white, advancedTint, tintStrength);
 
         ApplyMaterialProperties(tintMultiplier, metallicBoost, smoothnessBoost);
 
-        if (advancedEffect == null)
-            return;
+        if(advancedEffect != null)
+        {
+            advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        advancedEffect.Play(withChildren: true);
+            advancedEffect.Play(withChildren: true);
+        }
     }
 
-    private void ApplyNormal()
+    public void ResetForPool()
     {
         scaleTarget.localScale = originalScale;
 
-        ApplyMaterialProperties(Color.white, metalicBoost: 0f, smoothnessBoost: 0f);
+        ApplyMaterialProperties(Color.white, 0f, 0f);
 
-        if (advancedEffect == null)
-
-        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
+        if(advancedEffect != null)
+        {
+            advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
     }
 
     // 색상, 메탈릭, 부드러움 변환 및 적용.
