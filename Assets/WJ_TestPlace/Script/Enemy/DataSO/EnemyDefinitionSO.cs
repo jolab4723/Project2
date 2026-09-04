@@ -22,11 +22,14 @@ namespace EnemySystem
         public float baseAttackSpeed;
         public float attackRange;
         public float attackCooldown;
+        public float penetration;
+        public float projectileSpeed;
 
         [Header("패턴")]
         public int patternId;
 
         [Header("보상")]
         public float expReward;
+        public float creditReward;
     }
 }

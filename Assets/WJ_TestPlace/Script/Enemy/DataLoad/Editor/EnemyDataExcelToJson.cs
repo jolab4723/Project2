@@ -16,14 +16,14 @@ namespace DataSystem
     ///    이 시트: 1행 타입, 2행 헤더                  -> 아래 ReadTypesFirstSheet 사용
     ///    (CharStatTableExcelToJson.cs와 동일한 패턴)
     ///
-    /// 첫 번째 시트(EnemyData)만 읽는다. 두 번째 ComboBox 시트는 드롭다운 검증용이라 건너뛴다.
-    /// 이름 없는 예약 자리(enemyId만 있고 나머지가 비어있는 행, 예: "enemy.normal.melee")는
-    /// 실제 데이터가 아니므로 변환 대상에서 제외하고 개수만 경고로 남긴다.
+    /// 첫 번째 시트(EnemyData)만 읽는다. FloorStatScale/ComboBox 시트는 각각 별도 변환기
+    /// (FloorStatScaleExcelToJson) 또는 드롭다운 검증용이라 여기서 건너뛴다.
+    /// 완전히 빈 행(표 아래 여분 행)은 ReadTypesFirstSheet가 이미 걸러낸다.
     /// </summary>
     public static class EnemyDataExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/JSONFile";
-        private const string DefaultExcelPath = "Assets/Resources/DataFiles/EnemyData/ExcelFile/EnemyData.xlsx";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/EnemyData/1. ExcelFile/EnemyData.xlsx";
 
         [MenuItem("DataLoader/Enemy Data/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
@@ -40,6 +40,29 @@ namespace DataSystem
                 return;
 
             Convert(excelPath, jsonPath);
+        }
+
+        /// <summary>
+        /// 대화상자 없이 기본 경로만으로 변환한다. 통합 실행(0. Run All Steps)처럼 중간에 멈추면 안 되는 곳에서 쓴다.
+        /// </summary>
+        /// <returns>생성된 JSON의 절대 경로. 엑셀이 없거나 실패하면 null.</returns>
+        public static string ConvertWithDefaultPaths()
+        {
+            string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
+            if (!File.Exists(excelAbsolutePath))
+            {
+                Debug.LogWarning($"[EnemyData] 적 데이터 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                return null;
+            }
+
+            EnsureAssetFolder(DefaultJsonFolder);
+            string jsonAbsolutePath = Path.Combine(
+                AssetPathToAbsolutePath(DefaultJsonFolder),
+                Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
+
+            Convert(excelAbsolutePath, jsonAbsolutePath);
+
+            return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
         }
 
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
@@ -68,36 +91,22 @@ namespace DataSystem
             using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
             {
-                // 첫 번째 시트(EnemyData)만 사용한다. 두 번째 ComboBox 시트는 읽지 않는다.
+                // 첫 번째 시트(EnemyData)만 사용한다. FloorStatScale/ComboBox 시트는 읽지 않는다.
                 List<Dictionary<string, string>> rows = ReadTypesFirstSheet(reader);
                 allRows = ExcelSheetReader.MapRows<EnemyDataRow>(rows);
             }
 
-            List<EnemyDataRow> realRows = new List<EnemyDataRow>();
-            int placeholderCount = 0;
-
-            foreach (EnemyDataRow row in allRows)
-            {
-                // enemyId만 채워두고 나머지가 빈 예약 자리(enemyGrade 미배정 등급 조합용)는 실제 데이터가 아니다.
-                if (string.IsNullOrWhiteSpace(row.enemyName))
-                {
-                    placeholderCount++;
-                    continue;
-                }
-
-                realRows.Add(row);
-            }
-
-            if (placeholderCount > 0)
-                Debug.Log($"[EnemyData] enemyName이 비어있는 예약 자리 {placeholderCount}개는 변환에서 제외했습니다.");
-
-            if (realRows.Count == 0)
+            if (allRows.Count == 0)
             {
                 Debug.LogError("[EnemyData] 변환할 데이터 행이 없습니다. 시트 구조(1행 타입 / 2행 헤더 / 3행부터 데이터)를 확인해주세요.");
                 return;
             }
 
-            string json = JsonConvert.SerializeObject(realRows, Formatting.Indented);
+            List<string> missingIds = allRows.FindAll(row => string.IsNullOrWhiteSpace(row.enemyId)).ConvertAll(row => row.enemyId ?? "(null)");
+            if (missingIds.Count > 0)
+                Debug.LogWarning($"[EnemyData] enemyId가 비어있는 행이 {missingIds.Count}개 있습니다. 해당 행은 SO 생성 단계에서 건너뜁니다.");
+
+            string json = JsonConvert.SerializeObject(allRows, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -105,7 +114,7 @@ namespace DataSystem
             File.WriteAllText(jsonAbsolutePath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"[EnemyData] JSON generated: {jsonAbsolutePath}\n적 {realRows.Count}개");
+            Debug.Log($"[EnemyData] JSON generated: {jsonAbsolutePath}\n적 {allRows.Count}개");
         }
 
         /// <summary>1행이 타입, 2행이 헤더인 시트를 읽어서 "헤더 이름 -> 셀 값" 딕셔너리 목록으로 반환한다.</summary>
