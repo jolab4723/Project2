@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Serialization;
 
+/// <summary>퀘스트 하나의 제목과 요약을 표시하고 상세 팝업 열기를 요청한다.</summary>
 public class KY_QuestSlot : MonoBehaviour
 {
     [Header("Texts")]
@@ -13,7 +14,8 @@ public class KY_QuestSlot : MonoBehaviour
     private KY_QuestData questData;
     private Button button;
 
-    void Awake()
+    /// <summary>버튼 클릭 이벤트를 연결한다.</summary>
+    private void Awake()
     {
         button = GetComponent<Button>();
 
@@ -26,12 +28,14 @@ public class KY_QuestSlot : MonoBehaviour
         button.onClick.AddListener(OnClick);
     }
 
+    /// <summary>파괴될 때 버튼 이벤트를 해제한다.</summary>
     private void OnDestroy()
     {
         if (button != null)
             button.onClick.RemoveListener(OnClick);
     }
 
+    /// <summary>슬롯에 표시할 퀘스트 데이터를 설정한다.</summary>
     public void SetData(KY_QuestData data)
     {
         questData = data;
@@ -44,17 +48,24 @@ public class KY_QuestSlot : MonoBehaviour
             if (subText != null)
                 subText.text = string.Empty;
 
+            if (button != null)
+                button.interactable = false;
+
             return;
         }
 
         if (titleText != null)
-            titleText.text = data.questName;
+            titleText.text = data.questName ?? string.Empty;
 
         if (subText != null)
-            subText.text = data.description;
+            subText.text = data.description ?? string.Empty;
+
+        if (button != null)
+            button.interactable = true;
     }
 
-    void OnClick()
+    /// <summary>현재 슬롯의 퀘스트 상세 팝업을 연다.</summary>
+    private void OnClick()
     {
         if (questData == null)
         {
