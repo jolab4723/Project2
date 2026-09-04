@@ -305,6 +305,9 @@ public class ItemDropHandler : MonoBehaviour
 
         if (TryRestoreOriginalPlacement())
         {
+            inventoryController?.ReportSinglePlayerMessage(
+                ChatKind.Warning,
+                "아이템을 필드에 놓지 못해 인벤토리로 되돌렸습니다.");
             Debug.LogWarning(
                 $"[ItemDropHandler] 월드 드롭에 실패하여 원래 위치로 복구했습니다. result={result}");
         }
@@ -331,7 +334,11 @@ public class ItemDropHandler : MonoBehaviour
         string message = InventoryRemoveMessageMapper.GetMessage(result, itemName);
 
         if (inventoryController != null)
+        {
             inventoryController.PrintLog(message);
+            if (result != InventoryRemoveResult.Success)
+                inventoryController.ReportSinglePlayerMessage(ChatKind.Warning, message);
+        }
         else
             Debug.LogWarning(message);
 
