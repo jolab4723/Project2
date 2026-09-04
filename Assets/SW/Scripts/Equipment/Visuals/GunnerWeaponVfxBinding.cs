@@ -18,8 +18,8 @@ using UnityEngine;
 /// - 이 컴포넌트는 공격 판정, 데미지, 이동, 충돌 또는 오브젝트 풀을 소유하지 않습니다.
 /// - 무기마다 별도 전투 스크립트를 만들지 않고 "어떤 VFX를 사용할지"만 알려줍니다.
 /// - Collider, Rigidbody, 데미지 컴포넌트를 시각 프리팹에 추가하지 마세요.
-/// - Muzzle은 무기 외형 루트의 직속 자식이며, 총구 섬광의 위치와 방향을 제공합니다.
-/// - 실제 투사체의 시작 위치와 공격 방향은 플레이어 루트의 공통 FirePoint가 결정합니다.
+/// - 무기 외형의 Muzzle은 총열 위치를 확인하기 위한 기준점으로 보존합니다.
+/// - 총구 VFX, 실제 투사체와 공격 판정의 시작 위치·방향은 모두 플레이어 루트의 공통 FirePoint가 결정합니다.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class GunnerWeaponVfxBinding : MonoBehaviour
@@ -33,10 +33,10 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     [Tooltip("이 외형이 사용하는 전투 분기입니다. Rifle, Shotgun, Grenade 중 실제 무기 타입과 일치해야 합니다.")]
     [SerializeField] private GunnerWeaponType weaponType;
 
-    [Tooltip("총열 끝 기준점입니다. 총구 섬광은 이 Transform의 위치와 회전을 따라가며, 실제 투사체 시작 위치나 공격 방향은 결정하지 않습니다.")]
+    [Tooltip("무기 외형의 총열 끝을 확인하기 위한 기준점입니다. 실제 재생 위치는 모든 무기가 공유하는 플레이어 FirePoint를 사용합니다.")]
     [SerializeField] private Transform muzzle;
 
-    [Tooltip("발사 순간 Muzzle 위치에서 짧게 재생되는 VFX입니다. 공격 판정과 투사체 이동에는 관여하지 않습니다.")]
+    [Tooltip("발사 순간 플레이어 FirePoint에서 짧게 재생되는 VFX입니다. 공격 판정과 투사체 이동에는 관여하지 않습니다.")]
     [SerializeField] private GameObject muzzleVisualPrefab;
 
     [Tooltip("라이플·유탄발사기의 기존 WBH_Projectile 풀 오브젝트에 붙는 비행 VFX입니다. 산탄총은 중앙 탄환을 사용하지 않으므로 비워 둡니다.")]
@@ -63,23 +63,27 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     public GameObject ImpactVisualPrefab => impactVisualPrefab;
 
     /// <summary>
-    /// 현재 무기의 총구 VFX를 Muzzle 위치와 방향에서 처음부터 재생합니다.
-    /// 총구 섬광은 총열에 붙어 있어야 자연스러우므로 손과 무기의 애니메이션을 그대로 따라갑니다.
-    /// 이 회전은 섬광에만 적용되며 실제 투사체와 공격 판정에는 전달되지 않습니다.
-    /// 총구 또는 VFX가 비어 있으면 기존 공격 자체는 막지 않고 조용히 건너뜁니다.
+    /// 현재 무기의 총구 VFX를 플레이어 공통 FirePoint 위치와 정면 방향에서 처음부터 재생합니다.
+    /// 무기와 손의 애니메이션으로 총열이 기울어져도 총구 VFX, 실제 투사체와 공격 판정이 같은 위치·방향을 사용합니다.
+    /// VFX가 비어 있으면 기존 공격 자체는 막지 않고 조용히 건너뜁니다.
     /// 따라서 VFX 연결 실수 때문에 데미지나 투사체 발사가 중단되지는 않습니다.
     /// </summary>
     public void PlayMuzzle(Vector3 attackOrigin, Vector3 attackForward, float attackRange)
     {
-        if (muzzle == null || muzzleVisualPrefab == null)
+        if (muzzleVisualPrefab == null)
             return;
+
+        Vector3 forward = Vector3.ProjectOnPlane(attackForward, Vector3.up);
+        forward = forward.sqrMagnitude > 0.0001f
+            ? forward.normalized
+            : Vector3.forward;
+        Quaternion firePointRotation = Quaternion.LookRotation(forward, Vector3.up);
 
         if (muzzleVisualInstance == null)
         {
-            // 총구 섬광은 실제 총열의 일부처럼 보여야 하므로 Muzzle 자식으로 둡니다.
-            // 실제 탄환과 판정은 T_PlayerCombat의 공통 FirePoint를 사용하므로, 여기서 따라가는 Muzzle 회전은
-            // 섬광의 보이는 방향에만 영향을 주고 공격 명중 방향을 바꾸지 않습니다.
-            muzzleVisualInstance = Instantiate(muzzleVisualPrefab, muzzle, false);
+            // FirePoint에서 재생한 VFX가 캐릭터 이동이나 손 애니메이션을 뒤늦게 따라가지 않도록
+            // 무기의 자식으로 두지 않고 독립된 런타임 인스턴스로 한 번만 생성해 재사용합니다.
+            muzzleVisualInstance = Instantiate(muzzleVisualPrefab);
             muzzleVisualInstance.name = $"{muzzleVisualPrefab.name}_Runtime";
 
             if (weaponType == GunnerWeaponType.Shotgun)
@@ -88,6 +92,7 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
             DisableProjectileLikeMuzzleParticles(muzzleVisualInstance);
         }
 
+        muzzleVisualInstance.transform.SetPositionAndRotation(attackOrigin, firePointRotation);
         GunnerVfxPlayback.Restart(muzzleVisualInstance);
 
         if (weaponType != GunnerWeaponType.Shotgun)
@@ -113,15 +118,10 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
             targetDistanceScale / appliedShotgunDistanceScale);
         appliedShotgunDistanceScale = targetDistanceScale;
 
-        Vector3 forward = Vector3.ProjectOnPlane(attackForward, Vector3.up);
-        forward = forward.sqrMagnitude > 0.0001f
-            ? forward.normalized
-            : Vector3.forward;
-
-        // 총구의 기울기와 상관없이 실제 산탄 판정과 같은 공통 시작점·수평 정면을 사용합니다.
+        // 짧은 총구 섬광과 마찬가지로 실제 산탄 판정과 같은 공통 시작점·수평 정면을 사용합니다.
         shotgunAttackVisualInstance.transform.SetPositionAndRotation(
             attackOrigin,
-            Quaternion.LookRotation(forward, Vector3.up));
+            firePointRotation);
         GunnerVfxPlayback.Restart(shotgunAttackVisualInstance);
     }
 
@@ -166,7 +166,10 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
 
     private void OnDestroy()
     {
-        // 산탄 공격 연출은 무기 자식이 아니라 공통 FirePoint 위치에서 재생되므로 직접 제거합니다.
+        // 두 연출 모두 무기 자식이 아닌 FirePoint 위치에서 독립적으로 재생되므로 직접 제거합니다.
+        if (muzzleVisualInstance != null)
+            Destroy(muzzleVisualInstance);
+
         if (shotgunAttackVisualInstance != null)
             Destroy(shotgunAttackVisualInstance);
     }
