@@ -24,6 +24,9 @@ public class QuestOfferUI : MonoBehaviour
     [SerializeField] private Button acceptButton;
     [SerializeField] private Button closeButton;
 
+    // 김관영님이 만든 슬라이드 연출(같은 오브젝트에 붙어있으면 자동으로 씀) - 없으면 그냥 즉시 표시/숨김.
+    private KY_SlideAnimator slideAnimator;
+
     private QuestBoardNPC board;
 
     private void Awake()
@@ -35,6 +38,7 @@ public class QuestOfferUI : MonoBehaviour
         }
 
         Instance = this;
+        slideAnimator = GetComponent<KY_SlideAnimator>();
 
         if (rerollButton != null)
             rerollButton.onClick.AddListener(HandleRerollClicked);
@@ -45,7 +49,10 @@ public class QuestOfferUI : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(Hide);
 
-        Hide();
+        // 초기 숨김은 애니메이션 없이 즉시 처리한다. Hide()를 그대로 부르면 KY_SlideAnimator.SlideOut()이
+        // 걸리는데, Awake 시점엔 KY_SlideAnimator 자신의 Awake(원래 위치/숨김 위치 계산)가 아직 실행되지
+        // 않았을 수 있어 컴포넌트 간 실행 순서에 의존하게 된다.
+        SetGroupVisible(false);
     }
 
     private void OnDestroy()
@@ -65,12 +72,31 @@ public class QuestOfferUI : MonoBehaviour
 
         root.gameObject.SetActive(true);
         SetGroupVisible(true);
+
+        // 왼쪽에서 오른쪽으로 슬라이드 인(KY_SlideAnimator.hiddenOffsetX를 원래 위치보다 왼쪽으로 설정해둠).
+        if (slideAnimator != null)
+            slideAnimator.SlideIn();
     }
 
     public void Hide()
     {
         board = null;
-        SetGroupVisible(false);
+
+        if (slideAnimator != null)
+        {
+            // 슬라이드 아웃이 끝나기 전에 알파를 바로 0으로 죽이면 움직이는 게 안 보이므로, 상호작용만
+            // 먼저 막고 실제 알파 숨김(+ 회전 오브젝트 등 자식 갱신)은 슬라이드가 끝난 뒤에 처리한다.
+            if (canvasGroup != null)
+            {
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+            slideAnimator.SlideOut(() => SetGroupVisible(false));
+        }
+        else
+        {
+            SetGroupVisible(false);
+        }
     }
 
     private void Refresh()
