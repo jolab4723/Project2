@@ -62,11 +62,14 @@ public class WBH_EnemyPoolManager : MonoBehaviour
         }
         //enemy.gameObject.SetActive(true);
 
+        enemy.ResetForPool();
+
         return enemy;
     }
 
     public void Return(WBH_EnemyController enemy)
     {
+        enemy.ResetForPool();
         enemy.gameObject.SetActive(false);
 
         pools[enemy.Info.id].Enqueue(enemy);
