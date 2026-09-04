@@ -29,6 +29,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
     private bool isDying;
+    private bool isCutSceneDamageBlocked;
 
     public WBH_EnemyInfo Info => info;
     public WBH_ICombatStatus Status => status;
@@ -90,7 +91,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
-        if (status.IsDead)
+        if (isCutSceneDamageBlocked || status.IsDead)
             return;
 
         Vector3 hitPosition = result.HitPosition ?? transform.position;
@@ -173,6 +174,17 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public void ResetForPool()
     {
         gradeVisual?.ResetForPool();
+    }
+
+    // 컷씬 진행시 행동 방지 (차후 피격 시 무적 등도 이 메서드 안에서 호출하고 외부에서는 이 메서드만 호출)
+    public void SetCutSceneControlBlock(bool blocked)
+    {
+        movement.SetCutSceneControlBlock(blocked);
+    }
+
+    public void SetCutSceneDamageBlock(bool block)
+    {
+        isCutSceneDamageBlocked = block;
     }
 
     // 보스 전용 사망연출(애니메이션 이벤트). 사망 후 n초 뒤에 디졸브 걸고 사라짐.
