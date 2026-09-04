@@ -4,9 +4,11 @@ public static class ChatMessageMapper
     {
         entry = default;
         bool pickup = result.Operation == MirrorTestInventoryOperation.PickupWorldItem;
+        bool drop = result.Operation == MirrorTestInventoryOperation.DropInventoryItem;
         bool equip = result.Operation == MirrorTestInventoryOperation.ChangeEquipment;
         bool upgrade = result.Operation == MirrorTestInventoryOperation.UpgradeItem;
-        if ((!pickup && !equip && !upgrade) || result.Result == MirrorTestInventoryRequestResult.DuplicateRequest)
+        if ((!pickup && !drop && !equip && !upgrade) ||
+            result.Result == MirrorTestInventoryRequestResult.DuplicateRequest)
             return false;
         if (result.Result == MirrorTestInventoryRequestResult.Success)
         {
@@ -30,8 +32,12 @@ public static class ChatMessageMapper
                 MirrorTestInventoryRequestResult.PickupUnavailable => "더 이상 획득할 수 없는 아이템입니다.",
                 MirrorTestInventoryRequestResult.ItemUnavailable => "대상 아이템을 찾을 수 없습니다.",
                 MirrorTestInventoryRequestResult.StaleRevision => "아이템 상태가 바뀌었습니다. 다시 시도해 주세요.",
+                MirrorTestInventoryRequestResult.RecoveryFailed when drop =>
+                    "아이템 드랍과 인벤토리 복구에 실패했습니다. 인벤토리 상태를 확인해 주세요.",
                 _ => equip ? EquipMessageMapper.GetMessage(EquipResult.Failed) :
-                    upgrade ? "강화를 처리하지 못했습니다. 다시 시도해 주세요." : "아이템을 획득하지 못했습니다. 다시 시도해 주세요.",
+                    upgrade ? "강화를 처리하지 못했습니다. 다시 시도해 주세요." :
+                    drop ? "아이템을 필드에 놓지 못했습니다. 다시 시도해 주세요." :
+                    "아이템을 획득하지 못했습니다. 다시 시도해 주세요.",
             };
         }
         entry = new ChatEntry(ChatKind.Warning, text);
