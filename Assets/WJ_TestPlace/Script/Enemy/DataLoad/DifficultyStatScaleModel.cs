@@ -5,23 +5,24 @@ using Newtonsoft.Json;
 namespace DataSystem
 {
     /// <summary>
-    /// EnemyData.xlsx의 FloorStatScale 시트 한 줄. 층(floor)별로 EnemyDefinitionSO의 기본 스탯에
-    /// 곱해줄 배율을 담는다 - SO로 만들지 않고 JSON 그대로 두고 런타임에 FloorStatScaleTable이 읽는다
-    /// (적 하나당 SO를 만드는 EnemyData와 달리, 층 배율은 단순 조회 테이블이라 SO화할 필요가 없음).
+    /// EnemyData.xlsx의 difficultyStatScale 시트 한 줄. 난이도(difficultyName)별로 EnemyDefinitionSO의
+    /// 기본 스탯에 곱해줄 배율을 담는다 - FloorStatScaleRow와 같은 구조이되 키가 층(floor)이 아니라
+    /// 난이도 이름이다. SO로 만들지 않고 JSON 그대로 두고 런타임에 DifficultyStatScaleTable이 읽는다.
     ///
-    /// 난이도(difficulty)는 더 이상 이 시트가 아니라 별도 difficultyStatScale 시트/DifficultyStatScaleRow로
-    /// 분리됐다(2026-09-04 엑셀 개편) - 이 시트는 순수하게 층(floor) 하나만 키로 쓴다.
+    /// 2026-09-04 엑셀 개편 전에는 FloorStatScale 시트 안에 difficulty 컬럼이 섞여 있었으나
+    /// (값이 바뀌는 행에만 적고 아래는 빈칸으로 이어받는 carry-forward 방식), 층 배율과 난이도 배율이
+    /// 서로 다른 축이라 별도 시트/모델로 분리됐다.
     ///
-    /// floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
+    /// difficultyName을 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
     /// multipliers 딕셔너리에 담긴다 - 엑셀에 새 배율 컬럼을 추가하고 파이프라인만 다시 돌리면 코드
-    /// 수정 없이 자동으로 반영된다(FloorStatScaleExcelToJson 참고).
+    /// 수정 없이 자동으로 반영된다(DifficultyStatScaleExcelToJson 참고).
     /// </summary>
     [Serializable]
-    public class FloorStatScaleRow
+    public class DifficultyStatScaleRow
     {
-        public int floor;
+        public string difficultyName;
 
-        /// <summary>floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
+        /// <summary>difficultyName을 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
         public Dictionary<string, float> multipliers = new Dictionary<string, float>();
 
         /// <summary>컬럼 이름으로 배율을 조회한다. 없으면 배율 없음(1배)으로 취급한다.</summary>

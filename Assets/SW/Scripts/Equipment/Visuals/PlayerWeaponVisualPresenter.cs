@@ -66,6 +66,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
         }
 
+        // 이 캐릭터가 활성화될 때마다 공용 EquipmentSystem에 "지금은 나(Fighter/Gunner)다"를 알려준다 -
+        // 장비 장착 검증(캐릭터 전용 무기 체크)이 이 값을 기준으로 동작한다.
+        equipmentSystem.SetActiveCharacterClass(characterClass);
+
         equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         RefreshFromEquipment();
 #endif
