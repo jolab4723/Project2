@@ -13,6 +13,10 @@ public class QuestOfferUI : MonoBehaviour
 {
     public static QuestOfferUI Instance { get; private set; }
 
+    /// <summary>지금 팝업이 열려서(제시 중) 표시되고 있는지. ESC로 이 팝업을 먼저 닫도록
+    /// KY_UIInputManager가 확인하는 용도.</summary>
+    public bool IsShowing => board != null;
+
     [SerializeField] private RectTransform root;
     [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private TextMeshProUGUI titleText;
@@ -80,6 +84,9 @@ public class QuestOfferUI : MonoBehaviour
 
     public void Hide()
     {
+        // 여기서 board.CurrentOffer를 비우지 않는다 - 닫았다 다시 열어도 같은 제시가 그대로 유지돼야
+        // 한다(캠프 한 번 진입 중 이 NPC가 제시하는 퀘스트는 하나로 고정, 리롤/수락 전까지는 안 바뀜).
+        // 실제로 한 번 지웠다가(2026-09-05) "여닫을 때마다 퀘스트가 계속 바뀐다"는 회귀가 생겨 되돌렸다.
         board = null;
 
         if (slideAnimator != null)
