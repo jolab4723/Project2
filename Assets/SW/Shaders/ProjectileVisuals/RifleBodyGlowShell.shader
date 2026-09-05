@@ -10,6 +10,8 @@ Shader "Project2/Rifle Body Glow Shell"
         _PulseAmount("Pulse Amount", Range(0, 0.5)) = 0.08
         _Style("Element Style", Range(0, 3)) = 0
         _HaloScale("Outer Halo Scale", Range(1, 1.2)) = 1.06
+        _OutlinePixels("Minimum Rim Width (pixels)", Range(0, 4)) = 1.6
+        _HaloPixels("Minimum Halo Width (pixels)", Range(0, 6)) = 3.2
     }
 
     SubShader
@@ -20,6 +22,8 @@ Shader "Project2/Rifle Body Glow Shell"
             "Queue" = "Transparent+20"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
+            // 각 탄환의 원점을 기준으로 테두리를 넓히므로 메시를 미리 하나로 합치지 않습니다.
+            "DisableBatching" = "True"
         }
 
         Pass
@@ -65,6 +69,8 @@ Shader "Project2/Rifle Body Glow Shell"
                 float _PulseAmount;
                 float _Style;
                 float _HaloScale;
+                float _OutlinePixels;
+                float _HaloPixels;
             CBUFFER_END
 
             Varyings Vert(Attributes input)
@@ -79,6 +85,25 @@ Shader "Project2/Rifle Body Glow Shell"
                 float innerScale = 1.0 + _OutlineWidth;
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz * innerScale);
                 output.positionCS = positionInputs.positionCS;
+                // A model-relative expansion becomes less than one pixel after the
+                // WBH projectile scale and gameplay camera projection. Keep a small
+                // visible rim in screen space. Smooth normals are stored on the
+                // dedicated glow mesh; the solid projectile mesh is untouched.
+                float4 baseCS = TransformObjectToHClip(input.positionOS.xyz);
+                float3 outlineNormalWS = TransformObjectToWorldNormal(input.normalOS);
+                float2 normalVS = mul((float3x3)UNITY_MATRIX_V, outlineNormalWS).xy;
+                float2 directionVS = mul((float2x2)UNITY_MATRIX_P, normalVS) * _ScaledScreenParams.xy;
+                float directionLength = length(directionVS);
+                float2 pixelDirection = directionVS / max(directionLength, 0.0001);
+                float2 expandedPixels = (output.positionCS.xy / max(output.positionCS.w, 0.0001)
+                    - baseCS.xy / max(baseCS.w, 0.0001)) * (0.5 * _ScaledScreenParams.xy);
+                float existingWidth = dot(expandedPixels, pixelDirection);
+                float extraPixels = max(0.0, _OutlinePixels - existingWidth);
+                output.positionCS.xy += pixelDirection * extraPixels
+                    * (2.0 / _ScaledScreenParams.xy) * output.positionCS.w
+                    * saturate(length(normalVS) * 20.0)
+                    * step(0.0001, baseCS.w);
+
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.positionOS = input.positionOS.xyz;
@@ -91,7 +116,9 @@ Shader "Project2/Rifle Body Glow Shell"
                 float3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 // Keep the projectile surface readable: only the silhouette edge emits.
                 // A filled additive shell made pale/ice projectiles turn into flat white blobs.
-                float rim = pow(saturate(1.0 - abs(dot(normalWS, viewDirWS))), _RimPower);
+                // 작은 탄환에서는 시선에 따른 감쇠가 너무 강하면 HDR 발광이 Bloom 기준 아래로 내려갑니다.
+                // 본체 바깥에 노출된 테두리만 최소 밝기를 유지하며, 본체 표면은 깊이 검사로 보호합니다.
+                float rim = 0.65 + 0.35 * pow(saturate(1.0 - abs(dot(normalWS, viewDirWS))), _RimPower);
 
                 float phase = _Time.y * _PulseSpeed;
                 float pulse = 1.0 + sin(phase) * _PulseAmount;
@@ -183,6 +210,8 @@ Shader "Project2/Rifle Body Glow Shell"
                 float _PulseAmount;
                 float _Style;
                 float _HaloScale;
+                float _OutlinePixels;
+                float _HaloPixels;
             CBUFFER_END
 
             Varyings VertHalo(Attributes input)
@@ -198,6 +227,25 @@ Shader "Project2/Rifle Body Glow Shell"
                 float3 expandedOS = input.positionOS.xyz * outerScale;
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(expandedOS);
                 output.positionCS = positionInputs.positionCS;
+                // A model-relative expansion becomes less than one pixel after the
+                // WBH projectile scale and gameplay camera projection. Keep a small
+                // visible rim in screen space. Smooth normals are stored on the
+                // dedicated glow mesh; the solid projectile mesh is untouched.
+                float4 baseCS = TransformObjectToHClip(input.positionOS.xyz);
+                float3 outlineNormalWS = TransformObjectToWorldNormal(input.normalOS);
+                float2 normalVS = mul((float3x3)UNITY_MATRIX_V, outlineNormalWS).xy;
+                float2 directionVS = mul((float2x2)UNITY_MATRIX_P, normalVS) * _ScaledScreenParams.xy;
+                float directionLength = length(directionVS);
+                float2 pixelDirection = directionVS / max(directionLength, 0.0001);
+                float2 expandedPixels = (output.positionCS.xy / max(output.positionCS.w, 0.0001)
+                    - baseCS.xy / max(baseCS.w, 0.0001)) * (0.5 * _ScaledScreenParams.xy);
+                float existingWidth = dot(expandedPixels, pixelDirection);
+                float extraPixels = max(0.0, _HaloPixels - existingWidth);
+                output.positionCS.xy += pixelDirection * extraPixels
+                    * (2.0 / _ScaledScreenParams.xy) * output.positionCS.w
+                    * saturate(length(normalVS) * 20.0)
+                    * step(0.0001, baseCS.w);
+
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.positionOS = input.positionOS.xyz;
@@ -208,7 +256,7 @@ Shader "Project2/Rifle Body Glow Shell"
             {
                 float3 normalWS = normalize(input.normalWS);
                 float3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
-                float rim = pow(saturate(1.0 - abs(dot(normalWS, viewDirWS))), max(0.65, _RimPower * 0.72));
+                float rim = 0.3 + 0.7 * pow(saturate(1.0 - abs(dot(normalWS, viewDirWS))), max(0.65, _RimPower * 0.72));
                 float pulse = 1.0 + sin(_Time.y * _PulseSpeed) * (_PulseAmount * 0.6);
                 float styleEnergy = _Style > 2.5 ? 0.37 : (_Style > 0.5 && _Style < 1.5 ? 0.34 : 0.29);
                 float stylePattern = 1.0;
