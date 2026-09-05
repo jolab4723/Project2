@@ -8,4 +8,5 @@ public enum EquipResult : byte
     NotEquipped = 5,
     NoReturnSpace = 6,
     Failed = 7,
+    WrongCharacterClass = 8,
 }

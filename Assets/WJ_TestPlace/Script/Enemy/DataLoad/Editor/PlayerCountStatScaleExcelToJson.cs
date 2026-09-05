@@ -8,20 +8,20 @@ using UnityEngine;
 namespace DataSystem
 {
     /// <summary>
-    /// EnemyData.xlsx의 FloorStatScale 시트(두 번째 시트)를 JSON으로 변환한다. EnemyData 시트와
-    /// 같은 엑셀 파일을 쓰지만 SO를 만들지 않고 JSON만 만든다 - 층별 배율은 적 하나하나가 아니라
-    /// 조회 테이블이라 SO화할 필요가 없다(FloorStatScaleTable이 런타임에 이 JSON을 직접 읽는다).
+    /// EnemyData.xlsx의 playerCountStatScale 시트를 JSON으로 변환한다. FloorStatScaleExcelToJson과
+    /// 같은 방식(SO화하지 않고 JSON만 생성, 새 배율 컬럼은 코드 수정 없이 자동 반영)이며
+    /// 시트마다 독립된 변환기로 두는 기존 방침에 따라 별도 클래스로 둔다.
     ///
     /// 시트 구조는 EnemyData와 동일하게 1행 타입 / 2행 헤더 / 3행부터 데이터다.
     /// </summary>
-    public static class FloorStatScaleExcelToJson
+    public static class PlayerCountStatScaleExcelToJson
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
         private const string DefaultExcelPath = "Assets/Resources/DataFiles/EnemyData/1. ExcelFile/EnemyData.xlsx";
-        private const string OutputFileName = "FloorStatScale.json";
-        private const string SheetName = "FloorStatScale";
+        private const string OutputFileName = "PlayerCountStatScale.json";
+        private const string SheetName = "playerCountStatScale";
 
-        [MenuItem("DataLoader/Enemy Data/3. Convert FloorStatScale To JSON")]
+        [MenuItem("DataLoader/Enemy Data/5. Convert PlayerCountStatScale To JSON")]
         public static void ConvertFromMenu()
         {
             ConvertWithDefaultPaths();
@@ -36,7 +36,7 @@ namespace DataSystem
             string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogWarning($"[FloorStatScale] 적 데이터 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                Debug.LogWarning($"[PlayerCountStatScale] 적 데이터 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
                 return null;
             }
 
@@ -52,7 +52,7 @@ namespace DataSystem
         {
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogError($"[FloorStatScale] Excel file not found: {excelAbsolutePath}");
+                Debug.LogError($"[PlayerCountStatScale] Excel file not found: {excelAbsolutePath}");
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace DataSystem
             {
                 if (!SeekToSheet(reader, SheetName))
                 {
-                    Debug.LogError($"[FloorStatScale] '{SheetName}' 시트를 찾지 못했습니다: {excelAbsolutePath}");
+                    Debug.LogError($"[PlayerCountStatScale] '{SheetName}' 시트를 찾지 못했습니다: {excelAbsolutePath}");
                     return;
                 }
 
@@ -72,11 +72,11 @@ namespace DataSystem
 
             if (rawRows.Count == 0)
             {
-                Debug.LogError("[FloorStatScale] 변환할 데이터 행이 없습니다. 시트 구조(1행 타입 / 2행 헤더 / 3행부터 데이터)를 확인해주세요.");
+                Debug.LogError("[PlayerCountStatScale] 변환할 데이터 행이 없습니다. 시트 구조(1행 타입 / 2행 헤더 / 3행부터 데이터)를 확인해주세요.");
                 return;
             }
 
-            List<FloorStatScaleRow> rows = MapRows(rawRows);
+            List<PlayerCountStatScaleRow> rows = MapRows(rawRows);
 
             string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
@@ -86,32 +86,32 @@ namespace DataSystem
             File.WriteAllText(jsonAbsolutePath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"[FloorStatScale] JSON generated: {jsonAbsolutePath}\n층 {rows.Count}개");
+            Debug.Log($"[PlayerCountStatScale] JSON generated: {jsonAbsolutePath}\n인원 수 구간 {rows.Count}개");
         }
 
         /// <summary>
         /// ExcelSheetReader.MapRows(리플렉션으로 고정된 필드 이름만 매핑)를 안 쓰고 직접 매핑한다.
-        /// floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
-        /// 그대로 FloorStatScaleRow.multipliers에 담는다 - 새 배율 컬럼을 엑셀에 추가해도
-        /// FloorStatScaleRow에 필드를 새로 안 만들어도 자동으로 JSON에 실린다.
+        /// playerCount만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplierForPlayerCount 등)은 전부 컬럼
+        /// 이름 그대로 PlayerCountStatScaleRow.multipliers에 담는다 - 새 배율 컬럼을 엑셀에 추가해도
+        /// PlayerCountStatScaleRow에 필드를 새로 안 만들어도 자동으로 JSON에 실린다.
         /// </summary>
-        private static List<FloorStatScaleRow> MapRows(List<Dictionary<string, string>> rawRows)
+        private static List<PlayerCountStatScaleRow> MapRows(List<Dictionary<string, string>> rawRows)
         {
-            var result = new List<FloorStatScaleRow>();
+            var result = new List<PlayerCountStatScaleRow>();
 
             foreach (Dictionary<string, string> rawRow in rawRows)
             {
-                if (!rawRow.TryGetValue("floor", out string floorText) || string.IsNullOrWhiteSpace(floorText))
+                if (!rawRow.TryGetValue("playerCount", out string countText) || string.IsNullOrWhiteSpace(countText))
                 {
-                    Debug.LogWarning("[FloorStatScale] floor 값이 없는 행을 건너뜁니다.");
+                    Debug.LogWarning("[PlayerCountStatScale] playerCount 값이 없는 행을 건너뜁니다.");
                     continue;
                 }
 
-                var row = new FloorStatScaleRow { floor = ParseInt(floorText) };
+                var row = new PlayerCountStatScaleRow { playerCount = ParseInt(countText) };
 
                 foreach (KeyValuePair<string, string> cell in rawRow)
                 {
-                    if (cell.Key == "floor")
+                    if (cell.Key == "playerCount")
                         continue;
 
                     row.multipliers[cell.Key] = ParseFloat(cell.Value);

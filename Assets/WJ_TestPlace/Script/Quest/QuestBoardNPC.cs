@@ -20,12 +20,16 @@ public class QuestBoardNPC : MonoBehaviour
     private const string AlreadyAcceptedMessage = "이번 캠프에서는 의뢰를 이미 수락했습니다. 다시 캠프에 들어오면 새로 수락할 수 있습니다.";
 
     public QuestDefinitionSO CurrentOffer { get; private set; }
+
+    /// <summary>이번 캠프 진입 중 이 NPC로 이미 리롤을 썼는지. Accept와 마찬가지로 캠프 진입당 1회만
+    /// 허용한다 - Interact()에서 초기화하지 않는다(초기화하면 팝업을 닫았다 다시 열어서 리롤을
+    /// 무한히 쓸 수 있게 됨). 새 캠프 진입(= 이 컴포넌트의 새 인스턴스)마다 자연히 false로 초기화된다.</summary>
     public bool HasRerolled { get; private set; }
 
     /// <summary>이번 캠프 진입 중 이 NPC를 통해 이미 퀘스트를 수락했는지.</summary>
     public bool HasAcceptedThisVisit { get; private set; }
 
-    /// <summary>NPC와 상호작용을 시작한다. 매번 새로 뽑고 리롤 기회를 초기화한다.</summary>
+    /// <summary>NPC와 상호작용을 시작한다. 매번 새로 뽑는다(리롤 기회는 캠프 진입당 1회라 여기서 초기화하지 않음).</summary>
     public void Interact()
     {
         // 캠프 한 번 진입 중 이 NPC로는 1회만 수락할 수 있다 - 이미 썼으면 새로 제시하지 않는다.
@@ -36,7 +40,6 @@ public class QuestBoardNPC : MonoBehaviour
             return;
         }
 
-        HasRerolled = false;
         CurrentOffer = QuestManager.Instance.GetRandomAvailableQuest();
 
         if (CurrentOffer == null)
@@ -49,7 +52,7 @@ public class QuestBoardNPC : MonoBehaviour
             QuestOfferUI.Instance.Show(this);
     }
 
-    /// <summary>1회만 가능한 리롤. 이미 리롤했거나 후보가 없으면 false.</summary>
+    /// <summary>캠프 진입당 1회만 가능한 리롤. 이미 리롤했거나 후보가 없으면 false.</summary>
     public bool Reroll()
     {
         if (HasRerolled || CurrentOffer == null)
