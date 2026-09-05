@@ -22,7 +22,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     [SerializeField] private WaveData[] waves;
 
-    [SerializeField] private WBH_HighEnemyHpbarView eliteView;
+    [SerializeField] private WBH_HighEnemyHpbarView highEnemyView;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
     [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
 
@@ -50,6 +50,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         player = FindAnyObjectByType<T_PlayerController>().transform;
 
         wallet = FindFirstObjectByType < PlayerWallet>();
+        highEnemyView = FindFirstObjectByType<WBH_HighEnemyHpbarView>();
     }
 
     private void OnEnable()
@@ -78,7 +79,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             if (area == null)
                 continue;
 
-            area.Initialize(enemyPool, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, eliteView, wallet);
+            area.Initialize(enemyPool, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
         }
     }
 

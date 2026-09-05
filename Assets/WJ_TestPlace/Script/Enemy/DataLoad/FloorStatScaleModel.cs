@@ -9,21 +9,19 @@ namespace DataSystem
     /// 곱해줄 배율을 담는다 - SO로 만들지 않고 JSON 그대로 두고 런타임에 FloorStatScaleTable이 읽는다
     /// (적 하나당 SO를 만드는 EnemyData와 달리, 층 배율은 단순 조회 테이블이라 SO화할 필요가 없음).
     ///
-    /// difficulty/floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
+    /// 난이도(difficulty)는 더 이상 이 시트가 아니라 별도 difficultyStatScale 시트/DifficultyStatScaleRow로
+    /// 분리됐다(2026-09-04 엑셀 개편) - 이 시트는 순수하게 층(floor) 하나만 키로 쓴다.
+    ///
+    /// floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
     /// multipliers 딕셔너리에 담긴다 - 엑셀에 새 배율 컬럼을 추가하고 파이프라인만 다시 돌리면 코드
     /// 수정 없이 자동으로 반영된다(FloorStatScaleExcelToJson 참고).
-    ///
-    /// difficulty는 엑셀에서 값이 바뀌는 행에만 적어두고 그 아래는 비워두는 표기 방식을 쓴다
-    /// (병합 셀이 아니라 진짜 빈 셀) - FloorStatScaleExcelToJson이 변환 시점에 바로 위 행의 값으로
-    /// 채워서(carry-forward) 이 JSON에는 항상 실제 값이 들어있다.
     /// </summary>
     [Serializable]
     public class FloorStatScaleRow
     {
-        public float difficulty;
         public int floor;
 
-        /// <summary>difficulty/floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
+        /// <summary>floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
         public Dictionary<string, float> multipliers = new Dictionary<string, float>();
 
         /// <summary>컬럼 이름으로 배율을 조회한다. 없으면 배율 없음(1배)으로 취급한다.</summary>

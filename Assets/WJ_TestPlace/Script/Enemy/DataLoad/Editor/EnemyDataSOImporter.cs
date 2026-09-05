@@ -55,6 +55,8 @@ namespace DataSystem
             GenerateAllFromJson(jsonPath, DefaultOutputRoot);
 
             FloorStatScaleExcelToJson.ConvertWithDefaultPaths();
+            DifficultyStatScaleExcelToJson.ConvertWithDefaultPaths();
+            PlayerCountStatScaleExcelToJson.ConvertWithDefaultPaths();
 
             Debug.Log("[EnemyData] ===== 통합 실행 완료 =====");
         }
