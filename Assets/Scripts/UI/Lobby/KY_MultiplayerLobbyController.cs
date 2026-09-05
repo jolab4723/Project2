@@ -15,11 +15,14 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     [Header("로컬 플레이어")]
     [SerializeField] private string localPlayerId = "local";
     [SerializeField] private string localPlayerName = "Player";
+
     [Header("미리보기 참여자")]
     [SerializeField] private List<KY_LobbyPlayerData> previewPlayers = new List<KY_LobbyPlayerData>();
+    
     [Header("로비 표시")]
     [SerializeField] private KY_LobbyPlayerSlot[] playerSlots;
     [SerializeField] private KY_LobbyLineupView lineupView;
+    
     [Header("버튼")]
     [SerializeField] private Button readyButton;
     [SerializeField] private Button changeCharacterButton;
@@ -28,6 +31,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     [SerializeField] private Button passiveSkillButton;
     [SerializeField] private Button optionsButton;
     [SerializeField] private TMP_Text readyButtonText;
+    
     [Header("팝업")]
     [SerializeField] private KY_PopupManager popupManager;
 
