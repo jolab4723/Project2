@@ -1,16 +1,15 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
 
-public class YJ_HexShield : MonoBehaviour
+public class YJ_GunnerHexShield : MonoBehaviour
 {
-    private const int DashSkillIndex = 2;
+    private const int BackstepSkillIndex = 2;
 
-    private static readonly int ShieldStepId =
-        Shader.PropertyToID("_Shield_step");
+    private static readonly int ShieldStepId = Shader.PropertyToID("_Shield_step");
 
     [Header("Shield Fade")]
     [SerializeField, Min(0f)] private float fadeDuration = 0.5f;
-    [SerializeField, Min(0f)] private float fallbackInvincibleDuration = 0.5f;
+    [SerializeField, Min(0f)] private float fallbackInvincibleDuration = 0.3f;
 
     private MeshRenderer[] targetRenderers;
     private MaterialPropertyBlock propertyBlock;
@@ -50,7 +49,8 @@ public class YJ_HexShield : MonoBehaviour
 
         // 외부 이펙트 컴포넌트의 Awake가 덮어쓴 값도 다시 복구한다.
         SetShieldStep(1f);
-        circle.gameObject.SetActive(false);
+        if (circle != null)
+            circle.SetActive(false);
 
         float invincibleDuration = ResolveInvincibleDuration();
         float remainingInvincibleTime = invincibleDuration - (Time.time - enabledTime);
@@ -81,13 +81,13 @@ public class YJ_HexShield : MonoBehaviour
 
     private float ResolveInvincibleDuration()
     {
-        FighterSkillController skillController = GetComponentInParent<FighterSkillController>();
+        GunnerSkillController skillController = GetComponentInParent<GunnerSkillController>();
         SkillDefinitionSO skillDefinition = skillController != null
-            ? skillController.GetSkillDefinition(DashSkillIndex)
+            ? skillController.GetSkillDefinition(BackstepSkillIndex)
             : null;
 
         return skillDefinition != null
-            ? Mathf.Max(0f, skillDefinition.evoInvincibleDuration)
+            ? Mathf.Max(0f, skillDefinition.evoBackstepInvincibleDuration)
             : fallbackInvincibleDuration;
     }
 
