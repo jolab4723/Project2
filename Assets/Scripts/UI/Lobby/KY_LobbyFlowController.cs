@@ -47,7 +47,9 @@ public class KY_LobbyFlowController : MonoBehaviour
     /// <summary>방 나가기는 실제 네트워크 연결 해제 구현 전까지 외부 연결 지점으로 남긴다.</summary>
     private void HandleLeaveLobby()
     {
-        Debug.Log("[KY_LobbyFlowController] 방 나가기 요청을 받았습니다. 네트워크 연결 해제 후 타이틀 전환을 연결하세요.", this);
+        multiplayerLobbyController?.SetPlayers(null);
+        ShowCharacterSelection();
+        Debug.Log("[KY_LobbyFlowController] 로컬 로비 미리보기를 나왔습니다. 실제 네트워크 연결 해제는 추후 연결합니다.", this);
     }
 
     /// <summary>선택적으로 연결한 패널을 안전하게 켜거나 끈다.</summary>

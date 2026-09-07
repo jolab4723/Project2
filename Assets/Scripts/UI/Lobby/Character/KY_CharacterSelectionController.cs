@@ -54,7 +54,7 @@ public class KY_CharacterSelectionController : MonoBehaviour
     private void PlayEntryEffects()
     {
         if (selectionSlideAnimators != null)
-            foreach (KY_SlideAnimator slideAnimator in selectionSlideAnimators) slideAnimator?.SlideIn();
+            foreach (KY_SlideAnimator slideAnimator in selectionSlideAnimators) slideAnimator?.ReplayIn();
         radarChartCurtain?.Open();
     }
 

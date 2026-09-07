@@ -92,6 +92,7 @@ public class KY_SettingsPopup : KY_PopupBase
     /// 완료/취소 시 정리한다. 완료 시 슬롯 텍스트 갱신 + 저장 + KeyBindingChanged 이벤트 발행까지 처리.</summary>
     public void StartRebind(InputAction action, KY_RebindSlot slot)
     {
+        rebindOperation?.Cancel();
         rebindOverlay.SetActive(true);
         rebindText.text = "변경할 키를 입력해주세요";
 
@@ -107,15 +108,23 @@ public class KY_SettingsPopup : KY_PopupBase
                 slot.RefreshKeyText();
                 KeyBindingService.Save();
                 KY_GameEvents.KeyBindingChanged();
-                rebindOperation.Dispose();
+                operation.Dispose();
+                rebindOperation = null;
             })
             .OnCancel(operation =>
             {
                 action.Enable();
                 rebindOverlay.SetActive(false);
-                rebindOperation.Dispose();
+                operation.Dispose();
+                rebindOperation = null;
             })
             .Start();
+    }
+
+    private void OnDisable()
+    {
+        // 닫힌 팝업의 리바인드가 게임 입력을 계속 가로채지 않도록 취소한다.
+        rebindOperation?.Cancel();
     }
 
     public override void Open()

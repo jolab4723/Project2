@@ -17,6 +17,7 @@ public class KY_SlideAnimator : MonoBehaviour
     private RectTransform rectTransform;
     private Vector2 originalPosition;       // 원래 위치
     private Vector2 hiddenPosition;         // 숨는 위치
+    private Tween slideTween;
 
     void Awake()
     {
@@ -31,9 +32,18 @@ public class KY_SlideAnimator : MonoBehaviour
     // 팝업이 들어올 때 호출
     public Tween SlideIn()
     {
-        return rectTransform.DOAnchorPos(originalPosition, duration)
+        slideTween?.Kill();
+        return slideTween = rectTransform.DOAnchorPos(originalPosition, duration)
             .SetEase(inEase, 0)
             .SetUpdate(ignoreTimeScale);
+    }
+
+    // 화면에 다시 진입할 때 숨김 위치부터 재생한다.
+    public Tween ReplayIn()
+    {
+        slideTween?.Kill();
+        rectTransform.anchoredPosition = hiddenPosition;
+        return SlideIn();
     }
 
     // 팝업이 나갈 때 호출
@@ -44,9 +54,12 @@ public class KY_SlideAnimator : MonoBehaviour
 
     public Tween SlideOut(System.Action onComplete)
     {
-        return rectTransform.DOAnchorPos(hiddenPosition, duration)
+        slideTween?.Kill();
+        return slideTween = rectTransform.DOAnchorPos(hiddenPosition, duration)
             .SetEase(outEase, 0)
             .SetUpdate(ignoreTimeScale)
             .OnComplete(() => onComplete?.Invoke());
     }
+
+    private void OnDisable() => slideTween?.Kill();
 }
