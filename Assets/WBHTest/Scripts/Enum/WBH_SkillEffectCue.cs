@@ -59,6 +59,7 @@ public enum WBH_PlayerEffectCue
     G_skill2_evo3_etc9 = 2239,  // 2번스킬 3변형, 디버프 이펙트
     G_skill3_evo0_etc0 = 2300,  // 3번스킬 기본
     G_skill3_evo1_etc0 = 2310,  // 3번스킬 1변형
+    G_skill3_evo1_etc1 = 2311,  // 3번스킬 1변형, 이동 이펙트
     G_skill3_evo1_etc8 = 2318,  // 3번스킬 1변형, 디코이 폭발
     G_skill3_evo2_etc0 = 2320,  // 3번스킬 2변형
     G_skill3_evo2_etc1 = 2321,  // 3번스킬 2변형, 쉴드 이펙트
