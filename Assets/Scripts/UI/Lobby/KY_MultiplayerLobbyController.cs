@@ -20,6 +20,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     [SerializeField] private List<KY_LobbyPlayerData> previewPlayers = new List<KY_LobbyPlayerData>();
     
     [Header("로비 표시")]
+    [Tooltip("입장 순서대로 연결합니다. LobbySeane은 가운데 왼쪽, 가운데 오른쪽, 맨 왼쪽, 맨 오른쪽 순서입니다.")]
     [SerializeField] private KY_LobbyPlayerSlot[] playerSlots;
     [SerializeField] private KY_LobbyLineupView lineupView;
     
@@ -51,6 +52,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         gameStartButton?.onClick.AddListener(RequestGameStart);
         passiveSkillButton?.onClick.AddListener(OpenPassiveSkill);
         optionsButton?.onClick.AddListener(OpenOptions);
+        RefreshView();
     }
 
     /// <summary>로컬 플레이어가 캐릭터를 확정해 로비에 들어왔을 때 상태를 초기화해 표시한다.</summary>
@@ -131,8 +133,14 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
             }
         lineupView?.ShowPlayers(previewPlayers);
         KY_LobbyPlayerData localPlayer = FindLocalPlayer();
+        if (readyButton != null) readyButton.interactable = localPlayer != null;
+        if (changeCharacterButton != null) changeCharacterButton.interactable = localPlayer != null;
         if (readyButtonText != null) readyButtonText.text = localPlayer != null && localPlayer.readyState == KY_LobbyReadyState.Ready ? "READY CANCEL" : "READY";
-        if (gameStartButton != null) gameStartButton.interactable = CanStartGame();
+        if (gameStartButton != null)
+        {
+            gameStartButton.gameObject.SetActive(localPlayer != null && localPlayer.isHost);
+            gameStartButton.interactable = CanStartGame();
+        }
     }
 
     /// <summary>호스트이며 모든 실제 참여자가 준비되었는지 확인한다.</summary>

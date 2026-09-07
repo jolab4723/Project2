@@ -14,11 +14,16 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
     [SerializeField] private TMP_Text characterNameText;
     [SerializeField] private TMP_Text readyStateText;
 
+    [Header("수동 배치 모델 (자동 Lineup과 함께 사용하지 않음)")]
+    [SerializeField] private GameObject fighterModel;
+    [SerializeField] private GameObject gunnerModel;
+
     /// <summary>비어 있는 플레이어 칸으로 표시한다.</summary>
     public void ShowEmpty()
     {
         SetActive(emptyStateRoot, true); SetActive(playerStateRoot, false);
         SetActive(hostBadge, false); SetActive(localPlayerFrame, false);
+        SetActive(fighterModel, false); SetActive(gunnerModel, false);
     }
 
     /// <summary>전달받은 플레이어의 현재 선택과 준비 상태를 표시한다.</summary>
@@ -31,6 +36,15 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
         SetText(playerNameText, string.IsNullOrWhiteSpace(player.displayName) ? "Player" : player.displayName);
         SetText(characterNameText, character != null ? character.characterName : "캐릭터 선택 중");
         SetText(readyStateText, GetReadyStateText(player.readyState));
+        SetActive(fighterModel, isActiveAndEnabled && player.selectedCharacterId == KY_CharacterId.Fighter);
+        SetActive(gunnerModel, isActiveAndEnabled && player.selectedCharacterId == KY_CharacterId.Gunner);
+    }
+
+    // UI와 별도 3D 스테이지에 있는 모델도 로비 화면을 떠날 때 숨긴다.
+    private void OnDisable()
+    {
+        SetActive(fighterModel, false);
+        SetActive(gunnerModel, false);
     }
 
     /// <summary>준비 상태에 맞는 UI 문구를 반환한다.</summary>
