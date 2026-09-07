@@ -17,6 +17,7 @@ public class SkillLabelDatabaseSO : ScriptableObject
     public class SkillLabelEntry
     {
         public string skillId;
+        public string skillName;
         public string skillDescription;
         public string evolution1Description;
         public string evolution2Description;
@@ -32,6 +33,10 @@ public class SkillLabelDatabaseSO : ScriptableObject
     [SerializeField] private List<SkillLabelEntry> chnLabels = new List<SkillLabelEntry>();
 
     private Dictionary<GameLanguage, Dictionary<string, SkillLabelEntry>> lookupCache;
+
+    /// <summary>현재 표시 언어 기준으로 스킬 이름을 반환한다. 매칭 실패 시 빈 문자열(호출부에서 SkillDefinitionSO.skillName으로 폴백해야 함).</summary>
+    public string GetSkillName(ActiveSkillId skillId) =>
+        GetEntry(skillId, CurrentLanguage)?.skillName ?? string.Empty;
 
     /// <summary>현재 표시 언어 기준으로 기본 스킬 설명을 반환한다. 매칭 실패 시 빈 문자열.</summary>
     public string GetSkillDescription(ActiveSkillId skillId) =>

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using DG.Tweening;
 
 /// <summary>
@@ -18,18 +19,26 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
     [Header("Ease")]
     [SerializeField] private Ease ease = Ease.OutQuad;
 
-    private Vector3 originalScale;  // 버튼의 원래 크기를 저장할 변수. 
+    [Tooltip("지정하지 않으면 같은 GameObject에서 자동으로 찾는다. 있으면 비활성(interactable == false) 상태일 때 호버/클릭 연출을 재생하지 않는다.")]
+    [SerializeField] private Button button;
+
+    private Vector3 originalScale;  // 버튼의 원래 크기를 저장할 변수.
     private bool isHovering = false;
 
-    /// <summary>버튼의 원래 크기를 저장한다.</summary>
+    /// <summary>버튼의 원래 크기를 저장하고, button이 비어있으면 같은 GameObject에서 찾는다.</summary>
     void Awake()
     {
         originalScale = transform.localScale;
+
+        if (button == null)
+            button = GetComponent<Button>();
     }
 
-    /// <summary>호버시 hoverScale로 확대.</summary>
+    /// <summary>호버시 hoverScale로 확대. 버튼이 비활성 상태면 무시한다.</summary>
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (button != null && !button.interactable) return;
+
         isHovering = true;
         transform.DOKill();
         transform.DOScale(originalScale * hoverScale, hoverDuration)
@@ -40,6 +49,8 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
     /// <summary>호버 종료 시 원래 크기로 복귀.</summary>
     public void OnPointerExit(PointerEventData eventData)
     {
+        if (!isHovering) return;
+
         isHovering = false;
         transform.DOKill();
         transform.DOScale(originalScale, hoverDuration)
@@ -47,9 +58,11 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
             .SetUpdate(true);
     }
 
-    /// <summary>클릭 시 눌림 스케일로 축소했다가, 현재 호버 상태에 맞는 크기로 복귀한다.</summary>
+    /// <summary>클릭 시 눌림 스케일로 축소했다가, 현재 호버 상태에 맞는 크기로 복귀한다. 버튼이 비활성 상태면 무시한다.</summary>
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (button != null && !button.interactable) return;
+
         transform.DOKill();
 
         Vector3 restoreTarget = isHovering ? originalScale * hoverScale : originalScale;

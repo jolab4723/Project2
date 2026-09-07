@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using ItemSystem;
 using UnityEngine;
 
 /// <summary>
@@ -9,6 +10,9 @@ using UnityEngine;
 /// !! KY_QuestPopup.cs(김관영님 소유)는 전혀 수정하지 않는다. 그 클래스의 private quests 필드와
 ///    private RefreshList()를 리플렉션으로만 건드린다 - 표시용 데이터 형식이 서로 다른 걸
 ///    이 브릿지가 변환해서 이어줄 뿐, 원본 UI 클래스는 그대로 둔다.
+///
+/// !! 표시 문구는 questLabels/itemLabels가 있으면 그걸 거쳐서 언어별로 나온다(QuestOfferUI와 같은 방식) -
+///    YJ_LanguageManager.LanguageChanged를 구독해서 언어가 바뀌면 열려있는 중에도 즉시 다시 그린다.
 /// </summary>
 public class QuestPopupBridge : MonoBehaviour
 {
@@ -17,6 +21,10 @@ public class QuestPopupBridge : MonoBehaviour
 
     [Tooltip("KY_QuestPopup 컴포넌트를 드래그해서 연결.")]
     [SerializeField] private MonoBehaviour questPopup;
+
+    [Header("다국어(비워두면 QuestDefinitionSO 원본 문구로 폴백)")]
+    [SerializeField] private QuestLabelDatabaseSO questLabels;
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
 
     private FieldInfo questsField;
     private MethodInfo refreshListMethod;
@@ -45,6 +53,9 @@ public class QuestPopupBridge : MonoBehaviour
             QuestManager.Instance.OnQuestProgressChanged += HandleProgressChanged;
         }
 
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+
         Refresh();
     }
 
@@ -55,9 +66,15 @@ public class QuestPopupBridge : MonoBehaviour
             QuestManager.Instance.OnQuestListChanged -= Refresh;
             QuestManager.Instance.OnQuestProgressChanged -= HandleProgressChanged;
         }
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
     }
 
     private void HandleProgressChanged(ActiveQuestData _) => Refresh();
+
+    // 목록이 열려있는 동안 설정에서 언어를 바꾸면 다음에 열 때가 아니라 바로 반영되게 한다.
+    private void HandleLanguageChanged(GameLanguage _) => Refresh();
 
     private void Refresh()
     {
@@ -77,7 +94,7 @@ public class QuestPopupBridge : MonoBehaviour
             {
                 conditions.Add(new KY_QuestConditionData
                 {
-                    description = def.conditions[i].description,
+                    description = GetConditionDescription(def, i),
                     current = active.conditionProgress[i],
                     required = def.conditions[i].requiredCount
                 });
@@ -85,8 +102,8 @@ public class QuestPopupBridge : MonoBehaviour
 
             list.Add(new KY_QuestData
             {
-                questName = def.questName,
-                description = def.description,
+                questName = GetQuestName(def),
+                description = GetQuestDescription(def),
                 conditions = conditions.ToArray(),
                 reward = BuildRewardText(def)
             });
@@ -99,11 +116,27 @@ public class QuestPopupBridge : MonoBehaviour
             refreshListMethod.Invoke(questPopup, null);
     }
 
-    private static string BuildRewardText(QuestDefinitionSO def)
+    private string GetQuestName(QuestDefinitionSO def) =>
+        questLabels != null ? questLabels.GetQuestName(def.questId) : def.questName;
+
+    private string GetQuestDescription(QuestDefinitionSO def) =>
+        questLabels != null ? questLabels.GetQuestDescription(def.questId) : def.description;
+
+    private string GetConditionDescription(QuestDefinitionSO def, int index) =>
+        questLabels != null ? questLabels.GetConditionDescription(def.questId, index) : def.conditions[index].description;
+
+    private string BuildRewardText(QuestDefinitionSO def)
     {
-        string reward = "크레딧 " + def.rewardGold;
+        string creditFormat = questLabels != null ? questLabels.GetLabel("quest_ui.reward_credit_plain") : "크레딧 {0}";
+        string reward = string.Format(creditFormat, def.rewardGold);
+
         if (def.rewardItem != null)
-            reward += ", " + def.rewardItem.itemName + " x" + def.rewardItemCount;
+        {
+            string itemName = itemLabels != null ? itemLabels.GetName(def.rewardItem.itemId) : def.rewardItem.itemName;
+            string suffixFormat = questLabels != null ? questLabels.GetLabel("quest_ui.reward_item_suffix") : ", {0} x{1}";
+            reward += string.Format(suffixFormat, itemName, def.rewardItemCount);
+        }
+
         return reward;
     }
 }
