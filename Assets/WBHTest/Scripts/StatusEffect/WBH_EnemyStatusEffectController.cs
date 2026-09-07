@@ -17,6 +17,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     [SerializeField] private WBH_EffectData knockbackEffect;
     [SerializeField] private WBH_EffectData airborneEffect;
     [SerializeField] private WBH_EffectData stunEffect;
+    [SerializeField] private WBH_EffectData markedEffect;
 
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
     private readonly HashSet<WBH_StatusEffectType> controlBlockingEffects = new();
@@ -228,7 +229,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
             WBH_StatusEffectType.KnockBack => knockbackEffect,
             WBH_StatusEffectType.Airborne => airborneEffect,
             WBH_StatusEffectType.Stun => stunEffect,
-
+            WBH_StatusEffectType.Marked => markedEffect,
             _ => null
         };
     }

@@ -4,6 +4,13 @@ using UnityEngine;
 public class WBH_EffectSpawner : MonoBehaviour
 {
     [SerializeField] private WBH_EffectPoolManager poolManager;
+    [SerializeField] private Camera billboardCamera;
+
+    private void Awake()
+    {
+        billboardCamera = FindFirstObjectByType<Camera>();
+    }
+
     public void SpawnEffect(WBH_EffectData data, Transform attachTarget)
 
     {
@@ -34,7 +41,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data, autoReturn: true, 1f);
+        effect.Play(data, autoReturn: true, 1f, viewCamera: billboardCamera);
     }
 
     public void SpawnEffect(WBH_EffectData data, Vector3 position)
@@ -55,7 +62,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetParent(null);
 
         effect.transform.SetPositionAndRotation(position, rotation);
-        effect.Play(data, autoReturn: true, 1f);
+        effect.Play(data, autoReturn: true, 1f, viewCamera: billboardCamera);
     }
 
     // 월드 이펙트 스케일 조정용 오버로딩
@@ -79,7 +86,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetPositionAndRotation(position, rotation);
         effectTransform.localScale = Vector3.Scale(effectTransform.localScale, scaleMultiplier);
 
-        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed);
+        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera);
     }
 
     // 부착형 이펙트 스케일 조정을 위한 오버로딩
@@ -108,7 +115,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed);
+        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera);
     }
 
     // 상태이상 같은 일정시간 동안 지속형 이펙트
@@ -141,7 +148,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data, autoReturn: false);
+        effect.Play(data, autoReturn: false, viewCamera: billboardCamera);
 
         return effect;
     }
@@ -160,7 +167,7 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetParent(null);
         effect.transform.SetPositionAndRotation(positon, rotation);
 
-        effect.Play(data, autoReturn: false);
+        effect.Play(data, autoReturn: false, viewCamera: billboardCamera);
         return effect;
     }
 
@@ -178,11 +185,28 @@ public class WBH_EffectSpawner : MonoBehaviour
             Log.Error($"{name} 의 이펙트 풀 매니저가 초기화되지 않았습니다.");
             return false;
         }
+
         if(data == null)
         {
             Log.Warning($"{name} 에서 EffectData 없이 EffectData 없이 재생을 요청하였습니다.");
             return false;
         }
+
+        if (data.attachType == EffectAttachType.Follow_Billboard)
+        {
+            // Inspector 지정값 또는 이전에 찾은 카메라를 우선 사용
+            if (billboardCamera == null)
+            {
+                billboardCamera = Camera.main;
+            }
+
+            if (billboardCamera == null)
+            {
+                Log.Warning($"{name}: {data.name}을 재생할 카메라가 없습니다. " + "Billboard Camera 연결 또는 활성 MainCamera 태그를 확인하세요.");
+                return false;
+            }
+        }
+
         return true;
     }
 
