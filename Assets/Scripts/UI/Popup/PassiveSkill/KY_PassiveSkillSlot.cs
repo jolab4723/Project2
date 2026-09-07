@@ -2,11 +2,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
+using TMPro;
 
 public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public Image iconImage;
     public GameObject activeHighlight;
+    [SerializeField] private TMP_Text missingIconLabel;
 
     private KY_PassiveSkillData myData;
 
@@ -18,6 +20,12 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
     {
         myData = data;
         iconImage.sprite = data.icon;
+        iconImage.enabled = data.icon != null;
+        if (missingIconLabel != null)
+        {
+            missingIconLabel.gameObject.SetActive(data.icon == null);
+            missingIconLabel.text = data.skillName;
+        }
         activeHighlight.SetActive(data.isActive);
     }
 
