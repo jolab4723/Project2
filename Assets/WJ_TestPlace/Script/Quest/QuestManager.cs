@@ -22,6 +22,13 @@ public class QuestManager : Singleton<QuestManager>
     [Tooltip("프로젝트에 존재하는 모든 퀘스트 정의. 인스펙터에서 QuestDatabaseSO 에셋을 연결해야 한다.")]
     [SerializeField] private QuestDatabaseSO database;
 
+    [Header("다국어(비워두면 QuestDefinitionSO 원본 문구로 폴백)")]
+    [SerializeField] private QuestLabelDatabaseSO questLabels;
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
+
+    /// <summary>QuestBoardNPC 등 다른 퀘스트 관련 컴포넌트가 같은 다국어 DB를 공유해서 쓸 때 참조.</summary>
+    public QuestLabelDatabaseSO QuestLabels => questLabels;
+
     private readonly List<ActiveQuestData> activeQuests = new List<ActiveQuestData>();
     private bool subscribedToInventory;
 
@@ -199,8 +206,45 @@ public class QuestManager : Singleton<QuestManager>
     {
         active.isCompleted = true;
         GrantReward(def);
+        NotifyQuestCompleted(def);
         OnQuestCompleted?.Invoke(active);
         OnQuestListChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// 퀘스트 완료를 김성우님이 만든 알림 경로(InventoryController.PrintLog + 싱글플레이 채팅)로
+    /// 띄운다. QuestBoardNPC.NotifyAlreadyAccepted()와 같은 방식 - 획득 알림이므로 장비 거절/경고와
+    /// 달리 ChatKind.Acquisition("[획득]" 접두사, 초록색)을 쓴다. 인벤토리 팝업을 한 번도 안 열어
+    /// Instance가 아직 없으면(GrantReward도 이미 건너뛴 상태) 조용히 건너뛴다.
+    /// </summary>
+    private void NotifyQuestCompleted(QuestDefinitionSO def)
+    {
+        if (InventoryController.Instance == null)
+            return;
+
+        string questName = questLabels != null ? questLabels.GetQuestName(def.questId) : def.questName;
+        string messageFormat = questLabels != null
+            ? questLabels.GetLabel("quest_ui.completed_message")
+            : "'{0}' 의뢰를 완료했습니다! 보상: {1}";
+        string message = string.Format(messageFormat, questName, BuildRewardText(def));
+
+        InventoryController.Instance.PrintLog(message);
+        InventoryController.Instance.ReportSinglePlayerMessage(ChatKind.Acquisition, message);
+    }
+
+    private string BuildRewardText(QuestDefinitionSO def)
+    {
+        string creditFormat = questLabels != null ? questLabels.GetLabel("quest_ui.reward_credit_plain") : "크레딧 {0}";
+        string reward = string.Format(creditFormat, def.rewardGold);
+
+        if (def.rewardItem != null)
+        {
+            string itemName = itemLabels != null ? itemLabels.GetName(def.rewardItem.itemId) : def.rewardItem.itemName;
+            string suffixFormat = questLabels != null ? questLabels.GetLabel("quest_ui.reward_item_suffix") : ", {0} x{1}";
+            reward += string.Format(suffixFormat, itemName, def.rewardItemCount);
+        }
+
+        return reward;
     }
 
     private void GrantReward(QuestDefinitionSO def)

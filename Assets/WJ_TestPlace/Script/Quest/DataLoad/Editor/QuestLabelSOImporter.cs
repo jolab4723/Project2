@@ -7,33 +7,33 @@ using UnityEngine;
 namespace DataSystem
 {
     /// <summary>
-    /// SkillLabelExcelToJson 결과물(JSON)을 읽어서 SkillLabelDatabaseSO를 갱신한다.
-    /// SkillLabelDatabaseSO의 korLabels/engLabels/jpnLabels/chnLabels는 private [SerializeField]라
-    /// 그 파일은 그대로 두고 SerializedObject/SerializedProperty로 직접 써넣는다.
+    /// QuestLabelExcelToJson 결과물(JSON)을 읽어서 QuestLabelDatabaseSO를 갱신한다.
+    /// QuestLabelDatabaseSO의 korLabels/engLabels/jpnLabels/chnLabels는 private [SerializeField]라
+    /// 그 파일은 그대로 두고 SerializedObject/SerializedProperty로 직접 써넣는다(StatLabelSOImporter와 동일).
     /// </summary>
-    public static class SkillLabelSOImporter
+    public static class QuestLabelSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/CharData/SkillData/3. GeneratedAssets/SkillLabelDatabase.asset";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/QuestData/2. JSONFile";
+        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Quest/QuestLabelDatabase.asset";
 
-        [MenuItem("DataLoader/Skill Label/2. Generate SO From JSON")]
+        [MenuItem("DataLoader/Quest Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
         {
             string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
-            string jsonPath = EditorUtility.OpenFilePanel("Select skill label JSON", defaultAbsoluteFolder, "json");
+            string jsonPath = EditorUtility.OpenFilePanel("Select quest label JSON", defaultAbsoluteFolder, "json");
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
             Import(jsonPath, DefaultOutputAssetPath);
         }
 
-        [MenuItem("DataLoader/Skill Label/0. Run All Steps")]
+        [MenuItem("DataLoader/Quest Label/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            string jsonPath = SkillLabelExcelToJson.ConvertWithDefaultPaths();
+            string jsonPath = QuestLabelExcelToJson.ConvertWithDefaultPaths();
             if (string.IsNullOrEmpty(jsonPath))
             {
-                Debug.LogError("[SkillLabel] 엑셀을 찾지 못해 중단했습니다.");
+                Debug.LogError("[QuestLabel] 엑셀을 찾지 못해 중단했습니다.");
                 return;
             }
 
@@ -51,19 +51,19 @@ namespace DataSystem
             string absoluteJsonPath = jsonPath.StartsWith("Assets/") ? AssetPathToAbsolutePath(jsonPath) : jsonPath;
             if (!File.Exists(absoluteJsonPath))
             {
-                Debug.LogError($"[SkillLabel] JSON file not found: {absoluteJsonPath}");
+                Debug.LogError($"[QuestLabel] JSON file not found: {absoluteJsonPath}");
                 return;
             }
 
             string json = File.ReadAllText(absoluteJsonPath);
-            SkillLabelJsonData data = JsonConvert.DeserializeObject<SkillLabelJsonData>(json);
+            QuestLabelJsonData data = JsonConvert.DeserializeObject<QuestLabelJsonData>(json);
             if (data == null)
             {
-                Debug.LogError("[SkillLabel] JSON parse failed.");
+                Debug.LogError("[QuestLabel] JSON parse failed.");
                 return;
             }
 
-            SkillLabelDatabaseSO so = GetOrCreateAsset(outputAssetPath);
+            QuestLabelDatabaseSO so = GetOrCreateAsset(outputAssetPath);
             if (so == null)
                 return;
 
@@ -78,54 +78,47 @@ namespace DataSystem
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[SkillLabel] SO 갱신 완료: {outputAssetPath}\n" +
+            Debug.Log($"[QuestLabel] SO 갱신 완료: {outputAssetPath}\n" +
                       $"KOR: {korCount}, ENG: {engCount}, JPN: {jpnCount}, CHN: {chnCount}");
         }
 
-        private static int WriteLabels(SerializedProperty labelsProp, List<SkillLabelRow> rows)
+        private static int WriteLabels(SerializedProperty labelsProp, List<QuestLabelRow> rows)
         {
             labelsProp.ClearArray();
 
             int index = 0;
-            foreach (SkillLabelRow row in rows)
+            foreach (QuestLabelRow row in rows)
             {
-                if (string.IsNullOrEmpty(row.skillId))
+                if (string.IsNullOrEmpty(row.key))
                 {
-                    Debug.LogWarning("[SkillLabel] skillId가 비어있는 행을 건너뜁니다.");
+                    Debug.LogWarning("[QuestLabel] key가 비어있는 행을 건너뜁니다.");
                     continue;
                 }
 
                 labelsProp.InsertArrayElementAtIndex(index);
                 SerializedProperty element = labelsProp.GetArrayElementAtIndex(index);
-                element.FindPropertyRelative("skillId").stringValue = row.skillId;
-                element.FindPropertyRelative("skillName").stringValue = row.skillName;
-                element.FindPropertyRelative("skillDescription").stringValue = row.skillDescription;
-                element.FindPropertyRelative("evolution1Description").stringValue = row.evolution1Description;
-                element.FindPropertyRelative("evolution2Description").stringValue = row.evolution2Description;
-                element.FindPropertyRelative("evolution3Description").stringValue = row.evolution3Description;
-                element.FindPropertyRelative("enhancement1Description").stringValue = row.enhancement1Description;
-                element.FindPropertyRelative("enhancement2Description").stringValue = row.enhancement2Description;
-                element.FindPropertyRelative("enhancement3Description").stringValue = row.enhancement3Description;
+                element.FindPropertyRelative("key").stringValue = row.key;
+                element.FindPropertyRelative("label").stringValue = row.label;
                 index++;
             }
 
             return index;
         }
 
-        private static SkillLabelDatabaseSO GetOrCreateAsset(string path)
+        private static QuestLabelDatabaseSO GetOrCreateAsset(string path)
         {
-            SkillLabelDatabaseSO asset = AssetDatabase.LoadAssetAtPath<SkillLabelDatabaseSO>(path);
+            QuestLabelDatabaseSO asset = AssetDatabase.LoadAssetAtPath<QuestLabelDatabaseSO>(path);
             if (asset != null)
                 return asset;
 
             Object existing = AssetDatabase.LoadAssetAtPath<Object>(path);
             if (existing != null)
             {
-                Debug.LogError($"[SkillLabel] Asset already exists but type is not SkillLabelDatabaseSO: {path}");
+                Debug.LogError($"[QuestLabel] Asset already exists but type is not QuestLabelDatabaseSO: {path}");
                 return null;
             }
 
-            asset = ScriptableObject.CreateInstance<SkillLabelDatabaseSO>();
+            asset = ScriptableObject.CreateInstance<QuestLabelDatabaseSO>();
             string directory = Path.GetDirectoryName(path).Replace("\\", "/");
             EnsureAssetFolder(directory);
             AssetDatabase.CreateAsset(asset, path);

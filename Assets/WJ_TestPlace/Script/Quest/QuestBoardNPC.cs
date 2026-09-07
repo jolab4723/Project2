@@ -129,13 +129,19 @@ public class QuestBoardNPC : MonoBehaviour
     /// 추가 수락 시도를 김성우님이 만든 알림 경로(InventoryController.PrintLog + 싱글플레이 채팅 경고)로
     /// 띄운다 - EquipmentSystem이 장비 거절을 알릴 때(InventoryController.ReportEquipmentRejection)와
     /// 같은 방식을 그대로 재사용한다. 인벤토리 팝업을 한 번도 안 열어 Instance가 아직 없으면 조용히 건너뛴다.
+    /// 문구는 QuestManager가 들고 있는 QuestLabelDatabaseSO를 공유해서 언어별로 낸다(비어있으면 한국어 폴백).
     /// </summary>
     private static void NotifyAlreadyAccepted()
     {
         if (InventoryController.Instance == null)
             return;
 
-        InventoryController.Instance.PrintLog(AlreadyAcceptedMessage);
-        InventoryController.Instance.ReportSinglePlayerMessage(ChatKind.Warning, AlreadyAcceptedMessage);
+        QuestLabelDatabaseSO questLabels = QuestManager.Instance != null ? QuestManager.Instance.QuestLabels : null;
+        string message = questLabels != null
+            ? questLabels.GetLabel("quest_ui.already_accepted_message")
+            : AlreadyAcceptedMessage;
+
+        InventoryController.Instance.PrintLog(message);
+        InventoryController.Instance.ReportSinglePlayerMessage(ChatKind.Warning, message);
     }
 }

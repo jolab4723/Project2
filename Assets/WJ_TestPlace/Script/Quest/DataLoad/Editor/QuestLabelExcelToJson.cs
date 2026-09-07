@@ -9,16 +9,15 @@ using DataSystem.Excel;
 namespace DataSystem
 {
     /// <summary>
-    /// SkillDataLabel.xlsx(KOR/ENG/JPN/CHN 시트)를 JSON으로 변환한다.
-    /// skillId 컬럼은 ActiveSkillId enum 이름(예: "FighterHalfCircleSlash")과 1:1로 맞춰져 있다.
-    /// EnemyLabelExcelToJson과 동일한 구조(1행 헤더, 타입 힌트 행 없음)라 ExcelSheetReader.ReadSheetRows를 그대로 사용한다.
+    /// QuestLabel.xlsx(KOR/ENG/JPN/CHN 시트)를 JSON으로 변환한다. StatLabelExcelToJson과 같은 구조
+    /// (1행 헤더, 타입 힌트 행 없음, key/label 두 컬럼)라 ExcelSheetReader.ReadSheetRows를 그대로 쓴다.
     /// </summary>
-    public static class SkillLabelExcelToJson
+    public static class QuestLabelExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
-        private const string DefaultExcelPath = "Assets/Resources/DataFiles/CharData/SkillData/1. ExcelFile/SkillDataLabel.xlsx";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/QuestData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/QuestData/1. ExcelFile/QuestLabel.xlsx";
 
-        [MenuItem("DataLoader/Skill Label/1. Convert Excel To JSON")]
+        [MenuItem("DataLoader/Quest Label/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
         {
             string excelPath = ResolveExcelPath();
@@ -28,7 +27,7 @@ namespace DataSystem
             EnsureAssetFolder(DefaultJsonFolder);
             string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
             string suggestedJsonFileName = Path.GetFileNameWithoutExtension(excelPath) + ".json";
-            string jsonPath = EditorUtility.SaveFilePanel("Save skill label JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
+            string jsonPath = EditorUtility.SaveFilePanel("Save quest label JSON", defaultAbsoluteFolder, suggestedJsonFileName, "json");
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
@@ -38,13 +37,13 @@ namespace DataSystem
         /// <summary>
         /// 대화상자 없이 기본 경로만으로 변환한다. 통합 실행(0. Run All Steps)에서 쓴다.
         /// </summary>
-        /// <returns>생성된 JSON의 절대 경로. 엑셀이 없으면 null.</returns>
+        /// <returns>생성된 JSON의 절대 경로. 엑셀이 없거나 실패하면 null.</returns>
         public static string ConvertWithDefaultPaths()
         {
             string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogWarning($"[SkillLabel] 스킬 라벨 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                Debug.LogWarning($"[QuestLabel] 퀘스트 라벨 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
                 return null;
             }
 
@@ -64,22 +63,22 @@ namespace DataSystem
             string defaultAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
             if (File.Exists(defaultAbsolutePath))
             {
-                Debug.Log("[SkillLabel] 사전 설정된 엑셀 파일을 사용합니다: " + DefaultExcelPath);
+                Debug.Log("[QuestLabel] 사전 설정된 엑셀 파일을 사용합니다: " + DefaultExcelPath);
                 return defaultAbsolutePath;
             }
 
-            return EditorUtility.OpenFilePanel("Select skill label table", Application.dataPath, "xlsx");
+            return EditorUtility.OpenFilePanel("Select quest label table", Application.dataPath, "xlsx");
         }
 
         public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
         {
             if (!File.Exists(excelAbsolutePath))
             {
-                Debug.LogError($"[SkillLabel] Excel file not found: {excelAbsolutePath}");
+                Debug.LogError($"[QuestLabel] Excel file not found: {excelAbsolutePath}");
                 return;
             }
 
-            SkillLabelJsonData data = new SkillLabelJsonData();
+            QuestLabelJsonData data = new QuestLabelJsonData();
 
             using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
@@ -101,32 +100,32 @@ namespace DataSystem
             File.WriteAllText(jsonAbsolutePath, json);
             AssetDatabase.Refresh();
 
-            Debug.Log($"[SkillLabel] JSON generated: {jsonAbsolutePath}\n" +
+            Debug.Log($"[QuestLabel] JSON generated: {jsonAbsolutePath}\n" +
                       $"KOR: {data.korLabels.Count}, ENG: {data.engLabels.Count}, JPN: {data.jpnLabels.Count}, CHN: {data.chnLabels.Count}");
         }
 
-        private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, SkillLabelJsonData data)
+        private static void ApplyRowsToData(string sheetName, List<Dictionary<string, string>> rows, QuestLabelJsonData data)
         {
             switch (sheetName)
             {
                 case "KOR":
-                    data.korLabels = ExcelSheetReader.MapRows<SkillLabelRow>(rows);
+                    data.korLabels = ExcelSheetReader.MapRows<QuestLabelRow>(rows);
                     break;
 
                 case "ENG":
-                    data.engLabels = ExcelSheetReader.MapRows<SkillLabelRow>(rows);
+                    data.engLabels = ExcelSheetReader.MapRows<QuestLabelRow>(rows);
                     break;
 
                 case "JPN":
-                    data.jpnLabels = ExcelSheetReader.MapRows<SkillLabelRow>(rows);
+                    data.jpnLabels = ExcelSheetReader.MapRows<QuestLabelRow>(rows);
                     break;
 
                 case "CHN":
-                    data.chnLabels = ExcelSheetReader.MapRows<SkillLabelRow>(rows);
+                    data.chnLabels = ExcelSheetReader.MapRows<QuestLabelRow>(rows);
                     break;
 
                 default:
-                    Debug.LogWarning($"[SkillLabel] 알 수 없는 시트라 건너뜁니다: {sheetName}");
+                    Debug.LogWarning($"[QuestLabel] 알 수 없는 시트라 건너뜁니다: {sheetName}");
                     break;
             }
         }

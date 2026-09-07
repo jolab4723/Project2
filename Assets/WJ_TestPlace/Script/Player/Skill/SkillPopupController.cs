@@ -16,6 +16,9 @@ public class SkillPopupController : MonoBehaviour
     [Tooltip("스킬/진화/강화 설명 라벨 테이블(SkillLabelDatabase.asset).")]
     [SerializeField] private SkillLabelDatabaseSO labelDatabase;
 
+    [Tooltip("고정 UI 문구(진화/강화 접두어, 쿨타임 표기 등) 다국어 테이블. 비워두면 하드코딩된 한국어 문구를 그대로 쓴다.")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
     [Tooltip("Bottom/SkillNameText - 스킬 이름 표시")]
     [SerializeField] private TextMeshProUGUI skillNameText;
 
@@ -134,7 +137,10 @@ public class SkillPopupController : MonoBehaviour
             return;
 
         if (skillNameText != null)
-            skillNameText.text = def.skillName;
+        {
+            string localizedName = labelDatabase.GetSkillName(def.skillId);
+            skillNameText.text = string.IsNullOrEmpty(localizedName) ? def.skillName : localizedName;
+        }
 
         if (skillCostText != null)
             skillCostText.text = BuildCostSummary(controller, def);
@@ -147,11 +153,11 @@ public class SkillPopupController : MonoBehaviour
 
         string evoLine = currentEvo == SkillEvolutionId.None
             ? string.Empty
-            : "진화 : " + labelDatabase.GetEvolutionDescription(def.skillId, currentEvo);
+            : string.Format(GetUILabel("skill_ui.evolution_format", "진화 : {0}"), labelDatabase.GetEvolutionDescription(def.skillId, currentEvo));
 
         string enhLine = currentEnh == SkillEnhancementId.None
             ? string.Empty
-            : "강화 : " + labelDatabase.GetEnhancementDescription(def.skillId, currentEnh);
+            : string.Format(GetUILabel("skill_ui.enhancement_format", "강화 : {0}"), labelDatabase.GetEnhancementDescription(def.skillId, currentEnh));
 
         if (string.IsNullOrEmpty(evoLine))
             skillExtraText.text = enhLine;
@@ -166,10 +172,14 @@ public class SkillPopupController : MonoBehaviour
         float cooldown = controller.GetEffectiveCooldown(selectedSkillIndex);
 
         if (def.shapeType == SkillShapeType.Dash)
-            return $"쿨타임 {cooldown:0.#}초";
+            return string.Format(GetUILabel("skill_ui.cooldown_only", "쿨타임 {0}초"), $"{cooldown:0.#}");
 
-        return $"피해 배율 {def.damageMultiplier * 100f:0}% · 쿨타임 {cooldown:0.#}초";
+        return string.Format(GetUILabel("skill_ui.damage_and_cooldown", "피해 배율 {0}% · 쿨타임 {1}초"),
+            $"{def.damageMultiplier * 100f:0}", $"{cooldown:0.#}");
     }
+
+    private string GetUILabel(string key, string fallback) =>
+        uiLabels != null ? uiLabels.GetLabel(key) : fallback;
 
     private static void SetHighlight(Button button, bool active)
     {
