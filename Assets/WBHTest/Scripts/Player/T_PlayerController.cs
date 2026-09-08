@@ -26,8 +26,13 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public int reviveCount = 3;
     private bool canControl = true;
     private bool isStatusEffectControlBlocked;
+
+    // 컷씬 관련 변수
     private bool isCutSceneControlBlocked;
     private bool isCutSceneDamageBlocked;
+    private bool isCutSceneTransformControlled;
+    private bool previousAgentUpdatePosition;
+    private bool previousAgentUpdateRotation;
 
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }

@@ -1,3 +1,4 @@
+using EnemySystem;
 using ItemSystem;
 using UnityEngine;
 using UnityEngine.UI;
@@ -99,7 +100,7 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
 
     private void RefreshBossPhaseView()
     {
-        if (bossPhaseView == null || authority.EnemyInfo?.enemyType != EnemyType.Boss)
+        if (bossPhaseView == null || authority.EnemyInfo?.enemyAttackType != EnemyAttackType.Boss)
         {
             return;
         }

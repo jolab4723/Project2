@@ -1,6 +1,7 @@
+using EnemySystem;
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
-using Mirror;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -152,7 +153,7 @@ public sealed class WBH_EnemyPattern_MirrorTest : MonoBehaviour
         authority.ServerTryBeginAttack(target);
     }
 
-    private bool IsBoss => authority != null && authority.EnemyInfo?.enemyType == EnemyType.Boss;
+    private bool IsBoss => authority != null && authority.EnemyInfo?.enemyAttackType == EnemyAttackType.Boss;
 
     [Server]
     private void TickBoss(float deltaTime)

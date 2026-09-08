@@ -1,3 +1,4 @@
+using EnemySystem;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,11 +8,11 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemySpawner))]
 public class WBH_EnemySpawnArea : MonoBehaviour
 {
-    [System.Serializable]
+    [Serializable]
     public class EnemyGradeSpawnData
     {
         public EnemyGrade grade;
-        public int[] enemyIDs;
+        public EnemyDefinitionSO[] enemies;
     }
 
     [Header("Spawn Setting")]
@@ -27,6 +28,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
     }
 
     public void Initialize(WBH_EnemyPoolManager enemyPool, 
+                           WBH_EnemyDataProvider enemyDataProvider,
                            WBH_EffectSpawner effectSpawner, 
                            WBH_ProjectileSpawner projectileSpawner, 
                            Transform localPlayer, 
@@ -36,25 +38,24 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            PlayerWallet playerWallet)
     {
         this.findClosestPlayer = findClosestPlayer;
-        enemySpawner.Initialize(enemyPool, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
-        //view.Initialize(damagePool);
+        enemySpawner.Initialize(enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
     }
 
-    public int Spawn(EnemyGrade grade, int count)
+    public int Spawn(EnemyGrade grade, int count, WBH_EnemyStatContext context)
     {
         EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data.grade == grade);
 
-        if(spawnData == null || spawnData.enemyIDs == null || spawnData.enemyIDs.Length == 0)
+        if(spawnData == null || spawnData.enemies == null || spawnData.enemies.Length == 0)
         {
             Log.Warning($"{name} : {grade} 등급의 스폰 ID가 설정되지 않았습니다.");
             return 0;
         }
-        return SpawnEnemies(spawnData.enemyIDs, count);
+        return SpawnEnemies(spawnData.enemies, count, context);
     }
 
-    private int SpawnEnemies(int[] enemyIDs, int count)
+    private int SpawnEnemies(EnemyDefinitionSO[] enemies, int count, WBH_EnemyStatContext context)
     {
-        if (spawnPoints.Length == 0 || enemyIDs.Length == 0)
+        if (spawnPoints.Length == 0 || enemies.Length == 0)
             return 0;
 
         int spawnCount = 0;
@@ -72,11 +73,17 @@ public class WBH_EnemySpawnArea : MonoBehaviour
             Transform spawnPoint = availablePoints[pointIndex];
             availablePoints.RemoveAt(pointIndex);
 
-            int enemyID = enemyIDs[UnityEngine.Random.Range(0, enemyIDs.Length)];
+            EnemyDefinitionSO def = enemies[UnityEngine.Random.Range(0, enemies.Length)];
+
+            if(def == null)
+            {
+                Log.Error($"{name} : SpawnData 에 비어있는 defSO 가 있습니다.");
+                continue;
+            }
 
             Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
 
-            if (enemySpawner.Spawn(enemyID, spawnPoint, target) != null)
+            if (enemySpawner.Spawn(def.enemyId, spawnPoint, target, context) != null)
                 spawnCount++;
         }
         return spawnCount;

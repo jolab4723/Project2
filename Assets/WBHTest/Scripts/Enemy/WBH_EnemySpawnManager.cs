@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyPoolManager))]
+[RequireComponent(typeof(WBH_EnemyDataProvider))]
 public class WBH_EnemySpawnManager : MonoBehaviour
 {
     [System.Serializable]
@@ -20,6 +21,8 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
     [SerializeField] private Transform player;
 
+    [SerializeField] private WBH_EnemyDataProvider enemyDataProvider;
+    [SerializeField] private WBH_EnemyStatContext statContext = new WBH_EnemyStatContext(1, "normal", 1);
     [SerializeField] private WaveData[] waves;
 
     [SerializeField] private WBH_HighEnemyHpbarView highEnemyView;
@@ -44,6 +47,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private void Awake()
     {
         enemyPool = GetComponent<WBH_EnemyPoolManager>();
+        enemyDataProvider = GetComponent<WBH_EnemyDataProvider>();
         damagePool = FindFirstObjectByType<WBH_FloatTextPoolManager>();
 
         spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
@@ -79,8 +83,18 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             if (area == null)
                 continue;
 
-            area.Initialize(enemyPool, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
+            area.Initialize(enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
         }
+    }
+
+    public void SetStatContext(WBH_EnemyStatContext context)
+    {
+        if(!context.IsValid)
+        {
+            Log.Error($"잘못된 적 능력치 컨텍스트입니다. 층 = {context.floor}, 난이도 = {context.difficultyName}, 플레이어 수 = {context.playerCount}");
+            return;
+        }
+        statContext = context;
     }
 
     public bool TrySpawnNextWave()
@@ -145,7 +159,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         for(int i = 0; i < count; i ++)
         {
             WBH_EnemySpawnArea area = GetRandomArea();
-            spawnedCount += area.Spawn(grade, 1);
+            spawnedCount += area.Spawn(grade, 1, statContext);
         }
         return spawnedCount;
     }

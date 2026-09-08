@@ -3,9 +3,8 @@ using UnityEngine.AI;
 
 public class WBH_EnemySpawner : MonoBehaviour
 {
-    [SerializeField] private WBH_EnemyInfo[] testInfos;
-
     private WBH_EnemyPoolManager enemyPool;
+    private WBH_EnemyDataProvider enemyDataProvider;
     private WBH_EffectSpawner effectSpawner;
     private WBH_ProjectileSpawner projectileSpawner;
     private WBH_FloatTextPoolManager floatTextPool;
@@ -16,10 +15,8 @@ public class WBH_EnemySpawner : MonoBehaviour
 
     public event System.Action<WBH_EnemyController> BossSpawn;
 
-
-    //!@ 데이터 매니저 연결
-
-    public void Initialize(WBH_EnemyPoolManager poolManager, 
+    public void Initialize(WBH_EnemyPoolManager poolManager,
+                           WBH_EnemyDataProvider enemyDataProvider,
                            WBH_EffectSpawner effectSpawner, 
                            WBH_ProjectileSpawner projectileSpawner, 
                            Transform localPlayer, // eliteView 에만 사용
@@ -28,28 +25,33 @@ public class WBH_EnemySpawner : MonoBehaviour
                            PlayerWallet wallet)
     {
         this.enemyPool = poolManager;
+        this.enemyDataProvider = enemyDataProvider;
         this.effectSpawner = effectSpawner;
         this.projectileSpawner = projectileSpawner;
         this.floatTextPool = floatTextPool;
         this.eliteView = eliteView;
         this.eliteView.Initialize(localPlayer);
         this.wallet = wallet;
+
     }
 
-    public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint, Transform target)
+    public WBH_EnemyController Spawn(string enemyId, Transform spawnPoint, Transform target, WBH_EnemyStatContext context)
     {
         if(enemyPool == null)
         {
             Log.Error("EnemyPoolManager가 초기화 되지 않았습니다.");
             return null;
         }
-
-        WBH_EnemyInfo info = GetEnemyInfo(enemyID);
-        // info = 데이터 매니저에서 enemyID 를 통해 info(스탯 등) 주입 !@
-
-        if (info == null)
+        if(enemyDataProvider == null)
         {
-            Log.Error($"EnemyInfo(ID : {enemyID}를 찾을 수 없습니다.)");
+            Log.Error("EnemyDataProvider 초기화 되지 않았습니다.");
+            return null;
+        }
+
+        if(!enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out WBH_EnemyInfo info))
+        {
+            Log.Error($"적 정보 생성에 실패했습니다. enemyId = {enemyId}");
+            return null;
         }
 
         if(!NavMesh.SamplePosition(spawnPoint.position, out NavMeshHit hit, spawnNavSearchRadius, NavMesh.AllAreas))
@@ -58,13 +60,12 @@ public class WBH_EnemySpawner : MonoBehaviour
             return null;
         }
 
-        WBH_EnemyController enemy = enemyPool.Get(enemyID);
+        WBH_EnemyController enemy = enemyPool.Get(enemyId);
 
         if (enemy == null)
             return null;
 
-        enemy.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
-        enemy.gameObject.SetActive(true);
+        enemy.transform.SetPositionAndRotation(hit.position, spawnPoint.rotation);
 
         enemy.GetComponent<EnemyKillReward>()?.Initialize(wallet);
         enemy.GetComponent<WBH_EnemyView>().Initialize(floatTextPool, eliteView);
@@ -72,24 +73,15 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.Initialize(info, enemyPool, effectSpawner, projectileSpawner);
 
         enemy.SetTarget(target);
+        enemy.gameObject.SetActive(true);
 
 
-        if(info.enemyGrade == EnemyGrade.Boss)
+        if (info.enemyGrade == EnemyGrade.Boss)
         {
             eliteView?.BindBoss(enemy);
             BossSpawn?.Invoke(enemy);
         }
 
         return enemy;
-    }
-
-    private WBH_EnemyInfo GetEnemyInfo(int enemyID)
-    {
-        foreach (var info in testInfos)
-        {
-            if (info.id == enemyID)
-                return info;
-        }
-        return null;
     }
 }
