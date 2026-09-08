@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,11 +11,16 @@ public class WBH_PlayerEffect : MonoBehaviour
         public WBH_PlayerEffectCue cue;
         public WBH_EffectData data;
         public Transform anchor;
+        public AudioClip sfxClip;
+        [Range(0f, 1f)] public float sfxVolume = 1f;
+        [Min(0f)] public float sfxBaseTime = 0f;
+        public float sfxOffset = 0f;
     }
 
     [SerializeField] private WBH_EffectSpawner spawner;
     [SerializeField] private WBH_PlayerStatus playerStatus;
     [SerializeField] private EffectBinding[] effectBindings;
+    [SerializeField] private YJ_SfxPlayer sfxPlayer;
 
     [Header("Local Persistent Effects")]
     [SerializeField] private WBH_EffectData chargeEffect;
@@ -30,12 +36,17 @@ public class WBH_PlayerEffect : MonoBehaviour
         if (playerStatus == null)
             playerStatus = GetComponent<WBH_PlayerStatus>();
 
+        if (sfxPlayer == null)
+            sfxPlayer = FindFirstObjectByType<YJ_SfxPlayer>();
+
         BuildBindindMap();
     }
 
     // 사망 시, 기존 이펙트 종료
     private void OnDisable()
     {
+        CancelPendingSfx();
+
         foreach (WBH_Effect effect in activeLocalEffects.Values)
         {
             if (effect != null)
@@ -76,19 +87,22 @@ public class WBH_PlayerEffect : MonoBehaviour
     // 스케일을 적용해 Cue 에 바인딩 된 위치에 이펙트 재생
     public void PlayEffect( WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
     {
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+        {
+            Log.Warning($"{name}에 {cue} 이펙트가 등록되지 않았습니다.");
+            return;
+        }
+
+        if (binding.data == null)
+            return;
+
         if (spawner == null)
         {
             Log.Error($"{name}의 이펙트 스포너가 등록되지 않았습니다.");
             return;
         }
 
-        if (!bindingMap.TryGetValue(cue, out EffectBinding binding))
-        {
-            Log.Warning($"{name}에 {cue} 이펙트가 등록되지 않았습니다.");
-            return;
-        }
-
-        if (binding.data == null || binding.anchor == null)
+        if (binding.anchor == null)
             return;
 
         PlayBinding(binding, scaleMultiplier);
@@ -97,9 +111,7 @@ public class WBH_PlayerEffect : MonoBehaviour
     // 실질적인 이펙트 재생
     private void PlayBinding(EffectBinding binding, Vector3 scaleMultiplier)
     {
-        Vector3 appliedScale = binding.data.applyEnhancementScale
-            ? scaleMultiplier
-            : Vector3.one;
+        Vector3 appliedScale = binding.data.applyEnhancementScale ? scaleMultiplier : Vector3.one;
 
         switch (binding.data.attachType)
         {
@@ -112,7 +124,9 @@ public class WBH_PlayerEffect : MonoBehaviour
                     
                     break;
                 }
+
             case EffectAttachType.AttachOnce:
+
             case EffectAttachType.Follow:
                 spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed);
                 break;
@@ -137,17 +151,14 @@ public class WBH_PlayerEffect : MonoBehaviour
         if (effect == null)
             return;
 
-        Vector3 appliedScale = effectData.applyEnhancementScale
-            ? scaleMultiplier
-            : Vector3.one;
-
+        Vector3 appliedScale = effectData.applyEnhancementScale ? scaleMultiplier : Vector3.one;
         effect.transform.localScale = Vector3.Scale(effect.transform.localScale, appliedScale);
         activeLocalEffects.Add(effectData, effect);
     }
 
     private void StopLocalEffect(WBH_EffectData effectData)
     {
-        if (effectData == null || !activeLocalEffects.TryGetValue(effectData, out WBH_Effect effect))
+        if (effectData == null || ! activeLocalEffects.TryGetValue(effectData, out WBH_Effect effect))
             return;
 
         if (effect != null)
@@ -160,16 +171,15 @@ public class WBH_PlayerEffect : MonoBehaviour
 
     public void PlayWorldEffect(WBH_PlayerEffectCue cue, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
     {
-        if (spawner == null)
-            return;
-
-        if(!bindingMap.TryGetValue(cue, out EffectBinding binding))
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
         {
             Log.Warning($"{name} 에 {cue} 이펙트가 등록되지 않았습니다.");
             return;
         }
 
-        if (binding.data == null)
+        PlayBindingSfx(binding, position);
+
+        if (binding.data == null || spawner == null)
             return;
 
         if(binding.data.attachType == EffectAttachType.Follow)
@@ -181,7 +191,6 @@ public class WBH_PlayerEffect : MonoBehaviour
         Vector3 appliedScale = binding.data.applyEnhancementScale ? scaleMultiplier : Vector3.one;
         Vector3 spawnPos = position + rotation * binding.data.localPos;
         Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
-
 
         spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed);
     }
@@ -213,5 +222,115 @@ public class WBH_PlayerEffect : MonoBehaviour
 
         data = binding.data;
         return data != null;
+    }
+
+    private void PlayBindingSfx(EffectBinding binding, Vector3 position)
+    {
+        if (sfxPlayer == null || binding.sfxClip == null)
+            return;
+
+        sfxPlayer.PlayImmediate(binding.sfxClip, position, binding.sfxVolume);
+    }
+
+    public void PlaySfx(WBH_PlayerEffectCue cue)
+    {
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+        {
+            Log.Warning($"{name}에 {cue} 사운드 바인딩이 없습니다.");
+            return;
+        }
+
+        Vector3 position = binding.anchor != null ? binding.anchor.position : transform.position;
+        PlayBindingSfx(binding, position);
+    }
+
+    public void ScheduleSfx(WBH_PlayerEffectCue cue, Animator animator, AnimationEvent animationEvent)
+    {
+        if ( ! isActiveAndEnabled || animator == null || sfxPlayer == null)
+            return;
+
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+        {
+            Log.Warning($"{name}에 {cue} 사운드 바인딩이 없습니다.");
+            return;
+        }
+
+        if (binding.sfxClip == null)
+            return;
+
+        AnimationClip clip = animationEvent.animatorClipInfo.clip;
+
+        if (clip == null || clip.length <= 0f)
+            return;
+
+        float delayInClip = binding.sfxBaseTime + binding.sfxOffset;
+
+        // 예약 이벤트 이전의 시점은 재생할 수 없다.
+        if (delayInClip < 0f)
+        {
+            Log.Warning($"{cue}: SFX 기준 시간 + Offset은 0 이상이어야 합니다.");
+            return;
+        }
+
+        // 이벤트의 클립 내 위치 + Cue별 보정 시간을
+        // 애니메이션 진행도(0~1)로 변환한다.
+        float targetNormalizedTime = (animationEvent.time + delayInClip) / clip.length;
+
+        if (targetNormalizedTime >= 1f)
+        {
+            Log.Warning($"{cue}: SFX 재생 시점이 클립 끝에 있거나 끝을 벗어납니다.");
+            return;
+        }
+
+        int stateHash = animationEvent.animatorStateInfo.fullPathHash;
+        StartCoroutine(WaitForSfxTime(binding, animator, stateHash, targetNormalizedTime));
+    }
+
+    private IEnumerator WaitForSfxTime(EffectBinding binding, Animator animator, int stateHash, float targetNormalizedTime)
+    {
+        const int layer = 0;
+
+        while (animator != null && animator.isActiveAndEnabled)
+        {
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(layer);
+
+            if (animator.IsInTransition(layer))
+            {
+                AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(layer);
+
+                if (next.fullPathHash == stateHash)
+                {
+                    // 해당 스킬로 진입하는 전환 중.
+                    state = next;
+                }
+                else
+                {
+                    // 해당 스킬을 벗어나는 전환이면 예약 취소.
+                    yield break;
+                }
+            }
+
+            if (state.fullPathHash != stateHash)
+                yield break;
+
+            if (state.normalizedTime >= targetNormalizedTime)
+            {
+                // 오디오 일시정지 중에 목표 지점을 넘긴 소리는 생략.
+                if (!AudioListener.pause)
+                {
+                    Vector3 position = binding.anchor != null ? binding.anchor.position : transform.position;
+                    PlayBindingSfx(binding, position);
+                }
+
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    public void CancelPendingSfx()
+    {
+        StopAllCoroutines();
     }
 }
