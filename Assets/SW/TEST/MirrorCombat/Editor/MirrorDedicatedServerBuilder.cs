@@ -20,6 +20,12 @@ internal static class MirrorDedicatedServerBuilder
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
+        MirrorTestNetworkManager.SessionStage2Scene,
+        MirrorTestNetworkManager.SessionStage3Scene,
+        MirrorTestNetworkManager.SessionStage4Scene,
+        MirrorTestNetworkManager.SessionStage5Scene,
+        MirrorTestNetworkManager.SessionStage6Scene,
+        MirrorTestNetworkManager.SessionBossScene,
         MirrorTestNetworkManager.SessionUnknownScene,
     };
     private const string WindowsBuildDirectory = "Builds/MirrorDedicatedServer";
@@ -57,6 +63,13 @@ internal static class MirrorDedicatedServerBuilder
             true);
     }
 
+    [MenuItem("SW/Mirror 테스트/Windows 전용 서버 개발 빌드")]
+    private static void BuildWindowsDevelopmentServer()
+    {
+        BuildDedicatedServer(BuildTarget.StandaloneWindows64, WindowsBuildDirectory,
+            WindowsExecutableName, WindowsLaunchFileName, false, true);
+    }
+
     /// <summary>
     /// 선택한 운영체제의 전용 서버를 동일한 선택→Camp/Stage1 테스트 Scene과 설정으로 빌드합니다.
     /// </summary>
@@ -65,7 +78,8 @@ internal static class MirrorDedicatedServerBuilder
         string buildDirectory,
         string executableName,
         string launchFileName,
-        bool isLinux)
+        bool isLinux,
+        bool development = false)
     {
         if (EditorApplication.isCompiling)
         {
@@ -98,9 +112,8 @@ internal static class MirrorDedicatedServerBuilder
             locationPathName = executablePath,
             target = target,
             subtarget = (int)StandaloneBuildSubtarget.Server,
-            // Unity 6000.3.8의 URP Development Player 직렬화 결함을 피합니다.
-            // 서버 동작 로그는 일반 빌드에서도 남으므로 이번 기능 검증에는 영향을 주지 않습니다.
-            options = BuildOptions.DetailedBuildReport
+            // 일반 서버 메뉴는 기존 Release 설정을 유지하고, 개발 검사 명령은 별도 Development 메뉴로 빌드한다.
+            options = BuildOptions.DetailedBuildReport | (development ? BuildOptions.Development : BuildOptions.None)
         };
 
         bool hadAddressablesBuildPreference = EditorPrefs.HasKey(AddressablesBuildWithPlayerPreferenceKey);

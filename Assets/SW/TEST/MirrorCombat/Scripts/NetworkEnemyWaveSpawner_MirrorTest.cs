@@ -35,6 +35,8 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     [SerializeField, Min(0f)] private float spawnInterval = 0.35f;
     [SerializeField, Min(0f)] private float nextWaveDelay = 2.5f;
     [SerializeField, Min(1f)] private float spawnRadius = 8f;
+    [SerializeField] private Vector3[] authoredSpawnPositions;
+    [SerializeField] private Vector3 bossSpawnPosition;
 
     [SyncVar] private int currentWave;
     [SyncVar] private uint totalSpawnCount;
@@ -252,7 +254,9 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     {
         float angle = spawnCount > 0 ? 360f * index / spawnCount : 0f;
         Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * spawnRadius;
-        Vector3 candidate = transform.position + offset;
+        Vector3 candidate = authoredSpawnPositions != null && authoredSpawnPositions.Length > 0
+            ? bossSession ? bossSpawnPosition : authoredSpawnPositions[index % authoredSpawnPositions.Length]
+            : transform.position + offset;
         return NavMesh.SamplePosition(candidate, out NavMeshHit hit, 4f, NavMesh.AllAreas)
             ? hit.position
             : candidate;

@@ -50,7 +50,8 @@ public sealed partial class MirrorTestNetworkManager
     public MirrorSessionRoster_MirrorTest ServerRoster { get; } = new();
     public bool ServerDevelopmentCommandsEnabled => NetworkServer.active &&
         (Application.isEditor || Debug.isDebugBuild) && (enableDevelopmentCommands ||
-            Array.IndexOf(Environment.GetCommandLineArgs(), "--mirror-smoke-inventory") >= 0);
+            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-inventory") == "true" ||
+            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-combat") == "true");
     public string ClientDisplayName { get; set; } = "Player";
     public string LocalParticipantId { get; private set; }
     public MirrorReconnectProfile_MirrorTest RequestedReconnectProfile { get; set; }

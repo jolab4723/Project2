@@ -1,6 +1,8 @@
 using Mirror;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using ItemSystem;
 
 /// <summary>
 /// 일반 원거리 적의 Mirror 테스트용 서버 투사체다.
@@ -25,11 +27,17 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     public static uint ServerMissileSpawnCount { get; private set; }
     public static uint ServerMissileImpactCount { get; private set; }
     public static uint ClientMissileObservedCount { get; private set; }
+    public static uint ServerPlayerSpawnCount { get; private set; }
+    public static uint ClientPlayerObservedCount { get; private set; }
 
     [SerializeField, Min(0.01f)] private float collisionRadius = 0.2f;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
 
     [SyncVar] private bool missile;
+    [SyncVar] private bool playerShot;
+    [SyncVar] private uint playerOwnerNetId;
+    [SyncVar] private string shotItemId;
+    [SyncVar] private GunnerWeaponType shotWeaponType;
 
     private NetworkEnemyAuthority_MirrorTest owner;
     private Vector3 direction;
@@ -42,10 +50,23 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private float missileFlightDuration;
     private float missileElapsed;
     private float missileArcHeight;
-    private float missileExplosionRadius;
+    [SyncVar] private float missileExplosionRadius;
     private readonly HashSet<PlayerContext> missileTargets = new();
+    private readonly HashSet<WBH_ICombat> playerShotTargets = new();
+    private PlayerContext playerOwner;
+    private ElementType shotElement;
+    private int shotSceneHandle;
+    private double shotExpiresAt;
+    private int playerShotCollisionMask;
+    private GameObject playerProjectileVisual;
+    private GameObject playerImpactVisualPrefab;
+    private float visualBindUntil;
 
     public bool IsMissile => missile;
+    public bool IsPlayerShot => playerShot;
+    public uint PlayerOwnerNetId => playerOwnerNetId;
+    private bool IsPlayerShotAvailable => playerOwner != null && playerOwner.CombatAuthority?.CanContinueGunnerProjectile == true &&
+        SceneManager.GetActiveScene().handle == shotSceneHandle && NetworkTime.time < shotExpiresAt;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
@@ -55,6 +76,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         ServerMissileSpawnCount = 0;
         ServerMissileImpactCount = 0;
         ClientMissileObservedCount = 0;
+        ServerPlayerSpawnCount = 0;
+        ClientPlayerObservedCount = 0;
     }
 
     private void Awake()
@@ -66,8 +89,14 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
-        ClientObservedCount++;
-        if (missile)
+        if (playerShot)
+        {
+            ClientPlayerObservedCount++;
+            visualBindUntil = Time.unscaledTime + 0.5f;
+            TryBindPlayerVisual();
+        }
+        else ClientObservedCount++;
+        if (missile && !playerShot)
             ClientMissileObservedCount++;
         if (!isServer && projectileCollider != null)
             projectileCollider.enabled = false;
@@ -76,8 +105,9 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        ServerSpawnCount++;
-        if (missile)
+        if (playerShot) ServerPlayerSpawnCount++;
+        else ServerSpawnCount++;
+        if (missile && !playerShot)
             ServerMissileSpawnCount++;
     }
 
@@ -116,10 +146,43 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         missileArcHeight = Mathf.Max(3f, horizontalDistance * 0.25f);
     }
 
+    /// <summary>적 투사체의 이동 경계를 재사용하는 Gunner 기본 공격 시험판. 피해 공식은 기존 SW resolver만 사용한다.</summary>
+    [Server]
+    public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
+        ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint, float explosionRadius)
+    {
+        playerShot = true;
+        playerOwner = attackOwner;
+        playerOwnerNetId = attackOwner.GetComponent<NetworkIdentity>().netId;
+        shotItemId = itemId ?? string.Empty;
+        shotWeaponType = weaponType;
+        shotElement = element;
+        shotSceneHandle = SceneManager.GetActiveScene().handle;
+        shotExpiresAt = NetworkTime.time + 20d;
+        playerShotCollisionMask = LayerMask.GetMask("Enemy", "Wall", "Prop", "Ground") | (1 << 10);
+        InitializeServer(null, moveDirection, moveSpeed, maxDistance);
+        if (weaponType == GunnerWeaponType.GrenadeLauncher)
+        {
+            Vector3 offset = Vector3.ClampMagnitude(impactPoint - transform.position, remainingDistance);
+            InitializeMissileServer(null, transform.position + offset,
+                Mathf.Max(1f, offset.magnitude / speed), explosionRadius);
+            float ratio = Mathf.Clamp01(offset.magnitude / remainingDistance);
+            missileArcHeight = Mathf.Lerp(1f, 3f, ratio * ratio);
+        }
+    }
+
     private void Update()
     {
+        if (isClient && playerShot && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
+            TryBindPlayerVisual();
         if (!isServer || consumed)
             return;
+
+        if (playerShot && !IsPlayerShotAvailable)
+        {
+            ServerDestroy();
+            return;
+        }
 
         if (missile)
         {
@@ -140,9 +203,14 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
                 direction,
                 out RaycastHit hit,
                 distance,
-                playerLayer,
+                playerShot ? playerShotCollisionMask : playerLayer.value,
                 QueryTriggerInteraction.Collide))
         {
+            if (playerShot)
+            {
+                FinishPlayerImpact(hit.point, -direction, hit.collider);
+                return;
+            }
             PlayerContext target = hit.collider.GetComponentInParent<PlayerContext>();
             if (target != null && target.RuntimeState?.IsDead != true)
                 owner?.ServerDamagePlayer(target);
@@ -159,6 +227,12 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (isServer && !consumed && playerShot)
+        {
+            if ((playerShotCollisionMask & (1 << other.gameObject.layer)) != 0)
+                FinishPlayerImpact(transform.position, -transform.forward, other);
+            return;
+        }
         if (!isServer || consumed || missile ||
             (playerLayer.value & (1 << other.gameObject.layer)) == 0)
             return;
@@ -178,6 +252,13 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         float t = Mathf.Clamp01(missileElapsed / missileFlightDuration);
         Vector3 nextPosition = Vector3.Lerp(missileStart, missileImpactPoint, t);
         nextPosition.y += 4f * missileArcHeight * t * (1f - t);
+        Vector3 travel = nextPosition - previousPosition;
+        if (playerShot && travel.sqrMagnitude > 0.000001f && Physics.SphereCast(previousPosition, collisionRadius,
+            travel.normalized, out RaycastHit playerHit, travel.magnitude, playerShotCollisionMask, QueryTriggerInteraction.Collide))
+        {
+            FinishPlayerImpact(playerHit.point, -travel.normalized, playerHit.collider);
+            return;
+        }
         transform.position = nextPosition;
 
         Vector3 motion = nextPosition - previousPosition;
@@ -186,6 +267,12 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
         if (t < 1f)
             return;
+
+        if (playerShot)
+        {
+            FinishPlayerImpact(missileImpactPoint, Vector3.up, null);
+            return;
+        }
 
         ApplyMissileAreaDamage();
         ServerMissileImpactCount++;
@@ -210,6 +297,62 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
             owner?.ServerDamagePlayer(target);
         }
+    }
+
+    [Server]
+    private void FinishPlayerImpact(Vector3 point, Vector3 hitDirection, Collider directHit)
+    {
+        if (consumed) return;
+        consumed = true;
+        try
+        {
+            if (!IsPlayerShotAvailable) return;
+            playerShotTargets.Clear();
+            if (missile)
+            {
+                foreach (Collider hit in Physics.OverlapSphere(point, missileExplosionRadius, 1 << 10, QueryTriggerInteraction.Collide))
+                    ApplyPlayerDamage(hit);
+            }
+            else if (directHit != null) ApplyPlayerDamage(directHit);
+            RpcPlayerImpact(point, hitDirection);
+        }
+        finally { NetworkServer.Destroy(gameObject); }
+    }
+
+    [Server]
+    private void ApplyPlayerDamage(Collider hit)
+    {
+        WBH_ICombat target = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
+        if (target is not Component component || component.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>() == null ||
+            !playerShotTargets.Add(target)) return;
+        // 원본 WBH_DamageRequest도 공격자 객체를 보관하므로 피해는 명중 시의 실제 Stat으로 계산된다.
+        // 무기 종류·속성·속도·사거리·VFX는 발사 시 값을 유지하고, 새 피해 공식을 복제하지 않는다.
+        if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f, null, out WBH_DamageResult result))
+            playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
+    }
+
+    private void TryBindPlayerVisual()
+    {
+        if (!NetworkClient.spawned.TryGetValue(playerOwnerNetId, out NetworkIdentity identity)) return;
+        GunnerWeaponVfxBinding binding = GunnerCombatPresentation_MirrorTest.FindBinding(identity.gameObject, shotItemId, shotWeaponType);
+        if (binding == null) return;
+        // 발사 후 장착 외형이 바뀌어도 이 탄은 처음 확보한 VFX 참조를 유지한다.
+        playerImpactVisualPrefab = binding.ImpactVisualPrefab;
+        if (binding.ProjectileVisualPrefab == null || playerProjectileVisual != null) return;
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
+        playerProjectileVisual = Instantiate(binding.ProjectileVisualPrefab, transform, false);
+        playerProjectileVisual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        GunnerVfxPlayback.Restart(playerProjectileVisual);
+    }
+
+    [ClientRpc]
+    private void RpcPlayerImpact(Vector3 point, Vector3 hitDirection)
+    {
+        if (playerImpactVisualPrefab != null)
+            GunnerVfxPlayback.SpawnTransient(playerImpactVisualPrefab, point, hitDirection);
+        else if (missile)
+            SkillRangeVisual.ShowSector(point, Vector3.forward, missileExplosionRadius, 360f,
+                new Color(1f, 0.6f, 0.2f, 0.35f), 0.2f);
     }
 
     [Server]

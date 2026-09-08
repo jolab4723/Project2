@@ -28,6 +28,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private string serverSceneStartPath;
     private Vector3 serverSceneStartPosition;
     private Quaternion serverSceneStartRotation;
+    private int confirmedSceneHandle = -1;
     [SyncVar(hook = nameof(OnTemporarilyAbsentChanged))] private bool temporarilyAbsent;
     private Renderer[] absentRenderers;
     private bool[] rendererStates;
@@ -41,8 +42,10 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public PlayerContext Context => context;
     /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
     public bool IsTemporarilyAbsent => temporarilyAbsent;
+    /// <summary>같은 이름의 Scene 재방문도 구분하여 소유자의 시작 위치 최종 확정을 확인한다.</summary>
+    public bool IsSceneStartConfirmed => confirmedSceneHandle == SceneManager.GetActiveScene().handle;
     private bool CanRestoreGameplay => !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
-        !context.RuntimeState.IsDead;
+        !context.RuntimeState.IsDead && (!isLocalPlayer || !RequiresNavMesh || IsSceneStartConfirmed);
     private bool RequiresNavMesh => GetTestNetworkManager()?.CurrentSessionRoute is
         MirrorSessionRoute.Combat or MirrorSessionRoute.Camp;
 
@@ -102,6 +105,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     public override void OnStopLocalPlayer()
     {
+        confirmedSceneHandle = -1;
         StopLocalSceneRestore();
         context?.Combat?.CancelChase();
         context?.Controller?.StopMovement();
@@ -178,13 +182,21 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void RefreshLocalInput()
     {
+        bool canControl = isLocalPlayer && gameplayInputEnabled && CanRestoreGameplay && RequiresNavMesh;
+        // 생존 스냅샷/OnStartLocalPlayer가 먼저 와도 최종 위치 확정 전에 실제 입력을 열지 않는다.
+        // 서버의 원격 캐릭터 Controller 상태는 이 로컬 입력 경계에서 바꾸지 않는다.
+        if (isLocalPlayer && !canControl && context?.Controller != null)
+        {
+            context.Controller.SetControlEnable(false);
+            context.Controller.enabled = false;
+        }
         if (localOnlyBehaviours == null)
             return;
 
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = isLocalPlayer && gameplayInputEnabled && CanRestoreGameplay && !textInputBlocked &&
+                behaviour.enabled = canControl && !textInputBlocked &&
                     Time.frameCount > textInputReleaseFrame;
         }
     }
@@ -204,7 +216,13 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             if (context?.Controller != null) context.Controller.enabled = false;
         }
         if (isLocalPlayer)
+        {
+            bool wasInputEnabled = gameplayInputEnabled;
             SetLocalOnlyBehaviours(enabled);
+            if (enabled && !wasInputEnabled && CanRestoreGameplay && RequiresNavMesh && context?.Controller?.agent != null &&
+                (!context.Controller.agent.enabled || !context.Controller.agent.isOnNavMesh))
+                RestoreLocalGameplayAfterScene();
+        }
     }
 
     /// <summary>서버가 참가자의 재접속 예약 상태를 변경하고 미완료 행동을 취소한다.</summary>
@@ -285,6 +303,15 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         if (!isLocalPlayer || temporarilyAbsent)
             return;
 
+        // OnClientSceneChanged와 TargetRpc의 도착 순서와 무관하게 이미 복구한 이동/스킬은 유지한다.
+        if (IsSceneStartConfirmed && CanRestoreGameplay && RequiresNavMesh && gameplayInputEnabled &&
+            context.Controller != null && context.Controller.enabled && context.Controller.IsControlEnabled &&
+            context.Controller.agent != null && context.Controller.agent.enabled && context.Controller.agent.isOnNavMesh)
+        {
+            RegisterLocalContext();
+            RefreshLocalInput();
+            return;
+        }
         StopLocalSceneRestore();
         localSceneRestoreRoutine = StartCoroutine(RestoreLocalGameplayRoutine());
     }
@@ -295,11 +322,18 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [Server]
     public void ServerPlaceAtSceneStart(Vector3 position, Quaternion rotation)
     {
+        confirmedSceneHandle = -1;
         hasServerSceneStart = true;
         serverSceneStartPath = SceneManager.GetActiveScene().path;
         serverSceneStartPosition = position;
         serverSceneStartRotation = rotation;
         ApplySceneStart(position, rotation);
+        // Host는 같은 객체에 서버 위치가 이미 적용됐다. 뒤따르는 TargetRpc가 이동 경로를 다시 지우지 않는다.
+        if (isLocalPlayer)
+        {
+            confirmedSceneHandle = SceneManager.GetActiveScene().handle;
+            RestoreLocalGameplayAfterScene();
+        }
     }
 
     /// <summary>
@@ -324,7 +358,10 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         Vector3 position,
         Quaternion rotation)
     {
+        if (IsSceneStartConfirmed) return;
         ApplySceneStart(position, rotation);
+        confirmedSceneHandle = SceneManager.GetActiveScene().handle;
+        Debug.Log($"[MirrorSpawnedPlayerBinder] scene-start confirmed netId={netId} handle={confirmedSceneHandle} position={transform.position}", this);
         RestoreLocalGameplayAfterScene();
     }
 
@@ -341,7 +378,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             if (agent.enabled && agent.isOnNavMesh)
                 agent.ResetPath();
 
-            if (RequiresNavMesh && !temporarilyAbsent && TryWarpToNavMesh(agent, position))
+            if (RequiresNavMesh && !temporarilyAbsent && context?.RuntimeState?.IsDead == false && TryWarpToNavMesh(agent, position))
             {
                 transform.rotation = rotation;
                 return;
