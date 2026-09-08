@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 최대 4명의 캐릭터 선택, 준비 상태, 로비 슬롯과 시작 가능 여부를 표시한다.
-/// 네트워크 동기화는 이후 외부에서 SetPlayers로 전달받아 연결한다.
+/// 외부 상태 모드에서는 사용자 의도만 전달하고 SetPlayers로 받은 상태를 표시한다.
 /// </summary>
 public class KY_MultiplayerLobbyController : MonoBehaviour
 {
@@ -15,6 +15,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     [Header("로컬 플레이어")]
     [SerializeField] private string localPlayerId = "local";
     [SerializeField] private string localPlayerName = "Player";
+    private bool usesExternalState;
 
     [Header("미리보기 참여자")]
     [SerializeField] private List<KY_LobbyPlayerData> previewPlayers = new List<KY_LobbyPlayerData>();
@@ -42,6 +43,19 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     public event Action LeaveLobbyRequested;
     /// <summary>모든 참여자가 준비되어 게임 시작을 요청할 때 호출한다.</summary>
     public event Action GameStartRequested;
+    /// <summary>외부 상태 소유자에게 준비 또는 준비 해제를 요청한다.</summary>
+    public event Action<bool> ReadyChangeRequested;
+    /// <summary>외부 상태 소유자에게 선택한 캐릭터를 전달한다.</summary>
+    public event Action<KY_CharacterId> CharacterChangeRequested;
+
+    /// <summary>참가자 식별자를 설정하고 외부에서 전달한 상태만 표시하는 모드로 전환한다.</summary>
+    public void ConfigureExternalState(string participantId, string displayName)
+    {
+        usesExternalState = true;
+        localPlayerId = participantId;
+        localPlayerName = displayName;
+        RefreshView();
+    }
 
     /// <summary>로비 버튼의 이벤트를 등록한다.</summary>
     private void Awake()
@@ -58,6 +72,11 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
     /// <summary>로컬 플레이어가 캐릭터를 확정해 로비에 들어왔을 때 상태를 초기화해 표시한다.</summary>
     public void OpenForLocalPlayer(KY_CharacterId characterId)
     {
+        if (usesExternalState)
+        {
+            CharacterChangeRequested?.Invoke(characterId);
+            return;
+        }
         KY_LobbyPlayerData localPlayer = GetOrCreateLocalPlayer();
         if (localPlayer == null)
             return;
@@ -74,10 +93,10 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         if (players != null)
             foreach (KY_LobbyPlayerData player in players)
             {
-                if (player == null || previewPlayers.Count >= MaxPlayerCount)
-                    continue;
+                if (previewPlayers.Count >= MaxPlayerCount)
+                    break;
 
-                previewPlayers.Add(ClonePlayer(player));
+                previewPlayers.Add(player == null ? null : ClonePlayer(player));
             }
         RefreshView();
     }
@@ -89,12 +108,23 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         if (localPlayer == null)
             return;
 
+        if (usesExternalState)
+        {
+            ReadyChangeRequested?.Invoke(localPlayer.readyState != KY_LobbyReadyState.Ready);
+            return;
+        }
         localPlayer.readyState = localPlayer.readyState == KY_LobbyReadyState.Ready ? KY_LobbyReadyState.NotReady : KY_LobbyReadyState.Ready;
         RefreshView();
     }
     /// <summary>캐릭터 변경 전 준비 상태를 해제하고 선택 화면 전환을 요청한다.</summary>
     private void RequestCharacterChange()
     {
+        if (usesExternalState)
+        {
+            ReadyChangeRequested?.Invoke(false);
+            ChangeCharacterRequested?.Invoke();
+            return;
+        }
         KY_LobbyPlayerData localPlayer = GetOrCreateLocalPlayer();
         if (localPlayer == null)
             return;
@@ -127,7 +157,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
                 if (index < previewPlayers.Count)
                 {
                     KY_LobbyPlayerData player = previewPlayers[index];
-                    slot.ShowPlayer(player, player.playerId == localPlayerId);
+                    slot.ShowPlayer(player, player != null && player.playerId == localPlayerId);
                 }
                 else slot.ShowEmpty();
             }
@@ -149,14 +179,14 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         KY_LobbyPlayerData localPlayer = FindLocalPlayer();
         if (localPlayer == null || !localPlayer.isHost || previewPlayers.Count == 0) return false;
         foreach (KY_LobbyPlayerData player in previewPlayers)
-            if (player == null || player.readyState != KY_LobbyReadyState.Ready) return false;
+            if (player != null && player.readyState != KY_LobbyReadyState.Ready) return false;
         return true;
     }
     /// <summary>로컬 플레이어 데이터를 찾고 없으면 호스트인 기본 데이터를 만든다.</summary>
     private KY_LobbyPlayerData GetOrCreateLocalPlayer()
     {
         KY_LobbyPlayerData localPlayer = FindLocalPlayer();
-        if (localPlayer != null) return localPlayer;
+        if (localPlayer != null || usesExternalState) return localPlayer;
 
         if (previewPlayers.Count >= MaxPlayerCount)
         {

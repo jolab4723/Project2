@@ -27,12 +27,16 @@ public static class InventoryGridMath
                    ignoredSecond);
     }
 
-    private static bool CanPlaceRectIgnoring(
+    /// <summary>모델을 변경하지 않고 지정한 아이템의 기존 점유를 제외해 미리보기 영역을 검사한다.</summary>
+    public static bool CanPlaceRectIgnoring(
         InventoryGrid grid,
         InventoryCellRect rect,
         InventoryItem ignoredFirst,
-        InventoryItem ignoredSecond)
+        InventoryItem ignoredSecond = null)
     {
+        if (grid == null || !rect.IsInside(grid))
+            return false;
+
         for (int x = rect.X; x < rect.Right; x++)
         {
             for (int y = rect.Y; y < rect.Bottom; y++)

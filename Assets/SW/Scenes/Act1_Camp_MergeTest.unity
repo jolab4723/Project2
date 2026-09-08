@@ -4051,7 +4051,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00035179517}
+  m_AnchoredPosition: {x: 0, y: 0.00005424966}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &225213475
@@ -4844,15 +4844,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 3097473518040875159, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_Name
@@ -18498,7 +18498,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 241738351}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9995984
+  m_Size: 0.9999972
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -23497,6 +23497,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
   poolManager: {fileID: 1569555024}
+  billboardCamera: {fileID: 0}
 --- !u!4 &1569555026
 Transform:
   m_ObjectHideFlags: 0
@@ -26120,7 +26121,7 @@ MonoBehaviour:
   - {fileID: 1067262331}
   spawnDatas:
   - grade: 1
-    enemyIDs: 01000000
+    enemies: []
 --- !u!114 &1780888193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26133,23 +26134,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 361756efa185f19459d45451e25a3262, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemySpawner
-  testInfos:
-  - id: 1
-    enemyName: Artificer Integration Droid
-    enemyGrade: 1
-    enemyType: 0
-    maxHP: 1
-    attack: 0
-    defense: 1
-    moveSpeed: 1
-    pen: 0
-    attackRange: 2
-    attackCoolTime: 3
-    attackSpeed: 1
-    projectileSpeed: 0
-    exp: 1
-    credit: 0
-    patternID: 0
 --- !u!4 &1780888194
 Transform:
   m_ObjectHideFlags: 0
@@ -27009,6 +26993,7 @@ GameObject:
   - component: {fileID: 1831219903}
   - component: {fileID: 1831219902}
   - component: {fileID: 1831219901}
+  - component: {fileID: 1831219904}
   m_Layer: 0
   m_Name: EnemySystem
   m_TagString: Untagged
@@ -27030,11 +27015,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemySpawnManager
   spawnAreas: []
   player: {fileID: 0}
+  enemyDataProvider: {fileID: 0}
+  statContext:
+    floor: 1
+    difficultyName: normal
+    playerCount: 1
   waves:
   - enemies:
     - grade: 1
       count: 1
-  eliteView: {fileID: 0}
+  highEnemyView: {fileID: 0}
   effectSpawner: {fileID: 0}
   projectileSpawner: {fileID: 0}
 --- !u!114 &1831219902
@@ -27050,7 +27040,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPoolManager
   enemyPools:
-  - enemyID: 1
+  - enemyDef: {fileID: 0}
     prefab: {fileID: -5431423992665652879, guid: 769b31cee13af964e91dabafa87d6c64, type: 3}
     poolSize: 1
 --- !u!4 &1831219903
@@ -27068,6 +27058,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1831219904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831219900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df3913d1ea7406d45991b4fa7c6430a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyDataProvider
+  infoSource: 0
+  enemyDatabase: {fileID: 0}
+  testInfos: []
 --- !u!1 &1836046694
 GameObject:
   m_ObjectHideFlags: 0

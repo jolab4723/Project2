@@ -6,8 +6,7 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Mirror가 생성한 테스트 플레이어의 로컬·서버 등록과 Scene 간 수명주기를 연결한다.
-/// <para>6-B 빌드 보완: Scene 전환 직후 한 프레임의 콜백에만 의존하지 않고, 로컬 PlayerContext를 다시
-/// 등록한 뒤 전투·캠프 Scene의 NavMeshAgent가 실제 NavMesh에 올라올 때까지 기다려 입력과 조작 권한을 복구한다.</para>
+/// <para>세션 이동과 재접속 예약 동안 런타임을 보존하고, 서버 스냅샷과 생존·참가 상태를 확인한 뒤 입력을 복구한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext))]
@@ -29,8 +28,23 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private string serverSceneStartPath;
     private Vector3 serverSceneStartPosition;
     private Quaternion serverSceneStartRotation;
+    [SyncVar(hook = nameof(OnTemporarilyAbsentChanged))] private bool temporarilyAbsent;
+    private Renderer[] absentRenderers;
+    private bool[] rendererStates;
+    private Collider[] absentColliders;
+    private bool[] colliderStates;
+    private bool absenceApplied;
+    private bool controllerWasEnabled;
+    private bool controllerHadControl;
+    private NavMeshAgent absentAgent;
 
     public PlayerContext Context => context;
+    /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
+    public bool IsTemporarilyAbsent => temporarilyAbsent;
+    private bool CanRestoreGameplay => !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
+        !context.RuntimeState.IsDead;
+    private bool RequiresNavMesh => GetTestNetworkManager()?.CurrentSessionRoute is
+        MirrorSessionRoute.Combat or MirrorSessionRoute.Camp;
 
     private void Awake()
     {
@@ -69,27 +83,28 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         base.OnStartLocalPlayer();
         RegisterLocalContext();
 
-        // Host는 첫 서버 스냅샷 발행 전에 OnStartLocalPlayer가 올 수 있다.
-        // 아직 스냅샷이 없다면 초기 HP 0을 사망으로 오인하지 않고 입력을 먼저 연다.
-        bool hasAuthoritativeSnapshot = context?.RuntimeState?.HasSnapshot == true;
-        SetLocalOnlyBehaviours(!hasAuthoritativeSnapshot || context.RuntimeState.IsDead == false);
+        textInputBlocked = false;
+        SetLocalOnlyBehaviours(CanRestoreGameplay);
         RestoreLocalGameplayAfterScene();
     }
 
     /// <summary>
-    /// 6-B 테스트에서는 Mirror가 생성한 플레이어 묶음 자체가 Camp와 Stage보다 오래 살아야 한다.
+    /// Mirror가 생성한 플레이어 묶음 자체가 Camp와 Stage보다 오래 살아야 한다.
     /// 원격 복제본도 각 Client에서 함께 유지되어야 하므로 모든 Client 복제본을 DontDestroyOnLoad로 옮긴다.
-    /// 연결 종료 시에는 Mirror의 명시적 Destroy가 그대로 실행되므로 다음 접속의 Player와 섞이지 않는다.
+    /// 재접속 예약 중에도 동일한 런타임을 보존하며 예약 만료 후 서버가 명시적으로 파괴한다.
     /// </summary>
     public override void OnStartClient()
     {
         base.OnStartClient();
         PreserveAcrossNetworkSceneChange();
+        ApplyTemporaryAbsence();
     }
 
     public override void OnStopLocalPlayer()
     {
         StopLocalSceneRestore();
+        context?.Combat?.CancelChase();
+        context?.Controller?.StopMovement();
         SetLocalOnlyBehaviours(false);
         UnregisterLocalContext();
         base.OnStopLocalPlayer();
@@ -169,7 +184,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = isLocalPlayer && gameplayInputEnabled && !textInputBlocked &&
+                behaviour.enabled = isLocalPlayer && gameplayInputEnabled && CanRestoreGameplay && !textInputBlocked &&
                     Time.frameCount > textInputReleaseFrame;
         }
     }
@@ -180,8 +195,84 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// </summary>
     public void SetLocalInputEnabled(bool enabled)
     {
+        // 생존 스냅샷이 Controller를 켠 직후에도 예약 상태의 정지를 다시 적용한다.
+        if (temporarilyAbsent) ApplyTemporaryAbsence();
+        if (!RequiresNavMesh)
+        {
+            enabled = false;
+            context?.Controller?.SetControlEnable(false);
+            if (context?.Controller != null) context.Controller.enabled = false;
+        }
         if (isLocalPlayer)
             SetLocalOnlyBehaviours(enabled);
+    }
+
+    /// <summary>서버가 참가자의 재접속 예약 상태를 변경하고 미완료 행동을 취소한다.</summary>
+    [Server]
+    public void ServerSetTemporarilyAbsent(bool absent)
+    {
+        if (temporarilyAbsent == absent) return;
+        temporarilyAbsent = absent;
+        if (absent)
+        {
+            context?.CombatAuthority?.ServerCancelForDisconnect();
+            GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerCancelForDisconnect();
+        }
+        ApplyTemporaryAbsence();
+    }
+
+    private void OnTemporarilyAbsentChanged(bool oldValue, bool newValue)
+    {
+        ApplyTemporaryAbsence();
+        if (!newValue && isLocalPlayer)
+            RestoreLocalGameplayAfterScene();
+    }
+
+    private void ApplyTemporaryAbsence()
+    {
+        T_PlayerController controller = context?.Controller;
+        if (temporarilyAbsent)
+        {
+            if (!absenceApplied)
+            {
+                absentRenderers = GetComponentsInChildren<Renderer>(true);
+                rendererStates = new bool[absentRenderers.Length];
+                for (int i = 0; i < absentRenderers.Length; i++) rendererStates[i] = absentRenderers[i].enabled;
+                absentColliders = GetComponentsInChildren<Collider>(true);
+                colliderStates = new bool[absentColliders.Length];
+                for (int i = 0; i < absentColliders.Length; i++) colliderStates[i] = absentColliders[i].enabled;
+                controllerWasEnabled = controller != null && controller.enabled;
+                controllerHadControl = controller != null && controller.IsControlEnabled;
+                absentAgent = GetComponent<NavMeshAgent>();
+                absenceApplied = true;
+                context?.Combat?.CancelChase();
+                controller?.StopMovement();
+            }
+            StopLocalSceneRestore();
+            SetLocalOnlyBehaviours(false);
+            foreach (Renderer item in absentRenderers) if (item != null) item.enabled = false;
+            foreach (Collider item in absentColliders) if (item != null) item.enabled = false;
+            controller?.SetControlEnable(false);
+            if (controller != null) controller.enabled = false;
+            if (absentAgent != null) absentAgent.enabled = false;
+            return;
+        }
+        if (!absenceApplied) return;
+        absenceApplied = false;
+        for (int i = 0; i < absentRenderers.Length; i++) if (absentRenderers[i] != null) absentRenderers[i].enabled = rendererStates[i];
+        for (int i = 0; i < absentColliders.Length; i++) if (absentColliders[i] != null) absentColliders[i].enabled = colliderStates[i];
+        bool alive = context?.RuntimeState?.IsDead == false;
+        if (absentAgent != null)
+        {
+            absentAgent.enabled = false;
+            if (alive && RequiresNavMesh) TryWarpToNavMesh(absentAgent, transform.position);
+        }
+        if (controller != null)
+        {
+            controller.enabled = controllerWasEnabled && alive && RequiresNavMesh;
+            controller.SetControlEnable(controllerHadControl && alive && RequiresNavMesh);
+        }
+        SetLocalOnlyBehaviours(CanRestoreGameplay && RequiresNavMesh);
     }
 
     /// <summary>
@@ -191,7 +282,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// </summary>
     public void RestoreLocalGameplayAfterScene()
     {
-        if (!isLocalPlayer)
+        if (!isLocalPlayer || temporarilyAbsent)
             return;
 
         StopLocalSceneRestore();
@@ -245,16 +336,19 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void ApplySceneStart(Vector3 position, Quaternion rotation)
     {
-        if (TryGetComponent(out NavMeshAgent agent) && agent.enabled)
+        if (TryGetComponent(out NavMeshAgent agent))
         {
-            if (agent.isOnNavMesh)
+            if (agent.enabled && agent.isOnNavMesh)
                 agent.ResetPath();
 
-            if (TryWarpToNavMesh(agent, position))
+            if (RequiresNavMesh && !temporarilyAbsent && TryWarpToNavMesh(agent, position))
             {
                 transform.rotation = rotation;
                 return;
             }
+            agent.enabled = false;
+            if (RequiresNavMesh && NavMesh.SamplePosition(position, out NavMeshHit hit, NavMeshSampleDistance, agent.areaMask))
+                position = hit.position;
         }
 
         transform.SetPositionAndRotation(position, rotation);
@@ -264,51 +358,61 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     {
         RegisterLocalContext();
 
-        PlayerRuntimeStateSync_MirrorTest runtimeState = context?.RuntimeState;
-        bool hasSnapshot = runtimeState?.HasSnapshot == true;
-        bool isDead = hasSnapshot && runtimeState.IsDead;
-        SetLocalOnlyBehaviours(!isDead);
-
-        if (isDead)
+        SetLocalOnlyBehaviours(false);
+        for (int frame = 0; frame < SceneRestoreFrameLimit && context?.RuntimeState?.HasSnapshot != true; frame++)
+        {
+            if (temporarilyAbsent) break;
+            yield return null;
+        }
+        if (!CanRestoreGameplay)
         {
             localSceneRestoreRoutine = null;
             yield break;
         }
 
         T_PlayerController controller = context?.Controller;
-        if (controller != null)
-            controller.enabled = true;
-
-        bool requiresNavMesh =
-            SceneManager.GetActiveScene().path == MirrorTestNetworkManager.SessionCombatScene ||
-            SceneManager.GetActiveScene().path == MirrorTestNetworkManager.SessionCampGameplayScene;
+        bool requiresNavMesh = RequiresNavMesh;
+        if (!requiresNavMesh)
+        {
+            SetLocalInputEnabled(false);
+            localSceneRestoreRoutine = null;
+            yield break;
+        }
+        if (controller != null) controller.enabled = true;
 
         for (int frame = 0; frame < SceneRestoreFrameLimit; frame++)
         {
-            if (!requiresNavMesh)
-                break;
-
-            NavMeshAgent agent = controller != null ? controller.agent : null;
-            if (agent != null && agent.enabled)
+            if (!CanRestoreGameplay)
             {
-                if (!agent.isOnNavMesh)
+                SetLocalOnlyBehaviours(false);
+                localSceneRestoreRoutine = null;
+                yield break;
+            }
+            NavMeshAgent agent = controller != null ? controller.agent : null;
+            if (agent != null)
+            {
+                if (!agent.enabled || !agent.isOnNavMesh)
                     TryWarpToNavMesh(agent, transform.position);
 
-                if (agent.isOnNavMesh)
+                if (agent.enabled && agent.isOnNavMesh)
                     break;
             }
 
             yield return null;
         }
 
-        if (controller != null)
-            controller.SetControlEnable(true);
-
-        SetLocalOnlyBehaviours(true);
+        if (!CanRestoreGameplay)
+        {
+            SetLocalOnlyBehaviours(false);
+            localSceneRestoreRoutine = null;
+            yield break;
+        }
+        bool placed = controller != null && controller.agent != null &&
+            controller.agent.enabled && controller.agent.isOnNavMesh;
+        controller?.SetControlEnable(placed);
+        SetLocalOnlyBehaviours(CanRestoreGameplay && placed);
         localSceneRestoreRoutine = null;
-
-        if (requiresNavMesh &&
-            (controller == null || controller.agent == null || !controller.agent.isOnNavMesh))
+        if (!placed)
         {
             Debug.LogError(
                 "[MirrorSpawnedPlayerBinder] Scene 전환 뒤 로컬 플레이어를 NavMesh에 연결하지 못했습니다.",
@@ -318,7 +422,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private static bool TryWarpToNavMesh(NavMeshAgent agent, Vector3 position)
     {
-        if (agent == null || !agent.enabled)
+        if (agent == null)
             return false;
 
         if (!NavMesh.SamplePosition(
@@ -330,7 +434,12 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             return false;
         }
 
-        return agent.Warp(hit.position);
+        if (!agent.enabled)
+        {
+            agent.transform.position = hit.position;
+            agent.enabled = true;
+        }
+        return agent.isOnNavMesh && agent.Warp(hit.position);
     }
 
     private void StopLocalSceneRestore()

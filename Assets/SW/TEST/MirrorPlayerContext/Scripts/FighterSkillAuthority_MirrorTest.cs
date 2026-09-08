@@ -93,6 +93,18 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     public int LastStatusEffectCount => lastStatusEffectCount;
     public uint AcceptedSkillCount => acceptedSkillCount;
     public uint RejectedSkillCount => rejectedSkillCount;
+    private bool IsUnavailable => GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+        context?.RuntimeState?.IsDead == true || status == null || status.IsDead;
+
+    /// <summary>재접속 예약으로 미완료 스킬과 로컬 대시를 취소하며 서버 쿨다운과 마나는 유지한다.</summary>
+    [Server]
+    public void ServerCancelForDisconnect()
+    {
+        ClearServerPendingSkill();
+        ClearLocalPendingSkill(restoreIdle: false);
+        lastServerRequestId = 0;
+        resolvedTargets.Clear();
+    }
 
     private void Awake()
     {
@@ -101,6 +113,12 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 
     private void Update()
     {
+        if (IsUnavailable)
+        {
+            if (isServer) ServerCancelForDisconnect();
+            else ClearLocalPendingSkill(restoreIdle: false);
+            return;
+        }
         if (isLocalPlayer &&
             activeLocalRequestId != 0 &&
             NetworkTime.time >= localAnimationExpiresAt)
@@ -133,14 +151,23 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        inputHandler.OnSkillKeyPressed += HandleSkillPressed;
-        inputHandler.OnSkillKeyReleased += HandleSkillReleased;
+        ClearLocalPendingSkill(restoreIdle: false);
+        System.Array.Clear(predictedReadyAt, 0, predictedReadyAt.Length);
+        nextLocalRequestId = 0;
+        UnbindLocalInput();
+        if (inputHandler != null)
+        {
+            inputHandler.OnSkillKeyPressed += HandleSkillPressed;
+            inputHandler.OnSkillKeyReleased += HandleSkillReleased;
+        }
     }
 
     public override void OnStopLocalPlayer()
     {
         UnbindLocalInput();
         ClearLocalPendingSkill(restoreIdle: false);
+        System.Array.Clear(predictedReadyAt, 0, predictedReadyAt.Length);
+        nextLocalRequestId = 0;
         base.OnStopLocalPlayer();
     }
 
@@ -177,7 +204,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     {
         if (!isLocalPlayer || !NetworkClient.active || !NetworkClient.ready ||
             index < 0 || index >= SkillCount || skills[index] == null ||
-            context?.RuntimeState?.IsDead == true || !CanUseLocalSkill() ||
+            IsUnavailable || context?.RuntimeState?.HasSnapshot != true || !CanUseLocalSkill() ||
             GetRemainingCooldown(index) > 0f)
         {
             return false;
@@ -220,7 +247,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdRequestSkill(uint requestId, byte slotIndex, Vector3 aimDirection)
     {
-        if (context?.RuntimeState?.IsDead == true || status == null || status.IsDead)
+        if (IsUnavailable)
         {
             Reject(requestId, slotIndex, MirrorSkillRequestResult.Dead);
             return;
@@ -289,7 +316,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     /// </summary>
     public bool TryConfirmLocalSkillImpactFromAnimation()
     {
-        if (!isLocalPlayer ||
+        if (IsUnavailable || !isLocalPlayer ||
             !NetworkClient.active ||
             !NetworkClient.ready ||
             activeLocalRequestId == 0 ||
@@ -326,7 +353,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdConfirmSkillAnimationImpact(uint requestId)
     {
-        if (requestId == 0 ||
+        if (IsUnavailable || requestId == 0 ||
             requestId != pendingServerRequestId ||
             pendingServerSlot >= SkillCount ||
             NetworkTime.time > serverAnimationExpiresAt)
@@ -349,6 +376,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private void ResolveServerSkill(int index, SkillDefinitionSO definition, Vector3 aimDirection)
     {
+        if (IsUnavailable) return;
         resolvedTargets.Clear();
 
         switch (definition.shapeType)
@@ -461,6 +489,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private bool TryDamageTarget(WBH_ICombat target, float damageMultiplier)
     {
+        if (IsUnavailable) return false;
         if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
                 context,
                 target,
@@ -511,7 +540,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         SkillEvolutionId evolution,
         float dashDuration)
     {
-        if (slotIndex >= SkillCount || skills[slotIndex] == null)
+        if (IsUnavailable || slotIndex >= SkillCount || skills[slotIndex] == null)
             return;
 
         presentationSkillIndex = slotIndex;
@@ -522,7 +551,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [ClientRpc]
     private void RpcPresentSkillImpact(byte slotIndex, Vector3 origin, Vector3 aimDirection)
     {
-        if (slotIndex >= SkillCount || skills[slotIndex] == null)
+        if (IsUnavailable || slotIndex >= SkillCount || skills[slotIndex] == null)
             return;
 
         SkillDefinitionSO definition = skills[slotIndex];
@@ -564,7 +593,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         presentationSkillIndex = -1;
         presentationEvolution = SkillEvolutionId.None;
 
-        if (!isLocalPlayer || definition?.shapeType == SkillShapeType.Dash)
+        if (IsUnavailable || !isLocalPlayer || definition?.shapeType == SkillShapeType.Dash)
             return;
 
         if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
@@ -573,7 +602,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 
     public void PlayPendingSkillEffect(int partValue)
     {
-        if (presentationSkillIndex < 0 ||
+        if (IsUnavailable || presentationSkillIndex < 0 ||
             presentationSkillIndex >= SkillCount ||
             !System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
         {
@@ -638,6 +667,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 
     private IEnumerator ExecuteLocalDash(SkillDefinitionSO definition, Vector3 direction)
     {
+        if (IsUnavailable || !isLocalPlayer) yield break;
         NavMeshAgent agent = controller != null ? controller.agent : null;
         if (agent == null || !agent.enabled)
         {
@@ -656,12 +686,22 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
+            if (IsUnavailable || !isLocalPlayer || !agent.enabled || !agent.isOnNavMesh)
+            {
+                localSkillRoutine = null;
+                yield break;
+            }
             elapsed += Time.deltaTime;
             Vector3 next = Vector3.Lerp(start, target, Mathf.Clamp01(elapsed / duration));
             agent.Move(next - transform.position);
             yield return null;
         }
 
+        if (IsUnavailable || !isLocalPlayer)
+        {
+            localSkillRoutine = null;
+            yield break;
+        }
         if (agent.isOnNavMesh)
             agent.Warp(target);
 

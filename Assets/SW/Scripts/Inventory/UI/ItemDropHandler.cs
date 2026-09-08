@@ -10,6 +10,7 @@ public class ItemDropHandler : MonoBehaviour
     private InventoryController inventoryController;
     private EquipSlotUI[] equipmentSlots;
     private bool restorePending;
+    private bool restoreModel = true;
     private bool recoveryFailureLogged;
 
     public bool HasPendingRestore => restorePending;
@@ -42,8 +43,9 @@ public class ItemDropHandler : MonoBehaviour
             TryRestoreOriginalPlacement();
     }
 
-    public void PrepareRestore()
+    public void PrepareRestore(bool allowModelRestore = true)
     {
+        restoreModel = allowModelRestore;
         restorePending = true;
         recoveryFailureLogged = false;
     }
@@ -92,6 +94,13 @@ public class ItemDropHandler : MonoBehaviour
 
         if (TryFinalizeStablePlacement())
             return true;
+
+        // 표시용 드래그 중 서버가 소유권을 바꿨다면 옛 아이템을 Grid에 되살리지 않는다.
+        if (!restoreModel)
+        {
+            CancelRestore();
+            return false;
+        }
 
         // 모델이 장비에 남아 있는데 시각 슬롯을 찾지 못한 경우 Grid 복구로 중복 소유시키지 않는다.
         if (IsItemOwnedByEquipmentModel())

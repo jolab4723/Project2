@@ -91,7 +91,8 @@ public sealed class InventoryItemUISpawner : MonoBehaviour
         subscribed = false;
     }
 
-    private void RebuildPlayerItems()
+    /// <summary>모델을 변경하지 않고 현재 플레이어 그리드의 아이템 화면을 다시 만든다.</summary>
+    public void RebuildPlayerItems()
     {
         ClearPlayerItemViews();
 

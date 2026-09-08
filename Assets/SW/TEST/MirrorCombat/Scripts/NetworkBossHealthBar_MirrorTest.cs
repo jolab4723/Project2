@@ -6,6 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// WBH 보스 체력바 Prefab을 Mirror 서버가 확정한 보스 체력에 연결하는 클라이언트 전용 어댑터다.
 /// 원본 <see cref="WBH_HighEnemyHpbarView"/>는 로컬 WBH_EnemyStatus 이벤트를 전제로 하므로 비활성화한다.
+/// 보스 완료 결과와 방장의 로비 복귀 버튼도 같은 서버 상태를 표시한다.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
@@ -21,8 +22,12 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
     [SerializeField] private WBH_HighEnemyHpbarView productionView;
     [SerializeField] private NetworkEnemyWaveSpawner_MirrorTest waveSpawner;
     [SerializeField] private GameObject clearRoot;
+    [SerializeField] private Button returnToLobbyButton;
+    [SerializeField] private TMP_Text returnToLobbyText;
 
     private NetworkEnemyAuthority_MirrorTest boundBoss;
+    private MirrorTestNetworkManager manager;
+    private bool returnRequested;
     private float nextBossSearchAt;
     private float displayedHealth = float.NaN;
     private float displayedMaxHealth = float.NaN;
@@ -41,6 +46,31 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
 
         SetVisible(false);
         SetClearVisible(false);
+        if (returnToLobbyButton != null)
+            returnToLobbyButton.onClick.AddListener(RequestLobbyReturn);
+    }
+
+    private void Start()
+    {
+        manager = Mirror.NetworkManager.singleton as MirrorTestNetworkManager;
+        if (manager != null) manager.AdmissionStatusChanged += HandleReturnRejected;
+    }
+
+    private void OnDestroy()
+    {
+        if (returnToLobbyButton != null) returnToLobbyButton.onClick.RemoveListener(RequestLobbyReturn);
+        if (manager != null) manager.AdmissionStatusChanged -= HandleReturnRejected;
+    }
+
+    private void RequestLobbyReturn()
+    {
+        if (!returnRequested && IsClearVisible && manager != null)
+            returnRequested = manager.RequestReturnToLobby();
+    }
+
+    private void HandleReturnRejected(string _)
+    {
+        returnRequested = false;
     }
 
     private void Update()
@@ -140,6 +170,17 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
                        waveSpawner.IsBossSession &&
                        waveSpawner.SessionPhase == MirrorTestSessionPhase.Completed;
         SetClearVisible(visible);
+        if (visible)
+        {
+            bool leader = manager != null && manager.CanLocalClientControlSession;
+            if (returnToLobbyButton != null) returnToLobbyButton.interactable = leader && !returnRequested;
+            if (returnToLobbyText != null)
+            {
+                if (returnRequested) returnToLobbyText.text = "로비로 이동 중…";
+                else if (leader) returnToLobbyText.text = "로비로 돌아가기";
+                else returnToLobbyText.text = "방장의 복귀를 기다리는 중";
+            }
+        }
         return visible;
     }
 
