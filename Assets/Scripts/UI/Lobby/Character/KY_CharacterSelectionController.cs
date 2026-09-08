@@ -29,6 +29,7 @@ public class KY_CharacterSelectionController : MonoBehaviour
 
     /// <summary>선택한 캐릭터를 확정했을 때 호출한다.</summary>
     public event Action<KY_CharacterId> SelectionConfirmed;
+    public event Action<KY_CharacterId> CharacterSelected;
 
     /// <summary>버튼과 캐릭터 카드의 이벤트를 등록한다.</summary>
     private void Awake()
@@ -68,6 +69,7 @@ public class KY_CharacterSelectionController : MonoBehaviour
             return;
         }
         selectedCharacterId = characterId;
+        CharacterSelected?.Invoke(characterId);
         slot?.Show(data);
         previewController?.ShowCharacter(characterId);
         if (confirmSelectionButton != null) confirmSelectionButton.interactable = true;

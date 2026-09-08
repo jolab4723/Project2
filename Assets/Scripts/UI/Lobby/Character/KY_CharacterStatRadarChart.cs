@@ -16,6 +16,16 @@ public class KY_CharacterStatRadarChart : MaskableGraphic
     /// <summary>새 능력치 목표로 차트 채움 애니메이션을 시작한다.</summary>
     public void SetValues(float powerValue, float healthValue, float difficultyValue)
     {
+        // 닫힌 상세 창에서도 최신 값을 보관하고 다시 열면 바로 표시한다.
+        if (!isActiveAndEnabled)
+        {
+            power = powerValue;
+            health = healthValue;
+            difficulty = difficultyValue;
+            animationCoroutine = null;
+            SetVerticesDirty();
+            return;
+        }
         if (animationCoroutine != null)
             StopCoroutine(animationCoroutine);
 
