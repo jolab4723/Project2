@@ -48,6 +48,10 @@ public class KY_StatusPopup : KY_PopupBase
         curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
 
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (statLabels == null)
+            statLabels = Resources.Load<StatLabelDatabaseSO>("DataFiles/CharData/ClassData/3. GeneratedAssets/StatLabelDatabase");
+
         ApplyLabels();
     }
 

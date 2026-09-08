@@ -17133,7 +17133,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 97784468971243459, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1984896762}
   m_SourcePrefab: {fileID: 100100000, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
 --- !u!224 &1984896757 stripped
 RectTransform:
@@ -17162,6 +17165,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b871c5b0fb838f74db50fea35f454e11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_InventoryPopup
+--- !u!1 &1984896760 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 97784468971243459, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 1984896756}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1984896761 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5676292289274195919, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -17173,6 +17181,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
+--- !u!114 &1984896762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1984896760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: upgrade_ui.header
+  database: {fileID: 0}
 --- !u!1001 &1994013365
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -722,6 +722,7 @@ GameObject:
   - component: {fileID: 1259762203}
   - component: {fileID: 1259762202}
   - component: {fileID: 1259762204}
+  - component: {fileID: 1259762205}
   m_Layer: 5
   m_Name: TooltipTitle
   m_TagString: Untagged
@@ -860,6 +861,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
+--- !u!114 &1259762205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259762200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: loading_ui.tooltip_title
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &1400168008
 GameObject:
   m_ObjectHideFlags: 0
@@ -927,6 +942,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LoadingSceneProgress
   progressText: {fileID: 504687361}
+  progressLabel: Progress
 --- !u!4 &1443341927
 Transform:
   m_ObjectHideFlags: 0
@@ -1418,6 +1434,7 @@ GameObject:
   - component: {fileID: 1797464765}
   - component: {fileID: 1797464764}
   - component: {fileID: 1797464766}
+  - component: {fileID: 1797464767}
   m_Layer: 5
   m_Name: TooltipContent
   m_TagString: Untagged
@@ -1465,10 +1482,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\uC774\uACF3\uC740 \uC624\uC5FC\uC73C\uB85C \uC778\uD574 \uC778\uAC04\uC774
-    \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,\r\n\uC218\uBC31
-    \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774 \uC2A4\uC2A4\uB85C\uB97C
-    \uBCF5\uAD6C\uD558\uACE0 \uAC1C\uC870\uD558\uAE30 \n\uC2DC\uC791\uD558\uBA74\uC11C
-    \uAE30\uAD34\uD55C \uBA54\uCE74 \uC0DD\uD0DC\uACC4\uAC00 \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4.\r\n"
+    \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,
+    \uC218\uBC31 \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774
+    \uC2A4\uC2A4\uB85C\uB97C \uBCF5\uAD6C\uD558\uACE0 \uAC1C\uC870\uD558\uAE30 \uC2DC\uC791\uD558\uBA74\uC11C
+    \uAE30\uAD34\uD55C \uBA54\uCE74 \uC0DD\uD0DC\uACC4\uAC00 \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
   m_sharedMaterial: {fileID: -4062070630887492077, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
@@ -1560,6 +1577,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
+--- !u!114 &1797464767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797464762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: loading_ui.tooltip_content
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &1812752736
 GameObject:
   m_ObjectHideFlags: 0

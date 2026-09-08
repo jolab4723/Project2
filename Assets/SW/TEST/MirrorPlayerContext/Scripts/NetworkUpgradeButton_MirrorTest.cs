@@ -134,7 +134,7 @@ public sealed class NetworkUpgradeButton_MirrorTest : MonoBehaviour
 
         if (selectedItem?.definition == null)
         {
-            ShowMessage(UpgradeMessageMapper.SelectionRequired);
+            ShowMessage(UpgradeMessageMapper.GetSelectionRequired(null));
             return;
         }
 
@@ -183,7 +183,8 @@ public sealed class NetworkUpgradeButton_MirrorTest : MonoBehaviour
                 UpgradeMessageMapper.GetMessage(
                     UpgradeResult.Success,
                     itemName,
-                    upgradeLevel));
+                    upgradeLevel,
+                    null));
             return;
         }
 

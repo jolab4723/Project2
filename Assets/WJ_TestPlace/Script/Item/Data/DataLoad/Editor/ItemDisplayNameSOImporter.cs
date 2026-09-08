@@ -3,37 +3,38 @@ using System.IO;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using ItemSystem;
 
 namespace DataSystem
 {
     /// <summary>
-    /// UILabelExcelToJson 결과물(JSON)을 읽어서 UILabelDatabaseSO를 갱신한다.
-    /// UILabelDatabaseSO의 korLabels/engLabels/jpnLabels/chnLabels는 private [SerializeField]라
+    /// ItemDisplayNameExcelToJson 결과물(JSON)을 읽어서 ItemDisplayNameDatabaseSO를 갱신한다.
+    /// ItemDisplayNameDatabaseSO의 korLabels/engLabels/jpnLabels/chnLabels는 private [SerializeField]라
     /// 그 파일은 그대로 두고 SerializedObject/SerializedProperty로 직접 써넣는다(QuestLabelSOImporter와 동일).
     /// </summary>
-    public static class UILabelSOImporter
+    public static class ItemDisplayNameSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/UIData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/UIData/3. GeneratedAssets/UILabelDatabase.asset";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/ItemData/2. JSONFile";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemDisplayNameDatabase.asset";
 
-        [MenuItem("DataLoader/UI Label/2. Generate SO From JSON")]
+        [MenuItem("DataLoader/Item Display Name/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
         {
             string defaultAbsoluteFolder = AssetPathToAbsolutePath(DefaultJsonFolder);
-            string jsonPath = EditorUtility.OpenFilePanel("Select UI label JSON", defaultAbsoluteFolder, "json");
+            string jsonPath = EditorUtility.OpenFilePanel("Select item display name JSON", defaultAbsoluteFolder, "json");
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
             Import(jsonPath, DefaultOutputAssetPath);
         }
 
-        [MenuItem("DataLoader/UI Label/0. Run All Steps")]
+        [MenuItem("DataLoader/Item Display Name/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            string jsonPath = UILabelExcelToJson.ConvertWithDefaultPaths();
+            string jsonPath = ItemDisplayNameExcelToJson.ConvertWithDefaultPaths();
             if (string.IsNullOrEmpty(jsonPath))
             {
-                Debug.LogError("[UILabel] 엑셀을 찾지 못해 중단했습니다.");
+                Debug.LogError("[ItemDisplayName] 엑셀을 찾지 못해 중단했습니다.");
                 return;
             }
 
@@ -51,19 +52,19 @@ namespace DataSystem
             string absoluteJsonPath = jsonPath.StartsWith("Assets/") ? AssetPathToAbsolutePath(jsonPath) : jsonPath;
             if (!File.Exists(absoluteJsonPath))
             {
-                Debug.LogError($"[UILabel] JSON file not found: {absoluteJsonPath}");
+                Debug.LogError($"[ItemDisplayName] JSON file not found: {absoluteJsonPath}");
                 return;
             }
 
             string json = File.ReadAllText(absoluteJsonPath);
-            UILabelJsonData data = JsonConvert.DeserializeObject<UILabelJsonData>(json);
+            ItemDisplayNameJsonData data = JsonConvert.DeserializeObject<ItemDisplayNameJsonData>(json);
             if (data == null)
             {
-                Debug.LogError("[UILabel] JSON parse failed.");
+                Debug.LogError("[ItemDisplayName] JSON parse failed.");
                 return;
             }
 
-            UILabelDatabaseSO so = GetOrCreateAsset(outputAssetPath);
+            ItemDisplayNameDatabaseSO so = GetOrCreateAsset(outputAssetPath);
             if (so == null)
                 return;
 
@@ -78,20 +79,20 @@ namespace DataSystem
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[UILabel] SO 갱신 완료: {outputAssetPath}\n" +
+            Debug.Log($"[ItemDisplayName] SO 갱신 완료: {outputAssetPath}\n" +
                       $"KOR: {korCount}, ENG: {engCount}, JPN: {jpnCount}, CHN: {chnCount}");
         }
 
-        private static int WriteLabels(SerializedProperty labelsProp, List<UILabelRow> rows)
+        private static int WriteLabels(SerializedProperty labelsProp, List<ItemDisplayNameRow> rows)
         {
             labelsProp.ClearArray();
 
             int index = 0;
-            foreach (UILabelRow row in rows)
+            foreach (ItemDisplayNameRow row in rows)
             {
                 if (string.IsNullOrEmpty(row.key))
                 {
-                    Debug.LogWarning("[UILabel] key가 비어있는 행을 건너뜁니다.");
+                    Debug.LogWarning("[ItemDisplayName] key가 비어있는 행을 건너뜁니다.");
                     continue;
                 }
 
@@ -105,20 +106,20 @@ namespace DataSystem
             return index;
         }
 
-        private static UILabelDatabaseSO GetOrCreateAsset(string path)
+        private static ItemDisplayNameDatabaseSO GetOrCreateAsset(string path)
         {
-            UILabelDatabaseSO asset = AssetDatabase.LoadAssetAtPath<UILabelDatabaseSO>(path);
+            ItemDisplayNameDatabaseSO asset = AssetDatabase.LoadAssetAtPath<ItemDisplayNameDatabaseSO>(path);
             if (asset != null)
                 return asset;
 
             Object existing = AssetDatabase.LoadAssetAtPath<Object>(path);
             if (existing != null)
             {
-                Debug.LogError($"[UILabel] Asset already exists but type is not UILabelDatabaseSO: {path}");
+                Debug.LogError($"[ItemDisplayName] Asset already exists but type is not ItemDisplayNameDatabaseSO: {path}");
                 return null;
             }
 
-            asset = ScriptableObject.CreateInstance<UILabelDatabaseSO>();
+            asset = ScriptableObject.CreateInstance<ItemDisplayNameDatabaseSO>();
             string directory = Path.GetDirectoryName(path).Replace("\\", "/");
             EnsureAssetFolder(directory);
             AssetDatabase.CreateAsset(asset, path);
