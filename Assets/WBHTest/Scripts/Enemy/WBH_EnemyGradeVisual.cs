@@ -23,6 +23,7 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
     [SerializeField] private ParticleSystem advancedEffect;
 
     private MaterialPropertyBlock propertyBlock;
+    private EnemyGrade currentGrade = EnemyGrade.Normal;
 
     private Vector3 originalScale;
     private bool initialized;
@@ -45,9 +46,16 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        RefreshAdvancedEffect();
+    }
+
     public void ApplyGrade(EnemyGrade grade)
     {
         ResetForPool();
+
+        currentGrade = grade;
 
         if (grade != EnemyGrade.Advanced)
             return;
@@ -58,24 +66,36 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
 
         ApplyMaterialProperties(tintMultiplier, metallicBoost, smoothnessBoost);
 
-        if(advancedEffect != null)
-        {
-            advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            advancedEffect.Play(withChildren: true);
-        }
+        RefreshAdvancedEffect();
     }
 
     public void ResetForPool()
     {
+        currentGrade = EnemyGrade.Normal;
+
         scaleTarget.localScale = originalScale;
 
         ApplyMaterialProperties(Color.white, 0f, 0f);
 
-        if(advancedEffect != null)
-        {
-            advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
+        StopAdvancedEffect();
+    }
+
+    private void RefreshAdvancedEffect()
+    {
+        StopAdvancedEffect();
+
+        if (currentGrade != EnemyGrade.Advanced || advancedEffect == null || !gameObject.activeInHierarchy)
+            return;
+
+        advancedEffect.Play(withChildren: true);
+    }
+
+    private void StopAdvancedEffect()
+    {
+        if (advancedEffect == null)
+            return;
+
+        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     // 색상, 메탈릭, 부드러움 변환 및 적용.

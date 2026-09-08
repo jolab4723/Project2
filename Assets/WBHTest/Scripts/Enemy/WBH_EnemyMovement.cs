@@ -33,6 +33,11 @@ public class WBH_EnemyMovement : MonoBehaviour
         status = GetComponent<WBH_EnemyStatus>();
     }
 
+    private void OnEnable()
+    {
+        RefreshControlState();
+    }
+
     // NavMeshAgent 초기화
     public void Initialize(WBH_EnemyInfo info)
     {
@@ -42,7 +47,6 @@ public class WBH_EnemyMovement : MonoBehaviour
         isStatusEffectControlBlocked = false;
 
         agent.speed = info.moveSpeed;
-        agent.isStopped = false;
 
         lastDestination = Vector3.zero;
     }

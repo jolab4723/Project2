@@ -1,3 +1,4 @@
+using EnemySystem;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -159,7 +160,7 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
         {
             if (enemy != null &&
                 !enemy.IsDead &&
-                enemy.EnemyInfo?.enemyType == EnemyType.Boss)
+                enemy.EnemyInfo?.enemyAttackType == EnemyAttackType.Boss)
             {
                 return enemy;
             }

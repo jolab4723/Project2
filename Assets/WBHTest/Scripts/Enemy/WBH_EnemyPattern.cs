@@ -1,3 +1,4 @@
+using EnemySystem;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyMovement))]
@@ -156,11 +157,11 @@ public class WBH_EnemyPattern : MonoBehaviour
     // patternID 혹은 EnemyType에 따라 고유패턴 실행 (normal, advanced 는 영향 X)
     private void CreatePattern()
     {
-        if (controller.Info.enemyType == EnemyType.SelfDestruct)
+        if (controller.Info.enemyAttackType == EnemyAttackType.SelfDestruct)
         {
             currentPattern = new WBH_EnemySelfDestructPattern();
         }
-        else if(controller.Info.enemyType == EnemyType.Hidden)
+        else if(controller.Info.enemyAttackType == EnemyAttackType.Hidden)
         {
             currentPattern = new WBH_EnemyHiddenPattern();
         }
@@ -242,15 +243,15 @@ public class WBH_EnemyPattern : MonoBehaviour
     {
         FaceTarget();
 
-        switch (controller.Info.enemyType)
+        switch (controller.Info.enemyAttackType)
         {
-            case EnemyType.Melee:
+            case EnemyAttackType.Melee:
                 MeleeAttack();
                 break;
-            case EnemyType.Ranged:
+            case EnemyAttackType.Ranged:
                 RangedAttack();
                 break;
-            case EnemyType.Boss:
+            case EnemyAttackType.Boss:
                 MeleeAttack();
                 break;
         }
