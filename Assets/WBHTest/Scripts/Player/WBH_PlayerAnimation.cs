@@ -264,4 +264,10 @@ public class WBH_PlayerAnimation : MonoBehaviour
         if (combat.currentWeapon == GunnerWeaponType.Shotgun)
             effectSpawner.SpawnEffect(Eff_gunnerShotgunAtk, gunnerEffectRoot);
     }
+
+    public void AniEvent_PlaySkillSfx(int partValue)
+    {
+        fighterSkillController?.PlayPendingSkillSfx(partValue);
+        gunnerSkillController?.PlayPendingSkillSfx(partValue);
+    }
 }

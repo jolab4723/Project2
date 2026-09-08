@@ -39,7 +39,7 @@ public class YJ_SfxPlayer : MonoBehaviour
         }
     }
 
-    public void PlayOneShot(AudioClip clip, Vector3 position, float volume = 1f)
+    public void PlayImmediate(AudioClip clip, Vector3 position, float volume)
     {
         if (clip == null || ! isActiveAndEnabled || sources == null)
             return;

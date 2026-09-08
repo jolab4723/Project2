@@ -1241,4 +1241,22 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         playerEffect.TryGetEffectData(cue, out WBH_EffectData data);
         return data;
     }
+
+    public void PlayPendingSkillSfx(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+            return;
+
+        if (skills[pendingSkillIndex] == null || playerEffect == null)
+            return;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1,
+                                                                              pendingEvo,
+                                                                              (SkillEffectPart)partValue);
+
+        playerEffect.PlaySfx(cue);
+    }
 }
