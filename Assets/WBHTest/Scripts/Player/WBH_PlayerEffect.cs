@@ -10,11 +10,14 @@ public class WBH_PlayerEffect : MonoBehaviour
         public WBH_PlayerEffectCue cue;
         public WBH_EffectData data;
         public Transform anchor;
+        public AudioClip sfxClip;
+        [Range(0f, 1f)] public float sfxVolume = 1f;
     }
 
     [SerializeField] private WBH_EffectSpawner spawner;
     [SerializeField] private WBH_PlayerStatus playerStatus;
     [SerializeField] private EffectBinding[] effectBindings;
+    [SerializeField] private YJ_SfxPlayer sfxPlayer;
 
     [Header("Local Persistent Effects")]
     [SerializeField] private WBH_EffectData chargeEffect;
@@ -29,6 +32,9 @@ public class WBH_PlayerEffect : MonoBehaviour
     {
         if (playerStatus == null)
             playerStatus = GetComponent<WBH_PlayerStatus>();
+
+        if (sfxPlayer == null)
+            sfxPlayer = FindFirstObjectByType<YJ_SfxPlayer>();
 
         BuildBindindMap();
     }
@@ -76,19 +82,25 @@ public class WBH_PlayerEffect : MonoBehaviour
     // 스케일을 적용해 Cue 에 바인딩 된 위치에 이펙트 재생
     public void PlayEffect( WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
     {
-        if (spawner == null)
-        {
-            Log.Error($"{name}의 이펙트 스포너가 등록되지 않았습니다.");
-            return;
-        }
-
         if (!bindingMap.TryGetValue(cue, out EffectBinding binding))
         {
             Log.Warning($"{name}에 {cue} 이펙트가 등록되지 않았습니다.");
             return;
         }
 
-        if (binding.data == null || binding.anchor == null)
+        Vector3 soundPosition = binding.anchor != null ? binding.anchor.position : transform.position;
+        PlayBindingSfx(binding, soundPosition);
+
+        if (binding.data == null)
+            return;
+
+        if (spawner == null)
+        {
+            Log.Error($"{name}의 이펙트 스포너가 등록되지 않았습니다.");
+            return;
+        }
+
+        if (binding.anchor == null)
             return;
 
         PlayBinding(binding, scaleMultiplier);
@@ -112,7 +124,9 @@ public class WBH_PlayerEffect : MonoBehaviour
                     
                     break;
                 }
+
             case EffectAttachType.AttachOnce:
+
             case EffectAttachType.Follow:
                 spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed);
                 break;
@@ -137,10 +151,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         if (effect == null)
             return;
 
-        Vector3 appliedScale = effectData.applyEnhancementScale
-            ? scaleMultiplier
-            : Vector3.one;
-
+        Vector3 appliedScale = effectData.applyEnhancementScale ? scaleMultiplier : Vector3.one;
         effect.transform.localScale = Vector3.Scale(effect.transform.localScale, appliedScale);
         activeLocalEffects.Add(effectData, effect);
     }
@@ -160,16 +171,15 @@ public class WBH_PlayerEffect : MonoBehaviour
 
     public void PlayWorldEffect(WBH_PlayerEffectCue cue, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
     {
-        if (spawner == null)
-            return;
-
-        if(!bindingMap.TryGetValue(cue, out EffectBinding binding))
+        if (!bindingMap.TryGetValue(cue, out EffectBinding binding))
         {
             Log.Warning($"{name} 에 {cue} 이펙트가 등록되지 않았습니다.");
             return;
         }
 
-        if (binding.data == null)
+        PlayBindingSfx(binding, position);
+
+        if (binding.data == null || spawner == null)
             return;
 
         if(binding.data.attachType == EffectAttachType.Follow)
@@ -181,7 +191,6 @@ public class WBH_PlayerEffect : MonoBehaviour
         Vector3 appliedScale = binding.data.applyEnhancementScale ? scaleMultiplier : Vector3.one;
         Vector3 spawnPos = position + rotation * binding.data.localPos;
         Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
-
 
         spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed);
     }
@@ -213,5 +222,13 @@ public class WBH_PlayerEffect : MonoBehaviour
 
         data = binding.data;
         return data != null;
+    }
+
+    private void PlayBindingSfx(EffectBinding binding, Vector3 position)
+    {
+        if (sfxPlayer == null || binding.sfxClip == null)
+            return;
+
+        sfxPlayer.PlayOneShot(binding.sfxClip, position, binding.sfxVolume);
     }
 }
