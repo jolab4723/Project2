@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ public class WBH_PlayerEffect : MonoBehaviour
         public Transform anchor;
         public AudioClip sfxClip;
         [Range(0f, 1f)] public float sfxVolume = 1f;
+        [Min(0f)] public float sfxBaseTime = 0f;
+        public float sfxOffset = 0f;
     }
 
     [SerializeField] private WBH_EffectSpawner spawner;
@@ -42,6 +45,8 @@ public class WBH_PlayerEffect : MonoBehaviour
     // 사망 시, 기존 이펙트 종료
     private void OnDisable()
     {
+        CancelPendingSfx();
+
         foreach (WBH_Effect effect in activeLocalEffects.Values)
         {
             if (effect != null)
@@ -237,5 +242,95 @@ public class WBH_PlayerEffect : MonoBehaviour
 
         Vector3 position = binding.anchor != null ? binding.anchor.position : transform.position;
         PlayBindingSfx(binding, position);
+    }
+
+    public void ScheduleSfx(WBH_PlayerEffectCue cue, Animator animator, AnimationEvent animationEvent)
+    {
+        if ( ! isActiveAndEnabled || animator == null || sfxPlayer == null)
+            return;
+
+        if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
+        {
+            Log.Warning($"{name}에 {cue} 사운드 바인딩이 없습니다.");
+            return;
+        }
+
+        if (binding.sfxClip == null)
+            return;
+
+        AnimationClip clip = animationEvent.animatorClipInfo.clip;
+
+        if (clip == null || clip.length <= 0f)
+            return;
+
+        float delayInClip = binding.sfxBaseTime + binding.sfxOffset;
+
+        // 예약 이벤트 이전의 시점은 재생할 수 없다.
+        if (delayInClip < 0f)
+        {
+            Log.Warning($"{cue}: SFX 기준 시간 + Offset은 0 이상이어야 합니다.");
+            return;
+        }
+
+        // 이벤트의 클립 내 위치 + Cue별 보정 시간을
+        // 애니메이션 진행도(0~1)로 변환한다.
+        float targetNormalizedTime = (animationEvent.time + delayInClip) / clip.length;
+
+        if (targetNormalizedTime >= 1f)
+        {
+            Log.Warning($"{cue}: SFX 재생 시점이 클립 끝에 있거나 끝을 벗어납니다.");
+            return;
+        }
+
+        int stateHash = animationEvent.animatorStateInfo.fullPathHash;
+        StartCoroutine(WaitForSfxTime(binding, animator, stateHash, targetNormalizedTime));
+    }
+
+    private IEnumerator WaitForSfxTime(EffectBinding binding, Animator animator, int stateHash, float targetNormalizedTime)
+    {
+        const int layer = 0;
+
+        while (animator != null && animator.isActiveAndEnabled)
+        {
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(layer);
+
+            if (animator.IsInTransition(layer))
+            {
+                AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(layer);
+
+                if (next.fullPathHash == stateHash)
+                {
+                    // 해당 스킬로 진입하는 전환 중.
+                    state = next;
+                }
+                else
+                {
+                    // 해당 스킬을 벗어나는 전환이면 예약 취소.
+                    yield break;
+                }
+            }
+
+            if (state.fullPathHash != stateHash)
+                yield break;
+
+            if (state.normalizedTime >= targetNormalizedTime)
+            {
+                // 오디오 일시정지 중에 목표 지점을 넘긴 소리는 생략.
+                if (!AudioListener.pause)
+                {
+                    Vector3 position = binding.anchor != null ? binding.anchor.position : transform.position;
+                    PlayBindingSfx(binding, position);
+                }
+
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    public void CancelPendingSfx()
+    {
+        StopAllCoroutines();
     }
 }

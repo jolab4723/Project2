@@ -61,7 +61,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
         if(gunnerSkillController != null)
         {
-            gunnerSkillController.OnSkillAniRequested += PlayGunnerSkillAni;
+            gunnerSkillController.OnSkillAniRequested += PlayGunnerSkillAnimation;
         }
     }
     private void OnDisable()
@@ -82,7 +82,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
         if (gunnerSkillController != null)
         {
-            gunnerSkillController.OnSkillAniRequested -= PlayGunnerSkillAni;
+            gunnerSkillController.OnSkillAniRequested -= PlayGunnerSkillAnimation;
         }
     }
 
@@ -148,6 +148,8 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
     public void PlayFighterSkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
+        effect?.CancelPendingSfx();
+
         float skillSpeed = 1f;
         const int DashSkillId = 3;
 
@@ -159,7 +161,6 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetFloat(SkillSpeedHash, skillSpeed);
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetBool(IsChargingHash, isCharging);
-
         animator.ResetTrigger(SkillHash);
         animator.SetTrigger(SkillHash);
     }
@@ -169,8 +170,10 @@ public class WBH_PlayerAnimation : MonoBehaviour
         animator.SetBool(IsChargingHash, isCharging);
     }
 
-    public void PlayGunnerSkillAni(int skillId, int evoNumber, float backstepDuration)
+    public void PlayGunnerSkillAnimation(int skillId, int evoNumber, float backstepDuration)
     {
+        effect?.CancelPendingSfx();
+
         animator.SetFloat(SkillSpeedHash, 1f);
 
         float backstepMoveSpeed = 1f;
@@ -181,10 +184,8 @@ public class WBH_PlayerAnimation : MonoBehaviour
         }
 
         animator.SetFloat(BackstepMoveSpeedHash, backstepMoveSpeed);
-
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetInteger(EvoNumberHash, evoNumber);
-
         animator.ResetTrigger(SkillHash);
         animator.SetTrigger(SkillHash);
     }
@@ -265,9 +266,9 @@ public class WBH_PlayerAnimation : MonoBehaviour
             effectSpawner.SpawnEffect(Eff_gunnerShotgunAtk, gunnerEffectRoot);
     }
 
-    public void AniEvent_PlaySkillSfx(int partValue)
+    public void AniEvent_PlaySkillSfx(AnimationEvent animationEvent)
     {
-        fighterSkillController?.PlayPendingSkillSfx(partValue);
-        gunnerSkillController?.PlayPendingSkillSfx(partValue);
+        fighterSkillController?.PlayPendingSkillSfx(animationEvent, animator);
+        gunnerSkillController?.PlayPendingSkillSfx(animationEvent, animator);
     }
 }

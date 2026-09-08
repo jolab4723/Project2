@@ -422,6 +422,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 초기화
     private void ClearPendingSkill()
     {
+        playerEffect?.CancelPendingSfx();
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
         pendingEnhance = SkillEnhancementId.None;
@@ -1016,8 +1017,10 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return transform.forward;
     }
 
-    public void PlayPendingSkillSfx(int partValue)
+    public void PlayPendingSkillSfx(AnimationEvent animationEvent, Animator animator)
     {
+        int partValue = animationEvent.intParameter;
+
         if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
             return;
 
@@ -1028,9 +1031,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return;
 
         WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1,
-                                                                               pendingEvo,
-                                                                               (SkillEffectPart)partValue);
+                                                                              pendingEvo,
+                                                                              (SkillEffectPart)partValue);
 
-        playerEffect.PlaySfx(cue);
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
     }
 }

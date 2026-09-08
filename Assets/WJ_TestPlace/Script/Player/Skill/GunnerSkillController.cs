@@ -352,6 +352,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
     private void ClearPendingSkill()
     {
+        playerEffect?.CancelPendingSfx();
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
         pendingEnhance = SkillEnhancementId.None;
@@ -1242,8 +1243,10 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return data;
     }
 
-    public void PlayPendingSkillSfx(int partValue)
+    public void PlayPendingSkillSfx(AnimationEvent animationEvent, Animator animator)
     {
+        int partValue = animationEvent.intParameter;
+
         if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
             return;
 
@@ -1257,6 +1260,6 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                                                                               pendingEvo,
                                                                               (SkillEffectPart)partValue);
 
-        playerEffect.PlaySfx(cue);
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
     }
 }
