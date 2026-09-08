@@ -17,6 +17,7 @@ namespace DataSystem
     public class SkillLabelRow
     {
         public string skillId;
+        public string skillName;
         public string skillDescription;
         public string evolution1Description;
         public string evolution2Description;
