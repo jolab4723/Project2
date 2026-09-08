@@ -16,10 +16,13 @@ public enum MirrorCombatRequestResult : byte
     InvalidTiming = 8,
     CanceledByMove = 9,
     AnimationNotConfirmed = 10,
+    UnsupportedCharacter = 11,
+    WeaponChanged = 12,
+    ProjectileUnavailable = 13,
 }
 
 /// <summary>
-/// Fighter의 로컬 공격 연출과 서버의 실제 타격 판정을 분리하는 Mirror 테스트 컴포넌트다.
+/// Fighter와 제한된 Gunner 기본 공격의 로컬 연출과 서버 타격 판정을 분리한다.
 /// <para>클라이언트는 요청 번호와 조준점만 보내며 대상·데미지·치명타는 보내지 않는다.</para>
 /// <para>서버가 공격속도를 반영한 타격 시각에 Physics 범위를 검사하고 같은 적의 여러 Collider를 한 번으로 합친다.</para>
 /// <para>클릭 Command는 공격을 예약할 뿐이며, 실제 공격 클립의 타격 AnimationEvent가 로컬에서 발생해야
@@ -34,7 +37,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private const float BaseImpactSeconds = 0.6836111f;
     private const float BaseAttackDurationSeconds = 2.175f;
     private const float AnimatorAttackStateSpeed = 2f;
-    private const float AttackAngle = 230f;
+    // 현재 GunnerController_Short / Gunner_Attack_Short의 실행 이벤트와 EndAttack 시각.
+    private const float GunnerImpactSeconds = 0.16666667f;
+    private const float GunnerAttackDurationSeconds = 0.76666665f;
     private const float MaxAimDistance = 1000f;
     private const double MinimumBackdateSeconds = 0.05d;
     private const double MaximumBackdateSeconds = 0.35d;
@@ -47,6 +52,10 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private WBH_PlayerStatus status;
     [SerializeField] private LayerMask enemyLayer = 1 << 10;
+    [Header("Gunner basic attack test")]
+    [SerializeField] private NetworkEnemyProjectile_MirrorTest gunnerProjectilePrefab;
+    [SerializeField] private Transform gunnerFirePoint;
+    [SerializeField, Min(0.01f)] private float gunnerExplosionRadius = 3f;
 
     [SyncVar] private MirrorCombatRequestResult lastResult;
     [SyncVar] private uint lastTargetNetId;
@@ -59,6 +68,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private float lastRequestBackdateSeconds;
     [SyncVar] private float lastCooldownRemainingSeconds;
     [SyncVar] private bool lastRejectedWhileImpactPending;
+    [SyncVar] private uint gunnerShotCount;
+    [SyncVar] private GunnerWeaponType lastGunnerWeapon;
 
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
     private uint nextLocalRequestId;
@@ -74,6 +85,12 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private double localImpactAt;
     private double localImpactConfirmationExpiresAt;
     private double localNextAttackAt;
+    private GunnerWeaponType pendingGunnerWeapon;
+    private string pendingGunnerItemId;
+    private Vector3 pendingGunnerAim;
+    private ElementType pendingGunnerElement;
+    private float pendingGunnerRange;
+    private float pendingGunnerSpeed;
 
     public MirrorCombatRequestResult LastResult => lastResult;
     public uint LastTargetNetId => lastTargetNetId;
@@ -86,7 +103,17 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     public float LastRequestBackdateSeconds => lastRequestBackdateSeconds;
     public float LastCooldownRemainingSeconds => lastCooldownRemainingSeconds;
     public bool LastRejectedWhileImpactPending => lastRejectedWhileImpactPending;
-    private bool IsUnavailable => GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+    // 서버는 세션 명부의 선택을 Equipment에 주입하고, 클라이언트는 해당 캐릭터 프리팹의 Presenter가 설정한다.
+    // 클래스가 아직 준비되지 않은 경우에도 Fighter 판정으로 추측하지 않는다.
+    public bool IsGunner => context?.Equipment?.CurrentCharacterClass == CharacterClass.Gunner;
+    public bool SupportsCharacter => IsGunner || context?.Equipment?.CurrentCharacterClass == CharacterClass.Fighter;
+    public uint GunnerShotCount => gunnerShotCount;
+    public GunnerWeaponType LastGunnerWeapon => lastGunnerWeapon;
+    public bool CanContinueGunnerProjectile => IsGunner && !IsUnavailable;
+    private float AttackAngle => status != null ? status.FighterAttackAngle : 0f;
+    private float ImpactSeconds => IsGunner ? GunnerImpactSeconds : BaseImpactSeconds;
+    private float AttackDurationSeconds => IsGunner ? GunnerAttackDurationSeconds : BaseAttackDurationSeconds;
+    private bool IsUnavailable => !SupportsCharacter || GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
         context?.RuntimeState?.IsDead == true || status == null || status.IsDead;
 
     /// <summary>새 소유 연결의 예측 요청을 초기화하고 서버 쿨다운을 유지한다.</summary>
@@ -213,10 +240,10 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         // 이 값은 판정 권한이 아니라 입력 예측값이며, 실제 피해와 최종 허용 여부는 항상 서버가 결정한다.
         float effectiveAnimationSpeed = GetEffectiveAnimationSpeed();
         activeLocalRequestId = nextLocalRequestId;
-        localImpactAt = localAttackStartedAt + BaseImpactSeconds / effectiveAnimationSpeed;
+        localImpactAt = localAttackStartedAt + ImpactSeconds / effectiveAnimationSpeed;
         localImpactConfirmationExpiresAt =
             localImpactAt + GetImpactConfirmationGraceSeconds();
-        localNextAttackAt = localAttackStartedAt + BaseAttackDurationSeconds / effectiveAnimationSpeed;
+        localNextAttackAt = localAttackStartedAt + AttackDurationSeconds / effectiveAnimationSpeed;
 
         CmdRequestAttack(nextLocalRequestId, aimPoint, localAttackStartedAt);
         return true;
@@ -281,6 +308,12 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdRequestAttack(uint requestId, Vector3 aimPoint, double clientAttackStartedAt)
     {
+        if (!SupportsCharacter)
+        {
+            Reject(MirrorCombatRequestResult.UnsupportedCharacter);
+            return;
+        }
+
         if (IsUnavailable)
         {
             Reject(MirrorCombatRequestResult.Dead);
@@ -326,17 +359,35 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             return;
         }
 
+        if (IsGunner)
+        {
+            if (!TryGetGunnerWeapon(out pendingGunnerWeapon, out pendingGunnerItemId))
+            {
+                Reject(MirrorCombatRequestResult.UnsupportedCharacter);
+                return;
+            }
+            if (pendingGunnerWeapon != GunnerWeaponType.Shotgun && gunnerProjectilePrefab == null)
+            {
+                Reject(MirrorCombatRequestResult.ProjectileUnavailable);
+                return;
+            }
+            pendingGunnerAim = aimPoint;
+            pendingGunnerElement = status.CurrentElement;
+            pendingGunnerRange = Mathf.Max(0.1f, status.GunnerAttackRange);
+            pendingGunnerSpeed = Mathf.Max(0.1f, status.GunnerBulletSpeed);
+        }
+
         transform.forward = lookDirection.normalized;
 
         // Fighter Animator의 Attack 상태 자체가 2배속이며 AttackSpeed 파라미터가 여기에 다시 곱해진다.
         // 서버도 같은 최종 재생 속도를 사용해야 타격 시점과 다음 공격 허용 시점이 화면의 애니메이션과 일치한다.
         float effectiveAnimationSpeed = GetEffectiveAnimationSpeed();
         expectedClientImpactAt =
-            authoritativeStartAt + BaseImpactSeconds / effectiveAnimationSpeed;
+            authoritativeStartAt + ImpactSeconds / effectiveAnimationSpeed;
         impactAt = System.Math.Max(now, expectedClientImpactAt);
         impactConfirmationExpiresAt =
             impactAt + GetImpactConfirmationGraceSeconds();
-        nextAttackAt = authoritativeStartAt + BaseAttackDurationSeconds / effectiveAnimationSpeed;
+        nextAttackAt = authoritativeStartAt + AttackDurationSeconds / effectiveAnimationSpeed;
         attackPending = true;
         attackImpactConfirmed = false;
         pendingServerRequestId = requestId;
@@ -460,6 +511,12 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             return;
         }
 
+        if (IsGunner)
+        {
+            ResolveServerGunnerAttack();
+            return;
+        }
+
         resolvedTargets.Clear();
         lastTargetNetId = 0;
         lastDamage = 0f;
@@ -512,7 +569,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             : MirrorCombatRequestResult.NoTarget;
     }
 
-    private static WBH_ICombat FindCombatTarget(Collider hit)
+    internal static WBH_ICombat FindCombatTarget(Collider hit)
     {
         MonoBehaviour[] behaviours = hit.GetComponentsInParent<MonoBehaviour>(true);
         foreach (MonoBehaviour behaviour in behaviours)
@@ -522,6 +579,109 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         }
 
         return null;
+    }
+
+    private bool TryGetGunnerWeapon(out GunnerWeaponType weaponType, out string itemId)
+    {
+        weaponType = combat != null ? combat.currentWeapon : GunnerWeaponType.Rifle;
+        itemId = string.Empty;
+        if (!IsGunner || context.Equipment == null) return false;
+        if (context.Equipment.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance item))
+        {
+            if (item?.definition == null || item.definition.characterClass != CharacterClass.Gunner) return false;
+            itemId = item.definition.itemId ?? string.Empty;
+            switch (item.definition.weaponType)
+            {
+                case WeaponType.Rifle: weaponType = GunnerWeaponType.Rifle; break;
+                case WeaponType.Shotgun: weaponType = GunnerWeaponType.Shotgun; break;
+                case WeaponType.GrenadeLauncher: weaponType = GunnerWeaponType.GrenadeLauncher; break;
+                default: return false;
+            }
+        }
+        return weaponType is GunnerWeaponType.Rifle or GunnerWeaponType.Shotgun or GunnerWeaponType.GrenadeLauncher;
+    }
+
+    // 예약 중 교체는 이전 무기의 발사를 취소한다. 이미 발사된 탄은 원본처럼 명중 시점 Stat을 읽는다.
+    public bool IsGunnerShotCurrent(string itemId, GunnerWeaponType weaponType)
+    {
+        return !IsUnavailable && TryGetGunnerWeapon(out GunnerWeaponType currentType, out string currentId) &&
+            currentType == weaponType && string.Equals(currentId, itemId ?? string.Empty, System.StringComparison.Ordinal);
+    }
+
+    [Server]
+    private void ResolveServerGunnerAttack()
+    {
+        lastTargetNetId = 0;
+        lastDamage = 0f;
+        lastHitCritical = false;
+        if (!IsGunnerShotCurrent(pendingGunnerItemId, pendingGunnerWeapon))
+        {
+            Reject(MirrorCombatRequestResult.WeaponChanged);
+            return;
+        }
+        if (pendingGunnerWeapon != GunnerWeaponType.Shotgun && gunnerProjectilePrefab == null)
+        {
+            Reject(MirrorCombatRequestResult.ProjectileUnavailable);
+            return;
+        }
+
+        Vector3 origin = gunnerFirePoint != null ? gunnerFirePoint.position : transform.position + Vector3.up;
+        Vector3 direction = pendingGunnerAim - transform.position;
+        direction.y = 0f;
+        direction.Normalize();
+        lastGunnerWeapon = pendingGunnerWeapon;
+        gunnerShotCount++;
+        lastResult = MirrorCombatRequestResult.Accepted;
+        RpcPresentGunnerShot(pendingGunnerItemId, pendingGunnerWeapon, origin, direction, pendingGunnerRange);
+
+        if (pendingGunnerWeapon == GunnerWeaponType.Shotgun)
+        {
+            resolvedTargets.Clear();
+            foreach (Collider hit in Physics.OverlapSphere(origin, pendingGunnerRange, enemyLayer, QueryTriggerInteraction.Collide))
+            {
+                WBH_ICombat target = FindCombatTarget(hit);
+                if (target is not Component component || component.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>() == null ||
+                    resolvedTargets.Contains(target)) continue;
+                Vector3 offset = hit.ClosestPoint(origin) - origin;
+                Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
+                if (Vector3.Angle(direction, flat) > 45f ||
+                    Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
+                resolvedTargets.Add(target);
+                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f, null, out WBH_DamageResult result))
+                {
+                    ServerRecordGunnerHit(target, result);
+                    RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.ClosestPoint(origin), -direction);
+                }
+            }
+            if (lastResult != MirrorCombatRequestResult.Hit) lastResult = MirrorCombatRequestResult.NoTarget;
+            return;
+        }
+
+        NetworkEnemyProjectile_MirrorTest projectile = Instantiate(gunnerProjectilePrefab, origin, Quaternion.LookRotation(direction));
+        projectile.InitializePlayerServer(context, pendingGunnerWeapon, pendingGunnerItemId, pendingGunnerElement,
+            direction, pendingGunnerSpeed, pendingGunnerRange, pendingGunnerAim, gunnerExplosionRadius);
+        NetworkServer.Spawn(projectile.gameObject);
+    }
+
+    [Server]
+    public void ServerRecordGunnerHit(WBH_ICombat target, WBH_DamageResult result)
+    {
+        lastResult = MirrorCombatRequestResult.Hit;
+        lastDamage = result.FinalDamage;
+        lastHitCritical = result.IsCritical;
+        if (target is Component component) lastTargetNetId = component.GetComponentInParent<NetworkIdentity>()?.netId ?? 0;
+    }
+
+    [ClientRpc]
+    private void RpcPresentGunnerShot(string itemId, GunnerWeaponType weaponType, Vector3 origin, Vector3 direction, float range)
+    {
+        GunnerCombatPresentation_MirrorTest.PlayShot(gameObject, itemId, weaponType, origin, direction, range);
+    }
+
+    [ClientRpc]
+    private void RpcPresentGunnerImpact(string itemId, GunnerWeaponType weaponType, Vector3 position, Vector3 direction)
+    {
+        GunnerCombatPresentation_MirrorTest.PlayImpact(gameObject, itemId, weaponType, position, direction);
     }
 
     [Server]

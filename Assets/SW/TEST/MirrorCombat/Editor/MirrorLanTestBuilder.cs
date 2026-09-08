@@ -20,6 +20,12 @@ internal static class MirrorLanTestBuilder
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
+        MirrorTestNetworkManager.SessionStage2Scene,
+        MirrorTestNetworkManager.SessionStage3Scene,
+        MirrorTestNetworkManager.SessionStage4Scene,
+        MirrorTestNetworkManager.SessionStage5Scene,
+        MirrorTestNetworkManager.SessionStage6Scene,
+        MirrorTestNetworkManager.SessionBossScene,
         MirrorTestNetworkManager.SessionUnknownScene,
     };
     private const string BuildDirectory = "Builds/MirrorLanTest";

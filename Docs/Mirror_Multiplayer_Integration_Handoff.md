@@ -1,6 +1,6 @@
 # Mirror 멀티플레이 통합 인계
 
-작성 기준: 2026-09-08, `codex/unity-6000-3-22-test`. 사용자가 공통 원본 수정을 보류한 시점의 구현 결과와 후속 작업을 기록한다. **정식 승격 전이며 `_MirrorTest`를 유지한다.** 확인한 실행 범위와 미완료 기능을 구분한다.
+작성 기준: 2026-09-09, `unity-6000-3-22-test`(사용자가 김성우 테스트 작업 브랜치로 확인). 사용자가 공통 원본 수정을 보류한 시점의 구현 결과와 후속 작업을 기록한다. **정식 승격 전이며 `_MirrorTest`를 유지한다.** 확인한 실행 범위와 미완료 기능을 구분한다.
 
 ## 1. 현재 범위와 검증 상태
 
@@ -14,9 +14,10 @@
 | 런타임 정지 | 부재 시 시각·충돌·이동·입력 및 미완료 공격·스킬을 정지하고 런타임은 유지 | 사망·부활·씬 이동과 겹친 복귀의 실제 플레이 검증은 진행 중 |
 | 기본값 | 새 멀티 런의 골드·상점 혜택·서버 패시브는 0, 테스트 아이템 자동 지급 제거 | **패시브를 최종적으로 0으로 하자는 팀 결정이 아님** |
 | 개발 명령 | 서버의 개발 명령 허용 조건을 통과할 때만 임의 아이템 지급 가능 | 운영 플레이 보상 설계가 아님 |
-| 파이터 | 기존 SW 테스트용 서버 공격·스킬 경계를 세션에 연결 | 원본 전체 진화·강화 기능의 정식 멀티 전환은 미완료 |
-| 거너 | 로비 선택과 외형·인벤토리용 네트워크 프리팹 구성 | 6개 shape의 서버 전투·투사체는 미연결 |
-| 맵 진행 | Host+Gunner Client가 Battle·Elite·Camp·Event·Boss를 포함한 11개 노드를 지나 로비 복귀·새 런까지 통과 | Battle·Elite·Boss는 같은 Stage1 테스트 맵을 사용한다. 실제 Act 1 Stage 1~6·플랫폼·전체 적 배치는 미완료 |
+| 파이터 | 기존 SW 서버 공격·스킬 경계 유지, 실제 Stat 공격각과 서버 마나 소비 연결, 씬별 VFX 초기화 보완 | 원본 전체 진화·강화·차징 기능의 정식 멀티 전환은 미완료 |
+| 거너 | 라이플·샷건·유탄 기본 공격을 서버 판정·네트워크 투사체·기존 무기 VFX에 연결. Host 실제 공격 24개 검사 통과 | 6개 스킬 shape·전체 진화·강화와 원격 전투 품질 검증은 미완료 |
+| 맵 진행 | 실제 Stage1~6·Boss 환경을 쓰는 SW 테스트 씬 7개, Camp·Event·선택·로비를 연결. 맵 6개 소진 전 중복 배정을 피하고 서버 스냅샷에 보존 | 4인 전체 경로 검증 결과는 아래 최신 기록을 기준으로 한다. 원본 전체 적 종류·퀘스트·이벤트 효과까지 정식 통합한 것은 아님 |
+| 노드 투표 | 현재 접속한 원래 런 참가자에게 1표씩 허용. 변경 가능, 첫 표부터 20초, 전원 투표 시 즉시 확정, 최다 득표와 동률 추첨 | 이번 사용자 요청으로 노드 선택만 기존 리더 전용에서 변경. 로비 출발·결과 복귀 권한과 이벤트 선택 정책은 별도 |
 | 결과·재출발 | 리더만 클리어 결과에서 파티를 로비로 복귀시킨다. 참가자·캐릭터 선택은 유지하고 READY·이전 런타임·진행도를 초기화 | 호스트 이전이나 서버 재시작 복구를 추가한 것은 아님 |
 | 적 데이터 | WBH Provider의 WJ GeneratedData와 `EnemyAttackType`을 서버에서 사용하고 결과를 클라이언트에 동기화. 처치 크레딧을 서버 지갑에 1회 지급 | 현재 3종 매핑과 normal 난이도만 사용. 전체 적 종류·실제 보스 외형/패턴의 데이터 기반 교체는 미완료 |
 
@@ -107,6 +108,61 @@ main 병합본 `5c253649`에 기존 작업 stash를 복원하고 `.meta`의 오�
 
 마지막으로 Editor를 일반 Player 타깃으로 복구하고 C# 컴파일 완료, 세션 규칙·Fighter/Gunner 참조 검사를 다시 통과했다. Console에서 조회한 오류 65개는 모두 변경하지 않은 Advanced Dissolve·Animpic 셰이더 항목이며 C# 오류는 없었다. 코드·문서 `git diff --check`는 통과했다. Unity가 저장한 Scene·Prefab·meta의 빈 값 뒤 공백은 일괄 수정하지 않았다. 검증 프로세스·격리 자격 11개·임시 실행 도구·빌드 생성 파일을 정리했고, 빌드가 바꾼 URP 필터/런타임 목록만 복구했다. 원본 Camp 씬의 Dirty 상태와 사용자의 기존 변경은 보존했다.
 
+### 2026-09-08 실제 Act1 맵·파티 투표·거너 기본 공격
+
+이번 요청은 팀원 원본 스크립트를 수정하지 않고 SW `_MirrorTest` 경계를 확장했다. 원본 API가 필요한 전체 스킬·공통 피해·상태이상·퀘스트는 7절의 변경 요구로 유지한다. 무조건 원본 전체를 복제하지 않고, 독립적인 맵 환경·승강기·투표와 기존 투사체 확장만 분리했다.
+
+- `MirrorAct1SceneRoute_MirrorTest`가 노드 확정 시 실제 Act1 맵을 배정한다. 일반 실행은 새 런마다 임의 seed, 명시적 smoke 실행만 재현 seed를 사용한다. 배정된 `sceneName`과 `usedStageSceneNames`는 동일 스냅샷에 남는다. 보스는 별도 Boss 맵이다.
+- `MirrorAct1SceneSetup_MirrorTest`는 Stage2~6/Boss의 원본 Environment·조명·경계·스폰 위치를 SW 템플릿으로 옮긴다. 원본 Stage6이 Act2_Stage4 NavMesh를 참조하므로 SW Stage6 지형만 별도 베이크했다. 원본 씬은 저장하지 않았다. 시작점·포탈의 NavMesh 샘플 성공을 확인했다.
+- Stage5 실제 플랫폼은 고정 출발·도착·착지 지점과 기존 `MirrorFourPlayerElevator_MirrorTest`를 사용한다. 현재 접속한 생존 대기자 전원이 탑승하면 상승한다. 위층 도착자는 다음 탑승의 분모에서 제외한다. 도착 위치 보정과 NavMesh 복구 뒤 입력을 돌려준다.
+- 기존 StageSelect 노드·Reticle·TMP 글꼴을 사용해 표 수·자기 선택·남은 시간을 표시한다. 로딩 중인 참가자는 투표 분모에 유지하고, 제출은 Ready·플레이어 생성 완료 후 허용한다. 끊김·연결 교체 시 이전 표를 제거하며, 이전 revision의 요청은 거부한다.
+- 거너 종류는 서버 장착 아이템에서 결정한다. 라이플은 직선 투사체, 샷건은 90도 범위·대상당 1회, 유탄은 포물선·폭발 판정이다. 적의 기존 네트워크 투사체 이동을 재사용하며 플레이어/적 진단 카운터는 구분한다. 소유자 사망·부재·씬 이동·20초 수명에 탄을 정리한다. 발사 예약 중 무기 교체는 취소하고, 이미 날아간 탄은 발사 때의 종류·속성·속도·사거리와 명중 때의 Stat을 사용한다.
+- 파이터 마나는 실제 실행 확정 시 `WBH_PlayerStatus.TryUseMana`를 1회 호출한다. 취소·중복·만료·부족한 마나의 재사용을 막는다. 대시는 서버 실행 승인 후 시작한다. `WBH_PlayerEffect.Initialize`를 기존 씬 스포너 조회 경로에서 호출해 스킬을 먼저 사용해도 VFX가 초기화된다.
+
+Editor 검증: 세션 규칙 93개, 투표 규칙 31개, 맵 배정 25개, 플랫폼 규칙 16개, 실제 서버 Fighter 클래스·각도·마나 경계 10개 통과. 11개 씬의 Missing Script·교차 씬 참조, 전투 씬 7개의 엄격한 참조·스폰·포탈·카메라 연결 및 두 플레이어 프리팹의 필수 참조 검사를 통과했다. 기존 HUD의 끊어진 MP 머터리얼 참조 1곳을 기본 UI 머터리얼로 복구했다. 기존 로비·선택·Camp에는 원본에서 이어진 Particle 머터리얼/이미지 Sprite 누락 18곳이 남아 별도 경고로 보고한다.
+
+Host 실제 전투 검증: Gunner 3종 각각 정상/근접 벽 조건에서 실제 AnimationEvent, HP 감소, 중복 Collider 피해 1회, 중복 이벤트 거부, 서버 Spawn/Host 관찰 카운터 등 24개 통과. 공개 인벤토리·장비 API로 임시 무기를 장착했으며 검사 뒤 아이템·골드 및 임시 객체 정리를 확인했다. 원격 Command 장착이나 원격 전투 검증과는 구분한다. Fighter는 실제 AnimationEvent 기본 공격으로 HP 100000→99994, 슬롯 0 스킬로 99994→99985.5를 확인했다. 이 스킬 데이터의 비용은 0이므로 마나 소비는 별도의 비용 5.9/MP 6 경계 검사로 검증했다. 스킬을 먼저 사용하는 재검사에서 VFX 스포너 연결과 Console error 0을 확인했다.
+
+Editor Host 1인 전체 진행 검사는 **11개 노드 PASS**다. 고정 검사용 시드에서 Stage6→Stage2→Camp→Camp→Stage5→Stage1→Stage4→Unknown→Stage3→Camp→Boss를 실제 서버 씬 전환과 노드 UI·이동 명령·포탈/선택 버튼으로 통과했다. Stage5 탑승 후 y 0.5267→11.6018 상승·위층 NavMesh/조작 복구를 확인했다. 보스 결과 버튼→로비→READY→새 런에서 netId 3→116, 골드 0·아이템 0·진행도 0과 서버 초기화 검사를 통과했다. 적 종료용 개발 피해를 사용한 진행 검사이며 실제 전투 난이도·수동 완주 검증은 아니다. 현재 실행 구간 Exception/FAIL 0. 근거: `Builds/MirrorLanTest/RunValidation/editor-act1-full-run.log`, `editor_clear.png`, `editor_lobby.png`, `vote-ui.png`.
+
+지도 안내와 보스 결과를 Game 캡처로 확인했다. 최종 세션 93·투표 31·맵 배정 25·플랫폼 16 규칙 및 플레이어 두 자산 검사를 통과했다. 11개 씬 Missing Script·교차 씬 참조 검사와 7개 전투 씬의 엄격한 참조 검사를 통과했으며 기존 비전투 씬의 시각 참조 경고 18개는 별도로 남겨 두었다. Editor Console 조회 오류 0. 임시 Editor 씬 목록은 기존 28개로 복구하고 빌드가 변경한 URP 필터·TimeManager 직렬화·미리보기 텍스처와 Build Settings만 되돌렸다. 사용자가 열어 둔 Dirty Camp 씬은 원래 경로·1872개 Transform을 보존하고 원본 파일에 저장하지 않았다.
+
+이 시점에 보류했던 Windows 빌드·4인 검증은 아래 2026-09-09 후속 결과로 갱신한다. 첫 층은 선택지가 하나이므로 분할 투표 검사는 실제 두 번째 분기층까지 진행했다.
+
+### 2026-09-09 실제 Windows EXE 4인·전용 서버 검증
+
+후속 빌드·수정 요청에 따라 앞서 제시한 `WeaponBoneRetargeter.cs` 전체의 `#if UNITY_EDITOR`/`#endif` 두 줄을 적용해 Player에서 EditorWindow 코드가 컴파일되지 않게 했다. 게임 원본 스크립트는 추가 수정하지 않았다. 호환 버전은 `2026090804`이며, 같은 PC의 `127.0.0.1:7777`에서 Host+Client 3개와 **Windows Server 타깃 EXE+Client 4개**를 각각 실행했다. 후자는 `WindowsServer`·Null graphics·서버 UDP 포트 로그로 구분했다.
+
+| 검사 | Host 포함 4인 | 전용 서버 + 4인 |
+| --- | --- | --- |
+| 실제 맵·전체 진행 | `host-full-04` 전원 통과 | `dedicated-full-01` 전원 통과 |
+| 방장 A / 나머지 3명 B 투표 | `host-split-02`: 두 번째 층 B 노드로 전원 이동 | `dedicated-split-01`: 같은 다수결 결과와 서버 확정 통과 |
+| 실제 공격·스냅샷·정리 | `host-combat-04`: 공격 10단계·생명주기 4단계 통과 | `dedicated-combat-01`: 같은 14단계와 네 클라이언트 확인 통과 |
+| 개인 인벤토리·공동 구매 | `host-inventory-03`: 네 명 개별 UI 흐름·공유 재고 경쟁 통과 | `dedicated-inventory-01`: 같은 검사 통과 |
+| 강화 아이템 재접속 | 같은 participant/netId·instance/강화1·골드15,000·HP/MP·조작 복원 | 같은 항목 보존 및 새 connection으로 복원 |
+| 잘못된 토큰·런 도중 신규 참가 | 정확한 거절 사유와 미승인·연결 종료 확인 | 서버 부재 확정 후 같은 검사 통과 |
+| 실제 적 공격·사망 재접속 | 이번 추가 검사는 전용 서버에서 수행 | `dedicated-death-01`: 실제 적 공격으로 네 명 HP0, Gunner 재접속 후 같은 participant/netId·HP0·입력/NavMesh 차단 유지 |
+
+전체 진행은 Stage6→Stage2→Camp→Camp→Stage5→Stage1→Stage4→Unknown→Stage3→Camp→Boss의 11개 노드를 실제 노드 UI·이동 명령·포털·미지 선택·결과 버튼으로 통과했다. 두 구성 모두 여섯 전투 맵·Camp·Event·Boss 방문 집합을 확인했고, Stage5에서 네 명 모두 약 y0.5→11.6018 상승 후 위층 이동·포털 통과를 확인했다. 보스 결과에서 비방장의 복귀 요청은 서버가 거절하고 방장 버튼으로 전원이 로비에 복귀했다. READY 후 새 런에서 같은 접속자에게 새 netId를 발급하고 이전 아이템·골드·진행도를 제거했다. Host의 netId는 3/4/5/6→126/127/129/128, 전용 서버 클라이언트는 5/4/3/6→130/128/127/129였다.
+
+공격 검사는 각 Fighter의 기본 공격·슬롯0, 각 Gunner의 라이플·샷건·유탄을 실제 소유자 Command와 자연 AnimationEvent로 실행했다. 서버 HP 감소·피해 표시 횟수·공격자와 네 클라이언트 복제값, 중복 확인 거부 및 대상/탄/임시 장비 정리를 검사했다. 각 플레이어는 실제 회복 포션의 HP 증가·충전 1회 차감, HP/MP·버프 동기화, 사망 중 공격/스킬 거부와 부활 후 조작/NavMesh 복원도 통과했다. 사망 이동은 유효한 목적지로 이동 명령을 보낸 뒤 최소 0.5초 동안 매 프레임 경로 없음·속도0·위치 불변을 검사했고, 네 명 모두 변위0이었다. `ResetPath()`가 `isStopped`를 false로 바꾸는 엔진 동작을 확인했으므로 정지 플래그만으로 이동 실패를 판정하지 않는다.
+
+인벤토리는 네 명 각각 이동·회전·교환·거절·장착/해제·판매/구매·삭제/중단·강화·드롭/재획득과 서버 소유 모델을 검사했다. 이어 같은 판매 재고 instance를 동시에 요청해 **성공1·정상 충돌 거절3·소유자1·공유 revision 증가1**을 확인했다. 성공자만 실제 가격이 차감되고 나머지 아이템·강화·골드는 보존됐다. 재접속 비교는 이 공동 거래까지 끝난 상태를 기준으로 했으며, 장착 슬롯·배치·버프 남은 시간 보존까지 검사했다는 뜻은 아니다.
+
+이번 EXE 실행에서 수정한 원인은 다음과 같다.
+
+- 최종 시작점 확정 전에 입력이 열리거나 중복 위치 확정으로 이동 명령이 지워지지 않도록 `MirrorSpawnedPlayerBinder`의 씬별 확정과 입력 복원 순서를 보완했다. 연속 Camp 전환과 실제 포털 이동을 네 명 모두 다시 통과했다.
+- Stage5는 폭 0.1m의 `Collider1` 진입선으로 전원 점유를 검사하던 연결을, 기존 발판 영역 `Collider2`(4×1×2m)로 바꿨다. SW 씬과 재생성 코드에만 반영했다. 변경 전에는 회피로 선 밖에 선 Host 때문에 출발하지 않았고, 변경 후 두 구성의 네 명 탑승을 통과했다.
+- 검사 도구도 비활성 클라이언트 Collider의 실제 중심, 이동 명령 후 실제 위치 변화, 실제 판매 가격에 맞는 공동 구매 예산을 사용하도록 수정했다. 실패를 통과로 숨기지 않도록 예외·미완료·거절 사유를 엄격히 판정한다.
+
+근거 폴더는 `Builds/MirrorLanTest/OvernightValidation/{검사명}`이며 `processes.json`, `build-hashes.json`, 각 EXE 로그와 재접속 비교 JSON을 보존했다. 전체 진행 화면은 `Builds/MirrorLanTest/RunValidation/host-full-04-p0_*.png`, `dedicated-full-01-p0_*.png`다. 실제 표시 창에서 맵·캐릭터·클리어·로비 화면을 확인했다. 숨긴 창의 검은 캡처는 시각 검증 근거로 사용하지 않았다. 완료 조건을 확인한 뒤 직접 종료한 묶음은 정상 종료 코드까지 통과한 것으로 주장하지 않는다. 강제 종료 직후 기존 연결이 10초 타임아웃 전에 남아 있던 인증 초기 시도는 실패 로그로 보존하고, 서버 `absent=True` 확인 후 다시 검증했다.
+
+최종 Player는 `client-05` 빌드 성공, 전용 서버는 `server-01` 개발 빌드 성공(약 2,884.7MB, 오류0·경고63)이다. Player에는 기존 `WBHTest/Material/Boss_Act_01_Up/Leg.shader`의 **Built-in SubShader 1 오류10·경고69**가 남는다. 실제 SW 보스는 다른 Robot Support 머터리얼을 사용하며, 원본 `WBHTest/Prefabs/Etc/Manager.prefab`의 EnemyPool 참조가 별도 원본 보스와 이 셰이더를 빌드에 포함한다. 효과 없는 SW 셰이더 복사본은 채택하지 않았다. 원본 참조 정리·Built-in 셰이더 수정은 후속 범위이고 깨끗한 Player 빌드라고 표현하지 않는다. Host 인벤토리는 `client-04`에서 검사했으며 이후 `client-05` 변경은 Stage5 탑승 연결과 전투 검사 도구로, 인벤토리 구현은 동일하다.
+
+마감 확인: 아홉 검사 묶음의 기본 실행 로그에서 각각 클라이언트4개의 완료 표시와 예상하지 않은 FAIL/주요 예외0을 다시 집계했다(`OvernightValidation/validation-summary.json`). 11개 씬 Missing Script·교차 씬 참조 및 7개 전투 씬 엄격 참조 검사를 다시 통과했고 C# 컴파일 오류는0이다. Player 타깃 복원 뒤 Editor Console에는 기존 Foliage 중복 keyword·Advanced Dissolve include 경로 등 셰이더 오류65개가 남아 있어 Console 전체 오류0은 아니다. 빌드가 변경한 URP 필터·전역 런타임 목록, 생성 link.xml·임시 씬 백업을 정리했다. 원래 Dirty Camp의 경로·1872개 Transform을 유지하고 파일에 저장하지 않았으며, 기존 사용자 변경을 보존했다. 실제 EXE 검사 프로세스는 모두 종료했다. 김성우 개인 구현 로그를 갱신했고 Commit/Push는 수행하지 않았다.
+
+범위 한계: 전체 진행에서는 종료용 개발 피해를 사용했으므로 수동 전투 난이도 완주와 구분한다. 공격 검사는 별도로 실제 공격 경로를 사용했다. 네 대의 PC·외부 LAN·지연/패킷 손실·성능·모든 스킬/VFX·진화/강화 조합을 검증한 것은 아니다. 거너6스킬·원본 전체 상태이상/피해·퀘스트·패시브 정책과 기존 비전투 시각 참조 경고18개는 7절 및 이전 기록의 후속 항목으로 남는다.
+
 ## 2. 실행 준비와 확인 순서
 
 1. 같은 변경본으로 서버와 클라이언트를 준비한다. `MirrorTestNetworkManager.CompatibilityVersion`이 맞지 않으면 참가 인증 단계에서 거부한다. DTO 또는 SyncVar 구조를 바꾼 뒤에는 모든 테스트 프로세스의 빌드를 맞춘다.
@@ -122,7 +178,13 @@ main 병합본 `5c253649`에 기존 작업 stash를 복원하고 `.meta`의 오�
 | 로비 | `Assets/SW/TEST/MirrorCombat/Scenes/Lobby_MirrorTest.unity` |
 | 노드 선택 | `Assets/SW/TEST/MirrorCombat/Scenes/StageSelect_MirrorSessionTest.unity` |
 | 캠프 플레이 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Camp_MirrorSessionTest.unity` |
-| 전투 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage1_MirrorSessionTest.unity` |
+| 전투 Stage1 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage1_MirrorSessionTest.unity` |
+| 전투 Stage2 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage2_MirrorSessionTest.unity` |
+| 전투 Stage3 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage3_MirrorSessionTest.unity` |
+| 전투 Stage4 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage4_MirrorSessionTest.unity` |
+| 전투 Stage5 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage5_MirrorSessionTest.unity` |
+| 전투 Stage6 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_Stage6_MirrorSessionTest.unity` |
+| 보스 | `Assets/SW/TEST/MirrorCombat/Scenes/Act1_BossStage_MirrorSessionTest.unity` |
 | 이벤트 | `Assets/SW/TEST/MirrorCombat/Scenes/Unknown_Stage_MirrorSessionTest.unity` |
 
 `SessionCampScene` 상수는 이름과 달리 **노드 선택 씬**을 가리킨다. 실제 캠프 플레이는 `SessionCampGameplayScene`이다. 이동·입력 복구 판단에는 `CurrentSessionRoute`의 `StageSelect`, `Camp`, `Event`, `Combat`을 사용한다.
@@ -153,6 +215,7 @@ main 병합본 `5c253649`에 기존 작업 stash를 복원하고 `.meta`의 오�
 | 7 | `PlayerCombatAuthority_MirrorTest.cs`, `FighterSkillAuthority_MirrorTest.cs`, `WBH_CombatResolver_MirrorTest.cs` | 입력·애니메이션 확인과 실제 피해 판정의 분리, 취소와 쿨다운 |
 | 8 | `PlayerStatInitializationGuard_MirrorTest.cs` | 아직 원본 API로 해결하지 못한 초기화 순서 보완과 제거 조건 |
 | 9 | `Assets/Editor/MirrorSessionRulesValidation_MirrorTest.cs` | 네트워크 실행 없이 확인하는 규칙 검사의 범위와 실패 조건 |
+| 10 | `MirrorStageVoting_MirrorTest.cs`, `MirrorAct1SceneRoute_MirrorTest.cs` | 참가자별 투표·기한·revision, 노드 확정 시 실제 맵 배정과 보존 |
 
 KY 로비는 다음 기존 파일의 공개 경계로 연결한다. 이 세 파일의 변경 승인은 유지된다.
 
@@ -196,7 +259,7 @@ KY 로비는 다음 기존 파일의 공개 경계로 연결한다. 이 세 파�
 
 최근 검토한 네 원본 파일 중 **`PlayerStat.cs`의 공개 API 변경만 승인·반영**했다. `Assets/WJ_TestPlace/Script/Player/PlayerStat.cs`의 `NotifyValuesChanged()`는 외부 상태 소유자가 최종 수치를 일괄 반영한 뒤 `OnStatChanged`를 한 번 알린다. 재계산·경험치·패시브 정책을 바꾸지 않는다. `PlayerRuntimeStateSync_MirrorTest`는 이 API로 스냅샷 반영을 알린다.
 
-`WBH_CombatManager.cs`, `WBH_PlayerStatus.cs`, `PlayerStatManager.cs` 원본 수정은 보류다. 원본 코드를 다른 파일에 복제해 이 보류를 우회하지 않는다. 기존 SW 테스트 경계의 유지와 추가 원본 복제는 다르게 취급하며, 후속 통합은 아래의 원본 공개 경계를 승인된 범위에서 정리한다.
+`WBH_CombatManager.cs`, `WBH_PlayerStatus.cs`, `PlayerStatManager.cs` 원본 수정은 보류다. 이번 사용자는 독립 가능한 기능을 `_MirrorTest`로 만들거나 필요한 원본 API 변경을 문서화하도록 허용했다. 이에 기존 SW 테스트 경계를 확장했으며, 세 원본 전체의 새 복제본은 만들지 않았다. 후속 정식 통합은 아래의 원본 공개 경계를 승인된 범위에서 정리한다.
 
 `PlayerStatInitializationGuard_MirrorTest`는 아직 제거하면 안 된다. `T_PlayerController.Awake`가 `PlayerStatManager.Awake` 및 `WBH_PlayerStatus.Awake`보다 먼저 실행될 때 사용할 `Stat`과 소유 `statManager` 참조가 준비되지 않는 문제를 보완한다. 현재는 조기 실행과 Reflection으로 `PlayerStatManager.Stat`의 private setter 및 `WBH_PlayerStatus.statManager` 필드에 최소 참조를 넣는다. `NotifyValuesChanged()` 추가만으로 이 초기화 문제가 해결되지는 않는다. 두 원본의 초기화 API가 멱등적으로 자신의 참조를 확보하고 실제 스폰·재접속 검증을 통과한 뒤, 테스트 프리팹 참조까지 확인해 guard를 제거한다.
 
@@ -208,7 +271,7 @@ KY 로비는 다음 기존 파일의 공개 경계로 연결한다. 이 세 파�
 - 아무 참가자나 수락할 수 있고 서버가 받은 첫 유효 요청이 승리한다. 퀘스트 수락을 리더 전용으로 제한하지 않는다.
 - 캠프 방문마다 파티의 수락·리롤을 각각 1회 허용한다.
 - 유효 참가자와 재접속 예약 참가자는 각자 정확히 한 번 보상을 받는다. 인벤토리가 가득 차면 보상을 유실하거나 중복 지급하지 않고 지급 대기로 유지한다.
-- 전체 통합 목표는 실제 Act 1의 Stage 1~6·Camp·Unknown·Boss이며 아직 완료되지 않았다.
+- 전체 통합 목표는 실제 Act 1의 Stage 1~6·Camp·Unknown·Boss다. SW 맵 연결은 최신 1절을 따르며, 퀘스트·원본 전체 전투 통합은 남아 있다.
 
 최신 사용자 판단에서 미정인 정책은 **패시브를 개인별로 적용할지, 한 참가자의 패시브를 공통 적용할지**다. 서버 패시브·상점 수치 0은 이 결정 전 임시 기본값이며 싱글 프로필을 서버 런타임에 연결하지 않은 상태다. 이 정책 선택과 아래 원본 변경 승인은 별도로 다룬다.
 
@@ -218,13 +281,13 @@ KY 로비는 다음 기존 파일의 공개 경계로 연결한다. 이 세 파�
 | `Assets/WBHTest/Scripts/Player/WBH_PlayerStatus.cs` | `Initialize(T_PlayerController)`가 controller를 넣고 즉시 Stat 기반 속도를 읽지만 자기 `statManager` 준비는 Awake 순서에 기대고 있다. | 공개 초기화에서 자신의 필수 참조를 먼저 확보하고 중복 호출에도 안전하게 동작하도록 한다. 다른 캐릭터의 Manager를 찾지 않는다. | 다른 Awake 순서, 런타임 스폰, 재활성화·재접속, null 참조·중복 구독 여부 | 초기화 책임을 이 컴포넌트와 소유 `PlayerContext` 사이에서 명확히 분배 |
 | `Assets/WJ_TestPlace/Script/Player/PlayerStatManager.cs` | Stat 생성 시점이 Awake에 있고 패시브 계산·구독은 `PassiveSkillManager.Instance`를 읽는다. 멀티의 플레이어별 원본과 초기화 순서가 확정되지 않았다. | 이미 만든 Stat을 덮어쓰지 않는 초기화 경계와 패시브 소스 연결 경계를 제공한다. 싱글의 기존 소스를 유지하되 멀티의 권한 있는 입력을 구분한다. | 서로 다른 장비·버프·패시브를 가진 2인, 스폰·재접속, 싱글 회귀, 중복 초기화로 체력·레벨 초기화되지 않음 | 패시브 개인 적용 또는 특정 참가자 기준 공유, 저장 원본, 변경 시점, 공유 기준 참가자의 이탈 처리 |
 | `Assets/WJ_TestPlace/Script/Player/Skill/FighterSkillController.cs` | 로컬 입력·애니메이션 대기·진화·강화·실제 실행이 연결되어 있다. SW 파이터 검증 경로가 원본 전체 기능과 같다고 볼 수 없다. | 검증된 aim·slot과 서버가 보유한 evolution·enhancement로 실행하는 공개 경계. 피해와 이동·표현 책임을 분리하며 새 원본 복제는 만들지 않는다. | 각 shape와 진화·강화, 애니메이션 미확인·취소, 중복 요청, 쿨다운·자원 유지, 타인 캐릭터에 피해 권한이 섞이지 않음 | 서버가 소유하는 스킬 선택·진화·강화 원본과 차징·취소 규칙 |
-| `Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs` | 현재 거너 네트워크 자산은 외형·인벤토리 구성이며 서버 전투 미연결이다. 원본의 SectorSlash, LineSlam, Dash, ArcProjectile, BombThrow, BackstepShot 총 6개 shape를 그대로 서버 검증 완료로 취급할 수 없다. | 검증된 aim·slot 및 서버의 진화·강화 상태로 실행하는 경계. 서버 피해·투사체 생성과 클라이언트 애니메이션·효과를 나눈다. | 6개 shape 각각의 발사·충돌·피해 1회성, 진화·강화, 다인 관찰, 발사 중 끊김·재접속, 투사체 수명 | 투사체 권한, 자원·쿨다운 시점, 복귀 시 지속 투사체의 소유 처리 |
+| `Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs` | SW 경로에서 라이플·샷건·유탄 기본 공격은 연결했지만 거너 스킬은 미연결이다. 원본의 SectorSlash, LineSlam, Dash, ArcProjectile, BombThrow, BackstepShot 총 6개 shape를 서버 검증 완료로 취급할 수 없다. | 검증된 aim·slot 및 서버의 진화·강화 상태로 실행하는 경계. 서버 피해·투사체 생성과 클라이언트 애니메이션·효과를 나눈다. | 6개 shape 각각의 발사·충돌·피해 1회성, 진화·강화, 다인 관찰, 발사 중 끊김·재접속, 투사체 수명 | 투사체 권한, 자원·쿨다운 시점, 복귀 시 지속 투사체의 소유 처리 |
 | `Assets/WJ_TestPlace/Script/Buff/TriggeredBuffUniqueEffectSO.cs` | `PlayerBuffManager.Instance`, `Time.time`, SO 내부 쿨다운 저장 및 `ItemInstance.persistedStackCount`를 함께 사용한다. 플레이어·세션 간 공유 상태와 시간 원본을 구분해야 한다. | 명시적인 owner·서버 시각·아이템 스택 실행 경계를 제공하고 런타임 기록의 소유 위치를 분리한다. 장착·해제·발동도 같은 소유자를 사용한다. | 같은 SO를 쓰는 두 소유자, 아이템별/공유 중복 정책, 전원 부재 중 서버 시간 경과, 재장착과 양도 시 스택 유지, 세션 초기화 | 소유자와 아이템의 스택 기록을 보존하고 서버 시간으로 효과·쿨다운 기간을 유지. 전원 부재의 timeScale 정지만으로 이 요구를 완료 처리하지 않음 |
 | `Assets/WJ_TestPlace/Script/Quest/QuestBoardNPC.cs` | NPC가 로컬 의뢰 추첨·리롤·수락 방문 상태를 보유하고 Singleton UI·QuestManager를 호출한다. | 서버가 정한 제안·방문 상태를 표시하는 경계와 수락·리롤 의도 이벤트를 제공한다. 로컬 추첨이 서버 결과를 덮어쓰지 않게 한다. | 동시 수락에서 첫 유효 요청만 성공, 캠프 방문당 수락·리롤 각 1회, 캠프 재방문, 늦은 표시 갱신, 재접속 후 남은 방문 횟수 | 확정: 파티 공용, 아무 참가자나 수락 가능, 첫 유효 요청 승리, 캠프 방문마다 수락·리롤 각 1회. 남은 승인은 이 원본의 구체적 수정 |
 | `Assets/WJ_TestPlace/Script/Quest/QuestManager.cs` | 진행·완료와 보상 지급이 로컬 Singleton 및 `InventoryController.Instance`를 기준으로 한다. | 서버의 파티 진행 원본과 참가자별 보상 기록·지급 대기 경계, 표시용 목록·진행 스냅샷 반영 경계를 제공한다. | 두 명 이상이 동시에 완료 조건 충족, 유효·재접속 예약 참가자별 보상 정확히 1회, 인벤토리 가득 참→공간 확보 후 지급, 재접속 중 중복·누락 방지 | 확정: 파티 진행 공유, 유효·재접속 예약 참가자 각자 1회 보상, 인벤토리 가득 차면 지급 대기. 남은 승인은 이 원본의 구체적 수정 |
 | `Assets/Scripts/UI/Popup/Quest/KY_QuestPopup.cs` | private `quests` 목록과 private `RefreshList()`로 표시하며 서버 목록을 전달하는 공개 경계가 없다. | 서버 파티 공용 목록을 복사·반영하는 공개 API. 팝업은 수락·진행·지급 대기 상태를 소유하지 않는다. | 팝업 닫힘 중 수신, 재오픈 최신 공용 목록, 빈 목록·변경·풀 반환, 복귀자의 진행·보상 상태 표시 | 확정된 파티 공용 퀘스트를 표시. 남은 승인은 이 UI 원본의 공개 반영 API 수정 |
-| `Assets/Scripts/StageSelect/YJ_StageSelectManager.cs` | Start에서 로컬 저장을 읽거나 맵을 생성한다. 서버 스냅샷 준비와 로컬 저장 복구가 한 시작 흐름에 있어 멀티 진입 순서를 분리해야 한다. | 맵 데이터·프리팹 준비와 로컬 저장 로드·새 맵 생성을 분리하는 공개 초기화 경계. 멀티에서는 서버 진행 스냅샷을 기준으로 표시한다. | 새 런, 다른 로컬 세이브를 가진 2인, 씬 복귀·재접속, 시드·노드 ID·선택·방문·클리어 일치, 실제 Act 1 경로 | 서버 진행도와 리더의 노드 선택 권한 유지. 실제 Stage 1~6·Camp·Unknown·Boss 연결은 구현·검증 대상이며 권한 정책 재논의 항목이 아님 |
-| `Assets/Scripts/Environment/Movement/YJ_PointMove.cs` | Stage 5 플랫폼의 트리거·이동·승객 참조가 로컬 컴포넌트 상태다. 여러 플레이어와 서버 권한 승객 상태가 정의되지 않았다. | 서버가 활성화·경로·정지·리셋을 결정하는 실행 경계와 클라이언트 표시 반영. 승객과 NavMesh 조작의 소유자를 명시한다. | 다인 탑승·내림, 이동 중 끊김·사망, 도착 NavMesh 복구, 클라이언트 중복 활성화 거부 | 동시 탑승 인원, 부재 승객·플랫폼 리셋 정책 |
+| `Assets/Scripts/StageSelect/YJ_StageSelectManager.cs` | Start에서 로컬 저장을 읽거나 맵을 생성한다. SW 어댑터는 서버 스냅샷과 투표를 연결했으며 정식 통합 시 초기화 순서를 공통 API로 정리해야 한다. | 맵 데이터·프리팹 준비와 로컬 저장 로드·새 맵 생성을 분리하는 공개 초기화 경계. 멀티에서는 서버 진행 스냅샷을 기준으로 표시한다. | 새 런, 다른 로컬 세이브를 가진 2인, 씬 복귀·재접속, 시드·노드 ID·선택·방문·클리어 일치, 실제 Act 1 경로 | 참가자별 1표·변경 가능, 최다 득표 선택, 동률 서버 추첨. 리더만 선택하던 이전 정책은 이번 요청으로 대체됨 |
+| `Assets/Scripts/Environment/Movement/YJ_PointMove.cs` | 원본은 로컬 플랫폼 상태다. SW Stage 5 복사 씬은 기존 Mirror 승강기 어댑터로 서버 탑승·이동을 연결했으며 원본을 수정하지 않았다. | 정식 통합 시 서버가 활성화·경로·정지·리셋을 결정하는 실행 경계와 클라이언트 표시 반영. 승객과 NavMesh 조작의 소유자를 명시한다. | 다인 탑승·내림, 이동 중 끊김·사망, 도착 NavMesh 복구, 클라이언트 중복 활성화 거부 | 살아 있고 연결된 대기 승객 전원 탑승 후 이동, 도착한 승객은 다음 탑승 조건에서 제외 |
 
 추가 시간 경계가 필요한 원본은 `Assets/WJ_TestPlace/Script/Player/PlayerBuffManager.cs`다. private `Update()`가 `tracker.Tick(Time.deltaTime)`을 호출하므로 전원 부재의 timeScale 0에서 버프도 멈춘다. 동일 tracker를 재사용하는 공개 시간 진행 경계를 제공하고, 네트워크 캐릭터는 서버만 실제 경과 시간을 전달하도록 해야 한다. 싱글의 기존 시간 정책은 유지하며 클라이언트 표시가 중복 Tick을 만들지 않게 한다. 살아 있는 다른 참가자의 유무, 예약 중 만료, 복귀 직후 잔여 시간·재계산을 확인해야 한다. 이것도 별도 원본 수정 승인 대상이며 Manager 복제나 Reflection 접근으로 우회하지 않는다.
 
@@ -246,11 +309,11 @@ KY 로비는 다음 기존 파일의 공개 경계로 연결한다. 이 세 파�
 
 ## 8. 구현 재개 순서와 승격 기준
 
-1. 현재 승인 범위의 컴파일·규칙83개·자산 참조·4인 Stage1 진입·사망 재접속·최종 빌드 로비 UI 검증은 위 기록을 기준으로 삼는다. 후속 변경이 생기면 영향을 받는 범위를 다시 확인한다.
+1. 최신 구현과 검증은 위의 실제 Act1 맵·파티 투표·거너 기본 공격 절을 기준으로 삼는다. 이전 빌드·4인 Stage1·재접속 기록은 당시 버전의 결과이며 최신 코드 검증을 대신하지 않는다.
 2. 호스트 포함 4인 또는 전용 서버+4인의 실제 프로세스 검증을 수행한다. 정원 초과, 중도 참가 거부, 동시 복귀, 299초/300초, 리더 이탈, 전원 부재, 사망 상태 복귀를 각각 확인한다. 보존 전후 인벤토리·장비·골드·체력·버프·쿨다운을 비교한다. 전원 부재 시 timeScale 정지로 멈추는 버프 시간 경계를 보완하고 서버 시간 기준 기간 경과를 별도로 검증한다.
 3. 패시브 정책을 팀이 확정한 뒤 `PlayerStatManager`의 입력 원본과 초기화 API 변경안을 구체화한다. `WBH_PlayerStatus`의 초기화와 공통 피해/owner trigger 변경을 같은 연결 흐름에서 정리하고, 해당 원본 수정 범위의 승인이 정해지면 구현한다. 승인 보류를 새 복제 파일로 우회하지 않는다.
 4. 공통 전투 경계가 안정되면 원본 파이터·거너의 실행 API를 연결한다. 거너 6개 shape를 순서대로 서버 판정·관찰 표현·끊김 정리까지 확인한다. 외형이 보인다는 이유로 전투 완료 처리하지 않는다.
-5. 이미 승인된 파티 공용 퀘스트·수락·리롤·개별 보상·지급 대기 요구를 구현 기준으로 삼는다. NPC → QuestManager → KY 팝업의 구체적인 원본 API 수정 범위 승인이 정해지면 연결한다. 퀘스트 정책 자체를 다시 결정하는 단계는 두지 않는다. 이어 StageSelect 초기화 경계와 Stage 5 플랫폼을 연결하고 실제 Act 1 Stage 1~6·Camp·Unknown·Boss 경로를 검증한다.
+5. 이미 승인된 파티 공용 퀘스트·수락·리롤·개별 보상·지급 대기 요구를 구현 기준으로 삼는다. NPC → QuestManager → KY 팝업의 구체적인 원본 API 수정 범위 승인이 정해지면 연결한다. 퀘스트 정책 자체를 다시 결정하는 단계는 두지 않는다. SW의 StageSelect 투표와 Stage 5 플랫폼 연결은 원본 승격 경계가 정해지면 공통 API로 옮기고 실제 Act 1 전체 경로를 다시 검증한다.
 6. 원본 단일 계산 경로, 싱글 회귀, 다인 실제 전투, 재접속 상태 보존, 씬·프리팹 참조 검증이 모두 끝난 뒤 정식 승격 대상을 정한다. 그전에는 `_MirrorTest` 접미사와 필요한 초기화 guard를 유지한다. 삭제는 코드 참조와 Scene/Prefab 직렬화 참조를 함께 확인한 뒤 수행한다.
 
-후속 작업자는 확정된 퀘스트·리더 요구를 그대로 유지하고, 미정인 패시브 적용 방식과 원본 API의 구체적 수정 승인을 구분한다. 이 문서에 명시한 확정 요구는 구현 기준이며, 보류 원본의 변경 승인을 대신하지 않는다. 승인된 파일 범위에서 구현을 재개한다.
+후속 작업자는 확정된 퀘스트·리더 요구를 유지하되, 노드 선택은 이번 사용자가 요청한 참가자 투표 정책을 적용한다. 미정인 패시브 적용 방식과 원본 API의 구체적 수정 승인을 구분한다. 이 문서에 명시한 확정 요구는 구현 기준이며, 보류 원본의 변경 승인을 대신하지 않는다. 승인된 파일 범위에서 구현을 재개한다.

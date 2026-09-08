@@ -18,11 +18,14 @@ public enum MirrorSkillRequestResult : byte
     SkillOnCooldown = 8,
     SkillAlreadyPending = 9,
     AnimationImpactMissing = 10,
+    UnsupportedCharacter = 11,
+    InsufficientMana = 12,
 }
 
 /// <summary>
-/// WJ <see cref="FighterSkillController"/>의 현재 Fighter 스킬을 Mirror 테스트 플레이어에 연결한다.
-/// 입력과 이동 피드백은 로컬 소유자가 처리하고, 쿨타임·범위 판정·피해·상태이상은 서버가 확정한다.
+/// WJ <see cref="FighterSkillController"/> 데이터의 기존 Fighter 시험판 스킬 범위를 제공한다.
+/// 입력은 로컬 소유자가 처리하고, 마나·쿨타임·범위 판정·피해·상태이상은 서버가 확정한다.
+/// 최신 강화·차징·스택 전체를 지원하는 원본 컨트롤러의 대체품은 아니다.
 /// WJ 원본과 데이터 SO는 수정하지 않는다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -93,7 +96,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     public int LastStatusEffectCount => lastStatusEffectCount;
     public uint AcceptedSkillCount => acceptedSkillCount;
     public uint RejectedSkillCount => rejectedSkillCount;
-    private bool IsUnavailable => GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+    private bool SupportsCharacter => context?.Equipment?.CurrentCharacterClass == CharacterClass.Fighter;
+    private bool IsUnavailable => !SupportsCharacter || GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
         context?.RuntimeState?.IsDead == true || status == null || status.IsDead;
 
     /// <summary>재접속 예약으로 미완료 스킬과 로컬 대시를 취소하며 서버 쿨다운과 마나는 유지한다.</summary>
@@ -202,6 +206,12 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 
     public bool TryUseLocalSkill(int index)
     {
+        return TryUseLocalSkill(index, GetCursorDirection());
+    }
+
+    /// <summary>명시적 조준도 일반 입력과 같은 소유자 요청 및 AnimationEvent 확인 경로를 사용한다.</summary>
+    public bool TryUseLocalSkill(int index, Vector3 aimDirection)
+    {
         if (!isLocalPlayer || !NetworkClient.active || !NetworkClient.ready ||
             index < 0 || index >= SkillCount || skills[index] == null ||
             IsUnavailable || context?.RuntimeState?.HasSnapshot != true || !CanUseLocalSkill() ||
@@ -210,9 +220,11 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
             return false;
         }
 
-        Vector3 aimDirection = GetCursorDirection();
         if (!IsFinite(aimDirection) || aimDirection.sqrMagnitude < 0.001f)
             return false;
+        aimDirection.y = 0f;
+        if (aimDirection.sqrMagnitude < 0.001f) return false;
+        aimDirection.Normalize();
 
         SkillDefinitionSO definition = skills[index];
         predictedReadyAt[index] = NetworkTime.time + Mathf.Max(0f, definition.cooldownSeconds);
@@ -247,6 +259,12 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdRequestSkill(uint requestId, byte slotIndex, Vector3 aimDirection)
     {
+        if (!SupportsCharacter)
+        {
+            Reject(requestId, slotIndex, MirrorSkillRequestResult.UnsupportedCharacter);
+            return;
+        }
+
         if (IsUnavailable)
         {
             Reject(requestId, slotIndex, MirrorSkillRequestResult.Dead);
@@ -330,21 +348,11 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
             return false;
 
         uint requestId = activeLocalRequestId;
-        byte slotIndex = activeLocalSlot;
-        Vector3 aimDirection = activeLocalAim;
 
         activeLocalRequestId = 0;
         activeLocalSlot = byte.MaxValue;
         activeLocalAim = Vector3.zero;
         localAnimationExpiresAt = 0d;
-
-        if (definition.shapeType == SkillShapeType.Dash)
-        {
-            if (localSkillRoutine != null)
-                StopCoroutine(localSkillRoutine);
-
-            localSkillRoutine = StartCoroutine(ExecuteLocalDash(definition, aimDirection));
-        }
 
         CmdConfirmSkillAnimationImpact(requestId);
         return true;
@@ -353,24 +361,46 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdConfirmSkillAnimationImpact(uint requestId)
     {
+        if (!TryCommitPendingSkill(requestId, out byte slotIndex, out Vector3 aimDirection, out SkillDefinitionSO definition))
+        {
+            if (slotIndex != byte.MaxValue)
+            {
+                SetServerReadyAt(slotIndex, NetworkTime.time);
+                Reject(requestId, slotIndex, MirrorSkillRequestResult.InsufficientMana);
+            }
+            return;
+        }
+
+        ResolveServerSkill(slotIndex, definition, aimDirection);
+        RpcPresentSkillImpact(slotIndex, transform.position, aimDirection);
+    }
+
+    // 원본은 입력 때 마나를 소모한다. 이 어댑터는 타격 이벤트 확인이 실제 실행의 경계이므로
+    // 그때만 원본 소비 API를 호출한다. 먼저 예약을 제거해 재전송/재진입으로 두 번 소비하지 않는다.
+    [Server]
+    private bool TryCommitPendingSkill(uint requestId, out byte slotIndex, out Vector3 aimDirection, out SkillDefinitionSO definition)
+    {
+        slotIndex = byte.MaxValue;
+        aimDirection = Vector3.zero;
+        definition = null;
         if (IsUnavailable || requestId == 0 ||
             requestId != pendingServerRequestId ||
             pendingServerSlot >= SkillCount ||
             NetworkTime.time > serverAnimationExpiresAt)
         {
-            return;
+            return false;
         }
 
-        byte slotIndex = pendingServerSlot;
-        Vector3 aimDirection = pendingServerAim;
-        SkillDefinitionSO definition = skills[slotIndex];
+        slotIndex = pendingServerSlot;
+        aimDirection = pendingServerAim;
+        definition = skills[slotIndex];
         ClearServerPendingSkill();
 
         if (definition == null)
-            return;
+            return false;
 
-        ResolveServerSkill(slotIndex, definition, aimDirection);
-        RpcPresentSkillImpact(slotIndex, transform.position, aimDirection);
+        float cost = definition.GetManaCost(GetEvolution(slotIndex));
+        return float.IsFinite(cost) && cost >= 0f && status.TryUseMana(cost);
     }
 
     [Server]
@@ -580,6 +610,12 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
 
             case SkillShapeType.Dash:
                 SkillRangeVisual.ShowLine(origin, aimDirection, definition.dashDistance, 0.6f, dashVisualColor);
+                // 마나 승인이 실패한 대시는 이동도 시작하지 않는다.
+                if (isLocalPlayer)
+                {
+                    if (localSkillRoutine != null) StopCoroutine(localSkillRoutine);
+                    localSkillRoutine = StartCoroutine(ExecuteLocalDash(definition, aimDirection));
+                }
                 break;
         }
     }
@@ -653,7 +689,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour
         if (slotIndex < predictedReadyAt.Length && requestId == nextLocalRequestId)
             predictedReadyAt[slotIndex] = 0d;
 
-        if (requestId == activeLocalRequestId)
+        if (requestId == activeLocalRequestId || requestId == nextLocalRequestId)
             ClearLocalPendingSkill(restoreIdle: true);
     }
 

@@ -223,6 +223,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_PlayEffect(int cueValue)
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         WBH_PlayerEffectCue cue = (WBH_PlayerEffectCue)cueValue;
 
         // 최신 원본 Fighter의 기본 공격 클립은 1000 cue를 보내지만 현재 원본 프리팹에는
@@ -240,11 +241,13 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_PlaySkillEffect(int partValue)
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         skillAuthority?.PlayPendingSkillEffect(partValue);
     }
 
     public void AniEvent_PlayFighterChargeEffect()
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         playerEffect?.PlayFighterChargeEffect();
     }
 
@@ -262,6 +265,8 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_GunnerAttackEvent()
     {
+        // Mirror의 총구/샷건 VFX는 승인된 발사 Rpc가 한 번만 재생한다.
+        if (combatAuthority != null) return;
         WBH_EffectSpawner spawner = ResolveSceneEffectSpawner();
         if (combat.currentWeapon == GunnerWeaponType.Shotgun &&
             spawner != null &&
@@ -323,6 +328,9 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         effectSpawner = poolManager != null
             ? poolManager.GetComponent<WBH_EffectSpawner>()
             : null;
+        // 씬마다 새 스포너를 원본의 공개 초기화 경계로 연결한다.
+        // 스킬을 기본 공격보다 먼저 사용해도 같은 경로를 통과한다.
+        if (effectSpawner != null) playerEffect?.Initialize(effectSpawner);
         return effectSpawner;
     }
 }

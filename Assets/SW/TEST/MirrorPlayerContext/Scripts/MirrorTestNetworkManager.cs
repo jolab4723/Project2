@@ -21,6 +21,7 @@ public struct MirrorSessionRouteRequestMessage : NetworkMessage
 
 public struct MirrorStageNodeSelectionRequestMessage : NetworkMessage
 {
+    public uint Revision;
     public string NodeId;
 }
 
@@ -48,7 +49,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
 {
     // ponytail: 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026090803;
+    public const int CompatibilityVersion = 2026090804;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =
@@ -217,6 +218,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         base.OnStartClient();
         Chat.StartClient();
         StartClientMembership();
+        NetworkClient.RegisterHandler<MirrorStageVoteState_MirrorTest>(HandleClientStageVotes);
         NetworkClient.RegisterHandler<MirrorSessionRunSnapshotMessage>(
             HandleClientRunSnapshot,
             false);
@@ -281,6 +283,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         NetworkClient.UnregisterHandler<MirrorLobbySnapshot_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionFeedback_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionRunSnapshotMessage>();
+        NetworkClient.UnregisterHandler<MirrorStageVoteState_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionLeadershipMessage>();
         clientCompatibilityConfirmed = false;
         clientLobby = default;
@@ -351,7 +354,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
     /// </summary>
     public bool RequestStageNodeSelection(string nodeId)
     {
-        if (!CanLocalClientControlSession ||
+        if (!CanLocalClientVote ||
             !IsSessionSelectionActive ||
             string.IsNullOrWhiteSpace(nodeId))
         {
@@ -361,6 +364,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         NetworkClient.Send(new MirrorStageNodeSelectionRequestMessage
         {
             NodeId = nodeId,
+            Revision = runSnapshotRevision,
         });
         return true;
     }
@@ -433,6 +437,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
             }
         }
 
+        ResetStageVotes();
         RunSnapshotChanged?.Invoke(runSnapshotRevision);
         Debug.Log(
             $"[MirrorTestNetworkManager] 서버 Run Snapshot 갱신: " +
@@ -578,6 +583,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
 
         runSnapshotRevision = message.Revision;
         runSnapshotJson = message.SnapshotJson;
+        ResetStageVotes();
         RunSnapshotChanged?.Invoke(runSnapshotRevision);
         Debug.Log(
             $"[MirrorTestNetworkManager] 서버 Run Snapshot 적용: " +
@@ -818,6 +824,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
     {
         runSnapshotRevision = 0;
         runSnapshotJson = string.Empty;
+        ResetStageVotes();
     }
 
     private void HandleClientSessionLeadership(MirrorSessionLeadershipMessage message)
@@ -918,59 +925,6 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
             $"requester={requesterConnectionId}, leader={sessionLeaderConnectionId}, " +
             $"compatible={compatible}, player={hasPlayer}");
         return false;
-    }
-
-    private void HandleServerStageNodeSelectionRequest(
-        NetworkConnectionToClient connection,
-        MirrorStageNodeSelectionRequestMessage request)
-    {
-        if (!CanConnectionControlSession(connection, "스테이지 노드 선택"))
-            return;
-
-        if (sessionSceneChangeRequested ||
-            NetworkServer.isLoadingScene ||
-            SceneManager.GetActiveScene().path != SessionCampScene)
-        {
-            return;
-        }
-
-        if (!TryGetRunSnapshot(out StageMapSaveData snapshot))
-        {
-            Debug.LogWarning("[MirrorTestNetworkManager] 선택할 Run Snapshot이 없습니다.");
-            return;
-        }
-
-        if (!TryBeginStageNode(
-                snapshot,
-                request.NodeId,
-                out StageNodeSaveData selectedNode,
-                out string error))
-        {
-            Debug.LogWarning(
-                $"[MirrorTestNetworkManager] 스테이지 노드 선택 거부: " +
-                $"node={request.NodeId}, reason={error}, connectionId={connection.connectionId}");
-            return;
-        }
-
-        MirrorSessionRoute targetRoute = GetRouteForStageNodeType(selectedNode.type);
-        if (!CanChangeSessionRoute(MirrorSessionRoute.StageSelect, targetRoute))
-        {
-            Debug.LogWarning(
-                $"[MirrorTestNetworkManager] 지원하지 않는 노드 이동 경로: " +
-                $"node={selectedNode.id}, type={selectedNode.type}, route={targetRoute}");
-            return;
-        }
-
-        if (!ServerPublishRunSnapshot(snapshot))
-            return;
-
-        pendingSessionRoute = targetRoute;
-        sessionSceneChangeRequested = true;
-        Debug.Log(
-            $"[MirrorTestNetworkManager] 서버 노드 선택 확정: " +
-            $"node={selectedNode.id}, type={selectedNode.type}, route={targetRoute}, " +
-            $"revision={runSnapshotRevision}, connectionId={connection.connectionId}");
-        ServerChangeScene(GetSceneForRoute(targetRoute));
     }
 
     private void HandleServerUnknownStageChoiceRequest(
@@ -1257,12 +1211,13 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
     /// </summary>
     private static MirrorSessionRoute GetRouteForScene(string scenePath)
     {
+        if (IsAct1CombatScene(scenePath))
+            return MirrorSessionRoute.Combat;
         return scenePath switch
         {
             SessionCampScene => MirrorSessionRoute.StageSelect,
             SessionCampGameplayScene => MirrorSessionRoute.Camp,
             SessionUnknownScene => MirrorSessionRoute.Event,
-            SessionCombatScene => MirrorSessionRoute.Combat,
             _ => MirrorSessionRoute.Unknown,
         };
     }
@@ -1277,14 +1232,14 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         };
     }
 
-    private static string GetSceneForRoute(MirrorSessionRoute route)
+    private string GetSceneForRoute(MirrorSessionRoute route)
     {
         return route switch
         {
             MirrorSessionRoute.StageSelect => SessionCampScene,
             MirrorSessionRoute.Camp => SessionCampGameplayScene,
             MirrorSessionRoute.Event => SessionUnknownScene,
-            MirrorSessionRoute.Combat => SessionCombatScene,
+            MirrorSessionRoute.Combat => GetPendingCombatScene(),
             _ => string.Empty,
         };
     }
