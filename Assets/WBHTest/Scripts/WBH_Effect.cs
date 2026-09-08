@@ -4,6 +4,7 @@ using UnityEngine;
 public class WBH_Effect : MonoBehaviour
 {
     public bool IsPlaying { get; private set;}
+    private Camera billboardCamera;
     public WBH_EffectData Data => effectData;
     private WBH_EffectPoolManager poolManager;
     private WBH_EffectData effectData;
@@ -12,7 +13,6 @@ public class WBH_Effect : MonoBehaviour
     private float[] initialSimulationSpeeds;
     private Vector3 initialLocalScale;
     private float currentAttackSpeed = 1f;
-
 
     private void Awake()
     {
@@ -28,18 +28,26 @@ public class WBH_Effect : MonoBehaviour
         initialLocalScale = transform.localScale;
     }
 
+    private void LateUpdate()
+    {
+        UpdateBillboardRotation();
+    }
+
     public void Initialize(WBH_EffectPoolManager poolManager)
     {
         this.poolManager = poolManager;
     }
 
-    public void Play(WBH_EffectData data, bool autoReturn = true, float attackSpeed = 1f) 
+    public void Play(WBH_EffectData data, bool autoReturn = true, float attackSpeed = 1f, Camera viewCamera = null) 
     {
         if (data == null)
             return;
 
         effectData = data;
         IsPlaying = true;
+
+        billboardCamera = viewCamera;
+        UpdateBillboardRotation();
 
         currentAttackSpeed = data.applyAttackSpeed ? Mathf.Max(0.01f, attackSpeed) : 1f;
 
@@ -97,7 +105,7 @@ public class WBH_Effect : MonoBehaviour
         }
 
         poolManager.ReturnEffect(this);
-
+        billboardCamera = null;
         effectData = null;
     }
 
@@ -107,6 +115,19 @@ public class WBH_Effect : MonoBehaviour
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
         transform.localScale = initialLocalScale;
+    }
+
+    private void UpdateBillboardRotation()
+    {
+        if ( ! IsPlaying ||
+            effectData == null ||
+            effectData.attachType != EffectAttachType.Follow_Billboard ||
+            billboardCamera == null)
+        {
+            return;
+        }
+
+        transform.rotation = billboardCamera.transform.rotation * Quaternion.Euler(effectData.localRot);
     }
 
     //private void SetParticleSpeed(float speed)

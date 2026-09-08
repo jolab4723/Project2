@@ -20,6 +20,9 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    [Header("일반 팝업 뒤 입력 차단 대상")]
+    [SerializeField] private CanvasGroup[] modalInputTargets;
+
     [Header("Dialog")]
     [SerializeField] private KY_ConfirmDialog confirmDialog;
     [SerializeField] private KY_AlertDialog alertDialog;
@@ -62,9 +65,13 @@ public class KY_PopupManager : MonoBehaviour
 
     public void Show(PopupType type)
     {
-        KY_PopupBase popup = popupDict[type];
+        if (!popupDict.TryGetValue(type, out KY_PopupBase popup) || popup == null)
+            return;
+        if (popupStack.Contains(popup))
+            return;
         popup.Open();
         popupStack.Push(popup);
+        SetBackgroundInput(false);
     }
 
     public void Hide()
@@ -73,11 +80,24 @@ public class KY_PopupManager : MonoBehaviour
 
         KY_PopupBase top = popupStack.Pop();
         top.Close();
+        if (popupStack.Count == 0) SetBackgroundInput(true);
+    }
+
+    private void SetBackgroundInput(bool enabled)
+    {
+        if (modalInputTargets == null) return;
+        foreach (CanvasGroup target in modalInputTargets)
+        {
+            if (target == null) continue;
+            target.interactable = enabled;
+            target.blocksRaycasts = enabled;
+        }
     }
 
     public void ShowSidePopup(PopupType type)
     {
-        KY_PopupBase popup = popupDict[type];
+        if (!popupDict.TryGetValue(type, out KY_PopupBase popup) || popup == null)
+            return;
         Debug.Log("ShowSidePopup 호출됨: " + type);
 
         if (currentSidePopup == popup)

@@ -15,8 +15,8 @@ namespace DataSystem
     /// </summary>
     public static class SkillLabelExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/SkillData/JSONFile";
-        private const string DefaultExcelPath = "Assets/Resources/DataFiles/SkillData/ExcelFile/SkillDataLabel.xlsx";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/CharData/SkillData/1. ExcelFile/SkillDataLabel.xlsx";
 
         [MenuItem("DataLoader/Skill Label/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()
@@ -33,6 +33,29 @@ namespace DataSystem
                 return;
 
             Convert(excelPath, jsonPath);
+        }
+
+        /// <summary>
+        /// 대화상자 없이 기본 경로만으로 변환한다. 통합 실행(0. Run All Steps)에서 쓴다.
+        /// </summary>
+        /// <returns>생성된 JSON의 절대 경로. 엑셀이 없으면 null.</returns>
+        public static string ConvertWithDefaultPaths()
+        {
+            string excelAbsolutePath = AssetPathToAbsolutePath(DefaultExcelPath);
+            if (!File.Exists(excelAbsolutePath))
+            {
+                Debug.LogWarning($"[SkillLabel] 스킬 라벨 엑셀이 없어 변환을 건너뜁니다: {DefaultExcelPath}");
+                return null;
+            }
+
+            EnsureAssetFolder(DefaultJsonFolder);
+            string jsonAbsolutePath = Path.Combine(
+                AssetPathToAbsolutePath(DefaultJsonFolder),
+                Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
+
+            Convert(excelAbsolutePath, jsonAbsolutePath);
+
+            return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
         }
 
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>

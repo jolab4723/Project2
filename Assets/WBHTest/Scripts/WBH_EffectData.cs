@@ -5,7 +5,8 @@ public enum EffectAttachType
 {
     World,
     AttachOnce,
-    Follow
+    Follow,
+    Follow_Billboard
 }
 
 [CreateAssetMenu(fileName = "EffectData", menuName = "WBH/Effect Data")]

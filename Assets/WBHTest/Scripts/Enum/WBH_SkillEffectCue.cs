@@ -48,15 +48,21 @@ public enum WBH_PlayerEffectCue
     G_skill1_evo3_etc0 = 2130,  // 1번스킬 3변형
     G_skill1_evo3_etc8 = 2138,  // 1번스킬 3변형, 투사체 폭발 이펙트
     G_skill2_evo0_etc0 = 2200,  // 2번스킬 기본
+    G_skill2_evo0_etc8 = 2208,  // 2번스킬 기본, 폭발 이펙트
     G_skill2_evo1_etc0 = 2210,  // 2번스킬 1변형
-    G_skill2_evo1_etc2 = 2218,  // 2번스킬 1변형, 집속폭탄 1차 폭발 이펙트
-    G_skill2_evo1_etc4 = 2219,  // 2번스킬 1변형, 집속폭탄 2차 폭발 이펙트
+    G_skill2_evo1_etc8 = 2218,  // 2번스킬 1변형, 집속폭탄 1차 폭발 이펙트
+    G_skill2_evo1_etc9 = 2219,  // 2번스킬 1변형, 집속폭탄 2차 폭발 이펙트
     G_skill2_evo2_etc0 = 2220,  // 2번스킬 2변형
+    G_skill2_evo2_etc8 = 2228,  // 2번스킬 2변형, 폭발 이펙트
     G_skill2_evo3_etc0 = 2230,  // 2번스킬 3변형
+    G_skill2_evo3_etc8 = 2238,  // 2번스킬 3변형, 폭발 이펙트
+    G_skill2_evo3_etc9 = 2239,  // 2번스킬 3변형, 디버프 이펙트
     G_skill3_evo0_etc0 = 2300,  // 3번스킬 기본
     G_skill3_evo1_etc0 = 2310,  // 3번스킬 1변형
+    G_skill3_evo1_etc1 = 2311,  // 3번스킬 1변형, 이동 이펙트
     G_skill3_evo1_etc8 = 2318,  // 3번스킬 1변형, 디코이 폭발
     G_skill3_evo2_etc0 = 2320,  // 3번스킬 2변형
+    G_skill3_evo2_etc1 = 2321,  // 3번스킬 2변형, 쉴드 이펙트
     G_skill3_evo3_etc0 = 2330,  // 3번스킬 3변형
 }
 

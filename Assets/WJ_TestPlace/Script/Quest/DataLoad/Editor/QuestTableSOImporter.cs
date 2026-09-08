@@ -41,6 +41,12 @@ namespace DataSystem
         {
             Debug.Log("[QuestTable] ===== 통합 실행 시작 =====");
 
+            string labelJsonPath = QuestLabelExcelToJson.ConvertWithDefaultPaths();
+            if (!string.IsNullOrEmpty(labelJsonPath))
+                QuestLabelSOImporter.ImportWithDefaultPaths(labelJsonPath);
+            else
+                Debug.LogWarning("[QuestTable] 퀘스트 라벨(다국어 문구) 갱신을 건너뛰었습니다 - 기존 QuestLabelDatabase를 그대로 씁니다.");
+
             string jsonPath = QuestTableExcelToJson.ConvertWithDefaultPaths();
             if (string.IsNullOrEmpty(jsonPath))
             {

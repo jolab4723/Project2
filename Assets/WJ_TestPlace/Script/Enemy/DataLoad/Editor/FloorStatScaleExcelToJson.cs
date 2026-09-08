@@ -76,8 +76,6 @@ namespace DataSystem
                 return;
             }
 
-            ApplyDifficultyCarryForward(rawRows);
-
             List<FloorStatScaleRow> rows = MapRows(rawRows);
 
             string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
@@ -92,30 +90,8 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// 엑셀에서 difficulty는 값이 바뀌는 행에만 적혀있고 그 아래는 빈 셀로 남겨두는 표기 방식을 쓴다
-        /// (병합 셀 아님). 빈 칸은 바로 위에서 마지막으로 채워진 값을 그대로 이어받는다.
-        /// 맨 첫 행부터 비어있으면(엑셀 작성 실수) 1로 둔다.
-        /// </summary>
-        private static void ApplyDifficultyCarryForward(List<Dictionary<string, string>> rows)
-        {
-            string lastDifficulty = "1";
-
-            foreach (Dictionary<string, string> row in rows)
-            {
-                if (row.TryGetValue("difficulty", out string value) && !string.IsNullOrWhiteSpace(value))
-                {
-                    lastDifficulty = value;
-                }
-                else
-                {
-                    row["difficulty"] = lastDifficulty;
-                }
-            }
-        }
-
-        /// <summary>
         /// ExcelSheetReader.MapRows(리플렉션으로 고정된 필드 이름만 매핑)를 안 쓰고 직접 매핑한다.
-        /// difficulty/floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
+        /// floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
         /// 그대로 FloorStatScaleRow.multipliers에 담는다 - 새 배율 컬럼을 엑셀에 추가해도
         /// FloorStatScaleRow에 필드를 새로 안 만들어도 자동으로 JSON에 실린다.
         /// </summary>
@@ -131,15 +107,11 @@ namespace DataSystem
                     continue;
                 }
 
-                var row = new FloorStatScaleRow
-                {
-                    floor = ParseInt(floorText),
-                    difficulty = rawRow.TryGetValue("difficulty", out string difficultyText) ? ParseFloat(difficultyText) : 1f,
-                };
+                var row = new FloorStatScaleRow { floor = ParseInt(floorText) };
 
                 foreach (KeyValuePair<string, string> cell in rawRow)
                 {
-                    if (cell.Key == "floor" || cell.Key == "difficulty")
+                    if (cell.Key == "floor")
                         continue;
 
                     row.multipliers[cell.Key] = ParseFloat(cell.Value);

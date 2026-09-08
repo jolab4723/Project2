@@ -8,6 +8,19 @@ public class EquipmentSystem : MonoBehaviour
 
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
 
+    /// <summary>
+    /// 지금 이 인벤토리를 쓰고 있는 캐릭터(Fighter/Gunner)의 클래스. 인벤토리/장비 상태는
+    /// 캐릭터와 무관하게 공용이라 이 값을 별도로 기억해야 무기 장착 시 클래스를 검증할 수 있다.
+    /// PlayerWeaponVisualPresenter.OnEnable()이 자기 캐릭터가 활성화될 때마다 알려준다.
+    /// 아직 아무도 알려준 적 없으면(테스트 씬 등) null이고, 그때는 클래스 검증을 건너뛴다.
+    /// </summary>
+    public CharacterClass? CurrentCharacterClass { get; private set; }
+
+    public void SetActiveCharacterClass(CharacterClass characterClass)
+    {
+        CurrentCharacterClass = characterClass;
+    }
+
     internal EquipResult TryEquipState(
         InventoryItem item,
         EquipSlotType slotType)
@@ -157,6 +170,15 @@ public class EquipmentSystem : MonoBehaviour
 
         if (!EquipSlotRules.CanEquipTo(item.itemData.definition, slotType))
             return EquipResult.InvalidSlot;
+
+        // 무기는 캐릭터 전용(Fighter/Gunner)이 정해져 있다. 지금 캐릭터를 아직 모르면(테스트 씬 등)
+        // 검증을 건너뛴다 - 실제 플레이 흐름에서는 PlayerWeaponVisualPresenter가 항상 미리 알려준다.
+        if (slotType == EquipSlotType.Weapon &&
+            CurrentCharacterClass.HasValue &&
+            item.itemData.definition.characterClass != CurrentCharacterClass.Value)
+        {
+            return EquipResult.WrongCharacterClass;
+        }
 
         return EquipResult.Success;
     }

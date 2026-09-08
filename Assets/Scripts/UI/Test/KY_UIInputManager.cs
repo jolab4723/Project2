@@ -30,7 +30,7 @@ public class KY_UIInputManager : MonoBehaviour
     {
         if (inputActions.Player.Pause.triggered)
         {
-            if (!CloseCampInventoryIfOpen())
+            if (!CloseCampInventoryIfOpen() && !CloseQuestOfferIfOpen())
                 KY_GameEvents.EscPressed();
         }
 
@@ -79,6 +79,17 @@ public class KY_UIInputManager : MonoBehaviour
             return false;
 
         inventoryView.CloseAll();
+        return true;
+    }
+
+    // 이우진님의 QuestOfferUI(의뢰 제시 팝업)가 열려있으면 ESC로 이걸 먼저 닫고, 이벤트 자체를
+    // 발생시키지 않는다 - 안 그러면 KY_PopupManager가 이 팝업을 몰라서 일시정지도 같이 열어버린다.
+    private bool CloseQuestOfferIfOpen()
+    {
+        if (QuestOfferUI.Instance == null || !QuestOfferUI.Instance.IsShowing)
+            return false;
+
+        QuestOfferUI.Instance.Hide();
         return true;
     }
 }

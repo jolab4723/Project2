@@ -28,6 +28,9 @@ public static class EquipMessageMapper
             case EquipResult.Failed:
                 return "장비 처리가 실패했습니다.";
 
+            case EquipResult.WrongCharacterClass:
+                return "이 캐릭터가 장착할 수 없는 무기입니다.";
+
             default:
                 return "알 수 없는 장비 처리 결과입니다.";
         }
