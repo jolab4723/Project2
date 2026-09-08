@@ -1,7 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
+using EnemySystem;
 using ItemSystem;
 using Mirror;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -511,7 +512,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         if (isDead || !IsAliveTarget(target))
             return;
 
-        if (enemyInfo.enemyType == EnemyType.Ranged)
+        if (enemyInfo.enemyAttackType == EnemyAttackType.Ranged)
             SpawnProjectile(target);
         else
             ResolveMeleeAttack();
@@ -623,7 +624,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         deathHandled = true;
         ServerDeathCount++;
         isDead = true;
-        if (enemyInfo?.enemyType == EnemyType.Boss)
+        if (enemyInfo?.enemyAttackType == EnemyAttackType.Boss)
             bossPhase = MirrorAct1BossPhase.Dead;
         currentHealth = 0f;
         targetNetId = 0;
