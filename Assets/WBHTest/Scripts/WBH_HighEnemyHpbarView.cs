@@ -4,6 +4,10 @@ using UnityEngine.UI;
 
 public class WBH_HighEnemyHpbarView : MonoBehaviour
 {
+    [Header("HUD Animation")]
+    [SerializeField] private KY_HUDAnimator eliteHudAni;
+    [SerializeField] private KY_HUDAnimator bossHudAni;
+
     [Header("Elite")]
     [SerializeField] private GameObject hpBarRoot;
     [SerializeField] private Slider hpSlider;
@@ -58,6 +62,34 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         player = localPlayer;
     }
 
+    private static void ShowBar(GameObject barRoot, KY_HUDAnimator animator)
+    {
+        if (barRoot == null)
+            return;
+
+        bool wasActive = barRoot.activeSelf;
+
+        barRoot.SetActive(true);
+
+        if(wasActive)
+        {
+            animator?.SlideIn();
+        }
+    }
+
+    private static void HideBar(GameObject barRoot, KY_HUDAnimator animator)
+    {
+        if (barRoot == null)
+            return;
+
+        if(animator != null && barRoot.activeInHierarchy)
+        {
+            animator.SlideOut();
+            return;
+        }
+        barRoot.SetActive(false);
+    }
+
     public void BindElite(WBH_EnemyController enemy)
     {
         if (enemy == null || enemy.Info == null || enemy.Info.enemyGrade != EnemyGrade.Elite || player == null)
@@ -65,7 +97,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
         if (eliteEnemy == enemy)
         {
-            ShowElite();
+            ShowBar(hpBarRoot, eliteHudAni);
             UpdateEliteHp(eliteStatus.CurrentHp, eliteStatus.MaxHealth);
             return;
         }
@@ -85,7 +117,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         eliteStatus.OnDead += UnbindElite;
 
         enemyNameText.text = enemy.Info.enemyName;
-        ShowElite();
+        ShowBar(hpBarRoot, eliteHudAni);
         UpdateEliteHp(eliteStatus.CurrentHp, eliteStatus.MaxHealth);
     }
 
@@ -96,7 +128,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
         if(bossEnemy == enemy)
         {
-            ShowBoss();
+            ShowBar(bossHpBarRoot, bossHudAni);
             UpdateBossHp(bossStatus.CurrentHp, bossStatus.MaxHealth);
             return;
         }
@@ -120,7 +152,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
             bossEnemyNameText.text = enemy.Info.enemyName;
         }
 
-        ShowBoss();
+        ShowBar(bossHpBarRoot, bossHudAni);
         UpdateBossHp(bossStatus.CurrentHp, bossStatus.MaxHealth);
     }
 
@@ -134,10 +166,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         eliteEnemy = null;
         eliteStatus = null;
 
-        if(hpBarRoot != null)
-        {
-            hpBarRoot.SetActive(false);
-        }
+        HideBar(hpBarRoot, eliteHudAni);
     }
 
     private void UnbindBoss()
@@ -150,10 +179,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         bossEnemy = null;
         bossStatus = null;
 
-        if (bossHpBarRoot != null)
-        {
-            bossHpBarRoot.SetActive(false);
-        }
+        HideBar(bossHpBarRoot, bossHudAni);
     }
 
     private void UpdateEliteVisibility()
@@ -184,21 +210,6 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         if(!bossEnemy.gameObject.activeInHierarchy)
         {
             UnbindBoss();
-        }
-    }
-
-    private void ShowElite()
-    {
-        if (hpBarRoot != null)
-        {
-            hpBarRoot.SetActive(true);
-        }
-    }
-    private void ShowBoss()
-    {
-        if (bossHpBarRoot != null)
-        {
-            bossHpBarRoot.SetActive(true);
         }
     }
 
