@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 93462038799774044}
   - component: {fileID: 8774434609269083480}
   - component: {fileID: 2815976225732522202}
+  - component: {fileID: 8424780540219864501}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -137,6 +138,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8424780540219864501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885641873777452460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1562795639181871263
 GameObject:
   m_ObjectHideFlags: 0
@@ -1312,6 +1325,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestPopupBridge
   database: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
   questPopup: {fileID: 9077484284368052113}
+  questLabels: {fileID: 0}
+  itemLabels: {fileID: 0}
 --- !u!1 &8507622015924287135
 GameObject:
   m_ObjectHideFlags: 0

@@ -263,6 +263,278 @@
     {
       "key": "status_ui.type_header",
       "label": "TYPE"
+    },
+    {
+      "key": "shop_ui.header",
+      "label": "상점"
+    },
+    {
+      "key": "inventory_ui.header",
+      "label": "인벤토리"
+    },
+    {
+      "key": "upgrade_ui.header",
+      "label": "강화"
+    },
+    {
+      "key": "item_tooltip_ui.sub_option_label",
+      "label": "부가 옵션"
+    },
+    {
+      "key": "item_tooltip_ui.unique_effect_label",
+      "label": "고유 효과"
+    },
+    {
+      "key": "upgrade_ui.current_stat",
+      "label": "현재 스탯 : {0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.next_stat",
+      "label": "강화 후 스탯 : {0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.cost",
+      "label": "강화비용 : {0}"
+    },
+    {
+      "key": "upgrade_ui.cost_unavailable",
+      "label": "강화비용 : -"
+    },
+    {
+      "key": "upgrade_ui.unknown_item",
+      "label": "아이템"
+    },
+    {
+      "key": "upgrade_ui.selection_required",
+      "label": "강화할 아이템을 선택하세요."
+    },
+    {
+      "key": "upgrade_ui.result_success",
+      "label": "{0} +{1} 강화 성공"
+    },
+    {
+      "key": "upgrade_ui.result_not_enough_gold",
+      "label": "골드가 부족합니다."
+    },
+    {
+      "key": "upgrade_ui.result_invalid_item",
+      "label": "강화할 수 없는 아이템입니다."
+    },
+    {
+      "key": "upgrade_ui.result_invalid_cost",
+      "label": "강화 비용 설정이 올바르지 않습니다."
+    },
+    {
+      "key": "upgrade_ui.result_wallet_unavailable",
+      "label": "강화 처리 중 문제가 발생했습니다."
+    },
+    {
+      "key": "upgrade_ui.result_failed",
+      "label": "강화에 실패했습니다."
+    },
+    {
+      "key": "npc_ui.quest",
+      "label": "의뢰"
+    },
+    {
+      "key": "npc_ui.rest",
+      "label": "휴식"
+    },
+    {
+      "key": "chat_ui.equip_success",
+      "label": "장비 처리가 완료되었습니다."
+    },
+    {
+      "key": "chat_ui.equip_swapped",
+      "label": "장비를 교체했습니다."
+    },
+    {
+      "key": "chat_ui.equip_invalid_item",
+      "label": "장착할 수 없는 아이템입니다."
+    },
+    {
+      "key": "chat_ui.equip_invalid_slot",
+      "label": "해당 슬롯에 장착할 수 없습니다."
+    },
+    {
+      "key": "chat_ui.equip_slot_occupied",
+      "label": "이미 장비가 장착되어 있습니다."
+    },
+    {
+      "key": "chat_ui.equip_not_equipped",
+      "label": "해제할 장비가 없습니다."
+    },
+    {
+      "key": "chat_ui.equip_no_return_space",
+      "label": "기존 장비를 인벤토리에 내려놓을 공간이 없습니다."
+    },
+    {
+      "key": "chat_ui.equip_failed",
+      "label": "장비 처리가 실패했습니다."
+    },
+    {
+      "key": "chat_ui.equip_wrong_class",
+      "label": "이 캐릭터가 장착할 수 없는 무기입니다."
+    },
+    {
+      "key": "chat_ui.equip_unknown",
+      "label": "알 수 없는 장비 처리 결과입니다."
+    },
+    {
+      "key": "chat_ui.inventory_acquisition",
+      "label": "{0} 아이템을 획득했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_acquisition_colored",
+      "label": "{0} 획득했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_success_position",
+      "label": "{0} 위치 : {1}, {2}"
+    },
+    {
+      "key": "chat_ui.inventory_invalid_item",
+      "label": "유효하지 않은 아이템입니다."
+    },
+    {
+      "key": "chat_ui.inventory_no_space",
+      "label": "인벤토리가 꽉 찼습니다!"
+    },
+    {
+      "key": "chat_ui.inventory_grid_unavailable",
+      "label": "인벤토리를 사용할 수 없습니다."
+    },
+    {
+      "key": "chat_ui.inventory_placement_failed",
+      "label": "인벤토리에 아이템을 배치하지 못했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_add_failed",
+      "label": "아이템 획득에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_success",
+      "label": "{0}을(를) 삭제했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_invalid_item",
+      "label": "유효하지 않은 아이템입니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_unavailable",
+      "label": "인벤토리를 사용할 수 없습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_not_player",
+      "label": "내 인벤토리의 아이템만 삭제할 수 있습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_equipped_not_allowed",
+      "label": "장착 중인 아이템은 바로 삭제할 수 없습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_failed",
+      "label": "아이템 삭제에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.inventory_remove_default_failed",
+      "label": "아이템을 삭제하지 못했습니다."
+    },
+    {
+      "key": "chat_ui.shop_buy_success",
+      "label": "{0}을 구매했습니다."
+    },
+    {
+      "key": "chat_ui.shop_sell_success",
+      "label": "{0}을 판매했습니다."
+    },
+    {
+      "key": "chat_ui.shop_not_enough_gold",
+      "label": "골드가 부족해 {0} 구매에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.shop_no_space_buy",
+      "label": "인벤토리에 공간이 없습니다."
+    },
+    {
+      "key": "chat_ui.shop_no_space_sell",
+      "label": "상점에 판매 아이템을 놓을 공간이 없습니다."
+    },
+    {
+      "key": "chat_ui.shop_invalid_item",
+      "label": "유효하지 않은 아이템입니다."
+    },
+    {
+      "key": "chat_ui.shop_transfer_failed",
+      "label": "{0} 이동 중 거래에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.shop_stock_update_failed",
+      "label": "{0} 재고 처리에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.shop_failed",
+      "label": "거래 처리에 실패했습니다."
+    },
+    {
+      "key": "chat_ui.pickup_default",
+      "label": "아이템을 획득했습니다."
+    },
+    {
+      "key": "chat_ui.out_of_range",
+      "label": "아이템에 더 가까이 이동해 주세요."
+    },
+    {
+      "key": "chat_ui.already_claimed",
+      "label": "이미 획득된 아이템입니다."
+    },
+    {
+      "key": "chat_ui.pickup_unavailable",
+      "label": "더 이상 획득할 수 없는 아이템입니다."
+    },
+    {
+      "key": "chat_ui.item_unavailable",
+      "label": "대상 아이템을 찾을 수 없습니다."
+    },
+    {
+      "key": "chat_ui.stale_revision",
+      "label": "아이템 상태가 바뀌었습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "chat_ui.recovery_failed",
+      "label": "아이템 드랍과 인벤토리 복구에 실패했습니다. 인벤토리 상태를 확인해 주세요."
+    },
+    {
+      "key": "chat_ui.upgrade_process_failed",
+      "label": "강화를 처리하지 못했습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "chat_ui.drop_failed",
+      "label": "아이템을 필드에 놓지 못했습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "chat_ui.acquisition_failed",
+      "label": "아이템을 획득하지 못했습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "chat_ui.shop_state_changed",
+      "label": "상점 상태가 바뀌었습니다. 다시 선택해 주세요."
+    },
+    {
+      "key": "chat_ui.inventory_state_changed",
+      "label": "인벤토리 상태가 바뀌었습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "chat_ui.trade_failed",
+      "label": "거래를 처리하지 못했습니다. 다시 시도해 주세요."
+    },
+    {
+      "key": "loading_ui.tooltip_title",
+      "label": "데브리스-9"
+    },
+    {
+      "key": "loading_ui.tooltip_content",
+      "label": "이곳은 오염으로 인해 인간이 살 수 없는 버려진 땅이었지만, 수백 년간 쌓인 로봇 잔해들이 스스로를 복구하고 개조하기 시작하면서 기괴한 메카 생태계가 만들어졌습니다."
     }
   ],
   "engLabels": [
@@ -529,6 +801,278 @@
     {
       "key": "status_ui.type_header",
       "label": "TYPE"
+    },
+    {
+      "key": "shop_ui.header",
+      "label": "Shop"
+    },
+    {
+      "key": "inventory_ui.header",
+      "label": "Inventory"
+    },
+    {
+      "key": "upgrade_ui.header",
+      "label": "Upgrade"
+    },
+    {
+      "key": "item_tooltip_ui.sub_option_label",
+      "label": "Additional Options"
+    },
+    {
+      "key": "item_tooltip_ui.unique_effect_label",
+      "label": "Unique Effect"
+    },
+    {
+      "key": "upgrade_ui.current_stat",
+      "label": "Current Stat: {0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.next_stat",
+      "label": "After Upgrade: {0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.cost",
+      "label": "Upgrade Cost: {0}"
+    },
+    {
+      "key": "upgrade_ui.cost_unavailable",
+      "label": "Upgrade Cost: -"
+    },
+    {
+      "key": "upgrade_ui.unknown_item",
+      "label": "Item"
+    },
+    {
+      "key": "upgrade_ui.selection_required",
+      "label": "Please select an item to upgrade."
+    },
+    {
+      "key": "upgrade_ui.result_success",
+      "label": "{0} +{1} Upgrade Success"
+    },
+    {
+      "key": "upgrade_ui.result_not_enough_gold",
+      "label": "Not enough gold."
+    },
+    {
+      "key": "upgrade_ui.result_invalid_item",
+      "label": "This item cannot be upgraded."
+    },
+    {
+      "key": "upgrade_ui.result_invalid_cost",
+      "label": "The upgrade cost setting is invalid."
+    },
+    {
+      "key": "upgrade_ui.result_wallet_unavailable",
+      "label": "A problem occurred while processing the upgrade."
+    },
+    {
+      "key": "upgrade_ui.result_failed",
+      "label": "Upgrade failed."
+    },
+    {
+      "key": "npc_ui.quest",
+      "label": "Quest"
+    },
+    {
+      "key": "npc_ui.rest",
+      "label": "Rest"
+    },
+    {
+      "key": "chat_ui.equip_success",
+      "label": "Equipment updated successfully."
+    },
+    {
+      "key": "chat_ui.equip_swapped",
+      "label": "Equipment swapped."
+    },
+    {
+      "key": "chat_ui.equip_invalid_item",
+      "label": "This item cannot be equipped."
+    },
+    {
+      "key": "chat_ui.equip_invalid_slot",
+      "label": "Cannot equip to that slot."
+    },
+    {
+      "key": "chat_ui.equip_slot_occupied",
+      "label": "Equipment is already equipped there."
+    },
+    {
+      "key": "chat_ui.equip_not_equipped",
+      "label": "There is no equipment to unequip."
+    },
+    {
+      "key": "chat_ui.equip_no_return_space",
+      "label": "No inventory space to store the previous equipment."
+    },
+    {
+      "key": "chat_ui.equip_failed",
+      "label": "Failed to process equipment."
+    },
+    {
+      "key": "chat_ui.equip_wrong_class",
+      "label": "This character cannot equip this weapon."
+    },
+    {
+      "key": "chat_ui.equip_unknown",
+      "label": "Unknown equipment processing result."
+    },
+    {
+      "key": "chat_ui.inventory_acquisition",
+      "label": "Obtained item: {0}."
+    },
+    {
+      "key": "chat_ui.inventory_acquisition_colored",
+      "label": "Obtained {0}."
+    },
+    {
+      "key": "chat_ui.inventory_success_position",
+      "label": "{0} Position: {1}, {2}"
+    },
+    {
+      "key": "chat_ui.inventory_invalid_item",
+      "label": "This item is not valid."
+    },
+    {
+      "key": "chat_ui.inventory_no_space",
+      "label": "Inventory is full!"
+    },
+    {
+      "key": "chat_ui.inventory_grid_unavailable",
+      "label": "Inventory is unavailable."
+    },
+    {
+      "key": "chat_ui.inventory_placement_failed",
+      "label": "Failed to place the item in the inventory."
+    },
+    {
+      "key": "chat_ui.inventory_add_failed",
+      "label": "Failed to obtain the item."
+    },
+    {
+      "key": "chat_ui.inventory_remove_success",
+      "label": "Deleted {0}."
+    },
+    {
+      "key": "chat_ui.inventory_remove_invalid_item",
+      "label": "This item is not valid."
+    },
+    {
+      "key": "chat_ui.inventory_remove_unavailable",
+      "label": "Inventory is unavailable."
+    },
+    {
+      "key": "chat_ui.inventory_remove_not_player",
+      "label": "You can only delete items from your own inventory."
+    },
+    {
+      "key": "chat_ui.inventory_remove_equipped_not_allowed",
+      "label": "Equipped items cannot be deleted directly."
+    },
+    {
+      "key": "chat_ui.inventory_remove_failed",
+      "label": "Failed to delete the item."
+    },
+    {
+      "key": "chat_ui.inventory_remove_default_failed",
+      "label": "Could not delete the item."
+    },
+    {
+      "key": "chat_ui.shop_buy_success",
+      "label": "Purchased {0}."
+    },
+    {
+      "key": "chat_ui.shop_sell_success",
+      "label": "Sold {0}."
+    },
+    {
+      "key": "chat_ui.shop_not_enough_gold",
+      "label": "Not enough gold to purchase {0}."
+    },
+    {
+      "key": "chat_ui.shop_no_space_buy",
+      "label": "No space in your inventory."
+    },
+    {
+      "key": "chat_ui.shop_no_space_sell",
+      "label": "No space in the shop to place the item for sale."
+    },
+    {
+      "key": "chat_ui.shop_invalid_item",
+      "label": "This item is not valid."
+    },
+    {
+      "key": "chat_ui.shop_transfer_failed",
+      "label": "The trade failed while moving {0}."
+    },
+    {
+      "key": "chat_ui.shop_stock_update_failed",
+      "label": "Failed to update stock for {0}."
+    },
+    {
+      "key": "chat_ui.shop_failed",
+      "label": "Failed to process the trade."
+    },
+    {
+      "key": "chat_ui.pickup_default",
+      "label": "Obtained the item."
+    },
+    {
+      "key": "chat_ui.out_of_range",
+      "label": "Please move closer to the item."
+    },
+    {
+      "key": "chat_ui.already_claimed",
+      "label": "This item has already been claimed."
+    },
+    {
+      "key": "chat_ui.pickup_unavailable",
+      "label": "This item can no longer be obtained."
+    },
+    {
+      "key": "chat_ui.item_unavailable",
+      "label": "The target item could not be found."
+    },
+    {
+      "key": "chat_ui.stale_revision",
+      "label": "The item's state has changed. Please try again."
+    },
+    {
+      "key": "chat_ui.recovery_failed",
+      "label": "Failed to drop the item and restore the inventory. Please check your inventory."
+    },
+    {
+      "key": "chat_ui.upgrade_process_failed",
+      "label": "Failed to process the upgrade. Please try again."
+    },
+    {
+      "key": "chat_ui.drop_failed",
+      "label": "Failed to drop the item on the field. Please try again."
+    },
+    {
+      "key": "chat_ui.acquisition_failed",
+      "label": "Failed to obtain the item. Please try again."
+    },
+    {
+      "key": "chat_ui.shop_state_changed",
+      "label": "The shop's state has changed. Please select again."
+    },
+    {
+      "key": "chat_ui.inventory_state_changed",
+      "label": "The inventory's state has changed. Please try again."
+    },
+    {
+      "key": "chat_ui.trade_failed",
+      "label": "Failed to process the trade. Please try again."
+    },
+    {
+      "key": "loading_ui.tooltip_title",
+      "label": "Debris-9"
+    },
+    {
+      "key": "loading_ui.tooltip_content",
+      "label": "This place was once an abandoned land, uninhabitable due to contamination, but as centuries of accumulated robot wreckage began to repair and modify itself, a bizarre mechanical ecosystem was born."
     }
   ],
   "jpnLabels": [
@@ -795,6 +1339,278 @@
     {
       "key": "status_ui.type_header",
       "label": "TYPE"
+    },
+    {
+      "key": "shop_ui.header",
+      "label": "ショップ"
+    },
+    {
+      "key": "inventory_ui.header",
+      "label": "インベントリ"
+    },
+    {
+      "key": "upgrade_ui.header",
+      "label": "強化"
+    },
+    {
+      "key": "item_tooltip_ui.sub_option_label",
+      "label": "追加オプション"
+    },
+    {
+      "key": "item_tooltip_ui.unique_effect_label",
+      "label": "固有効果"
+    },
+    {
+      "key": "upgrade_ui.current_stat",
+      "label": "現在ステータス：{0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.next_stat",
+      "label": "強化後ステータス：{0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.cost",
+      "label": "強化費用：{0}"
+    },
+    {
+      "key": "upgrade_ui.cost_unavailable",
+      "label": "強化費用：-"
+    },
+    {
+      "key": "upgrade_ui.unknown_item",
+      "label": "アイテム"
+    },
+    {
+      "key": "upgrade_ui.selection_required",
+      "label": "強化するアイテムを選択してください。"
+    },
+    {
+      "key": "upgrade_ui.result_success",
+      "label": "{0} +{1} 強化成功"
+    },
+    {
+      "key": "upgrade_ui.result_not_enough_gold",
+      "label": "ゴールドが不足しています。"
+    },
+    {
+      "key": "upgrade_ui.result_invalid_item",
+      "label": "強化できないアイテムです。"
+    },
+    {
+      "key": "upgrade_ui.result_invalid_cost",
+      "label": "強化費用の設定が正しくありません。"
+    },
+    {
+      "key": "upgrade_ui.result_wallet_unavailable",
+      "label": "強化処理中に問題が発生しました。"
+    },
+    {
+      "key": "upgrade_ui.result_failed",
+      "label": "強化に失敗しました。"
+    },
+    {
+      "key": "npc_ui.quest",
+      "label": "依頼"
+    },
+    {
+      "key": "npc_ui.rest",
+      "label": "休憩"
+    },
+    {
+      "key": "chat_ui.equip_success",
+      "label": "装備処理が完了しました。"
+    },
+    {
+      "key": "chat_ui.equip_swapped",
+      "label": "装備を交換しました。"
+    },
+    {
+      "key": "chat_ui.equip_invalid_item",
+      "label": "装備できないアイテムです。"
+    },
+    {
+      "key": "chat_ui.equip_invalid_slot",
+      "label": "そのスロットには装備できません。"
+    },
+    {
+      "key": "chat_ui.equip_slot_occupied",
+      "label": "すでに装備が装着されています。"
+    },
+    {
+      "key": "chat_ui.equip_not_equipped",
+      "label": "解除する装備がありません。"
+    },
+    {
+      "key": "chat_ui.equip_no_return_space",
+      "label": "既存の装備をインベントリに置くスペースがありません。"
+    },
+    {
+      "key": "chat_ui.equip_failed",
+      "label": "装備処理に失敗しました。"
+    },
+    {
+      "key": "chat_ui.equip_wrong_class",
+      "label": "このキャラクターは装備できない武器です。"
+    },
+    {
+      "key": "chat_ui.equip_unknown",
+      "label": "不明な装備処理結果です。"
+    },
+    {
+      "key": "chat_ui.inventory_acquisition",
+      "label": "{0} アイテムを獲得しました。"
+    },
+    {
+      "key": "chat_ui.inventory_acquisition_colored",
+      "label": "{0} を獲得しました。"
+    },
+    {
+      "key": "chat_ui.inventory_success_position",
+      "label": "{0} 位置：{1}, {2}"
+    },
+    {
+      "key": "chat_ui.inventory_invalid_item",
+      "label": "無効なアイテムです。"
+    },
+    {
+      "key": "chat_ui.inventory_no_space",
+      "label": "インベントリが満杯です！"
+    },
+    {
+      "key": "chat_ui.inventory_grid_unavailable",
+      "label": "インベントリを使用できません。"
+    },
+    {
+      "key": "chat_ui.inventory_placement_failed",
+      "label": "インベントリにアイテムを配置できませんでした。"
+    },
+    {
+      "key": "chat_ui.inventory_add_failed",
+      "label": "アイテムの獲得に失敗しました。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_success",
+      "label": "{0} を削除しました。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_invalid_item",
+      "label": "無効なアイテムです。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_unavailable",
+      "label": "インベントリを使用できません。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_not_player",
+      "label": "自分のインベントリのアイテムのみ削除できます。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_equipped_not_allowed",
+      "label": "装備中のアイテムは直接削除できません。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_failed",
+      "label": "アイテムの削除に失敗しました。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_default_failed",
+      "label": "アイテムを削除できませんでした。"
+    },
+    {
+      "key": "chat_ui.shop_buy_success",
+      "label": "{0} を購入しました。"
+    },
+    {
+      "key": "chat_ui.shop_sell_success",
+      "label": "{0} を売却しました。"
+    },
+    {
+      "key": "chat_ui.shop_not_enough_gold",
+      "label": "ゴールドが不足しているため {0} の購入に失敗しました。"
+    },
+    {
+      "key": "chat_ui.shop_no_space_buy",
+      "label": "インベントリに空きがありません。"
+    },
+    {
+      "key": "chat_ui.shop_no_space_sell",
+      "label": "ショップに販売アイテムを置くスペースがありません。"
+    },
+    {
+      "key": "chat_ui.shop_invalid_item",
+      "label": "無効なアイテムです。"
+    },
+    {
+      "key": "chat_ui.shop_transfer_failed",
+      "label": "{0} の移動中に取引に失敗しました。"
+    },
+    {
+      "key": "chat_ui.shop_stock_update_failed",
+      "label": "{0} の在庫処理に失敗しました。"
+    },
+    {
+      "key": "chat_ui.shop_failed",
+      "label": "取引処理に失敗しました。"
+    },
+    {
+      "key": "chat_ui.pickup_default",
+      "label": "アイテムを獲得しました。"
+    },
+    {
+      "key": "chat_ui.out_of_range",
+      "label": "アイテムにもっと近づいてください。"
+    },
+    {
+      "key": "chat_ui.already_claimed",
+      "label": "すでに獲得済みのアイテムです。"
+    },
+    {
+      "key": "chat_ui.pickup_unavailable",
+      "label": "これ以上獲得できないアイテムです。"
+    },
+    {
+      "key": "chat_ui.item_unavailable",
+      "label": "対象のアイテムが見つかりません。"
+    },
+    {
+      "key": "chat_ui.stale_revision",
+      "label": "アイテムの状態が変わりました。もう一度お試しください。"
+    },
+    {
+      "key": "chat_ui.recovery_failed",
+      "label": "アイテムのドロップとインベントリの復元に失敗しました。インベントリの状態を確認してください。"
+    },
+    {
+      "key": "chat_ui.upgrade_process_failed",
+      "label": "強化を処理できませんでした。もう一度お試しください。"
+    },
+    {
+      "key": "chat_ui.drop_failed",
+      "label": "アイテムをフィールドに置けませんでした。もう一度お試しください。"
+    },
+    {
+      "key": "chat_ui.acquisition_failed",
+      "label": "アイテムを獲得できませんでした。もう一度お試しください。"
+    },
+    {
+      "key": "chat_ui.shop_state_changed",
+      "label": "ショップの状態が変わりました。もう一度選択してください。"
+    },
+    {
+      "key": "chat_ui.inventory_state_changed",
+      "label": "インベントリの状態が変わりました。もう一度お試しください。"
+    },
+    {
+      "key": "chat_ui.trade_failed",
+      "label": "取引を処理できませんでした。もう一度お試しください。"
+    },
+    {
+      "key": "loading_ui.tooltip_title",
+      "label": "デブリス-9"
+    },
+    {
+      "key": "loading_ui.tooltip_content",
+      "label": "この場所は汚染によって人間が住めない廃墟の地でしたが、何百年もの間積み重なったロボットの残骸が自らを修復・改造し始め、奇怪なメカ生態系が生まれました。"
     }
   ],
   "chnLabels": [
@@ -1061,6 +1877,278 @@
     {
       "key": "status_ui.type_header",
       "label": "TYPE"
+    },
+    {
+      "key": "shop_ui.header",
+      "label": "商店"
+    },
+    {
+      "key": "inventory_ui.header",
+      "label": "物品栏"
+    },
+    {
+      "key": "upgrade_ui.header",
+      "label": "强化"
+    },
+    {
+      "key": "item_tooltip_ui.sub_option_label",
+      "label": "附加选项"
+    },
+    {
+      "key": "item_tooltip_ui.unique_effect_label",
+      "label": "固有效果"
+    },
+    {
+      "key": "upgrade_ui.current_stat",
+      "label": "当前属性：{0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.next_stat",
+      "label": "强化后属性：{0} + {1}"
+    },
+    {
+      "key": "upgrade_ui.cost",
+      "label": "强化费用：{0}"
+    },
+    {
+      "key": "upgrade_ui.cost_unavailable",
+      "label": "强化费用：-"
+    },
+    {
+      "key": "upgrade_ui.unknown_item",
+      "label": "物品"
+    },
+    {
+      "key": "upgrade_ui.selection_required",
+      "label": "请选择要强化的物品。"
+    },
+    {
+      "key": "upgrade_ui.result_success",
+      "label": "{0} +{1} 强化成功"
+    },
+    {
+      "key": "upgrade_ui.result_not_enough_gold",
+      "label": "金币不足。"
+    },
+    {
+      "key": "upgrade_ui.result_invalid_item",
+      "label": "该物品无法强化。"
+    },
+    {
+      "key": "upgrade_ui.result_invalid_cost",
+      "label": "强化费用设置不正确。"
+    },
+    {
+      "key": "upgrade_ui.result_wallet_unavailable",
+      "label": "强化处理过程中发生了问题。"
+    },
+    {
+      "key": "upgrade_ui.result_failed",
+      "label": "强化失败。"
+    },
+    {
+      "key": "npc_ui.quest",
+      "label": "委托"
+    },
+    {
+      "key": "npc_ui.rest",
+      "label": "休息"
+    },
+    {
+      "key": "chat_ui.equip_success",
+      "label": "装备处理已完成。"
+    },
+    {
+      "key": "chat_ui.equip_swapped",
+      "label": "已更换装备。"
+    },
+    {
+      "key": "chat_ui.equip_invalid_item",
+      "label": "该物品无法装备。"
+    },
+    {
+      "key": "chat_ui.equip_invalid_slot",
+      "label": "无法装备到该栏位。"
+    },
+    {
+      "key": "chat_ui.equip_slot_occupied",
+      "label": "该位置已装备物品。"
+    },
+    {
+      "key": "chat_ui.equip_not_equipped",
+      "label": "没有可卸下的装备。"
+    },
+    {
+      "key": "chat_ui.equip_no_return_space",
+      "label": "背包中没有空间放置原有装备。"
+    },
+    {
+      "key": "chat_ui.equip_failed",
+      "label": "装备处理失败。"
+    },
+    {
+      "key": "chat_ui.equip_wrong_class",
+      "label": "该角色无法装备此武器。"
+    },
+    {
+      "key": "chat_ui.equip_unknown",
+      "label": "未知的装备处理结果。"
+    },
+    {
+      "key": "chat_ui.inventory_acquisition",
+      "label": "获得了物品：{0}。"
+    },
+    {
+      "key": "chat_ui.inventory_acquisition_colored",
+      "label": "获得了 {0}。"
+    },
+    {
+      "key": "chat_ui.inventory_success_position",
+      "label": "{0} 位置：{1}, {2}"
+    },
+    {
+      "key": "chat_ui.inventory_invalid_item",
+      "label": "无效的物品。"
+    },
+    {
+      "key": "chat_ui.inventory_no_space",
+      "label": "背包已满！"
+    },
+    {
+      "key": "chat_ui.inventory_grid_unavailable",
+      "label": "无法使用背包。"
+    },
+    {
+      "key": "chat_ui.inventory_placement_failed",
+      "label": "未能将物品放入背包。"
+    },
+    {
+      "key": "chat_ui.inventory_add_failed",
+      "label": "获取物品失败。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_success",
+      "label": "已删除 {0}。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_invalid_item",
+      "label": "无效的物品。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_unavailable",
+      "label": "无法使用背包。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_not_player",
+      "label": "只能删除自己背包中的物品。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_equipped_not_allowed",
+      "label": "已装备的物品无法直接删除。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_failed",
+      "label": "删除物品失败。"
+    },
+    {
+      "key": "chat_ui.inventory_remove_default_failed",
+      "label": "无法删除物品。"
+    },
+    {
+      "key": "chat_ui.shop_buy_success",
+      "label": "已购买 {0}。"
+    },
+    {
+      "key": "chat_ui.shop_sell_success",
+      "label": "已出售 {0}。"
+    },
+    {
+      "key": "chat_ui.shop_not_enough_gold",
+      "label": "金币不足，购买 {0} 失败。"
+    },
+    {
+      "key": "chat_ui.shop_no_space_buy",
+      "label": "背包中没有空间。"
+    },
+    {
+      "key": "chat_ui.shop_no_space_sell",
+      "label": "商店中没有空间放置出售的物品。"
+    },
+    {
+      "key": "chat_ui.shop_invalid_item",
+      "label": "无效的物品。"
+    },
+    {
+      "key": "chat_ui.shop_transfer_failed",
+      "label": "移动 {0} 时交易失败。"
+    },
+    {
+      "key": "chat_ui.shop_stock_update_failed",
+      "label": "{0} 库存处理失败。"
+    },
+    {
+      "key": "chat_ui.shop_failed",
+      "label": "交易处理失败。"
+    },
+    {
+      "key": "chat_ui.pickup_default",
+      "label": "获得了物品。"
+    },
+    {
+      "key": "chat_ui.out_of_range",
+      "label": "请靠近物品。"
+    },
+    {
+      "key": "chat_ui.already_claimed",
+      "label": "该物品已被获取。"
+    },
+    {
+      "key": "chat_ui.pickup_unavailable",
+      "label": "该物品无法再获取。"
+    },
+    {
+      "key": "chat_ui.item_unavailable",
+      "label": "找不到目标物品。"
+    },
+    {
+      "key": "chat_ui.stale_revision",
+      "label": "物品状态已更改，请重试。"
+    },
+    {
+      "key": "chat_ui.recovery_failed",
+      "label": "物品掉落及背包恢复失败，请检查背包状态。"
+    },
+    {
+      "key": "chat_ui.upgrade_process_failed",
+      "label": "强化处理失败，请重试。"
+    },
+    {
+      "key": "chat_ui.drop_failed",
+      "label": "未能将物品放置到场地上，请重试。"
+    },
+    {
+      "key": "chat_ui.acquisition_failed",
+      "label": "获取物品失败，请重试。"
+    },
+    {
+      "key": "chat_ui.shop_state_changed",
+      "label": "商店状态已更改，请重新选择。"
+    },
+    {
+      "key": "chat_ui.inventory_state_changed",
+      "label": "背包状态已更改，请重试。"
+    },
+    {
+      "key": "chat_ui.trade_failed",
+      "label": "交易处理失败，请重试。"
+    },
+    {
+      "key": "loading_ui.tooltip_title",
+      "label": "残骸-9"
+    },
+    {
+      "key": "loading_ui.tooltip_content",
+      "label": "这里原本是因污染而无法居住的废弃之地，但数百年间堆积的机器人残骸开始自我修复与改造，形成了诡异的机甲生态系统。"
     }
   ]
 }

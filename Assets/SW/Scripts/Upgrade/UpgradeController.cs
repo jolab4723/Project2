@@ -17,6 +17,9 @@ public class UpgradeController : MonoBehaviour
     [SerializeField] private Image rarityBackground;
     [SerializeField] private Image rarityFrame;
 
+    [Tooltip("고정 UI 문구(스탯 표기, 강화 결과 메시지 등) 다국어 테이블. 비워두면 하드코딩된 한국어 문구를 그대로 쓴다.")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
     private ItemInstance selectedItem;
     private UpgradeService upgradeService;
 
@@ -28,6 +31,10 @@ public class UpgradeController : MonoBehaviour
 
     private void Awake()
     {
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
         upgradeService = new UpgradeService(playerWallet);
     }
 
@@ -67,7 +74,7 @@ public class UpgradeController : MonoBehaviour
         if (!UpgradeService.CanUpgrade(item))
         {
             Debug.LogWarning("[UpgradeController] 강화할 수 없는 아이템입니다.");
-            ReportRejection(UpgradeMessageMapper.GetMessage(UpgradeResult.InvalidItem, "아이템", 0));
+            ReportRejection(UpgradeMessageMapper.GetMessage(UpgradeResult.InvalidItem, GetUILabel("upgrade_ui.unknown_item", "아이템"), 0, uiLabels));
 
             return false;
         }
@@ -101,8 +108,9 @@ public class UpgradeController : MonoBehaviour
     {
         if (selectedItem == null)
         {
-            ShowMessage(UpgradeMessageMapper.SelectionRequired);
-            ReportRejection(UpgradeMessageMapper.SelectionRequired);
+            string selectionRequired = UpgradeMessageMapper.GetSelectionRequired(uiLabels);
+            ShowMessage(selectionRequired);
+            ReportRejection(selectionRequired);
             return;
         }
 
@@ -128,7 +136,7 @@ public class UpgradeController : MonoBehaviour
         string itemName =
             selectedItem?.definition != null
                 ? selectedItem.definition.itemName
-                : "아이템";
+                : GetUILabel("upgrade_ui.unknown_item", "아이템");
 
         int upgradeLevel =
             selectedItem != null
@@ -138,7 +146,8 @@ public class UpgradeController : MonoBehaviour
         string message = UpgradeMessageMapper.GetMessage(
                 result,
                 itemName,
-                upgradeLevel);
+                upgradeLevel,
+                uiLabels);
         ShowMessage(message);
         if (result != UpgradeResult.Success) ReportRejection(message);
     }
@@ -193,13 +202,23 @@ public class UpgradeController : MonoBehaviour
         float nextValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel + 1);
         FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
 
+        string statName = ItemDisplayNames.StatNames[mainOption.statType];
+
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
-        currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {currentValue:0.#}";
-        nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {nextValue:0.#}";
+        currentStatText.text = string.Format(
+            GetUILabel("upgrade_ui.current_stat", "현재 스탯 : {0} + {1}"),
+            statName, $"{currentValue:0.#}");
+        nextStatText.text = string.Format(
+            GetUILabel("upgrade_ui.next_stat", "강화 후 스탯 : {0} + {1}"),
+            statName, $"{nextValue:0.#}");
         costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
-            ? $"강화비용 : {cost}"
-            : "강화비용 : -";
+            ? string.Format(GetUILabel("upgrade_ui.cost", "강화비용 : {0}"), cost)
+            : GetUILabel("upgrade_ui.cost_unavailable", "강화비용 : -");
     }
+
+    /// <summary>다국어 DB가 배선돼 있으면 그 문구를, 없으면 기존 하드코딩 한국어 문구를 반환한다.</summary>
+    private string GetUILabel(string key, string fallback) =>
+        uiLabels != null ? uiLabels.GetLabel(key) : fallback;
 
     private void ShowEmptyState()
     {
@@ -216,7 +235,7 @@ public class UpgradeController : MonoBehaviour
 
         if (currentStatText != null)
         {
-            currentStatText.text = UpgradeMessageMapper.SelectionRequired;
+            currentStatText.text = UpgradeMessageMapper.GetSelectionRequired(uiLabels);
         }
 
         if (nextStatText != null)
