@@ -39,6 +39,7 @@ public class KY_StatusPopup : KY_PopupBase
 
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect curtainEffect;
+    private KY_UIAnimationManager animationManager;
 
     private PlayerStatManager statManager;
 
@@ -46,6 +47,7 @@ public class KY_StatusPopup : KY_PopupBase
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
         curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
+        animationManager = GetComponent<KY_UIAnimationManager>();
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
 
         ApplyLabels();
@@ -113,9 +115,12 @@ public class KY_StatusPopup : KY_PopupBase
         ApplyLabels();
         RequestData();
 
+        animationManager?.PlayPanelOpen();
+
         Sequence seq = DOTween.Sequence();
-        seq.Append(slideAnimator.SlideIn());
-        seq.AppendCallback(() => curtainEffect.Open());
+        float slideDuration = slideAnimator != null ? slideAnimator.duration : 0f;
+        seq.AppendInterval(slideDuration);
+        seq.AppendCallback(() => curtainEffect?.Open());
     }
 
     public override void Close()
