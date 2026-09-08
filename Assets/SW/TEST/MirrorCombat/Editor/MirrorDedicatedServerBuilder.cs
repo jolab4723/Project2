@@ -16,6 +16,7 @@ internal static class MirrorDedicatedServerBuilder
         "Addressables.BuildAddressablesWithPlayerBuild";
     private static readonly string[] TestScenes =
     {
+        MirrorTestNetworkManager.SessionLobbyScene,
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
@@ -187,7 +188,7 @@ internal static class MirrorDedicatedServerBuilder
 
     /// <summary>
     /// 서버 로그를 빌드 폴더에 남기는 실행 명령을 만듭니다.
-    /// 마지막 플레이어가 나가 서버 프로세스가 정상 종료되거나 예기치 않게 종료되면,
+    /// 서버 프로세스가 정상 종료되거나 예기치 않게 종료되면,
     /// 실행 스크립트가 2초 뒤 새 프로세스를 시작해 다음 접속을 완전히 새 게임으로 받습니다.
     /// 터미널 종료 신호는 재시작하지 않고 현재 서버 자식 프로세스까지 함께 종료합니다.
     /// </summary>
@@ -308,13 +309,13 @@ internal static class MirrorDedicatedServerBuilder
                 "4. Windows Client는 VM 외부 IPv4를 입력하고 Client를 누릅니다.\n" +
                 "5. KCP UDP 포트는 7777이며 Google Cloud 방화벽에서 허용되어야 합니다.\n" +
                 "6. 서버에는 로컬 플레이어, 카메라, HUD가 생기지 않는 것이 정상입니다.\n" +
-                "7. 모든 Client가 나간 뒤 15초가 지나면 서버 프로세스가 종료되고 실행 스크립트가 새 세션으로 다시 시작합니다.\n" +
+                "7. 런 중 끊긴 참가자는 300초 동안 복귀할 수 있습니다. 예약이 모두 만료되면 같은 서버가 새 로비로 돌아갑니다.\n" +
                 "8. 서버를 완전히 종료하려면 실행 중인 터미널에서 Ctrl+C를 누르거나 tmux 세션을 종료합니다.\n\n" +
                 "서버 UDP 확인:\n" +
                 "  ss -lunp | grep :7777\n\n" +
                 "우선 검증:\n" +
                 "  Client 2명 접속 -> PlayerContext 2개 확인 -> 상점/AI/전투/드롭 확인\n" +
-                "  -> Client 모두 종료 -> 15초 뒤 프로세스 재시작 확인 -> 다시 접속해 새 게임 상태 확인\n\n" +
+                "  -> Client 연결 끊김/복귀 -> 전원 예약 만료 후 새 로비/새 참가 확인\n\n" +
                 "서버 로그:\n" +
                 "  이 폴더의 DedicatedServer.log\n" +
                 "  서버 시작, connectionId별 접속/종료와 오류를 확인합니다.\n";
@@ -328,13 +329,13 @@ internal static class MirrorDedicatedServerBuilder
             "3. 다른 PC의 Client는 서버 PC의 내부 IPv4를 입력하고 Client를 누릅니다.\r\n" +
             "4. KCP UDP 포트는 7777이며 기존 LAN 방화벽 규칙을 그대로 사용할 수 있습니다.\r\n" +
             "5. 서버에는 로컬 플레이어, 카메라, HUD가 생기지 않는 것이 정상입니다.\r\n" +
-            "6. 모든 Client가 나간 뒤 15초가 지나면 서버 프로세스가 종료되고 실행 파일이 새 세션으로 다시 시작합니다.\r\n" +
+            "6. 런 중 끊긴 참가자는 300초 동안 복귀할 수 있습니다. 예약이 모두 만료되면 같은 서버가 새 로비로 돌아갑니다.\r\n" +
             "7. 서버를 완전히 종료하려면 실행 중인 창을 닫거나 배치 파일을 종료합니다.\r\n\r\n" +
             "서버 UDP 확인:\r\n" +
             "  netstat -ano -p udp | findstr :7777\r\n\r\n" +
             "우선 검증:\r\n" +
             "  Client 2명 접속 -> PlayerContext 2개 확인 -> 상점/AI/전투/드롭 확인\r\n" +
-            "  -> Client 모두 종료 -> 15초 뒤 프로세스 재시작 확인 -> 다시 접속해 새 게임 상태 확인\r\n\r\n" +
+            "  -> Client 연결 끊김/복귀 -> 전원 예약 만료 후 새 로비/새 참가 확인\r\n\r\n" +
             "서버 로그:\r\n" +
             "  이 폴더의 DedicatedServer.log\r\n" +
             "  서버 시작, connectionId별 접속/종료와 오류를 확인합니다.\r\n";

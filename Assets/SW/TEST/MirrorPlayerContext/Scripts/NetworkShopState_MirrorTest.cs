@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using ItemSystem;
 using Mirror;
 using UnityEngine;
@@ -24,9 +23,7 @@ internal sealed class MirrorTestShopItemSnapshot
 /// <para>구매·판매·리롤은 모두 요청 당시 상점 상태 번호를 확인한다. Mirror Command는 서버에서
 /// 한 번에 하나씩 처리되므로 첫 요청이 상태 번호를 올린 뒤 도착한 요청은 돈과 아이템을 변경하기 전에
 /// 거절된다. 별도의 전역 잠금 Manager는 만들지 않는다.</para>
-/// <para>테스트 복제본 경계: 원본 상점의 private 재고 서비스는 수정하지 않고 화면을 다시 그릴 때만
-/// Reflection으로 새 재고 서비스를 주입한다. 정식 전환에서는 원본에 명시적인 Bind API를 추가한 뒤
-/// 이 Reflection 연결을 제거한다.</para>
+/// <para>기존 상점의 명시적인 재고 연결 API와 추첨 설정을 재사용한다.</para>
 /// <para>6-C 실제 StageSelect 복제 Scene에는 상점 Grid가 없으므로 그 Scene에서는 빈 서버 상태로 대기한다.
 /// Camp 또는 전투 Scene의 상점 UI와 함께 생성된 인스턴스만 실제 공유 재고를 초기화한다.</para>
 /// </summary>
@@ -34,16 +31,6 @@ internal sealed class MirrorTestShopItemSnapshot
 [RequireComponent(typeof(NetworkIdentity))]
 public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
 {
-    private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
-    private static readonly FieldInfo StockServiceField =
-        typeof(ShopController).GetField("stockService", PrivateInstance);
-    private static readonly FieldInfo ItemDatabaseField =
-        typeof(ShopStockInitializer).GetField("itemDatabase", PrivateInstance);
-    private static readonly FieldInfo InitialStockCountField =
-        typeof(ShopStockInitializer).GetField("initialStockCount", PrivateInstance);
-    private static readonly FieldInfo RarityChancesField =
-        typeof(ShopStockInitializer).GetField("rarityChances", PrivateInstance);
-
     [Header("공유 리롤 규칙")]
     [SerializeField, Min(0)] private int baseFreeRerollCount = 1;
     [SerializeField, Min(0)] private int paidRerollGoldCost = 100;
@@ -250,42 +237,29 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         int width = isRotated ? itemData.definition.itemHeight : itemData.definition.itemWidth;
         int height = isRotated ? itemData.definition.itemWidth : itemData.definition.itemHeight;
         InventoryItem ownedItem = FindOwnedItem(requester.Context, instanceId, out _);
-        bool alreadyAppliedByHost = ownedItem != null;
-
-        if (alreadyAppliedByHost)
-        {
-            if (!playerGrid.ContainsItem(ownedItem) ||
-                ownedItem.x != targetX || ownedItem.y != targetY || ownedItem.isRotated != isRotated)
-            {
-                return MirrorTestShopRequestResult.InventoryStateChanged;
-            }
-        }
-        else if (!playerGrid.CanPlaceItem(targetX, targetY, width, height))
+        if (ownedItem != null)
+            return MirrorTestShopRequestResult.InventoryStateChanged;
+        if (!playerGrid.CanPlaceItem(targetX, targetY, width, height))
         {
             return MirrorTestShopRequestResult.InventoryFull;
         }
 
         int price = CalculateBuyPrice(itemData.definition.sellPrice, requester.DiscountPercent);
-        requester.ServerSetGold(requester.Gold);
         if (!requester.ServerTrySpendGold(price))
             return MirrorTestShopRequestResult.NotEnoughGold;
 
-        if (!alreadyAppliedByHost)
+        ownedItem = new InventoryItem(itemData) { isRotated = isRotated };
+        InventoryAddResultData addResult = inventory.TryAddItemAt(ownedItem, targetX, targetY);
+        if (addResult.Result != InventoryAddResult.Success)
         {
-            ownedItem = new InventoryItem(itemData) { isRotated = isRotated };
-            InventoryAddResultData addResult = inventory.TryAddItemAt(ownedItem, targetX, targetY);
-            if (addResult.Result != InventoryAddResult.Success)
-            {
-                requester.ServerAddGold(price);
-                return MirrorTestShopRequestResult.StateApplyFailed;
-            }
+            requester.ServerAddGold(price);
+            return MirrorTestShopRequestResult.StateApplyFailed;
         }
 
         if (!requester.InventorySync.ServerCommitShopItemAdded(ownedItem, requestedInventoryRevision))
         {
             requester.ServerAddGold(price);
-            if (!alreadyAppliedByHost)
-                inventory.TryRemoveInventoryItem(ownedItem);
+            inventory.TryRemoveInventoryItem(ownedItem);
             return MirrorTestShopRequestResult.StateApplyFailed;
         }
 
@@ -329,14 +303,22 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
             return MirrorTestShopRequestResult.ShopFull;
 
         InventoryItem ownedItem = FindOwnedItem(requester.Context, instanceId, out EquipSlotType equippedSlot);
-        bool alreadyAppliedByHost = ownedItem == null;
-        requester.ServerSetGold(requester.Gold);
+        if (ownedItem == null)
+            return MirrorTestShopRequestResult.ItemUnavailable;
 
-        if (!alreadyAppliedByHost && !TryRemoveOwnedItem(requester.Context, ownedItem, equippedSlot))
+        InventoryPlacementSnapshot beforeSale = InventoryPlacementSnapshot.Capture(requester.Context.Inventory.PlayerGrid, ownedItem);
+        if (!TryRemoveOwnedItem(requester.Context, ownedItem, equippedSlot))
             return MirrorTestShopRequestResult.StateApplyFailed;
 
         if (!requester.InventorySync.ServerCommitShopItemRemoved(instanceId, requestedInventoryRevision))
+        {
+            bool restored = equippedSlot != EquipSlotType.None
+                ? new EquipmentTransaction(requester.Context.Equipment).TryRestoreEquippedItem(ownedItem, equippedSlot).IsSuccess
+                : beforeSale.IsValid && requester.Context.Inventory.TryAddItemAt(ownedItem, beforeSale.Rect.X, beforeSale.Rect.Y).Result == InventoryAddResult.Success;
+            if (!restored)
+                Debug.LogError($"[NetworkShopState_MirrorTest] 판매 실패 후 소유권 복구 실패: {instanceId}", this);
             return MirrorTestShopRequestResult.StateApplyFailed;
+        }
 
         int sellPrice = Mathf.Max(0, itemData.definition.sellPrice);
         MirrorTestShopItemSnapshot soldStock = new()
@@ -474,15 +456,14 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         ShopStockInitializer initializer = FindInOwningScene<ShopStockInitializer>();
         ShopController controller = FindInOwningScene<ShopController>();
 
-        if (initializer == null || controller?.ShopGrid == null ||
-            ItemDatabaseField == null || InitialStockCountField == null || RarityChancesField == null)
+        if (initializer == null || controller?.ShopGrid == null)
         {
             return false;
         }
 
-        itemDatabase = ItemDatabaseField.GetValue(initializer) as ItemDatabaseSO;
-        stockCount = InitialStockCountField.GetValue(initializer) is int count ? count : 0;
-        rarityChances = RarityChancesField.GetValue(initializer) as ShopRarityChance[];
+        itemDatabase = initializer.ItemDatabase;
+        stockCount = initializer.InitialStockCount;
+        rarityChances = initializer.RarityChances;
         gridWidth = controller.ShopGrid.GridWidth;
         gridHeight = controller.ShopGrid.GridHeight;
         return itemDatabase != null && stockCount > 0 && rarityChances is { Length: > 0 } &&
@@ -776,8 +757,7 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
     {
         if (localContext?.Inventory?.PlayerGrid == null ||
             localShopController?.ShopGrid == null ||
-            localItemSpawner == null ||
-            StockServiceField == null)
+            localItemSpawner == null)
         {
             return;
         }
@@ -800,8 +780,7 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
             shopGrid.TryRemoveItem(item);
 
         ShopStockService localStock = new();
-        StockServiceField.SetValue(localShopController, localStock);
-        if (!localShopController.BindPlayer(localContext.Inventory))
+        if (!localShopController.BindStock(localContext.Inventory, localStock))
         {
             Debug.LogError("[NetworkShopState_MirrorTest] 로컬 상점에 PlayerContext를 Bind하지 못했습니다.", this);
             return;
@@ -834,9 +813,6 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
             badge?.Apply(stock.source);
         }
 
-        PlayerInventorySync_MirrorTest inventorySync =
-            localContext.GetComponent<PlayerInventorySync_MirrorTest>();
-        inventorySync?.TryRestoreGridFromAuthoritativeSnapshots();
     }
 
     [Server]

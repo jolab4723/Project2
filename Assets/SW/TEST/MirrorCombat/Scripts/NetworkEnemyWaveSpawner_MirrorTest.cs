@@ -28,6 +28,7 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     [SerializeField] private NetworkEnemyAuthority_MirrorTest meleePrefab;
     [SerializeField] private NetworkEnemyAuthority_MirrorTest rangedPrefab;
     [SerializeField] private NetworkEnemyAuthority_MirrorTest bossPrefab;
+    [SerializeField] private WBH_EnemyDataProvider enemyDataProvider;
     [SerializeField, Min(1)] private int waveCount = 2;
     [SerializeField, Min(1)] private int enemiesPerWave = 5;
     [SerializeField, Min(0f)] private float initialDelay = 1.5f;
@@ -46,6 +47,7 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     private Coroutine waveRoutine;
     private bool waveSpawnFinished;
     private int activeWaveCount;
+    private WBH_EnemyInfo[] activeEnemyInfos;
 
     public int CurrentWave => currentWave;
     public int AliveEnemyCount
@@ -158,6 +160,9 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
             return false;
         }
 
+        if (!TryPrepareEnemyInfos(manager, pendingNode))
+            return false;
+
         sessionPhase = MirrorTestSessionPhase.Playing;
         sessionStateRevision++;
         waveRoutine = StartCoroutine(SpawnWaveAfter(initialDelay));
@@ -177,6 +182,34 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
 
         sessionPhase = MirrorTestSessionPhase.Resetting;
         sessionStateRevision++;
+    }
+
+    [Server]
+    private bool TryPrepareEnemyInfos(MirrorTestNetworkManager manager, StageNodeSaveData pendingNode)
+    {
+        if (enemyDataProvider == null)
+        {
+            Debug.LogError("[NetworkEnemyWaveSpawner_MirrorTest] EnemyDataProvider가 연결되지 않았습니다.", this);
+            return false;
+        }
+
+        // 현재 Mirror 세션은 normal 난이도이며, 재접속 예약을 포함한 출발 인원으로 배율을 고정한다.
+        var context = new WBH_EnemyStatContext(
+            Mathf.Max(1, pendingNode?.floor ?? 1), "normal",
+            Mathf.Max(1, manager?.ServerRoster.Members.Count ?? 1));
+        var prefabs = bossSession ? new[] { bossPrefab } : new[] { meleePrefab, rangedPrefab };
+        activeEnemyInfos = new WBH_EnemyInfo[prefabs.Length];
+        for (int index = 0; index < prefabs.Length; index++)
+        {
+            string enemyId = prefabs[index]?.EnemyInfo?.enemyId;
+            if (!enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out activeEnemyInfos[index]))
+            {
+                Debug.LogError($"[NetworkEnemyWaveSpawner_MirrorTest] 적 데이터 생성 실패: {enemyId}", this);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     [Server]
@@ -202,6 +235,7 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
 
             Vector3 position = ResolveSpawnPosition(index, spawnCount);
             NetworkEnemyAuthority_MirrorTest enemy = Instantiate(prefab, position, Quaternion.identity);
+            enemy.ServerSetEnemyInfo(activeEnemyInfos[index % activeEnemyInfos.Length]);
             NetworkServer.Spawn(enemy.gameObject);
             aliveEnemies.Add(enemy);
             totalSpawnCount++;

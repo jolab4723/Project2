@@ -1226,7 +1226,8 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
-  emptySessionResetDelay: 15
+  gunnerPlayerPrefab: {fileID: 0}
+  enableDevelopmentCommands: 0
 --- !u!114 &52302485
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2230,7 +2231,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeController
   playerWallet: {fileID: 1912764913}
-  upgradeCostMultiplier: 1.15
   equipmentSystem: {fileID: 1912764907}
   upgradeLevelText: {fileID: 809259916}
   costText: {fileID: 464400638}
@@ -5876,6 +5876,7 @@ MonoBehaviour:
   inventory: {fileID: 592603517}
   shop: {fileID: 477114008}
   upgrade: {fileID: 119146188}
+  quest: {fileID: 0}
 --- !u!224 &453076670
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11285,6 +11286,7 @@ GameObject:
   - component: {fileID: 768561313}
   - component: {fileID: 768561315}
   - component: {fileID: 768561314}
+  - component: {fileID: 768561316}
   m_Layer: 0
   m_Name: Network Enemy Wave Spawner_MirrorTest
   m_TagString: Untagged
@@ -11325,6 +11327,7 @@ MonoBehaviour:
   meleePrefab: {fileID: 7454581624532826259, guid: 730390b0aa4bb7b4dad4cba02ad43f91, type: 3}
   rangedPrefab: {fileID: 420549163450281, guid: 68609140f998f7b45b55463b07174c75, type: 3}
   bossPrefab: {fileID: 0}
+  enemyDataProvider: {fileID: 768561316}
   waveCount: 100
   enemiesPerWave: 8
   initialDelay: 15
@@ -11348,6 +11351,21 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
+--- !u!114 &768561316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768561312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df3913d1ea7406d45991b4fa7c6430a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyDataProvider
+  infoSource: 0
+  enemyDatabase: {fileID: 11400000, guid: 39272725bb15a434b99ddd55f9fdabed, type: 2}
+  testInfos: []
 --- !u!1 &770955482
 GameObject:
   m_ObjectHideFlags: 0
@@ -32266,6 +32284,7 @@ MonoBehaviour:
   itemRarityText: {fileID: 1362917935}
   itemCategoryText: {fileID: 1326620470}
   mainStatText: {fileID: 625488863}
+  subOptionLabel: {fileID: 0}
   subStat1Text: {fileID: 1641612061}
   subStat2Text: {fileID: 1766535509}
   subStat3Text: {fileID: 888526232}
@@ -32273,12 +32292,14 @@ MonoBehaviour:
   elementBonusText: {fileID: 750028232}
   uniqueEffectNameText: {fileID: 520359115}
   uniqueEffectDescriptionText: {fileID: 952057859}
+  itemDescriptionText: {fileID: 0}
   itemPriceText: {fileID: 1738014874}
   itemSizeText: {fileID: 551112533}
   section1: {fileID: 1663990723}
   section2: {fileID: 642357108}
   section3: {fileID: 325701979}
   section4: {fileID: 1383487805}
+  section5: {fileID: 0}
   backgroundRect: {fileID: 1106617264}
   sectionSpacing: 5
   topPadding: 30

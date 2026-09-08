@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Core;
 using Mirror;
 using UnityEngine;
@@ -56,14 +55,11 @@ public readonly struct MirrorTestShopRequestCompleted
 }
 
 /// <summary>
-/// 플레이어마다 다른 상점 골드·패시브 값과 상점 요청 권한을 소유하는 Mirror 테스트 컴포넌트다.
-/// <para>팀 원본과의 차이: 전역 <see cref="PassiveSkillManager"/>를 서버의 파티 상태로 사용하지 않는다.
-/// 각 로컬 프로필에서 상점 강화 값만 읽어 자신의 네트워크 플레이어로 전달하고, 서버 상점은
-/// 연결된 플레이어 값 중 가장 높은 효과만 선택한다.</para>
+/// 플레이어의 서버 확정 골드·상점 혜택과 연결별 거래 요청 권한을 소유한다.
+/// <para>새 런은 상점 혜택과 패시브를 0으로 시작하며 클라이언트의 싱글 프로필을 가져오지 않는다.
+/// 재접속은 기존 지갑과 상태를 유지하고 중복 요청 기록만 새 소유 연결에 맞춰 초기화한다.</para>
 /// <para>골드는 Owner에게만 복제하고 실제 <see cref="PlayerWallet"/>에 반영한다. 구매·판매·리롤
 /// Command도 이 권한 있는 플레이어 객체에서 시작해 임의의 다른 플레이어 지갑을 바꾸지 못하게 한다.</para>
-/// <para>이 테스트 값 전달은 실제 계정 서버 검증을 대신하지 않는다. 정식 서버에서는 인증된 프로필을
-/// 서버가 불러온 뒤 같은 필드에 넣어야 한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-1000)]
@@ -71,23 +67,7 @@ public readonly struct MirrorTestShopRequestCompleted
 public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 {
     private const int ProcessedRequestHistorySize = 128;
-    private const int MaxPassiveStatJsonLength = 4096;
-    private const float MaxPassiveStatValue = 10000f;
-
-    private static readonly FieldInfo[] StatSetFields =
-        typeof(StatSet).GetFields(BindingFlags.Instance | BindingFlags.Public);
-
-    private static readonly FieldInfo PassiveDatabaseField =
-        typeof(PassiveSkillManager).GetField(
-            "database",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
     [SerializeField] private PlayerContext context;
-    [SerializeField] private PassiveSkillDatabaseSO passiveSkillDatabase;
-    [SerializeField, Min(0)] private int startingTestGold = 10000;
-    [SerializeField, Min(0)] private int fallbackShopEnhanceLevel;
-    [SerializeField, Min(0)] private int fallbackExtraRerollCount;
-    [SerializeField, Range(0f, 0.95f)] private float fallbackDiscountPercent;
 
     [SyncVar(hook = nameof(HandleGoldChanged))]
     private int syncedGold;
@@ -107,7 +87,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     private readonly Queue<uint> processedRequestOrder = new();
 
     private PlayerInventorySync_MirrorTest inventorySync;
-    private PassiveSkillManager passiveSkillManager;
     private StatSet serverPassiveStats;
     private uint nextRequestId;
 
@@ -125,7 +104,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 
     private void Awake()
     {
-        ApplyPassiveSkillDatabase();
         syncMode = SyncMode.Owner;
         context ??= GetComponent<PlayerContext>();
         inventorySync = GetComponent<PlayerInventorySync_MirrorTest>();
@@ -139,16 +117,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     }
 #endif
 
-    private void ApplyPassiveSkillDatabase()
-    {
-        if (passiveSkillDatabase == null || PassiveDatabaseField == null)
-            return;
-
-        PassiveSkillManager manager = PassiveSkillManager.Instance;
-        if (manager != null && PassiveDatabaseField.GetValue(manager) == null)
-            PassiveDatabaseField.SetValue(manager, passiveSkillDatabase);
-    }
-
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -161,14 +129,13 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             return;
         }
 
-        if (context.Wallet.Gold <= 0 && startingTestGold > 0)
-            context.Wallet.SetGold(startingTestGold);
-
+        context.Wallet.SetGold(0);
         syncedGold = context.Wallet.Gold;
-        shopEnhanceLevel = fallbackShopEnhanceLevel;
-        extraRerollCount = fallbackExtraRerollCount;
-        discountPercent = fallbackDiscountPercent;
+        shopEnhanceLevel = 0;
+        extraRerollCount = 0;
+        discountPercent = 0;
         serverPassiveStats = StatSet.Zero;
+        ServerPassiveStatsChanged?.Invoke();
         ResolveShopState()?.ServerRefreshPartyBenefits();
     }
 
@@ -182,22 +149,13 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     {
         base.OnStartLocalPlayer();
 
-        passiveSkillManager = PassiveSkillManager.Instance;
-        if (passiveSkillManager != null)
-        {
-            passiveSkillManager.OnProfileChanged -= SendCurrentPassiveState;
-            passiveSkillManager.OnProfileChanged += SendCurrentPassiveState;
-        }
-
-        SendCurrentPassiveState();
+        nextRequestId = 0;
+        pendingRequestIds.Clear();
+        waitingForState.Clear();
     }
 
     public override void OnStopLocalPlayer()
     {
-        if (passiveSkillManager != null)
-            passiveSkillManager.OnProfileChanged -= SendCurrentPassiveState;
-
-        passiveSkillManager = null;
         pendingRequestIds.Clear();
         waitingForState.Clear();
         base.OnStopLocalPlayer();
@@ -210,6 +168,14 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         processedRequestOrder.Clear();
         base.OnStopServer();
         shop?.ServerRefreshPartyBenefits();
+    }
+
+    /// <summary>새 소유 연결의 요청 번호를 허용한다. 골드와 상점·패시브 상태는 변경하지 않는다.</summary>
+    [Server]
+    public void ServerResetOwnerRequests()
+    {
+        processedRequestIds.Clear();
+        processedRequestOrder.Clear();
     }
 
     private void LateUpdate()
@@ -315,20 +281,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             return false;
 
         CmdReroll(requestId, shop.StateRevision);
-        return true;
-    }
-
-    public bool RequestToggleTestShopPassive()
-    {
-        if (!isLocalPlayer || !NetworkClient.active || !NetworkClient.ready)
-            return false;
-
-        bool enable = shopEnhanceLevel <= 0;
-        CmdSetShopPassiveState(
-            enable ? 1 : 0,
-            enable ? 1 : 0,
-            enable ? 0.1f : 0f,
-            GetLocalPassiveStatJson());
         return true;
     }
 
@@ -445,32 +397,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             requestedShopRevision);
     }
 
-    [Command]
-    private void CmdSetShopPassiveState(
-        int level,
-        int extraRerolls,
-        float discount,
-        string passiveStatsJson)
-    {
-        shopEnhanceLevel = Mathf.Clamp(level, 0, 20);
-        extraRerollCount = Mathf.Clamp(extraRerolls, 0, 20);
-        discountPercent = Mathf.Clamp(discount, 0f, 0.95f);
-
-        if (TryReadPassiveStats(passiveStatsJson, out StatSet receivedStats))
-        {
-            serverPassiveStats = receivedStats;
-            ServerPassiveStatsChanged?.Invoke();
-        }
-        else
-        {
-            Debug.LogWarning(
-                "[NetworkShopPlayerState_MirrorTest] 유효하지 않은 패시브 StatSet 보고를 무시했습니다.",
-                this);
-        }
-
-        ResolveShopState()?.ServerRefreshPartyBenefits();
-    }
-
     [Server]
     private void CompleteServerRequest(
         uint requestId,
@@ -544,7 +470,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     [Server]
     private bool TryAcceptServerRequest(uint requestId)
     {
-        if (requestId == 0 || !processedRequestIds.Add(requestId))
+        if (GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+            requestId == 0 || !processedRequestIds.Add(requestId))
             return false;
 
         processedRequestOrder.Enqueue(requestId);
@@ -557,67 +484,9 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     private void CompleteLocalRequest(MirrorTestShopRequestCompleted completed)
     {
         pendingRequestIds.Remove(completed.RequestId);
+        if (completed.Result != MirrorTestShopRequestResult.Success)
+            Debug.LogWarning($"[NetworkShopPlayerState_MirrorTest] {completed.Operation}: {completed.Result}", this);
         RequestCompleted?.Invoke(completed);
-    }
-
-    private void SendCurrentPassiveState()
-    {
-        if (!isLocalPlayer || !NetworkClient.active || !NetworkClient.ready)
-            return;
-
-        int level = fallbackShopEnhanceLevel;
-        int rerolls = fallbackExtraRerollCount;
-        float discount = fallbackDiscountPercent;
-
-        if (passiveSkillManager != null)
-        {
-            level = passiveSkillManager.GetCurrentLevel(PassiveSkillId.ShopEnhance);
-            rerolls = passiveSkillManager.ShopExtraRerollCount;
-            discount = passiveSkillManager.ShopDiscountPercent;
-        }
-
-        CmdSetShopPassiveState(level, rerolls, discount, GetLocalPassiveStatJson());
-    }
-
-    private string GetLocalPassiveStatJson()
-    {
-        StatSet passiveStats = passiveSkillManager != null
-            ? passiveSkillManager.GetStatSet()
-            : StatSet.Zero;
-
-        return JsonUtility.ToJson(passiveStats);
-    }
-
-    private static bool TryReadPassiveStats(string json, out StatSet stats)
-    {
-        stats = StatSet.Zero;
-        if (string.IsNullOrWhiteSpace(json) || json.Length > MaxPassiveStatJsonLength)
-            return false;
-
-        object boxed;
-        try
-        {
-            boxed = JsonUtility.FromJson<StatSet>(json);
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-
-        foreach (FieldInfo field in StatSetFields)
-        {
-            if (field.FieldType != typeof(float))
-                return false;
-
-            float value = (float)field.GetValue(boxed);
-            if (float.IsNaN(value) || float.IsInfinity(value))
-                return false;
-
-            field.SetValue(boxed, Mathf.Clamp(value, 0f, MaxPassiveStatValue));
-        }
-
-        stats = (StatSet)boxed;
-        return true;
     }
 
     private void HandleGoldChanged(int oldGold, int newGold)
@@ -633,7 +502,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         context.Wallet.SetGold(Mathf.Max(0, amount));
     }
 
-    private NetworkShopState_MirrorTest ResolveShopState()
+    /// <summary>요청 UI도 동일한 연결 상태의 공유 상점을 사용한다.</summary>
+    public NetworkShopState_MirrorTest ResolveShopState()
     {
         return FindFirstObjectByType<NetworkShopState_MirrorTest>();
     }

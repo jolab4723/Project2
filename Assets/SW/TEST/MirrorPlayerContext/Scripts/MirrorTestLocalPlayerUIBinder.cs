@@ -14,10 +14,6 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 {
-    private static readonly FieldInfo ShopControllerField =
-        typeof(InventoryView).GetField(
-            "shopController",
-            BindingFlags.Instance | BindingFlags.NonPublic);
     private static readonly FieldInfo NpcClickedEventField =
         typeof(YJ_ClickNPC).GetField(
             "onClicked",
@@ -130,23 +126,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (context == null)
             return;
 
-        // 비활성 상점 패널은 아직 Awake 전이라 원본의 로컬 Shop Bind가 실패한다.
-        // 공유 상점은 NetworkShopState가 별도로 연결하므로 이 Bind 한 번만 건너뛴다.
-        ShopController shopController =
-            ShopControllerField?.GetValue(inventoryView) as ShopController;
-        ShopControllerField?.SetValue(inventoryView, null);
-
-        bool inventoryBound;
-        try
-        {
-            inventoryBound = inventoryView.Bind(context);
-        }
-        finally
-        {
-            ShopControllerField?.SetValue(inventoryView, shopController);
-        }
-
-        if (!inventoryBound)
+        if (!inventoryView.Bind(context))
         {
             Debug.LogError(
                 "[MirrorTestLocalPlayerUIBinder] 로컬 PlayerContext UI Bind에 실패했습니다.",

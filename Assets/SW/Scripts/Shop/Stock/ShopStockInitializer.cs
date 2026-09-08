@@ -17,6 +17,10 @@ public sealed class ShopStockInitializer : MonoBehaviour
     private ShopStockRollService rollService;
     private bool initialized;
 
+    internal ItemDatabaseSO ItemDatabase => itemDatabase;
+    internal int InitialStockCount => initialStockCount;
+    internal ShopRarityChance[] RarityChances => rarityChances;
+
     private void Awake()
     {
         if (shopController == null)

@@ -70,7 +70,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private double impactAt;
     private double expectedClientImpactAt;
     private double impactConfirmationExpiresAt;
-    private double nextAttackAt;
+    [SyncVar] private double nextAttackAt;
     private double localImpactAt;
     private double localImpactConfirmationExpiresAt;
     private double localNextAttackAt;
@@ -86,6 +86,45 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     public float LastRequestBackdateSeconds => lastRequestBackdateSeconds;
     public float LastCooldownRemainingSeconds => lastCooldownRemainingSeconds;
     public bool LastRejectedWhileImpactPending => lastRejectedWhileImpactPending;
+    private bool IsUnavailable => GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+        context?.RuntimeState?.IsDead == true || status == null || status.IsDead;
+
+    /// <summary>새 소유 연결의 예측 요청을 초기화하고 서버 쿨다운을 유지한다.</summary>
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        ClearLocalAttackPrediction();
+    }
+
+    /// <summary>소유 연결 종료 시 남은 로컬 공격 예약을 제거한다.</summary>
+    public override void OnStopLocalPlayer()
+    {
+        ClearLocalAttackPrediction();
+        base.OnStopLocalPlayer();
+    }
+
+    private void ClearLocalAttackPrediction()
+    {
+        nextLocalRequestId = 0;
+        activeLocalRequestId = 0;
+        localImpactAt = 0d;
+        localImpactConfirmationExpiresAt = 0d;
+        localNextAttackAt = nextAttackAt;
+    }
+
+    /// <summary>연결 종료로 미완료 공격을 취소한다. 이미 확정한 타격의 쿨다운은 유지한다.</summary>
+    [Server]
+    public void ServerCancelForDisconnect()
+    {
+        if (attackPending)
+        {
+            if (!attackImpactConfirmed) ExpireUnconfirmedAttack();
+            else ClearServerAttackReservation();
+        }
+        // 새 소유 연결은 요청 번호를 1부터 발급한다. 서버 쿨다운은 연결을 넘어 유지한다.
+        lastServerRequestId = 0;
+        resolvedTargets.Clear();
+    }
 
     private void Awake()
     {
@@ -105,6 +144,12 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
     private void Update()
     {
+        if (IsUnavailable)
+        {
+            if (isServer) ServerCancelForDisconnect();
+            if (isLocalPlayer) ClearLocalAttackPrediction();
+            return;
+        }
         // 공격 클립이 재생되지 않아 AnimationEvent도 오지 않은 요청은 로컬에서 영구히 붙잡지 않는다.
         // 이 정리는 서버 판정 권한과 무관하며, 다음 정상 공격의 요청 번호를 덮어쓰지 않게 하는 안전장치다.
         if (isLocalPlayer &&
@@ -145,7 +190,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         if (!isLocalPlayer ||
             !NetworkClient.active ||
             !NetworkClient.ready ||
-            context?.RuntimeState?.IsDead == true ||
+            IsUnavailable || context?.RuntimeState?.HasSnapshot != true ||
             status == null ||
             !IsFinite(aimPoint))
         {
@@ -210,7 +255,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     /// </summary>
     public bool TryConfirmLocalAttackImpactFromAnimation()
     {
-        if (!isLocalPlayer ||
+        if (IsUnavailable || !isLocalPlayer ||
             !NetworkClient.active ||
             !NetworkClient.ready ||
             activeLocalRequestId == 0)
@@ -236,7 +281,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdRequestAttack(uint requestId, Vector3 aimPoint, double clientAttackStartedAt)
     {
-        if (context?.RuntimeState?.IsDead == true || status == null || status.IsDead)
+        if (IsUnavailable)
         {
             Reject(MirrorCombatRequestResult.Dead);
             return;
@@ -311,7 +356,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         uint requestId,
         double clientAnimationImpactAt)
     {
-        if (!attackPending ||
+        if (IsUnavailable || !attackPending ||
             attackImpactConfirmed ||
             requestId == 0 ||
             requestId != pendingServerRequestId)
@@ -344,7 +389,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdCancelAttackForMove(uint requestId, double clientCanceledAt)
     {
-        if (!attackPending || requestId == 0 || requestId != pendingServerRequestId)
+        if (IsUnavailable || !attackPending || requestId == 0 || requestId != pendingServerRequestId)
             return;
 
         if (!TryResolveAuthoritativeClientTime(
@@ -409,7 +454,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private void ResolveServerAttack()
     {
-        if (context?.RuntimeState?.IsDead == true || status == null || status.IsDead)
+        if (IsUnavailable)
         {
             lastResult = MirrorCombatRequestResult.Dead;
             return;
