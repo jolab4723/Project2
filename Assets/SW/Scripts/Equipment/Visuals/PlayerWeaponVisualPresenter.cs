@@ -32,6 +32,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     [SerializeField, Min(0f)] private float leftHandIkBlendSpeed = 12f;
 
     private string currentItemId;
+    public string CurrentVisualItemId => currentItemId;
     private string pendingItemId;
     private string pooledItemId;
     private GameObject currentVisual;

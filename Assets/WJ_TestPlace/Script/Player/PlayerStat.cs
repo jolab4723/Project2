@@ -42,6 +42,15 @@ public class PlayerStat
     /// <summary>스탯이 갱신될 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event Action OnStatChanged;
 
+    /// <summary>
+    /// 외부 상태 소유자가 최종 수치를 일괄 반영한 뒤 변경을 한 번 알린다.
+    /// 수치를 다시 계산하거나 경험치·패시브를 변경하지 않는다.
+    /// </summary>
+    public void NotifyValuesChanged()
+    {
+        OnStatChanged?.Invoke();
+    }
+
     public PlayerStat(int startLevel = 1, float startExp = 0f)
     {
         currentLevel = startLevel;

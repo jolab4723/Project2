@@ -140,16 +140,22 @@ public static class InventorySwapPlanner
         }
     }
 
+    /// <summary>
+    /// 점유를 바꾸지 않고 교환 위치를 계산한다. 별도 표시용 아이템을 쓸 때는
+    /// occupiedMovingItem으로 Grid에 남은 원본을 전달하며 그 계획은 표시용으로만 사용한다.
+    /// </summary>
     public static InventorySwapPlan BuildPlan(
         InventoryGrid grid,
         InventoryItem movingItem,
         InventoryPlacementSnapshot movingOriginal,
-        InventoryItem otherItem)
+        InventoryItem otherItem,
+        InventoryItem occupiedMovingItem = null)
     {
         if (grid == null ||
             movingItem == null ||
             otherItem == null ||
             movingItem == otherItem ||
+            occupiedMovingItem == otherItem ||
             !movingOriginal.IsValid)
         {
             return InventorySwapPlan.Invalid();
@@ -193,7 +199,7 @@ public static class InventorySwapPlanner
                 grid,
                 idealMoving,
                 idealOther,
-                movingItem,
+                occupiedMovingItem ?? movingItem,
                 otherItem))
         {
             return InventorySwapPlan.Valid(
@@ -229,7 +235,7 @@ public static class InventorySwapPlanner
                         grid,
                         movingTo,
                         otherTo,
-                        movingItem,
+                        occupiedMovingItem ?? movingItem,
                         otherItem))
                 {
                     continue;

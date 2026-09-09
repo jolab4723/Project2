@@ -107,6 +107,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
             case PlayerState.Dodge:
                 animator.SetTrigger("Dodge");
+                effect?.PlaySfx(WBH_PlayerEffectCue.Dodge);
                 break;
 
             case PlayerState.Hit:

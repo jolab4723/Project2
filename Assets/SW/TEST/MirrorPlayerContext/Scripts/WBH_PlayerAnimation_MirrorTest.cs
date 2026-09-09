@@ -27,6 +27,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     [SerializeField] private WBH_EffectData Eff_fighterAtk;
     [SerializeField] private WBH_EffectData Eff_gunnerShotgunAtk;
     [SerializeField] private AnimationClip fighterDash;
+    [SerializeField] private AnimationClip gunnerBackstepMove;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
     private Animator animator;
@@ -39,11 +40,14 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     private NavMeshAgent agent;
     private WBH_PlayerStatus status;
     private bool localEventsBound;
+    private bool statEventsBound;
 
     private readonly int skillHash = Animator.StringToHash("Skill");
     private readonly int skillIdHash = Animator.StringToHash("SkillID");
     private readonly int isChargingHash = Animator.StringToHash("IsCharging");
     private readonly int skillSpeedHash = Animator.StringToHash("SkillSpeed");
+    private readonly int evolutionHash = Animator.StringToHash("EvoNumber");
+    private readonly int backstepSpeedHash = Animator.StringToHash("BackstepMoveSpeed");
 
     private void Awake()
     {
@@ -66,6 +70,21 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         UpdateMoveAnimation();
     }
 
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        // 전용 서버도 원본 클립의 모든 타격 시점을 실행한다.
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        BindStatEvents();
+        SetAttackAnimationSpeed();
+    }
+
+    public override void OnStopServer()
+    {
+        if (!isLocalPlayer) UnbindStatEvents();
+        base.OnStopServer();
+    }
+
     public override void OnStopLocalPlayer()
     {
         UnbindLocalEvents();
@@ -75,6 +94,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     private void OnDisable()
     {
         UnbindLocalEvents();
+        UnbindStatEvents();
     }
 
     private void Update()
@@ -91,7 +111,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
             return;
 
         stateMachine.OnEnterState += HandleEnterState;
-        status.OnAtkSpeedChanged += HandleAttackSpeedChanged;
+        BindStatEvents();
         localEventsBound = true;
     }
 
@@ -101,8 +121,22 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
             return;
 
         stateMachine.OnEnterState -= HandleEnterState;
-        status.OnAtkSpeedChanged -= HandleAttackSpeedChanged;
+        if (!isServer) UnbindStatEvents();
         localEventsBound = false;
+    }
+
+    private void BindStatEvents()
+    {
+        if (statEventsBound || status == null) return;
+        status.OnAtkSpeedChanged += HandleAttackSpeedChanged;
+        statEventsBound = true;
+    }
+
+    private void UnbindStatEvents()
+    {
+        if (!statEventsBound) return;
+        if (status != null) status.OnAtkSpeedChanged -= HandleAttackSpeedChanged;
+        statEventsBound = false;
     }
 
     private void HandleEnterState(PlayerState state)
@@ -158,6 +192,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
+        ResolveSceneEffectSpawner();
         float skillSpeed = 1f;
         const int DashSkillId = 3;
 
@@ -174,6 +209,31 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     public void SetChargingAnimation(bool isCharging)
     {
         animator.SetBool(isChargingHash, isCharging);
+    }
+
+    /// <summary>서버가 확정한 거너 스킬과 진화에 맞춰 기존 모션을 재생한다.</summary>
+    public void PlayGunnerSkillAnimation(int skillId, int evolution, float duration)
+    {
+        ResolveSceneEffectSpawner();
+        playerEffect?.CancelPendingSfx();
+        animator.SetFloat(skillSpeedHash, 1f);
+        animator.SetFloat(backstepSpeedHash, gunnerBackstepMove != null && duration > 0f
+            ? gunnerBackstepMove.length / duration : 1f);
+        animator.SetInteger(skillIdHash, skillId);
+        animator.SetInteger(evolutionHash, evolution);
+        animator.ResetTrigger(skillHash);
+        animator.SetTrigger(skillHash);
+    }
+
+    /// <summary>취소된 스킬의 남은 이벤트와 표현을 정리한다. 사망·피격 모션은 유지한다.</summary>
+    public void CancelSkillAnimation()
+    {
+        playerEffect?.CancelPendingSfx();
+        playerEffect?.StopFighterChargeEffect();
+        animator.ResetTrigger(skillHash);
+        animator.SetBool(isChargingHash, false);
+        if (stateMachine == null || !stateMachine.IsAnyState(PlayerState.Dead, PlayerState.Hit, PlayerState.Revive))
+            animator.Play("Base Layer.Locomotion", 0, 0f);
     }
 
     public void AniEvent_ExecuteAttack()
@@ -194,15 +254,21 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
             stateMachine.ChangeState(PlayerState.Idle);
     }
 
-    public void AniEvent_ExecuteSkill()
+    public void AniEvent_ExecuteSkill(AnimationEvent animationEvent)
     {
-        if (isLocalPlayer)
-            skillAuthority?.TryConfirmLocalSkillImpactFromAnimation();
+        if (isServer)
+            skillAuthority?.ServerExecuteSkillFromAnimation(animationEvent);
+    }
+
+    public void AniEvent_ExecuteBackstepMove(AnimationEvent animationEvent)
+    {
+        if (isServer)
+            skillAuthority?.ServerExecuteBackstepFromAnimation(animationEvent);
     }
 
     public void AniEvent_EndSkill()
     {
-        skillAuthority?.EndPendingSkillAnimation();
+        if (isServer) skillAuthority?.EndPendingSkillAnimation();
     }
 
     public void AniEvent_EndDead()
@@ -223,6 +289,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_PlayEffect(int cueValue)
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         WBH_PlayerEffectCue cue = (WBH_PlayerEffectCue)cueValue;
 
         // 최신 원본 Fighter의 기본 공격 클립은 1000 cue를 보내지만 현재 원본 프리팹에는
@@ -240,11 +307,27 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_PlaySkillEffect(int partValue)
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         skillAuthority?.PlayPendingSkillEffect(partValue);
+    }
+
+    public void AniEvent_PlaySkillSfx(AnimationEvent animationEvent)
+    {
+        if (!isClient || playerEffect == null || skillAuthority == null) return;
+        int index = animator.GetInteger(skillIdHash) - 1;
+        if (index < 0 || index >= skillAuthority.SkillCount) return;
+        var evolution = skillAuthority.GetEvolution(index);
+        var part = (SkillEffectPart)animationEvent.intParameter;
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), part)) return;
+        var cue = GetComponent<PlayerContext>()?.Equipment?.CurrentCharacterClass == ItemSystem.CharacterClass.Gunner
+            ? PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evolution, part)
+            : PlayerEffectCueUtility.CreateFighterSkillCue(index + 1, evolution, part);
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
     }
 
     public void AniEvent_PlayFighterChargeEffect()
     {
+        if (ResolveSceneEffectSpawner() == null) return;
         playerEffect?.PlayFighterChargeEffect();
     }
 
@@ -262,6 +345,8 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_GunnerAttackEvent()
     {
+        // Mirror의 총구/샷건 VFX는 승인된 발사 Rpc가 한 번만 재생한다.
+        if (combatAuthority != null) return;
         WBH_EffectSpawner spawner = ResolveSceneEffectSpawner();
         if (combat.currentWeapon == GunnerWeaponType.Shotgun &&
             spawner != null &&
@@ -323,6 +408,9 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         effectSpawner = poolManager != null
             ? poolManager.GetComponent<WBH_EffectSpawner>()
             : null;
+        // 씬마다 새 스포너를 원본의 공개 초기화 경계로 연결한다.
+        // 스킬을 기본 공격보다 먼저 사용해도 같은 경로를 통과한다.
+        if (effectSpawner != null) playerEffect?.Initialize(effectSpawner);
         return effectSpawner;
     }
 }

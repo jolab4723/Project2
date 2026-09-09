@@ -42,7 +42,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public static uint LocalDeathPresentationCount { get; private set; }
 
     [Header("일반 적 데이터")]
-    [SerializeField] private WBH_EnemyInfo enemyInfo;
+    [SerializeField, SyncVar] private WBH_EnemyInfo enemyInfo;
     [SerializeField, Min(0.01f)] private float attackImpactDelay = 0.45f;
     [SerializeField, Min(0.05f)] private float destroyDelay = 0.35f;
     [SerializeField] private bool useAnimatorOnlyDeathPresentation;
@@ -109,7 +109,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
     private bool ResolveSharedSpawners()
     {
-        sharedEffectSpawner ??=FindFirstObjectByType<WBH_EffectSpawner>(FindObjectsInactive.Exclude);
+        // 적 프리팹의 미연결 Spawner 대신 씬의 공용 Pool과 같은 객체에 있는 Spawner를 사용한다.
+        sharedEffectSpawner ??= FindFirstObjectByType<WBH_EffectPoolManager>(FindObjectsInactive.Exclude)
+            ?.GetComponent<WBH_EffectSpawner>();
 
         sharedProjectileSpawner ??=FindFirstObjectByType<WBH_ProjectileSpawner>(FindObjectsInactive.Exclude);
 
@@ -160,6 +162,18 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public uint BossJumpCount => bossJumpCount;
     public bool IsAttackPending => attackPending;
 
+    [Server]
+    public void ServerSetEnemyInfo(WBH_EnemyInfo info)
+    {
+        if (netId != 0)
+        {
+            Debug.LogError("[NetworkEnemyAuthority_MirrorTest] 적 데이터는 NetworkServer.Spawn 전에 설정해야 합니다.", this);
+            return;
+        }
+
+        enemyInfo = info?.Clone();
+    }
+
     private void Awake()
     {
         ResolveReferences();
@@ -188,10 +202,20 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             return;
         }
 
-        bool effectReady = ResolveSharedSpawners(); // @!@
+        // 원격 표시용 프리팹에서 꺼진 Agent도 서버의 이동 초기화 전에는 준비되어야 한다.
+        if (agent != null)
+        {
+            agent.enabled = true;
+            if (!agent.isOnNavMesh &&
+                NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, agent.areaMask))
+                agent.Warp(hit.position);
+        }
+
+        ResolveSharedSpawners();
         controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner); // @!@
         //InitializeLocalEffectSpawner(); @!@
-        originalStatusEffectsReady = localEffectSpawnerInitialized;
+        // Gameplay effects do not require a visual spawner on the server.
+        originalStatusEffectsReady = GetComponent<WBH_EnemyStatusEffectController>() != null;
 
         status.OnHpChanged += HandleHealthChanged;
         status.OnDamaged += HandleDamaged;
@@ -202,12 +226,6 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         isDead = false;
         deathHandled = false;
         stateChangeNumber++;
-
-        if (agent != null && agent.enabled && !agent.isOnNavMesh &&
-            NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, agent.areaMask))
-        {
-            agent.Warp(hit.position);
-        }
 
         networkPattern.InitializeServer(this);
     }
@@ -490,8 +508,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     }
 
     /// <summary>
-    /// 원본 상태 효과의 게임 규칙은 유지하되, Act1 효과 풀이 준비된 서버에서만 적용한다.
-    /// 테스트 씬의 효과 풀이 없을 때는 피해 판정을 취소하거나 예외를 내지 않고 상태 효과만 건너뛴다.
+    /// 원본 상태 효과를 서버에서 적용한다. 시각 효과 풀이 없어도 게임 규칙과 만료 처리는 유지한다.
     /// </summary>
     [Server]
     public bool ServerTryApplyStatusEffect(WBH_StatusEffectData data)
@@ -603,6 +620,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackerContext = attacker;
             lastAttackerNetId = GetNetId(attacker);
             lastAttackDirection = (transform.position - attacker.transform.position).normalized;
+            // 원본 스킬·일반 공격 모두 실제 피해 수신 뒤 공격자 자신의 장비 효과를 발동한다.
+            attacker.ItemTriggers?.Fire(TriggerCondition.OnDamageDealt);
+            if (result.IsCritical)
+                attacker.ItemTriggers?.Fire(TriggerCondition.OnCrit);
+            attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
         }
         else
         {
@@ -623,6 +645,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         deathHandled = true;
         ServerDeathCount++;
+        if (NetworkManager.singleton is MirrorTestNetworkManager session)
+            session.ServerReportQuestKill(enemyInfo?.enemyId);
         isDead = true;
         if (enemyInfo?.enemyAttackType == EnemyAttackType.Boss)
             bossPhase = MirrorAct1BossPhase.Dead;
@@ -651,6 +675,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         lastAttackerContext.ItemTriggers?.Fire(TriggerCondition.OnKill);
         lastAttackerContext.Stats?.GainExp(enemyInfo.exp);
+        lastAttackerContext.GetComponent<NetworkShopPlayerState_MirrorTest>()?.ServerAddGold(enemyInfo.credit);
         killRewardCount++;
         ServerRewardCount++;
 
@@ -774,6 +799,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     {
         return target != null &&
                target.gameObject.activeInHierarchy &&
+               target.GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent != true &&
                target.RuntimeState?.IsDead != true &&
                target.Health != null &&
                target.Health.CurrentHealth > 0f;
@@ -801,6 +827,10 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         // 네트워크 Authority가 처치 트리거와 드롭을 한 번만 확정하므로,
         // WBH 로컬 사망 이벤트를 구독하는 기존 테스트 어댑터는 함께 실행하지 않는다.
+        EnemyKillReward originalKillReward = GetComponent<EnemyKillReward>();
+        if (originalKillReward != null)
+            originalKillReward.enabled = false;
+
         WBHEnemyItemDropAdapter originalItemDropAdapter =
             GetComponent<WBHEnemyItemDropAdapter>();
         if (originalItemDropAdapter != null)

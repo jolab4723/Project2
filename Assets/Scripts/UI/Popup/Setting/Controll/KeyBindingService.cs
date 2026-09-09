@@ -15,6 +15,7 @@ using UnityEngine.InputSystem;
 public static class KeyBindingService
 {
     private const string KeyBindingsPrefKey = "KeyBindings";
+    private static string storageKey = KeyBindingsPrefKey; // SW 수정
 
     private static GameInputActions inputActions;
 
@@ -35,12 +36,36 @@ public static class KeyBindingService
             {
                 inputActions = new GameInputActions();
 
-                if (PlayerPrefs.HasKey(KeyBindingsPrefKey))
-                    inputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(KeyBindingsPrefKey));
+                LoadBindings();
             }
 
             inputActions.Enable();
             return inputActions;
+        }
+    }
+
+    /// <summary>실행 프로필별로 키 설정을 나눈다. null 또는 빈 이름은 기존 싱글플레이 저장값을 사용한다.</summary>
+    public static void ConfigureProfile(string profileName)
+    {
+        string nextKey = string.IsNullOrEmpty(profileName) ? KeyBindingsPrefKey : KeyBindingsPrefKey + "." + profileName;
+        if (storageKey == nextKey) return;
+        storageKey = nextKey;
+        if (inputActions != null) LoadBindings();
+    }
+
+    /// <summary>같은 입력 인스턴스에 저장값을 다시 적용한다. 손상된 저장값은 기본 키로 동작하며 파일을 덮어쓰지 않는다.</summary>
+    private static void LoadBindings()
+    {
+        inputActions.RemoveAllBindingOverrides();
+        if (!PlayerPrefs.HasKey(storageKey)) return;
+        try
+        {
+            inputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(storageKey));
+        }
+        catch (System.ArgumentException)
+        {
+            inputActions.RemoveAllBindingOverrides();
+            Debug.LogWarning("[KeyBindingService] 저장된 키 설정을 읽지 못해 기본 키를 사용합니다.");
         }
     }
 
@@ -49,7 +74,7 @@ public static class KeyBindingService
     public static void Save()
     {
         string json = InputActions.SaveBindingOverridesAsJson();
-        PlayerPrefs.SetString(KeyBindingsPrefKey, json);
+        PlayerPrefs.SetString(storageKey, json);
         PlayerPrefs.Save();
     }
 }

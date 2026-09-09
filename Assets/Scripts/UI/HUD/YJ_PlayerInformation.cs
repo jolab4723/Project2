@@ -13,6 +13,16 @@ public class YJ_PlayerInformation : MonoBehaviour
 
     private float displayedLevel = float.NaN;
     private float nextPlayerSearchTime;
+    private bool usesExternalPlayer; // SW 수정
+
+    /// <summary>멀티플레이에서 정보를 표시할 로컬 플레이어를 전달받는다.</summary>
+    public void BindPlayer(WBH_PlayerStatus owner)
+    {
+        usesExternalPlayer = true;
+        playerStatus = owner;
+        displayedLevel = float.NaN;
+        RefreshLevel();
+    }
 
     private void Awake()
     {
@@ -38,7 +48,7 @@ public class YJ_PlayerInformation : MonoBehaviour
     {
         nextPlayerSearchTime = Time.unscaledTime + PlayerSearchInterval;
 
-        if (playerStatus == null)
+        if (playerStatus == null && !usesExternalPlayer)
             playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
     }
 

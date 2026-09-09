@@ -14,6 +14,7 @@ public enum MirrorTestInventoryOperation : byte
     MoveGridItem = 4,
     ChangeEquipment = 5,
     UpgradeItem = 6,
+    RemoveInventoryItem = 7,
 }
 
 public enum MirrorTestInventoryRequestResult : byte
@@ -63,7 +64,7 @@ public readonly struct MirrorTestInventoryRequestCompleted
 }
 
 /// <summary>
-/// Mirror PlayerContext C단계의 인벤토리 서버 권한 검증용 컴포넌트다.
+/// 플레이어 인벤토리를 서버 권한으로 유지하고 재접속 시 동일한 소유 상태를 복구한다.
 /// 서버의 <see cref="InventoryController"/>를 원본으로 사용하고 기존 <see cref="ItemSaveData"/>를
 /// JSON 문자열로 바꿔 <see cref="SyncList{T}"/>에 복제한다. 필드 드랍·획득도 서버가 판정한다.
 /// HP, MP, Stat 동기화는 이 테스트 범위에 포함하지 않는다.
@@ -84,8 +85,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 {
     private const int ProcessedRequestHistorySize = 64;
     private const int MaxInstanceIdLength = 128;
-    // 장시간 Act 1 회귀 테스트에서 생존 여유를 확보하도록 현재 ItemDatabase의
-    // 고체력 전설 투구(우주 괴물 두개골, 최대 체력 230)를 최초 테스트 장비로 지급한다.
+    // 서버가 개발 명령을 명시적으로 허용한 경우에만 수동 지급할 검증용 아이템이다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
 
     [SerializeField] private PlayerContext context;
@@ -105,10 +105,11 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private InventoryView localInventoryView;
     private InventoryItemUISpawner localItemSpawner;
 
-    [SyncVar(hook = nameof(HandleStateRevisionChanged))]
+    [SyncVar]
     private uint stateRevision;
 
     private uint nextRequestId;
+    private bool localStateRefreshQueued;
 
     public int SyncedItemCount => itemSnapshots.Count;
     public uint StateRevision => stateRevision;
@@ -166,7 +167,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 
     /// <summary>
     /// 상점 판매를 확정하기 전에 서버가 보관 중인 플레이어 소유 기록을 읽는다.
-    /// 로컬 Host가 먼저 화면 거래를 적용해 실제 Grid에서 아이템이 빠진 경우에도
     /// 클라이언트가 보낸 임의 데이터가 아니라 서버 기록을 판매 원본으로 사용한다.
     /// </summary>
     [Server]
@@ -202,7 +202,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             : null;
 
         if (isLocalPlayer)
-            EnsureLocalEquipmentVisuals();
+            localStateRefreshQueued = true;
     }
 
     public void UnbindLocalInventoryView(InventoryView view)
@@ -237,18 +237,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-
-        MirrorTestInventoryRequestResult result = ServerGrantDistinctTestItem();
-        if (result == MirrorTestInventoryRequestResult.Success)
-        {
-            AdvanceStateRevision();
-        }
-        else
-        {
-            Debug.LogError(
-                $"[PlayerInventorySync_MirrorTest] 서버 시작 아이템 지급 실패: {result}",
-                this);
-        }
+        // 새 런에는 테스트 아이템을 자동 지급하지 않는다. 개발 지급은 명시적 요청 경로에만 둔다.
+        AdvanceStateRevision();
     }
 
     public override void OnStartClient()
@@ -258,8 +248,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (isServer)
             return;
 
-        foreach (string snapshot in itemSnapshots)
-            ApplyAddedSnapshot(snapshot);
+        localStateRefreshQueued = true;
     }
 
     public override void OnStopClient()
@@ -267,6 +256,31 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         pendingRequestIds.Clear();
         waitingForRevision.Clear();
         base.OnStopClient();
+    }
+
+    /// <summary>재접속한 소유자의 요청 번호와 화면 대기 상태를 초기화한다.</summary>
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        nextRequestId = 0;
+        pendingRequestIds.Clear();
+        waitingForRevision.Clear();
+    }
+
+    /// <summary>연결이 끝나면 이전 소유자의 미완료 화면 요청을 제거한다.</summary>
+    public override void OnStopLocalPlayer()
+    {
+        pendingRequestIds.Clear();
+        waitingForRevision.Clear();
+        base.OnStopLocalPlayer();
+    }
+
+    /// <summary>새 소유 연결의 중복 요청 기록만 초기화한다. 아이템과 상태 번호는 유지한다.</summary>
+    [Server]
+    public void ServerResetOwnerRequests()
+    {
+        processedRequestIds.Clear();
+        processedRequestOrder.Clear();
     }
 
     public override void OnStopServer()
@@ -314,6 +328,36 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 
         CmdDropInventoryItem(requestId, requestedRevision, instanceId);
         return true;
+    }
+
+    /// <summary>삭제 영역 입력도 서버 소유 아이템에 대해서만 확정한다.</summary>
+    public bool TryRequestRemoveInventoryItem(string instanceId, out uint requestId)
+    {
+        requestId = 0;
+        if (!IsValidInstanceId(instanceId) ||
+            !TryBeginLocalRequest(out requestId, out uint revision)) return false;
+        CmdRemoveInventoryItem(requestId, revision, instanceId);
+        return true;
+    }
+
+    [Command]
+    private void CmdRemoveInventoryItem(uint requestId, uint revision, string instanceId)
+    {
+        if (TryValidateServerRequest(requestId, revision, out MirrorTestInventoryRequestResult result))
+        {
+            InventoryItem item = IsValidInstanceId(instanceId) ? FindGridItem(instanceId) : null;
+            int index = FindSnapshotIndex(instanceId);
+            if (item == null || index < 0)
+                result = MirrorTestInventoryRequestResult.ItemUnavailable;
+            else if (InventoryRemoveService.TryRemove(context.Inventory, item, context.Inventory.PlayerGrid, false) != InventoryRemoveResult.Success)
+                result = MirrorTestInventoryRequestResult.StateApplyFailed;
+            else
+            {
+                itemSnapshots.RemoveAt(index);
+                result = MirrorTestInventoryRequestResult.Success;
+            }
+        }
+        CompleteServerRequest(requestId, MirrorTestInventoryOperation.RemoveInventoryItem, result, revision);
     }
 
     /// <summary>
@@ -620,6 +664,10 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     [Server]
     private MirrorTestInventoryRequestResult ServerGrantDistinctTestItem()
     {
+        if (NetworkManager.singleton is not MirrorTestNetworkManager manager ||
+            !manager.ServerDevelopmentCommandsEnabled)
+            return MirrorTestInventoryRequestResult.InvalidRequest;
+
         if (context?.Inventory == null)
             return MirrorTestInventoryRequestResult.InventoryUnavailable;
 
@@ -681,7 +729,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             return MirrorTestInventoryRequestResult.InvalidRequest;
         }
 
-        // 호스트는 클라이언트와 서버가 같은 모델을 사용하므로 Command 도착 전에 드래그 결과가 이미 반영되어 있다.
+        // 같은 배치 요청은 모델을 다시 분리하지 않는다.
         if (grid.ContainsItem(item) &&
             item.x == targetX &&
             item.y == targetY &&
@@ -776,7 +824,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             }
         }
 
-        // Host는 UI와 서버가 같은 모델을 사용하므로 Command 도착 전에 최종 장비 상태가 반영될 수 있다.
+        // 이미 동일한 상태인 요청은 장비 효과를 다시 적용하지 않는다.
         if (MatchesRequestedEquipmentState(
                 item,
                 shouldBeEquipped,
@@ -785,7 +833,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 targetY,
                 isRotated))
         {
-            return TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot)
+            return TrySynchronizeOwnedSnapshots()
                 ? MirrorTestInventoryRequestResult.Success
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
@@ -895,11 +943,11 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
 
-        if (TrySynchronizeEquipmentState(shouldBeEquipped, targetSlot))
+        if (TrySynchronizeOwnedSnapshots())
             return MirrorTestInventoryRequestResult.Success;
 
-        bool rebuildHostVisuals = isLocalPlayer && localItemSpawner != null;
-        return TryRestoreOwnedStateFromSnapshots(beforeChange, rebuildHostVisuals)
+        localStateRefreshQueued = isLocalPlayer;
+        return TryRestoreOwnedStateFromSnapshots(beforeChange)
             ? MirrorTestInventoryRequestResult.StateApplyFailed
             : MirrorTestInventoryRequestResult.RecoveryFailed;
     }
@@ -1126,6 +1174,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         added = null;
 
+        if (item?.definition == null)
+            return MirrorTestInventoryRequestResult.ItemUnavailable;
+
         if (context?.Inventory == null)
             return MirrorTestInventoryRequestResult.InventoryUnavailable;
 
@@ -1150,7 +1201,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         try
         {
             itemSnapshots.Add(ToSnapshotJson(added));
-            return MirrorTestInventoryRequestResult.Success;
         }
         catch (Exception exception)
         {
@@ -1172,6 +1222,23 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
+        ReportQuestAcquisition(item);
+        return MirrorTestInventoryRequestResult.Success;
+    }
+
+    /// <summary>퀘스트 보상도 기존 추가·복구·소유 스냅샷 경로로 확정한다.</summary>
+    [Server]
+    internal MirrorTestInventoryRequestResult ServerGrantQuestReward(ItemInstance item)
+    {
+        var result = ServerAddItemAndSnapshot(item, out _);
+        if (result == MirrorTestInventoryRequestResult.Success) AdvanceStateRevision();
+        return result;
+    }
+
+    private void ReportQuestAcquisition(ItemInstance item)
+    {
+        if (NetworkManager.singleton is MirrorTestNetworkManager session)
+            session.ServerReportQuestItem(context, item.definition.itemId);
     }
 
     private bool TryBeginLocalRequest(out uint requestId, out uint requestedRevision)
@@ -1203,7 +1270,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         uint requestedRevision,
         out MirrorTestInventoryRequestResult result)
     {
-        if (requestId == 0)
+        if (GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true || requestId == 0)
         {
             result = MirrorTestInventoryRequestResult.InvalidRequest;
             return false;
@@ -1255,6 +1322,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         stateRevision++;
         if (stateRevision == 0)
             stateRevision = 1;
+        if (isLocalPlayer) localStateRefreshQueued = true;
     }
 
     [TargetRpc]
@@ -1274,13 +1342,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             authoritativeRevision,
             feedbackText);
 
-        if (stateRevision < authoritativeRevision)
-        {
-            waitingForRevision[requestId] = completed;
-            return;
-        }
-
-        CompleteLocalRequest(completed);
+        // SyncList 한 묶음의 적용과 화면 갱신이 끝난 뒤 완료를 알린다.
+        waitingForRevision[requestId] = completed;
     }
 
     private void HandleStateRevisionChanged(uint _, uint newRevision)
@@ -1312,7 +1375,41 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private void CompleteLocalRequest(MirrorTestInventoryRequestCompleted completed)
     {
         pendingRequestIds.Remove(completed.RequestId);
+        if (completed.Result != MirrorTestInventoryRequestResult.Success)
+            Debug.LogWarning($"[PlayerInventorySync_MirrorTest] {completed.Operation}: {completed.FeedbackText ?? completed.Result.ToString()}", this);
         RequestCompleted?.Invoke(completed);
+    }
+
+    private void LateUpdate()
+    {
+        if (!isLocalPlayer) return;
+        if (localStateRefreshQueued)
+        {
+            localStateRefreshQueued = false;
+            if (!isServer && !IsOwnedStateEqualToSnapshots() && !TryRestoreGridFromAuthoritativeSnapshots())
+            {
+                Debug.LogError("[PlayerInventorySync_MirrorTest] 서버 소유 상태 적용에 실패했습니다.", this);
+                return;
+            }
+            localStateRefreshQueued = false;
+            RefreshLocalItemViews();
+        }
+        HandleStateRevisionChanged(stateRevision, stateRevision);
+    }
+
+    private void RefreshLocalItemViews()
+    {
+        if (localInventoryView == null || localItemSpawner == null) return;
+        foreach (EquipSlotUI slot in localInventoryView.EquipmentSlots)
+        {
+            ItemUI view = slot?.EquippedItemUI;
+            if (view == null) continue;
+            slot.ClearItemUI();
+            view.ClearCurrentEquipSlot();
+            Destroy(view.gameObject);
+        }
+        localItemSpawner.RebuildPlayerItems();
+        EnsureLocalEquipmentVisuals();
     }
 
     private void HandleSnapshotChanged(
@@ -1321,102 +1418,22 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         string oldSnapshot,
         string newSnapshot)
     {
-        if (isServer)
-            return;
-
-        switch (operation)
-        {
-            case SyncList<string>.Operation.OP_ADD:
-            case SyncList<string>.Operation.OP_INSERT:
-                ApplyAddedSnapshot(newSnapshot);
-                break;
-
-            case SyncList<string>.Operation.OP_SET:
-                if (DoesOwnedStateMatchSnapshot(newSnapshot))
-                    break;
-
-                ApplyRemovedSnapshot(oldSnapshot);
-                ApplyAddedSnapshot(newSnapshot);
-                break;
-
-            case SyncList<string>.Operation.OP_REMOVEAT:
-                ApplyRemovedSnapshot(oldSnapshot);
-                break;
-        }
-    }
-
-    private void ApplyAddedSnapshot(string snapshotJson)
-    {
-        ItemSaveData saved = FromSnapshotJson(snapshotJson);
-        if (saved == null || FindOwnedItem(saved.instanceId) != null)
-            return;
-
-        ItemInstance item = CreateItemInstance(saved);
-        if (item == null)
-            return;
-
-        InventoryItem inventoryItem = new(item)
-        {
-            isRotated = saved.isRotated,
-        };
-
-        bool restored = saved.isEquipped
-            ? TryRestoreEquippedItem(
-                inventoryItem,
-                saved.equippedSlotType,
-                localItemSpawner != null)
-            : context.Inventory.TryAddItemAt(
-                inventoryItem,
-                saved.gridX,
-                saved.gridY).Result == InventoryAddResult.Success;
-
-        if (!restored)
-        {
-            Debug.LogError(
-                $"[PlayerInventorySync_MirrorTest] 동기화 아이템 상태 적용 실패: {saved.itemId}",
-                this);
-        }
-    }
-
-    private void ApplyRemovedSnapshot(string snapshotJson)
-    {
-        ItemSaveData saved = FromSnapshotJson(snapshotJson);
-        InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
-
-        if (item == null)
-            return;
-
-        InventoryItem gridItem = FindGridItem(saved.instanceId);
-        if (gridItem != null)
-        {
-            context.Inventory.TryRemoveInventoryItem(gridItem);
-            return;
-        }
-
-        if (!TryFindEquippedSlot(saved.instanceId, out EquipSlotType slotType, out InventoryItem equippedItem))
-            return;
-
-        EquipmentTransactionResult result =
-            new EquipmentTransaction(context.Equipment)
-                .TryUnequipForTransfer(slotType, equippedItem);
-
-        if (!result.IsSuccess)
-            return;
-
-        ClearLocalEquipmentVisual(slotType, equippedItem);
+        // 교환 중간의 OP_SET 하나만 적용하면 아직 이동하지 않은 상대 아이템과 충돌한다.
+        // 한 프레임의 소유 스냅샷을 모두 받은 후 묶어서 반영한다.
+        if (!isServer) localStateRefreshQueued = true;
     }
 
     /// <summary>
-    /// 로컬에서 먼저 적용한 이동·장비 변경을 버리고 서버 확정 소유 상태로 다시 구성한다.
-    /// 기존 3-3 호출부 이름은 유지하지만 3-4부터 장비와 장비 슬롯 화면도 함께 복구한다.
+    /// 서버 확정 소유 상태를 적용한다. 장비 모델 복구는 UI 생성 시점에 의존하지 않는다.
     /// </summary>
     public bool TryRestoreGridFromAuthoritativeSnapshots()
     {
         if (!isLocalPlayer || context?.Inventory?.PlayerGrid == null || context.Equipment == null)
             return false;
 
-        return TryRestoreOwnedStateFromSnapshots(CopySnapshots(), true) &&
-               IsOwnedStateEqualToSnapshots();
+        bool restored = TryRestoreOwnedStateFromSnapshots(CopySnapshots()) && IsOwnedStateEqualToSnapshots();
+        if (restored) localStateRefreshQueued = true;
+        return restored;
     }
 
     private InventoryItem FindOwnedItem(string instanceId)
@@ -1517,9 +1534,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         return snapshots;
     }
 
-    private bool TryRestoreOwnedStateFromSnapshots(
-        IReadOnlyList<string> snapshots,
-        bool rebuildVisuals)
+    private bool TryRestoreOwnedStateFromSnapshots(IReadOnlyList<string> snapshots)
     {
         if (context?.Inventory?.PlayerGrid == null ||
             context.Equipment == null ||
@@ -1530,6 +1545,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
 
         List<ItemSaveData> savedItems = new(snapshots.Count);
         HashSet<string> instanceIds = new();
+        HashSet<string> retainedIds = new();
         foreach (string snapshot in snapshots)
         {
             ItemSaveData saved = FromSnapshotJson(snapshot);
@@ -1543,30 +1559,32 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             }
 
             savedItems.Add(saved);
+            if (DoesOwnedStateMatchSnapshot(snapshot))
+                retainedIds.Add(saved.instanceId);
         }
 
         if (!IsValidSavedStateLayout(savedItems))
             return false;
 
-        if (!TryClearOwnedState(rebuildVisuals))
+        if (!TryClearOwnedState(retainedIds))
             return false;
 
         // 장비 교환 복구 시 그리드 자리를 먼저 채운 뒤 장비 슬롯을 복원한다.
         foreach (ItemSaveData saved in savedItems)
         {
-            if (saved.isEquipped)
+            if (saved.isEquipped || retainedIds.Contains(saved.instanceId))
                 continue;
 
-            if (!TryRestoreSavedItem(saved, rebuildVisuals))
+            if (!TryRestoreSavedItem(saved))
                 return false;
         }
 
         foreach (ItemSaveData saved in savedItems)
         {
-            if (!saved.isEquipped)
+            if (!saved.isEquipped || retainedIds.Contains(saved.instanceId))
                 continue;
 
-            if (!TryRestoreSavedItem(saved, rebuildVisuals))
+            if (!TryRestoreSavedItem(saved))
                 return false;
         }
 
@@ -1589,7 +1607,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             if (saved.isEquipped)
             {
                 if (!occupiedSlots.Add(saved.equippedSlotType) ||
-                    !EquipSlotRules.CanEquipTo(definition, saved.equippedSlotType))
+                    !EquipSlotRules.CanEquipTo(definition, saved.equippedSlotType) ||
+                    (saved.equippedSlotType == EquipSlotType.Weapon && context.Equipment.CurrentCharacterClass.HasValue &&
+                     definition.characterClass != context.Equipment.CurrentCharacterClass.Value))
                 {
                     return false;
                 }
@@ -1621,7 +1641,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         return true;
     }
 
-    private bool TryRestoreSavedItem(ItemSaveData saved, bool rebuildVisuals)
+    private bool TryRestoreSavedItem(ItemSaveData saved)
     {
         ItemInstance itemData = CreateItemInstance(saved);
         if (itemData == null)
@@ -1633,7 +1653,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         };
 
         if (saved.isEquipped)
-            return TryRestoreEquippedItem(item, saved.equippedSlotType, rebuildVisuals);
+            return new EquipmentTransaction(context.Equipment).TryRestoreEquippedItem(item, saved.equippedSlotType).IsSuccess;
 
         return context.Inventory.TryAddItemAt(
             item,
@@ -1641,52 +1661,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             saved.gridY).Result == InventoryAddResult.Success;
     }
 
-    private bool TryRestoreEquippedItem(
-        InventoryItem item,
-        EquipSlotType slotType,
-        bool rebuildVisuals)
-    {
-        ItemUI spawnedUI = null;
-        ItemEquipHandler equipHandler = null;
-        EquipSlotUI slotUI = null;
-
-        if (rebuildVisuals)
-        {
-            slotUI = FindLocalEquipmentSlot(slotType);
-            if (localItemSpawner == null || slotUI == null || !slotUI.IsEmpty)
-                return false;
-
-            spawnedUI = localItemSpawner.SpawnItemUIAndGet(item);
-            equipHandler = spawnedUI != null
-                ? spawnedUI.GetComponent<ItemEquipHandler>()
-                : null;
-
-            if (equipHandler == null)
-            {
-                if (spawnedUI != null)
-                    Destroy(spawnedUI.gameObject);
-                return false;
-            }
-        }
-
-        EquipmentTransactionResult result =
-            new EquipmentTransaction(context.Equipment)
-                .TryRestoreEquippedItem(item, slotType);
-
-        if (!result.IsSuccess)
-        {
-            if (spawnedUI != null)
-                Destroy(spawnedUI.gameObject);
-            return false;
-        }
-
-        if (rebuildVisuals)
-            equipHandler.SetEquipSlotVisual(slotUI);
-
-        return true;
-    }
-
-    private bool TryClearOwnedState(bool clearVisuals)
+    private bool TryClearOwnedState(ISet<string> retainedIds)
     {
         List<KeyValuePair<EquipSlotType, InventoryItem>> equippedItems = new();
         foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
@@ -1695,18 +1670,19 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         EquipmentTransaction transaction = new(context.Equipment);
         foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in equippedItems)
         {
+            // 이동과 무관한 장비의 고유 효과를 해제·재적용하지 않는다.
+            if (retainedIds.Contains(pair.Value.itemData.instanceId)) continue;
             EquipmentTransactionResult result =
                 transaction.TryUnequipForTransfer(pair.Key, pair.Value);
             if (!result.IsSuccess)
                 return false;
 
-            if (clearVisuals)
-                ClearLocalEquipmentVisual(pair.Key, pair.Value);
         }
 
         List<InventoryItem> gridItems = new(context.Inventory.GetAllInventoryItems());
         foreach (InventoryItem item in gridItems)
         {
+            if (retainedIds.Contains(item.itemData.instanceId)) continue;
             if (context.Inventory.TryRemoveInventoryItem(item) != InventoryRemoveResult.Success)
                 return false;
         }
@@ -1749,19 +1725,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             else if (spawnedUI != null)
                 Destroy(spawnedUI.gameObject);
         }
-    }
-
-    private void ClearLocalEquipmentVisual(EquipSlotType slotType, InventoryItem item)
-    {
-        EquipSlotUI slot = FindLocalEquipmentSlot(slotType);
-        ItemUI itemUI = slot?.EquippedItemUI;
-
-        if (itemUI == null || !ReferenceEquals(itemUI.Item, item))
-            return;
-
-        slot.ClearItemUI();
-        itemUI.ClearCurrentEquipSlot();
-        Destroy(itemUI.gameObject);
     }
 
     private int CountOwnedItems()
@@ -1838,41 +1801,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (!HasOneSnapshotPerOwnedItem())
             return false;
 
-        foreach (InventoryItem item in context.Inventory.GetAllInventoryItems())
-        {
-            int index = item?.itemData != null
-                ? FindSnapshotIndex(item.itemData.instanceId)
-                : -1;
-            ItemSaveData saved = index >= 0
-                ? FromSnapshotJson(itemSnapshots[index])
-                : null;
-
-            if (saved == null ||
-                saved.isEquipped ||
-                saved.gridX != item.x ||
-                saved.gridY != item.y ||
-                saved.isRotated != item.isRotated)
-            {
-                return false;
-            }
-        }
-
-        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
-        {
-            int index = pair.Value?.itemData != null
-                ? FindSnapshotIndex(pair.Value.itemData.instanceId)
-                : -1;
-            ItemSaveData saved = index >= 0
-                ? FromSnapshotJson(itemSnapshots[index])
-                : null;
-
-            if (saved == null ||
-                !saved.isEquipped ||
-                saved.equippedSlotType != pair.Key)
-            {
-                return false;
-            }
-        }
+        foreach (string snapshot in itemSnapshots)
+            if (!DoesOwnedStateMatchSnapshot(snapshot)) return false;
 
         return true;
     }
@@ -1930,26 +1860,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             Debug.LogException(exception, this);
             return false;
         }
-    }
-
-    private bool TrySynchronizeEquipmentState(
-        bool shouldBeEquipped,
-        EquipSlotType targetSlot)
-    {
-        if (!TrySynchronizeOwnedSnapshots())
-            return false;
-
-        // Act 1 회귀 테스트용 임시 보정: Host의 사전 적용 경로를 포함해
-        // 서버가 승인한 투구 장착은 새 최대 체력으로 현재 체력을 한 번 가득 채운다.
-        if (shouldBeEquipped &&
-            targetSlot == EquipSlotType.Helmet &&
-            context.Health != null)
-        {
-            context.Health.RefreshMaxHealth();
-            context.Health.FillHealth();
-        }
-
-        return true;
     }
 
     private static Dictionary<InventoryItem, InventoryPlacementSnapshot> CaptureGridState(

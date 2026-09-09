@@ -16,9 +16,16 @@ internal static class MirrorLanTestBuilder
 {
     private static readonly string[] TestScenes =
     {
+        MirrorTestNetworkManager.SessionLobbyScene,
         MirrorTestNetworkManager.SessionCampScene,
         MirrorTestNetworkManager.SessionCampGameplayScene,
         MirrorTestNetworkManager.SessionCombatScene,
+        MirrorTestNetworkManager.SessionStage2Scene,
+        MirrorTestNetworkManager.SessionStage3Scene,
+        MirrorTestNetworkManager.SessionStage4Scene,
+        MirrorTestNetworkManager.SessionStage5Scene,
+        MirrorTestNetworkManager.SessionStage6Scene,
+        MirrorTestNetworkManager.SessionBossScene,
         MirrorTestNetworkManager.SessionUnknownScene,
     };
     private const string BuildDirectory = "Builds/MirrorLanTest";
@@ -170,10 +177,11 @@ internal static class MirrorLanTestBuilder
             "1. 이 폴더 전체를 네 PC에 복사합니다. EXE만 따로 복사하면 안 됩니다.\r\n" +
             "2. 각 PC에서 ipconfig로 IPv4, 서브넷 마스크, 기본 게이트웨이를 확인합니다.\r\n" +
             "3. 내부 IPv4는 서로 달라야 합니다. 같은 공인 IP인 것은 정상입니다.\r\n" +
-            "4. Host PC가 먼저 실행해 NetworkManagerHUD의 Host를 누릅니다.\r\n" +
-            "5. Client 세 명은 주소 칸에 Host의 내부 IPv4를 입력하고 Client를 누릅니다.\r\n" +
+            "4. Host PC가 로비의 방 만들기 (Host)를 누릅니다.\r\n" +
+            "5. Client 세 명은 주소 칸에 Host의 내부 IPv4를 입력하고 주소로 참가를 누릅니다.\r\n" +
             "6. KCP는 UDP 7777을 사용합니다. 같은 LAN에서는 포트 포워딩이 필요 없습니다.\r\n\r\n" +
-            "7. 접속 뒤 선택 화면에서 Camp 또는 Stage1을 고르고, 각 Scene에서 선택 화면 복귀까지 확인합니다.\r\n\r\n" +
+            "7. 캐릭터를 선택하고 전원 READY 후 방장이 시작합니다. 연결 끊김은 최근 세션으로 복귀를 사용합니다.\r\n" +
+            "8. 같은 PC에서 여러 실행 파일을 켤 때는 --mirror-profile 이름을 서로 다르게 지정합니다.\r\n\r\n" +
             "Host UDP 확인:\r\n" +
             "  netstat -ano -p udp | findstr :7777\r\n\r\n" +
             "Host 임시 방화벽 허용(관리자 PowerShell):\r\n" +

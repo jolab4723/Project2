@@ -22,6 +22,7 @@ public class ItemDragHandler : MonoBehaviour,
     private Camera lastEventCamera;
     private GameObject lastPointerTarget;
     private DragState dragState;
+    private bool externalDrag;
 
     public bool IsDragging =>
         dragState == DragState.Detached ||
@@ -39,6 +40,12 @@ public class ItemDragHandler : MonoBehaviour,
         if (!IsDragging)
             return;
 
+        if (externalDrag && !itemUI.IsDragPreviewActive)
+        {
+            TryRestoreInterruptedDrag();
+            return;
+        }
+
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
         {
             itemUI.RotateDraggingItem();
@@ -51,9 +58,28 @@ public class ItemDragHandler : MonoBehaviour,
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (dragState != DragState.Idle ||
+            eventData == null ||
             itemUI == null ||
-            dropHandler == null)
+            itemUI.Item?.itemData == null ||
+            itemUI.IsDragPreviewActive ||
+            itemUI.CurrentGrid == null ||
+            dropHandler == null ||
+            dragVisual == null ||
+            dragHighlighter == null)
         {
+            return;
+        }
+
+        // 시작 때 정한 경로를 끝까지 유지해 처리기가 해제되어도 로컬 거래로 바뀌지 않게 한다.
+        externalDrag = itemUI.HasExternalInput;
+        if (externalDrag && !itemUI.TryHandleExternalInput(ItemExternalInputAction.BeginDrag, eventData))
+        {
+            externalDrag = false;
+            return;
+        }
+        if (!isActiveAndEnabled || itemUI == null)
+        {
+            externalDrag = false;
             return;
         }
 
@@ -64,13 +90,17 @@ public class ItemDragHandler : MonoBehaviour,
         bool wasEquipped = itemUI.IsEquipped;
 
         itemUI.SaveOriginalState();
-        dropHandler.PrepareRestore();
+        dropHandler.PrepareRestore(!externalDrag);
         dragState = DragState.Preparing;
 
-        if (!itemUI.TryDetachFromCurrentSlotOrGrid())
+        bool prepared = externalDrag
+            ? itemUI.BeginDragPreview()
+            : itemUI.TryDetachFromCurrentSlotOrGrid();
+        if (!prepared)
         {
             dropHandler.CancelRestore();
             dragState = DragState.Idle;
+            externalDrag = false;
             Debug.LogError(
                 "[ItemDragHandler] 드래그 시작 전 아이템을 기존 위치에서 분리하지 못했습니다.");
             return;
@@ -108,8 +138,14 @@ public class ItemDragHandler : MonoBehaviour,
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (!IsDragging)
+        if (!IsDragging || eventData == null)
             return;
+
+        if (externalDrag && !itemUI.IsDragPreviewActive)
+        {
+            TryRestoreInterruptedDrag();
+            return;
+        }
 
         UpdatePointerContext(eventData);
         itemUI.MoveByDelta(eventData.delta);
@@ -124,6 +160,12 @@ public class ItemDragHandler : MonoBehaviour,
         if (dragState != DragState.Detached)
             return;
 
+        if (eventData == null || (externalDrag && !itemUI.IsDragPreviewActive))
+        {
+            TryRestoreInterruptedDrag();
+            return;
+        }
+
         UpdatePointerContext(eventData);
         dragHighlighter.RefreshHighlight(
             lastPointerPosition,
@@ -134,20 +176,21 @@ public class ItemDragHandler : MonoBehaviour,
 
         try
         {
-            InventorySwapPlan previewPlan = dragHighlighter.CurrentSwapPlan;
-            dropHandler.ResolveDrop(
-                lastPointerPosition,
-                lastEventCamera,
-                previewPlan,
-                eventData.pointerCurrentRaycast.gameObject);
+            if (externalDrag)
+                itemUI.TryHandleExternalInput(ItemExternalInputAction.EndDrag, eventData);
+            else
+            {
+                InventorySwapPlan previewPlan = dragHighlighter.CurrentSwapPlan;
+                dropHandler.ResolveDrop(
+                    lastPointerPosition,
+                    lastEventCamera,
+                    previewPlan,
+                    eventData.pointerCurrentRaycast.gameObject);
+            }
         }
         finally
         {
-            if (dropHandler.HasPendingRestore)
-                dropHandler.TryRestoreOriginalPlacement();
-
-            dragState = DragState.Idle;
-            EndDragVisuals();
+            TryRestoreInterruptedDrag();
         }
     }
 
@@ -165,9 +208,20 @@ public class ItemDragHandler : MonoBehaviour,
 
     private void TryRestoreInterruptedDrag()
     {
-        dropHandler?.TryRestoreOriginalPlacement();
-        dragState = DragState.Idle;
-        EndDragVisuals();
+        // 복구 중 부모 변경으로 다시 비활성화돼도 같은 아이템을 중복 복구하지 않는다.
+        dragState = DragState.Resolving;
+        try
+        {
+            // 원본 참조를 먼저 돌려놓아 기존 복구가 표시용 복사본을 모델에 추가하지 않게 한다.
+            if (externalDrag) itemUI?.EndDragPreview();
+            dropHandler?.TryRestoreOriginalPlacement();
+        }
+        finally
+        {
+            dragState = DragState.Idle;
+            externalDrag = false;
+            EndDragVisuals();
+        }
     }
 
     private void EndDragVisuals()
