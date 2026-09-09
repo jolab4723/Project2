@@ -655,7 +655,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0008574033
+      value: 0.00096702634
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -4119,6 +4119,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunner
       objectReference: {fileID: 0}
+    - target: {fileID: 3433699924133273942, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6083522059478059166, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
       propertyPath: equipmentSystem
       value: 
@@ -4938,6 +4942,14 @@ MonoBehaviour:
   spawner: {fileID: 0}
   playerStatus: {fileID: 1674656732}
   effectBindings:
+  - cue: 10
+    data: {fileID: 0}
+    anchor: {fileID: 1396496446}
+    sounds:
+    - clip: {fileID: 8300000, guid: d24041b4cba791a4094722f020700b58, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
   - cue: 2000
     data: {fileID: 11400000, guid: 767cfae72eadb764cad2bca1e93ff3d4, type: 2}
     anchor: {fileID: 1396496446}

@@ -13,6 +13,7 @@ public enum SkillEffectPart
 public enum WBH_PlayerEffectCue
 {
     None = 0,
+    Dodge = 10, // 회피
 
     // --------------------------------------------------------------------------------------------- 파이터
     F_normal0_evo0_etc0 = 1000, // 평타
