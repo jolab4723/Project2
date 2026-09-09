@@ -20,7 +20,7 @@ namespace DataSystem
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
         private const string DefaultOutputRoot = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/Enemies";
         private const string EnemyDatabasePath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/AllEnemies.asset";
-        private const string EnemyLabelDatabasePath = "Assets/WJ_TestPlace/Data/Enemy/EnemyLabelDatabase.asset";
+        private const string EnemyLabelDatabasePath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase.asset";
 
         [MenuItem("DataLoader/Enemy Data/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()

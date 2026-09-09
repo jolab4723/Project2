@@ -14,7 +14,7 @@ namespace DataSystem
     public static class EnemyLabelSOImporter
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Enemy/EnemyLabelDatabase.asset";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase.asset";
 
         [MenuItem("DataLoader/Enemy Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
