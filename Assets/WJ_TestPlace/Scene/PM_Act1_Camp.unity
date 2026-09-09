@@ -25024,7 +25024,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00065303285
+      value: 0.00070033915
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -27683,6 +27683,7 @@ MonoBehaviour:
   spawner: {fileID: 0}
   playerStatus: {fileID: 0}
   effectBindings: []
+  sfxPlayer: {fileID: 0}
   chargeEffect: {fileID: 0}
   chargeRangeEffect: {fileID: 0}
 --- !u!114 &1200747931
@@ -48790,7 +48791,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3946913132850295773, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 3946913132850295773, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
 --- !u!224 &1669805381 stripped
 RectTransform:
@@ -56984,6 +56991,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30c14352a8f16844da33b1a35dcde7d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EliteHpbarView
+  eliteHudAni: {fileID: 0}
+  bossHudAni: {fileID: 0}
   hpBarRoot: {fileID: 2027423223}
   hpSlider: {fileID: 1475558147}
   enemyNameText: {fileID: 720129631}
@@ -56994,6 +57003,7 @@ MonoBehaviour:
   bossHpText: {fileID: 0}
   player: {fileID: 0}
   hideDistance: 30
+  enemyLabels: {fileID: 0}
 --- !u!1 &2027571081
 GameObject:
   m_ObjectHideFlags: 0
