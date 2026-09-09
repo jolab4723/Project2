@@ -50,6 +50,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30c14352a8f16844da33b1a35dcde7d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EliteHpbarView
+  eliteHudAni: {fileID: 0}
+  bossHudAni: {fileID: 0}
   hpBarRoot: {fileID: 8501043148901001871}
   hpSlider: {fileID: 1557629502361008936}
   enemyNameText: {fileID: 8534720629381267478}
@@ -138,7 +140,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5926425658350595596, guid: 7db7b5d8714271e46bb7f743f59c63b1, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 408.75
+      value: -75
       objectReference: {fileID: 0}
     - target: {fileID: 5926425658350595596, guid: 7db7b5d8714271e46bb7f743f59c63b1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -163,7 +165,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4589297033118527670, guid: 7db7b5d8714271e46bb7f743f59c63b1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8635847578697783019}
   m_SourcePrefab: {fileID: 100100000, guid: 7db7b5d8714271e46bb7f743f59c63b1, type: 3}
 --- !u!224 &171702217907341522 stripped
 RectTransform:
@@ -208,6 +213,23 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4589297033118527670, guid: 7db7b5d8714271e46bb7f743f59c63b1, type: 3}
   m_PrefabInstance: {fileID: 5790757197075769054}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8635847578697783019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8064983396770928232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f529cfcef9879e4097256252e5441a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_HUDAnimator
+  slideInDirection: 1
+  slideDistance: 200
+  slideSpeed: 10
+  delay: 0
+  reactToSidePopup: 0
 --- !u!1001 &6847066227949611544
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -218,15 +240,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0.3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1218247502974533417, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0.3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3097473518040875159, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_Name
@@ -234,15 +256,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3097473518040875159, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4735855602229638316, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0.3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4735855602229638316, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6938854077490614189, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_Pivot.x
@@ -310,7 +332,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6938854077490614189, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 408.75
+      value: -75
       objectReference: {fileID: 0}
     - target: {fileID: 6938854077490614189, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -327,7 +349,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3097473518040875159, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7431980361350494512}
   m_SourcePrefab: {fileID: 100100000, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
 --- !u!114 &1557629502361008936 stripped
 MonoBehaviour:
@@ -361,6 +386,23 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3097473518040875159, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}
   m_PrefabInstance: {fileID: 6847066227949611544}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7431980361350494512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8501043148901001871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f529cfcef9879e4097256252e5441a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_HUDAnimator
+  slideInDirection: 1
+  slideDistance: 200
+  slideSpeed: 10
+  delay: 0
+  reactToSidePopup: 0
 --- !u!114 &8534720629381267478 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2987224956929747470, guid: 10631a2861ce47d4a93395f148c66d94, type: 3}

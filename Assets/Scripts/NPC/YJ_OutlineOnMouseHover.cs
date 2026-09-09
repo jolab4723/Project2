@@ -10,6 +10,10 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     [SerializeField] private Vector3 nameTagWorldOffset = new Vector3(0f, 3f, 0f);
     public string objectName = "";
 
+    [Tooltip("UILabelDatabaseSO 안의 key. 비워두면 objectName을 그대로 쓴다.")]
+    [SerializeField] private string nameKey;
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
     private bool isHovered;
     public bool IsHovered => isHovered;
 
@@ -24,6 +28,10 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
         if (worldCamera == null)
             worldCamera = Camera.main;
+
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
     }
 
     private void Start()
@@ -57,7 +65,10 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
         if (nameTag != null)
         {
-            nameTag.ChangeText(objectName);
+            string displayName = (uiLabels != null && !string.IsNullOrEmpty(nameKey))
+                ? uiLabels.GetLabel(nameKey)
+                : objectName;
+            nameTag.ChangeText(displayName);
             nameTag.Active(true);
         }
     }

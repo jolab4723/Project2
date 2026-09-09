@@ -14,7 +14,7 @@ namespace DataSystem
     public static class UILabelSOImporter
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/UIData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/UI/UILabelDatabase.asset";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/UIData/3. GeneratedAssets/UILabelDatabase.asset";
 
         [MenuItem("DataLoader/UI Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()

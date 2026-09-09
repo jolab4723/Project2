@@ -4,6 +4,10 @@ using UnityEngine.UI;
 
 public class WBH_HighEnemyHpbarView : MonoBehaviour
 {
+    [Header("HUD Animation")]
+    [SerializeField] private KY_HUDAnimator eliteHudAni;
+    [SerializeField] private KY_HUDAnimator bossHudAni;
+
     [Header("Elite")]
     [SerializeField] private GameObject hpBarRoot;
     [SerializeField] private Slider hpSlider;
@@ -19,6 +23,10 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
     [Header("Hide Condition")]
     [SerializeField] private Transform player;
     [SerializeField] private float hideDistance = 30f;
+
+    [Header("Localization")]
+    [Tooltip("적 이름 다국어 DB. 비워두면 Resources에서 공용 DB를 자동으로 찾아 쓴다.")]
+    [SerializeField] private EnemyLabelDatabaseSO enemyLabels;
 
     private WBH_EnemyController eliteEnemy;
     private WBH_EnemyStatus eliteStatus;
@@ -38,6 +46,10 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         {
             bossHpBarRoot.SetActive(false);
         }
+
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (enemyLabels == null)
+            enemyLabels = Resources.Load<EnemyLabelDatabaseSO>("DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase");
     }
 
     // 엘리트의 경우 플레이어와 기존 타겟(엘리트)의 거리가 멀어지면 hp바 비활성화
@@ -47,15 +59,71 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         UpdateBossVisibility();
     }
 
+    private void OnEnable()
+    {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+    }
+
     private void OnDisable()
     {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+
         UnbindElite();
         UnbindBoss();
+    }
+
+    // 언어가 바뀌면 현재 화면에 떠 있는 엘리트/보스 이름표를 다시 계산해서 즉시 반영한다.
+    private void HandleLanguageChanged(GameLanguage _)
+    {
+        if (eliteEnemy != null && enemyNameText != null)
+            enemyNameText.text = ResolveEnemyName(eliteEnemy.Info);
+
+        if (bossEnemy != null && bossEnemyNameText != null)
+            bossEnemyNameText.text = ResolveEnemyName(bossEnemy.Info);
+    }
+
+    /// <summary>언어 반응형 적 이름 DB가 있으면 그 값을, 없으면 스폰 시점에 저장된 이름을 그대로 반환한다.</summary>
+    private string ResolveEnemyName(WBH_EnemyInfo info)
+    {
+        if (info == null)
+            return string.Empty;
+
+        return enemyLabels != null ? enemyLabels.GetName(info.enemyId) : info.enemyName;
     }
 
     public void Initialize(Transform localPlayer)
     {
         player = localPlayer;
+    }
+
+    private static void ShowBar(GameObject barRoot, KY_HUDAnimator animator)
+    {
+        if (barRoot == null)
+            return;
+
+        bool wasActive = barRoot.activeSelf;
+
+        barRoot.SetActive(true);
+
+        if(wasActive)
+        {
+            animator?.SlideIn();
+        }
+    }
+
+    private static void HideBar(GameObject barRoot, KY_HUDAnimator animator)
+    {
+        if (barRoot == null)
+            return;
+
+        if(animator != null && barRoot.activeInHierarchy)
+        {
+            animator.SlideOut();
+            return;
+        }
+        barRoot.SetActive(false);
     }
 
     public void BindElite(WBH_EnemyController enemy)
@@ -65,7 +133,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
         if (eliteEnemy == enemy)
         {
-            ShowElite();
+            ShowBar(hpBarRoot, eliteHudAni);
             UpdateEliteHp(eliteStatus.CurrentHp, eliteStatus.MaxHealth);
             return;
         }
@@ -84,8 +152,8 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         eliteStatus.OnHpChanged += UpdateEliteHp;
         eliteStatus.OnDead += UnbindElite;
 
-        enemyNameText.text = enemy.Info.enemyName;
-        ShowElite();
+        enemyNameText.text = ResolveEnemyName(enemy.Info);
+        ShowBar(hpBarRoot, eliteHudAni);
         UpdateEliteHp(eliteStatus.CurrentHp, eliteStatus.MaxHealth);
     }
 
@@ -96,7 +164,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
         if(bossEnemy == enemy)
         {
-            ShowBoss();
+            ShowBar(bossHpBarRoot, bossHudAni);
             UpdateBossHp(bossStatus.CurrentHp, bossStatus.MaxHealth);
             return;
         }
@@ -117,10 +185,10 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
         if(bossEnemyNameText != null)
         {
-            bossEnemyNameText.text = enemy.Info.enemyName;
+            bossEnemyNameText.text = ResolveEnemyName(enemy.Info);
         }
 
-        ShowBoss();
+        ShowBar(bossHpBarRoot, bossHudAni);
         UpdateBossHp(bossStatus.CurrentHp, bossStatus.MaxHealth);
     }
 
@@ -134,10 +202,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         eliteEnemy = null;
         eliteStatus = null;
 
-        if(hpBarRoot != null)
-        {
-            hpBarRoot.SetActive(false);
-        }
+        HideBar(hpBarRoot, eliteHudAni);
     }
 
     private void UnbindBoss()
@@ -150,10 +215,7 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         bossEnemy = null;
         bossStatus = null;
 
-        if (bossHpBarRoot != null)
-        {
-            bossHpBarRoot.SetActive(false);
-        }
+        HideBar(bossHpBarRoot, bossHudAni);
     }
 
     private void UpdateEliteVisibility()
@@ -184,21 +246,6 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         if(!bossEnemy.gameObject.activeInHierarchy)
         {
             UnbindBoss();
-        }
-    }
-
-    private void ShowElite()
-    {
-        if (hpBarRoot != null)
-        {
-            hpBarRoot.SetActive(true);
-        }
-    }
-    private void ShowBoss()
-    {
-        if (bossHpBarRoot != null)
-        {
-            bossHpBarRoot.SetActive(true);
         }
     }
 

@@ -42,6 +42,12 @@ public class SkillPopupController : MonoBehaviour
 
     private void Awake()
     {
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (labelDatabase == null)
+            labelDatabase = Resources.Load<SkillLabelDatabaseSO>("DataFiles/CharData/SkillData/3. GeneratedAssets/SkillLabelDatabase");
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
         for (int i = 0; i < skillSlotButtons.Length; i++)
         {
             int index = i;

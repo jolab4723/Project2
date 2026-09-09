@@ -8,15 +8,20 @@ using UnityEngine;
 /// 오브젝트 각각에 이 컴포넌트 하나(+key+DB)만 붙이면 되므로 옵션창처럼 고정 문구가 많은 화면에도
 /// 그대로 재사용할 수 있다.
 ///
-/// !! database가 비어있거나 key에 대응하는 문구가 없으면 아무것도 바꾸지 않는다 - 씬에 이 컴포넌트만
-///    붙이고 배선 전이라도 기존에 디자이너가 입력해둔 문구가 그대로 보인다.
+/// !! database를 씬에서 직접 안 채워도, 없으면 Resources에서 공용 UILabelDatabase를 자동으로 찾아 쓴다
+///    (ItemDisplayNames.cs/TooltipUI.cs가 쓰는 것과 같은 방식) - 씬마다 일일이 배선하지 않아도 다른
+///    맵/스테이지 씬에서 그대로 동작한다. key에 대응하는 문구가 없으면 아무것도 바꾸지 않는다 -
+///    씬에 이 컴포넌트만 붙이고 key가 비어있어도 기존에 디자이너가 입력해둔 문구가 그대로 보인다.
 /// </summary>
 [RequireComponent(typeof(TextMeshProUGUI))]
 public class UILabelText : MonoBehaviour
 {
+    private const string DatabaseResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
+
     [Tooltip("UILabelDatabaseSO 안의 key. 예: settings_ui.tab_display")]
     [SerializeField] private string key;
 
+    [Tooltip("비워두면 Resources에서 공용 UILabelDatabase를 자동으로 찾아 쓴다.")]
     [SerializeField] private UILabelDatabaseSO database;
 
     private TextMeshProUGUI text;
@@ -24,6 +29,9 @@ public class UILabelText : MonoBehaviour
     private void Awake()
     {
         text = GetComponent<TextMeshProUGUI>();
+
+        if (database == null)
+            database = Resources.Load<UILabelDatabaseSO>(DatabaseResourcePath);
 
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
