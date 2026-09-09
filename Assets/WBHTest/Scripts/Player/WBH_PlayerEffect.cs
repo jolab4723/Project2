@@ -11,10 +11,17 @@ public class WBH_PlayerEffect : MonoBehaviour
         public WBH_PlayerEffectCue cue;
         public WBH_EffectData data;
         public Transform anchor;
-        public AudioClip sfxClip;
-        [Range(0f, 1f)] public float sfxVolume = 1f;
-        [Min(0f)] public float sfxBaseTime = 0f;
-        public float sfxOffset = 0f;
+        public SfxEntry[] sounds = Array.Empty<SfxEntry>();
+    }
+
+    [Serializable]
+    private class SfxEntry
+    {
+        public AudioClip clip;
+        [Range(0f, 1f)] public float volume = 1f;
+
+        [Min(0f)] public float baseTime = 0f;
+        public float offset = 0f;
     }
 
     [SerializeField] private WBH_EffectSpawner spawner;
@@ -226,10 +233,24 @@ public class WBH_PlayerEffect : MonoBehaviour
 
     private void PlayBindingSfx(EffectBinding binding, Vector3 position)
     {
-        if (sfxPlayer == null || binding.sfxClip == null)
+        if (sfxPlayer == null || binding.sounds == null)
             return;
 
-        sfxPlayer.PlayImmediate(binding.sfxClip, position, binding.sfxVolume);
+        foreach (SfxEntry sound in binding.sounds)
+        {
+            if (sound == null || sound.clip == null)
+                continue;
+
+            float delay = sound.baseTime + sound.offset;
+
+            if (delay < 0f)
+            {
+                Log.Warning($"{binding.cue}: 폭발 SFX의 Base Time + Offset은 " + "0 이상이어야 합니다.");
+                continue;
+            }
+
+            sfxPlayer.PlayDelayed(sound.clip, position,sound.volume, delay);
+        }
     }
 
     public void PlaySfx(WBH_PlayerEffectCue cue)
@@ -255,7 +276,7 @@ public class WBH_PlayerEffect : MonoBehaviour
             return;
         }
 
-        if (binding.sfxClip == null)
+        if (binding.sounds == null)
             return;
 
         AnimationClip clip = animationEvent.animatorClipInfo.clip;
@@ -263,30 +284,41 @@ public class WBH_PlayerEffect : MonoBehaviour
         if (clip == null || clip.length <= 0f)
             return;
 
-        float delayInClip = binding.sfxBaseTime + binding.sfxOffset;
-
-        // 예약 이벤트 이전의 시점은 재생할 수 없다.
-        if (delayInClip < 0f)
+        foreach (SfxEntry sound in binding.sounds)
         {
-            Log.Warning($"{cue}: SFX 기준 시간 + Offset은 0 이상이어야 합니다.");
-            return;
+            if (sound == null || sound.clip == null)
+                continue;
+
+            float delayInClip = sound.baseTime + sound.offset;
+
+            if (delayInClip < 0f)
+            {
+                Log.Warning($"{cue}: SFX 기준 시간 + Offset은 0 이상이어야 합니다.");
+                continue;
+            }
+
+            float targetNormalizedTime =
+                (animationEvent.time + delayInClip) / clip.length;
+
+            if (targetNormalizedTime >= 1f)
+            {
+                Log.Warning($"{cue}: SFX 재생 시점이 클립 끝을 벗어납니다.");
+                continue;
+            }
+
+            StartCoroutine(WaitForSfxTime(binding,
+                                          sound,
+                                          animator,
+                                          animationEvent.animatorStateInfo.fullPathHash,
+                                          targetNormalizedTime));
         }
-
-        // 이벤트의 클립 내 위치 + Cue별 보정 시간을
-        // 애니메이션 진행도(0~1)로 변환한다.
-        float targetNormalizedTime = (animationEvent.time + delayInClip) / clip.length;
-
-        if (targetNormalizedTime >= 1f)
-        {
-            Log.Warning($"{cue}: SFX 재생 시점이 클립 끝에 있거나 끝을 벗어납니다.");
-            return;
-        }
-
-        int stateHash = animationEvent.animatorStateInfo.fullPathHash;
-        StartCoroutine(WaitForSfxTime(binding, animator, stateHash, targetNormalizedTime));
     }
 
-    private IEnumerator WaitForSfxTime(EffectBinding binding, Animator animator, int stateHash, float targetNormalizedTime)
+    private IEnumerator WaitForSfxTime(EffectBinding binding,
+                                       SfxEntry sound,
+                                       Animator animator,
+                                       int stateHash,
+                                       float targetNormalizedTime)
     {
         const int layer = 0;
 
@@ -319,7 +351,11 @@ public class WBH_PlayerEffect : MonoBehaviour
                 if (!AudioListener.pause)
                 {
                     Vector3 position = binding.anchor != null ? binding.anchor.position : transform.position;
-                    PlayBindingSfx(binding, position);
+
+                    if (sfxPlayer != null && sound.clip != null)
+                    {
+                        sfxPlayer.PlayImmediate(sound.clip, position, sound.volume);
+                    }
                 }
 
                 yield break;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using UnityEngine.Audio;
 
 public class YJ_SfxPlayer : MonoBehaviour
@@ -66,8 +67,53 @@ public class YJ_SfxPlayer : MonoBehaviour
         }
     }
 
+    public void PlayDelayed(AudioClip clip, Vector3 position, float volume, float delay)
+    {
+        if (clip == null || !isActiveAndEnabled || sources == null)
+            return;
+
+        if (AudioListener.pause)
+            return;
+
+        volume = Mathf.Clamp01(volume);
+
+        if (volume <= 0f)
+            return;
+
+        if (delay < 0f)
+        {
+            Debug.LogWarning("폭발 SFX의 최종 딜레이는 0 이상이어야 합니다.", this);
+            return;
+        }
+
+        if (delay == 0f)
+        {
+            PlayImmediate(clip, position, volume);
+            return;
+        }
+
+        StartCoroutine(CoPlayDelayed(clip, position, volume, delay));
+    }
+
+    private IEnumerator CoPlayDelayed(AudioClip clip, Vector3 position, float volume, float delay)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < delay)
+        {
+            yield return null;
+
+            if ( ! AudioListener.pause)
+                elapsed += Time.deltaTime;
+        }
+
+        PlayImmediate(clip, position, volume);
+    }
+
     private void OnDisable()
     {
+        StopAllCoroutines();
+
         if (sources == null)
             return;
 
