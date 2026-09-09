@@ -42,12 +42,14 @@ public class KY_StatusPopup : KY_PopupBase
     private KY_UIAnimationManager animationManager;
 
     private PlayerStatManager statManager;
+    private KY_StatRow[] statRows;
 
     void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
         curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
         animationManager = GetComponent<KY_UIAnimationManager>();
+        statRows = GetComponentsInChildren<KY_StatRow>(true);
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
 
         ApplyLabels();
@@ -214,6 +216,12 @@ public class KY_StatusPopup : KY_PopupBase
 
         isDetailed = isOn;
         SetData(currentData);
+
+        if (statRows == null || statRows.Length == 0)
+            statRows = GetComponentsInChildren<KY_StatRow>(true);
+
+        for (int i = 0; i < statRows.Length; i++)
+            statRows[i].PlayDetailTransition(isDetailed, i * 0.04f);
 
         StartCoroutine(RebuildLayout());
     }
