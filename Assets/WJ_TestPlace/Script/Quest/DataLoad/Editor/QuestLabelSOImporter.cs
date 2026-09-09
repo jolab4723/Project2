@@ -14,7 +14,7 @@ namespace DataSystem
     public static class QuestLabelSOImporter
     {
         private const string DefaultJsonFolder = "Assets/Resources/DataFiles/QuestData/2. JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Quest/QuestLabelDatabase.asset";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/QuestData/3. GeneratedAssets/QuestLabelDatabase.asset";
 
         [MenuItem("DataLoader/Quest Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()

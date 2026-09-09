@@ -161,6 +161,7 @@ GameObject:
   - component: {fileID: 4653185129635239776}
   - component: {fileID: 7666289984479920873}
   - component: {fileID: 6719044912995940783}
+  - component: {fileID: 1085032037573524783}
   m_Layer: 5
   m_Name: LogText
   m_TagString: Untagged
@@ -287,6 +288,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1085032037573524783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 82679505337166480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &316296674152497462
 GameObject:
   m_ObjectHideFlags: 0
@@ -4174,6 +4187,7 @@ GameObject:
   - component: {fileID: 3759919496709741207}
   - component: {fileID: 4622868243209515235}
   - component: {fileID: 8980590551035606282}
+  - component: {fileID: 8369384020286006995}
   m_Layer: 5
   m_Name: HeaderText
   m_TagString: Untagged
@@ -4312,6 +4326,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
+--- !u!114 &8369384020286006995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6036491357705573699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: inventory_ui.header
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &6238665527466384211
 GameObject:
   m_ObjectHideFlags: 0
@@ -5509,6 +5537,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: 600
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &3383331175685877718
 MonoBehaviour:
@@ -6021,6 +6050,7 @@ GameObject:
   - component: {fileID: 1776521737123175642}
   - component: {fileID: 193081788145894003}
   - component: {fileID: 2361096392320880166}
+  - component: {fileID: 6520412790050497682}
   m_Layer: 0
   m_Name: CreditText
   m_TagString: Untagged
@@ -6147,6 +6177,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &6520412790050497682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8574296466521425963}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &8783247586669749891
 GameObject:
   m_ObjectHideFlags: 0

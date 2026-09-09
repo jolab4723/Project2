@@ -31,6 +31,12 @@ public class QuestPopupBridge : MonoBehaviour
 
     private void Awake()
     {
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (questLabels == null)
+            questLabels = Resources.Load<QuestLabelDatabaseSO>("DataFiles/QuestData/3. GeneratedAssets/QuestLabelDatabase");
+        if (itemLabels == null)
+            itemLabels = Resources.Load<ItemLabelDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase");
+
         if (questPopup == null)
         {
             Debug.LogWarning("[QuestPopupBridge] questPopup이 연결되지 않았습니다.");

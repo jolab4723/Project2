@@ -385,6 +385,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 7037775876555072658}
   activeHighlight: {fileID: 3121938952512799032}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &4148377022964905251
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1431,6 +1432,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 1210415779393883393}
   activeHighlight: {fileID: 1117711629822349265}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &3467308032861453026
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1869,6 +1871,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 7768325952114395482}
   activeHighlight: {fileID: 7307659644645087148}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &250310406150088718
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4073,6 +4076,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 8733221737376059002}
   activeHighlight: {fileID: 2603935149118506457}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &4657192184306652930
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4710,6 +4714,7 @@ GameObject:
   - component: {fileID: 7841990701052173692}
   - component: {fileID: 8011299063122430014}
   - component: {fileID: 1191405177831820706}
+  - component: {fileID: 9044600799593443993}
   m_Layer: 5
   m_Name: SkillCostText
   m_TagString: Untagged
@@ -4836,6 +4841,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &9044600799593443993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3433579286927967824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &3549588188345308663
 GameObject:
   m_ObjectHideFlags: 0
@@ -4893,6 +4910,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 974565925918228698}
   activeHighlight: {fileID: 4117095784543141827}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &740324930805235789
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5922,6 +5940,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 2043193358094341512}
   activeHighlight: {fileID: 6524397412126087798}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &6021710874184950328
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -6315,6 +6334,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 3010840159808042004}
   activeHighlight: {fileID: 2906000907919555049}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &4282343440337685989
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -6540,6 +6560,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: 1100
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &3761379842413086204
 MonoBehaviour:
@@ -6566,6 +6587,7 @@ MonoBehaviour:
   - {fileID: 6618738688046520243}
   - {fileID: 4606328061333033476}
   labelDatabase: {fileID: 11400000, guid: 87d5c8f355c941649a2748e331de1f8c, type: 2}
+  uiLabels: {fileID: 0}
   skillNameText: {fileID: 2946966008646131117}
   skillCostText: {fileID: 1191405177831820706}
   skillDescriptionText: {fileID: 4578787087924955792}
@@ -7990,6 +8012,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 5716711306491699236}
   activeHighlight: {fileID: 9050665293785402500}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &6144162506585002357
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9102,6 +9125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 1066633392703753827}
   activeHighlight: {fileID: 4727243195130866308}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &6557880377414295928
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9919,6 +9943,7 @@ GameObject:
   - component: {fileID: 5728491229839129195}
   - component: {fileID: 5309487815701792257}
   - component: {fileID: 2946966008646131117}
+  - component: {fileID: 4385517122447894259}
   m_Layer: 5
   m_Name: SkillNameText
   m_TagString: Untagged
@@ -10045,6 +10070,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4385517122447894259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6851216289812733938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &6983019248806029667
 GameObject:
   m_ObjectHideFlags: 0
@@ -10749,6 +10786,7 @@ GameObject:
   - component: {fileID: 344869366518120214}
   - component: {fileID: 2808196777285248198}
   - component: {fileID: 7257892669209355299}
+  - component: {fileID: 3169289970209723507}
   m_Layer: 5
   m_Name: SkillExtraText
   m_TagString: Untagged
@@ -10875,6 +10913,18 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &3169289970209723507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7388910561774146634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &7400367004327368237
 GameObject:
   m_ObjectHideFlags: 0
@@ -10931,6 +10981,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 7501596670311064751}
   activeHighlight: {fileID: 9163432549532936194}
+  missingIconLabel: {fileID: 0}
 --- !u!222 &2872893188423862348
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11100,6 +11151,7 @@ GameObject:
   - component: {fileID: 2969742067634007265}
   - component: {fileID: 4578787087924955792}
   - component: {fileID: 5289002002394783333}
+  - component: {fileID: 2133825089108566562}
   m_Layer: 5
   m_Name: SkillDescriptionText
   m_TagString: Untagged
@@ -11240,6 +11292,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!114 &2133825089108566562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7585837595962392308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &7827388396157000002
 GameObject:
   m_ObjectHideFlags: 0

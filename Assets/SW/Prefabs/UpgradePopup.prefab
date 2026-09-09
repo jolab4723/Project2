@@ -995,6 +995,7 @@ MonoBehaviour:
   itemImage: {fileID: 4080694558684321410}
   rarityBackground: {fileID: 2009897683811258798}
   rarityFrame: {fileID: 3000109389493637456}
+  uiLabels: {fileID: 0}
 --- !u!114 &3475763415468521718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1011,6 +1012,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: -4440
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &8526397332114648246
 MonoBehaviour:
@@ -2068,6 +2070,7 @@ GameObject:
   - component: {fileID: 6231171297061599185}
   - component: {fileID: 8683724431641762516}
   - component: {fileID: 35909245012267042}
+  - component: {fileID: 8028540985180417163}
   m_Layer: 5
   m_Name: HeaderText
   m_TagString: Untagged
@@ -2206,6 +2209,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
+--- !u!114 &8028540985180417163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9196024695051971490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: upgrade_ui.header
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1001 &5297249497358489682
 PrefabInstance:
   m_ObjectHideFlags: 0

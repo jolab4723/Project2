@@ -166,6 +166,7 @@ MonoBehaviour:
   inEase: 27
   outEase: 26
   hiddenOffsetX: -4440
+  hiddenOffsetY: 0
   ignoreTimeScale: 0
 --- !u!114 &3205504701008151788
 MonoBehaviour:
@@ -6802,6 +6803,7 @@ GameObject:
   - component: {fileID: 8316509867120399608}
   - component: {fileID: 3225194313640310484}
   - component: {fileID: 4119016075364586454}
+  - component: {fileID: 1929806087328709376}
   m_Layer: 5
   m_Name: HeaderText
   m_TagString: Untagged
@@ -6940,6 +6942,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
+--- !u!114 &1929806087328709376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7441874355275885640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: shop_ui.header
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &7448053584734499322
 GameObject:
   m_ObjectHideFlags: 0

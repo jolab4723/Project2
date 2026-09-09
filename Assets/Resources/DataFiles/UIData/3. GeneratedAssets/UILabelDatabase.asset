@@ -1,0 +1,1126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f591b5698277fe642b498455f1cdba1f, type: 3}
+  m_Name: UILabelDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelDatabaseSO
+  korLabels:
+  - key: settings_ui.tab_display
+    label: "\uD654\uBA74"
+  - key: settings_ui.tab_sound
+    label: "\uC18C\uB9AC"
+  - key: settings_ui.tab_control
+    label: "\uC870\uC791"
+  - key: settings_ui.tab_gameplay
+    label: "\uAC8C\uC784 \uD50C\uB808\uC774"
+  - key: settings_ui.section_screen_size
+    label: "\uD654\uBA74 \uD06C\uAE30"
+  - key: settings_ui.label_resolution
+    label: "\uD574\uC0C1\uB3C4"
+  - key: settings_ui.label_fullscreen
+    label: "\uCC3D\uBAA8\uB4DC"
+  - key: settings_ui.label_quality
+    label: "\uD488\uC9C8"
+  - key: settings_ui.label_brightness
+    label: "\uBC1D\uAE30"
+  - key: settings_ui.option_low
+    label: "\uB0AE\uC74C"
+  - key: settings_ui.option_medium
+    label: "\uC911\uAC04"
+  - key: settings_ui.option_high
+    label: "\uB192\uC74C"
+  - key: settings_ui.label_max_fps
+    label: "\uCD5C\uB300 FPS"
+  - key: settings_ui.option_unlimited
+    label: "\uBB34\uC81C\uD55C"
+  - key: settings_ui.label_master_volume
+    label: "\uC804\uCCB4\uC74C\uB7C9"
+  - key: settings_ui.label_bgm_volume
+    label: "\uBC30\uACBD\uC74C"
+  - key: settings_ui.label_sfx_volume
+    label: "\uD6A8\uACFC\uC74C"
+  - key: settings_ui.label_mute
+    label: "\uC74C\uC18C\uAC70"
+  - key: settings_ui.section_key_binding
+    label: "\uD0A4 \uC124\uC815"
+  - key: settings_ui.skill_slot_1
+    label: "\uC2A4\uD0AC1"
+  - key: settings_ui.skill_slot_2
+    label: "\uC2A4\uD0AC2"
+  - key: settings_ui.skill_slot_3
+    label: "\uC2A4\uD0AC3"
+  - key: settings_ui.skill_slot_4
+    label: "\uC2A4\uD0AC4"
+  - key: settings_ui.skill_slot_potion
+    label: "\uC18C\uBAA8\uD488"
+  - key: settings_ui.skill_slot_dodge
+    label: "\uD68C\uD53C"
+  - key: settings_ui.label_enemy_health_display
+    label: "\uC801 \uCCB4\uB825 \uD45C\uC2DC"
+  - key: settings_ui.option_always
+    label: "\uD56D\uC0C1"
+  - key: settings_ui.option_on_hit
+    label: "\uD53C\uACA9\uC2DC"
+  - key: settings_ui.option_none
+    label: "\uD45C\uC2DC \uC548 \uD568"
+  - key: settings_ui.label_damage_display
+    label: "\uB370\uBBF8\uC9C0 \uD45C\uC2DC"
+  - key: settings_ui.label_screen_shake
+    label: "\uD654\uBA74 \uD754\uB4E4\uB9BC"
+  - key: settings_ui.label_tutorial
+    label: "\uD29C\uD1A0\uB9AC\uC5BC"
+  - key: settings_ui.option_once
+    label: "\uD55C\uBC88\uB9CC"
+  - key: settings_ui.label_language
+    label: "\uC5B8\uC5B4"
+  - key: settings_ui.button_reset
+    label: "\uCD08\uAE30 \uC124\uC815\uC73C\uB85C"
+  - key: settings_ui.button_apply
+    label: "\uC801\uC6A9"
+  - key: settings_ui.button_confirm
+    label: "\uD655\uC778"
+  - key: settings_ui.rebind_prompt
+    label: "\uBCC0\uACBD\uD560 \uD0A4\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
+  - key: settings_ui.desc_resolution
+    label: "\uD654\uBA74\uC758 \uD574\uC0C1\uB3C4\uB97C \uBCC0\uACBD\uD560 \uC218
+      \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_fullscreen
+    label: "\uCC3D\uBAA8\uB4DC\uC758 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218
+      \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_brightness
+    label: "\uBC1D\uAE30\uB97C \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_quality
+    label: "\uD488\uC9C8\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_max_fps
+    label: "\uCD5C\uB300 FPS\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_master_volume
+    label: "\uC804\uCCB4\uC74C\uB7C9\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_bgm_volume
+    label: "\uBC30\uACBD\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_sfx_volume
+    label: "\uD6A8\uACFC\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_mute
+    label: "\uC74C\uC18C\uAC70 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_skill_keybind
+    label: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_potion_keybind
+    label: "\uAC8C\uC784\uC758 \uC18C\uBAA8\uD488 \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_dodge_keybind
+    label: "\uAC8C\uC784\uC758 \uD68C\uD53C \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_enemy_health_display
+    label: "\uC801 \uCCB4\uB825 \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
+      \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_damage_display
+    label: "\uB370\uBBF8\uC9C0 \uD45C\uC2DC\uC5D0 \uC5EC\uBD80\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_screen_shake
+    label: "\uAC8C\uC784 \uC911 \uD654\uBA74 \uD754\uB4E4\uB9BC \uC5EC\uBD80\uC5D0
+      \uB300\uD574 \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_tutorial
+    label: "\uD29C\uD1A0\uB9AC\uC5BC \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
+      \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_language
+    label: "\uC5B8\uC5B4 \uC124\uC815\uC744 \uBCC0\uACBD\uD569\uB2C8\uB2E4"
+  - key: pause_ui.resume
+    label: "\uACC4\uC18D\uD558\uAE30"
+  - key: pause_ui.settings
+    label: "\uD658\uACBD\uC124\uC815"
+  - key: pause_ui.giveup
+    label: "\uD3EC\uAE30\uD55C\uB2E4"
+  - key: pause_ui.save_and_quit
+    label: "\uC800\uC7A5 \uD6C4 \uC885\uB8CC"
+  - key: skill_ui.evolution_format
+    label: "\uC9C4\uD654 : {0}"
+  - key: skill_ui.enhancement_format
+    label: "\uAC15\uD654 : {0}"
+  - key: skill_ui.cooldown_only
+    label: "\uCFE8\uD0C0\uC784 {0}\uCD08"
+  - key: skill_ui.damage_and_cooldown
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\uC138\uBD80 \uC2A4\uD15F \uBCF4\uAE30"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\uC0C1\uC810"
+  - key: inventory_ui.header
+    label: "\uC778\uBCA4\uD1A0\uB9AC"
+  - key: upgrade_ui.header
+    label: "\uAC15\uD654"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\uBD80\uAC00 \uC635\uC158"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\uACE0\uC720 \uD6A8\uACFC"
+  - key: upgrade_ui.current_stat
+    label: "\uD604\uC7AC \uC2A4\uD0EF : {0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\uAC15\uD654 \uD6C4 \uC2A4\uD0EF : {0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\uAC15\uD654\uBE44\uC6A9 : {0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\uAC15\uD654\uBE44\uC6A9 : -"
+  - key: upgrade_ui.unknown_item
+    label: "\uC544\uC774\uD15C"
+  - key: upgrade_ui.selection_required
+    label: "\uAC15\uD654\uD560 \uC544\uC774\uD15C\uC744 \uC120\uD0DD\uD558\uC138\uC694."
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \uAC15\uD654 \uC131\uACF5"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\uACE8\uB4DC\uAC00 \uBD80\uC871\uD569\uB2C8\uB2E4."
+  - key: upgrade_ui.result_invalid_item
+    label: "\uAC15\uD654\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: upgrade_ui.result_invalid_cost
+    label: "\uAC15\uD654 \uBE44\uC6A9 \uC124\uC815\uC774 \uC62C\uBC14\uB974\uC9C0
+      \uC54A\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\uAC15\uD654 \uCC98\uB9AC \uC911 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.result_failed
+    label: "\uAC15\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: npc_ui.quest
+    label: "\uC758\uB8B0"
+  - key: npc_ui.rest
+    label: "\uD734\uC2DD"
+  - key: chat_ui.equip_success
+    label: "\uC7A5\uBE44 \uCC98\uB9AC\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_swapped
+    label: "\uC7A5\uBE44\uB97C \uAD50\uCCB4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_invalid_item
+    label: "\uC7A5\uCC29\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.equip_invalid_slot
+    label: "\uD574\uB2F9 \uC2AC\uB86F\uC5D0 \uC7A5\uCC29\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_slot_occupied
+    label: "\uC774\uBBF8 \uC7A5\uBE44\uAC00 \uC7A5\uCC29\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_not_equipped
+    label: "\uD574\uC81C\uD560 \uC7A5\uBE44\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_no_return_space
+    label: "\uAE30\uC874 \uC7A5\uBE44\uB97C \uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uB0B4\uB824\uB193\uC744
+      \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_failed
+    label: "\uC7A5\uBE44 \uCC98\uB9AC\uAC00 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_wrong_class
+    label: "\uC774 \uCE90\uB9AD\uD130\uAC00 \uC7A5\uCC29\uD560 \uC218 \uC5C6\uB294
+      \uBB34\uAE30\uC785\uB2C8\uB2E4."
+  - key: chat_ui.equip_unknown
+    label: "\uC54C \uC218 \uC5C6\uB294 \uC7A5\uBE44 \uCC98\uB9AC \uACB0\uACFC\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_acquisition
+    label: "{0} \uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_acquisition_colored
+    label: "{0} \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_success_position
+    label: "{0} \uC704\uCE58 : {1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_no_space
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uAC00 \uAF49 \uCC3C\uC2B5\uB2C8\uB2E4!"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_placement_failed
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uC544\uC774\uD15C\uC744 \uBC30\uCE58\uD558\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_add_failed
+    label: "\uC544\uC774\uD15C \uD68D\uB4DD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_success
+    label: "{0}\uC744(\uB97C) \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_not_player
+    label: "\uB0B4 \uC778\uBCA4\uD1A0\uB9AC\uC758 \uC544\uC774\uD15C\uB9CC \uC0AD\uC81C\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\uC7A5\uCC29 \uC911\uC778 \uC544\uC774\uD15C\uC740 \uBC14\uB85C \uC0AD\uC81C\uD560
+      \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_failed
+    label: "\uC544\uC774\uD15C \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\uC544\uC774\uD15C\uC744 \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_buy_success
+    label: "{0}\uC744 \uAD6C\uB9E4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_sell_success
+    label: "{0}\uC744 \uD310\uB9E4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_not_enough_gold
+    label: "\uACE8\uB4DC\uAC00 \uBD80\uC871\uD574 {0} \uAD6C\uB9E4\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_no_space_buy
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_no_space_sell
+    label: "\uC0C1\uC810\uC5D0 \uD310\uB9E4 \uC544\uC774\uD15C\uC744 \uB193\uC744
+      \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.shop_transfer_failed
+    label: "{0} \uC774\uB3D9 \uC911 \uAC70\uB798\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0} \uC7AC\uACE0 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_failed
+    label: "\uAC70\uB798 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.pickup_default
+    label: "\uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.out_of_range
+    label: "\uC544\uC774\uD15C\uC5D0 \uB354 \uAC00\uAE4C\uC774 \uC774\uB3D9\uD574
+      \uC8FC\uC138\uC694."
+  - key: chat_ui.already_claimed
+    label: "\uC774\uBBF8 \uD68D\uB4DD\uB41C \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.pickup_unavailable
+    label: "\uB354 \uC774\uC0C1 \uD68D\uB4DD\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.item_unavailable
+    label: "\uB300\uC0C1 \uC544\uC774\uD15C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.stale_revision
+    label: "\uC544\uC774\uD15C \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.recovery_failed
+    label: "\uC544\uC774\uD15C \uB4DC\uB78D\uACFC \uC778\uBCA4\uD1A0\uB9AC \uBCF5\uAD6C\uC5D0
+      \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC778\uBCA4\uD1A0\uB9AC \uC0C1\uD0DC\uB97C
+      \uD655\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.upgrade_process_failed
+    label: "\uAC15\uD654\uB97C \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.drop_failed
+    label: "\uC544\uC774\uD15C\uC744 \uD544\uB4DC\uC5D0 \uB193\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.acquisition_failed
+    label: "\uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.shop_state_changed
+    label: "\uC0C1\uC810 \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.inventory_state_changed
+    label: "\uC778\uBCA4\uD1A0\uB9AC \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.trade_failed
+    label: "\uAC70\uB798\uB97C \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: loading_ui.tooltip_title
+    label: "\uB370\uBE0C\uB9AC\uC2A4-9"
+  - key: loading_ui.tooltip_content
+    label: "\uC774\uACF3\uC740 \uC624\uC5FC\uC73C\uB85C \uC778\uD574 \uC778\uAC04\uC774
+      \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,
+      \uC218\uBC31 \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774
+      \uC2A4\uC2A4\uB85C\uB97C \uBCF5\uAD6C\uD558\uACE0 \uAC1C\uC870\uD558\uAE30
+      \uC2DC\uC791\uD558\uBA74\uC11C \uAE30\uAD34\uD55C \uBA54\uCE74 \uC0DD\uD0DC\uACC4\uAC00
+      \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4."
+  engLabels:
+  - key: settings_ui.tab_display
+    label: Display
+  - key: settings_ui.tab_sound
+    label: Sound
+  - key: settings_ui.tab_control
+    label: Controls
+  - key: settings_ui.tab_gameplay
+    label: Gameplay
+  - key: settings_ui.section_screen_size
+    label: Screen Size
+  - key: settings_ui.label_resolution
+    label: Resolution
+  - key: settings_ui.label_fullscreen
+    label: Fullscreen
+  - key: settings_ui.label_quality
+    label: Quality
+  - key: settings_ui.label_brightness
+    label: Brightness
+  - key: settings_ui.option_low
+    label: Low
+  - key: settings_ui.option_medium
+    label: Medium
+  - key: settings_ui.option_high
+    label: High
+  - key: settings_ui.label_max_fps
+    label: Max FPS
+  - key: settings_ui.option_unlimited
+    label: Unlimited
+  - key: settings_ui.label_master_volume
+    label: Master Volume
+  - key: settings_ui.label_bgm_volume
+    label: Background Music
+  - key: settings_ui.label_sfx_volume
+    label: Sound Effects
+  - key: settings_ui.label_mute
+    label: Mute
+  - key: settings_ui.section_key_binding
+    label: Key Bindings
+  - key: settings_ui.skill_slot_1
+    label: Skill 1
+  - key: settings_ui.skill_slot_2
+    label: Skill 2
+  - key: settings_ui.skill_slot_3
+    label: Skill 3
+  - key: settings_ui.skill_slot_4
+    label: Skill 4
+  - key: settings_ui.skill_slot_potion
+    label: Consumable
+  - key: settings_ui.skill_slot_dodge
+    label: Dodge
+  - key: settings_ui.label_enemy_health_display
+    label: Enemy Health Display
+  - key: settings_ui.option_always
+    label: Always
+  - key: settings_ui.option_on_hit
+    label: On Hit
+  - key: settings_ui.option_none
+    label: Off
+  - key: settings_ui.label_damage_display
+    label: Damage Display
+  - key: settings_ui.label_screen_shake
+    label: Screen Shake
+  - key: settings_ui.label_tutorial
+    label: Tutorial
+  - key: settings_ui.option_once
+    label: Once
+  - key: settings_ui.label_language
+    label: Language
+  - key: settings_ui.button_reset
+    label: Reset to Default
+  - key: settings_ui.button_apply
+    label: Apply
+  - key: settings_ui.button_confirm
+    label: Confirm
+  - key: settings_ui.rebind_prompt
+    label: Please press the new key
+  - key: settings_ui.desc_resolution
+    label: You can change the screen resolution.
+  - key: settings_ui.desc_fullscreen
+    label: You can toggle fullscreen mode.
+  - key: settings_ui.desc_brightness
+    label: You can adjust the brightness.
+  - key: settings_ui.desc_quality
+    label: You can change the quality settings.
+  - key: settings_ui.desc_max_fps
+    label: You can change the maximum FPS setting.
+  - key: settings_ui.desc_master_volume
+    label: You can adjust the master volume.
+  - key: settings_ui.desc_bgm_volume
+    label: You can adjust the background music volume.
+  - key: settings_ui.desc_sfx_volume
+    label: You can adjust the sound effects volume.
+  - key: settings_ui.desc_mute
+    label: You can toggle mute.
+  - key: settings_ui.desc_skill_keybind
+    label: You can set the skill input key.
+  - key: settings_ui.desc_potion_keybind
+    label: You can set the consumable item input key.
+  - key: settings_ui.desc_dodge_keybind
+    label: You can set the dodge input key.
+  - key: settings_ui.desc_enemy_health_display
+    label: You can change the enemy health display setting.
+  - key: settings_ui.desc_damage_display
+    label: You can set whether damage numbers are displayed.
+  - key: settings_ui.desc_screen_shake
+    label: You can set whether the screen shakes during gameplay.
+  - key: settings_ui.desc_tutorial
+    label: You can change the tutorial display setting.
+  - key: settings_ui.desc_language
+    label: Change the language setting.
+  - key: pause_ui.resume
+    label: Resume
+  - key: pause_ui.settings
+    label: Settings
+  - key: pause_ui.giveup
+    label: Give Up
+  - key: pause_ui.save_and_quit
+    label: Save & Quit
+  - key: skill_ui.evolution_format
+    label: 'Evolution: {0}'
+  - key: skill_ui.enhancement_format
+    label: 'Enhancement: {0}'
+  - key: skill_ui.cooldown_only
+    label: Cooldown {0}s
+  - key: skill_ui.damage_and_cooldown
+    label: "Damage {0}% \xB7 Cooldown {1}s"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: Show Detailed Stats
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: Shop
+  - key: inventory_ui.header
+    label: Inventory
+  - key: upgrade_ui.header
+    label: Upgrade
+  - key: item_tooltip_ui.sub_option_label
+    label: Additional Options
+  - key: item_tooltip_ui.unique_effect_label
+    label: Unique Effect
+  - key: upgrade_ui.current_stat
+    label: 'Current Stat: {0} + {1}'
+  - key: upgrade_ui.next_stat
+    label: 'After Upgrade: {0} + {1}'
+  - key: upgrade_ui.cost
+    label: 'Upgrade Cost: {0}'
+  - key: upgrade_ui.cost_unavailable
+    label: 'Upgrade Cost: -'
+  - key: upgrade_ui.unknown_item
+    label: Item
+  - key: upgrade_ui.selection_required
+    label: Please select an item to upgrade.
+  - key: upgrade_ui.result_success
+    label: '{0} +{1} Upgrade Success'
+  - key: upgrade_ui.result_not_enough_gold
+    label: Not enough gold.
+  - key: upgrade_ui.result_invalid_item
+    label: This item cannot be upgraded.
+  - key: upgrade_ui.result_invalid_cost
+    label: The upgrade cost setting is invalid.
+  - key: upgrade_ui.result_wallet_unavailable
+    label: A problem occurred while processing the upgrade.
+  - key: upgrade_ui.result_failed
+    label: Upgrade failed.
+  - key: npc_ui.quest
+    label: Quest
+  - key: npc_ui.rest
+    label: Rest
+  - key: chat_ui.equip_success
+    label: Equipment updated successfully.
+  - key: chat_ui.equip_swapped
+    label: Equipment swapped.
+  - key: chat_ui.equip_invalid_item
+    label: This item cannot be equipped.
+  - key: chat_ui.equip_invalid_slot
+    label: Cannot equip to that slot.
+  - key: chat_ui.equip_slot_occupied
+    label: Equipment is already equipped there.
+  - key: chat_ui.equip_not_equipped
+    label: There is no equipment to unequip.
+  - key: chat_ui.equip_no_return_space
+    label: No inventory space to store the previous equipment.
+  - key: chat_ui.equip_failed
+    label: Failed to process equipment.
+  - key: chat_ui.equip_wrong_class
+    label: This character cannot equip this weapon.
+  - key: chat_ui.equip_unknown
+    label: Unknown equipment processing result.
+  - key: chat_ui.inventory_acquisition
+    label: 'Obtained item: {0}.'
+  - key: chat_ui.inventory_acquisition_colored
+    label: Obtained {0}.
+  - key: chat_ui.inventory_success_position
+    label: '{0} Position: {1}, {2}'
+  - key: chat_ui.inventory_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.inventory_no_space
+    label: Inventory is full!
+  - key: chat_ui.inventory_grid_unavailable
+    label: Inventory is unavailable.
+  - key: chat_ui.inventory_placement_failed
+    label: Failed to place the item in the inventory.
+  - key: chat_ui.inventory_add_failed
+    label: Failed to obtain the item.
+  - key: chat_ui.inventory_remove_success
+    label: Deleted {0}.
+  - key: chat_ui.inventory_remove_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.inventory_remove_unavailable
+    label: Inventory is unavailable.
+  - key: chat_ui.inventory_remove_not_player
+    label: You can only delete items from your own inventory.
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: Equipped items cannot be deleted directly.
+  - key: chat_ui.inventory_remove_failed
+    label: Failed to delete the item.
+  - key: chat_ui.inventory_remove_default_failed
+    label: Could not delete the item.
+  - key: chat_ui.shop_buy_success
+    label: Purchased {0}.
+  - key: chat_ui.shop_sell_success
+    label: Sold {0}.
+  - key: chat_ui.shop_not_enough_gold
+    label: Not enough gold to purchase {0}.
+  - key: chat_ui.shop_no_space_buy
+    label: No space in your inventory.
+  - key: chat_ui.shop_no_space_sell
+    label: No space in the shop to place the item for sale.
+  - key: chat_ui.shop_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.shop_transfer_failed
+    label: The trade failed while moving {0}.
+  - key: chat_ui.shop_stock_update_failed
+    label: Failed to update stock for {0}.
+  - key: chat_ui.shop_failed
+    label: Failed to process the trade.
+  - key: chat_ui.pickup_default
+    label: Obtained the item.
+  - key: chat_ui.out_of_range
+    label: Please move closer to the item.
+  - key: chat_ui.already_claimed
+    label: This item has already been claimed.
+  - key: chat_ui.pickup_unavailable
+    label: This item can no longer be obtained.
+  - key: chat_ui.item_unavailable
+    label: The target item could not be found.
+  - key: chat_ui.stale_revision
+    label: The item's state has changed. Please try again.
+  - key: chat_ui.recovery_failed
+    label: Failed to drop the item and restore the inventory. Please check your inventory.
+  - key: chat_ui.upgrade_process_failed
+    label: Failed to process the upgrade. Please try again.
+  - key: chat_ui.drop_failed
+    label: Failed to drop the item on the field. Please try again.
+  - key: chat_ui.acquisition_failed
+    label: Failed to obtain the item. Please try again.
+  - key: chat_ui.shop_state_changed
+    label: The shop's state has changed. Please select again.
+  - key: chat_ui.inventory_state_changed
+    label: The inventory's state has changed. Please try again.
+  - key: chat_ui.trade_failed
+    label: Failed to process the trade. Please try again.
+  - key: loading_ui.tooltip_title
+    label: Debris-9
+  - key: loading_ui.tooltip_content
+    label: This place was once an abandoned land, uninhabitable due to contamination,
+      but as centuries of accumulated robot wreckage began to repair and modify itself,
+      a bizarre mechanical ecosystem was born.
+  jpnLabels:
+  - key: settings_ui.tab_display
+    label: "\u753B\u9762"
+  - key: settings_ui.tab_sound
+    label: "\u30B5\u30A6\u30F3\u30C9"
+  - key: settings_ui.tab_control
+    label: "\u64CD\u4F5C"
+  - key: settings_ui.tab_gameplay
+    label: "\u30B2\u30FC\u30E0\u30D7\u30EC\u30A4"
+  - key: settings_ui.section_screen_size
+    label: "\u753B\u9762\u30B5\u30A4\u30BA"
+  - key: settings_ui.label_resolution
+    label: "\u89E3\u50CF\u5EA6"
+  - key: settings_ui.label_fullscreen
+    label: "\u30D5\u30EB\u30B9\u30AF\u30EA\u30FC\u30F3"
+  - key: settings_ui.label_quality
+    label: "\u753B\u8CEA"
+  - key: settings_ui.label_brightness
+    label: "\u660E\u308B\u3055"
+  - key: settings_ui.option_low
+    label: "\u4F4E"
+  - key: settings_ui.option_medium
+    label: "\u4E2D"
+  - key: settings_ui.option_high
+    label: "\u9AD8"
+  - key: settings_ui.label_max_fps
+    label: "\u6700\u5927FPS"
+  - key: settings_ui.option_unlimited
+    label: "\u7121\u5236\u9650"
+  - key: settings_ui.label_master_volume
+    label: "\u5168\u4F53\u97F3\u91CF"
+  - key: settings_ui.label_bgm_volume
+    label: "BGM\u97F3\u91CF"
+  - key: settings_ui.label_sfx_volume
+    label: "\u52B9\u679C\u97F3"
+  - key: settings_ui.label_mute
+    label: "\u30DF\u30E5\u30FC\u30C8"
+  - key: settings_ui.section_key_binding
+    label: "\u30AD\u30FC\u8A2D\u5B9A"
+  - key: settings_ui.skill_slot_1
+    label: "\u30B9\u30AD\u30EB1"
+  - key: settings_ui.skill_slot_2
+    label: "\u30B9\u30AD\u30EB2"
+  - key: settings_ui.skill_slot_3
+    label: "\u30B9\u30AD\u30EB3"
+  - key: settings_ui.skill_slot_4
+    label: "\u30B9\u30AD\u30EB4"
+  - key: settings_ui.skill_slot_potion
+    label: "\u6D88\u8017\u54C1"
+  - key: settings_ui.skill_slot_dodge
+    label: "\u56DE\u907F"
+  - key: settings_ui.label_enemy_health_display
+    label: "\u6575\u4F53\u529B\u8868\u793A"
+  - key: settings_ui.option_always
+    label: "\u5E38\u306B"
+  - key: settings_ui.option_on_hit
+    label: "\u88AB\u5F3E\u6642"
+  - key: settings_ui.option_none
+    label: "\u8868\u793A\u3057\u306A\u3044"
+  - key: settings_ui.label_damage_display
+    label: "\u30C0\u30E1\u30FC\u30B8\u8868\u793A"
+  - key: settings_ui.label_screen_shake
+    label: "\u753B\u9762\u632F\u52D5"
+  - key: settings_ui.label_tutorial
+    label: "\u30C1\u30E5\u30FC\u30C8\u30EA\u30A2\u30EB"
+  - key: settings_ui.option_once
+    label: "\u4E00\u5EA6\u3060\u3051"
+  - key: settings_ui.label_language
+    label: "\u8A00\u8A9E"
+  - key: settings_ui.button_reset
+    label: "\u521D\u671F\u8A2D\u5B9A\u306B\u623B\u3059"
+  - key: settings_ui.button_apply
+    label: "\u9069\u7528"
+  - key: settings_ui.button_confirm
+    label: "\u78BA\u8A8D"
+  - key: settings_ui.rebind_prompt
+    label: "\u5909\u66F4\u3059\u308B\u30AD\u30FC\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044"
+  - key: settings_ui.desc_resolution
+    label: "\u753B\u9762\u306E\u89E3\u50CF\u5EA6\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_fullscreen
+    label: "\u30D5\u30EB\u30B9\u30AF\u30EA\u30FC\u30F3\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_brightness
+    label: "\u660E\u308B\u3055\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_quality
+    label: "\u753B\u8CEA\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_max_fps
+    label: "\u6700\u5927FPS\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_master_volume
+    label: "\u5168\u4F53\u97F3\u91CF\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_bgm_volume
+    label: "BGM\u97F3\u91CF\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_sfx_volume
+    label: "\u52B9\u679C\u97F3\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_mute
+    label: "\u30DF\u30E5\u30FC\u30C8\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_skill_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u30B9\u30AD\u30EB\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_potion_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u6D88\u8017\u54C1\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_dodge_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u56DE\u907F\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_enemy_health_display
+    label: "\u6575\u4F53\u529B\u8868\u793A\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_damage_display
+    label: "\u30C0\u30E1\u30FC\u30B8\u8868\u793A\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_screen_shake
+    label: "\u30B2\u30FC\u30E0\u4E2D\u306E\u753B\u9762\u632F\u52D5\u306E\u6709\u7121\u306B\u3064\u3044\u3066\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_tutorial
+    label: "\u30C1\u30E5\u30FC\u30C8\u30EA\u30A2\u30EB\u8868\u793A\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_language
+    label: "\u8A00\u8A9E\u8A2D\u5B9A\u3092\u5909\u66F4\u3057\u307E\u3059\u3002"
+  - key: pause_ui.resume
+    label: "\u7D9A\u3051\u308B"
+  - key: pause_ui.settings
+    label: "\u8A2D\u5B9A"
+  - key: pause_ui.giveup
+    label: "\u3042\u304D\u3089\u3081\u308B"
+  - key: pause_ui.save_and_quit
+    label: "\u4FDD\u5B58\u3057\u3066\u7D42\u4E86"
+  - key: skill_ui.evolution_format
+    label: "\u9032\u5316\uFF1A{0}"
+  - key: skill_ui.enhancement_format
+    label: "\u5F37\u5316\uFF1A{0}"
+  - key: skill_ui.cooldown_only
+    label: "\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{0}\u79D2"
+  - key: skill_ui.damage_and_cooldown
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\u8A73\u7D30\u30B9\u30C6\u30FC\u30BF\u30B9\u8868\u793A"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\u30B7\u30E7\u30C3\u30D7"
+  - key: inventory_ui.header
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA"
+  - key: upgrade_ui.header
+    label: "\u5F37\u5316"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\u8FFD\u52A0\u30AA\u30D7\u30B7\u30E7\u30F3"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\u56FA\u6709\u52B9\u679C"
+  - key: upgrade_ui.current_stat
+    label: "\u73FE\u5728\u30B9\u30C6\u30FC\u30BF\u30B9\uFF1A{0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\u5F37\u5316\u5F8C\u30B9\u30C6\u30FC\u30BF\u30B9\uFF1A{0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\u5F37\u5316\u8CBB\u7528\uFF1A{0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\u5F37\u5316\u8CBB\u7528\uFF1A-"
+  - key: upgrade_ui.unknown_item
+    label: "\u30A2\u30A4\u30C6\u30E0"
+  - key: upgrade_ui.selection_required
+    label: "\u5F37\u5316\u3059\u308B\u30A2\u30A4\u30C6\u30E0\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \u5F37\u5316\u6210\u529F"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\u30B4\u30FC\u30EB\u30C9\u304C\u4E0D\u8DB3\u3057\u3066\u3044\u307E\u3059\u3002"
+  - key: upgrade_ui.result_invalid_item
+    label: "\u5F37\u5316\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: upgrade_ui.result_invalid_cost
+    label: "\u5F37\u5316\u8CBB\u7528\u306E\u8A2D\u5B9A\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\u5F37\u5316\u51E6\u7406\u4E2D\u306B\u554F\u984C\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: upgrade_ui.result_failed
+    label: "\u5F37\u5316\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: npc_ui.quest
+    label: "\u4F9D\u983C"
+  - key: npc_ui.rest
+    label: "\u4F11\u61A9"
+  - key: chat_ui.equip_success
+    label: "\u88C5\u5099\u51E6\u7406\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_swapped
+    label: "\u88C5\u5099\u3092\u4EA4\u63DB\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_invalid_item
+    label: "\u88C5\u5099\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.equip_invalid_slot
+    label: "\u305D\u306E\u30B9\u30ED\u30C3\u30C8\u306B\u306F\u88C5\u5099\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_slot_occupied
+    label: "\u3059\u3067\u306B\u88C5\u5099\u304C\u88C5\u7740\u3055\u308C\u3066\u3044\u307E\u3059\u3002"
+  - key: chat_ui.equip_not_equipped
+    label: "\u89E3\u9664\u3059\u308B\u88C5\u5099\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_no_return_space
+    label: "\u65E2\u5B58\u306E\u88C5\u5099\u3092\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u7F6E\u304F\u30B9\u30DA\u30FC\u30B9\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_failed
+    label: "\u88C5\u5099\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_wrong_class
+    label: "\u3053\u306E\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u306F\u88C5\u5099\u3067\u304D\u306A\u3044\u6B66\u5668\u3067\u3059\u3002"
+  - key: chat_ui.equip_unknown
+    label: "\u4E0D\u660E\u306A\u88C5\u5099\u51E6\u7406\u7D50\u679C\u3067\u3059\u3002"
+  - key: chat_ui.inventory_acquisition
+    label: "{0} \u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_acquisition_colored
+    label: "{0} \u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_success_position
+    label: "{0} \u4F4D\u7F6E\uFF1A{1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.inventory_no_space
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u304C\u6E80\u676F\u3067\u3059\uFF01"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_placement_failed
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u30A2\u30A4\u30C6\u30E0\u3092\u914D\u7F6E\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: chat_ui.inventory_add_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u7372\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_success
+    label: "{0} \u3092\u524A\u9664\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_remove_not_player
+    label: "\u81EA\u5206\u306E\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u30A2\u30A4\u30C6\u30E0\u306E\u307F\u524A\u9664\u3067\u304D\u307E\u3059\u3002"
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\u88C5\u5099\u4E2D\u306E\u30A2\u30A4\u30C6\u30E0\u306F\u76F4\u63A5\u524A\u9664\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_remove_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u524A\u9664\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: chat_ui.shop_buy_success
+    label: "{0} \u3092\u8CFC\u5165\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_sell_success
+    label: "{0} \u3092\u58F2\u5374\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_not_enough_gold
+    label: "\u30B4\u30FC\u30EB\u30C9\u304C\u4E0D\u8DB3\u3057\u3066\u3044\u308B\u305F\u3081
+      {0} \u306E\u8CFC\u5165\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_no_space_buy
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u7A7A\u304D\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.shop_no_space_sell
+    label: "\u30B7\u30E7\u30C3\u30D7\u306B\u8CA9\u58F2\u30A2\u30A4\u30C6\u30E0\u3092\u7F6E\u304F\u30B9\u30DA\u30FC\u30B9\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.shop_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.shop_transfer_failed
+    label: "{0} \u306E\u79FB\u52D5\u4E2D\u306B\u53D6\u5F15\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0} \u306E\u5728\u5EAB\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_failed
+    label: "\u53D6\u5F15\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.pickup_default
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.out_of_range
+    label: "\u30A2\u30A4\u30C6\u30E0\u306B\u3082\u3063\u3068\u8FD1\u3065\u3044\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.already_claimed
+    label: "\u3059\u3067\u306B\u7372\u5F97\u6E08\u307F\u306E\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.pickup_unavailable
+    label: "\u3053\u308C\u4EE5\u4E0A\u7372\u5F97\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.item_unavailable
+    label: "\u5BFE\u8C61\u306E\u30A2\u30A4\u30C6\u30E0\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.stale_revision
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.recovery_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u30C9\u30ED\u30C3\u30D7\u3068\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u5FA9\u5143\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u72B6\u614B\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.upgrade_process_failed
+    label: "\u5F37\u5316\u3092\u51E6\u7406\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.drop_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u30D5\u30A3\u30FC\u30EB\u30C9\u306B\u7F6E\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.acquisition_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.shop_state_changed
+    label: "\u30B7\u30E7\u30C3\u30D7\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.inventory_state_changed
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.trade_failed
+    label: "\u53D6\u5F15\u3092\u51E6\u7406\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: loading_ui.tooltip_title
+    label: "\u30C7\u30D6\u30EA\u30B9-9"
+  - key: loading_ui.tooltip_content
+    label: "\u3053\u306E\u5834\u6240\u306F\u6C5A\u67D3\u306B\u3088\u3063\u3066\u4EBA\u9593\u304C\u4F4F\u3081\u306A\u3044\u5EC3\u589F\u306E\u5730\u3067\u3057\u305F\u304C\u3001\u4F55\u767E\u5E74\u3082\u306E\u9593\u7A4D\u307F\u91CD\u306A\u3063\u305F\u30ED\u30DC\u30C3\u30C8\u306E\u6B8B\u9AB8\u304C\u81EA\u3089\u3092\u4FEE\u5FA9\u30FB\u6539\u9020\u3057\u59CB\u3081\u3001\u5947\u602A\u306A\u30E1\u30AB\u751F\u614B\u7CFB\u304C\u751F\u307E\u308C\u307E\u3057\u305F\u3002"
+  chnLabels:
+  - key: settings_ui.tab_display
+    label: "\u663E\u793A"
+  - key: settings_ui.tab_sound
+    label: "\u58F0\u97F3"
+  - key: settings_ui.tab_control
+    label: "\u64CD\u4F5C"
+  - key: settings_ui.tab_gameplay
+    label: "\u6E38\u620F\u73A9\u6CD5"
+  - key: settings_ui.section_screen_size
+    label: "\u5C4F\u5E55\u8BBE\u7F6E"
+  - key: settings_ui.label_resolution
+    label: "\u5206\u8FA8\u7387"
+  - key: settings_ui.label_fullscreen
+    label: "\u5168\u5C4F\u6A21\u5F0F"
+  - key: settings_ui.label_quality
+    label: "\u753B\u8D28"
+  - key: settings_ui.label_brightness
+    label: "\u4EAE\u5EA6"
+  - key: settings_ui.option_low
+    label: "\u4F4E"
+  - key: settings_ui.option_medium
+    label: "\u4E2D"
+  - key: settings_ui.option_high
+    label: "\u9AD8"
+  - key: settings_ui.label_max_fps
+    label: "\u6700\u5927\u5E27\u7387"
+  - key: settings_ui.option_unlimited
+    label: "\u65E0\u9650\u5236"
+  - key: settings_ui.label_master_volume
+    label: "\u4E3B\u97F3\u91CF"
+  - key: settings_ui.label_bgm_volume
+    label: "\u80CC\u666F\u97F3\u4E50"
+  - key: settings_ui.label_sfx_volume
+    label: "\u97F3\u6548"
+  - key: settings_ui.label_mute
+    label: "\u9759\u97F3"
+  - key: settings_ui.section_key_binding
+    label: "\u6309\u952E\u8BBE\u7F6E"
+  - key: settings_ui.skill_slot_1
+    label: "\u6280\u80FD1"
+  - key: settings_ui.skill_slot_2
+    label: "\u6280\u80FD2"
+  - key: settings_ui.skill_slot_3
+    label: "\u6280\u80FD3"
+  - key: settings_ui.skill_slot_4
+    label: "\u6280\u80FD4"
+  - key: settings_ui.skill_slot_potion
+    label: "\u6D88\u8017\u54C1"
+  - key: settings_ui.skill_slot_dodge
+    label: "\u95EA\u907F"
+  - key: settings_ui.label_enemy_health_display
+    label: "\u654C\u4EBA\u8840\u91CF\u663E\u793A"
+  - key: settings_ui.option_always
+    label: "\u603B\u662F"
+  - key: settings_ui.option_on_hit
+    label: "\u53D7\u51FB\u65F6"
+  - key: settings_ui.option_none
+    label: "\u4E0D\u663E\u793A"
+  - key: settings_ui.label_damage_display
+    label: "\u4F24\u5BB3\u663E\u793A"
+  - key: settings_ui.label_screen_shake
+    label: "\u5C4F\u5E55\u9707\u52A8"
+  - key: settings_ui.label_tutorial
+    label: "\u6559\u7A0B"
+  - key: settings_ui.option_once
+    label: "\u4EC5\u4E00\u6B21"
+  - key: settings_ui.label_language
+    label: "\u8BED\u8A00"
+  - key: settings_ui.button_reset
+    label: "\u6062\u590D\u9ED8\u8BA4\u8BBE\u7F6E"
+  - key: settings_ui.button_apply
+    label: "\u5E94\u7528"
+  - key: settings_ui.button_confirm
+    label: "\u786E\u8BA4"
+  - key: settings_ui.rebind_prompt
+    label: "\u8BF7\u8F93\u5165\u8981\u66F4\u6539\u7684\u6309\u952E"
+  - key: settings_ui.desc_resolution
+    label: "\u53EF\u4EE5\u66F4\u6539\u5C4F\u5E55\u5206\u8FA8\u7387\u3002"
+  - key: settings_ui.desc_fullscreen
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F\u3002"
+  - key: settings_ui.desc_brightness
+    label: "\u53EF\u4EE5\u8C03\u8282\u4EAE\u5EA6\u3002"
+  - key: settings_ui.desc_quality
+    label: "\u53EF\u4EE5\u66F4\u6539\u753B\u8D28\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_max_fps
+    label: "\u53EF\u4EE5\u66F4\u6539\u6700\u5927\u5E27\u7387\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_master_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u4E3B\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_bgm_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u80CC\u666F\u97F3\u4E50\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_sfx_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u97F3\u6548\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_mute
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u9759\u97F3\u3002"
+  - key: settings_ui.desc_skill_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u6280\u80FD\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.desc_potion_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u6D88\u8017\u54C1\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.desc_dodge_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u95EA\u907F\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.desc_enemy_health_display
+    label: "\u53EF\u4EE5\u66F4\u6539\u654C\u4EBA\u8840\u91CF\u663E\u793A\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_damage_display
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u663E\u793A\u4F24\u5BB3\u6570\u503C\u3002"
+  - key: settings_ui.desc_screen_shake
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u8FC7\u7A0B\u4E2D\u662F\u5426\u5F00\u542F\u5C4F\u5E55\u9707\u52A8\u3002"
+  - key: settings_ui.desc_tutorial
+    label: "\u53EF\u4EE5\u66F4\u6539\u6559\u7A0B\u663E\u793A\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_language
+    label: "\u66F4\u6539\u8BED\u8A00\u8BBE\u7F6E\u3002"
+  - key: pause_ui.resume
+    label: "\u7EE7\u7EED"
+  - key: pause_ui.settings
+    label: "\u8BBE\u7F6E"
+  - key: pause_ui.giveup
+    label: "\u653E\u5F03"
+  - key: pause_ui.save_and_quit
+    label: "\u4FDD\u5B58\u540E\u9000\u51FA"
+  - key: skill_ui.evolution_format
+    label: "\u8FDB\u5316\uFF1A{0}"
+  - key: skill_ui.enhancement_format
+    label: "\u5F3A\u5316\uFF1A{0}"
+  - key: skill_ui.cooldown_only
+    label: "\u51B7\u5374\u65F6\u95F4{0}\u79D2"
+  - key: skill_ui.damage_and_cooldown
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\u663E\u793A\u8BE6\u7EC6\u5C5E\u6027"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\u5546\u5E97"
+  - key: inventory_ui.header
+    label: "\u7269\u54C1\u680F"
+  - key: upgrade_ui.header
+    label: "\u5F3A\u5316"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\u9644\u52A0\u9009\u9879"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\u56FA\u6709\u6548\u679C"
+  - key: upgrade_ui.current_stat
+    label: "\u5F53\u524D\u5C5E\u6027\uFF1A{0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\u5F3A\u5316\u540E\u5C5E\u6027\uFF1A{0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\u5F3A\u5316\u8D39\u7528\uFF1A{0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\u5F3A\u5316\u8D39\u7528\uFF1A-"
+  - key: upgrade_ui.unknown_item
+    label: "\u7269\u54C1"
+  - key: upgrade_ui.selection_required
+    label: "\u8BF7\u9009\u62E9\u8981\u5F3A\u5316\u7684\u7269\u54C1\u3002"
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \u5F3A\u5316\u6210\u529F"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\u91D1\u5E01\u4E0D\u8DB3\u3002"
+  - key: upgrade_ui.result_invalid_item
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u5F3A\u5316\u3002"
+  - key: upgrade_ui.result_invalid_cost
+    label: "\u5F3A\u5316\u8D39\u7528\u8BBE\u7F6E\u4E0D\u6B63\u786E\u3002"
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\u5F3A\u5316\u5904\u7406\u8FC7\u7A0B\u4E2D\u53D1\u751F\u4E86\u95EE\u9898\u3002"
+  - key: upgrade_ui.result_failed
+    label: "\u5F3A\u5316\u5931\u8D25\u3002"
+  - key: npc_ui.quest
+    label: "\u59D4\u6258"
+  - key: npc_ui.rest
+    label: "\u4F11\u606F"
+  - key: chat_ui.equip_success
+    label: "\u88C5\u5907\u5904\u7406\u5DF2\u5B8C\u6210\u3002"
+  - key: chat_ui.equip_swapped
+    label: "\u5DF2\u66F4\u6362\u88C5\u5907\u3002"
+  - key: chat_ui.equip_invalid_item
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u88C5\u5907\u3002"
+  - key: chat_ui.equip_invalid_slot
+    label: "\u65E0\u6CD5\u88C5\u5907\u5230\u8BE5\u680F\u4F4D\u3002"
+  - key: chat_ui.equip_slot_occupied
+    label: "\u8BE5\u4F4D\u7F6E\u5DF2\u88C5\u5907\u7269\u54C1\u3002"
+  - key: chat_ui.equip_not_equipped
+    label: "\u6CA1\u6709\u53EF\u5378\u4E0B\u7684\u88C5\u5907\u3002"
+  - key: chat_ui.equip_no_return_space
+    label: "\u80CC\u5305\u4E2D\u6CA1\u6709\u7A7A\u95F4\u653E\u7F6E\u539F\u6709\u88C5\u5907\u3002"
+  - key: chat_ui.equip_failed
+    label: "\u88C5\u5907\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.equip_wrong_class
+    label: "\u8BE5\u89D2\u8272\u65E0\u6CD5\u88C5\u5907\u6B64\u6B66\u5668\u3002"
+  - key: chat_ui.equip_unknown
+    label: "\u672A\u77E5\u7684\u88C5\u5907\u5904\u7406\u7ED3\u679C\u3002"
+  - key: chat_ui.inventory_acquisition
+    label: "\u83B7\u5F97\u4E86\u7269\u54C1\uFF1A{0}\u3002"
+  - key: chat_ui.inventory_acquisition_colored
+    label: "\u83B7\u5F97\u4E86 {0}\u3002"
+  - key: chat_ui.inventory_success_position
+    label: "{0} \u4F4D\u7F6E\uFF1A{1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_no_space
+    label: "\u80CC\u5305\u5DF2\u6EE1\uFF01"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\u65E0\u6CD5\u4F7F\u7528\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_placement_failed
+    label: "\u672A\u80FD\u5C06\u7269\u54C1\u653E\u5165\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_add_failed
+    label: "\u83B7\u53D6\u7269\u54C1\u5931\u8D25\u3002"
+  - key: chat_ui.inventory_remove_success
+    label: "\u5DF2\u5220\u9664 {0}\u3002"
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\u65E0\u6CD5\u4F7F\u7528\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_remove_not_player
+    label: "\u53EA\u80FD\u5220\u9664\u81EA\u5DF1\u80CC\u5305\u4E2D\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\u5DF2\u88C5\u5907\u7684\u7269\u54C1\u65E0\u6CD5\u76F4\u63A5\u5220\u9664\u3002"
+  - key: chat_ui.inventory_remove_failed
+    label: "\u5220\u9664\u7269\u54C1\u5931\u8D25\u3002"
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\u65E0\u6CD5\u5220\u9664\u7269\u54C1\u3002"
+  - key: chat_ui.shop_buy_success
+    label: "\u5DF2\u8D2D\u4E70 {0}\u3002"
+  - key: chat_ui.shop_sell_success
+    label: "\u5DF2\u51FA\u552E {0}\u3002"
+  - key: chat_ui.shop_not_enough_gold
+    label: "\u91D1\u5E01\u4E0D\u8DB3\uFF0C\u8D2D\u4E70 {0} \u5931\u8D25\u3002"
+  - key: chat_ui.shop_no_space_buy
+    label: "\u80CC\u5305\u4E2D\u6CA1\u6709\u7A7A\u95F4\u3002"
+  - key: chat_ui.shop_no_space_sell
+    label: "\u5546\u5E97\u4E2D\u6CA1\u6709\u7A7A\u95F4\u653E\u7F6E\u51FA\u552E\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.shop_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.shop_transfer_failed
+    label: "\u79FB\u52A8 {0} \u65F6\u4EA4\u6613\u5931\u8D25\u3002"
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0} \u5E93\u5B58\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.shop_failed
+    label: "\u4EA4\u6613\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.pickup_default
+    label: "\u83B7\u5F97\u4E86\u7269\u54C1\u3002"
+  - key: chat_ui.out_of_range
+    label: "\u8BF7\u9760\u8FD1\u7269\u54C1\u3002"
+  - key: chat_ui.already_claimed
+    label: "\u8BE5\u7269\u54C1\u5DF2\u88AB\u83B7\u53D6\u3002"
+  - key: chat_ui.pickup_unavailable
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u518D\u83B7\u53D6\u3002"
+  - key: chat_ui.item_unavailable
+    label: "\u627E\u4E0D\u5230\u76EE\u6807\u7269\u54C1\u3002"
+  - key: chat_ui.stale_revision
+    label: "\u7269\u54C1\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.recovery_failed
+    label: "\u7269\u54C1\u6389\u843D\u53CA\u80CC\u5305\u6062\u590D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u80CC\u5305\u72B6\u6001\u3002"
+  - key: chat_ui.upgrade_process_failed
+    label: "\u5F3A\u5316\u5904\u7406\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.drop_failed
+    label: "\u672A\u80FD\u5C06\u7269\u54C1\u653E\u7F6E\u5230\u573A\u5730\u4E0A\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.acquisition_failed
+    label: "\u83B7\u53D6\u7269\u54C1\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.shop_state_changed
+    label: "\u5546\u5E97\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002"
+  - key: chat_ui.inventory_state_changed
+    label: "\u80CC\u5305\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.trade_failed
+    label: "\u4EA4\u6613\u5904\u7406\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: loading_ui.tooltip_title
+    label: "\u6B8B\u9AB8-9"
+  - key: loading_ui.tooltip_content
+    label: "\u8FD9\u91CC\u539F\u672C\u662F\u56E0\u6C61\u67D3\u800C\u65E0\u6CD5\u5C45\u4F4F\u7684\u5E9F\u5F03\u4E4B\u5730\uFF0C\u4F46\u6570\u767E\u5E74\u95F4\u5806\u79EF\u7684\u673A\u5668\u4EBA\u6B8B\u9AB8\u5F00\u59CB\u81EA\u6211\u4FEE\u590D\u4E0E\u6539\u9020\uFF0C\u5F62\u6210\u4E86\u8BE1\u5F02\u7684\u673A\u7532\u751F\u6001\u7CFB\u7EDF\u3002"
