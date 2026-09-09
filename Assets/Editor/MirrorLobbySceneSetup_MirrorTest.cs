@@ -20,8 +20,75 @@ public static class MirrorLobbySceneSetup_MirrorTest
     private const string FighterPath = "Assets/SW/TEST/MirrorPlayerContext/Prefabs/FighterNetworkPlayer.prefab";
     public const string GunnerPath = "Assets/SW/TEST/MirrorPlayerContext/Prefabs/GunnerNetworkPlayer_MirrorTest.prefab";
     private const string OriginalGunnerPath = "Assets/Resources/Prefabs/Character/Player/Gunner.prefab";
-    private const string OriginalLobbyPath = "Assets/Scenes/Test/KY/LobbySeane.unity";
+    private const string OriginalLobbyPath = "Assets/Scenes/Test/KY/MultiplayerLobbySeane.unity";
     private const string KoreanFontPath = "Assets/Resources/Font/Pretendard-Medium SDF.asset";
+
+    /// <summary>세 로비의 기존 패시브 화면에 실제 매니저와 DB를 연결한다. 멀티 저장 연결 전에는 조회만 허용한다.</summary>
+    [MenuItem("SW/Mirror Test/Connect Passive Lobby UI")]
+    public static void ConnectPassiveLobbyUI()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
+            throw new InvalidOperationException("컴파일이 끝난 Edit Mode에서 실행하세요.");
+        string[] paths = { MirrorTestNetworkManager.SessionLobbyScene, OriginalLobbyPath,
+            "Assets/Scenes/Test/KY/SinglePlayerLobbySeane.unity" };
+        foreach (string path in paths)
+        {
+            Scene loaded = SceneManager.GetSceneByPath(path);
+            if (loaded.isLoaded && loaded.isDirty)
+                throw new InvalidOperationException("저장하지 않은 로비 편집이 있습니다: " + path);
+        }
+        Scene previous = SceneManager.GetActiveScene();
+        var database = AssetDatabase.LoadAssetAtPath<PassiveSkillDatabaseSO>(
+            "Assets/WJ_TestPlace/Data/Passive/PassiveSkillDatabase.asset");
+        if (database == null) throw new InvalidOperationException("패시브 DB를 찾지 못했습니다.");
+        foreach (string path in paths)
+        {
+            Scene scene = SceneManager.GetSceneByPath(path);
+            bool opened = !scene.isLoaded;
+            if (opened) scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
+            try
+            {
+                var popup = InScene<KY_PassiveSkillPopup>(scene).Single();
+                var manager = InScene<PassiveSkillManager>(scene).SingleOrDefault();
+                if (manager == null)
+                {
+                    var root = new GameObject("Passive Profile");
+                    SceneManager.MoveGameObjectToScene(root, scene);
+                    manager = root.AddComponent<PassiveSkillManager>();
+                }
+                SetReference(manager, "database", database);
+                SetReference(popup, "skillManager", manager);
+                var data = new SerializedObject(popup);
+                bool singlePlayer = path.EndsWith("/SinglePlayerLobbySeane.unity", StringComparison.Ordinal);
+                data.FindProperty("allowChanges").boolValue = singlePlayer;
+                data.FindProperty("unavailableReason").stringValue =
+                    "프로필 저장 연결이 준비되면 패시브를 변경할 수 있습니다.";
+                data.ApplyModifiedPropertiesWithoutUndo();
+                var popups = InScene<KY_PopupManager>(scene).Single();
+                var pause = InScene<KY_PausePopup>(scene).SingleOrDefault();
+                if (pause == null)
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/UI/Popup/PausePopup.prefab");
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, popup.transform.parent);
+                    pause = instance.GetComponent<KY_PausePopup>();
+                    instance.SetActive(false);
+                }
+                var pauseData = new SerializedObject(pause);
+                pauseData.FindProperty("pauseGameTime").boolValue = singlePlayer;
+                pauseData.ApplyModifiedPropertiesWithoutUndo();
+                if (!popups.popupEntries.Any(entry => entry.type == PopupType.Pause))
+                    popups.popupEntries.Add(new KY_PopupManager.PopupEntry { type = PopupType.Pause, popup = pause });
+                EditorUtility.SetDirty(popups);
+                EditorSceneManager.MarkSceneDirty(scene);
+                if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("로비 저장 실패: " + path);
+            }
+            finally
+            {
+                if (opened) EditorSceneManager.CloseScene(scene, true);
+                if (previous.IsValid() && previous.isLoaded) SceneManager.SetActiveScene(previous);
+            }
+        }
+    }
 
     /// <summary>캠프 이동 영역을 별도 프리뷰 씬에서 굽고 Mirror 캠프에만 연결한다.</summary>
     [MenuItem("SW/Mirror 테스트/캠프 이동 영역 생성")]
@@ -135,12 +202,17 @@ public static class MirrorLobbySceneSetup_MirrorTest
             Object.DestroyImmediate(managerObject.GetComponent<NetworkManagerHUD>());
             Object.DestroyImmediate(managerObject.GetComponent<DataManager_MirrorTest>());
             MirrorTestNetworkManager manager = managerObject.GetComponent<MirrorTestNetworkManager>();
-            manager.authenticator = managerObject.AddComponent<MirrorSessionAuthenticator_MirrorTest>();
+            manager.authenticator = managerObject.GetComponent<MirrorSessionAuthenticator_MirrorTest>() ??
+                managerObject.AddComponent<MirrorSessionAuthenticator_MirrorTest>();
+            SetReference(manager.authenticator, "passiveDatabase", AssetDatabase.LoadAssetAtPath<PassiveSkillDatabaseSO>(
+                "Assets/WJ_TestPlace/Data/Passive/PassiveSkillDatabase.asset"));
             manager.autoCreatePlayer = false;
             manager.maxConnections = 4;
             manager.offlineScene = MirrorTestNetworkManager.SessionLobbyScene;
             manager.onlineScene = string.Empty;
             if (!manager.spawnPrefabs.Contains(gunner)) manager.spawnPrefabs.Add(gunner);
+            var skillVisual = AssetDatabase.LoadAssetAtPath<GameObject>(MirrorSkillSceneSetup_MirrorTest.NetworkVisualPath);
+            if (skillVisual != null && !manager.spawnPrefabs.Contains(skillVisual)) manager.spawnPrefabs.Add(skillVisual);
             SetReference(manager, "gunnerPlayerPrefab", gunner);
 
             KY_LobbyFlowController flow = InScene<KY_LobbyFlowController>(lobbyScene).Single();
@@ -227,6 +299,7 @@ public static class MirrorLobbySceneSetup_MirrorTest
             identity.FindProperty("sceneId").ulongValue = 0;
             identity.ApplyModifiedPropertiesWithoutUndo();
             gunner.GetComponent<UnityEngine.AI.NavMeshAgent>().enabled = false;
+            MirrorSkillSceneSetup_MirrorTest.ConfigurePlayer(gunner, sourceGunner);
             VerifyReferences(new[] { gunner });
             return PrefabUtility.SaveAsPrefabAsset(gunner, GunnerPath);
         }

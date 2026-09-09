@@ -57,7 +57,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private GUIStyle passStyle;
     private GUIStyle failStyle;
     private Vector2 diagnosticsScroll;
-    private bool diagnosticsCollapsed;
+    private bool diagnosticsCollapsed = true;
 
     public PlayerContext BoundContext => context;
 

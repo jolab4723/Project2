@@ -32,6 +32,8 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
         Unbind();
         BoundContext = context;
 
+        BindPlayerViews(context);
+
         if (context == null)
             return;
 
@@ -58,6 +60,7 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
 
     public void Unbind()
     {
+        BindPlayerViews(null);
         if (health != null)
             health.OnHealthChanged -= PublishHealth;
 
@@ -74,6 +77,16 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
         health = null;
         mana = null;
         stats = null;
+    }
+
+    /// <summary>HUD의 레벨·수치 툴팁·방향 표시도 같은 로컬 플레이어만 참조하게 한다.</summary>
+    private void BindPlayerViews(PlayerContext context)
+    {
+        var status = context != null ? context.GetComponent<WBH_PlayerStatus>() : null;
+        foreach (var view in GetComponentsInChildren<YJ_PlayerInformation>(true)) view.BindPlayer(status);
+        foreach (var view in GetComponentsInChildren<YJ_HUDInformationView>(true)) view.BindPlayer(status);
+        foreach (var view in GetComponentsInChildren<YJ_MinimapPlayer>(true))
+            view.BindPlayer(context != null ? context.transform : null);
     }
 
     private void OnDestroy()

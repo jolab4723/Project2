@@ -266,6 +266,8 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         stockSnapshots.RemoveAt(stockIndex);
         lastServerEvent = $"netId={requester.netId} 구매: {itemData.definition.itemName} / {price}골드";
         AdvanceStateRevision();
+        if (NetworkManager.singleton is MirrorTestNetworkManager session)
+            session.ServerReportQuestItem(requester.Context, itemData.definition.itemId);
         return MirrorTestShopRequestResult.Success;
     }
 

@@ -7,12 +7,15 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class MirrorSessionAuthenticator_MirrorTest : NetworkAuthenticator
 {
+    [SerializeField] private PassiveSkillDatabaseSO passiveDatabase;
+    public PassiveSkillDatabaseSO PassiveDatabase => passiveDatabase;
     public struct AdmissionRequest : NetworkMessage
     {
         public int Version;
         public string DisplayName;
         public string SessionId;
         public string ReconnectToken;
+        public string PassiveProfileJson;
     }
 
     public struct AdmissionResponse : NetworkMessage
@@ -62,7 +65,15 @@ public sealed class MirrorSessionAuthenticator_MirrorTest : NetworkAuthenticator
         bool accepted = request.Version == MirrorTestNetworkManager.CompatibilityVersion;
         if (!accepted) reason = "서버와 클라이언트의 빌드 버전이 다릅니다.";
         else if (string.IsNullOrEmpty(request.SessionId) && string.IsNullOrEmpty(request.ReconnectToken))
-            accepted = manager.ServerRoster.TryJoin(connection.connectionId, request.DisplayName, out member, out reason);
+        {
+            accepted = MirrorPassiveProfile_MirrorTest.TryValidate(request.PassiveProfileJson, passiveDatabase,
+                out MirrorPassiveProfile_MirrorTest passive, out reason);
+            if (accepted)
+            {
+                accepted = manager.ServerRoster.TryJoin(connection.connectionId, request.DisplayName, out member, out reason);
+                if (accepted) member.PassiveProfile = passive;
+            }
+        }
         else
             accepted = manager.ServerRoster.TryResume(connection.connectionId, request.SessionId,
                 request.ReconnectToken, Time.realtimeSinceStartupAsDouble, out member, out reason);
@@ -106,12 +117,26 @@ public sealed class MirrorSessionAuthenticator_MirrorTest : NetworkAuthenticator
     public override void OnClientAuthenticate()
     {
         MirrorReconnectProfile_MirrorTest profile = manager.RequestedReconnectProfile;
+        string passiveJson;
+        try
+        {
+            passiveJson = profile == null ?
+                MirrorSessionSmokeDriver_MirrorTest.PassiveFixtureJson() ?? MirrorPassiveProfile_MirrorTest.ReadLocalPayload() : null;
+        }
+        catch (System.Exception exception) when (exception is System.IO.IOException ||
+            exception is System.UnauthorizedAccessException || exception is System.ArgumentException)
+        {
+            manager.SetAdmissionStatus("저장된 패시브 프로필을 읽지 못했습니다.");
+            ClientReject();
+            return;
+        }
         NetworkClient.Send(new AdmissionRequest
         {
             Version = MirrorTestNetworkManager.CompatibilityVersion,
             DisplayName = manager.ClientDisplayName,
             SessionId = profile?.SessionId,
-            ReconnectToken = profile?.ReconnectToken
+            ReconnectToken = profile?.ReconnectToken,
+            PassiveProfileJson = passiveJson
         });
         clientTimeout = StartCoroutine(ExpireClientAdmission());
     }

@@ -12,6 +12,7 @@ using UnityEngine.InputSystem;
 /// 인벤토리·상점·강화 창을 여는 로컬 단축키 경계도 함께 담당한다.
 /// </summary>
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-100)]
 public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 {
     private static readonly FieldInfo NpcClickedEventField =
@@ -20,6 +21,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private MirrorTestNetworkManager networkManager;
+    [SerializeField] private KY_PopupManager popupManager;
+    private MirrorSpawnedPlayerBinder boundPlayerBinder;
     [SerializeField] private InventoryView inventoryView;
     [SerializeField] private InventoryPartView inventoryPartView;
     [SerializeField] private MirrorTestPlayerHud playerHud;
@@ -27,6 +30,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     [SerializeField] private NetworkUpgradeButton_MirrorTest upgradeButton;
     [SerializeField] private PlayerHudEventBridge_MirrorTest formalHudBridge;
     [SerializeField] private KY_StatusPopup_MirrorTest statusPopup;
+    [SerializeField] private SkillPopupController skillPopup;
+    private FighterSkillAuthority_MirrorTest boundSkills;
 
     private PlayerContext boundContext;
     private PlayerInventorySync_MirrorTest boundInventorySync;
@@ -36,6 +41,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void OnEnable()
     {
+        popupManager ??= FindInBinderScene<KY_PopupManager>();
+        skillPopup ??= FindInBinderScene<SkillPopupController>();
         if (networkManager == null)
             networkManager = FindFirstObjectByType<MirrorTestNetworkManager>();
 
@@ -72,14 +79,22 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         }
 
         networkManager.LocalPlayerContextChanged += HandleLocalPlayerChanged;
+        networkManager.RunSnapshotChanged += RefreshLocation;
+        RefreshLocation(0);
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
         BindCampNpcWindows();
     }
 
     private void OnDisable()
     {
+        UnbindSkills();
+        if (boundPlayerBinder != null) boundPlayerBinder.SetMenuInputBlocked(false);
+        boundPlayerBinder = null;
         if (networkManager != null)
+        {
             networkManager.LocalPlayerContextChanged -= HandleLocalPlayerChanged;
+            networkManager.RunSnapshotChanged -= RefreshLocation;
+        }
 
         // UnityEngine.Object는 파괴된 뒤 C# 참조가 남아 있어도 `obj != null` 비교에서는 null로 취급된다.
         // 반면 null 조건 연산자(`?.`)는 Unity의 이 판정을 거치지 않아 Scene 전환 중 파괴된 HUD를
@@ -110,6 +125,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void HandleLocalPlayerChanged(PlayerContext context)
     {
+        UnbindSkills();
+        if (boundPlayerBinder != null) boundPlayerBinder.SetMenuInputBlocked(false);
+        boundPlayerBinder = null;
         boundShopState?.UnbindLocalView(boundContext);
         boundShopState = null;
         boundInventorySync?.UnbindLocalInventoryView(inventoryView);
@@ -135,6 +153,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         }
 
         boundContext = context;
+        boundPlayerBinder = context.GetComponent<MirrorSpawnedPlayerBinder>();
         boundInventorySync = context.GetComponent<PlayerInventorySync_MirrorTest>();
         boundInventorySync?.BindLocalInventoryView(inventoryView);
         boundShopState = FindInBinderScene<NetworkShopState_MirrorTest>();
@@ -144,6 +163,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         formalHudBridge?.Bind(context);
         statusPopup?.Bind(context.Stats);
         worldItemScanner?.BindPlayer(context.transform);
+        boundSkills = context.GetComponent<FighterSkillAuthority_MirrorTest>();
+        if (boundSkills != null) boundSkills.SkillStateChanged += RefreshSkills;
+        RefreshSkills();
 
         Debug.Assert(
             worldItemScanner == null || worldItemScanner.BoundPlayer == context.transform,
@@ -154,6 +176,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     private void Update()
     {
         EnsureSceneShopBinding();
+        RefreshMenuInputBlock();
 
         if (networkManager != null && networkManager.Chat.ConsumesInputThisFrame)
             return;
@@ -163,11 +186,17 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (statusPopup != null && statusPopup.IsOpen)
+            if (popupManager != null && popupManager.HasOpenModalPopup)
+                popupManager.Hide();
+            else if (statusPopup != null && statusPopup.IsOpen)
                 statusPopup.Close();
-            else
+            else if (inventoryPartView.HasOpenWindow)
                 inventoryPartView.CloseAll();
+            else if (popupManager != null)
+                popupManager.Show(PopupType.Pause);
         }
+        else if (popupManager != null && popupManager.HasOpenModalPopup)
+            return;
         else if (Keyboard.current.iKey.wasPressedThisFrame)
         {
             CloseStatusPopup();
@@ -188,6 +217,45 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             inventoryPartView.CloseAll();
             statusPopup?.Toggle();
         }
+        else if (Keyboard.current.kKey.wasPressedThisFrame && popupManager != null)
+        {
+            inventoryPartView.CloseAll();
+            CloseStatusPopup();
+            popupManager.Show(PopupType.Skill);
+        }
+        RefreshMenuInputBlock();
+    }
+
+    private void RefreshSkills()
+    {
+        if (skillPopup != null) skillPopup.Bind(boundSkills);
+    }
+
+    private void UnbindSkills()
+    {
+        if (boundSkills != null) boundSkills.SkillStateChanged -= RefreshSkills;
+        boundSkills = null;
+        if (skillPopup != null) skillPopup.Bind(null);
+    }
+
+    /// <summary>씬의 위치 표시는 개인 저장이 아닌 현재 서버 진행 상태를 사용한다.</summary>
+    private void RefreshLocation(uint _)
+    {
+        if (networkManager == null || formalHudBridge == null ||
+            !networkManager.TryGetRunSnapshot(out StageMapSaveData run) ||
+            !networkManager.TryGetPendingStageNode(out StageNodeSaveData node)) return;
+        foreach (var view in formalHudBridge.GetComponentsInChildren<KY_LocationView>(true))
+            view.BindLocation((int)run.act, node.floor, node.type == StageNodeType.Boss, node.type == StageNodeType.Camp);
+    }
+
+    /// <summary>메뉴가 열려 있는 동안 이 컴퓨터의 플레이어 입력만 차단한다. 서버 시간과 다른 플레이어는 유지한다.</summary>
+    private void RefreshMenuInputBlock()
+    {
+        if (boundPlayerBinder == null) return;
+        boundPlayerBinder.SetMenuInputBlocked(
+            (popupManager != null && popupManager.HasOpenModalPopup) ||
+            (inventoryPartView != null && inventoryPartView.HasOpenWindow) ||
+            (statusPopup != null && statusPopup.IsOpen));
     }
 
     /// <summary>

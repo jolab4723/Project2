@@ -1174,6 +1174,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         added = null;
 
+        if (item?.definition == null)
+            return MirrorTestInventoryRequestResult.ItemUnavailable;
+
         if (context?.Inventory == null)
             return MirrorTestInventoryRequestResult.InventoryUnavailable;
 
@@ -1198,7 +1201,6 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         try
         {
             itemSnapshots.Add(ToSnapshotJson(added));
-            return MirrorTestInventoryRequestResult.Success;
         }
         catch (Exception exception)
         {
@@ -1220,6 +1222,23 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
                 ? MirrorTestInventoryRequestResult.RecoveryFailed
                 : MirrorTestInventoryRequestResult.StateApplyFailed;
         }
+        ReportQuestAcquisition(item);
+        return MirrorTestInventoryRequestResult.Success;
+    }
+
+    /// <summary>퀘스트 보상도 기존 추가·복구·소유 스냅샷 경로로 확정한다.</summary>
+    [Server]
+    internal MirrorTestInventoryRequestResult ServerGrantQuestReward(ItemInstance item)
+    {
+        var result = ServerAddItemAndSnapshot(item, out _);
+        if (result == MirrorTestInventoryRequestResult.Success) AdvanceStateRevision();
+        return result;
+    }
+
+    private void ReportQuestAcquisition(ItemInstance item)
+    {
+        if (NetworkManager.singleton is MirrorTestNetworkManager session)
+            session.ServerReportQuestItem(context, item.definition.itemId);
     }
 
     private bool TryBeginLocalRequest(out uint requestId, out uint requestedRevision)

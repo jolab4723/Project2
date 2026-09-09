@@ -24113,7 +24113,6 @@ GameObject:
   - component: {fileID: 2823562511156927928}
   - component: {fileID: 1897430130703103307}
   - component: {fileID: 4874407544157284740}
-  - component: {fileID: 6748893541369499704}
   - component: {fileID: 6481658510261050913}
   - component: {fileID: 8744379826164766748}
   - component: {fileID: 415836466331156959}
@@ -24125,11 +24124,13 @@ GameObject:
   - component: {fileID: 5198440570502304043}
   - component: {fileID: 5474923337583963065}
   - component: {fileID: 5325885778830853498}
-  - component: {fileID: 8380417683392608680}
   - component: {fileID: 6028610422977531239}
   - component: {fileID: 238806385585576223}
   - component: {fileID: 7687806169252240126}
   - component: {fileID: 3228904019783049022}
+  - component: {fileID: 1818644913548340300}
+  - component: {fileID: 1541500590879433877}
+  - component: {fileID: 3846049506183012237}
   m_Layer: 15
   m_Name: GunnerNetworkPlayer_MirrorTest
   m_TagString: Player
@@ -24175,8 +24176,8 @@ Animator:
   m_GameObject: {fileID: 4430178008348295829}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 271fb3111643439479e51ecb5e1fcdb0, type: 3}
-  m_Controller: {fileID: 9100000, guid: 8e3f96481b13dbb44b7cb7d15c22c51f, type: 2}
-  m_CullingMode: 1
+  m_Controller: {fileID: 9100000, guid: 732456151fa2a254b824f37693ede8f3, type: 2}
+  m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
@@ -24674,40 +24675,6 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
---- !u!114 &6748893541369499704
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4430178008348295829}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ff3ba0becae47b8b9381191598957c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
-  syncDirection: 1
-  syncMode: 0
-  syncInterval: 0
-  target: {fileID: 8466836010852513863}
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 0
-  onlySyncOnChange: 1
-  compressRotation: 1
-  interpolatePosition: 1
-  interpolateRotation: 1
-  interpolateScale: 1
-  coordinateSpace: 0
-  timelineOffset: 1
-  showGizmos: 0
-  showOverlay: 0
-  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
-  onlySyncOnChangeCorrectionMultiplier: 2
-  useFixedUpdate: 0
-  rotationSensitivity: 0.01
-  positionPrecision: 0.01
-  scalePrecision: 0.01
 --- !u!114 &6481658510261050913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24753,6 +24720,7 @@ MonoBehaviour:
   localOnlyBehaviours:
   - {fileID: 5198440570502304043}
   - {fileID: 4006901802914829666}
+  nameplatePrefab: {fileID: 8383472571775063643, guid: 95aa36f943faa27419a6ff2146c7cd80, type: 3}
 --- !u!114 &415836466331156959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24851,7 +24819,8 @@ MonoBehaviour:
   gunnerEffectRoot: {fileID: 0}
   Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
   Eff_gunnerShotgunAtk: {fileID: 0}
-  fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
+  fighterDash: {fileID: 0}
+  gunnerBackstepMove: {fileID: 7400000, guid: 9d40f183ed5c3f9428ff87ea520bd7a1, type: 2}
   effectSpawner: {fileID: 0}
 --- !u!114 &5198440570502304043
 MonoBehaviour:
@@ -24903,18 +24872,6 @@ MonoBehaviour:
   syncMode: 1
   syncInterval: 0
   context: {fileID: 6481658510261050913}
---- !u!114 &8380417683392608680
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4430178008348295829}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b08a095bcd593447998579b023402e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatInitializationGuard_MirrorTest
 --- !u!114 &6028610422977531239
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24976,20 +24933,15 @@ MonoBehaviour:
   controller: {fileID: 9061743800565114677}
   stateMachine: {fileID: 8605050849527392173}
   status: {fileID: 5858254365823748933}
-  buffManager: {fileID: 6526913084456221866}
   animationView: {fileID: 489053152331062225}
   playerEffect: {fileID: 814317363952088704}
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 1024
+  fighterSkills: {fileID: 0}
+  gunnerSkills: {fileID: 1818644913548340300}
   skills:
   - {fileID: 11400000, guid: af52c70d0d2e7db4989bdedef7d3953f, type: 2}
   - {fileID: 11400000, guid: 1291596fb54cf2c45846b4c92749acbf, type: 2}
   - {fileID: 11400000, guid: 036bfe5bf874dde40b1d4c0ef0a6392c, type: 2}
   activeEvolutions: 000000000000000000000000
-  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
-  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
-  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
 --- !u!114 &3228904019783049022
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25007,6 +24959,89 @@ MonoBehaviour:
   syncInterval: 0
   context: {fileID: 6481658510261050913}
   presenter: {fileID: 1897430130703103307}
+--- !u!114 &1818644913548340300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07a285f141cd2fb4283b1b51d0512bfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerSkillController
+  inputHandler: {fileID: 0}
+  combat: {fileID: 2430848411781236210}
+  controller: {fileID: 9061743800565114677}
+  stateMachine: {fileID: 8605050849527392173}
+  status: {fileID: 5858254365823748933}
+  buffManager: {fileID: 6526913084456221866}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  firePoint: {fileID: 5622703443282546972}
+  skills:
+  - {fileID: 11400000, guid: af52c70d0d2e7db4989bdedef7d3953f, type: 2}
+  - {fileID: 11400000, guid: 1291596fb54cf2c45846b4c92749acbf, type: 2}
+  - {fileID: 11400000, guid: 036bfe5bf874dde40b1d4c0ef0a6392c, type: 2}
+  activeEvolutions: 000000000000000000000000
+  activeEnhancements: 000000000000000000000000
+  visibleSkillArea: 0
+  sectorVisualColor: {r: 0.2, g: 0.6, b: 1, a: 0.35}
+  lineVisualColor: {r: 0.2, g: 0.9, b: 1, a: 0.35}
+  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+--- !u!114 &1541500590879433877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f6fa6c57ae38174185c1e11499e0a59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkSkillPresentation_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  gunnerSkills: {fileID: 1818644913548340300}
+  visualPrefab: {fileID: 7546416788901728222, guid: 4117c62e752183a4da2773d51d339036, type: 3}
+--- !u!114 &3846049506183012237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fb52eaa317efc244aea455c0618cfcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerNetworkTransform_MirrorTest
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 8466836010852513863}
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 0
+  onlySyncOnChange: 1
+  compressRotation: 1
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  coordinateSpace: 0
+  timelineOffset: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  onlySyncOnChangeCorrectionMultiplier: 2
+  useFixedUpdate: 0
+  rotationSensitivity: 0.01
+  positionPrecision: 0.01
+  scalePrecision: 0.01
 --- !u!1 &4563209726806013730
 GameObject:
   m_ObjectHideFlags: 0

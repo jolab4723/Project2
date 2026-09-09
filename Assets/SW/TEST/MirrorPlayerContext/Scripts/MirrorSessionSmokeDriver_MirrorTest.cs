@@ -51,6 +51,7 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
     private bool sawExpectedRejection;
     private bool wasAdmitted;
     private bool observedSession;
+    private bool passiveValidationPassed;
     private bool inventoryTurn;
     private InventorySmokeStep contention;
     private int inventorySlot;
@@ -80,7 +81,11 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
     {
         if (string.IsNullOrEmpty(Argument("--mirror-smoke-role"))) return;
         if (NetworkManager.singleton is MirrorTestNetworkManager manager)
-            manager.gameObject.AddComponent<MirrorSessionSmokeDriver_MirrorTest>();
+        {
+            var driver = manager.gameObject.AddComponent<MirrorSessionSmokeDriver_MirrorTest>();
+            driver.manager = manager;
+            driver.ConfigureLatencyFixture();
+        }
     }
 
     private void Start()
@@ -102,6 +107,7 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
             "run-started" => "이미 출발한 세션에는 새로 참가할 수 없습니다.",
             "full" => "세션 정원이 찼습니다.",
             "version" => "서버와 클라이언트의 빌드 버전이 다릅니다.",
+            "passive" => "패시브 프로필을 확인할 수 없습니다.",
             _ => string.Empty
         };
         if (expectedRejection == string.Empty || expectedRejection != null &&
@@ -173,6 +179,39 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
             if (role != "server") StartCoroutine(Guard(ValidateCompleteRun()));
         }
         if (firstNodeProbe) StartCoroutine(Guard(ValidateFirstNode()));
+        if (NetworkServer.active && Argument("--mirror-smoke-buff-clock") == "true" &&
+            (Debug.isDebugBuild || Application.isEditor))
+            StartCoroutine(Guard(ValidateBuffClock()));
+        if (expectedRejection == null && role != "server" && PassiveFixtureJson() != null)
+            StartCoroutine(Guard(ValidatePassiveAndInitialization()));
+    }
+
+    private IEnumerator ValidateBuffClock()
+    {
+        yield return WaitFor(() => manager.ServerRoster.RunStarted &&
+            manager.ServerPlayerContexts.Count == expectedMembers &&
+            manager.ServerPlayerContexts.All(p => p.RuntimeState.HasSnapshot), "buff clock players", 90);
+        PlayerContext owner = manager.ServerPlayerContexts.First();
+        BuffDefinitionSO buff = Resources.Load<BuffDefinitionSO>("DataFiles/BuffData/3. GeneratedAssets/buff.attack_up");
+        Require(buff != null && buff.duration == 10, "actual ten-second buff asset");
+        owner.Buffs.ApplyBuff(buff);
+        yield return new WaitForSecondsRealtime(12);
+        Require(!owner.Buffs.ActiveBuffs.Any(b => b.source == buff), "connected buff expires");
+        Debug.Log("[MirrorBuffClock] PASS connected expiry after 12 real seconds");
+        owner.Buffs.ApplyBuff(buff);
+        Debug.Log("[MirrorBuffClock] DISCONNECT_NOW second ten-second buff applied");
+        yield return WaitFor(() => Time.timeScale == 0 &&
+            owner.GetComponent<MirrorSpawnedPlayerBinder>().IsTemporarilyAbsent, "all absent pause", 90);
+        float before = owner.Buffs.ActiveBuffs.FirstOrDefault(b => b.source == buff)?.remainingTime ?? 0;
+        Require(before > 0, "buff expired before disconnect; retry with an earlier disconnect");
+        yield return new WaitForSecondsRealtime(12);
+        float after = owner.Buffs.ActiveBuffs.FirstOrDefault(b => b.source == buff)?.remainingTime ?? 0;
+        Debug.Log($"[MirrorBuffClock] {(after <= 0 ? "PASS" : "FAIL")} all-absent server-time expiry before={before:F3} after={after:F3} realSeconds=12 timeScale={Time.timeScale}");
+        yield return WaitFor(() => !owner.GetComponent<MirrorSpawnedPlayerBinder>().IsTemporarilyAbsent, "buff clock resume", 120);
+        Require(manager.ServerPlayerContexts.Contains(owner), "reconnect retains buff owner");
+        yield return new WaitForSecondsRealtime(12);
+        Require(!owner.Buffs.ActiveBuffs.Any(b => b.source == buff), "resumed buff expires");
+        Debug.Log("[MirrorBuffClock] PASS retained owner and resumed expiry");
     }
 
     private void Update()
@@ -194,6 +233,10 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
                           (!runProbe || runValidationPassed) && (!firstNodeProbe || firstNodeValidationPassed);
             if (Argument("--mirror-smoke-combat") == "true")
                 passed &= MirrorCombatSmoke_MirrorTest.Completed && MirrorCombatSmoke_MirrorTest.Passed;
+            if (Argument("--mirror-smoke-platform") == "true")
+                passed &= MirrorPlatformSmoke_MirrorTest.Completed && MirrorPlatformSmoke_MirrorTest.Passed;
+            if (expectedRejection == null && role != "server" && PassiveFixtureJson() != null)
+                passed &= passiveValidationPassed;
             Debug.Log($"[MirrorSmoke] {(sessionPassed ? "PASS" : "FAIL")} admission/session role={role} expectedRejection={expectedRejection ?? "none"}");
             if (!passed) Debug.LogError("[MirrorSmoke] FAIL 요청한 검증이 완료되지 않았습니다.");
             Finish(passed);
@@ -247,6 +290,101 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
             inventoryRoutineStarted = true;
             StartCoroutine(Guard(ValidateInventoryTurn()));
         }
+    }
+
+    // 명시적 개발 검사만 임시 입력을 만든다. 실제 로컬 저장 파일과 전역 프로필은 변경하지 않는다.
+    public static string PassiveFixtureJson()
+    {
+        string fixture = Argument("--mirror-smoke-passive");
+        if (fixture == null || string.IsNullOrEmpty(Argument("--mirror-smoke-role")) ||
+            !Debug.isDebugBuild && !Application.isEditor) return null;
+        Require(fixture is "empty" or "attack1" or "attack5-shop" or "all-max" or "invalid-rank", "known passive fixture");
+        var tree = new Core.PassiveSkillTreeData();
+        if (fixture == "all-max")
+        {
+            var database = NetworkManager.singleton.GetComponent<MirrorSessionAuthenticator_MirrorTest>().PassiveDatabase;
+            foreach (Core.PassiveSkillId id in Enum.GetValues(typeof(Core.PassiveSkillId)))
+            {
+                var definition = database.Get(id);
+                if (definition != null) tree.learnedSkills.Add(new Core.PassiveSkillEntry
+                    { id = id, currentLevel = definition.maxLevel, unlockedLevel = definition.maxLevel });
+            }
+            return JsonUtility.ToJson(tree);
+        }
+        int level = fixture == "attack1" ? 1 : fixture == "attack5-shop" ? 5 : fixture == "invalid-rank" ? 999 : 0;
+        if (level > 0) tree.learnedSkills.Add(new Core.PassiveSkillEntry
+            { id = Core.PassiveSkillId.AttackPower, currentLevel = level, unlockedLevel = level });
+        if (fixture == "attack5-shop") tree.learnedSkills.Add(new Core.PassiveSkillEntry
+            { id = Core.PassiveSkillId.ShopEnhance, currentLevel = 1, unlockedLevel = 1 });
+        return JsonUtility.ToJson(tree);
+    }
+
+    private void ConfigureLatencyFixture()
+    {
+        if (!float.TryParse(Argument("--mirror-smoke-latency-ms"), out float latency)) return;
+        Require((Debug.isDebugBuild || Application.isEditor) && !NetworkServer.active && !NetworkClient.active &&
+            latency >= 0f && latency <= 500f, "latency fixture before connection, 0..500ms");
+        // Awake에 wrap이 필요하므로 비활성 자식에서 구성한 뒤 활성화한다.
+        var root = new GameObject("MirrorSmoke_Latency");
+        root.SetActive(false);
+        root.transform.SetParent(manager.transform, false);
+        var simulation = root.AddComponent<LatencySimulation>();
+        simulation.wrap = manager.transport;
+        simulation.latency = latency;
+        simulation.jitter = 0.02f;
+        simulation.unreliableLoss = 2f;
+        simulation.unreliableScramble = 2f;
+        manager.transport = simulation;
+        Transport.active = simulation;
+        root.SetActive(true);
+        Debug.Log($"[MirrorSmoke] latency fixture per outbound leg={latency}ms jitter<=20ms unreliable loss/scramble=2%");
+    }
+
+    private IEnumerator ValidatePassiveAndInitialization()
+    {
+        yield return WaitFor(() => manager.LocalPlayerContext?.RuntimeState.HasSnapshot == true, "passive owner snapshot", 90);
+        yield return new WaitForSecondsRealtime(1f);
+        PlayerContext owner = manager.LocalPlayerContext;
+        var database = manager.GetComponent<MirrorSessionAuthenticator_MirrorTest>().PassiveDatabase;
+        string fixture = Argument("--mirror-smoke-passive");
+        int rank = fixture == "attack1" ? 1 : fixture is "attack5-shop" or "all-max" ? 5 : 0;
+        float expected = database.Get(Core.PassiveSkillId.AttackPower).GetValue(rank);
+        Require(MirrorPassiveProfile_MirrorTest.TryValidate(PassiveFixtureJson(), database, out var profile, out _), "valid passive fixture");
+        owner.Stats.GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
+        Require(Mathf.Approximately(passive.attackPowerPercent, expected), "owner personal passive raw layer");
+        Require(JsonUtility.ToJson(passive) == JsonUtility.ToJson(profile.Stats), "all personal passive stat fields replicated");
+        var expectedStats = new PlayerStat();
+        expectedStats.Recalculate(character, equipment, buff, profile.Stats);
+        Require(owner.RuntimeState.AttackPower == expectedStats.attackPower, "owner final attack reflects personal rank");
+        var shop = owner.GetComponent<NetworkShopPlayerState_MirrorTest>();
+        Require(shop.ShopEnhanceLevel == profile.ShopLevel, "owner shop rank");
+        if (profile.ShopLevel > 0)
+            Require(Mathf.Approximately(shop.DiscountPercent, database.Get(Core.PassiveSkillId.ShopEnhance).GetValue(1) / 100f) &&
+                shop.ExtraRerollCount == database.Get(Core.PassiveSkillId.ShopEnhance).extraRerollCount, "owner discount/reroll source");
+
+        PlayerStat original = owner.Stats.Stat;
+        int level = original.currentLevel;
+        float exp = original.currentExp, health = owner.Health.CurrentHealth, mana = owner.Mana.CurrentMana;
+        Require(ReferenceEquals(original, owner.Stats.EnsureInitialized()) &&
+            ReferenceEquals(original, owner.Stats.EnsureInitialized()), "idempotent stat identity");
+        var status = owner.GetComponent<WBH_PlayerStatus>();
+        int calls = 0;
+        void Changed(float value) { calls++; }
+        status.OnAtkSpeedChanged += Changed;
+        original.NotifyValuesChanged();
+        int baselineCalls = calls;
+        status.Initialize(owner.Controller);
+        status.Initialize(owner.Controller);
+        status.enabled = false;
+        status.enabled = true;
+        calls = 0;
+        original.NotifyValuesChanged();
+        status.OnAtkSpeedChanged -= Changed;
+        Require(baselineCalls > 0 && calls == baselineCalls, "one owned subscription after repeated initialize/re-enable");
+        Require(ReferenceEquals(original, owner.Stats.Stat) && original.currentLevel == level && original.currentExp == exp &&
+            owner.Health.CurrentHealth == health && owner.Mana.CurrentMana == mana, "initialization preserves stat/resources");
+        passiveValidationPassed = true;
+        Debug.Log($"[MirrorPassiveSmoke] PASS role={role} fixture={fixture} netId={shop.netId} rank={rank} attack={owner.RuntimeState.AttackPower} callbacks={calls} init/re-enable/resources");
     }
 
     private void OnDestroy()
@@ -863,7 +1001,8 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
         ui.OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right });
         Require(Owned(owner, firstId) == null && wallet.Gold == goldBefore + price, "구매 승인 전 소유권·골드 보존");
         yield return WaitFor(() => sync.StateRevision > revision && wallet.PendingRequestCount == 0, "서버 재구매 승인");
-        Require(Owned(owner, firstId) != null && wallet.Gold == goldBefore, "재구매 단일 소유권·대금");
+        int repurchasePrice = Mathf.Max(0, Mathf.CeilToInt(Mathf.Max(0, price) * (1f - Mathf.Clamp(wallet.DiscountPercent, 0f, 0.95f))));
+        Require(Owned(owner, firstId) != null && wallet.Gold == goldBefore + price - repurchasePrice, "개인 할인 재구매 단일 소유권·대금");
 
         revision = sync.StateRevision;
         Require(sync.TryRequestRemoveInventoryItem(secondId, out _), "서버 삭제 요청 시작");
@@ -1095,6 +1234,16 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
                 $"localItems={string.Join(",", local.Inventory.GetAllInventoryItems().Select(item => item.itemData.instanceId))} " +
                 $"localUpgrades={string.Join(",", local.Inventory.GetAllInventoryItems().Select(item => item.itemData.upgradeLevel))}");
         }
+        if (Argument("--mirror-smoke-nameplates") == "true" && local != null)
+        {
+            var nameplates = FindObjectsByType<PlayerNameplate_MirrorTest>(FindObjectsSortMode.None);
+            var members = manager.ClientLobby.Members ?? Array.Empty<MirrorLobbyMember_MirrorTest>();
+            bool matches = nameplates.Length == expectedMembers && nameplates.All(view =>
+                view.BoundPlayer != null && members.Any(member =>
+                    member.Slot == view.BoundPlayer.ParticipantSlot && member.DisplayName == view.BoundPlayer.ParticipantDisplayName) &&
+                view.DisplayedName == $"P{view.BoundPlayer.ParticipantSlot + 1} {view.BoundPlayer.ParticipantDisplayName}");
+            Debug.Log($"[MirrorNameplateSmoke] matches={matches} count={nameplates.Length} names={string.Join(",", nameplates.Select(view => view.DisplayedName))}");
+        }
         if (!NetworkServer.active) return;
         foreach (MirrorSessionRoster_MirrorTest.Member member in manager.ServerRoster.Members)
         {
@@ -1106,6 +1255,8 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
                 $"connection={member.ConnectionId} netId={netId} absent={context?.GetComponent<MirrorSpawnedPlayerBinder>().IsTemporarilyAbsent} " +
                 $"hp={context?.Health.CurrentHealth}/{context?.Health.MaxHealth} mp={context?.Mana.CurrentMana}/{context?.Mana.MaxMana} " +
                 $"gold={context?.Wallet.Gold} revives={context?.Controller.reviveCount} items={itemIds} " +
+                $"profileShopLevel={member.PassiveProfile?.ShopLevel} " +
+                $"buffs={(context != null ? string.Join(",", context.Buffs.ActiveBuffs.Select(b => b.remainingTime.ToString("F3"))) : string.Empty)} " +
                 $"upgrades={(context != null ? string.Join(",", context.Inventory.GetAllInventoryItems().Select(item => item.itemData.upgradeLevel)) : string.Empty)}");
         }
     }

@@ -49,7 +49,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
 {
     // ponytail: 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026090804;
+    public const int CompatibilityVersion = 2026090903;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =
@@ -129,6 +129,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         }
 
         base.Awake();
+        KeyBindingService.ConfigureProfile("Mirror." + MirrorReconnectProfile_MirrorTest.GetProfileName());
         autoCreatePlayer = false;
         maxConnections = MirrorSessionRoster_MirrorTest.MaxMembers;
         authenticator = GetComponent<MirrorSessionAuthenticator_MirrorTest>();
@@ -197,6 +198,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         base.OnStartServer();
         Chat.StartServer(connection => compatibleConnectionIds.Contains(connection.connectionId));
         StartServerMembership();
+        StartServerQuests();
         NetworkServer.RegisterHandler<MirrorSessionRouteRequestMessage>(
             HandleServerSessionRouteRequest);
         NetworkServer.RegisterHandler<MirrorStageNodeSelectionRequestMessage>(
@@ -218,6 +220,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         base.OnStartClient();
         Chat.StartClient();
         StartClientMembership();
+        StartClientQuests();
         NetworkClient.RegisterHandler<MirrorStageVoteState_MirrorTest>(HandleClientStageVotes);
         NetworkClient.RegisterHandler<MirrorSessionRunSnapshotMessage>(
             HandleClientRunSnapshot,
@@ -282,6 +285,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         CancelClientSceneRestore();
         NetworkClient.UnregisterHandler<MirrorLobbySnapshot_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionFeedback_MirrorTest>();
+        NetworkClient.UnregisterHandler<MirrorQuestSnapshot_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionRunSnapshotMessage>();
         NetworkClient.UnregisterHandler<MirrorStageVoteState_MirrorTest>();
         NetworkClient.UnregisterHandler<MirrorSessionLeadershipMessage>();
@@ -307,6 +311,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         Chat.StopServer();
         SetPartyAbsentPause(false);
         NetworkServer.UnregisterHandler<MirrorLobbyRequest_MirrorTest>();
+        NetworkServer.UnregisterHandler<MirrorQuestRequest_MirrorTest>();
         NetworkServer.UnregisterHandler<MirrorSessionRouteRequestMessage>();
         NetworkServer.UnregisterHandler<MirrorStageNodeSelectionRequestMessage>();
         NetworkServer.UnregisterHandler<MirrorUnknownStageChoiceRequestMessage>();
@@ -825,6 +830,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         runSnapshotRevision = 0;
         runSnapshotJson = string.Empty;
         ResetStageVotes();
+        ResetQuests();
     }
 
     private void HandleClientSessionLeadership(MirrorSessionLeadershipMessage message)
@@ -1035,6 +1041,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
     public override void OnServerSceneChanged(string sceneName)
     {
         base.OnServerSceneChanged(sceneName);
+        BeginQuestVisit(sceneName);
 
         if (sceneName == SessionLobbyScene)
         {
@@ -1059,6 +1066,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
     {
         base.OnServerReady(connection);
         AttachReadyParticipant(connection);
+        SendQuests(connection);
         TryStartCombatWhenPartyReady();
 
         if (!IsManagedSessionScene(SceneManager.GetActiveScene().path) ||

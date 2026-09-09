@@ -7,14 +7,12 @@ using UnityEngine.InputSystem;
 /// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/PlayerActionInputHandler.cs</c></para>
 /// <para>포션 입력은 같은 플레이어의 <c>PlayerRuntimeStateSync_MirrorTest</c>를 통해 서버에 요청하고,
 /// 서버가 <c>PotionUseManager_MirrorTest</c>를 실행한다.</para>
-/// <para>리바인딩 로드는 원본과 동일하며, 입력 인스턴스 생성은 중복 생성을 막도록 한 경로로 모았다.</para>
+/// <para>설정 UI와 같은 입력 인스턴스를 사용해 키 변경을 즉시 반영한다. 공유 입력의 수명은 KeyBindingService가 관리한다.</para>
 /// <para>로컬 플레이어 여부는 여기서 전역 조회하지 않고 <c>MirrorSpawnedPlayerBinder</c>가 이 컴포넌트의 활성화를 제어한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
 {
-    private const string KeyBindingsPrefKey = "KeyBindings";
-
     [SerializeField] private PlayerRuntimeStateSync_MirrorTest runtimeState;
 
     public event Action<int> OnSkillKeyPressed;
@@ -26,24 +24,16 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
     private void Awake()
     {
         runtimeState ??= GetComponent<PlayerRuntimeStateSync_MirrorTest>();
-        CreateInputActions();
     }
 
     private void OnEnable()
     {
-        CreateInputActions();
-        inputActions.Enable();
+        inputActions = KeyBindingService.InputActions;
     }
 
     private void OnDisable()
     {
         ReleaseHeldSkills();
-        inputActions?.Disable();
-    }
-
-    private void OnDestroy()
-    {
-        inputActions?.Dispose();
     }
 
     private void Update()
@@ -88,14 +78,4 @@ public sealed class PlayerActionInputHandler_MirrorTest : MonoBehaviour
         for (int i = 0; i < heldSkills.Length; i++) ReleaseSkill(i);
     }
 
-    private void CreateInputActions()
-    {
-        if (inputActions != null)
-            return;
-
-        inputActions = new GameInputActions();
-
-        if (PlayerPrefs.HasKey(KeyBindingsPrefKey))
-            inputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(KeyBindingsPrefKey));
-    }
 }

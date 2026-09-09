@@ -66,6 +66,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     // ------ 9.1 WBH 추가. 애니메이션 연결 및 타격과 투사체 생성시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
     public event Action<int, int, float> OnSkillAniRequested;
 
+    /// <summary>초기화가 끝난 스킬 생성물과 원본 프리팹을 알려 외부에서 시각 표현을 연결할 수 있게 한다.</summary>
+    public event Action<GameObject, GameObject> SkillObjectSpawned;
+
     private WBH_PlayerEffect playerEffect;
 
     private int pendingSkillIndex = -1;
@@ -74,6 +77,23 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
     private int pendingArcBusterStacks;
     private Vector3 pendingAimDirection;
+    private PlayerStatManager skillOwnerStats;
+
+    // SW 수정
+    /// <summary>호출자가 검증한 조준·목표 위치·소유자 스탯으로 스킬을 준비한다. 권한과 사거리 검증은 호출자가 담당한다.</summary>
+    public bool TryUseSkill(int index, Vector3 aimDirection, Vector3 targetPosition, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null)
+            return false;
+        return TryUseSkillInternal(index, aimDirection, targetPosition, ownerStats, true);
+    }
+
+    private bool CanUseSkillFrom(bool externalInput) => stateMachine != null &&
+        !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack, PlayerState.Skill,
+            PlayerState.Dodge, PlayerState.Dead) && (externalInput || !SkillPopupController.IsOpen);
+
+    private static bool IsFinite(Vector3 value) =>
+        float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
     private Vector3 pendingCursorPos; // 중복 실행 방지 변수
 
 
@@ -233,11 +253,28 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     // 9.1 WBH 추가. 기존 TryUseSkill 에서 투사체, 데미지 부분 제외하고 PreparePendingSkill 에 일시적인 스킬 정보 전달.
     public bool TryUseSkill(int index)
     {
+        if (Camera.main == null)
+            return false;
+        return TryUseSkillInternal(index, GetCursorDirection(), GetCursorGroundPosition(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool TryUseSkillInternal(int index, Vector3 aimDir, Vector3 cursorPos,
+        PlayerStatManager ownerStats, bool externalInput)
+    {
         if (index < 0 || index >= skills.Length)
             return false;
 
+        if (!IsFinite(aimDir) || !IsFinite(cursorPos) || !float.IsFinite((cursorPos - transform.position).sqrMagnitude))
+            return false;
+        aimDir.y = 0f;
+        if (aimDir.sqrMagnitude < 0.0001f || !float.IsFinite(aimDir.sqrMagnitude))
+            return false;
+        aimDir.Normalize();
+
         SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) || combat == null ||
+            (externalInput && (status == null || status.IsDead)))
             return false;
 
         SkillEvolutionId evo = GetEvolution(index);
@@ -252,10 +289,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
         int arcBusterStacksBeforeConsume = arcBusterStacks;
 
-        Vector3 aimDir = GetCursorDirection();
-        Vector3 cursorPos = GetCursorGroundPosition();
-
         ConsumeSkillUse(index, def);
+        skillOwnerStats = ownerStats;
         combat.CancelChase();
 
         PreparePendingSkill(index, evo, arcBusterStacksBeforeConsume, aimDir, cursorPos);
@@ -301,6 +336,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         int index = pendingSkillIndex;
         SkillDefinitionSO def = skills[index];
+
+        transform.forward = pendingAimDirection;
 
         if(def == null)
         {
@@ -348,6 +385,15 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         {
             stateMachine.ChangeState(PlayerState.Idle);
         }
+    }
+
+    /// <summary>진행 중인 연사와 이동을 취소하며 이미 소모한 마나·쿨타임·스택은 유지한다.</summary>
+    public void CancelActiveSkill()
+    {
+        StopAllCoroutines();
+        ClearPendingSkill();
+        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+            stateMachine.ChangeState(PlayerState.Idle);
     }
 
     private void ClearPendingSkill()
@@ -402,9 +448,17 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, part);
 
-        Vector3 scaleMultiPlier = CalculatePendingEffectScale(def, part);
+        Vector3 scaleMultiPlier = GetPendingSkillEffectScale(partValue);
 
         playerEffect.PlayEffect(cue, scaleMultiPlier);
+    }
+
+    /// <summary>시전 중인 원본 이펙트 배율을 반환해 외부 표시에서도 같은 계산을 사용한다.</summary>
+    public Vector3 GetPendingSkillEffectScale(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length ||
+            !System.Enum.IsDefined(typeof(SkillEffectPart), partValue)) return Vector3.one;
+        return CalculatePendingEffectScale(skills[pendingSkillIndex], (SkillEffectPart)partValue);
     }
 
     // 기본 스킬 범위와 스킬범위 보너스 스탯이 적용된 스킬범위 비교해서 이펙트 크기 결정
@@ -456,9 +510,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float flatBonus = 0f;
         float percentBonus = 0f;
 
-        if(PlayerStatManager.Instance != null)
+        if(skillOwnerStats != null)
         {
-            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
         }
 
         if(pendingEnhance == SkillEnhancementId.Enhance3)
@@ -595,8 +649,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     {
         float flatBonus = 0f;
         float percentBonus = 0f;
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        if (skillOwnerStats != null)
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
 
         if (GetEnhancement(index) == SkillEnhancementId.Enhance3)
             percentBonus += def.enhanceRangeBonusPercent;
@@ -692,6 +746,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.explosionRadius, enemyLayer, request);
         ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
+        SkillObjectSpawned?.Invoke(projectileGO, def.arcProjectilePrefab);
     }
 
     /// <summary>
@@ -740,6 +795,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : 1f;
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.evoCannonExplosionRadius, enemyLayer, request, visualScale: visualScale);
         ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
+        SkillObjectSpawned?.Invoke(projectileGO, prefab);
     }
 
     /// <summary>
@@ -804,6 +860,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             }
 
             projectile.Initialize(dir, def.projectileSpeed, maxDistance, 0f, enemyLayer, request, explodeOnHit: false);
+            SkillObjectSpawned?.Invoke(projectileGO, def.arcProjectilePrefab);
 
             if (shot < 2)
                 yield return new WaitForSeconds(def.evoArcBulletInterval);
@@ -831,7 +888,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
 
-        Vector3 toCursor = GetCursorGroundPosition() - transform.position;
+        Vector3 toCursor = cursorPos - transform.position;
         toCursor.y = 0f;
 
         float throwRange = ApplySkillRangeBonus(def, index, def.bombThrowRange);
@@ -911,6 +968,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.ProjectileExplosion2) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
 
         bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one, secondExplosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
     }
 
     /// <summary>강화(Enhance1: 위력 강화)가 선택돼 있으면 데미지 계수에 곱해지는 보너스를 곱한다.</summary>
@@ -1054,6 +1112,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                                                                                        SkillEvolutionId.Evolution1,
                                                                                        SkillEffectPart.ProjectileExplosion1);
         decoy.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(decoyGO, def.evoDecoyPrefab);
     }
 
     // 9.1 WBH 추가. 매개변수로 진화를 전달받게끔 변경. 공격부분과 이동부분 분리를 위해 주석 처리

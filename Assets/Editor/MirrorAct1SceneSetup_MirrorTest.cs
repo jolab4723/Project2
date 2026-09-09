@@ -235,7 +235,7 @@ public static class MirrorAct1SceneSetup_MirrorTest
         foreach (string name in CombatNames) ValidateAsset(Folder + name + "_MirrorSessionTest.unity", true);
         foreach (string name in new[] { "Lobby_MirrorTest", "StageSelect_MirrorSessionTest", "Act1_Camp_MirrorSessionTest", "Unknown_Stage_MirrorSessionTest" })
             ValidateAsset(Folder + name + ".unity", false);
-        Debug.Log("[MirrorAct1] All 11 scenes passed missing-script and cross-scene-reference checks; seven combat scenes passed strict reference/wiring checks. Existing non-combat visual reference warnings are reported separately.");
+        Debug.Log("[MirrorAct1] All 11 scenes passed missing-script, broken-reference and cross-scene-reference checks; seven combat scenes passed combat wiring checks.");
     }
 
     private static void ValidateAsset(string path, bool combat)
@@ -268,12 +268,7 @@ public static class MirrorAct1SceneSetup_MirrorTest
                     if (reference == null && property.objectReferenceInstanceIDValue != 0)
                     {
                         string message = scene.path + ": Broken reference " + component.name + "." + property.propertyPath;
-                        // 기존 로비/캠프의 원본 연출 누락은 보고하되 새 전투 씬 검증과 구분한다.
-                        bool existingVisual = !combat && ((component is UnityEngine.UI.Image && property.propertyPath == "m_Sprite") ||
-                            (component is ParticleSystemRenderer && property.propertyPath.StartsWith("m_Materials.")) ||
-                            (component is ParticleSystem && property.propertyPath.StartsWith("UVModule.sprites.")));
-                        if (!existingVisual) throw new InvalidOperationException(message);
-                        Debug.LogWarning("[MirrorAct1 existing visual] " + message);
+                        throw new InvalidOperationException(message);
                     }
                     GameObject referencedObject = reference is GameObject go ? go : (reference as Component)?.gameObject;
                     if (referencedObject != null && referencedObject.scene.IsValid() && referencedObject.scene != scene)
