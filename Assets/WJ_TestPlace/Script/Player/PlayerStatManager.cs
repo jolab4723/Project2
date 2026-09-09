@@ -44,6 +44,31 @@ public class PlayerStatManager : MonoBehaviour
     /// <summary>최종 합산된 플레이어 스탯. 외부에서는 이걸 참조.</summary>
     public PlayerStat Stat { get; private set; }
 
+    private StatSet? passiveStats; // SW 수정
+    private PassiveSkillManager subscribedPassiveManager;
+
+    /// <summary>Awake 전 호출도 허용한다. 이미 생성한 Stat과 레벨·경험치는 유지한다.</summary>
+    public PlayerStat EnsureInitialized() => Stat ??= new PlayerStat(startLevel);
+
+    /// <summary>소유자가 검증한 개인 패시브를 사용한다. null은 싱글의 기존 프로필 소스로 복귀한다.</summary>
+    public void SetPassiveStats(StatSet? value)
+    {
+        passiveStats = value;
+        RefreshPassiveSubscription();
+        Recalculate();
+    }
+
+    private bool UsesLocalPassiveProfile => !passiveStats.HasValue && GetComponent<Mirror.NetworkIdentity>() == null;
+
+    private void RefreshPassiveSubscription()
+    {
+        PassiveSkillManager source = isActiveAndEnabled && UsesLocalPassiveProfile ? PassiveSkillManager.Instance : null;
+        if (subscribedPassiveManager == source) return;
+        if (subscribedPassiveManager != null) subscribedPassiveManager.OnProfileChanged -= Recalculate;
+        subscribedPassiveManager = source;
+        if (subscribedPassiveManager != null) subscribedPassiveManager.OnProfileChanged += Recalculate;
+    }
+
     /// <summary>현재 레벨. UI 등 외부에서 Stat.currentLevel을 직접 건드리지 않고 읽기 전용으로 조회.</summary>
     public int CurrentLevel => Stat.currentLevel;
 
@@ -83,8 +108,7 @@ public class PlayerStatManager : MonoBehaviour
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
 
-        if (PassiveSkillManager.Instance != null)
-            PassiveSkillManager.Instance.OnProfileChanged += Recalculate;
+        RefreshPassiveSubscription();
     }
 
     private void OnDisable()
@@ -92,8 +116,9 @@ public class PlayerStatManager : MonoBehaviour
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged -= HandleEquipmentChanged;
 
-        if (PassiveSkillManager.Instance != null)
-            PassiveSkillManager.Instance.OnProfileChanged -= Recalculate;
+        if (subscribedPassiveManager != null)
+            subscribedPassiveManager.OnProfileChanged -= Recalculate;
+        subscribedPassiveManager = null;
 
         // 기존엔 OnDestroy에서만 Instance를 비워서, 캐릭터를 SetActive(false)로 비활성화만 해도
         // (파괴 아님) Instance가 그 캐릭터를 계속 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때
@@ -146,7 +171,7 @@ public class PlayerStatManager : MonoBehaviour
         if (identity != null && !identity.isLocalPlayer)
         {
             // 다른 플레이어의 스탯도 계산 자체는 필요하니 Stat은 만들어두되, Instance로는 등록 안 함.
-            Stat = new PlayerStat(startLevel);
+            EnsureInitialized();
             Recalculate();
             return;
         }
@@ -165,10 +190,17 @@ public class PlayerStatManager : MonoBehaviour
         if (buffManagerBehaviour != null && BuffProvider == null)
             Debug.LogWarning($"[PlayerStatManager] {buffManagerBehaviour.GetType().Name}은(는) IStatSetProvider를 구현하지 않았습니다.");
 
-        Stat = new PlayerStat(startLevel);
+        EnsureInitialized();
         Recalculate();
 
         // 초기 스폰 시 체력/마나는 PlayerHealthManager/PlayerManaManager가 각각 자체적으로 Start()에서 풀충전 처리함.
+    }
+
+    private void Start()
+    {
+        // 다른 레이어의 Awake가 모두 끝난 뒤 초기 수치를 계산한다.
+        RefreshPassiveSubscription();
+        Recalculate();
     }
 
     private void OnDestroy()
@@ -181,11 +213,11 @@ public class PlayerStatManager : MonoBehaviour
     /// <summary>
     /// 네 레이어를 전부 다시 모아서 PlayerStat을 갱신한다.
     /// 장비 착용/해제, 레벨업, 버프 적용/해제, 패시브 스킬 변경 시 호출.
-    /// !! 패시브 스킬은 캐릭터별 컴포넌트가 아니라 전역 PassiveSkillManager.Instance를 직접 참조한다
-    ///    (equip/buff처럼 Inspector에 캐릭터별로 꽂아주는 방식이 아님 - DataManager 참조 방식과 동일).
+    /// 싱글은 기존 프로필, 네트워크 캐릭터는 소유자가 명시한 개인 패시브만 사용한다.
     /// </summary>
     public void Recalculate()
     {
+        EnsureInitialized();
         GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive);
 
         Stat.Recalculate(character, equipment, buff, passive);
@@ -197,10 +229,12 @@ public class PlayerStatManager : MonoBehaviour
     /// </summary>
     public void GetLayerStatSets(out StatSet character, out StatSet equipment, out StatSet buff, out StatSet passive)
     {
+        EnsureInitialized();
         character = GetCharacterStatSet();
         equipment = EquipProvider != null ? EquipProvider.GetStatSet() : StatSet.Zero;
         buff = BuffProvider != null ? BuffProvider.GetStatSet() : StatSet.Zero;
-        passive = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero;
+        passive = passiveStats ?? (UsesLocalPassiveProfile && PassiveSkillManager.Instance != null
+            ? PassiveSkillManager.Instance.GetStatSet() : StatSet.Zero);
     }
 
     /// <summary>

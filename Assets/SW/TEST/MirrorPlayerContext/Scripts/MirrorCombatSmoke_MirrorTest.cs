@@ -21,6 +21,11 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         public string Item;
         public EquipSlotType Slot;
         public bool Skill;
+        public int SkillIndex;
+        public SkillEvolutionId Evolution;
+        public SkillEnhancementId Enhancement;
+        public uint SkillCount;
+        public Vector3 Position;
         public float Health;
         public uint DamageCount;
         public float Mana;
@@ -83,7 +88,8 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private void Update()
     {
         if (Completed || failed) return;
-        if (Time.realtimeSinceStartupAsDouble - startedAt > 240d) { Fail("combat timeout 240s"); return; }
+        double timeout = Argument("--mirror-smoke-skills") == "true" ? 720d : 240d;
+        if (Time.realtimeSinceStartupAsDouble - startedAt > timeout) { Fail("combat timeout " + timeout); return; }
         if (NetworkServer.active && !serverRegistered)
         {
             if (!manager.ServerDevelopmentCommandsEnabled) { Fail("server development commands disabled"); return; }
@@ -201,12 +207,86 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 Debug.Log($"[MirrorCombatSmoke] STEP PASS step={step} actor={currentStep.Actor} {label} HP={currentStep.Health} all=4");
             }
         }
+        if (Argument("--mirror-smoke-skills") == "true")
+            foreach (PlayerContext actor in actors.GroupBy(p => p.Equipment.CurrentCharacterClass).Select(group => group.First()))
+                yield return RunSkillMatrix(actor, prefab);
         foreach (PlayerContext actor in actors) yield return RunLifecycle(actor);
         SendPhase(4);
         yield return WaitForAcks("all client final cleanup");
         SendPhase(5);
         Passed = Completed = true;
         Debug.Log($"[MirrorCombatSmoke] PASS server steps={step} clients=4 actual owner commands/animation/HP/cleanup");
+    }
+
+    /// <summary>실제 소유자 입력으로 각 스킬 진화를 실행하고 네 참가자의 피해·선택·종료 위치를 비교한다.</summary>
+    private IEnumerator RunSkillMatrix(PlayerContext actor, GameObject prefab)
+    {
+        var skills = actor.GetComponent<FighterSkillAuthority_MirrorTest>();
+        for (int slot = 0; slot < skills.SkillCount; slot++)
+        for (int evolution = 0; evolution <= 3; evolution++)
+        {
+            yield return Wait(() => !skills.ServerMotionLocked && actor.StateMachine.Is(PlayerState.Idle) &&
+                skills.GetRemainingCooldown(slot) <= 0f &&
+                (!skills.TryGetStackInfo(slot, out int current, out int max) || current == max), "natural skill recharge", 45d);
+            actor.GetComponent<PlayerManaManager>().FillMana();
+            step++;
+            string label = actor.Equipment.CurrentCharacterClass + " skill=" + slot + " evolution=" + evolution;
+            currentStep = new StepMessage
+            {
+                Step = step, Actor = actor.CombatAuthority.netId, Skill = true, SkillIndex = slot,
+                Evolution = (SkillEvolutionId)evolution, Enhancement = (SkillEnhancementId)((slot + evolution) % 4), Detail = label
+            };
+            SendPhase(20);
+            yield return WaitForAcks("owner selection and four replicas " + label);
+            Require(skills.GetEvolution(slot) == currentStep.Evolution && skills.GetEnhancement(slot) == currentStep.Enhancement,
+                "server selection " + label);
+            yield return Wait(() => skills.GetRemainingCooldown(slot) <= 0f &&
+                (!skills.TryGetStackInfo(slot, out int current, out int max) || current == max), "selected skill recharge", 45d);
+
+            Vector3 position = FindTargetPosition(actor, 1.6f);
+            target = Instantiate(prefab, position, Quaternion.identity).GetComponent<NetworkEnemyAuthority_MirrorTest>();
+            WBH_EnemyInfo info = target.EnemyInfo.Clone();
+            info.maxHP = 100000f; info.attack = 0f; info.defense = 0f; info.moveSpeed = 0f; info.exp = 0; info.credit = 0;
+            target.ServerSetEnemyInfo(info);
+            NetworkServer.Spawn(target.gameObject);
+            target.GetComponent<WBH_EnemyPattern_MirrorTest>().StopServer();
+            Physics.SyncTransforms();
+            currentStep.Target = target.netId;
+            currentStep.Health = target.CurrentHealth;
+            currentStep.DamageCount = target.ReceivedDamagePresentationCount;
+            currentStep.SkillCount = skills.AcceptedSkillCount;
+            SendPhase(0);
+            yield return WaitForAcks("skill target replica " + label);
+            Vector3 startingPosition = actor.transform.position;
+            bool movementOnly = skills.GetSkillDefinition(slot).shapeType == SkillShapeType.Dash;
+            SendPhase(21);
+            yield return Wait(() => skills.AcceptedSkillCount == currentStep.SkillCount + 1, "skill accepted " + label);
+            yield return Wait(() => !skills.ServerMotionLocked, "skill finish and owner position acknowledgement " + label);
+            Require(skills.LastResult != MirrorSkillRequestResult.Interrupted &&
+                skills.LastResult != MirrorSkillRequestResult.AnimationImpactMissing, "natural animation finish " + label);
+            if (movementOnly)
+                Require(Vector3.Distance(startingPosition, actor.transform.position) > 0.5f &&
+                    Mathf.Approximately(target.CurrentHealth, currentStep.Health), "original movement-only dash " + label);
+            else yield return Wait(() => target.CurrentHealth < currentStep.Health, "original skill damage " + label);
+            yield return Wait(() => FindObjectsByType<NetworkSkillVisual_MirrorTest>(FindObjectsSortMode.None).Length == 0,
+                "original projectile lifetime " + label);
+            Vector3 finishedPosition = actor.transform.position;
+            yield return new WaitForSecondsRealtime(1f);
+            Require(Vector3.Distance(finishedPosition, actor.transform.position) < 0.05f, "no owner snapshot snapback " + label);
+            if (!movementOnly) Require(target.LastAttackerNetId == actor.CombatAuthority.netId &&
+                target.ReceivedDamagePresentationCount > currentStep.DamageCount, "server skill attacker " + label);
+            currentStep.Health = target.CurrentHealth;
+            currentStep.DamageCount = target.ReceivedDamagePresentationCount;
+            currentStep.SkillCount = skills.AcceptedSkillCount;
+            currentStep.Position = actor.transform.position;
+            SendPhase(22);
+            yield return WaitForAcks("skill state HP and final position replicas " + label);
+            Debug.Log($"[MirrorSkillSmoke] PASS {label} enhancement={currentStep.Enhancement} hits={currentStep.DamageCount} position={currentStep.Position} all=4");
+            NetworkServer.Destroy(target.gameObject);
+            target = null;
+            SendPhase(3);
+            yield return WaitForAcks("skill target cleanup " + label);
+        }
     }
 
     private IEnumerator RunLifecycle(PlayerContext actor)
@@ -407,6 +487,54 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 !local.Equipment.TryGetEquippedItem(EquipSlotType.Potion, out _), "final local inventory cleanup");
             RestoreInputs();
         }
+        else if (message.Phase == 20)
+        {
+            yield return Wait(() => NetworkClient.spawned.ContainsKey(message.Actor), "skill actor replica");
+            var actorSkills = NetworkClient.spawned[message.Actor].GetComponent<FighterSkillAuthority_MirrorTest>();
+            var ownSkills = local.GetComponent<FighterSkillAuthority_MirrorTest>();
+            SkillEvolutionId ownEvolution = ownSkills.GetEvolution(message.SkillIndex);
+            SkillEnhancementId ownEnhancement = ownSkills.GetEnhancement(message.SkillIndex);
+            if (owner) actorSkills.SetEvolution(message.SkillIndex, message.Evolution);
+            yield return Wait(() => actorSkills.GetEvolution(message.SkillIndex) == message.Evolution, "evolution snapshot");
+            if (owner) actorSkills.SetEnhancement(message.SkillIndex, message.Enhancement);
+            yield return Wait(() => actorSkills.GetEnhancement(message.SkillIndex) == message.Enhancement, "enhancement snapshot");
+            if (!owner) Require(ownSkills.GetEvolution(message.SkillIndex) == ownEvolution &&
+                ownSkills.GetEnhancement(message.SkillIndex) == ownEnhancement, "other participant skill selection unchanged");
+        }
+        else if (message.Phase == 21)
+        {
+            if (!owner) yield break;
+            var skills = local.GetComponent<FighterSkillAuthority_MirrorTest>();
+            var enemy = ClientTarget(message.Target);
+            Require(enemy != null, "skill target replica");
+            yield return Wait(() => local.StateMachine.Is(PlayerState.Idle) && skills.GetRemainingCooldown(message.SkillIndex) <= 0f,
+                "owner ready for skill");
+            Vector3 aim = enemy.transform.position - local.transform.position;
+            Require(skills.TryUseLocalSkill(message.SkillIndex, aim, enemy.transform.position), "owner skill command");
+            Require(!skills.TryUseLocalSkill(message.SkillIndex, aim, enemy.transform.position), "duplicate local skill request blocked");
+            if (skills.GetSkillDefinition(message.SkillIndex).shapeType == SkillShapeType.SectorSlash &&
+                message.Evolution == SkillEvolutionId.Evolution3)
+            {
+                yield return new WaitForSecondsRealtime(0.75f);
+                skills.ReleaseLocalSkill(message.SkillIndex);
+            }
+            yield break; // 서버의 실제 Animator와 원본 투사체만 피해를 만든다.
+        }
+        else if (message.Phase == 22)
+        {
+            var actorObject = NetworkClient.spawned[message.Actor];
+            var skills = actorObject.GetComponent<FighterSkillAuthority_MirrorTest>();
+            yield return Wait(() => skills.AcceptedSkillCount == message.SkillCount &&
+                Vector3.Distance(actorObject.transform.position, message.Position) < 0.2f &&
+                ClientTarget(message.Target) != null && Mathf.Approximately(ClientTarget(message.Target).CurrentHealth, message.Health) &&
+                ClientTarget(message.Target).ReceivedDamagePresentationCount == message.DamageCount &&
+                (skills.GetSkillDefinition(message.SkillIndex).shapeType == SkillShapeType.Dash ||
+                 ClientTarget(message.Target).LastAttackerNetId == message.Actor), "skill position and damage replica");
+            Require(skills.GetEvolution(message.SkillIndex) == message.Evolution &&
+                skills.GetEnhancement(message.SkillIndex) == message.Enhancement, "confirmed skill selection retained");
+            if (owner) Require(local.Controller.IsControlEnabled && local.StateMachine.Is(PlayerState.Idle) &&
+                !skills.TryConfirmLocalSkillImpactFromAnimation(), "owner control restored and client impact rejected");
+        }
         else if (message.Phase == 10 || message.Phase == 12)
         {
             if (owner) Require(message.Phase == 10 ? local.RuntimeState.RequestToggleTestMutation() :
@@ -472,9 +600,9 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     }
 
     private IEnumerator WaitForAcks(string label) => Wait(() => acknowledgements.Count == participants.Count, label);
-    private IEnumerator Wait(Func<bool> predicate, string label)
+    private IEnumerator Wait(Func<bool> predicate, string label, double timeout = 20d)
     {
-        double until = Time.realtimeSinceStartupAsDouble + 20d;
+        double until = Time.realtimeSinceStartupAsDouble + timeout;
         while (!predicate())
         {
             Require(!failed && Time.realtimeSinceStartupAsDouble < until, label + " timeout");

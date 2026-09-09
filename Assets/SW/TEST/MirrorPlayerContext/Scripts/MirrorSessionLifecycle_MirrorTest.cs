@@ -13,6 +13,7 @@ public struct MirrorLobbyRequest_MirrorTest : NetworkMessage
     public MirrorLobbyOperation_MirrorTest Operation;
     public CharacterClass CharacterClass;
     public bool Ready;
+    public string PassiveProfileJson;
 }
 
 /// <summary>클라이언트 표시용 명부 항목. 참가 자격을 증명하는 비밀은 포함하지 않는다.</summary>
@@ -51,7 +52,8 @@ public sealed partial class MirrorTestNetworkManager
     public bool ServerDevelopmentCommandsEnabled => NetworkServer.active &&
         (Application.isEditor || Debug.isDebugBuild) && (enableDevelopmentCommands ||
             MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-inventory") == "true" ||
-            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-combat") == "true");
+            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-combat") == "true" ||
+            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-platform") == "true");
     public string ClientDisplayName { get; set; } = "Player";
     public string LocalParticipantId { get; private set; }
     public MirrorReconnectProfile_MirrorTest RequestedReconnectProfile { get; set; }
@@ -76,9 +78,25 @@ public sealed partial class MirrorTestNetworkManager
         CharacterClass characterClass = CharacterClass.Fighter, bool ready = false)
     {
         if (!NetworkClient.isConnected || !clientCompatibilityConfirmed) return false;
+        string passiveJson = null;
+        if (operation == MirrorLobbyOperation_MirrorTest.Ready && ready)
+        {
+            try
+            {
+                passiveJson = MirrorSessionSmokeDriver_MirrorTest.PassiveFixtureJson() ??
+                    MirrorPassiveProfile_MirrorTest.ReadLocalPayload();
+            }
+            catch (Exception exception) when (exception is System.IO.IOException ||
+                exception is UnauthorizedAccessException || exception is ArgumentException)
+            {
+                SetAdmissionStatus("저장된 패시브 프로필을 읽지 못했습니다.");
+                return false;
+            }
+        }
         NetworkClient.Send(new MirrorLobbyRequest_MirrorTest
         {
-            Operation = operation, CharacterClass = characterClass, Ready = ready
+            Operation = operation, CharacterClass = characterClass, Ready = ready,
+            PassiveProfileJson = passiveJson
         });
         return true;
     }
@@ -122,7 +140,7 @@ public sealed partial class MirrorTestNetworkManager
                 accepted = ServerRoster.TrySetCharacter(connection.connectionId, request.CharacterClass, out reason);
                 break;
             case MirrorLobbyOperation_MirrorTest.Ready:
-                accepted = ServerRoster.TrySetReady(connection.connectionId, request.Ready, out reason);
+                accepted = TrySetReadyWithPassive(connection.connectionId, request, out reason);
                 break;
             case MirrorLobbyOperation_MirrorTest.Start:
                 if (sessionSceneChangeRequested || NetworkServer.isLoadingScene ||
@@ -164,6 +182,18 @@ public sealed partial class MirrorTestNetworkManager
         }
         if (!accepted) connection.Send(new MirrorSessionFeedback_MirrorTest { Reason = reason });
         BroadcastLobby();
+    }
+
+    /// <summary>준비할 때 최신 패시브를 검증한다. 검증 또는 준비 요청이 실패하면 기존 프로필을 유지한다.</summary>
+    private bool TrySetReadyWithPassive(int connectionId, MirrorLobbyRequest_MirrorTest request, out string reason)
+    {
+        MirrorPassiveProfile_MirrorTest passive = null;
+        if (request.Ready && !MirrorPassiveProfile_MirrorTest.TryValidate(request.PassiveProfileJson,
+            GetComponent<MirrorSessionAuthenticator_MirrorTest>()?.PassiveDatabase, out passive, out reason))
+            return false;
+        if (!ServerRoster.TrySetReady(connectionId, request.Ready, out reason)) return false;
+        if (request.Ready) ServerRoster.FindByConnection(connectionId).PassiveProfile = passive;
+        return true;
     }
 
     /// <summary>
@@ -230,6 +260,7 @@ public sealed partial class MirrorTestNetworkManager
         MirrorSessionRoster_MirrorTest.Member member = ServerRoster.FindByConnection(connection.connectionId);
         if (!ServerRoster.RunStarted || member == null || !connection.isReady || connection.identity != null) return;
         PlayerContext context = member.RuntimeContext;
+        bool created = context == null;
         Transform start = GetStartPosition();
         if (context == null)
         {
@@ -248,6 +279,7 @@ public sealed partial class MirrorTestNetworkManager
             context.Equipment.SetActiveCharacterClass(member.CharacterClass);
         }
         MirrorSpawnedPlayerBinder binder = context.GetComponent<MirrorSpawnedPlayerBinder>();
+        binder.ServerSetDisplayIdentity(member);
         context.GetComponent<PlayerInventorySync_MirrorTest>().ServerResetOwnerRequests();
         context.GetComponent<NetworkShopPlayerState_MirrorTest>().ServerResetOwnerRequests();
         if (start != null) binder.ServerPlaceAtSceneStart(start.position, start.rotation);
@@ -258,6 +290,7 @@ public sealed partial class MirrorTestNetworkManager
         }
         binder.ServerSetTemporarilyAbsent(false);
         RegisterServerPlayer(context);
+        if (created) context.GetComponent<NetworkShopPlayerState_MirrorTest>().ServerApplyPassiveProfile(member.PassiveProfile);
         binder.ServerConfirmSceneStart(connection);
         SendRunSnapshot(connection);
     }
@@ -315,6 +348,7 @@ public sealed partial class MirrorTestNetworkManager
                 anyoneReady = true;
         }
         SetPartyAbsentPause(!anyoneReady && (anyoneConnected || ServerRoster.HasReconnectReservations(now)));
+        if (anyoneReady) RetryQuestRewards();
         if (!anyoneConnected && !ServerRoster.HasReconnectReservations(now))
         {
             foreach (MirrorSessionRoster_MirrorTest.Member member in ServerRoster.Members) DestroyRetainedPlayer(member);

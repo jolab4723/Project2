@@ -18,10 +18,15 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     [SerializeField] private PlayerContext context;
     [Tooltip("로컬 플레이어에게만 켤 입력 컴포넌트")]
     [SerializeField] private Behaviour[] localOnlyBehaviours;
+    [SerializeField] private PlayerNameplate_MirrorTest nameplatePrefab;
+    [SyncVar] private string participantDisplayName;
+    [SyncVar] private int participantSlot;
+    private PlayerNameplate_MirrorTest nameplate;
 
     private Coroutine localSceneRestoreRoutine;
     private bool gameplayInputEnabled;
     private bool textInputBlocked;
+    private bool menuInputBlocked;
     private Coroutine textInputReleaseRoutine;
     private int textInputReleaseFrame = -1;
     private bool hasServerSceneStart;
@@ -40,6 +45,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private NavMeshAgent absentAgent;
 
     public PlayerContext Context => context;
+    public string ParticipantDisplayName => participantDisplayName;
+    public int ParticipantSlot => participantSlot;
     /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
     public bool IsTemporarilyAbsent => temporarilyAbsent;
     /// <summary>같은 이름의 Scene 재방문도 구분하여 소유자의 시작 위치 최종 확정을 확인한다.</summary>
@@ -75,7 +82,9 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         Debug.Assert(GetComponent<WBH_PlayerInputHandler>() == null, "원본 이동 입력기가 남아 있습니다.", this);
         Debug.Assert(GetComponent<WBH_PlayerAnimation>() == null, "원본 애니메이션 이벤트 수신기가 남아 있습니다.", this);
         Debug.Assert(GetComponent<PlayerActionInputHandler>() == null, "원본 액션 입력기가 남아 있습니다.", this);
-        Debug.Assert(GetComponent<FighterSkillController>() == null, "원본 로컬 스킬 판정기가 남아 있습니다.", this);
+        Debug.Assert(isServer ||
+            (GetComponent<FighterSkillController>()?.enabled != true && GetComponent<GunnerSkillController>()?.enabled != true),
+            "클라이언트에서 원본 스킬 판정기가 켜져 있습니다.", this);
         Debug.Assert(GetComponent<PotionUseManager>() == null, "원본 로컬 포션 관리자가 남아 있습니다.", this);
         Debug.Assert(GetComponent<PlayerRelicEffectProvider>() == null, "원본 로컬 유물 적용기가 남아 있습니다.", this);
         Debug.Assert(GetComponent<PlayerHudEventBridge>() == null, "원본 전역 HUD 발행기가 남아 있습니다.", this);
@@ -87,6 +96,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         RegisterLocalContext();
 
         textInputBlocked = false;
+        menuInputBlocked = false;
         SetLocalOnlyBehaviours(CanRestoreGameplay);
         RestoreLocalGameplayAfterScene();
     }
@@ -101,6 +111,28 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         base.OnStartClient();
         PreserveAcrossNetworkSceneChange();
         ApplyTemporaryAbsence();
+        if (nameplatePrefab != null && nameplate == null)
+        {
+            nameplate = Instantiate(nameplatePrefab);
+            DontDestroyOnLoad(nameplate.gameObject);
+            nameplate.Bind(this);
+        }
+    }
+
+    public override void OnStopClient()
+    {
+        if (nameplate != null) Destroy(nameplate.gameObject);
+        nameplate = null;
+        base.OnStopClient();
+    }
+
+    /// <summary>인증된 명부의 표시 정보만 플레이어 복제본에 전달한다.</summary>
+    [Server]
+    internal void ServerSetDisplayIdentity(MirrorSessionRoster_MirrorTest.Member member)
+    {
+        if (member == null || member.RuntimeContext != context) return;
+        participantDisplayName = member.DisplayName;
+        participantSlot = member.Slot;
     }
 
     public override void OnStopLocalPlayer()
@@ -161,6 +193,20 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     {
         if (textInputBlocked == blocked) return;
         textInputBlocked = blocked;
+        RefreshInputBlock();
+    }
+
+    /// <summary>메뉴 입력 차단을 채팅과 별도로 기록해, 한쪽을 닫아도 다른 쪽의 차단을 유지한다.</summary>
+    public void SetMenuInputBlocked(bool blocked)
+    {
+        if (menuInputBlocked == blocked) return;
+        menuInputBlocked = blocked;
+        RefreshInputBlock();
+    }
+
+    private void RefreshInputBlock()
+    {
+        bool blocked = textInputBlocked || menuInputBlocked;
         if (textInputReleaseRoutine != null) StopCoroutine(textInputReleaseRoutine);
         textInputReleaseRoutine = null;
         if (blocked && isLocalPlayer)
@@ -196,7 +242,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = canControl && !textInputBlocked &&
+                behaviour.enabled = canControl && !textInputBlocked && !menuInputBlocked &&
                     Time.frameCount > textInputReleaseFrame;
         }
     }
@@ -359,6 +405,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         Quaternion rotation)
     {
         if (IsSceneStartConfirmed) return;
+        serverSceneStartPosition = position;
         ApplySceneStart(position, rotation);
         confirmedSceneHandle = SceneManager.GetActiveScene().handle;
         Debug.Log($"[MirrorSpawnedPlayerBinder] scene-start confirmed netId={netId} handle={confirmedSceneHandle} position={transform.position}", this);
@@ -429,7 +476,11 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             if (agent != null)
             {
                 if (!agent.enabled || !agent.isOnNavMesh)
-                    TryWarpToNavMesh(agent, transform.position);
+                {
+                    // 승강기 등 NavMesh 밖에서 부활하면 현재 맵의 서버 확정 시작점으로 복구한다.
+                    if (!TryWarpToNavMesh(agent, transform.position) && IsSceneStartConfirmed)
+                        TryWarpToNavMesh(agent, serverSceneStartPosition);
+                }
 
                 if (agent.enabled && agent.isOnNavMesh)
                     break;

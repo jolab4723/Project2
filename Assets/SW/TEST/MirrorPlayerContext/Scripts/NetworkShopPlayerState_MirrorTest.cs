@@ -56,7 +56,7 @@ public readonly struct MirrorTestShopRequestCompleted
 
 /// <summary>
 /// 플레이어의 서버 확정 골드·상점 혜택과 연결별 거래 요청 권한을 소유한다.
-/// <para>새 런은 상점 혜택과 패시브를 0으로 시작하며 클라이언트의 싱글 프로필을 가져오지 않는다.
+/// <para>새 런은 참가 시 서버가 검증한 개인 패시브와 상점 혜택을 적용한다.
 /// 재접속은 기존 지갑과 상태를 유지하고 중복 요청 기록만 새 소유 연결에 맞춰 초기화한다.</para>
 /// <para>골드는 Owner에게만 복제하고 실제 <see cref="PlayerWallet"/>에 반영한다. 구매·판매·리롤
 /// Command도 이 권한 있는 플레이어 객체에서 시작해 임의의 다른 플레이어 지갑을 바꾸지 못하게 한다.</para>
@@ -176,6 +176,17 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     {
         processedRequestIds.Clear();
         processedRequestOrder.Clear();
+    }
+
+    [Server]
+    public void ServerApplyPassiveProfile(MirrorPassiveProfile_MirrorTest profile)
+    {
+        serverPassiveStats = profile?.Stats ?? StatSet.Zero;
+        shopEnhanceLevel = profile?.ShopLevel ?? 0;
+        extraRerollCount = profile?.ExtraRerolls ?? 0;
+        discountPercent = profile?.DiscountFraction ?? 0f;
+        ServerPassiveStatsChanged?.Invoke();
+        ResolveShopState()?.ServerRefreshPartyBenefits();
     }
 
     private void LateUpdate()

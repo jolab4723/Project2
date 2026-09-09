@@ -6,6 +6,14 @@ public class YJ_MinimapPlayer : MonoBehaviour
     [SerializeField] private float rotationSpeed = 10f;
 
     private RectTransform iconRect;
+    private bool usesExternalPlayer; // SW 수정
+
+    /// <summary>미니맵 방향 아이콘에 현재 로컬 플레이어를 연결한다.</summary>
+    public void BindPlayer(Transform owner)
+    {
+        usesExternalPlayer = true;
+        player = owner;
+    }
 
     private void Awake()
     {
@@ -14,7 +22,7 @@ public class YJ_MinimapPlayer : MonoBehaviour
 
     private void Start()
     {
-        if (player != null)
+        if (player != null || usesExternalPlayer)
             return;
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");

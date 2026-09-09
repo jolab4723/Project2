@@ -15,4 +15,16 @@ public class KY_QuestData
     public string description;
     public KY_QuestConditionData[] conditions;
     public string reward;
+    public KY_QuestRewardData[] rewardItems; // SW 수정
+}
+
+/// <summary>보상 슬롯이 표시할 아이콘과 총수량, 미수령 수량이다. 실제 지급은 게임 상태 소유자가 처리한다.</summary>
+[System.Serializable]
+public class KY_QuestRewardData
+{
+    public UnityEngine.Sprite icon;
+    public string name;
+    public int amount;
+    public int remainingAmount;
+    public bool questCompleted;
 }

@@ -102,7 +102,8 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     // 도트데미지 (화상)
     public override void ApplyDotDamage(float damage)
     {
-        status.TakeDamage(damage);
+        // SW 수정
+        status.TakeDamage(new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire));
     }
 
     // 넉백
@@ -192,7 +193,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 
         WBH_EffectData data = GetEffectData(type);
 
-        if (data == null)
+        if (data == null || effectSpawner == null) // SW 수정
             return;
 
         WBH_Effect effect = effectSpawner.SpawnPersistentEffect(data, statusEffectRoot);

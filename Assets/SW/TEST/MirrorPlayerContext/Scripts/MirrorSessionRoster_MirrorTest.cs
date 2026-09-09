@@ -22,6 +22,7 @@ public sealed class MirrorSessionRoster_MirrorTest
         public bool HasForfeited { get; internal set; }
         public string ReconnectToken { get; internal set; }
         public PlayerContext RuntimeContext { get; set; }
+        public MirrorPassiveProfile_MirrorTest PassiveProfile { get; internal set; }
     }
 
     public const int MaxMembers = 4;

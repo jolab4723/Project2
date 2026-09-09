@@ -103,6 +103,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     public float LastRequestBackdateSeconds => lastRequestBackdateSeconds;
     public float LastCooldownRemainingSeconds => lastCooldownRemainingSeconds;
     public bool LastRejectedWhileImpactPending => lastRejectedWhileImpactPending;
+    public bool ServerAttackPending => isServer && attackPending;
     // 서버는 세션 명부의 선택을 Equipment에 주입하고, 클라이언트는 해당 캐릭터 프리팹의 Presenter가 설정한다.
     // 클래스가 아직 준비되지 않은 경우에도 Fighter 판정으로 추측하지 않는다.
     public bool IsGunner => context?.Equipment?.CurrentCharacterClass == CharacterClass.Gunner;
@@ -352,7 +353,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         lastCooldownRemainingSeconds = Mathf.Max(0f, (float)(nextAttackAt - authoritativeStartAt));
         lastRejectedWhileImpactPending = attackPending;
 
-        if (attackPending ||
+        if (attackPending || GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerMotionLocked == true ||
             authoritativeStartAt + CooldownBoundaryToleranceSeconds < nextAttackAt)
         {
             Reject(MirrorCombatRequestResult.AttackOnCooldown);

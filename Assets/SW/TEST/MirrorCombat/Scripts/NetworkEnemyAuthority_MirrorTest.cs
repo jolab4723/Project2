@@ -214,7 +214,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         ResolveSharedSpawners();
         controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner); // @!@
         //InitializeLocalEffectSpawner(); @!@
-        originalStatusEffectsReady = localEffectSpawnerInitialized;
+        // Gameplay effects do not require a visual spawner on the server.
+        originalStatusEffectsReady = GetComponent<WBH_EnemyStatusEffectController>() != null;
 
         status.OnHpChanged += HandleHealthChanged;
         status.OnDamaged += HandleDamaged;
@@ -507,8 +508,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     }
 
     /// <summary>
-    /// 원본 상태 효과의 게임 규칙은 유지하되, Act1 효과 풀이 준비된 서버에서만 적용한다.
-    /// 테스트 씬의 효과 풀이 없을 때는 피해 판정을 취소하거나 예외를 내지 않고 상태 효과만 건너뛴다.
+    /// 원본 상태 효과를 서버에서 적용한다. 시각 효과 풀이 없어도 게임 규칙과 만료 처리는 유지한다.
     /// </summary>
     [Server]
     public bool ServerTryApplyStatusEffect(WBH_StatusEffectData data)
@@ -620,6 +620,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackerContext = attacker;
             lastAttackerNetId = GetNetId(attacker);
             lastAttackDirection = (transform.position - attacker.transform.position).normalized;
+            // 원본 스킬·일반 공격 모두 실제 피해 수신 뒤 공격자 자신의 장비 효과를 발동한다.
+            attacker.ItemTriggers?.Fire(TriggerCondition.OnDamageDealt);
+            if (result.IsCritical)
+                attacker.ItemTriggers?.Fire(TriggerCondition.OnCrit);
+            attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
         }
         else
         {
@@ -640,6 +645,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         deathHandled = true;
         ServerDeathCount++;
+        if (NetworkManager.singleton is MirrorTestNetworkManager session)
+            session.ServerReportQuestKill(enemyInfo?.enemyId);
         isDead = true;
         if (enemyInfo?.enemyAttackType == EnemyAttackType.Boss)
             bossPhase = MirrorAct1BossPhase.Dead;

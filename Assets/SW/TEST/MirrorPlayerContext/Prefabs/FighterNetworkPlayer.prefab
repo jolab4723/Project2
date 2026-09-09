@@ -20,6 +20,10 @@ PrefabInstance:
       propertyPath: inventoryController
       value: 
       objectReference: {fileID: 7746940822970853538}
+    - target: {fileID: 2774735281992846289, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3224241202828719320, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.026277838
@@ -133,9 +137,6 @@ PrefabInstance:
       addedObject: {fileID: 8654730087331729777}
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1477279287762142363}
-    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 5412883201991654428}
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
@@ -169,9 +170,6 @@ PrefabInstance:
       addedObject: {fileID: 86986326738118108}
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2674278279629932106}
-    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2327126826848467182}
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
@@ -182,6 +180,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4844431935736903393}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1211950086955628659}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6759512655277069435}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5616473080612121775}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!114 &354411757978519734 stripped
 MonoBehaviour:
@@ -254,40 +261,6 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
---- !u!114 &1477279287762142363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2429587572153738188}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ff3ba0becae47b8b9381191598957c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
-  syncDirection: 1
-  syncMode: 0
-  syncInterval: 0
-  target: {fileID: 3097475621473565046}
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 0
-  onlySyncOnChange: 1
-  compressRotation: 1
-  interpolatePosition: 1
-  interpolateRotation: 1
-  interpolateScale: 1
-  coordinateSpace: 0
-  timelineOffset: 1
-  showGizmos: 0
-  showOverlay: 0
-  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
-  onlySyncOnChangeCorrectionMultiplier: 2
-  useFixedUpdate: 0
-  rotationSensitivity: 0.01
-  positionPrecision: 0.01
-  scalePrecision: 0.01
 --- !u!114 &5412883201991654428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -333,6 +306,7 @@ MonoBehaviour:
   localOnlyBehaviours:
   - {fileID: 1324992842006805359}
   - {fileID: 792359749329208090}
+  nameplatePrefab: {fileID: 8383472571775063643, guid: 95aa36f943faa27419a6ff2146c7cd80, type: 3}
 --- !u!114 &1296911216832023797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -431,7 +405,8 @@ MonoBehaviour:
   gunnerEffectRoot: {fileID: 0}
   Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
   Eff_gunnerShotgunAtk: {fileID: 0}
-  fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
+  fighterDash: {fileID: 7400000, guid: 3be23a73b910df64b93e9f1f0e7d6df6, type: 2}
+  gunnerBackstepMove: {fileID: 0}
   effectSpawner: {fileID: 0}
 --- !u!114 &1324992842006805359
 MonoBehaviour:
@@ -483,18 +458,6 @@ MonoBehaviour:
   syncMode: 1
   syncInterval: 0
   context: {fileID: 5412883201991654428}
---- !u!114 &2674278279629932106
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2429587572153738188}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b08a095bcd593447998579b023402e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatInitializationGuard_MirrorTest
 --- !u!114 &2327126826848467182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -532,6 +495,9 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 1024
+  gunnerProjectilePrefab: {fileID: 0}
+  gunnerFirePoint: {fileID: 0}
+  gunnerExplosionRadius: 3
 --- !u!114 &3770454499868839698
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -553,20 +519,15 @@ MonoBehaviour:
   controller: {fileID: 941499957347379877}
   stateMachine: {fileID: 5869277213540180398}
   status: {fileID: 9187465300744639497}
-  buffManager: {fileID: 1153837035469029928}
   animationView: {fileID: 6920224539749933987}
   playerEffect: {fileID: 6482285972647578202}
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 1024
+  fighterSkills: {fileID: 1211950086955628659}
+  gunnerSkills: {fileID: 0}
   skills:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
   - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
-  activeEvolutions: 010000000200000000000000
-  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
-  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
-  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+  activeEvolutions: 000000000000000000000000
 --- !u!114 &4844431935736903393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -584,6 +545,93 @@ MonoBehaviour:
   syncInterval: 0
   context: {fileID: 5412883201991654428}
   presenter: {fileID: 3975054903283207721}
+--- !u!114 &1211950086955628659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f85fc167f6b18a4e96f2bb4255db016, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FighterSkillController
+  inputHandler: {fileID: 0}
+  combat: {fileID: 7392333230692009756}
+  controller: {fileID: 941499957347379877}
+  stateMachine: {fileID: 5869277213540180398}
+  status: {fileID: 9187465300744639497}
+  buffManager: {fileID: 1153837035469029928}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  effectSpawner: {fileID: 0}
+  chargeEffectData: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
+  skills:
+  - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
+  - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
+  - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
+  activeEvolutions: 000000000000000000000000
+  activeEnhancements: 000000000000000000000000
+  visibleSkillArea: 0
+  sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
+  lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
+  dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+--- !u!114 &6759512655277069435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f6fa6c57ae38174185c1e11499e0a59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkSkillPresentation_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  gunnerSkills: {fileID: 0}
+  visualPrefab: {fileID: 7546416788901728222, guid: 4117c62e752183a4da2773d51d339036, type: 3}
+--- !u!114 &5616473080612121775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fb52eaa317efc244aea455c0618cfcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerNetworkTransform_MirrorTest
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 3097475621473565046}
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 0
+  onlySyncOnChange: 1
+  compressRotation: 1
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  coordinateSpace: 0
+  timelineOffset: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  onlySyncOnChangeCorrectionMultiplier: 2
+  useFixedUpdate: 0
+  rotationSensitivity: 0.01
+  positionPrecision: 0.01
+  scalePrecision: 0.01
 --- !u!4 &3097475621473565046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}

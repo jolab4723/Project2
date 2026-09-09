@@ -223,17 +223,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         recalculatingServerStats = true;
         try
         {
-            context.Stats.GetLayerStatSets(
-                out StatSet character,
-                out StatSet equipment,
-                out StatSet buff,
-                out _);
-
-            StatSet passive = shopPlayerState != null
-                ? shopPlayerState.ServerPassiveStats
-                : StatSet.Zero;
-
-            context.Stats.Stat.Recalculate(character, equipment, buff, passive);
+            context.Stats.SetPassiveStats(shopPlayerState?.ServerPassiveStats ?? StatSet.Zero);
             context.Health?.RefreshMaxHealth();
             context.Mana?.RefreshMaxMana();
         }
@@ -283,6 +273,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             revision = revision,
             currentLevel = stat.currentLevel,
             currentExp = stat.currentExp,
+            passiveStats = shopPlayerState?.ServerPassiveStats ?? StatSet.Zero,
             maxHealth = stat.maxHealth,
             currentHealth = context.Health.CurrentHealth,
             maxMana = stat.maxMana,
@@ -340,6 +331,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         try
         {
             ApplyClientBuffs(snapshot.buffs);
+            context.Stats.SetPassiveStats(snapshot.passiveStats);
             ApplyFinalStats(snapshot, context.Stats.Stat);
             InvokeStatChanged(context.Stats.Stat);
 
@@ -659,6 +651,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public bool isDead;
         public uint reviveSequence;
         public BuffSnapshot[] buffs;
+        public StatSet passiveStats;
     }
 
     [Serializable]
