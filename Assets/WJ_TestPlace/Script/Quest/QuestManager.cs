@@ -131,9 +131,9 @@ public class QuestManager : Singleton<QuestManager>
         if (FindActive(definition.questId) != null)
             return false;
 
-        var data = new ActiveQuestData { questId = definition.questId };
-        for (int i = 0; i < definition.conditions.Length; i++)
-            data.conditionProgress.Add(0);
+        ActiveQuestData data = CreateProgress(definition);
+        if (data == null)
+            return false;
 
         activeQuests.Add(data);
         OnQuestListChanged?.Invoke();
@@ -168,27 +168,7 @@ public class QuestManager : Singleton<QuestManager>
             if (def == null)
                 continue;
 
-            bool changed = false;
-
-            for (int c = 0; c < def.conditions.Length && c < active.conditionProgress.Count; c++)
-            {
-                QuestConditionDefinition condition = def.conditions[c];
-                if (condition.conditionType != type)
-                    continue;
-
-                // targetId가 비어있는 조건은 어떤 대상이든 인정, 그 외엔 정확히 일치해야 진행된다.
-                bool matches = string.IsNullOrEmpty(condition.targetId) || condition.targetId == targetId;
-                if (!matches)
-                    continue;
-
-                if (active.conditionProgress[c] >= condition.requiredCount)
-                    continue;
-
-                active.conditionProgress[c] = Mathf.Min(active.conditionProgress[c] + amount, condition.requiredCount);
-                changed = true;
-            }
-
-            if (!changed)
+            if (!TryAdvanceProgress(def, active, type, targetId, amount))
                 continue;
 
             OnQuestProgressChanged?.Invoke(active);
@@ -198,11 +178,53 @@ public class QuestManager : Singleton<QuestManager>
         }
     }
 
-    private static bool IsAllConditionsMet(QuestDefinitionSO def, ActiveQuestData active)
+    /// <summary>로컬 이벤트 구독·지갑 접근·파일 저장 없이 호출자가 소유할 진행 상태를 만든다.</summary>
+    public static ActiveQuestData CreateProgress(QuestDefinitionSO definition)
     {
+        // SW 수정
+        if (definition == null || string.IsNullOrEmpty(definition.questId) || definition.conditions == null)
+            return null;
+        var progress = new ActiveQuestData { questId = definition.questId };
+        for (int i = 0; i < definition.conditions.Length; i++)
+            progress.conditionProgress.Add(0);
+        return progress;
+    }
+
+    /// <summary>전달받은 상태의 진행도만 계산한다. 완료 확정과 보상 대상은 호출자가 결정한다.</summary>
+    public static bool TryAdvanceProgress(QuestDefinitionSO definition, ActiveQuestData progress,
+        QuestConditionType type, string targetId, int amount = 1)
+    {
+        if (!IsMatchingProgress(definition, progress) || progress.isCompleted || amount <= 0)
+            return false;
+        bool changed = false;
+        for (int i = 0; i < definition.conditions.Length; i++)
+        {
+            QuestConditionDefinition condition = definition.conditions[i];
+            if (condition == null || condition.conditionType != type ||
+                (!string.IsNullOrEmpty(condition.targetId) && condition.targetId != targetId))
+                continue;
+            int current = progress.conditionProgress[i];
+            if (current >= condition.requiredCount)
+                continue;
+            // 큰 획득 수를 더해도 정수 오버플로로 진행도가 음수가 되지 않게 한다.
+            progress.conditionProgress[i] = (int)Math.Min((long)current + amount, condition.requiredCount);
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static bool IsMatchingProgress(QuestDefinitionSO definition, ActiveQuestData progress) =>
+        definition != null && definition.conditions != null && progress != null &&
+        progress.questId == definition.questId && progress.conditionProgress != null &&
+        progress.conditionProgress.Count == definition.conditions.Length;
+
+    public static bool IsAllConditionsMet(QuestDefinitionSO def, ActiveQuestData active)
+    {
+        if (!IsMatchingProgress(def, active) || def.conditions.Length == 0)
+            return false;
         for (int c = 0; c < def.conditions.Length; c++)
         {
-            if (active.conditionProgress[c] < def.conditions[c].requiredCount)
+            if (def.conditions[c] == null || active.conditionProgress[c] < def.conditions[c].requiredCount)
                 return false;
         }
         return true;

@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>기존 로컬 거래 입력을 선택적으로 대체할 외부 요청 종류다.</summary>
+public enum ItemExternalInputAction { BeginDrag, EndDrag, RightClick }
+
 public class ItemUI : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private ItemEquipHandler equipmentHandler;
@@ -21,6 +24,54 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
     public Transform ItemTransform => itemTransform;
 
     private InventoryItem inventoryItem;
+    private InventoryItem dragSourceItem;
+    private System.Func<ItemExternalInputAction, PointerEventData, bool> externalInputHandler;
+
+    /// <summary>입력을 로컬 거래 대신 외부 요청으로 전달하는지 반환한다.</summary>
+    public bool HasExternalInput => externalInputHandler != null;
+    /// <summary>거래 모델과 분리한 표시용 아이템으로 드래그 중인지 반환한다.</summary>
+    public bool IsDragPreviewActive => dragSourceItem != null;
+    /// <summary>미리보기 회전·좌표가 반영되지 않은 실제 소유 아이템을 반환한다.</summary>
+    public InventoryItem DragSourceItem => dragSourceItem ?? inventoryItem;
+
+    /// <summary>외부 입력 처리기를 연결한다. null이면 기존 싱글 입력 경로를 사용한다.</summary>
+    public void BindExternalInput(System.Func<ItemExternalInputAction, PointerEventData, bool> handler)
+    {
+        externalInputHandler = handler;
+    }
+
+    /// <summary>외부 처리기에 입력 의도를 전달한다. 실패를 로컬 거래로 전환하지 않는다.</summary>
+    public bool TryHandleExternalInput(ItemExternalInputAction action, PointerEventData eventData)
+    {
+        return eventData != null && externalInputHandler?.Invoke(action, eventData) == true;
+    }
+
+    /// <summary>원래 배치 저장 후 표시용 아이템만 만든다. Grid·장비 소유 모델은 그대로 유지한다.</summary>
+    public bool BeginDragPreview()
+    {
+        if (IsDragPreviewActive || inventoryItem?.itemData == null)
+            return false;
+
+        dragSourceItem = inventoryItem;
+        inventoryItem = new InventoryItem(dragSourceItem.itemData)
+        {
+            x = dragSourceItem.x,
+            y = dragSourceItem.y,
+            isRotated = dragSourceItem.isRotated,
+            isEquipped = dragSourceItem.isEquipped
+        };
+        if (currentEquipSlot != null && currentEquipSlot.EquippedItemUI == this)
+            currentEquipSlot.ClearItemUI();
+        return true;
+    }
+
+    /// <summary>표시용 복사본을 버리고 실제 소유 아이템 참조를 복구한다.</summary>
+    public void EndDragPreview()
+    {
+        if (!IsDragPreviewActive) return;
+        inventoryItem = dragSourceItem;
+        dragSourceItem = null;
+    }
 
     private Vector2 originalPosition;
     private bool originalWasEquipped;
@@ -53,6 +104,9 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
     public void Setup(InventoryItem item, InventoryGrid grid)
     {
+        if (item?.itemData?.definition == null || grid == null)
+            return;
+
         EnsureUIReferences();
 
         if (rect == null || itemIcon == null || itemTransform == null)
@@ -63,6 +117,8 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
+        // 서버 등에서 새 상태가 도착하면 이전 미리보기가 그 상태를 덮어쓰지 않게 한다.
+        dragSourceItem = null;
         inventoryItem = item;
         currentGrid = grid;
         cellSize = grid.CellSize;
@@ -146,8 +202,14 @@ public class ItemUI : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Right)
+        if (eventData == null || eventData.button != PointerEventData.InputButton.Right)
             return;
+
+        if (HasExternalInput || IsDragPreviewActive)
+        {
+            TryHandleExternalInput(ItemExternalInputAction.RightClick, eventData);
+            return;
+        }
 
         if (ShopController.Instance != null && ShopController.Instance.TryHandleRightClick(this))
             return;

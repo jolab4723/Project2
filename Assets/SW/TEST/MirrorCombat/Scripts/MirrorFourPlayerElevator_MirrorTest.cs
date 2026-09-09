@@ -16,22 +16,33 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     [SerializeField] private GameObject visualRoot;
     [SerializeField] private Collider boardingTrigger;
     [SerializeField] private Rigidbody platformRigidbody;
+    [SerializeField] private bool alwaysAvailable;
+    [SerializeField] private Transform startPoint;
+    [SerializeField] private Transform destinationPoint;
+    [SerializeField] private Transform safeLandingPoint;
     [SerializeField] private Vector3 travelOffset = new(0f, 10.75f, 0f);
     [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
     [SerializeField, Min(0f)] private float topWait = 5f;
     [SerializeField, Min(0.1f)] private float navMeshSearchDistance = 1.5f;
+
+    public Collider BoardingTrigger => boardingTrigger;
 
     [SyncVar(hook = nameof(HandleAvailabilityChanged))]
     private bool available;
 
     private readonly HashSet<NetworkIdentity> boardedPlayers = new();
     private Coroutine serverRideRoutine;
+    private float nextBoardingCheck;
+    private Vector3 localPassengerOffset;
+    private Vector3 localSafeStart;
+    private bool hasLocalSafeStart;
 
     private Coroutine localRideRoutine;
     private Rigidbody localPlayerRigidbody;
     private NavMeshAgent localPlayerAgent;
     private T_PlayerController localPlayerController;
     private bool localAgentWasEnabled;
+    private bool localAgentWasStopped;
     private bool localControlWasEnabled;
 
     private readonly WaitForFixedUpdate waitForFixedUpdate = new();
@@ -54,7 +65,14 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     {
         base.OnStartServer();
 
-        available = IsCurrentNodeDesignatedForElevator();
+        available = IsAvailable(alwaysAvailable, IsCurrentNodeDesignatedForElevator());
+        if (alwaysAvailable && (startPoint == null || destinationPoint == null || safeLandingPoint == null ||
+            startPoint.IsChildOf(platformRigidbody.transform) || destinationPoint.IsChildOf(platformRigidbody.transform) ||
+            safeLandingPoint.IsChildOf(platformRigidbody.transform)))
+        {
+            available = false;
+            Debug.LogError("[MirrorFourPlayerElevator] Stage5 requires fixed start, destination and safe landing points outside the moving platform.", this);
+        }
         ApplyAvailability(available);
     }
 
@@ -68,6 +86,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     {
         if (serverRideRoutine != null)
             StopCoroutine(serverRideRoutine);
+        serverRideRoutine = null;
 
         boardedPlayers.Clear();
         base.OnStopServer();
@@ -75,66 +94,67 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
 
     public override void OnStopClient()
     {
-        RestoreLocalPlayer();
+        RestoreLocalPlayer(false);
         base.OnStopClient();
     }
 
     [ServerCallback]
-    private void OnTriggerEnter(Collider other)
+    private void Update()
     {
-        if (!available || serverRideRoutine != null ||
-            !TryGetNetworkPlayer(other, out NetworkIdentity player))
-        {
+        // Rebuild actual overlaps: duplicate colliders, disconnects, death and returning
+        // passengers must not depend on another OnTriggerEnter being delivered.
+        if (!available || serverRideRoutine != null || Time.unscaledTime < nextBoardingCheck)
             return;
-        }
-
-        boardedPlayers.Add(player);
+        nextBoardingCheck = Time.unscaledTime + 0.2f;
         TryStartRide();
     }
 
-    [ServerCallback]
-    private void OnTriggerExit(Collider other)
-    {
-        if (serverRideRoutine != null ||
-            !TryGetNetworkPlayer(other, out NetworkIdentity player))
-        {
-            return;
-        }
-
-        boardedPlayers.Remove(player);
-    }
-
-    /// <summary>
-    /// 현재 연결되어 PlayerContext가 준비된 모든 플레이어가 탑승했을 때만 왕복을 시작한다.
-    /// 이전 왕복 완료 여부는 조건에 넣지 않아 테스트 중 같은 엘리베이터를 반복해서 검증할 수 있다.
-    /// </summary>
     [Server]
     private void TryStartRide()
     {
-        boardedPlayers.RemoveWhere(player =>
-            player == null || player.connectionToClient == null);
+        if (boardingTrigger is not BoxCollider box || !box.enabled)
+            return;
 
-        int connectedPlayerCount = 0;
+        boardedPlayers.Clear();
+        Vector3 scale = box.transform.lossyScale;
+        scale = new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
+        Collider[] overlaps = Physics.OverlapBox(
+            box.transform.TransformPoint(box.center), Vector3.Scale(box.size, scale) * 0.5f,
+            box.transform.rotation, Physics.AllLayers, QueryTriggerInteraction.Collide);
+        foreach (Collider overlap in overlaps)
+        {
+            if (TryGetNetworkPlayer(overlap, out NetworkIdentity player) && IsWaitingPlayer(player))
+                boardedPlayers.Add(player);
+        }
+
+        int waitingPlayerCount = 0;
         foreach (NetworkConnectionToClient connection in NetworkServer.connections.Values)
         {
-            if (connection?.identity != null &&
-                connection.identity.TryGetComponent(out PlayerContext _))
-            {
-                connectedPlayerCount++;
-            }
+            if (IsWaitingPlayer(connection?.identity))
+                waitingPlayerCount++;
         }
 
-        if (!CanStartRide(
-                available,
-                serverRideRoutine != null,
-                connectedPlayerCount,
-                boardedPlayers.Count))
-        {
-            return;
-        }
-
-        serverRideRoutine = StartCoroutine(RideRoundTrip());
+        if (CanStartRide(available, serverRideRoutine != null, waitingPlayerCount, boardedPlayers.Count))
+            serverRideRoutine = StartCoroutine(RideRoundTrip());
     }
+
+    private bool IsWaitingPlayer(NetworkIdentity player)
+    {
+        bool connected = player != null && player.connectionToClient != null;
+        PlayerContext context = player != null ? player.GetComponent<PlayerContext>() : null;
+        bool alive = context != null && context.RuntimeState != null && !context.RuntimeState.IsDead;
+        bool absent = player != null && player.GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true;
+        // Once a player reached the upper floor, they do not block passengers who
+        // return downstairs for another trip. Default test mode keeps the whole-party rule.
+        bool alreadyUpstairs = alwaysAvailable && destinationPoint != null && player != null &&
+            player.transform.position.y >= destinationPoint.position.y - navMeshSearchDistance;
+        return IsWaitingParticipant(connected, alive, absent, alreadyUpstairs);
+    }
+
+    public static bool IsAvailable(bool always, bool designatedNode) => always || designatedNode;
+
+    public static bool IsWaitingParticipant(bool connected, bool alive, bool absent, bool alreadyUpstairs)
+        => connected && alive && !absent && !alreadyUpstairs;
 
     /// <summary>
     /// 상승 중에는 기존 방식대로 탑승자의 입력을 잠시 막아 플랫폼과 함께 이동시킨다.
@@ -150,16 +170,18 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         foreach (NetworkIdentity player in boardedPlayers)
         {
             if (player != null && player.connectionToClient != null)
-                TargetBeginRide(player.connectionToClient);
+                TargetBeginRide(player.connectionToClient, platformRigidbody.position);
         }
 
-        Vector3 startPosition = platformRigidbody.position;
-        yield return MovePlatform(startPosition + travelOffset);
+        Vector3 startPosition = startPoint != null ? startPoint.position : platformRigidbody.position;
+        Vector3 destination = destinationPoint != null ? destinationPoint.position : startPosition + travelOffset;
+        yield return MovePlatform(destination);
 
         foreach (NetworkIdentity player in boardedPlayers)
         {
             if (player != null && player.connectionToClient != null)
-                TargetEndRide(player.connectionToClient);
+                TargetEndRide(player.connectionToClient, destination,
+                    player.GetComponent<PlayerContext>()?.RuntimeState?.IsDead == false);
         }
 
         if (topWait > 0f)
@@ -190,9 +212,11 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     }
 
     [TargetRpc]
-    private void TargetBeginRide(NetworkConnectionToClient target)
+    private void TargetBeginRide(NetworkConnectionToClient target, Vector3 platformStart)
     {
-        RestoreLocalPlayer();
+        RestoreLocalPlayer(false);
+        if (!CanRestoreLocalControl())
+            return;
 
         NetworkIdentity localPlayer = NetworkClient.localPlayer;
         if (localPlayer == null)
@@ -202,17 +226,24 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         localPlayerAgent = localPlayer.GetComponent<NavMeshAgent>();
         localPlayerController = localPlayer.GetComponent<T_PlayerController>();
 
+        localPassengerOffset = localPlayerRigidbody != null
+            ? localPlayerRigidbody.position - platformStart : Vector3.zero;
+        hasLocalSafeStart = localPlayerAgent != null && localPlayerAgent.isOnNavMesh &&
+            NavMesh.SamplePosition(localPlayer.transform.position, out _, navMeshSearchDistance, localPlayerAgent.areaMask);
+        localSafeStart = localPlayer.transform.position;
         localControlWasEnabled = localPlayerController?.IsControlEnabled == true;
         if (localControlWasEnabled)
             localPlayerController.SetControlEnable(false);
 
         localAgentWasEnabled = localPlayerAgent != null && localPlayerAgent.enabled;
+        localAgentWasStopped = localAgentWasEnabled && localPlayerAgent.isOnNavMesh && localPlayerAgent.isStopped;
         if (localAgentWasEnabled)
         {
             if (localPlayerAgent.isOnNavMesh)
                 localPlayerAgent.ResetPath();
 
-            localPlayerAgent.isStopped = true;
+            if (localPlayerAgent.isOnNavMesh)
+                localPlayerAgent.isStopped = true;
             localPlayerAgent.enabled = false;
         }
 
@@ -220,28 +251,40 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
     }
 
     [TargetRpc]
-    private void TargetEndRide(NetworkConnectionToClient target)
+    private void TargetEndRide(NetworkConnectionToClient target, Vector3 finalPlatformPosition, bool alive)
     {
-        RestoreLocalPlayer();
+        // End RPC can arrive before the final interpolated NetworkTransform sample.
+        // Apply the absolute endpoint and captured offset before searching the NavMesh.
+        if (alive && CanRestoreLocalControl() && localPlayerRigidbody != null)
+            localPlayerRigidbody.position = finalPlatformPosition + localPassengerOffset;
+        RestoreLocalPlayer(alive);
     }
 
     private IEnumerator FollowPlatform()
     {
-        Vector3 previousPlatformPosition = platformRigidbody.position;
         while (true)
         {
             yield return waitForFixedUpdate;
-
-            Vector3 currentPlatformPosition = platformRigidbody.position;
-            Vector3 delta = currentPlatformPosition - previousPlatformPosition;
-            previousPlatformPosition = currentPlatformPosition;
-
+            if (!CanRestoreLocalControl())
+            {
+                localRideRoutine = null;
+                RestoreLocalPlayer(false);
+                yield break;
+            }
             if (localPlayerRigidbody != null)
-                localPlayerRigidbody.MovePosition(localPlayerRigidbody.position + delta);
+                localPlayerRigidbody.MovePosition(platformRigidbody.position + localPassengerOffset);
         }
     }
 
-    private void RestoreLocalPlayer()
+    private static bool CanRestoreLocalControl()
+    {
+        NetworkIdentity player = NetworkClient.localPlayer;
+        return NetworkClient.active && NetworkClient.ready && player != null &&
+            player.GetComponent<PlayerContext>()?.RuntimeState?.IsDead == false &&
+            player.GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent != true;
+    }
+
+    private void RestoreLocalPlayer(bool restoreControl)
     {
         if (localRideRoutine != null)
         {
@@ -249,24 +292,40 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
             localRideRoutine = null;
         }
 
-        if (localAgentWasEnabled && localPlayerAgent != null)
+        bool canRestore = restoreControl && CanRestoreLocalControl();
+        if (canRestore && localAgentWasEnabled && localPlayerAgent != null)
         {
             Vector3 playerPosition = localPlayerRigidbody != null
-                ? localPlayerRigidbody.position
-                : localPlayerAgent.transform.position;
+                ? localPlayerRigidbody.position : localPlayerAgent.transform.position;
+            bool found = NavMesh.SamplePosition(playerPosition, out NavMeshHit hit,
+                navMeshSearchDistance, localPlayerAgent.areaMask);
+            if (!found && safeLandingPoint != null)
+                found = NavMesh.SamplePosition(safeLandingPoint.position, out hit,
+                    navMeshSearchDistance, localPlayerAgent.areaMask);
+            if (!found && hasLocalSafeStart)
+                found = NavMesh.SamplePosition(localSafeStart, out hit,
+                    navMeshSearchDistance, localPlayerAgent.areaMask);
 
-            localPlayerAgent.enabled = true;
-            if (NavMesh.SamplePosition(
-                    playerPosition,
-                    out NavMeshHit hit,
-                    navMeshSearchDistance,
-                    localPlayerAgent.areaMask))
+            if (found)
             {
-                localPlayerAgent.Warp(hit.position);
+                if (localPlayerRigidbody != null)
+                    localPlayerRigidbody.position = hit.position;
+                localPlayerAgent.transform.position = hit.position;
+                localPlayerAgent.enabled = true;
+                canRestore = localPlayerAgent.Warp(hit.position);
+                if (!canRestore)
+                    localPlayerAgent.enabled = false;
+                else
+                    localPlayerAgent.isStopped = localAgentWasStopped;
+            }
+            else
+            {
+                canRestore = false;
+                Debug.LogError("[MirrorFourPlayerElevator] No valid landing or boarding NavMesh; control remains blocked. Configure safeLandingPoint on the upper floor.", this);
             }
         }
 
-        if (localControlWasEnabled)
+        if (canRestore && localControlWasEnabled)
             localPlayerController?.SetControlEnable(true);
 
         localPlayerRigidbody = null;
@@ -274,6 +333,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         localPlayerController = null;
         localAgentWasEnabled = false;
         localControlWasEnabled = false;
+        hasLocalSafeStart = false;
     }
 
     private void HandleAvailabilityChanged(bool _, bool isAvailable)
@@ -337,7 +397,7 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
             : string.CompareOrdinal(left.id, right.id);
     }
 
-    private static bool CanStartRide(
+    public static bool CanStartRide(
         bool isAvailable,
         bool isMoving,
         int connectedPlayerCount,
@@ -356,7 +416,6 @@ public sealed class MirrorFourPlayerElevator_MirrorTest : NetworkBehaviour
         player = null;
         Rigidbody attachedRigidbody = other.attachedRigidbody;
         return attachedRigidbody != null &&
-               other.gameObject == attachedRigidbody.gameObject &&
                attachedRigidbody.TryGetComponent(out player) &&
                player.connectionToClient != null &&
                player.TryGetComponent(out PlayerContext _);

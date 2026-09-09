@@ -20,6 +20,9 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    /// <summary>일반 팝업이 열려 있는지 알려준다. 멀티플레이 입력은 게임 시간을 멈추지 않고 이 상태로 차단한다.</summary>
+    public bool HasOpenModalPopup => popupStack.Count > 0; // SW 수정
+
     [Header("일반 팝업 뒤 입력 차단 대상")]
     [SerializeField] private CanvasGroup[] modalInputTargets;
 
@@ -69,6 +72,7 @@ public class KY_PopupManager : MonoBehaviour
             return;
         if (popupStack.Contains(popup))
             return;
+        popup.transform.SetAsLastSibling(); // SW 수정
         popup.Open();
         popupStack.Push(popup);
         SetBackgroundInput(false);
@@ -160,8 +164,21 @@ public class KY_PopupManager : MonoBehaviour
         ShowSidePopup(PopupType.Quest);
     }
 
+    private KY_QuestData displayedQuestData;
+
+    /// <summary>열려 있는 같은 의뢰의 내용만 갱신하며 팝업을 다시 열지 않는다.</summary>
+    public void RefreshQuestDetail(KY_QuestData previous, KY_QuestData updated)
+    {
+        if (previous == null || !ReferenceEquals(displayedQuestData, previous)) return;
+        displayedQuestData = updated;
+        if (popupDict.TryGetValue(PopupType.QuestDetail, out var popup) &&
+            popup is KY_QuestDetailPopup detail && detail.gameObject.activeInHierarchy)
+            detail.SetData(updated);
+    }
+
     public void ShowQuestDetail(KY_QuestData data)
     {
+        displayedQuestData = data;
         KY_QuestDetailPopup detailPopup = popupDict[PopupType.QuestDetail] as KY_QuestDetailPopup;
         detailPopup.SetData(data);
         Show(PopupType.QuestDetail);

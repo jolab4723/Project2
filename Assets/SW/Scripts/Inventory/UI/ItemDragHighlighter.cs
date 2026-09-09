@@ -68,11 +68,10 @@ public class ItemDragHighlighter : MonoBehaviour
             item.CurrentWidth,
             item.CurrentHeight);
 
-        if (targetGrid.CanPlaceItem(
-                requestedCell.x,
-                requestedCell.y,
-                item.CurrentWidth,
-                item.CurrentHeight))
+        if (InventoryGridMath.CanPlaceRectIgnoring(
+                targetGrid,
+                requestedRect,
+                itemUI.DragSourceItem))
         {
             CurrentSwapPlan = default;
             ShowMovePreview(targetGrid, requestedRect);
@@ -124,7 +123,8 @@ public class ItemDragHighlighter : MonoBehaviour
                 item,
                 requestedCell,
                 pointerCell,
-                out InventoryItem otherItem))
+                out InventoryItem otherItem,
+                itemUI.DragSourceItem))
         {
             CurrentSwapPlan = InventorySwapPlan.Invalid();
             ShowInvalidPreview(targetGrid, requestedRect);
@@ -135,7 +135,8 @@ public class ItemDragHighlighter : MonoBehaviour
             targetGrid,
             item,
             itemUI.OriginalPlacement,
-            otherItem);
+            otherItem,
+            itemUI.DragSourceItem);
 
         if (CurrentSwapPlan.IsValid)
         {

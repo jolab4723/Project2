@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using ItemSystem;
 using Mirror;
 using UnityEngine;
@@ -20,9 +19,6 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
 {
     private const int MaxSyncedBuffCount = 32;
     private const string TestBuffPath = "DataFiles/BuffData/3. GeneratedAssets/buff.attack_up";
-
-    private static readonly FieldInfo StatChangedEvent =
-        typeof(PlayerStat).GetField("OnStatChanged", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private static Dictionary<string, BuffDefinitionSO> buffDefinitions;
     private static Dictionary<string, UniqueEffectSO> uniqueEffects;
@@ -160,7 +156,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     [Server]
     public bool ServerReviveForTest()
     {
-        if (context?.Health == null)
+        if (NetworkManager.singleton is not MirrorTestNetworkManager manager ||
+            !manager.ServerDevelopmentCommandsEnabled || context?.Health == null)
             return false;
 
         context.Health.FillHealth();
@@ -176,6 +173,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdUsePotion()
     {
+        if (GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true) return;
         context?.Potions?.TryUsePotion();
         serverPublishQueued = true;
     }
@@ -183,6 +181,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     [Command]
     private void CmdToggleTestMutation()
     {
+        if (NetworkManager.singleton is not MirrorTestNetworkManager manager ||
+            !manager.ServerDevelopmentCommandsEnabled) return;
         if (context?.Stats?.Stat == null || context.Health == null || context.Mana == null || context.Buffs == null)
             return;
 
@@ -223,17 +223,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         recalculatingServerStats = true;
         try
         {
-            context.Stats.GetLayerStatSets(
-                out StatSet character,
-                out StatSet equipment,
-                out StatSet buff,
-                out _);
-
-            StatSet passive = shopPlayerState != null
-                ? shopPlayerState.ServerPassiveStats
-                : StatSet.Zero;
-
-            context.Stats.Stat.Recalculate(character, equipment, buff, passive);
+            context.Stats.SetPassiveStats(shopPlayerState?.ServerPassiveStats ?? StatSet.Zero);
             context.Health?.RefreshMaxHealth();
             context.Mana?.RefreshMaxMana();
         }
@@ -283,6 +273,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             revision = revision,
             currentLevel = stat.currentLevel,
             currentExp = stat.currentExp,
+            passiveStats = shopPlayerState?.ServerPassiveStats ?? StatSet.Zero,
             maxHealth = stat.maxHealth,
             currentHealth = context.Health.CurrentHealth,
             maxMana = stat.maxMana,
@@ -340,6 +331,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         try
         {
             ApplyClientBuffs(snapshot.buffs);
+            context.Stats.SetPassiveStats(snapshot.passiveStats);
             ApplyFinalStats(snapshot, context.Stats.Stat);
             InvokeStatChanged(context.Stats.Stat);
 
@@ -417,8 +409,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
 
     private static void InvokeStatChanged(PlayerStat stat)
     {
-        if (StatChangedEvent?.GetValue(stat) is Action changed)
-            changed.Invoke();
+        stat.NotifyValuesChanged();
     }
 
     private static IBuffSource ResolveBuffSource(BuffSnapshot snapshot)
@@ -660,6 +651,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public bool isDead;
         public uint reviveSequence;
         public BuffSnapshot[] buffs;
+        public StatSet passiveStats;
     }
 
     [Serializable]

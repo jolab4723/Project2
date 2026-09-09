@@ -8,6 +8,9 @@ public class KY_QuestDetailPopup : KY_PopupBase
     [SerializeField] private TextMeshProUGUI questNameText;
     [SerializeField] private TextMeshProUGUI descriptionText;
     [SerializeField] private TextMeshProUGUI rewardText;
+    [SerializeField] private Transform rewardContent; // SW 수정
+    [SerializeField] private KY_QuestRewardSlot rewardSlotPrefab;
+    private readonly System.Collections.Generic.List<KY_QuestRewardSlot> rewardSlots = new();
 
     [SerializeField] private KY_QuestConditionRow[] conditionRows; // 인스펙터에서 3개 연결
 
@@ -31,7 +34,7 @@ public class KY_QuestDetailPopup : KY_PopupBase
 
         SetText(questNameText, data.questName);
         SetText(descriptionText, data.description);
-        SetText(rewardText, data.reward);
+        SetRewards(data);
 
         HideConditionRows();
 
@@ -100,7 +103,27 @@ public class KY_QuestDetailPopup : KY_PopupBase
         SetText(questNameText, string.Empty);
         SetText(descriptionText, string.Empty);
         SetText(rewardText, string.Empty);
+        foreach (var slot in rewardSlots) slot.gameObject.SetActive(false);
         HideConditionRows();
+    }
+
+    /// <summary>아이콘 보상 데이터가 있으면 슬롯으로 표시하고, 기존 문자열만 전달하는 화면은 그대로 지원한다.</summary>
+    private void SetRewards(KY_QuestData data)
+    {
+        bool useIcons = rewardContent != null && rewardSlotPrefab != null && data.rewardItems?.Length > 0;
+        if (rewardText != null)
+        {
+            rewardText.gameObject.SetActive(!useIcons);
+            if (!useIcons) rewardText.text = data.reward ?? string.Empty;
+        }
+        int count = useIcons ? data.rewardItems.Length : 0;
+        for (int i = 0; i < count; i++)
+        {
+            if (i == rewardSlots.Count) rewardSlots.Add(Instantiate(rewardSlotPrefab, rewardContent));
+            rewardSlots[i].gameObject.SetActive(true);
+            rewardSlots[i].SetData(data.rewardItems[i]);
+        }
+        for (int i = count; i < rewardSlots.Count; i++) rewardSlots[i].gameObject.SetActive(false);
     }
 
     /// <summary>연결된 모든 조건 행을 숨긴다.</summary>

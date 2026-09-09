@@ -20,7 +20,7 @@ public class ShopController : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        stockService = new ShopStockService();
+        stockService ??= new ShopStockService();
 
         if (inventoryController != null)
             BindPlayer(inventoryController);
@@ -30,6 +30,8 @@ public class ShopController : MonoBehaviour
 
     public bool BindPlayer(InventoryController owner)
     {
+        // 비활성 패널의 Awake 전에도 런타임 플레이어 UI를 연결할 수 있다.
+        stockService ??= new ShopStockService();
         if (owner == null ||
             owner.PlayerWallet == null ||
             owner.PlayerGrid == null ||
@@ -44,6 +46,14 @@ public class ShopController : MonoBehaviour
 
         tradeService = new ShopTradeService(playerWallet, stockService);
         return true;
+    }
+
+    /// <summary>공유 상점 화면의 확정 재고를 기존 거래 서비스에 연결한다.</summary>
+    internal bool BindStock(InventoryController owner, ShopStockService stock)
+    {
+        if (stock == null) return false;
+        stockService = stock;
+        return BindPlayer(owner);
     }
 
     public void UnbindPlayer(InventoryController owner)

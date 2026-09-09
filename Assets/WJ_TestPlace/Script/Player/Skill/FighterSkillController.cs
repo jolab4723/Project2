@@ -88,6 +88,51 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
     private float pendingDashDuration;
+    private Vector3 pendingAimDirection;
+    private PlayerStatManager skillOwnerStats;
+
+    // SW 수정
+    /// <summary>호출자가 검증한 조준과 소유자 스탯으로 스킬을 준비한다. 권한 검증은 호출자가 담당한다.</summary>
+    public bool TryUseSkill(int index, Vector3 aimDirection, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null || !TryNormalizeAim(ref aimDirection))
+            return false;
+        return TryUseSkillInternal(index, aimDirection, ownerStats, true);
+    }
+
+    /// <summary>외부 입력으로 차징을 시작한다. 마나와 쿨다운은 정상 해제 시점에 확정한다.</summary>
+    public bool TryStartCharge(int index, Vector3 aimDirection, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null || !TryNormalizeAim(ref aimDirection) ||
+            index < 0 || index >= skills.Length || skills[index] == null ||
+            skills[index].shapeType != SkillShapeType.SectorSlash ||
+            GetEvolution(index) != SkillEvolutionId.Evolution3)
+            return false;
+        return StartChargeInternal(index, aimDirection, ownerStats, true);
+    }
+
+    /// <summary>현재 차징 중인 슬롯을 한 번만 해제하고 실제 사용 성공 여부를 반환한다.</summary>
+    public bool TryReleaseCharge(int index)
+    {
+        if (index < 0 || chargingSkillIndex != index || !stateMachine.Is(PlayerState.Skill))
+            return false;
+        return ReleaseCharge();
+    }
+
+    private bool CanUseSkillFrom(bool externalInput) => stateMachine != null &&
+        !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack, PlayerState.Skill,
+            PlayerState.Dodge, PlayerState.Dead) && (externalInput || !SkillPopupController.IsOpen);
+
+    private static bool TryNormalizeAim(ref Vector3 direction)
+    {
+        if (!float.IsFinite(direction.x) || !float.IsFinite(direction.y) || !float.IsFinite(direction.z))
+            return false;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f || !float.IsFinite(direction.sqrMagnitude))
+            return false;
+        direction.Normalize();
+        return true;
+    }
 
 
     //-------
@@ -294,11 +339,20 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     //------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 코드
     public bool TryUseSkill(int index)
     {
+        if (Camera.main == null)
+            return false;
+        return TryUseSkillInternal(index, GetCursorDirection(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool TryUseSkillInternal(int index, Vector3 aimDirection, PlayerStatManager ownerStats, bool externalInput)
+    {
         if (index < 0 || index >= skills.Length)
             return false;
 
         SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) ||
+            combat == null || (externalInput && (status == null || status.IsDead)) || !TryNormalizeAim(ref aimDirection))
             return false;
 
         SkillEvolutionId evolution = GetEvolution(index);
@@ -310,7 +364,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return false;
 
         ConsumeSkillUse(index, def);
-        FaceCursor();
+        skillOwnerStats = ownerStats;
+        pendingAimDirection = aimDirection;
+        transform.forward = aimDirection;
         combat.CancelChase();
 
         PreparePendingSkill(index, evolution);
@@ -331,6 +387,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         int index = pendingSkillIndex;
         SkillDefinitionSO def = skills[index];
+
+        transform.forward = pendingAimDirection;
 
         if(def == null)
         {
@@ -451,15 +509,29 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1, pendingEvo, part);
 
-        Vector3 scaleMultiplier = CalculatePendingEnhancementEffectScale(def);
+        Vector3 scaleMultiplier = GetPendingSkillEffectScale(partValue);
 
         playerEffect.PlayEffect(cue, scaleMultiplier);
     }
 
+    /// <summary>시전 중인 원본 이펙트 배율을 반환해 외부 표시에서도 같은 계산을 사용한다.</summary>
+    public Vector3 GetPendingSkillEffectScale(int partValue)
+    {
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue)) return Vector3.one;
+        if (chargingSkillIndex >= 0 && chargingSkillIndex < skills.Length)
+        {
+            SkillDefinitionSO charging = skills[chargingSkillIndex];
+            return charging != null && GetEnhancement(chargingSkillIndex) == SkillEnhancementId.Enhance3
+                ? Vector3.one * (1f + charging.enhanceRangeBonusPercent / 100f) : Vector3.one;
+        }
+        return pendingSkillIndex >= 0 && pendingSkillIndex < skills.Length
+            ? CalculatePendingEnhancementEffectScale(skills[pendingSkillIndex]) : Vector3.one;
+    }
+
     /// <summary>
-    /// Converts the pending Enhance3 range bonus to an effect scale multiplier.
-    /// GetPendingBaseRange selects the base range for Skill1~3 and each evolution.
-    /// Each WBH_EffectData decides whether to use the multiplier.
+    /// 시전 중인 Enhance3 범위 보너스를 이펙트 크기 배율로 변환한다.
+    /// GetPendingBaseRange에서 각 스킬과 진화의 기본 범위를 선택한다.
+    /// 배율 적용 여부는 각 WBH_EffectData가 결정한다.
     /// </summary>
     private Vector3 CalculatePendingEnhancementEffectScale(SkillDefinitionSO def)
     {
@@ -603,27 +675,35 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
     private void StartCharge(int index)
     {
-        SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (Camera.main == null)
             return;
+        StartChargeInternal(index, GetCursorDirection(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool StartChargeInternal(int index, Vector3 aimDirection, PlayerStatManager ownerStats, bool externalInput)
+    {
+        SkillDefinitionSO def = skills[index];
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) ||
+            combat == null || (externalInput && (status == null || status.IsDead)) || !TryNormalizeAim(ref aimDirection))
+            return false;
 
         // 즉발 스킬(TryUseSkill)과 동일하게 마나가 부족하면 아예 차징을 시작할 수 없다. 여기선 소모는 안 하고
         // 확인만 한다(HasEnoughMana에 대응하는 WBH_PlayerStatus API가 없어서 CurrentMp를 직접 비교) -
         // 실제 소모는 쿨타임/스택과 마찬가지로 릴리즈 시점(ReleaseCharge)에 커밋해서, 차징 중 피격 등으로
         // 취소(CancelCharge)되면 마나를 그대로 돌려주는 셈이 된다.
         if (status != null && status.CurrentMp < def.GetManaCost(SkillEvolutionId.Evolution3))
-            return;
+            return false;
 
         chargingSkillIndex = index;
         chargeElapsed = 0f;
-        FaceCursor();
+        skillOwnerStats = ownerStats;
+        pendingAimDirection = aimDirection;
+        transform.forward = aimDirection;
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
 
-        Vector3 chargeEffectScale =
-            GetEnhancement(index) == SkillEnhancementId.Enhance3
-                ? Vector3.one * (1f + def.enhanceRangeBonusPercent / 100f)
-                : Vector3.one;
+        Vector3 chargeEffectScale = GetPendingSkillEffectScale((int)SkillEffectPart.Main);
 
         playerEffect?.SetChargeEnhancementScale(chargeEffectScale);
 
@@ -637,6 +717,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         outlineColor.a = 1f;
         if (visibleSkillArea)
             activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+        return true;
     }
 
     /// <summary>PlayerStatManager의 "스킬 범위" 스탯 + 강화(Enhance3: 범위 강화)만큼 기본 판정 거리를 늘린다.
@@ -649,8 +730,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         float flatBonus = 0f;
         float percentBonus = 0f;
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        if (skillOwnerStats != null)
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
 
         if (GetEnhancement(index) == SkillEnhancementId.Enhance3)
             percentBonus += def.enhanceRangeBonusPercent;
@@ -673,18 +754,18 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         activeChargeEffect = null;
     }
 
-    private void ReleaseCharge()
+    private bool ReleaseCharge()
     {
         int index = chargingSkillIndex;
         chargingSkillIndex = -1;
         StopChargeEffect();
 
         if (index < 0)
-            return;
+            return false;
 
         SkillDefinitionSO def = skills[index];
         if (def == null)
-            return;
+            return false;
 
         // StartCharge에서 확인만 하고 소모는 안 했으므로 실제 커밋은 여기서 한다(쿨타임/스택과 같은 시점).
         // 이 시점에 실패하는 건 이론상 거의 없지만(StartCharge 이후 마나가 줄어들 수단이 현재 없음), 혹시
@@ -693,7 +774,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         {
             if (stateMachine.Is(PlayerState.Skill))
                 stateMachine.ChangeState(PlayerState.Idle);
-            return;
+            return false;
         }
 
         ConsumeSkillUse(index, def);
@@ -716,6 +797,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         //ExecuteSectorSlashEvo3(def, ratio, index);
         //StartCoroutine(ReturnToIdleAfter(0.3f));
+        return true;
     }
 
     // 8.24 WBH 수정 : seconds 뒤 전환이 애니메이션 이벤트로 이뤄짐.
@@ -725,6 +807,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     //    if (stateMachine.Is(PlayerState.Skill))
     //        stateMachine.ChangeState(PlayerState.Idle);
     //}
+
+    /// <summary>진행 중인 차징과 이동을 취소하며 이미 소모한 마나·쿨타임·스택은 유지한다.</summary>
+    public void CancelActiveSkill()
+    {
+        StopAllCoroutines();
+        CancelCharge();
+        ClearPendingSkill();
+        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+            stateMachine.ChangeState(PlayerState.Idle);
+    }
 
     private void CancelCharge()
     {
@@ -954,7 +1046,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (evo == SkillEvolutionId.Evolution1)
             controller.ApplyInvincibility(def.evoInvincibleDuration);
 
-        Vector3 dir = GetCursorDirection();
+        Vector3 dir = pendingAimDirection;
         float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
 
         if (visibleSkillArea)

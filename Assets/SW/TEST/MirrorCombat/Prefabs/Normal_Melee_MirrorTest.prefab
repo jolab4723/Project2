@@ -1132,6 +1132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
+  bossMissileEffect: {fileID: 0}
 --- !u!114 &-2777707044376071587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1145,6 +1146,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
   poolManager: {fileID: 0}
+  billboardCamera: {fileID: 0}
 --- !u!114 &-2997808910522100489
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1159,7 +1161,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
   poolManager: {fileID: 0}
   effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
 --- !u!114 &-4878034140046804760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1192,6 +1193,7 @@ MonoBehaviour:
     candidateCount: 5
     maxFleeAngle: 70
     initialDirectionWeight: 5
+    despawnEffect: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -1265,6 +1267,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 7734316272648223314}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 8370071735663241610}
   hpBarSlider: {fileID: 4061675389082596751}
   hpBarVisibleTime: 2
@@ -1284,7 +1287,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 3207281568816389647}
-  effectSpawner: {fileID: -2777707044376071587}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -1292,6 +1294,7 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+  markedEffect: {fileID: 0}
 --- !u!114 &3732678896662894666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1716,6 +1719,7 @@ MonoBehaviour:
   status: {fileID: -1532668858091577115}
   agent: {fileID: 1804622572661222385}
   firePoint: {fileID: 0}
+  grenadePoint: {fileID: 0}
 --- !u!114 &7454581624532826259
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1732,28 +1736,30 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   enemyInfo:
-    id: 1
-    enemyName: "Mirror \uC77C\uBC18 \uADFC\uC811 \uC801"
+    enemyId: enemy.normal.melee.working_machine
+    enemyName: "\uC791\uC5C5 \uAE30\uACC4"
     enemyGrade: 0
-    enemyType: 0
-    maxHP: 40
-    attack: 3
-    defense: 0
-    moveSpeed: 3.5
-    pen: 0
-    attackRange: 2.2
-    attackCoolTime: 1.5
-    attackSpeed: 1
+    enemyAttackType: 0
+    maxHP: 200
+    attack: 20
+    defense: 3
+    moveSpeed: 1
+    pen: 1
+    attackRange: 2
+    attackCoolTime: 2
+    attackSpeed: 1.2
     projectileSpeed: 0
-    exp: 10
-    gold: 0
+    exp: 30
+    credit: 20
     patternID: 0
   attackImpactDelay: 0.45
   destroyDelay: 0.35
+  useAnimatorOnlyDeathPresentation: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
   projectilePrefab: {fileID: 0}
+  bossMissilePrefab: {fileID: 0}
   controller: {fileID: -5431423992665652879}
   status: {fileID: -1532668858091577115}
   movement: {fileID: 5827602817927617593}
@@ -1762,9 +1768,11 @@ MonoBehaviour:
   originalAnimation: {fileID: 1932562817314288795}
   originalView: {fileID: 6453888425464919382}
   originalEffectSpawner: {fileID: -2777707044376071587}
+  indicatorSpawner: {fileID: 0}
   networkPattern: {fileID: 2668631643391966822}
   agent: {fileID: 1804622572661222385}
   networkAnimator: {fileID: 1502224066395526959}
+  animator: {fileID: 6868741642036229829}
   destructionLink: {fileID: 3732678896662894666}
 --- !u!114 &1704976161695319765
 MonoBehaviour:
@@ -1782,6 +1790,7 @@ MonoBehaviour:
   damageTextRoot: {fileID: 7734316272648223314}
   healthBarRoot: {fileID: 8370071735663241610}
   healthBarSlider: {fileID: 4061675389082596751}
+  bossPhaseView: {fileID: 0}
 --- !u!114 &17425674188547550
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -57,7 +57,7 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
     private GUIStyle passStyle;
     private GUIStyle failStyle;
     private Vector2 diagnosticsScroll;
-    private bool diagnosticsCollapsed;
+    private bool diagnosticsCollapsed = true;
 
     public PlayerContext BoundContext => context;
 
@@ -381,10 +381,6 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
                 $"무료 리롤 남음={sharedShop.RemainingFreeRerollCount}/{sharedShop.TotalFreeRerollCount} | " +
                 $"이후 비용={sharedShop.PaidRerollGoldCost}골드 | 최고 강화 적용자 netId={sharedShop.HighestBenefitPlayerNetId}");
 
-            if (GUILayout.Button("내 테스트 상점 강화 켜기/끄기"))
-                AddEvent(shopPlayerState.RequestToggleTestShopPassive()
-                    ? "테스트 상점 강화 변경 요청"
-                    : "테스트 상점 강화 변경 요청 실패");
         }
 
         if (GUILayout.Button("서버에 내 구분용 실제 아이템 지급 요청"))
@@ -533,7 +529,9 @@ public sealed class MirrorTestPlayerHud : MonoBehaviour
         else if (waveSpawner.SessionPhase == MirrorTestSessionPhase.Completed)
         {
             GUILayout.Label(
-                "전투 완료: 모든 플레이어가 나가면 전용 서버가 새 세션으로 초기화됩니다.");
+                waveSpawner.IsBossSession
+                    ? "보스 클리어: 결과 화면에서 방장이 로비 복귀를 선택합니다."
+                    : "전투 완료: 열린 포탈로 이동하면 스테이지 선택으로 돌아갑니다.");
         }
         else if (waveSpawner.SessionPhase == MirrorTestSessionPhase.Resetting)
         {

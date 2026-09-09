@@ -30,14 +30,15 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
     public void ShowPlayer(KY_LobbyPlayerData player, bool isLocalPlayer)
     {
         if (player == null) { ShowEmpty(); return; }
-        KY_CharacterInfoData character = KY_CharacterDatabase.GetById(player.selectedCharacterId);
+        bool isSelecting = player.readyState == KY_LobbyReadyState.Selecting;
+        KY_CharacterInfoData character = isSelecting ? null : KY_CharacterDatabase.GetById(player.selectedCharacterId);
         SetActive(emptyStateRoot, false); SetActive(playerStateRoot, true);
         SetActive(hostBadge, player.isHost); SetActive(localPlayerFrame, isLocalPlayer);
         SetText(playerNameText, string.IsNullOrWhiteSpace(player.displayName) ? "Player" : player.displayName);
         SetText(characterNameText, character != null ? character.characterName : "캐릭터 선택 중");
         SetText(readyStateText, GetReadyStateText(player.readyState));
-        SetActive(fighterModel, isActiveAndEnabled && player.selectedCharacterId == KY_CharacterId.Fighter);
-        SetActive(gunnerModel, isActiveAndEnabled && player.selectedCharacterId == KY_CharacterId.Gunner);
+        SetActive(fighterModel, isActiveAndEnabled && !isSelecting && player.selectedCharacterId == KY_CharacterId.Fighter);
+        SetActive(gunnerModel, isActiveAndEnabled && !isSelecting && player.selectedCharacterId == KY_CharacterId.Gunner);
     }
 
     // UI와 별도 3D 스테이지에 있는 모델도 로비 화면을 떠날 때 숨긴다.
