@@ -209,6 +209,8 @@ public class KY_SettingsPopup : KY_PopupBase
         for (int i = 0; i < frameToggles.Length; i++)
             if (frameToggles[i].isOn) tempData.targetFrameRate = i;
 
+        tempData.language = languageDropdown.value;
+
         SettingManager.Instance.Apply(tempData);
     }
 }

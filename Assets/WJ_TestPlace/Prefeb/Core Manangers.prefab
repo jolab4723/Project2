@@ -37,6 +37,7 @@ Transform:
   - {fileID: 5907022907074080806}
   - {fileID: 215845095444893253}
   - {fileID: 63313996829097834}
+  - {fileID: 5558237978977456303}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2036348304416083705
@@ -218,6 +219,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestManager
   database: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
+  questLabels: {fileID: 11400000, guid: 47baefc27464cd540b6d9aac7b098cd7, type: 2}
+  itemLabels: {fileID: 11400000, guid: 4276d92fb9e2f3e449d22d6677ddadae, type: 2}
 --- !u!1 &4279024615722798528
 GameObject:
   m_ObjectHideFlags: 0
@@ -356,6 +359,54 @@ MonoBehaviour:
   canvasGroup: {fileID: 4029385190881112843}
   fadeOutDuration: 0.15
   fadeInDuration: 0.15
+--- !u!1 &6381627180029304038
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5558237978977456303}
+  - component: {fileID: 7098173522436247407}
+  m_Layer: 0
+  m_Name: LanguageManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5558237978977456303
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6381627180029304038}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 756894979714148616}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7098173522436247407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6381627180029304038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbfc16c8838c05346955c045d465cf8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LanguageManager
+  inspectorLanguage: 0
+  koreanEnglishFont: {fileID: 11400000, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
+  japaneseFont: {fileID: 11400000, guid: 0a28582f7c866a948931904bf07fb64a, type: 2}
+  simplifiedChineseFont: {fileID: 11400000, guid: 4a18762d2030b624b9712494f2f28f34, type: 2}
 --- !u!1 &7096937802171879612
 GameObject:
   m_ObjectHideFlags: 0
