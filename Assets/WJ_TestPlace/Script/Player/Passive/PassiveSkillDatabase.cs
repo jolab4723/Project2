@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 /// <summary>
 /// 패시브 스킬 하나의 디자인 데이터(이름/최대 레벨/레벨별 수치/해금 비용). 세이브 데이터가 아니라 고정된 밸런스 값.
@@ -15,6 +16,9 @@ public class PassiveSkillDefinition
 {
     public Core.PassiveSkillId id;
     public string displayName;
+    [TextArea]
+    [Tooltip("스킬 설명(한국어 기본값). 다국어는 PassiveSkillLabelDatabaseSO.GetDescription이 우선하고, 없으면 이 값으로 폴백한다.")]
+    public string description;
     public int maxLevel;
     public float[] valuesPerLevel;
     public int extraRerollCount;
