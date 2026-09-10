@@ -1107,7 +1107,7 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
         finally { wallet.RequestCompleted -= RecordBuy; }
     }
 
-    private static bool TryFindPickupRay(NetworkWorldItem_MirrorTest target, out Ray ray, out string blocker)
+    internal static bool TryFindPickupRay(NetworkWorldItem_MirrorTest target, out Ray ray, out string blocker)
     {
         ray = default;
         blocker = "no enabled collider";
@@ -1216,8 +1216,13 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
 
     private void ReportState()
     {
+        int networkLoops = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop().subSystemList
+            .SelectMany(system => system.subSystemList ?? Array.Empty<UnityEngine.LowLevel.PlayerLoopSystem>())
+            .Count(system => system.type == typeof(NetworkLoop));
         Debug.Log($"[MirrorSmoke] role={role} connected={NetworkClient.isConnected} admitted={manager.ClientCompatibilityConfirmed} " +
-            $"run={manager.ClientLobby.RunStarted} scene={UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+            $"run={manager.ClientLobby.RunStarted} scene={UnityEngine.SceneManagement.SceneManager.GetActiveScene().name} " +
+            $"mode={manager.mode} clientActive={NetworkClient.active} serverActive={NetworkServer.active} " +
+            $"transport={Transport.active?.GetType().Name} transportEnabled={Transport.active?.enabled} networkLoops={networkLoops} status={manager.CompatibilityStatusMessage}");
         PlayerContext local = manager.LocalPlayerContext;
         if (local != null)
         {

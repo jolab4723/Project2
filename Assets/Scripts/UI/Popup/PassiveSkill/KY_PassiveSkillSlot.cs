@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
 using System;
 using TMPro;
 
@@ -9,7 +8,8 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
 {
     public Image iconImage;
     public GameObject activeHighlight;
-    [FormerlySerializedAs("missingIconLabel")]
+    [SerializeField] private TMP_Text missingIconLabel;
+    [SerializeField] private TMP_Text levelLabel; // SW 수정: 새 화면의 단계 배지
     [SerializeField] private TMP_Text skillLevelText;
 
     private PassiveSkillData myData;
@@ -24,6 +24,13 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
         myData = data;
         iconImage.sprite = data.icon;
         iconImage.enabled = data.icon != null;
+        if (missingIconLabel != null)
+        {
+            missingIconLabel.gameObject.SetActive(data.icon == null);
+            missingIconLabel.text = levelLabel != null ? data.DisplayName.Replace(" ", "\n")
+                : data.MaxLevel <= 0 ? data.DisplayName : data.LevelLabel;
+        }
+        if (levelLabel != null) levelLabel.text = data.LevelBadgeText;
         if (skillLevelText != null)
         {
             skillLevelText.gameObject.SetActive(data.icon == null);

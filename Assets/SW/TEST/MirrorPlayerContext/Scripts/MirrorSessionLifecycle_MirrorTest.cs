@@ -283,6 +283,7 @@ public sealed partial class MirrorTestNetworkManager
         context.GetComponent<PlayerInventorySync_MirrorTest>().ServerResetOwnerRequests();
         context.GetComponent<NetworkShopPlayerState_MirrorTest>().ServerResetOwnerRequests();
         if (start != null) binder.ServerPlaceAtSceneStart(start.position, start.rotation);
+        if (!created) context.GetComponent<PlayerNetworkTransform_MirrorTest>().ServerResetOwnerReceiveState();
         if (!NetworkServer.AddPlayerForConnection(connection, context.gameObject))
         {
             connection.Disconnect();

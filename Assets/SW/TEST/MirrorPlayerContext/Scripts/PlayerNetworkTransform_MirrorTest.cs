@@ -5,6 +5,15 @@ public sealed class PlayerNetworkTransform_MirrorTest : NetworkTransformReliable
 {
     private FighterSkillAuthority_MirrorTest skills;
 
+    [Server]
+    internal void ServerResetOwnerReceiveState()
+    {
+        // 새 소유자의 송신 델타는 0부터 시작한다. 기존 관전자에게 보내는 기준값은 유지한다.
+        lastDeserializedPosition = Vector3Long.zero;
+        lastDeserializedScale = Vector3Long.zero;
+        serverSnapshots.Clear();
+    }
+
     protected override void UpdateServer()
     {
         if (skills == null) skills = GetComponent<FighterSkillAuthority_MirrorTest>();
