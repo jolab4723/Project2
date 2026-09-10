@@ -27,6 +27,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private bool gameplayInputEnabled;
     private bool textInputBlocked;
     private bool menuInputBlocked;
+    private bool cutsceneInputBlocked;
     private Coroutine textInputReleaseRoutine;
     private int textInputReleaseFrame = -1;
     private bool hasServerSceneStart;
@@ -204,9 +205,24 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         RefreshInputBlock();
     }
 
+    /// <summary>인트로 차단을 메뉴·채팅·스킬 차단과 별도로 유지한다.</summary>
+    public void SetCutsceneInputBlocked(bool blocked)
+    {
+        if (cutsceneInputBlocked == blocked) return;
+        cutsceneInputBlocked = blocked;
+        if (blocked && isLocalPlayer && context?.Controller?.agent != null)
+        {
+            var agent = context.Controller.agent;
+            if (agent.enabled && agent.isOnNavMesh) agent.ResetPath();
+        }
+        RefreshInputBlock();
+    }
+
+    public bool IsCutsceneInputBlocked => cutsceneInputBlocked;
+
     private void RefreshInputBlock()
     {
-        bool blocked = textInputBlocked || menuInputBlocked;
+        bool blocked = textInputBlocked || menuInputBlocked || cutsceneInputBlocked;
         if (textInputReleaseRoutine != null) StopCoroutine(textInputReleaseRoutine);
         textInputReleaseRoutine = null;
         if (blocked && isLocalPlayer)
@@ -242,7 +258,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         foreach (Behaviour behaviour in localOnlyBehaviours)
         {
             if (behaviour != null)
-                behaviour.enabled = canControl && !textInputBlocked && !menuInputBlocked &&
+                behaviour.enabled = canControl && !textInputBlocked && !menuInputBlocked && !cutsceneInputBlocked &&
                     Time.frameCount > textInputReleaseFrame;
         }
     }

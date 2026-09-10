@@ -378,6 +378,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_QuestPopup
   slotPrefab: {fileID: 2522181660112130250, guid: 5ed16a28c378ed940a92fe9711731467, type: 3}
   content: {fileID: 5141645508074860495}
+  quests: []
 --- !u!114 &5650584487750548587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -390,10 +391,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48bc5717bebd4a3438231bdbb68f8e2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SlideAnimator
-  slideSpeed: 10
+  duration: 0.35
+  inEase: 27
+  outEase: 26
   hiddenOffsetX: 600
-  inslideType: 0
-  outslideType: 0
+  hiddenOffsetY: 0
+  ignoreTimeScale: 0
 --- !u!1 &7576831294648063281
 GameObject:
   m_ObjectHideFlags: 0
