@@ -659,7 +659,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00029734988
+      value: 0.0009806977
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3591,7 +3591,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3945,6 +3945,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 748769975}
     - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
+      propertyPath: waves.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: waves.Array.data[0].enemies.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -3953,11 +3957,19 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
+      propertyPath: waves.Array.data[2].enemies.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: waves.Array.data[0].enemies.Array.data[0].count
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: waves.Array.data[1].enemies.Array.data[0].count
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7740657695786710182, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
+      propertyPath: waves.Array.data[2].enemies.Array.data[0].count
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8028295587728885316, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
@@ -3986,7 +3998,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8478993714791160529, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: testInfos.Array.data[0].info.maxHP
-      value: 200
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8478993714791160529, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: testInfos.Array.data[0].info.attack
@@ -4179,14 +4191,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunner
       objectReference: {fileID: 0}
-    - target: {fileID: 3433699924133273942, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6083522059478059166, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
       propertyPath: equipmentSystem
       value: 
       objectReference: {fileID: 1192462389}
+    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: effectBindings.Array.data[1].sounds.Array.data[0].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 74fd11f66ca8110418be57a810d2fad8, type: 3}
+    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: effectBindings.Array.data[1].sounds.Array.data[0].baseTime
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: effectBindings.Array.data[2].sounds.Array.data[0].baseTime
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: effectBindings.Array.data[3].sounds.Array.data[0].baseTime
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
