@@ -24,6 +24,15 @@ public class YJ_HUDInformationView : MonoBehaviour
     private TMP_Text informationText;
     private float nextPlayerSearchTime;
     private bool isTagVisible;
+    private bool usesExternalPlayer; // SW 수정
+
+    /// <summary>멀티플레이에서 수치 툴팁이 참조할 로컬 플레이어를 전달받는다.</summary>
+    public void BindPlayer(WBH_PlayerStatus owner)
+    {
+        usesExternalPlayer = true;
+        playerStatus = owner;
+        HideInformation();
+    }
 
     private Camera EventCamera =>
         rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay
@@ -143,7 +152,7 @@ public class YJ_HUDInformationView : MonoBehaviour
     {
         nextPlayerSearchTime = Time.unscaledTime + PlayerSearchInterval;
 
-        if (playerStatus == null)
+        if (playerStatus == null && !usesExternalPlayer)
             playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
     }
 

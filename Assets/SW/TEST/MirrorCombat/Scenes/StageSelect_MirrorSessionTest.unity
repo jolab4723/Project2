@@ -792,7 +792,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 52052b80c1f03ca479369113c362c5cc, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1010,6 +1010,37 @@ MonoBehaviour:
   nodeLineController: {fileID: 463139084}
   nodeReticle: {fileID: 0}
   testSceneLoader: {fileID: 0}
+  stageScenesByAct:
+  - act: 1
+    combatSceneNames:
+    - Act1_Stage1
+    - Act1_Stage2
+    - Act1_Stage3
+    - Act1_Stage4
+    - Act1_Stage5
+    - Act1_Stage6
+    campSceneName: Act1_Camp
+    bossSceneName: Act1_BossStage
+  - act: 2
+    combatSceneNames:
+    - Act2_Stage1
+    - Act2_Stage2
+    - Act2_Stage3
+    - Act2_Stage4
+    - Act2_Stage5
+    - Act2_Stage6
+    campSceneName: Act2_Camp
+    bossSceneName: Act2_BossStage
+  - act: 3
+    combatSceneNames:
+    - Act3_Stage1
+    - Act3_Stage2
+    - Act3_Stage3
+    - Act3_Stage4
+    - Act3_Stage5
+    - Act3_Stage6
+    campSceneName: Act3_Camp
+    bossSceneName: Act3_BossStage
   unknownStageDatabase: {fileID: 0}
   stageSaveService: {fileID: 0}
   loadSavedMapOnStart: 0
@@ -2621,6 +2652,7 @@ GameObject:
   - component: {fileID: 1378177110}
   - component: {fileID: 1378177109}
   - component: {fileID: 1378177108}
+  - component: {fileID: 1378177113}
   m_Layer: 0
   m_Name: Mirror Test NetworkManager
   m_TagString: Untagged
@@ -2681,7 +2713,7 @@ MonoBehaviour:
   maxConnections: 100
   disconnectInactiveConnections: 0
   disconnectInactiveTimeout: 60
-  authenticator: {fileID: 0}
+  authenticator: {fileID: 1378177113}
   playerPrefab: {fileID: 2429587572153738188, guid: 6b0d6bb0a29f43f45bcc12e78ff3415a, type: 3}
   autoCreatePlayer: 1
   playerSpawnMethod: 0
@@ -2690,6 +2722,7 @@ MonoBehaviour:
   - {fileID: 5577328161507397385, guid: 730390b0aa4bb7b4dad4cba02ad43f91, type: 3}
   - {fileID: 7354258622308962069, guid: 68609140f998f7b45b55463b07174c75, type: 3}
   - {fileID: 8780727661788297695, guid: d2c8438dbb722954f973fb7a94381b31, type: 3}
+  - {fileID: 3027342163971534760, guid: 4117c62e752183a4da2773d51d339036, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -2705,7 +2738,9 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
-  emptySessionResetDelay: 15
+  questDatabase: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
+  gunnerPlayerPrefab: {fileID: 0}
+  enableDevelopmentCommands: 0
 --- !u!114 &1378177111
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2751,6 +2786,25 @@ Transform:
   - {fileID: 1809540367}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1378177113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378177107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 262207e4539e81149847b70cb0776a29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MirrorSessionAuthenticator_MirrorTest
+  OnServerAuthenticated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnClientAuthenticated:
+    m_PersistentCalls:
+      m_Calls: []
+  passiveDatabase: {fileID: 11400000, guid: e25982b2c8a6f8346aaacb1fd1e208a6, type: 2}
 --- !u!1 &1562807233
 GameObject:
   m_ObjectHideFlags: 0

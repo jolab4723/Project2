@@ -24,6 +24,31 @@ using UnityEngine;
 /// </summary>
 public class QuestBoardNPC : MonoBehaviour
 {
+    public enum RequestKind { Interact, Reroll, Accept } // SW 수정
+
+    private bool useExternalRequests;
+    private System.Action<RequestKind> sendRequest;
+
+    /// <summary>세션 요청 전달 함수를 연결한다. null로 해제해도 로컬 보상 처리로 돌아가지 않는다.</summary>
+    public void BindExternalRequests(System.Action<RequestKind> requestSender)
+    {
+        useExternalRequests = true;
+        sendRequest = requestSender;
+    }
+
+    /// <summary>서버가 확정한 제시값을 반영한다. 요청을 보내는 것만으로는 상태가 바뀌지 않는다.</summary>
+    public void ApplyExternalOffer(QuestDefinitionSO offer, bool hasRerolled,
+        bool hasAccepted, bool showPopup = false)
+    {
+        if (!useExternalRequests)
+            return;
+        CurrentOffer = hasAccepted ? null : offer;
+        HasRerolled = hasRerolled;
+        HasAcceptedThisVisit = hasAccepted;
+        if (showPopup && CurrentOffer != null)
+            ShowOfferPopup();
+    }
+
     private const string AlreadyAcceptedMessage = "이번 캠프에서는 의뢰를 이미 수락했습니다. 다시 캠프에 들어오면 새로 수락할 수 있습니다.";
 
     public QuestDefinitionSO CurrentOffer { get; private set; }
@@ -45,6 +70,11 @@ public class QuestBoardNPC : MonoBehaviour
     /// </summary>
     public void Interact()
     {
+        if (useExternalRequests)
+        {
+            sendRequest?.Invoke(RequestKind.Interact);
+            return;
+        }
         // 캠프 한 번 진입 중 이 NPC로는 1회만 수락할 수 있다 - 이미 썼으면 새로 제시하지 않는다.
         if (HasAcceptedThisVisit)
         {
@@ -99,6 +129,12 @@ public class QuestBoardNPC : MonoBehaviour
     /// <summary>캠프 진입당 1회만 가능한 리롤. 이미 리롤했거나 후보가 없으면 false.</summary>
     public bool Reroll()
     {
+        if (useExternalRequests)
+        {
+            if (!HasRerolled && !HasAcceptedThisVisit && CurrentOffer != null)
+                sendRequest?.Invoke(RequestKind.Reroll);
+            return false; // 응답 대기 중이며, 다음 제시값은 서버 응답으로 반영한다.
+        }
         if (HasRerolled || CurrentOffer == null)
             return false;
 
@@ -114,6 +150,12 @@ public class QuestBoardNPC : MonoBehaviour
     /// <summary>제시된 퀘스트를 수락하고 진행을 시작한다.</summary>
     public bool Accept()
     {
+        if (useExternalRequests)
+        {
+            if (!HasAcceptedThisVisit && CurrentOffer != null)
+                sendRequest?.Invoke(RequestKind.Accept);
+            return false;
+        }
         if (CurrentOffer == null)
             return false;
 

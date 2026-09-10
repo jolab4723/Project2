@@ -9,7 +9,8 @@ public static class InventorySwapTargetResolver
         InventoryItem movingItem,
         Vector2Int requestedCell,
         Vector2Int? pointerCell,
-        out InventoryItem targetItem)
+        out InventoryItem targetItem,
+        InventoryItem occupiedMovingItem = null)
     {
         targetItem = null;
 
@@ -22,7 +23,7 @@ public static class InventorySwapTargetResolver
                 pointerCell.Value.x,
                 pointerCell.Value.y);
 
-            if (pointerTarget != null && pointerTarget != movingItem)
+            if (pointerTarget != null && pointerTarget != movingItem && pointerTarget != occupiedMovingItem)
             {
                 targetItem = pointerTarget;
                 return true;
@@ -33,7 +34,8 @@ public static class InventorySwapTargetResolver
             grid,
             movingItem,
             requestedCell,
-            out targetItem);
+            out targetItem,
+            occupiedMovingItem);
     }
 
     public static bool TryResolveTargetFromFootprint(
@@ -53,7 +55,8 @@ public static class InventorySwapTargetResolver
         InventoryGrid grid,
         InventoryItem movingItem,
         Vector2Int requestedCell,
-        out InventoryItem targetItem)
+        out InventoryItem targetItem,
+        InventoryItem occupiedMovingItem = null)
     {
         targetItem = null;
 
@@ -78,7 +81,7 @@ public static class InventorySwapTargetResolver
             for (int y = minY; y < maxY; y++)
             {
                 InventoryItem occupant = grid.GetItemAt(x, y);
-                if (occupant == null || occupant == movingItem)
+                if (occupant == null || occupant == movingItem || occupant == occupiedMovingItem)
                     continue;
 
                 if (targetItem == null)

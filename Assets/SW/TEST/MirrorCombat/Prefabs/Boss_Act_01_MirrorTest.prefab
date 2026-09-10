@@ -5496,6 +5496,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
+  bossMissileEffect: {fileID: 0}
 --- !u!114 &4863905477784235105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5509,6 +5510,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
   poolManager: {fileID: 0}
+  billboardCamera: {fileID: 0}
 --- !u!114 &6277946766306180021
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5523,7 +5525,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
   poolManager: {fileID: 0}
   effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
 --- !u!114 &3439901779823102211
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5556,6 +5557,7 @@ MonoBehaviour:
     candidateCount: 5
     maxFleeAngle: 70
     initialDirectionWeight: 5
+    despawnEffect: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 32768
@@ -5577,7 +5579,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 1072797204313020006}
-  effectSpawner: {fileID: 0}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -5585,6 +5586,7 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+  markedEffect: {fileID: 0}
 --- !u!114 &7056045415955417540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5633,6 +5635,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 7534506397720038980}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 0}
   hpBarSlider: {fileID: 0}
   hpBarVisibleTime: 2
@@ -5651,7 +5654,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b7e15b96c6b62842981894d8f4cf160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
-  effectSpawner: {fileID: 4863905477784235105}
   circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
 --- !u!114 &5297122012163549294
@@ -6118,22 +6120,22 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   enemyInfo:
-    id: 10
-    enemyName: Badass Mecha MK 1
+    enemyId: enemy.boss.boss.SpiderX
+    enemyName: "\uC2A4\uD30C\uC774\uB354 X"
     enemyGrade: 3
-    enemyType: 3
-    maxHP: 1500
-    attack: 75
-    defense: 100
-    moveSpeed: 1.5
-    pen: 0
-    attackRange: 7
-    attackCoolTime: 1
-    attackSpeed: 0.7
-    projectileSpeed: 8
-    exp: 250
-    gold: 0
-    patternID: 10
+    enemyAttackType: 3
+    maxHP: 800
+    attack: 50
+    defense: 10
+    moveSpeed: 1
+    pen: 10
+    attackRange: 2
+    attackCoolTime: 2
+    attackSpeed: 1
+    projectileSpeed: 5
+    exp: 500
+    credit: 500
+    patternID: 101
   attackImpactDelay: 0.45
   destroyDelay: 3.35
   useAnimatorOnlyDeathPresentation: 1

@@ -38,7 +38,18 @@ public class SkillPopupController : MonoBehaviour
     /// static으로 간단히 노출한다.</summary>
     public static bool IsOpen { get; private set; }
 
-    private ISkillController SkillController => ActiveSkillControllerLocator.Find();
+    private ISkillController boundController;
+    private bool usesExternalController;
+    private ISkillController SkillController => usesExternalController ? boundController : ActiveSkillControllerLocator.Find();
+
+    // SW 수정
+    /// <summary>이 팝업이 조작할 플레이어의 스킬을 연결한다. 연결 해제 시 다른 캐릭터를 자동 선택하지 않는다.</summary>
+    public void Bind(ISkillController controller)
+    {
+        usesExternalController = true;
+        boundController = controller;
+        if (isActiveAndEnabled) RefreshAll();
+    }
 
     private void Awake()
     {

@@ -23,4 +23,5 @@ public class KY_SettingsData
     public bool showDamage = true;      // 데미지 표시
     public bool screenShake = true;     // 화면 흔들림
     public int tutorialDisplay = 0;     // 튜토리얼 (0=항상, 1=한번만, 2=표시안함)(기본값 1)
+    public int language = 0;            // 언어 (GameLanguage 순서: 0=KOR, 1=ENG, 2=JPN, 3=CHN)
 }

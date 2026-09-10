@@ -16,6 +16,16 @@ public class KY_QuestPopup : KY_PopupBase
     private ObjectPool<KY_QuestSlot> slotPool;
     private readonly List<KY_QuestSlot> activeSlots = new List<KY_QuestSlot>();
 
+    // SW 수정
+    /// <summary>외부에서 확정된 표시 데이터를 받는다. 게임 상태와 보상은 이 팝업에서 변경하지 않는다.</summary>
+    public void SetQuestData(IReadOnlyList<KY_QuestData> data)
+    {
+        quests.Clear();
+        if (data != null)
+            for (int i = 0; i < data.Count; i++) quests.Add(data[i]);
+        if (gameObject.activeInHierarchy) RefreshList();
+    }
+
     /// <summary>필수 참조와 퀘스트 슬롯 풀을 준비한다.</summary>
     private void Awake()
     {

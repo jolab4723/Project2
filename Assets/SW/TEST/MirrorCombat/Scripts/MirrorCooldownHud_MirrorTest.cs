@@ -11,13 +11,6 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
 {
-    private sealed class ActiveSkillView
-    {
-        public KY_SkillSlot slot;
-        public Image cooldownFill;
-        public TextMeshProUGUI remainingText;
-    }
-
     private sealed class UniqueEffectView
     {
         public GameObject root;
@@ -41,14 +34,13 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
     [SerializeField] private GameObject uniqueEffectSlotPrefab;
     [SerializeField] private Transform uniqueEffectSlotParent;
 
-    private readonly ActiveSkillView[] activeSkillViews = new ActiveSkillView[3];
+    private readonly KY_SkillSlot[] activeSkillViews = new KY_SkillSlot[3];
     private readonly List<UniqueEffectView> uniqueEffectPool = new();
     private readonly List<UniqueEffectEntry> uniqueEffectEntries = new();
 
     private FighterSkillAuthority_MirrorTest skillAuthority;
     private ItemTriggerManager_MirrorTest itemTriggers;
     private InventoryController inventory;
-    private static Sprite fallbackFillSprite;
 
     public PlayerContext BoundContext { get; private set; }
     public int ActiveSkillSlotCount { get; private set; }
@@ -57,6 +49,28 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
     private void Awake()
     {
         ResolveHudReferences();
+    }
+
+    private void OnEnable()
+    {
+        KY_GameEvents.OnKeyBindingChanged += RefreshKeyGuides;
+        RefreshKeyGuides();
+    }
+
+    private void OnDisable() => KY_GameEvents.OnKeyBindingChanged -= RefreshKeyGuides;
+
+    /// <summary>쿨타임과 같은 슬롯에 현재 프로필의 입력 키를 표시한다.</summary>
+    private void RefreshKeyGuides()
+    {
+        foreach (var slot in GetComponentsInChildren<KY_SkillSlot>(true))
+        {
+            string action = slot.name switch
+            {
+                "Slot1" => "Skill1", "Slot2" => "Skill2", "Slot3" => "Skill3", "Slot4" => "Skill4",
+                "DodgeSlot" => "Dodge", "ItemSlot" => "Potion", _ => null
+            };
+            if (action != null) slot.SetKeyText(KY_KeyTextUtil.GetKeyText(KeyBindingService.InputActions, action));
+        }
     }
 
     public void Bind(PlayerContext context)
@@ -121,7 +135,7 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
             if (slot == null)
                 continue;
 
-            activeSkillViews[index] ??= CreateActiveSkillView(slot);
+            activeSkillViews[index] = slot;
             ActiveSkillSlotCount++;
         }
 
@@ -138,111 +152,36 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
         }
     }
 
-    private static ActiveSkillView CreateActiveSkillView(KY_SkillSlot slot)
-    {
-        Transform iconRoot = slot.icon != null ? slot.icon.transform.parent : slot.transform;
-        Transform existing = iconRoot.Find("CooldownOverlay_MirrorTest");
-        Image fill;
-        TextMeshProUGUI text;
-
-        if (existing != null)
-        {
-            fill = existing.GetComponent<Image>();
-            text = existing.GetComponentInChildren<TextMeshProUGUI>(true);
-        }
-        else
-        {
-            GameObject overlayObject = new(
-                "CooldownOverlay_MirrorTest",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            overlayObject.layer = slot.gameObject.layer;
-            RectTransform overlayRect = overlayObject.GetComponent<RectTransform>();
-            overlayRect.SetParent(iconRoot, false);
-            Stretch(overlayRect);
-
-            fill = overlayObject.GetComponent<Image>();
-            fill.sprite = slot.icon != null && slot.icon.sprite != null
-                ? slot.icon.sprite
-                : GetFallbackFillSprite();
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Radial360;
-            fill.fillOrigin = (int)Image.Origin360.Top;
-            fill.fillClockwise = true;
-            fill.color = new Color(0f, 0f, 0f, 0.68f);
-            fill.raycastTarget = false;
-
-            GameObject textObject = new(
-                "CooldownRemaining_MirrorTest",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI));
-            textObject.layer = slot.gameObject.layer;
-            RectTransform textRect = textObject.GetComponent<RectTransform>();
-            textRect.SetParent(overlayRect, false);
-            Stretch(textRect);
-
-            text = textObject.GetComponent<TextMeshProUGUI>();
-            if (slot.keyText != null)
-            {
-                text.font = slot.keyText.font;
-                text.fontSharedMaterial = slot.keyText.fontSharedMaterial;
-            }
-
-            text.alignment = TextAlignmentOptions.Center;
-            text.fontStyle = FontStyles.Bold;
-            text.fontSize = 24f;
-            text.color = Color.white;
-            text.raycastTarget = false;
-        }
-
-        return new ActiveSkillView
-        {
-            slot = slot,
-            cooldownFill = fill,
-            remainingText = text,
-        };
-    }
-
     private void RefreshActiveSkillIdentity()
     {
-        string[] keys = { "A", "S", "D" };
         for (int index = 0; index < activeSkillViews.Length; index++)
         {
-            ActiveSkillView view = activeSkillViews[index];
-            if (view?.slot == null)
+            KY_SkillSlot view = activeSkillViews[index];
+            if (view == null)
                 continue;
 
-            view.slot.SetKeyText(keys[index]);
             SkillDefinitionSO definition = skillAuthority?.GetSkillDefinition(index);
-            if (definition?.icon != null)
-                view.slot.SetIcon(definition.icon);
+            view.SetIcon(definition?.icon);
         }
+        RefreshKeyGuides();
     }
 
     private void RefreshActiveSkillCooldowns()
     {
         for (int index = 0; index < activeSkillViews.Length; index++)
         {
-            ActiveSkillView view = activeSkillViews[index];
-            if (view?.cooldownFill == null || view.remainingText == null)
+            KY_SkillSlot view = activeSkillViews[index];
+            if (view == null)
                 continue;
 
             SkillDefinitionSO definition = skillAuthority?.GetSkillDefinition(index);
             float remaining = definition != null
                 ? skillAuthority.GetRemainingCooldown(index)
                 : 0f;
-            float duration = definition != null ? definition.cooldownSeconds : 0f;
-            bool active = remaining > 0f;
-
-            view.cooldownFill.enabled = active;
-            view.cooldownFill.fillAmount = duration > 0f
-                ? Mathf.Clamp01(remaining / duration)
-                : 0f;
-            view.remainingText.gameObject.SetActive(active && remaining <= 9f);
-            if (view.remainingText.gameObject.activeSelf)
-                view.remainingText.text = Mathf.CeilToInt(remaining).ToString();
+            float duration = definition != null ? skillAuthority.GetEffectiveCooldown(index) : 0f;
+            view.SetCooldown(remaining, duration);
+            view.SetStacks(skillAuthority != null && skillAuthority.TryGetStackInfo(index, out int current, out _)
+                ? current : null);
         }
     }
 
@@ -359,26 +298,4 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
             child.gameObject.layer = layer;
     }
 
-    private static void Stretch(RectTransform target)
-    {
-        target.anchorMin = Vector2.zero;
-        target.anchorMax = Vector2.one;
-        target.anchoredPosition = Vector2.zero;
-        target.sizeDelta = Vector2.zero;
-    }
-
-    private static Sprite GetFallbackFillSprite()
-    {
-        if (fallbackFillSprite != null)
-            return fallbackFillSprite;
-
-        Texture2D texture = Texture2D.whiteTexture;
-        fallbackFillSprite = Sprite.Create(
-            texture,
-            new Rect(0f, 0f, texture.width, texture.height),
-            new Vector2(0.5f, 0.5f),
-            100f);
-        fallbackFillSprite.name = "MirrorCooldownFill_Runtime";
-        return fallbackFillSprite;
-    }
 }
