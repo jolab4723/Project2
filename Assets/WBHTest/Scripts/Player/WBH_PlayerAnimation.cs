@@ -26,6 +26,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     private WBH_PlayerStatus status;
     private FighterSkillController fighterSkillController;
     private GunnerSkillController gunnerSkillController;
+    private PlayerStatManager statManager;
 
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
@@ -46,6 +47,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
         status = GetComponent<WBH_PlayerStatus>();
         fighterSkillController = GetComponent<FighterSkillController>();
         gunnerSkillController = GetComponent<GunnerSkillController>();
+        statManager = GetComponent<PlayerStatManager>();
     }
 
     private void OnEnable()
@@ -271,5 +273,70 @@ public class WBH_PlayerAnimation : MonoBehaviour
     {
         fighterSkillController?.PlayPendingSkillSfx(animationEvent, animator);
         gunnerSkillController?.PlayPendingSkillSfx(animationEvent, animator);
+    }
+    private bool TryGetFighterAttackCue(out WBH_PlayerEffectCue cue)
+    {
+        cue = WBH_PlayerEffectCue.None;
+
+        if (statManager == null || ! statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon))
+        {
+            cue = WBH_PlayerEffectCue.F_normal0_evo0_etc0; // 무기 타입을 못읽으면 대검으로 인식.
+            return true;
+        }
+
+        switch (weapon.weaponType)
+        {
+            case ItemSystem.WeaponType.Greatsword:
+                cue = WBH_PlayerEffectCue.F_normal0_evo0_etc0;
+                return true;
+
+            case ItemSystem.WeaponType.Axe:
+                cue = WBH_PlayerEffectCue.F_normal0_evo0_etc1;
+                return true;
+
+            case ItemSystem.WeaponType.Blunt:
+                cue = WBH_PlayerEffectCue.F_normal0_evo0_etc2;
+                return true;
+
+            default:
+                cue = WBH_PlayerEffectCue.F_normal0_evo0_etc0; // 무기 타입을 못읽으면 대검으로 인식.
+                return true;
+        }
+    }
+
+    public void AniEvent_PlayFighterAttackSfx(AnimationEvent animationEvent)
+    {
+        if (TryGetFighterAttackCue(out WBH_PlayerEffectCue cue))
+            effect?.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    public void AniEvent_PlayGunnerAttackSfx(AnimationEvent animationEvent)
+    {
+        if (combat == null || effect == null)
+            return;
+
+        // 실제 GunnerAttack()과 동일한 무기 판정 기준.
+        GunnerWeaponVfxBinding binding = combat.GetComponentInChildren<GunnerWeaponVfxBinding>();
+
+        GunnerWeaponType weaponType = binding != null
+            ? binding.WeaponType
+            : combat.currentWeapon;
+
+        WBH_PlayerEffectCue cue = weaponType switch
+        {
+            GunnerWeaponType.Rifle
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc0,
+
+            GunnerWeaponType.Shotgun
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc1,
+
+            GunnerWeaponType.GrenadeLauncher
+                => WBH_PlayerEffectCue.G_normal0_evo0_etc2,
+
+            _ => WBH_PlayerEffectCue.None
+        };
+
+        if (cue != WBH_PlayerEffectCue.None)
+            effect.ScheduleSfx(cue, animator, animationEvent);
     }
 }

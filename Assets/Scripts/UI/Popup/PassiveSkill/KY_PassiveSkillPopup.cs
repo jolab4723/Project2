@@ -4,7 +4,11 @@ using Core;
 using TMPro;
 using UnityEngine;
 
-/// <summary>실제 패시브의 골드와 단계를 표시하고, 확인한 변경만 기존 매니저에 전달한다.</summary>
+/// <summary>실제 패시브의 골드와 단계를 표시하고, 확인한 변경만 기존 매니저에 전달한다.
+/// !! 2026-09-10: WJ_StatSystemTestScene에서는 이 컴포넌트를 비활성화하고 PassiveSkillPanelUI로
+/// 교체했다(요청: "ky가 작업한 스크립트는 일단 다 비활성화"). KY_PassiveSkillSlot이 PassiveSkillData
+/// 타입을 쓰도록 바뀌어서 그 경계에 닿는 시그니처만 최소한으로 맞춰 컴파일만 유지해뒀다 - 이 클래스
+/// 자체의 나머지 로직/필드(allSkills, descriptionView 등)는 그대로 KY_PassiveSkillData를 쓴다.</summary>
 public class KY_PassiveSkillPopup : KY_PopupBase
 {
     // SW 수정
@@ -93,7 +97,14 @@ public class KY_PassiveSkillPopup : KY_PopupBase
                 isActive = level > 0
             };
             allSkills.Add(data);
-            if (index < slots.Count && slots[index] != null) slots[index].Render(data);
+            if (index < slots.Count && slots[index] != null)
+                slots[index].Render(new PassiveSkillData
+                {
+                    id = id,
+                    definition = definition,
+                    unlockedLevel = skillManager != null ? skillManager.GetUnlockedLevel(id) : 0,
+                    currentLevel = level
+                });
             if (data.isActive) activeSkills.Add(data);
             index++;
         }
@@ -104,13 +115,13 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         RefreshSelection();
     }
 
-    private void OnSkillClicked(KY_PassiveSkillData data) => ChangePendingLevel(data, 1);
-    private void OnSkillDecreaseRequested(KY_PassiveSkillData data) => ChangePendingLevel(data, -1);
+    private void OnSkillClicked(PassiveSkillData data) { if (data != null) ChangePendingLevel(data.id, 1); }
+    private void OnSkillDecreaseRequested(PassiveSkillData data) { if (data != null) ChangePendingLevel(data.id, -1); }
 
     /// <summary>좌클릭은 한 단계 올리고 우클릭은 내린다. 확인 전에는 골드와 저장값을 바꾸지 않는다.</summary>
-    private void ChangePendingLevel(KY_PassiveSkillData data, int change)
+    private void ChangePendingLevel(PassiveSkillId id, int change)
     {
-        if (data == null || !Enum.TryParse(data.id, out PassiveSkillId id) || skillManager == null) return;
+        if (skillManager == null) return;
         var definition = skillManager.GetDefinition(id);
         if (definition == null) return;
         if (selectedId != id) pendingLevel = skillManager.GetCurrentLevel(id);
@@ -156,9 +167,13 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         });
     }
 
-    private void OnSkillHoverEnter(KY_PassiveSkillData data)
+    private void OnSkillHoverEnter(PassiveSkillData data)
     {
-        if (data != null && descriptionView != null) descriptionView.Render(data);
+        // KY_PassiveSkillSlot 이벤트가 PassiveSkillData를 주므로, descriptionView(KY_PassiveSkillData 전용)에
+        // 넘기기 위해 allSkills에서 같은 id의 기존 데이터를 찾아 그대로 쓴다.
+        if (data == null || descriptionView == null) return;
+        var kyData = allSkills.Find(s => s.id == data.id.ToString());
+        if (kyData != null) descriptionView.Render(kyData);
     }
 
     private void OnSkillHoverExit() => RefreshSelection();

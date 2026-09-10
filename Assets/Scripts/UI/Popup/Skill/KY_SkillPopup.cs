@@ -10,11 +10,14 @@ public class KY_SkillPopup : KY_PopupBase
     public override void Open()
     {
         gameObject.SetActive(true);
-        slideAnimator.SlideIn();
+        slideAnimator?.SlideIn();
     }
 
     public override void Close()
     {
-        slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        if (slideAnimator != null)
+            slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        else
+            gameObject.SetActive(false);
     }
 }

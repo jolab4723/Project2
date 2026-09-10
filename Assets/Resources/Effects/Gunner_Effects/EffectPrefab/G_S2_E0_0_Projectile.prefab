@@ -4798,6 +4798,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6210093530497187991}
   - component: {fileID: 6752886008970331250}
+  - component: {fileID: 5250559326156560285}
   m_Layer: 11
   m_Name: Sfx
   m_TagString: Untagged
@@ -4926,6 +4927,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5250559326156560285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4631112500871358171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0db750adb2712e458e0901a32251231, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_BombLanding
+  landingSfx: {fileID: 8300000, guid: 4f2aecfc30657174fb2c4d1b9a75e162, type: 3}
+  landingSfxLeadTime: 0.175
 --- !u!1 &5212505796381649909
 GameObject:
   m_ObjectHideFlags: 0
