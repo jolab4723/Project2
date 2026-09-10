@@ -169,10 +169,10 @@ public class WBH_EnemyPattern : MonoBehaviour
         {
             switch (controller.Info.patternID)
             {
-                case 1: // 엘리트 근접
+                case 11: // 엘리트 근접
                     currentPattern = new WBH_EnemyElitePattern();
                     break;
-                case 10: // 액트1 보스
+                case 101: // 액트1 보스
                     currentPattern = new WBH_EnemyBossPattern_Act1();
                     break;
             }
