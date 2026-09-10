@@ -655,7 +655,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00094831485
+      value: 0.0009394573
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1121,6 +1121,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30c14352a8f16844da33b1a35dcde7d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EliteHpbarView
+--- !u!4 &791141807 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5022215380906037386, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1512621466}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &798402216 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8756550498913179854, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
@@ -3593,6 +3598,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c28388b841889b94fbca6a6ebee1a76c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatManager
+--- !u!114 &1512621500 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2674546040288394452, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+  m_PrefabInstance: {fileID: 1512621466}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d290f8342c78336419858a73de73bdc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerStatus
 --- !u!1 &1522336686
 GameObject:
   m_ObjectHideFlags: 0
@@ -4873,6 +4889,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1955646352}
   - component: {fileID: 1955646353}
+  - component: {fileID: 1955646354}
   m_Layer: 0
   m_Name: Save
   m_TagString: Untagged
@@ -5156,6 +5173,212 @@ MonoBehaviour:
       offset: -0.12
   sfxPlayer: {fileID: 0}
   chargeEffect: {fileID: 0}
+  chargeRangeEffect: {fileID: 0}
+--- !u!114 &1955646354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1955646350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90799546e2228824bb9ac1742890a08f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerEffect
+  spawner: {fileID: 0}
+  playerStatus: {fileID: 1512621500}
+  effectBindings:
+  - cue: 10
+    data: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: d24041b4cba791a4094722f020700b58, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 1000
+    data: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1100
+    data: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: f8d5eecb988152f4fae71c43842c34d7, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.15
+  - cue: 1110
+    data: {fileID: 11400000, guid: ab717c39309e4804f997efb94c0e8bcd, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: f8d5eecb988152f4fae71c43842c34d7, type: 3}
+      volume: 0.6
+      baseTime: 0.2
+      offset: -0.15
+    - clip: {fileID: 8300000, guid: 1df1429981f76644097c7fd47fc5f239, type: 3}
+      volume: 0.4
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1120
+    data: {fileID: 11400000, guid: 649c6edfc87142748adbcade2659d012, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: f8d5eecb988152f4fae71c43842c34d7, type: 3}
+      volume: 0.6
+      baseTime: 0.2
+      offset: -0.15
+    - clip: {fileID: 8300000, guid: be0d6bc21616d2b499cdcb56a0f95520, type: 3}
+      volume: 0.4
+      baseTime: 0.2
+      offset: -0.1
+  - cue: 1130
+    data: {fileID: 11400000, guid: b37e2957662935a47983951c060910fd, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.1
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.1
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.2
+    - clip: {fileID: 8300000, guid: 313c7c8a55149aa49aa9cb99f6c3dde7, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1131
+    data: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1200
+    data: {fileID: 11400000, guid: d3ec493c7fa6326429ec67c37dbebee4, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: ec704f7650a11234b8877b1d489df4ca, type: 3}
+      volume: 0.7
+      baseTime: 0.2
+      offset: 0
+  - cue: 1202
+    data: {fileID: 11400000, guid: e9831c3fd0dd95342bec5a558120798b, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1210
+    data: {fileID: 11400000, guid: 414891d2f2f622d4184852ed023462ac, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: ec704f7650a11234b8877b1d489df4ca, type: 3}
+      volume: 0.7
+      baseTime: 0.2
+      offset: 0
+  - cue: 1212
+    data: {fileID: 11400000, guid: e3344d2705c38914597708405c2c5e18, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1220
+    data: {fileID: 11400000, guid: 37f24a0e046df8347b5607ffee44dc81, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: ec704f7650a11234b8877b1d489df4ca, type: 3}
+      volume: 0.7
+      baseTime: 0.2
+      offset: 0
+  - cue: 1222
+    data: {fileID: 11400000, guid: e65f498e5cb3e664abd351efb947e8f8, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1230
+    data: {fileID: 11400000, guid: 396047721842fbe4783b7484cb07459f, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: ec704f7650a11234b8877b1d489df4ca, type: 3}
+      volume: 0.7
+      baseTime: 0.2
+      offset: 0
+  - cue: 1232
+    data: {fileID: 11400000, guid: 3837e71f6d1e2984ab36c6db0feb9d0d, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1300
+    data: {fileID: 11400000, guid: fb6da4700c26be4478286001162c02ea, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+      volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1310
+    data: {fileID: 11400000, guid: 6ed3be1b3fc65e84b892cebde185f8fb, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+      volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1311
+    data: {fileID: 11400000, guid: 71a5d40f56709ca4095b33015fc22092, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  - cue: 1320
+    data: {fileID: 11400000, guid: f98762d38dc76c348b60aaa6c890adcb, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+      volume: 0.3
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 7496ed0836a44dd4ca16fb34eeff1b96, type: 3}
+      volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1330
+    data: {fileID: 11400000, guid: 22168e8b572940c40b4c1015dd783575, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+      volume: 0.4
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 7b0109653a87502439d61ed827318755, type: 3}
+      volume: 0.6
+      baseTime: 0.2
+      offset: -0.2
+  - cue: 1331
+    data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
+    anchor: {fileID: 791141807}
+    sounds: []
+  sfxPlayer: {fileID: 0}
+  chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
   chargeRangeEffect: {fileID: 0}
 --- !u!1 &2065496024
 GameObject:
