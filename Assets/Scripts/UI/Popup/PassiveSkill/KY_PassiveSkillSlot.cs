@@ -10,15 +10,16 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
     public GameObject activeHighlight;
     [SerializeField] private TMP_Text missingIconLabel;
     [SerializeField] private TMP_Text levelLabel; // SW 수정: 새 화면의 단계 배지
+    [SerializeField] private TMP_Text skillLevelText;
 
-    private KY_PassiveSkillData myData;
+    private PassiveSkillData myData;
 
-    public event Action<KY_PassiveSkillData> OnSlotClicked;
-    public event Action<KY_PassiveSkillData> OnSlotDecreaseRequested; // SW 수정
-    public event Action<KY_PassiveSkillData> OnSlotHoverEnter;
+    public event Action<PassiveSkillData> OnSlotClicked;
+    public event Action<PassiveSkillData> OnSlotDecreaseRequested; // SW 수정
+    public event Action<PassiveSkillData> OnSlotHoverEnter;
     public event Action OnSlotHoverExit;
 
-    public void Render(KY_PassiveSkillData data, int level = 0, int maxLevel = 0)
+    public void Render(PassiveSkillData data)
     {
         myData = data;
         iconImage.sprite = data.icon;
@@ -26,11 +27,17 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
         if (missingIconLabel != null)
         {
             missingIconLabel.gameObject.SetActive(data.icon == null);
-            missingIconLabel.text = levelLabel != null ? data.skillName.Replace(" ", "\n")
-                : maxLevel <= 0 ? data.skillName : $"{data.skillName}\n{level}/{maxLevel}";
+            missingIconLabel.text = levelLabel != null ? data.DisplayName.Replace(" ", "\n")
+                : data.MaxLevel <= 0 ? data.DisplayName : data.LevelLabel;
         }
-        if (levelLabel != null) levelLabel.text = maxLevel > 0 && level >= maxLevel ? "M" : level.ToString();
-        activeHighlight.SetActive(data.isActive);
+        if (levelLabel != null) levelLabel.text = data.LevelBadgeText;
+        if (skillLevelText != null)
+        {
+            skillLevelText.gameObject.SetActive(data.icon == null);
+            skillLevelText.text = data.LevelBadgeText;
+        }
+        // activeHighlight(OutLine)는 더 이상 여기서 안 건드림 - 현재 선택된 슬롯인지 여부는
+        // PassiveSkillPanelUI가 전체 슬롯을 훑어보며 배타적으로 관리한다(2026-09-10).
     }
 
     /// <summary>좌클릭은 단계 올리기, 우클릭은 단계 내리기를 팝업에 요청한다.</summary>

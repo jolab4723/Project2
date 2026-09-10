@@ -333,6 +333,26 @@ MonoBehaviour:
       \uC624\uB978\uCABD \uBC84\uD2BC: \uAC15\uD654(\uC5C6\uC74C\u2192\uAC15\uD6541\u21922\u21923)"
   - key: skill_evolution_ui.none
     label: "\uC5C6\uC74C"
+  - key: passive_skill_ui.title
+    label: "\uD328\uC2DC\uBE0C \uC5C5\uADF8\uB808\uC774\uB4DC"
+  - key: passive_skill_ui.skill_clear
+    label: "\uCD08\uAE30\uD654"
+  - key: passive_skill_ui.skill_points
+    label: "\uC2A4\uD0AC \uD3EC\uC778\uD2B8 -"
+  - key: passive_skill_ui.credit_format
+    label: "\uD06C\uB808\uB527 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\uD06C\uB808\uB527 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\uD504\uB85C\uD544 \uC900\uBE44 \uC911"
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: "\uD604\uC7AC \uB808\uBCA8: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\uD604\uC7AC \uD6A8\uACFC: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\uB2E4\uC74C \uB808\uBCA8: {0}"
   engLabels:
   - key: settings_ui.tab_display
     label: Display
@@ -623,6 +643,26 @@ MonoBehaviour:
       Right button: Enhancement (None\u2192Enh1\u21922\u21923)"
   - key: skill_evolution_ui.none
     label: None
+  - key: passive_skill_ui.title
+    label: Passive Upgrade
+  - key: passive_skill_ui.skill_clear
+    label: Reset
+  - key: passive_skill_ui.skill_points
+    label: Skill Points -
+  - key: passive_skill_ui.credit_format
+    label: Credit | {0}
+  - key: passive_skill_ui.credit_none
+    label: Credit | -
+  - key: passive_skill_ui.profile_loading
+    label: Loading Profile
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: 'Current Lv: {0} / {1}'
+  - key: passive_skill_ui.detail_current_effect
+    label: 'Current Effect: {0}'
+  - key: passive_skill_ui.detail_next_level
+    label: 'Next Lv: {0}'
   jpnLabels:
   - key: settings_ui.tab_display
     label: "\u753B\u9762"
@@ -911,6 +951,26 @@ MonoBehaviour:
     label: "K\u3067\u958B\u9589 - \u5DE6\u30DC\u30BF\u30F3\uFF1A\u9032\u5316\uFF08\u306A\u3057\u2192\u9032\u53161\u21922\u21923\uFF09\u3001\u53F3\u30DC\u30BF\u30F3\uFF1A\u5F37\u5316\uFF08\u306A\u3057\u2192\u5F37\u53161\u21922\u21923\uFF09"
   - key: skill_evolution_ui.none
     label: "\u306A\u3057"
+  - key: passive_skill_ui.title
+    label: "\u30D1\u30C3\u30B7\u30D6\u30A2\u30C3\u30D7\u30B0\u30EC\u30FC\u30C9"
+  - key: passive_skill_ui.skill_clear
+    label: "\u30EA\u30BB\u30C3\u30C8"
+  - key: passive_skill_ui.skill_points
+    label: "\u30B9\u30AD\u30EB\u30DD\u30A4\u30F3\u30C8 -"
+  - key: passive_skill_ui.credit_format
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u6E96\u5099\u4E2D"
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: "\u73FE\u5728\u30EC\u30D9\u30EB: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\u73FE\u5728\u52B9\u679C: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\u6B21\u30EC\u30D9\u30EB: {0}"
   chnLabels:
   - key: settings_ui.tab_display
     label: "\u663E\u793A"
@@ -1198,3 +1258,23 @@ MonoBehaviour:
     label: "\u6309K\u952E\u5F00\u5173 - \u5DE6\u952E\uFF1A\u8FDB\u5316\uFF08\u65E0\u2192\u8FDB\u53161\u21922\u21923\uFF09\uFF0C\u53F3\u952E\uFF1A\u5F3A\u5316\uFF08\u65E0\u2192\u5F3A\u53161\u21922\u21923\uFF09"
   - key: skill_evolution_ui.none
     label: "\u65E0"
+  - key: passive_skill_ui.title
+    label: "\u88AB\u52A8\u5347\u7EA7"
+  - key: passive_skill_ui.skill_clear
+    label: "\u91CD\u7F6E"
+  - key: passive_skill_ui.skill_points
+    label: "\u6280\u80FD\u70B9 -"
+  - key: passive_skill_ui.credit_format
+    label: "\u70B9\u6570 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\u70B9\u6570 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\u914D\u7F6E\u51C6\u5907\u4E2D"
+  - key: passive_skill_ui.confirm_ok
+    label: "\u786E\u5B9A"
+  - key: passive_skill_ui.detail_current_level
+    label: "\u5F53\u524D\u7B49\u7EA7: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\u5F53\u524D\u6548\u679C: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\u4E0B\u4E00\u7EA7: {0}"

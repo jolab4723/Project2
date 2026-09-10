@@ -49,6 +49,7 @@ public class GunnerBomb : MonoBehaviour
 
     private bool landed;
     private bool initialized;
+    private YJ_BombLanding landingSound;
 
     // 폭발 이펙트 재생을 위한 변수들
     private WBH_PlayerEffect effectOwner;
@@ -64,6 +65,7 @@ public class GunnerBomb : MonoBehaviour
 
     private void Awake()
     {
+        landingSound = GetComponentInChildren<YJ_BombLanding>(true);
         wallLayerMask = LayerMask.GetMask("Wall");
         propLayerMask = LayerMask.GetMask("Prop");
     }
@@ -120,6 +122,10 @@ public class GunnerBomb : MonoBehaviour
         Vector3 position = Vector3.Lerp(startPosition, targetPosition, t);
         position.y += arcHeight * 4f * t * (1f - t);
         transform.position = position;
+
+        // 설정된 선행 시간에 재생한다. 중복 호출은 YJ_BombLanding에서 막는다.
+        if (landingSound != null && travelTime - currentTime <= landingSound.LandingSfxLeadTime)
+            landingSound.PlayLanding();
 
         if (t >= 1f)
         {
