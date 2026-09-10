@@ -49,6 +49,7 @@ namespace Core
             ApplyBrightness();
             ApplyAudio();
             ApplyGameplay();
+            ApplyLanguage();
             Save();
         }
 
@@ -108,6 +109,15 @@ namespace Core
         void ApplyGameplay()
         {
             // 나중에 연결
+        }
+
+        // 언어 - KY_SettingsPopup의 드롭다운이 즉시 미리보기로 YJ_LanguageManager를 직접 부르지만,
+        // 그건 디스크에 저장되지 않는다. Apply()에서 저장된 값을 다시 넣어줘야 앱을 재시작해도
+        // 마지막으로 고른 언어가 유지된다(SetLanguage는 같은 언어면 아무 것도 안 하므로 중복 호출 안전).
+        void ApplyLanguage()
+        {
+            if (YJ_LanguageManager.Instance != null)
+                YJ_LanguageManager.Instance.SetLanguage((GameLanguage)currentData.language);
         }
 
         void Save()
