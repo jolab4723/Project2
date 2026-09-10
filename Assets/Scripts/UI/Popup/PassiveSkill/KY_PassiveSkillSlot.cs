@@ -9,6 +9,7 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
     public Image iconImage;
     public GameObject activeHighlight;
     [SerializeField] private TMP_Text missingIconLabel;
+    [SerializeField] private TMP_Text levelLabel; // SW 수정: 새 화면의 단계 배지
 
     private KY_PassiveSkillData myData;
 
@@ -17,7 +18,7 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
     public event Action<KY_PassiveSkillData> OnSlotHoverEnter;
     public event Action OnSlotHoverExit;
 
-    public void Render(KY_PassiveSkillData data)
+    public void Render(KY_PassiveSkillData data, int level = 0, int maxLevel = 0)
     {
         myData = data;
         iconImage.sprite = data.icon;
@@ -25,8 +26,10 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
         if (missingIconLabel != null)
         {
             missingIconLabel.gameObject.SetActive(data.icon == null);
-            missingIconLabel.text = data.skillName;
+            missingIconLabel.text = levelLabel != null ? data.skillName.Replace(" ", "\n")
+                : maxLevel <= 0 ? data.skillName : $"{data.skillName}\n{level}/{maxLevel}";
         }
+        if (levelLabel != null) levelLabel.text = maxLevel > 0 && level >= maxLevel ? "M" : level.ToString();
         activeHighlight.SetActive(data.isActive);
     }
 

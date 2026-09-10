@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Core;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>실제 패시브의 골드와 단계를 표시하고, 확인한 변경만 기존 매니저에 전달한다.</summary>
 public class KY_PassiveSkillPopup : KY_PopupBase
@@ -20,6 +21,14 @@ public class KY_PassiveSkillPopup : KY_PopupBase
     public KY_PassiveSkillDescriptionView descriptionView;
     public KY_PassiveSkillListView activeListView;
 
+    [Header("단계 조절 버튼 (새 패시브 화면)")]
+    [SerializeField] private Button levelUpButton;
+    [SerializeField] private Button levelDownButton;
+    [SerializeField] private Button confirmButton;
+    [SerializeField] private Button resetButton;
+    [SerializeField] private TMP_Text pendingLevelText;
+    [SerializeField] private TMP_Text confirmButtonText;
+
     [SerializeField] private bool allowChanges = true;
     [SerializeField] private string unavailableReason;
     private PassiveSkillId? selectedId;
@@ -27,6 +36,10 @@ public class KY_PassiveSkillPopup : KY_PopupBase
 
     private void Awake()
     {
+        levelUpButton?.onClick.AddListener(OnClickLevelUp);
+        levelDownButton?.onClick.AddListener(OnClickLevelDown);
+        confirmButton?.onClick.AddListener(OnClickConfirm);
+        resetButton?.onClick.AddListener(OnClickReset);
         foreach (var slot in slots)
         {
             if (slot == null) continue;
@@ -54,6 +67,10 @@ public class KY_PassiveSkillPopup : KY_PopupBase
 
     private void OnDestroy()
     {
+        levelUpButton?.onClick.RemoveListener(OnClickLevelUp);
+        levelDownButton?.onClick.RemoveListener(OnClickLevelDown);
+        confirmButton?.onClick.RemoveListener(OnClickConfirm);
+        resetButton?.onClick.RemoveListener(OnClickReset);
         foreach (var slot in slots)
         {
             if (slot == null) continue;
@@ -88,12 +105,12 @@ public class KY_PassiveSkillPopup : KY_PopupBase
             var data = new KY_PassiveSkillData
             {
                 id = id.ToString(),
-                skillName = definition != null ? $"{definition.displayName}\n{level}/{definition.maxLevel}" : "프로필 준비 중",
+                skillName = definition != null ? definition.displayName : "프로필 준비 중",
                 description = definition != null ? DescribeEffect(id, definition, level) : "패시브 데이터 연결을 확인하세요.",
                 isActive = level > 0
             };
             allSkills.Add(data);
-            if (index < slots.Count && slots[index] != null) slots[index].Render(data);
+            if (index < slots.Count && slots[index] != null) slots[index].Render(data, level, definition?.maxLevel ?? 0);
             if (data.isActive) activeSkills.Add(data);
             index++;
         }
@@ -104,8 +121,18 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         RefreshSelection();
     }
 
-    private void OnSkillClicked(KY_PassiveSkillData data) => ChangePendingLevel(data, 1);
+    private void OnSkillClicked(KY_PassiveSkillData data) => ChangePendingLevel(data, levelUpButton != null ? 0 : 1);
     private void OnSkillDecreaseRequested(KY_PassiveSkillData data) => ChangePendingLevel(data, -1);
+
+    /// <summary>선택한 스킬의 미리보기 단계만 바꾼다. 구매는 확인 버튼에서 처리한다.</summary>
+    public void OnClickLevelUp() => ChangeSelectedLevel(1);
+    public void OnClickLevelDown() => ChangeSelectedLevel(-1);
+
+    private void ChangeSelectedLevel(int change)
+    {
+        if (!selectedId.HasValue) return;
+        ChangePendingLevel(allSkills.Find(skill => skill.id == selectedId.Value.ToString()), change);
+    }
 
     /// <summary>좌클릭은 한 단계 올리고 우클릭은 내린다. 확인 전에는 골드와 저장값을 바꾸지 않는다.</summary>
     private void ChangePendingLevel(KY_PassiveSkillData data, int change)
@@ -122,6 +149,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
 
     private void RefreshSelection()
     {
+        RefreshControls();
         if (descriptionView == null) return;
         if (!allowChanges)
         {
@@ -137,7 +165,9 @@ public class KY_PassiveSkillPopup : KY_PopupBase
             descriptionView.Render(new KY_PassiveSkillData
             {
                 skillName = "패시브 선택",
-                description = "아이콘 좌클릭: 단계 올리기\n우클릭: 단계 내리기\n확인을 눌러 적용합니다."
+                description = levelUpButton != null
+                    ? "패시브를 선택한 뒤 + / - 버튼으로 단계를 조절하세요.\n확인을 눌러 적용합니다."
+                    : "아이콘 좌클릭: 단계 올리기\n우클릭: 단계 내리기\n확인을 눌러 적용합니다."
             });
             return;
         }
@@ -154,6 +184,21 @@ public class KY_PassiveSkillPopup : KY_PopupBase
                 (skillManager.CurrentProfile == null ? "프로필을 먼저 불러오세요." :
                     skillManager.CurrentProfile.gold < cost ? "골드가 부족합니다." : "확인을 누르면 적용됩니다.")
         });
+    }
+
+    private void RefreshControls()
+    {
+        var definition = selectedId.HasValue && skillManager != null ? skillManager.GetDefinition(selectedId.Value) : null;
+        bool canChange = allowChanges && skillManager != null && skillManager.CurrentProfile != null;
+        bool selected = canChange && definition != null && selectedId != PassiveSkillId.Undecided;
+        int cost = selected ? skillManager.GetUnlockCostToLevel(selectedId.Value, pendingLevel) : 0;
+        if (pendingLevelText != null) pendingLevelText.text = selectedId.HasValue ? pendingLevel.ToString() : "-";
+        if (levelUpButton != null) levelUpButton.interactable = selected && pendingLevel < definition.maxLevel;
+        if (levelDownButton != null) levelDownButton.interactable = selected && pendingLevel > 0;
+        if (confirmButton != null) confirmButton.interactable = selected &&
+            pendingLevel != skillManager.GetCurrentLevel(selectedId.Value) && skillManager.CurrentProfile.gold >= cost;
+        if (resetButton != null) resetButton.interactable = canChange && allSkills.Exists(skill => skill.isActive);
+        if (confirmButtonText != null) confirmButtonText.text = cost > 0 ? $"{cost:N0} 골드" : "적용";
     }
 
     private void OnSkillHoverEnter(KY_PassiveSkillData data)

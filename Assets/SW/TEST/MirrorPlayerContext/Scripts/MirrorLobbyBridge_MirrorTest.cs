@@ -18,8 +18,10 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     [SerializeField] private Button joinButton;
     [SerializeField] private Button serverButton;
     [SerializeField] private Button reconnectButton;
+    [SerializeField] private KY_PassiveSkillPopup passivePopup;
     private MirrorTestNetworkManager manager;
     private string displayedParticipantId;
+    private bool? passiveChangesAllowed;
 
     private void Awake()
     {
@@ -95,7 +97,12 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         manager.StartClient();
     }
 
-    private void ChangeReady(bool ready) => manager?.RequestLobbyChange(MirrorLobbyOperation_MirrorTest.Ready, ready: ready);
+    private void ChangeReady(bool ready)
+    {
+        if (manager == null) return;
+        if (ready) SetPassiveChangesAllowed(false);
+        if (!manager.RequestLobbyChange(MirrorLobbyOperation_MirrorTest.Ready, ready: ready)) RefreshLobby();
+    }
     private void ChangeCharacter(KY_CharacterId character) => manager?.RequestLobbyChange(
         MirrorLobbyOperation_MirrorTest.Character,
         character == KY_CharacterId.Gunner ? CharacterClass.Gunner : CharacterClass.Fighter);
@@ -109,6 +116,7 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         connectionPanel.SetActive(!admitted);
         if (!admitted)
         {
+            SetPassiveChangesAllowed(true);
             displayedParticipantId = null;
             flow.HidePanels();
             return;
@@ -116,10 +124,12 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         lobby.ConfigureExternalState(manager.LocalParticipantId, manager.ClientDisplayName);
         var slots = new KY_LobbyPlayerData[MirrorSessionRoster_MirrorTest.MaxMembers];
         MirrorLobbySnapshot_MirrorTest snapshot = manager.ClientLobby;
+        MirrorLobbyMember_MirrorTest local = default;
         if (snapshot.Members != null)
         {
             foreach (MirrorLobbyMember_MirrorTest member in snapshot.Members)
             {
+                if (member.ParticipantId == manager.LocalParticipantId) local = member;
                 if (member.Slot < 0 || member.Slot >= slots.Length || member.HasForfeited) continue;
                 slots[member.Slot] = new KY_LobbyPlayerData
                 {
@@ -129,18 +139,23 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
                 };
             }
         }
+        SetPassiveChangesAllowed(!snapshot.RunStarted && !local.IsReady);
         lobby.SetPlayers(slots);
         if (snapshot.RunStarted) flow.HidePanels();
         else if (displayedParticipantId != manager.LocalParticipantId)
         {
             displayedParticipantId = manager.LocalParticipantId;
-            MirrorLobbyMember_MirrorTest local = default;
-            if (snapshot.Members != null)
-                foreach (MirrorLobbyMember_MirrorTest member in snapshot.Members)
-                    if (member.ParticipantId == manager.LocalParticipantId) local = member;
             if (local.HasCharacterChoice) flow.ShowLobby();
             else flow.ShowCharacterSelection();
         }
+    }
+
+    /// <summary>준비 시 전송한 패시브와 출발 시 적용할 값이 달라지지 않도록 준비 후에는 변경을 잠근다.</summary>
+    private void SetPassiveChangesAllowed(bool allowed)
+    {
+        if (passivePopup == null || passiveChangesAllowed == allowed) return;
+        passiveChangesAllowed = allowed;
+        passivePopup.Bind(PassiveSkillManager.Instance, allowed, "준비를 취소한 뒤 패시브를 변경할 수 있습니다.");
     }
 
     private static KY_LobbyReadyState GetReadyState(MirrorLobbyMember_MirrorTest member)

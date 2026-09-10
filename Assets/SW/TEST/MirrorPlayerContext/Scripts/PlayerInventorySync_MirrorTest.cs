@@ -1418,9 +1418,18 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         string oldSnapshot,
         string newSnapshot)
     {
+        if (isServer) return;
+        if (operation == SyncList<string>.Operation.OP_SET && isLocalPlayer &&
+            context?.Inventory?.PlayerGrid != null && context.Equipment != null)
+        {
+            ItemSaveData saved = FromSnapshotJson(newSnapshot);
+            InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
+            // 누적 스택만 바뀔 때 소유권과 UI를 다시 만들지 않고 기존 인스턴스에 반영한다.
+            if (item?.itemData != null) item.itemData.persistedStackCount = saved.persistedStackCount;
+        }
         // 교환 중간의 OP_SET 하나만 적용하면 아직 이동하지 않은 상대 아이템과 충돌한다.
         // 한 프레임의 소유 스냅샷을 모두 받은 후 묶어서 반영한다.
-        if (!isServer) localStateRefreshQueued = true;
+        localStateRefreshQueued = true;
     }
 
     /// <summary>
@@ -1455,7 +1464,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         ItemSaveData saved = FromSnapshotJson(snapshotJson);
         InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
-        if (item?.itemData == null || item.itemData.upgradeLevel != saved.upgradeLevel)
+        if (item?.itemData == null || item.itemData.upgradeLevel != saved.upgradeLevel ||
+            item.itemData.persistedStackCount != saved.persistedStackCount)
             return false;
 
         if (saved.isEquipped)
@@ -1969,6 +1979,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>(),
             rolledElement = saved.rolledElement,
             upgradeLevel = saved.upgradeLevel,
+            persistedStackCount = saved.persistedStackCount,
         };
     }
 
@@ -1990,6 +2001,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             rolledSubStats = data.rolledSubStats,
             rolledElement = data.rolledElement,
             upgradeLevel = data.upgradeLevel,
+            persistedStackCount = data.persistedStackCount,
             gridX = item.x,
             gridY = item.y,
             isRotated = item.isRotated,
@@ -2007,6 +2019,18 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         return string.IsNullOrWhiteSpace(snapshotJson)
             ? null
             : JsonUtility.FromJson<ItemSaveData>(snapshotJson);
+    }
+
+    /// <summary>위치와 거래 번호를 바꾸지 않고 서버 소유 아이템의 저장 스택 표시를 갱신한다.</summary>
+    [Server]
+    internal void ServerSyncPersistedStack(ItemInstance item)
+    {
+        int index = item != null ? FindSnapshotIndex(item.instanceId) : -1;
+        if (index < 0 || FindOwnedItem(item.instanceId)?.itemData != item) return;
+        ItemSaveData saved = FromSnapshotJson(itemSnapshots[index]);
+        if (saved.persistedStackCount == item.persistedStackCount) return;
+        saved.persistedStackCount = item.persistedStackCount;
+        itemSnapshots[index] = JsonUtility.ToJson(saved);
     }
 
     private static ItemDefinitionSO ResolveDefinition(string itemId)

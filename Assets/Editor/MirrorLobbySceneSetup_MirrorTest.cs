@@ -90,6 +90,92 @@ public static class MirrorLobbySceneSetup_MirrorTest
         }
     }
 
+    /// <summary>WJ의 새 패시브 화면만 읽어 Mirror 로비의 구매·표시·닫기 버튼에 연결한다.</summary>
+    [MenuItem("SW/Mirror Test/Import Latest Passive Popup")]
+    public static void ImportLatestPassivePopup()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
+            PrefabStageUtility.GetCurrentPrefabStage() != null)
+            throw new InvalidOperationException("Prefab Stage를 닫고 컴파일이 끝난 Edit Mode에서 실행하세요.");
+        Scene previous = SceneManager.GetActiveScene();
+        Scene scene = SceneManager.GetSceneByPath(MirrorTestNetworkManager.SessionLobbyScene);
+        if (scene.isLoaded && scene.isDirty) throw new InvalidOperationException("Mirror 로비에 저장하지 않은 편집이 있습니다.");
+        bool opened = !scene.isLoaded;
+        if (opened) scene = EditorSceneManager.OpenScene(MirrorTestNetworkManager.SessionLobbyScene, OpenSceneMode.Additive);
+        Scene source = EditorSceneManager.OpenPreviewScene("Assets/WJ_TestPlace/Scene/WJ_StatSystemTestScene.unity");
+        try
+        {
+            var template = InScene<KY_PassiveSkillPopup>(source).Single(p => p.transform.Find("Contents/MainRow/ControlArea/ControlPanel") != null);
+            var old = InScene<KY_PassiveSkillPopup>(scene).Single();
+            var popups = InScene<KY_PopupManager>(scene).Single();
+            var profile = InScene<PassiveSkillManager>(scene).Single();
+            var popup = Object.Instantiate(template, old.transform.parent);
+            popup.name = old.name;
+            popup.gameObject.SetActive(false);
+            popup.allSkills.Clear();
+            popup.activeListView = null;
+            popup.pointText = popup.transform.Find("Contents/HeaderRow/ControlArea/CreditText").GetComponent<TextMeshProUGUI>();
+            popup.transform.Find("Contents/HeaderRow/ControlArea/SkillPointsText").gameObject.SetActive(false);
+            Transform controls = popup.transform.Find("Contents/MainRow/ControlArea/ControlPanel");
+            popup.descriptionView = controls.gameObject.AddComponent<KY_PassiveSkillDescriptionView>();
+            popup.descriptionView.nameText = controls.Find("PassiveNameText").GetComponent<TextMeshProUGUI>();
+            popup.descriptionView.descriptionText = controls.Find("PassiveDescriptionText").GetComponent<TextMeshProUGUI>();
+            popup.descriptionView.descriptionText.enableAutoSizing = true;
+            popup.descriptionView.descriptionText.fontSizeMin = 20;
+            popup.descriptionView.descriptionText.fontSizeMax = 28;
+            SetReference(popup, "skillManager", profile);
+            var data = new SerializedObject(popup);
+            data.FindProperty("allowChanges").boolValue = true;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            foreach (var unused in popup.GetComponentsInChildren<PassiveSkillPanelUI>(true)) Object.DestroyImmediate(unused);
+            foreach (Button button in popup.GetComponentsInChildren<Button>(true)) button.onClick = new Button.ButtonClickedEvent();
+            var innerClose = popup.transform.Find("btnClosePopup/innerShadow").GetComponent<Button>();
+            if (innerClose != null) Object.DestroyImmediate(innerClose);
+            SetReference(popup, "levelUpButton", controls.Find("ControlButton/btn_LevelUp").GetComponent<Button>());
+            SetReference(popup, "levelDownButton", controls.Find("ControlButton/btn_LevelDown").GetComponent<Button>());
+            SetReference(popup, "confirmButton", controls.Find("btn_Confilm").GetComponent<Button>());
+            SetReference(popup, "resetButton", popup.transform.Find("Contents/HeaderRow/ControlArea/btn_SkillClear").GetComponent<Button>());
+            SetReference(popup, "pendingLevelText", controls.Find("ControlButton/Divider").GetComponent<TMP_Text>());
+            SetReference(popup, "confirmButtonText", controls.Find("btn_Confilm/Label").GetComponent<TMP_Text>());
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(popup.transform.Find("btnClosePopup").GetComponent<Button>().onClick, popups.Hide);
+            foreach (Graphic graphic in popup.GetComponentsInChildren<Graphic>(true)) graphic.raycastTarget = false;
+            foreach (Button button in popup.GetComponentsInChildren<Button>(true)) button.targetGraphic.raycastTarget = true;
+            foreach (KY_PassiveSkillSlot slot in popup.slots)
+            {
+                slot.transform.Find("IconFrame").GetComponent<Image>().raycastTarget = true;
+                var label = new GameObject("Skill Name", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+                label.transform.SetParent(slot.transform.Find("IconFrame"), false);
+                label.rectTransform.anchorMin = Vector2.zero;
+                label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = new Vector2(6, 6);
+                label.rectTransform.offsetMax = new Vector2(-6, -6);
+                label.font = popup.pointText.font;
+                label.fontSize = 28;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 16;
+                label.fontSizeMax = 28;
+                label.alignment = TextAlignmentOptions.Center;
+                label.raycastTarget = false;
+                SetReference(slot, "missingIconLabel", label);
+                SetReference(slot, "levelLabel", slot.transform.Find("SkillLevelIcon/SkillLevelText").GetComponent<TMP_Text>());
+            }
+            VerifyReferences(new[] { popup.gameObject });
+            foreach (var entry in popups.popupEntries) if (entry.popup == old) entry.popup = popup;
+            SetReference(InScene<MirrorLobbyBridge_MirrorTest>(scene).Single(), "passivePopup", popup);
+            Object.DestroyImmediate(old.gameObject);
+            EditorUtility.SetDirty(popups);
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Mirror 로비 저장 실패");
+            Debug.Log("[MirrorLobbySetup] 새 패시브 화면·단계 버튼·프로필 연결 완료");
+        }
+        finally
+        {
+            EditorSceneManager.ClosePreviewScene(source);
+            if (opened) EditorSceneManager.CloseScene(scene, true);
+            if (previous.IsValid() && previous.isLoaded) SceneManager.SetActiveScene(previous);
+        }
+    }
+
     /// <summary>캠프 이동 영역을 별도 프리뷰 씬에서 굽고 Mirror 캠프에만 연결한다.</summary>
     [MenuItem("SW/Mirror 테스트/캠프 이동 영역 생성")]
     public static void BakeCampNavigation()
@@ -223,7 +309,13 @@ public static class MirrorLobbySceneSetup_MirrorTest
             lobbyData.ApplyModifiedPropertiesWithoutUndo();
             CreateConnectionPanel(flow, lobby);
             EventSystem[] systems = InScene<EventSystem>(lobbyScene)
-                .OrderByDescending(item => item.gameObject.activeInHierarchy).ToArray();
+                .OrderByDescending(item => item.transform.IsChildOf(manager.transform))
+                .ThenByDescending(item => item.gameObject.activeInHierarchy).ToArray();
+            if (systems.Length > 0)
+            {
+                systems[0].transform.SetParent(manager.transform, false);
+                systems[0].gameObject.SetActive(true);
+            }
             foreach (EventSystem duplicate in systems.Skip(1))
             {
                 foreach (BaseInputModule module in duplicate.GetComponents<BaseInputModule>()) Object.DestroyImmediate(module);

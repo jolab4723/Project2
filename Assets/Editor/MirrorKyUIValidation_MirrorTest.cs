@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Core;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 /// <summary>실제 로비 UI에서 패시브 적용·저장·읽기 전용, 키 설정 분리, 메뉴 시간 복원을 검사한다.</summary>
@@ -19,6 +21,8 @@ public static class MirrorKyUIValidation_MirrorTest
         var manager = PassiveSkillManager.Instance;
         if (popup == null || manager.GetDefinition(PassiveSkillId.AttackPower) == null)
             throw new InvalidOperationException("실제 패시브 팝업과 DB 연결이 필요합니다.");
+        if (!popup.gameObject.activeInHierarchy)
+            throw new InvalidOperationException("패시브 팝업을 연 뒤 다음 프레임에 검사를 실행하세요.");
         if (manager.CurrentProfile == null) DataManager.Instance.LoadPassiveData();
         PlayerProfileData originalProfile = manager.CurrentProfile;
         var popupData = new SerializedObject(popup);
@@ -37,6 +41,22 @@ public static class MirrorKyUIValidation_MirrorTest
         {
             if (!passed) throw new InvalidOperationException("[MirrorKyUIValidation] " + name);
             checks++;
+        }
+        Button Control(string field) => (Button)new SerializedObject(popup).FindProperty(field).objectReferenceValue;
+        void Click(Component target)
+        {
+            Canvas.ForceUpdateCanvases();
+            RectTransform rect = (RectTransform)target.transform;
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(rect.rect.center)),
+                button = PointerEventData.InputButton.Left
+            };
+            var hits = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointer, hits);
+            Check(hits.Count > 0 && ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject) == target.gameObject,
+                "actual pointer target: " + target.name);
+            ExecuteEvents.ExecuteHierarchy(hits[0].gameObject, pointer, ExecuteEvents.pointerClickHandler);
         }
         try
         {
@@ -78,38 +98,66 @@ public static class MirrorKyUIValidation_MirrorTest
             var profile = new PlayerProfileData { playerId = Guid.NewGuid().ToString("N"), gold = 10000 };
             manager.SetActiveProfile(profile);
             popup.Bind(manager);
-            popup.Open();
+            KY_PopupManager.Instance.Show(PopupType.PassiveSkill);
             Check(popup.allSkills.Count == 12, "actual database rows");
-            var left = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
-            var right = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right };
+            foreach (PassiveSkillId id in Enum.GetValues(typeof(PassiveSkillId)))
+            {
+                Click(popup.slots[(int)id]);
+                Check(popup.descriptionView.nameText.text == manager.GetDefinition(id).displayName, "select " + id);
+            }
             int attackIndex = (int)PassiveSkillId.AttackPower;
-            popup.slots[attackIndex].OnPointerClick(left);
+            Click(popup.slots[attackIndex]);
+            Click(Control("levelUpButton"));
             Check(profile.gold == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
             int cost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 1);
-            popup.OnClickConfirm();
+            Click(Control("confirmButton"));
             Check(profile.gold == 10000 - cost && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "confirmed purchase");
             Check(DataManager.Instance.LoadSinglePlayerSlot().profile.gold == profile.gold, "existing save API");
-            popup.slots[attackIndex].OnPointerClick(right);
-            popup.OnClickConfirm();
+            Click(Control("levelDownButton"));
+            Click(Control("confirmButton"));
             Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "deactivate preserves unlock");
-            popup.slots[attackIndex].OnPointerClick(left);
-            popup.OnClickConfirm();
+            Click(Control("levelUpButton"));
+            Click(Control("confirmButton"));
             Check(profile.gold == 10000 - cost, "unlocked rank is free");
+            Click(popup.transform.Find("btnClosePopup").GetComponent<Button>());
+            Check(!popup.gameObject.activeSelf && !KY_PopupManager.Instance.HasOpenModalPopup, "close releases background input");
+            KY_PopupManager.Instance.Show(PopupType.PassiveSkill);
+            Click(popup.slots[attackIndex]);
+            Click(Control("levelUpButton"));
+            int secondCost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 2);
+            Click(Control("confirmButton"));
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2 && profile.gold == 10000 - cost - secondCost,
+                "reopened popup applies one level once");
             profile.gold = 0;
-            popup.slots[attackIndex].OnPointerClick(left);
-            popup.OnClickConfirm();
-            Check(profile.gold == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "insufficient gold rejected");
-            popup.slots[(int)PassiveSkillId.Undecided].OnPointerClick(left);
-            popup.OnClickConfirm();
+            manager.SetActiveProfile(profile);
+            Click(Control("levelUpButton"));
+            Check(!Control("confirmButton").interactable, "insufficient gold disables purchase");
+            Click(Control("confirmButton"));
+            Check(profile.gold == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2, "insufficient gold rejected");
+            Click(popup.slots[(int)PassiveSkillId.Undecided]);
+            Check(!Control("levelUpButton").interactable && !Control("confirmButton").interactable, "undefined effect controls disabled");
             Check(manager.GetUnlockedLevel(PassiveSkillId.Undecided) == 0, "undefined effect cannot be purchased");
             popup.Bind(manager, false, "읽기 전용 검사");
-            popup.OnClickReset();
-            popup.slots[attackIndex].OnPointerClick(right);
-            popup.OnClickConfirm();
-            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "read only protects profile");
+            Click(popup.slots[attackIndex]);
+            Check(!Control("resetButton").interactable && !Control("levelDownButton").interactable, "ready lock disables controls");
+            Click(Control("resetButton"));
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2, "read only protects profile");
             popup.Bind(manager);
-            popup.OnClickReset();
-            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "reset preserves purchase");
+            Click(Control("resetButton"));
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 2, "reset preserves purchase");
+            profile.gold = 100000;
+            manager.SetActiveProfile(profile);
+            Click(popup.slots[attackIndex]);
+            int maxLevel = manager.GetDefinition(PassiveSkillId.AttackPower).maxLevel;
+            for (int level = 0; level < maxLevel; level++) Click(Control("levelUpButton"));
+            Check(!Control("levelUpButton").interactable, "maximum level stops preview");
+            Click(Control("confirmButton"));
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == maxLevel, "maximum level purchase");
+            var levelLabel = (TMPro.TMP_Text)new SerializedObject(popup.slots[attackIndex]).FindProperty("levelLabel").objectReferenceValue;
+            Check(levelLabel.text == "M", "maximum badge");
+            Check(DataManager.Instance.LoadSinglePlayerSlot().profile.passiveSkillTree.learnedSkills
+                .Find(entry => entry.id == PassiveSkillId.AttackPower).currentLevel == maxLevel, "saved level round trip");
+            SessionState.SetString("MirrorLatestPassiveValidatedProfile", JsonUtility.ToJson(profile));
         }
         finally
         {
@@ -122,7 +170,7 @@ public static class MirrorKyUIValidation_MirrorTest
             else if (File.Exists(savePath)) File.Delete(savePath);
             manager.SetActiveProfile(originalProfile);
             popup.Bind(manager, originalAllowChanges, originalReason);
-            if (!originallyOpen) popup.Close();
+            if (!originallyOpen && popup.gameObject.activeSelf) KY_PopupManager.Instance.Hide();
             PlayerPrefs.DeleteKey("KeyBindings." + keyProfile + ".A");
             PlayerPrefs.DeleteKey("KeyBindings." + keyProfile + ".B");
             PlayerPrefs.Save();
@@ -131,6 +179,9 @@ public static class MirrorKyUIValidation_MirrorTest
             if (pauseObject != null) Object.DestroyImmediate(pauseObject);
             if (inputObject != null) Object.DestroyImmediate(inputObject);
         }
-        Debug.Log($"[MirrorKyUIValidation] PASS {checks} checks; original profile and storage restored");
+        string report = $"[MirrorKyUIValidation] PASS {checks} checks; original profile and storage restored";
+        Directory.CreateDirectory("Temp/MirrorValidation");
+        File.WriteAllText("Temp/MirrorValidation/PassiveUI.txt", report);
+        Debug.Log(report);
     }
 }
