@@ -40,6 +40,7 @@ public class KY_StatusPopup : KY_PopupBase
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect curtainEffect;
     private KY_UIAnimationManager animationManager;
+    private Sequence transitionSequence;
 
     private PlayerStatManager statManager;
     private KY_StatRow[] statRows;
@@ -111,6 +112,7 @@ public class KY_StatusPopup : KY_PopupBase
 
     public override void Open()
     {
+        transitionSequence?.Kill();
         gameObject.SetActive(true);
 
         // 닫혀 있는 동안 언어가 바뀌었을 수 있으므로 열 때마다 다시 채운다.
@@ -119,17 +121,30 @@ public class KY_StatusPopup : KY_PopupBase
 
         animationManager?.PlayPanelOpen();
 
-        Sequence seq = DOTween.Sequence();
+        transitionSequence = DOTween.Sequence();
         float slideDuration = slideAnimator != null ? slideAnimator.duration : 0f;
-        seq.AppendInterval(slideDuration);
-        seq.AppendCallback(() => curtainEffect?.Open());
+        transitionSequence.AppendInterval(slideDuration);
+        transitionSequence.AppendCallback(() => curtainEffect?.Open());
     }
 
     public override void Close()
     {
-        Sequence seq = DOTween.Sequence();
-        seq.Append(curtainEffect.Close());
-        seq.AppendCallback(() => slideAnimator.SlideOut(() => gameObject.SetActive(false)));
+        transitionSequence?.Kill();
+        transitionSequence = DOTween.Sequence();
+        if (curtainEffect != null)
+            transitionSequence.Append(curtainEffect.Close());
+        transitionSequence.AppendCallback(() =>
+        {
+            if (slideAnimator != null)
+                slideAnimator.SlideOut(() => gameObject.SetActive(false));
+            else
+                gameObject.SetActive(false);
+        });
+    }
+
+    void OnDestroy()
+    {
+        transitionSequence?.Kill();
     }
 
     void RequestData()

@@ -194,8 +194,14 @@ public class UpgradeController : MonoBehaviour
         FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
 
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
-        currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {currentValue:0.#}";
-        nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {nextValue:0.#}";
+
+        // 강화 팝업 리디자인으로 텍스트 출력 방식 변경했습니다. - 김관영
+        currentStatText.text =
+            $"현재 스탯\n{ItemDisplayNames.StatNames[mainOption.statType]} +{currentValue:0.#}";
+
+        nextStatText.text =
+            $"강화 후 스탯\n{ItemDisplayNames.StatNames[mainOption.statType]} +{nextValue:0.#}";
+
         costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
             ? $"강화비용 : {cost}"
             : "강화비용 : -";
@@ -215,12 +221,13 @@ public class UpgradeController : MonoBehaviour
             upgradeLevelText.text = "";
 
         if (currentStatText != null)
-        {
-            currentStatText.text = UpgradeMessageMapper.SelectionRequired;
-        }
+            currentStatText.text = string.Empty;
 
         if (nextStatText != null)
             nextStatText.text = string.Empty;
+
+        if (logText != null)
+            logText.text = UpgradeMessageMapper.SelectionRequired;
 
         if (costText != null)
             costText.text = string.Empty;
