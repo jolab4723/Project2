@@ -27,13 +27,15 @@ public class KY_HUDAnimator : MonoBehaviour
         rectTransform.anchoredPosition = hiddenPosition;
     }
 
-    void Start()
-    {
-        StartCoroutine(DelayedSlideIn());
-    }
-
     void OnEnable()
     {
+        // 재활성화될 때마다 숨김 위치에서 등장 연출을 다시 시작한다.
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = hiddenPosition;
+            currentCoroutine = StartCoroutine(DelayedSlideIn());
+        }
+
         if (reactToSidePopup)
         {
             KY_GameEvents.OnSidePopupOpened += SlideOut;
@@ -43,6 +45,12 @@ public class KY_HUDAnimator : MonoBehaviour
 
     void OnDisable()
     {
+        if (currentCoroutine != null)
+        {
+            StopCoroutine(currentCoroutine);
+            currentCoroutine = null;
+        }
+
         if (reactToSidePopup)
         {
             KY_GameEvents.OnSidePopupOpened -= SlideOut;
