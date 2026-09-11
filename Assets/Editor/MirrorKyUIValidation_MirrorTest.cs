@@ -95,7 +95,7 @@ public static class MirrorKyUIValidation_MirrorTest
             input.enabled = false;
             Check(actions.Player.Skill1.enabled, "disabled player does not disable shared UI input");
 
-            var profile = new PlayerProfileData { playerId = Guid.NewGuid().ToString("N"), gold = 10000 };
+            var profile = new PlayerProfileData { playerId = Guid.NewGuid().ToString("N"), credit = 10000 };
             manager.SetActiveProfile(profile);
             popup.Bind(manager);
             KY_PopupManager.Instance.Show(PopupType.PassiveSkill);
@@ -106,19 +106,31 @@ public static class MirrorKyUIValidation_MirrorTest
                 Check(popup.descriptionView.nameText.text == manager.GetDefinition(id).displayName, "select " + id);
             }
             int attackIndex = (int)PassiveSkillId.AttackPower;
-            Click(popup.slots[attackIndex]);
-            Click(Control("levelUpButton"));
-            Check(profile.gold == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
+            var left = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+            var right = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right };
+
+            // 1. 슬롯 포인터 클릭(좌클릭: 단계 올리기 / 우클릭: 단계 내리기) 검증 (main 작업)
+            popup.slots[attackIndex].OnPointerClick(left);
+            Check(profile.credit == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
             int cost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 1);
-            Click(Control("confirmButton"));
-            Check(profile.gold == 10000 - cost && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "confirmed purchase");
-            Check(DataManager.Instance.LoadSinglePlayerSlot().profile.gold == profile.gold, "existing save API");
+            popup.OnClickConfirm();
+            Check(profile.credit == 10000 - cost && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "confirmed purchase");
+            Check(DataManager.Instance.LoadSinglePlayerSlot().profile.credit == profile.credit, "existing save API");
+            popup.slots[attackIndex].OnPointerClick(right);
+            popup.OnClickConfirm();
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "deactivate preserves unlock");
+            popup.slots[attackIndex].OnPointerClick(left);
+            popup.OnClickConfirm();
+            Check(profile.credit == 10000 - cost, "unlocked rank is free");
+
+            // 2. 단계 조절 버튼 및 모달 팝업 라이프사이클 검증 (내쪽 작업)
+            Click(popup.slots[attackIndex]);
             Click(Control("levelDownButton"));
             Click(Control("confirmButton"));
-            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "deactivate preserves unlock");
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "button deactivate preserves unlock");
             Click(Control("levelUpButton"));
             Click(Control("confirmButton"));
-            Check(profile.gold == 10000 - cost, "unlocked rank is free");
+            Check(profile.credit == 10000 - cost, "button unlocked rank is free");
             Click(popup.transform.Find("btnClosePopup").GetComponent<Button>());
             Check(!popup.gameObject.activeSelf && !KY_PopupManager.Instance.HasOpenModalPopup, "close releases background input");
             KY_PopupManager.Instance.Show(PopupType.PassiveSkill);
@@ -126,16 +138,23 @@ public static class MirrorKyUIValidation_MirrorTest
             Click(Control("levelUpButton"));
             int secondCost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 2);
             Click(Control("confirmButton"));
-            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2 && profile.gold == 10000 - cost - secondCost,
+            Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2 && profile.credit == 10000 - cost - secondCost,
                 "reopened popup applies one level once");
-            profile.gold = 0;
+
+            // 3. 크레딧 부족 및 미정 효과 차단 검증 (main + 내쪽 통합)
+            profile.credit = 0;
             manager.SetActiveProfile(profile);
             Click(Control("levelUpButton"));
-            Check(!Control("confirmButton").interactable, "insufficient gold disables purchase");
+            Check(!Control("confirmButton").interactable, "insufficient credit disables purchase");
             Click(Control("confirmButton"));
-            Check(profile.gold == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2, "insufficient gold rejected");
+            Check(profile.credit == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2, "insufficient credit rejected");
+            popup.slots[attackIndex].OnPointerClick(left);
+            popup.OnClickConfirm();
+            Check(profile.credit == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 2, "insufficient credit pointer click rejected");
             Click(popup.slots[(int)PassiveSkillId.Undecided]);
             Check(!Control("levelUpButton").interactable && !Control("confirmButton").interactable, "undefined effect controls disabled");
+            popup.slots[(int)PassiveSkillId.Undecided].OnPointerClick(left);
+            popup.OnClickConfirm();
             Check(manager.GetUnlockedLevel(PassiveSkillId.Undecided) == 0, "undefined effect cannot be purchased");
             popup.Bind(manager, false, "읽기 전용 검사");
             Click(popup.slots[attackIndex]);
@@ -145,7 +164,7 @@ public static class MirrorKyUIValidation_MirrorTest
             popup.Bind(manager);
             Click(Control("resetButton"));
             Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 2, "reset preserves purchase");
-            profile.gold = 100000;
+            profile.credit = 100000;
             manager.SetActiveProfile(profile);
             Click(popup.slots[attackIndex]);
             int maxLevel = manager.GetDefinition(PassiveSkillId.AttackPower).maxLevel;

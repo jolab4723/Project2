@@ -131,7 +131,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         if (activeListView != null) activeListView.Render(activeSkills);
         if (pointText != null)
             pointText.text = skillManager != null && skillManager.CurrentProfile != null
-                ? $"골드 : {skillManager.CurrentProfile.gold:N0}" : "프로필 준비 중";
+                ? $"골드 : {skillManager.CurrentProfile.credit:N0}" : "프로필 준비 중";
         RefreshSelection();
     }
 
@@ -196,7 +196,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
                 $"현재 {skillManager.GetCurrentLevel(id)} → 적용할 단계 {pendingLevel}/{definition.maxLevel}\n" +
                 DescribeEffect(id, definition, pendingLevel) + $"\n해금 비용: {cost:N0} 골드\n" +
                 (skillManager.CurrentProfile == null ? "프로필을 먼저 불러오세요." :
-                    skillManager.CurrentProfile.gold < cost ? "골드가 부족합니다." : "확인을 누르면 적용됩니다.")
+                    skillManager.CurrentProfile.credit < cost ? "골드가 부족합니다." : "확인을 누르면 적용됩니다.")
         });
     }
 
@@ -210,7 +210,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         if (levelUpButton != null) levelUpButton.interactable = selected && pendingLevel < definition.maxLevel;
         if (levelDownButton != null) levelDownButton.interactable = selected && pendingLevel > 0;
         if (confirmButton != null) confirmButton.interactable = selected &&
-            pendingLevel != skillManager.GetCurrentLevel(selectedId.Value) && skillManager.CurrentProfile.gold >= cost;
+            pendingLevel != skillManager.GetCurrentLevel(selectedId.Value) && skillManager.CurrentProfile.credit >= cost;
         if (resetButton != null) resetButton.interactable = canChange && allSkills.Exists(skill => skill.isActive);
         if (confirmButtonText != null) confirmButtonText.text = cost > 0 ? $"{cost:N0} 골드" : "적용";
     }

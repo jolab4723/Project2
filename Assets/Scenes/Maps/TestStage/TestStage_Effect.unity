@@ -659,7 +659,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0009806977
+      value: 0.0009463775
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3998,7 +3998,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8478993714791160529, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: testInfos.Array.data[0].info.maxHP
-      value: 5
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 8478993714791160529, guid: 9076a445f290d8549a1bba38e08cbfa6, type: 3}
       propertyPath: testInfos.Array.data[0].info.attack
@@ -4191,26 +4191,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gunner
       objectReference: {fileID: 0}
+    - target: {fileID: 3433699924133273942, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6083522059478059166, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
       propertyPath: equipmentSystem
       value: 
       objectReference: {fileID: 1192462389}
-    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
-      propertyPath: effectBindings.Array.data[1].sounds.Array.data[0].clip
-      value: 
-      objectReference: {fileID: 8300000, guid: 74fd11f66ca8110418be57a810d2fad8, type: 3}
-    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
-      propertyPath: effectBindings.Array.data[1].sounds.Array.data[0].baseTime
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
-      propertyPath: effectBindings.Array.data[2].sounds.Array.data[0].baseTime
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7312763563134168244, guid: 52343f8796454ed4d99aef6897d6ab9a, type: 3}
-      propertyPath: effectBindings.Array.data[3].sounds.Array.data[0].baseTime
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4366,6 +4354,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1677853113}
     m_Modifications:
+    - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
+      propertyPath: sfxPlayer
+      value: 
+      objectReference: {fileID: 7290049745077939168}
     - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
       propertyPath: targetCanvas
       value: 
@@ -4988,8 +4980,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1955646352}
-  - component: {fileID: 1955646353}
   - component: {fileID: 1955646354}
+  - component: {fileID: 1955646353}
   m_Layer: 0
   m_Name: Save
   m_TagString: Untagged
@@ -5038,7 +5030,27 @@ MonoBehaviour:
   - cue: 2000
     data: {fileID: 11400000, guid: 767cfae72eadb764cad2bca1e93ff3d4, type: 2}
     anchor: {fileID: 1396496446}
-    sounds: []
+    sounds:
+    - clip: {fileID: 8300000, guid: 74fd11f66ca8110418be57a810d2fad8, type: 3}
+      volume: 0.3
+      baseTime: 0
+      offset: 0
+  - cue: 2001
+    data: {fileID: 11400000, guid: 2e31dce606e6fba48ad3c42e25847bab, type: 2}
+    anchor: {fileID: 1396496446}
+    sounds:
+    - clip: {fileID: 8300000, guid: e07faa26d7d74e348b43973cb93fa6bd, type: 3}
+      volume: 0.3
+      baseTime: 0
+      offset: 0
+  - cue: 2002
+    data: {fileID: 11400000, guid: 522fac322da5d4e4fa755908101a31f7, type: 2}
+    anchor: {fileID: 1396496446}
+    sounds:
+    - clip: {fileID: 8300000, guid: bea96d7184098574481c153c4ebe3048, type: 3}
+      volume: 0.3
+      baseTime: 0
+      offset: 0
   - cue: 2100
     data: {fileID: 11400000, guid: a154d87d9ecfc2a4d88ba29f11f1b994, type: 2}
     anchor: {fileID: 1396496446}
@@ -5115,6 +5127,10 @@ MonoBehaviour:
       volume: 1
       baseTime: 0
       offset: 0
+    - clip: {fileID: 8300000, guid: 7b38b1b758f207b48a4a78cd0b7b94fa, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
   - cue: 2208
     data: {fileID: 11400000, guid: 3ee0e6fc4f162fd4b92101d90d75ccc4, type: 2}
     anchor: {fileID: 1396496446}
@@ -5128,6 +5144,10 @@ MonoBehaviour:
     anchor: {fileID: 1396496446}
     sounds:
     - clip: {fileID: 8300000, guid: 6e9e5ba1252b9fc43bb4c99f50203e6c, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 7b38b1b758f207b48a4a78cd0b7b94fa, type: 3}
       volume: 1
       baseTime: 0
       offset: 0
@@ -5155,6 +5175,10 @@ MonoBehaviour:
       volume: 1
       baseTime: 0
       offset: 0
+    - clip: {fileID: 8300000, guid: 7b38b1b758f207b48a4a78cd0b7b94fa, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
   - cue: 2228
     data: {fileID: 11400000, guid: 5a702c89bab684d48908dbc30f6be026, type: 2}
     anchor: {fileID: 1396496446}
@@ -5176,6 +5200,10 @@ MonoBehaviour:
     anchor: {fileID: 1396496446}
     sounds:
     - clip: {fileID: 8300000, guid: 6e9e5ba1252b9fc43bb4c99f50203e6c, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 7b38b1b758f207b48a4a78cd0b7b94fa, type: 3}
       volume: 1
       baseTime: 0
       offset: 0
@@ -5300,7 +5328,27 @@ MonoBehaviour:
   - cue: 1000
     data: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
     anchor: {fileID: 791141807}
-    sounds: []
+    sounds:
+    - clip: {fileID: 8300000, guid: 4a578695dfac4422d81299af3481ea10, type: 3}
+      volume: 0.3
+      baseTime: 0.2
+      offset: 0
+  - cue: 1001
+    data: {fileID: 11400000, guid: d16216d943391854086fafddd7194f42, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 02c34bbca89b0214aa5a2cfabd1c857b, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 1002
+    data: {fileID: 11400000, guid: 8a7f5e9d089488142bfb139cc409ef14, type: 2}
+    anchor: {fileID: 791141807}
+    sounds:
+    - clip: {fileID: 8300000, guid: 02c34bbca89b0214aa5a2cfabd1c857b, type: 3}
+      volume: 0.3
+      baseTime: 0.2
+      offset: 0
   - cue: 1100
     data: {fileID: 11400000, guid: 84109c41093b6474f905d7e755773326, type: 2}
     anchor: {fileID: 791141807}
@@ -5361,10 +5409,6 @@ MonoBehaviour:
       volume: 1
       baseTime: 0.2
       offset: -0.2
-  - cue: 1131
-    data: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
-    anchor: {fileID: 791141807}
-    sounds: []
   - cue: 1200
     data: {fileID: 11400000, guid: d3ec493c7fa6326429ec67c37dbebee4, type: 2}
     anchor: {fileID: 791141807}
@@ -5433,16 +5477,32 @@ MonoBehaviour:
     data: {fileID: 11400000, guid: fb6da4700c26be4478286001162c02ea, type: 2}
     anchor: {fileID: 791141807}
     sounds:
-    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+    - clip: {fileID: 8300000, guid: cede7597e6cf55a48959c16de639f373, type: 3}
       volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: a25a0e9661e51304182befd25e5193f7, type: 3}
+      volume: 1
       baseTime: 0.2
       offset: -0.2
   - cue: 1310
     data: {fileID: 11400000, guid: 6ed3be1b3fc65e84b892cebde185f8fb, type: 2}
     anchor: {fileID: 791141807}
     sounds:
-    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
+    - clip: {fileID: 8300000, guid: cede7597e6cf55a48959c16de639f373, type: 3}
       volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: a25a0e9661e51304182befd25e5193f7, type: 3}
+      volume: 1
       baseTime: 0.2
       offset: -0.2
   - cue: 1311
@@ -5453,8 +5513,16 @@ MonoBehaviour:
     data: {fileID: 11400000, guid: f98762d38dc76c348b60aaa6c890adcb, type: 2}
     anchor: {fileID: 791141807}
     sounds:
-    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
-      volume: 0.3
+    - clip: {fileID: 8300000, guid: cede7597e6cf55a48959c16de639f373, type: 3}
+      volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: a25a0e9661e51304182befd25e5193f7, type: 3}
+      volume: 1
       baseTime: 0.2
       offset: -0.2
     - clip: {fileID: 8300000, guid: 7496ed0836a44dd4ca16fb34eeff1b96, type: 3}
@@ -5465,8 +5533,16 @@ MonoBehaviour:
     data: {fileID: 11400000, guid: 22168e8b572940c40b4c1015dd783575, type: 2}
     anchor: {fileID: 791141807}
     sounds:
-    - clip: {fileID: 8300000, guid: 64c96f2cef6aa3244b987f61ae9fa863, type: 3}
-      volume: 0.4
+    - clip: {fileID: 8300000, guid: cede7597e6cf55a48959c16de639f373, type: 3}
+      volume: 0.5
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: 3b240849a836d1c4ca82fc8ea434d701, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.2
+    - clip: {fileID: 8300000, guid: a25a0e9661e51304182befd25e5193f7, type: 3}
+      volume: 1
       baseTime: 0.2
       offset: -0.2
     - clip: {fileID: 8300000, guid: 7b0109653a87502439d61ed827318755, type: 3}
@@ -5479,7 +5555,7 @@ MonoBehaviour:
     sounds: []
   sfxPlayer: {fileID: 0}
   chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
-  chargeRangeEffect: {fileID: 0}
+  chargeRangeEffect: {fileID: 11400000, guid: 89935942cf7a2f04c8c6557a390f5543, type: 2}
 --- !u!1 &2065496024
 GameObject:
   m_ObjectHideFlags: 0
@@ -5963,6 +6039,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+--- !u!114 &7290049745077939168 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6605051447275091447, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+  m_PrefabInstance: {fileID: 7290049745077939167}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 407c2fe40a5b5c246be18a9a1c9ae1ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_SfxPlayer
 --- !u!65 &7346003844674876747
 BoxCollider:
   m_ObjectHideFlags: 0
