@@ -1,15 +1,349 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 {
+    private enum BasicPattern
+    {
+        TrackingFire,
+        ShortDash,
+        ShortSectorAtk,
+        WideSectorAtk
+    }
+
+    private enum SpecialPattern
+    {
+        GrabAndSlam,
+        SummonSelfDestruct,
+        FlameThrow,
+        SlowPulse
+    }
+
+    // 페이즈 및 패턴 관련 변수
+    private const float PhaseTwoHpRatio = 0.5f;
+    private const float TargetChangeInterval = 10f;
+    private const float SpecialCooldown = 20f;
+
+    // 1페이즈 기본 패턴 관련 변수
+    private const float FireRange = 12f;
+    private const int FireBulletCount = 6;
+    private const float FireInterval = 0.15f;
+    private const float FireTurnSpeed = 540f;
+
+    // 1,2 페이즈 공통 기본 패턴 관련 변수
+    private const float ShortDashRange = 5f;
+    private const float ShortDashDuration = 0.45f;
+    private const float ShortDashReadyDuration = 0.25f;
+
+    private const float ShortSectorRange = 4f;
+    private const float ShortSectorAngle = 150f;
+    private const float ShortSectorDamageMul = 0.8f;
+
+    private const float WideSectorRange = 5f;
+    private const float WideSectorAngle = 180f;
+    private const float WideSectorDamageMul = 1f;
+
+    // 페이즈 전환 패턴
+    private const int TransitionRotationCount = 3;
+    private const float TransitionDuration = 4f;
+    private const int TransitionBulletCount = 24;
+    private const float TransitionBulletRange = 15f;
+
+    // 2페이즈 특수 패턴 관련 변수
+    private const float GrabStartRange = 2.5f;
+    private const float GrabDamageMul = 1.8f;
+
+    private const float FlameRange = 8f;
+    private const float FlameAngle = 60f;
+    private const float FlameDuration = 2.5f;
+    private const float FlameDamageInterval = 0.25f;
+
+    private const float SlowPulseRange = 7f;
+    private const float SlowPulseDamageMul = 0.3f;
+    private const float SlowDuration = 5f;
+    private const float SlowMul = 0.5f;
+
+    // 애니메이터 SkillId
+    private const int TrackingFireSkillId = 1;
+    private const int ShortDashSkillId = 2;
+    private const int ShortSecterSkillId = 3;
+    private const int WideSecterSkillId = 4;
+    private const int TransitionSkillId = 5;
+    private const int GrabSkillId = 6;
+    private const int SummonSkillId = 7;
+    private const int FlameSkillId = 8;
+    private const int SlowPulseSkillId = 9;
+
+    private readonly List<BasicPattern> basicPatterns = new(4);
+
+    private WBH_EnemyPattern owner;
+    private WBH_BossMinionSpawner minionSpawner;
+
+    private bool isPhaseTwo;
+    private bool isPhaseTransition;
+
+    private SpecialPattern? pendingSpecial;
+
+    private float targetChangeTimer;
+    private float specialTimer;
+
     public void Initialize(WBH_EnemyPattern owner)
     {
-        throw new System.NotImplementedException();
+        this.owner = owner;
+        minionSpawner = owner.GetComponent<WBH_BossMinionSpawner>();
+
+        isPhaseTwo = false;
+        isPhaseTransition = false;
+        pendingSpecial = null;
+
+        targetChangeTimer = TargetChangeInterval;
+        specialTimer = SpecialCooldown;
+
+        owner.SetPatternDamageBlock(false);
     }
 
     public void Tick(float deltaTime)
     {
-        throw new System.NotImplementedException();
+        targetChangeTimer -= deltaTime;
+
+        if(!isPhaseTwo && !isPhaseTransition && owner.HealthRatio <= PhaseTwoHpRatio)
+        {
+            BeginPhaseTransition();
+            return;
+        }
+
+        if (isPhaseTransition || owner.Combat.IsActionInProgress)
+            return;
+
+        if(pendingSpecial.HasValue)
+        {
+            TickPendingSpecial();
+            return;
+        }
+
+        if(targetChangeTimer <= 0f)
+        {
+            owner.TrySelectAnotherActivePlayer();
+            targetChangeTimer = TargetChangeInterval;
+
+            return;
+        }
+
+        if(isPhaseTwo && specialTimer <= 0f)
+        {
+            SelectSpecialPattern();
+            return;
+        }
+
+        TickBasicPatterns();
+
+    }
+
+    private void TickBasicPatterns()
+    {
+        basicPatterns.Clear();
+
+        float distance = owner.Distance;
+
+        if(!isPhaseTwo && distance > WideSectorRange && distance <= FireRange)
+        {
+            basicPatterns.Add(BasicPattern.TrackingFire);
+        }
+
+        if(distance <= ShortDashRange)
+        {
+            basicPatterns.Add(BasicPattern.ShortDash);
+        }
+        if(distance <= ShortSectorRange)
+        {
+            basicPatterns.Add(BasicPattern.ShortSectorAtk);
+        }
+        if(distance <= WideSectorRange)
+        {
+            basicPatterns.Add(BasicPattern.WideSectorAtk);
+        }
+
+        if(basicPatterns.Count == 0)
+        {
+            owner.Movement.Move(owner.Target.position);
+            return;
+        }
+
+        owner.Movement.Stop();
+
+        BasicPattern selected = basicPatterns[Random.Range(0, basicPatterns.Count)];
+
+        TryStartBasicPattern(selected);
+    }
+
+    private void TryStartBasicPattern (BasicPattern selected)
+    {
+        switch (selected)
+        {
+            case BasicPattern.TrackingFire:
+                if(owner.Combat.tryTrackingFire(FireBulletCount,FireInterval, FireTurnSpeed, FireRange))
+                {
+                    owner.enemyAnimation.PlaySkill(TrackingFireSkillId);
+                }
+                break;
+            case BasicPattern.ShortDash:
+                owner.Combat.TryDashAttack(Mathf.Min(owner.Distance, ShortDashRange), ShortDashDuration, owner.IndicatorSpawner, owner.DashHitRadius * 2f, ShortDashReadyDuration);
+                break;
+            case BasicPattern.ShortSectorAtk:
+                if(owner.Combat.TrySectorAttack(ShortSectorRange,ShortSectorAngle,ShortSectorDamageMul))
+                {
+                    owner.enemyAnimation.PlaySkill(ShortSecterSkillId);
+                }
+                break;
+            case BasicPattern.WideSectorAtk:
+                if (owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul))
+                {
+                    owner.enemyAnimation.PlaySkill(WideSecterSkillId);
+                }
+                break;
+        }
+    }
+
+    private void BeginPhaseTransition()
+    {
+        isPhaseTransition = true;
+        pendingSpecial = null;
+
+        owner.Movement.Stop();
+        owner.SetPatternDamageBlock(true);
+
+        bool started = owner.Combat.TrySpinBarrage(TransitionRotationCount, TransitionDuration, TransitionBulletCount, TransitionBulletRange, CompletePhaseTransition);
+
+        if(!started)
+        {
+            owner.SetPatternDamageBlock(false);
+            isPhaseTransition=false;
+            return;
+        }
+
+        owner.enemyAnimation.PlaySkill(TransitionSkillId);
+    }
+
+    private void CompletePhaseTransition()
+    {
+        owner.SetPatternDamageBlock(false);
+        isPhaseTwo = true;
+        isPhaseTransition = false;
+
+        specialTimer = SpecialCooldown;
+        targetChangeTimer = TargetChangeInterval;
+    }
+
+    private void SelectSpecialPattern()
+    {
+        pendingSpecial = (SpecialPattern)Random.Range(0, 4);
+
+        if(pendingSpecial == SpecialPattern.GrabAndSlam)
+        {
+            owner.TrySelectFarTarget(float.PositiveInfinity);
+        }
+    }
+
+    private void TickPendingSpecial()
+    {
+        bool started = false;
+        int skillId = 0;
+
+        switch(pendingSpecial.Value)
+        {
+            case SpecialPattern.GrabAndSlam:
+                if(owner.Distance > GrabStartRange)
+                {
+                    owner.Movement.Move(owner.Target.position);
+                    return;
+                }
+                owner.Movement.Stop();
+
+                started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration :1.8f, maxDashDistance : 30f, dashDuration : 1.2f, slamHitDelay : 0.7f, slamRecoveryDuration : 0.8f, collisionRadius : owner.DashHitRadius,GrabDamageMul, roarSkillId : 11, dashSkillId : 12, slamSkillId : 13); // !@ 스킬 아이디 와 매개변수 재검토 필요
+
+                skillId = 0;
+                break;
+
+            case SpecialPattern.SummonSelfDestruct:
+                owner.Movement.Stop();
+
+                if(minionSpawner == null)
+                {
+                    CancelPendingSpecial();
+                    return;
+                }
+
+                int spawnCount = GetAcitvePlayerCount() * 3;
+
+                started = owner.Combat.TrySummonSelfDestruct(minionSpawner, spawnCount, owner.Target);
+
+                skillId = SummonSkillId;
+                break;
+
+            case SpecialPattern.FlameThrow:
+                if(owner.Distance > FlameRange)
+                {
+                    owner.Movement.Move(owner.Target.position);
+                    return;
+                }
+                owner.Movement.Stop();
+
+                started = owner.Combat.TryFlameThrow(FlameRange, FlameAngle, FlameDuration, FlameDamageInterval);
+
+                skillId = FlameSkillId;
+                break;
+
+            case SpecialPattern.SlowPulse:
+                if (owner.Distance > SlowPulseRange)
+                {
+                    owner.Movement.Move(owner.Target.position);
+                    return;
+                }
+                owner.Movement.Stop();
+
+                WBH_StatusEffectData slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow, SlowDuration, SlowMul);
+
+                started = owner.Combat.TryAreaDamageAndStatus(owner.transform.position, SlowPulseRange, SlowPulseDamageMul, slow);
+
+                skillId = SlowPulseSkillId;
+                break;
+        }
+        if (!started)
+            return;
+
+        owner.enemyAnimation.PlaySkill(skillId);
+
+        pendingSpecial = null;
+
+        specialTimer = SpecialCooldown;
+    }
+
+    private int GetAcitvePlayerCount()
+    {
+        T_PlayerController[] players = Object.FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        int count = 0;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (player.isActiveAndEnabled)
+                count++;
+        }
+        return Mathf.Max(1, count);
+    }
+
+    private void CancelPendingSpecial()
+    {
+        pendingSpecial = null;
+        specialTimer = 1f;
+    }
+
+    public void Cleanup()
+    {
+        pendingSpecial = null;
+        isPhaseTransition = false;
+
+        owner?.SetPatternDamageBlock(false);
     }
 
 }

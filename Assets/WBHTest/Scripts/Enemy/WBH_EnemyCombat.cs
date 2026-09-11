@@ -9,6 +9,7 @@ using UnityEngine;
 public class WBH_EnemyCombat : MonoBehaviour
 {
     [SerializeField] private WBH_EffectData bossMissileEffect;
+    [SerializeField] private Transform grabPoint;
 
     private WBH_EnemyController controller;
     private WBH_EnemyStatus status;
@@ -21,8 +22,15 @@ public class WBH_EnemyCombat : MonoBehaviour
     private float missileMaxDistance = 100f;
     private float minMissileFlightTime = 1f;
 
+    private bool isGrabDash;
+    private float grabCollisionRadius;
+    private float grabReleaseRadius = 1.5f;
+
+
     private readonly HashSet<WBH_ICombat> dashHitTargets = new(); // 대쉬 피해 시, 플레이어가 여러 번 충돌하더라도 데미지 1번만 받도록 하기 위한 변수
     private readonly HashSet<WBH_ICombat> areaHitTargets = new(); // 범위 피해 시, 플레이어가 여러 컬라이더 가져도 데미지 1번만
+    private readonly HashSet<T_PlayerController> grabbedPlayers = new();
+
     public bool IsActionInProgress { get; private set; }
 
 
@@ -43,7 +51,14 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         movement.OnDashUpdate -= CheckDashHit;
         
+        StopAllCoroutines();
+
+        isGrabDash = false;
+        ReleaseGrabbedPlayers();
+
         dashHitTargets.Clear();
+        areaHitTargets.Clear();
+
         IsActionInProgress = false;
     }
 
@@ -110,8 +125,7 @@ public class WBH_EnemyCombat : MonoBehaviour
         IsActionInProgress = false;
     }
 
-    //------- 엘리트 등 특수 패턴용 메서드
-
+    #region 엘리트 등 특수 패턴용 메서드
     // 돌진
     public bool TryDashAttack(float distance, float duration, WBH_IndicatorSpawner indicator, float indicatorWidth, float readyDuration)
     {
@@ -141,7 +155,14 @@ public class WBH_EnemyCombat : MonoBehaviour
     // 돌진 중 플레이어 충돌 체크
     private void CheckDashHit()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer);
+        if(isGrabDash) // 잡기 전용 돌진일 경우
+        {
+            CheckGrabHit();
+            HoldGrabbedPlayers();
+            return;
+        }
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
 
         foreach (Collider hit in hits)
         {
@@ -155,6 +176,181 @@ public class WBH_EnemyCombat : MonoBehaviour
 
             break;
         }
+    }
+
+    // 돌진 도중 부딪히는 플레이어를 감지해서 grabbedPlayers 에 추가
+    private void CheckGrabHit()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, grabCollisionRadius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+
+        foreach (Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponent<T_PlayerController>();
+
+            if (player == null || grabbedPlayers.Contains(player))
+                continue;
+
+            if (!player.TryBeginGrab())
+                continue;
+
+            grabbedPlayers.Add(player);
+        }
+    }
+
+    // 돌진 잡기 패턴
+    public bool TryGrabAndSlam(Transform dashTarget,
+                               float roarDuration,
+                               float maxDashDistance,
+                               float dashDuration,
+                               float slamHitDelay,
+                               float slamRecoveryDuration,
+                               float collisionRadius,
+                               float damageMul,
+                               int roarSkillId,
+                               int dashSkillId,
+                               int slamSkillId)
+    {
+        if (IsActionInProgress || dashTarget == null || !movement.CanControl)
+            return false;
+
+        BeginAction();
+
+        grabbedPlayers.Clear();
+        grabCollisionRadius = collisionRadius;
+
+        FaceTarget(dashTarget);
+
+        StartCoroutine(CoGrabAndSlam(dashTarget, roarDuration, maxDashDistance, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul, roarSkillId, dashSkillId, slamSkillId));
+        return true;
+    }
+
+    // 돌진 잡기 패턴 코루틴. 애니메이션 종료까지의 타이밍을 float 으로 직접 받음
+    private IEnumerator CoGrabAndSlam(Transform dashTarget,
+                                      float roarDuration,
+                                      float maxDashDistance,
+                                      float dashDuration,
+                                      float slamHitDelay,
+                                      float slamRecoveryDuration,
+                                      float damageMul,
+                                      int roarSkillId,
+                                      int dashSkillId,
+                                      int slamSkillId)
+    {
+        //ownerStop();
+
+        // 1. 포효
+        enemyAnimation.PlaySkill(roarSkillId);
+        yield return new WaitForSeconds(roarDuration);
+
+        if(dashTarget == null || !dashTarget.gameObject.activeInHierarchy)
+        {
+            ReleaseGrabbedPlayers();
+            EndAction();
+            yield break;
+        }
+
+        Vector3 dir = dashTarget.position - transform.position;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude < 0.001f)
+        {
+            dir = transform.forward;
+        }
+        else
+        {
+            dir.Normalize();
+        }
+
+        transform.rotation = Quaternion.LookRotation(dir);
+
+        float targetDistance = Vector3.Distance(transform.position, dashTarget.position);
+
+        float dashDistance = Mathf.Min(targetDistance + 1.5f, maxDashDistance);
+
+        // 2. 돌진 및 충돌 플레이어 잡기
+        isGrabDash = true;
+        enemyAnimation.PlaySkill(dashSkillId);
+
+        bool dashFinished = false;
+
+        movement.Dash(dir, dashDistance, dashDuration, () => dashFinished = true);
+
+        while(!dashFinished)
+        {
+            HoldGrabbedPlayers();
+            yield return null;
+        }
+
+        isGrabDash = false;
+        HoldGrabbedPlayers();
+
+        //3. 내려찍기
+        enemyAnimation.PlaySkill(slamSkillId);
+        float elapsed = 0f;
+
+        while(elapsed < slamHitDelay)
+        {
+            elapsed += Time.deltaTime;
+            HoldGrabbedPlayers();
+            yield return null;
+        }
+
+        // 4. 피해 후 포획 해제
+        DamageGrabbedPlayers(damageMul);
+        ReleaseGrabbedPlayers();
+
+        yield return new WaitForSeconds(slamRecoveryDuration);
+
+        EndAction();
+    }
+
+    // 플레이어에게 잡힘 상태 부여
+    private void HoldGrabbedPlayers()
+    {
+        Vector3 holdPos = grabPoint != null ? grabPoint.position : transform.position + Vector3.up;
+
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null || !player.gameObject.activeInHierarchy)
+                continue;
+
+            player.SetGrabPosition(holdPos);
+        }
+    }
+
+    private void DamageGrabbedPlayers(float damageMul)
+    {
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null || !player.gameObject.activeInHierarchy)
+                continue;
+
+            WBH_DamageRequest request = CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul);
+
+            WBH_CombatManager.ProcessDamage(request);
+        }
+    }
+
+    // 잡기 해제
+    private void ReleaseGrabbedPlayers()
+    {
+        int count = grabbedPlayers.Count;
+        int index = 0;
+
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null)
+                continue;
+
+            float angle = count > 0 ? 360f * index / count : 0f;
+
+            Vector3 dir = Quaternion.Euler(0f, angle, 0f) * transform.forward;
+            Vector3 realeasPos = transform.position + dir * grabReleaseRadius;
+
+            player.EndGrab(realeasPos);
+            index++;
+        }
+        grabbedPlayers.Clear();
     }
 
     // 연발 사격
@@ -192,6 +388,7 @@ public class WBH_EnemyCombat : MonoBehaviour
         projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, 12f, pattern.PlayerLayer);
     }    
 
+    // 일제사격 탄막
     public bool TryBarrage(int projectileCount, float spreadAngle, float maxDistance, float actionDuration)
     {
         if (IsActionInProgress || pattern.Target == null)
@@ -355,4 +552,250 @@ public class WBH_EnemyCombat : MonoBehaviour
             WBH_CombatManager.ProcessDamage(request);
         }
     }
+
+    // 적 방향으로 회전하면서 일정 간격으로 사격
+    public bool tryTrackingFire(int count, float interval, float turnSpeed, float maxDistance)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        StartCoroutine(CoTrackingFire(count, interval, turnSpeed, maxDistance));
+        return true;
+    }
+
+    private IEnumerator CoTrackingFire(int count, float interval, float turnSpeed,float maxDistance)
+    {
+        for(int i = 0; i < count; i ++)
+        {
+            if (pattern.Target == null)
+                break;
+
+            if(i > 0)
+            {
+                float elapsed = 0f;
+
+                while(elapsed < interval)
+                {
+                    elapsed += Time.deltaTime;
+                    RotateTowardsTarget(turnSpeed);
+                    yield return null;
+                }
+            }
+
+            RotateTowardsTarget(turnSpeed);
+
+            Vector3 dir = (pattern.Target.position + Vector3.up - pattern.FirePoint.position).normalized;
+            WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
+
+            projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, maxDistance, pattern.PlayerLayer);
+        }
+        yield return new WaitForSeconds(0.25f);
+    }
+
+    // 타겟 방향으로 회전
+    private void RotateTowardsTarget(float turnSpeed)
+    {
+        if (pattern.Target == null)
+            return;
+
+        Vector3 dir = pattern.Target.position - transform.position;
+        dir.y = 0;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
+    }
+
+    // 부채꼴 단발 공격
+    public bool TrySectorAttack(float range, float angle, float damageMul, float hitDelay = 0.35f, float recoveryDuration = 0.4f)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        FaceTarget(pattern.Target);
+
+        StartCoroutine(CoSectorAttack(range, angle, damageMul, hitDelay, recoveryDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoSectorAttack(float range, float angle, float damageMul, float hitDelay, float recoverDuration)
+    {
+        yield return new WaitForSeconds(hitDelay);
+
+        ApplySectorDamage(range, angle, damageMul);
+
+        yield return new WaitForSeconds(recoverDuration);
+        EndAction();
+    }
+
+    private void ApplySectorDamage(float range, float angle, float damageMul)
+    {
+        areaHitTargets.Clear();
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, range, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+
+        foreach(Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponent<T_PlayerController>();
+
+            if (player == null || !areaHitTargets.Add(player))
+                continue;
+
+            Vector3 dir = player.transform.position - transform.position;
+            dir.y = 0f;
+
+            if (dir.sqrMagnitude < 0.001f)
+                continue;
+
+            if (Vector3.Angle(transform.forward, dir) > angle * 0.5f)
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul));
+        }
+    }
+
+    // rotationCount 바퀴 회전하며 투사체 발사
+    public bool TrySpinBarrage(int rotationCount, float duration, int bulletCount, float bulletRange, System.Action onCompleted)
+    {
+        if(IsActionInProgress || bulletCount <= 0 )
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoSpinBarrage(rotationCount, duration, bulletCount, bulletRange, onCompleted));
+
+        return true;
+    }
+
+    private IEnumerator CoSpinBarrage(int rotationCount, float duration, int bulletCount, float bulletRange, System.Action onCompleted)
+    {
+        Quaternion startRotation = transform.rotation;
+        float shotInterval = duration / bulletCount;
+
+        float elapsed = 0f;
+        int firedCount = 0;
+
+        while(elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            float progress = Mathf.Clamp01(elapsed / duration);
+            float angle = 360f * rotationCount * progress;
+
+            transform.rotation = startRotation * Quaternion.Euler(0f, angle, 0f);
+
+            while(firedCount < bulletCount && elapsed >= firedCount * shotInterval)
+            {
+                WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
+
+                projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, transform.forward, request, status.ProjectileSpeed, bulletRange, pattern.PlayerLayer);
+
+                firedCount++;
+            }
+            yield return null;
+        }
+        onCompleted?.Invoke();
+        EndAction();
+    }
+
+    // 부채꼴 범위 틱데미지
+    public bool TryFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul = 0.25f)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+        
+        BeginAction();
+        FaceTarget(pattern.Target);
+
+        StartCoroutine(CoFlameThrow(range, angle, duration, damageInterval, damageMul));
+
+        return true;
+    }
+
+    private IEnumerator CoFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul)
+    {
+        float elapsed = 0f;
+        float damageTimer = 0f;
+
+        while(elapsed < duration)
+        {
+            elapsed += Time.deltaTime; ;
+            damageTimer -= Time.deltaTime;
+
+            if(damageTimer <= 0f)
+            {
+                damageTimer = damageInterval;
+                ApplySectorDamage(range, angle, damageMul);
+            }
+            yield return null;
+        }
+        EndAction();
+    }
+
+    // 원형 범위 데미지 + 상태이상
+    public bool TryAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float hitDelay = 0.5f, float recoveryDuration = 0.4f)
+    {
+        if(IsActionInProgress)
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoAreaDamageAndStatus(center, radius, damageMul, statusEffect, hitDelay, recoveryDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float hitDelay, float recoveryDuration)
+    {
+        yield return new WaitForSeconds(hitDelay);
+
+        areaHitTargets.Clear();
+
+        Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+
+        foreach(Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponentInParent<T_PlayerController>();
+
+            if (player == null || !areaHitTargets.Add(player))
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul));
+
+            player.AddStatusEffect(statusEffect);
+        }
+
+        yield return new WaitForSeconds(recoveryDuration);
+
+        EndAction();
+    }
+
+    public bool TrySummonSelfDestruct(WBH_BossMinionSpawner spawner, int count, Transform initialTarget, float spawnDelay = 0.8f, float recoveryDuration = 0.5f)
+    {
+        if (IsActionInProgress || spawner == null || count <= 0)
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoSummonSelfDestruct(spawner, count, initialTarget, spawnDelay, recoveryDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoSummonSelfDestruct(WBH_BossMinionSpawner spawner, int count, Transform initialTarget, float spawnDelay, float recoveryDuration)
+    {
+        yield return new WaitForSeconds(spawnDelay);
+
+        //spawner.Spawn();
+
+        yield return new WaitForSeconds(recoveryDuration);
+        EndAction();
+    }
+    #endregion
 }
