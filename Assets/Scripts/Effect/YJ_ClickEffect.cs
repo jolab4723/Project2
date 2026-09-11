@@ -14,6 +14,11 @@ public class YJ_ClickEffect : MonoBehaviour
     [Header("Ground 우클릭 이펙트")]
     [SerializeField] private ParticleSystem rightClickEffect;
 
+    [Header("클릭 사운드")]
+    [SerializeField] YJ_SfxPlayer sfxPlayer;
+    [SerializeField] AudioClip clickSound;
+    [SerializeField] float clickVolume = 1f;
+
     private RectTransform canvasRect;
 
     private void Awake()
@@ -27,6 +32,12 @@ public class YJ_ClickEffect : MonoBehaviour
             canvasRect = targetCanvas.transform as RectTransform;
     }
 
+    private void Start()
+    {
+        if (sfxPlayer == null)
+            sfxPlayer = FindFirstObjectByType<YJ_SfxPlayer>();
+    }
+
     private void Update()
     {
         if (Input.GetMouseButtonUp(0) && IsPointerOverUI())
@@ -35,7 +46,7 @@ public class YJ_ClickEffect : MonoBehaviour
             return;
         }
 
-        if (!Input.GetMouseButtonUp(1))
+        if ( ! Input.GetMouseButtonUp(1))
             return;
 
         if (IsPointerOverUI())
@@ -66,6 +77,7 @@ public class YJ_ClickEffect : MonoBehaviour
         leftClickEffectRoot.anchoredPosition = localPosition;
 
         leftClickEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        PlayClickSfx();
         leftClickEffect.Play(true);
     }
 
@@ -90,5 +102,13 @@ public class YJ_ClickEffect : MonoBehaviour
         // 연속 클릭해도 매번 처음부터 1회 재생한다.
         rightClickEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         rightClickEffect.Play(true);
+    }
+
+    public void PlayClickSfx()
+    {
+        if (sfxPlayer == null)
+            return;
+
+        sfxPlayer.PlayImmediate(clickSound, Vector3.zero, clickVolume);
     }
 }
