@@ -191,6 +191,22 @@ public class KY_SettingsPopup : KY_PopupBase
 
     public void OnClickReset()
     {
+        if (KY_PopupManager.Instance == null)
+        {
+            ResetSettingsConfirmed();
+            return;
+        }
+
+        KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
+        {
+            message = "설정을 기본값으로 초기화하시겠습니까?",
+            warningText = "현재 설정이 모두 기본값으로 변경됩니다.",
+            onYes = ResetSettingsConfirmed
+        });
+    }
+
+    private void ResetSettingsConfirmed()
+    {
         SettingManager.Instance.Apply(new KY_SettingsData());
         LoadCurrentSettings();
     }

@@ -186,7 +186,28 @@ public class KY_PopupManager : MonoBehaviour
 
     public void ShowConfirm(KY_DialogData data)
     {
+        RemoveClosedPopups();
+        if (confirmDialog == null || popupStack.Contains(confirmDialog))
+            return;
+
         confirmDialog.Show(data);
+        popupStack.Push(confirmDialog);
+    }
+
+    private void RemoveClosedPopups()
+    {
+        if (popupStack.Count == 0) return;
+
+        var activeEntries = new List<KY_PopupBase>();
+        while (popupStack.Count > 0)
+        {
+            KY_PopupBase popup = popupStack.Pop();
+            if (popup != null && popup.gameObject.activeSelf)
+                activeEntries.Add(popup);
+        }
+
+        for (int i = activeEntries.Count - 1; i >= 0; i--)
+            popupStack.Push(activeEntries[i]);
     }
 
     public void ShowAlert(KY_AlertData data)
