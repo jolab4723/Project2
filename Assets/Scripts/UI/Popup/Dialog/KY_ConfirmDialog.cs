@@ -4,7 +4,7 @@ using TMPro;
 
 // 예/아니오 확인 다이얼로그.
 // 버튼 클릭 시 콜백 실행 후 스스로 닫힘.
-public class KY_ConfirmDialog : MonoBehaviour
+public class KY_ConfirmDialog : KY_PopupBase
 {
     [Header("Text")]
     [SerializeField] private TMP_Text messageText;
@@ -21,9 +21,7 @@ public class KY_ConfirmDialog : MonoBehaviour
         if (yesButton != null)
             yesButton.onClick.AddListener(OnYesClicked);
         if (noButton != null)
-            noButton.onClick.AddListener(OnNoClicked);
-        gameObject.SetActive(false); // 평소엔 꺼둔 상태로 시작
-    }
+            noButton.onClick.AddListener(OnNoClicked);}
 
     public void Show(KY_DialogData data)
     {
@@ -41,23 +39,26 @@ public class KY_ConfirmDialog : MonoBehaviour
                 warningText.text = data.warningText;
         }
 
-        gameObject.SetActive(true);
+        Open();
     }
 
     private void OnYesClicked()
     {
         currentData.onYes?.Invoke();
-        Hide();
+        CloseThroughManager();
     }
 
     private void OnNoClicked()
     {
         currentData.onNo?.Invoke();
-        Hide();
+        CloseThroughManager();
     }
 
-    public void Hide()
+    private void CloseThroughManager()
     {
-        gameObject.SetActive(false);
+        if (KY_PopupManager.Instance != null)
+            KY_PopupManager.Instance.Hide();
+        else
+            Close();
     }
 }
