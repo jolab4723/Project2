@@ -104,10 +104,10 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
         }
 
         int cost = GetUnlockCostToLevel(id, targetLevel);
-        if (CurrentProfile.gold < cost)
+        if (CurrentProfile.credit < cost)
             return false;
 
-        CurrentProfile.gold -= cost;
+        CurrentProfile.credit -= cost;
         entry.unlockedLevel = targetLevel;
         entry.currentLevel = targetLevel;
         OnProfileChanged?.Invoke();
