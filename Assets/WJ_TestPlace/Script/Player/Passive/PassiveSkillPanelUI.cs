@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Core;
 
@@ -11,8 +12,8 @@ using Core;
 /// 아이콘 12개(SkillSlot_1~12)는 Core.PassiveSkillId의 enum 선언 순서와 1:1로 대응된다.
 ///
 /// 아이콘 클릭 -> 해당 패시브 선택(펜딩 레벨 = 현재 레벨) -> -/+ 로 "적용해볼 레벨"(pendingLevel)을 조정
-/// -> btn_Confilm으로 확정. 이미 해금된 범위 안이면 즉시 무료 적용("OK"), 그 이상이면 골드를 써서
-/// 해금 후 적용(비용 숫자 표시, 골드가 모자라면 빨간색). 다른 아이콘을 선택하면 확정 안 한 변경은 버려진다.
+/// -> btn_Confilm으로 확정. 이미 해금된 범위 안이면 즉시 무료 적용("OK"), 그 이상이면 크레딧을 써서
+/// 해금 후 적용(비용 숫자 표시, 크레딧이 모자라면 빨간색). 다른 아이콘을 선택하면 확정 안 한 변경은 버려진다.
 ///
 /// !! 2026-09-10: 원래 transform.Find(...)로 오브젝트를 찾아 썼으나, 계층 구조가 바뀔 때마다
 ///    조용히 깨지는 문제가 있어 인스펙터에서 직접 드래그해 연결하는 SerializeField 방식으로 바꿨다.
@@ -31,7 +32,8 @@ public class PassiveSkillPanelUI : MonoBehaviour
     private const string MaxLevelReachedColor = "#FFFF00"; // 노란색 - 최대 레벨까지 전부 해금됨
 
     [Header("헤더")]
-    [SerializeField] private TextMeshProUGUI goldText;
+    [FormerlySerializedAs("goldText")]
+    [SerializeField] private TextMeshProUGUI creditText;
     [SerializeField] private Button skillClearButton;
     [SerializeField] private Button closeButton;
 
@@ -209,9 +211,9 @@ public class PassiveSkillPanelUI : MonoBehaviour
         var manager = PassiveSkillManager.Instance;
         var profile = manager != null ? manager.CurrentProfile : null;
 
-        if (goldText != null)
-            goldText.text = profile != null
-                ? string.Format(L("passive_skill_ui.credit_format", "크레딧 | {0}"), profile.gold.ToString("N0"))
+        if (creditText != null)
+            creditText.text = profile != null
+                ? string.Format(L("passive_skill_ui.credit_format", "크레딧 | {0}"), profile.credit.ToString("N0"))
                 : L("passive_skill_ui.credit_none", "크레딧 | -");
 
         for (int i = 0; i < slots.Count && i < IconOrder.Length; i++)
@@ -312,7 +314,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
             else
             {
                 int cost = manager.GetUnlockCostToLevel(id, pendingLevel);
-                bool canAfford = manager.CurrentProfile != null && manager.CurrentProfile.gold >= cost;
+                bool canAfford = manager.CurrentProfile != null && manager.CurrentProfile.credit >= cost;
                 confirmButtonText.text = cost.ToString();
                 confirmButtonText.color = canAfford ? Color.white : Color.red;
             }
