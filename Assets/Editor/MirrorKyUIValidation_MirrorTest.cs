@@ -75,7 +75,7 @@ public static class MirrorKyUIValidation_MirrorTest
             input.enabled = false;
             Check(actions.Player.Skill1.enabled, "disabled player does not disable shared UI input");
 
-            var profile = new PlayerProfileData { playerId = Guid.NewGuid().ToString("N"), gold = 10000 };
+            var profile = new PlayerProfileData { playerId = Guid.NewGuid().ToString("N"), credit = 10000 };
             manager.SetActiveProfile(profile);
             popup.Bind(manager);
             popup.Open();
@@ -84,21 +84,21 @@ public static class MirrorKyUIValidation_MirrorTest
             var right = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right };
             int attackIndex = (int)PassiveSkillId.AttackPower;
             popup.slots[attackIndex].OnPointerClick(left);
-            Check(profile.gold == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
+            Check(profile.credit == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
             int cost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 1);
             popup.OnClickConfirm();
-            Check(profile.gold == 10000 - cost && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "confirmed purchase");
-            Check(DataManager.Instance.LoadSinglePlayerSlot().profile.gold == profile.gold, "existing save API");
+            Check(profile.credit == 10000 - cost && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "confirmed purchase");
+            Check(DataManager.Instance.LoadSinglePlayerSlot().profile.credit == profile.credit, "existing save API");
             popup.slots[attackIndex].OnPointerClick(right);
             popup.OnClickConfirm();
             Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "deactivate preserves unlock");
             popup.slots[attackIndex].OnPointerClick(left);
             popup.OnClickConfirm();
-            Check(profile.gold == 10000 - cost, "unlocked rank is free");
-            profile.gold = 0;
+            Check(profile.credit == 10000 - cost, "unlocked rank is free");
+            profile.credit = 0;
             popup.slots[attackIndex].OnPointerClick(left);
             popup.OnClickConfirm();
-            Check(profile.gold == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "insufficient gold rejected");
+            Check(profile.credit == 0 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 1, "insufficient gold rejected");
             popup.slots[(int)PassiveSkillId.Undecided].OnPointerClick(left);
             popup.OnClickConfirm();
             Check(manager.GetUnlockedLevel(PassiveSkillId.Undecided) == 0, "undefined effect cannot be purchased");

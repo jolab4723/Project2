@@ -16,17 +16,17 @@ namespace Core
         public string characterClass; // ItemSystem.CharacterClass와 이름 충돌 피하려 문자열로 저장
         public float playTimeSeconds;
 
-        /// <summary>영구 골드. 런 종료 시 PlayerStatusData.gold(런 전용)가 여기 더해진다. 스킬 포인트 구매에 사용.</summary>
-        public int gold;
+        /// <summary>영구 크레딧. 새 프로필 기본값은 2000. 런 종료 시 PlayerStatusData.gold(런 전용)가 여기 더해진다. 스킬 포인트 구매에 사용.</summary>
+        public int credit = 2000;
 
 
         public PassiveSkillTreeData passiveSkillTree = new PassiveSkillTreeData();
 
         public string lastPlayedUtc; // DateTime.UtcNow.ToString("O") 형태로 저장
 
-        public void ApplyGold(int goldAmount)
+        public void ApplyCredit(int creditAmount)
         {
-            gold += goldAmount;
+            credit += creditAmount;
         }
     }
 }
