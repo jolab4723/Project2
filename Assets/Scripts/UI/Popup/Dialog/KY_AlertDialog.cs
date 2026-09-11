@@ -9,7 +9,6 @@ using TMPro;
 public class KY_AlertDialog : KY_PopupBase
 {
     [Header("Text")]
-    [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private TMP_Text warningText;
 
@@ -28,7 +27,6 @@ public class KY_AlertDialog : KY_PopupBase
     {
         currentData = data;
 
-        titleText.text = data.title;
         messageText.text = data.message;
 
         bool hasWarning = !string.IsNullOrEmpty(data.warningText);
