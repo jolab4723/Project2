@@ -154,7 +154,8 @@ public sealed class NetworkInventoryInput_MirrorTest : MonoBehaviour
                 : Queue(() => inventorySync.TryRequestMoveGridItem(id, cell.x, cell.y, rotated, out _));
         }
 
-        return target == null && !wasEquipped && Queue(() => inventorySync.TryRequestDropInventoryItem(id, out _));
+        // 인벤토리 그리드 밖이면서 유효한 장비/상점/강화/삭제 슬롯이 아니면 필드 드롭(바닥 버리기)으로 판정한다.
+        return !wasEquipped && Queue(() => inventorySync.TryRequestDropInventoryItem(id, out _));
     }
 
     private bool Queue(Func<bool> request, bool trade = false)

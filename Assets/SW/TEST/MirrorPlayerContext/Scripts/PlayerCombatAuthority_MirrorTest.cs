@@ -74,7 +74,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
     private uint nextLocalRequestId;
     private uint activeLocalRequestId;
-    private uint lastServerRequestId;
+    [SyncVar] private uint lastServerRequestId;
     private uint pendingServerRequestId;
     private bool attackPending;
     private bool attackImpactConfirmed;
@@ -104,10 +104,22 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     public float LastCooldownRemainingSeconds => lastCooldownRemainingSeconds;
     public bool LastRejectedWhileImpactPending => lastRejectedWhileImpactPending;
     public bool ServerAttackPending => isServer && attackPending;
-    // 서버는 세션 명부의 선택을 Equipment에 주입하고, 클라이언트는 해당 캐릭터 프리팹의 Presenter가 설정한다.
-    // 클래스가 아직 준비되지 않은 경우에도 Fighter 판정으로 추측하지 않는다.
-    public bool IsGunner => context?.Equipment?.CurrentCharacterClass == CharacterClass.Gunner;
-    public bool SupportsCharacter => IsGunner || context?.Equipment?.CurrentCharacterClass == CharacterClass.Fighter;
+    public CharacterClass ResolvedCharacterClass
+    {
+        get
+        {
+            if (context?.Equipment?.CurrentCharacterClass.HasValue == true)
+                return context.Equipment.CurrentCharacterClass.Value;
+
+            if (gameObject.name.IndexOf("Gunner", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return CharacterClass.Gunner;
+
+            return CharacterClass.Fighter;
+        }
+    }
+
+    public bool IsGunner => ResolvedCharacterClass == CharacterClass.Gunner;
+    public bool SupportsCharacter => true;
     public uint GunnerShotCount => gunnerShotCount;
     public GunnerWeaponType LastGunnerWeapon => lastGunnerWeapon;
     public bool CanContinueGunnerProjectile => IsGunner && !IsUnavailable;
@@ -117,11 +129,39 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private bool IsUnavailable => !SupportsCharacter || GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
         context?.RuntimeState?.IsDead == true || status == null || status.IsDead;
 
+    private void EnsureCharacterClass()
+    {
+        if (context?.Equipment != null && !context.Equipment.CurrentCharacterClass.HasValue)
+        {
+            context.Equipment.SetActiveCharacterClass(ResolvedCharacterClass);
+        }
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        EnsureCharacterClass();
+        lastServerRequestId = 0;
+        pendingServerRequestId = 0;
+        attackPending = false;
+        attackImpactConfirmed = false;
+        resolvedTargets.Clear();
+    }
+
+    public override void OnStopServer()
+    {
+        ServerCancelForDisconnect();
+        base.OnStopServer();
+    }
+
     /// <summary>새 소유 연결의 예측 요청을 초기화하고 서버 쿨다운을 유지한다.</summary>
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+        EnsureCharacterClass();
         ClearLocalAttackPrediction();
+        if (nextLocalRequestId <= lastServerRequestId)
+            nextLocalRequestId = lastServerRequestId;
     }
 
     /// <summary>소유 연결 종료 시 남은 로컬 공격 예약을 제거한다.</summary>
@@ -133,7 +173,6 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
     private void ClearLocalAttackPrediction()
     {
-        nextLocalRequestId = 0;
         activeLocalRequestId = 0;
         localImpactAt = 0d;
         localImpactConfirmationExpiresAt = 0d;
@@ -159,6 +198,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         context ??= GetComponent<PlayerContext>();
         combat ??= GetComponent<T_PlayerCombat>();
         status ??= GetComponent<WBH_PlayerStatus>();
+        EnsureCharacterClass();
     }
 
 #if UNITY_EDITOR
@@ -232,6 +272,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         combat.TryAttack(aimPoint);
         if (context?.StateMachine == null || !context.StateMachine.Is(PlayerState.Attack))
             return false;
+
+        if (nextLocalRequestId <= lastServerRequestId)
+            nextLocalRequestId = lastServerRequestId;
 
         nextLocalRequestId++;
         if (nextLocalRequestId == 0)

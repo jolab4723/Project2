@@ -103,16 +103,30 @@ public class TooltipManager : MonoBehaviour
         playerStatManager = null;
     }
 
+    private Vector2 GetMousePosition()
+    {
+        if (Mouse.current != null)
+            return Mouse.current.position.ReadValue();
+
+        return Input.mousePosition;
+    }
+
     private void Update()
     {
-        if (primaryTooltip == null || !primaryTooltip.IsVisible || Mouse.current == null)
+        if (!Input.GetMouseButton(0) && activeItemDragCount > 0)
+            activeItemDragCount = 0;
+
+        if (primaryTooltip == null || !primaryTooltip.IsVisible)
             return;
 
-        PositionVisibleTooltips(Mouse.current.position.ReadValue());
+        PositionVisibleTooltips(GetMousePosition());
     }
 
     public void ShowTooltip(ItemInstance itemData)
     {
+        if (!Input.GetMouseButton(0) && activeItemDragCount > 0)
+            activeItemDragCount = 0;
+
         // 장비 슬롯의 기존 아이템 위를 지나며 발생하는 PointerEnter도 드래그 중에는 무시한다.
         if (activeItemDragCount > 0)
             return;
@@ -147,8 +161,7 @@ public class TooltipManager : MonoBehaviour
         else
             ShowSingleTooltip(itemData);
 
-        if (Mouse.current != null)
-            PositionVisibleTooltips(Mouse.current.position.ReadValue());
+        PositionVisibleTooltips(GetMousePosition());
     }
 
     private void ShowSingleTooltip(ItemInstance itemData)

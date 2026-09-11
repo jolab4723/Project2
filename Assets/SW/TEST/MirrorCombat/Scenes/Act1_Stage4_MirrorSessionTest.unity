@@ -16615,6 +16615,8 @@ MonoBehaviour:
   iconImage: {fileID: 1426179500}
   activeHighlight: {fileID: 1639813362}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &204806393
 GameObject:
   m_ObjectHideFlags: 0
@@ -18542,6 +18544,8 @@ MonoBehaviour:
   iconImage: {fileID: 1204825641}
   activeHighlight: {fileID: 106485704}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &236999374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40962,6 +40966,8 @@ MonoBehaviour:
   iconImage: {fileID: 2074664899}
   activeHighlight: {fileID: 48741941}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &428099168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -46935,7 +46941,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &504805144
 RectTransform:
   m_ObjectHideFlags: 0
@@ -65620,6 +65626,8 @@ MonoBehaviour:
   iconImage: {fileID: 48888050}
   activeHighlight: {fileID: 1582560002}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &621323529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65848,7 +65856,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &625112505
 RectTransform:
   m_ObjectHideFlags: 0
@@ -71312,6 +71320,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 693737257}
   m_CullTransparentMesh: 1
+--- !u!114 &693902570 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2935355435994630424, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &693902571 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8534720629381267478, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &693902572 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1557629502361008936, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &694715608
 GameObject:
   m_ObjectHideFlags: 0
@@ -82045,6 +82086,7 @@ MonoBehaviour:
   - {x: 2.52, y: 0, z: -8.8}
   - {x: -1.74, y: 0, z: 7.03}
   bossSpawnPosition: {x: 0, y: 0, z: 0}
+  bossIntro: {fileID: 0}
 --- !u!114 &768561315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85777,6 +85819,8 @@ MonoBehaviour:
   iconImage: {fileID: 1370002520}
   activeHighlight: {fileID: 1645857967}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &824369397
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89732,8 +89776,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 500006806}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.3, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -96452,6 +96496,8 @@ MonoBehaviour:
   iconImage: {fileID: 11209842}
   activeHighlight: {fileID: 982013748}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &951692249
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -111501,7 +111547,7 @@ RectTransform:
   m_Father: {fileID: 1806528097}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
@@ -114909,6 +114955,8 @@ MonoBehaviour:
   iconImage: {fileID: 1280203902}
   activeHighlight: {fileID: 1774149238}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1190653182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121245,6 +121293,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8064983396770928232, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8501043148901001871, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -121342,6 +121398,9 @@ MonoBehaviour:
   healthSlider: {fileID: 1210593976}
   bossNameText: {fileID: 1210593975}
   healthText: {fileID: 1210593974}
+  eliteHealthSlider: {fileID: 693902572}
+  eliteNameText: {fileID: 693902571}
+  eliteHealthText: {fileID: 693902570}
   productionView: {fileID: 1210593979}
   waveSpawner: {fileID: 768561314}
   clearRoot: {fileID: 1912748010}
@@ -122763,8 +122822,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 980683893}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.3, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -166423,6 +166482,8 @@ MonoBehaviour:
   iconImage: {fileID: 793940094}
   activeHighlight: {fileID: 1227671590}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1656813433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169171,7 +169232,7 @@ RectTransform:
   m_Father: {fileID: 1019616660}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
@@ -180702,7 +180763,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 442ae810b5931f7459ad8b4490ad9e84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_ConfirmDialog
-  titleText: {fileID: 1507970998}
   messageText: {fileID: 389008041}
   warningText: {fileID: 1343692785}
   yesButton: {fileID: 922689507}
@@ -189137,6 +189197,8 @@ MonoBehaviour:
   iconImage: {fileID: 761836263}
   activeHighlight: {fileID: 558052635}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1904297598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -189276,6 +189338,8 @@ MonoBehaviour:
   iconImage: {fileID: 1207357187}
   activeHighlight: {fileID: 1260938199}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1906088263
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -14,6 +14,7 @@ public sealed class MirrorBossIntro_MirrorTest : NetworkBehaviour
     [SerializeField] private AnimationTrack playerTrack;
     [SerializeField] private Animator fighterVisual;
     [SerializeField] private Animator gunnerVisual;
+    [SerializeField] private Transform playerTimelineOrigin;
     [SerializeField] private Transform[] playerPoints;
 
     [SyncVar] private double startsAt;
@@ -24,8 +25,15 @@ public sealed class MirrorBossIntro_MirrorTest : NetworkBehaviour
     private bool presenting;
     private bool hudWasActive;
     private readonly List<GameObject> actors = new();
+    private readonly List<GameObject> actorAnchors = new();
     private readonly Dictionary<Renderer, bool> hiddenRenderers = new();
     private MirrorSpawnedPlayerBinder localBinder;
+    private Animator primaryActor;
+    private AnimationClip playerAnimationClip;
+    private double playerAnimationStart;
+    private double playerAnimationEnd;
+    private double playerAnimationClipIn;
+    private double playerAnimationTimeScale;
 
     public bool IsComplete => complete;
     public bool IsPresenting => presenting;
@@ -39,7 +47,8 @@ public sealed class MirrorBossIntro_MirrorTest : NetworkBehaviour
     {
         if (startsAt > 0d || manager == null || director == null || director.playableAsset == null ||
             presentationRoot == null || fighterVisual == null || gunnerVisual == null ||
-            playerTrack == null || playerPoints == null || playerPoints.Length != 4 ||
+            playerTrack == null || playerTimelineOrigin == null ||
+            playerPoints == null || playerPoints.Length != 4 ||
             director.duration <= 0d || double.IsInfinity(director.duration))
         {
             Debug.LogError("[MirrorBossIntro] 인트로 참조 또는 시작 상태가 올바르지 않습니다.", this);
@@ -81,30 +90,111 @@ public sealed class MirrorBossIntro_MirrorTest : NetworkBehaviour
         BindAndHidePlayers();
         director.time = System.Math.Max(0d, System.Math.Min(NetworkTime.time - startsAt, director.duration));
         director.Evaluate();
+        ApplyPlayerFormationAnimation();
     }
 
     private void BeginPresentation()
     {
+        if (actorAnchors.Count > 0)
+        {
+            foreach (var anchor in actorAnchors)
+            {
+                if (anchor != null)
+                {
+                    if (Application.isPlaying) Destroy(anchor);
+                    else DestroyImmediate(anchor);
+                }
+            }
+            actorAnchors.Clear();
+            actors.Clear();
+            primaryActor = null;
+        }
+
         presenting = true;
         hudWasActive = hud != null && hud.activeSelf;
         if (hud != null) hud.SetActive(false);
-        Animator primary = null;
+        ResolvePlayerAnimation();
+        Vector3 actorStartPosition = playerTimelineOrigin.InverseTransformPoint(playerPoints[0].position);
+        Quaternion actorStartRotation = Quaternion.Inverse(playerTimelineOrigin.rotation) * playerPoints[0].rotation;
         for (int slot = 0; slot < 4; slot++)
         {
             if ((occupiedSlots & (1 << slot)) == 0) continue;
             var template = (gunnerSlots & (1 << slot)) != 0 ? gunnerVisual : fighterVisual;
-            var actor = Instantiate(template, playerPoints[slot].position, playerPoints[slot].rotation, presentationRoot.transform);
+            var anchorObject = new GameObject($"Intro Player Slot {slot} Anchor");
+            var anchor = anchorObject.transform;
+            anchor.SetParent(presentationRoot.transform, false);
+            Vector3 formationOffset = playerPoints[0].InverseTransformPoint(playerPoints[slot].position);
+            anchor.position = playerTimelineOrigin.TransformPoint(formationOffset);
+            anchor.rotation = playerTimelineOrigin.rotation * Quaternion.Inverse(playerPoints[0].rotation) * playerPoints[slot].rotation;
+            actorAnchors.Add(anchorObject);
+
+            var actor = Instantiate(template, anchor);
+            actor.transform.localPosition = actorStartPosition;
+            actor.transform.localRotation = actorStartRotation;
+            actor.transform.localScale = template.transform.localScale;
             actor.name = $"Intro Player Slot {slot}";
             actor.gameObject.SetActive(true);
             actors.Add(actor.gameObject);
-            if (primary == null) primary = actor;
+            if (primaryActor == null) primaryActor = actor;
         }
-        director.SetGenericBinding(playerTrack, primary);
+        director.SetGenericBinding(playerTrack, primaryActor);
         presentationRoot.SetActive(true);
         director.timeUpdateMode = DirectorUpdateMode.Manual;
         director.time = 0d;
         director.Play();
         Debug.Log($"[MirrorBossIntro] client presentation started actors={actors.Count}");
+    }
+
+    private void ResolvePlayerAnimation()
+    {
+        playerAnimationClip = null;
+        foreach (TimelineClip timelineClip in playerTrack.GetClips())
+        {
+            if (timelineClip.asset is not AnimationPlayableAsset animationAsset || animationAsset.clip == null) continue;
+            playerAnimationClip = animationAsset.clip;
+            playerAnimationStart = timelineClip.start;
+            playerAnimationEnd = timelineClip.end;
+            playerAnimationClipIn = timelineClip.clipIn;
+            playerAnimationTimeScale = timelineClip.timeScale;
+            break;
+        }
+    }
+
+    private void ApplyPlayerFormationAnimation()
+    {
+        if (primaryActor == null) return;
+        for (int index = 1; index < actors.Count; index++)
+        {
+            GameObject actor = actors[index];
+            if (actor == null) continue;
+            CopyBoneHierarchy(primaryActor.transform, actor.transform);
+        }
+    }
+
+    private static void CopyBoneHierarchy(Transform source, Transform target)
+    {
+        target.localPosition = source.localPosition;
+        target.localRotation = source.localRotation;
+        target.localScale = source.localScale;
+        int count = source.childCount;
+        for (int i = 0; i < count; i++)
+        {
+            Transform sChild = source.GetChild(i);
+            Transform tChild = null;
+            for (int j = 0; j < target.childCount; j++)
+            {
+                Transform candidate = target.GetChild(j);
+                if (candidate.name == sChild.name)
+                {
+                    tChild = candidate;
+                    break;
+                }
+            }
+            if (tChild != null)
+            {
+                CopyBoneHierarchy(sChild, tChild);
+            }
+        }
     }
 
     private void BindAndHidePlayers()
@@ -135,8 +225,18 @@ public sealed class MirrorBossIntro_MirrorTest : NetworkBehaviour
         director.Stop();
         director.ClearGenericBinding(playerTrack);
         presentationRoot.SetActive(false);
-        foreach (var actor in actors) if (actor != null) Destroy(actor);
+        foreach (var anchor in actorAnchors)
+        {
+            if (anchor != null)
+            {
+                if (Application.isPlaying) Destroy(anchor);
+                else DestroyImmediate(anchor);
+            }
+        }
+        actorAnchors.Clear();
         actors.Clear();
+        primaryActor = null;
+        playerAnimationClip = null;
         foreach (var pair in hiddenRenderers) if (pair.Key != null) pair.Key.forceRenderingOff = pair.Value;
         hiddenRenderers.Clear();
         if (localBinder != null) localBinder.SetCutsceneInputBlocked(false);

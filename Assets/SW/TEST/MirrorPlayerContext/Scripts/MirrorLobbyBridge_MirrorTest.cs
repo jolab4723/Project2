@@ -1,4 +1,4 @@
-using ItemSystem;
+﻿using ItemSystem;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -25,6 +25,8 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
 
     private void Awake()
     {
+        Core.SettingManager.Instance?.Activate();
+        Core.DataManager.Instance?.LoadPassiveData();
         flow.ConfigureExternalFlow();
         lobby.ConfigureExternalState(null, string.Empty);
         lobby.SetPlayers(null);
@@ -36,6 +38,14 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         lobby.CharacterChangeRequested += ChangeCharacter;
         lobby.GameStartRequested += StartRun;
         flow.LeaveRequested += Leave;
+    }
+
+    private void Update()
+    {
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            KY_GameEvents.EscPressed();
+        }
     }
 
     private void Start()

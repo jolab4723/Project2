@@ -667,32 +667,99 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         StartCoroutine(DestroyAfterPresentation());
     }
 
+    private static ItemDropTableSO cachedUniversalDropTable;
+    private static NetworkWorldItem_MirrorTest cachedWorldItemPrefab;
+    private static readonly ItemDropRollService universalDropRollService = new();
+
+    private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade)
+    {
+        ItemSystemController itemSystem = ItemSystemController.Instance ?? Object.FindFirstObjectByType<ItemSystemController>();
+        if (itemSystem != null)
+        {
+            ItemDefinitionSO fromSystem = itemSystem.GetRandomItemSO(grade);
+            if (fromSystem != null)
+                return fromSystem;
+        }
+
+        if (cachedUniversalDropTable == null)
+        {
+            cachedUniversalDropTable = Resources.Load<ItemDropTableSO>("DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/ItemDropTable");
+        }
+
+        if (cachedUniversalDropTable != null)
+        {
+            var itemDatabase = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
+            ItemDropRollResultData result = universalDropRollService.Roll(cachedUniversalDropTable, itemDatabase, grade);
+            if (result.HasDrop && result.ItemDefinition != null)
+                return result.ItemDefinition;
+        }
+
+        return null;
+    }
+
     [Server]
     private void GrantKillRewardOnce()
     {
-        if (lastAttackerContext == null || enemyInfo == null)
+        if (enemyInfo == null)
             return;
 
-        lastAttackerContext.ItemTriggers?.Fire(TriggerCondition.OnKill);
-        lastAttackerContext.Stats?.GainExp(enemyInfo.exp);
-        lastAttackerContext.GetComponent<NetworkShopPlayerState_MirrorTest>()?.ServerAddGold(enemyInfo.credit);
+        PlayerContext rewardRecipient = lastAttackerContext;
+        if (rewardRecipient == null)
+        {
+            if (NetworkManager.singleton is MirrorTestNetworkManager session && session.ServerPlayerContexts.Count > 0)
+            {
+                foreach (PlayerContext candidate in session.ServerPlayerContexts)
+                {
+                    if (candidate != null)
+                    {
+                        rewardRecipient = candidate;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                rewardRecipient = Object.FindFirstObjectByType<PlayerContext>();
+            }
+        }
+
+        if (rewardRecipient != null)
+        {
+            rewardRecipient.ItemTriggers?.Fire(TriggerCondition.OnKill);
+            rewardRecipient.Stats?.GainExp(enemyInfo.exp);
+            rewardRecipient.GetComponent<NetworkShopPlayerState_MirrorTest>()?.ServerAddGold(enemyInfo.credit);
+        }
+
         killRewardCount++;
         ServerRewardCount++;
 
-        ItemSystemController itemSystem = ItemSystemController.Instance;
-        ItemDefinitionSO definition = itemSystem != null
-            ? itemSystem.GetRandomItemSO(enemyInfo.enemyGrade)
-            : null;
+        ItemDefinitionSO definition = ResolveDropItemDefinition(enemyInfo.enemyGrade);
         if (definition == null)
             return;
 
-        PlayerInventorySync_MirrorTest inventorySync =
-            lastAttackerContext.GetComponent<PlayerInventorySync_MirrorTest>();
+        PlayerInventorySync_MirrorTest inventorySync = rewardRecipient != null
+            ? rewardRecipient.GetComponent<PlayerInventorySync_MirrorTest>()
+            : Object.FindFirstObjectByType<PlayerInventorySync_MirrorTest>();
+
+        NetworkWorldItem_MirrorTest worldItemPrefab = inventorySync != null ? inventorySync.WorldItemPrefab : null;
+        if (worldItemPrefab != null)
+        {
+            cachedWorldItemPrefab = worldItemPrefab;
+        }
+        else if (cachedWorldItemPrefab != null)
+        {
+            worldItemPrefab = cachedWorldItemPrefab;
+        }
+        else
+        {
+            worldItemPrefab = Resources.Load<NetworkWorldItem_MirrorTest>("Prefabs/WorldItemCube_MirrorTest");
+        }
+
         ItemInstance item = ItemDataCreator.CreateItemData(definition);
         string snapshot = PlayerInventorySync_MirrorTest.CreateSnapshotJson(new InventoryItem(item));
-        if (inventorySync != null &&
+        if (worldItemPrefab != null &&
             NetworkWorldItemSpawnService_MirrorTest.TrySpawnNew(
-                inventorySync.WorldItemPrefab,
+                worldItemPrefab,
                 snapshot,
                 transform.position + Vector3.up * 0.5f,
                 out _))

@@ -4,14 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// WBH 보스 체력바 Prefab을 Mirror 서버가 확정한 보스 체력에 연결하는 클라이언트 전용 어댑터다.
+/// WBH 보스/엘리트 체력바 Prefab을 Mirror 서버가 확정한 체력 상태에 연결하는 클라이언트 전용 어댑터다.
 /// 원본 <see cref="WBH_HighEnemyHpbarView"/>는 로컬 WBH_EnemyStatus 이벤트를 전제로 하므로 비활성화한다.
+/// 보스 씬에서는 보스 체력바만, 엘리트 씬에서는 엘리트 체력바만 상호 배타적으로 노출하여 중첩을 원천 방지한다.
 /// 보스 완료 결과와 방장의 로비 복귀 버튼도 같은 서버 상태를 표시한다.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
 {
-    private const float BossSearchInterval = 0.25f;
+    private const float SearchInterval = 0.25f;
 
     [SerializeField] private GameObject viewRoot;
     [SerializeField] private GameObject bossBarRoot;
@@ -19,35 +20,91 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TMP_Text bossNameText;
     [SerializeField] private TMP_Text healthText;
+    [SerializeField] private Slider eliteHealthSlider;
+    [SerializeField] private TMP_Text eliteNameText;
+    [SerializeField] private TMP_Text eliteHealthText;
     [SerializeField] private WBH_HighEnemyHpbarView productionView;
     [SerializeField] private NetworkEnemyWaveSpawner_MirrorTest waveSpawner;
     [SerializeField] private GameObject clearRoot;
     [SerializeField] private Button returnToLobbyButton;
     [SerializeField] private TMP_Text returnToLobbyText;
 
-    private NetworkEnemyAuthority_MirrorTest boundBoss;
+    private NetworkEnemyAuthority_MirrorTest boundEnemy;
     private MirrorTestNetworkManager manager;
     private bool returnRequested;
-    private float nextBossSearchAt;
+    private float nextSearchAt;
     private float displayedHealth = float.NaN;
     private float displayedMaxHealth = float.NaN;
 
-    public NetworkEnemyAuthority_MirrorTest BoundBoss => boundBoss;
-    public bool IsVisible => viewRoot != null && viewRoot.activeSelf;
+    public NetworkEnemyAuthority_MirrorTest BoundBoss => (boundEnemy != null && IsBoss(boundEnemy)) ? boundEnemy : null;
+    public NetworkEnemyAuthority_MirrorTest BoundElite => (boundEnemy != null && IsElite(boundEnemy)) ? boundEnemy : null;
+    public bool IsVisible => (bossBarRoot != null && bossBarRoot.activeSelf) || (eliteBarRoot != null && eliteBarRoot.activeSelf);
     public bool IsClearVisible => clearRoot != null && clearRoot.activeSelf;
 
     private void Awake()
     {
-        if (productionView != null)
-            productionView.enabled = false;
+        // 1. 씬 내의 모든 WBH_HighEnemyHpbarView(Canvas_HUD 등 포함)를 비활성화하고,
+        // 하위의 EliteBar/BossBar 유령 체력바가 중복 노출되지 않도록 정리한다.
+        CleanupProductionHighEnemyHpBars();
 
-        if (eliteBarRoot != null)
-            eliteBarRoot.SetActive(false);
+        // 2. 엘리트 UI 컴포넌트 자동 바인딩 (미할당 시)
+        ResolveEliteComponents();
 
-        SetVisible(false);
+        // 3. 시작 시 모든 바 비활성화
+        if (bossBarRoot != null) bossBarRoot.SetActive(false);
+        if (eliteBarRoot != null) eliteBarRoot.SetActive(false);
+        if (viewRoot != null) viewRoot.SetActive(false);
         SetClearVisible(false);
+
         if (returnToLobbyButton != null)
             returnToLobbyButton.onClick.AddListener(RequestLobbyReturn);
+    }
+
+    private void ResolveEliteComponents()
+    {
+        if (eliteBarRoot == null) return;
+        if (eliteHealthSlider == null)
+            eliteHealthSlider = eliteBarRoot.GetComponentInChildren<Slider>(true);
+        if (eliteNameText == null || eliteHealthText == null)
+        {
+            var texts = eliteBarRoot.GetComponentsInChildren<TMP_Text>(true);
+            foreach (var t in texts)
+            {
+                if (eliteNameText == null && t.name.Contains("Name"))
+                    eliteNameText = t;
+                else if (eliteHealthText == null && (t.name.Contains("HP") || t.name.Contains("Label")))
+                    eliteHealthText = t;
+            }
+        }
+    }
+
+    private void CleanupProductionHighEnemyHpBars()
+    {
+        var views = FindObjectsByType<WBH_HighEnemyHpbarView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var view in views)
+        {
+            if (view == null) continue;
+            view.enabled = false;
+            for (int i = 0; i < view.transform.childCount; i++)
+            {
+                var child = view.transform.GetChild(i);
+                if (child.name.Contains("Bar"))
+                    child.gameObject.SetActive(false);
+            }
+        }
+
+        var canvasHud = GameObject.Find("Canvas_HUD");
+        if (canvasHud != null)
+        {
+            var highBar = canvasHud.transform.Find("HUDManager/Top/HighEnemyHpBar");
+            if (highBar != null)
+            {
+                var eb = highBar.Find("EliteBar");
+                if (eb != null) eb.gameObject.SetActive(false);
+                var bb = highBar.Find("BossBar");
+                if (bb != null) bb.gameObject.SetActive(false);
+            }
+        }
     }
 
     private void Start()
@@ -78,60 +135,86 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
         if (!Mirror.NetworkClient.active)
         {
             SetClearVisible(false);
-            BindBoss(null);
+            BindEnemy(null);
             return;
         }
 
         if (RefreshClearState())
         {
-            BindBoss(null);
+            BindEnemy(null);
             return;
         }
 
-        if (boundBoss == null || boundBoss.IsDead)
+        if (boundEnemy == null || boundEnemy.IsDead)
         {
-            if (Time.unscaledTime < nextBossSearchAt)
+            if (Time.unscaledTime < nextSearchAt)
                 return;
 
-            nextBossSearchAt = Time.unscaledTime + BossSearchInterval;
-            BindBoss(FindLivingBoss());
+            nextSearchAt = Time.unscaledTime + SearchInterval;
+            BindEnemy(FindTargetEnemy());
         }
 
-        if (boundBoss == null || boundBoss.IsDead)
+        if (boundEnemy == null || boundEnemy.IsDead)
         {
-            SetVisible(false);
+            HideAllBars();
             return;
         }
 
         RefreshDisplay();
     }
 
-    private void BindBoss(NetworkEnemyAuthority_MirrorTest boss)
+    private void BindEnemy(NetworkEnemyAuthority_MirrorTest enemy)
     {
-        if (boundBoss == boss)
+        if (boundEnemy == enemy)
             return;
 
-        boundBoss = boss;
+        boundEnemy = enemy;
         displayedHealth = float.NaN;
         displayedMaxHealth = float.NaN;
 
-        if (boundBoss == null)
+        if (boundEnemy == null)
         {
-            SetVisible(false);
+            HideAllBars();
             return;
         }
 
-        if (bossNameText != null)
-            bossNameText.text = boundBoss.EnemyInfo?.enemyName ?? string.Empty;
+        bool isBoss = IsBoss(boundEnemy);
+        if (isBoss)
+        {
+            if (eliteBarRoot != null) eliteBarRoot.SetActive(false);
+            if (bossBarRoot != null) bossBarRoot.SetActive(true);
+            if (viewRoot != null) viewRoot.SetActive(true);
+            if (bossNameText != null)
+                bossNameText.text = boundEnemy.EnemyInfo?.enemyName ?? string.Empty;
+        }
+        else
+        {
+            if (bossBarRoot != null) bossBarRoot.SetActive(false);
+            if (viewRoot != null) viewRoot.SetActive(false);
+            if (eliteBarRoot != null) eliteBarRoot.SetActive(true);
+            if (eliteNameText != null)
+                eliteNameText.text = boundEnemy.EnemyInfo?.enemyName ?? string.Empty;
+        }
 
-        SetVisible(true);
         RefreshDisplay();
+    }
+
+    private void HideAllBars()
+    {
+        if (bossBarRoot != null && bossBarRoot.activeSelf)
+            bossBarRoot.SetActive(false);
+        if (eliteBarRoot != null && eliteBarRoot.activeSelf)
+            eliteBarRoot.SetActive(false);
+        if (viewRoot != null && viewRoot.activeSelf)
+            viewRoot.SetActive(false);
     }
 
     private void RefreshDisplay()
     {
-        float currentHealth = boundBoss.CurrentHealth;
-        float maxHealth = boundBoss.MaxHealth;
+        if (boundEnemy == null) return;
+
+        float currentHealth = boundEnemy.CurrentHealth;
+        float maxHealth = boundEnemy.MaxHealth;
         if (Mathf.Approximately(currentHealth, displayedHealth) &&
             Mathf.Approximately(maxHealth, displayedMaxHealth))
         {
@@ -142,25 +225,29 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
         displayedMaxHealth = maxHealth;
         float ratio = maxHealth > 0f ? Mathf.Clamp01(currentHealth / maxHealth) : 0f;
 
-        if (healthSlider != null)
-            healthSlider.value = ratio;
-
-        if (healthText != null)
+        bool isBoss = IsBoss(boundEnemy);
+        if (isBoss)
         {
-            healthText.SetText(
-                "{0:0} / {1:0}",
-                Mathf.CeilToInt(currentHealth),
-                Mathf.CeilToInt(maxHealth));
+            if (healthSlider != null) healthSlider.value = ratio;
+            if (healthText != null)
+            {
+                healthText.SetText(
+                    "{0:0} / {1:0}",
+                    Mathf.CeilToInt(currentHealth),
+                    Mathf.CeilToInt(maxHealth));
+            }
         }
-    }
-
-    private void SetVisible(bool visible)
-    {
-        if (viewRoot != null && viewRoot.activeSelf != visible)
-            viewRoot.SetActive(visible);
-
-        if (bossBarRoot != null && bossBarRoot.activeSelf != visible)
-            bossBarRoot.SetActive(visible);
+        else
+        {
+            if (eliteHealthSlider != null) eliteHealthSlider.value = ratio;
+            if (eliteHealthText != null)
+            {
+                eliteHealthText.SetText(
+                    "{0:0} / {1:0}",
+                    Mathf.CeilToInt(currentHealth),
+                    Mathf.CeilToInt(maxHealth));
+            }
+        }
     }
 
     private bool RefreshClearState()
@@ -172,6 +259,7 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
         SetClearVisible(visible);
         if (visible)
         {
+            HideAllBars();
             bool leader = manager != null && manager.CanLocalClientControlSession;
             if (returnToLobbyButton != null) returnToLobbyButton.interactable = leader && !returnRequested;
             if (returnToLobbyText != null)
@@ -190,23 +278,45 @@ public sealed class NetworkBossHealthBar_MirrorTest : MonoBehaviour
             clearRoot.SetActive(visible);
     }
 
-    private static NetworkEnemyAuthority_MirrorTest FindLivingBoss()
+    private NetworkEnemyAuthority_MirrorTest FindTargetEnemy()
     {
+        waveSpawner ??= FindFirstObjectByType<NetworkEnemyWaveSpawner_MirrorTest>();
+        bool isBossStage = waveSpawner != null ? waveSpawner.IsBossSession : UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Boss");
+
         NetworkEnemyAuthority_MirrorTest[] enemies =
             FindObjectsByType<NetworkEnemyAuthority_MirrorTest>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
 
-        foreach (NetworkEnemyAuthority_MirrorTest enemy in enemies)
+        if (isBossStage)
         {
-            if (enemy != null &&
-                !enemy.IsDead &&
-                enemy.EnemyInfo?.enemyAttackType == EnemyAttackType.Boss)
+            // 보스 씬: 오직 보스만 탐색 (엘리트는 절대 탐색/노출하지 않음)
+            foreach (var enemy in enemies)
             {
-                return enemy;
+                if (enemy != null && !enemy.IsDead && IsBoss(enemy))
+                    return enemy;
             }
+            return null;
         }
+        else
+        {
+            // 엘리트/일반 씬: 엘리트 몬스터만 탐색
+            foreach (var enemy in enemies)
+            {
+                if (enemy != null && !enemy.IsDead && IsElite(enemy))
+                    return enemy;
+            }
+            return null;
+        }
+    }
 
-        return null;
+    private static bool IsBoss(NetworkEnemyAuthority_MirrorTest enemy)
+    {
+        return enemy != null && (enemy.EnemyInfo?.enemyAttackType == EnemyAttackType.Boss || enemy.EnemyInfo?.enemyGrade == EnemyGrade.Boss);
+    }
+
+    private static bool IsElite(NetworkEnemyAuthority_MirrorTest enemy)
+    {
+        return enemy != null && enemy.EnemyInfo?.enemyGrade == EnemyGrade.Elite;
     }
 }
