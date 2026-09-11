@@ -1008,6 +1008,37 @@ MonoBehaviour:
   nodeLineController: {fileID: 463139084}
   nodeReticle: {fileID: 0}
   testSceneLoader: {fileID: 0}
+  stageScenesByAct:
+  - act: 1
+    combatSceneNames:
+    - Act1_Stage1
+    - Act1_Stage2
+    - Act1_Stage3
+    - Act1_Stage4
+    - Act1_Stage5
+    - Act1_Stage6
+    campSceneName: Act1_Camp
+    bossSceneName: Act1_BossStage
+  - act: 2
+    combatSceneNames:
+    - Act2_Stage1
+    - Act2_Stage2
+    - Act2_Stage3
+    - Act2_Stage4
+    - Act2_Stage5
+    - Act2_Stage6
+    campSceneName: Act2_Camp
+    bossSceneName: Act2_BossStage
+  - act: 3
+    combatSceneNames:
+    - Act3_Stage1
+    - Act3_Stage2
+    - Act3_Stage3
+    - Act3_Stage4
+    - Act3_Stage5
+    - Act3_Stage6
+    campSceneName: Act3_Camp
+    bossSceneName: Act3_BossStage
   unknownStageDatabase: {fileID: 0}
   stageSaveService: {fileID: 0}
   loadSavedMapOnStart: 1
@@ -1103,6 +1134,9 @@ MonoBehaviour:
   leftClickEffectRoot: {fileID: 1025284793}
   leftClickEffect: {fileID: 1025284792}
   rightClickEffect: {fileID: 0}
+  sfxPlayer: {fileID: 1330911957}
+  clickSound: {fileID: 8300000, guid: 2842a97c1a176446cb3688fe1fbf4bce, type: 3}
+  clickVolume: 0.4
 --- !u!1001 &582894604
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1993,11 +2027,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 498321784237006576, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 35.80945
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 498321784237006576, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 109.74048
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 498321784237006576, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2014,6 +2048,10 @@ PrefabInstance:
     - target: {fileID: 3946913132850295773, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
       propertyPath: m_Name
       value: ClickEffectRoot
+      objectReference: {fileID: 0}
+    - target: {fileID: 4651283914413825291, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9099099571192217068, guid: 0da17247fe186b044b7f788b108426c5, type: 3}
       propertyPath: m_LocalScale.x
@@ -2279,6 +2317,67 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1213419435}
   m_CullTransparentMesh: 1
+--- !u!1001 &1218401214
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 647002596400484504, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_Name
+      value: SoundManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6605051447275091447, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+      propertyPath: spatialBlend
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
 --- !u!1 &1223250691
 GameObject:
   m_ObjectHideFlags: 0
@@ -2528,6 +2627,17 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1330911957 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6605051447275091447, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+  m_PrefabInstance: {fileID: 1218401214}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 407c2fe40a5b5c246be18a9a1c9ae1ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_SfxPlayer
 --- !u!1 &1562807233
 GameObject:
   m_ObjectHideFlags: 0
@@ -4648,3 +4758,4 @@ SceneRoots:
   - {fileID: 1273158580}
   - {fileID: 1809540367}
   - {fileID: 463139082}
+  - {fileID: 1218401214}

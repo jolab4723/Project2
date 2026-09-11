@@ -523,6 +523,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1677853113}
     m_Modifications:
     - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
+      propertyPath: sfxPlayer
+      value: 
+      objectReference: {fileID: 1590621214}
+    - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
       propertyPath: targetCanvas
       value: 
       objectReference: {fileID: 563853687}
@@ -701,6 +705,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 563853684}
     m_Modifications:
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1175335153437914770, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -983,7 +999,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000953587
+      value: 0.00097354245
       objectReference: {fileID: 0}
     - target: {fileID: 7622790397609347566, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -7621,6 +7637,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
   m_PrefabInstance: {fileID: 1590621212}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1590621214 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6605051447275091447, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+  m_PrefabInstance: {fileID: 1590621212}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 407c2fe40a5b5c246be18a9a1c9ae1ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_SfxPlayer
 --- !u!1001 &1592581940
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8210,8 +8237,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 60361053}
   - {fileID: 1719525917}
+  - {fileID: 60361053}
   - {fileID: 1707995940}
   - {fileID: 1804944781}
   - {fileID: 754962787}

@@ -898,7 +898,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00091672124
+      value: 0.0009428746
       objectReference: {fileID: 0}
     - target: {fileID: 7470017816629756765, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3696,6 +3696,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5300117073913189464, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
   m_PrefabInstance: {fileID: 1656339792}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1656339794 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6605051447275091447, guid: 34826aa94c15cf34c8b3c7fc75b14eb2, type: 3}
+  m_PrefabInstance: {fileID: 1656339792}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 407c2fe40a5b5c246be18a9a1c9ae1ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_SfxPlayer
 --- !u!1 &1677853112
 GameObject:
   m_ObjectHideFlags: 0
@@ -3744,6 +3755,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1677853113}
     m_Modifications:
+    - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
+      propertyPath: sfxPlayer
+      value: 
+      objectReference: {fileID: 1656339794}
     - target: {fileID: 3251599353313151942, guid: f60054c5ae7441944a1a1d9a1012b55e, type: 3}
       propertyPath: targetCanvas
       value: 
