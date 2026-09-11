@@ -63,7 +63,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     private bool localRequestPending;
     private bool ownerInputBlocked;
     private uint nextLocalRequestId;
-    private uint lastServerRequestId;
+    [SyncVar] private uint lastServerRequestId;
     private uint pendingServerRequestId;
     private int pendingServerSlot = -1;
     private bool serverCharging;
@@ -96,6 +96,10 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     public override void OnStartServer()
     {
         base.OnStartServer();
+        lastServerRequestId = 0;
+        pendingServerRequestId = 0;
+        motionAckRequestId = 0;
+        UnlockServerMotion();
         ResolveReferences();
         if (Original == null)
         {
@@ -148,7 +152,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     {
         base.OnStartLocalPlayer();
         localRequestPending = false;
-        nextLocalRequestId = 0;
+        if (nextLocalRequestId <= lastServerRequestId)
+            nextLocalRequestId = lastServerRequestId;
         UnbindLocalInput();
         inputHandler.OnSkillKeyPressed += HandleSkillPressed;
         inputHandler.OnSkillKeyReleased += HandleSkillReleased;
@@ -264,6 +269,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         if (TryGetStackInfo(index, out int stacks, out _)) { if (stacks <= 0) return false; }
         else if (GetRemainingCooldown(index) > 0f) return false;
         localRequestPending = true;
+        if (nextLocalRequestId <= lastServerRequestId)
+            nextLocalRequestId = lastServerRequestId;
         nextLocalRequestId++;
         if (nextLocalRequestId == 0) nextLocalRequestId++;
         CmdRequestSkill(nextLocalRequestId, (byte)index, aimDirection, targetPosition);

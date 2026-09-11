@@ -6700,7 +6700,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &29485551
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10923,6 +10923,8 @@ MonoBehaviour:
   iconImage: {fileID: 195489630}
   activeHighlight: {fileID: 228939070}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &90130858
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27164,7 +27166,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 442ae810b5931f7459ad8b4490ad9e84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_ConfirmDialog
-  titleText: {fileID: 139510266}
   messageText: {fileID: 19574297}
   warningText: {fileID: 1706544132}
   yesButton: {fileID: 546651336}
@@ -30649,7 +30650,7 @@ RectTransform:
   m_Father: {fileID: 1134617073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
@@ -32181,6 +32182,8 @@ MonoBehaviour:
   iconImage: {fileID: 1151727932}
   activeHighlight: {fileID: 1080403601}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &314356163
 GameObject:
   m_ObjectHideFlags: 0
@@ -56745,8 +56748,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 203881971}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.3, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -60100,6 +60103,8 @@ MonoBehaviour:
   iconImage: {fileID: 553781581}
   activeHighlight: {fileID: 905690657}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &652180761
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65473,6 +65478,8 @@ MonoBehaviour:
   iconImage: {fileID: 288977190}
   activeHighlight: {fileID: 480786864}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &707031868
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -70416,6 +70423,7 @@ MonoBehaviour:
   - {x: 2.52, y: 0, z: -8.8}
   - {x: -1.74, y: 0, z: 7.03}
   bossSpawnPosition: {x: 0, y: 0, z: 0}
+  bossIntro: {fileID: 0}
 --- !u!114 &768561315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96748,6 +96756,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1138663951}
   m_CullTransparentMesh: 1
+--- !u!114 &1140206219 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2935355435994630424, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1140206220 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8534720629381267478, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1140206221 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1557629502361008936, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+  m_PrefabInstance: {fileID: 1210593972}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1140806655
 GameObject:
   m_ObjectHideFlags: 0
@@ -100669,6 +100710,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8064983396770928232, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8501043148901001871, guid: d8bea2c07188003459987ad5356b12de, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -100766,6 +100815,9 @@ MonoBehaviour:
   healthSlider: {fileID: 1210593976}
   bossNameText: {fileID: 1210593975}
   healthText: {fileID: 1210593974}
+  eliteHealthSlider: {fileID: 1140206221}
+  eliteNameText: {fileID: 1140206220}
+  eliteHealthText: {fileID: 1140206219}
   productionView: {fileID: 1210593979}
   waveSpawner: {fileID: 768561314}
   clearRoot: {fileID: 1912748010}
@@ -109224,6 +109276,8 @@ MonoBehaviour:
   iconImage: {fileID: 1062476491}
   activeHighlight: {fileID: 1865413040}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1267213568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112856,6 +112910,8 @@ MonoBehaviour:
   iconImage: {fileID: 457933571}
   activeHighlight: {fileID: 177596131}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1318887860
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123676,8 +123732,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 536877673}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.3, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -126767,6 +126823,8 @@ MonoBehaviour:
   iconImage: {fileID: 2012824161}
   activeHighlight: {fileID: 387604680}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1455176799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138843,6 +138901,8 @@ MonoBehaviour:
   iconImage: {fileID: 1789768210}
   activeHighlight: {fileID: 438632493}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1637175780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -141126,7 +141186,7 @@ RectTransform:
   m_Father: {fileID: 1510818772}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.3, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
@@ -143360,7 +143420,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1698119142
 RectTransform:
   m_ObjectHideFlags: 0
@@ -183871,6 +183931,8 @@ MonoBehaviour:
   iconImage: {fileID: 1719178053}
   activeHighlight: {fileID: 2066826613}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1951500681
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187449,6 +187511,8 @@ MonoBehaviour:
   iconImage: {fileID: 1947908944}
   activeHighlight: {fileID: 109902524}
   missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!114 &1996081982
 MonoBehaviour:
   m_ObjectHideFlags: 0

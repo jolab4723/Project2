@@ -87,6 +87,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int MaxInstanceIdLength = 128;
     // 서버가 개발 명령을 명시적으로 허용한 경우에만 수동 지급할 검증용 아이템이다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
+    // 임시 지급용: 파이터 및 거너 클래스별 최고 공격력 무기 아이템 ID (파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)
+    private const string DefaultFighterWeaponItemId = "item.weapon.axe.heartofdebris";
+    private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.magmacrusher";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
@@ -237,8 +240,146 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        // 새 런에는 테스트 아이템을 자동 지급하지 않는다. 개발 지급은 명시적 요청 경로에만 둔다.
+
+        // 임시 지급용: 미러 테스트 중 적 공격에 즉사하지 않도록 가장 체력이 높은 아이템(우주 괴물 두개골, HP +230)을 기본 지급하고 자동 장착한다.
+        ServerGrantDefaultHighHealthItem();
+
+        // 임시 지급용: 미러 테스트 중 원활한 공격 검증을 위해 클래스별 최고 공격력 무기(파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)를 기본 지급하고 자동 장착한다.
+        ServerGrantDefaultHighAttackWeapon();
+
         AdvanceStateRevision();
+    }
+
+    // 임시 지급용: 미러 테스트 중 적이 너무 세서 한 방에 죽는 문제를 방지하기 위해, 체력이 가장 높은 아이템을 기본 지급하고 자동 장착한다.
+    [Server]
+    private void ServerGrantDefaultHighHealthItem()
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (context?.Inventory == null)
+            return;
+
+        if (HasOwnedItemDefinition(DefaultTestItemId))
+            return;
+
+        ItemDefinitionSO definition = ResolveDefinition(DefaultTestItemId);
+        if (definition == null)
+        {
+            Debug.LogError($"[PlayerInventorySync_MirrorTest] 임시 지급용 테스트 아이템을 찾지 못했습니다: {DefaultTestItemId}", this);
+            return;
+        }
+
+        ItemInstance item = ItemDataCreator.CreateItemData(definition);
+        MirrorTestInventoryRequestResult addResult = ServerAddItemAndSnapshot(item, out InventoryItem added);
+        if (addResult != MirrorTestInventoryRequestResult.Success || added?.itemData == null)
+        {
+            Debug.LogWarning($"[PlayerInventorySync_MirrorTest] 임시 지급용 아이템 인벤토리 추가 실패: {addResult}", this);
+            return;
+        }
+
+        if (context.Equipment != null && !context.Equipment.TryGetEquippedItem(EquipSlotType.Helmet, out _))
+        {
+            ServerChangeEquipment(
+                added.itemData.instanceId,
+                true,
+                EquipSlotType.Helmet,
+                0,
+                0,
+                false,
+                out _);
+
+            if (context.Health != null)
+            {
+                context.Health.RefreshMaxHealth();
+                context.Health.FillHealth();
+            }
+        }
+    }
+
+    // 임시 지급용: 거너와 파이터 캐릭터 클래스에 맞춰 가장 공격력이 높은 무기를 기본 지급하고 자동 장착한다.
+    [Server]
+    private void ServerGrantDefaultHighAttackWeapon()
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (context?.Inventory == null)
+            return;
+
+        CharacterClass characterClass = ResolveCharacterClass();
+        if (context.Equipment != null && !context.Equipment.CurrentCharacterClass.HasValue)
+            context.Equipment.SetActiveCharacterClass(characterClass);
+
+        string weaponItemId = characterClass == CharacterClass.Gunner
+            ? DefaultGunnerWeaponItemId
+            : DefaultFighterWeaponItemId;
+
+        if (HasOwnedItemDefinition(weaponItemId))
+            return;
+
+        ItemDefinitionSO definition = ResolveDefinition(weaponItemId);
+        if (definition == null)
+        {
+            Debug.LogError($"[PlayerInventorySync_MirrorTest] 임시 지급용 무기 아이템을 찾지 못했습니다: {weaponItemId}", this);
+            return;
+        }
+
+        ItemInstance item = ItemDataCreator.CreateItemData(definition);
+        MirrorTestInventoryRequestResult addResult = ServerAddItemAndSnapshot(item, out InventoryItem added);
+        if (addResult != MirrorTestInventoryRequestResult.Success || added?.itemData == null)
+        {
+            Debug.LogWarning($"[PlayerInventorySync_MirrorTest] 임시 지급용 무기 인벤토리 추가 실패: {addResult}", this);
+            return;
+        }
+
+        if (context.Equipment != null && !context.Equipment.TryGetEquippedItem(EquipSlotType.Weapon, out _))
+        {
+            ServerChangeEquipment(
+                added.itemData.instanceId,
+                true,
+                EquipSlotType.Weapon,
+                0,
+                0,
+                false,
+                out _);
+        }
+    }
+
+    private CharacterClass ResolveCharacterClass()
+    {
+        if (context?.Equipment?.CurrentCharacterClass.HasValue == true)
+            return context.Equipment.CurrentCharacterClass.Value;
+
+        if (gameObject.name.IndexOf("Gunner", StringComparison.OrdinalIgnoreCase) >= 0)
+            return CharacterClass.Gunner;
+
+        return CharacterClass.Fighter;
+    }
+
+    private bool HasOwnedItemDefinition(string itemId)
+    {
+        if (context?.Inventory != null)
+        {
+            foreach (InventoryItem item in context.Inventory.GetAllInventoryItems())
+            {
+                if (item?.itemData?.definition != null &&
+                    string.Equals(item.itemData.definition.itemId, itemId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (context?.Equipment != null)
+        {
+            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
+            {
+                if (pair.Value?.itemData?.definition != null &&
+                    string.Equals(pair.Value.itemData.definition.itemId, itemId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public override void OnStartClient()
