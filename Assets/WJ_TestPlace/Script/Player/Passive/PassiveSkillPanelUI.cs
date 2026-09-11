@@ -19,7 +19,7 @@ using Core;
 ///    아이콘 슬롯은 클릭 감지/렌더링만 담당하는 뷰 컴포넌트인 KY_PassiveSkillSlot을 그대로 재사용한다
 ///    (좌클릭만 사용 - 원래 버전이 일반 Button.onClick만 썼던 것과 동일하게 맞춤).
 /// </summary>
-public class PassiveSkillPanelUI : MonoBehaviour
+public class PassiveSkillPanelUI : KY_PopupBase
 {
     // enum 선언 순서가 slots 리스트 순서와 1:1로 대응됨.
     private static readonly PassiveSkillId[] IconOrder = (PassiveSkillId[])Enum.GetValues(typeof(PassiveSkillId));
@@ -201,7 +201,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
 
     private void HandleCloseClicked()
     {
-        gameObject.SetActive(false);
+        KY_PopupManager.Instance.Hide();
     }
 
     private void RefreshAll()
