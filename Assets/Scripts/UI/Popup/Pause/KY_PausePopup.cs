@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using Core;
 
 public class KY_PausePopup : KY_PopupBase
 {
@@ -18,11 +21,39 @@ public class KY_PausePopup : KY_PopupBase
         }
     }
 
-    void Awake()
+void Awake()
     {
         slideAnimator = GetComponentInChildren<KY_SlideAnimator>(true);
         if (slideAnimator != null) slideAnimator.ignoreTimeScale = true;
+
+        // 씬에 저장된 UnityEvent가 비어 있어도 포기 버튼이 동작하도록 자동 연결한다.
+        WirePauseButtons();
     }
+
+private void OnEnable()
+    {
+        WirePauseButtons();
+    }
+
+    private void WirePauseButtons()
+    {
+        foreach (Button button in GetComponentsInChildren<Button>(true))
+        {
+            if (button == null) continue;
+
+            if (button.gameObject.name == "Giveup")
+            {
+                button.onClick.RemoveListener(OnClickGiveUp);
+                button.onClick.AddListener(OnClickGiveUp);
+            }
+            else if (button.gameObject.name == "Save")
+            {
+                button.onClick.RemoveListener(OnClickSaveAndExit);
+                button.onClick.AddListener(OnClickSaveAndExit);
+            }
+        }
+    }
+
 
     public override void Open()
     {
@@ -61,5 +92,43 @@ public class KY_PausePopup : KY_PopupBase
     public void OnClickSettings()
     {
         KY_PopupManager.Instance.Show(PopupType.Settings);
+    }
+
+    public void OnClickGiveUp()
+    {
+        if (KY_PopupManager.Instance == null) return;
+
+        KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
+        {
+            message = "게임을 포기하시겠습니까?",
+            warningText = "경고: 현재 게임 데이터가 사라집니다.",
+            onYes = GiveUpGame
+        });
+    }
+
+public void OnClickSaveAndExit()
+    {
+        if (KY_PopupManager.Instance == null) return;
+
+        KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
+        {
+            message = "게임을 저장하고 종료하시겠습니까?",
+            onYes = SaveAndExitGame
+        });
+    }
+
+private void SaveAndExitGame()
+    {
+        RestoreGameTime();
+        DataManager.Instance?.SaveGameplayData();
+        DataManager.Instance?.SavePassiveData();
+        SceneManager.LoadScene("TitleSeane");
+    }
+
+    private void GiveUpGame()
+    {
+        RestoreGameTime();
+        DataManager.Instance?.ResetAllData();
+        SceneManager.LoadScene("TitleSeane");
     }
 }
