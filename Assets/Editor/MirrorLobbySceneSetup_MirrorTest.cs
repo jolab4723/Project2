@@ -450,6 +450,76 @@ public static class MirrorLobbySceneSetup_MirrorTest
         SetOptionalReference(data, "serverButton", server);
         SetOptionalReference(data, "reconnectButton", reconnect);
         data.ApplyModifiedPropertiesWithoutUndo();
+        StyleConnectionPanel(bridge);
+    }
+
+    [MenuItem("SW/Mirror Test/Polish Lobby Connection UI")]
+    public static void PolishLobbyConnectionUI()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (EditorApplication.isPlayingOrWillChangePlaymode || scene.isDirty ||
+            scene.path != MirrorTestNetworkManager.SessionLobbyScene || PrefabStageUtility.GetCurrentPrefabStage() != null)
+            throw new InvalidOperationException("저장된 Mirror 로비를 Edit Mode에서 열어 주세요.");
+        StyleConnectionPanel(InScene<MirrorLobbyBridge_MirrorTest>(scene).Single());
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene)) throw new IOException("로비 저장 실패");
+    }
+
+    private static void StyleConnectionPanel(MirrorLobbyBridge_MirrorTest bridge)
+    {
+        var data = new SerializedObject(bridge);
+        var panel = ((GameObject)data.FindProperty("connectionPanel").objectReferenceValue).GetComponent<RectTransform>();
+        panel.sizeDelta = new Vector2(740, 660);
+        panel.GetComponent<Image>().color = new Color(0.025f, 0.075f, 0.105f, 0.98f);
+        var outline = panel.GetComponent<UnityEngine.UI.Outline>() ?? panel.gameObject.AddComponent<UnityEngine.UI.Outline>();
+        outline.effectColor = new Color(0.12f, 0.65f, 0.72f, 0.8f);
+        outline.effectDistance = new Vector2(2, -2);
+        var address = (TMP_InputField)data.FindProperty("addressInput").objectReferenceValue;
+        var nickname = (TMP_InputField)data.FindProperty("displayNameInput").objectReferenceValue;
+        Place(nickname.GetComponent<RectTransform>(), new Vector2(440, 56), new Vector2(85, 155));
+        Place(address.GetComponent<RectTransform>(), new Vector2(440, 56), new Vector2(85, 80));
+        nickname.characterLimit = 24;
+        foreach (var input in new[] { nickname, address })
+        {
+            input.lineType = TMP_InputField.LineType.SingleLine;
+            input.textComponent.fontSize = 24;
+            input.textComponent.color = new Color(0.91f, 0.97f, 1f);
+            input.targetGraphic.color = new Color(0.07f, 0.17f, 0.22f);
+            input.textComponent.rectTransform.sizeDelta = new Vector2(410, 50);
+        }
+        foreach (var text in panel.GetComponentsInChildren<TMP_Text>(true).Where(t => t.transform.parent == panel))
+        {
+            if (text.text == "MULTIPLAYER" || text.text == "멀티플레이 접속")
+            { text.text = "멀티플레이 접속"; text.fontSize = 34; text.color = new Color(0.55f, 0.93f, 1f); Place(text.rectTransform, new Vector2(640, 60), new Vector2(0, 255)); }
+            else if (text.text == "이름" || text.text == "닉네임")
+            { text.text = "닉네임"; text.fontSize = 22; Place(text.rectTransform, new Vector2(150, 56), new Vector2(-240, 155)); }
+            else if (text.text == "주소" || text.text == "서버 주소")
+            { text.text = "서버 주소"; text.fontSize = 22; Place(text.rectTransform, new Vector2(150, 56), new Vector2(-240, 80)); }
+        }
+        StyleButton("joinButton", "서버 접속", new Vector2(610, 62), new Vector2(0, -10), new Color(0.06f, 0.45f, 0.55f));
+        StyleButton("reconnectButton", "최근 세션으로 복귀", new Vector2(610, 52), new Vector2(0, -80), new Color(0.08f, 0.24f, 0.31f));
+        StyleButton("hostButton", "로컬 테스트 · Host", new Vector2(295, 46), new Vector2(-157.5f, -155), new Color(0.11f, 0.17f, 0.21f));
+        StyleButton("serverButton", "로컬 테스트 · 서버", new Vector2(295, 46), new Vector2(157.5f, -155), new Color(0.11f, 0.17f, 0.21f));
+        var status = (TMP_Text)data.FindProperty("statusText").objectReferenceValue;
+        status.text = "최대 4인 · 먼저 접속한 플레이어가 방장입니다.\n서버 IP 또는 호스트명 입력 · 연결이 끊겨도 5분 안에 복귀 가능";
+        status.fontSize = 20;
+        status.color = new Color(0.65f, 0.79f, 0.85f);
+        Place(status.rectTransform, new Vector2(640, 105), new Vector2(0, -255));
+        void StyleButton(string field, string label, Vector2 size, Vector2 position, Color color)
+        {
+            var button = (Button)data.FindProperty(field).objectReferenceValue;
+            Place(button.GetComponent<RectTransform>(), size, position);
+            button.targetGraphic.color = color;
+            var text = button.GetComponentInChildren<TMP_Text>(true);
+            text.text = label;
+            text.fontSize = 23;
+            text.rectTransform.sizeDelta = size - new Vector2(20, 4);
+            var colors = button.colors;
+            colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.65f);
+            button.colors = colors;
+        }
+        void Place(RectTransform rect, Vector2 size, Vector2 position)
+        { rect.sizeDelta = size; rect.anchoredPosition = position; }
     }
 
     private static RectTransform Rect(string name, Transform parent, Vector2 size, Vector2 position)

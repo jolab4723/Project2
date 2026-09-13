@@ -21,6 +21,12 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
         string configured = UnityEditor.SessionState.GetString(key, string.Empty);
         UnityEditor.SessionState.EraseString(key);
         editorArguments = string.IsNullOrEmpty(configured) ? null : configured.Split('\n');
+        // MPPM은 프로세스 인수 대신 플레이어 태그를 전달한다. 명시적 검사 태그가
+        // 있는 시나리오에서만 기존 검사기를 실행하고 일반 2/4 Player 실행은 수동으로 둔다.
+        var tags = Unity.Multiplayer.PlayMode.CurrentPlayer.Tags.SelectMany(tag => tag.Split(';')).ToArray();
+        if (editorArguments == null && tags.Contains("mirror-validation"))
+            editorArguments = tags.Where(tag => tag.StartsWith("--mirror-", StringComparison.Ordinal) && tag.Contains("="))
+                .SelectMany(tag => tag.Split(new[] { '=' }, 2)).ToArray();
     }
 #endif
 
@@ -579,7 +585,8 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
                 if (manager.CurrentSessionRoute == MirrorSessionRoute.Combat)
                 {
                     if (pending.type == StageNodeType.Boss) visitedBoss = true;
-                    else Require(combatScenes.Add(pending.sceneName), "6개 일반 전투 맵 중복 없는 순회");
+                    else if (combatScenes.Count < 6)
+                        Require(combatScenes.Add(pending.sceneName), "첫 6개 일반 전투 맵 중복 없는 순회");
                     yield return WaitFor(() => FindFirstObjectByType<NetworkEnemyWaveSpawner_MirrorTest>()?.SessionPhase == MirrorTestSessionPhase.Completed,
                         "실제 적 사망 후 웨이브 완료", 90);
                     Require(verifiedEnemyData.Any(key => key.StartsWith(pending.floor + "/", StringComparison.Ordinal)),
@@ -590,6 +597,15 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
                 if (pending.sceneName == "Act1_Stage5") yield return RideStage5Elevator(owner);
                 MirrorStagePortalAdapter_MirrorTest portal = FindFirstObjectByType<MirrorStagePortalAdapter_MirrorTest>();
                 Require(portal != null, "실제 스테이지 포탈");
+                YJ_PortalActive portalVisual = portal.GetComponentInParent<YJ_PortalActive>();
+                yield return WaitFor(() => portalVisual != null && portalVisual.IsPortalActive,
+                    "전원 처치 후 포탈 활성화 복제", 5);
+                ParticleSystem[] portalParticles = portalVisual.GetComponentsInChildren<ParticleSystem>(true);
+                Require(portalParticles.Length > 0 && portalParticles.All(p =>
+                    p.isPlaying && p.GetComponent<Renderer>().enabled), "포탈 원형 파티클 재생");
+                Require(portalVisual.transform.position.y > portal.transform.position.y + 0.1f,
+                    "포탈 원형 이펙트의 본체 위 배치");
+                Debug.Log($"[MirrorRunSmoke] portal-visual role={role} scene={pending.sceneName} particles={portalParticles.Length} height={portalVisual.transform.position.y - portal.transform.position.y:F3}");
                 Vector3 destination = portal.GetComponent<Collider>().bounds.center;
                 destination.y = owner.transform.position.y;
                 Require(UnityEngine.AI.NavMesh.SamplePosition(destination, out UnityEngine.AI.NavMeshHit hit, 3,
@@ -895,6 +911,8 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
         PlayerInventorySync_MirrorTest sync = owner.GetComponent<PlayerInventorySync_MirrorTest>();
         NetworkShopPlayerState_MirrorTest wallet = owner.GetComponent<NetworkShopPlayerState_MirrorTest>();
         InventoryGrid grid = owner.Inventory.PlayerGrid;
+        var originalEquipment = owner.Equipment.GetEquippedItems()
+            .Select(pair => new { Slot = pair.Key, Id = pair.Value.itemData.instanceId }).ToArray();
         yield return WaitFor(() => owner.GetComponent<MirrorSpawnedPlayerBinder>().IsSceneStartConfirmed &&
             owner.Controller.IsControlEnabled && owner.Controller.agent.enabled && owner.Controller.agent.isOnNavMesh,
             "노드 선택 후 Camp 시작점과 이동 입력 복구");
@@ -982,6 +1000,19 @@ public sealed class MirrorSessionSmokeDriver_MirrorTest : MonoBehaviour
         yield return WaitFor(() => sync.StateRevision > revision && sync.PendingRequestCount == 0, "해제 승인");
         first = Owned(owner, firstId);
         Require(first != null && !first.isEquipped && grid.ContainsItem(first), "서버 해제 상태");
+
+        // 장착 검사는 기존 기본 투구와 교환한다. 원래 장비를 삭제하지 않고 다시 장착한다.
+        foreach (var original in originalEquipment)
+        {
+            if (owner.Equipment.TryGetEquippedItem(original.Slot, out var equipped) &&
+                equipped.itemData.instanceId == original.Id) continue;
+            revision = sync.StateRevision;
+            Require(sync.TryRequestEquipmentChange(original.Id, true, original.Slot, -1, -1, false, out _),
+                "검사 전 기본 장비 재장착 요청");
+            yield return WaitFor(() => sync.StateRevision > revision && sync.PendingRequestCount == 0 &&
+                owner.Equipment.TryGetEquippedItem(original.Slot, out var restored) &&
+                restored.itemData.instanceId == original.Id, "기본 장비 인스턴스와 장착 상태 보존");
+        }
 
         ShopController shop = ShopController.Instance;
         Require(shop != null && shop.BoundPlayer == owner.Inventory, "동일 플레이어 상점 연결");

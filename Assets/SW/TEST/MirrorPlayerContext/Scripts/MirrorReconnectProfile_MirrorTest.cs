@@ -23,6 +23,13 @@ public sealed class MirrorReconnectProfile_MirrorTest
             if (arguments[index] != "--mirror-profile") continue;
             return index + 1 < arguments.Length ? arguments[index + 1] : string.Empty;
         }
+#if UNITY_EDITOR
+        // MPPM 검사도 기존 프로필 저장을 덮어쓰지 않도록 명시한 플레이어 태그를 사용한다.
+        const string prefix = "--mirror-profile=";
+        foreach (string tag in Unity.Multiplayer.PlayMode.CurrentPlayer.Tags)
+            foreach (string option in tag.Split(';'))
+                if (option.StartsWith(prefix, StringComparison.Ordinal)) return option.Substring(prefix.Length);
+#endif
         return "default";
     }
 

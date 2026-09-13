@@ -674,27 +674,25 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade)
     {
         ItemSystemController itemSystem = ItemSystemController.Instance ?? Object.FindFirstObjectByType<ItemSystemController>();
-        if (itemSystem != null)
-        {
-            ItemDefinitionSO fromSystem = itemSystem.GetRandomItemSO(grade);
-            if (fromSystem != null)
-                return fromSystem;
-        }
-
         if (cachedUniversalDropTable == null)
         {
             cachedUniversalDropTable = Resources.Load<ItemDropTableSO>("DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/ItemDropTable");
         }
 
-        if (cachedUniversalDropTable != null)
-        {
-            var itemDatabase = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
-            ItemDropRollResultData result = universalDropRollService.Roll(cachedUniversalDropTable, itemDatabase, grade);
-            if (result.HasDrop && result.ItemDefinition != null)
-                return result.ItemDefinition;
-        }
+        // 로비에서 시작한 세션에는 ItemManager가 없을 수 있다. Instance를 읽어 빈
+        // 영속 매니저를 만들지 않고, 싱글에서도 사용하는 생성 데이터베이스를 읽는다.
+        var itemManager = Object.FindFirstObjectByType<Core.ItemManager>(FindObjectsInactive.Include);
+        ItemDatabaseSO itemDatabase = itemManager != null ? itemManager.ItemDatabase : null;
+        if (itemDatabase == null)
+            itemDatabase = Resources.Load<ItemDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/AllItems");
 
-        return null;
+        ItemDropTableSO table = itemSystem != null && itemSystem.itemDropTable != null
+            ? itemSystem.itemDropTable : cachedUniversalDropTable;
+        // NoDrop도 정상 결과다. 원본 확률을 보존하도록 처치당 한 번만 추첨한다.
+        ItemDropRollResultData result = universalDropRollService.Roll(table, itemDatabase, grade);
+        if (!result.HasDrop && result.Result != ItemDropRollResult.NoDrop)
+            Debug.LogWarning($"[NetworkEnemyAuthority_MirrorTest] {ItemDropMessageMapper.GetMessage(result)}");
+        return result.HasDrop ? result.ItemDefinition : null;
     }
 
     [Server]
@@ -761,6 +759,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             NetworkWorldItemSpawnService_MirrorTest.TrySpawnNew(
                 worldItemPrefab,
                 snapshot,
+                transform.position,
                 transform.position + Vector3.up * 0.5f,
                 out _))
         {
