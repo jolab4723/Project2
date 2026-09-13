@@ -109,8 +109,9 @@ public static class MirrorKyUIValidation_MirrorTest
             var left = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
             var right = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right };
 
-            // 1. 슬롯 포인터 클릭(좌클릭: 단계 올리기 / 우클릭: 단계 내리기) 검증 (main 작업)
+            // 현재 화면은 슬롯 클릭으로 선택하고 + 버튼으로 미리보기 단계를 올린다.
             popup.slots[attackIndex].OnPointerClick(left);
+            Click(Control("levelUpButton"));
             Check(profile.credit == 10000 && manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0, "preview does not spend");
             int cost = manager.GetUnlockCostToLevel(PassiveSkillId.AttackPower, 1);
             popup.OnClickConfirm();
@@ -120,6 +121,7 @@ public static class MirrorKyUIValidation_MirrorTest
             popup.OnClickConfirm();
             Check(manager.GetCurrentLevel(PassiveSkillId.AttackPower) == 0 && manager.GetUnlockedLevel(PassiveSkillId.AttackPower) == 1, "deactivate preserves unlock");
             popup.slots[attackIndex].OnPointerClick(left);
+            Click(Control("levelUpButton"));
             popup.OnClickConfirm();
             Check(profile.credit == 10000 - cost, "unlocked rank is free");
 

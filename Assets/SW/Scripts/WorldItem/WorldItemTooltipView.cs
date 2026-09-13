@@ -23,6 +23,7 @@ public class WorldItemTooltipView : MonoBehaviour
 
     private Transform currentTarget;
     private CanvasGroup canvasGroup;
+    private Canvas tooltipCanvas;
 
     private void Awake()
     {
@@ -33,6 +34,9 @@ public class WorldItemTooltipView : MonoBehaviour
         if (canvasGroup == null)
             canvasGroup = tooltipPanel.AddComponent<CanvasGroup>();
 
+        tooltipCanvas = tooltipPanel.GetComponentInParent<Canvas>()?.rootCanvas;
+        canvasGroup.blocksRaycasts = false;
+        canvasGroup.interactable = false;
         canvasGroup.alpha = 0f;
         tooltipPanel.SetActive(false);
     }
@@ -62,6 +66,7 @@ public class WorldItemTooltipView : MonoBehaviour
 
         currentTarget = target;
         tooltipPanel.SetActive(true);
+        UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRect);
         UpdatePosition();
 
         canvasGroup.DOKill();
@@ -135,7 +140,25 @@ public class WorldItemTooltipView : MonoBehaviour
         if (tooltipPanel != null && !tooltipPanel.activeSelf)
             tooltipPanel.SetActive(true);
 
-        tooltipRect.position = screenPosition;
+        if (tooltipCanvas == null)
+            return;
+
+        var canvasRect = (RectTransform)tooltipCanvas.transform;
+        Camera uiCamera = tooltipCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+            ? null : tooltipCanvas.worldCamera;
+        if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                canvasRect, screenPosition, uiCamera, out Vector3 point))
+            return;
+
+        tooltipRect.position = point;
+        Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(canvasRect, tooltipRect);
+        Rect area = canvasRect.rect;
+        float x = Mathf.Clamp(bounds.center.x, area.xMin + bounds.extents.x,
+            Mathf.Max(area.xMin + bounds.extents.x, area.xMax - bounds.extents.x));
+        float y = Mathf.Clamp(bounds.center.y, area.yMin + bounds.extents.y,
+            Mathf.Max(area.yMin + bounds.extents.y, area.yMax - bounds.extents.y));
+        tooltipRect.position += canvasRect.TransformVector(
+            new Vector3(x - bounds.center.x, y - bounds.center.y, 0f));
     }
 
     /// <summary>

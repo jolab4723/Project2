@@ -22,6 +22,7 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     private MirrorTestNetworkManager manager;
     private string displayedParticipantId;
     private bool? passiveChangesAllowed;
+    private KY_PausePopup pausePopup;
 
     private void Awake()
     {
@@ -42,6 +43,9 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
 
     private void Update()
     {
+        bool canConnect = manager != null && !NetworkClient.active && !NetworkServer.active;
+        hostButton.interactable = joinButton.interactable = serverButton.interactable = reconnectButton.interactable = canConnect;
+        addressInput.interactable = displayNameInput.interactable = canConnect;
         if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             KY_GameEvents.EscPressed();
@@ -50,6 +54,8 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
 
     private void Start()
     {
+        foreach (var popup in FindObjectsByType<KY_PausePopup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (popup.gameObject.scene == gameObject.scene) { pausePopup = popup; break; }
         manager = NetworkManager.singleton as MirrorTestNetworkManager;
         if (manager == null)
         {
@@ -77,8 +83,22 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     private bool PrepareConnection()
     {
         if (manager == null || NetworkClient.active || NetworkServer.active) return false;
-        manager.ClientDisplayName = displayNameInput.text;
-        manager.networkAddress = string.IsNullOrWhiteSpace(addressInput.text) ? "localhost" : addressInput.text.Trim();
+        string nickname = displayNameInput.text.Trim();
+        string address = addressInput.text.Trim();
+        if (nickname.Length == 0 || nickname.Length > 24 || nickname.IndexOfAny(new[] { '<', '>', '\n', '\r', '\t' }) >= 0)
+        {
+            SetStatus("닉네임을 1~24자로 입력해 주세요. 태그와 줄바꿈은 사용할 수 없습니다.");
+            displayNameInput.Select();
+            return false;
+        }
+        if (System.Uri.CheckHostName(address) == System.UriHostNameType.Unknown)
+        {
+            SetStatus("서버 IP 또는 호스트명을 입력해 주세요. 포트 번호는 붙이지 않습니다.");
+            addressInput.Select();
+            return false;
+        }
+        manager.ClientDisplayName = nickname;
+        manager.networkAddress = address;
         manager.RequestedReconnectProfile = null;
         SetStatus("연결 중…");
         return true;
@@ -122,6 +142,7 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
 
     private void RefreshLobby()
     {
+        MirrorTestLocalPlayerUIBinder.ConfigurePauseMenu(pausePopup, manager);
         bool admitted = !string.IsNullOrEmpty(manager.LocalParticipantId);
         connectionPanel.SetActive(!admitted);
         if (!admitted)

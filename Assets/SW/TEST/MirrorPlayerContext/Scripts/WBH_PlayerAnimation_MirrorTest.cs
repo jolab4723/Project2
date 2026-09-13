@@ -357,6 +357,21 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         }
     }
 
+    public void AniEvent_PlayFighterAttackSfx(AnimationEvent animationEvent)
+    {
+        if (!isClient || playerEffect == null) return;
+        PlayerStatManager stats = GetComponent<PlayerStatManager>();
+        ItemSystem.WeaponType weaponType = stats != null && stats.TryGetEquippedWeaponInfo(out var weapon)
+            ? weapon.weaponType : ItemSystem.WeaponType.Greatsword;
+        WBH_PlayerEffectCue cue = weaponType switch
+        {
+            ItemSystem.WeaponType.Axe => WBH_PlayerEffectCue.F_normal0_evo0_etc1,
+            ItemSystem.WeaponType.Blunt => WBH_PlayerEffectCue.F_normal0_evo0_etc2,
+            _ => WBH_PlayerEffectCue.F_normal0_evo0_etc0
+        };
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
     public void AniEvent_PlayGunnerAttackSfx(AnimationEvent animationEvent)
     {
         if (!isClient || combat == null || playerEffect == null) return;

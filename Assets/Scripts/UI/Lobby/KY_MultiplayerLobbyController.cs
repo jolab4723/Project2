@@ -69,6 +69,9 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         RefreshView();
     }
 
+    // 숨겨진 동안 받은 명부도 패널을 다시 열면 3D 모델까지 반영한다.
+    private void OnEnable() => RefreshView();
+
     /// <summary>로컬 플레이어가 캐릭터를 확정해 로비에 들어왔을 때 상태를 초기화해 표시한다.</summary>
     public void OpenForLocalPlayer(KY_CharacterId characterId)
     {
@@ -165,7 +168,7 @@ public class KY_MultiplayerLobbyController : MonoBehaviour
         KY_LobbyPlayerData localPlayer = FindLocalPlayer();
         if (readyButton != null) readyButton.interactable = localPlayer != null;
         if (changeCharacterButton != null) changeCharacterButton.interactable = localPlayer != null;
-        if (readyButtonText != null) readyButtonText.text = localPlayer != null && localPlayer.readyState == KY_LobbyReadyState.Ready ? "READY CANCEL" : "READY";
+        if (readyButtonText != null) readyButtonText.text = localPlayer != null && localPlayer.readyState == KY_LobbyReadyState.Ready ? "CANCEL" : "READY";
         if (gameStartButton != null)
         {
             gameStartButton.gameObject.SetActive(localPlayer != null && localPlayer.isHost);

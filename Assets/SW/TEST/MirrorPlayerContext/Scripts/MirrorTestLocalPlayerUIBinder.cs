@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 /// 필드 아이템 획득 시에도 이 컴포넌트를 <see cref="IItemReceiver"/>로 사용해
 /// 씬에 남아 있는 고정 InventoryController가 아니라 같은 로컬 Context의 Inventory로 전달한다.
 /// 운영용 KY 입력 Manager는 복제하거나 수정하지 않고, 테스트 씬에서만 I/O/U/ESC로
-/// 인벤토리·상점·강화 창을 여는 로컬 단축키 경계도 함께 담당한다.
+/// 인벤토리·퀘스트·강화 창을 여는 로컬 단축키 경계도 함께 담당한다.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-100)]
@@ -45,6 +45,7 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         skillPopup ??= FindInBinderScene<SkillPopupController>();
         if (networkManager == null)
             networkManager = FindFirstObjectByType<MirrorTestNetworkManager>();
+        ConfigurePauseMenu(FindInBinderScene<KY_PausePopup>(), networkManager);
 
         if (worldItemScanner == null)
             worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
@@ -123,6 +124,37 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundContext = null;
     }
 
+    internal static void ConfigurePauseMenu(KY_PausePopup popup, MirrorTestNetworkManager session)
+    {
+        if (popup == null || session == null) return;
+        bool host = Mirror.NetworkServer.active;
+        popup.PauseGameTime = false;
+        popup.BindExitActions(new KY_DialogData
+        {
+            message = host ? "호스트 세션을 종료하시겠습니까?" : "이 세션에서 떠나시겠습니까?",
+            warningText = host ? "모든 참가자의 연결과 현재 런이 종료됩니다." : "현재 참가 자격을 포기하며 이 런에 재접속할 수 없습니다.",
+            onYes = () => { if (session != null) session.RequestLeaveSession(); }
+        }, new KY_DialogData
+        {
+            message = "잠시 세션에서 나가시겠습니까?",
+            warningText = "서버가 유지되는 동안 5분 안에 재접속할 수 있습니다. 파티의 게임은 계속됩니다.",
+            onYes = () => { if (session != null && !Mirror.NetworkServer.active) session.StopClient(); }
+        });
+        foreach (var button in popup.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+        {
+            bool leave = button.name == "Giveup";
+            if (!leave && button.name != "Save") continue;
+            button.gameObject.SetActive(Mirror.NetworkClient.active && (leave || !host));
+            var label = button.GetComponentInChildren<TMPro.TMP_Text>(true);
+            if (label != null)
+            {
+                // 세션별 동적 문구를 싱글용 고정 라벨의 Awake가 덮어쓰지 않게 한다.
+                if (label.TryGetComponent<UILabelText>(out var fixedLabel)) Destroy(fixedLabel);
+                label.text = leave ? (host ? "호스트 세션 종료" : "세션 떠나기") : "잠시 나가기";
+            }
+        }
+    }
+
     private void HandleLocalPlayerChanged(PlayerContext context)
     {
         UnbindSkills();
@@ -192,6 +224,8 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
                 statusPopup.Close();
             else if (inventoryPartView.HasOpenWindow)
                 inventoryPartView.CloseAll();
+            else if (QuestOfferUI.Instance != null && QuestOfferUI.Instance.IsShowing)
+                QuestOfferUI.Instance.Hide();
             else if (popupManager != null)
                 popupManager.Show(PopupType.Pause);
         }
@@ -204,8 +238,9 @@ public sealed class MirrorTestLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         }
         else if (Keyboard.current.oKey.wasPressedThisFrame)
         {
+            inventoryPartView.CloseAll();
             CloseStatusPopup();
-            inventoryPartView.OpenShop();
+            if (popupManager != null) popupManager.Show(PopupType.Quest);
         }
         else if (Keyboard.current.uKey.wasPressedThisFrame)
         {

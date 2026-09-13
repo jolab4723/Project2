@@ -84,7 +84,7 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
                     CreateFixtureItem(actors[0], definitions.Single(d => d.itemId == condition.targetId), EquipSlotType.None);
                     currentStep = new StepMessage { Step = ++step, Actor = actors[0].CombatAuthority.netId, Item = fixtureItem.itemData.instanceId };
                     SendPhase(44);
-                    yield return WaitForAcks("actual world pickup updates shared quest");
+                    yield return WaitForAcks("actual world pickup updates shared quest", 45d);
                 }
             }
             currentStep = new StepMessage { Step = ++step, Actor = actors[3].CombatAuthority.netId,
@@ -163,11 +163,19 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
         }
         else if (message.Phase == 41 || message.Phase == 42)
         {
-            // 네 프로세스가 서버의 첫 응답을 받기 전에 실제 버튼을 누르도록 동기화한다.
+            // 같은 시각에 시도해도 다른 클라이언트의 요청이 먼저 확정될 수 있다.
+            // 이미 갱신/닫힌 UI를 클릭하지 않고 그 참가자의 중복 요청은 서버에서 검증한다.
             yield return Wait(() => NetworkTime.time >= message.Mana, "synchronized quest button click");
-            Button button = (Button)typeof(QuestOfferUI).GetField(message.Phase == 41 ? "rerollButton" : "acceptButton",
-                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(QuestOfferUI.Instance);
-            ClickQuestButton(button);
+            bool alreadySettled = message.Phase == 41 ? manager.ClientQuests.HasRerolled : manager.ClientQuests.HasAccepted;
+            if (alreadySettled)
+                Require(manager.RequestQuest(message.Phase == 41 ? QuestBoardNPC.RequestKind.Reroll : QuestBoardNPC.RequestKind.Accept),
+                    "late concurrent request still reaches server validation");
+            else
+            {
+                Button button = (Button)typeof(QuestOfferUI).GetField(message.Phase == 41 ? "rerollButton" : "acceptButton",
+                    BindingFlags.Instance | BindingFlags.NonPublic).GetValue(QuestOfferUI.Instance);
+                ClickUiButton(button);
+            }
             yield return Wait(() => message.Phase == 41 ? manager.ClientQuests.HasRerolled && board.CurrentOffer?.questId == message.Detail :
                 manager.ClientQuests.HasAccepted && manager.ClientQuests.Quests?.Length == 1 && manager.ClientQuests.Quests[0].QuestId == message.Detail,
                 "shared quest request settled");
@@ -182,14 +190,19 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
         }
         else if (message.Phase == 44 && owner)
         {
+            yield return Wait(() => sync.PendingRequestCount == 0 &&
+                local.Inventory.PlayerGrid.GetAllItems().Any(i => i.itemData.instanceId == message.Item),
+                "quest fixture replicated before drop");
             Require(sync.TryRequestDropInventoryItem(message.Item, out _), "quest collection fixture drop");
             NetworkWorldItem_MirrorTest world = null;
             yield return Wait(() => sync.PendingRequestCount == 0 && (world = FindObjectsByType<NetworkWorldItem_MirrorTest>(FindObjectsSortMode.None)
                 .FirstOrDefault(w => w.CreateItemInstance()?.instanceId == message.Item)) != null, "quest world item");
+            Debug.Log($"[MirrorCombatSmoke] QUEST PICKUP dropped item={message.Item} world={world.netId}");
             Ray ray = default;
             yield return Wait(() => MirrorSessionSmokeDriver_MirrorTest.TryFindPickupRay(world, out ray, out _), "quest pickup ray");
             Require(sync.TryRequestPickup(ray), "actual quest pickup command");
             yield return Wait(() => sync.PendingRequestCount == 0 && local.Inventory.PlayerGrid.GetAllItems().Any(i => i.itemData.instanceId == message.Item), "quest pickup committed");
+            Debug.Log($"[MirrorCombatSmoke] QUEST PICKUP committed item={message.Item}");
         }
         else if (message.Phase == 45 || message.Phase == 46)
         {
@@ -199,17 +212,30 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
                 manager.ClientQuests.Quests[0].RewardPending == pending &&
                 manager.ClientQuests.Quests[0].PendingItemCount == (pending ? definition.rewardItemCount : 0) &&
                 local.Wallet.Gold == questGoldBefore + message.Charges, "personal reward and pending snapshot");
-            Require(local.Inventory.PlayerGrid.GetAllItems().Count(i => i.itemData.definition == definition.rewardItem) ==
+            yield return Wait(() => local.Inventory.PlayerGrid.GetAllItems().Count(i => i.itemData.definition == definition.rewardItem) ==
                 (pending ? 0 : definition.rewardItemCount), "individual item reward exactly once");
         }
         else if (message.Phase == 47 && owner)
         {
             relicReplicas.Clear();
             RestoreInputs();
-            clientRegistered = false;
             string address = manager.networkAddress;
             MirrorTestNetworkManager previousManager = manager;
-            manager.StopClient();
+            if (message.Detail == "disconnect during charge") manager.StopClient();
+            else
+            {
+                KY_PopupManager.Instance.Show(PopupType.Pause);
+                yield return new WaitForSecondsRealtime(0.5f);
+                var pause = FindFirstObjectByType<KY_PausePopup>();
+                Require(pause != null && !pause.PauseGameTime && Mathf.Approximately(Time.timeScale, 1f),
+                    "multiplayer pause leaves simulation running");
+                ClickUiButton(pause.GetComponentsInChildren<Button>().Single(b => b.name == "Save"));
+                yield return new WaitForSecondsRealtime(0.5f);
+                var confirm = FindFirstObjectByType<KY_ConfirmDialog>();
+                Require(confirm != null, "temporary leave confirmation");
+                ClickUiButton((Button)typeof(KY_ConfirmDialog).GetField("yesButton", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(confirm));
+            }
+            clientRegistered = false; // StopClient가 기존 메시지 핸들러를 비운 뒤에만 재등록을 예약한다.
             yield return Wait(() => previousManager == null && NetworkManager.singleton is MirrorTestNetworkManager,
                 "offline lobby creates fresh network manager", 45d);
             manager = (MirrorTestNetworkManager)NetworkManager.singleton;
@@ -221,9 +247,9 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
         }
     }
 
-    private static void ClickQuestButton(Button button)
+    private static void ClickUiButton(Button button)
     {
-        Require(button != null && button.interactable, "quest button enabled");
+        Require(button != null && button.interactable, "UI button enabled");
         Require(EventSystem.current != null, "session EventSystem survives scene transition and reconnect");
         Canvas.ForceUpdateCanvases();
         var rect = (RectTransform)button.transform;
@@ -234,7 +260,10 @@ public sealed partial class MirrorCombatSmoke_MirrorTest
         };
         var hits = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(pointer, hits);
-        Require(hits.Count > 0 && ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject) == button.gameObject, "actual quest button raycast");
+        Require(hits.Count > 0 && ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject) == button.gameObject,
+            $"actual UI button raycast button={button.name} point={pointer.position} screen={Screen.width}x{Screen.height} " +
+            $"active={button.gameObject.activeInHierarchy} " +
+            $"hits={string.Join(",", hits.Take(5).Select(hit => hit.gameObject.name + ":" + hit.sortingOrder))}");
         ExecuteEvents.ExecuteHierarchy(hits[0].gameObject, pointer, ExecuteEvents.pointerClickHandler);
     }
 }

@@ -1197,9 +1197,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (snapshotIndex < 0 || !originalPlacement.IsValid)
             return MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        // ponytail: C단계 평면 테스트용 배치다. 실제 맵 적용 시 WorldItemDropService의
-        // 충돌·빈자리 탐색을 서버 전용 API로 올린 뒤 이 위치 계산을 교체한다.
-        Vector3 position = transform.position + transform.forward * dropDistance + Vector3.up * 0.5f;
+        Vector3 position = transform.position + transform.forward * dropDistance;
         NetworkWorldItem_MirrorTest pickup = null;
         bool removed = false;
 
@@ -1208,6 +1206,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             if (!NetworkWorldItemSpawnService_MirrorTest.TryCreateUnspawned(
                     worldItemPrefab,
                     snapshot,
+                    transform.position,
                     position,
                     out pickup))
             {
