@@ -87,11 +87,12 @@ public sealed class WBH_PlayerInputHandler_MirrorTest : MonoBehaviour
             IsBlocked(hit.collider.gameObject.layer))
             return;
 
+        // 이동을 누른 채 다시 공격해도 미확정 타격을 취소한다. 확정된 공격의 대기시간은 유지된다.
+        combatAuthority?.TryCancelLocalAttackForMove();
         if (Input.GetMouseButtonDown(1))
         {
-            // 최초 이동 입력에서만 추격과 예약 공격을 취소한다.
+            // 최초 이동 입력에서만 추격을 취소한다.
             // 누르는 동안 매 프레임 CancelChase를 호출하면 새 NavMesh 경로도 계속 초기화된다.
-            combatAuthority?.TryCancelLocalAttackForMove();
             combat.CancelChase();
         }
 

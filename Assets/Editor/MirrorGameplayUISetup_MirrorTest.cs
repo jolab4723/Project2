@@ -69,6 +69,9 @@ public static class MirrorGameplayUISetup_MirrorTest
         // Mirror Binder와 동시에 I/ESC를 처리하면 같은 프레임에 열고 다시 닫힌다.
         foreach (var input in InScene<KY_UIInputManager>(scene)) input.enabled = false;
         var popup = root.GetComponentInChildren<KY_PopupManager>(true);
+        SetReference(popup, "confirmDialog", root.GetComponentInChildren<KY_ConfirmDialog>(true));
+        SetReference(popup, "alertDialog", root.GetComponentInChildren<KY_AlertDialog>(true));
+        SetReference(popup, "toastDialog", root.GetComponentInChildren<KY_ToastDialog>(true));
         var hud = root.GetComponentInChildren<PlayerHudEventBridge_MirrorTest>(true);
         SetReference(binder, "skillPopup", root.GetComponentInChildren<SkillPopupController>(true));
         foreach (var location in hud.GetComponentsInChildren<KY_LocationView>(true))

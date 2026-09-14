@@ -87,9 +87,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int MaxInstanceIdLength = 128;
     // 서버가 개발 명령을 명시적으로 허용한 경우에만 수동 지급할 검증용 아이템이다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
-    // 임시 지급용: 파이터 및 거너 클래스별 최고 공격력 무기 아이템 ID (파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)
-    private const string DefaultFighterWeaponItemId = "item.weapon.axe.heartofdebris";
-    private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.magmacrusher";
+    // 클래스별 고급 등급 시작 무기: 고철 분류 도끼 / 레드라인 브리처.
+    private const string DefaultFighterWeaponItemId = "item.weapon.axe.scrapsorter";
+    private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.redlinebreacher";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
@@ -244,8 +244,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         // 임시 지급용: 미러 테스트 중 적 공격에 즉사하지 않도록 가장 체력이 높은 아이템(우주 괴물 두개골, HP +230)을 기본 지급하고 자동 장착한다.
         ServerGrantDefaultHighHealthItem();
 
-        // 임시 지급용: 미러 테스트 중 원활한 공격 검증을 위해 클래스별 최고 공격력 무기(파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)를 기본 지급하고 자동 장착한다.
-        ServerGrantDefaultHighAttackWeapon();
+        // 클래스별 고급 시작 무기를 지급하고 빈 무기 슬롯에 자동 장착한다.
+        ServerGrantDefaultWeapon();
 
         AdvanceStateRevision();
     }
@@ -295,9 +295,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         }
     }
 
-    // 임시 지급용: 거너와 파이터 캐릭터 클래스에 맞춰 가장 공격력이 높은 무기를 기본 지급하고 자동 장착한다.
+    // 기존 소유 아이템과 장착 상태를 보존하며 클래스에 맞는 시작 무기를 지급한다.
     [Server]
-    private void ServerGrantDefaultHighAttackWeapon()
+    private void ServerGrantDefaultWeapon()
     {
         context ??= GetComponent<PlayerContext>();
         if (context?.Inventory == null)
