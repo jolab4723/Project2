@@ -92,9 +92,10 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.OnExitState -= HandleExitState;
         status.OnDead -= Die;
 
+        bool wasGrabbed = isGrabbed;
         isGrabbed = false;
 
-        if(agent != null)
+        if(wasGrabbed && agent != null)
         {
             agent.updatePosition = grabPreviousUpdatePos;
             agent.updateRotation = grabPreviousUpdateRot;

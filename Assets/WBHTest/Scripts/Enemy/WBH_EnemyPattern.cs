@@ -490,6 +490,10 @@ public class WBH_EnemyPattern : MonoBehaviour
         {
             hidden.Cleanup();
         }
+        if(pattern is WBH_EnemyBossPattern_Act2 act2)
+        {
+            act2.Cleanup();
+        }
 
     }
 

@@ -50,16 +50,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     private void OnDisable()
     {
         movement.OnDashUpdate -= CheckDashHit;
-        
-        StopAllCoroutines();
 
-        isGrabDash = false;
-        ReleaseGrabbedPlayers();
-
-        dashHitTargets.Clear();
-        areaHitTargets.Clear();
-
-        IsActionInProgress = false;
+        CancelCurrentAction();
     }
 
     private void Update()
@@ -126,6 +118,23 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     #region 엘리트 등 특수 패턴용 메서드
+    // 패턴 취소
+    public void CancelCurrentAction()
+    {
+        StopAllCoroutines();
+
+        movement.CancelForcedMovement();
+
+        isGrabDash = false;
+
+        ReleaseGrabbedPlayers();
+
+        dashHitTargets.Clear();
+        areaHitTargets.Clear();
+
+        IsActionInProgress = false;
+    }
+
     // 돌진
     public bool TryDashAttack(float distance, float duration, WBH_IndicatorSpawner indicator, float indicatorWidth, float readyDuration)
     {
@@ -185,7 +194,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         foreach (Collider hit in hits)
         {
-            T_PlayerController player = hit.GetComponent<T_PlayerController>();
+            T_PlayerController player = hit.GetComponentInParent<T_PlayerController>();
 
             if (player == null || grabbedPlayers.Contains(player))
                 continue;
@@ -205,10 +214,7 @@ public class WBH_EnemyCombat : MonoBehaviour
                                float slamHitDelay,
                                float slamRecoveryDuration,
                                float collisionRadius,
-                               float damageMul,
-                               int roarSkillId,
-                               int dashSkillId,
-                               int slamSkillId)
+                               float damageMul)
     {
         if (IsActionInProgress || dashTarget == null || !movement.CanControl)
             return false;
@@ -220,7 +226,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         FaceTarget(dashTarget);
 
-        StartCoroutine(CoGrabAndSlam(dashTarget, roarDuration, maxDashDistance, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul, roarSkillId, dashSkillId, slamSkillId));
+        StartCoroutine(CoGrabAndSlam(dashTarget, roarDuration, maxDashDistance, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul));
         return true;
     }
 
@@ -231,15 +237,11 @@ public class WBH_EnemyCombat : MonoBehaviour
                                       float dashDuration,
                                       float slamHitDelay,
                                       float slamRecoveryDuration,
-                                      float damageMul,
-                                      int roarSkillId,
-                                      int dashSkillId,
-                                      int slamSkillId)
+                                      float damageMul)
     {
         //ownerStop();
 
         // 1. 포효
-        enemyAnimation.PlaySkill(roarSkillId);
         yield return new WaitForSeconds(roarDuration);
 
         if(dashTarget == null || !dashTarget.gameObject.activeInHierarchy)
@@ -269,7 +271,6 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         // 2. 돌진 및 충돌 플레이어 잡기
         isGrabDash = true;
-        enemyAnimation.PlaySkill(dashSkillId);
 
         bool dashFinished = false;
 
@@ -285,7 +286,6 @@ public class WBH_EnemyCombat : MonoBehaviour
         HoldGrabbedPlayers();
 
         //3. 내려찍기
-        enemyAnimation.PlaySkill(slamSkillId);
         float elapsed = 0f;
 
         while(elapsed < slamHitDelay)
@@ -345,9 +345,9 @@ public class WBH_EnemyCombat : MonoBehaviour
             float angle = count > 0 ? 360f * index / count : 0f;
 
             Vector3 dir = Quaternion.Euler(0f, angle, 0f) * transform.forward;
-            Vector3 realeasPos = transform.position + dir * grabReleaseRadius;
+            Vector3 releasPos = transform.position + dir * grabReleaseRadius;
 
-            player.EndGrab(realeasPos);
+            player.EndGrab(releasPos);
             index++;
         }
         grabbedPlayers.Clear();
@@ -554,7 +554,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 적 방향으로 회전하면서 일정 간격으로 사격
-    public bool tryTrackingFire(int count, float interval, float turnSpeed, float maxDistance)
+    public bool TryTrackingFire(int count, float interval, float turnSpeed, float maxDistance)
     {
         if (IsActionInProgress || pattern.Target == null)
             return false;
@@ -591,6 +591,7 @@ public class WBH_EnemyCombat : MonoBehaviour
             projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, maxDistance, pattern.PlayerLayer);
         }
         yield return new WaitForSeconds(0.25f);
+        EndAction();
     }
 
     // 타겟 방향으로 회전
@@ -792,7 +793,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         yield return new WaitForSeconds(spawnDelay);
 
-        //spawner.Spawn();
+        int spawnedCount = spawner.Spawn(count, initialTarget);
 
         yield return new WaitForSeconds(recoveryDuration);
         EndAction();

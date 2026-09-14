@@ -119,11 +119,12 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         isDying = true;
 
-        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
-
+        combat.CancelCurrentAction(); // 기존 패턴 취소
         movement.Stop();
         movement.SetControlEnable(false);
 
+        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
+        
         enemyAnimation.PlayDie();
 
         if(!enemyAnimation.UseDieAni)
@@ -157,6 +158,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         OnEnemyDead?.Invoke();
 
+        combat.CancelCurrentAction();
         movement.Stop();
         movement.SetControlEnable(false);
 

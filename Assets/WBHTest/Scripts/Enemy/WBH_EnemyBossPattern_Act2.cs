@@ -50,7 +50,6 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float TransitionBulletRange = 15f;
 
     // 2페이즈 특수 패턴 관련 변수
-    private const float GrabStartRange = 2.5f;
     private const float GrabDamageMul = 1.8f;
 
     private const float FlameRange = 8f;
@@ -66,8 +65,8 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 애니메이터 SkillId
     private const int TrackingFireSkillId = 1;
     private const int ShortDashSkillId = 2;
-    private const int ShortSecterSkillId = 3;
-    private const int WideSecterSkillId = 4;
+    private const int ShortSectorSkillId = 3;
+    private const int WideSectorSkillId = 4;
     private const int TransitionSkillId = 5;
     private const int GrabSkillId = 6;
     private const int SummonSkillId = 7;
@@ -105,6 +104,11 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     public void Tick(float deltaTime)
     {
         targetChangeTimer -= deltaTime;
+
+        if(isPhaseTwo)
+        {
+            specialTimer -= deltaTime;
+        }
 
         if(!isPhaseTwo && !isPhaseTransition && owner.HealthRatio <= PhaseTwoHpRatio)
         {
@@ -181,7 +185,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         switch (selected)
         {
             case BasicPattern.TrackingFire:
-                if(owner.Combat.tryTrackingFire(FireBulletCount,FireInterval, FireTurnSpeed, FireRange))
+                if(owner.Combat.TryTrackingFire(FireBulletCount,FireInterval, FireTurnSpeed, FireRange))
                 {
                     owner.enemyAnimation.PlaySkill(TrackingFireSkillId);
                 }
@@ -192,13 +196,13 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
             case BasicPattern.ShortSectorAtk:
                 if(owner.Combat.TrySectorAttack(ShortSectorRange,ShortSectorAngle,ShortSectorDamageMul))
                 {
-                    owner.enemyAnimation.PlaySkill(ShortSecterSkillId);
+                    owner.enemyAnimation.PlaySkill(ShortSectorSkillId);
                 }
                 break;
             case BasicPattern.WideSectorAtk:
                 if (owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul))
                 {
-                    owner.enemyAnimation.PlaySkill(WideSecterSkillId);
+                    owner.enemyAnimation.PlaySkill(WideSectorSkillId);
                 }
                 break;
         }
@@ -252,16 +256,11 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         switch(pendingSpecial.Value)
         {
             case SpecialPattern.GrabAndSlam:
-                if(owner.Distance > GrabStartRange)
-                {
-                    owner.Movement.Move(owner.Target.position);
-                    return;
-                }
                 owner.Movement.Stop();
 
-                started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration :1.8f, maxDashDistance : 30f, dashDuration : 1.2f, slamHitDelay : 0.7f, slamRecoveryDuration : 0.8f, collisionRadius : owner.DashHitRadius,GrabDamageMul, roarSkillId : 11, dashSkillId : 12, slamSkillId : 13); // !@ 스킬 아이디 와 매개변수 재검토 필요
+                started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration :1.8f, maxDashDistance : 30f, dashDuration : 1.2f, slamHitDelay : 0.7f, slamRecoveryDuration : 0.8f, collisionRadius : owner.DashHitRadius,GrabDamageMul); // !@ 스킬 아이디 와 매개변수 재검토 필요
 
-                skillId = 0;
+                skillId = GrabSkillId;
                 break;
 
             case SpecialPattern.SummonSelfDestruct:
@@ -273,7 +272,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                     return;
                 }
 
-                int spawnCount = GetAcitvePlayerCount() * 3;
+                int spawnCount = GetActivePlayerCount() * 3;
 
                 started = owner.Combat.TrySummonSelfDestruct(minionSpawner, spawnCount, owner.Target);
 
@@ -318,7 +317,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         specialTimer = SpecialCooldown;
     }
 
-    private int GetAcitvePlayerCount()
+    private int GetActivePlayerCount()
     {
         T_PlayerController[] players = Object.FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
