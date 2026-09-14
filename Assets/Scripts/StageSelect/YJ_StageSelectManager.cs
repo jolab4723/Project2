@@ -163,7 +163,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     private void Start()
     {
-        if (loadSavedMapOnStart &&
+        // 임시 런의 씬 간 진행 복원은 유지하되, 디스크 저장은 SaveService에서 차단한다.
+        if ((YJ_StageSaveService.IsSessionOnly || loadSavedMapOnStart) &&
             stageSaveService != null &&
             stageSaveService.HasSaveFile)
         {

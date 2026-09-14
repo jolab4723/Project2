@@ -47,7 +47,25 @@ public class KY_TitleSceneManager : MonoBehaviour
         userInfoText.text = "유저 이름";
     }
 
-     void OnSinglePlayClicked() { SceneManager.LoadScene("SinglePlayerLobbySeane"); }
-    void OnMultiPlayClicked() { SceneManager.LoadScene("MultiplayerLobbySeane"); }
-     void OnPassiveSkillClicked() { popupManager.Show(PopupType.PassiveSkill); }
+    void OnSinglePlayClicked()
+    {
+        Core.SceneLoader loader = Core.SceneLoader.Instance;
+
+        if (loader == null || loader.IsLoading)
+            return;
+
+        loader.LoadScene("SinglePlayerLobbyScene");
+    }
+
+    void OnMultiPlayClicked()
+    {
+        Core.SceneLoader loader = Core.SceneLoader.Instance;
+
+        if (loader == null || loader.IsLoading)
+            return;
+
+        loader.LoadScene("MultiplayerLobbyScene");
+    }
+
+    void OnPassiveSkillClicked() { popupManager.Show(PopupType.PassiveSkill); }
 }

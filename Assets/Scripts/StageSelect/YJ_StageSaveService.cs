@@ -12,6 +12,27 @@ public class YJ_StageSaveService : MonoBehaviour
 {
     private const string DefaultFileName = "stage_map_save.json";
 
+    // 임시 통합 테스트: Start에서 시작한 런은 디스크 대신 메모리로만 진행을 전달한다.
+    public static bool IsSessionOnly { get; private set; }
+    private static string sessionJson;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSession()
+    {
+        IsSessionOnly = false;
+        sessionJson = null;
+    }
+
+    public static void BeginTemporaryRun()
+    {
+        IsSessionOnly = true;
+        sessionJson = JsonConvert.SerializeObject(new StageMapSaveData
+        {
+            act = StageActType.Act1,
+            startNewAct = true
+        }, SerializerSettings);
+    }
+
     // 저장 파일에 CLR 타입 정보가 기록되지 않도록 제한하고 컬렉션을 JSON 값으로 교체합니다.
     private static readonly JsonSerializerSettings SerializerSettings = new()
     {
@@ -40,7 +61,9 @@ public class YJ_StageSaveService : MonoBehaviour
     /// <summary>
     /// 현재 저장 경로에 JSON 파일이 존재하는지 반환합니다.
     /// </summary>
-    public bool HasSaveFile => File.Exists(SavePath);
+    public bool HasSaveFile => IsSessionOnly
+        ? sessionJson != null
+        : File.Exists(SavePath);
 
     /// <summary>
     /// 런타임 시작 시 Inspector 참조가 비어 있으면 같은 씬의 매니저를 찾습니다.
@@ -167,6 +190,12 @@ public class YJ_StageSaveService : MonoBehaviour
             return false;
         }
 
+        if (IsSessionOnly)
+        {
+            sessionJson = JsonConvert.SerializeObject(saveData, SerializerSettings);
+            return true;
+        }
+
         string path = SavePath;
         string temporaryPath = path + ".tmp";
 
@@ -275,7 +304,7 @@ public class YJ_StageSaveService : MonoBehaviour
         saveData = null;
         string path = SavePath;
 
-        if (!File.Exists(path))
+        if (!HasSaveFile)
         {
             Log.Warning($"스테이지 맵 저장 파일이 없습니다: {path}");
             return false;
@@ -283,7 +312,10 @@ public class YJ_StageSaveService : MonoBehaviour
 
         try
         {
-            string json = File.ReadAllText(path, Encoding.UTF8);
+            // 임시 런에서는 기존 저장 파일을 읽지 않는다. 역직렬화로 독립 복사본을 반환한다.
+            string json = IsSessionOnly
+                ? sessionJson
+                : File.ReadAllText(path, Encoding.UTF8);
             saveData = JsonConvert.DeserializeObject<StageMapSaveData>(
                 json,
                 SerializerSettings);
@@ -349,6 +381,12 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     public bool DeleteSaveFile()
     {
+        if (IsSessionOnly)
+        {
+            sessionJson = null;
+            return true;
+        }
+
         string path = SavePath;
         if (!File.Exists(path))
         {

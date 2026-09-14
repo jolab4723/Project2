@@ -38,14 +38,14 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
 
     private void Awake()
     {
-        //if(hpBarRoot != null)
-        //{
-        //    hpBarRoot.SetActive(false);
-        //}
-        //if(bossHpBarRoot != null)
-        //{
-        //    bossHpBarRoot.SetActive(false);
-        //}
+        if (hpBarRoot != null)
+        {
+            hpBarRoot.SetActive(false);
+        }
+        if (bossHpBarRoot != null)
+        {
+            bossHpBarRoot.SetActive(false);
+        }
 
         // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
         if (enemyLabels == null)
