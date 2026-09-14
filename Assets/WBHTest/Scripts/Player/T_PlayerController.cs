@@ -27,6 +27,11 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private bool canControl = true;
     private bool isStatusEffectControlBlocked;
 
+    // 잡기 관련 변수
+    private bool isGrabbed;
+    private bool grabPreviousUpdatePos;
+    private bool grabPreviousUpdateRot;
+
     // 컷씬 관련 변수
     private bool isCutSceneControlBlocked;
     private bool isCutSceneDamageBlocked;
@@ -39,9 +44,10 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public bool IsInvincible { get; private set; } = false; // 무적여부
 
     public WBH_ICombatStatus Status => status;
+    public bool IsGrabbed => isGrabbed;
     public bool CanDodge => currentDodgeCooltime <= 0f;
     private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
-    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked && !isCutSceneControlBlocked;
+    public bool IsControlEnabled => canControl && !isStatusEffectControlBlocked && !isCutSceneControlBlocked && !isGrabbed;
 
 
 
@@ -85,6 +91,15 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.OnEnterState -= HandleEnterState;
         stateMachine.OnExitState -= HandleExitState;
         status.OnDead -= Die;
+
+        bool wasGrabbed = isGrabbed;
+        isGrabbed = false;
+
+        if(wasGrabbed && agent != null)
+        {
+            agent.updatePosition = grabPreviousUpdatePos;
+            agent.updateRotation = grabPreviousUpdateRot;
+        }
     }
 
     private void Update()
@@ -457,6 +472,68 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     public void SetCutSceneDamageBlock(bool block)
     {
         isCutSceneDamageBlocked = block;
+    }
+
+    public bool TryBeginGrab()
+    {
+        if (isGrabbed || !isActiveAndEnabled || stateMachine.IsAnyState(PlayerState.Dead, PlayerState.Revive, PlayerState.Dodge))
+            return false;
+
+        if (IsInvincible)
+            return false;
+
+        isGrabbed = true;
+
+        StopMovement();
+        RefreshControlState();
+
+        if(agent != null && agent.isActiveAndEnabled)
+        {
+            grabPreviousUpdatePos = agent.updatePosition;
+            grabPreviousUpdateRot = agent.updateRotation;
+
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+        }
+        return true;
+    }
+
+    public void SetGrabPosition(Vector3 worldPos)
+    {
+        if (!isGrabbed)
+            return;
+        transform.position = worldPos;
+    }
+
+    public void EndGrab(Vector3 releasePos)
+    {
+        if (!isGrabbed)
+            return;
+
+        isGrabbed = false;
+
+        if(agent != null && agent.isActiveAndEnabled)
+        {
+            int areaMask = agent.areaMask;
+
+            if(NavMesh.SamplePosition(releasePos, out NavMeshHit hit, 2f, areaMask))
+            {
+                transform.position = hit.position;
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                transform.position = releasePos;
+            }
+
+            agent.updatePosition = grabPreviousUpdatePos;
+            agent.updateRotation = grabPreviousUpdateRot;
+        }
+        else
+        {
+            transform.position = releasePos;
+        }
+        RefreshControlState();
     }
 
     // --- 테스트용 메서드

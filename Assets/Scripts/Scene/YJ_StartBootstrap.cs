@@ -6,12 +6,16 @@ using UnityEngine;
 public class YJ_StartBootstrap : MonoBehaviour
 {
     [Header("Startup")]
-    [SerializeField] private string initialSceneName = "StageSelect";
+    [SerializeField] private string initialSceneName = "TitleScene";
     [SerializeField, Min(0f)] private float minimumStartupDuration = 0.5f;
     [SerializeField, Min(1f)] private float managerInitializationTimeout = 10f;
 
     private IEnumerator Start()
     {
+        // 임시: 이전 StageSelect 저장 불러오기를 막고 Act1 첫 층에서 시작한다.
+        // 기존 디스크 저장/불러오기를 복구하려면 아래 호출을 주석 처리한다.
+        YJ_StageSaveService.BeginTemporaryRun();
+
         float startupTime = Time.realtimeSinceStartup;
         GameManager gameManager = GameManager.Instance;
         if (gameManager == null)

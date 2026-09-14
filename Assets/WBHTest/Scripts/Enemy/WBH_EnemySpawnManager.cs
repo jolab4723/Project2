@@ -83,7 +83,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             if (area == null)
                 continue;
 
-            area.Initialize(enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
+            area.Initialize(this, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
         }
     }
 
@@ -193,5 +193,14 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             closePlayer = player.transform;
         }
         return closePlayer;
+    }
+
+    // 적 패턴 등으로 적을 추가 소환할 경우 aliveEnemyCount 를 증가
+    public void RegisterAdditionalEnemies(int count)
+    {
+        if (!waveInProgress || count <= 0)
+            return;
+
+        aliveEnemyCount += count;
     }
 }
