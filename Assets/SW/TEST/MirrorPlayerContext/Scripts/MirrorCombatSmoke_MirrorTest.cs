@@ -51,6 +51,7 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private readonly HashSet<int> acknowledgements = new();
     private readonly Dictionary<string, ItemInstance> relicReplicas = new();
     private readonly Dictionary<EquipSlotType, string> initialClientEquipment = new();
+    private string initialClientInventory;
     private readonly Dictionary<uint, int> initialBuffCounts = new();
     private bool initialEquipmentCaptured;
     private int step;
@@ -146,6 +147,7 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             p.GetComponent<NetworkEnemyAuthority_MirrorTest>() != null);
         Require(prefab != null, "registered Normal_Melee_MirrorTest prefab");
         ItemDefinitionSO[] definitions = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items");
+        ValidateAuthoredP0Effects(definitions);
         yield return new WaitForSecondsRealtime(2f);
         var initialEquipment = actors.ToDictionary(p => p.CombatAuthority.netId, EquipmentIds);
         foreach (PlayerContext actor in actors)
@@ -221,6 +223,7 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         }
         if (Argument("--mirror-smoke-relics") == "true")
         {
+            yield return RunAuthoredP0Effects(actors, definitions, prefab);
             if (remainingOnly) ValidateRelicCooldownPolicies(actors, definitions.Single(d => d.itemId == "item.relic.alienheart"));
             else yield return RunRelicStacks(actors, definitions);
         }
@@ -234,7 +237,8 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             yield return RunQuestFlow(actors, definitions, prefab);
         SendPhase(4);
         yield return WaitForAcks("all client final cleanup");
-        Require(actors.All(p => EquipmentIds(p) == initialEquipment[p.CombatAuthority.netId]), "all initial equipment preserved");
+        if (!remainingOnly)
+            Require(actors.All(p => EquipmentIds(p) == initialEquipment[p.CombatAuthority.netId]), "all initial equipment preserved");
         SendPhase(5);
         Passed = Completed = true;
         Debug.Log($"[MirrorCombatSmoke] PASS server steps={step} clients=4 actual owner commands/animation/HP/cleanup");
@@ -537,6 +541,7 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         {
             foreach (var pair in local.Equipment.GetEquippedItems())
                 initialClientEquipment.Add(pair.Key, pair.Value.itemData.instanceId);
+            initialClientInventory = InventoryIds(local);
             initialEquipmentCaptured = true;
         }
         if (message.Phase == 0)
@@ -601,10 +606,12 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         }
         else if (message.Phase == 4)
         {
-            yield return Wait(() => local.Inventory.PlayerGrid.GetAllItems().Count == 0 &&
-                local.Equipment.GetEquippedItems().Count() == initialClientEquipment.Count &&
-                initialClientEquipment.All(pair => local.Equipment.TryGetEquippedItem(pair.Key, out var item) &&
-                    item.itemData.instanceId == pair.Value), "final local cleanup preserves initial equipment");
+            bool remainingOnly = Argument("--mirror-smoke-focus") == "remaining";
+            if (!remainingOnly)
+                yield return Wait(() => InventoryIds(local) == initialClientInventory &&
+                    local.Equipment.GetEquippedItems().Count() == initialClientEquipment.Count &&
+                    initialClientEquipment.All(pair => local.Equipment.TryGetEquippedItem(pair.Key, out var item) &&
+                        item.itemData.instanceId == pair.Value), "final local cleanup preserves initial equipment");
             RestoreInputs();
         }
         else if (message.Phase == 20)
@@ -719,6 +726,17 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 relicReplicas.Remove(message.Item);
             }
         }
+        else if (message.Phase == 35)
+        {
+            ItemDefinitionSO definition = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items")
+                .Single(item => item.itemId == message.Detail);
+            var effect = (TriggeredBuffUniqueEffectSO)definition.uniqueEffect;
+            PlayerContext actor = NetworkClient.spawned[message.Actor].GetComponent<PlayerContext>();
+            yield return Wait(() =>
+                (actor.Buffs.ActiveBuffs.FirstOrDefault(buff => buff.source == effect)?.stackCount ?? 0) == message.Charges &&
+                JsonUtility.ToJson(actor.Buffs.GetStatSet()) == message.BuffStats,
+                "authored P0 buff replica " + message.Detail);
+        }
         else if (message.Phase >= 40 && message.Phase <= 47)
         {
             yield return RunQuestClient(message, local);
@@ -777,6 +795,9 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 
     private static string EquipmentIds(PlayerContext actor) => string.Join("|", actor.Equipment.GetEquippedItems()
         .OrderBy(pair => pair.Key).Select(pair => pair.Key + ":" + pair.Value.itemData.instanceId));
+
+    private static string InventoryIds(PlayerContext actor) => string.Join("|", actor.Inventory.PlayerGrid.GetAllItems()
+        .Select(item => item.itemData.instanceId).OrderBy(id => id, StringComparer.Ordinal));
 
     private static Vector3 FindDeadMoveDestination(PlayerContext actor, NavMeshAgent agent)
     {
