@@ -17,6 +17,15 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
+    [Header("Run Playback Speed")]
+    [Tooltip("Run 애니메이션을 1배속으로 재생할 실제 이동속도입니다.")]
+    [SerializeField, Min(0.01f)] private float referenceRunMoveSpeed = 5f;
+    [SerializeField, Range(0.1f, 3f)] private float minimumRunPlaybackSpeed = 0.5f;
+    [SerializeField, Range(0.1f, 3f)] private float maximumRunPlaybackSpeed = 2f;
+
+    private bool hasRunPlaybackSpeedParameter;
+    private static readonly int RunPlaybackSpeedHash = Animator.StringToHash("RunPlaybackSpeed");
+
     private Animator animator;
     private WBH_PlayerStateMachine stateMachine;
     private T_PlayerCombat combat;
@@ -48,6 +57,23 @@ public class WBH_PlayerAnimation : MonoBehaviour
         fighterSkillController = GetComponent<FighterSkillController>();
         gunnerSkillController = GetComponent<GunnerSkillController>();
         statManager = GetComponent<PlayerStatManager>();
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.nameHash == RunPlaybackSpeedHash &&
+                parameter.type == AnimatorControllerParameterType.Float)
+            {
+                hasRunPlaybackSpeedParameter = true;
+                break;
+            }
+        }
+
+        if (!hasRunPlaybackSpeedParameter)
+        {
+            Debug.LogWarning(
+                "[WBH_PlayerAnimation] Animator에 Float RunPlaybackSpeed를 추가하고 " +
+                "Locomotion의 Speed Multiplier에 연결하세요. 현재 Run 배속 연동은 적용되지 않습니다.", this);
+        }
     }
 
     private void OnEnable()
@@ -138,15 +164,36 @@ public class WBH_PlayerAnimation : MonoBehaviour
             case PlayerState.Dodge:
             case PlayerState.Dead:
             case PlayerState.Revive:
+                if (hasRunPlaybackSpeedParameter)
+                    animator.SetFloat(RunPlaybackSpeedHash, 1f);
                 return;
         }
 
-        float speed = agent.velocity.magnitude / agent.speed;
+        Vector3 velocity = Vector3.zero;
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !agent.isStopped)
+            velocity = agent.velocity;
+        velocity.y = 0f;
+
+        float actualSpeed = velocity.magnitude;
+        float speed = agent != null && agent.speed > 0.01f
+            ? Mathf.Clamp01(actualSpeed / agent.speed)
+            : 0f;
 
         if (speed < 0.05f)
             speed = 0;
 
         animator.SetFloat("MoveSpeed", speed);
+
+        if (hasRunPlaybackSpeedParameter)
+        {
+            float lowerSpeed = Mathf.Clamp(minimumRunPlaybackSpeed, 0.1f, 3f);
+            float upperSpeed = Mathf.Clamp(maximumRunPlaybackSpeed, lowerSpeed, 3f);
+            // Idle은 1배속으로 유지하고 달릴 때만 실제 속도에 비례시킵니다.
+            float playbackSpeed = speed > 0f
+                ? Mathf.Clamp(actualSpeed / Mathf.Max(0.01f, referenceRunMoveSpeed), lowerSpeed, upperSpeed)
+                : 1f;
+            animator.SetFloat(RunPlaybackSpeedHash, playbackSpeed);
+        }
     }
 
     public void PlayFighterSkillAnimation(int skillId, bool isCharging, float targetDuration)
