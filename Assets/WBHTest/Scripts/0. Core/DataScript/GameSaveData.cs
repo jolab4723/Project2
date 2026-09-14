@@ -15,5 +15,6 @@ namespace Core
         public SkillTreeSaveData skillTree = new SkillTreeSaveData(); // 3-2 (자리만 잡아둠)
         public StageSaveData stage = new StageSaveData();             // 3-4 (자리만 잡아둠)
         public ActiveSkillSaveData activeSkill = new ActiveSkillSaveData(); // 3-5
+        public bool needsPlayerInitialization; // 플레이어 초기화(새 게임시 사용)
     }
 }

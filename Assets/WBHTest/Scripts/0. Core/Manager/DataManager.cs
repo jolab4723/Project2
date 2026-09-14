@@ -726,7 +726,12 @@ namespace Core
         [ContextMenu("게임플레이 데이터 초기화")]
         public void ResetGameplayData()
         {
-            WriteJson(GetSavePath(GameplaySaveFileName), new GameSaveData());
+            var data = new GameSaveData{needsPlayerInitialization = true};
+
+            data.status.playerLevel = 1;
+            data.status.playerExp = 0f;
+
+            WriteJson(GetSavePath(GameplaySaveFileName), data);
         }
 
         #endregion
