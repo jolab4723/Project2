@@ -36,9 +36,17 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
         SetActive(hostBadge, player.isHost); SetActive(localPlayerFrame, isLocalPlayer);
         SetText(playerNameText, string.IsNullOrWhiteSpace(player.displayName) ? "Player" : player.displayName);
         SetText(characterNameText, character != null ? character.characterName : "캐릭터 선택 중");
-        SetText(readyStateText, GetReadyStateText(player.readyState));
-        SetActive(fighterModel, isActiveAndEnabled && !isSelecting && player.selectedCharacterId == KY_CharacterId.Fighter);
-        SetActive(gunnerModel, isActiveAndEnabled && !isSelecting && player.selectedCharacterId == KY_CharacterId.Gunner);
+        if (readyStateText != null)
+        {
+            // 원래 READY 디자인은 유지하고 미준비/선택 중에는 배지 전체를 숨긴다.
+            readyStateText.transform.parent.gameObject.SetActive(player.readyState == KY_LobbyReadyState.Ready);
+            SetText(readyStateText, "READY");
+        }
+        if (hostBadge != null) SetText(hostBadge.GetComponentInChildren<TMP_Text>(true), "방장");
+        // 부모 OnEnable에서 갱신할 때는 이 자식의 OnEnable 호출이 아직 끝나지 않을 수 있다.
+        bool visible = enabled && gameObject.activeInHierarchy && !isSelecting;
+        SetActive(fighterModel, visible && player.selectedCharacterId == KY_CharacterId.Fighter);
+        SetActive(gunnerModel, visible && player.selectedCharacterId == KY_CharacterId.Gunner);
     }
 
     // UI와 별도 3D 스테이지에 있는 모델도 로비 화면을 떠날 때 숨긴다.
@@ -48,11 +56,6 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
         SetActive(gunnerModel, false);
     }
 
-    /// <summary>준비 상태에 맞는 UI 문구를 반환한다.</summary>
-    private static string GetReadyStateText(KY_LobbyReadyState readyState) => readyState switch
-    {
-        KY_LobbyReadyState.Ready => "READY", KY_LobbyReadyState.NotReady => "NOT READY", _ => "SELECTING"
-    };
     /// <summary>선택적으로 연결한 오브젝트의 활성 상태를 안전하게 바꾼다.</summary>
     private static void SetActive(GameObject target, bool isActive) { if (target != null) target.SetActive(isActive); }
     /// <summary>선택적으로 연결한 텍스트에 문구를 표시한다.</summary>

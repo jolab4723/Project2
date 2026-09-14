@@ -21,6 +21,18 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
         typeof(YJ_StageSelectManager).GetField(
             "mapSeed",
             BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo ClearedFloorField =
+        typeof(YJ_StageSelectManager).GetField(
+            "clearedFloor",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo LastClearedNodeIdField =
+        typeof(YJ_StageSelectManager).GetField(
+            "lastClearedNodeId",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo SelectedNodeField =
+        typeof(YJ_StageSelectManager).GetField(
+            "selectedNode",
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
     [SerializeField] private YJ_StageSelectManager stageSelectManager;
     [SerializeField, Min(0f)] private float requestDelay = 0.25f;
@@ -224,6 +236,11 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
         stageSelectManager.GenerateMap();
         DisableUnsupportedBossGlow();
         StageMapSaveData initialSnapshot = stageSelectManager.CaptureSaveData();
+        initialSnapshot.clearedFloor = 0;
+        initialSnapshot.lastClearedNodeId = string.Empty;
+        initialSnapshot.pendingNodeId = string.Empty;
+        initialSnapshot.clearedNodeIds?.Clear();
+        initialSnapshot.visitedNodeIds?.Clear();
         if (!networkManager.ServerPublishRunSnapshot(initialSnapshot))
         {
             Debug.LogError("[MirrorStageSelect] 최초 런 스냅샷 게시에 실패했습니다.", this);
@@ -479,6 +496,9 @@ public sealed class MirrorStageSelectRouteAdapter_MirrorTest : NetworkBehaviour
         if (MapSeedField != null)
         {
             MapSeedField.SetValue(manager, mapSeed);
+            ClearedFloorField?.SetValue(manager, 0);
+            LastClearedNodeIdField?.SetValue(manager, string.Empty);
+            SelectedNodeField?.SetValue(manager, null);
             return true;
         }
 

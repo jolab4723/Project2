@@ -161,7 +161,10 @@ public sealed class MirrorCooldownHud_MirrorTest : MonoBehaviour
                 continue;
 
             SkillDefinitionSO definition = skillAuthority?.GetSkillDefinition(index);
-            view.SetIcon(definition?.icon);
+            if (definition != null && definition.icon != null)
+            {
+                view.SetIcon(definition.icon);
+            }
         }
         RefreshKeyGuides();
     }

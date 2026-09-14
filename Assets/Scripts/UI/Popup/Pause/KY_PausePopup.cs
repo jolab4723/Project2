@@ -9,6 +9,15 @@ public class KY_PausePopup : KY_PopupBase
     private KY_SlideAnimator slideAnimator;
     private bool ownsTimePause;
     private float previousTimeScale;
+    private KY_DialogData? externalGiveUp;
+    private KY_DialogData? externalSaveAndExit;
+
+    /// <summary>세션 종료 확인과 실행을 외부에 맡긴다. null로 해제하면 기존 싱글 동작을 사용한다.</summary>
+    public void BindExitActions(KY_DialogData? giveUp, KY_DialogData? saveAndExit)
+    {
+        externalGiveUp = giveUp;
+        externalSaveAndExit = saveAndExit;
+    }
 
     /// <summary>싱글에서는 게임 시간을 멈춘다. 멀티플레이 메뉴는 false로 설정해 화면만 연다.</summary>
     public bool PauseGameTime
@@ -98,28 +107,35 @@ private void OnEnable()
     {
         if (KY_PopupManager.Instance == null) return;
 
-        KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
+        KY_DialogData dialog = externalGiveUp ?? new KY_DialogData
         {
             message = "게임을 포기하시겠습니까?",
             warningText = "경고: 현재 게임 데이터가 사라집니다.",
-            onYes = GiveUpGame
-        });
+        };
+        dialog.onYes = GiveUpGame;
+        KY_PopupManager.Instance.ShowConfirm(dialog);
     }
 
 public void OnClickSaveAndExit()
     {
         if (KY_PopupManager.Instance == null) return;
 
-        KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
+        KY_DialogData dialog = externalSaveAndExit ?? new KY_DialogData
         {
             message = "게임을 저장하고 종료하시겠습니까?",
-            onYes = SaveAndExitGame
-        });
+        };
+        dialog.onYes = SaveAndExitGame;
+        KY_PopupManager.Instance.ShowConfirm(dialog);
     }
 
 private void SaveAndExitGame()
     {
         RestoreGameTime();
+        if (externalSaveAndExit.HasValue)
+        {
+            externalSaveAndExit.Value.onYes?.Invoke();
+            return;
+        }
         DataManager.Instance?.SaveGameplayData();
         DataManager.Instance?.SavePassiveData();
         SceneManager.LoadScene("TitleSeane");
@@ -128,6 +144,11 @@ private void SaveAndExitGame()
     private void GiveUpGame()
     {
         RestoreGameTime();
+        if (externalGiveUp.HasValue)
+        {
+            externalGiveUp.Value.onYes?.Invoke();
+            return;
+        }
         DataManager.Instance?.ResetAllData();
         SceneManager.LoadScene("TitleSeane");
     }

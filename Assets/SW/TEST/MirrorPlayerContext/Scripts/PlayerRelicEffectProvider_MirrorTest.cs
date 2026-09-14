@@ -77,6 +77,11 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 
         switch (effect)
         {
+            case TriggeredBuffUniqueEffectSO triggered:
+                if (NetworkServer.active && triggered.persistStackOnItem && ownerItem.persistedStackCount > 0)
+                    buffs.SetBuffStack(triggered, ownerItem.persistedStackCount);
+                break;
+
             case PassiveBuffUniqueEffectSO passive:
                 int count = passiveCounts.TryGetValue(passive, out int current) ? current + 1 : 1;
                 passiveCounts[passive] = count;
@@ -101,6 +106,9 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 
         ItemInstance ownerItem = item.itemData;
         UniqueEffectSO effect = ownerItem.definition.uniqueEffect;
+
+        if (NetworkServer.active && effect is TriggeredBuffUniqueEffectSO triggered)
+            buffs.RemoveBuff(triggered);
 
         if (effect is PassiveBuffUniqueEffectSO passive && passiveCounts.TryGetValue(passive, out int count))
         {

@@ -120,7 +120,14 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
         }
 
         cooldownEndTimes[key] = now + Mathf.Max(0f, effect.cooldownSeconds);
-        buffs.ApplyBuff(effect);
+        if (effect.persistStackOnItem)
+        {
+            int next = (int)System.Math.Min((long)Mathf.Max(0, item.persistedStackCount) + 1, int.MaxValue);
+            item.persistedStackCount = effect.buffSpec.maxStack > 0 ? Mathf.Min(next, effect.buffSpec.maxStack) : next;
+            buffs.SetBuffStack(effect, item.persistedStackCount);
+            GetComponent<PlayerInventorySync_MirrorTest>()?.ServerSyncPersistedStack(item);
+        }
+        else buffs.ApplyBuff(effect);
     }
 
     private static string GetCooldownKey(TriggeredBuffUniqueEffectSO effect, ItemInstance item)

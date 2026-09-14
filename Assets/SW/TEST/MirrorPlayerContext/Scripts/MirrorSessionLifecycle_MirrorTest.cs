@@ -106,6 +106,11 @@ public sealed partial class MirrorTestNetworkManager
     {
         MirrorReconnectProfile_MirrorTest.Clear(out _);
         RequestedReconnectProfile = null;
+        if (mode == NetworkManagerMode.Host)
+        {
+            StopHost();
+            return;
+        }
         if (RequestLobbyChange(MirrorLobbyOperation_MirrorTest.Leave)) return;
         if (NetworkClient.active) StopClient();
     }
@@ -261,7 +266,7 @@ public sealed partial class MirrorTestNetworkManager
         if (!ServerRoster.RunStarted || member == null || !connection.isReady || connection.identity != null) return;
         PlayerContext context = member.RuntimeContext;
         bool created = context == null;
-        Transform start = GetStartPosition();
+        Transform start = GetParticipantStartPosition(member.Slot);
         if (context == null)
         {
             GameObject prefab = member.CharacterClass == CharacterClass.Gunner ? gunnerPlayerPrefab : playerPrefab;
@@ -283,6 +288,7 @@ public sealed partial class MirrorTestNetworkManager
         context.GetComponent<PlayerInventorySync_MirrorTest>().ServerResetOwnerRequests();
         context.GetComponent<NetworkShopPlayerState_MirrorTest>().ServerResetOwnerRequests();
         if (start != null) binder.ServerPlaceAtSceneStart(start.position, start.rotation);
+        if (!created) context.GetComponent<PlayerNetworkTransform_MirrorTest>().ServerResetOwnerReceiveState();
         if (!NetworkServer.AddPlayerForConnection(connection, context.gameObject))
         {
             connection.Disconnect();

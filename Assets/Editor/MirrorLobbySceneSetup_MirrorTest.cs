@@ -90,6 +90,92 @@ public static class MirrorLobbySceneSetup_MirrorTest
         }
     }
 
+    /// <summary>WJ의 새 패시브 화면만 읽어 Mirror 로비의 구매·표시·닫기 버튼에 연결한다.</summary>
+    [MenuItem("SW/Mirror Test/Import Latest Passive Popup")]
+    public static void ImportLatestPassivePopup()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
+            PrefabStageUtility.GetCurrentPrefabStage() != null)
+            throw new InvalidOperationException("Prefab Stage를 닫고 컴파일이 끝난 Edit Mode에서 실행하세요.");
+        Scene previous = SceneManager.GetActiveScene();
+        Scene scene = SceneManager.GetSceneByPath(MirrorTestNetworkManager.SessionLobbyScene);
+        if (scene.isLoaded && scene.isDirty) throw new InvalidOperationException("Mirror 로비에 저장하지 않은 편집이 있습니다.");
+        bool opened = !scene.isLoaded;
+        if (opened) scene = EditorSceneManager.OpenScene(MirrorTestNetworkManager.SessionLobbyScene, OpenSceneMode.Additive);
+        Scene source = EditorSceneManager.OpenPreviewScene("Assets/WJ_TestPlace/Scene/WJ_StatSystemTestScene.unity");
+        try
+        {
+            var template = InScene<KY_PassiveSkillPopup>(source).Single(p => p.transform.Find("Contents/MainRow/ControlArea/ControlPanel") != null);
+            var old = InScene<KY_PassiveSkillPopup>(scene).Single();
+            var popups = InScene<KY_PopupManager>(scene).Single();
+            var profile = InScene<PassiveSkillManager>(scene).Single();
+            var popup = Object.Instantiate(template, old.transform.parent);
+            popup.name = old.name;
+            popup.gameObject.SetActive(false);
+            popup.allSkills.Clear();
+            popup.activeListView = null;
+            popup.pointText = popup.transform.Find("Contents/HeaderRow/ControlArea/CreditText").GetComponent<TextMeshProUGUI>();
+            popup.transform.Find("Contents/HeaderRow/ControlArea/SkillPointsText").gameObject.SetActive(false);
+            Transform controls = popup.transform.Find("Contents/MainRow/ControlArea/ControlPanel");
+            popup.descriptionView = controls.gameObject.AddComponent<KY_PassiveSkillDescriptionView>();
+            popup.descriptionView.nameText = controls.Find("PassiveNameText").GetComponent<TextMeshProUGUI>();
+            popup.descriptionView.descriptionText = controls.Find("PassiveDescriptionText").GetComponent<TextMeshProUGUI>();
+            popup.descriptionView.descriptionText.enableAutoSizing = true;
+            popup.descriptionView.descriptionText.fontSizeMin = 20;
+            popup.descriptionView.descriptionText.fontSizeMax = 28;
+            SetReference(popup, "skillManager", profile);
+            var data = new SerializedObject(popup);
+            data.FindProperty("allowChanges").boolValue = true;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            foreach (var unused in popup.GetComponentsInChildren<PassiveSkillPanelUI>(true)) Object.DestroyImmediate(unused);
+            foreach (Button button in popup.GetComponentsInChildren<Button>(true)) button.onClick = new Button.ButtonClickedEvent();
+            var innerClose = popup.transform.Find("btnClosePopup/innerShadow").GetComponent<Button>();
+            if (innerClose != null) Object.DestroyImmediate(innerClose);
+            SetReference(popup, "levelUpButton", controls.Find("ControlButton/btn_LevelUp").GetComponent<Button>());
+            SetReference(popup, "levelDownButton", controls.Find("ControlButton/btn_LevelDown").GetComponent<Button>());
+            SetReference(popup, "confirmButton", controls.Find("btn_Confilm").GetComponent<Button>());
+            SetReference(popup, "resetButton", popup.transform.Find("Contents/HeaderRow/ControlArea/btn_SkillClear").GetComponent<Button>());
+            SetReference(popup, "pendingLevelText", controls.Find("ControlButton/Divider").GetComponent<TMP_Text>());
+            SetReference(popup, "confirmButtonText", controls.Find("btn_Confilm/Label").GetComponent<TMP_Text>());
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(popup.transform.Find("btnClosePopup").GetComponent<Button>().onClick, popups.Hide);
+            foreach (Graphic graphic in popup.GetComponentsInChildren<Graphic>(true)) graphic.raycastTarget = false;
+            foreach (Button button in popup.GetComponentsInChildren<Button>(true)) button.targetGraphic.raycastTarget = true;
+            foreach (KY_PassiveSkillSlot slot in popup.slots)
+            {
+                slot.transform.Find("IconFrame").GetComponent<Image>().raycastTarget = true;
+                var label = new GameObject("Skill Name", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+                label.transform.SetParent(slot.transform.Find("IconFrame"), false);
+                label.rectTransform.anchorMin = Vector2.zero;
+                label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = new Vector2(6, 6);
+                label.rectTransform.offsetMax = new Vector2(-6, -6);
+                label.font = popup.pointText.font;
+                label.fontSize = 28;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 16;
+                label.fontSizeMax = 28;
+                label.alignment = TextAlignmentOptions.Center;
+                label.raycastTarget = false;
+                SetReference(slot, "missingIconLabel", label);
+                SetReference(slot, "levelLabel", slot.transform.Find("SkillLevelIcon/SkillLevelText").GetComponent<TMP_Text>());
+            }
+            VerifyReferences(new[] { popup.gameObject });
+            foreach (var entry in popups.popupEntries) if (entry.popup == old) entry.popup = popup;
+            SetReference(InScene<MirrorLobbyBridge_MirrorTest>(scene).Single(), "passivePopup", popup);
+            Object.DestroyImmediate(old.gameObject);
+            EditorUtility.SetDirty(popups);
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Mirror 로비 저장 실패");
+            Debug.Log("[MirrorLobbySetup] 새 패시브 화면·단계 버튼·프로필 연결 완료");
+        }
+        finally
+        {
+            EditorSceneManager.ClosePreviewScene(source);
+            if (opened) EditorSceneManager.CloseScene(scene, true);
+            if (previous.IsValid() && previous.isLoaded) SceneManager.SetActiveScene(previous);
+        }
+    }
+
     /// <summary>캠프 이동 영역을 별도 프리뷰 씬에서 굽고 Mirror 캠프에만 연결한다.</summary>
     [MenuItem("SW/Mirror 테스트/캠프 이동 영역 생성")]
     public static void BakeCampNavigation()
@@ -223,7 +309,13 @@ public static class MirrorLobbySceneSetup_MirrorTest
             lobbyData.ApplyModifiedPropertiesWithoutUndo();
             CreateConnectionPanel(flow, lobby);
             EventSystem[] systems = InScene<EventSystem>(lobbyScene)
-                .OrderByDescending(item => item.gameObject.activeInHierarchy).ToArray();
+                .OrderByDescending(item => item.transform.IsChildOf(manager.transform))
+                .ThenByDescending(item => item.gameObject.activeInHierarchy).ToArray();
+            if (systems.Length > 0)
+            {
+                systems[0].transform.SetParent(manager.transform, false);
+                systems[0].gameObject.SetActive(true);
+            }
             foreach (EventSystem duplicate in systems.Skip(1))
             {
                 foreach (BaseInputModule module in duplicate.GetComponents<BaseInputModule>()) Object.DestroyImmediate(module);
@@ -358,6 +450,76 @@ public static class MirrorLobbySceneSetup_MirrorTest
         SetOptionalReference(data, "serverButton", server);
         SetOptionalReference(data, "reconnectButton", reconnect);
         data.ApplyModifiedPropertiesWithoutUndo();
+        StyleConnectionPanel(bridge);
+    }
+
+    [MenuItem("SW/Mirror Test/Polish Lobby Connection UI")]
+    public static void PolishLobbyConnectionUI()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (EditorApplication.isPlayingOrWillChangePlaymode || scene.isDirty ||
+            scene.path != MirrorTestNetworkManager.SessionLobbyScene || PrefabStageUtility.GetCurrentPrefabStage() != null)
+            throw new InvalidOperationException("저장된 Mirror 로비를 Edit Mode에서 열어 주세요.");
+        StyleConnectionPanel(InScene<MirrorLobbyBridge_MirrorTest>(scene).Single());
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene)) throw new IOException("로비 저장 실패");
+    }
+
+    private static void StyleConnectionPanel(MirrorLobbyBridge_MirrorTest bridge)
+    {
+        var data = new SerializedObject(bridge);
+        var panel = ((GameObject)data.FindProperty("connectionPanel").objectReferenceValue).GetComponent<RectTransform>();
+        panel.sizeDelta = new Vector2(740, 660);
+        panel.GetComponent<Image>().color = new Color(0.025f, 0.075f, 0.105f, 0.98f);
+        var outline = panel.GetComponent<UnityEngine.UI.Outline>() ?? panel.gameObject.AddComponent<UnityEngine.UI.Outline>();
+        outline.effectColor = new Color(0.12f, 0.65f, 0.72f, 0.8f);
+        outline.effectDistance = new Vector2(2, -2);
+        var address = (TMP_InputField)data.FindProperty("addressInput").objectReferenceValue;
+        var nickname = (TMP_InputField)data.FindProperty("displayNameInput").objectReferenceValue;
+        Place(nickname.GetComponent<RectTransform>(), new Vector2(440, 56), new Vector2(85, 155));
+        Place(address.GetComponent<RectTransform>(), new Vector2(440, 56), new Vector2(85, 80));
+        nickname.characterLimit = 24;
+        foreach (var input in new[] { nickname, address })
+        {
+            input.lineType = TMP_InputField.LineType.SingleLine;
+            input.textComponent.fontSize = 24;
+            input.textComponent.color = new Color(0.91f, 0.97f, 1f);
+            input.targetGraphic.color = new Color(0.07f, 0.17f, 0.22f);
+            input.textComponent.rectTransform.sizeDelta = new Vector2(410, 50);
+        }
+        foreach (var text in panel.GetComponentsInChildren<TMP_Text>(true).Where(t => t.transform.parent == panel))
+        {
+            if (text.text == "MULTIPLAYER" || text.text == "멀티플레이 접속")
+            { text.text = "멀티플레이 접속"; text.fontSize = 34; text.color = new Color(0.55f, 0.93f, 1f); Place(text.rectTransform, new Vector2(640, 60), new Vector2(0, 255)); }
+            else if (text.text == "이름" || text.text == "닉네임")
+            { text.text = "닉네임"; text.fontSize = 22; Place(text.rectTransform, new Vector2(150, 56), new Vector2(-240, 155)); }
+            else if (text.text == "주소" || text.text == "서버 주소")
+            { text.text = "서버 주소"; text.fontSize = 22; Place(text.rectTransform, new Vector2(150, 56), new Vector2(-240, 80)); }
+        }
+        StyleButton("joinButton", "서버 접속", new Vector2(610, 62), new Vector2(0, -10), new Color(0.06f, 0.45f, 0.55f));
+        StyleButton("reconnectButton", "최근 세션으로 복귀", new Vector2(610, 52), new Vector2(0, -80), new Color(0.08f, 0.24f, 0.31f));
+        StyleButton("hostButton", "로컬 테스트 · Host", new Vector2(295, 46), new Vector2(-157.5f, -155), new Color(0.11f, 0.17f, 0.21f));
+        StyleButton("serverButton", "로컬 테스트 · 서버", new Vector2(295, 46), new Vector2(157.5f, -155), new Color(0.11f, 0.17f, 0.21f));
+        var status = (TMP_Text)data.FindProperty("statusText").objectReferenceValue;
+        status.text = "최대 4인 · 먼저 접속한 플레이어가 방장입니다.\n서버 IP 또는 호스트명 입력 · 연결이 끊겨도 5분 안에 복귀 가능";
+        status.fontSize = 20;
+        status.color = new Color(0.65f, 0.79f, 0.85f);
+        Place(status.rectTransform, new Vector2(640, 105), new Vector2(0, -255));
+        void StyleButton(string field, string label, Vector2 size, Vector2 position, Color color)
+        {
+            var button = (Button)data.FindProperty(field).objectReferenceValue;
+            Place(button.GetComponent<RectTransform>(), size, position);
+            button.targetGraphic.color = color;
+            var text = button.GetComponentInChildren<TMP_Text>(true);
+            text.text = label;
+            text.fontSize = 23;
+            text.rectTransform.sizeDelta = size - new Vector2(20, 4);
+            var colors = button.colors;
+            colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.65f);
+            button.colors = colors;
+        }
+        void Place(RectTransform rect, Vector2 size, Vector2 position)
+        { rect.sizeDelta = size; rect.anchoredPosition = position; }
     }
 
     private static RectTransform Rect(string name, Transform parent, Vector2 size, Vector2 position)

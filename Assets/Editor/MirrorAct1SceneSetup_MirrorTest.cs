@@ -74,7 +74,9 @@ public static class MirrorAct1SceneSetup_MirrorTest
             for (int i = 0; i < starts.Length; ++i)
                 starts[i].transform.position = playerPosition + Vector3.right * (i * 2 - 3);
             Vector3 portalPosition = Find(source, "PortalSpawnPoint").position;
-            Find(target, "Portal_Particle2_MirrorSession").position = portalPosition;
+            // 원형 이펙트가 포탈 본체 안에 묻히지 않도록 표면 위에 둔다.
+            // 탑승 Collider는 템플릿의 역방향 높이 보정을 유지한다.
+            Find(target, "Portal_Particle2_MirrorSession").position = portalPosition + Vector3.up * 1.1f;
             Find(target, "Portal_Body_MirrorSession").position = portalPosition;
 
             WBH_EnemySpawnArea area = Components<WBH_EnemySpawnArea>(source).Single();

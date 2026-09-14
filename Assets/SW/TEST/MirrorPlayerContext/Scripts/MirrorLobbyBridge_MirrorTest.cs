@@ -1,4 +1,4 @@
-using ItemSystem;
+﻿using ItemSystem;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -18,11 +18,16 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     [SerializeField] private Button joinButton;
     [SerializeField] private Button serverButton;
     [SerializeField] private Button reconnectButton;
+    [SerializeField] private KY_PassiveSkillPopup passivePopup;
     private MirrorTestNetworkManager manager;
     private string displayedParticipantId;
+    private bool? passiveChangesAllowed;
+    private KY_PausePopup pausePopup;
 
     private void Awake()
     {
+        Core.SettingManager.Instance?.Activate();
+        Core.DataManager.Instance?.LoadPassiveData();
         flow.ConfigureExternalFlow();
         lobby.ConfigureExternalState(null, string.Empty);
         lobby.SetPlayers(null);
@@ -36,8 +41,21 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         flow.LeaveRequested += Leave;
     }
 
+    private void Update()
+    {
+        bool canConnect = manager != null && !NetworkClient.active && !NetworkServer.active;
+        hostButton.interactable = joinButton.interactable = serverButton.interactable = reconnectButton.interactable = canConnect;
+        addressInput.interactable = displayNameInput.interactable = canConnect;
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            KY_GameEvents.EscPressed();
+        }
+    }
+
     private void Start()
     {
+        foreach (var popup in FindObjectsByType<KY_PausePopup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (popup.gameObject.scene == gameObject.scene) { pausePopup = popup; break; }
         manager = NetworkManager.singleton as MirrorTestNetworkManager;
         if (manager == null)
         {
@@ -65,8 +83,22 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     private bool PrepareConnection()
     {
         if (manager == null || NetworkClient.active || NetworkServer.active) return false;
-        manager.ClientDisplayName = displayNameInput.text;
-        manager.networkAddress = string.IsNullOrWhiteSpace(addressInput.text) ? "localhost" : addressInput.text.Trim();
+        string nickname = displayNameInput.text.Trim();
+        string address = addressInput.text.Trim();
+        if (nickname.Length == 0 || nickname.Length > 24 || nickname.IndexOfAny(new[] { '<', '>', '\n', '\r', '\t' }) >= 0)
+        {
+            SetStatus("닉네임을 1~24자로 입력해 주세요. 태그와 줄바꿈은 사용할 수 없습니다.");
+            displayNameInput.Select();
+            return false;
+        }
+        if (System.Uri.CheckHostName(address) == System.UriHostNameType.Unknown)
+        {
+            SetStatus("서버 IP 또는 호스트명을 입력해 주세요. 포트 번호는 붙이지 않습니다.");
+            addressInput.Select();
+            return false;
+        }
+        manager.ClientDisplayName = nickname;
+        manager.networkAddress = address;
         manager.RequestedReconnectProfile = null;
         SetStatus("연결 중…");
         return true;
@@ -95,7 +127,12 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         manager.StartClient();
     }
 
-    private void ChangeReady(bool ready) => manager?.RequestLobbyChange(MirrorLobbyOperation_MirrorTest.Ready, ready: ready);
+    private void ChangeReady(bool ready)
+    {
+        if (manager == null) return;
+        if (ready) SetPassiveChangesAllowed(false);
+        if (!manager.RequestLobbyChange(MirrorLobbyOperation_MirrorTest.Ready, ready: ready)) RefreshLobby();
+    }
     private void ChangeCharacter(KY_CharacterId character) => manager?.RequestLobbyChange(
         MirrorLobbyOperation_MirrorTest.Character,
         character == KY_CharacterId.Gunner ? CharacterClass.Gunner : CharacterClass.Fighter);
@@ -105,10 +142,12 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
 
     private void RefreshLobby()
     {
+        MirrorTestLocalPlayerUIBinder.ConfigurePauseMenu(pausePopup, manager);
         bool admitted = !string.IsNullOrEmpty(manager.LocalParticipantId);
         connectionPanel.SetActive(!admitted);
         if (!admitted)
         {
+            SetPassiveChangesAllowed(true);
             displayedParticipantId = null;
             flow.HidePanels();
             return;
@@ -116,10 +155,12 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
         lobby.ConfigureExternalState(manager.LocalParticipantId, manager.ClientDisplayName);
         var slots = new KY_LobbyPlayerData[MirrorSessionRoster_MirrorTest.MaxMembers];
         MirrorLobbySnapshot_MirrorTest snapshot = manager.ClientLobby;
+        MirrorLobbyMember_MirrorTest local = default;
         if (snapshot.Members != null)
         {
             foreach (MirrorLobbyMember_MirrorTest member in snapshot.Members)
             {
+                if (member.ParticipantId == manager.LocalParticipantId) local = member;
                 if (member.Slot < 0 || member.Slot >= slots.Length || member.HasForfeited) continue;
                 slots[member.Slot] = new KY_LobbyPlayerData
                 {
@@ -129,18 +170,23 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
                 };
             }
         }
+        SetPassiveChangesAllowed(!snapshot.RunStarted && !local.IsReady);
         lobby.SetPlayers(slots);
         if (snapshot.RunStarted) flow.HidePanels();
         else if (displayedParticipantId != manager.LocalParticipantId)
         {
             displayedParticipantId = manager.LocalParticipantId;
-            MirrorLobbyMember_MirrorTest local = default;
-            if (snapshot.Members != null)
-                foreach (MirrorLobbyMember_MirrorTest member in snapshot.Members)
-                    if (member.ParticipantId == manager.LocalParticipantId) local = member;
             if (local.HasCharacterChoice) flow.ShowLobby();
             else flow.ShowCharacterSelection();
         }
+    }
+
+    /// <summary>준비 시 전송한 패시브와 출발 시 적용할 값이 달라지지 않도록 준비 후에는 변경을 잠근다.</summary>
+    private void SetPassiveChangesAllowed(bool allowed)
+    {
+        if (passivePopup == null || passiveChangesAllowed == allowed) return;
+        passiveChangesAllowed = allowed;
+        passivePopup.Bind(PassiveSkillManager.Instance, allowed, "준비를 취소한 뒤 패시브를 변경할 수 있습니다.");
     }
 
     private static KY_LobbyReadyState GetReadyState(MirrorLobbyMember_MirrorTest member)

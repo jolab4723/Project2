@@ -37,6 +37,7 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     [SerializeField, Min(1f)] private float spawnRadius = 8f;
     [SerializeField] private Vector3[] authoredSpawnPositions;
     [SerializeField] private Vector3 bossSpawnPosition;
+    [SerializeField] private MirrorBossIntro_MirrorTest bossIntro;
 
     [SyncVar] private int currentWave;
     [SyncVar] private uint totalSpawnCount;
@@ -165,6 +166,9 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
         if (!TryPrepareEnemyInfos(manager, pendingNode))
             return false;
 
+        if (bossSession && bossIntro != null && !bossIntro.ServerBegin(manager, initialDelay))
+            return false;
+
         sessionPhase = MirrorTestSessionPhase.Playing;
         sessionStateRevision++;
         waveRoutine = StartCoroutine(SpawnWaveAfter(initialDelay));
@@ -217,7 +221,12 @@ public sealed class NetworkEnemyWaveSpawner_MirrorTest : NetworkBehaviour
     [Server]
     private IEnumerator SpawnWaveAfter(float delay)
     {
-        if (delay > 0f)
+        if (bossSession && bossIntro != null)
+        {
+            while (!bossIntro.IsComplete)
+                yield return null;
+        }
+        else if (delay > 0f)
             yield return new WaitForSeconds(delay);
 
         currentWave++;

@@ -138,6 +138,7 @@ public static class MirrorInventoryRulesValidation_MirrorTest
             SetReference(upgrade, "equipmentSystem", null);
             SetReference(tooltip, "playerStatManager", null);
             SetReference(tooltip, "equipmentSystem", null);
+            tooltip.gameObject.SetActive(true);
 
             foreach (InventoryItemUISpawner component in contents.GetComponentsInChildren<InventoryItemUISpawner>(true))
                 if (component != spawner) Object.DestroyImmediate(component);
@@ -174,8 +175,11 @@ public static class MirrorInventoryRulesValidation_MirrorTest
             .GetComponentInChildren<InventoryView>(true);
         Require(view != null, "Camp InventoryView가 없습니다.");
         var serialized = new SerializedObject(view);
-        foreach (string field in new[] { "gridRect", "itemsContainer", "itemSpawner", "shopController", "upgradeController" })
+        foreach (string field in new[] { "gridRect", "itemsContainer", "itemSpawner", "shopController", "upgradeController", "tooltipManager" })
             Require(serialized.FindProperty(field).objectReferenceValue != null, "Camp InventoryView." + field + " 참조가 없습니다.");
+        var tooltip = (TooltipManager)serialized.FindProperty("tooltipManager").objectReferenceValue;
+        Require(tooltip.enabled && tooltip.GetComponentsInParent<Transform>(true).All(t => t.gameObject.activeSelf),
+            "Camp TooltipManager의 Runtime 또는 상위 오브젝트가 비활성 상태입니다.");
         Require(view.EquipmentSlots.Length == 5 && view.EquipmentSlots.All(slot => slot != null), "Camp 장비 슬롯 참조가 없습니다.");
         Require(view.transform.root.GetComponentsInChildren<InventoryController>(true).Length == 0 &&
                 view.transform.root.GetComponentsInChildren<TooltipManager>(true).Length == 1 &&

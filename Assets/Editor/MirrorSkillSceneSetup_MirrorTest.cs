@@ -172,8 +172,8 @@ public static class MirrorSkillSceneSetup_MirrorTest
                     // 원본의 빛·회전 연출과 URP Light 설정은 보존한다. 피해 및 수명은 서버 원본만 실행한다.
                     string type = behaviour.GetType().FullName;
                     if (type is "SciFiArsenal.SciFiLightFade" or "SciFiArsenal.SciFiLightFlicker" or "SciFiArsenal.SciFiRotation" or "UnityEngine.Rendering.Universal.UniversalAdditionalLightData") continue;
-                    // 사운드 작업 중인 원본 피치 조절 구성도 그대로 전달한다.
-                    if (type == "SciFiArsenal.SciFiPitchRandomizer") continue;
+                    // 실제 AudioSource가 있는 피치 조절만 보존한다. 없는 구성은 Start에서 예외가 난다.
+                    if (type == "SciFiArsenal.SciFiPitchRandomizer" && behaviour.GetComponent<AudioSource>() != null) continue;
                     Object.DestroyImmediate(behaviour);
                 }
                 foreach (var collider in clone.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(collider);

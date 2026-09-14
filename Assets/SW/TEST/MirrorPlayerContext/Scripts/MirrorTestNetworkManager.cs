@@ -1195,7 +1195,8 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
             if (player == null)
                 continue;
 
-            Transform start = GetStartPosition();
+            MirrorSpawnedPlayerBinder binder = player.GetComponent<MirrorSpawnedPlayerBinder>();
+            Transform start = GetParticipantStartPosition(binder.ParticipantSlot);
             if (start == null)
             {
                 Debug.LogWarning(
@@ -1203,9 +1204,16 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
                 return;
             }
 
-            player.GetComponent<MirrorSpawnedPlayerBinder>()
-                ?.ServerPlaceAtSceneStart(start.position, start.rotation);
+            binder.ServerPlaceAtSceneStart(start.position, start.rotation);
         }
+    }
+
+    /// <summary>입장·씬 전환·재접속 모두 같은 참가 슬롯의 시작점을 사용해 무작위 중복 배치를 막는다.</summary>
+    private Transform GetParticipantStartPosition(int slot)
+    {
+        startPositions.RemoveAll(start => start == null);
+        if (startPositions.Count == 0) return null;
+        return startPositions[Mathf.Clamp(slot, 0, MirrorSessionRoster_MirrorTest.MaxMembers - 1) % startPositions.Count];
     }
 
     private static bool IsCompatibleBuild(int clientVersion)

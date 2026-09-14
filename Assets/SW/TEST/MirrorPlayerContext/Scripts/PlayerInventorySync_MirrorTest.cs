@@ -87,6 +87,9 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int MaxInstanceIdLength = 128;
     // 서버가 개발 명령을 명시적으로 허용한 경우에만 수동 지급할 검증용 아이템이다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
+    // 임시 지급용: 파이터 및 거너 클래스별 최고 공격력 무기 아이템 ID (파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)
+    private const string DefaultFighterWeaponItemId = "item.weapon.axe.heartofdebris";
+    private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.magmacrusher";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;
@@ -237,8 +240,146 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        // 새 런에는 테스트 아이템을 자동 지급하지 않는다. 개발 지급은 명시적 요청 경로에만 둔다.
+
+        // 임시 지급용: 미러 테스트 중 적 공격에 즉사하지 않도록 가장 체력이 높은 아이템(우주 괴물 두개골, HP +230)을 기본 지급하고 자동 장착한다.
+        ServerGrantDefaultHighHealthItem();
+
+        // 임시 지급용: 미러 테스트 중 원활한 공격 검증을 위해 클래스별 최고 공격력 무기(파이터: 데브리스 심장 도끼 ATK 75, 거너: 용암 파쇄포 ATK 78)를 기본 지급하고 자동 장착한다.
+        ServerGrantDefaultHighAttackWeapon();
+
         AdvanceStateRevision();
+    }
+
+    // 임시 지급용: 미러 테스트 중 적이 너무 세서 한 방에 죽는 문제를 방지하기 위해, 체력이 가장 높은 아이템을 기본 지급하고 자동 장착한다.
+    [Server]
+    private void ServerGrantDefaultHighHealthItem()
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (context?.Inventory == null)
+            return;
+
+        if (HasOwnedItemDefinition(DefaultTestItemId))
+            return;
+
+        ItemDefinitionSO definition = ResolveDefinition(DefaultTestItemId);
+        if (definition == null)
+        {
+            Debug.LogError($"[PlayerInventorySync_MirrorTest] 임시 지급용 테스트 아이템을 찾지 못했습니다: {DefaultTestItemId}", this);
+            return;
+        }
+
+        ItemInstance item = ItemDataCreator.CreateItemData(definition);
+        MirrorTestInventoryRequestResult addResult = ServerAddItemAndSnapshot(item, out InventoryItem added);
+        if (addResult != MirrorTestInventoryRequestResult.Success || added?.itemData == null)
+        {
+            Debug.LogWarning($"[PlayerInventorySync_MirrorTest] 임시 지급용 아이템 인벤토리 추가 실패: {addResult}", this);
+            return;
+        }
+
+        if (context.Equipment != null && !context.Equipment.TryGetEquippedItem(EquipSlotType.Helmet, out _))
+        {
+            ServerChangeEquipment(
+                added.itemData.instanceId,
+                true,
+                EquipSlotType.Helmet,
+                0,
+                0,
+                false,
+                out _);
+
+            if (context.Health != null)
+            {
+                context.Health.RefreshMaxHealth();
+                context.Health.FillHealth();
+            }
+        }
+    }
+
+    // 임시 지급용: 거너와 파이터 캐릭터 클래스에 맞춰 가장 공격력이 높은 무기를 기본 지급하고 자동 장착한다.
+    [Server]
+    private void ServerGrantDefaultHighAttackWeapon()
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (context?.Inventory == null)
+            return;
+
+        CharacterClass characterClass = ResolveCharacterClass();
+        if (context.Equipment != null && !context.Equipment.CurrentCharacterClass.HasValue)
+            context.Equipment.SetActiveCharacterClass(characterClass);
+
+        string weaponItemId = characterClass == CharacterClass.Gunner
+            ? DefaultGunnerWeaponItemId
+            : DefaultFighterWeaponItemId;
+
+        if (HasOwnedItemDefinition(weaponItemId))
+            return;
+
+        ItemDefinitionSO definition = ResolveDefinition(weaponItemId);
+        if (definition == null)
+        {
+            Debug.LogError($"[PlayerInventorySync_MirrorTest] 임시 지급용 무기 아이템을 찾지 못했습니다: {weaponItemId}", this);
+            return;
+        }
+
+        ItemInstance item = ItemDataCreator.CreateItemData(definition);
+        MirrorTestInventoryRequestResult addResult = ServerAddItemAndSnapshot(item, out InventoryItem added);
+        if (addResult != MirrorTestInventoryRequestResult.Success || added?.itemData == null)
+        {
+            Debug.LogWarning($"[PlayerInventorySync_MirrorTest] 임시 지급용 무기 인벤토리 추가 실패: {addResult}", this);
+            return;
+        }
+
+        if (context.Equipment != null && !context.Equipment.TryGetEquippedItem(EquipSlotType.Weapon, out _))
+        {
+            ServerChangeEquipment(
+                added.itemData.instanceId,
+                true,
+                EquipSlotType.Weapon,
+                0,
+                0,
+                false,
+                out _);
+        }
+    }
+
+    private CharacterClass ResolveCharacterClass()
+    {
+        if (context?.Equipment?.CurrentCharacterClass.HasValue == true)
+            return context.Equipment.CurrentCharacterClass.Value;
+
+        if (gameObject.name.IndexOf("Gunner", StringComparison.OrdinalIgnoreCase) >= 0)
+            return CharacterClass.Gunner;
+
+        return CharacterClass.Fighter;
+    }
+
+    private bool HasOwnedItemDefinition(string itemId)
+    {
+        if (context?.Inventory != null)
+        {
+            foreach (InventoryItem item in context.Inventory.GetAllInventoryItems())
+            {
+                if (item?.itemData?.definition != null &&
+                    string.Equals(item.itemData.definition.itemId, itemId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (context?.Equipment != null)
+        {
+            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
+            {
+                if (pair.Value?.itemData?.definition != null &&
+                    string.Equals(pair.Value.itemData.definition.itemId, itemId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public override void OnStartClient()
@@ -1056,9 +1197,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (snapshotIndex < 0 || !originalPlacement.IsValid)
             return MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        // ponytail: C단계 평면 테스트용 배치다. 실제 맵 적용 시 WorldItemDropService의
-        // 충돌·빈자리 탐색을 서버 전용 API로 올린 뒤 이 위치 계산을 교체한다.
-        Vector3 position = transform.position + transform.forward * dropDistance + Vector3.up * 0.5f;
+        Vector3 position = transform.position + transform.forward * dropDistance;
         NetworkWorldItem_MirrorTest pickup = null;
         bool removed = false;
 
@@ -1067,6 +1206,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             if (!NetworkWorldItemSpawnService_MirrorTest.TryCreateUnspawned(
                     worldItemPrefab,
                     snapshot,
+                    transform.position,
                     position,
                     out pickup))
             {
@@ -1418,9 +1558,18 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         string oldSnapshot,
         string newSnapshot)
     {
+        if (isServer) return;
+        if (operation == SyncList<string>.Operation.OP_SET && isLocalPlayer &&
+            context?.Inventory?.PlayerGrid != null && context.Equipment != null)
+        {
+            ItemSaveData saved = FromSnapshotJson(newSnapshot);
+            InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
+            // 누적 스택만 바뀔 때 소유권과 UI를 다시 만들지 않고 기존 인스턴스에 반영한다.
+            if (item?.itemData != null) item.itemData.persistedStackCount = saved.persistedStackCount;
+        }
         // 교환 중간의 OP_SET 하나만 적용하면 아직 이동하지 않은 상대 아이템과 충돌한다.
         // 한 프레임의 소유 스냅샷을 모두 받은 후 묶어서 반영한다.
-        if (!isServer) localStateRefreshQueued = true;
+        localStateRefreshQueued = true;
     }
 
     /// <summary>
@@ -1455,7 +1604,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     {
         ItemSaveData saved = FromSnapshotJson(snapshotJson);
         InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
-        if (item?.itemData == null || item.itemData.upgradeLevel != saved.upgradeLevel)
+        if (item?.itemData == null || item.itemData.upgradeLevel != saved.upgradeLevel ||
+            item.itemData.persistedStackCount != saved.persistedStackCount)
             return false;
 
         if (saved.isEquipped)
@@ -1969,6 +2119,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>(),
             rolledElement = saved.rolledElement,
             upgradeLevel = saved.upgradeLevel,
+            persistedStackCount = saved.persistedStackCount,
         };
     }
 
@@ -1990,6 +2141,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             rolledSubStats = data.rolledSubStats,
             rolledElement = data.rolledElement,
             upgradeLevel = data.upgradeLevel,
+            persistedStackCount = data.persistedStackCount,
             gridX = item.x,
             gridY = item.y,
             isRotated = item.isRotated,
@@ -2007,6 +2159,18 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         return string.IsNullOrWhiteSpace(snapshotJson)
             ? null
             : JsonUtility.FromJson<ItemSaveData>(snapshotJson);
+    }
+
+    /// <summary>위치와 거래 번호를 바꾸지 않고 서버 소유 아이템의 저장 스택 표시를 갱신한다.</summary>
+    [Server]
+    internal void ServerSyncPersistedStack(ItemInstance item)
+    {
+        int index = item != null ? FindSnapshotIndex(item.instanceId) : -1;
+        if (index < 0 || FindOwnedItem(item.instanceId)?.itemData != item) return;
+        ItemSaveData saved = FromSnapshotJson(itemSnapshots[index]);
+        if (saved.persistedStackCount == item.persistedStackCount) return;
+        saved.persistedStackCount = item.persistedStackCount;
+        itemSnapshots[index] = JsonUtility.ToJson(saved);
     }
 
     private static ItemDefinitionSO ResolveDefinition(string itemId)

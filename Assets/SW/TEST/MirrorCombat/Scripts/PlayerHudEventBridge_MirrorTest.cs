@@ -21,6 +21,14 @@ public sealed class PlayerHudEventBridge_MirrorTest : MonoBehaviour
 
     public PlayerContext BoundContext { get; private set; }
 
+    private void Awake()
+    {
+        // 실제 네트워크 보스/엘리트 바는 별도 NetworkBossHealthBar가 표시한다.
+        // 캠프처럼 해당 어댑터가 없는 씬에서도 원본 HUD의 샘플 바가 남지 않게 한다.
+        foreach (var view in GetComponentsInChildren<WBH_HighEnemyHpbarView>(true))
+            view.gameObject.SetActive(false);
+    }
+
     public void Bind(PlayerContext context)
     {
         if (BoundContext == context)

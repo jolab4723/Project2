@@ -9,7 +9,7 @@ using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 /// <summary>명시적 개발 실행에서만 실제 소유자 공격과 모든 접속자의 HP 복제를 검사한다.</summary>
-public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
+public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 {
     // 별도 NetworkBehaviour/프리팹을 추가하지 않는다. 테스트 메시지는 활성화된 서버의 고정 참가자만 받는다.
     public struct StepMessage : NetworkMessage
@@ -33,6 +33,7 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         public int Charges;
         public bool Dead;
         public string Detail;
+        public string BuffStats;
     }
     public struct AckMessage : NetworkMessage
     {
@@ -48,6 +49,10 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private bool serverRegistered, clientRegistered, campRequested, voteRequested, routineStarted, failed;
     private readonly HashSet<int> participants = new();
     private readonly HashSet<int> acknowledgements = new();
+    private readonly Dictionary<string, ItemInstance> relicReplicas = new();
+    private readonly Dictionary<EquipSlotType, string> initialClientEquipment = new();
+    private readonly Dictionary<uint, int> initialBuffCounts = new();
+    private bool initialEquipmentCaptured;
     private int step;
     private byte phase;
     private NetworkEnemyAuthority_MirrorTest target;
@@ -70,14 +75,18 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private static void Attach()
     {
         if (Argument("--mirror-smoke-combat") != "true") return;
-        if (NetworkManager.singleton is MirrorTestNetworkManager manager &&
-            manager.GetComponent<MirrorCombatSmoke_MirrorTest>() == null)
-            manager.gameObject.AddComponent<MirrorCombatSmoke_MirrorTest>();
+        if (NetworkManager.singleton is MirrorTestNetworkManager &&
+            FindFirstObjectByType<MirrorCombatSmoke_MirrorTest>() == null)
+        {
+            var runner = new GameObject("Mirror Combat Smoke");
+            DontDestroyOnLoad(runner);
+            runner.AddComponent<MirrorCombatSmoke_MirrorTest>();
+        }
     }
 
     private void Start()
     {
-        manager = GetComponent<MirrorTestNetworkManager>();
+        manager = NetworkManager.singleton as MirrorTestNetworkManager;
         startedAt = Time.realtimeSinceStartupAsDouble;
         if ((!Debug.isDebugBuild && !Application.isEditor) || manager == null ||
             Argument("--mirror-smoke-inventory") == "true" || !string.IsNullOrEmpty(Argument("--mirror-smoke-travel")) ||
@@ -88,7 +97,8 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private void Update()
     {
         if (Completed || failed) return;
-        double timeout = Argument("--mirror-smoke-skills") == "true" ? 720d : 240d;
+        if (manager == null) return; // 재접속 중 로비가 새 NetworkManager를 만드는 프레임.
+        double timeout = Argument("--mirror-smoke-skills") == "true" || Argument("--mirror-smoke-quests") == "true" ? 720d : 240d;
         if (Time.realtimeSinceStartupAsDouble - startedAt > timeout) { Fail("combat timeout " + timeout); return; }
         if (NetworkServer.active && !serverRegistered)
         {
@@ -137,10 +147,14 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         Require(prefab != null, "registered Normal_Melee_MirrorTest prefab");
         ItemDefinitionSO[] definitions = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items");
         yield return new WaitForSecondsRealtime(2f);
+        var initialEquipment = actors.ToDictionary(p => p.CombatAuthority.netId, EquipmentIds);
+        foreach (PlayerContext actor in actors)
+            initialBuffCounts[actor.CombatAuthority.netId] = actor.Buffs.ActiveBuffs.Count;
+        bool remainingOnly = Argument("--mirror-smoke-focus") == "remaining";
+        if (!remainingOnly)
         foreach (PlayerContext actor in actors)
         {
-            Require(actor.Inventory.PlayerGrid.GetAllItems().Count == 0 &&
-                !actor.Equipment.TryGetEquippedItem(EquipSlotType.Weapon, out _), "fresh combat fixture requires empty inventory/weapon");
+            Require(actor.Inventory.PlayerGrid.GetAllItems().Count == 0, "fresh combat fixture requires empty inventory");
             bool gunner = actor.Equipment.CurrentCharacterClass == CharacterClass.Gunner;
             int count = gunner ? 3 : 2;
             for (int test = 0; test < count; test++)
@@ -149,14 +163,12 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 bool skill = !gunner && test == 1;
                 WeaponType weapon = test == 0 ? WeaponType.Rifle : test == 1 ? WeaponType.Shotgun : WeaponType.GrenadeLauncher;
                 string label = gunner ? weapon.ToString() : skill ? "FighterSkill0" : "FighterBasic";
-                if (gunner)
-                {
-                    ItemDefinitionSO definition = definitions.Where(d => d.characterClass == CharacterClass.Gunner &&
-                        d.category == ItemCategory.Weapon && d.weaponType == weapon && d.uniqueEffect == null &&
-                        d.weaponEnchantElement == ElementType.None).OrderBy(d => d.itemId, StringComparer.Ordinal).FirstOrDefault();
-                    Require(definition != null, "plain weapon definition " + label);
-                    CreateFixtureItem(actor, definition, EquipSlotType.Weapon);
-                }
+                // 중복 타격 검사는 속성/고유 효과 없는 무기로 하고, 각 검사 뒤 기본 장비를 복원한다.
+                ItemDefinitionSO definition = definitions.Where(d => d.characterClass == actor.Equipment.CurrentCharacterClass &&
+                    d.category == ItemCategory.Weapon && d.weaponType == (gunner ? weapon : WeaponType.Axe) && d.uniqueEffect == null &&
+                    d.weaponEnchantElement == ElementType.None).OrderBy(d => d.itemId, StringComparer.Ordinal).FirstOrDefault();
+                Require(definition != null, "plain weapon definition " + label);
+                CreateFixtureItem(actor, definition, EquipSlotType.Weapon);
                 WBH_PlayerStatus status = actor.GetComponent<WBH_PlayerStatus>();
                 float range = gunner ? status.GunnerAttackRange : status.FighterAttackRange;
                 if (skill) range = Mathf.Min(range, actor.GetComponent<FighterSkillAuthority_MirrorTest>().GetSkillDefinition(0).sectorRange);
@@ -201,21 +213,105 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 SendPhase(3);
                 yield return WaitForAcks("cleanup " + label);
                 Require(actor.Inventory.PlayerGrid.GetAllItems().Count == 0 &&
-                    !actor.Equipment.TryGetEquippedItem(EquipSlotType.Weapon, out _), "server inventory cleanup");
+                    EquipmentIds(actor) == initialEquipment[actor.CombatAuthority.netId], "server cleanup preserves initial equipment");
                 fixtureItem = null;
                 fixtureOwner = null;
                 Debug.Log($"[MirrorCombatSmoke] STEP PASS step={step} actor={currentStep.Actor} {label} HP={currentStep.Health} all=4");
             }
         }
-        if (Argument("--mirror-smoke-skills") == "true")
+        if (Argument("--mirror-smoke-relics") == "true")
+        {
+            if (remainingOnly) ValidateRelicCooldownPolicies(actors, definitions.Single(d => d.itemId == "item.relic.alienheart"));
+            else yield return RunRelicStacks(actors, definitions);
+        }
+        if (!remainingOnly && Argument("--mirror-smoke-skills") == "true")
             foreach (PlayerContext actor in actors.GroupBy(p => p.Equipment.CurrentCharacterClass).Select(group => group.First()))
                 yield return RunSkillMatrix(actor, prefab);
-        foreach (PlayerContext actor in actors) yield return RunLifecycle(actor);
+        if (!remainingOnly) foreach (PlayerContext actor in actors) yield return RunLifecycle(actor);
+        if (Argument("--mirror-smoke-interruptions") == "true")
+            yield return RunSkillInterruptions(actors.First(p => p.Equipment.CurrentCharacterClass == CharacterClass.Fighter), prefab);
+        if (Argument("--mirror-smoke-quests") == "true")
+            yield return RunQuestFlow(actors, definitions, prefab);
         SendPhase(4);
         yield return WaitForAcks("all client final cleanup");
+        Require(actors.All(p => EquipmentIds(p) == initialEquipment[p.CombatAuthority.netId]), "all initial equipment preserved");
         SendPhase(5);
         Passed = Completed = true;
         Debug.Log($"[MirrorCombatSmoke] PASS server steps={step} clients=4 actual owner commands/animation/HP/cleanup");
+    }
+
+    private IEnumerator RunRelicStacks(PlayerContext[] actors, ItemDefinitionSO[] definitions)
+    {
+        var relics = definitions.Where(d => d.category == ItemCategory.Relic &&
+            d.uniqueEffect is TriggeredBuffUniqueEffectSO effect && effect.persistStackOnItem).ToArray();
+        Require(relics.Length == 3, "three authored persistent relic definitions");
+        foreach (ItemDefinitionSO definition in relics)
+        {
+            var effect = (TriggeredBuffUniqueEffectSO)definition.uniqueEffect;
+            Require(effect.cooldownSeconds == 0f && effect.buffSpec.maxStack > 2, "authored kill-stack fixture");
+            var items = new InventoryItem[2];
+            for (int index = 0; index < 2; index++)
+            {
+                CreateFixtureItem(actors[index], definition, EquipSlotType.None);
+                items[index] = fixtureItem;
+                yield return ObserveRelic(actors[index], items[index], definition, 0);
+            }
+            actors[0].ItemTriggers.Fire(effect.triggerCondition);
+            actors[1].ItemTriggers.Fire(effect.triggerCondition);
+            actors[1].ItemTriggers.Fire(effect.triggerCondition);
+            yield return ObserveRelic(actors[0], items[0], definition, 1);
+            yield return ObserveRelic(actors[1], items[1], definition, 2);
+            uint revision = actors[0].GetComponent<PlayerInventorySync_MirrorTest>().StateRevision;
+            for (int hit = 0; hit < effect.buffSpec.maxStack + 2; hit++) actors[0].ItemTriggers.Fire(effect.triggerCondition);
+            Require(actors[0].GetComponent<PlayerInventorySync_MirrorTest>().StateRevision == revision,
+                "stack metadata does not invalidate placement requests");
+            yield return ObserveRelic(actors[0], items[0], definition, effect.buffSpec.maxStack);
+            yield return ObserveRelic(actors[1], items[1], definition, 2);
+
+            string droppedId = items[0].itemData.instanceId;
+            currentStep.Actor = actors[0].CombatAuthority.netId; currentStep.Item = droppedId;
+            SendPhase(31);
+            yield return WaitForAcks("owner relic drop");
+            Require(!actors[0].Buffs.ActiveBuffs.Any(b => b.source == effect), "relic loss removes buff");
+            NetworkWorldItem_MirrorTest dropped = FindObjectsByType<NetworkWorldItem_MirrorTest>(FindObjectsSortMode.None)
+                .FirstOrDefault(p => p.CreateItemInstance()?.instanceId == droppedId);
+            Require(dropped != null && dropped.CreateItemInstance().persistedStackCount == effect.buffSpec.maxStack,
+                "world snapshot preserves capped stack");
+            currentStep.Target = dropped.netId; currentStep.Charges = effect.buffSpec.maxStack;
+            SendPhase(32);
+            yield return WaitForAcks("four world stack replicas");
+            SendPhase(33);
+            yield return WaitForAcks("owner actual raycast reacquisition");
+            items[0] = actors[0].Inventory.PlayerGrid.GetAllItems().First(i => i.itemData.instanceId == droppedId);
+            yield return ObserveRelic(actors[0], items[0], definition, effect.buffSpec.maxStack);
+            yield return ObserveRelic(actors[1], items[1], definition, 2);
+            for (int index = 0; index < 2; index++)
+            {
+                currentStep.Actor = actors[index].CombatAuthority.netId; currentStep.Item = items[index].itemData.instanceId;
+                SendPhase(34);
+                yield return WaitForAcks("owner relic cleanup");
+                Require(!actors[index].Buffs.ActiveBuffs.Any(b => b.source == effect), "removed relic buff cleanup");
+            }
+            fixtureItem = null; fixtureOwner = null;
+            Debug.Log($"[MirrorCombatSmoke] RELIC PASS {definition.itemId} owners=2 observers=4 max={effect.buffSpec.maxStack} metadata/drop/pickup/buff");
+        }
+        ValidateRelicCooldownPolicies(actors, relics[0]);
+    }
+
+    private IEnumerator ObserveRelic(PlayerContext actor, InventoryItem item, ItemDefinitionSO definition, int count)
+    {
+        var effect = (TriggeredBuffUniqueEffectSO)definition.uniqueEffect;
+        Require(item.itemData.persistedStackCount == count &&
+            (actor.Buffs.ActiveBuffs.FirstOrDefault(b => b.source == effect)?.stackCount ?? 0) == count,
+            "server item and buff stack agree");
+        var sync = actor.GetComponent<PlayerInventorySync_MirrorTest>();
+        Require(sync.ServerTryGetOwnedSnapshot(item.itemData.instanceId, sync.StateRevision, out string json) &&
+            PlayerInventorySync_MirrorTest.CreateItemInstance(json).persistedStackCount == count, "snapshot round trip");
+        currentStep = new StepMessage { Step = ++step, Actor = actor.CombatAuthority.netId,
+            Item = item.itemData.instanceId, Detail = definition.itemId, Charges = count,
+            BuffStats = JsonUtility.ToJson(actor.Buffs.GetStatSet()) };
+        SendPhase(30);
+        yield return WaitForAcks("four relic buff and owner metadata replicas");
     }
 
     /// <summary>실제 소유자 입력으로 각 스킬 진화를 실행하고 네 참가자의 피해·선택·종료 위치를 비교한다.</summary>
@@ -291,6 +387,12 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 
     private IEnumerator RunLifecycle(PlayerContext actor)
     {
+        // 마지막 대시 진화의 한시 버프가 다음 검사의 관찰 도중 만료되면,
+        // 이미 만료된 버프 개수의 스냅샷을 기다리게 된다. 원래 수명대로 종료한
+        // 서버와 복제 상태에서 포션/사망 검사를 시작한다.
+        int baselineBuffs = initialBuffCounts[actor.CombatAuthority.netId];
+        yield return Wait(() => actor.Buffs.ActiveBuffs.Count == baselineBuffs && actor.RuntimeState.ActiveBuffCount == baselineBuffs,
+            "previous skill buffs naturally expire before lifecycle fixture", 45d);
         step++;
         Require(!actor.Equipment.TryGetEquippedItem(EquipSlotType.Potion, out _), "empty potion fixture slot");
         ItemDefinitionSO definition = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items")
@@ -372,6 +474,8 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     {
         currentStep.Health = state.CurrentHealth; currentStep.Mana = state.CurrentMana;
         currentStep.Charges = state.PotionCharges; currentStep.Buffs = state.ActiveBuffCount; currentStep.Dead = state.IsDead;
+        Debug.Log($"[MirrorCombatSmoke] RUNTIME EXPECT step={step} actor={currentStep.Actor} HP={currentStep.Health} MP={currentStep.Mana} " +
+            $"potion={currentStep.Charges} buffs={currentStep.Buffs} dead={currentStep.Dead}");
         SendPhase(11);
         yield return WaitForAcks("four runtime replicas");
     }
@@ -429,6 +533,12 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         bool owner = local.CombatAuthority.netId == message.Actor;
         CaptureInputs(local);
         PlayerInventorySync_MirrorTest sync = local.GetComponent<PlayerInventorySync_MirrorTest>();
+        if (!initialEquipmentCaptured)
+        {
+            foreach (var pair in local.Equipment.GetEquippedItems())
+                initialClientEquipment.Add(pair.Key, pair.Value.itemData.instanceId);
+            initialEquipmentCaptured = true;
+        }
         if (message.Phase == 0)
         {
             if (message.Target != 0)
@@ -474,17 +584,27 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 projectile.PlayerOwnerNetId == message.Actor), "owned projectile cleanup replica");
             if (owner && !string.IsNullOrEmpty(message.Item))
             {
-                Require(sync.TryRequestEquipmentChange(message.Item, false, message.Slot, 0, 0, false, out _), "owner unequip request");
-                yield return Wait(() => sync.PendingRequestCount == 0 && !local.Equipment.TryGetEquippedItem(message.Slot, out _), "unequip replica");
+                if (initialClientEquipment.TryGetValue(message.Slot, out string originalId))
+                {
+                    Require(sync.TryRequestEquipmentChange(originalId, true, message.Slot, -1, -1, false, out _), "owner restores initial equipment");
+                    yield return Wait(() => sync.PendingRequestCount == 0 && local.Equipment.TryGetEquippedItem(message.Slot, out var restored) &&
+                        restored.itemData.instanceId == originalId, "initial equipment restored replica");
+                }
+                else
+                {
+                    Require(sync.TryRequestEquipmentChange(message.Item, false, message.Slot, 0, 0, false, out _), "owner unequip request");
+                    yield return Wait(() => sync.PendingRequestCount == 0 && !local.Equipment.TryGetEquippedItem(message.Slot, out _), "unequip replica");
+                }
                 Require(sync.TryRequestRemoveInventoryItem(message.Item, out _), "owner fixture remove request");
                 yield return Wait(() => sync.PendingRequestCount == 0 && !local.Inventory.PlayerGrid.GetAllItems().Any(i => i.itemData.instanceId == message.Item), "fixture removal replica");
             }
         }
         else if (message.Phase == 4)
         {
-            Require(local.Inventory.PlayerGrid.GetAllItems().Count == 0 &&
-                !local.Equipment.TryGetEquippedItem(EquipSlotType.Weapon, out _) &&
-                !local.Equipment.TryGetEquippedItem(EquipSlotType.Potion, out _), "final local inventory cleanup");
+            yield return Wait(() => local.Inventory.PlayerGrid.GetAllItems().Count == 0 &&
+                local.Equipment.GetEquippedItems().Count() == initialClientEquipment.Count &&
+                initialClientEquipment.All(pair => local.Equipment.TryGetEquippedItem(pair.Key, out var item) &&
+                    item.itemData.instanceId == pair.Value), "final local cleanup preserves initial equipment");
             RestoreInputs();
         }
         else if (message.Phase == 20)
@@ -520,6 +640,20 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             }
             yield break; // 서버의 실제 Animator와 원본 투사체만 피해를 만든다.
         }
+        else if (message.Phase == 23 && owner)
+        {
+            var skills = local.GetComponent<FighterSkillAuthority_MirrorTest>();
+            var enemy = ClientTarget(message.Target);
+            Require(enemy != null && skills.TryUseLocalSkill(message.SkillIndex,
+                enemy.transform.position - local.transform.position, enemy.transform.position), "owner starts interrupted charge");
+        }
+        else if (message.Phase == 24)
+        {
+            var actor = NetworkClient.spawned[message.Actor].GetComponent<PlayerContext>();
+            yield return Wait(() => actor.GetComponent<FighterSkillAuthority_MirrorTest>().LastResult == MirrorSkillRequestResult.Interrupted,
+                "interruption result on every replica");
+            if (owner) yield return Wait(() => local.Controller.IsControlEnabled && local.StateMachine.Is(PlayerState.Idle), "resumed owner controls");
+        }
         else if (message.Phase == 22)
         {
             var actorObject = NetworkClient.spawned[message.Actor];
@@ -534,6 +668,61 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
                 skills.GetEnhancement(message.SkillIndex) == message.Enhancement, "confirmed skill selection retained");
             if (owner) Require(local.Controller.IsControlEnabled && local.StateMachine.Is(PlayerState.Idle) &&
                 !skills.TryConfirmLocalSkillImpactFromAnimation(), "owner control restored and client impact rejected");
+        }
+        else if (message.Phase >= 30 && message.Phase <= 34)
+        {
+            var definition = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items")
+                .First(d => d.itemId == message.Detail);
+            var effect = (TriggeredBuffUniqueEffectSO)definition.uniqueEffect;
+            PlayerContext actor = NetworkClient.spawned[message.Actor].GetComponent<PlayerContext>();
+            InventoryItem OwnedRelic() => local.Inventory.PlayerGrid.GetAllItems().FirstOrDefault(i => i.itemData.instanceId == message.Item);
+            if (message.Phase == 30)
+            {
+                yield return Wait(() => (actor.Buffs.ActiveBuffs.FirstOrDefault(b => b.source == effect)?.stackCount ?? 0) == message.Charges &&
+                    JsonUtility.ToJson(actor.Buffs.GetStatSet()) == message.BuffStats, "replicated relic buff stats");
+                if (owner)
+                {
+                    yield return Wait(() => OwnedRelic()?.itemData.persistedStackCount == message.Charges, "owner persistent item metadata");
+                    ItemInstance data = OwnedRelic().itemData;
+                    if (relicReplicas.TryGetValue(message.Item, out ItemInstance previous))
+                        Require(ReferenceEquals(previous, data), "stack-only update preserves owned instance");
+                    relicReplicas[message.Item] = data;
+                }
+            }
+            else if (message.Phase == 31 && owner)
+            {
+                Require(sync.TryRequestDropInventoryItem(message.Item, out _), "owner drop command");
+                yield return Wait(() => sync.PendingRequestCount == 0 && OwnedRelic() == null &&
+                    !local.Buffs.ActiveBuffs.Any(b => b.source == effect), "drop owner and buff removal");
+                relicReplicas.Remove(message.Item);
+            }
+            else if (message.Phase == 32)
+            {
+                yield return Wait(() => NetworkClient.spawned.TryGetValue(message.Target, out var world) &&
+                    world.GetComponent<NetworkWorldItem_MirrorTest>().CreateItemInstance()?.persistedStackCount == message.Charges,
+                    "world persistent metadata replica");
+            }
+            else if (message.Phase == 33 && owner)
+            {
+                var dropped = NetworkClient.spawned[message.Target].GetComponent<NetworkWorldItem_MirrorTest>();
+                Ray ray = default;
+                yield return Wait(() => MirrorSessionSmokeDriver_MirrorTest.TryFindPickupRay(dropped, out ray, out _), "visible pickup collider");
+                Require(sync.TryRequestPickup(ray), "owner raycast pickup command");
+                yield return Wait(() => sync.PendingRequestCount == 0 && OwnedRelic()?.itemData.persistedStackCount == message.Charges,
+                    "reacquired persistent item");
+            }
+            else if (message.Phase == 34 && owner)
+            {
+                Require(sync.TryRequestRemoveInventoryItem(message.Item, out _), "owner relic remove command");
+                yield return Wait(() => sync.PendingRequestCount == 0 && OwnedRelic() == null &&
+                    !local.Buffs.ActiveBuffs.Any(b => b.source == effect), "relic cleanup replica");
+                relicReplicas.Remove(message.Item);
+            }
+        }
+        else if (message.Phase >= 40 && message.Phase <= 47)
+        {
+            yield return RunQuestClient(message, local);
+            if (message.Phase == 47 && owner) yield break;
         }
         else if (message.Phase == 10 || message.Phase == 12)
         {
@@ -586,6 +775,9 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     private static NetworkEnemyAuthority_MirrorTest ClientTarget(uint id) => NetworkClient.spawned.TryGetValue(id, out NetworkIdentity identity)
         ? identity.GetComponent<NetworkEnemyAuthority_MirrorTest>() : null;
 
+    private static string EquipmentIds(PlayerContext actor) => string.Join("|", actor.Equipment.GetEquippedItems()
+        .OrderBy(pair => pair.Key).Select(pair => pair.Key + ":" + pair.Value.itemData.instanceId));
+
     private static Vector3 FindDeadMoveDestination(PlayerContext actor, NavMeshAgent agent)
     {
         var path = new NavMeshPath();
@@ -599,7 +791,7 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         throw new InvalidOperationException("reachable dead MoveCommand destination");
     }
 
-    private IEnumerator WaitForAcks(string label) => Wait(() => acknowledgements.Count == participants.Count, label);
+    private IEnumerator WaitForAcks(string label, double timeout = 20d) => Wait(() => acknowledgements.Count == participants.Count, label, timeout);
     private IEnumerator Wait(Func<bool> predicate, string label, double timeout = 20d)
     {
         double until = Time.realtimeSinceStartupAsDouble + timeout;
@@ -615,26 +807,34 @@ public sealed class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     {
         var stack = new Stack<IEnumerator>();
         stack.Push(routine);
-        while (stack.Count > 0 && !failed)
+        try
         {
-            object next = null;
-            Exception error = null;
-            try
+            while (stack.Count > 0 && !failed)
             {
-                IEnumerator current = stack.Peek();
-                if (!current.MoveNext()) { stack.Pop(); continue; }
-                next = current.Current;
+                object next = null;
+                Exception error = null;
+                try
+                {
+                    IEnumerator current = stack.Peek();
+                    if (!current.MoveNext()) { stack.Pop(); continue; }
+                    next = current.Current;
+                }
+                catch (Exception exception) { error = exception; }
+                if (error != null)
+                {
+                    if (message.HasValue && NetworkClient.active)
+                        NetworkClient.Send(new AckMessage { Step = message.Value.Step, Phase = message.Value.Phase, Passed = false, Detail = error.Message });
+                    Fail(error.ToString());
+                    yield break;
+                }
+                if (next is IEnumerator nested) stack.Push(nested);
+                else yield return next;
             }
-            catch (Exception exception) { error = exception; }
-            if (error != null)
-            {
-                if (message.HasValue && NetworkClient.active)
-                    NetworkClient.Send(new AckMessage { Step = message.Value.Step, Phase = message.Value.Phase, Passed = false, Detail = error.Message });
-                Fail(error.Message);
-                yield break;
-            }
-            if (next is IEnumerator nested) stack.Push(nested);
-            else yield return next;
+        }
+        finally
+        {
+            while (stack.Count > 0)
+                (stack.Pop() as IDisposable)?.Dispose();
         }
     }
 

@@ -357,6 +357,37 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         }
     }
 
+    public void AniEvent_PlayFighterAttackSfx(AnimationEvent animationEvent)
+    {
+        if (!isClient || playerEffect == null) return;
+        PlayerStatManager stats = GetComponent<PlayerStatManager>();
+        ItemSystem.WeaponType weaponType = stats != null && stats.TryGetEquippedWeaponInfo(out var weapon)
+            ? weapon.weaponType : ItemSystem.WeaponType.Greatsword;
+        WBH_PlayerEffectCue cue = weaponType switch
+        {
+            ItemSystem.WeaponType.Axe => WBH_PlayerEffectCue.F_normal0_evo0_etc1,
+            ItemSystem.WeaponType.Blunt => WBH_PlayerEffectCue.F_normal0_evo0_etc2,
+            _ => WBH_PlayerEffectCue.F_normal0_evo0_etc0
+        };
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    public void AniEvent_PlayGunnerAttackSfx(AnimationEvent animationEvent)
+    {
+        if (!isClient || combat == null || playerEffect == null) return;
+        GunnerWeaponVfxBinding binding = combat.GetComponentInChildren<GunnerWeaponVfxBinding>();
+        GunnerWeaponType weaponType = binding != null ? binding.WeaponType : combat.currentWeapon;
+        WBH_PlayerEffectCue cue = weaponType switch
+        {
+            GunnerWeaponType.Rifle => WBH_PlayerEffectCue.G_normal0_evo0_etc0,
+            GunnerWeaponType.Shotgun => WBH_PlayerEffectCue.G_normal0_evo0_etc1,
+            GunnerWeaponType.GrenadeLauncher => WBH_PlayerEffectCue.G_normal0_evo0_etc2,
+            _ => WBH_PlayerEffectCue.None
+        };
+        if (cue != WBH_PlayerEffectCue.None)
+            playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
     /// <summary>
     /// 서버가 처음 확정한 사망 스냅샷을 현재 화면의 Animator에 즉시 반영한다.
     /// 상태 이벤트가 이미 지나간 재접속 복제본도 사망 모션을 놓치지 않게 한다.
