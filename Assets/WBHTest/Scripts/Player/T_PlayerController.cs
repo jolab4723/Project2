@@ -23,7 +23,7 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     private Vector3 dodgeDir;
     private Coroutine invincibilityRoutine;
 
-    public int reviveCount = 3;
+    public int reviveCount; // Start()에서 패시브 스킬(Revive) 해금 여부로 초기화된다.
     private bool canControl = true;
     private bool isStatusEffectControlBlocked;
 
@@ -78,6 +78,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         combat.Initialize(projectileSpawner);
         statusEffectController.Initialize(effectSpawner);
         playerEffect.Initialize(effectSpawner);
+
+        // 부활 패시브(Revive)를 해금한 경우에만 1회 부활 가능
+        reviveCount = PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.HasRevive ? 1 : 0;
     }
 
     private void OnEnable()
@@ -424,7 +427,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
         reviveCount--;
 
-        BeginRevive(1f, 10f);
+        float healthRatio = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.ReviveHealthPercent / 100f : 1f;
+        BeginRevive(healthRatio, 10f);
     }
 
     public void CompleteRevive()

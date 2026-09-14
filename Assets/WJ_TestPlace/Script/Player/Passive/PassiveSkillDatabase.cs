@@ -32,7 +32,7 @@ public class PassiveSkillDefinition
         return valuesPerLevel[level - 1];
     }
 
-    /// <summary>level 그 자체(한 단계)를 해금하는 데 드는 골드. level은 1부터.</summary>
+    /// <summary>level 그 자체(한 단계)를 해금하는 데 드는 크레딧. level은 1부터.</summary>
     public int GetUnlockCost(int level)
     {
         return baseCost * level;
