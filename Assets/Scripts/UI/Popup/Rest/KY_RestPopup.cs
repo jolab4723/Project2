@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -18,6 +19,7 @@ public class KY_RestPopup : MonoBehaviour
     [Tooltip("팝업 바깥에서 완료 문구와 배경을 함께 표시할 패널")]
     [SerializeField] private GameObject completionMessagePanel;
     [SerializeField] private TMP_Text completionMessageText;
+    [Min(0f)] [SerializeField] private float completionMessageDuration = 2.5f;
 
     [Header("버튼")]
     [SerializeField] private Button confirmButton;
@@ -27,6 +29,7 @@ public class KY_RestPopup : MonoBehaviour
     private int potionAmount;
     private int cost;
     private int currentCredits;
+    private Coroutine completionMessageRoutine;
 
     private void Awake()
     {
@@ -41,6 +44,9 @@ public class KY_RestPopup : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (completionMessageRoutine != null)
+            StopCoroutine(completionMessageRoutine);
+
         if (confirmButton != null)
             confirmButton.onClick.RemoveListener(HandleConfirmClicked);
 
@@ -68,7 +74,7 @@ public class KY_RestPopup : MonoBehaviour
     /// <summary>팝업을 닫는다.</summary>
     public void Close()
     {
-            gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
 
     /// <summary>외부 회복 시스템이 계산한 미리보기 값을 주입한다.</summary>
@@ -107,6 +113,11 @@ public class KY_RestPopup : MonoBehaviour
 
         if (completionMessagePanel != null)
             completionMessagePanel.SetActive(true);
+
+        if (completionMessageRoutine != null)
+            StopCoroutine(completionMessageRoutine);
+
+        completionMessageRoutine = StartCoroutine(HideCompletionMessageAfterDelay());
     }
 
     private void HandleCancelClicked()
@@ -116,7 +127,20 @@ public class KY_RestPopup : MonoBehaviour
 
     private void HideCompletionMessage()
     {
+        if (completionMessageRoutine != null)
+        {
+            StopCoroutine(completionMessageRoutine);
+            completionMessageRoutine = null;
+        }
+
         if (completionMessagePanel != null)
             completionMessagePanel.SetActive(false);
+    }
+
+    private IEnumerator HideCompletionMessageAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(completionMessageDuration);
+        completionMessageRoutine = null;
+        HideCompletionMessage();
     }
 }
