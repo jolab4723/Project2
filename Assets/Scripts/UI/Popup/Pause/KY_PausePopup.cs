@@ -138,7 +138,7 @@ private void SaveAndExitGame()
         }
         DataManager.Instance?.SaveGameplayData();
         DataManager.Instance?.SavePassiveData();
-        SceneManager.LoadScene("TitleSeane");
+        SceneManager.LoadScene("TitleScene");
     }
 
     private void GiveUpGame()
@@ -150,6 +150,6 @@ private void SaveAndExitGame()
             return;
         }
         DataManager.Instance?.ResetAllData();
-        SceneManager.LoadScene("TitleSeane");
+        SceneManager.LoadScene("TitleScene");
     }
 }
