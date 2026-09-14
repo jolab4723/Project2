@@ -77,6 +77,18 @@ public static class MirrorAct1SceneSetup_MirrorTest
             // 원형 이펙트가 포탈 본체 안에 묻히지 않도록 표면 위에 둔다.
             // 탑승 Collider는 템플릿의 역방향 높이 보정을 유지한다.
             Find(target, "Portal_Particle2_MirrorSession").position = portalPosition + Vector3.up * 1.1f;
+            Transform portalEffect = Find(target, "Portal_Particle2_MirrorSession");
+            Transform boarding = portalEffect.GetComponentInChildren<Collider>(true).transform;
+            Vector3 boardingPosition = boarding.position;
+            Vector3 boardingScale = boarding.lossyScale;
+            Vector3 authoredScale = Find(source, "Portal_Particle2").lossyScale;
+            Vector3 parentScale = portalEffect.parent != null ? portalEffect.parent.lossyScale : Vector3.one;
+            portalEffect.localScale = new Vector3(authoredScale.x / parentScale.x,
+                authoredScale.y / parentScale.y, authoredScale.z / parentScale.z);
+            boarding.position = boardingPosition;
+            Vector3 boardingParentScale = boarding.parent.lossyScale;
+            boarding.localScale = new Vector3(boardingScale.x / boardingParentScale.x,
+                boardingScale.y / boardingParentScale.y, boardingScale.z / boardingParentScale.z);
             Find(target, "Portal_Body_MirrorSession").position = portalPosition;
 
             WBH_EnemySpawnArea area = Components<WBH_EnemySpawnArea>(source).Single();

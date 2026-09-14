@@ -266,7 +266,19 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         }
 
         double localAttackStartedAt = NetworkTime.time;
-        if (localAttackStartedAt + CooldownBoundaryToleranceSeconds < localNextAttackAt)
+        if (localAttackStartedAt < localNextAttackAt)
+            return false;
+
+        // TryAttack은 이미 Attack 상태면 새 모션을 시작하지 않는다.
+        // 이때 요청 번호만 갱신하면 진행 중인 AnimationEvent가 다른 서버 예약에 연결된다.
+        if (activeLocalRequestId != 0 || context.StateMachine == null ||
+            context.StateMachine.Is(PlayerState.Attack))
+            return false;
+
+        // 이동이 논리 상태를 먼저 풀어도 이전 Attack/블렌드 중에는 새 클립을 시작할 수 없다.
+        Animator animator = GetComponent<Animator>();
+        if (animator == null || animator.IsInTransition(0) ||
+            animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
             return false;
 
         combat.TryAttack(aimPoint);
@@ -295,7 +307,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
     /// <summary>
     /// 로컬 이동 입력이 들어왔을 때 아직 실제 타격 AnimationEvent가 발생하지 않은 평타만 취소 요청한다.
-    /// <para>타격 전 취소는 피해가 발생하지 않았으므로 즉시 다음 공격을 시작할 수 있다.</para>
+    /// <para>타격 전 취소는 피해 예약만 제거하고 다음 공격 가능 시각은 유지한다.</para>
     /// <para>타격 AnimationEvent 이후에는 이동만 허용하고 <c>localNextAttackAt</c>은 그대로 두어
     /// 이동을 반복해 평타 간격을 줄이는 후딜 캔슬 악용을 막는다.</para>
     /// </summary>
@@ -314,7 +326,6 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         activeLocalRequestId = 0;
         localImpactAt = 0d;
         localImpactConfirmationExpiresAt = 0d;
-        localNextAttackAt = canceledAt;
         CmdCancelAttackForMove(canceledRequestId, canceledAt);
         return true;
     }
@@ -502,17 +513,16 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             return;
 
         ClearServerAttackReservation();
-        nextAttackAt = System.Math.Min(nextAttackAt, authoritativeCanceledAt);
         canceledRequestCount++;
         lastTargetNetId = 0;
         lastDamage = 0f;
         lastHitCritical = false;
-        lastCooldownRemainingSeconds = 0f;
+        lastCooldownRemainingSeconds = Mathf.Max(0f, (float)(nextAttackAt - authoritativeCanceledAt));
         lastRejectedWhileImpactPending = false;
         lastResult = MirrorCombatRequestResult.CanceledByMove;
 
         Debug.Assert(
-            !attackPending && pendingServerRequestId == 0 && nextAttackAt <= authoritativeCanceledAt,
+            !attackPending && pendingServerRequestId == 0,
             "[PlayerCombatAuthority_MirrorTest] 이동 취소 뒤 서버 공격 예약이 남아 있습니다.",
             this);
     }
