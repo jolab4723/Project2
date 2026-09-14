@@ -14,6 +14,60 @@ public static class MirrorCombatBoundaryValidation_MirrorTest
     private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
     private static bool gunnerValidationRunning;
 
+    [MenuItem("SW/Mirror Test/Validate Gunner Attack Cancellation")]
+    public static async void ValidateGunnerAttackCancellation()
+    {
+        Require(!gunnerValidationRunning && Application.isPlaying && NetworkServer.active &&
+            NetworkClient.localPlayer != null && NetworkServer.connections.Count == 1, "Solo Host가 필요합니다.");
+        var context = NetworkClient.localPlayer.GetComponent<PlayerContext>();
+        var attack = context.CombatAuthority;
+        var controller = context.GetComponent<T_PlayerController>();
+        var agent = context.GetComponent<NavMeshAgent>();
+        Require(attack.IsGunner && !context.RuntimeState.IsDead && controller.IsControlEnabled &&
+            agent.enabled && agent.isOnNavMesh, "살아 있고 이동 가능한 전투 씬의 거너가 필요합니다.");
+        Require(context.GetComponent<PlayerWeaponVisualPresenter>().enabled &&
+            context.GetComponentInChildren<GunnerWeaponVfxBinding>() != null, "장착 무기 VFX 로드를 기다리세요.");
+        var input = context.GetComponent<WBH_PlayerInputHandler_MirrorTest>();
+        bool wasEnabled = input.enabled;
+        Vector3 position = context.transform.position;
+        Quaternion rotation = context.transform.rotation;
+        uint shots = attack.GunnerShotCount, unconfirmed = attack.UnconfirmedAttackCount;
+        gunnerValidationRunning = true;
+        input.enabled = false;
+        try
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                await WaitUntil(() => attack.TryBeginLocalAttack(context.transform.position + Vector3.forward * 5), "취소 검사 공격");
+                double nextAttack = Get<double>(attack, "localNextAttackAt");
+                uint canceled = attack.CanceledRequestCount;
+                Require(attack.TryCancelLocalAttackForMove(), "타격 전 취소");
+                controller.MoveCommand(position + Vector3.right);
+                Require(Get<double>(attack, "localNextAttackAt") == nextAttack &&
+                    !attack.TryBeginLocalAttack(position + Vector3.forward * 5), "취소 직후 재공격 차단");
+                await WaitUntil(() => attack.CanceledRequestCount == canceled + 1, "서버 취소 확인");
+                Require(Get<double>(attack, "nextAttackAt") >= nextAttack - 0.05d, "서버 공격 간격 보존");
+            }
+            Require(attack.GunnerShotCount == shots, "취소된 공격은 발사하지 않음");
+            await WaitUntil(() => attack.TryBeginLocalAttack(context.transform.position + Vector3.forward * 5), "취소 후 정상 공격");
+            await WaitUntil(() => attack.GunnerShotCount == shots + 1, "실제 AnimationEvent 발사");
+            double recovery = Get<double>(attack, "localNextAttackAt");
+            attack.TryCancelLocalAttackForMove();
+            controller.MoveCommand(position + Vector3.right);
+            Require(Get<double>(attack, "localNextAttackAt") == recovery &&
+                attack.UnconfirmedAttackCount == unconfirmed, "발사 후 이동은 대기시간 유지·이벤트 누락 없음");
+            Debug.Log("[MirrorGunnerCancelValidation] PASS: 타격 전 취소8회 발사0·즉시 재공격 차단·서버 간격 보존·정상 발사1·발사 후 이동 확인.");
+        }
+        catch (Exception exception) { Debug.LogException(exception); }
+        finally
+        {
+            if (agent != null && agent.isOnNavMesh) { agent.ResetPath(); agent.Warp(position); }
+            if (context != null) context.transform.rotation = rotation;
+            if (input != null) input.enabled = wasEnabled;
+            gunnerValidationRunning = false;
+        }
+    }
+
     [MenuItem("SW/Mirror Test/Validate Gunner Live Attacks")]
     public static async void ValidateGunnerLiveAttacks()
     {
