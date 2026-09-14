@@ -33,21 +33,16 @@ public class YJ_PortalSceneLoader : MonoBehaviour
         transitionRequested = true;
 
         string destinationSceneName = loadSceneName;
-        if (completePendingStage &&
-            ! CompletePendingStage(out destinationSceneName))
+        if (completePendingStage && ! CompletePendingStage(out destinationSceneName))
         {
             transitionRequested = false;
             return;
         }
 
-        StartCoroutine(PlayEffectAndLoadScene(
-            other.gameObject,
-            destinationSceneName));
+        StartCoroutine(PlayEffectAndLoadScene(other.gameObject, destinationSceneName));
     }
 
-    private IEnumerator PlayEffectAndLoadScene(
-        GameObject player,
-        string destinationSceneName)
+    private IEnumerator PlayEffectAndLoadScene(GameObject player, string destinationSceneName)
     {
         if (portalEffect != null)
             yield return portalEffect.PlayOnce(player);
@@ -63,8 +58,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     {
         destinationSceneName = loadSceneName;
 
-        YJ_StageSaveService saveService =
-            FindFirstObjectByType<YJ_StageSaveService>();
+        YJ_StageSaveService saveService = FindFirstObjectByType<YJ_StageSaveService>();
         if (saveService == null)
             saveService = gameObject.AddComponent<YJ_StageSaveService>();
 
@@ -74,9 +68,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
         }
 
-        if (!saveService.CompletePendingNode(
-                out StageNodeSaveData completedNode,
-                out StageActType completedAct))
+        if ( ! saveService.CompletePendingNode(out StageNodeSaveData completedNode, out StageActType completedAct))
         {
             return false;
         }
@@ -100,18 +92,18 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     /// <summary>
     /// Act1과 Act2의 다음 Act를 반환합니다. Act3은 클리어 씬으로 이동하므로 false입니다.
     /// </summary>
-    private static bool TryGetNextAct(
-        StageActType completedAct,
-        out StageActType nextAct)
+    private static bool TryGetNextAct(StageActType completedAct, out StageActType nextAct)
     {
         switch (completedAct)
         {
             case StageActType.Act1:
                 nextAct = StageActType.Act2;
                 return true;
+
             case StageActType.Act2:
                 nextAct = StageActType.Act3;
                 return true;
+
             default:
                 nextAct = default;
                 return false;

@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
-public class YJ_SfxPlayer : MonoBehaviour
+public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
 {
     [Header("Output")]
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
@@ -17,8 +18,16 @@ public class YJ_SfxPlayer : MonoBehaviour
 
     private AudioSource[] sources;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+        if (Instance != this)
+        {
+            // Destroy는 프레임 끝에 처리되므로 중복 객체의 사용을 즉시 막습니다.
+            gameObject.SetActive(false);
+            return;
+        }
+
         sources = new AudioSource[Mathf.Max(1, maxVoices)];
 
         for (int i = 0; i < sources.Length; i++)
@@ -38,6 +47,17 @@ public class YJ_SfxPlayer : MonoBehaviour
             source.maxDistance = Mathf.Max(source.minDistance + 0.01f, maxDistance);
             sources[i] = source;
         }
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneUnloaded += HandleSceneUnloaded;
+    }
+
+    private void HandleSceneUnloaded(Scene scene)
+    {
+        // 영구 객체는 씬 전환 때 OnDisable이 호출되지 않습니다.
+        StopAll();
     }
 
     public void PlayImmediate(AudioClip clip, Vector3 position, float volume)
@@ -111,6 +131,13 @@ public class YJ_SfxPlayer : MonoBehaviour
     }
 
     private void OnDisable()
+    {
+        SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+        StopAll();
+    }
+
+    /// <summary>재생 중인 SFX와 지연 재생 요청을 모두 취소합니다.</summary>
+    public void StopAll()
     {
         StopAllCoroutines();
 
