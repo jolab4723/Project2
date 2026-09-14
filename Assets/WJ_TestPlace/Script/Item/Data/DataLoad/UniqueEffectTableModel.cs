@@ -7,9 +7,9 @@ namespace DataSystem
     ///
     /// effectType에 따라 실제로 사용되는 컬럼이 다르다. 해당 없는 컬럼은 비워둔다.
     ///   PassiveBuffUniqueEffectSO       : 버프 컬럼
-    ///   TriggeredBuffUniqueEffectSO     : 버프 컬럼, triggerCondition, cooldownSeconds, duplicatePolicy
+    ///   TriggeredBuffUniqueEffectSO     : 버프 컬럼, triggerCondition, cooldownSeconds, duplicatePolicy, persistStackOnItem
     ///   StatThresholdBuffUniqueEffectSO : 버프 컬럼, referenceStat, comparisonOperator, thresholdValue
-    ///   FieldAuraUniqueEffectSO         : 버프 컬럼, radius
+    ///   FieldAuraUniqueEffectSO         : 버프 컬럼, radius, targetEnemies
     ///   PeriodicLogUniqueEffectSO       : intervalSeconds, message
     ///
     /// 버프 컬럼 = statEffects / duration / stackBehavior / maxStack.
@@ -57,6 +57,9 @@ namespace DataSystem
         /// </summary>
         public string duplicatePolicy;
 
+        /// <summary>장비 해제 후 다시 장착해도 스택을 아이템에 보존할지 여부. TriggeredBuff에서만 쓴다.</summary>
+        public bool persistStackOnItem;
+
         /// <summary>조건 판정에 쓸 스탯. StatThresholdBuff에서만 쓴다. (예: CurrentHealthPercent, AttackPower)</summary>
         public string referenceStat;
 
@@ -68,6 +71,9 @@ namespace DataSystem
 
         /// <summary>오라 반경(월드 유닛). FieldAura에서만 쓴다.</summary>
         public float radius;
+
+        /// <summary>아군 대신 적에게 오라를 적용할지 여부. FieldAura에서만 쓴다.</summary>
+        public bool targetEnemies;
 
         public float intervalSeconds;
         public string message;

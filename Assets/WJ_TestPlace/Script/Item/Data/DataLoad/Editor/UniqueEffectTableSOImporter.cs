@@ -155,6 +155,7 @@ namespace DataSystem
                     triggered.triggerCondition = ParseEnumOrDefault(row.triggerCondition, TriggerCondition.None, row.uniqueEffectId);
                     triggered.cooldownSeconds = row.cooldownSeconds;
                     triggered.duplicatePolicy = ParseEnumOrDefault(row.duplicatePolicy, DuplicateTriggerPolicy.ShareCooldown, row.uniqueEffectId);
+                    triggered.persistStackOnItem = row.persistStackOnItem;
                     break;
 
                 case StatThresholdBuffUniqueEffectSO threshold:
@@ -167,6 +168,7 @@ namespace DataSystem
                 case FieldAuraUniqueEffectSO aura:
                     aura.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
                     aura.radius = row.radius;
+                    aura.targetEnemies = row.targetEnemies;
                     break;
 
                 case PeriodicLogUniqueEffectSO periodic:

@@ -3,8 +3,21 @@
 - 검토일: 2026-09-14
 - 기준: `codex/unity-6000-3-22-test`의 현재 작업 트리. 기존 Mirror 관련 미커밋 변경을 포함한 정적 코드 검토.
 - 입력: `C:/Users/user/Downloads/SF_Roguelike_Equipment_Review.pdf` 31쪽 전체. 문서 안의 개발 요청 문장은 실행 지시로 취급하지 않았다.
-- 상태: 제안. 팀이 확정한 결정이나 구현 완료 기록이 아니다. 이번 작업은 코드·SO·Excel·Scene·Prefab을 수정하지 않았다.
+- 상태: P0 구현·4인 Windows 런타임 검증 완료. 팀이 확정한 결정이나 P1 이후 구현 완료 기록은 아니다.
 - 적용 기준: Ponytail full. 기존 구현을 재사용하고, 실제로 필요한 연결과 피해 출처 정보만 추가한다.
+
+## 0. P0 실행 기록
+
+2026-09-14에 복구된 Unity Pipeline으로 열린 Unity 6000.3.22f1 Editor를 재시작하지 않고 다음 기준선을 확인했다.
+
+- Editor 컴파일은 완료 상태이며 검사 시작 시 Console Error는 0건이었다.
+- AssetDatabase에서 `UniqueEffectSO` 50개와 고유효과가 연결된 `ItemDefinitionSO` 48개를 확인했다. 연결된 48개는 모두 현재 UniqueEffectPool의 SO를 참조했고, 중복 SO 이름은 0개였다. 앞선 정적 정찰의 46개 집계보다 2개 많으므로 이후 기준값은 Editor가 실제 로드한 48개로 사용한다.
+- `UE_SturdyArmor`는 남아 있는 이전 class identifier 문자열과 무관하게 Editor에서 `StatThresholdBuffUniqueEffectSO`로 정상 로드됐다.
+- 실제 로드값은 양산형 코어 `OnDamageDealt / 이동속도 +20% / 3초 / RefreshDuration`, 라이트세이버 `OnDamageDealt / 공격속도 +6% / 5초 / 최대 5스택`, 사이버네틱 코어 `OnDodge / 이동속도 flat +77 / 4초 / 30초 공유 쿨다운`, 고철 압축기 `OnKill / 공격력 +0.5% / 최대 100스택 / 아이템 저장`, 중력장 생성 코어 `적 대상 / 반경 8 / 이동속도 -50%`다.
+- 기존 4인 Mirror 전투 스모크는 영속 처치 스택 3종의 플레이어별 증가·최대치·드랍·재획득·복원·제거와 `ShareCooldown`/`PerItem`의 소유자 분리를 검사한다. 여기에 양산형 코어·라이트세이버·사이버네틱 코어·중력장 생성 코어의 실제 작성값과 발동 결과를 직접 검사하는 P0 단계를 추가했다.
+- 최초 점검에서 `UniqueEffectTable.xlsx`, `UniqueEffectTableRow`, `UniqueEffectTableSOImporter.ApplyRow`에 `targetEnemies`와 `persistStackOnItem`이 없어 재임포트 시 기본값 `false`로 사라지는 문제를 재현했다. 이후 WJ 담당 수정 승인을 받아 두 Boolean 열과 임포트 경로를 추가했다. 완료 판정은 Excel→JSON→SO 재임포트 뒤 `UE_GravityFieldCore.targetEnemies=true`와 영속 처치 스택 3종의 `persistStackOnItem=true`가 그대로 유지되는지 확인하는 것으로 한다.
+
+Windows64 Player 4인 실행에서 P0 작성값, 양산형·사이버네틱 반복 차단, 라이트세이버 5스택 상한·해제, 중력장 적 적용·해제, `ShareCooldown`/`PerItem` 소유자 분리와 네 클라이언트 복제를 확인했다. 서버와 세 클라이언트의 최종 스모크가 모두 통과했다. `HELLO WORLD`와 이동속도 flat `+77`은 데이터 손실 문제가 아니라 기획값 확정이 필요한 항목이므로 임의로 교체하지 않았다.
 
 ## 1. 판단
 
