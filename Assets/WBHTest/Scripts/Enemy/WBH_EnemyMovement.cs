@@ -20,6 +20,7 @@ public class WBH_EnemyMovement : MonoBehaviour
     private float landingNavSearchRadius = 2f;
     
     private Coroutine jumpCoroutine;
+    private Coroutine dashCoroutine;
     public event Action OnDashUpdate;
 
     public bool CanControl => canControl && !isStatusEffectControlBlocked && ! isCutSceneControlBlocked;
@@ -118,7 +119,9 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 돌진 (데미지 X)
     public void Dash(Vector3 direction, float distance, float duration, Action onCompleted = null)
     {
-        StartCoroutine(CoDash(direction, distance, duration, onCompleted));
+        CancelForcedMovement();
+
+        dashCoroutine = StartCoroutine(CoDash(direction, distance, duration, onCompleted));
     }
 
     private IEnumerator CoDash(Vector3 direction, float distance, float duration, Action onCompleted)
@@ -142,6 +145,7 @@ public class WBH_EnemyMovement : MonoBehaviour
         }
 
         Warp(transform.position);
+        dashCoroutine = null;
 
         SetControlEnable(true);
 
@@ -204,6 +208,33 @@ public class WBH_EnemyMovement : MonoBehaviour
         SetControlEnable(true);
 
         onCompleted?.Invoke();
+    }
+
+    // 돌진, 점프 코루틴 중단 (적 사망, 적 기절과 같이 패턴 중단 시에 사용)
+    public void CancelForcedMovement()
+    {
+        if(dashCoroutine != null)
+        {
+            StopCoroutine(dashCoroutine);
+            dashCoroutine = null;
+        }
+        if(jumpCoroutine != null)
+        {
+            StopCoroutine (jumpCoroutine);
+            jumpCoroutine = null;
+        }
+
+        if (agent == null)
+            return;
+
+        agent.updatePosition = true;
+
+        if(agent.isActiveAndEnabled && agent.isOnNavMesh)
+        {
+            agent.Warp(transform.position);
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+        }
     }
 
     // destination 까지 navMesh 경로가 있는지 체크

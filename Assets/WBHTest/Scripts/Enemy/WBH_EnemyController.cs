@@ -30,6 +30,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
     private bool isDying;
     private bool isCutSceneDamageBlocked;
+    private bool isPatternDamageBlocked;
+
 
     public WBH_EnemyInfo Info => info;
     public WBH_ICombatStatus Status => status;
@@ -91,7 +93,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
-        if (isCutSceneDamageBlocked || status.IsDead)
+        if (isCutSceneDamageBlocked || isPatternDamageBlocked || status.IsDead)
             return;
 
         Vector3 hitPosition = result.HitPosition ?? transform.position;
@@ -117,11 +119,12 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         isDying = true;
 
-        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
-
+        combat.CancelCurrentAction(); // 기존 패턴 취소
         movement.Stop();
         movement.SetControlEnable(false);
 
+        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
+        
         enemyAnimation.PlayDie();
 
         if(!enemyAnimation.UseDieAni)
@@ -155,6 +158,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         OnEnemyDead?.Invoke();
 
+        combat.CancelCurrentAction();
         movement.Stop();
         movement.SetControlEnable(false);
 
@@ -185,6 +189,12 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public void SetCutSceneDamageBlock(bool block)
     {
         isCutSceneDamageBlocked = block;
+    }
+
+
+    public void SetPatternDamageBlock(bool blocked)
+    {
+        isPatternDamageBlocked = blocked;
     }
 
     // 보스 전용 사망연출(애니메이션 이벤트). 사망 후 n초 뒤에 디졸브 걸고 사라짐.

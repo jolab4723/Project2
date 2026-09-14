@@ -27,7 +27,8 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         enemySpawner = GetComponent<WBH_EnemySpawner>();
     }
 
-    public void Initialize(WBH_EnemyPoolManager enemyPool, 
+    public void Initialize(WBH_EnemySpawnManager spawnManager,
+                           WBH_EnemyPoolManager enemyPool, 
                            WBH_EnemyDataProvider enemyDataProvider,
                            WBH_EffectSpawner effectSpawner, 
                            WBH_ProjectileSpawner projectileSpawner, 
@@ -38,7 +39,7 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            PlayerWallet playerWallet)
     {
         this.findClosestPlayer = findClosestPlayer;
-        enemySpawner.Initialize(enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
+        enemySpawner.Initialize(spawnManager, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
     }
 
     public int Spawn(EnemyGrade grade, int count, WBH_EnemyStatContext context)
@@ -88,5 +89,4 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         }
         return spawnCount;
     }
-
 }

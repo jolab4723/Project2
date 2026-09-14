@@ -175,6 +175,9 @@ public class WBH_EnemyPattern : MonoBehaviour
                 case 101: // 액트1 보스
                     currentPattern = new WBH_EnemyBossPattern_Act1();
                     break;
+                case 102: // 액트2 보스
+                    currentPattern = new WBH_EnemyBossPattern_Act2();
+                    break;
             }
         }
         currentPattern?.Initialize(this);
@@ -487,6 +490,10 @@ public class WBH_EnemyPattern : MonoBehaviour
         {
             hidden.Cleanup();
         }
+        if(pattern is WBH_EnemyBossPattern_Act2 act2)
+        {
+            act2.Cleanup();
+        }
 
     }
 
@@ -494,5 +501,10 @@ public class WBH_EnemyPattern : MonoBehaviour
     public void Despawn()
     {
         controller.Despawn();
+    }
+
+    public void SetPatternDamageBlock(bool blocked)
+    {
+        controller.SetPatternDamageBlock(blocked);
     }
 }
