@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using Core;
 
 public class YJ_StageManager : MonoBehaviour
@@ -30,15 +31,20 @@ public class YJ_StageManager : MonoBehaviour
             enemySpawnManager.WaveCompleted -= HandleWaveCompleted;
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         if (bootScene)
         {
             Initialize();
-            return;
+            yield break;
         }
 
-        StartScene();
+        // 씬에 배치된 활성 컴포넌트들의 Start 실행을 기다립니다.
+        yield return null;
+
+        if ( ! TryStartScene())
+            yield break;
+
         StartStage();
     }
 
@@ -56,14 +62,23 @@ public class YJ_StageManager : MonoBehaviour
 
     public void StartScene()
     {
-        if ( ! TryGetDataManager())
-            return;
+        TryStartScene();
+    }
 
-        // Start.unity(bootScene)를 거치지 않고 이 씬으로 바로 들어온 경우(에디터 테스트 등)에도
-        // 영구 프로필이 로드돼 있도록 여기서도 같이 불러온다. LoadPassiveData는 매번 다시 불러도
-        // 안전하다(파일과 항상 동기화돼 있음 - PassiveSkillManager가 변경 시마다 즉시 저장).
+    private bool TryStartScene()
+    {
+        if ( ! TryGetDataManager())
+            return false;
+
         dataManager.LoadPassiveData();
-        dataManager.LoadGameplayData();
+
+        if ( ! dataManager.TryLoadGameplayData())
+        {
+            Log.Error("플레이어 데이터 초기화/복원에 실패하여 스테이지 시작을 중단합니다.");
+            return false;
+        }
+
+        return true;
     }
 
     public void EndScene()

@@ -171,6 +171,14 @@ namespace Core
         [ContextMenu("게임플레이 데이터 전체 세아브")]
         public void SaveGameplayData()
         {
+            if ( ! TryGetGameplayPlayer(out var stats, out var health, out _) || stats.Stat == null
+                                                                              || stats.Stat.currentLevel < 1
+                                                                              || health.MaxHealth <= 0f)
+            {
+                Debug.LogWarning("[DataManager] 플레이어가 준비되지 않아 저장하지 않습니다.");
+                return;
+            }
+
             var data = new GameSaveData();
             data.status = BuildPlayerStatusData();
             data.inventory = BuildInventorySaveData();
@@ -184,16 +192,117 @@ namespace Core
         [ContextMenu("게임플레이 데이터 전체 로드")]
         public void LoadGameplayData()
         {
-            var data = ReadJson<GameSaveData>(GetSavePath(GameplaySaveFileName));
-            if (data == null)
-                return;
-
-            ApplyPlayerStatusData(data.status);
-            ApplyInventorySaveData(data.inventory);
-            ApplyActiveSkillSaveData(data.activeSkill);
-            // TODO : 스킬트리 데이터 로드
-            // TODO : 스테이지 데이터 로드
+            TryLoadGameplayData();
         }
+
+        // 플레이어와 관련 시스템의 Start 초기화가 끝난 뒤 호출합니다.
+        public bool TryLoadGameplayData()
+        {
+            if ( ! TryGetGameplayPlayer(out var stats, out var health, out var mana))
+            {
+                Debug.LogWarning("[DataManager] 활성 플레이어가 없어 로드를 보류합니다.");
+                return false;
+            }
+
+            string path = GetSavePath(GameplaySaveFileName);
+
+            // 읽기 오류나 손상된 JSON은 새 게임으로 덮어쓰지 않습니다.
+            GameSaveData data;
+            try
+            {
+                data = ReadJson<GameSaveData>(path);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 게임플레이 데이터 읽기 실패: {exception.Message}");
+                return false;
+            }
+
+            if (data == null && File.Exists(path))
+            {
+                Debug.LogError("[DataManager] 저장 파일의 내용이 유효하지 않습니다.");
+                return false;
+            }
+
+            bool isNewGame = data == null ||
+                             data.needsPlayerInitialization ||
+                             data.status == null ||
+                             data.status.playerLevel < 1;
+
+            if (isNewGame)
+            {
+                // 이전의 레벨 0 초기화 데이터도 정상적인 새 게임으로 전환합니다.
+                data = new GameSaveData{needsPlayerInitialization = true};
+                data.status.playerLevel = 1;
+                data.status.playerExp = 0f;
+            }
+
+            // 1. 레벨과 경험치 적용
+            var stat = stats.EnsureInitialized();
+            stat.currentLevel = data.status.playerLevel;
+            stat.currentExp = data.status.playerExp;
+
+            // 장비 복원 과정에서 스탯을 조회할 수 있으므로 먼저 계산합니다.
+            stats.Recalculate();
+
+            // 2. 이어하기일 때 저장된 장비·스킬 복원
+            // 새 게임은 새로 생성된 씬/프리팹의 초기 상태를 사용합니다.
+            if ( ! isNewGame)
+            {
+                ApplyInventorySaveData(data.inventory);
+                ApplyActiveSkillSaveData(data.activeSkill);
+            }
+
+            if (InventoryController.Instance != null &&
+                InventoryController.Instance.PlayerWallet != null)
+            {
+                InventoryController.Instance.PlayerWallet.SetGold(isNewGame ? 0 : data.status.gold);
+            }
+
+            // 3. 장비·스킬 적용 후 최종 최대치 갱신
+            stats.Recalculate();
+            health.RefreshMaxHealth();
+            mana.RefreshMaxMana();
+
+            if (health.MaxHealth <= 0f)
+            {
+                Debug.LogError("[DataManager] 최대 체력이 0 이하입니다. 기본 스탯 연결을 확인하세요.");
+                return false;
+            }
+
+            // 4. 현재 체력·마나 적용
+            if (isNewGame)
+            {
+                health.FillHealth();
+                mana.FillMana();
+
+                // 실제 초기화된 스탯을 저장하여 다음 씬부터 이어서 진행합니다.
+                data.status.playerLevel = stat.currentLevel;
+                data.status.playerExp = stat.currentExp;
+                data.status.currentHealth = health.CurrentHealth;
+                data.status.currentMana = mana.CurrentMana;
+                data.status.gold = 0;
+                data.needsPlayerInitialization = false;
+
+                try
+                {
+                    WriteJson(path, data);
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogError($"[DataManager] 새 게임 초기 상태 저장 실패: {exception.Message}");
+                    return false;
+                }
+            }
+            else
+            {
+                health.SetCurrentHealth(data.status.currentHealth);
+                mana.SetCurrentMana(data.status.currentMana);
+            }
+
+            return true;
+        }
+
 
         #endregion
 
@@ -526,10 +635,16 @@ namespace Core
             }
 
             if (PlayerHealthManager.Instance != null)
+            {
+                PlayerHealthManager.Instance.RefreshMaxHealth();
                 PlayerHealthManager.Instance.SetCurrentHealth(data.currentHealth);
+            }
 
             if (PlayerManaManager.Instance != null)
+            {
+                PlayerManaManager.Instance.RefreshMaxMana();
                 PlayerManaManager.Instance.SetCurrentMana(data.currentMana);
+            }
 
             if (InventoryController.Instance != null && InventoryController.Instance.PlayerWallet != null)
                 InventoryController.Instance.PlayerWallet.SetGold(data.gold);
@@ -726,14 +841,30 @@ namespace Core
         [ContextMenu("게임플레이 데이터 초기화")]
         public void ResetGameplayData()
         {
-            var data = new GameSaveData{needsPlayerInitialization = true};
+            var data = new GameSaveData
+            {
+                needsPlayerInitialization = true
+            };
 
             data.status.playerLevel = 1;
             data.status.playerExp = 0f;
 
             WriteJson(GetSavePath(GameplaySaveFileName), data);
         }
+        private bool TryGetGameplayPlayer(out PlayerStatManager stats, out PlayerHealthManager health, out PlayerManaManager mana)
+        {
+            stats = PlayerStatManager.Instance;
+            health = null;
+            mana = null;
 
+            if (stats == null || !stats.isActiveAndEnabled)
+                return false;
+
+            health = stats.GetComponent<PlayerHealthManager>();
+            mana = stats.GetComponent<PlayerManaManager>();
+
+            return health != null && health.isActiveAndEnabled && mana != null && mana.isActiveAndEnabled;
+        }
         #endregion
 
         #region ===================== 공용 JSON 파일 입출력 =====================
