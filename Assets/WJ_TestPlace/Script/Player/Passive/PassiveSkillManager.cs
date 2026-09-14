@@ -2,8 +2,8 @@ using UnityEngine;
 using Core;
 
 /// <summary>
-/// 현재 활성화된 PlayerProfileData(영구 골드/패시브 스킬트리)를 들고 있으면서
-/// 골드로 패시브 스킬 레벨을 해금/적용하는 로직을 전담하는 매니저.
+/// 현재 활성화된 PlayerProfileData(영구 크레딧/패시브 스킬트리)를 들고 있으면서
+/// 크레딧으로 패시브 스킬 레벨을 해금/적용하는 로직을 전담하는 매니저.
 /// 스킬별 이름/최대 레벨/레벨당 수치/해금 비용은 PassiveSkillDatabase(고정 밸런스 데이터) 참고.
 ///
 /// !! 저장/불러오기는 전부 DataManager가 전담한다(DataManager.SavePassiveData/LoadPassiveData).
@@ -31,7 +31,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
         return database.Get(id);
     }
 
-    /// <summary>골드/스킬 레벨이 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
+    /// <summary>크레딧/스킬 레벨이 바뀔 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event System.Action OnProfileChanged;
 
     public void SetActiveProfile(PlayerProfileData profile)
@@ -47,7 +47,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
         return entry != null ? entry.currentLevel : 0;
     }
 
-    /// <summary>골드로 해금한 최고 레벨(추가 비용 없이 자유롭게 오갈 수 있는 상한선). 미습득/프로필 없음이면 0.</summary>
+    /// <summary>크레딧으로 해금한 최고 레벨(추가 비용 없이 자유롭게 오갈 수 있는 상한선). 미습득/프로필 없음이면 0.</summary>
     public int GetUnlockedLevel(PassiveSkillId id)
     {
         var entry = FindEntry(id);
@@ -55,7 +55,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
     }
 
     /// <summary>
-    /// id 스킬을 targetLevel까지 해금하는 데 필요한 골드 총합.
+    /// id 스킬을 targetLevel까지 해금하는 데 필요한 크레딧 총합.
     /// targetLevel이 이미 해금된 레벨 이하면 0 (추가 비용 없음).
     /// </summary>
     public int GetUnlockCostToLevel(PassiveSkillId id, int targetLevel)
@@ -74,8 +74,8 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
 
     /// <summary>
     /// id 스킬의 적용 레벨을 targetLevel로 맞춘다.
-    /// targetLevel이 이미 해금된 범위면 즉시 무료로 적용, 그 이상이면 골드를 소모해서 먼저 해금한 뒤 적용한다.
-    /// 골드가 부족하면 아무것도 바꾸지 않고 false를 반환한다.
+    /// targetLevel이 이미 해금된 범위면 즉시 무료로 적용, 그 이상이면 크레딧을 소모해서 먼저 해금한 뒤 적용한다.
+    /// 크레딧이 부족하면 아무것도 바꾸지 않고 false를 반환한다.
     /// </summary>
     public bool TryApplyLevel(PassiveSkillId id, int targetLevel)
     {

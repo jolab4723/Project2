@@ -55,7 +55,7 @@ public class PassiveSkillPanelUI : KY_PopupBase
     [Header("번역 (비워두면 Resources에서 공용 DB를 자동으로 찾아 쓴다)")]
     [Tooltip("패시브 스킬 이름 다국어 DB")]
     [SerializeField] private PassiveSkillLabelDatabaseSO passiveLabels;
-    [Tooltip("골드/레벨 접두사 등 고정 문구 다국어 DB")]
+    [Tooltip("크레딧/레벨 접두사 등 고정 문구 다국어 DB")]
     [SerializeField] private UILabelDatabaseSO uiLabels;
 
     private const string PassiveLabelResourcePath = "DataFiles/PassiveSkillData/3. GeneratedAssets/PassiveSkillLabelDatabase";
@@ -189,7 +189,7 @@ public class PassiveSkillPanelUI : KY_PopupBase
             return;
 
         // 성공하면 OnProfileChanged -> RefreshAll이 이미 화면을 갱신해준다.
-        // 골드 부족으로 실패해도 pendingLevel은 그대로 둬서 사용자가 다시 시도할 수 있게 한다.
+        // 크레딧 부족으로 실패해도 pendingLevel은 그대로 둬서 사용자가 다시 시도할 수 있게 한다.
         PassiveSkillManager.Instance.TryApplyLevel(selectedId.Value, pendingLevel);
         RefreshDetailPanel();
     }

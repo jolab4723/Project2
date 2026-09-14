@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>실제 패시브의 골드와 단계를 표시하고, 확인한 변경만 기존 매니저에 전달한다.
+/// <summary>실제 패시브의 크레딧과 단계를 표시하고, 확인한 변경만 기존 매니저에 전달한다.
 /// !! 2026-09-10: WJ_StatSystemTestScene에서는 이 컴포넌트를 비활성화하고 PassiveSkillPanelUI로
 /// 교체했다(요청: "ky가 작업한 스크립트는 일단 다 비활성화"). KY_PassiveSkillSlot이 PassiveSkillData
 /// 타입을 쓰도록 바뀌어서 그 경계에 닿는 시그니처만 최소한으로 맞춰 컴파일만 유지해뒀다 - 이 클래스
@@ -131,7 +131,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         if (activeListView != null) activeListView.Render(activeSkills);
         if (pointText != null)
             pointText.text = skillManager != null && skillManager.CurrentProfile != null
-                ? $"골드 : {skillManager.CurrentProfile.credit:N0}" : "프로필 준비 중";
+                ? $"크레딧 : {skillManager.CurrentProfile.credit:N0}" : "프로필 준비 중";
         RefreshSelection();
     }
 
@@ -148,7 +148,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         ChangePendingLevel(selectedId.Value, change);
     }
 
-    /// <summary>좌클릭은 한 단계 올리고 우클릭은 내린다. 확인 전에는 골드와 저장값을 바꾸지 않는다.</summary>
+    /// <summary>좌클릭은 한 단계 올리고 우클릭은 내린다. 확인 전에는 크레딧과 저장값을 바꾸지 않는다.</summary>
     private void ChangePendingLevel(PassiveSkillId id, int change)
     {
         if (skillManager == null) return;
@@ -194,9 +194,9 @@ public class KY_PassiveSkillPopup : KY_PopupBase
             skillName = definition.displayName,
             description = id == PassiveSkillId.Undecided ? "효과가 아직 정해지지 않아 구매할 수 없습니다." :
                 $"현재 {skillManager.GetCurrentLevel(id)} → 적용할 단계 {pendingLevel}/{definition.maxLevel}\n" +
-                DescribeEffect(id, definition, pendingLevel) + $"\n해금 비용: {cost:N0} 골드\n" +
+                DescribeEffect(id, definition, pendingLevel) + $"\n해금 비용: {cost:N0} 크레딧\n" +
                 (skillManager.CurrentProfile == null ? "프로필을 먼저 불러오세요." :
-                    skillManager.CurrentProfile.credit < cost ? "골드가 부족합니다." : "확인을 누르면 적용됩니다.")
+                    skillManager.CurrentProfile.credit < cost ? "크레딧이 부족합니다." : "확인을 누르면 적용됩니다.")
         });
     }
 
@@ -212,7 +212,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
         if (confirmButton != null) confirmButton.interactable = selected &&
             pendingLevel != skillManager.GetCurrentLevel(selectedId.Value) && skillManager.CurrentProfile.credit >= cost;
         if (resetButton != null) resetButton.interactable = canChange && allSkills.Exists(skill => skill.isActive);
-        if (confirmButtonText != null) confirmButtonText.text = cost > 0 ? $"{cost:N0} 골드" : "적용";
+        if (confirmButtonText != null) confirmButtonText.text = cost > 0 ? $"{cost:N0} 크레딧" : "적용";
     }
 
     private void OnSkillHoverEnter(PassiveSkillData data)
@@ -226,7 +226,7 @@ public class KY_PassiveSkillPopup : KY_PopupBase
 
     private void OnSkillHoverExit() => RefreshSelection();
 
-    /// <summary>해금한 단계와 골드는 유지하고 현재 적용한 단계만 모두 해제한다.</summary>
+    /// <summary>해금한 단계와 크레딧은 유지하고 현재 적용한 단계만 모두 해제한다.</summary>
     public void OnClickReset()
     {
         if (!allowChanges || skillManager == null || skillManager.CurrentProfile == null) return;
