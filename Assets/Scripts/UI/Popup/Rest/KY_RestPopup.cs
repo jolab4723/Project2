@@ -1,4 +1,4 @@
-using System.Collections;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -23,7 +23,7 @@ public class KY_RestPopup : MonoBehaviour
     [Tooltip("팝업 바깥에서 완료 문구와 배경을 함께 표시할 패널")]
     [SerializeField] private GameObject completionMessagePanel;
     [SerializeField] private TMP_Text completionMessageText;
-    [Min(0f)] [SerializeField] private float completionMessageDuration = 2.5f;
+    [Min(0f)] [SerializeField] private float completionMessageDuration = 1f;
 
     [Header("버튼")]
     [SerializeField] private Button confirmButton;
@@ -39,12 +39,18 @@ public class KY_RestPopup : MonoBehaviour
     private int potionAmount;
     private int cost;
     private int currentCredits;
-    private Coroutine completionMessageRoutine;
+    private Tween completionMessageTween;
+
+    /// <summary>완료 알림 패널의 커튼 연출. 이걸 열어주지 않으면 패널을 켜도 세로로 접힌 채(스케일 0) 안 보인다.</summary>
+    private KY_CurtainEffect completionCurtain;
 
     private void Awake()
     {
         if (uiLabels == null)
             uiLabels = Resources.Load<UILabelDatabaseSO>(UiLabelResourcePath);
+
+        if (completionMessagePanel != null)
+            completionCurtain = completionMessagePanel.GetComponent<KY_CurtainEffect>();
 
         if (confirmButton != null)
             confirmButton.onClick.AddListener(HandleConfirmClicked);
@@ -60,8 +66,7 @@ public class KY_RestPopup : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (completionMessageRoutine != null)
-            StopCoroutine(completionMessageRoutine);
+        completionMessageTween?.Kill();
 
         if (confirmButton != null)
             confirmButton.onClick.RemoveListener(HandleConfirmClicked);
@@ -138,26 +143,31 @@ public class KY_RestPopup : MonoBehaviour
         if (currentCredits < cost)
             return;
 
+        ShowCompletionMessage();
+        OnConfirmed?.Invoke();
+        Close();
+    }
+
+    /// <summary>
+    /// 완료 알림을 띄운다. 알림 패널은 팝업 바깥에 있어서 팝업을 닫아도 남는다.
+    /// !! 자동 숨김을 코루틴으로 돌리면 팝업이 닫히는 순간(SetActive(false)) 같이 죽어서 알림이 영원히 남는다.
+    ///    그래서 팝업 활성 상태와 무관하게 도는 DOTween 지연 호출을 쓴다.
+    /// </summary>
+    private void ShowCompletionMessage()
+    {
         if (completionMessageText != null)
             completionMessageText.text = string.Format(
                 L("rest_ui.complete_message", "{0} 크레딧을 소비하여 체력 {1}, 포션 {2}개를 채웠습니다."),
                 cost, healthAmount, potionAmount);
 
-        if (completionMessagePanel != null)
-            completionMessagePanel.SetActive(true);
+        if (completionMessagePanel == null)
+            return;
 
+        completionMessagePanel.SetActive(true);
+        completionCurtain?.Open();
 
-        if (completionMessageRoutine != null)
-            StopCoroutine(completionMessageRoutine);
-
-        completionMessageRoutine = StartCoroutine(HideCompletionMessageAfterDelay());
-
-        // 완료 메시지가 뜬 채로 팝업이 안 닫히므로, 다시 눌러서 중복 적용되지 않도록 막는다.
-        if (confirmButton != null)
-            confirmButton.interactable = false;
-
-        OnConfirmed?.Invoke();
-
+        completionMessageTween?.Kill();
+        completionMessageTween = DOVirtual.DelayedCall(completionMessageDuration, HideCompletionMessage, true);
     }
 
     private void HandleCancelClicked()
@@ -167,20 +177,10 @@ public class KY_RestPopup : MonoBehaviour
 
     private void HideCompletionMessage()
     {
-        if (completionMessageRoutine != null)
-        {
-            StopCoroutine(completionMessageRoutine);
-            completionMessageRoutine = null;
-        }
+        completionMessageTween?.Kill();
+        completionMessageTween = null;
 
         if (completionMessagePanel != null)
             completionMessagePanel.SetActive(false);
-    }
-
-    private IEnumerator HideCompletionMessageAfterDelay()
-    {
-        yield return new WaitForSecondsRealtime(completionMessageDuration);
-        completionMessageRoutine = null;
-        HideCompletionMessage();
     }
 }
