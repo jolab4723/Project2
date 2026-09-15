@@ -63,7 +63,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     [SerializeField] private Color lineVisualColor = new Color(1f, 0.15f, 0.1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
 
-    private readonly float[] cooldownRemaining = new float[3];
+    // 슬롯 수(skills.Length)에 맞춰 Awake에서 다시 잡는다 - 궁극기(Skill4)처럼 슬롯이 늘어나도
+    // 쿨타임 배열만 3칸으로 남아 IndexOutOfRange가 나지 않도록 하기 위함.
+    private float[] cooldownRemaining = new float[3];
 
     // Dash 진화2(2스택화) 전용 상태. -1 = 아직 초기화 안 됨(Start에서 evoDashMaxStacks로 채움).
     private int dashStacks = -1;
@@ -140,6 +142,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void Awake()
     {
         playerEffect = GetComponent<WBH_PlayerEffect>();
+
+        if (cooldownRemaining.Length != skills.Length)
+            cooldownRemaining = new float[skills.Length];
     }
 
     private void OnEnable()

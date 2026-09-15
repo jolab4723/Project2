@@ -18,8 +18,8 @@ namespace DataSystem
     /// </summary>
     public static class SkillDataExcelToJson
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/SkillData/JSONFile";
-        private const string DefaultExcelPath = "Assets/Resources/DataFiles/SkillData/ExcelFile/SkillData.xlsx";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
+        private const string DefaultExcelPath = "Assets/Resources/DataFiles/CharData/SkillData/1. ExcelFile/SkillData.xlsx";
 
         [MenuItem("DataLoader/Skill Data/1. Convert Excel To JSON")]
         public static void ConvertExcelToJsonFromMenu()

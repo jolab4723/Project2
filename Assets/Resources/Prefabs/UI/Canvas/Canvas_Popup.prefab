@@ -4095,6 +4095,42 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -44.375
       objectReference: {fileID: 0}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: skillSlotButtons.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'skillIconSlots.Array.data[0]'
+      value: 
+      objectReference: {fileID: 5961663219013658803}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'skillIconSlots.Array.data[1]'
+      value: 
+      objectReference: {fileID: 8257401353380817100}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'skillIconSlots.Array.data[2]'
+      value: 
+      objectReference: {fileID: 6136655664417760236}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'skillIconSlots.Array.data[3]'
+      value: 
+      objectReference: {fileID: 6901089007021715219}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'enhancementIcons.Array.data[0]'
+      value: 
+      objectReference: {fileID: 21300000, guid: 5e3dfa2794d30ef4693e07980bd31c99, type: 3}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'enhancementIcons.Array.data[1]'
+      value: 
+      objectReference: {fileID: 21300000, guid: 4cc9ce314772a89498134761d24dd003, type: 3}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'enhancementIcons.Array.data[2]'
+      value: 
+      objectReference: {fileID: 21300000, guid: 85464d4363889224894bf664006d1a77, type: 3}
+    - target: {fileID: 3761379842413086204, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+      propertyPath: 'skillSlotButtons.Array.data[3]'
+      value: 
+      objectReference: {fileID: 7972910419968361751}
     - target: {fileID: 4306032909380422567, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -4420,6 +4456,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3409a41a05c387745b408d664fd9ed60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SkillPopup
+--- !u!114 &5961663219013658803 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6558615082119323504, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+  m_PrefabInstance: {fileID: 700578811220064195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debcff7245666dd4b92102f464a8af6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
+--- !u!114 &6136655664417760236 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6670169043563811887, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+  m_PrefabInstance: {fileID: 700578811220064195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debcff7245666dd4b92102f464a8af6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
+--- !u!114 &6901089007021715219 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6232246675554834640, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+  m_PrefabInstance: {fileID: 700578811220064195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debcff7245666dd4b92102f464a8af6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
+--- !u!114 &7972910419968361751 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7430239543524487892, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+  m_PrefabInstance: {fileID: 700578811220064195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &8257401353380817100 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8872331507330981647, guid: 68ef6391a5c3d56479c1851b32e0b783, type: 3}
+  m_PrefabInstance: {fileID: 700578811220064195}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debcff7245666dd4b92102f464a8af6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
 --- !u!1001 &1449694733892540324
 PrefabInstance:
   m_ObjectHideFlags: 0
