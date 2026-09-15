@@ -146,18 +146,18 @@ public class KY_RestPopup : MonoBehaviour
         if (completionMessagePanel != null)
             completionMessagePanel.SetActive(true);
 
-<<<<<<< Updated upstream
+
         if (completionMessageRoutine != null)
             StopCoroutine(completionMessageRoutine);
 
         completionMessageRoutine = StartCoroutine(HideCompletionMessageAfterDelay());
-=======
+
         // 완료 메시지가 뜬 채로 팝업이 안 닫히므로, 다시 눌러서 중복 적용되지 않도록 막는다.
         if (confirmButton != null)
             confirmButton.interactable = false;
 
         OnConfirmed?.Invoke();
->>>>>>> Stashed changes
+
     }
 
     private void HandleCancelClicked()
