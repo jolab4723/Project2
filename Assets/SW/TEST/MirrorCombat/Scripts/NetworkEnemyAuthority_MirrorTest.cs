@@ -220,6 +220,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         status.OnHpChanged += HandleHealthChanged;
         status.OnDamaged += HandleDamaged;
         status.OnDead += HandleDead;
+        serverDamageSubscribed = true;
 
         currentHealth = status.CurrentHp;
         maxHealth = status.MaxHealth;
@@ -229,6 +230,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
         networkPattern.InitializeServer(this);
     }
+
+    public bool IsServerDamageHandlingActive => netIdentity != null && netIdentity.isServer && serverDamageSubscribed;
+    private bool serverDamageSubscribed;
 
     public override void OnStartClient()
     {
@@ -248,6 +252,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
     public override void OnStopServer()
     {
+        serverDamageSubscribed = false;
         if (status != null)
         {
             status.OnHpChanged -= HandleHealthChanged;
@@ -621,9 +626,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackerNetId = GetNetId(attacker);
             lastAttackDirection = (transform.position - attacker.transform.position).normalized;
             // 원본 스킬·일반 공격 모두 실제 피해 수신 뒤 공격자 자신의 장비 효과를 발동한다.
-            attacker.ItemTriggers?.Fire(TriggerCondition.OnDamageDealt);
-            if (result.IsCritical)
-                attacker.ItemTriggers?.Fire(TriggerCondition.OnCrit);
+            attacker.ItemTriggers?.FireDamageDealt(result);
             attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
         }
         else
@@ -698,7 +701,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private void GrantKillRewardOnce()
     {
-        if (enemyInfo == null)
+        if (enemyInfo == null || killRewardCount != 0)
             return;
 
         PlayerContext rewardRecipient = lastAttackerContext;

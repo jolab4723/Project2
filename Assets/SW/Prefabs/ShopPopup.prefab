@@ -7840,7 +7840,7 @@ GameObject:
   - component: {fileID: 3897746295263750646}
   - component: {fileID: 5455537361925438179}
   - component: {fileID: 3279392249292735399}
-  - component: {fileID: 417899654258180325}
+  - component: {fileID: 5334212067382267001}
   m_Layer: 5
   m_Name: RerollButton
   m_TagString: Untagged
@@ -7864,7 +7864,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 22.5, y: -27.5}
+  m_AnchoredPosition: {x: 22.5, y: -27.49}
   m_SizeDelta: {x: 45, y: 45}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3897746295263750646
@@ -7949,7 +7949,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &417899654258180325
+--- !u!114 &5334212067382267001
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7958,10 +7958,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8189193351776199348}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a88ccc9df55e6e41b512d48ea5cc312, type: 3}
+  m_Script: {fileID: 11500000, guid: eb273c70eb26d2240a359e5174ba4613, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SwTestShopRerollButton
+  m_EditorClassIdentifier: Assembly-CSharp::ShopRerollButton
+  button: {fileID: 3279392249292735399}
   stockInitializer: {fileID: 2174406786377528255}
+  shopController: {fileID: 8177954171418749996}
+  baseFreeRerollCount: 1
+  paidRerollCost: 100
 --- !u!1 &8246622618388632972
 GameObject:
   m_ObjectHideFlags: 0

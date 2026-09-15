@@ -72,7 +72,9 @@ public class GunnerDecoy : MonoBehaviour
                                                                  damageRequest.StatusEffect,
                                                                  hitEffectData,
                                                                  hitPosition,
-                                                                 lookDirection);
+                                                                 lookDirection,
+                                                                 damageRequest.DamageCause,
+                                                                 damageRequest.AttackId);
             WBH_CombatManager.ProcessDamage(hitRequest);
         }
 

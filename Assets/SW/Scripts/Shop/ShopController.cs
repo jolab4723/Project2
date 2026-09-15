@@ -67,6 +67,14 @@ public class ShopController : MonoBehaviour
         tradeService = null;
     }
 
+    public void SetLogMessage(string message, bool isWarning = false)
+    {
+        if (logText != null)
+            logText.text = message;
+        if (isWarning)
+            inventoryController?.ReportSinglePlayerMessage(ChatKind.Warning, message);
+    }
+
     public bool TryAddGeneratedStock(InventoryItem item)
     {
         if (item?.itemData?.definition == null || shopGrid == null || stockService == null || itemUISpawner == null)

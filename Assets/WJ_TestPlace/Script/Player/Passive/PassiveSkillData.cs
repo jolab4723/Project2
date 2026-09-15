@@ -16,7 +16,7 @@ public class PassiveSkillData
     public int currentLevel;
 
     [Tooltip("아직 아이콘 스프라이트 체계가 없어 항상 null - 나중에 아이콘이 생기면 채워서 쓴다.")]
-    public Sprite icon;
+    public Sprite icon => definition?.icon;
 
     public string DisplayName => definition != null ? definition.displayName : id.ToString();
     public int MaxLevel => definition != null ? definition.maxLevel : 0;
