@@ -141,8 +141,10 @@ public class KY_SettingsPopup : KY_PopupBase
         resolutionDropdown.value = tempData.resolutionIndex;
 
         // 창모드
-        // 토글 라벨은 "창모드"이므로, 전체 화면 데이터와 반대 의미로 표시한다.
-        fullscreenToggle.isOn = !tempData.isFullscreen;
+        // 저장값이 아니라 현재 Unity 화면 모드를 기준으로 표시한다.
+        // 창모드면 켜고, 전체 화면/전체 화면 창이면 끈다.
+        bool isWindowed = Screen.fullScreenMode == FullScreenMode.Windowed;
+        fullscreenToggle.SetIsOnWithoutNotify(isWindowed);
 
         // 밝기
         brightnessSlider.value = tempData.brightness;
