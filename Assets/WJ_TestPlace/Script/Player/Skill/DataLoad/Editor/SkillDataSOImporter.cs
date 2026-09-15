@@ -16,8 +16,8 @@ namespace DataSystem
     /// </summary>
     public static class SkillDataSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/SkillData/JSONFile";
-        private const string OutputFolder = "Assets/WJ_TestPlace/Data/Skill";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
+        private const string OutputFolder = "Assets/Resources/DataFiles/CharData/SkillData/3. GeneratedAssets";
 
         [MenuItem("DataLoader/Skill Data/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -33,8 +33,8 @@ namespace DataSystem
         [MenuItem("DataLoader/Skill Data/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            const string excelPath = "Assets/Resources/DataFiles/SkillData/ExcelFile/SkillData.xlsx";
-            const string jsonPath = "Assets/Resources/DataFiles/SkillData/JSONFile/SkillData.json";
+            const string excelPath = "Assets/Resources/DataFiles/CharData/SkillData/1. ExcelFile/SkillData.xlsx";
+            const string jsonPath = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile/SkillData.json";
 
             string excelAbsolute = AssetPathToAbsolutePath(excelPath);
             string jsonAbsolute = AssetPathToAbsolutePath(jsonPath);

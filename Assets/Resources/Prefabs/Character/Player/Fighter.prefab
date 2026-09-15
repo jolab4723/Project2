@@ -8521,6 +8521,7 @@ GameObject:
   - component: {fileID: 4210524801797139003}
   - component: {fileID: 7151127679895332328}
   - component: {fileID: 4896227351667689570}
+  - component: {fileID: 6056062155033957943}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -8753,6 +8754,9 @@ MonoBehaviour:
   fighterDash: {fileID: 7400000, guid: 0aaf3ddb6a989354ea61fdb66bda6f60, type: 2}
   gunnerBackstepMove: {fileID: 0}
   effectSpawner: {fileID: 0}
+  referenceRunMoveSpeed: 5
+  minimumRunPlaybackSpeed: 0.5
+  maximumRunPlaybackSpeed: 2
 --- !u!114 &245515211961115271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9262,12 +9266,30 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ab39b74795b39014d8f4012ba4f78d25, type: 2}
   - {fileID: 11400000, guid: b625aac830758f94fb9fe10f96cdedd6, type: 2}
   - {fileID: 11400000, guid: 5547e5c053affda4ba86d21b0ac28cbd, type: 2}
-  activeEvolutions: 000000000000000000000000
-  activeEnhancements: 000000000000000000000000
+  - {fileID: 11400000, guid: d3d46b23d3422314bb1b5d63febba41e, type: 2}
+  activeEvolutions: 00000000000000000000000000000000
+  activeEnhancements: 00000000000000000000000000000000
   visibleSkillArea: 0
   sectorVisualColor: {r: 1, g: 0.5, b: 0.1, a: 0.35}
   lineVisualColor: {r: 1, g: 0.15, b: 0.1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+--- !u!114 &6056062155033957943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95acda7de1d941444a7f87fdb57e04fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClassSkillIconSet
+  slotIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: 5646df5ad75298b46bd9f4ec2617eb34, type: 3}
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0
