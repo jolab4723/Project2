@@ -7,7 +7,7 @@ using UnityEngine;
 /// 전혀 수정하지 않고 WBH_EnemyStatus.OnDead(공개 이벤트)만 구독한다.
 /// 풀에서 재사용되는 적이라도 OnEnable/OnDisable에서 매번 구독/해제하므로 중복 지급 걱정은 없다.
 /// 8/21 WBH 수정. OnDead 이벤트 대신 OnDamaged 구독을 통해 피해를 받았을 때 hp 가 0이 되는지 검사. (사망이벤트 구독 시, 풀 반환으로 크레딧 텍스트 비활성화 우려.)
-/// 로컬 환경에서는 SpawnManager 부터 Initialize()를 통해 주입받은 단일 PlayerWallet 에 골드 지급.
+/// 로컬 환경에서는 SpawnManager 부터 Initialize()를 통해 주입받은 단일 PlayerWallet 에 크레딧 지급.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(WBH_EnemyStatus))]

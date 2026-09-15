@@ -13,7 +13,7 @@ using ItemSystem;
 ///    GetSaveData()/ApplySaveData()로 데이터만 내어주고 받을 뿐, 파일 입출력은 하지 않는다
 ///    (SettingManager/PassiveSkillManager와 동일한 역할 분리).
 ///
-/// !! 보상 골드/아이템은 InventoryController.Instance(로컬 플레이어)로 지급한다. InventoryController가
+/// !! 보상 크레딧/아이템은 InventoryController.Instance(로컬 플레이어)로 지급한다. InventoryController가
 ///    비활성 인벤토리 팝업 안에 있어서 팝업을 한 번도 안 열면 Instance가 계속 null일 수 있다는 게 이미
 ///    확인된 구조적 한계다(158번 작업 로그 참고) - 그 문제 자체는 이 클래스가 고치지 않는다.
 /// </summary>

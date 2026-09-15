@@ -141,7 +141,8 @@ public class KY_SettingsPopup : KY_PopupBase
         resolutionDropdown.value = tempData.resolutionIndex;
 
         // 창모드
-        fullscreenToggle.isOn = tempData.isFullscreen;
+        // 토글 라벨은 "창모드"이므로, 전체 화면 데이터와 반대 의미로 표시한다.
+        fullscreenToggle.isOn = !tempData.isFullscreen;
 
         // 밝기
         brightnessSlider.value = tempData.brightness;
@@ -214,7 +215,8 @@ public class KY_SettingsPopup : KY_PopupBase
     void ApplySettings()
     {
         tempData.resolutionIndex = resolutionDropdown.value;
-        tempData.isFullscreen = fullscreenToggle.isOn;
+        // 창모드 토글이 켜져 있으면 전체 화면 데이터는 false여야 한다.
+        tempData.isFullscreen = !fullscreenToggle.isOn;
         tempData.brightness = brightnessSlider.value;
         tempData.masterVolume = masterVolumeSlider.value;
         tempData.isMuted = muteToggle.isOn;

@@ -28,10 +28,25 @@ public class KY_LoadingPresentation : MonoBehaviour
     [SerializeField] private LoadingTipEntry[] entries;
     [SerializeField] private bool chooseRandomEntry = true;
     [SerializeField] private int previewEntryIndex;
+    private int currentEntryIndex;
 
     private void OnEnable()
     {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
         ShowEntry(chooseRandomEntry ? GetRandomEntryIndex() : previewEntryIndex);
+    }
+
+    private void OnDisable()
+    {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _)
+    {
+        // 로딩 중 언어가 바뀌어도 같은 팁의 이미지와 키를 유지한다.
+        ShowEntry(currentEntryIndex);
     }
 
     /// <summary>Inspector 테스트나 외부 호출에서 특정 팁을 표시한다.</summary>
@@ -41,6 +56,7 @@ public class KY_LoadingPresentation : MonoBehaviour
             return;
 
         index = Mathf.Clamp(index, 0, entries.Length - 1);
+        currentEntryIndex = index;
         LoadingTipEntry entry = entries[index];
 
         if (loadingImage != null)

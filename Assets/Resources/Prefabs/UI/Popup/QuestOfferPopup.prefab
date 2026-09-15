@@ -2472,6 +2472,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4973736672556786259}
   - component: {fileID: 2940671533955834956}
+  - component: {fileID: 6046348260290036675}
   - component: {fileID: 7806141224636586384}
   m_Layer: 5
   m_Name: QuestOfferPopup
@@ -2479,7 +2480,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4973736672556786259
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2531,6 +2532,24 @@ MonoBehaviour:
   rewardSectionLabel: {fileID: 0}
   acceptButtonText: {fileID: 0}
   denyButtonText: {fileID: 0}
+--- !u!114 &6046348260290036675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5527596237818307079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48bc5717bebd4a3438231bdbb68f8e2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_SlideAnimator
+  duration: 0.35
+  inEase: 27
+  outEase: 26
+  hiddenOffsetX: -1300
+  hiddenOffsetY: 0
+  ignoreTimeScale: 0
 --- !u!225 &7806141224636586384
 CanvasGroup:
   m_ObjectHideFlags: 0

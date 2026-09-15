@@ -81,8 +81,7 @@ public class YJ_PlayerFootstepLoop : MonoBehaviour
         Vector3 velocity = agent.velocity;
         velocity.y = 0f;
 
-        return velocity.sqrMagnitude >
-               minimumMoveSpeed * minimumMoveSpeed;
+        return velocity.sqrMagnitude > minimumMoveSpeed * minimumMoveSpeed;
     }
 
     private void OnDisable()

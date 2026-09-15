@@ -7,7 +7,7 @@ using UnityEngine;
 /// Recalculate()를 호출해주면 3단 공식으로 최종값을 갱신하고 OnStatChanged를 발행한다.
 ///
 /// !! maxHealth/attackPower/defensePower/maxMana/pen은 원래 int였는데 float로 전환함.
-///    (골드/레벨 제외 전부 float로 통일) 계산 결과 자체는 Mathf.Ceil로 올림 처리해서
+///    (크레딧/레벨 제외 전부 float로 통일) 계산 결과 자체는 Mathf.Ceil로 올림 처리해서
 ///    항상 정수 값을 갖지만, 타입은 float라 나중에 소수 보너스가 들어와도 안전함.
 /// </summary>
 [Serializable]

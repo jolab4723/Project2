@@ -136,8 +136,8 @@ namespace Core
         }
 
         /// <summary>
-        /// 런 종료 시 호출. 현재 인벤토리의 골드(PlayerWallet.Gold)를 profile의 영구 크레딧에 더하고,
-        /// 인게임 골드는 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.
+        /// 런 종료 시 호출. 현재 인벤토리의 크레딧(PlayerWallet.Gold)를 profile의 영구 크레딧에 더하고,
+        /// 인게임 크레딧은 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.
         /// 여기서는 이전만 하고 파일 저장은 안 함 - 필요하면 호출부에서 SaveSinglePlayerSlot/SaveMultiplayerSlot을 이어서 불러야 함.
         /// </summary>
         public void TransferRunGoldToProfile(PlayerProfileData profile)
@@ -150,7 +150,7 @@ namespace Core
 
             if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
             {
-                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 골드를 이전하지 못했습니다.");
+                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
                 return;
             }
 
@@ -161,7 +161,7 @@ namespace Core
             profile.credit += runGold;
             InventoryController.Instance.PlayerWallet.SetGold(0);
 
-            Debug.Log("[DataManager] 런 골드 " + runGold + " 이전 완료. 프로필 영구 크레딧 = " + profile.credit);
+            Debug.Log("[DataManager] 런 크레딧 " + runGold + " 이전 완료. 프로필 영구 크레딧 = " + profile.credit);
         }
 
         #endregion
@@ -806,7 +806,7 @@ namespace Core
             Debug.Log("[DataManager] 전체 데이터를 기본값으로 초기화했습니다.");
         }
 
-        /// <summary>플레이어 프로필(골드/이름/플레이타임 등, 패시브 트리 포함)을 완전히 새 프로필로 되돌려서 저장한다.</summary>
+        /// <summary>플레이어 프로필(크레딧/이름/플레이타임 등, 패시브 트리 포함)을 완전히 새 프로필로 되돌려서 저장한다.</summary>
         [ContextMenu("플레이어 데이터 초기화")]
         public void ResetPlayerProfile()
         {
