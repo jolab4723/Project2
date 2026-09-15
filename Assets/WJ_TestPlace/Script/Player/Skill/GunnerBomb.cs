@@ -226,7 +226,9 @@ public class GunnerBomb : MonoBehaviour
                                                              damageRequest.StatusEffect,
                                                              effectData,
                                                              hitPosition,
-                                                             lookDirection);
+                                                             lookDirection,
+                                                             damageRequest.DamageCause,
+                                                             damageRequest.AttackId);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 

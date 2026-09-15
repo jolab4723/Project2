@@ -33,6 +33,7 @@ public class T_PlayerCombat : MonoBehaviour
 
     private bool hasChaseDestination;
     private float basicAttackMult = 1f;
+    private uint nextAttackId;
 
     private const float ChaseRefreshDistance = 0.25f;
 
@@ -199,7 +200,8 @@ public class T_PlayerCombat : MonoBehaviour
                                  effectData: effectData,
                                  impactVisualPrefab: impactVisual,
                                  attackOrigin: spawnPosition,
-                                 attackForward: direction);
+                                 attackForward: direction,
+                                 attackId: request.AttackId);
                                  // SW 추가:
                                  // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
                                  // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
@@ -252,8 +254,12 @@ public class T_PlayerCombat : MonoBehaviour
                               // 거너 샷건은 모든 총이 공유하는 FirePoint 위치와 플레이어 정면을 전달합니다.
                               // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
                               Vector3? attackOrigin = null,
-                              Vector3? attackForward = null)
+                              Vector3? attackForward = null,
+                              uint attackId = 0)
     {
+        if (attackId == 0)
+            attackId = CreateAttackId();
+
         Vector3 origin = attackOrigin ?? transform.position;
         Vector3 forward = attackForward ?? transform.forward;
 
@@ -291,7 +297,8 @@ public class T_PlayerCombat : MonoBehaviour
                                                             statusEffect: WBH_StatusEffectPresets.Slow1, // Slow1은 아직 테스트값
                                                             effectData: effectData,
                                                             hitPosition: hitPosition,
-                                                            hitEffectDirection: lookDirection);
+                                                            hitEffectDirection: lookDirection,
+                                                            attackId: attackId);
 
             WBH_CombatManager.ProcessDamage(request);
 
@@ -313,8 +320,13 @@ public class T_PlayerCombat : MonoBehaviour
                                                  WBH_StatusEffectData? statusEffect = null,
                                                  WBH_EffectData effectData = null,
                                                  Vector3? hitPosition = null,
-                                                 Vector3? hitEffectDirection = null)
+                                                 Vector3? hitEffectDirection = null,
+                                                 DamageCause? damageCause = null,
+                                                 uint attackId = 0)
     {
+        if (attackId == 0)
+            attackId = CreateAttackId();
+
         return new WBH_DamageRequest(controller,
                                      target,
                                      atkType, 
@@ -323,7 +335,9 @@ public class T_PlayerCombat : MonoBehaviour
                                      statusEffect, 
                                      effectData, 
                                      hitPosition, 
-                                     hitEffectDirection);
+                                     hitEffectDirection,
+                                     damageCause,
+                                     attackId);
     }
 
     // 투사체는 타겟이 충돌 시 결정되기에 null 로 비워둠.
@@ -333,8 +347,13 @@ public class T_PlayerCombat : MonoBehaviour
                                                  WBH_StatusEffectData? statusEffect = null,
                                                  WBH_EffectData effectData = null,
                                                  Vector3? hitPosition = null,
-                                                 Vector3? hitEffectDirection = null)
+                                                 Vector3? hitEffectDirection = null,
+                                                 DamageCause? damageCause = null,
+                                                 uint attackId = 0)
     {
+        if (attackId == 0)
+            attackId = CreateAttackId();
+
         return new WBH_DamageRequest(controller,
                                      null, 
                                      atkType,
@@ -343,7 +362,18 @@ public class T_PlayerCombat : MonoBehaviour
                                      statusEffect, 
                                      effectData, 
                                      hitPosition, 
-                                     hitEffectDirection);
+                                     hitEffectDirection,
+                                     damageCause,
+                                     attackId);
+    }
+
+    /// <summary>SW 수정: 0을 예약값으로 남기고 순차 공격 ID를 생성합니다.</summary>
+    public uint CreateAttackId()
+    {
+        nextAttackId++;
+        if (nextAttackId == 0)
+            nextAttackId++;
+        return nextAttackId;
     }
 
     private void UpdateChase()

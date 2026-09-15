@@ -72,6 +72,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private GunnerWeaponType lastGunnerWeapon;
 
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
+    private uint resolvedAttackId;
     private uint nextLocalRequestId;
     private uint activeLocalRequestId;
     [SyncVar] private uint lastServerRequestId;
@@ -145,6 +146,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         pendingServerRequestId = 0;
         attackPending = false;
         attackImpactConfirmed = false;
+        resolvedAttackId = 0;
         resolvedTargets.Clear();
     }
 
@@ -190,7 +192,21 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         }
         // 새 소유 연결은 요청 번호를 1부터 발급한다. 서버 쿨다운은 연결을 넘어 유지한다.
         lastServerRequestId = 0;
+        resolvedAttackId = 0;
         resolvedTargets.Clear();
+    }
+
+    [Server]
+    public bool TryRegisterResolvedTarget(uint attackId, WBH_ICombat target)
+    {
+        if (attackId == 0 || target == null)
+            return true;
+        if (resolvedAttackId != attackId)
+        {
+            resolvedAttackId = attackId;
+            resolvedTargets.Clear();
+        }
+        return resolvedTargets.Add(target);
     }
 
     private void Awake()
@@ -249,8 +265,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         if (NetworkTime.time < impactAt)
             return;
 
+        uint attackId = pendingServerRequestId;
         ClearServerAttackReservation();
-        ResolveServerAttack();
+        ResolveServerAttack(attackId);
     }
 
     public bool TryBeginLocalAttack(Vector3 aimPoint)
@@ -557,7 +574,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     }
 
     [Server]
-    private void ResolveServerAttack()
+    private void ResolveServerAttack(uint attackId)
     {
         if (IsUnavailable)
         {
@@ -567,11 +584,10 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         if (IsGunner)
         {
-            ResolveServerGunnerAttack();
+            ResolveServerGunnerAttack(attackId);
             return;
         }
 
-        resolvedTargets.Clear();
         lastTargetNetId = 0;
         lastDamage = 0f;
         lastHitCritical = false;
@@ -593,7 +609,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             }
 
             WBH_ICombat target = FindCombatTarget(hit);
-            if (target == null || !resolvedTargets.Add(target))
+            if (target == null)
                 continue;
 
             if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
@@ -602,7 +618,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
                     status.CurrentElement,
                     1f,
                     WBH_StatusEffectPresets.Slow1,
-                    out WBH_DamageResult result))
+                    out WBH_DamageResult result,
+                    DamageCause.Direct,
+                    attackId))
             {
                 continue;
             }
@@ -663,7 +681,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     }
 
     [Server]
-    private void ResolveServerGunnerAttack()
+    private void ResolveServerGunnerAttack(uint attackId)
     {
         lastTargetNetId = 0;
         lastDamage = 0f;
@@ -690,18 +708,17 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         if (pendingGunnerWeapon == GunnerWeaponType.Shotgun)
         {
-            resolvedTargets.Clear();
             foreach (Collider hit in Physics.OverlapSphere(origin, pendingGunnerRange, enemyLayer, QueryTriggerInteraction.Collide))
             {
                 WBH_ICombat target = FindCombatTarget(hit);
                 if (target is not Component component || component.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>() == null ||
-                    resolvedTargets.Contains(target)) continue;
+                    target == null) continue;
                 Vector3 offset = hit.ClosestPoint(origin) - origin;
                 Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
                 if (Vector3.Angle(direction, flat) > 45f ||
                     Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
-                resolvedTargets.Add(target);
-                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f, null, out WBH_DamageResult result))
+                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f, null,
+                        out WBH_DamageResult result, DamageCause.Direct, attackId))
                 {
                     ServerRecordGunnerHit(target, result);
                     RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.ClosestPoint(origin), -direction);
@@ -713,7 +730,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         NetworkEnemyProjectile_MirrorTest projectile = Instantiate(gunnerProjectilePrefab, origin, Quaternion.LookRotation(direction));
         projectile.InitializePlayerServer(context, pendingGunnerWeapon, pendingGunnerItemId, pendingGunnerElement,
-            direction, pendingGunnerSpeed, pendingGunnerRange, pendingGunnerAim, gunnerExplosionRadius);
+            direction, pendingGunnerSpeed, pendingGunnerRange, pendingGunnerAim, gunnerExplosionRadius, attackId);
         NetworkServer.Spawn(projectile.gameObject);
     }
 

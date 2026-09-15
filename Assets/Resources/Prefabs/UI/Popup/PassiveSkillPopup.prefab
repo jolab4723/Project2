@@ -54,7 +54,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 2971312258707200779}
   activeHighlight: {fileID: 476888192304878285}
-  skillLevelText: {fileID: 5473487715610815029}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 5473487715610815029}
 --- !u!1 &6735672918802338
 GameObject:
   m_ObjectHideFlags: 0
@@ -109,7 +110,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 6022765085423072889}
   activeHighlight: {fileID: 6831316659830683178}
-  skillLevelText: {fileID: 6099368694338898298}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 6099368694338898298}
 --- !u!1 &63525332687155180
 GameObject:
   m_ObjectHideFlags: 0
@@ -314,7 +316,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 2040029708854380915}
   activeHighlight: {fileID: 2532426250669170854}
-  skillLevelText: {fileID: 7765320233038628228}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 7765320233038628228}
 --- !u!1 &200186306533623196
 GameObject:
   m_ObjectHideFlags: 0
@@ -2582,7 +2585,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ef0f8518144d634b9d2d48d8bd54d7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PassiveSkillPanelUI
-  goldText: {fileID: 2088372622724486229}
+  creditText: {fileID: 2088372622724486229}
   skillClearButton: {fileID: 7041780503811767613}
   closeButton: {fileID: 6289207609764624196}
   nameText: {fileID: 6190074923920897043}
@@ -3082,7 +3085,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2998032347058387408
 CanvasRenderer:
@@ -3114,7 +3117,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -3401,7 +3404,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 6633637947805787550}
   activeHighlight: {fileID: 5297605989175734177}
-  skillLevelText: {fileID: 4631759847979807978}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 4631759847979807978}
 --- !u!1 &1432529351989128987
 GameObject:
   m_ObjectHideFlags: 0
@@ -5229,7 +5233,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9028685424845202473
 CanvasRenderer:
@@ -5261,7 +5265,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -8206,7 +8210,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 2446627463941747822}
   activeHighlight: {fileID: 8901785071566292474}
-  skillLevelText: {fileID: 3500658697409107666}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 3500658697409107666}
 --- !u!1 &3555226363410901243
 GameObject:
   m_ObjectHideFlags: 0
@@ -9407,7 +9412,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 6191935194016816457}
   activeHighlight: {fileID: 4094295812637800888}
-  skillLevelText: {fileID: 1077585264607222355}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 1077585264607222355}
 --- !u!1 &3987071585351366588
 GameObject:
   m_ObjectHideFlags: 0
@@ -11410,7 +11416,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8483407237055596430
 CanvasRenderer:
@@ -11442,7 +11448,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -12603,7 +12609,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 243608425396162703}
   activeHighlight: {fileID: 3580890345457118271}
-  skillLevelText: {fileID: 6034873297440282221}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 6034873297440282221}
 --- !u!1 &5702904021768616410
 GameObject:
   m_ObjectHideFlags: 0
@@ -13809,7 +13816,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4274557698300400861
 CanvasRenderer:
@@ -13841,7 +13848,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -14265,7 +14272,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 1177470499189277719}
   activeHighlight: {fileID: 1499902858649414129}
-  skillLevelText: {fileID: 621709300750629240}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 621709300750629240}
 --- !u!1 &6623519685709252507
 GameObject:
   m_ObjectHideFlags: 0
@@ -16331,7 +16339,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5903350500913608500
 CanvasRenderer:
@@ -16363,7 +16371,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -16406,7 +16414,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4903021120477869638
 CanvasRenderer:
@@ -16438,7 +16446,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -17143,7 +17151,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7124909642767899204
 CanvasRenderer:
@@ -17175,7 +17183,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -17368,7 +17376,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7046977932173303285
 CanvasRenderer:
@@ -17400,7 +17408,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -17637,7 +17645,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 6114821374304079117}
   activeHighlight: {fileID: 5102568109298026296}
-  skillLevelText: {fileID: 8370906645818688767}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 8370906645818688767}
 --- !u!1 &7929928699205146154
 GameObject:
   m_ObjectHideFlags: 0
@@ -18105,7 +18114,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1814984734651842457
 CanvasRenderer:
@@ -18137,7 +18146,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -18555,7 +18564,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8004025391126409590
 CanvasRenderer:
@@ -18587,7 +18596,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -19649,7 +19658,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 1154667962678332288}
   activeHighlight: {fileID: 6274512744237289950}
-  skillLevelText: {fileID: 7895251465171079173}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 7895251465171079173}
 --- !u!1 &8638225332813154574
 GameObject:
   m_ObjectHideFlags: 0
@@ -19704,7 +19714,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 4890065154492473324}
   activeHighlight: {fileID: 2977366648537394942}
-  skillLevelText: {fileID: 4678060685526801917}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 4678060685526801917}
 --- !u!1 &8642634994159381321
 GameObject:
   m_ObjectHideFlags: 0
@@ -19815,7 +19826,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4262339904000590706
 CanvasRenderer:
@@ -19847,7 +19858,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -19984,7 +19995,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_PassiveSkillSlot
   iconImage: {fileID: 7114236730502760505}
   activeHighlight: {fileID: 6194928379594454313}
-  skillLevelText: {fileID: 346545473913053512}
+  missingIconLabel: {fileID: 0}
+  levelLabel: {fileID: 346545473913053512}
 --- !u!1 &8818002906127347351
 GameObject:
   m_ObjectHideFlags: 0
@@ -20020,7 +20032,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9153451524971528011
 CanvasRenderer:
@@ -20052,7 +20064,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 8bafa4ccb4644d446a1fba150bfc040a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1

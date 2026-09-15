@@ -68,6 +68,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     private int pendingServerSlot = -1;
     private bool serverCharging;
     private bool serverMotionLocked;
+    [SyncVar] private bool serverRideLocked;
+    private bool localRideLocked;
     private uint motionAckRequestId;
     private float serverExpiresAt;
     private float nextSnapshotAt;
@@ -86,6 +88,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     public uint AcceptedSkillCount => acceptedSkillCount;
     public uint RejectedSkillCount => rejectedSkillCount;
     public bool ServerMotionLocked => isServer && serverMotionLocked;
+    public bool ServerRideLocked => isServer && serverRideLocked;
+    public bool IsRideLocked => isServer ? serverRideLocked : localRideLocked;
     private ISkillController Original => fighterSkills != null ? fighterSkills : gunnerSkills;
     private bool IsUnavailable => status == null || status.IsDead || context?.RuntimeState?.IsDead == true ||
         binder?.IsTemporarilyAbsent == true ||
@@ -99,6 +103,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         lastServerRequestId = 0;
         pendingServerRequestId = 0;
         motionAckRequestId = 0;
+        serverRideLocked = false;
         UnlockServerMotion();
         ResolveReferences();
         if (Original == null)
@@ -151,6 +156,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+        localRideLocked = false;
         localRequestPending = false;
         if (nextLocalRequestId <= lastServerRequestId)
             nextLocalRequestId = lastServerRequestId;
@@ -163,6 +169,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     {
         UnbindLocalInput();
         SetOwnerInputBlocked(false);
+        localRideLocked = false;
         localRequestPending = false;
         base.OnStopLocalPlayer();
     }
@@ -172,6 +179,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         UnbindLocalInput();
         if (isServer && NetworkServer.active) ServerCancelForDisconnect();
         SetOwnerInputBlocked(false);
+        localRideLocked = false;
     }
 
     private void OnDestroy() => UnbindOriginalEvents();
@@ -526,7 +534,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
 
     private void UnlockServerMotion()
     {
-        networkTransform?.serverSnapshots.Clear();
+        networkTransform?.ServerClearSnapshots();
         if (serverMotionLocked && networkAnimator != null)
         {
             networkAnimator.clientAuthority = savedAnimatorAuthority;
@@ -542,6 +550,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         if (pendingServerRequestId != 0) FinishServerSkill(true);
         motionAckRequestId = 0;
         UnlockServerMotion();
+        networkTransform?.ServerClearSnapshots();
+        serverRideLocked = false;
         lastServerRequestId = 0;
         if (fighterSkills != null) fighterSkills.CancelActiveSkill();
         else gunnerSkills?.CancelActiveSkill();
@@ -588,8 +598,20 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     }
 
     private void OnSkillStateChanged(SyncList<SkillState>.Operation operation, int index, SkillState value) => SkillStateChanged?.Invoke();
-    private bool CanSendLocalRequest() => isLocalPlayer && NetworkClient.active && NetworkClient.ready && !IsUnavailable;
-    private bool CanBeginSkillState() => stateMachine != null && !stateMachine.IsAnyState(
+    [Server]
+    internal void SetServerRideLocked(bool locked)
+    {
+        serverRideLocked = locked;
+    }
+
+    internal void SetLocalRideLocked(bool locked)
+    {
+        localRideLocked = locked;
+    }
+
+    private bool CanSendLocalRequest() => isLocalPlayer && NetworkClient.active && NetworkClient.ready &&
+        !IsUnavailable && !IsRideLocked;
+    private bool CanBeginSkillState() => !IsRideLocked && stateMachine != null && !stateMachine.IsAnyState(
         PlayerState.Hit, PlayerState.Attack, PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead, PlayerState.Revive);
 
     private bool TryValidateAim(ref Vector3 aim, Vector3 target)

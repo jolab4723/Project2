@@ -10,7 +10,6 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
     public GameObject activeHighlight;
     [SerializeField] private TMP_Text missingIconLabel;
     [SerializeField] private TMP_Text levelLabel; // SW 수정: 새 화면의 단계 배지
-    [SerializeField] private TMP_Text skillLevelText;
 
     private PassiveSkillData myData;
 
@@ -31,11 +30,6 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
                 : data.MaxLevel <= 0 ? data.DisplayName : data.LevelLabel;
         }
         if (levelLabel != null) levelLabel.text = data.LevelBadgeText;
-        if (skillLevelText != null)
-        {
-            skillLevelText.gameObject.SetActive(data.icon == null);
-            skillLevelText.text = data.LevelBadgeText;
-        }
         // activeHighlight(OutLine)는 더 이상 여기서 안 건드림 - 현재 선택된 슬롯인지 여부는
         // PassiveSkillPanelUI가 전체 슬롯을 훑어보며 배타적으로 관리한다(2026-09-10).
     }

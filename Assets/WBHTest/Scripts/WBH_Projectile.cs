@@ -338,7 +338,9 @@ public class WBH_Projectile : MonoBehaviour
                                                                  request.StatusEffect,
                                                                  request.EffectData,
                                                                  hitPosition,
-                                                                 hitEffectDirection);
+                                                                 hitEffectDirection,
+                                                                 request.DamageCause,
+                                                                 request.AttackId);
                                                                  // SW 추가:
                                                                  // 메인 머지에서 WBH_DamageRequest에 EffectData가 추가됐습니다.
                                                                  // 원본 요청을 명중 대상용 요청으로 복제할 때 이 값도 넘겨야

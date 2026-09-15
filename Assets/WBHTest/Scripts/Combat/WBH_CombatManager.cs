@@ -9,6 +9,8 @@ public class WBH_CombatManager
             return;
         WBH_ICombatStatus attackerStat = request.Attacker.Status;
         WBH_ICombatStatus targetStat = request.Target.Status;
+        if (attackerStat == null || targetStat == null || targetStat.IsDead)
+            return;
 
         float damage = CalculateBaseDamage(attackerStat, request); // 1차 데미지 계산
 
@@ -40,19 +42,32 @@ public class WBH_CombatManager
                                                        request.StatusEffect,
                                                        request.EffectData,
                                                        request.HitPosition,
-                                                       request.HitEffectDirection);
+                                                       request.HitEffectDirection,
+                                                       request.DamageCause,
+                                                       request.AttackId);
+
+        bool isHandledByMirrorAuthority = false;
+        if (request.Target is Component comp &&
+            comp.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>() is NetworkEnemyAuthority_MirrorTest authority)
+        {
+            isHandledByMirrorAuthority = authority.IsServerDamageHandlingActive;
+        }
+
         request.Target.TakeDamage(result);
 
         // 플레이어가 가한 피해일 때만 플레이어 장착템의 발동형 고유 효과를 건드린다.
         // (적이 다른 적을 때리거나 적이 플레이어를 때릴 때는 이 매니저를 공유해서 쓰므로 여기서 걸러야 함)
         // !! WBH_DamageRequest.Attacker는 T_PlayerCombat.CreateDamageRequest가 controller(T_PlayerController)를
         //    넘기므로 T_PlayerCombat이 아니라 T_PlayerController로 들어온다.
-        if (request.Attacker is T_PlayerController)
+        if (!isHandledByMirrorAuthority && request.Attacker is T_PlayerController)
         {
-            ItemTriggerManager.Instance?.Fire(TriggerCondition.OnDamageDealt);
+            if (result.DamageCause == DamageCause.Direct)
+            {
+                ItemTriggerManager.Instance?.Fire(TriggerCondition.OnDamageDealt);
 
-            if (isCritical)
-                ItemTriggerManager.Instance?.Fire(TriggerCondition.OnCrit);
+                if (isCritical)
+                    ItemTriggerManager.Instance?.Fire(TriggerCondition.OnCrit);
+            }
         }
 
         if(!request.Target.Status.IsDead && request.StatusEffect.HasValue)
