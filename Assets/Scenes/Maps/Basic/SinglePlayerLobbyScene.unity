@@ -1425,6 +1425,7 @@ GameObject:
   - component: {fileID: 29608158}
   - component: {fileID: 29608157}
   - component: {fileID: 29608156}
+  - component: {fileID: 29608162}
   m_Layer: 5
   m_Name: Passive
   m_TagString: Untagged
@@ -1580,6 +1581,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 29608154}
   m_CullTransparentMesh: 1
+--- !u!114 &29608162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 29608154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &31197901
 GameObject:
   m_ObjectHideFlags: 0
@@ -20368,6 +20385,7 @@ GameObject:
   - component: {fileID: 459599237}
   - component: {fileID: 459599236}
   - component: {fileID: 459599241}
+  - component: {fileID: 459599242}
   m_Layer: 5
   m_Name: SinglePlay
   m_TagString: Untagged
@@ -20508,6 +20526,22 @@ MonoBehaviour:
   characterId: 0
   button: {fileID: 459599238}
   portraitImage: {fileID: 21300000, guid: 155b162180f2c8148945fffa0b48a36c, type: 3}
+--- !u!114 &459599242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 459599235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &462529919
 GameObject:
   m_ObjectHideFlags: 0
@@ -37133,6 +37167,8 @@ GameObject:
   m_Component:
   - component: {fileID: 846602492}
   - component: {fileID: 846602493}
+  - component: {fileID: 846602495}
+  - component: {fileID: 846602494}
   m_Layer: 5
   m_Name: SelectButton
   m_TagString: Untagged
@@ -37179,6 +37215,66 @@ MonoBehaviour:
   hiddenOffsetX: -700
   hiddenOffsetY: 0
   ignoreTimeScale: 0
+--- !u!114 &846602494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846602491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
+--- !u!114 &846602495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 846602491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 0}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &850176560
 GameObject:
   m_ObjectHideFlags: 0
@@ -43138,6 +43234,7 @@ GameObject:
   - component: {fileID: 879337783}
   - component: {fileID: 879337782}
   - component: {fileID: 879337781}
+  - component: {fileID: 879337787}
   m_Layer: 5
   m_Name: Totitle
   m_TagString: Untagged
@@ -43293,6 +43390,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 879337779}
   m_CullTransparentMesh: 1
+--- !u!114 &879337787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 879337779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &879879548
 GameObject:
   m_ObjectHideFlags: 0
@@ -58136,6 +58249,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1176842569}
   - component: {fileID: 1176842570}
+  - component: {fileID: 1176842572}
+  - component: {fileID: 1176842571}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -58184,6 +58299,66 @@ MonoBehaviour:
   hiddenOffsetX: 0
   hiddenOffsetY: -200
   ignoreTimeScale: 0
+--- !u!114 &1176842571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176842568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
+--- !u!114 &1176842572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176842568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 0}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1178016275
 GameObject:
   m_ObjectHideFlags: 0
@@ -60391,6 +60566,7 @@ GameObject:
   - component: {fileID: 1233441053}
   - component: {fileID: 1233441052}
   - component: {fileID: 1233441058}
+  - component: {fileID: 1233441059}
   m_Layer: 5
   m_Name: Confirm
   m_TagString: Untagged
@@ -60564,6 +60740,22 @@ MonoBehaviour:
   clickDuration: 0.1
   ease: 6
   button: {fileID: 0}
+--- !u!114 &1233441059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233441050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1234167576
 GameObject:
   m_ObjectHideFlags: 0
@@ -63509,6 +63701,7 @@ GameObject:
   - component: {fileID: 1345095633}
   - component: {fileID: 1345095632}
   - component: {fileID: 1345095631}
+  - component: {fileID: 1345095637}
   m_Layer: 5
   m_Name: Option
   m_TagString: Untagged
@@ -63664,6 +63857,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1345095629}
   m_CullTransparentMesh: 1
+--- !u!114 &1345095637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1345095629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1345358114
 GameObject:
   m_ObjectHideFlags: 0
@@ -67074,6 +67283,7 @@ GameObject:
   - component: {fileID: 1476248480}
   - component: {fileID: 1476248479}
   - component: {fileID: 1476248477}
+  - component: {fileID: 1476248483}
   m_Layer: 5
   m_Name: SinglePlay (1)
   m_TagString: Untagged
@@ -67214,6 +67424,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1476248475}
   m_CullTransparentMesh: 1
+--- !u!114 &1476248483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476248475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1481514387
 GameObject:
   m_ObjectHideFlags: 0

@@ -2327,6 +2327,7 @@ GameObject:
   - component: {fileID: 29608158}
   - component: {fileID: 29608157}
   - component: {fileID: 29608156}
+  - component: {fileID: 29608162}
   m_Layer: 5
   m_Name: Passive
   m_TagString: Untagged
@@ -2482,6 +2483,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 29608154}
   m_CullTransparentMesh: 1
+--- !u!114 &29608162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 29608154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &29702164
 GameObject:
   m_ObjectHideFlags: 0
@@ -5175,6 +5192,8 @@ MonoBehaviour:
   iconImage: {fileID: 736245188}
   activeHighlight: {fileID: 674599175}
   missingIconLabel: {fileID: 104513617}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &67864159
 GameObject:
   m_ObjectHideFlags: 0
@@ -18192,6 +18211,12 @@ MonoBehaviour:
   pointText: {fileID: 3666136}
   descriptionView: {fileID: 993304691}
   activeListView: {fileID: 1745544230}
+  levelUpButton: {fileID: 0}
+  levelDownButton: {fileID: 0}
+  confirmButton: {fileID: 0}
+  resetButton: {fileID: 0}
+  pendingLevelText: {fileID: 0}
+  confirmButtonText: {fileID: 0}
   allowChanges: 0
   unavailableReason: "\uD504\uB85C\uD544 \uC800\uC7A5 \uC5F0\uACB0\uC774 \uC900\uBE44\uB418\uBA74
     \uD328\uC2DC\uBE0C\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
@@ -19776,6 +19801,8 @@ MonoBehaviour:
   iconImage: {fileID: 1232516358}
   activeHighlight: {fileID: 74984158}
   missingIconLabel: {fileID: 179580589}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &156875060
 GameObject:
   m_ObjectHideFlags: 0
@@ -38989,6 +39016,8 @@ MonoBehaviour:
   iconImage: {fileID: 692500419}
   activeHighlight: {fileID: 2062631888}
   missingIconLabel: {fileID: 1078400208}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &308607405
 GameObject:
   m_ObjectHideFlags: 0
@@ -96382,6 +96411,7 @@ GameObject:
   - component: {fileID: 873037676}
   - component: {fileID: 873037675}
   - component: {fileID: 873037674}
+  - component: {fileID: 873037678}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -96507,6 +96537,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 873037672}
   m_CullTransparentMesh: 1
+--- !u!114 &873037678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873037672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &873221202
 GameObject:
   m_ObjectHideFlags: 0
@@ -96816,6 +96862,7 @@ GameObject:
   - component: {fileID: 879337783}
   - component: {fileID: 879337782}
   - component: {fileID: 879337781}
+  - component: {fileID: 879337787}
   m_Layer: 5
   m_Name: Totitle
   m_TagString: Untagged
@@ -96971,6 +97018,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 879337779}
   m_CullTransparentMesh: 1
+--- !u!114 &879337787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 879337779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &880079634
 GameObject:
   m_ObjectHideFlags: 0
@@ -102849,6 +102912,8 @@ MonoBehaviour:
   iconImage: {fileID: 1939835812}
   activeHighlight: {fileID: 1027541042}
   missingIconLabel: {fileID: 719824974}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &896221546
 GameObject:
   m_ObjectHideFlags: 0
@@ -116009,6 +116074,7 @@ GameObject:
   - component: {fileID: 986925222}
   - component: {fileID: 986925224}
   - component: {fileID: 986925225}
+  - component: {fileID: 986925226}
   m_Layer: 5
   m_Name: GameStartButton
   m_TagString: Untagged
@@ -116136,6 +116202,22 @@ MonoBehaviour:
   shakeStrength: 10
   vibrato: 20
   randomness: 90
+--- !u!114 &986925226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 986925220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &987775672
 GameObject:
   m_ObjectHideFlags: 0
@@ -123794,6 +123876,8 @@ MonoBehaviour:
   iconImage: {fileID: 8272819}
   activeHighlight: {fileID: 2059662033}
   missingIconLabel: {fileID: 1384003499}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1033830872
 GameObject:
   m_ObjectHideFlags: 0
@@ -130151,6 +130235,8 @@ MonoBehaviour:
   iconImage: {fileID: 1713722868}
   activeHighlight: {fileID: 11288423}
   missingIconLabel: {fileID: 313968811}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1139333433
 GameObject:
   m_ObjectHideFlags: 0
@@ -140571,6 +140657,7 @@ GameObject:
   - component: {fileID: 1227118789}
   - component: {fileID: 1227118788}
   - component: {fileID: 1227118787}
+  - component: {fileID: 1227118791}
   m_Layer: 5
   m_Name: Button (1)
   m_TagString: Untagged
@@ -140696,6 +140783,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1227118785}
   m_CullTransparentMesh: 1
+--- !u!114 &1227118791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227118785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1229515050
 GameObject:
   m_ObjectHideFlags: 0
@@ -141109,6 +141212,7 @@ GameObject:
   - component: {fileID: 1233441053}
   - component: {fileID: 1233441052}
   - component: {fileID: 1233441058}
+  - component: {fileID: 1233441059}
   m_Layer: 5
   m_Name: Confirm
   m_TagString: Untagged
@@ -141282,6 +141386,22 @@ MonoBehaviour:
   clickDuration: 0.1
   ease: 6
   button: {fileID: 0}
+--- !u!114 &1233441059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233441050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1233590091
 GameObject:
   m_ObjectHideFlags: 0
@@ -144121,6 +144241,8 @@ MonoBehaviour:
   iconImage: {fileID: 676034619}
   activeHighlight: {fileID: 180770661}
   missingIconLabel: {fileID: 2143611600}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1285872663
 GameObject:
   m_ObjectHideFlags: 0
@@ -150056,6 +150178,8 @@ MonoBehaviour:
   iconImage: {fileID: 730102905}
   activeHighlight: {fileID: 1249632436}
   missingIconLabel: {fileID: 285785358}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1317975176
 GameObject:
   m_ObjectHideFlags: 0
@@ -156386,6 +156510,7 @@ GameObject:
   - component: {fileID: 1345095633}
   - component: {fileID: 1345095632}
   - component: {fileID: 1345095631}
+  - component: {fileID: 1345095637}
   m_Layer: 5
   m_Name: Option
   m_TagString: Untagged
@@ -156541,6 +156666,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1345095629}
   m_CullTransparentMesh: 1
+--- !u!114 &1345095637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1345095629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37f983a3eb8e2d94b870f4505876cc1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickSound
+  hoverSound: {fileID: 8300000, guid: c0bab065919cfed46a8a238b32542c5c, type: 3}
+  hoverVolume: 0.5
+  clickSound: {fileID: 8300000, guid: 806b3206fbe14478a85da553f4920da2, type: 3}
+  clickVolume: 1
 --- !u!1 &1345122860
 GameObject:
   m_ObjectHideFlags: 0
@@ -204932,6 +205073,8 @@ MonoBehaviour:
   iconImage: {fileID: 883176878}
   activeHighlight: {fileID: 660722364}
   missingIconLabel: {fileID: 238079547}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1707112772
 GameObject:
   m_ObjectHideFlags: 0
@@ -205405,6 +205548,8 @@ MonoBehaviour:
   iconImage: {fileID: 1626954255}
   activeHighlight: {fileID: 1963843906}
   missingIconLabel: {fileID: 635070500}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &1717206105
 GameObject:
   m_ObjectHideFlags: 0
@@ -249340,6 +249485,8 @@ MonoBehaviour:
   iconImage: {fileID: 471366198}
   activeHighlight: {fileID: 1298693696}
   missingIconLabel: {fileID: 731854746}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!224 &2093288439
 RectTransform:
   m_ObjectHideFlags: 0
@@ -251241,6 +251388,8 @@ MonoBehaviour:
   iconImage: {fileID: 1857354166}
   activeHighlight: {fileID: 1017018637}
   missingIconLabel: {fileID: 1643069116}
+  levelLabel: {fileID: 0}
+  skillLevelText: {fileID: 0}
 --- !u!1 &2135333303
 GameObject:
   m_ObjectHideFlags: 0
