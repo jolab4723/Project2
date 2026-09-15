@@ -14,4 +14,9 @@ public enum ActiveSkillId
     GunnerArcBuster,
     GunnerBombThrow,
     GunnerBackstepShot,
+
+    // 궁극기(Skill4). 아직 전용 설계가 없어서 임시로 각 클래스 1번 스킬 데이터를 복사해 쓴다.
+    // !! 기존 값의 번호가 밀리지 않도록 반드시 맨 뒤에만 추가한다(에셋에 int로 직렬화됨).
+    FighterUltimate,
+    GunnerUltimate,
 }

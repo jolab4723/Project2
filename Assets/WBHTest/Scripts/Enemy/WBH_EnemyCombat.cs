@@ -161,6 +161,37 @@ public class WBH_EnemyCombat : MonoBehaviour
         movement.Dash(transform.forward, distance, duration, EndAction);
     }
 
+    public bool TryDashAttackWithRangeVisual(float distance, float duration, float indicatorWidth, float readyDuration, Color indicatorColor)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        dashHitTargets.Clear();
+
+        FaceTarget(pattern.Target);
+
+        Vector3 dashDir = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+
+        if(dashDir.sqrMagnitude < 0.001f)
+        {
+            EndAction();
+            return false;
+        }
+
+        SkillRangeVisual.ShowLine(transform.position, dashDir, distance, indicatorWidth, indicatorColor, readyDuration);
+
+        StartCoroutine(CoDashAttackWithRangeVisual(dashDir, distance, duration, readyDuration));
+        return true;
+    }
+
+    private IEnumerator CoDashAttackWithRangeVisual(Vector3 dashDir, float distance, float duration, float readyDuration)
+    {
+        yield return new WaitForSeconds(readyDuration);
+
+        movement.Dash(dashDir, distance, duration, EndAction);
+    }
+
     // 돌진 중 플레이어 충돌 체크
     private void CheckDashHit()
     {
@@ -214,7 +245,8 @@ public class WBH_EnemyCombat : MonoBehaviour
                                float slamHitDelay,
                                float slamRecoveryDuration,
                                float collisionRadius,
-                               float damageMul)
+                               float damageMul,
+                               Color indicatorColor)
     {
         if (IsActionInProgress || dashTarget == null || !movement.CanControl)
             return false;
@@ -226,21 +258,37 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         FaceTarget(dashTarget);
 
-        StartCoroutine(CoGrabAndSlam(dashTarget, roarDuration, maxDashDistance, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul));
+        Vector3 toTarget = Vector3.ProjectOnPlane(dashTarget.position - transform.position, Vector3.up);
+
+        Vector3 dashDir;
+        
+        if(toTarget.sqrMagnitude < 0.001f)
+        { 
+            dashDir = transform.forward; 
+        }
+        else
+            dashDir = toTarget.normalized;
+
+        float dashDistance = Mathf.Min(toTarget.magnitude + 1.5f, maxDashDistance);
+
+        transform.rotation = Quaternion.LookRotation(dashDir);
+
+        SkillRangeVisual.ShowLine(transform.position, dashDir, dashDistance, collisionRadius * 2f, indicatorColor, roarDuration);
+
+        StartCoroutine(CoGrabAndSlam(dashTarget, dashDir, dashDistance, roarDuration, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul));
         return true;
     }
 
     // 돌진 잡기 패턴 코루틴. 애니메이션 종료까지의 타이밍을 float 으로 직접 받음
     private IEnumerator CoGrabAndSlam(Transform dashTarget,
+                                      Vector3 dashDir,
+                                      float dashDistance,
                                       float roarDuration,
-                                      float maxDashDistance,
                                       float dashDuration,
                                       float slamHitDelay,
                                       float slamRecoveryDuration,
                                       float damageMul)
     {
-        //ownerStop();
-
         // 1. 포효
         yield return new WaitForSeconds(roarDuration);
 
@@ -251,30 +299,14 @@ public class WBH_EnemyCombat : MonoBehaviour
             yield break;
         }
 
-        Vector3 dir = dashTarget.position - transform.position;
-        dir.y = 0;
-
-        if(dir.sqrMagnitude < 0.001f)
-        {
-            dir = transform.forward;
-        }
-        else
-        {
-            dir.Normalize();
-        }
-
-        transform.rotation = Quaternion.LookRotation(dir);
-
-        float targetDistance = Vector3.Distance(transform.position, dashTarget.position);
-
-        float dashDistance = Mathf.Min(targetDistance + 1.5f, maxDashDistance);
+        transform.rotation = Quaternion.LookRotation(dashDir);
 
         // 2. 돌진 및 충돌 플레이어 잡기
         isGrabDash = true;
 
         bool dashFinished = false;
 
-        movement.Dash(dir, dashDistance, dashDuration, () => dashFinished = true);
+        movement.Dash(dashDir, dashDistance, dashDuration, () => dashFinished = true);
 
         while(!dashFinished)
         {

@@ -296,8 +296,10 @@ namespace Core
             }
             else
             {
+                // 체력은 저장값을 그대로 이어가고, 마나는 스테이지에 들어올 때마다 최대치로 채운다.
+                // (저장된 currentMana는 참고용으로 계속 기록만 하고 복원에는 쓰지 않는다.)
                 health.SetCurrentHealth(data.status.currentHealth);
-                mana.SetCurrentMana(data.status.currentMana);
+                mana.FillMana();
             }
 
             return true;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 쿨타임이 진행 중인 발동형 고유효과(TriggeredBuffUniqueEffectSO) 아이템만 아이콘으로 나열해서
@@ -38,6 +39,8 @@ public class CooldownIconUIContainer : MonoBehaviour
 
         CollectOnCooldownItems();
 
+        int before = pool.Count;
+
         while (pool.Count < onCooldown.Count)
             pool.Add(Instantiate(iconSlotPrefab, slotParent));
 
@@ -48,6 +51,12 @@ public class CooldownIconUIContainer : MonoBehaviour
             if (inUse)
                 pool[i].Bind(onCooldown[i].item, onCooldown[i].effect);
         }
+
+        // 새로 만든 슬롯은 GridLayoutGroup이 다음 레이아웃 갱신에서야 자리를 잡아준다. 그전까지는
+        // 프리팹에 저장된 위치(컨테이너 정중앙)에 그려져서, 아이콘이 가운데서 튀어나와 제자리로
+        // 날아가는 것처럼 보인다. 슬롯이 늘어난 경우에만 즉시 레이아웃을 돌려 그 한 프레임을 없앤다.
+        if (pool.Count > before)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(slotParent as RectTransform);
     }
 
     /// <summary>

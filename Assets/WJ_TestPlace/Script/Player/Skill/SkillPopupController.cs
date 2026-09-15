@@ -4,8 +4,14 @@ using TMPro;
 
 public class SkillPopupController : MonoBehaviour
 {
-    [Tooltip("스킬 슬롯 1~3(SkillSlot_1~3). 클릭하면 그 스킬이 '지금 설정 중인 스킬'로 선택된다.")]
-    [SerializeField] private Button[] skillSlotButtons = new Button[3];
+    [Tooltip("스킬 슬롯 1~4(SkillSlot_1~4, 4번은 궁극기). 클릭하면 그 스킬이 '지금 설정 중인 스킬'로 선택된다.")]
+    [SerializeField] private Button[] skillSlotButtons = new Button[4];
+
+    [Tooltip("상단 스킬 슬롯 아이콘(SkillSlot_1~4). 파이터/거너 등 활성 캐릭터의 스킬 아이콘으로 자동 교체한다.")]
+    [SerializeField] private KY_PassiveSkillSlot[] skillIconSlots = new KY_PassiveSkillSlot[4];
+
+    [Tooltip("강화 선택 아이콘(Enhance1 위력 / Enhance2 쿨타임 감소 / Enhance3 범위). 강화 종류는 클래스와 무관해서 공용 아이콘을 쓴다. 비워두면 선택된 스킬 아이콘을 그대로 쓴다.")]
+    [SerializeField] private Sprite[] enhancementIcons = new Sprite[3];
 
     [Tooltip("진화 선택 1~3(EvolSelect_1~3). 클릭하면 선택된 스킬의 진화가 그 값으로 바뀐다(이미 선택된 걸 다시 누르면 없음으로 해제).")]
     [SerializeField] private Button[] evolutionButtons = new Button[3];
@@ -103,6 +109,12 @@ public class SkillPopupController : MonoBehaviour
 
     private void SelectSkill(int index)
     {
+        // 아직 그 슬롯의 스킬 데이터가 없는 컨트롤러(슬롯 3칸짜리 등)에서는 선택을 무시한다.
+        // 그냥 넘기면 이름/설명이 이전 스킬 것으로 남아 잘못된 정보를 보여준다.
+        ISkillController controller = SkillController;
+        if (controller != null && controller.GetSkillDefinition(index) == null)
+            return;
+
         selectedSkillIndex = index;
         RefreshAll();
     }
@@ -144,7 +156,60 @@ public class SkillPopupController : MonoBehaviour
         for (int i = 0; i < enhancementButtons.Length; i++)
             SetHighlight(enhancementButtons[i], (int)currentEnh == i + 1);
 
+        RefreshIcons(controller);
         RefreshDescription(controller, currentEvo, currentEnh);
+    }
+
+    /// <summary>
+    /// 활성 캐릭터의 스킬 아이콘을 팝업에 반영한다. 아이콘 출처는 HUD(KY_SkillView)와 동일하게
+    /// 스킬 데이터(SkillDefinitionSO.icon)가 우선이고, 비어 있으면 캐릭터의 ClassSkillIconSet을 쓴다.
+    ///
+    /// !! 진화/강화 선택 슬롯은 선택지별 전용 아이콘이 아직 없어서 '지금 선택된 스킬'의 아이콘을 따라간다
+    ///    (예전엔 파이터 1번 스킬 아이콘이 고정으로 박혀 있어 거너로 플레이해도 그대로 남았다).
+    /// </summary>
+    private void RefreshIcons(ISkillController controller)
+    {
+        MonoBehaviour controllerBehaviour = controller as MonoBehaviour;
+        ClassSkillIconSet iconSet = controllerBehaviour != null
+            ? controllerBehaviour.GetComponent<ClassSkillIconSet>()
+            : null;
+
+        for (int i = 0; i < skillIconSlots.Length; i++)
+            ApplyIcon(skillIconSlots[i], ResolveSlotIcon(controller, iconSet, i));
+
+        Sprite selectedIcon = ResolveSlotIcon(controller, iconSet, selectedSkillIndex);
+        foreach (Button button in evolutionButtons)
+            ApplyIcon(button != null ? button.GetComponent<KY_PassiveSkillSlot>() : null, selectedIcon);
+
+        // 강화는 종류(위력/쿨타임/범위)가 클래스·스킬과 무관하므로 공용 아이콘을 쓴다.
+        for (int i = 0; i < enhancementButtons.Length; i++)
+        {
+            Sprite icon = i < enhancementIcons.Length && enhancementIcons[i] != null
+                ? enhancementIcons[i]
+                : selectedIcon;
+            ApplyIcon(enhancementButtons[i] != null ? enhancementButtons[i].GetComponent<KY_PassiveSkillSlot>() : null, icon);
+        }
+    }
+
+    private static Sprite ResolveSlotIcon(ISkillController controller, ClassSkillIconSet iconSet, int index)
+    {
+        SkillDefinitionSO definition = controller.GetSkillDefinition(index);
+        Sprite icon = definition != null ? definition.icon : null;
+
+        if (icon == null && iconSet != null)
+            icon = iconSet.GetSlotIcon(index);
+
+        return icon;
+    }
+
+    /// <summary>아이콘이 없으면 기존 이미지를 그대로 둔다(아직 아이콘이 준비되지 않은 슬롯 대비).</summary>
+    private static void ApplyIcon(KY_PassiveSkillSlot slot, Sprite icon)
+    {
+        if (slot == null || slot.iconImage == null || icon == null)
+            return;
+
+        slot.iconImage.sprite = icon;
+        slot.iconImage.enabled = true;
     }
 
     private void RefreshDescription(ISkillController controller, SkillEvolutionId currentEvo, SkillEnhancementId currentEnh)

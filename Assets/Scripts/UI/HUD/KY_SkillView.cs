@@ -18,6 +18,9 @@ public class KY_SkillView : MonoBehaviour
     // 그때그때 찾아서 쓴다(SkillEvolutionSelectUI와 같은 방식, 116/124번).
     private ISkillController SkillController => ActiveSkillControllerLocator.Find();
 
+    /// <summary>아이콘을 이미 채워 넣은 컨트롤러. 캐릭터(클래스)가 바뀐 프레임에만 아이콘을 다시 채우려고 들고 있는다.</summary>
+    private ISkillController iconSyncedController;
+
     private GameInputActions inputActions;
     private T_PlayerController playerController;
     private WBH_PlayerStatus playerStatus;
@@ -49,17 +52,25 @@ public class KY_SkillView : MonoBehaviour
 
     void Update()
     {
-        if (SkillController == null)
+        ISkillController controller = SkillController;
+        if (controller == null)
             return;
 
-        int cooldownSlotCount = Mathf.Min(SkillController.SkillCount, skillSlots.Length);
+        // 파이터↔거너처럼 활성 캐릭터가 바뀌면 그 클래스의 스킬 아이콘으로 교체한다.
+        if (!ReferenceEquals(controller, iconSyncedController))
+        {
+            RefreshSkillIcons(controller);
+            iconSyncedController = controller;
+        }
+
+        int cooldownSlotCount = Mathf.Min(controller.SkillCount, skillSlots.Length);
         for (int i = 0; i < cooldownSlotCount; i++)
         {
-            float skillRemaining = SkillController.GetRemainingCooldown(i);
-            float skillTotal = SkillController.GetEffectiveCooldown(i);
+            float skillRemaining = controller.GetRemainingCooldown(i);
+            float skillTotal = controller.GetEffectiveCooldown(i);
             skillSlots[i].SetCooldown(skillRemaining, skillTotal);
 
-            if (SkillController.TryGetStackInfo(i, out int stacks, out int maxStacks))
+            if (controller.TryGetStackInfo(i, out int stacks, out int maxStacks))
                 skillSlots[i].SetStacks(stacks);
             else
                 skillSlots[i].SetStacks(null);
@@ -68,6 +79,33 @@ public class KY_SkillView : MonoBehaviour
         float dodgeRemaining = playerController.currentDodgeCooltime;
         float dodgeTotal = playerStatus.DodgeCooltime;
         dodgeSlot.SetCooldown(dodgeRemaining, dodgeTotal);
+    }
+
+    /// <summary>
+    /// 활성 캐릭터의 스킬 데이터(SkillDefinitionSO.icon)를 슬롯 아이콘에 채운다.
+    /// 아이콘이 비어 있는 스킬은 씬에 배치된 기존 이미지를 그대로 둔다 - 아직 아이콘이 준비되지 않은
+    /// 슬롯(예: Skill4 궁극기)을 빈칸으로 만들지 않기 위함이다.
+    /// </summary>
+    private void RefreshSkillIcons(ISkillController controller)
+    {
+        // 스킬 데이터에 아이콘이 없는 슬롯(예: 아직 구현 전인 Skill4 궁극기)은 캐릭터에 붙은
+        // ClassSkillIconSet에 지정해둔 클래스별 아이콘으로 메운다.
+        MonoBehaviour controllerBehaviour = controller as MonoBehaviour;
+        ClassSkillIconSet iconSet = controllerBehaviour != null
+            ? controllerBehaviour.GetComponent<ClassSkillIconSet>()
+            : null;
+
+        for (int i = 0; i < skillSlots.Length; i++)
+        {
+            SkillDefinitionSO definition = controller.GetSkillDefinition(i);
+            Sprite icon = definition != null ? definition.icon : null;
+
+            if (icon == null && iconSet != null)
+                icon = iconSet.GetSlotIcon(i);
+
+            if (icon != null)
+                skillSlots[i].SetIcon(icon);
+        }
     }
 
     void OnSkillEquipped(int index, Sprite icon)

@@ -85,6 +85,19 @@ public class KY_QuestDetailPopup : KY_PopupBase
         base.Close();
     }
 
+    /// <summary>닫기 버튼에서 호출한다. 팝업 스택과 배경 입력 상태까지 함께 정리한다.</summary>
+    public void RequestClose()
+    {
+        if (KY_PopupManager.Instance != null)
+        {
+            KY_PopupManager.Instance.Hide();
+            return;
+        }
+
+        // 매니저가 없는 테스트/에디터 상황에서도 화면만 닫히도록 한다.
+        Close();
+    }
+
     /// <summary>연출용 : 커튼 하나를 현재 순차 연출에 추가한다.</summary>
     private void AppendCurtain(KY_CurtainEffect curtain)
     {

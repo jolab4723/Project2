@@ -13908,6 +13908,7 @@ GameObject:
   - component: {fileID: 7545624182888009642}
   - component: {fileID: 4489042031379611030}
   - component: {fileID: 6083522059478059166}
+  - component: {fileID: 5270891724592338207}
   m_Layer: 15
   m_Name: Gunner
   m_TagString: Player
@@ -14141,6 +14142,9 @@ MonoBehaviour:
   fighterDash: {fileID: 0}
   gunnerBackstepMove: {fileID: 7400000, guid: 970b96c8e7d32744886dc8ec59f361d3, type: 2}
   effectSpawner: {fileID: 0}
+  referenceRunMoveSpeed: 5
+  minimumRunPlaybackSpeed: 0.5
+  maximumRunPlaybackSpeed: 2
 --- !u!114 &7312763563134168244
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14529,7 +14533,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6145fadacf1f5940a89b2030ed0b6b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelManager
-  statDataJson: {fileID: 4900000, guid: 7aadd889b989ef14ea384bae286d2dc6, type: 3}
+  statDataJson: {fileID: 4900000, guid: 7de7c66c8f9da3d4d9fc5e11d5eb7754, type: 3}
   testLevel: 1
 --- !u!114 &5045732354064687984
 MonoBehaviour:
@@ -14693,8 +14697,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: af52c70d0d2e7db4989bdedef7d3953f, type: 2}
   - {fileID: 11400000, guid: 1291596fb54cf2c45846b4c92749acbf, type: 2}
   - {fileID: 11400000, guid: 036bfe5bf874dde40b1d4c0ef0a6392c, type: 2}
-  activeEvolutions: 000000000000000000000000
-  activeEnhancements: 000000000000000000000000
+  - {fileID: 11400000, guid: d90f4c46f44877847a9d48f596a56d4c, type: 2}
+  activeEvolutions: 00000000000000000000000000000000
+  activeEnhancements: 00000000000000000000000000000000
   visibleSkillArea: 0
   sectorVisualColor: {r: 0.2, g: 0.6, b: 1, a: 0.35}
   lineVisualColor: {r: 0.2, g: 0.9, b: 1, a: 0.35}
@@ -14723,6 +14728,23 @@ MonoBehaviour:
   characterClass: 1
   characterAnimator: {fileID: 4287175214796011596}
   leftHandIkBlendSpeed: 12
+--- !u!114 &5270891724592338207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3433699924133273942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95acda7de1d941444a7f87fdb57e04fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClassSkillIconSet
+  slotIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: 3bc9bf0386455c046862ae9091272995, type: 3}
 --- !u!1 &3517197199581817610
 GameObject:
   m_ObjectHideFlags: 0

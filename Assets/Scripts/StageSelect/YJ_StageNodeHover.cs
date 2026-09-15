@@ -9,6 +9,14 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    [Header("Hover Sound")]
+    [SerializeField] private AudioClip hoverSound;
+    [SerializeField, Range(0f, 1f)] private float hoverVolume = 1f;
+
+    [Header("Click Sound")]
+    [SerializeField] private AudioClip clickSound;
+    [SerializeField, Range(0f, 1f)] private float clickVolume = 1f;
+
     [Header("Background")]
     // Hover 및 선택 상태에 따라 알파와 색상을 변경할 Background 이미지입니다.
     [SerializeField] private Image backgroundImage;
@@ -196,8 +204,11 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (!isInteractable)
+        if (!isActiveAndEnabled || !isInteractable)
             return;
+
+        if (!isPointerInside)
+            PlayUISound(hoverSound, hoverVolume);
 
         isPointerInside = true;
         RefreshBackgroundVisual();
@@ -218,7 +229,7 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!isInteractable || isSelected || eventData.button != PointerEventData.InputButton.Left)
+        if (!isActiveAndEnabled || !isInteractable || isSelected || eventData.button != PointerEventData.InputButton.Left)
             return;
 
         if (stageSelectManager == null)
@@ -229,7 +240,20 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
             : SetSelectedWithoutManager();
 
         if (selected)
+        {
+            PlayUISound(clickSound, clickVolume);
             PlayClickAnimation();
+        }
+    }
+
+    private static void PlayUISound(AudioClip clip, float volume)
+    {
+        if (clip == null || volume <= 0f)
+            return;
+
+        var player = YJ_SfxPlayer.Instance;
+        if (player != null)
+            player.PlayUI(clip, volume);
     }
 
     /// <summary>
