@@ -19,6 +19,10 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         SlowPulse
     }
 
+    private static readonly Color BasicRangeColor = new Color(1f, 0.15f, 0.1f, 0.35f);
+    private static readonly Color CannotControlRangeColor = new Color(1f, 0.5f, 0.1f, 0.35f);
+    private static readonly Color DebuffRangeColor = new Color(0.2f, 0.7f, 1f, 0.35f);
+
     // 페이즈 및 패턴 관련 변수
     private const float PhaseTwoHpRatio = 0.5f;
     private const float TargetChangeInterval = 10f;
@@ -42,6 +46,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float WideSectorRange = 5f;
     private const float WideSectorAngle = 180f;
     private const float WideSectorDamageMul = 1f;
+    private const float SectorHitDelay = 0.35f;
 
     // 페이즈 전환 패턴
     private const int TransitionRotationCount = 3;
@@ -53,14 +58,25 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float GrabDamageMul = 1.8f;
 
     private const float FlameRange = 8f;
+    private const float FlameRangeOffset = 2f;
+    private const float FlameCastRange = FlameRange - FlameRangeOffset;
+    private const float FlameApproachSpeedMul = 1.5f;
     private const float FlameAngle = 60f;
     private const float FlameDuration = 2.5f;
     private const float FlameDamageInterval = 0.25f;
+    private bool isBoosted;
+
+    private const float GrabRoarDuration = 1.8f;
+    private const float GrabMaxDashDistance = 30f;
+    private const float GrabDashDuration = 1.2f;
+    private const float GrabSlamHitDelay = 0.7f;
+    private const float GrabRecoveryDuration = 0.8f;
 
     private const float SlowPulseRange = 7f;
     private const float SlowPulseDamageMul = 0.3f;
     private const float SlowDuration = 5f;
     private const float SlowMul = 0.5f;
+    private const float SlowPulseDelay =0.5f;
 
     // 애니메이터 SkillId
     private const int TrackingFireSkillId = 1;
@@ -74,6 +90,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const int SlowPulseSkillId = 9;
 
     private readonly List<BasicPattern> basicPatterns = new(4);
+    
 
     private WBH_EnemyPattern owner;
     private WBH_BossMinionSpawner minionSpawner;
@@ -191,17 +208,22 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 }
                 break;
             case BasicPattern.ShortDash:
-                owner.Combat.TryDashAttack(Mathf.Min(owner.Distance, ShortDashRange), ShortDashDuration, owner.IndicatorSpawner, owner.DashHitRadius * 2f, ShortDashReadyDuration);
+                if(owner.Combat.TryDashAttackWithRangeVisual(Mathf.Min(owner.Distance, ShortDashRange), ShortDashDuration, owner.DashHitRadius * 2f, ShortDashReadyDuration, BasicRangeColor))
+                {
+                    owner.enemyAnimation.PlaySkill(ShortDashSkillId);
+                }
                 break;
             case BasicPattern.ShortSectorAtk:
-                if(owner.Combat.TrySectorAttack(ShortSectorRange,ShortSectorAngle,ShortSectorDamageMul))
+                if(owner.Combat.TrySectorAttack(ShortSectorRange,ShortSectorAngle,ShortSectorDamageMul, hitDelay : SectorHitDelay))
                 {
+                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, ShortSectorRange, ShortSectorAngle, BasicRangeColor, SectorHitDelay);
                     owner.enemyAnimation.PlaySkill(ShortSectorSkillId);
                 }
                 break;
             case BasicPattern.WideSectorAtk:
-                if (owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul))
+                if (owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul, hitDelay: SectorHitDelay))
                 {
+                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, WideSectorRange, WideSectorAngle, BasicRangeColor, SectorHitDelay);
                     owner.enemyAnimation.PlaySkill(WideSectorSkillId);
                 }
                 break;
@@ -258,7 +280,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
             case SpecialPattern.GrabAndSlam:
                 owner.Movement.Stop();
 
-                started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration :1.8f, maxDashDistance : 30f, dashDuration : 1.2f, slamHitDelay : 0.7f, slamRecoveryDuration : 0.8f, collisionRadius : owner.DashHitRadius,GrabDamageMul); // !@ 스킬 아이디 와 매개변수 재검토 필요
+                started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration : GrabRoarDuration, maxDashDistance : GrabMaxDashDistance, dashDuration : GrabDashDuration, slamHitDelay : GrabSlamHitDelay, slamRecoveryDuration : GrabRecoveryDuration, collisionRadius : owner.DashHitRadius, damageMul : GrabDamageMul, indicatorColor : CannotControlRangeColor); 
 
                 skillId = GrabSkillId;
                 break;
@@ -280,14 +302,22 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 break;
 
             case SpecialPattern.FlameThrow:
-                if(owner.Distance > FlameRange)
+                if(owner.Distance > FlameCastRange)
                 {
+                    SetFlameApproachBoost(true);
+
                     owner.Movement.Move(owner.Target.position);
                     return;
                 }
+                SetFlameApproachBoost(false);
                 owner.Movement.Stop();
 
                 started = owner.Combat.TryFlameThrow(FlameRange, FlameAngle, FlameDuration, FlameDamageInterval);
+
+                if(started)
+                {
+                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, FlameRange, FlameAngle, BasicRangeColor, FlameDuration);
+                }
 
                 skillId = FlameSkillId;
                 break;
@@ -302,7 +332,14 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
                 WBH_StatusEffectData slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow, SlowDuration, SlowMul);
 
-                started = owner.Combat.TryAreaDamageAndStatus(owner.transform.position, SlowPulseRange, SlowPulseDamageMul, slow);
+                Vector3 pulseCenter = owner.transform.position;
+
+                started = owner.Combat.TryAreaDamageAndStatus(pulseCenter, SlowPulseRange, SlowPulseDamageMul, slow, hitDelay: SlowPulseDelay);
+
+                if(started)
+                {
+                    SkillRangeVisual.ShowSector(pulseCenter, owner.transform.forward, SlowPulseRange, 360f, DebuffRangeColor, SlowPulseDelay);
+                }
 
                 skillId = SlowPulseSkillId;
                 break;
@@ -315,6 +352,15 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         pendingSpecial = null;
 
         specialTimer = SpecialCooldown;
+    }
+
+    private void SetFlameApproachBoost(bool enabled)
+    {
+        if (isBoosted == enabled)
+            return;
+
+        isBoosted = enabled;
+        owner.Status.SetPatternMoveSpeedModifier(enabled ? FlameApproachSpeedMul : 1f);
     }
 
     private int GetActivePlayerCount()
@@ -333,12 +379,16 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
     private void CancelPendingSpecial()
     {
+        SetFlameApproachBoost(false);
+        
         pendingSpecial = null;
         specialTimer = 1f;
     }
 
     public void Cleanup()
     {
+        SetFlameApproachBoost(false);
+
         pendingSpecial = null;
         isPhaseTransition = false;
 

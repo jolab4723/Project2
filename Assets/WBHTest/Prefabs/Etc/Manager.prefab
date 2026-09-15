@@ -167,13 +167,13 @@ MonoBehaviour:
   enemyPools:
   - enemyDef: {fileID: 11400000, guid: f2d3bd42c6995914c924176004487e8b, type: 2}
     prefab: {fileID: -5431423992665652879, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
-    poolSize: 20
+    poolSize: 25
   - enemyDef: {fileID: 11400000, guid: bc974d4dc30678440a3c953d292edcf9, type: 2}
     prefab: {fileID: 5791879278000763495, guid: f5a233bee20b12644b215f8e0e6a8f2d, type: 3}
-    poolSize: 20
+    poolSize: 25
   - enemyDef: {fileID: 11400000, guid: f4a6f4e0ae572a8428598ca0370bdb4e, type: 2}
     prefab: {fileID: 3834549105520735570, guid: 75575f158d1b28e42b645ec3ffdcb687, type: 3}
-    poolSize: 20
+    poolSize: 25
   - enemyDef: {fileID: 11400000, guid: eaf1a2b9ff538414eaccb4a315ae078a, type: 2}
     prefab: {fileID: -5431423992665652879, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
     poolSize: 5
@@ -204,6 +204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2065ab864b28ad498e0887c526498a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemySpawnManager
+  defaultWaveSet: {fileID: 0}
   spawnAreas: []
   player: {fileID: 0}
   enemyDataProvider: {fileID: 8478993714791160529}
@@ -211,13 +212,6 @@ MonoBehaviour:
     floor: 1
     difficultyName: normal
     playerCount: 1
-  waves:
-  - enemies:
-    - grade: 0
-      count: 5
-    - grade: 1
-      count: 1
-  - enemies: []
   highEnemyView: {fileID: 0}
   effectSpawner: {fileID: 8756550498913179854}
   projectileSpawner: {fileID: 5045398631486137927}
@@ -233,10 +227,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df3913d1ea7406d45991b4fa7c6430a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyDataProvider
-  infoSource: 1
+  infoSource: 0
   enemyDatabase: {fileID: 11400000, guid: 39272725bb15a434b99ddd55f9fdabed, type: 2}
   testInfos:
-  - enemyId: 
+  - testDef: {fileID: 0}
     info:
       enemyId: 
       enemyName: 

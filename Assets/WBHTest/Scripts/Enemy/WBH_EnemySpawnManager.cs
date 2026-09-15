@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyPoolManager))]
@@ -12,18 +13,14 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         [Min(0)] public int count;
     }
 
-    [System.Serializable]
-    public class WaveData
-    {
-        public GradeCount[] enemies;
-    }
+
+    [SerializeField] private WBH_WaveSetSO defaultWaveSet;
 
     [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
     [SerializeField] private Transform player;
 
     [SerializeField] private WBH_EnemyDataProvider enemyDataProvider;
     [SerializeField] private WBH_EnemyStatContext statContext = new WBH_EnemyStatContext(1, "normal", 1);
-    [SerializeField] private WaveData[] waves;
 
     [SerializeField] private WBH_HighEnemyHpbarView highEnemyView;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
@@ -32,6 +29,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private WBH_EnemyPoolManager enemyPool;
     private WBH_FloatTextPoolManager damagePool;
     private PlayerWallet wallet;
+    private WBH_WaveSetSO activeWaveSet;
 
     private int currentWave = -1;
     private int aliveEnemyCount;
@@ -40,9 +38,14 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     public event Action WaveCompleted;
 
+    private readonly List<WBH_EnemySpawnArea> compatibleAreas = new();
+
+    public WBH_WaveSetSO ActiveWaveSet => activeWaveSet;
     public int CurrentWaveIndex => currentWave;
-    public int WaveCount => waves != null ? waves.Length : 0;
+    public bool HasUsableWaveSet => activeWaveSet != null && activeWaveSet.WaveCount > 0;
+    public int WaveCount => activeWaveSet != null ? activeWaveSet.WaveCount : 0;
     public bool HasNextWave => currentWave + 1 < WaveCount;
+
 
     private void Awake()
     {
@@ -55,6 +58,8 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
         wallet = FindFirstObjectByType < PlayerWallet>();
         highEnemyView = FindFirstObjectByType<WBH_HighEnemyHpbarView>();
+
+        activeWaveSet = defaultWaveSet;
     }
 
     private void OnEnable()
@@ -71,7 +76,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         InitializeSpawnAreas();
     }
 
-    private void InitializeSpawnAreas() //!@ 차후 어그로 시스템 제작 시 player 빼기, eliteview UI쪽과 통합 시 eliteView 빼기
+    private void InitializeSpawnAreas() 
     {
         if (spawnAreasInitialized)
             return;
@@ -87,6 +92,35 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         }
     }
 
+    public bool TrySetWaveSet(WBH_WaveSetSO waveSet)
+    {
+        if(waveInProgress)
+        {
+            Log.Error("웨이브 진행중에는 waveSet 교체가 불가능합니다.");
+            return false;
+        }
+        if(waveSet == null)
+        {
+            Log.Error("적용할 waveSet 이 없습니다.");
+            return false;
+        }
+        if(waveSet.WaveCount <= 0)
+        {
+            Log.Error($"{waveSet.name} : 웨이브 데이터가 없습니다.");
+            return false;
+        }
+
+        activeWaveSet = waveSet;
+
+        currentWave = -1;
+        aliveEnemyCount = 0;
+        waveInProgress = false;
+
+        Log.Print($"WaveSet 적용 : {waveSet.WaveSetId}");
+
+        return true;
+    }
+
     public void SetStatContext(WBH_EnemyStatContext context)
     {
         if(!context.IsValid)
@@ -99,7 +133,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
     public bool TrySpawnNextWave()
     {
-        if (waveInProgress || !HasNextWave)
+        if (!HasUsableWaveSet || waveInProgress || !HasNextWave)
             return false;
 
         InitializeSpawnAreas();
@@ -108,13 +142,13 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         aliveEnemyCount = 0;
         waveInProgress = true;
 
-        WaveData wave = waves[currentWave];
+        WBH_WaveData wave = activeWaveSet.GetWave(currentWave);
 
         if(wave != null && wave.enemies != null)
         {
-            foreach(GradeCount entry in wave.enemies)
+            foreach(WBH_WaveGradeCount entry in wave.enemies)
             {
-                if (entry == null)
+                if (entry == null || entry.count <= 0)
                     continue;
 
                 aliveEnemyCount += Spawn(entry.grade, entry.count);
@@ -158,16 +192,36 @@ public class WBH_EnemySpawnManager : MonoBehaviour
 
         for(int i = 0; i < count; i ++)
         {
-            WBH_EnemySpawnArea area = GetRandomArea();
+            WBH_EnemySpawnArea area = GetRandomArea(grade);
+            
+            if (area == null)
+                break;
+
             spawnedCount += area.Spawn(grade, 1, statContext);
         }
         return spawnedCount;
     }
 
-    private WBH_EnemySpawnArea GetRandomArea()
+    private WBH_EnemySpawnArea GetRandomArea(EnemyGrade grade)
     {
-        int index = UnityEngine.Random.Range(0, spawnAreas.Length);
-        return spawnAreas[index];
+        compatibleAreas.Clear();
+
+        foreach(WBH_EnemySpawnArea area in spawnAreas)
+        {
+            if(area != null && area.CanSpawn(grade))
+            {
+                compatibleAreas.Add(area);
+            }
+        }
+
+        if(compatibleAreas.Count == 0)
+        {
+            Log.Error($"{grade} 등급을 소환할 수 있는 SpawnArea 가 없습니다.");
+            return null;
+        }
+
+        int index = UnityEngine.Random.Range(0, compatibleAreas.Count);
+        return compatibleAreas[index];
     }
 
 
@@ -202,5 +256,27 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             return;
 
         aliveEnemyCount += count;
+    }
+
+    public bool TryUseDefaultWaveSet()
+    {
+        if(waveInProgress)
+        {
+            Log.Error("웨이브 진행중에는 기본 waveSet 으로 변경할 수 없습니다.");
+            return false;
+        }
+        if(defaultWaveSet == null || defaultWaveSet.WaveCount <= 0)
+        {
+            Log.Error("EnemySpawnManager 의 defaultWaveSet 이 비어있습니다.");
+            return false;
+        }
+
+        activeWaveSet = defaultWaveSet;
+
+        currentWave = -1;
+        aliveEnemyCount = 0;
+        waveInProgress = false;
+
+        return true;
     }
 }
