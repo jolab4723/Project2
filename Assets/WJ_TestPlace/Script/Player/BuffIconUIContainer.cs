@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 현재 적용 중인 버프를 아이콘으로 나열해서 보여주는 HUD UI.
@@ -75,6 +76,8 @@ public class BuffIconUIContainer : MonoBehaviour
 
         IReadOnlyList<BuffInstance> active = buffManager.ActiveBuffs;
 
+        int before = pool.Count;
+
         while (pool.Count < active.Count)
             pool.Add(Instantiate(iconSlotPrefab, slotParent));
 
@@ -85,5 +88,11 @@ public class BuffIconUIContainer : MonoBehaviour
             if (inUse)
                 pool[i].Bind(active[i]);
         }
+
+        // 새로 만든 슬롯은 GridLayoutGroup이 다음 레이아웃 갱신에서야 자리를 잡아준다. 그전까지는
+        // 프리팹에 저장된 위치(컨테이너 정중앙)에 그려져서, 아이콘이 가운데서 튀어나와 제자리로
+        // 날아가는 것처럼 보인다. 슬롯이 늘어난 경우에만 즉시 레이아웃을 돌려 그 한 프레임을 없앤다.
+        if (pool.Count > before)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(slotParent as RectTransform);
     }
 }

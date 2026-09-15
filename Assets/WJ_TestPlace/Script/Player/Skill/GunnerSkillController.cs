@@ -330,8 +330,27 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         float backstepDuration = def != null && def.shapeType == SkillShapeType.BackstepShot ? Mathf.Max(0.01f, def.backstepDuration) : 0f;
 
-        OnSkillAniRequested?.Invoke(index + 1, (int)pendingEvo, backstepDuration);
+        OnSkillAniRequested?.Invoke(GetPresentationSkillNumber(index), (int)pendingEvo, backstepDuration);
     }
+
+    /// <summary>궁극기 슬롯. 전용 애니메이션·이펙트가 준비되면 이 보정을 통째로 지운다.</summary>
+    private const int UltimateSlotIndex = 3;
+
+    /// <summary>궁극기가 임시로 빌려 쓰는 스킬 번호(= 데이터를 복사해 온 1번 스킬, 아크 버스터).</summary>
+    private const int UltimateBorrowedSkillNumber = 1;
+
+    /// <summary>
+    /// 애니메이터와 이펙트 큐에 보낼 스킬 번호(0=없음, 1부터 스킬).
+    ///
+    /// 궁극기(슬롯 4)는 아직 전용 애니메이션·이펙트가 없어서 1번 스킬 번호를 빌려 쓴다. 애니메이터에
+    /// SkillID 4 전이가 없으면 스킬 클립이 아예 재생되지 않고, 실행 시점을 알리는 애니메이션 이벤트
+    /// (AniEvent_ExecuteSkill)도 오지 않아 ExecutePendingSkill이 호출되지 않는다 - 그러면 피해도 안 들어가고
+    /// 플레이어가 Skill 상태에서 빠져나오지 못해 조작이 멈춘다.
+    ///
+    /// 실제 스킬 로직은 계속 원래 슬롯 인덱스(pendingSkillIndex)로 돌아가므로 궁극기 데이터가 그대로 쓰인다.
+    /// </summary>
+    private static int GetPresentationSkillNumber(int index) =>
+        index == UltimateSlotIndex ? UltimateBorrowedSkillNumber : index + 1;
 
     // 애니메이션 이벤트에서 실제 스킬 실행
     public void ExecutePendingSkill()
@@ -451,7 +470,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         SkillEffectPart part = (SkillEffectPart)partValue;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, part);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(pendingSkillIndex), pendingEvo, part);
 
         Vector3 scaleMultiPlier = GetPendingSkillEffectScale(partValue);
 
@@ -531,7 +550,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     // arkbuster 사격 시, 폭발이펙트 재생을 위해 이펙트데이터와 크기, 기초 설정을 세팅하는 메서드
     private void ConfigureArcProjectileEffect(GunnerArcProjectile projectile, SkillDefinitionSO def)
     {
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1, pendingEvo, SkillEffectPart.ProjectileExplosion1);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(pendingSkillIndex), pendingEvo, SkillEffectPart.ProjectileExplosion1);
         Vector3 scaleMultiplier = CalculatePendingEffectScale(def, SkillEffectPart.ProjectileExplosion1);
         projectile.ConfigureExplosionEffect(playerEffect, cue, scaleMultiplier);
     }
@@ -968,9 +987,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                 explosionRadius, enemyLayer, request);
         }
 
-        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.ProjectileExplosion1); // 1차 폭발 이펙트
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), evo, SkillEffectPart.ProjectileExplosion1); // 1차 폭발 이펙트
         WBH_PlayerEffectCue secondExplosionCue = evo == SkillEvolutionId.Evolution1 ?
-            PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evo, SkillEffectPart.ProjectileExplosion2) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
+            PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), evo, SkillEffectPart.ProjectileExplosion2) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
 
         bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one, secondExplosionCue, Vector3.one);
         SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
@@ -1113,7 +1132,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         decoy.Initialize(def.evoDecoyFuseSeconds, def.evoDecoyExplosionRadius, enemyLayer, request);
 
-        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1,
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index),
                                                                                        SkillEvolutionId.Evolution1,
                                                                                        SkillEffectPart.ProjectileExplosion1);
         decoy.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
@@ -1302,7 +1321,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (playerEffect == null)
             return null;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evolution, part);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), evolution, part);
         playerEffect.TryGetEffectData(cue, out WBH_EffectData data);
         return data;
     }
@@ -1320,7 +1339,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (skills[pendingSkillIndex] == null || playerEffect == null)
             return;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(pendingSkillIndex + 1,
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(pendingSkillIndex),
                                                                               pendingEvo,
                                                                               (SkillEffectPart)partValue);
 

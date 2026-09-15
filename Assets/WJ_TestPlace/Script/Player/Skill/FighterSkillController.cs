@@ -479,8 +479,27 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 스킬 애니메이션 실행을 위한 이벤트 요청.
     private void RequestSkillAni(int index, bool isCharging, float targetDuration = 0f)
     {
-        OnSkillAniRequested?.Invoke(index + 1, isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
+        OnSkillAniRequested?.Invoke(GetPresentationSkillNumber(index), isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
     }
+
+    /// <summary>궁극기 슬롯. 전용 애니메이션·이펙트가 준비되면 이 보정을 통째로 지운다.</summary>
+    private const int UltimateSlotIndex = 3;
+
+    /// <summary>궁극기가 임시로 빌려 쓰는 스킬 번호(= 데이터를 복사해 온 1번 스킬).</summary>
+    private const int UltimateBorrowedSkillNumber = 1;
+
+    /// <summary>
+    /// 애니메이터와 이펙트 큐에 보낼 스킬 번호(0=없음, 1부터 스킬).
+    ///
+    /// 궁극기(슬롯 4)는 아직 전용 애니메이션·이펙트가 없어서 1번 스킬 번호를 빌려 쓴다. 애니메이터에
+    /// SkillID 4 전이가 없으면 스킬 클립이 아예 재생되지 않고, 실행 시점을 알리는 애니메이션 이벤트
+    /// (AniEvent_ExecuteSkill)도 오지 않아 ExecutePendingSkill이 호출되지 않는다 - 그러면 피해도 안 들어가고
+    /// 플레이어가 Skill 상태에서 빠져나오지 못해 조작이 멈춘다.
+    ///
+    /// 실제 스킬 로직은 계속 원래 슬롯 인덱스(pendingSkillIndex)로 돌아가므로 궁극기 데이터가 그대로 쓰인다.
+    /// </summary>
+    private static int GetPresentationSkillNumber(int index) =>
+        index == UltimateSlotIndex ? UltimateBorrowedSkillNumber : index + 1;
 
     // 초기화
     private void ClearPendingSkill()
@@ -512,7 +531,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         SkillEffectPart part = (SkillEffectPart)partValue;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1, pendingEvo, part);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(pendingSkillIndex), pendingEvo, part);
 
         Vector3 scaleMultiplier = GetPendingSkillEffectScale(partValue);
 
@@ -1014,7 +1033,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(index + 1, pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.Main);
 
         playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
 
@@ -1127,7 +1146,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (skills[pendingSkillIndex] == null || playerEffect == null)
             return;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(pendingSkillIndex + 1,
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(pendingSkillIndex),
                                                                               pendingEvo,
                                                                               (SkillEffectPart)partValue);
 
