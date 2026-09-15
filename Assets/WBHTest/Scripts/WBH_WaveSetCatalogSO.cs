@@ -19,9 +19,31 @@ public sealed class WBH_WaveSetCatalogSO : ScriptableObject
         if (candidates == null || candidates.Length == 0)
             return false;
 
-        var random = new System.Random(seed);
+        int validCount = 0;
 
-        selected = candidates[random.Next(candidates.Length)];
-        return selected != null;
+        foreach(WBH_WaveSetSO candidate in candidates)
+        {
+            if(candidate != null && candidate.WaveCount > 0)
+            {
+                validCount++;
+            }
+        }
+        if (validCount == 0)
+            return false;
+
+        var random = new System.Random(seed);
+        int selectedIndex = random.Next(validCount);
+
+        foreach(WBH_WaveSetSO candidate in candidates)
+        {
+            if (candidate == null || candidate.WaveCount <= 0)
+                continue;
+            if (selectedIndex-- != 0)
+                continue;
+
+            selected = candidate;
+            return true;
+        }
+        return false;
     }
 }

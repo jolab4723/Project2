@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Core;
 
 // 타이틀 씬 관리 매니저입니다.
 public class KY_TitleSceneManager : MonoBehaviour
@@ -39,12 +40,27 @@ public class KY_TitleSceneManager : MonoBehaviour
 
     void OnQuitClicked()
     {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
     }
 
     void RefreshUserInfo()
     {
-        userInfoText.text = "유저 이름";
+        if (userInfoText == null)
+            return;
+
+        string playerName = null;
+        DataManager dataManager = DataManager.Instance;
+        if (dataManager != null)
+        {
+            var slot = dataManager.LoadSinglePlayerSlot();
+            playerName = slot != null && slot.profile != null ? slot.profile.playerName : null;
+        }
+
+        userInfoText.text = string.IsNullOrWhiteSpace(playerName) ? "Player" : playerName;
     }
 
     void OnSinglePlayClicked()

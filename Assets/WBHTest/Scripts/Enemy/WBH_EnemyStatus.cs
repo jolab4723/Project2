@@ -48,6 +48,8 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
     // Marked(받는 데미지 증가) 등이 거는 배율. RecalculateAll의 base-buff-상태이상 합성 대상이 아니라
     // (합쳐질 base 스탯이 없음) ProcessDamage가 최종 데미지에 직접 곱해서 쓴다.
     private float statusDamageTakenModifier = 1f;
+    // 적 패턴 등으로 상승되는 배율
+    private float patternMoveSpeedModifier = 1f;
 
     // 버프/디버프(아이템 고유효과, 스킬 등 - EnemyBuffManager)가 거는 가산치. 상태이상과 별개 레이어라
     // 최종 수치는 base를 버프로 가산한 뒤 상태이상 배율을 곱하는 순서로 합성한다(RecalculateAll 참고).
@@ -96,7 +98,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
         attackRange = info.attackRange;
 
         buffStatSet = StatSet.Zero;
-        statusAttackModifier = statusDefenseModifier = statusMoveSpeedModifier = statusAttackSpeedModifier = statusDamageTakenModifier = 1f;
+        statusAttackModifier = statusDefenseModifier = statusMoveSpeedModifier = statusAttackSpeedModifier = statusDamageTakenModifier = patternMoveSpeedModifier = 1f;
 
         RecalculateAll();
         currentHp = currentMaxHp;
@@ -169,7 +171,7 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
 
         currentAttackPower = Mathf.Max(0f, Combine(attackPower, buffStatSet.attackPowerFlat, buffStatSet.attackPowerPercent) * statusAttackModifier);
         currentDefensePower = Mathf.Max(0f, Combine(defensePower, buffStatSet.defensePowerFlat, buffStatSet.defensePowerPercent) * statusDefenseModifier);
-        currentMoveSpeed = Mathf.Max(0f, Combine(moveSpeed, buffStatSet.moveSpeedFlat, buffStatSet.moveSpeedPercent) * statusMoveSpeedModifier);
+        currentMoveSpeed = Mathf.Max(0f, Combine(moveSpeed, buffStatSet.moveSpeedFlat, buffStatSet.moveSpeedPercent) * statusMoveSpeedModifier * patternMoveSpeedModifier);
         currentAttackSpeed = Mathf.Max(0f, Combine(attackSpeed, buffStatSet.attackSpeedFlat, buffStatSet.attackSpeedPercent) * statusAttackSpeedModifier);
 
         currentCriticalChance = Mathf.Max(0f, criticalChance + buffStatSet.critRateFlat);
@@ -214,5 +216,16 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
     public void MultiplyDamageTaken(float modifier)
     {
         statusDamageTakenModifier = modifier;
+    }
+
+    public void SetPatternMoveSpeedModifier(float modifier)
+    {
+        modifier = Mathf.Max(0f, modifier);
+
+        if (Mathf.Approximately(patternMoveSpeedModifier, modifier))
+            return;
+
+        patternMoveSpeedModifier = modifier;
+        RecalculateAll();
     }
 }

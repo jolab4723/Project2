@@ -204,12 +204,17 @@ public class UpgradeController : MonoBehaviour
 
         string statName = ItemDisplayNames.StatNames[mainOption.statType];
 
+        string currentStatLabel = GetUILabel("upgrade_ui.current_stat", "현재 스탯 : {0} + {1}")
+            .Replace("{0}", "\n{0}");
+        string nextStatLabel = GetUILabel("upgrade_ui.next_stat", "강화 후 스탯 : {0} + {1}")
+            .Replace("{0}", "\n{0}");
+
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
         currentStatText.text = string.Format(
-            GetUILabel("upgrade_ui.current_stat", "현재 스탯 : {0} + {1}"),
+            currentStatLabel,
             statName, $"{currentValue:0.#}");
         nextStatText.text = string.Format(
-            GetUILabel("upgrade_ui.next_stat", "강화 후 스탯 : {0} + {1}"),
+            nextStatLabel,
             statName, $"{nextValue:0.#}");
         costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
             ? string.Format(GetUILabel("upgrade_ui.cost", "강화비용 : {0}"), cost)
@@ -234,15 +239,15 @@ public class UpgradeController : MonoBehaviour
             upgradeLevelText.text = "";
 
         if (currentStatText != null)
-        {
-            currentStatText.text = UpgradeMessageMapper.GetSelectionRequired(uiLabels);
-        }
+            currentStatText.text = string.Empty;
 
         if (nextStatText != null)
             nextStatText.text = string.Empty;
 
         if (costText != null)
             costText.text = string.Empty;
+
+        ShowMessage(UpgradeMessageMapper.GetSelectionRequired(uiLabels));
     }
 
     private void ApplyRarityVisuals(ItemRarity rarity)

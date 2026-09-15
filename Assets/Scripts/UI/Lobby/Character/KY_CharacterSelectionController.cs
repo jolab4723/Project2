@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Core;
 
 /// <summary>
 /// 연출용 : 캐릭터 선택 화면의 입력, 상세 정보, 미리보기와 진입 연출을 관리한다.
@@ -98,7 +99,11 @@ public class KY_CharacterSelectionController : MonoBehaviour
     /// <summary>타이틀 복귀 버튼의 외부 연결 지점이다.</summary>
     private void OnClickReturnToTitle()
     {
-        // TODO: 타이틀 씬 전환 연결
+        SceneLoader loader = SceneLoader.Instance;
+        if (loader == null || loader.IsLoading)
+            return;
+
+        loader.LoadScene("TitleScene");
     }
 
     /// <summary>등록한 버튼과 캐릭터 카드의 이벤트를 해제한다.</summary>

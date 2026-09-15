@@ -17,6 +17,7 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
     [SerializeField, Min(0.01f)] private float maxDistance = 40f;
 
     private AudioSource[] sources;
+    private AudioSource uiSource;
 
     protected override void Awake()
     {
@@ -46,6 +47,14 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
             source.minDistance = Mathf.Max(0.01f, minDistance);
             source.maxDistance = Mathf.Max(source.minDistance + 0.01f, maxDistance);
             sources[i] = source;
+
+            uiSource = gameObject.AddComponent<AudioSource>();
+            uiSource.playOnAwake = false;
+            uiSource.loop = false;
+            uiSource.spatialBlend = 0f;
+            uiSource.dopplerLevel = 0f;
+            uiSource.ignoreListenerPause = true;
+            uiSource.outputAudioMixerGroup = sfxMixerGroup;
         }
     }
 
@@ -134,6 +143,9 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
     {
         SceneManager.sceneUnloaded -= HandleSceneUnloaded;
         StopAll();
+
+        if (uiSource != null)
+            uiSource.Stop();
     }
 
     /// <summary>재생 중인 SFX와 지연 재생 요청을 모두 취소합니다.</summary>
@@ -152,5 +164,17 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
             source.Stop();
             source.clip = null;
         }
+    }
+
+    public void PlayUI(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null || ! isActiveAndEnabled || uiSource == null)
+            return;
+
+        volume = Mathf.Clamp01(volume);
+        if (volume <= 0f)
+            return;
+
+        uiSource.PlayOneShot(clip, volume);
     }
 }

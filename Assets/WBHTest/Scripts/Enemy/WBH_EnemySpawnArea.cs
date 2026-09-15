@@ -89,4 +89,17 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         }
         return spawnCount;
     }
+
+    public bool CanSpawn(EnemyGrade grade)
+    {
+        if(spawnDatas == null)
+            return false;
+
+        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data != null && data.grade == grade);
+
+        if(spawnData == null || spawnData.enemies == null)
+            return false;
+
+        return System.Array.Exists(spawnData.enemies, enemy => enemy != null);
+    }
 }
