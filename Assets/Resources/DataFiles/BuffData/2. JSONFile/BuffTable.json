@@ -108,5 +108,15 @@
     "stackBehavior": "Ignore",
     "maxStack": 0,
     "note": "필드 존용. 존이 직접 제거하므로 duration은 0이어야 함"
+  },
+  {
+    "buffId": "buff.fighter_awakening",
+    "buffName": "각성",
+    "description": "일정 시간 전투 능력이 크게 향상됩니다.",
+    "statEffects": "attackPowerPercent:30;attackSpeedPercent:25;moveSpeedPercent:15;defensePowerPercent:30",
+    "duration": 15.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": "파이터 궁극기(각성) 전용"
   }
 ]

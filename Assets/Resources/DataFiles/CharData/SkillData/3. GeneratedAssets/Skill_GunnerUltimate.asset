@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Skill_GunnerUltimate
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
   skillId: 7
-  skillName: "\uAD81\uADF9\uAE30(\uC784\uC2DC)"
+  skillName: "\uC735\uB2E8\uD3ED\uACA9"
   icon: {fileID: 21300000, guid: 3bc9bf0386455c046862ae9091272995, type: 3}
-  cooldownSeconds: 1
+  cooldownSeconds: 60
   damageMultiplier: 1.2
-  manaCost: 15
+  manaCost: 50
   evolution1ManaCost: 0
   evolution2ManaCost: 0
   evolution3ManaCost: 0
-  shapeType: 3
+  shapeType: 7
   sectorRange: 4
   sectorAngle: 180
   lineLength: 4
@@ -44,12 +44,12 @@ MonoBehaviour:
   evoCannonDamageMultiplier: 2.5
   evoCannonStackCost: 2
   evoCannonProjectilePrefab: {fileID: 0}
-  bombThrowRange: 6
+  bombThrowRange: 8
   bombThrowSpeed: 10
   bombArcHeight: 2
   bombFuseSeconds: 2
   bombExplosionRadius: 3
-  bombPrefab: {fileID: 0}
+  bombPrefab: {fileID: 2628153949981438602, guid: 030e6bc54201bec46a3423f571b06d6c, type: 3}
   evoClusterDelaySeconds: 0.5
   evoClusterRadius: 4
   evoClusterDamageMultiplier: 0.5
@@ -88,6 +88,14 @@ MonoBehaviour:
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
+  carpetAreaRadius: 8
+  carpetWaveCount: 3
+  carpetWaveInterval: 0.5
+  carpetDamagePerWave: 1.2
+  carpetVisualBombsPerWave: 6
+  carpetDropHeight: 14
+  carpetImpactDelay: 0.35
+  awakeningBuff: {fileID: 0}
   enhanceDamageMultiplierBonusPercent: 15
   enhanceDashSpeedBonusPercent: 15
   enhanceCooldownReductionPercent: 15
