@@ -32,6 +32,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
     private readonly int DieHash = Animator.StringToHash("Die");
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
+    private readonly int IsGroggyHash = Animator.StringToHash("IsGroggy");
 
     public bool UseDieAni => useDieAni;
 
@@ -90,10 +91,20 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public void PlaySkill(int skillId)
     {
+        if (!useAttackAni || animator == null)
+            return;
+
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetTrigger(SkillHash);
     }
 
+    public void SetGroggy(bool isGroggy)
+    {
+        if (animator == null)
+            return;
+
+        animator.SetBool(IsGroggyHash, isGroggy);
+    }
 
     // 애니메이션 이벤트
     public void OnAttackEvent()

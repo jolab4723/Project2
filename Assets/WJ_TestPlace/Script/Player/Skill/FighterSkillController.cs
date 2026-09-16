@@ -430,7 +430,33 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             case SkillShapeType.Dash:
                 StartCoroutine(ExecuteDash(def, pendingEvo, index, pendingDashDuration));
                 break;
+
+            case SkillShapeType.AwakeningBurst:
+                ExecuteAwakeningBurst(def, index);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 궁극기(각성). 시전 즉시 자기 주변 원형 범위를 한 번 때리고, 이어서 자신에게 강화 버프를 건다.
+    ///
+    /// 판정은 SectorSlash와 같은 부채꼴 질의를 각도 360으로 쓴다(= 원형). 새 도형을 만들지 않고
+    /// 기존 GetSectorTargets/ApplyHit을 그대로 재사용하므로 피해 계산·이펙트 규칙이 다른 스킬과 같다.
+    ///
+    /// 범위 표시는 visibleSkillArea(디버그용 전역 토글)와 무관하게 항상 그린다 - 궁극기는 어디까지
+    /// 맞는지가 플레이어에게 보여야 하는 연출의 일부라서 디버그 옵션에 묶어두지 않는다.
+    /// </summary>
+    private void ExecuteAwakeningBurst(SkillDefinitionSO def, int index)
+    {
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+
+        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
+
+        foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
+            ApplyHit(target, def, def.damageMultiplier, index);
+
+        if (def.awakeningBuff != null && buffManager != null)
+            buffManager.ApplyBuff(def.awakeningBuff);
     }
 
     // 스킬 종료 후 Idle 상태로 복귀.
@@ -481,6 +507,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         OnSkillAniRequested?.Invoke(GetPresentationSkillNumber(index), isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
     }
+
+    /// <summary>각성 시전 타격은 자기 주변 전방위라 부채꼴 질의를 360도(=원형)로 쓴다.</summary>
+    private const float AwakeningBurstAngle = 360f;
 
     /// <summary>궁극기 슬롯. 전용 애니메이션·이펙트가 준비되면 이 보정을 통째로 지운다.</summary>
     private const int UltimateSlotIndex = 3;

@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Skill_FighterUltimate
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
   skillId: 6
-  skillName: "\uAD81\uADF9\uAE30(\uC784\uC2DC)"
+  skillName: "\uAC01\uC131"
   icon: {fileID: 21300000, guid: 5646df5ad75298b46bd9f4ec2617eb34, type: 3}
-  cooldownSeconds: 5
-  damageMultiplier: 1.5
-  manaCost: 25
+  cooldownSeconds: 60
+  damageMultiplier: 1
+  manaCost: 50
   evolution1ManaCost: 0
   evolution2ManaCost: 0
   evolution3ManaCost: 0
-  shapeType: 0
-  sectorRange: 4
+  shapeType: 6
+  sectorRange: 3
   sectorAngle: 180
   lineLength: 4
   lineWidth: 2
@@ -88,6 +88,14 @@ MonoBehaviour:
   evoDashMaxStacks: 2
   evoDashStackRechargeSeconds: 4
   evoDashDamageBuff: {fileID: 0}
+  carpetAreaRadius: 8
+  carpetWaveCount: 3
+  carpetWaveInterval: 0.5
+  carpetDamagePerWave: 0.8
+  carpetVisualBombsPerWave: 6
+  carpetDropHeight: 14
+  carpetImpactDelay: 0.35
+  awakeningBuff: {fileID: 11400000, guid: bafe48498c468e342b0af89e5bcab42f, type: 2}
   enhanceDamageMultiplierBonusPercent: 15
   enhanceDashSpeedBonusPercent: 15
   enhanceCooldownReductionPercent: 15

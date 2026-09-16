@@ -389,7 +389,113 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             case SkillShapeType.BackstepShot:
                 ExecuteBackstepAction(def, index, pendingEvo);
                 break;
+            case SkillShapeType.CarpetBombing:
+                StartCoroutine(ExecuteCarpetBombing(def, index, pendingCursorPos));
+                break;
 
+        }
+    }
+
+    /// <summary>
+    /// 궁극기(융단폭격). 커서로 지정한 지점을 중심으로 한 원형 영역 **전체**를 일정 간격으로 여러 번 타격한다.
+    ///
+    /// 피해와 연출을 분리했다.
+    ///   - 피해: 타격마다 영역 안의 적을 한 번에 전부 때린다(Physics.OverlapSphere). 폭탄이 어디에
+    ///     떨어지느냐와 무관하게 영역 안이면 맞으므로 "운 좋게 빗나가는" 일이 없다.
+    ///   - 연출: 같은 타이밍에 폭탄을 하늘에서 떨어뜨린다. 폭발 반경 0으로 넘겨 판정을 갖지 않게 하고,
+    ///     비행·폭발 이펙트만 GunnerBomb이 그대로 처리하게 둔다.
+    ///
+    /// 낙하 지점은 영역 안 무작위이고, 폭탄은 지면이 아니라 영역 위 하늘에서 생성해 수직으로 내려꽂힌다.
+    /// 범위 표시는 전체 폭격 영역 하나만 폭격이 끝날 때까지 유지한다.
+    /// </summary>
+    private IEnumerator ExecuteCarpetBombing(SkillDefinitionSO def, int index, Vector3 cursorPos)
+    {
+        // 지정 지점은 폭탄 투척과 같은 방식으로 최대 사거리까지만 허용한다.
+        Vector3 toCursor = cursorPos - transform.position;
+        toCursor.y = 0f;
+        float designateRange = ApplySkillRangeBonus(def, index, def.bombThrowRange);
+        Vector3 center = toCursor.sqrMagnitude > designateRange * designateRange
+            ? transform.position + toCursor.normalized * designateRange
+            : transform.position + toCursor;
+        center.y = transform.position.y;
+
+        float areaRadius = def.carpetAreaRadius;
+        float totalDuration = def.carpetWaveCount * def.carpetWaveInterval;
+
+        SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
+                                    totalDuration + def.carpetImpactDelay + 0.3f);
+
+        float damageMultiplier = def.carpetDamagePerWave;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue explosionCue =
+            PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
+
+        for (int wave = 0; wave < def.carpetWaveCount; wave++)
+        {
+            SpawnFallingBombs(def, center, areaRadius, explosionCue);
+
+            // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
+            yield return new WaitForSeconds(def.carpetImpactDelay);
+            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData);
+
+            float rest = def.carpetWaveInterval - def.carpetImpactDelay;
+            if (rest > 0f)
+                yield return new WaitForSeconds(rest);
+        }
+    }
+
+    /// <summary>폭격 연출용 폭탄을 하늘에서 떨어뜨린다. 폭발 반경 0이라 판정은 없고 낙하·폭발 이펙트만 남는다.</summary>
+    private void SpawnFallingBombs(SkillDefinitionSO def, Vector3 center, float areaRadius, WBH_PlayerEffectCue explosionCue)
+    {
+        if (def.bombPrefab == null)
+            return;
+
+        for (int i = 0; i < def.carpetVisualBombsPerWave; i++)
+        {
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * areaRadius;
+            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
+            Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+
+            GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
+            GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
+            if (bomb == null)
+            {
+                Destroy(bombGO);
+                return;
+            }
+
+            // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
+            float fallSpeed = def.carpetImpactDelay > 0f
+                ? def.carpetDropHeight / def.carpetImpactDelay
+                : def.bombThrowSpeed;
+
+            bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+            bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+            SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+        }
+    }
+
+    /// <summary>폭격 한 번 분량의 피해를 영역 안 모든 적에게 적용한다.</summary>
+    private void ApplyCarpetWaveDamage(SkillDefinitionSO def, int index, Vector3 center, float areaRadius,
+                                       float damageMultiplier, WBH_EffectData effectData)
+    {
+        Collider[] targets = Physics.OverlapSphere(center, areaRadius, enemyLayer);
+        foreach (Collider target in targets)
+        {
+            if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                continue;
+
+            Vector3 hitPosition = target.ClosestPoint(center);
+            WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                                   WBH_AttackType.Skill,
+                                                                   status.CurrentElement,
+                                                                   damageMultiplier,
+                                                                   effectData: effectData,
+                                                                   hitPosition: hitPosition);
+            WBH_CombatManager.ProcessDamage(request);
         }
     }
 

@@ -17,6 +17,10 @@ public enum SkillShapeType
     BombThrow,
     /// <summary>전방(커서 방향) 원뿔 범위를 즉시 명중시킨 뒤, 커서 반대 방향(후방)으로 백스탭 이동.</summary>
     BackstepShot,
+    /// <summary>시전 즉시 자기 주변 원형 범위를 때리고, 일정 시간 자신에게 강화 버프를 건다(파이터 궁극기).</summary>
+    AwakeningBurst,
+    /// <summary>커서로 지정한 넓은 원형 영역에 폭탄을 여러 발 시간차로 떨어뜨린다(거너 궁극기, 융단폭격).</summary>
+    CarpetBombing,
 }
 
 /// <summary>
@@ -92,13 +96,13 @@ public class SkillDefinitionSO : ScriptableObject
 
     [Header("ArcProjectile 진화1 전용 (아크 레이저 - 스택 전부 소모, 직선 판정 즉시 명중)")]
     [Tooltip("레이저 직선 판정 길이.")]
-    public float evoLaserLength = 8f;
+    public float evoLaserLength = 12f;
     [Tooltip("레이저 직선 판정 폭.")]
-    public float evoLaserWidth = 1f;
+    public float evoLaserWidth = 2f;
     [Tooltip("소모한 스택 1개당 피해 배율에 곱연산으로 반영되는 증가율(%). 50 = 0.5 증가.")]
     public float evoLaserDamagePerStackPercent = 50f;
     [Tooltip("피해 증가 계산에 반영되는 소모 스택 수의 최대치. 이보다 많이 소모해도 이 값까지만 계산에 들어간다.")]
-    public int evoLaserMaxBonusStacks = 3;
+    public int evoLaserMaxBonusStacks = 6;
 
     [Header("ArcProjectile 진화2 전용 (아크 불릿 - 같은 스택 1개로 약한 투사체 3발 연사)")]
     [Tooltip("발당 피해 배율. 기본 damageMultiplier 대신 이 값을 그대로 쓴다.")]
@@ -228,6 +232,29 @@ public class SkillDefinitionSO : ScriptableObject
 
     [Header("Dash 진화3 전용 (대시 후 피해 증가 버프)")]
     public BuffDefinitionSO evoDashDamageBuff;
+
+    [Header("CarpetBombing 전용 (거너 궁극기 - 융단폭격)")]
+    [Tooltip("폭격 영역의 반경. 커서 지점을 중심으로 이 범위 전체가 타격 대상이다. 시트의 rangeWidthOrAngle 컬럼과 연결된다.")]
+    public float carpetAreaRadius = 8f;
+    [Tooltip("영역 전체를 때리는 횟수.")]
+    public int carpetWaveCount = 3;
+    [Tooltip("타격과 타격 사이 간격(초).")]
+    public float carpetWaveInterval = 0.5f;
+    [Tooltip("한 번의 타격이 주는 피해 계수. 영역 안 모든 적에게 동일하게 들어간다.")]
+    public float carpetDamagePerWave = 1.2f;
+
+    [Header("CarpetBombing 연출 - 하늘에서 떨어지는 폭탄")]
+    [Tooltip("타격 한 번에 하늘에서 떨어지는 폭탄 개수. 피해는 영역 전체에 들어가므로 이건 순수 연출용이다.")]
+    public int carpetVisualBombsPerWave = 6;
+    [Tooltip("폭탄이 생성되는 높이(영역 지면 기준).")]
+    public float carpetDropHeight = 14f;
+    [Tooltip("폭탄이 떨어지기 시작한 뒤 실제 피해가 들어가기까지의 시간(초). 낙하 연출과 타격 타이밍을 맞추는 값이다.")]
+    public float carpetImpactDelay = 0.35f;
+
+    [Header("AwakeningBurst 전용 (파이터 궁극기)")]
+    [Tooltip("시전과 동시에 자신에게 거는 강화 버프. 지속시간·스탯 수치는 이 버프 에셋이 들고 있다. " +
+             "엑셀에서는 오브젝트 참조를 표현할 수 없어 인스펙터/에디터에서 직접 연결한다(evoDashDamageBuff와 같은 방식).")]
+    public BuffDefinitionSO awakeningBuff;
 
     [Header("강화 - 위력(Enhance1), 전 스킬 공통이지만 shapeType별로 의미가 다름")]
     [Tooltip("SectorSlash/LineSlam 전용: 데미지 계수(damageMultiplier)에 곱해지는 보너스(%).")]

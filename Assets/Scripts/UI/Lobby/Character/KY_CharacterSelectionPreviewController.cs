@@ -6,10 +6,11 @@ public class KY_CharacterSelectionPreviewController : MonoBehaviour
     [SerializeField] private GameObject fighterModel;
     [SerializeField] private GameObject gunnerModel;
 
-    /// <summary>선택한 캐릭터 모델만 활성화한다.</summary>
+    /// <summary>선택한 캐릭터 모델만 즉시 표시한다.</summary>
     public void ShowCharacter(KY_CharacterId id)
     {
-        fighterModel.SetActive(id == KY_CharacterId.Fighter);
-        gunnerModel.SetActive(id == KY_CharacterId.Gunner);
+        bool isFighter = id == KY_CharacterId.Fighter;
+        fighterModel.SetActive(isFighter);
+        gunnerModel.SetActive(!isFighter);
     }
 }
