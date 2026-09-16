@@ -113,7 +113,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
     // =========================================================================
     private IEnumerator RunClientLifecycle()
     {
-        // SW 수정: 호스트가 첫 StepMessage를 보내기 전에 핸들러를 먼저 등록합니다.
+        // 호스트가 첫 StepMessage를 보내기 전에 핸들러를 먼저 등록합니다.
         NetworkClient.RegisterHandler<MppmStepMessage>(OnClientStepMessage);
 
         yield return new WaitForSeconds(1.5f);
@@ -198,7 +198,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
         NetworkServer.RegisterHandler<MppmClientAckMessage>(OnServerClientAck);
 
         // Client 연결 대기 (총 연결 수 2 이상)
-        // SW 수정: 최초 가상 프로젝트 생성·임포트가 포함된 콜드 스타트도 기다릴 수 있게 합니다.
+        // 최초 가상 프로젝트 생성·임포트가 포함된 콜드 스타트도 기다릴 수 있게 합니다.
         float connectTimeout = Time.realtimeSinceStartup + 180f;
         while ((NetworkServer.connections.Count < 2 || NetworkServer.connections.Values.Any(conn => !conn.isAuthenticated)) &&
                Time.realtimeSinceStartup < connectTimeout)
@@ -245,7 +245,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
         playerA.GetComponent<PlayerLevelManager>()?.Load();
         playerB.GetComponent<PlayerLevelManager>()?.Load();
 
-        // SW 수정: 원격 러너가 메시지 핸들러와 로컬 스냅샷 준비를 끝낸 뒤 시나리오를 시작합니다.
+        // 원격 러너가 메시지 핸들러와 로컬 스냅샷 준비를 끝낸 뒤 시나리오를 시작합니다.
         float clientReadyTimeout = Time.realtimeSinceStartup + 15f;
         while ((!clientAckReceived || lastClientAck.Step != 0 || !lastClientAck.Success) &&
                Time.realtimeSinceStartup < clientReadyTimeout)
@@ -299,7 +299,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
     {
         foreach (var conn in NetworkServer.connections.Values)
         {
-            // SW 수정: Mirror 인증이 끝나기 전에 Ready/Spawn 메시지를 보내면 원격 클라이언트가 연결을 끊습니다.
+            // Mirror 인증이 끝나기 전에 Ready/Spawn 메시지를 보내면 원격 클라이언트가 연결을 끊습니다.
             if (!conn.isAuthenticated)
                 continue;
 
@@ -574,7 +574,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
         bool hitA = WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
             playerA, eCombat, ElementType.Fire, 1f, null, out WBH_DamageResult resA, DamageCause.Direct, 401u);
         Check(hitA && resA.DamageCause == DamageCause.Direct, "T04: Player A dealt Direct damage");
-        // SW 수정: 런타임 공격력에 따라 실제 피해량이 달라지므로 고정 HP 50을 가정하지 않습니다.
+        // 런타임 공격력에 따라 실제 피해량이 달라지므로 고정 HP 50을 가정하지 않습니다.
         Check(eStatus.CurrentHp < hpBeforeA && eStatus.CurrentHp > 0f && !eStatus.IsDead,
               "T04: Target took non-lethal damage and remained alive");
         var lastAttackerA = typeof(NetworkEnemyAuthority_MirrorTest).GetField("lastAttackerContext", PrivateInstance).GetValue(target);
@@ -646,7 +646,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
         Check(hits[2].AttackId == 502u && hits[2].DamageCause == DamageCause.Effect, "T05: Hit 2 is 502 Effect (FIFO)");
 
         // 2) 중간 사망 시 잔여 큐 안전 스킵
-        // SW 수정: 런타임 공격력·치명타와 무관하게 510은 비치명, 511은 치명이 되도록 경계를 명시합니다.
+        // 런타임 공격력·치명타와 무관하게 510은 비치명, 511은 치명이 되도록 경계를 명시합니다.
         info.maxHP = 10000f;
         eStatus.Initialize(info);
         hits.Clear();
@@ -819,7 +819,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
         info.moveSpeed = 0f;
         info.exp = 0;
         info.credit = 0;
-        // SW 수정: NetworkEnemyAuthority의 데이터 변경 계약에 맞춰 모든 fixture 설정을 Spawn 전에 적용합니다.
+        // NetworkEnemyAuthority의 데이터 변경 계약에 맞춰 모든 fixture 설정을 Spawn 전에 적용합니다.
         configure?.Invoke(info);
         authority.ServerSetEnemyInfo(info);
         NetworkServer.Spawn(go);
@@ -907,7 +907,7 @@ public sealed class MirrorMppmCombatRunner_MirrorTest : MonoBehaviour
 
     private IEnumerator StopMppmSessionAfterDelay()
     {
-        // SW 수정: 실패 로그가 Main Editor에 전달될 시간을 준 뒤 가상 플레이어까지 자동 정리합니다.
+        // 실패 로그가 Main Editor에 전달될 시간을 준 뒤 가상 플레이어까지 자동 정리합니다.
         yield return new WaitForSecondsRealtime(2f);
         StopMppmSession();
     }

@@ -1,6 +1,9 @@
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// SW 수정: 사망한 대상의 잔여 피해를 차단하고, 직접 피해만 고유효과 이벤트를 발행하며 Mirror 서버 경로와의 중복 발행을 막습니다.
+/// </summary>
 public class WBH_CombatManager
 {
     public static void ProcessDamage(WBH_DamageRequest request)

@@ -1,6 +1,9 @@
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// SW 수정: 피해가 직접 공격, 스킬, 고유효과 추가타, 지속 피해 중 어디서 발생했는지 구분합니다.
+/// </summary>
 public enum DamageCause : byte
 {
     Direct = 0,
@@ -9,6 +12,9 @@ public enum DamageCause : byte
     DoT = 3,
 }
 
+/// <summary>
+/// SW 수정: 기존 피해 요청에 원인과 공격 식별자를 함께 전달해 후속 고유효과의 재발동과 중복 요청을 구분합니다.
+/// </summary>
 public readonly struct WBH_DamageRequest
 {
     public readonly WBH_ICombat Attacker;

@@ -63,6 +63,16 @@ public class PassiveSkillPanelUI : KY_PopupBase
 
     private PassiveSkillId? selectedId;
     private int pendingLevel;
+    private bool allowChanges = true;
+    private string unavailableReason;
+
+    /// <summary>로비 준비 완료 후에는 조회와 닫기는 유지하고 단계 변경만 잠근다.</summary>
+    public void SetChangesAllowed(bool allowed, string reason = null)
+    {
+        allowChanges = allowed;
+        unavailableReason = reason;
+        RefreshAll();
+    }
 
     private void OnEnable()
     {
@@ -165,7 +175,7 @@ public class PassiveSkillPanelUI : KY_PopupBase
 
     private void HandleLevelDownClicked()
     {
-        if (selectedId == null)
+        if (!allowChanges || selectedId == null)
             return;
 
         pendingLevel = Mathf.Max(0, pendingLevel - 1);
@@ -174,7 +184,7 @@ public class PassiveSkillPanelUI : KY_PopupBase
 
     private void HandleLevelUpClicked()
     {
-        if (selectedId == null || PassiveSkillManager.Instance == null)
+        if (!allowChanges || selectedId == null || PassiveSkillManager.Instance == null)
             return;
 
         var definition = PassiveSkillManager.Instance.GetDefinition(selectedId.Value);
@@ -185,7 +195,7 @@ public class PassiveSkillPanelUI : KY_PopupBase
 
     private void HandleConfirmClicked()
     {
-        if (selectedId == null || PassiveSkillManager.Instance == null)
+        if (!allowChanges || selectedId == null || PassiveSkillManager.Instance == null)
             return;
 
         // 성공하면 OnProfileChanged -> RefreshAll이 이미 화면을 갱신해준다.
@@ -196,6 +206,9 @@ public class PassiveSkillPanelUI : KY_PopupBase
 
     private void HandleSkillClearClicked()
     {
+        if (!allowChanges)
+            return;
+
         PassiveSkillManager.Instance?.ResetAllCurrentLevels();
         if (selectedId != null)
             SelectSkill(selectedId.Value);
@@ -215,6 +228,9 @@ public class PassiveSkillPanelUI : KY_PopupBase
             creditText.text = profile != null
                 ? string.Format(L("passive_skill_ui.credit_format", "크레딧 | {0}"), profile.credit.ToString("N0"))
                 : L("passive_skill_ui.credit_none", "크레딧 | -");
+
+        if (skillClearButton != null)
+            skillClearButton.interactable = allowChanges && profile != null;
 
         for (int i = 0; i < slots.Count && i < IconOrder.Length; i++)
         {
@@ -263,7 +279,9 @@ public class PassiveSkillPanelUI : KY_PopupBase
             nameText.text = ResolvePassiveName(id, definition);
 
         if (descriptionText != null)
-            descriptionText.text = ResolvePassiveDescription(id, definition);
+            descriptionText.text = allowChanges
+                ? ResolvePassiveDescription(id, definition)
+                : unavailableReason ?? "현재는 패시브를 변경할 수 없습니다.";
 
         if (levelUpText != null)
         {
@@ -299,10 +317,13 @@ public class PassiveSkillPanelUI : KY_PopupBase
             pendingLevelText.text = pendingLevel.ToString();
 
         if (levelDownButton != null)
-            levelDownButton.interactable = pendingLevel > 0;
+            levelDownButton.interactable = allowChanges && pendingLevel > 0;
 
         if (levelUpButton != null)
-            levelUpButton.interactable = pendingLevel < definition.maxLevel;
+            levelUpButton.interactable = allowChanges && pendingLevel < definition.maxLevel;
+
+        if (confirmButton != null)
+            confirmButton.interactable = allowChanges;
 
         if (confirmButtonText != null)
         {
