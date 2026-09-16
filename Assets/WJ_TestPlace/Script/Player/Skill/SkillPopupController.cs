@@ -13,6 +13,18 @@ public class SkillPopupController : MonoBehaviour
     [Tooltip("강화 선택 아이콘(Enhance1 위력 / Enhance2 쿨타임 감소 / Enhance3 범위). 강화 종류는 클래스와 무관해서 공용 아이콘을 쓴다. 비워두면 선택된 스킬 아이콘을 그대로 쓴다.")]
     [SerializeField] private Sprite[] enhancementIcons = new Sprite[3];
 
+    [Tooltip("진화 배지 아이콘(진화1/2/3). 전용 아이콘이 아직 없으면 비워두면 되고, 그 경우 해당 스킬의 아이콘으로 대신 표시한다.")]
+    [SerializeField] private Sprite[] evolutionIcons = new Sprite[3];
+
+    [Tooltip("옵션을 아직 안 고른 배지에 넣을 전용 이미지. 비워두면 임시로 그 스킬 아이콘을 회색으로 표시한다.")]
+    [SerializeField] private Sprite unselectedOptionIcon;
+
+    [Tooltip("스킬 슬롯 1~4의 배지(SkillSlot_N/Area_SkillOptions/option_*/img_OptionIcon). 아직 배지를 안 만든 슬롯은 비워두면 된다.")]
+    [SerializeField] private SkillOptionBadges[] skillOptionBadges = new SkillOptionBadges[4];
+
+    /// <summary>미선택 배지에 임시로 입히는 색. 전용 이미지(unselectedOptionIcon)가 준비되면 안 쓰인다.</summary>
+    private static readonly Color UnselectedBadgeTint = new Color(0.35f, 0.35f, 0.35f, 1f);
+
     [Tooltip("진화 선택 1~3(EvolSelect_1~3). 클릭하면 선택된 스킬의 진화가 그 값으로 바뀐다(이미 선택된 걸 다시 누르면 없음으로 해제).")]
     [SerializeField] private Button[] evolutionButtons = new Button[3];
 
@@ -36,6 +48,17 @@ public class SkillPopupController : MonoBehaviour
 
     [Tooltip("Bottom/SkillExtraText - 선택된 진화/강화 설명 표시(둘 다 없으면 빈칸)")]
     [SerializeField] private TextMeshProUGUI skillExtraText;
+
+    /// <summary>스킬 슬롯 아이콘 위에 "지금 이 스킬에 뭐가 적용돼 있는지"를 보여주는 작은 배지 한 쌍.</summary>
+    [System.Serializable]
+    private class SkillOptionBadges
+    {
+        [Tooltip("option_SkillRevolution/img_OptionIcon - 배지 틀(배경)이 아니라 안쪽 아이콘 Image를 연결한다.")]
+        public Image evolutionBadge;
+
+        [Tooltip("option_SkillUpgrade/img_OptionIcon - 배지 틀(배경)이 아니라 안쪽 아이콘 Image를 연결한다.")]
+        public Image enhancementBadge;
+    }
 
     private int selectedSkillIndex = 0;
 
@@ -156,8 +179,100 @@ public class SkillPopupController : MonoBehaviour
         for (int i = 0; i < enhancementButtons.Length; i++)
             SetHighlight(enhancementButtons[i], (int)currentEnh == i + 1);
 
-        RefreshIcons(controller);
+        ClassSkillIconSet iconSet = ResolveIconSet(controller);
+        RefreshIcons(controller, iconSet);
+        RefreshOptionBadges(controller, iconSet);
         RefreshDescription(controller, currentEvo, currentEnh);
+    }
+
+    /// <summary>
+    /// 각 스킬 슬롯 아이콘 위에 그 스킬에 지금 적용돼 있는 진화/강화를 작은 배지로 표시한다.
+    /// 선택 중인 슬롯만이 아니라 슬롯 전체를 매번 갱신해서, 팝업을 닫지 않고도 어느 스킬에
+    /// 뭐가 붙어 있는지 한눈에 보이게 한다.
+    ///
+    /// 아직 안 고른 옵션도 배지를 끄지 않고 미선택 모습으로 남긴다. 칸이 계속 보여야
+    /// "여기에 뭘 넣을 수 있다"가 드러나기 때문이다.
+    /// </summary>
+    private void RefreshOptionBadges(ISkillController controller, ClassSkillIconSet iconSet)
+    {
+        for (int i = 0; i < skillOptionBadges.Length; i++)
+        {
+            SkillOptionBadges badges = skillOptionBadges[i];
+            if (badges == null)
+                continue;
+
+            bool hasSkill = controller.GetSkillDefinition(i) != null;
+            Sprite slotIcon = ResolveSlotIcon(controller, iconSet, i);
+
+            // !! 진화는 스킬마다 내용이 달라서 원래는 스킬별 아이콘이 맞지만 아직 에셋이 없다.
+            //    지금은 공용 3칸을 먼저 보고, 비어 있으면 그 스킬 아이콘으로 대신 표시한다.
+            //    진화1/2/3 아이콘이 준비되면 evolutionIcons에 꽂는 것만으로 교체된다.
+            SkillEvolutionId evolution = hasSkill ? controller.GetEvolution(i) : SkillEvolutionId.None;
+            SetBadge(badges.evolutionBadge,
+                     evolution != SkillEvolutionId.None,
+                     PickIcon(evolutionIcons, (int)evolution - 1) ?? slotIcon,
+                     slotIcon);
+
+            SkillEnhancementId enhancement = hasSkill ? controller.GetEnhancement(i) : SkillEnhancementId.None;
+            SetBadge(badges.enhancementBadge,
+                     enhancement != SkillEnhancementId.None,
+                     PickIcon(enhancementIcons, (int)enhancement - 1),
+                     slotIcon);
+        }
+    }
+
+    /// <summary>
+    /// 아이콘 배열에서 한 칸을 꺼낸다. 비어 있으면 확실하게 null을 돌려준다.
+    ///
+    /// !! 직렬화된 오브젝트 배열의 빈 칸은 진짜 null이 아니라 Unity의 "가짜 null"이라
+    ///    ReferenceEquals(null)이 false다. 그래서 ?? 연산자가 폴백으로 넘어가지 않고
+    ///    빈 칸을 그대로 들고 가 아이콘이 통째로 안 보인다. 여기서 Unity의 == 비교로 한 번 걸러 준다.
+    /// </summary>
+    private static Sprite PickIcon(Sprite[] icons, int index)
+    {
+        if (icons == null || index < 0 || index >= icons.Length)
+            return null;
+
+        Sprite icon = icons[index];
+        return icon != null ? icon : null;
+    }
+
+    /// <summary>
+    /// 배지 하나를 갱신한다. 고른 옵션이 있으면 그 아이콘을 원래 색으로 보여주고,
+    /// 아직 안 골랐으면 미선택 모습으로 남긴다.
+    ///
+    /// 미선택 전용 이미지(unselectedOptionIcon)가 준비되면 그걸 그대로 쓰고,
+    /// 아직 없는 동안은 임시로 해당 스킬 아이콘을 회색으로 깔아 둔다. 직전에 골랐던
+    /// 아이콘을 회색으로 남기면 "아직 그게 적용돼 있는데 꺼진 것"처럼 보여서, 미선택일 때는
+    /// 항상 같은 그림으로 되돌린다.
+    /// </summary>
+    private void SetBadge(Image badge, bool applied, Sprite appliedIcon, Sprite emptyFallback)
+    {
+        if (badge == null)
+            return;
+
+        badge.gameObject.SetActive(true);
+
+        if (applied && appliedIcon != null)
+        {
+            badge.sprite = appliedIcon;
+            badge.color = Color.white;
+            return;
+        }
+
+        bool hasEmptyArt = unselectedOptionIcon != null;
+        Sprite empty = hasEmptyArt ? unselectedOptionIcon : emptyFallback;
+
+        if (empty != null)
+            badge.sprite = empty;
+
+        badge.color = hasEmptyArt ? Color.white : UnselectedBadgeTint;
+    }
+
+    private static ClassSkillIconSet ResolveIconSet(ISkillController controller)
+    {
+        MonoBehaviour controllerBehaviour = controller as MonoBehaviour;
+        return controllerBehaviour != null ? controllerBehaviour.GetComponent<ClassSkillIconSet>() : null;
     }
 
     /// <summary>
@@ -167,13 +282,8 @@ public class SkillPopupController : MonoBehaviour
     /// !! 진화/강화 선택 슬롯은 선택지별 전용 아이콘이 아직 없어서 '지금 선택된 스킬'의 아이콘을 따라간다
     ///    (예전엔 파이터 1번 스킬 아이콘이 고정으로 박혀 있어 거너로 플레이해도 그대로 남았다).
     /// </summary>
-    private void RefreshIcons(ISkillController controller)
+    private void RefreshIcons(ISkillController controller, ClassSkillIconSet iconSet)
     {
-        MonoBehaviour controllerBehaviour = controller as MonoBehaviour;
-        ClassSkillIconSet iconSet = controllerBehaviour != null
-            ? controllerBehaviour.GetComponent<ClassSkillIconSet>()
-            : null;
-
         for (int i = 0; i < skillIconSlots.Length; i++)
             ApplyIcon(skillIconSlots[i], ResolveSlotIcon(controller, iconSet, i));
 
