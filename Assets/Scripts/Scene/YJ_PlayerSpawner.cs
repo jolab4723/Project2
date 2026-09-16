@@ -11,7 +11,7 @@ public class YJ_PlayerSpawner : MonoBehaviour
     [SerializeField] private T_PlayerController fighterPrefab;
     [Tooltip("Hierarchy의 인스턴스가 아닌 Project 창의 Gunner 프리팹을 연결합니다.")]
     [SerializeField] private T_PlayerController gunnerPrefab;
-
+    [SerializeField] private WorldItemTooltipScanner worldItemScanner;
     public T_PlayerController SpawnedPlayer { get; private set; }
 
     private void Start()
@@ -43,5 +43,13 @@ public class YJ_PlayerSpawner : MonoBehaviour
         // SpawnPoint의 자식으로 두지 않아 부모 스케일/회전의 영향을 받지 않습니다.
         SpawnedPlayer = Instantiate(prefab, transform.position, transform.rotation);
         Log.Print($"선택 캐릭터 생성: {character}");
+
+        if (worldItemScanner == null)
+            worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
+
+        if (worldItemScanner != null)
+            worldItemScanner.BindPlayer(SpawnedPlayer.transform);
+        else
+            Log.Warning("WorldItemTooltipScanner가 없어 아이템 획득 연결을 생략합니다.");
     }
 }
