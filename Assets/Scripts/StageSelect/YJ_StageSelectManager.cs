@@ -175,6 +175,7 @@ public class YJ_StageSelectManager : MonoBehaviour
         }
 
         GenerateMap();
+        YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.StageSelectBgm);
     }
 
     /// <summary>
@@ -665,6 +666,7 @@ public class YJ_StageSelectManager : MonoBehaviour
             return;
         }
 
+        YJ_BgmPlayer.Instance.Stop();
         testSceneLoader.LoadScene(nodeData.sceneName);
     }
 
