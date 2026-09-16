@@ -53,6 +53,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     {
         enemyPool = GetComponent<WBH_EnemyPoolManager>();
         enemyDataProvider = GetComponent<WBH_EnemyDataProvider>();
+        spawnArea = FindFirstObjectByType<WBH_EnemySpawnArea>();
         damagePool = FindFirstObjectByType<WBH_FloatTextPoolManager>();
 
         highEnemyView = FindFirstObjectByType<WBH_HighEnemyHpbarView>();
