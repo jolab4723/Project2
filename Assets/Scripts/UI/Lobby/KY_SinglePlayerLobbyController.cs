@@ -22,6 +22,7 @@ public class KY_SinglePlayerLobbyController : MonoBehaviour
     {
         detailsPanel.SetActive(false);
         selectionController.ShowSelection();
+        YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.LobbyBgm);
     }
 
     private void HandleCharacterSelected(KY_CharacterId characterId)
@@ -40,8 +41,10 @@ public class KY_SinglePlayerLobbyController : MonoBehaviour
             feedbackText.text = "게임 시작 기능은 아직 연결되지 않았습니다.";
             return;
         }
+
         feedbackText.text = string.Empty;
         StartGameRequested.Invoke(characterId);
+        YJ_BgmPlayer.Instance.Stop();
     }
 
     private void OnDestroy()

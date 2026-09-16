@@ -207,6 +207,9 @@ public class GunnerBomb : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /// <summary>
+    /// SW 수정: 폭탄의 각 폭발 명중 요청에 원본 피해 원인과 공격 식별자를 전달합니다.
+    /// </summary>
     private void DealDamage(Collider target, float damageMultiplier, WBH_EffectData effectData)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
@@ -226,7 +229,9 @@ public class GunnerBomb : MonoBehaviour
                                                              damageRequest.StatusEffect,
                                                              effectData,
                                                              hitPosition,
-                                                             lookDirection);
+                                                             lookDirection,
+                                                             damageRequest.DamageCause,
+                                                             damageRequest.AttackId);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 

@@ -1,28 +1,143 @@
+using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 
-/// <summary>
-/// BH 원본 <c>WBH_CombatManager</c>의 Mirror 전투 검증용 계산기다.
-/// <para>원본: <c>Assets/WBHTest/Scripts/Combat/WBH_CombatManager.cs</c></para>
-/// <para>발동 효과는 적의 실제 피해 수신 이벤트에서 공격자의 <c>PlayerContext.ItemTriggers</c>에 전달한다.</para>
-/// <para>서버에서만 호출하며 컴포넌트나 인터페이스를 네트워크 메시지로 직렬화하지 않는다.</para>
-/// </summary>
+/// <summary>BH 원본 전투 계산을 Mirror 서버 권한 경계에서 수행한다.</summary>
 public static class WBH_CombatResolver_MirrorTest
 {
-    public static bool TryProcessPlayerDamage(
-        PlayerContext attacker,
-        WBH_ICombat target,
-        ElementType elementType,
-        float damageMultiplier,
-        WBH_StatusEffectData? statusEffect,
-        out WBH_DamageResult result)
+    private struct PendingFollowUpDamage
+    {
+        public PlayerContext Attacker;
+        public WBH_ICombat Target;
+        public ElementType ElementType;
+        public float DamageMultiplier;
+        public WBH_StatusEffectData? StatusEffect;
+        public DamageCause DamageCause;
+        public uint AttackId;
+        public System.Action<WBH_DamageResult> OnResolved;
+    }
+
+    private sealed class DamageResolutionState
+    {
+        public readonly Queue<PendingFollowUpDamage> PendingQueue = new();
+        public bool IsResolving;
+    }
+
+    private static readonly Dictionary<PlayerContext, DamageResolutionState> resolutionStates = new();
+
+    /// <summary>플레이어별로 분리된 동기적 피해 처리 진입점이다.</summary>
+    public static bool TryProcessPlayerDamage(PlayerContext attacker, WBH_ICombat target,
+        ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
+        out WBH_DamageResult result, DamageCause damageCause = DamageCause.Direct, uint attackId = 0)
     {
         result = default;
-
-        if (!Mirror.NetworkServer.active || attacker?.Controller == null || target == null ||
+        if (attacker == null || !Mirror.NetworkServer.active || attacker.Controller == null || target == null ||
             !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
             return false;
 
+        if (resolutionStates.TryGetValue(attacker, out DamageResolutionState state) && state.IsResolving)
+        {
+            Debug.LogWarning("[WBH_CombatResolver_MirrorTest] TryProcessPlayerDamage 재진입 거절: 후속 피해는 EnqueueFollowUpDamage를 사용해야 합니다.");
+            return false;
+        }
+
+        if (attackId != 0 && attacker.CombatAuthority != null &&
+            !attacker.CombatAuthority.TryRegisterResolvedTarget(attackId, target))
+            return false;
+
+        if (state == null)
+        {
+            state = new DamageResolutionState();
+            resolutionStates.Add(attacker, state);
+        }
+
+        state.IsResolving = true;
+        bool success;
+        try
+        {
+            success = ExecuteDamageInternal(attacker, target, elementType, damageMultiplier, statusEffect,
+                damageCause, attackId, out result);
+            DrainPendingQueue(state);
+        }
+        catch (System.Exception)
+        {
+            PurgePendingQueue(state, "피해 처리 도중 예외 발생");
+            throw;
+        }
+        finally
+        {
+            state.IsResolving = false;
+            resolutionStates.Remove(attacker);
+        }
+        return success;
+    }
+
+    /// <summary>현재 공격자의 활성 피해 처리 경계에 후속 피해를 FIFO로 등록한다.</summary>
+    public static bool EnqueueFollowUpDamage(PlayerContext attacker, WBH_ICombat target,
+        ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
+        DamageCause damageCause, uint attackId, System.Action<WBH_DamageResult> onResolved = null)
+    {
+        if (attacker == null || !resolutionStates.TryGetValue(attacker, out DamageResolutionState state) ||
+            !state.IsResolving)
+        {
+            Debug.LogWarning("[WBH_CombatResolver_MirrorTest] EnqueueFollowUpDamage 거절: 활성 피해 처리 경계 밖입니다.");
+            return false;
+        }
+        if (!Mirror.NetworkServer.active || attacker.Controller == null || target == null ||
+            !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
+            return false;
+
+        state.PendingQueue.Enqueue(new PendingFollowUpDamage
+        {
+            Attacker = attacker,
+            Target = target,
+            ElementType = elementType,
+            DamageMultiplier = damageMultiplier,
+            StatusEffect = statusEffect,
+            DamageCause = damageCause,
+            AttackId = attackId,
+            OnResolved = onResolved,
+        });
+        return true;
+    }
+
+    private static void DrainPendingQueue(DamageResolutionState state)
+    {
+        while (state.PendingQueue.Count > 0)
+        {
+            PendingFollowUpDamage pending = state.PendingQueue.Dequeue();
+            if (pending.Target == null || (pending.Target is Component comp && comp == null))
+                continue;
+            WBH_ICombatStatus targetStatus = pending.Target.Status;
+            if (targetStatus == null || targetStatus.IsDead)
+                continue;
+            if (pending.AttackId != 0 && pending.Attacker.CombatAuthority != null &&
+                !pending.Attacker.CombatAuthority.TryRegisterResolvedTarget(pending.AttackId, pending.Target))
+                continue;
+
+            if (ExecuteDamageInternal(pending.Attacker, pending.Target, pending.ElementType,
+                    pending.DamageMultiplier, pending.StatusEffect, pending.DamageCause, pending.AttackId,
+                    out WBH_DamageResult resolvedResult))
+                pending.OnResolved?.Invoke(resolvedResult);
+        }
+    }
+
+    private static void PurgePendingQueue(DamageResolutionState state, string reason)
+    {
+        int count = state.PendingQueue.Count;
+        state.PendingQueue.Clear();
+        if (count > 0)
+            Debug.LogWarning($"[WBH_CombatResolver_MirrorTest] {reason}: 대기 중인 후속 피해 {count}건을 폐기했습니다.");
+    }
+
+    private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_ICombat target,
+        ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
+        DamageCause damageCause, uint attackId, out WBH_DamageResult result)
+    {
+        result = default;
+        if (!Mirror.NetworkServer.active || attacker?.Controller == null || target == null ||
+            !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
+            return false;
         WBH_ICombatStatus attackerStatus = attacker.Controller.Status;
         WBH_ICombatStatus targetStatus = target.Status;
         if (attackerStatus == null || targetStatus == null || attackerStatus.IsDead || targetStatus.IsDead)
@@ -30,37 +145,24 @@ public static class WBH_CombatResolver_MirrorTest
 
         float damage = attackerStatus.AttackPower * damageMultiplier;
         damage *= 1f + GetElementBonus(attackerStatus, elementType);
-
         bool isCritical = Random.value <= attackerStatus.CritRate;
-        if (isCritical)
-            damage *= attackerStatus.CritMult;
-
+        if (isCritical) damage *= attackerStatus.CritMult;
         damage -= targetStatus.DefensePower - attackerStatus.Pen;
         damage *= targetStatus.DamageTakenModifier;
         damage = Mathf.Max(1f, damage);
 
-        result = new WBH_DamageResult(
-            attacker.Controller,
-            damage,
-            isCritical,
-            elementType,
-            statusEffect);
-
+        result = new WBH_DamageResult(attacker.Controller, damage, isCritical, elementType, statusEffect,
+            null, null, null, damageCause, attackId);
         target.TakeDamage(result);
 
         if (!target.Status.IsDead && statusEffect.HasValue)
         {
             if (target is Component targetComponent &&
                 targetComponent.TryGetComponent(out NetworkEnemyAuthority_MirrorTest networkEnemy))
-            {
                 networkEnemy.ServerTryApplyStatusEffect(statusEffect.Value);
-            }
             else
-            {
                 target.AddStatusEffect(statusEffect.Value);
-            }
         }
-
         return true;
     }
 

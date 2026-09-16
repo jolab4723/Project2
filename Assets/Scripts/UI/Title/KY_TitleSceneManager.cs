@@ -31,6 +31,8 @@ public class KY_TitleSceneManager : MonoBehaviour
 
         RefreshUserInfo();
         versionText.text = "Version " + Application.version;
+
+        YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.TitleBgm);
     }
 
     void OnSettingsClicked()
@@ -71,6 +73,7 @@ public class KY_TitleSceneManager : MonoBehaviour
             return;
 
         loader.LoadScene("SinglePlayerLobbyScene");
+        YJ_BgmPlayer.Instance.Stop();
     }
 
     void OnMultiPlayClicked()
@@ -81,6 +84,7 @@ public class KY_TitleSceneManager : MonoBehaviour
             return;
 
         loader.LoadScene("MultiplayerLobbyScene");
+        YJ_BgmPlayer.Instance.Stop();
     }
 
     void OnPassiveSkillClicked() { popupManager.Show(PopupType.PassiveSkill); }

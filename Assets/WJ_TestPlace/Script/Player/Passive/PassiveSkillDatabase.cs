@@ -23,6 +23,7 @@ public class PassiveSkillDefinition
     public float[] valuesPerLevel;
     public int extraRerollCount;
     public int baseCost;
+    public Sprite icon;
 
     public float GetValue(int level)
     {

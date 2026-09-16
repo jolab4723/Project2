@@ -61,9 +61,22 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
             stateMachine.OnEnterState -= HandleStateEntered;
     }
 
+    /// <summary>공격 적중 피해의 Direct 전용 고유효과 진입점이다.</summary>
+    public void FireDamageDealt(in WBH_DamageResult result)
+    {
+        if (result.DamageCause != DamageCause.Direct)
+            return;
+        if (netIdentity == null || !netIdentity.isServer || inventory == null || buffs == null)
+            return;
+
+        Fire(TriggerCondition.OnDamageDealt);
+        if (result.IsCritical)
+            Fire(TriggerCondition.OnCrit);
+    }
+
     public void Fire(TriggerCondition condition)
     {
-        if (!isServer || inventory == null || buffs == null)
+        if (netIdentity == null || !netIdentity.isServer || inventory == null || buffs == null)
             return;
 
         if (inventory.EquipmentSystem != null)

@@ -18,7 +18,7 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     [SerializeField] private Button joinButton;
     [SerializeField] private Button serverButton;
     [SerializeField] private Button reconnectButton;
-    [SerializeField] private KY_PassiveSkillPopup passivePopup;
+    [SerializeField] private PassiveSkillPanelUI passivePopup;
     private MirrorTestNetworkManager manager;
     private string displayedParticipantId;
     private bool? passiveChangesAllowed;
@@ -186,7 +186,7 @@ public sealed class MirrorLobbyBridge_MirrorTest : MonoBehaviour
     {
         if (passivePopup == null || passiveChangesAllowed == allowed) return;
         passiveChangesAllowed = allowed;
-        passivePopup.Bind(PassiveSkillManager.Instance, allowed, "준비를 취소한 뒤 패시브를 변경할 수 있습니다.");
+        passivePopup.SetChangesAllowed(allowed, "준비를 취소한 뒤 패시브를 변경할 수 있습니다.");
     }
 
     private static KY_LobbyReadyState GetReadyState(MirrorLobbyMember_MirrorTest member)
