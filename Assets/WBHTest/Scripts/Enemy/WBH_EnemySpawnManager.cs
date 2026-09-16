@@ -55,9 +55,6 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         enemyDataProvider = GetComponent<WBH_EnemyDataProvider>();
         damagePool = FindFirstObjectByType<WBH_FloatTextPoolManager>();
 
-        player = FindAnyObjectByType<T_PlayerController>().transform;
-
-        wallet = FindFirstObjectByType < PlayerWallet>();
         highEnemyView = FindFirstObjectByType<WBH_HighEnemyHpbarView>();
     }
 
@@ -70,10 +67,36 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         WBH_EnemyController.OnEnemyDead -= EnemyDead;
     }
 
+    public bool TrySetPlayer(T_PlayerController controller)
+    {
+        if (controller == null || !controller.isActiveAndEnabled)
+        {
+            Log.Error("적 스폰 초기화 실패: 활성 플레이어가 필요합니다.");
+            return false;
+        }
+        if (spawnAreaInitialized || waveInProgress || isSpawningWave)
+        {
+            Log.Error("적 스폰 초기화 이후에는 플레이어 참조를 교체할 수 없습니다.");
+            return false;
+        }
+
+        player = controller.transform;
+        // 현재 지갑은 캐릭터가 아니라 씬의 PlayerManager에 배치되어 있습니다.
+        wallet = FindFirstObjectByType<PlayerWallet>();
+        return true;
+    }
+
     private bool TryInitializeSpawnArea() 
     {
         if (spawnAreaInitialized)
             return true;
+
+        // 스포너가 없는 기존 테스트 씬도 지원하되, 실제 생성 시점에 찾습니다.
+        T_PlayerController controller = player != null && player.gameObject.activeInHierarchy
+            ? player.GetComponent<T_PlayerController>()
+            : FindFirstObjectByType<T_PlayerController>();
+        if (!TrySetPlayer(controller))
+            return false;
 
         if(spawnArea == null || !spawnArea.isActiveAndEnabled || enemyPool == null || enemyDataProvider == null || player == null || highEnemyView == null)
         {

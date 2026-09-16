@@ -9,6 +9,7 @@ public class YJ_StageManager : MonoBehaviour
     public bool isBossStage = false;
 
     [SerializeField] private WBH_EnemySpawnManager enemySpawnManager;
+    [SerializeField] private YJ_PlayerSpawner playerSpawner;
     [SerializeField] private YJ_StageSaveService stageSaveService;
     [SerializeField] private StageNodeType directSceneNodeType = StageNodeType.Battle;
     [SerializeField] private bool useDirectSceneNodeType;
@@ -26,6 +27,8 @@ public class YJ_StageManager : MonoBehaviour
     private void Awake()
     {
         enemySpawnManager ??= FindFirstObjectByType<WBH_EnemySpawnManager>();
+        if (playerSpawner == null)
+            playerSpawner = FindFirstObjectByType<YJ_PlayerSpawner>();
         stageSaveService ??= GetComponent<YJ_StageSaveService>();
     }
 
@@ -52,7 +55,18 @@ public class YJ_StageManager : MonoBehaviour
         // 씬에 배치된 활성 컴포넌트들의 Start 실행을 기다립니다.
         yield return null;
 
+        if (playerSpawner != null && playerSpawner.SpawnedPlayer == null)
+        {
+            Log.Error("선택 캐릭터가 생성되지 않아 스테이지 시작을 중단합니다. PlayerSpawner 설정을 확인하세요.");
+            yield break;
+        }
+
         if (!TryStartScene())
+            yield break;
+
+        // 기존 고정 플레이어 씬에서는 SpawnManager가 최초 웨이브 직전에 참조를 찾습니다.
+        if (playerSpawner != null && enemySpawnManager != null &&
+            !enemySpawnManager.TrySetPlayer(playerSpawner.SpawnedPlayer))
             yield break;
 
         StartStage();

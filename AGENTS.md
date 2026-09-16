@@ -53,7 +53,7 @@
 | 김성우 (SeongWoo/SW, Unity 6000.3.22 테스트) | `codex/unity-6000-3-22-test` | `Assets/SW/**` |
 | 이우진 (WJ) | `feature/WJ` | `Assets/WJ_TestPlace/**` |
 | 우병헌 (BH) | `feature/BH` | `Assets/WBHTest/**` |
-| 조용준 (JYJ) | `feature/JYJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
+| 조용준 (JYJ) | `feature/YJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
 | 김관영 (KY) | `feature/KY` | `Assets/Scripts/UI/**` |
 
 - 표의 경로는 탐색 시작점이지 영구적인 소유권 장벽은 아니다. 정확한 주간 담당 내용은 일정표를 우선한다.
@@ -220,7 +220,7 @@
 | `codex/unity-6000-3-22-test` | `Docs/Architecture/ImplementationLogs/김성우.md` |
 | `feature/WJ` | `Docs/Architecture/ImplementationLogs/이우진.md` |
 | `feature/BH` | `Docs/Architecture/ImplementationLogs/우병헌.md` |
-| `feature/JYJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |
+| `feature/YJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |
 | `feature/KY` | `Docs/Architecture/ImplementationLogs/김관영.md` |
 
 - 개인 로그가 아직 없으면 `Docs/Architecture/ImplementationLogs/TEMPLATE.md` 형식을 사용해 해당 담당자의 파일만 만든다.
