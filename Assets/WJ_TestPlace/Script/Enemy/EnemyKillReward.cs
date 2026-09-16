@@ -72,10 +72,22 @@ public sealed class EnemyKillReward : MonoBehaviour
         PlayerStatManager.Instance?.GainExp(controller.Info.exp);
     }
 
+    /// <summary>
+    /// !! 지갑은 스포너가 Initialize로 주입한다(WBH_EnemySpawner). 주입이 빠진 적이 죽으면 예전엔 여기서
+    ///    NullReferenceException이 났는데, 이 호출이 WBH_EnemyStatus.OnDamaged 구독 체인 한가운데라
+    ///    예외가 나면 뒤에 등록된 구독자들의 사망 처리까지 통째로 끊겼다(실제로 수동 생성한 적에서 발생).
+    ///    보상만 건너뛰고 나머지 흐름은 살리도록 경고만 남기고 빠진다.
+    /// </summary>
     private void GrantCredit(int amount)
     {
         if (amount <= 0)
             return;
+
+        if (wallet == null)
+        {
+            Log.Warning($"[EnemyKillReward] 지갑이 연결되지 않아 크레딧 {amount} 지급을 건너뜁니다. {name}");
+            return;
+        }
 
         wallet.AddGold(amount);
         OnCreditGranted?.Invoke(amount);

@@ -224,11 +224,44 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
     public bool AddWorldItem(ItemInstance itemData) => AddItem(itemData, true);
 
+    private static ItemLabelDatabaseSO itemLabelsCache;
+    private static UILabelDatabaseSO uiLabelsCache;
+
+    private static ItemLabelDatabaseSO ItemLabels =>
+        itemLabelsCache ??= Resources.Load<ItemLabelDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase");
+
+    private static UILabelDatabaseSO UILabels =>
+        uiLabelsCache ??= Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
+    /// <summary>
+    /// 채팅 로그에 쓸 아이템 이름을 현재 언어로 가져온다. 예전엔 definition.itemName(한국어 원본)을
+    /// 그대로 써서, 같은 아이템이 툴팁에서는 번역되고 획득 알림에서는 한국어로 나왔다.
+    /// 조회 규칙과 폴백은 아이템 툴팁(TooltipUI.GetItemName)과 동일하게 맞춘다 - 라벨 DB에 itemId가
+    /// 없으면 definition.itemName으로, 아이템 자체가 없으면 라벨 DB의 대체 문구로 폴백한다.
+    /// </summary>
+    private static string GetDisplayItemName(ItemInstance itemData)
+    {
+        ItemDefinitionSO definition = itemData?.definition;
+        if (definition == null)
+        {
+            string fallbackName = UILabels != null ? UILabels.GetLabel("chat_ui.item_fallback_name") : null;
+            return string.IsNullOrEmpty(fallbackName) ? "아이템" : fallbackName;
+        }
+
+        if (ItemLabels != null && ItemLabels.TryGetName(definition.itemId, out string localized)
+            && !string.IsNullOrWhiteSpace(localized))
+        {
+            return localized;
+        }
+
+        return definition.itemName;
+    }
+
     private bool AddItem(ItemInstance itemData, bool fromWorld)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
 
-        string itemName = itemData?.definition?.itemName ?? "아이템";
+        string itemName = GetDisplayItemName(itemData);
 
         PrintLog(
             InventoryMessageMapper.GetMessage(
