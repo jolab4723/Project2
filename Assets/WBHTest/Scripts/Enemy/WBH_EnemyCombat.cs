@@ -388,7 +388,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     // 연발 사격
     public bool TryShootBurst(int count)
     {
-        if (IsActionInProgress)
+        if (IsActionInProgress || pattern.Target == null)
             return false;
 
         BeginAction();
