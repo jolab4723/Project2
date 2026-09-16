@@ -25,6 +25,12 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
     private BuffInstance boundInstance;
 
+    /// <summary>지금 이 슬롯 위에 마우스가 올라와 있는지(언어 변경 시 툴팁을 다시 그릴지 판단용).</summary>
+    private bool hovered;
+
+    /// <summary>지금 툴팁에 그려져 있는 스택 수. 스택이 바뀌면 툴팁을 다시 그리기 위해 들고 있는다.</summary>
+    private int shownStackCount;
+
     /// <summary>이 슬롯에 버프 인스턴스를 연결한다. 아이콘/테두리색처럼 바인딩 시점에만 바뀌는 값을 채운다.</summary>
     public void Bind(BuffInstance instance)
     {
@@ -73,6 +79,10 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             if (showStack)
                 stackText.text = boundInstance.stackCount.ToString();
         }
+
+        // 툴팁을 띄운 채로 스택이 더 쌓이면 표시값이 그대로 굳어버리므로, 스택이 바뀐 프레임에 다시 그린다.
+        if (hovered && shownStackCount != boundInstance.stackCount)
+            ShowTooltip();
     }
 
     /// <summary>스탯 효과 값이 하나라도 음수면 디버프로 취급한다(별도 디버프 플래그가 없어서 값으로 판정).</summary>
@@ -83,22 +93,51 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        IBuffSource source = boundInstance?.source;
-        if (source == null || BuffTooltipUI.Instance == null)
-            return;
-
-        BuffTooltipUI.Instance.Show(source.BuffDisplayName, source.BuffDescription);
+        hovered = true;
+        ShowTooltip();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        hovered = false;
         BuffTooltipUI.Instance?.Hide();
+    }
+
+    private void OnEnable()
+    {
+        // 툴팁이 떠 있는 동안 설정에서 언어를 바꾸면 다음에 다시 올릴 때가 아니라 바로 반영되게 한다.
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += OnLanguageChanged;
     }
 
     private void OnDisable()
     {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
+
+        hovered = false;
+
         // 슬롯이 목록 재구성 등으로 비활성화될 때 마우스가 그 위에 있었다면 OnPointerExit이
         // 호출되지 않고 사라질 수 있어서, 툴팁이 화면에 남는 것을 막기 위해 여기서도 닫는다.
         BuffTooltipUI.Instance?.Hide();
+    }
+
+    private void OnLanguageChanged(GameLanguage _)
+    {
+        if (hovered)
+            ShowTooltip();
+    }
+
+    private void ShowTooltip()
+    {
+        IBuffSource source = boundInstance?.source;
+        if (source == null || BuffTooltipUI.Instance == null)
+            return;
+
+        // 스택 수를 함께 넘겨야 이름의 "(현재 / 최대)"와 스탯 합계가 실제 적용값과 맞는다.
+        int stacks = boundInstance.stackCount;
+        shownStackCount = stacks;
+        BuffTooltipUI.Instance.Show(BuffTextComposer.BuildName(source, stacks),
+                                    BuffTextComposer.BuildDescription(source, stacks));
     }
 }
