@@ -69,13 +69,10 @@ public class KY_QuestDetailPopup : KY_PopupBase
         openingSequence = DOTween.Sequence()
             .SetLink(gameObject);
 
-        AppendCurtain(questNameCurtain);
-        openingSequence.AppendInterval(curtainInterval);
-        AppendCurtain(descriptionCurtain);
-        openingSequence.AppendInterval(curtainInterval);
-        AppendCurtain(conditionsCurtain);
-        openingSequence.AppendInterval(curtainInterval);
-        AppendCurtain(rewardCurtain);
+        AppendCurtainAtStart(questNameCurtain, 0f);
+        AppendCurtainAtStart(descriptionCurtain, curtainInterval);
+        AppendCurtainAtStart(conditionsCurtain, curtainInterval * 2f);
+        AppendCurtainAtStart(rewardCurtain, curtainInterval * 3f);
     }
 
     /// <summary>연출용 : 실행 중인 커튼 연출을 정리하고 상세 팝업을 닫는다.</summary>
@@ -98,8 +95,8 @@ public class KY_QuestDetailPopup : KY_PopupBase
         Close();
     }
 
-    /// <summary>연출용 : 커튼 하나를 현재 순차 연출에 추가한다.</summary>
-    private void AppendCurtain(KY_CurtainEffect curtain)
+    /// <summary>이전 커튼의 시작 시점 기준으로 지연된 위치에 다음 커튼을 삽입한다.</summary>
+    private void AppendCurtainAtStart(KY_CurtainEffect curtain, float startDelay)
     {
         if (curtain == null)
         {
@@ -107,7 +104,7 @@ public class KY_QuestDetailPopup : KY_PopupBase
             return;
         }
 
-        openingSequence.Append(curtain.Open());
+        openingSequence.Insert(startDelay, curtain.Open());
     }
 
     /// <summary>상세 내용과 조건 행을 빈 상태로 초기화한다.</summary>
