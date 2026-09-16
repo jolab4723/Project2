@@ -388,11 +388,11 @@ public class WBH_EnemyCombat : MonoBehaviour
     // 연발 사격
     public bool TryShootBurst(int count)
     {
-        if (IsActionInProgress)
+        if (IsActionInProgress || pattern.Target == null)
             return false;
 
         BeginAction();
-        transform.LookAt(pattern.Target);
+        FaceTarget(pattern.Target);
 
         enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
         StartCoroutine(CoShootBurst(count));
@@ -829,6 +829,20 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitForSeconds(recoveryDuration);
         EndAction();
+    }
+
+    private Vector3 GetFlatFireDirection()
+    {
+        Vector3 dir = pattern.Target != null ? pattern.Target.position - pattern.FirePoint.position
+                                             : transform.forward;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude < 0.0001f)
+        {
+            dir = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        }
+
+        return dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
     }
     #endregion
 }

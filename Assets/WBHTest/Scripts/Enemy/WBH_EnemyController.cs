@@ -172,6 +172,9 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public void AddStatusEffect(WBH_StatusEffectData data)
     {
+        if (isActiveAndEnabled || isDying || status == null || status.IsDead || statusEffectController == null || !statusEffectController.isActiveAndEnabled)
+            return;
+
         statusEffectController.AddStatusEffect(data);
     }
 
