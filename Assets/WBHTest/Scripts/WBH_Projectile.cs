@@ -23,6 +23,7 @@ public class WBH_Projectile : MonoBehaviour
     private WBH_ProjectilePoolManager poolManager;
     private WBH_EffectSpawner effectSpawner;
     private WBH_EffectData hitEffectData;
+    private WBH_EnemyStatus deathOwner;
 
     private bool isInitialized;
 
@@ -90,6 +91,7 @@ public class WBH_Projectile : MonoBehaviour
 
         isExplosion = false;
         isInitialized = true;
+        BindDeathOwner(request.Attacker);
     }
 
     // 유탄용 변수 할당
@@ -136,6 +138,7 @@ public class WBH_Projectile : MonoBehaviour
 
         isExplosion = true;
         isInitialized = true;
+        BindDeathOwner(request.Attacker);
     }
 
 
@@ -353,6 +356,8 @@ public class WBH_Projectile : MonoBehaviour
 
     private void ReturnToPool()
     {
+        UnbindDeathOwner();
+
         isInitialized = false;
 
     // SW 추가:
@@ -442,7 +447,43 @@ public class WBH_Projectile : MonoBehaviour
     /// <summary>외부(플레이어 스킬 등)에서 투사체를 강제로 제거할 때 사용. ReturnToPool이 private라 감싸서 노출.</summary>
     public void ForceRemove()
     {
+        if (!isInitialized)
+            return;
+
         ReturnToPool();
+    }
+
+    private void BindDeathOwner(WBH_ICombat attacker)
+    {
+        UnbindDeathOwner();
+
+        if (attacker is not WBH_EnemyController enemy || enemy == null || enemy.Info == null)
+            return;
+
+        EnemyGrade grade = enemy.Info.enemyGrade;
+
+        if (grade != EnemyGrade.Boss && grade != EnemyGrade.Elite)
+            return;
+
+        deathOwner = enemy.GetComponent<WBH_EnemyStatus>();
+
+        if (deathOwner == null)
+            return;
+
+        deathOwner.OnDead += ForceRemove;
+
+        if(deathOwner.IsDead)
+            ForceRemove();
+    }
+
+    private void UnbindDeathOwner()
+    {
+        if(deathOwner != null)
+        {
+            deathOwner.OnDead -= ForceRemove;
+        }
+
+        deathOwner = null;
     }
 
 

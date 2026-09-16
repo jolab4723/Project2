@@ -42,64 +42,83 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         enemySpawner.Initialize(spawnManager, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
     }
 
-    public int Spawn(EnemyGrade grade, int count, WBH_EnemyStatContext context)
+    public bool TryGetSpawnPoint(int index, out Transform point)
     {
-        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data.grade == grade);
+        point = null;
+        if(spawnPoints == null || index < 0 || index >= spawnPoints.Length)
+            return false;
 
-        if(spawnData == null || spawnData.enemies == null || spawnData.enemies.Length == 0)
-        {
-            Log.Warning($"{name} : {grade} 등급의 스폰 ID가 설정되지 않았습니다.");
-            return 0;
-        }
-        return SpawnEnemies(spawnData.enemies, count, context);
+        point = spawnPoints[index];
+        return point != null && point != transform && point.IsChildOf(transform) && point.gameObject.activeInHierarchy;
     }
 
-    private int SpawnEnemies(EnemyDefinitionSO[] enemies, int count, WBH_EnemyStatContext context)
+    public bool ValidateSpawnPoints(int waveCount, out string error)
     {
-        if (spawnPoints.Length == 0 || enemies.Length == 0)
-            return 0;
-
-        int spawnCount = 0;
-        List<Transform> availablePoints = new List<Transform>(spawnPoints);
-
-        for(int i = 0; i < count; i++)
+        error = null;
+        if(waveCount <= 0 || spawnPoints == null || spawnPoints.Length < waveCount)
         {
-            // 스폰 지점 중복방지
-            if(availablePoints.Count == 0)
-            {
-                availablePoints = new List<Transform>(spawnPoints);
-            }
-
-            int pointIndex = UnityEngine.Random.Range(0, availablePoints.Count);
-            Transform spawnPoint = availablePoints[pointIndex];
-            availablePoints.RemoveAt(pointIndex);
-
-            EnemyDefinitionSO def = enemies[UnityEngine.Random.Range(0, enemies.Length)];
-
-            if(def == null)
-            {
-                Log.Error($"{name} : SpawnData 에 비어있는 defSO 가 있습니다.");
-                continue;
-            }
-
-            Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
-
-            if (enemySpawner.Spawn(def.enemyId, spawnPoint, target, context) != null)
-                spawnCount++;
+            error = $"{name} : 스폰포인트가 최소 {waveCount} 개 필요합니다.";
+            return false;
         }
-        return spawnCount;
+
+        var usedPoints = new HashSet<Transform>();
+        for(int i = 0; i < waveCount; i ++)
+        {
+            if(!TryGetSpawnPoint(i, out Transform point) || !usedPoints.Add(point))
+            {
+                error = $"{name} : SpawnPoints[{i}] 의 누락, 비활성, 중복, 자식 관계를 확인하세요.";
+                return false;
+            }
+        }
+        return true;
     }
 
     public bool CanSpawn(EnemyGrade grade)
     {
-        if(spawnDatas == null)
+        if (spawnDatas == null)
             return false;
 
-        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data != null && data.grade == grade);
+        EnemyGradeSpawnData selected = null;
+        foreach(EnemyGradeSpawnData data in spawnDatas)
+        {
+            if(data == null || data.grade != grade)
+                continue;
+            if (selected != null)
+                return false;
+            selected = data;
+        }
 
-        if(spawnData == null || spawnData.enemies == null)
+        if(selected?.enemies == null || selected.enemies.Length == 0)
             return false;
 
-        return System.Array.Exists(spawnData.enemies, enemy => enemy != null);
+        foreach(EnemyDefinitionSO def in selected.enemies)
+        {
+            if (def == null || string.IsNullOrWhiteSpace(def.enemyId) || def.enemyGrade != grade)
+                return false;
+        }
+        return true;
+    }
+
+    public int Spawn(EnemyGrade grade, int count, WBH_EnemyStatContext context, int spawnPointIndex)
+    {
+        if(count <= 0 || enemySpawner == null || !TryGetSpawnPoint(spawnPointIndex, out Transform point) || !CanSpawn(grade))
+            return 0;
+
+        EnemyGradeSpawnData data = Array.Find(spawnDatas, entry => entry != null && entry.grade == grade);
+
+        int spawnedCount = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            EnemyDefinitionSO def = data.enemies[UnityEngine.Random.Range(0, data.enemies.Length)];
+            Transform target = findClosestPlayer?.Invoke(point.position);
+
+            WBH_EnemyController enemy = enemySpawner.Spawn(def.enemyId, point, target, context);
+
+            if (enemy == null)
+                break;
+            spawnedCount++;
+        }
+        return spawnedCount;
     }
 }

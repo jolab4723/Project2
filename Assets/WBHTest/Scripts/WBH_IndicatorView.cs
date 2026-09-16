@@ -17,6 +17,7 @@ public class WBH_IndicatorView : MonoBehaviour
 
     private WBH_Effect effect;
     private Coroutine playCoroutine;
+    private WBH_EnemyStatus deathOwner;
     private Vector3 baseLocalScale;
 
     private void Awake()
@@ -40,6 +41,8 @@ public class WBH_IndicatorView : MonoBehaviour
         {
             visualRoot.localScale = baseLocalScale;
         }
+
+        UnbindDeathOwner();
     }
 
     // 원형 인디케이터
@@ -139,5 +142,33 @@ public class WBH_IndicatorView : MonoBehaviour
         return new Vector3(Mathf.Max(0.0001f, Mathf.Abs(scale.x)),
                            Mathf.Max(0.0001f, Mathf.Abs(scale.y)),
                            Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
+    }
+
+    public void BindDeathOwner(WBH_EnemyStatus owner)
+    {
+        UnbindDeathOwner();
+        deathOwner = owner;
+
+        if (deathOwner == null)
+            return;
+
+        deathOwner.OnDead += StopOnOwnerDeath;
+
+        if(deathOwner.IsDead)
+        {
+            StopOnOwnerDeath();
+        }
+    }
+
+    private void StopOnOwnerDeath()
+    {
+        effect.StopEffect();
+    }
+
+    private void UnbindDeathOwner()
+    {
+        if (deathOwner != null)
+            deathOwner.OnDead -= StopOnOwnerDeath;
+        deathOwner = null;
     }
 }
