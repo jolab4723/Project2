@@ -1,4 +1,5 @@
 using System;
+using ItemSystem;
 
 namespace Core
 {
@@ -16,5 +17,6 @@ namespace Core
         public StageSaveData stage = new StageSaveData();             // 3-4 (자리만 잡아둠)
         public ActiveSkillSaveData activeSkill = new ActiveSkillSaveData(); // 3-5
         public bool needsPlayerInitialization; // 플레이어 초기화(새 게임시 사용)
+        public CharacterClass selectedCharacter = CharacterClass.Fighter; // 이번 게임에서 사용할 클래스
     }
 }

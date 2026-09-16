@@ -168,7 +168,7 @@ namespace Core
 
         #region ===================== 3. 게임플레이 데이터 =====================
 
-        [ContextMenu("게임플레이 데이터 전체 세아브")]
+        [ContextMenu("게임플레이 데이터 전체 세이브")]
         public void SaveGameplayData()
         {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out _) || stats.Stat == null
@@ -179,7 +179,14 @@ namespace Core
                 return;
             }
 
-            var data = new GameSaveData();
+            if ( ! TryGetSavedCharacter(out CharacterClass character))
+            {
+                Debug.LogError(
+                    "[DataManager] 캐릭터 정보를 확인하지 못해 저장을 중단합니다.");
+                return;
+            }
+
+            var data = new GameSaveData{selectedCharacter = character};
             data.status = BuildPlayerStatusData();
             data.inventory = BuildInventorySaveData();
             data.activeSkill = BuildActiveSkillSaveData();
@@ -231,8 +238,20 @@ namespace Core
 
             if (isNewGame)
             {
-                // 이전의 레벨 0 초기화 데이터도 정상적인 새 게임으로 전환합니다.
-                data = new GameSaveData{needsPlayerInitialization = true};
+                CharacterClass character = data != null ? data.selectedCharacter : CharacterClass.Fighter;
+
+                if (character != CharacterClass.Fighter && character != CharacterClass.Gunner)
+                {
+                    Debug.LogError($"[DataManager] 초기화할 캐릭터 값이 유효하지 않습니다: {character}");
+                    return false;
+                }
+
+                data = new GameSaveData
+                {
+                    selectedCharacter = character,
+                    needsPlayerInitialization = true
+                };
+
                 data.status.playerLevel = 1;
                 data.status.playerExp = 0f;
             }
@@ -305,6 +324,65 @@ namespace Core
             return true;
         }
 
+        [ContextMenu("선택 캐릭터로 새 게임을 생성하는 메서드")]
+        public bool BeginNewGame(CharacterClass character)
+        {
+            if (character != CharacterClass.Fighter && character != CharacterClass.Gunner)
+            {
+                Debug.LogError($"[DataManager] 지원하지 않는 캐릭터입니다: {character}");
+                return false;
+            }
+
+            var data = new GameSaveData{selectedCharacter = character, needsPlayerInitialization = true};
+            data.status.playerLevel = 1;
+            data.status.playerExp = 0f;
+
+            try
+            {
+                WriteJson(GetSavePath(GameplaySaveFileName), data);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 새 게임 저장 실패: {exception.Message}");
+                return false;
+            }
+        }
+
+        public bool TryGetSavedCharacter(out CharacterClass character)
+        {
+            character = CharacterClass.Fighter;
+            string path = GetSavePath(GameplaySaveFileName);
+
+            // 전투 씬 직접 실행 테스트: 저장 파일이 없으면 Fighter 사용
+            if ( ! File.Exists(path))
+                return true;
+
+            try
+            {
+                GameSaveData data = ReadJson<GameSaveData>(path);
+
+                if (data == null)
+                {
+                    Debug.LogError("[DataManager] 게임 저장 데이터가 비어 있습니다.");
+                    return false;
+                }
+
+                if (data.selectedCharacter != CharacterClass.Fighter && data.selectedCharacter != CharacterClass.Gunner)
+                {
+                    Debug.LogError($"[DataManager] 저장된 캐릭터 값이 유효하지 않습니다: " + $"{data.selectedCharacter}");
+                    return false;
+                }
+
+                character = data.selectedCharacter;
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 캐릭터 정보 읽기 실패: {exception.Message}");
+                return false;
+            }
+        }
 
         #endregion
 
@@ -843,16 +921,9 @@ namespace Core
         [ContextMenu("게임플레이 데이터 초기화")]
         public void ResetGameplayData()
         {
-            var data = new GameSaveData
-            {
-                needsPlayerInitialization = true
-            };
-
-            data.status.playerLevel = 1;
-            data.status.playerExp = 0f;
-
-            WriteJson(GetSavePath(GameplaySaveFileName), data);
+            BeginNewGame(CharacterClass.Fighter);
         }
+
         private bool TryGetGameplayPlayer(out PlayerStatManager stats, out PlayerHealthManager health, out PlayerManaManager mana)
         {
             stats = PlayerStatManager.Instance;

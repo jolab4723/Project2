@@ -1,5 +1,6 @@
 using UnityEngine;
 using Core;
+using ItemSystem;
 
 [DisallowMultipleComponent]
 public class YJ_SinglePlayerStartFlow : MonoBehaviour
@@ -16,9 +17,7 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
     {
         if (lobbyController == null)
         {
-            Debug.LogError(
-                "[YJ_SinglePlayerStartFlow] Lobby Controller를 연결하세요.",
-                this);
+            Debug.LogError("[YJ_SinglePlayerStartFlow] Lobby Controller를 연결하세요.", this);
             return;
         }
 
@@ -33,37 +32,53 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
 
     private void HandleStartGame(KY_CharacterId characterId)
     {
-        if (string.IsNullOrWhiteSpace(stageSelectSceneName))
+        if (string.IsNullOrWhiteSpace(stageSelectSceneName) ||
+            !Application.CanStreamedLevelBeLoaded(stageSelectSceneName) ||
+            !Application.CanStreamedLevelBeLoaded("LoadingScene"))
         {
             Debug.LogError(
-                "[YJ_SinglePlayerStartFlow] 목적 씬 이름이 비어 있습니다.",
-                this);
+                "[YJ_SinglePlayerStartFlow] StageSelect 또는 LoadingScene의 " +
+                "Build Settings 등록을 확인하세요.", this);
             return;
         }
 
-        // Start 씬에서 준비된 기존 로더만 사용한다.
-        // Singleton.Instance의 자동 생성으로 부트 누락을 숨기지 않는다.
+        // 설정된 부트씬 Manager를 사용합니다.
         SceneLoader loader = FindFirstObjectByType<SceneLoader>();
+        DataManager dataManager = FindFirstObjectByType<DataManager>();
 
-        if (loader == null)
+        if (loader == null || dataManager == null)
         {
-            Debug.LogError(
-                "[YJ_SinglePlayerStartFlow] SceneLoader가 없습니다. " +
-                "Start 씬부터 실행하세요.",
-                this);
+            Debug.LogError("[YJ_SinglePlayerStartFlow] SceneLoader 또는 DataManager가 없습니다. " + "Start 씬부터 실행하세요.", this);
             return;
         }
 
         if (loader.IsLoading)
             return;
 
-        Debug.Log(
-            $"[YJ_SinglePlayerStartFlow] 선택 캐릭터: {characterId}, " +
-            $"이동 씬: {stageSelectSceneName}",
-            this);
+        // UI 선택값을 게임 데이터 타입으로 명시적으로 변환합니다.
+        CharacterClass character;
 
-        // 현재 단계는 씬 이동만 처리한다.
-        // 캐릭터 저장 및 새 게임/이어하기 처리는 추후 이 호출 전에 연결한다.
+        switch (characterId)
+        {
+            case KY_CharacterId.Fighter:
+                character = CharacterClass.Fighter;
+                break;
+
+            case KY_CharacterId.Gunner:
+                character = CharacterClass.Gunner;
+                break;
+
+            default:
+                Debug.LogError($"지원하지 않는 캐릭터 선택입니다: {characterId}", this);
+                return;
+        }
+
+        // 저장 실패 시 씬을 이동하지 않습니다.
+        if ( ! dataManager.BeginNewGame(character))
+            return;
+
+        Debug.Log($"[YJ_SinglePlayerStartFlow] 새 게임 캐릭터: {character}", this);
+
         loader.LoadScene(stageSelectSceneName);
     }
 }
