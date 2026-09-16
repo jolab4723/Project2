@@ -279,11 +279,31 @@ public sealed class ChatPanel : MonoBehaviour
         RefreshAppearance();
     }
 
-    private static string Prefix(ChatKind kind) => kind switch
+    private static UILabelDatabaseSO labelsCache;
+
+    private static UILabelDatabaseSO Labels =>
+        labelsCache ??= Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
+    /// <summary>
+    /// 줄머리 태그. 예전엔 한국어로 하드코딩돼 있어서, 본문만 번역되고 태그는 한국어로 남아
+    /// "[획득] Obtained ..."처럼 한 줄에 두 언어가 섞였다. 지금은 라벨 DB에서 현재 언어 값을 가져온다.
+    /// 라벨 DB가 없거나 키가 비면 원래 한국어 문구로 폴백한다.
+    /// !! 라벨 파이프라인이 앞뒤 공백을 잘라내므로, 본문과 띄우는 공백은 여기서 붙인다.
+    /// </summary>
+    private static string Prefix(ChatKind kind)
     {
-        ChatKind.Chat => "[채팅] ", ChatKind.Acquisition => "[획득] ",
-        ChatKind.Warning => "[안내] ", _ => "[연결] ",
-    };
+        string key, fallback;
+        switch (kind)
+        {
+            case ChatKind.Chat: key = "chat_ui.prefix_chat"; fallback = "[채팅]"; break;
+            case ChatKind.Acquisition: key = "chat_ui.prefix_acquisition"; fallback = "[획득]"; break;
+            case ChatKind.Warning: key = "chat_ui.prefix_warning"; fallback = "[안내]"; break;
+            default: key = "chat_ui.prefix_connection"; fallback = "[연결]"; break;
+        }
+
+        string label = Labels != null ? Labels.GetLabel(key) : null;
+        return (string.IsNullOrEmpty(label) ? fallback : label) + " ";
+    }
 
     private static Color ColorFor(ChatKind kind) => kind switch
     {
