@@ -28,6 +28,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
         }
 
         view.PlayCircle(radius, duration, growOverTime);
+        view.BindDeathOwner(GetComponent<WBH_EnemyStatus>());
         return effect;
     }
 
@@ -59,6 +60,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
             return;
         }
         view.PlayRectangle(width, length, duration, growOverTime);
+        view.BindDeathOwner(GetComponent<WBH_EnemyStatus>());
     }
 
     // 오류 메세지 출력 메서드

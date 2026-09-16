@@ -163,7 +163,7 @@ public sealed class EnemyRuntimeTestResetProvider : MonoBehaviour,
             {
                 WBH_EnemySpawnArea area =
                     spawnAreas[UnityEngine.Random.Range(0, spawnAreas.Count)];
-                area.Spawn(entry.grade, 1, new WBH_EnemyStatContext(1,"normal", 1));
+                area.Spawn(entry.grade, 1, new WBH_EnemyStatContext(1,"normal", 1),1); // 0915 WBH 수정. SW 허가하에 컴파일 오류 발생하지만 않도록 마지막 매개변수로 임의값 1 삽입.
             }
         }
     }

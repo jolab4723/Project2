@@ -47,11 +47,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_StageManager
   bootScene: 0
   isBossStage: 0
-  waveSetCatalog: {fileID: 11400000, guid: 3da5f444673ca794facf6d8cf30cf180, type: 2}
   enemySpawnManager: {fileID: 0}
+  playerSpawner: {fileID: 0}
   stageSaveService: {fileID: 0}
   directSceneNodeType: 1
   useDirectSceneNodeType: 0
+  waveCount: 5
+  totalEnemyCount: 50
+  waveRanges:
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  directSceneWaveSeed: 1234
 --- !u!114 &3251599353313151942
 MonoBehaviour:
   m_ObjectHideFlags: 0
