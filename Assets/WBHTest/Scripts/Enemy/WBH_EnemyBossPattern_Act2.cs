@@ -19,6 +19,11 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         SlowPulse
     }
 
+    private enum GroggyState
+    {
+        None, DamageWindow, Recovery
+    }
+
     private static readonly Color BasicRangeColor = new Color(1f, 0.15f, 0.1f, 0.35f);
     private static readonly Color CannotControlRangeColor = new Color(1f, 0.5f, 0.1f, 0.35f);
     private static readonly Color DebuffRangeColor = new Color(0.2f, 0.7f, 1f, 0.35f);
@@ -78,6 +83,13 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float SlowMul = 0.5f;
     private const float SlowPulseDelay =0.5f;
 
+    // 특수 패턴 이후 그로기 관련 변수
+    private const float GroggyDuration = 4f;
+    private const float GroggyRecoveryDuration = 1.5f;
+    private bool isWaitingForSpecial;
+    private GroggyState groggyState;
+    private float groggyTimer;
+
     // 애니메이터 SkillId
     private const int TrackingFireSkillId = 1;
     private const int ShortDashSkillId = 2;
@@ -88,6 +100,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const int SummonSkillId = 7;
     private const int FlameSkillId = 8;
     private const int SlowPulseSkillId = 9;
+    private const int GroggySkillId = 10;
 
     private readonly List<BasicPattern> basicPatterns = new(4);
     
@@ -115,11 +128,19 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         targetChangeTimer = TargetChangeInterval;
         specialTimer = SpecialCooldown;
 
+        isWaitingForSpecial = false;
+        groggyState = GroggyState.None;
+        groggyTimer -= 0f;
+        owner.enemyAnimation.SetGroggy(false);
+
         owner.SetPatternDamageBlock(false);
     }
 
     public void Tick(float deltaTime)
     {
+        if (TickSpecialAftermath(deltaTime))
+            return;
+
         targetChangeTimer -= deltaTime;
 
         if(isPhaseTwo)
@@ -158,6 +179,66 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
         TickBasicPatterns();
 
+    }
+
+    // 특수 패턴 직후 그로기 상태 부여
+    private bool TickSpecialAftermath(float deltaTime)
+    {
+        if(isWaitingForSpecial)
+        {
+            if (owner.Combat.IsActionInProgress)
+                return true;
+
+            isWaitingForSpecial = false;
+            BeginGroggy();
+            return true;
+        }
+
+        if(groggyState == GroggyState.DamageWindow)
+        {
+            owner.Movement.Stop();
+            groggyTimer -= deltaTime;
+
+            if(groggyTimer <= 0f)
+            {
+                groggyState = GroggyState.Recovery;
+                groggyTimer = GroggyRecoveryDuration;
+
+                owner.enemyAnimation.SetGroggy(false);
+            }
+            return true;
+        }
+
+        if(groggyState == GroggyState.Recovery)
+        {
+            owner.Movement.Stop();
+            groggyTimer -= deltaTime;
+
+            if(groggyTimer <= 0f)
+            {
+                groggyState = GroggyState.None;
+
+                specialTimer = SpecialCooldown;
+                targetChangeTimer = TargetChangeInterval;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void BeginGroggy()
+    {
+        SetFlameApproachBoost(false);
+
+        owner.Movement.Stop();
+
+        owner.SetPatternDamageBlock(false);
+
+        groggyState = GroggyState.DamageWindow;
+        groggyTimer = GroggyDuration;
+
+        owner.enemyAnimation.SetGroggy(true);
+        owner.enemyAnimation.PlaySkill(GroggySkillId);
     }
 
     private void TickBasicPatterns()
@@ -350,8 +431,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         owner.enemyAnimation.PlaySkill(skillId);
 
         pendingSpecial = null;
-
-        specialTimer = SpecialCooldown;
+        isWaitingForSpecial = true;
     }
 
     private void SetFlameApproachBoost(bool enabled)
@@ -385,13 +465,19 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         specialTimer = 1f;
     }
 
+    // 오브젝트 일괄 초기화
     public void Cleanup()
     {
         SetFlameApproachBoost(false);
 
         pendingSpecial = null;
         isPhaseTransition = false;
+        isWaitingForSpecial = false;
 
+        groggyState = GroggyState.None;
+        groggyTimer = 0f;
+
+        owner?.enemyAnimation?.SetGroggy(false);
         owner?.SetPatternDamageBlock(false);
     }
 
