@@ -1,6 +1,9 @@
 using ItemSystem;
 using UnityEngine;
 
+/// <summary>
+/// SW 수정: 처리된 피해 결과에도 원인과 공격 식별자를 보존해 이벤트와 처치 귀속에서 같은 정보를 사용합니다.
+/// </summary>
 public readonly struct WBH_DamageResult
 {
     public readonly WBH_ICombat Attacker;

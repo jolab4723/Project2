@@ -322,6 +322,9 @@ public class WBH_Projectile : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// SW 수정: 명중 대상용 요청을 만들 때 원본 피해 원인과 공격 식별자를 보존합니다.
+    /// </summary>
     private void ProcessHit(WBH_ICombat target, Vector3 hitPosition, Vector3 hitEffectDirection)
     {
     // SW 추가:

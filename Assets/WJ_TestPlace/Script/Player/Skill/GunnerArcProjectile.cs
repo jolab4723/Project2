@@ -138,6 +138,9 @@ public class GunnerArcProjectile : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /// <summary>
+    /// SW 수정: 아크 투사체의 명중 요청을 재구성할 때 원본 피해 원인과 공격 식별자를 보존합니다.
+    /// </summary>
     private void DealDamage(Collider target)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))

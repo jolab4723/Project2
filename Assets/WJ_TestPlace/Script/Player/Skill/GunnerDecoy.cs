@@ -47,6 +47,9 @@ public class GunnerDecoy : MonoBehaviour
             Explode();
     }
 
+    /// <summary>
+    /// SW 수정: 디코이 폭발의 명중 요청에 원본 피해 원인과 공격 식별자를 전달합니다.
+    /// </summary>
     private void Explode()
     {
         initialized = false;
