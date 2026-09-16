@@ -106,9 +106,11 @@ public class YJ_ClickEffect : MonoBehaviour
 
     public void PlayClickSfx()
     {
-        if (sfxPlayer == null)
+        if (clickSound == null || clickVolume <= 0f)
             return;
 
-        sfxPlayer.PlayImmediate(clickSound, Vector3.zero, clickVolume);
+        var player = YJ_SfxPlayer.Instance;
+        if (player != null)
+            player.PlayUI(clickSound, clickVolume);
     }
 }

@@ -110,10 +110,10 @@ public class YJ_StageManager : MonoBehaviour
     {
         stageClear = false;
 
-        if (!TryGetCurrentNodeType(out StageNodeType currentNodeType))
+        if ( ! TryGetCurrentNodeType(out StageNodeType currentNodeType))
             return;
 
-        if (!UsesEnemyWaves(currentNodeType))
+        if ( ! UsesEnemyWaves(currentNodeType))
             return;
 
         if (enemySpawnManager == null)
@@ -126,6 +126,42 @@ public class YJ_StageManager : MonoBehaviour
         }
 
         AdvanceStage();
+
+        if (isBossStage)
+        {
+            switch (RefreshLocation())
+            {
+                case 1:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act1BossBgm);
+                    break;
+                case 2:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act2BossBgm);
+                    break;
+                case 3:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act3BossBgm);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            switch (RefreshLocation())
+            {
+                case 1:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act1Bgm);
+                    break;
+                case 2:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act2Bgm);
+                    break;
+                case 3:
+                    YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.Act3Bgm);
+                    break;
+                default:
+                    break;
+            }
+        }
+
     }
 
     private void HandleWaveCompleted()
@@ -165,6 +201,7 @@ public class YJ_StageManager : MonoBehaviour
             Log.Error("스테이지 클리어 포탈이 연결되지 않았습니다.");
         }
 
+        YJ_BgmPlayer.Instance.Stop();
         Log.Print("Stage Clear");
     }
 
@@ -177,15 +214,19 @@ public class YJ_StageManager : MonoBehaviour
 
         if (isBossStage)
             return TryUseDefaultWaveSet("보스 스테이지");
-        if (!TryGetStageSaveService())
+
+        if ( ! TryGetStageSaveService())
             return TryUseDefaultWaveSet("YJ_StageSaveService 컴포넌트가 연결된 오브젝트를 찾을 수 없습니다.");
-        if (!stageSaveService.HasSaveFile)
+
+        if ( ! stageSaveService.HasSaveFile)
             return TryUseDefaultWaveSet("선택 노드 저장데이터가 없습니다.(전투 씬이 직접 실행되었습니다.)");
+
         if(!stageSaveService.TryLoadSaveData(out StageMapSaveData saveData))
         {
             Log.Error("스테이지 맵 저장 데이터를 불러오지 못했습니다.");
             return false;
         }
+
         if(string.IsNullOrWhiteSpace(saveData.pendingNodeId))
         {
             Log.Error("현재 진행중인 pending 노드가 없습니다.");
@@ -215,13 +256,13 @@ public class YJ_StageManager : MonoBehaviour
 
         int waveSeed = CreateWaveSeed(saveData.mapSeed, pendingNode);
 
-        if(!waveSetCatalog.TrySelect(eliteStage, waveSeed, out WBH_WaveSetSO selectedWaveSet))
+        if( ! waveSetCatalog.TrySelect(eliteStage, waveSeed, out WBH_WaveSetSO selectedWaveSet))
         {
             Log.Error($"{pendingNode.type} 노드에 사용할 WaveSet 이 없습니다.");
             return false;
         }
 
-        if(!enemySpawnManager.TrySetWaveSet(selectedWaveSet))
+        if( ! enemySpawnManager.TrySetWaveSet(selectedWaveSet))
             return false;
 
         Log.Print($"노드 웨이브 결정: {pendingNode.id} / {pendingNode.type} / {selectedWaveSet.WaveSetId}");
@@ -254,13 +295,13 @@ public class YJ_StageManager : MonoBehaviour
 
         currentNodeType = default;
 
-        if(!TryGetStageSaveService() || !stageSaveService.HasSaveFile)
+        if( ! TryGetStageSaveService() || !stageSaveService.HasSaveFile)
         {
             currentNodeType = isBossStage ? StageNodeType.Boss : directSceneNodeType;
             return true;
         }
 
-        if(!stageSaveService.TryGetPendingNode(out StageNodeSaveData pendingNode))
+        if( ! stageSaveService.TryGetPendingNode(out StageNodeSaveData pendingNode))
         {
             Log.Error("현재 진행 중인 노드 정보를 불러오지 못했습니다.");
             return false;
@@ -298,5 +339,28 @@ public class YJ_StageManager : MonoBehaviour
 
             return seed;
         }
+    }
+
+    private int RefreshLocation()
+    {
+        if (stageSaveService == null)
+            stageSaveService = FindFirstObjectByType<YJ_StageSaveService>();
+
+        if (stageSaveService == null)
+            stageSaveService = gameObject.AddComponent<YJ_StageSaveService>();
+
+        if (!stageSaveService.HasSaveFile ||
+            !stageSaveService.TryLoadSaveData(out StageMapSaveData saveData) ||
+            string.IsNullOrWhiteSpace(saveData.pendingNodeId))
+        {
+            return 0;
+        }
+
+        StageNodeSaveData currentNode = saveData.nodes.Find(
+            node => node != null && node.id == saveData.pendingNodeId);
+        if (currentNode == null)
+            return 0;
+
+        return (int)saveData.act;
     }
 }

@@ -54,6 +54,7 @@ public class KY_LobbyFlowController : MonoBehaviour
     private void Start()
     {
         if (!usesExternalFlow) ShowCharacterSelection();
+        YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.LobbyBgm);
     }
 
     /// <summary>캐릭터 선택 패널을 열고 이전에 선택한 캐릭터를 유지한다.</summary>
@@ -82,6 +83,7 @@ public class KY_LobbyFlowController : MonoBehaviour
         }
         multiplayerLobbyController?.SetPlayers(null);
         ShowCharacterSelection();
+        YJ_BgmPlayer.Instance.Stop();
         Debug.Log("[KY_LobbyFlowController] 로컬 로비 미리보기를 나왔습니다. 실제 네트워크 연결 해제는 추후 연결합니다.", this);
     }
 
