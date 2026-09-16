@@ -20,14 +20,17 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
     [SerializeField] private Slider healthBarSlider;
     [SerializeField] private WBH_EnemyBossPhaseView_Act1 bossPhaseView;
 
+    [SerializeField] private Vector2 damageTextSpacingPixels = new Vector2(56f, 28f);
+
     private WBH_FloatTextPoolManager damageTextPool;
     private Camera mainCamera;
-    private uint observedDamagePresentationCount;
-    private bool initialized;
+    private double damageTextBurstStartedAt = double.NegativeInfinity;
+    private int damageTextBurstIndex;
     private bool missingPoolReported;
     private bool bossPhaseTwoApplied;
     private MirrorAct1BossPhase observedBossPhase;
 
+    public uint PresentedDamageTextCount { get; private set; }
     public bool BossPhaseTwoApplied => bossPhaseTwoApplied;
 
     private void Awake()
@@ -39,15 +42,8 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
 
     private void Start()
     {
-        observedDamagePresentationCount = authority != null
-            ? authority.ReceivedDamagePresentationCount
-            : 0;
-        initialized = true;
-
-        if (!Mirror.NetworkClient.active)
-            return;
-
-        RefreshHealthBar();
+        if (Mirror.NetworkClient.active)
+            RefreshHealthBar();
     }
 
 #if UNITY_EDITOR
@@ -62,20 +58,12 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
         if (!Mirror.NetworkClient.active)
             return;
 
-        mainCamera ??= Camera.main;
+        if (mainCamera == null)
+            mainCamera = Camera.main;
         RefreshHealthBar();
 
         if (healthBarRoot != null && healthBarRoot.activeSelf && mainCamera != null)
             healthBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
-
-        if (!initialized || authority == null ||
-            observedDamagePresentationCount == authority.ReceivedDamagePresentationCount)
-        {
-            return;
-        }
-
-        observedDamagePresentationCount = authority.ReceivedDamagePresentationCount;
-        ShowDamage(authority.LastDamage, authority.LastDamageCritical);
     }
 
     private void RefreshHealthBar()
@@ -134,41 +122,60 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
         }
     }
 
-    private void ShowDamage(float damage, bool critical)
+    public void ShowDamage(float damage, bool critical,
+        ElementType element, Vector3 enemyPosition)
     {
-        if (damage <= 0f)
+        if (!Mirror.NetworkClient.active || !isActiveAndEnabled ||
+            !float.IsFinite(damage) || damage <= 0f)
             return;
 
-        // 1. 카메라가 아직 없는 환경(서버/로딩 중)이면 표출 스킵
-        if (Camera.main == null) return;
-        
-        damageTextPool ??= FindFirstObjectByType<WBH_FloatTextPoolManager>(FindObjectsInactive.Exclude);
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+        if (mainCamera == null)
+            return;
 
+        if (damageTextPool == null)
+            damageTextPool = FindFirstObjectByType<WBH_FloatTextPoolManager>(FindObjectsInactive.Exclude);
         if (damageTextPool == null)
         {
             if (!missingPoolReported)
             {
-                Debug.LogWarning(
-                    "[NetworkEnemyCombatView_MirrorTest] 씬의 데미지 텍스트 풀을 찾지 못했습니다.",
-                    this);
                 missingPoolReported = true;
+                Debug.LogWarning("[NetworkEnemyCombatView_MirrorTest] 씬의 데미지 텍스트 풀이 없습니다.", this);
             }
             return;
         }
 
+        Vector3 anchorOffset = damageTextRoot != null
+            ? damageTextRoot.position - transform.position
+            : Vector3.up * 1.5f;
+        Vector3 position = OffsetDamageText(enemyPosition + anchorOffset);
         WBH_DamageText damageText = damageTextPool.GetDamageText();
-        if (damageText != null)
-        {
-            // 2. 풀에서 꺼낸 직후 Initialize를 호출해 현재 씬의 Camera.main을 재할당
-            damageText.Initialize(damageTextPool);
-            Vector3 position = damageTextRoot != null
-                ? damageTextRoot.position
-                : transform.position + Vector3.up * 1.5f;
+        if (damageText == null)
+            return;
 
-            damageText.Show(
-                position,
-                new WBH_DamageResult(null, damage, critical, ElementType.None));
+        damageText.Initialize(damageTextPool);
+        damageText.Show(position, new WBH_DamageResult(null, damage, critical, element));
+        PresentedDamageTextCount++;
+    }
+
+    private Vector3 OffsetDamageText(Vector3 position)
+    {
+        double now = Time.unscaledTimeAsDouble;
+        if (now < damageTextBurstStartedAt || now - damageTextBurstStartedAt >= 0.12d)
+        {
+            damageTextBurstStartedAt = now;
+            damageTextBurstIndex = 0;
         }
+
+        int index = damageTextBurstIndex++;
+        Vector3 screen = mainCamera.WorldToScreenPoint(position);
+        if (screen.z <= 0f)
+            return position;
+
+        screen.x += ((index & 1) == 0 ? -0.5f : 0.5f) * damageTextSpacingPixels.x;
+        screen.y += (index / 2) * damageTextSpacingPixels.y;
+        return mainCamera.ScreenToWorldPoint(screen);
     }
 
     private void ResolveReferences()

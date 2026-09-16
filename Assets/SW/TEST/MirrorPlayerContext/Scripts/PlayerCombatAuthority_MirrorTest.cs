@@ -72,7 +72,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private GunnerWeaponType lastGunnerWeapon;
 
     private readonly HashSet<WBH_ICombat> resolvedTargets = new();
+    private readonly HashSet<WBH_ICombat> directAttackTargets = new();
     private uint resolvedAttackId;
+    private uint directAttackId;
     private uint nextLocalRequestId;
     private uint activeLocalRequestId;
     [SyncVar] private uint lastServerRequestId;
@@ -148,6 +150,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         attackImpactConfirmed = false;
         resolvedAttackId = 0;
         resolvedTargets.Clear();
+        directAttackId = 0;
+        directAttackTargets.Clear();
+        context?.ItemTriggers?.ResetAttackLifetime();
     }
 
     public override void OnStopServer()
@@ -194,6 +199,9 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         lastServerRequestId = 0;
         resolvedAttackId = 0;
         resolvedTargets.Clear();
+        directAttackId = 0;
+        directAttackTargets.Clear();
+        context?.ItemTriggers?.ResetAttackLifetime();
     }
 
     [Server]
@@ -207,6 +215,12 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             resolvedTargets.Clear();
         }
         return resolvedTargets.Add(target);
+    }
+
+    [Server]
+    public bool IsDirectTargetForAttack(uint attackId, WBH_ICombat target)
+    {
+        return attackId != 0 && attackId == directAttackId && target != null && directAttackTargets.Contains(target);
     }
 
     private void Awake()
@@ -593,6 +607,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         lastHitCritical = false;
 
         Collider[] hits = Physics.OverlapSphere(transform.position, status.FighterAttackRange, enemyLayer);
+        var targets = new List<WBH_ICombat>();
+        var uniqueTargets = new HashSet<WBH_ICombat>();
         bool hitAny = false;
 
         foreach (Collider hit in hits)
@@ -609,36 +625,66 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             }
 
             WBH_ICombat target = FindCombatTarget(hit);
-            if (target == null)
+            if (target == null || !uniqueTargets.Add(target))
                 continue;
 
-            if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
-                    context,
-                    target,
-                    status.CurrentElement,
-                    1f,
-                    WBH_StatusEffectPresets.Slow1,
-                    out WBH_DamageResult result,
-                    DamageCause.Direct,
-                    attackId))
-            {
-                continue;
-            }
+            targets.Add(target);
+        }
 
-            hitAny = true;
-            lastDamage = result.FinalDamage;
-            lastHitCritical = result.IsCritical;
+        targets.Sort(CompareTargetsDeterministically);
+        directAttackId = attackId;
+        directAttackTargets.Clear();
+        foreach (WBH_ICombat target in targets)
+            directAttackTargets.Add(target);
 
-            if (target is Component targetComponent &&
-                targetComponent.GetComponentInParent<NetworkIdentity>() is NetworkIdentity identity)
+        try
+        {
+            foreach (WBH_ICombat target in targets)
             {
-                lastTargetNetId = identity.netId;
+                if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
+                        context,
+                        target,
+                        status.CurrentElement,
+                        1f,
+                        GetStatusEffectForElement(status.CurrentElement),
+                        out WBH_DamageResult result,
+                        DamageCause.Direct,
+                        attackId))
+                {
+                    continue;
+                }
+
+                hitAny = true;
+                lastDamage = result.FinalDamage;
+                lastHitCritical = result.IsCritical;
+
+                if (target is Component targetComponent &&
+                    targetComponent.GetComponentInParent<NetworkIdentity>() is NetworkIdentity identity)
+                {
+                    lastTargetNetId = identity.netId;
+                }
             }
+        }
+        finally
+        {
+            directAttackId = 0;
+            directAttackTargets.Clear();
         }
 
         lastResult = hitAny
             ? MirrorCombatRequestResult.Hit
             : MirrorCombatRequestResult.NoTarget;
+    }
+
+    public static WBH_StatusEffectData? GetStatusEffectForElement(ElementType element)
+    {
+        return element switch
+        {
+            ElementType.Fire => WBH_StatusEffectPresets.Burn1,
+            ElementType.Ice => WBH_StatusEffectPresets.Freeze1,
+            ElementType.Electric => WBH_StatusEffectPresets.Electric1,
+            _ => null,
+        };
     }
 
     internal static WBH_ICombat FindCombatTarget(Collider hit)
@@ -651,6 +697,26 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         }
 
         return null;
+    }
+
+    private static int CompareTargetsDeterministically(WBH_ICombat left, WBH_ICombat right)
+    {
+        uint leftNetId = GetTargetNetId(left);
+        uint rightNetId = GetTargetNetId(right);
+        int byNetId = leftNetId.CompareTo(rightNetId);
+        if (byNetId != 0)
+            return byNetId;
+
+        int leftInstanceId = left is Component leftComponent ? leftComponent.GetInstanceID() : 0;
+        int rightInstanceId = right is Component rightComponent ? rightComponent.GetInstanceID() : 0;
+        return leftInstanceId.CompareTo(rightInstanceId);
+    }
+
+    private static uint GetTargetNetId(WBH_ICombat target)
+    {
+        return target is Component component
+            ? component.GetComponentInParent<NetworkIdentity>()?.netId ?? 0u
+            : 0u;
     }
 
     private bool TryGetGunnerWeapon(out GunnerWeaponType weaponType, out string itemId)
@@ -717,7 +783,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
                 Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
                 if (Vector3.Angle(direction, flat) > 45f ||
                     Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
-                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f, null,
+                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f,
+                        GetStatusEffectForElement(pendingGunnerElement),
                         out WBH_DamageResult result, DamageCause.Direct, attackId))
                 {
                     ServerRecordGunnerHit(target, result);

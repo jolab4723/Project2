@@ -1,0 +1,154 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+/// <summary>서버가 확정한 고유효과 구간을 로컬에서 표시하고 생성 자원의 수명을 관리한다.</summary>
+[DisallowMultipleComponent]
+public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
+{
+    [SerializeField] private ParticleSystem infernoHitPrefab;
+    [SerializeField, Min(0.05f)] private float infernoHitLifetime = 2f;
+    private readonly List<GameObject> activeInfernoHits = new();
+    private bool missingInfernoPrefabReported;
+    public uint PresentedInfernoHitCount { get; private set; }
+
+    private readonly List<GameObject> activeBolts = new();
+    private Material chainLightningMaterial;
+
+    public void PresentChainLightning(Vector3 start, Vector3 end)
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+            return;
+
+        chainLightningMaterial ??= new Material(shader)
+        {
+            name = "Chain Lightning Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+
+        GameObject boltObject = new("Chain Lightning Presentation")
+        {
+            hideFlags = HideFlags.DontSave,
+        };
+        boltObject.transform.SetParent(transform, true);
+        activeBolts.Add(boltObject);
+
+        LineRenderer line = boltObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.View;
+        line.textureMode = LineTextureMode.Stretch;
+        line.positionCount = 7;
+        line.widthMultiplier = 0.08f;
+        line.numCapVertices = 2;
+        line.startColor = new Color(0.25f, 0.95f, 1f, 0.95f);
+        line.endColor = new Color(0.25f, 0.55f, 1f, 0.2f);
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+
+        Vector3 direction = end - start;
+        Vector3 sideways = Vector3.Cross(direction.normalized, Vector3.up);
+        if (sideways.sqrMagnitude < 0.001f)
+            sideways = Vector3.right;
+        float amplitude = Mathf.Min(0.22f, direction.magnitude * 0.06f);
+        for (int i = 0; i < line.positionCount; i++)
+        {
+            float t = i / (line.positionCount - 1f);
+            float offset = i == 0 || i == line.positionCount - 1 ? 0f : (i % 2 == 0 ? -amplitude : amplitude);
+            line.SetPosition(i, Vector3.Lerp(start, end, t) + sideways * offset);
+        }
+
+        StartCoroutine(ReleaseBoltAfter(boltObject, 0.14f));
+    }
+
+    private IEnumerator ReleaseBoltAfter(GameObject boltObject, float seconds)
+    {
+        yield return new WaitForSecondsRealtime(seconds);
+        activeBolts.Remove(boltObject);
+        if (boltObject != null)
+            Destroy(boltObject);
+    }
+
+    public void PresentInfernoHit(Vector3 position)
+    {
+        if (!Application.isPlaying || !Mirror.NetworkClient.active || !isActiveAndEnabled)
+            return;
+
+        if (infernoHitPrefab == null)
+        {
+            if (!missingInfernoPrefabReported)
+            {
+                missingInfernoPrefabReported = true;
+                Debug.LogWarning("[UniqueEffectPresentation_MirrorTest] 화염 임팩트 프리팹이 없습니다.", this);
+            }
+            return;
+        }
+
+        ParticleSystem hit = Instantiate(infernoHitPrefab, position, Quaternion.identity);
+        GameObject instance = hit.gameObject;
+        instance.hideFlags = HideFlags.DontSave;
+        activeInfernoHits.Add(instance);
+        float lifetime = float.IsFinite(infernoHitLifetime)
+            ? Mathf.Max(0.05f, infernoHitLifetime) : 2f;
+        StartCoroutine(ReleaseInfernoHitAfter(instance, lifetime));
+        hit.Play(true);
+        if (hit.TryGetComponent(out AudioSource audio) && audio.clip != null)
+            audio.Play();
+        PresentedInfernoHitCount++;
+    }
+
+    private IEnumerator ReleaseInfernoHitAfter(GameObject instance, float lifetime)
+    {
+        yield return new WaitForSecondsRealtime(lifetime);
+        activeInfernoHits.Remove(instance);
+        if (instance != null)
+            DestroyOwnedObject(instance);
+    }
+
+    private void OnDisable()
+    {
+        ReleaseOwnedResources();
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseOwnedResources();
+    }
+
+    private void ReleaseOwnedResources()
+    {
+        StopAllCoroutines();
+        foreach (GameObject bolt in activeBolts)
+        {
+            if (bolt != null)
+                DestroyOwnedObject(bolt);
+        }
+        activeBolts.Clear();
+
+        foreach (GameObject hit in activeInfernoHits)
+        {
+            if (hit != null)
+                DestroyOwnedObject(hit);
+        }
+        activeInfernoHits.Clear();
+
+        if (chainLightningMaterial != null)
+        {
+            DestroyOwnedObject(chainLightningMaterial);
+            chainLightningMaterial = null;
+        }
+    }
+
+    private static void DestroyOwnedObject(Object ownedObject)
+    {
+        if (Application.isPlaying)
+            Destroy(ownedObject);
+        else
+            DestroyImmediate(ownedObject);
+    }
+}
