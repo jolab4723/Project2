@@ -63,14 +63,7 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         stats.defeatedEnemies += Mathf.Max(0, count);
     }
 
-    /// <summary>이번 런에서 얻은 크레디트를 더한다.</summary>
-    public void RecordCreditsEarned(int amount)
-    {
-        EnsureRun();
-        stats.earnedCredits += Mathf.Max(0, amount);
-    }
-
-    /// <summary>원정을 종료하고 결과 Payload에 현재 기록을 쓴다.</summary>
+    /// <summary>원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.</summary>
     public bool FinishRun(bool cleared)
     {
         if (payload == null)
@@ -88,15 +81,48 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         payload.SetResult(new KY_ResultData
         {
             cleared = cleared,
-            stageName = stats.stageName,
+            stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,
             playTimeSeconds = stats.elapsedSeconds,
-            earnedCredits = stats.earnedCredits,
+            earnedCredits = ResolveRemainingCredits(),
             combo = 0
         });
 
         runActive = false;
         return true;
+    }
+
+    /// <summary>인게임 지갑의 종료 시점 크레디트를 결과 보상으로 사용한다.</summary>
+    private static int ResolveRemainingCredits()
+    {
+        PlayerWallet wallet = InventoryController.Instance != null
+            ? InventoryController.Instance.PlayerWallet
+            : null;
+
+        return wallet != null ? Mathf.Max(0, wallet.Gold) : 0;
+    }
+
+    /// <summary>저장된 현재 노드 또는 마지막 클리어 노드에서 Act와 도달 층을 만든다.</summary>
+    private string ResolveReachedStage()
+    {
+        YJ_StageSaveService stageSaveService = FindFirstObjectByType<YJ_StageSaveService>();
+        if (stageSaveService == null || !stageSaveService.TryLoadSaveData(out StageMapSaveData saveData))
+            return stats.stageName;
+
+        int floor = saveData.clearedFloor;
+        if (!string.IsNullOrWhiteSpace(saveData.pendingNodeId))
+        {
+            StageNodeSaveData pendingNode = saveData.nodes?.Find(
+                node => node != null && node.id == saveData.pendingNodeId);
+
+            if (pendingNode != null)
+                floor = pendingNode.floor;
+        }
+
+        if ((int)saveData.act <= 0 || floor <= 0)
+            return stats.stageName;
+
+        return $"ACT {(int)saveData.act} · FLOOR {floor}";
     }
 
     /// <summary>기록 호출이 먼저 와도 새 런을 시작해 누락을 막는다.</summary>
@@ -113,5 +139,4 @@ public sealed class KY_RunStats
     public string stageName;
     public int defeatedEnemies;
     public float elapsedSeconds;
-    public int earnedCredits;
 }
