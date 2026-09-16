@@ -13,12 +13,33 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 {
+    [SerializeField] private PlayerContext context;
     [SerializeField] private InventoryController inventory;
     [SerializeField] private PlayerHealthManager health;
     [SerializeField] private PlayerBuffManager buffs;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
+    private UniqueEffectPresentation_MirrorTest presentation;
+    private bool missingInfernoPresenterReported;
 
     private readonly SyncDictionary<string, double> cooldownEndTimes = new();
+    private readonly Dictionary<ChainLightningUniqueEffectSO, uint> lastChainAttackIds = new();
+
+    [SyncVar] private uint chainLightningTriggerCount;
+    [SyncVar] private uint chainLightningResolvedHitCount;
+    [SyncVar] private uint infernoTriggerCount;
+    [SyncVar] private uint infernoResolvedHitCount;
+
+    public static uint LocalChainLightningPresentationCount { get; private set; }
+    public uint ChainLightningTriggerCount => chainLightningTriggerCount;
+    public uint ChainLightningResolvedHitCount => chainLightningResolvedHitCount;
+    public uint InfernoTriggerCount => infernoTriggerCount;
+    public uint InfernoResolvedHitCount => infernoResolvedHitCount;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetDiagnostics()
+    {
+        LocalChainLightningPresentationCount = 0;
+    }
 
     public int ActiveCooldownCount
     {
@@ -37,6 +58,7 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 
     private void Awake()
     {
+        context ??= GetComponent<PlayerContext>();
         inventory ??= GetComponentInChildren<InventoryController>(true);
         health ??= GetComponent<PlayerHealthManager>();
         buffs ??= GetComponent<PlayerBuffManager>();
@@ -62,7 +84,7 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     }
 
     /// <summary>공격 적중 피해의 Direct 전용 고유효과 진입점이다.</summary>
-    public void FireDamageDealt(in WBH_DamageResult result)
+    public void FireDamageDealt(in WBH_DamageResult result, WBH_ICombat firstTarget = null)
     {
         if (result.DamageCause != DamageCause.Direct)
             return;
@@ -72,6 +94,12 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
         Fire(TriggerCondition.OnDamageDealt);
         if (result.IsCritical)
             Fire(TriggerCondition.OnCrit);
+
+        if (firstTarget != null)
+        {
+            TryFireChainLightning(result, firstTarget);
+            TryFireInfernoExtraHit(result, firstTarget);
+        }
     }
 
     public void Fire(TriggerCondition condition)
@@ -97,13 +125,147 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 
     public float GetRemainingCooldown(ItemInstance item)
     {
-        if (item?.definition?.uniqueEffect is not TriggeredBuffUniqueEffectSO effect || effect.cooldownSeconds <= 0f)
+        UniqueEffectSO effect = item?.definition?.uniqueEffect;
+        float cooldownSeconds;
+        string key;
+        switch (effect)
+        {
+            case TriggeredBuffUniqueEffectSO triggered:
+                cooldownSeconds = triggered.cooldownSeconds;
+                key = GetCooldownKey(triggered, item);
+                break;
+            case ChainLightningUniqueEffectSO chain:
+                cooldownSeconds = chain.cooldownSeconds;
+                key = GetChainCooldownKey(chain);
+                break;
+            default:
+                return 0f;
+        }
+
+        if (cooldownSeconds <= 0f)
             return 0f;
 
-        string key = GetCooldownKey(effect, item);
         return cooldownEndTimes.TryGetValue(key, out double cooldownEnd)
             ? Mathf.Max(0f, (float)(cooldownEnd - NetworkTime.time))
             : 0f;
+    }
+
+    /// <summary>공격 번호가 다시 시작되는 서버 수명 경계에서 공격별 중복 기록만 초기화한다.</summary>
+    [Server]
+    public void ResetAttackLifetime()
+    {
+        lastChainAttackIds.Clear();
+    }
+
+    [Server]
+    private void TryFireChainLightning(in WBH_DamageResult result, WBH_ICombat firstTarget)
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (result.AttackId == 0 || inventory?.EquipmentSystem == null || firstTarget == null ||
+            !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon) ||
+            weapon?.definition?.uniqueEffect is not ChainLightningUniqueEffectSO effect)
+        {
+            return;
+        }
+
+        if (lastChainAttackIds.TryGetValue(effect, out uint lastAttackId) && lastAttackId == result.AttackId)
+            return;
+
+        // 공격당 한 번만 평가한다. 추가 표적이 없는 공격은 쿨다운을 소비하지 않는다.
+        lastChainAttackIds[effect] = result.AttackId;
+
+        string cooldownKey = GetChainCooldownKey(effect);
+        double now = NetworkTime.time;
+        if (cooldownEndTimes.TryGetValue(cooldownKey, out double cooldownEnd) && now < cooldownEnd)
+            return;
+
+        int queuedCount = ChainLightningExecutor_MirrorTest.Enqueue(
+            context,
+            effect,
+            result,
+            firstTarget,
+            (segmentStart, segmentEnd) =>
+            {
+                chainLightningResolvedHitCount++;
+                RpcPresentChainLightning(segmentStart, segmentEnd);
+            });
+
+        if (queuedCount <= 0)
+            return;
+
+        chainLightningTriggerCount++;
+        cooldownEndTimes[cooldownKey] = now + Mathf.Max(0f, effect.cooldownSeconds);
+    }
+
+    /// <summary>실제 Fighter 근접 기본 공격의 살아 있는 직접 대상에게 화염 후속 피해를 한 번 등록한다.</summary>
+    [Server]
+    private void TryFireInfernoExtraHit(in WBH_DamageResult result, WBH_ICombat firstTarget)
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (result.AttackId == 0 || firstTarget?.Status == null || firstTarget.Status.IsDead ||
+            context?.CombatAuthority == null ||
+            !context.CombatAuthority.IsDirectTargetForAttack(result.AttackId, firstTarget) ||
+            inventory?.EquipmentSystem == null ||
+            !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon) ||
+            weapon?.definition?.characterClass != CharacterClass.Fighter ||
+            weapon.definition.uniqueEffect is not InfernoExtraHitUniqueEffectSO effect)
+        {
+            return;
+        }
+
+        // 인터페이스의 Transform을 가정하지 않는다. 처치·풀 반환 전에 값만 저장한다.
+        Component targetComponent = firstTarget as Component;
+        bool hasImpactPoint = targetComponent != null;
+        Vector3 impactPoint = hasImpactPoint
+            ? targetComponent.transform.position + Vector3.up
+            : Vector3.zero;
+
+        if (!WBH_CombatResolver_MirrorTest.EnqueueFollowUpDamage(
+                context, firstTarget, ElementType.Fire, effect.damageMultiplier,
+                WBH_StatusEffectPresets.Burn1, DamageCause.Effect, result.AttackId,
+                _ =>
+                {
+                    infernoResolvedHitCount++;
+                    if (hasImpactPoint && netIdentity != null && netIdentity.netId != 0 &&
+                        NetworkServer.spawned.TryGetValue(netIdentity.netId, out NetworkIdentity spawnedIdentity) &&
+                        spawnedIdentity == netIdentity)
+                    {
+                        RpcPresentInfernoHit(impactPoint);
+                    }
+                },
+                canCrit: false))
+        {
+            return;
+        }
+
+        infernoTriggerCount++;
+    }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentInfernoHit(Vector3 position)
+    {
+        if (presentation == null)
+            presentation = GetComponent<UniqueEffectPresentation_MirrorTest>();
+        if (presentation != null)
+        {
+            presentation.PresentInfernoHit(position);
+            return;
+        }
+
+        if (!missingInfernoPresenterReported)
+        {
+            missingInfernoPresenterReported = true;
+            Debug.LogWarning("[ItemTriggerManager_MirrorTest] 설정된 인페르노 Presenter가 없습니다.", this);
+        }
+    }
+
+    [ClientRpc]
+    private void RpcPresentChainLightning(Vector3 start, Vector3 end)
+    {
+        LocalChainLightningPresentationCount++;
+        presentation ??= GetComponent<UniqueEffectPresentation_MirrorTest>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation_MirrorTest>();
+        presentation.PresentChainLightning(start, end);
     }
 
     private void HandleHitTaken(float amount)
@@ -150,5 +312,10 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
             : null;
 
         return effect.name + ":" + (itemKey ?? "shared");
+    }
+
+    private static string GetChainCooldownKey(ChainLightningUniqueEffectSO effect)
+    {
+        return effect.name + ":chain";
     }
 }

@@ -87,8 +87,8 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const int MaxInstanceIdLength = 128;
     // 서버가 개발 명령을 명시적으로 허용한 경우에만 수동 지급할 검증용 아이템이다.
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
-    // 클래스별 고급 등급 시작 무기: 고철 분류 도끼 / 레드라인 브리처.
-    private const string DefaultFighterWeaponItemId = "item.weapon.axe.scrapsorter";
+
+    private const string DefaultFighterWeaponItemId = "item.weapon.axe.inferno";
     private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.redlinebreacher";
 
     [SerializeField] private PlayerContext context;

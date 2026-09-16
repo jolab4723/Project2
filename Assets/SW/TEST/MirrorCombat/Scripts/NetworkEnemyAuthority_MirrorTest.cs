@@ -106,6 +106,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 
     private WBH_EffectSpawner sharedEffectSpawner;
     private WBH_ProjectileSpawner sharedProjectileSpawner;
+    private NetworkEnemyCombatView_MirrorTest combatView;
+    private bool missingCombatViewReported;
 
     private bool ResolveSharedSpawners()
     {
@@ -615,6 +617,16 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         lastDamage = result.FinalDamage;
         lastDamageCritical = result.IsCritical;
         receivedDamagePresentationCount++;
+
+        // 실제 Spawn된 적만 전송한다. Editor의 미Spawn 로직 검사는 그대로 실행한다.
+        if (netIdentity != null && netIdentity.netId != 0 &&
+            NetworkServer.spawned.TryGetValue(netIdentity.netId, out NetworkIdentity spawnedIdentity) &&
+            spawnedIdentity == netIdentity)
+        {
+            RpcShowDamage(result.FinalDamage, result.IsCritical,
+                result.ElementType, transform.position);
+        }
+
         Component attackerComponent = result.Attacker as Component;
         PlayerContext attacker = attackerComponent != null
             ? attackerComponent.GetComponentInParent<PlayerContext>()
@@ -626,7 +638,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackerNetId = GetNetId(attacker);
             lastAttackDirection = (transform.position - attacker.transform.position).normalized;
             // 원본 스킬·일반 공격 모두 실제 피해 수신 뒤 공격자 자신의 장비 효과를 발동한다.
-            attacker.ItemTriggers?.FireDamageDealt(result);
+            attacker.ItemTriggers?.FireDamageDealt(result, controller);
             attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
         }
         else
@@ -638,6 +650,26 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         stateChangeNumber++;
         if (!status.IsDead)
             networkAnimator?.SetTrigger("Hit");
+    }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcShowDamage(float damage, bool critical,
+        ElementType element, Vector3 enemyPosition)
+    {
+        if (combatView == null)
+            combatView = GetComponent<NetworkEnemyCombatView_MirrorTest>();
+
+        if (combatView != null)
+        {
+            combatView.ShowDamage(damage, critical, element, enemyPosition);
+            return;
+        }
+
+        if (!missingCombatViewReported)
+        {
+            missingCombatViewReported = true;
+            Debug.LogWarning("[NetworkEnemyAuthority_MirrorTest] 데미지 표시 View가 없습니다.", this);
+        }
     }
 
     [Server]

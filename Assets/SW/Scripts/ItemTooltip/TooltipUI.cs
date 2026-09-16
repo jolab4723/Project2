@@ -402,9 +402,14 @@ public class TooltipUI : MonoBehaviour
     /// </summary>
     private string GetUniqueEffectDescription(UniqueEffectSO effect)
     {
-        return uniqueEffectLabels != null
-            ? uniqueEffectLabels.GetDescription(effect.name, effect.coefficients)
-            : effect.EffectDescription;
+        if (uniqueEffectLabels != null)
+        {
+            string localized = uniqueEffectLabels.GetDescription(effect.name, effect.coefficients);
+            if (!string.IsNullOrWhiteSpace(localized))
+                return localized;
+        }
+
+        return effect.EffectDescription;
     }
 
     private void ApplyColor(ItemInstance itemData)

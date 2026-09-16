@@ -330,7 +330,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             !playerShotTargets.Add(target)) return;
         // 원본 WBH_DamageRequest도 공격자 객체를 보관하므로 피해는 명중 시의 실제 Stat으로 계산된다.
         // 무기 종류·속성·속도·사거리·VFX는 발사 시 값을 유지하고, 새 피해 공식을 복제하지 않는다.
-        if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f, null,
+        if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f,
+                PlayerCombatAuthority_MirrorTest.GetStatusEffectForElement(shotElement),
                 out WBH_DamageResult result, DamageCause.Direct, shotAttackId))
             playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
     }
