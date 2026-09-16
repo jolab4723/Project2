@@ -10,6 +10,7 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
         TitleBgm,
         LobbyBgm,
         StageSelectBgm,
+        CampBgm,
         Act1Bgm,
         Act2Bgm,
         Act3Bgm,
