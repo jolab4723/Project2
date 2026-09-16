@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -23,9 +24,22 @@ public sealed class KY_ResultScreen : MonoBehaviour
     [SerializeField] private Sprite clearLogo;
     [SerializeField] private Sprite gameOverLogo;
 
+    [Header("결과 수치 진입 연출")]
+    [SerializeField] private CanvasGroup[] scoreRows;
+    [SerializeField, Min(0f)] private float rowInterval = 0.14f;
+    [SerializeField, Min(0.01f)] private float rowRevealDuration = 0.22f;
+    [SerializeField, Min(0f)] private float rowStartOffset = 16f;
+    [SerializeField, Min(0.01f)] private float creditsCountDuration = 0.75f;
+    [SerializeField] private Graphic creditsHighlightGraphic;
+    [SerializeField, Min(0.01f)] private float creditsHighlightDuration = 0.2f;
+
     [Header("공통 버튼 — 다시 시작 / 타이틀로")]
     [SerializeField] private Button retryButton;
     [SerializeField] private Button titleButton;
+    [SerializeField] private CanvasGroup retryButtonGroup;
+    [SerializeField] private CanvasGroup titleButtonGroup;
+    [SerializeField, Min(0.01f)] private float buttonRevealDuration = 0.2f;
+    [SerializeField, Min(0f)] private float buttonRevealInterval = 0.12f;
 
     [Header("결과별 강조 색상")]
     [SerializeField] private Graphic[] accentGraphics;
@@ -43,12 +57,20 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private bool hasResult;
     private bool leaving;
+    private bool initialRevealCompleted;
+    private Sequence resultRevealSequence;
+    private Tween creditsHighlightTween;
+    private Sequence buttonRevealSequence;
+    private Color creditsBaseColor;
 
     public KY_ResultData CurrentData { get; private set; }
 
     // 정식 버튼의 클릭 이벤트를 등록한다.
     private void Awake()
     {
+        if (creditsHighlightGraphic != null)
+            creditsBaseColor = creditsHighlightGraphic.color;
+
         if (retryButton) retryButton.onClick.AddListener(Retry);
         if (titleButton) titleButton.onClick.AddListener(ReturnToTitle);
     }
@@ -76,8 +98,19 @@ public sealed class KY_ResultScreen : MonoBehaviour
                 SetButtons(false);
             }
         }
+
+        if (hasResult)
+        {
+            SetActionButtonsVisible(false);
+            SetButtons(false);
+        }
+
         if (wipe != null)
             yield return wipe.Reveal();
+
+        initialRevealCompleted = true;
+        if (hasResult)
+            yield return RevealScoreRows();
     }
 
     // 게임 종료 시 전달받은 데이터를 화면에 반영한다.
@@ -98,9 +131,108 @@ public sealed class KY_ResultScreen : MonoBehaviour
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
-        SetText(creditsText, Mathf.Max(0, data.earnedCredits).ToString("N0"));
+        // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
+        SetText(creditsText, "0");
         ApplyAccentColor(data.cleared ? clearAccentColor : gameOverAccentColor);
         SetButtons(!leaving);
+
+        // 씬 실행 뒤 미리보기나 외부 호출로 결과를 받았을 때도 연출을 다시 재생한다.
+        if (initialRevealCompleted && isActiveAndEnabled)
+            StartCoroutine(RevealScoreRows());
+    }
+
+    // 위에서 아래 순서로 결과 행을 나타내고, 마지막 크레디트는 숫자를 세어 표시한다.
+    private IEnumerator RevealScoreRows()
+    {
+        resultRevealSequence?.Kill();
+        buttonRevealSequence?.Kill();
+        SetActionButtonsVisible(false);
+        resultRevealSequence = DOTween.Sequence().SetLink(gameObject);
+
+        if (scoreRows != null)
+        {
+            foreach (CanvasGroup row in scoreRows)
+            {
+                if (row == null) continue;
+
+                RectTransform rect = row.transform as RectTransform;
+                if (rect == null) continue;
+
+                Vector2 targetPosition = rect.anchoredPosition;
+                row.alpha = 0f;
+                rect.anchoredPosition = targetPosition - Vector2.up * rowStartOffset;
+                resultRevealSequence.Append(row.DOFade(1f, rowRevealDuration).SetEase(Ease.OutCubic));
+                resultRevealSequence.Join(rect.DOAnchorPos(targetPosition, rowRevealDuration).SetEase(Ease.OutCubic));
+                resultRevealSequence.AppendInterval(rowInterval);
+            }
+        }
+
+        yield return resultRevealSequence.WaitForCompletion();
+
+        if (creditsText == null) yield break;
+
+        int credits = Mathf.Max(0, CurrentData.earnedCredits);
+        creditsText.text = "0";
+        yield return DOVirtual.Int(0, credits, creditsCountDuration,
+                value => creditsText.text = value.ToString("N0"))
+            .SetLink(gameObject)
+            .SetEase(Ease.OutCubic)
+            .WaitForCompletion();
+
+        yield return PulseCredits();
+        yield return RevealActionButtons();
+    }
+
+    // 크레디트 카운트업이 끝나는 순간 행 배경을 결과 색으로 짧게 강조한다.
+    private IEnumerator PulseCredits()
+    {
+        if (creditsHighlightGraphic == null) yield break;
+
+        creditsHighlightTween?.Kill();
+        Color highlight = CurrentData.cleared ? clearAccentColor : gameOverAccentColor;
+        highlight.a = Mathf.Max(creditsBaseColor.a, 0.65f);
+        creditsHighlightTween = DOTween.Sequence()
+            .Append(creditsHighlightGraphic.DOColor(highlight, creditsHighlightDuration).SetEase(Ease.OutCubic))
+            .Append(creditsHighlightGraphic.DOColor(creditsBaseColor, creditsHighlightDuration).SetEase(Ease.InCubic))
+            .SetLink(gameObject);
+        yield return creditsHighlightTween.WaitForCompletion();
+    }
+
+    // 보상 확인이 끝난 뒤 다시 시작과 타이틀 버튼을 차례로 보여준다.
+    private IEnumerator RevealActionButtons()
+    {
+        buttonRevealSequence?.Kill();
+        buttonRevealSequence = DOTween.Sequence().SetLink(gameObject);
+        AppendButtonReveal(retryButtonGroup);
+        buttonRevealSequence.AppendInterval(buttonRevealInterval);
+        AppendButtonReveal(titleButtonGroup);
+        yield return buttonRevealSequence.WaitForCompletion();
+        SetButtons(!leaving);
+    }
+
+    // 버튼 하나를 보이게 하는 페이드 단계를 추가한다.
+    private void AppendButtonReveal(CanvasGroup buttonGroup)
+    {
+        if (buttonGroup == null) return;
+        buttonGroup.alpha = 0f;
+        buttonGroup.blocksRaycasts = false;
+        buttonRevealSequence.Append(buttonGroup.DOFade(1f, buttonRevealDuration).SetEase(Ease.OutCubic));
+        buttonRevealSequence.AppendCallback(() => buttonGroup.blocksRaycasts = true);
+    }
+
+    // 버튼을 연출 시작 전에는 숨기고 완료 후에는 입력 가능 상태로 되돌린다.
+    private void SetActionButtonsVisible(bool visible)
+    {
+        SetButtonVisible(retryButtonGroup, visible);
+        SetButtonVisible(titleButtonGroup, visible);
+    }
+
+    // CanvasGroup이 연결된 버튼의 표시와 입력 차단을 함께 설정한다.
+    private static void SetButtonVisible(CanvasGroup buttonGroup, bool visible)
+    {
+        if (buttonGroup == null) return;
+        buttonGroup.alpha = visible ? 1f : 0f;
+        buttonGroup.blocksRaycasts = visible;
     }
 
     // 결과 종류에 맞춰 등록된 UI 강조색을 바꾼다.
@@ -207,6 +339,9 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 비활성화 시 전환 코루틴과 입력 잠금 상태를 정리한다.
     private void OnDisable()
     {
+        resultRevealSequence?.Kill();
+        creditsHighlightTween?.Kill();
+        buttonRevealSequence?.Kill();
         StopAllCoroutines();
         leaving = false;
     }
