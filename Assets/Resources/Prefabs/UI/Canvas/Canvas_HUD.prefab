@@ -10777,10 +10777,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2793522677515367548}
+  - component: {fileID: 2157688380301074147}
   - component: {fileID: 76737913280326908}
   - component: {fileID: 8960029586911248499}
   m_Layer: 5
-  m_Name: PlayerImage
+  m_Name: ClassImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10795,7 +10796,7 @@ RectTransform:
   m_GameObject: {fileID: 5666562293840656809}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: -1, z: 1}
+  m_LocalScale: {x: -1, y: -1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3362767757707014004}
@@ -10805,6 +10806,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 120, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2157688380301074147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5666562293840656809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca26a0d041e2e6c46a2116879dab8105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_PlayerFace
+  image: {fileID: 8960029586911248499}
+  fighterFace: {fileID: 21300000, guid: cd097467dc76f9f468379935f6cfc898, type: 3}
+  gunnerFace: {fileID: 21300000, guid: 91e2bd481b33da74bb7fa54a233083db, type: 3}
 --- !u!222 &76737913280326908
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10833,7 +10849,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 318cc9bcb387bd94791d048b0832dee8, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1a3f2e84c4304b34a9fbe662c6fd6547, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10925,7 +10941,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 5450061290756097097}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999979
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -14849,7 +14865,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00018910281, y: 0.0009983972}
+  m_AnchoredPosition: {x: 0.00018910281, y: 0.0010100832}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &7591620237396342327
