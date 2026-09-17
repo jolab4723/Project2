@@ -816,10 +816,26 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         GunnerCombatPresentation_MirrorTest.PlayShot(gameObject, itemId, weaponType, origin, direction, range);
     }
 
+    [Server]
+    public void ServerPresentGunnerImpact(string itemId, GunnerWeaponType weaponType, Vector3 position, Vector3 direction)
+    {
+        RpcPresentGunnerImpact(itemId, weaponType, position, direction);
+    }
+
     [ClientRpc]
     private void RpcPresentGunnerImpact(string itemId, GunnerWeaponType weaponType, Vector3 position, Vector3 direction)
     {
         GunnerCombatPresentation_MirrorTest.PlayImpact(gameObject, itemId, weaponType, position, direction);
+    }
+
+    public uint WeaponEquipGeneration => 1u;
+
+    public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon, out bool sourceStillEquipped)
+    {
+        sourceEffect = null;
+        sourceWeapon = GunnerWeaponType.Rifle;
+        sourceStillEquipped = false;
+        return false;
     }
 
     [Server]

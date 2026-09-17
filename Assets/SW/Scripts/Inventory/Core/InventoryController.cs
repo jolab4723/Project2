@@ -49,6 +49,17 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public InventoryGrid PlayerGrid => playerGrid;
     public PlayerWallet PlayerWallet => playerWallet;
 
+    public static EquipmentSystem GetLocalEquipmentSystem(Component owner)
+    {
+        if (owner == null)
+            return null;
+
+        var identity = owner.GetComponentInParent<Mirror.NetworkIdentity>();
+        return identity == null || identity.isLocalPlayer
+            ? Instance?.EquipmentSystem
+            : null;
+    }
+
     // ponytail: 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
     // 해당 자산들이 InventoryView로 전환된 뒤 함께 제거한다.
     public TextMeshProUGUI logText;
