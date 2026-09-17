@@ -40,6 +40,12 @@ public class YJ_ScreenFader : MonoBehaviour
         yield return Fade(0f, fadeInDuration);
     }
 
+    // 이번 호출에만 적용하며 인스펙터의 기본 시간은 변경하지 않습니다.
+    public IEnumerator FadeToBlack(float duration)
+    {
+        yield return Fade(1f, Mathf.Max(0f, duration));
+    }
+
     private IEnumerator Fade(float targetAlpha, float duration)
     {
         if (canvasGroup == null)
