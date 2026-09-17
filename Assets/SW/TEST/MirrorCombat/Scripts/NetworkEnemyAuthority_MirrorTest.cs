@@ -1008,7 +1008,11 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         bool growOverTime)
     {
         InitializeLocalEffectSpawner();
-        indicatorSpawner?.ShowCircle(position, radius, duration, growOverTime);
+        WBH_Effect effect = indicatorSpawner?.ShowCircle(position, radius, duration, growOverTime);
+        if (effect != null && effect.TryGetComponent<BossAttackTelegraph>(out var telegraph))
+        {
+            telegraph.Show(duration, radius);
+        }
     }
 
     private void ShowBossRectIndicatorLocal(

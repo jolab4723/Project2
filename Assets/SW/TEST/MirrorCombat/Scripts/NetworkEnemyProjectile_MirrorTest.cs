@@ -151,6 +151,14 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     [Server]
     public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
         ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
+        float explosionRadius, uint attackId, string instanceId, uint equipGeneration, GlassRailExtraHitUniqueEffectSO effect)
+    {
+        InitializePlayerServer(attackOwner, weaponType, itemId, element, moveDirection, moveSpeed, maxDistance, impactPoint, explosionRadius, attackId);
+    }
+
+    [Server]
+    public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
+        ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
         float explosionRadius, uint attackId)
     {
         playerShot = true;
@@ -317,7 +325,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
                     ApplyPlayerDamage(hit);
             }
             else if (directHit != null) ApplyPlayerDamage(directHit);
-            RpcPlayerImpact(point, hitDirection);
+            playerOwner?.CombatAuthority?.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, hitDirection);
         }
         finally { NetworkServer.Destroy(gameObject); }
     }

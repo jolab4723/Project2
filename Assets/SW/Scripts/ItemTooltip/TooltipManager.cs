@@ -124,6 +124,9 @@ public class TooltipManager : MonoBehaviour
 
     public void ShowTooltip(ItemInstance itemData)
     {
+        if (playerStatManager == null)
+            playerStatManager = PlayerStatManager.Instance;
+
         if (!Input.GetMouseButton(0) && activeItemDragCount > 0)
             activeItemDragCount = 0;
 

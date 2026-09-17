@@ -89,7 +89,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
     private const string DefaultTestItemId = "item.armor.helmet.alienskullcrown";
 
     private const string DefaultFighterWeaponItemId = "item.weapon.axe.inferno";
-    private const string DefaultGunnerWeaponItemId = "item.weapon.shotgun.redlinebreacher";
+    private const string DefaultGunnerWeaponItemId = "item.weapon.rifle.glassrail";
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private NetworkWorldItem_MirrorTest worldItemPrefab;

@@ -28,12 +28,16 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     [SyncVar] private uint chainLightningResolvedHitCount;
     [SyncVar] private uint infernoTriggerCount;
     [SyncVar] private uint infernoResolvedHitCount;
+    [SyncVar] private uint glassRailTriggerCount;
+    [SyncVar] private uint glassRailResolvedHitCount;
 
     public static uint LocalChainLightningPresentationCount { get; private set; }
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
     public uint ChainLightningResolvedHitCount => chainLightningResolvedHitCount;
     public uint InfernoTriggerCount => infernoTriggerCount;
     public uint InfernoResolvedHitCount => infernoResolvedHitCount;
+    public uint GlassRailTriggerCount => glassRailTriggerCount;
+    public uint GlassRailResolvedHitCount => glassRailResolvedHitCount;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
@@ -99,6 +103,7 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
         {
             TryFireChainLightning(result, firstTarget);
             TryFireInfernoExtraHit(result, firstTarget);
+            TryFireGlassRailExtraHit(result, firstTarget);
         }
     }
 
@@ -239,6 +244,33 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
         }
 
         infernoTriggerCount++;
+    }
+
+    /// <summary>발사 당시 유리빛 궤도 장착 세대가 적중 순간까지 유지된 라이플 탄에 냉기 추가타를 등록한다.</summary>
+    [Server]
+    private void TryFireGlassRailExtraHit(in WBH_DamageResult result, WBH_ICombat firstTarget)
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (result.AttackId == 0 || firstTarget?.Status == null || firstTarget.Status.IsDead ||
+            inventory?.EquipmentSystem == null ||
+            !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon) ||
+            weapon?.definition?.characterClass != CharacterClass.Gunner ||
+            weapon.definition.weaponType != WeaponType.Rifle ||
+            weapon.definition.uniqueEffect is not GlassRailExtraHitUniqueEffectSO effect)
+        {
+            return;
+        }
+
+        if (!WBH_CombatResolver_MirrorTest.EnqueueFollowUpDamage(
+                context, firstTarget, ElementType.Ice, effect.damageMultiplier,
+                null, DamageCause.Effect, result.AttackId,
+                _ => glassRailResolvedHitCount++,
+                canCrit: false))
+        {
+            return;
+        }
+
+        glassRailTriggerCount++;
     }
 
     [ClientRpc(channel = Channels.Reliable)]

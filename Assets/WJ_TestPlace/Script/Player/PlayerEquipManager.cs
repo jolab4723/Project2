@@ -16,10 +16,7 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
         StatSet total = StatSet.Zero;
 
         if (equipmentSystem == null)
-        {
-            Debug.LogWarning("[PlayerEquipManager] EquipmentSystem이 연결되지 않았습니다.");
-            return total;
-        }
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
 
         foreach (var pair in equipmentSystem.GetEquippedItems())
         {
@@ -51,10 +48,8 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
         result = StatSet.Zero;
 
         if (equipmentSystem == null)
-        {
-            Debug.LogWarning("[PlayerEquipManager] EquipmentSystem이 연결되지 않았습니다.");
-            return false;
-        }
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
 
         if (candidateItem == null || candidateItem.definition == null)
         {

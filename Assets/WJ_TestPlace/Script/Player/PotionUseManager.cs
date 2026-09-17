@@ -127,6 +127,9 @@ public class PotionUseManager : MonoBehaviour
         potion = null;
 
         if (equipmentSystem == null)
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
+        if (equipmentSystem == null)
             return false;
 
         if (!equipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Potion, out ItemInstance equipped))

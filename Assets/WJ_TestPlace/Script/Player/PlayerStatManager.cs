@@ -105,6 +105,9 @@ public class PlayerStatManager : MonoBehaviour
             }
         }
 
+        if (equipmentSystem == null)
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
         if (equipmentSystem != null)
             equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
 

@@ -62,6 +62,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         enabled = false;
 #else
         if (equipmentSystem == null)
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
+        if (equipmentSystem == null)
         {
             ShowDefaultVisual();
             return;
