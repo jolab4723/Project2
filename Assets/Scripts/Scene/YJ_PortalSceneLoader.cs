@@ -131,6 +131,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
         if (completedAct == StageActType.Act3)
         {
+            KY_RunStatsTracker.Instance?.FinishRun(true); // 결과창 데이터 집계용으로 추가
             destinationSceneName = clearSceneName;
             return true;
         }
