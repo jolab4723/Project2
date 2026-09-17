@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 
 public class WBH_PlayerInputHandler : MonoBehaviour
 {
+    public event System.Action<Vector3, float> PingCreated;
+
     //[SerializeField] private PlayerSkillSystem skillSystem; // 우진님 스킬시스템 연결
 
     [SerializeField] private LayerMask inputBlockLayer; // 입력 방지 레이어. 
@@ -21,6 +23,13 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     private float itemPickupDistance = 2.3f; // 아이템 픽업 가능 거리.
     private float itemDestinationRefreshDistance = 0.25f; // 드랍된 아이템 움직일 때 경로 갱신 조건.
 
+    [Header("맵 핑")]
+    [SerializeField] private GameObject pingMarkerPrefab;
+    [SerializeField] private LayerMask pingGroundLayer;
+    [SerializeField, Min(0.1f)] private float pingLifetime = 3f;
+    [SerializeField, Min(0f)] private float pingCooldown = 0.3f;
+    [SerializeField, Min(0f)] private float pingSurfaceOffset = 0.03f;
+    private float nextPingTime;
 
     private void Awake()
     {
@@ -79,28 +88,33 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     // 공격 및 아이템 획득
     private void HandleAttackInput()
     {
-        if (!Input.GetMouseButtonDown(0) || IsPointerOverUI())
+        if ( ! Input.GetMouseButtonDown(0) || IsPointerOverUI())
             return;
 
         Vector2 screenPos = Input.mousePosition;
 
+        // Alt+좌클릭은 핑 전용으로 사용합니다.
+        if (Input.GetKey(KeyCode.LeftAlt))
+        {
+            TrySpawnPing(screenPos);
+            return;
+        }
+
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        // 아이템을 먼저 검사하여 장판 등의 Collider가 획득 클릭을 가리지 않도록 합니다.
+        if (Physics.Raycast(ray, out RaycastHit itemHit, 500f, worldItemLayer, QueryTriggerInteraction.Collide))
+        {
+            ItemDataStorage item = itemHit.collider.GetComponentInParent<ItemDataStorage>();
+            if (item != null)
+            {
+                TryHandleWorldItemClick(screenPos, item);
+                return;
+            }
+        }
 
         if(Physics.Raycast(ray, out RaycastHit hit, 500f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
         {
-            bool isWorldItem = IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer);
-
-            if(isWorldItem)
-            {
-                ItemDataStorage item = hit.collider.GetComponentInParent<ItemDataStorage>();
-
-                if(item != null && IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer))
-                {
-                    TryHandleWorldItemClick(screenPos, item);
-                    return;
-                }
-            }
-
             if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
                 return;
 
@@ -368,4 +382,32 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     //    }
     //}
 
+    private void TrySpawnPing(Vector2 screenPosition)
+    {
+        if (pingMarkerPrefab == null || mainCamera == null)
+            return;
+
+        if (Time.time < nextPingTime)
+            return;
+
+        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
+
+        if ( ! Physics.Raycast(ray, out RaycastHit hit, 500f,pingGroundLayer, QueryTriggerInteraction.Ignore))
+            return;
+
+        nextPingTime = Time.time + pingCooldown;
+        Vector3 position = hit.point + hit.normal * pingSurfaceOffset;
+
+        // 프리팹에 설정된 회전을 유지합니다.
+        GameObject marker = Instantiate(pingMarkerPrefab, position, pingMarkerPrefab.transform.rotation);
+
+        // 현재 프리팹은 Play On Awake가 꺼져 있습니다.
+        foreach (ParticleSystem particle in marker.GetComponentsInChildren<ParticleSystem>())
+        {
+            particle.Play(false);
+        }
+
+        Destroy(marker, pingLifetime);
+        PingCreated?.Invoke(hit.point, pingLifetime);
+    }
 }

@@ -17,6 +17,10 @@ public class WBH_EnemySpawner : MonoBehaviour
 
     public event System.Action<WBH_EnemyController> BossSpawn;
 
+    [Header("스폰 이펙트")]
+    [SerializeField] private WBH_EffectData spawnEffect;
+    [SerializeField] private Vector3 spawnEffectOffset;
+
     public void Initialize(WBH_EnemySpawnManager spawnManager,
                            WBH_EnemyPoolManager poolManager,
                            WBH_EnemyDataProvider enemyDataProvider,
@@ -92,6 +96,12 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.SetTarget(target);
         enemy.gameObject.SetActive(true);
 
+        if (effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
+        {
+            effectSpawner.SpawnEffect(spawnEffect, 
+                                      enemy.transform.position + spawnEffectOffset,
+                                      spawnEffect.attackEffectPrefab.transform.localRotation);
+        }
 
         if (info.enemyGrade == EnemyGrade.Boss)
         {
