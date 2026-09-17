@@ -59,6 +59,7 @@ public sealed class EnemyKillReward : MonoBehaviour
         }
 
         hasGrantedReward = true;
+        KY_RunStatsTracker.Instance?.RecordEnemyDefeated(); // 결과창 데이터 집계용으로 추가
 
         GrantExp(enemyInfo.exp);
         GrantCredit(enemyInfo.credit);
