@@ -102,21 +102,19 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
+        // 아이템을 먼저 검사하여 장판 등의 Collider가 획득 클릭을 가리지 않도록 합니다.
+        if (Physics.Raycast(ray, out RaycastHit itemHit, 500f, worldItemLayer, QueryTriggerInteraction.Collide))
+        {
+            ItemDataStorage item = itemHit.collider.GetComponentInParent<ItemDataStorage>();
+            if (item != null)
+            {
+                TryHandleWorldItemClick(screenPos, item);
+                return;
+            }
+        }
+
         if(Physics.Raycast(ray, out RaycastHit hit, 500f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
         {
-            bool isWorldItem = IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer);
-
-            if(isWorldItem)
-            {
-                ItemDataStorage item = hit.collider.GetComponentInParent<ItemDataStorage>();
-
-                if(item != null && IsInLayerMask(hit.collider.gameObject.layer, worldItemLayer))
-                {
-                    TryHandleWorldItemClick(screenPos, item);
-                    return;
-                }
-            }
-
             if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
                 return;
 
