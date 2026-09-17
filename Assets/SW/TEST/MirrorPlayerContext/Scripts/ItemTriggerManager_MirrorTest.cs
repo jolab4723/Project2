@@ -246,17 +246,20 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
         infernoTriggerCount++;
     }
 
-    /// <summary>발사 당시 유리빛 궤도 장착 세대가 적중 순간까지 유지된 라이플 탄에 냉기 추가타를 등록한다.</summary>
+    /// <summary>발사 당시 유리빛 궤도 효과를 품고 날아간 라이플 탄에 냉기 추가타를 등록한다. (무기 교체·해제 후에도 유지)</summary>
     [Server]
     private void TryFireGlassRailExtraHit(in WBH_DamageResult result, WBH_ICombat firstTarget)
     {
         context ??= GetComponent<PlayerContext>();
         if (result.AttackId == 0 || firstTarget?.Status == null || firstTarget.Status.IsDead ||
-            inventory?.EquipmentSystem == null ||
-            !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon) ||
-            weapon?.definition?.characterClass != CharacterClass.Gunner ||
-            weapon.definition.weaponType != WeaponType.Rifle ||
-            weapon.definition.uniqueEffect is not GlassRailExtraHitUniqueEffectSO effect)
+            context?.CombatAuthority == null)
+        {
+            return;
+        }
+
+        if (!context.CombatAuthority.TryGetGunnerHitSource(result.AttackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType weaponType) ||
+            weaponType != GunnerWeaponType.Rifle ||
+            sourceEffect is not GlassRailExtraHitUniqueEffectSO effect)
         {
             return;
         }
