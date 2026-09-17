@@ -84,7 +84,13 @@ public class CampRestNPC : MonoBehaviour
         pendingCost = cost;
 
         restPopup.SetRecoveryPreview(healthAmount, potionAmount, cost, wallet.Gold);
-        restPopup.Open();
+
+        // KY_PopupManager 스택에 올려서 연다. 직접 Open()하면 매니저가 이 팝업이 열린 걸 몰라서
+        // ESC 한 번에 팝업이 닫히면서 일시정지까지 같이 열렸다(다른 팝업과 동일하게 매니저를 탄다).
+        if (KY_PopupManager.Instance != null)
+            KY_PopupManager.Instance.Show(PopupType.Rest);
+        else
+            restPopup.Open();
     }
 
     /// <summary>확인 버튼이 비용 검사를 통과했을 때(KY_RestPopup.OnConfirmed) 실제 처리를 적용한다.</summary>

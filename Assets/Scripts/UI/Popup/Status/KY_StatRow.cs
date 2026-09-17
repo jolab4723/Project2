@@ -9,9 +9,14 @@ public class KY_StatRow : MonoBehaviour
     public TextMeshProUGUI detailValueText;
 
     private const string ValueFormat = "0.##";
+    private const string IntegerFormat = "0";
+
+    [Tooltip("최대 체력·마나처럼 소수점이 의미 없는 행은 켠다. 총합과 세부값 모두 정수로 표시한다.")]
+    [SerializeField] private bool displayAsInteger;
 
     private Color baseColor;
     private Color equipColor;
+    private Color passiveColor;
     private Color buffColor;
     private Tween detailTween;
     private Tween totalPulseTween;
@@ -20,9 +25,10 @@ public class KY_StatRow : MonoBehaviour
 
     void Awake()
     {
-        ColorUtility.TryParseHtmlString("#FFFFFF", out baseColor);
-        ColorUtility.TryParseHtmlString("#FFD700", out equipColor);
-        ColorUtility.TryParseHtmlString("#00FF99", out buffColor);
+        ColorUtility.TryParseHtmlString("#FFFFFF", out baseColor);    // 캐릭터(레벨)
+        ColorUtility.TryParseHtmlString("#FFD700", out equipColor);   // 장비
+        ColorUtility.TryParseHtmlString("#4DA6FF", out passiveColor); // 패시브
+        ColorUtility.TryParseHtmlString("#00FF99", out buffColor);    // 버프
 
         if (detailValueText != null)
             detailBaseScale = detailValueText.transform.localScale;
@@ -42,16 +48,50 @@ public class KY_StatRow : MonoBehaviour
     {
         Debug.Log("[Row] UpdateMode 호출됨, isDetailed = " + isDetailed);
 
-        totalValueText.text = data.Total.ToString(ValueFormat);
+        float total = data.Total;
+        float baseValue = data.baseValue;
+        float equipValue = data.equipValue;
+        float passiveValue = data.passiveValue;
+        float buffValue = data.buffValue;
+
+        if (displayAsInteger)
+        {
+            // 각 항목을 따로 반올림하면 합이 총합과 어긋난다(1170 + 321.66 + 175.5 -> 1170+322+176 = 1668, 총합 1667.16).
+            // 총합은 PlayerStat.Recalculate와 같게 올림으로 확정하고, 네 항목을 반올림한 뒤
+            // 남은 잔차는 **가장 큰 항목**에 흡수시킨다.
+            //
+            // !! 잔차를 버프 칸에 몰면 버프가 하나도 없는데 "+1"로 표시돼 없는 버프가 있는 것처럼 보인다.
+            //    0인 칸은 0으로 남아야 해서, 값이 가장 큰 칸(보통 캐릭터)에 넘긴다.
+            total = Mathf.Ceil(total);
+            baseValue = Mathf.Round(baseValue);
+            equipValue = Mathf.Round(equipValue);
+            passiveValue = Mathf.Round(passiveValue);
+            buffValue = Mathf.Round(buffValue);
+
+            float residual = total - (baseValue + equipValue + passiveValue + buffValue);
+            if (!Mathf.Approximately(residual, 0f))
+            {
+                float max = Mathf.Max(Mathf.Abs(baseValue), Mathf.Abs(equipValue), Mathf.Abs(passiveValue), Mathf.Abs(buffValue));
+                if (Mathf.Approximately(max, Mathf.Abs(baseValue))) baseValue += residual;
+                else if (Mathf.Approximately(max, Mathf.Abs(equipValue))) equipValue += residual;
+                else if (Mathf.Approximately(max, Mathf.Abs(passiveValue))) passiveValue += residual;
+                else buffValue += residual;
+            }
+        }
+
+        string format = displayAsInteger ? IntegerFormat : ValueFormat;
+        totalValueText.text = total.ToString(format);
 
         detailValueText.gameObject.SetActive(isDetailed);
 
         if (isDetailed)
         {
+            // 캐릭터(흰색) + 장비(노랑) + 패시브(파랑) + 버프(초록)
             detailValueText.text =
-                $"(<color=#{ColorUtility.ToHtmlStringRGB(baseColor)}>{data.baseValue.ToString(ValueFormat)}</color>" +
-                $" + <color=#{ColorUtility.ToHtmlStringRGB(equipColor)}>{data.equipValue.ToString(ValueFormat)}</color>" +
-                $" + <color=#{ColorUtility.ToHtmlStringRGB(buffColor)}>{data.buffValue.ToString(ValueFormat)}</color>)";
+                $"(<color=#{ColorUtility.ToHtmlStringRGB(baseColor)}>{baseValue.ToString(format)}</color>" +
+                $" + <color=#{ColorUtility.ToHtmlStringRGB(equipColor)}>{equipValue.ToString(format)}</color>" +
+                $" + <color=#{ColorUtility.ToHtmlStringRGB(passiveColor)}>{passiveValue.ToString(format)}</color>" +
+                $" + <color=#{ColorUtility.ToHtmlStringRGB(buffColor)}>{buffValue.ToString(format)}</color>)";
         }
     }
 
