@@ -13,14 +13,21 @@ public class KY_FadeEffect : MonoBehaviour
 
     void Awake()
     {
-        canvasGroup = GetComponent<CanvasGroup>();
-        if (canvasGroup == null)
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        EnsureCanvasGroup();
+    }
+
+    /// <summary>페이드 없이 현재 투명도를 즉시 설정한다.</summary>
+    public void SetAlphaImmediate(float alpha)
+    {
+        EnsureCanvasGroup();
+        fadeTween?.Kill();
+        canvasGroup.alpha = alpha;
     }
 
     // 오브젝트를 alpha 0에서 시작해 1로 등장시킨다.
     public Tween FadeIn()
     {
+        EnsureCanvasGroup();
         fadeTween?.Kill();
         canvasGroup.alpha = 0f;
         fadeTween = canvasGroup.DOFade(1f, duration)
@@ -33,11 +40,21 @@ public class KY_FadeEffect : MonoBehaviour
     // 오브젝트를 현재 alpha에서 0으로 퇴장시킨다.
     public Tween FadeOut()
     {
+        EnsureCanvasGroup();
         fadeTween?.Kill();
         fadeTween = canvasGroup.DOFade(0f, duration)
             .SetEase(fadeEase)
             .SetUpdate(ignoreTimeScale)
             .SetLink(gameObject);
         return fadeTween;
+    }
+
+    private void EnsureCanvasGroup()
+    {
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
     }
 }

@@ -34,6 +34,21 @@ public class KY_StatusPopup : KY_PopupBase
     [Tooltip("비워두면 각 행의 이름 텍스트를 건드리지 않는다(기존 하드코딩된 텍스트 유지).")]
     public StatLabelDatabaseSO statLabels;
 
+    [Header("스탯 아이콘")]
+    [Tooltip("각 행의 자식 오브젝트를 열지 않고 이곳에서 아이콘을 지정한다.")]
+    public Sprite hpIcon;
+    public Sprite mpIcon;
+    public Sprite attackIcon;
+    public Sprite defenseIcon;
+    public Sprite moveSpeedIcon;
+    public Sprite attackSpeedIcon;
+    public Sprite critChanceIcon;
+    public Sprite critMultiplierIcon;
+    public Sprite cooldownReductionIcon;
+    public Sprite mpRegenIcon;
+    public Sprite penetrationIcon;
+    public Sprite skillRangeIcon;
+
     private KY_StatData currentData;
     private bool isDetailed = false;
 
@@ -58,6 +73,12 @@ public class KY_StatusPopup : KY_PopupBase
             statLabels = Resources.Load<StatLabelDatabaseSO>("DataFiles/CharData/ClassData/3. GeneratedAssets/StatLabelDatabase");
 
         ApplyLabels();
+        ApplyIcons();
+    }
+
+    void OnValidate()
+    {
+        ApplyIcons();
     }
 
     /// <summary>
@@ -82,6 +103,23 @@ public class KY_StatusPopup : KY_PopupBase
         mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
         penetrationRow.SetLabel(statLabels.GetLabel("pen"));
         skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));   
+    }
+
+    /// <summary>루트 인스펙터에 지정한 아이콘을 각 스탯 행에 반영한다.</summary>
+    void ApplyIcons()
+    {
+        hpRow?.SetIcon(hpIcon);
+        mpRow?.SetIcon(mpIcon);
+        attackRow?.SetIcon(attackIcon);
+        defenseRow?.SetIcon(defenseIcon);
+        moveSpeedRow?.SetIcon(moveSpeedIcon);
+        attackSpeedRow?.SetIcon(attackSpeedIcon);
+        critChanceRow?.SetIcon(critChanceIcon);
+        critMultiplierRow?.SetIcon(critMultiplierIcon);
+        cooldownReductionRow?.SetIcon(cooldownReductionIcon);
+        mpRegenRow?.SetIcon(mpRegenIcon);
+        penetrationRow?.SetIcon(penetrationIcon);
+        skillRangeRow?.SetIcon(skillRangeIcon);
     }
 
     void OnEnable()

@@ -1201,6 +1201,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 287637196}
+  - component: {fileID: 287637197}
   m_Layer: 0
   m_Name: Panel
   m_TagString: Untagged
@@ -1228,6 +1229,24 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 576, y: 646}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &287637197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287637195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9867acf96a7eee142be38cf3f64196f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
+  axis: 0
+  openDuration: 4
+  closeDuration: 0.5
+  openEase: 18
+  closeEase: 17
+  ignoreTimeScale: 0
 --- !u!1 &300041635
 GameObject:
   m_ObjectHideFlags: 0
@@ -1985,8 +2004,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_CreateAccountPopupView
   accountIdInput: {fileID: 1309949625}
-  passwordConfirmationInput: {fileID: 670689683}
   passwordInput: {fileID: 1877984956}
+  passwordConfirmationInput: {fileID: 670689683}
   createButton: {fileID: 770579416}
   loginButton: {fileID: 2040904567}
   feedbackText: {fileID: 1282150197}
@@ -2303,6 +2322,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 577950905}
+  - component: {fileID: 577950906}
   m_Layer: 0
   m_Name: Content
   m_TagString: Untagged
@@ -2332,6 +2352,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 576, y: 646}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &577950906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577950904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc4a53e1bebaecf4a98bcebd643b0fdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_FadeEffect
+  duration: 0.5
+  fadeEase: 6
+  ignoreTimeScale: 1
 --- !u!1 &610270989
 GameObject:
   m_ObjectHideFlags: 0
@@ -6768,7 +6803,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1428184226
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6805,6 +6840,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_LoginPopupView
   accountIdInput: {fileID: 1114456778}
   passwordInput: {fileID: 1911912176}
+  panelCurtain: {fileID: 2009326957}
+  contentFade: {fileID: 577950906}
   loginButton: {fileID: 1887322773}
   createAccountButton: {fileID: 1361564858}
   feedbackText: {fileID: 1282150197}
@@ -8806,6 +8843,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1883787683}
+  - component: {fileID: 1883787684}
   m_Layer: 0
   m_Name: Content
   m_TagString: Untagged
@@ -8835,6 +8873,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 576, y: 646}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1883787684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883787682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc4a53e1bebaecf4a98bcebd643b0fdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_FadeEffect
+  duration: 0.5
+  fadeEase: 6
+  ignoreTimeScale: 1
 --- !u!1 &1887322771
 GameObject:
   m_ObjectHideFlags: 0
@@ -9802,6 +9855,7 @@ GameObject:
   - component: {fileID: 2009326954}
   - component: {fileID: 2009326956}
   - component: {fileID: 2009326955}
+  - component: {fileID: 2009326957}
   m_Layer: 0
   m_Name: LoginPanel
   m_TagString: Untagged
@@ -9866,6 +9920,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2009326953}
   m_CullTransparentMesh: 1
+--- !u!114 &2009326957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2009326953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9867acf96a7eee142be38cf3f64196f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
+  axis: 0
+  openDuration: 0.26
+  closeDuration: 0.01
+  openEase: 9
+  closeEase: 17
+  ignoreTimeScale: 1
 --- !u!1 &2013526726
 GameObject:
   m_ObjectHideFlags: 0
@@ -10367,6 +10439,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_AuthSceneManager
   loginPopup: {fileID: 1428184227}
   createAccountPopup: {fileID: 454938933}
+  loginContentFade: {fileID: 577950906}
+  createAccountContentFade: {fileID: 1883787684}
+  logText: {fileID: 1282150197}
 --- !u!4 &2069735909
 Transform:
   m_ObjectHideFlags: 0

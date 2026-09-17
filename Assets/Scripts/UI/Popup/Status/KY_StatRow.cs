@@ -1,12 +1,15 @@
 using UnityEngine;
 using TMPro;
 using DG.Tweening;
+using UnityEngine.UI;
 
 public class KY_StatRow : MonoBehaviour
 {
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI totalValueText;
     public TextMeshProUGUI detailValueText;
+
+    private Image iconImage;
 
     private const string ValueFormat = "0.##";
     private const string IntegerFormat = "0";
@@ -42,6 +45,29 @@ public class KY_StatRow : MonoBehaviour
     {
         if (nameText != null)
             nameText.text = label;
+    }
+
+    /// <summary>행 안의 Icon 이미지를 찾아 스프라이트를 적용한다.</summary>
+    public void SetIcon(Sprite icon)
+    {
+        if (icon == null)
+            return;
+
+        if (iconImage == null)
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                if (images[i].gameObject.name == "Icon")
+                {
+                    iconImage = images[i];
+                    break;
+                }
+            }
+        }
+
+        if (iconImage != null)
+            iconImage.sprite = icon;
     }
 
     public void UpdateMode(KY_StatTypeData data, bool isDetailed)
