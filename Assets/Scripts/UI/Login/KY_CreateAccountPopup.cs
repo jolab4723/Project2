@@ -15,7 +15,9 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
 
     [Header("입력")]
     [SerializeField] private TMP_InputField accountIdInput;
-    [SerializeField] private TMP_InputField passwordInput;
+    
+    [SerializeField] private TMP_InputField passwordConfirmationInput;
+[SerializeField] private TMP_InputField passwordInput;
 
     [Header("버튼")]
     [SerializeField] private Button createButton;
@@ -52,14 +54,27 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     }
 
     /// <summary>입력값을 검증한 뒤 외부 계정 시스템에 가입 요청을 전달한다.</summary>
-    public void SubmitAccountCreation()
+public void SubmitAccountCreation()
     {
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
+        string passwordConfirmation = passwordConfirmationInput != null ? passwordConfirmationInput.text : string.Empty;
 
         if (string.IsNullOrEmpty(accountId) || string.IsNullOrEmpty(password))
         {
             ShowError("계정 ID와 비밀번호를 입력하십시오.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(passwordConfirmation))
+        {
+            ShowError("비밀번호 확인을 입력하십시오.");
+            return;
+        }
+
+        if (password != passwordConfirmation)
+        {
+            ShowError("비밀번호가 일치하지 않습니다.");
             return;
         }
 
@@ -86,7 +101,11 @@ public void RequestLogin()
         if (accountIdInput != null)
             accountIdInput.interactable = !isSubmitting;
 
-        if (passwordInput != null)
+        
+
+        if (passwordConfirmationInput != null)
+            passwordConfirmationInput.interactable = !isSubmitting;
+if (passwordInput != null)
             passwordInput.interactable = !isSubmitting;
     }
 
