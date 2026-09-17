@@ -166,8 +166,8 @@ public class KY_StatusPopup : KY_PopupBase
     }
 
     /// <summary>
-    /// PlayerStatManager의 캐릭터/장비/버프/패시브 레이어를 KY_StatData(캐릭터/장비/버프 3단)로 변환한다.
-    /// 패시브 스킬트리는 아직 UI가 구분하는 3단에 없어서 버프 몫에 합쳐 넣는다(현재는 패시브가 스텁이라 실질적으로 0).
+    /// PlayerStatManager의 캐릭터/장비/패시브/버프 레이어를 KY_StatData(4단)로 변환한다.
+    /// 화면에서는 캐릭터(흰색) → 장비(노랑) → 패시브(파랑) → 버프(초록) 순으로 보여준다.
     /// </summary>
     private static KY_StatData BuildDataFromPlayerStat(PlayerStatManager statManager)
     {
@@ -196,15 +196,15 @@ public class KY_StatusPopup : KY_PopupBase
     private static KY_StatTypeData Build(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
     {
         PlayerStat.CalcBreakdown(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     private static KY_StatTypeData BuildClamped(float characterFlat, float equipFlat, float buffFlat, float passiveFlat, float min, float max)
     {
         PlayerStat.CalcBreakdownClampedFlat(characterFlat, equipFlat, buffFlat, passiveFlat, min, max,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     void SetData(KY_StatData data)
