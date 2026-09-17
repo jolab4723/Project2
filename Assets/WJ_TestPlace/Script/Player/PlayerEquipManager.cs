@@ -11,14 +11,32 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
     [SerializeField] private EquipmentSystem equipmentSystem;
 
 
+    /// <summary>
+    /// 장비 원본을 확보한다. 인스펙터가 비어 있으면(프리팹으로 생성된 캐릭터는 씬 오브젝트 참조를
+    /// 직렬화할 수 없어 항상 비어 있다) 공용 헬퍼로 찾아 채운다.
+    ///
+    /// !! 헬퍼는 null을 돌려줄 수 있다 - 내 소유가 아닌 원격 플레이어이거나, InventoryController.Instance가
+    ///    아직 준비되지 않은 시점이다. 그대로 역참조하면 NRE가 나므로 호출부에서 반드시 확인한다.
+    /// </summary>
+    private bool TryGetEquipmentSystem(out EquipmentSystem equipment)
+    {
+        if (equipmentSystem == null)
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
+        equipment = equipmentSystem;
+        return equipment != null;
+    }
+
     public StatSet GetStatSet()
     {
         StatSet total = StatSet.Zero;
 
-        if (equipmentSystem == null)
-            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+        // 장비를 아직(또는 영영) 못 찾으면 장비 레이어 기여분은 0이다. 스탯 재계산마다 호출되는
+        // 경로라 경고를 찍지 않는다 - 캐릭터 생성 직후처럼 정상적으로 비는 프레임이 있다.
+        if (!TryGetEquipmentSystem(out EquipmentSystem equipment))
+            return total;
 
-        foreach (var pair in equipmentSystem.GetEquippedItems())
+        foreach (var pair in equipment.GetEquippedItems())
         {
             EquipSlotType slotType = pair.Key;
             InventoryItem invItem = pair.Value;
@@ -47,9 +65,9 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
     {
         result = StatSet.Zero;
 
-        if (equipmentSystem == null)
-            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
-
+        // 비교 결과를 낼 수 없으므로 여기서는 false로 알린다(호출부가 비교 UI를 숨긴다).
+        if (!TryGetEquipmentSystem(out EquipmentSystem equipment))
+            return false;
 
         if (candidateItem == null || candidateItem.definition == null)
         {
@@ -63,7 +81,7 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
             return false;
         }
 
-        foreach (var pair in equipmentSystem.GetEquippedItems())
+        foreach (var pair in equipment.GetEquippedItems())
         {
             EquipSlotType currentSlot = pair.Key;
             InventoryItem inventoryItem = pair.Value;

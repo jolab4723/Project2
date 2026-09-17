@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8699374502215724325}
   - component: {fileID: 4291821128801553504}
   - component: {fileID: 8517000206410722550}
+  - component: {fileID: 4095438821916193731}
   m_Layer: 17
   m_Name: RestNPC
   m_TagString: Untagged
@@ -152,7 +153,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
   onClicked:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4095438821916193731}
+        m_TargetAssemblyTypeName: CampRestNPC, Assembly-CSharp
+        m_MethodName: Interact
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &4291821128801553504
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,6 +449,22 @@ MonoBehaviour:
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &4095438821916193731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577902648214843569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b24459cf8c47e246b02af13fac155dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CampRestNPC
+  restDatabase: {fileID: 0}
+  baseHealPercent: 20
+  creditPerHealthPoint: 2
+  creditPerPotionCharge: 50
 --- !u!1 &1605258836411487822
 GameObject:
   m_ObjectHideFlags: 0
