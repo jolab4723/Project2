@@ -339,7 +339,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -392,7 +392,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -1494,7 +1494,7 @@ ParticleSystem:
     enabled: 1
     x:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -1600,7 +1600,7 @@ ParticleSystem:
         m_RotationOrder: 4
     z:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -4875,6 +4875,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8233413739905543188}
     m_Modifications:
+    - target: {fileID: -9076722712295191719, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: -9076722712295191719, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: -9076722712295191719, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: -9076722712295191719, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -9076722712295191719, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 6c82276815bcbcd4da1cb611fdeae754, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -5086,7 +5106,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: f19c56eefd9f9354780c12c585e3a531, type: 2}
     - target: {fileID: 919132149155446097, guid: 2babedcd9d56428439561e5bcdf5e684, type: 3}
       propertyPath: m_Name
-      value: BossAttackIndicator_Act1Fighter
+      value: BossAttackIndicator
       objectReference: {fileID: 0}
     - target: {fileID: 1375302067197006173, guid: 2babedcd9d56428439561e5bcdf5e684, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -5151,10 +5171,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BossTelegraph::BossAttackTelegraph
   warningDuration: 1.2
-  previewProgress: -1
+  previewProgress: 1
+  direction: 1
+  sweepRadiusRange: {x: 0.97, y: 0}
+  chargeRingScaleRange: {x: 2.3, y: 0.28}
   chevronSpinDegPerSec: 0
-  chargeSpinDegPerSec: -18
+  chargeSpinDegPerSec: 30
   pulseSpeed: 6
+  pulseIntensity: 0.45
   visualRoot: {fileID: 1915252918421317182}
 --- !u!114 &2928694493862262041
 MonoBehaviour:

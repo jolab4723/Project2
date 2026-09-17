@@ -29,6 +29,12 @@ public class WBH_IndicatorSpawner : MonoBehaviour
 
         view.PlayCircle(radius, duration, growOverTime);
         view.BindDeathOwner(GetComponent<WBH_EnemyStatus>());
+
+        if (effect.TryGetComponent<BossAttackTelegraph>(out var telegraph))
+        {
+            telegraph.Show(duration, radius);
+        }
+
         return effect;
     }
 
