@@ -14,24 +14,23 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     public sealed class CreateAccountRequestEvent : UnityEvent<string, string> { }
 
     [Header("입력")]
-    [SerializeField] private TMP_InputField accountIdInput;
-    
-    [SerializeField] private TMP_InputField passwordConfirmationInput;
-[SerializeField] private TMP_InputField passwordInput;
+    [SerializeField] private TMP_InputField accountIdInput;             // ID 입력창
+    [SerializeField] private TMP_InputField passwordInput;              // 비밀번호 입력창
+    [SerializeField] private TMP_InputField passwordConfirmationInput;  // 비밀번호 확인
 
     [Header("버튼")]
-    [SerializeField] private Button createButton;
-    [SerializeField] private Button loginButton;
+    [SerializeField] private Button createButton;   // 회원가입으로 버튼
+    [SerializeField] private Button loginButton;    // 로그인창으로 버튼
 
     [Header("선택 표시")]
-    [SerializeField] private TMP_Text feedbackText;
+    [SerializeField] private TMP_Text feedbackText; // 로그용 
 
     [Header("외부 연결")]
     [SerializeField] private CreateAccountRequestEvent createAccountRequested = new();
     
-
     public event Action LoginPopupRequested;
-[SerializeField] private UnityEvent loginRequested = new();
+
+    [SerializeField] private UnityEvent loginRequested = new();
 
     private void Awake()
     {
@@ -54,7 +53,7 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     }
 
     /// <summary>입력값을 검증한 뒤 외부 계정 시스템에 가입 요청을 전달한다.</summary>
-public void SubmitAccountCreation()
+    public void SubmitAccountCreation()
     {
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
@@ -83,7 +82,7 @@ public void SubmitAccountCreation()
     }
 
     /// <summary>로그인 화면 전환 요청을 외부 흐름에 전달한다.</summary>
-public void RequestLogin()
+    public void RequestLogin()
     {
         loginRequested?.Invoke();
         LoginPopupRequested?.Invoke();
@@ -105,7 +104,7 @@ public void RequestLogin()
 
         if (passwordConfirmationInput != null)
             passwordConfirmationInput.interactable = !isSubmitting;
-if (passwordInput != null)
+        if (passwordInput != null)
             passwordInput.interactable = !isSubmitting;
     }
 
