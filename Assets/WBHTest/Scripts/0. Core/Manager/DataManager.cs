@@ -171,19 +171,24 @@ namespace Core
         [ContextMenu("게임플레이 데이터 전체 세이브")]
         public void SaveGameplayData()
         {
+            TrySaveGameplayData();
+        }
+
+        private bool TrySaveGameplayData(string completedUnknownBattleKey = null)
+        {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out _) || stats.Stat == null
                                                                               || stats.Stat.currentLevel < 1
                                                                               || health.MaxHealth <= 0f)
             {
                 Debug.LogWarning("[DataManager] 플레이어가 준비되지 않아 저장하지 않습니다.");
-                return;
+                return false;
             }
 
             if ( ! TryGetSavedCharacter(out CharacterClass character))
             {
                 Debug.LogError(
                     "[DataManager] 캐릭터 정보를 확인하지 못해 저장을 중단합니다.");
-                return;
+                return false;
             }
 
             try
@@ -194,23 +199,65 @@ namespace Core
                 if (data == null || data.selectedCharacter != character)
                 {
                     Debug.LogError("[DataManager] 기존 런을 확인하지 못해 저장을 중단합니다.");
-                    return;
+                    return false;
                 }
                 data.status = BuildPlayerStatusData();
                 data.inventory = BuildInventorySaveData();
                 data.activeSkill = BuildActiveSkillSaveData();
                 data.needsPlayerInitialization = false;
+                if (!string.IsNullOrEmpty(completedUnknownBattleKey))
+                {
+                    if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out string error))
+                        throw new System.InvalidOperationException(error);
+                    if (stats.GetComponent<PlayerBuffManager>() == null)
+                        throw new System.InvalidOperationException("PlayerBuffManager가 없어 전투 효과를 종료할 수 없습니다.");
+                    YJ_UnknownRunBuffSource.CompleteBattle(data, completedUnknownBattleKey);
+                }
                 WriteGameplayDataAtomic(path, data);
+                if (!string.IsNullOrEmpty(completedUnknownBattleKey) &&
+                    !YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string restoreError))
+                    throw new System.InvalidOperationException(restoreError);
+                return true;
             }
             catch (System.Exception exception)
             {
                 Debug.LogError($"[DataManager] 게임플레이 저장 실패: {exception.Message}");
+                return false;
             }
         }
 
+        public bool TryPrepareUnknownBattle(string battleKey, out bool completed)
+        {
+            completed = false;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active) return false;
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                var data = ReadJson<GameSaveData>(path);
+                // 새 게임의 첫 전투에는 이어받을 효과가 없고, 실제 스탯 초기화는 아래 로드 단계가 담당한다.
+                if (data != null && data.needsPlayerInitialization) return true;
+                if (data == null || data.needsPlayerInitialization || data.status == null || data.status.playerLevel < 1)
+                    throw new System.InvalidOperationException("초기화된 런 저장이 없습니다.");
+                if (!YJ_UnknownRunBuffSource.TryBindBattle(data, battleKey, out bool changed, out string error))
+                    throw new System.InvalidOperationException(error);
+                if (changed) WriteGameplayDataAtomic(path, data);
+                completed = data.lastCompletedUnknownBattleKey == battleKey;
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[DataManager] 다음 전투 효과 준비 실패: {e.Message}");
+                return false;
+            }
+        }
+
+        public bool TryCompleteUnknownBattle(string battleKey) =>
+            !Mirror.NetworkClient.active && !Mirror.NetworkServer.active &&
+            !string.IsNullOrWhiteSpace(battleKey) && TrySaveGameplayData(battleKey);
+
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확정 크레딧 지급/지불/전액 손실, None, 이번 런 지속 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
+        /// 확정 크레딧 지급/지불/전액 손실, None, 이번 런/다음 전투 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
@@ -285,10 +332,9 @@ namespace Core
                      effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
                      effect.Type != YJ_UnknownEffectType.ModifyStats &&
                      effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
-                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent) ||
-                    (effect.Type == YJ_UnknownEffectType.ModifyStats && effect.Lifetime != YJ_UnknownEffectLifetime.ThisRun))
+                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent))
                 {
-                    error = "현재는 확정 크레딧 지급/지불/전액 손실, 효과 없음, 이번 런 지속 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
+                    error = "현재는 확정 크레딧 지급/지불/전액 손실, 효과 없음, 이번 런/다음 전투 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
                     return false;
                 }
                 if (effect.Type == YJ_UnknownEffectType.ModifyStats)
@@ -302,6 +348,7 @@ namespace Core
                     newBuffs.Add(new UnknownStageBuffRecord
                     {
                         effectKey = effectKey, stageId = stage.StageId, displayName = stage.StageName,
+                        lifetime = effect.Lifetime,
                         statEffects = YJ_UnknownRunBuffSource.CopyStats(effect.StatEffects)
                     });
                 }
@@ -431,10 +478,12 @@ namespace Core
             StatSet buffs = tracker.GetStatSet();
             if (data.unknownStageBuffs != null)
                 foreach (var record in data.unknownStageBuffs)
+                    if (YJ_UnknownRunBuffSource.IsActive(record))
                     foreach (var stat in record.statEffects)
                         StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
             // 앞선 효과로 추가된 최대 체력도 뒤의 회복량에 반영한다.
             foreach (var record in pendingBuffs)
+                if (YJ_UnknownRunBuffSource.IsActive(record))
                 foreach (var stat in record.statEffects)
                     StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
 
@@ -488,7 +537,7 @@ namespace Core
         }
 
         // 플레이어와 관련 시스템의 Start 초기화가 끝난 뒤 호출합니다.
-        public bool TryLoadGameplayData()
+        public bool TryLoadGameplayData(string unknownBattleKey = null)
         {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out var mana))
             {
@@ -548,7 +597,7 @@ namespace Core
 
             // 최대 체력/마나 및 장비 복원에서 스탯을 조회하기 전에 런 보상을 복원한다.
             // 새 게임의 빈 목록은 이전 런의 이벤트 버프만 제거한다.
-            if (!YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string buffError))
+            if (!YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string buffError, unknownBattleKey))
             {
                 Debug.LogError($"[DataManager] {buffError}");
                 return false;

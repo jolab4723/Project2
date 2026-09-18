@@ -4,7 +4,7 @@ using Core;
 using ItemSystem;
 using UnityEngine;
 
-/// <summary>이번 런의 Unknown 보상을 기존 버프 레이어에 전달한다. 전역 상태나 컴포넌트가 아니다.</summary>
+/// <summary>런 지속/다음 전투 Unknown 보상을 기존 버프 레이어에 전달한다. 전역 상태나 컴포넌트가 아니다.</summary>
 public sealed class YJ_UnknownRunBuffSource : IBuffSource
 {
     public string EffectKey { get; }
@@ -55,25 +55,37 @@ public sealed class YJ_UnknownRunBuffSource : IBuffSource
                     return false;
                 }
             }
+            if (!Enum.IsDefined(typeof(YJ_UnknownEffectLifetime), record.lifetime) ||
+                (record.lifetime == YJ_UnknownEffectLifetime.ThisRun && !string.IsNullOrEmpty(record.battleKey)))
+            {
+                error = "Unknown 효과의 지속 범위 또는 전투 기록이 유효하지 않습니다.";
+                return false;
+            }
         }
         return true;
     }
 
     /// <summary>이벤트 버프만 교체한다. 포션/장비 버프는 보존하고 반복 로드 시 중복을 막는다.</summary>
-    public static bool TryRestore(PlayerBuffManager target, IReadOnlyList<UnknownStageBuffRecord> records, out string error)
+    public static bool TryRestore(PlayerBuffManager target, IReadOnlyList<UnknownStageBuffRecord> records, out string error,
+        string battleKey = null)
     {
         if (!TryValidateRecords(records, out error)) return false;
         if (target == null)
         {
-            if (records == null || records.Count == 0) return true;
-            error = "PlayerBuffManager가 없어 Unknown 지속 효과를 복원할 수 없습니다.";
-            return false;
+            if (records != null)
+                foreach (var record in records)
+                    if (IsActive(record, battleKey))
+                    {
+                        error = "PlayerBuffManager가 없어 Unknown 효과를 복원할 수 없습니다.";
+                        return false;
+                    }
+            return true;
         }
 
         var restored = new List<YJ_UnknownRunBuffSource>();
         if (records != null)
             foreach (UnknownStageBuffRecord record in records)
-                restored.Add(new YJ_UnknownRunBuffSource(record));
+                if (IsActive(record, battleKey)) restored.Add(new YJ_UnknownRunBuffSource(record));
 
         // ActiveBuffs는 RemoveBuff 중 변경되므로 제거할 참조를 먼저 수집한다.
         var previous = new List<IBuffSource>();
@@ -82,5 +94,40 @@ public sealed class YJ_UnknownRunBuffSource : IBuffSource
         foreach (IBuffSource source in previous) target.RemoveBuff(source);
         foreach (YJ_UnknownRunBuffSource source in restored) target.ApplyBuff(source);
         return true;
+    }
+
+    public static bool IsActive(UnknownStageBuffRecord record, string battleKey = null) =>
+        record.lifetime == YJ_UnknownEffectLifetime.ThisRun ||
+        (!string.IsNullOrEmpty(battleKey) && record.battleKey == battleKey);
+
+    // 호출부에서 변경 데이터를 원자적으로 저장한 뒤 실제 플레이어에게 적용한다.
+    public static bool TryBindBattle(GameSaveData data, string battleKey, out bool changed, out string error)
+    {
+        changed = false;
+        if (!TryValidateRecords(data.unknownStageBuffs, out error)) return false;
+        if (string.IsNullOrWhiteSpace(battleKey)) { error = "전투 노드 키가 없습니다."; return false; }
+        if (data.lastCompletedUnknownBattleKey == battleKey) return true;
+        if (data.unknownStageBuffs == null) return true;
+        foreach (var record in data.unknownStageBuffs)
+            if (record.lifetime == YJ_UnknownEffectLifetime.NextBattle &&
+                !string.IsNullOrEmpty(record.battleKey) && record.battleKey != battleKey)
+            {
+                error = "다른 전투에 적용 중인 Unknown 효과가 남아 있습니다. 진행 저장을 확인하세요.";
+                return false;
+            }
+        foreach (var record in data.unknownStageBuffs)
+            if (record.lifetime == YJ_UnknownEffectLifetime.NextBattle && string.IsNullOrEmpty(record.battleKey))
+            {
+                record.battleKey = battleKey;
+                changed = true;
+            }
+        return true;
+    }
+
+    public static void CompleteBattle(GameSaveData data, string battleKey)
+    {
+        if (string.IsNullOrWhiteSpace(battleKey)) throw new ArgumentException("전투 노드 키가 없습니다.");
+        data.unknownStageBuffs?.RemoveAll(r => r.lifetime == YJ_UnknownEffectLifetime.NextBattle && r.battleKey == battleKey);
+        data.lastCompletedUnknownBattleKey = battleKey;
     }
 }

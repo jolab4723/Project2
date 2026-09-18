@@ -21,6 +21,7 @@ namespace Core
         public CharacterClass selectedCharacter = CharacterClass.Fighter; // 이번 게임에서 사용할 클래스
         public List<UnknownStageChoiceRecord> unknownStageChoices = new();
         public List<UnknownStageBuffRecord> unknownStageBuffs = new();
+        public string lastCompletedUnknownBattleKey; // 클리어 저장 후 포탈 이동 전 재로드를 구분한다.
     }
 
     [Serializable]
@@ -37,6 +38,8 @@ namespace Core
         public string effectKey; // nodeKey + choiceIndex + effectIndex
         public string stageId;
         public string displayName;
+        public YJ_UnknownEffectLifetime lifetime; // 기본값 ThisRun: 기존 저장과 호환.
+        public string battleKey; // NextBattle: 비어 있으면 대기, 값이 있으면 해당 전투 전용.
         // 선택 당시 수치의 복제본. 이후 SO 편집이 이미 받은 보상을 바꾸지 않는다.
         public FixedStatValue[] statEffects;
     }

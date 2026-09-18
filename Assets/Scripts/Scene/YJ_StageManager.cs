@@ -21,6 +21,8 @@ public class YJ_StageManager : MonoBehaviour
     [SerializeField] private int directSceneWaveSeed = 1234;
 
     private bool stageClear;
+    private string unknownBattleKey;
+    private bool unknownBattleCompleted;
 
     public bool StageClear => stageClear;
 
@@ -40,6 +42,7 @@ public class YJ_StageManager : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelInvoke(nameof(CompleteStage));
         if (enemySpawnManager != null)
             enemySpawnManager.WaveCompleted -= HandleWaveCompleted;
     }
@@ -96,7 +99,21 @@ public class YJ_StageManager : MonoBehaviour
 
         dataManager.LoadPassiveData();
 
-        if (!dataManager.TryLoadGameplayData())
+        unknownBattleKey = null;
+        unknownBattleCompleted = false;
+        if (!Mirror.NetworkClient.active && !Mirror.NetworkServer.active && !useDirectSceneNodeType)
+        {
+            if (!TryGetCurrentNodeType(out StageNodeType nodeType)) return false;
+            if (UsesEnemyWaves(nodeType) && stageSaveService != null && stageSaveService.HasSaveFile)
+            {
+                if (!stageSaveService.TryLoadSaveData(out StageMapSaveData map) || map == null ||
+                    string.IsNullOrWhiteSpace(map.pendingNodeId)) return false;
+                unknownBattleKey = $"{(int)map.act}:{map.mapSeed}:{map.pendingNodeId}";
+                if (!dataManager.TryPrepareUnknownBattle(unknownBattleKey, out unknownBattleCompleted)) return false;
+            }
+        }
+
+        if (!dataManager.TryLoadGameplayData(unknownBattleKey))
         {
             Log.Error("플레이어 데이터 초기화/복원에 실패하여 스테이지 시작을 중단합니다.");
             return false;
@@ -134,6 +151,13 @@ public class YJ_StageManager : MonoBehaviour
 
         if ( ! UsesEnemyWaves(currentNodeType))
             return;
+
+        // 클리어 저장 후 포탈 이동 전에 재로드했다면 전투/효과를 다시 소모하지 않는다.
+        if (unknownBattleCompleted)
+        {
+            CompleteStage();
+            return;
+        }
 
         if (enemySpawnManager == null)
             return;
@@ -215,6 +239,18 @@ public class YJ_StageManager : MonoBehaviour
     {
         if (stageClear)
             return;
+
+        if (!string.IsNullOrEmpty(unknownBattleKey) && !unknownBattleCompleted)
+        {
+            if (!dataManager.TryCompleteUnknownBattle(unknownBattleKey))
+            {
+                // 저장에 실패한 상태에서 포탈을 열지 않는다. 임시 I/O 실패는 재시도할 수 있다.
+                CancelInvoke(nameof(CompleteStage));
+                Invoke(nameof(CompleteStage), 2f);
+                return;
+            }
+            unknownBattleCompleted = true;
+        }
 
         stageClear = true;
 
