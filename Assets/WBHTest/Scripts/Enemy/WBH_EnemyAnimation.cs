@@ -33,7 +33,9 @@ public class WBH_EnemyAnimation : MonoBehaviour
     private readonly int SkillHash = Animator.StringToHash("Skill");
     private readonly int SkillIdHash = Animator.StringToHash("SkillID");
     private readonly int IsGroggyHash = Animator.StringToHash("IsGroggy");
+    private readonly int IsPhaseTransitionHash = Animator.StringToHash("IsPhaseTransition");
 
+    public bool IsSkillAniPlaying { get; private set; }
     public bool UseDieAni => useDieAni;
 
     private void Awake()
@@ -91,8 +93,10 @@ public class WBH_EnemyAnimation : MonoBehaviour
 
     public void PlaySkill(int skillId)
     {
-        if (!useAttackAni || animator == null)
+        if (!useSkillAni || animator == null)
             return;
+
+        IsSkillAniPlaying = true;
 
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetTrigger(SkillHash);
@@ -106,6 +110,20 @@ public class WBH_EnemyAnimation : MonoBehaviour
         animator.SetBool(IsGroggyHash, isGroggy);
     }
 
+    public void SetPhaseTransition(bool active)
+    {
+        if (animator == null)
+            return;
+
+        animator.SetBool(IsPhaseTransitionHash, active);
+    }
+
+    // 스킬 진행 강제 초기화
+    public void ResetSkillAniState()
+    {
+        IsSkillAniPlaying = false;
+    }
+
     // 애니메이션 이벤트
     public void OnAttackEvent()
     {
@@ -117,6 +135,9 @@ public class WBH_EnemyAnimation : MonoBehaviour
         attackEndEvent?.Invoke();
         attackEndEvent = null;
     }
-    
 
+    public void OnSkillAniEnd()
+    {
+        IsSkillAniPlaying = false;
+    }
 }
