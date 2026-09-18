@@ -109,6 +109,7 @@ public class QuestPopupBridge : MonoBehaviour
             list.Add(new KY_QuestData
             {
                 questName = GetQuestName(def),
+                objectiveTypeLabel = GetObjectiveTypeLabel(def),
                 description = GetQuestDescription(def),
                 conditions = conditions.ToArray(),
                 reward = BuildRewardText(def)
@@ -130,6 +131,23 @@ public class QuestPopupBridge : MonoBehaviour
 
     private string GetConditionDescription(QuestDefinitionSO def, int index) =>
         questLabels != null ? questLabels.GetConditionDescription(def.questId, index) : def.conditions[index].description;
+
+    /// <summary>퀘스트 유형에 따라 맞는 텍스트를 반환한다.</summary>
+    private static string GetObjectiveTypeLabel(QuestDefinitionSO def)
+    {
+        if (def == null || def.conditions == null || def.conditions.Length == 0)
+            return string.Empty;
+
+        switch (def.conditions[0].conditionType)
+        {
+            case QuestConditionType.KillEnemy:
+                return "적 처치";
+            case QuestConditionType.CollectItem:
+                return "물건 수집";
+            default:
+                return string.Empty;
+        }
+    }
 
     private string BuildRewardText(QuestDefinitionSO def)
     {
