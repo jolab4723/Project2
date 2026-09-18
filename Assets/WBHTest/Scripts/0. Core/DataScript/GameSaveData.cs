@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ItemSystem;
 
 namespace Core
@@ -18,5 +19,14 @@ namespace Core
         public ActiveSkillSaveData activeSkill = new ActiveSkillSaveData(); // 3-5
         public bool needsPlayerInitialization; // 플레이어 초기화(새 게임시 사용)
         public CharacterClass selectedCharacter = CharacterClass.Fighter; // 이번 게임에서 사용할 클래스
+        public List<UnknownStageChoiceRecord> unknownStageChoices = new();
+    }
+
+    [Serializable]
+    public class UnknownStageChoiceRecord
+    {
+        public string nodeKey; // Act + 맵 seed + 노드 ID. 새 게임은 목록 자체를 초기화한다.
+        public string stageId;
+        public int choiceIndex;
     }
 }

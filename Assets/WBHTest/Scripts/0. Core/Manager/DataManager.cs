@@ -186,14 +186,138 @@ namespace Core
                 return;
             }
 
-            var data = new GameSaveData{selectedCharacter = character};
-            data.status = BuildPlayerStatusData();
-            data.inventory = BuildInventorySaveData();
-            data.activeSkill = BuildActiveSkillSaveData();
-            // TODO : 스킬트리 데이터 세이브
-            // TODO : 스테이지 데이터 세이브
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                // 현재 런의 선택 처리 기록 등 플레이어 객체에 없는 데이터도 보존한다.
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (data == null || data.selectedCharacter != character)
+                {
+                    Debug.LogError("[DataManager] 기존 런을 확인하지 못해 저장을 중단합니다.");
+                    return;
+                }
+                data.status = BuildPlayerStatusData();
+                data.inventory = BuildInventorySaveData();
+                data.activeSkill = BuildActiveSkillSaveData();
+                data.needsPlayerInitialization = false;
+                WriteGameplayDataAtomic(path, data);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 게임플레이 저장 실패: {exception.Message}");
+            }
+        }
 
-            WriteJson(GetSavePath(GameplaySaveFileName), data);
+        /// <summary>
+        /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
+        /// 현재 단계는 확정 AddGold/None만 지원하며, 다른 효과가 섞이면 아무것도 지급하지 않는다.
+        /// </summary>
+        public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
+            int choiceIndex, out string error)
+        {
+            error = null;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active ||
+                PlayerStatManager.Instance != null && PlayerStatManager.Instance.isActiveAndEnabled)
+            {
+                error = "플레이어가 없는 싱글 Unknown 씬에서만 저장 보상을 적용할 수 있습니다.";
+                return false;
+            }
+
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (!TryApplyUnknownChoiceToData(data, nodeKey, stage, choiceIndex, out bool changed, out error))
+                    return false;
+
+                // 보상과 중복 방지 기록은 반드시 동일 파일 교체로 확정한다.
+                if (changed)
+                    WriteGameplayDataAtomic(path, data);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                error = $"Unknown 선택 저장 실패: {exception.Message}";
+                return false;
+            }
+        }
+
+        private static bool TryApplyUnknownChoiceToData(GameSaveData data, string nodeKey,
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error)
+        {
+            changed = false;
+            error = null;
+            if (data == null || data.needsPlayerInitialization || data.status == null ||
+                data.status.playerLevel < 1 || data.status.gold < 0 ||
+                (data.selectedCharacter != CharacterClass.Fighter && data.selectedCharacter != CharacterClass.Gunner))
+            {
+                error = "초기화된 런 저장 데이터가 없습니다. 정상적인 새 게임 흐름으로 진입하세요.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(nodeKey) || stage == null || string.IsNullOrWhiteSpace(stage.StageId))
+            {
+                error = "Unknown 노드 또는 이벤트 정보가 없습니다.";
+                return false;
+            }
+
+            UnknownStageChoiceRecord previous = data.unknownStageChoices?.Find(r => r != null && r.nodeKey == nodeKey);
+            if (previous != null)
+            {
+                if (previous.stageId == stage.StageId && previous.choiceIndex == choiceIndex)
+                    return true; // 지급 후 노드 완료가 실패한 재시도: 재지급하지 않는다.
+                error = "이 노드는 이미 다른 선택으로 처리되었습니다.";
+                return false;
+            }
+            if (!stage.TryGetChoice(choiceIndex, out YJ_UnknownStageChoice choice, out error))
+                return false;
+
+            long gold = data.status.gold;
+            foreach (YJ_UnknownStageEffect effect in choice.Effects)
+            {
+                if (effect.Probability != 1f ||
+                    (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold))
+                {
+                    error = "현재는 확정 크레딧 지급(AddGold)과 효과 없음(None)만 지원합니다. 지급하지 않았습니다.";
+                    return false;
+                }
+                if (effect.Type == YJ_UnknownEffectType.AddGold)
+                    gold += effect.Amount;
+                if (gold > int.MaxValue)
+                {
+                    error = "크레딧 보유 한도를 초과하여 지급하지 않았습니다.";
+                    return false;
+                }
+            }
+
+            data.status.gold = (int)gold;
+            data.unknownStageChoices ??= new List<UnknownStageChoiceRecord>();
+            data.unknownStageChoices.Add(new UnknownStageChoiceRecord
+            {
+                nodeKey = nodeKey, stageId = stage.StageId, choiceIndex = choiceIndex
+            });
+            changed = true;
+            return true;
+        }
+
+        private static void WriteGameplayDataAtomic(string path, GameSaveData data)
+        {
+            string temporaryPath = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporaryPath, JsonUtility.ToJson(data, true));
+                if (File.Exists(path))
+                    File.Replace(temporaryPath, path, path + ".bak");
+                else
+                    File.Move(temporaryPath, path);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                {
+                    try { File.Delete(temporaryPath); }
+                    catch (System.Exception exception) { Debug.LogWarning($"[DataManager] 임시 파일 정리 실패: {exception.Message}"); }
+                }
+            }
         }
 
         [ContextMenu("게임플레이 데이터 전체 로드")]

@@ -1,5 +1,4 @@
-using Core;
-using DG.Tweening;
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -7,15 +6,15 @@ public class YJ_ChoiceButton : MonoBehaviour
 {
     [SerializeField] private TMP_Text buttonTitle;
     [SerializeField] private TMP_Text buttonContent;
-    [SerializeField] private string stageSelectSceneName = "StageSelect";
-    [SerializeField] private bool completePendingStage = true;
+    private string stageId;
+    private int choiceIndex = -1;
+    private Action<string, int> onSelected;
 
-    private YJ_ChoiceButtonBox choiceButtonBox;
-    private bool transitionRequested;
-
-    private void Awake()
+    public void Initialize(string eventId, int index, Action<string, int> callback)
     {
-        choiceButtonBox = GetComponentInParent<YJ_ChoiceButtonBox>();
+        stageId = eventId;
+        choiceIndex = index;
+        onSelected = callback;
     }
 
     public void ButtonTitleSet(string str)
@@ -42,69 +41,15 @@ public class YJ_ChoiceButton : MonoBehaviour
 
     public void OnClick()
     {
-        if (transitionRequested)
+        if (!isActiveAndEnabled)
             return;
 
-        if (string.IsNullOrWhiteSpace(stageSelectSceneName))
+        if (string.IsNullOrWhiteSpace(stageId) || choiceIndex < 0 || onSelected == null)
         {
-            Log.Error("Stage Select scene name is empty.");
+            Log.Error("Unknown 선택 버튼의 이벤트 ID/번호/콜백이 연결되지 않았습니다.");
             return;
         }
 
-        SceneLoader sceneLoader = SceneLoader.Instance;
-        if (sceneLoader == null)
-        {
-            Log.Error("SceneLoader could not be found.");
-            return;
-        }
-
-        if (sceneLoader.IsLoading)
-            return;
-
-        if (choiceButtonBox == null)
-        {
-            Log.Error("YJ_ChoiceButtonBox could not be found.");
-            return;
-        }
-
-        if (choiceButtonBox.IsExitPlaying)
-            return;
-
-        if (completePendingStage && ! CompletePendingStage())
-        {
-            Log.Error("Failed to complete the pending Unknown stage node.");
-            return;
-        }
-
-        // 버튼 클릭으로 인한 효과 넣는곳
-
-        // 스테이지 셀렉트 씬으로 변경
-        TweenCallback loadScene = () =>
-        {
-            if (sceneLoader == null || sceneLoader.IsLoading)
-                return;
-
-            sceneLoader.LoadScene(stageSelectSceneName);
-        };
-
-        if (choiceButtonBox.PlayExit(this, loadScene))
-            transitionRequested = true;
-    }
-
-    private bool CompletePendingStage()
-    {
-        YJ_StageSaveService saveService =
-            FindFirstObjectByType<YJ_StageSaveService>();
-
-        if (saveService == null)
-            saveService = gameObject.AddComponent<YJ_StageSaveService>();
-
-        if (!saveService.HasSaveFile)
-        {
-            Log.Warning("Stage map save file was not found. Pending node completion was skipped.");
-            return true;
-        }
-
-        return saveService.CompletePendingNode();
+        onSelected.Invoke(stageId, choiceIndex);
     }
 }

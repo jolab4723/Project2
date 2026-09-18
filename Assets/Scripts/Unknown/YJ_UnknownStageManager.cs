@@ -16,11 +16,15 @@ public class YJ_UnknownStageManager : MonoBehaviour
     [SerializeField] private YJ_UnknownStageDatabaseSO stageDatabase;
     [SerializeField] private YJ_UnknownStageLabelDatabaseSO labelDatabase;
     [SerializeField] private YJ_StageSaveService stageSaveService;
+    [SerializeField] private string stageSelectSceneName = "StageSelect";
 
     [Header("Runtime")]
     [SerializeField] private YJ_UnknownStageDefinitionSO selectedStage;
 
     private YJ_LanguageManager languageManager;
+    private bool isProcessingChoice;
+    private string requestedNodeKey;
+    private string requestedNodeId;
 
     private void OnEnable()
     {
@@ -219,7 +223,10 @@ public class YJ_UnknownStageManager : MonoBehaviour
         BuildChoiceTexts(label, choiceCount, out List<string> titles, out List<string> descriptions);
 
         if (createButtons)
+        {
             choiceButtonBox.ButtonCreate(choiceCount);
+            choiceButtonBox.BindChoices(selectedStage.StageId, HandleChoiceSelected);
+        }
 
         choiceButtonBox.ButtonTextSet(titles, descriptions);
         choiceButtonBox.HideButtons();
@@ -227,6 +234,118 @@ public class YJ_UnknownStageManager : MonoBehaviour
             label.stageName,
             label.stageDescription,
             choiceButtonBox.PlayReveal);
+    }
+
+    private void HandleChoiceSelected(string stageId, int choiceIndex)
+    {
+        if (!isActiveAndEnabled || isProcessingChoice || selectedStage == null ||
+            choiceButtonBox == null || !choiceButtonBox.CanSelect ||
+            Core.SceneLoader.Instance != null && Core.SceneLoader.Instance.IsLoading)
+            return;
+
+        if (!string.Equals(stageId, selectedStage.StageId, System.StringComparison.Ordinal))
+        {
+            Log.Error("현재 Unknown 이벤트와 버튼의 이벤트 ID가 다릅니다.");
+            return;
+        }
+
+        isProcessingChoice = true;
+        choiceButtonBox.SetButtonsInteractable(false);
+        bool keepLocked = false;
+        try
+        {
+            Core.SceneLoader loader = Core.SceneLoader.Instance;
+            if (loader == null || string.IsNullOrWhiteSpace(stageSelectSceneName) ||
+                !Application.CanStreamedLevelBeLoaded(stageSelectSceneName))
+            {
+                Log.Error("SceneLoader 또는 StageSelect 빌드 씬 설정이 없습니다. 보상을 적용하지 않습니다.");
+                return;
+            }
+
+            YJ_ChoiceButton selectedButton = choiceButtonBox.GetChoiceButton(choiceIndex);
+            if (selectedButton == null)
+                return;
+
+            if (!selectedStage.TryGetChoice(choiceIndex, out _, out string error))
+            {
+                Log.Warning($"[Unknown] {stageId} / 선택지 {choiceIndex + 1}: {error}");
+                return;
+            }
+
+            if (!TryResolveSelectionNode(out error))
+            {
+                Log.Warning($"[Unknown] {error}");
+                return;
+            }
+            if (Core.DataManager.Instance == null)
+            {
+                Log.Error("DataManager가 없어 Unknown 선택을 저장할 수 없습니다.");
+                return;
+            }
+            if (!Core.DataManager.Instance.TryApplyUnknownStageChoice(requestedNodeKey, selectedStage, choiceIndex, out error))
+            {
+                Log.Warning($"[Unknown] {error}");
+                return;
+            }
+
+            // 지급은 이미 기록되었다. 완료 저장 실패 시 같은 선택을 재시도해도 재지급하지 않는다.
+            if (!stageSaveService.CompletePendingNode())
+            {
+                Log.Warning("[Unknown] 보상은 저장되었지만 노드 완료에 실패했습니다. 같은 선택을 다시 눌러 재시도하세요.");
+                return;
+            }
+
+            keepLocked = choiceButtonBox.PlayExit(selectedButton, () =>
+            {
+                if (loader != null && !loader.IsLoading)
+                    loader.LoadScene(stageSelectSceneName);
+                else if (loader == null)
+                {
+                    Log.Error("[Unknown] SceneLoader가 사라졌습니다. 보상 재지급 없이 이동을 재시도할 수 있습니다.");
+                    isProcessingChoice = false;
+                    choiceButtonBox.HideButtons();
+                    choiceButtonBox.PlayReveal();
+                }
+            });
+        }
+        finally
+        {
+            isProcessingChoice = keepLocked;
+            if (!keepLocked && choiceButtonBox != null)
+                choiceButtonBox.SetButtonsInteractable(true);
+        }
+    }
+
+    private bool TryResolveSelectionNode(out string error)
+    {
+        error = null;
+        FindSaveService();
+        if (stageSaveService == null || !stageSaveService.TryLoadSaveData(out StageMapSaveData map) || map?.nodes == null)
+        {
+            error = "진행 중인 스테이지 맵이 없습니다. Unknown 씬 단독 실행에서는 실제 보상을 지급하지 않습니다.";
+            return false;
+        }
+        StageNodeSaveData node = map.nodes.Find(n => n != null && n.id == map.pendingNodeId);
+        if (node != null && node.type == StageNodeType.Event && node.unknownStageId == selectedStage.StageId)
+        {
+            string key = $"{(int)map.act}:{map.mapSeed}:{node.id}";
+            if (requestedNodeKey != null && requestedNodeKey != key)
+            {
+                error = "선택 처리 도중 진행 노드가 변경되었습니다.";
+                return false;
+            }
+            requestedNodeId = node.id;
+            requestedNodeKey = key;
+            return true;
+        }
+        // 같은 씬에서 노드 완료 후 퇴장 연출만 실패한 경우의 재시도.
+        if (string.IsNullOrEmpty(map.pendingNodeId) && requestedNodeKey != null &&
+            requestedNodeKey == $"{(int)map.act}:{map.mapSeed}:{requestedNodeId}" &&
+            map.lastClearedNodeId == requestedNodeId && map.clearedNodeIds != null && map.clearedNodeIds.Contains(requestedNodeId))
+            return true;
+
+        error = "현재 이벤트와 일치하는 pending 노드가 없습니다. 보상을 적용하지 않습니다.";
+        return false;
     }
 
     private static void BuildChoiceTexts(
