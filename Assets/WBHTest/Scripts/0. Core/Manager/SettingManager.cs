@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.UI;
 using System.IO;
 
@@ -10,6 +11,17 @@ namespace Core
 
         private KY_SettingsData currentData = new KY_SettingsData();
         private string savePath;
+
+        [Header("Audio")]
+        [SerializeField] private AudioMixer audioMixer;
+        private bool audioReady;
+
+        private void Start()
+        {
+            // AudioMixer.SetFloat는 Awake/OnEnable 대신 Start 이후에 적용합니다.
+            audioReady = true;
+            ApplyMixerVolumes();
+        }
 
         // 밝기 - Unity 기본 API(Screen.brightness)는 모바일 전용이라 PC 빌드에선 못 쓴다. 화면 전체를
         // 덮는 반투명 검은 오버레이로 흉내 낸다(밝기가 낮을수록 오버레이가 진해짐 - 그래서 이 방식으로는
@@ -103,7 +115,33 @@ namespace Core
 
         void ApplyAudio()
         {
+            currentData.masterVolume = Mathf.Clamp01(currentData.masterVolume);
+            currentData.bgmVolume = Mathf.Clamp01(currentData.bgmVolume);
+            currentData.sfxVolume = Mathf.Clamp01(currentData.sfxVolume);
             AudioListener.volume = currentData.isMuted ? 0f : currentData.masterVolume;
+            if (audioReady)
+                ApplyMixerVolumes();
+        }
+
+        private void ApplyMixerVolumes()
+        {
+            if (audioMixer == null)
+            {
+                Debug.LogWarning("[SettingManager] Audio Mixer를 연결하세요. BGM/SFX 개별 음량은 적용되지 않습니다.", this);
+                return;
+            }
+
+            // 전체 음량/음소거는 AudioListener에서만 처리하여 중복 곱셈을 피합니다.
+            if (!audioMixer.SetFloat("BgmVolume", ToDecibels(currentData.bgmVolume)))
+                Debug.LogWarning("[SettingManager] 믹서의 BgmVolume 노출 파라미터를 확인하세요.", this);
+            if (!audioMixer.SetFloat("SfxVolume", ToDecibels(currentData.sfxVolume)))
+                Debug.LogWarning("[SettingManager] 믹서의 SfxVolume 노출 파라미터를 확인하세요.", this);
+        }
+
+        private static float ToDecibels(float volume)
+        {
+            volume = Mathf.Clamp01(volume);
+            return volume <= 0.0001f ? -80f : 20f * Mathf.Log10(volume);
         }
 
         void ApplyGameplay()
