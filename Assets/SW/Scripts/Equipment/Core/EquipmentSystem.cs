@@ -6,6 +6,29 @@ public class EquipmentSystem : MonoBehaviour
 {
     public event System.Action<EquippedItemInfo[]> OnEquipmentChanged;
 
+    [Tooltip("저마나 투구 효과를 플레이어별로 처리합니다. 기존 효과 콜백과 중복 실행하지 않습니다.")]
+    [SerializeField] private bool useLowManaHelmetEffect;
+
+    /// <summary>
+    /// 이 아이템을 플레이어별 저마나 투구 효과 처리에 맡길지 확인합니다.
+    /// 현재 마나를 검사하거나 버프를 적용하지는 않습니다.
+    /// </summary>
+    /// <returns>설정이 켜져 있고 지원하는 투구 효과이면 true입니다.</returns>
+    public bool UsesLowManaHelmetEffect(ItemInstance item)
+    {
+        ItemDefinitionSO definition = item?.definition;
+        if (!useLowManaHelmetEffect || definition == null)
+            return false;
+
+        if (definition.category != ItemCategory.Armor ||
+            definition.armorType != ArmorType.Helmet)
+            return false;
+
+        return definition.uniqueEffect is StatThresholdBuffUniqueEffectSO threshold &&
+            threshold.referenceStat == StatReference.CurrentManaPercent &&
+            threshold.comparisonOperator == ComparisonOperator.LessOrEqual;
+    }
+
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
 
     /// <summary>

@@ -1148,5 +1148,28 @@
     "intervalSeconds": 0.0,
     "message": "",
     "note": "실제 연결된 피격 발동 버프"
+  },
+  {
+    "uniqueEffectId": "UE_LowManaRecovery",
+    "effectType": "StatThresholdBuffUniqueEffectSO",
+    "effectName": "절전 모드",
+    "effectDescription": "현재 마나가 최대 마나의 {0}% 이하일 때 마나 재생이 {1}% 증가합니다.",
+    "coefficients": "25;30",
+    "statEffects": "mpRegenPercent:30",
+    "duration": 0.0,
+    "stackBehavior": "Ignore",
+    "maxStack": 1,
+    "triggerCondition": "",
+    "cooldownSeconds": 0.0,
+    "duplicatePolicy": "ShareCooldown",
+    "persistStackOnItem": false,
+    "referenceStat": "CurrentManaPercent",
+    "comparisonOperator": "LessOrEqual",
+    "thresholdValue": 25.0,
+    "radius": 0.0,
+    "targetEnemies": false,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "저마나 재생 보조. 최대 마나와 즉시 회복량은 변경하지 않음."
   }
 ]

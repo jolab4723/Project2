@@ -1,35 +1,35 @@
-using System.Collections.Generic;
 using ItemSystem;
+using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// P3-B 방어구 고유 효과의 PlayerContext 전환용 활성 어댑터.
-/// <para>
-/// 유물은 <see cref="PlayerRelicEffectProvider_MirrorTest"/>가 인벤토리 소유권을
-/// 책임지므로 이 컴포넌트는 장비 슬롯에 실제로 장착된 Armor만 관찰한다.
-/// </para>
-/// <para>
-/// EquipmentSystem의 단일 변경 이벤트를 기준으로 장착·해제·교체를 reconcile하고,
-/// threshold/aura의 런타임 객체와 passive 중복 수명을 이 PlayerContext 안에 둔다.
-/// Triggered 효과의 발동 판정은 ItemTriggerManager_MirrorTest가 실제 전투/상태 이벤트에서
-/// 수행하므로 여기서는 장착 시 복원과 해제 시 정리만 한다.
-/// </para>
+/// 서버에서 장착된 저마나 투구의 효과 실행 객체를 관리합니다.
+/// 마나 조건과 버프 적용은 StatThresholdRunner_MirrorTest에 맡깁니다.
+/// 장비 해제, 컴포넌트 비활성화, 서버 종료 때 기존 실행 객체를 정리합니다.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class PlayerArmorEffectProvider_MirrorTest : MonoBehaviour
+[RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext))]
+public sealed class PlayerArmorEffectProvider_MirrorTest : NetworkBehaviour
 {
     [SerializeField] private EquipmentSystem equipment;
     [SerializeField] private PlayerStatManager stats;
     [SerializeField] private PlayerHealthManager health;
     [SerializeField] private PlayerManaManager mana;
     [SerializeField] private PlayerBuffManager buffs;
-
-    private readonly HashSet<ItemInstance> activeArmorItems = new();
-    private readonly Dictionary<PassiveBuffUniqueEffectSO, int> passiveCounts = new();
-    private readonly Dictionary<ItemInstance, GameObject> runtimeObjects = new();
+    private PlayerContext owner;
+    private bool started;
+    private ItemInstance activeItem;
+    private StatThresholdBuffUniqueEffectSO activeEffect;
+    private GameObject runtimeObject;
 
     private void Awake()
     {
+        EnsureReferences();
+    }
+
+    private void EnsureReferences()
+    {
+        owner ??= GetComponent<PlayerContext>();
         equipment ??= GetComponentInChildren<EquipmentSystem>(true);
         stats ??= GetComponent<PlayerStatManager>();
         health ??= GetComponent<PlayerHealthManager>();
@@ -39,191 +39,103 @@ public sealed class PlayerArmorEffectProvider_MirrorTest : MonoBehaviour
 
     private void OnEnable()
     {
+        EnsureReferences();
         if (equipment != null)
+        {
+            equipment.OnEquipmentChanged -= HandleEquipmentChanged;
             equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        }
+        ReconcileEquipment();
     }
 
     private void Start()
     {
+        started = true;
         ReconcileEquipment();
     }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        started = true;
+        EnsureReferences();
+        if (equipment != null)
+        {
+            equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+            equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        }
+        ReconcileEquipment();
+    }
+
+    public override void OnStopServer()
+    {
+        if (equipment != null)
+            equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        StopRuntime();
+        started = false;
+        base.OnStopServer();
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] _)
+        => ReconcileEquipment();
 
     private void OnDisable()
     {
         if (equipment != null)
             equipment.OnEquipmentChanged -= HandleEquipmentChanged;
-
-        foreach (ItemInstance item in activeArmorItems)
-            Deactivate(item);
-
-        activeArmorItems.Clear();
-
-        foreach (PassiveBuffUniqueEffectSO passive in passiveCounts.Keys)
-            buffs?.RemoveBuff(passive);
-
-        passiveCounts.Clear();
-    }
-
-    private void HandleEquipmentChanged(EquippedItemInfo[] _)
-    {
-        ReconcileEquipment();
+        StopRuntime();
     }
 
     private void ReconcileEquipment()
     {
-        if (equipment == null || buffs == null)
+        EnsureReferences();
+        if (!started || !isActiveAndEnabled || !isServer) return;
+        if (owner == null || equipment == null || stats == null ||
+            mana == null || buffs == null || health == null ||
+            owner.Equipment != equipment || owner.Stats != stats ||
+            owner.Mana != mana || owner.Buffs != buffs || owner.Health != health)
+        {
+            StopRuntime();
+            Debug.LogError("[PlayerArmorEffectProvider] 같은 PlayerContext의 참조가 필요합니다.", this);
             return;
-
-        var current = new HashSet<ItemInstance>();
-        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in equipment.GetEquippedItems())
-        {
-            InventoryItem item = pair.Value;
-            if (!IsArmor(item))
-                continue;
-
-            ItemInstance instance = item.itemData;
-            if (instance?.definition?.uniqueEffect == null)
-                continue;
-
-            current.Add(instance);
-            if (!activeArmorItems.Contains(instance))
-                Activate(instance);
         }
 
-        foreach (ItemInstance previous in activeArmorItems)
-        {
-            if (!current.Contains(previous))
-                Deactivate(previous);
-        }
+        equipment.TryGetEquippedItemInstance(EquipSlotType.Helmet, out ItemInstance next);
+        if (!equipment.UsesLowManaHelmetEffect(next)) next = null;
+        var nextEffect = next?.definition?.uniqueEffect as StatThresholdBuffUniqueEffectSO;
+        if (ReferenceEquals(activeItem, next) && activeEffect == nextEffect) return;
 
-        activeArmorItems.Clear();
-        activeArmorItems.UnionWith(current);
+        StopRuntime(); // 이전 구독·효과를 먼저 종료한다.
+        if (next == null || nextEffect == null) return;
+        stats.EnsureInitialized();
+        activeItem = next;
+        activeEffect = nextEffect;
+        runtimeObject = new GameObject("LowManaHelmetEffect");
+        runtimeObject.transform.SetParent(transform, false);
+        runtimeObject.AddComponent<StatThresholdRunner_MirrorTest>()
+            .Bind(stats, health, mana, buffs, nextEffect);
     }
 
-    private void Activate(ItemInstance ownerItem)
+    /// <summary>
+    /// 이전 효과의 구독과 버프를 먼저 해제한 뒤 실행 객체를 제거합니다.
+    /// 여러 번 호출해도 이미 정리한 객체를 다시 처리하지 않습니다.
+    /// </summary>
+    private void StopRuntime()
     {
-        UniqueEffectSO effect = ownerItem?.definition?.uniqueEffect;
-        if (effect == null)
+        GameObject previous = runtimeObject;
+        // 버프 제거가 다른 이벤트를 호출해도 이전 객체를 다시 사용하지 않게 합니다.
+        runtimeObject = null;
+        activeItem = null;
+        activeEffect = null;
+        if (previous == null)
             return;
 
-        switch (effect)
-        {
-            case TriggeredBuffUniqueEffectSO triggered:
-                if (triggered.persistStackOnItem && ownerItem.persistedStackCount > 0)
-                    buffs.SetBuffStack(triggered, ownerItem.persistedStackCount);
-                break;
-
-            case PassiveBuffUniqueEffectSO passive:
-                int count = passiveCounts.TryGetValue(passive, out int current) ? current + 1 : 1;
-                passiveCounts[passive] = count;
-                if (count == 1)
-                    buffs.ApplyBuff(passive);
-                break;
-
-            case FieldAuraUniqueEffectSO aura:
-                CreateAura(ownerItem, aura);
-                break;
-
-            case StatThresholdBuffUniqueEffectSO threshold:
-                CreateThresholdRunner(ownerItem, threshold);
-                break;
-        }
-    }
-
-    private void Deactivate(ItemInstance ownerItem)
-    {
-        UniqueEffectSO effect = ownerItem?.definition?.uniqueEffect;
-        if (effect == null)
-            return;
-
-        if (effect is TriggeredBuffUniqueEffectSO triggered)
-        {
-            buffs.RemoveBuff(triggered);
-        }
-        else if (effect is PassiveBuffUniqueEffectSO passive &&
-                 passiveCounts.TryGetValue(passive, out int count))
-        {
-            if (count <= 1)
-            {
-                passiveCounts.Remove(passive);
-                buffs.RemoveBuff(passive);
-            }
-            else
-            {
-                passiveCounts[passive] = count - 1;
-            }
-        }
-
-        // Destroy는 Play Mode에서 프레임 끝에 실행되므로 threshold runner의 OnDestroy만
-        // 기다리면 장비 해제 직후 한 프레임 동안 효과가 남을 수 있다. 소유권 경계에서
-        // 먼저 제거하고 runner는 이벤트 구독만 정리하게 한다.
-        if (effect is StatThresholdBuffUniqueEffectSO threshold)
-            buffs.RemoveBuff(threshold);
-
-        if (runtimeObjects.Remove(ownerItem, out GameObject runtimeObject) && runtimeObject != null)
-            Destroy(runtimeObject);
-    }
-
-    private void CreateAura(ItemInstance ownerItem, FieldAuraUniqueEffectSO aura)
-    {
-        if (runtimeObjects.ContainsKey(ownerItem))
-            return;
-
-        GameObject zoneObject = new($"[MirrorTest Armor Aura] {aura.name}");
-        zoneObject.layer = 2;
-        zoneObject.transform.position = transform.position;
-
-        FollowTransform follow = zoneObject.AddComponent<FollowTransform>();
-        follow.SetTarget(transform);
-
-        if (Mirror.NetworkServer.active)
-        {
-            SphereCollider collider = zoneObject.AddComponent<SphereCollider>();
-            collider.isTrigger = true;
-            collider.radius = aura.radius;
-
-            Rigidbody rigidbody = zoneObject.AddComponent<Rigidbody>();
-            rigidbody.isKinematic = true;
-            rigidbody.useGravity = false;
-
-            BuffFieldZone_MirrorTest zone = zoneObject.AddComponent<BuffFieldZone_MirrorTest>();
-            zone.ConfigureRuntime(
-                aura,
-                targetEnemies: aura.targetEnemies,
-                removeOnExit: true,
-                removeWhenZoneDisabled: true);
-        }
-
-        if (aura.showAreaVisual && Mirror.NetworkClient.active)
-        {
-            AreaRingVisual ring = zoneObject.AddComponent<AreaRingVisual>();
-            ring.SetColor(aura.areaVisualColor);
-            ring.SetRadius(aura.radius);
-        }
-
-        runtimeObjects.Add(ownerItem, zoneObject);
-    }
-
-    private void CreateThresholdRunner(ItemInstance ownerItem, StatThresholdBuffUniqueEffectSO effect)
-    {
-        if (runtimeObjects.ContainsKey(ownerItem))
-            return;
-
-        GameObject runnerObject = new($"[MirrorTest Armor Threshold] {effect.name}");
-        runnerObject.transform.SetParent(transform, false);
-        runnerObject.AddComponent<StatThresholdRunner_MirrorTest>().Bind(
-            stats,
-            health,
-            mana,
-            buffs,
-            effect);
-
-        runtimeObjects.Add(ownerItem, runnerObject);
-    }
-
-    private static bool IsArmor(InventoryItem item)
-    {
-        return item?.itemData?.definition != null &&
-               item.itemData.definition.category == ItemCategory.Armor;
+        // 객체가 실제로 파괴되기 전에 이벤트 구독과 버프를 먼저 정리합니다.
+        previous.GetComponent<StatThresholdRunner_MirrorTest>()?.Unbind();
+        previous.SetActive(false);
+        if (Application.isPlaying)
+            Destroy(previous);
+        else
+            DestroyImmediate(previous);
     }
 }
