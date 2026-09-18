@@ -189,7 +189,7 @@ public static class MirrorOriginalIntegrationValidation_MirrorTest
             var authority = enemy.GetComponent<NetworkEnemyAuthority_MirrorTest>();
             var info = (WBH_EnemyInfo)Get(authority, "enemyInfo");
             enemy.GetComponent<NavMeshAgent>().enabled = true;
-            enemy.GetComponent<WBH_EnemyController>().Initialize(info, null, null, null);
+            enemy.GetComponent<WBH_EnemyController>().Initialize(info, null, null, null, null);
             var effects = enemy.GetComponent<WBH_EnemyStatusEffectController>();
             var enemyStatus = enemy.GetComponent<WBH_EnemyStatus>();
             float speed = enemyStatus.MoveSpeed;

@@ -519,6 +519,7 @@ GameObject:
   - component: {fileID: -5426887194382989782}
   - component: {fileID: 9072509643429721745}
   - component: {fileID: 634595258359326817}
+  - component: {fileID: 1968227137538448724}
   m_Layer: 10
   m_Name: Normal_Exploded_01
   m_TagString: Untagged
@@ -665,7 +666,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &4089908584023179054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1148,6 +1150,20 @@ MonoBehaviour:
   metallicBoost: 0.15
   smoothnessBoost: 0.1
   advancedEffect: {fileID: 2760348497191571063}
+--- !u!114 &1968227137538448724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3741057144801147515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &5229987633369615628
 GameObject:
   m_ObjectHideFlags: 0
