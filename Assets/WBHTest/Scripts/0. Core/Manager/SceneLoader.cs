@@ -51,6 +51,17 @@ namespace Core
         /// <summary>sceneName으로 전환한다. 이미 로딩 중이면 무시한다.</summary>
         public void LoadScene(string sceneName)
         {
+            RequestLoadScene(sceneName, null);
+        }
+
+        /// <summary>출발 씬의 첫 암전 시간만 지정한다. 로딩/도착 씬 페이드는 기본값을 유지한다.</summary>
+        public void LoadScene(string sceneName, float initialFadeOutDuration)
+        {
+            RequestLoadScene(sceneName, Mathf.Max(0f, initialFadeOutDuration));
+        }
+
+        private void RequestLoadScene(string sceneName, float? initialFadeOutDuration)
+        {
             if (IsLoading)
             {
                 Log.Warning("[SceneLoader] 이미 씬을 불러오는 중이므로 " + sceneName + " 요청을 무시합니다.");
@@ -75,10 +86,10 @@ namespace Core
                 return;
             }
 
-            StartCoroutine(LoadSceneRoutine(sceneName));
+            StartCoroutine(LoadSceneRoutine(sceneName, initialFadeOutDuration));
         }
 
-        private IEnumerator LoadSceneRoutine(string sceneName)
+        private IEnumerator LoadSceneRoutine(string sceneName, float? initialFadeOutDuration)
         {
             IsLoading = true;
             string previousSceneName = SceneManager.GetActiveScene().name;
@@ -95,7 +106,11 @@ namespace Core
 
             ResolveScreenFader();
             if (screenFader != null)
-                yield return screenFader.FadeToBlack();
+            {
+                yield return initialFadeOutDuration.HasValue
+                    ? screenFader.FadeToBlack(initialFadeOutDuration.Value)
+                    : screenFader.FadeToBlack();
+            }
 
             if (previousSceneName != LoadingSceneName)
             {

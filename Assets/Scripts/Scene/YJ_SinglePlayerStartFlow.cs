@@ -79,6 +79,7 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
 
         Debug.Log($"[YJ_SinglePlayerStartFlow] 새 게임 캐릭터: {character}", this);
 
+        KY_RunStatsTracker.Instance?.BeginRun(); // 결과창 데이터 집계용으로 추가
         loader.LoadScene(stageSelectSceneName);
     }
 }
