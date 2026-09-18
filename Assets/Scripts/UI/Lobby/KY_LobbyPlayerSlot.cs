@@ -9,6 +9,7 @@ public class KY_LobbyPlayerSlot : MonoBehaviour
     [SerializeField] private GameObject playerStateRoot;
     [SerializeField] private GameObject hostBadge;
     [SerializeField] private GameObject localPlayerFrame;
+
     [Header("텍스트")]
     [SerializeField] private TMP_Text playerNameText;
     [SerializeField] private TMP_Text characterNameText;
