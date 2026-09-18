@@ -107,10 +107,12 @@ public static class GlassRailExtraHitValidation_MirrorTest
                 effect, 9701u, created);
             EquipWeapon(context, alternate, "alternate_rifle");
             ApplyProjectileDamage(swappedProjectile, swappedCollider);
-            Check(swappedResults.Count == 1 && swappedResults[0].DamageCause == DamageCause.Direct,
-                "발사 후 다른 무기 교체에도 기존 탄 직접 피해 유지");
-            Check(context.ItemTriggers.GlassRailTriggerCount == triggerBefore,
-                "해제된 유리빛 궤도의 옛 탄은 고유효과 미발동");
+            Check(swappedResults.Count == 2,
+                "발사 후 다른 무기로 교체해도 원래 탄의 추가타 유지");
+            Check(swappedResults[0].DamageCause == DamageCause.Direct && swappedResults[1].DamageCause == DamageCause.Effect,
+                "교체 후에도 Direct와 Effect 쌍 정상 발생");
+            Check(context.ItemTriggers.GlassRailTriggerCount == triggerBefore + 1,
+                "교체된 상태에서도 유리빛 궤도 추가타 정상 발동");
             DestroyTracked(created, swappedTarget);
 
             EquipWeapon(context, glassRail, "glassrail_source_a");
@@ -126,8 +128,8 @@ public static class GlassRailExtraHitValidation_MirrorTest
                 effect, 9702u, created);
             EquipWeapon(context, glassRail, "glassrail_source_b");
             ApplyProjectileDamage(sameIdProjectile, sameIdCollider);
-            Check(sameIdResults.Count == 1 && context.ItemTriggers.GlassRailTriggerCount == triggerBefore,
-                "같은 itemId의 다른 인스턴스로 교체해도 옛 효과 미발동");
+            Check(sameIdResults.Count == 2 && context.ItemTriggers.GlassRailTriggerCount == triggerBefore + 1,
+                "같은 itemId의 다른 인스턴스로 교체해도 원래 탄의 효과 유지");
             DestroyTracked(created, sameIdTarget);
 
             EquipWeapon(context, glassRail, "glassrail_source_a");
@@ -142,11 +144,47 @@ public static class GlassRailExtraHitValidation_MirrorTest
                 projectilePrefab, context, glassRail, "glassrail_source_a", reequippedSourceGeneration,
                 effect, 9703u, created);
             UnequipWeapon(context);
-            EquipWeapon(context, glassRail, "glassrail_source_a");
             ApplyProjectileDamage(reequippedProjectile, reequippedCollider);
-            Check(reequippedResults.Count == 1 && context.ItemTriggers.GlassRailTriggerCount == triggerBefore,
-                "같은 인스턴스 해제·재장착도 장착 세대로 옛 효과 차단");
+            Check(reequippedResults.Count == 2 && context.ItemTriggers.GlassRailTriggerCount == triggerBefore + 1,
+                "무기 해제(맨손) 상태에서도 원래 탄의 효과 유지");
             DestroyTracked(created, reequippedTarget);
+
+            // 동일 인스턴스 해제 후 재장착 상태에서도 원래 탄 효과 유지
+            EquipWeapon(context, glassRail, "glassrail_source_a");
+            (GameObject reequipTarget, WBH_EnemyStatus reequipStatus, Collider reequipCollider, _) =
+                CreateEnemy(enemyPrefab, "ReequipSameInstanceActive", 1000f);
+            created.Add(reequipTarget);
+            var reequipResults = new List<WBH_DamageResult>();
+            reequipStatus.OnDamaged += reequipResults.Add;
+            triggerBefore = context.ItemTriggers.GlassRailTriggerCount;
+            NetworkEnemyProjectile_MirrorTest reequipProjectile = CreateProjectile(
+                projectilePrefab, context, glassRail, "glassrail_source_a", authority.WeaponEquipGeneration,
+                effect, 9707u, created);
+            UnequipWeapon(context);
+            EquipWeapon(context, glassRail, "glassrail_source_a");
+            ApplyProjectileDamage(reequipProjectile, reequipCollider);
+            Check(reequipResults.Count == 2 && context.ItemTriggers.GlassRailTriggerCount == triggerBefore + 1,
+                "동일 인스턴스 해제 후 재장착 상태에서도 원래 탄의 효과 유지");
+            DestroyTracked(created, reequipTarget);
+
+            // [G05 음성 검증] 일반 탄 발사 후 GlassRail을 장착해도 옛 일반 탄에는 추가타가 소급 부여되지 않아야 함
+            EquipWeapon(context, alternate, "alternate_rifle");
+            (GameObject normalTarget, WBH_EnemyStatus normalStatus, Collider normalCollider, _) =
+                CreateEnemy(enemyPrefab, "NormalShotThenEquipGlassRail", 1000f);
+            created.Add(normalTarget);
+            var normalResults = new List<WBH_DamageResult>();
+            normalStatus.OnDamaged += normalResults.Add;
+            triggerBefore = context.ItemTriggers.GlassRailTriggerCount;
+            NetworkEnemyProjectile_MirrorTest normalProjectile = CreateProjectile(
+                projectilePrefab, context, alternate, "alternate_rifle", authority.WeaponEquipGeneration,
+                null, 9706u, created);
+            EquipWeapon(context, glassRail, "glassrail_source_a");
+            ApplyProjectileDamage(normalProjectile, normalCollider);
+            Check(normalResults.Count == 1 && normalResults[0].DamageCause == DamageCause.Direct,
+                "일반 탄 발사 후 GlassRail 장착 시 Direct만 1회 발생");
+            Check(context.ItemTriggers.GlassRailTriggerCount == triggerBefore,
+                "옛 일반 탄에는 GlassRail 추가타 미발동 (소급 적용 차단)");
+            DestroyTracked(created, normalTarget);
 
             (GameObject orderTarget, WBH_EnemyStatus orderStatus, Collider orderCollider, _) =
                 CreateEnemy(enemyPrefab, "ArrivalOrder", 1000f);
@@ -168,9 +206,67 @@ public static class GlassRailExtraHitValidation_MirrorTest
                   orderResults[3].AttackId == 9704u, "서로 다른 탄의 역순 도착도 각각 Direct·Effect 처리");
             Check(context.ItemTriggers.GlassRailTriggerCount == triggerBefore + 2 &&
                   Mathf.Approximately(orderStatus.CurrentHp, 770f), "연속 탄 누락 없이 공격별 15% 추가타");
+            DestroyTracked(created, orderTarget);
+
+            // [R02-01] 동일 권한자 중첩 스코프 진입 거절 및 기존 활성 스코프 보존 검증
+            Check(!authority.TryBeginGunnerHitScope(0u, GunnerWeaponType.Rifle, effect, out _),
+                "유효하지 않은 attackId(0)의 스코프 진입 거절");
+            Check(authority.TryBeginGunnerHitScope(9710u, GunnerWeaponType.Rifle, effect, out System.IDisposable outerScope),
+                "외부 명중 스코프 A(9710u) 획득 성공");
+            Check(!authority.TryBeginGunnerHitScope(9711u, GunnerWeaponType.Shotgun, null, out System.IDisposable innerScope) && innerScope == null,
+                "동일 권한자의 중첩 명중 스코프 B(9711u) 진입 거절");
+            Check(authority.TryGetGunnerHitSource(9710u, out UniqueEffectSO effA, out GunnerWeaponType wpnA) &&
+                  effA == effect && wpnA == GunnerWeaponType.Rifle,
+                "중첩 진입 거절 후에도 기존 스코프 A의 출처 유지");
+            Check(!authority.TryGetGunnerHitSource(9711u, out _, out _),
+                "거절된 스코프 B는 출처 조회 실패");
+            outerScope.Dispose();
+            Check(!authority.TryGetGunnerHitSource(9710u, out _, out _),
+                "스코프 A 종료 후 출처 조회 실패 (정상 정리)");
+
+            // [R02-01] 서로 다른 플레이어의 동일 AttackId 독립 스코프 검증
+            GameObject player2 = UnityEngine.Object.Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+            created.Add(player2);
+            PlayerContext context2 = InitializePlayer(player2, glassRail, "glassrail_player2");
+            PlayerCombatAuthority_MirrorTest authority2 = context2.CombatAuthority;
+
+            Check(authority.TryBeginGunnerHitScope(9720u, GunnerWeaponType.Rifle, effect, out System.IDisposable p1Scope),
+                "플레이어 1 스코프(9720u) 획득");
+            Check(authority2.TryBeginGunnerHitScope(9720u, GunnerWeaponType.Rifle, null, out System.IDisposable p2Scope),
+                "플레이어 2 동일 attackId(9720u) 독립 스코프 획득");
+            Check(authority.TryGetGunnerHitSource(9720u, out UniqueEffectSO p1Eff, out _) && p1Eff == effect,
+                "플레이어 1은 자신의 효과(GlassRail) 반환");
+            Check(authority2.TryGetGunnerHitSource(9720u, out UniqueEffectSO p2Eff, out _) && p2Eff == null,
+                "플레이어 2는 자신의 효과(null) 반환");
+            p1Scope.Dispose();
+            Check(!authority.TryGetGunnerHitSource(9720u, out _, out _),
+                "플레이어 1 종료 후 플레이어 1 스코프 정리");
+            Check(authority2.TryGetGunnerHitSource(9720u, out _, out _),
+                "플레이어 1 종료 후에도 플레이어 2 스코프 독립 유지");
+            p2Scope.Dispose();
+            Check(!authority2.TryGetGunnerHitSource(9720u, out _, out _),
+                "플레이어 2 종료 후 플레이어 2 스코프 정리");
+
+            // [R02-01] 예외 발생 시 스코프 정리 및 다음 탄 정상 동작 검증
+            try
+            {
+                using (authority.BeginGunnerHitScope(9730u, GunnerWeaponType.Rifle, effect))
+                {
+                    throw new System.InvalidOperationException("Simulated exception inside hit scope");
+                }
+            }
+            catch (System.InvalidOperationException)
+            {
+                // 예외 정상 포착
+            }
+            Check(!authority.TryGetGunnerHitSource(9730u, out _, out _),
+                "예외 탈출 후에도 스코프가 정상 정리됨");
+            Check(authority.TryBeginGunnerHitScope(9731u, GunnerWeaponType.Rifle, effect, out System.IDisposable nextScope),
+                "예외 후 다음 탄의 스코프 정상 획득 가능");
+            nextScope.Dispose();
 
             Debug.Log($"[GlassRailExtraHitValidation] PASS {checks} checks. " +
-                      "실제 Gunner 탄 출처·명시적 다중 Collider·스냅샷·교체·동일 정의·재장착·역순 도착 확인.");
+                      "실제 Gunner 탄 출처·중첩 거절·다인 격리·예외 정리·명시적 다중 Collider·스냅샷·교체·동일 정의·맨손·재장착·소급 차단·역순 도착 확인.");
         }
         finally
         {

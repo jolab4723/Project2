@@ -796,8 +796,16 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         }
 
         NetworkEnemyProjectile_MirrorTest projectile = Instantiate(gunnerProjectilePrefab, origin, Quaternion.LookRotation(direction));
+        UniqueEffectSO weaponEffect = null;
+        if (context != null && context.Equipment != null &&
+            context.Equipment.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weaponInstance) &&
+            weaponInstance != null && weaponInstance.definition != null)
+        {
+            weaponEffect = weaponInstance.definition.uniqueEffect;
+        }
         projectile.InitializePlayerServer(context, pendingGunnerWeapon, pendingGunnerItemId, pendingGunnerElement,
-            direction, pendingGunnerSpeed, pendingGunnerRange, pendingGunnerAim, gunnerExplosionRadius, attackId);
+            direction, pendingGunnerSpeed, pendingGunnerRange, pendingGunnerAim, gunnerExplosionRadius, attackId,
+            weaponEffect);
         NetworkServer.Spawn(projectile.gameObject);
     }
 
@@ -830,12 +838,77 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
     public uint WeaponEquipGeneration => 1u;
 
-    public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon, out bool sourceStillEquipped)
+    private uint activeHitAttackId;
+    private GunnerWeaponType activeHitWeaponType;
+    private UniqueEffectSO activeHitUniqueEffect;
+
+    /// <summary>
+    /// 단일 동기식 투사체 명중 처리 동안만 해당 AttackId의 출처 정보를 노출한다.
+    /// 이미 다른 스코프가 활성화되어 있으면 재진입을 거절하고 false를 반환한다.
+    /// </summary>
+    public bool TryBeginGunnerHitScope(uint attackId, GunnerWeaponType weaponType, UniqueEffectSO effect, out System.IDisposable scope)
     {
+        if (attackId == 0 || activeHitAttackId != 0)
+        {
+            scope = null;
+            return false;
+        }
+
+        activeHitAttackId = attackId;
+        activeHitWeaponType = weaponType;
+        activeHitUniqueEffect = effect;
+        scope = new HitScopeDisposable(this, attackId);
+        return true;
+    }
+
+    public System.IDisposable BeginGunnerHitScope(uint attackId, GunnerWeaponType weaponType, UniqueEffectSO effect)
+    {
+        return TryBeginGunnerHitScope(attackId, weaponType, effect, out System.IDisposable scope) ? scope : null;
+    }
+
+    private sealed class HitScopeDisposable : System.IDisposable
+    {
+        private readonly PlayerCombatAuthority_MirrorTest authority;
+        private readonly uint attackId;
+        private bool disposed;
+
+        public HitScopeDisposable(PlayerCombatAuthority_MirrorTest authority, uint attackId)
+        {
+            this.authority = authority;
+            this.attackId = attackId;
+        }
+
+        public void Dispose()
+        {
+            if (disposed) return;
+            disposed = true;
+            if (authority != null && authority.activeHitAttackId == attackId)
+            {
+                authority.activeHitAttackId = 0;
+                authority.activeHitWeaponType = default;
+                authority.activeHitUniqueEffect = null;
+            }
+        }
+    }
+
+    public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon)
+    {
+        if (activeHitAttackId != 0 && activeHitAttackId == attackId)
+        {
+            sourceEffect = activeHitUniqueEffect;
+            sourceWeapon = activeHitWeaponType;
+            return true;
+        }
+
         sourceEffect = null;
         sourceWeapon = GunnerWeaponType.Rifle;
-        sourceStillEquipped = false;
         return false;
+    }
+
+    public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon, out bool sourceStillEquipped)
+    {
+        sourceStillEquipped = TryGetGunnerWeapon(out GunnerWeaponType currentWeapon, out _) && currentWeapon == activeHitWeaponType;
+        return TryGetGunnerHitSource(attackId, out sourceEffect, out sourceWeapon);
     }
 
     [Server]

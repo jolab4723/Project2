@@ -34,6 +34,21 @@ public class KY_StatusPopup : KY_PopupBase
     [Tooltip("비워두면 각 행의 이름 텍스트를 건드리지 않는다(기존 하드코딩된 텍스트 유지).")]
     public StatLabelDatabaseSO statLabels;
 
+    [Header("스탯 아이콘")]
+    [Tooltip("각 행의 자식 오브젝트를 열지 않고 이곳에서 아이콘을 지정한다.")]
+    public Sprite hpIcon;
+    public Sprite mpIcon;
+    public Sprite attackIcon;
+    public Sprite defenseIcon;
+    public Sprite moveSpeedIcon;
+    public Sprite attackSpeedIcon;
+    public Sprite critChanceIcon;
+    public Sprite critMultiplierIcon;
+    public Sprite cooldownReductionIcon;
+    public Sprite mpRegenIcon;
+    public Sprite penetrationIcon;
+    public Sprite skillRangeIcon;
+
     private KY_StatData currentData;
     private bool isDetailed = false;
 
@@ -58,6 +73,12 @@ public class KY_StatusPopup : KY_PopupBase
             statLabels = Resources.Load<StatLabelDatabaseSO>("DataFiles/CharData/ClassData/3. GeneratedAssets/StatLabelDatabase");
 
         ApplyLabels();
+        ApplyIcons();
+    }
+
+    void OnValidate()
+    {
+        ApplyIcons();
     }
 
     /// <summary>
@@ -82,6 +103,23 @@ public class KY_StatusPopup : KY_PopupBase
         mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
         penetrationRow.SetLabel(statLabels.GetLabel("pen"));
         skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));   
+    }
+
+    /// <summary>루트 인스펙터에 지정한 아이콘을 각 스탯 행에 반영한다.</summary>
+    void ApplyIcons()
+    {
+        hpRow?.SetIcon(hpIcon);
+        mpRow?.SetIcon(mpIcon);
+        attackRow?.SetIcon(attackIcon);
+        defenseRow?.SetIcon(defenseIcon);
+        moveSpeedRow?.SetIcon(moveSpeedIcon);
+        attackSpeedRow?.SetIcon(attackSpeedIcon);
+        critChanceRow?.SetIcon(critChanceIcon);
+        critMultiplierRow?.SetIcon(critMultiplierIcon);
+        cooldownReductionRow?.SetIcon(cooldownReductionIcon);
+        mpRegenRow?.SetIcon(mpRegenIcon);
+        penetrationRow?.SetIcon(penetrationIcon);
+        skillRangeRow?.SetIcon(skillRangeIcon);
     }
 
     void OnEnable()
@@ -166,8 +204,8 @@ public class KY_StatusPopup : KY_PopupBase
     }
 
     /// <summary>
-    /// PlayerStatManager의 캐릭터/장비/버프/패시브 레이어를 KY_StatData(캐릭터/장비/버프 3단)로 변환한다.
-    /// 패시브 스킬트리는 아직 UI가 구분하는 3단에 없어서 버프 몫에 합쳐 넣는다(현재는 패시브가 스텁이라 실질적으로 0).
+    /// PlayerStatManager의 캐릭터/장비/패시브/버프 레이어를 KY_StatData(4단)로 변환한다.
+    /// 화면에서는 캐릭터(흰색) → 장비(노랑) → 패시브(파랑) → 버프(초록) 순으로 보여준다.
     /// </summary>
     private static KY_StatData BuildDataFromPlayerStat(PlayerStatManager statManager)
     {
@@ -196,15 +234,15 @@ public class KY_StatusPopup : KY_PopupBase
     private static KY_StatTypeData Build(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
     {
         PlayerStat.CalcBreakdown(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     private static KY_StatTypeData BuildClamped(float characterFlat, float equipFlat, float buffFlat, float passiveFlat, float min, float max)
     {
         PlayerStat.CalcBreakdownClampedFlat(characterFlat, equipFlat, buffFlat, passiveFlat, min, max,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     void SetData(KY_StatData data)

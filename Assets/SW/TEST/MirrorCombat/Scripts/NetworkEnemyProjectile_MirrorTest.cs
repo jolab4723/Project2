@@ -58,6 +58,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private uint shotAttackId;
     private int shotSceneHandle;
     private double shotExpiresAt;
+    private UniqueEffectSO shotUniqueEffect;
     private int playerShotCollisionMask;
     private GameObject playerProjectileVisual;
     private GameObject playerImpactVisualPrefab;
@@ -153,13 +154,13 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
         float explosionRadius, uint attackId, string instanceId, uint equipGeneration, GlassRailExtraHitUniqueEffectSO effect)
     {
-        InitializePlayerServer(attackOwner, weaponType, itemId, element, moveDirection, moveSpeed, maxDistance, impactPoint, explosionRadius, attackId);
+        InitializePlayerServer(attackOwner, weaponType, itemId, element, moveDirection, moveSpeed, maxDistance, impactPoint, explosionRadius, attackId, effect);
     }
 
     [Server]
     public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
         ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
-        float explosionRadius, uint attackId)
+        float explosionRadius, uint attackId, UniqueEffectSO uniqueEffect = null)
     {
         playerShot = true;
         playerOwner = attackOwner;
@@ -168,6 +169,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         shotWeaponType = weaponType;
         shotElement = element;
         shotAttackId = attackId;
+        shotUniqueEffect = uniqueEffect;
         shotSceneHandle = SceneManager.GetActiveScene().handle;
         shotExpiresAt = NetworkTime.time + 20d;
         playerShotCollisionMask = LayerMask.GetMask("Enemy", "Wall", "Prop", "Ground") | (1 << 10);
@@ -338,10 +340,17 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             !playerShotTargets.Add(target)) return;
         // 원본 WBH_DamageRequest도 공격자 객체를 보관하므로 피해는 명중 시의 실제 Stat으로 계산된다.
         // 무기 종류·속성·속도·사거리·VFX는 발사 시 값을 유지하고, 새 피해 공식을 복제하지 않는다.
-        if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f,
-                PlayerCombatAuthority_MirrorTest.GetStatusEffectForElement(shotElement),
-                out WBH_DamageResult result, DamageCause.Direct, shotAttackId))
-            playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
+        if (playerOwner == null || playerOwner.CombatAuthority == null ||
+            !playerOwner.CombatAuthority.TryBeginGunnerHitScope(shotAttackId, shotWeaponType, shotUniqueEffect, out System.IDisposable hitScope))
+            return;
+
+        using (hitScope)
+        {
+            if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f,
+                    PlayerCombatAuthority_MirrorTest.GetStatusEffectForElement(shotElement),
+                    out WBH_DamageResult result, DamageCause.Direct, shotAttackId))
+                playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
+        }
     }
 
     private void TryBindPlayerVisual()
