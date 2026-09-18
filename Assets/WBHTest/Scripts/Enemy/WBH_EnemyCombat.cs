@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class WBH_EnemyCombat : MonoBehaviour
 {
-    [SerializeField] private WBH_EffectData bossMissileEffect;
+    [SerializeField] private WBH_EffectData missileEffect;
     [SerializeField] private Transform grabPoint;
 
     private WBH_EnemyController controller;
@@ -202,7 +202,7 @@ public class WBH_EnemyCombat : MonoBehaviour
             return;
         }
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
 
         foreach (Collider hit in hits)
         {
@@ -221,7 +221,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     // 돌진 도중 부딪히는 플레이어를 감지해서 grabbedPlayers 에 추가
     private void CheckGrabHit()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, grabCollisionRadius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+        Collider[] hits = Physics.OverlapSphere(transform.position, grabCollisionRadius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
 
         foreach (Collider hit in hits)
         {
@@ -509,7 +509,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, bossMissileEffect);
+        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, missileEffect);
     }
 
 
@@ -790,7 +790,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         areaHitTargets.Clear();
 
-        Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+        Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
 
         foreach(Collider hit in hits)
         {

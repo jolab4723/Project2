@@ -33,7 +33,16 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float TargetChangeInterval = 10f;
     private const float SpecialCooldown = 20f;
 
+    private const float BasicPatternDelay = 1f;
+    private float actionDelayTimer;
+    private bool wasActionInProgress;
+
+    private const float PatternTurnSpeed = 180f; // 패턴 간 딜레이 중 회전속도
+    private const float PatternFacingTolerance = 5f; // 패턴 실행 직전 플레이어와의 각도 보정 (순간회전)
+
     // 1페이즈 기본 패턴 관련 변수
+    private const int MaxTrackingFireCount = 2;
+    private int trackingFireCount;
     private const float FireRange = 12f;
     private const int FireBulletCount = 6;
     private const float FireInterval = 0.15f;
@@ -56,7 +65,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 페이즈 전환 패턴
     private const int TransitionRotationCount = 3;
     private const float TransitionDuration = 4f;
-    private const int TransitionBulletCount = 24;
+    private const int TransitionBulletCount = 48;
     private const float TransitionBulletRange = 15f;
 
     // 2페이즈 특수 패턴 관련 변수
@@ -67,8 +76,8 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float FlameCastRange = FlameRange - FlameRangeOffset;
     private const float FlameApproachSpeedMul = 1.5f;
     private const float FlameAngle = 60f;
-    private const float FlameDuration = 2.5f;
-    private const float FlameDamageInterval = 0.25f;
+    private const float FlameDuration = 4f;
+    private const float FlameDamageInterval = 0.5f;
     private bool isBoosted;
 
     private const float GrabRoarDuration = 1.8f;
@@ -130,14 +139,20 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
         isWaitingForSpecial = false;
         groggyState = GroggyState.None;
-        groggyTimer -= 0f;
-        owner.enemyAnimation.SetGroggy(false);
+        groggyTimer = 0f;
 
+        trackingFireCount = 0;
+        actionDelayTimer = 0f;
+        wasActionInProgress = owner.Combat.IsActionInProgress;
+
+        owner.enemyAnimation.SetGroggy(false);
         owner.SetPatternDamageBlock(false);
     }
 
     public void Tick(float deltaTime)
     {
+        bool isBasicPatternDelayActive = UpdateBasicPatternDelay(deltaTime);
+
         if (TickSpecialAftermath(deltaTime))
             return;
 
@@ -148,18 +163,25 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
             specialTimer -= deltaTime;
         }
 
-        if(!isPhaseTwo && !isPhaseTransition && owner.HealthRatio <= PhaseTwoHpRatio)
+        if (isPhaseTransition || IsActionBusy())
+            return;
+
+        if(isBasicPatternDelayActive)
+        {
+            owner.Movement.Stop();
+            RotateTowardsTarget(deltaTime);
+            return;
+        }
+
+        if (!isPhaseTwo && !isPhaseTransition && owner.HealthRatio <= PhaseTwoHpRatio)
         {
             BeginPhaseTransition();
             return;
         }
 
-        if (isPhaseTransition || owner.Combat.IsActionInProgress)
-            return;
-
         if(pendingSpecial.HasValue)
         {
-            TickPendingSpecial();
+            TickPendingSpecial(deltaTime);
             return;
         }
 
@@ -177,7 +199,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
             return;
         }
 
-        TickBasicPatterns();
+        TickBasicPatterns(deltaTime);
 
     }
 
@@ -241,13 +263,14 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         owner.enemyAnimation.PlaySkill(GroggySkillId);
     }
 
-    private void TickBasicPatterns()
+    private void TickBasicPatterns(float deltaTime)
     {
         basicPatterns.Clear();
 
         float distance = owner.Distance;
+        bool canUseTrackingFire = trackingFireCount < MaxTrackingFireCount;
 
-        if(!isPhaseTwo && distance > WideSectorRange && distance <= FireRange)
+        if(!isPhaseTwo && distance > WideSectorRange && distance <= FireRange && canUseTrackingFire)
         {
             basicPatterns.Add(BasicPattern.TrackingFire);
         }
@@ -273,6 +296,9 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
         owner.Movement.Stop();
 
+        if (!RotateTowardsTarget(deltaTime))
+            return;
+
         BasicPattern selected = basicPatterns[Random.Range(0, basicPatterns.Count)];
 
         TryStartBasicPattern(selected);
@@ -280,34 +306,44 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
     private void TryStartBasicPattern (BasicPattern selected)
     {
+        bool started = false;
+
         switch (selected)
         {
             case BasicPattern.TrackingFire:
-                if(owner.Combat.TryTrackingFire(FireBulletCount,FireInterval, FireTurnSpeed, FireRange))
+                started = owner.Combat.TryTrackingFire(FireBulletCount, FireInterval, FireTurnSpeed, FireRange);
+                if (started)
                 {
                     owner.enemyAnimation.PlaySkill(TrackingFireSkillId);
                 }
                 break;
             case BasicPattern.ShortDash:
-                if(owner.Combat.TryDashAttackWithRangeVisual(Mathf.Min(owner.Distance, ShortDashRange), ShortDashDuration, owner.DashHitRadius * 2f, ShortDashReadyDuration, BasicRangeColor))
+                started = owner.Combat.TryDashAttackWithRangeVisual(Mathf.Min(owner.Distance, ShortDashRange), ShortDashDuration, owner.DashHitRadius * 2f, ShortDashReadyDuration, BasicRangeColor);
+                if (started)
                 {
                     owner.enemyAnimation.PlaySkill(ShortDashSkillId);
                 }
                 break;
             case BasicPattern.ShortSectorAtk:
-                if(owner.Combat.TrySectorAttack(ShortSectorRange,ShortSectorAngle,ShortSectorDamageMul, hitDelay : SectorHitDelay))
+                started = owner.Combat.TrySectorAttack(ShortSectorRange, ShortSectorAngle, ShortSectorDamageMul, hitDelay: SectorHitDelay);
+                if (started)
                 {
                     SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, ShortSectorRange, ShortSectorAngle, BasicRangeColor, SectorHitDelay);
                     owner.enemyAnimation.PlaySkill(ShortSectorSkillId);
                 }
                 break;
             case BasicPattern.WideSectorAtk:
-                if (owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul, hitDelay: SectorHitDelay))
+                started = owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul, hitDelay: SectorHitDelay);
+                if (started)
                 {
                     SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, WideSectorRange, WideSectorAngle, BasicRangeColor, SectorHitDelay);
                     owner.enemyAnimation.PlaySkill(WideSectorSkillId);
                 }
                 break;
+        }
+        if(started)
+        {
+            RecordStartBasicPattern(selected);
         }
     }
 
@@ -318,12 +354,15 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
         owner.Movement.Stop();
         owner.SetPatternDamageBlock(true);
+        owner.enemyAnimation.SetPhaseTransition(true);
 
         bool started = owner.Combat.TrySpinBarrage(TransitionRotationCount, TransitionDuration, TransitionBulletCount, TransitionBulletRange, CompletePhaseTransition);
 
         if(!started)
         {
             owner.SetPatternDamageBlock(false);
+            owner.enemyAnimation.SetPhaseTransition(false);
+
             isPhaseTransition=false;
             return;
         }
@@ -333,14 +372,19 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
     private void CompletePhaseTransition()
     {
+        owner.enemyAnimation.SetPhaseTransition(false);
+
         owner.SetPatternDamageBlock(false);
         isPhaseTwo = true;
         isPhaseTransition = false;
 
         specialTimer = SpecialCooldown;
         targetChangeTimer = TargetChangeInterval;
+
+        SelectSpecialPattern(); // 페이즈 전환 직후 특수 패턴 실행
     }
 
+    // 특수패턴 선택
     private void SelectSpecialPattern()
     {
         pendingSpecial = (SpecialPattern)Random.Range(0, 4);
@@ -351,7 +395,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         }
     }
 
-    private void TickPendingSpecial()
+    private void TickPendingSpecial(float deltaTime)
     {
         bool started = false;
         int skillId = 0;
@@ -360,6 +404,9 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         {
             case SpecialPattern.GrabAndSlam:
                 owner.Movement.Stop();
+                
+                if (!RotateTowardsTarget(deltaTime))
+                    return;
 
                 started = owner.Combat.TryGrabAndSlam(owner.Target, roarDuration : GrabRoarDuration, maxDashDistance : GrabMaxDashDistance, dashDuration : GrabDashDuration, slamHitDelay : GrabSlamHitDelay, slamRecoveryDuration : GrabRecoveryDuration, collisionRadius : owner.DashHitRadius, damageMul : GrabDamageMul, indicatorColor : CannotControlRangeColor); 
 
@@ -392,6 +439,9 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 }
                 SetFlameApproachBoost(false);
                 owner.Movement.Stop();
+
+                if (!RotateTowardsTarget(deltaTime))
+                    return;
 
                 started = owner.Combat.TryFlameThrow(FlameRange, FlameAngle, FlameDuration, FlameDamageInterval);
 
@@ -428,12 +478,15 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         if (!started)
             return;
 
+        trackingFireCount = 0;
+
         owner.enemyAnimation.PlaySkill(skillId);
 
         pendingSpecial = null;
         isWaitingForSpecial = true;
     }
 
+    // 특수패턴-화염방사 시, 접근 이속 향상.
     private void SetFlameApproachBoost(bool enabled)
     {
         if (isBoosted == enabled)
@@ -443,6 +496,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         owner.Status.SetPatternMoveSpeedModifier(enabled ? FlameApproachSpeedMul : 1f);
     }
 
+    // 플레이어 수 체크 (자폭병 소환 시, 플레이어 수 * 3 만큼 소환하기 위함)
     private int GetActivePlayerCount()
     {
         T_PlayerController[] players = Object.FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -465,7 +519,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         specialTimer = 1f;
     }
 
-    // 오브젝트 일괄 초기화
+    // 패턴관련 변수 일괄 초기화
     public void Cleanup()
     {
         SetFlameApproachBoost(false);
@@ -477,8 +531,77 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         groggyState = GroggyState.None;
         groggyTimer = 0f;
 
+        trackingFireCount = 0;
+        actionDelayTimer = 0f;
+        wasActionInProgress = false;
+
         owner?.enemyAnimation?.SetGroggy(false);
+        owner?.enemyAnimation?.SetPhaseTransition(false);
         owner?.SetPatternDamageBlock(false);
     }
 
+    // 패턴간 딜레이 시간 체크. 
+    private bool UpdateBasicPatternDelay(float deltaTime)
+    {
+        bool isActionBusy = IsActionBusy();
+
+        if(isActionBusy)
+        {
+            wasActionInProgress = true;
+            return false;
+        }
+
+        if(wasActionInProgress)
+        {
+            wasActionInProgress = false;
+            actionDelayTimer = BasicPatternDelay;
+        }
+
+        if(actionDelayTimer <= 0f)
+            return false;
+
+        actionDelayTimer = Mathf.Max(0f, actionDelayTimer - deltaTime);
+        return actionDelayTimer > 0f;
+    }
+
+    private void RecordStartBasicPattern (BasicPattern pattern)
+    {
+        if(pattern == BasicPattern.TrackingFire)
+        {
+            trackingFireCount++;
+            return;
+        }
+        trackingFireCount = 0;
+    }
+
+    // 타겟을 향해 급하게 회전하는 것을 방지
+    private bool RotateTowardsTarget(float deltaTime)
+    {
+        if (owner.Target == null)
+            return false;
+
+        Vector3 dir = owner.Target.position - owner.transform.position;
+
+        dir.y = 0;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return true;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        float angle = Quaternion.Angle(owner.transform.rotation, targetRotation);
+
+        if (angle <= PatternFacingTolerance)
+            return true;
+
+        owner.transform.rotation = Quaternion.RotateTowards(owner.transform.rotation, targetRotation, PatternTurnSpeed * deltaTime);
+
+        return false;
+    }
+
+    // 패턴 코루틴 혹은 패턴 애니메이션이 실행 중 여부를 판단
+    private bool IsActionBusy()
+    {
+        return owner.Combat.IsActionInProgress || owner.enemyAnimation.IsSkillAniPlaying;
+    }
 }
