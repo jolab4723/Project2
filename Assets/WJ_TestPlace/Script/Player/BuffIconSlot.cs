@@ -23,6 +23,9 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     [SerializeField] private Color buffBorderColor = new Color(0.25f, 0.85f, 0.35f);
     [SerializeField] private Color debuffBorderColor = new Color(0.85f, 0.25f, 0.25f);
 
+    [Tooltip("장점과 대가를 함께 주는 효과(BuffDisplayKind.Tradeoff)의 테두리색.")]
+    [SerializeField] private Color tradeoffBorderColor = new Color(0.88f, 0.60f, 0.15f);
+
     private BuffInstance boundInstance;
 
     /// <summary>지금 이 슬롯 위에 마우스가 올라와 있는지(언어 변경 시 툴팁을 다시 그릴지 판단용).</summary>
@@ -48,7 +51,7 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
         }
 
         if (borderImage != null)
-            borderImage.color = IsDebuff(source) ? debuffBorderColor : buffBorderColor;
+            borderImage.color = ResolveBorderColor(source);
 
         Refresh();
     }
@@ -85,10 +88,34 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             ShowTooltip();
     }
 
-    /// <summary>스탯 효과 값이 하나라도 음수면 디버프로 취급한다(별도 디버프 플래그가 없어서 값으로 판정).</summary>
-    private static bool IsDebuff(IBuffSource source)
+    private Color ResolveBorderColor(IBuffSource source)
     {
-        return source?.StatEffects != null && source.StatEffects.Any(effect => effect.value < 0f);
+        switch (ResolveDisplayKind(source))
+        {
+            case BuffDisplayKind.Debuff: return debuffBorderColor;
+            case BuffDisplayKind.Tradeoff: return tradeoffBorderColor;
+            default: return buffBorderColor;
+        }
+    }
+
+    /// <summary>
+    /// 표시 성격을 정한다. 기획이 시트에 적어둔 값이 있으면 그대로 쓰고, Auto(미지정)일 때만
+    /// 예전처럼 스탯 값의 부호로 추정한다.
+    ///
+    /// !! 부호 추정은 오버클럭 코어처럼 장점과 대가를 함께 주는 효과를 순수 디버프와 구분하지 못한다.
+    ///    그런 효과는 시트의 displayKind에 Tradeoff를 적어야 제대로 나온다.
+    /// </summary>
+    private static BuffDisplayKind ResolveDisplayKind(IBuffSource source)
+    {
+        if (source == null)
+            return BuffDisplayKind.Buff;
+
+        if (source.DisplayKind != BuffDisplayKind.Auto)
+            return source.DisplayKind;
+
+        return source.StatEffects != null && source.StatEffects.Any(effect => effect.value < 0f)
+            ? BuffDisplayKind.Debuff
+            : BuffDisplayKind.Buff;
     }
 
     public void OnPointerEnter(PointerEventData eventData)

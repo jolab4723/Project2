@@ -178,7 +178,7 @@ namespace DataSystem
             }
         }
 
-        /// <summary>시트의 버프 컬럼들(statEffects/duration/stackBehavior/maxStack)로 BuffSpec을 만든다.</summary>
+        /// <summary>시트의 버프 컬럼들(statEffects/duration/stackBehavior/maxStack/displayKind)로 BuffSpec을 만든다.</summary>
         private static BuffSpec BuildBuffSpec(UniqueEffectTableRow row, BuffStackBehavior fallbackStack)
         {
             return new BuffSpec
@@ -187,6 +187,7 @@ namespace DataSystem
                 duration = row.duration,
                 stackBehavior = ParseEnumOrDefault(row.stackBehavior, fallbackStack, row.uniqueEffectId),
                 maxStack = row.maxStack,
+                displayKind = ParseEnumOrDefault(row.displayKind, BuffDisplayKind.Auto, row.uniqueEffectId),
             };
         }
 

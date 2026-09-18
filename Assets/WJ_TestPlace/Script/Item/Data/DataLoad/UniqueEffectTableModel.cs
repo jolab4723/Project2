@@ -46,6 +46,13 @@ namespace DataSystem
         /// <summary>stackBehavior가 Stack일 때 최대 스택. 0 이하면 무제한.</summary>
         public int maxStack;
 
+        /// <summary>
+        /// 버프 HUD 표시 성격: Auto / Buff / Debuff / Tradeoff.
+        /// 비워두면 Auto(스탯 값의 부호로 추정 - 음수가 하나라도 있으면 디버프).
+        /// 오버클럭 코어처럼 장점과 대가를 함께 주는 효과는 Tradeoff로 적는다.
+        /// </summary>
+        public string displayKind;
+
         public string triggerCondition;
 
         /// <summary>발동 후 재발동까지의 쿨타임(초). 0이면 쿨타임 없음. TriggeredBuff에서만 쓴다.</summary>

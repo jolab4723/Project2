@@ -27,6 +27,10 @@ namespace ItemSystem
         [Tooltip("stackBehavior가 Stack일 때 최대 스택 수. 0 이하면 무제한.")]
         public int maxStack = 0;
 
+        [Header("표시")]
+        [Tooltip("버프 HUD 색 구분용. Auto면 스탯 값의 부호로 추정한다(음수가 하나라도 있으면 디버프).")]
+        public BuffDisplayKind displayKind = BuffDisplayKind.Auto;
+
         public bool IsPermanent => duration <= 0f;
     }
 }
