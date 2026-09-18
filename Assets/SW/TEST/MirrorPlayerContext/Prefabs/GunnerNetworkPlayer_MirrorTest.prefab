@@ -17282,6 +17282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
+  useLowManaHelmetEffect: 1
 --- !u!114 &8866376909114551219
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24131,6 +24132,7 @@ GameObject:
   - component: {fileID: 1818644913548340300}
   - component: {fileID: 1541500590879433877}
   - component: {fileID: 3846049506183012237}
+  - component: {fileID: 6184000000000000002}
   m_Layer: 15
   m_Name: GunnerNetworkPlayer_MirrorTest
   m_TagString: Player
@@ -24730,23 +24732,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider_MirrorTest
   inventory: {fileID: 417027276181376844}
   buffs: {fileID: 6526913084456221866}
---- !u!114 &6184000000000000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4430178008348295829}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59445f4b88e3a9a40a362214edabbd0e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerArmorEffectProvider_MirrorTest
-  equipment: {fileID: 72723864390379643}
-  stats: {fileID: 2823562511156927928}
-  health: {fileID: 2139064789501050255}
-  mana: {fileID: 4155494080038671786}
-  buffs: {fileID: 6526913084456221866}
 --- !u!114 &2813188469206678755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25006,6 +24991,26 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &6184000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59445f4b88e3a9a40a362214edabbd0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerArmorEffectProvider_MirrorTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  equipment: {fileID: 72723864390379643}
+  stats: {fileID: 2823562511156927928}
+  health: {fileID: 2139064789501050255}
+  mana: {fileID: 4155494080038671786}
+  buffs: {fileID: 6526913084456221866}
 --- !u!1 &4563209726806013730
 GameObject:
   m_ObjectHideFlags: 0
