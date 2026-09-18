@@ -4904,7 +4904,7 @@ AudioSource:
   m_GameObject: {fileID: 5043653701807556891}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: -1888192918195774513, guid: cc95b5ed81c968947b7e4b377291c975, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 0d7d3928980ac5b448c9cb79420f06ec, type: 3}
   m_PlayOnAwake: 0
@@ -9312,7 +9312,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_PlayerDead
   titleSceneName: TitleScene
   deathDelay: 1
+  deathFadeOutDuration: 5
   deathScreenPrefab: {fileID: 8894719189734768699, guid: 8cc5162aab952c941bf361e0f7af3843, type: 3}
+  deathScreenFadeInDuration: 2
   deathSfx: {fileID: 8300000, guid: 2d88b010a97d454448f4f8bb32c7055a, type: 3}
   deathSfxVolume: 0.7
 --- !u!1 &8918607210474184876

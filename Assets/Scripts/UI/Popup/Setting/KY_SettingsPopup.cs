@@ -22,8 +22,10 @@ public class KY_SettingsPopup : KY_PopupBase
     public Slider masterVolumeSlider;
     [Tooltip("Sound/Pan (1)/Toggle - 음소거")]
     public Toggle muteToggle;
-    // bgmVolume/sfxVolume(Sound/Pan (3), Pan (4))은 아직 BGM/SFX를 구분해서 재생하는 시스템 자체가
-    // 없어서(오디오 믹서 등) 이번엔 연결하지 않는다 - 실제 재생 시스템이 생기면 그때 연결.
+    [Tooltip("Sound/Pan (3)/Slider - BGM 음량")]
+    public Slider bgmVolumeSlider;
+    [Tooltip("Sound/Pan (4)/Slider - SFX 음량")]
+    public Slider sfxVolumeSlider;
 
     [Header("조작")]
     public KY_RebindSlot skill1Slot;
@@ -150,8 +152,14 @@ public class KY_SettingsPopup : KY_PopupBase
         brightnessSlider.value = tempData.brightness;
 
         // 소리
-        masterVolumeSlider.value = tempData.masterVolume;
-        muteToggle.isOn = tempData.isMuted;
+        masterVolumeSlider.SetValueWithoutNotify(tempData.masterVolume);
+        muteToggle.SetIsOnWithoutNotify(tempData.isMuted);
+        if (bgmVolumeSlider != null)
+            bgmVolumeSlider.SetValueWithoutNotify(tempData.bgmVolume);
+        if (sfxVolumeSlider != null)
+            sfxVolumeSlider.SetValueWithoutNotify(tempData.sfxVolume);
+        if (bgmVolumeSlider == null || sfxVolumeSlider == null)
+            Debug.LogWarning("[KY_SettingsPopup] BGM/SFX 슬라이더 참조를 연결하세요. 미연결 항목은 저장값을 유지합니다.", this);
 
         // 품질
         for (int i = 0; i < qualityToggles.Length; i++)
@@ -222,6 +230,10 @@ public class KY_SettingsPopup : KY_PopupBase
         tempData.brightness = brightnessSlider.value;
         tempData.masterVolume = masterVolumeSlider.value;
         tempData.isMuted = muteToggle.isOn;
+        if (bgmVolumeSlider != null)
+            tempData.bgmVolume = Mathf.Clamp01(bgmVolumeSlider.value);
+        if (sfxVolumeSlider != null)
+            tempData.sfxVolume = Mathf.Clamp01(sfxVolumeSlider.value);
 
         for (int i = 0; i < qualityToggles.Length; i++)
             if (qualityToggles[i].isOn) tempData.graphicsQuality = i;
