@@ -1,6 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
-
+/// <summary>
+/// act2 보스는 1,2 페이즈로 나뉘며 1페이즈에서는 BasicPattern 만, 2페이즈에서는 SpecialCooldown 마다 SpecialPattern 을 사용한다.
+/// TrackingFire : 타겟 방향으로 회전하며 사격 / ShortDash : 타겟 방향으로 짧게 돌진 / ShortSectorAtk : 4 거리, 150도 부채꼴 범위 공격 / WideSectorAtk : 5 거리, 180도 부채꼴 범위 공격
+/// 체력이 PhaseTwoHpRatio 비율 이하라면 페이즈를 전환하며 페이즈 전환 시에는 BeginPhaseTransition() 를 실행하여 n바퀴 회전하며 일정 각도마다 탄환을 발사한다.
+/// SpecialPattern 은 항상 포효 애니메이션 후 실질적인 패턴을 수행하며 이후 그로기에 걸린다.
+/// GrabAndSlam : 가장 먼 플레이어를 향해 돌진하며 돌진 경로의 타겟을 모두 잡아 내려찍는다. / SummonSelfDestruct : 보스 주위에 플레이어 수 * 3 만큼 자폭병을 소환 / FlameThrow : 타겟을 추적한 후 부채꼴 범위 틱데미지 / 
+/// SlowPulse : 일정 범위 내 데미지 및 둔화 디버프 부여
+/// </summary>
 public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 {
     private enum BasicPattern
@@ -90,7 +97,9 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float SlowPulseDamageMul = 0.3f;
     private const float SlowDuration = 5f;
     private const float SlowMul = 0.5f;
-    private const float SlowPulseDelay =0.5f;
+    private const float SlowPulseStartDelay = 1.9f; // roar 애니메이션 > attack3 로 전환되는 시점
+    private const float SlowPulseHitDelay = 27f / 30f; // attack3 애니메이션 클립 기준 계산(30프레임)
+    private const float SlowPulseRecoveryDuration = 2f - SlowPulseHitDelay;
 
     // 특수 패턴 이후 그로기 관련 변수
     private const float GroggyDuration = 4f;
@@ -465,12 +474,8 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
 
                 Vector3 pulseCenter = owner.transform.position;
 
-                started = owner.Combat.TryAreaDamageAndStatus(pulseCenter, SlowPulseRange, SlowPulseDamageMul, slow, hitDelay: SlowPulseDelay);
-
-                if(started)
-                {
-                    SkillRangeVisual.ShowSector(pulseCenter, owner.transform.forward, SlowPulseRange, 360f, DebuffRangeColor, SlowPulseDelay);
-                }
+                started = owner.Combat.TryAreaDamageAndStatus(pulseCenter, SlowPulseRange, SlowPulseDamageMul, slow, startDelay: SlowPulseStartDelay, hitDelay: SlowPulseHitDelay, SlowPulseRecoveryDuration,
+                                                              onStarted: () => { SkillRangeVisual.ShowSector(pulseCenter, owner.transform.forward, SlowPulseRange, 360f, DebuffRangeColor, SlowPulseHitDelay); });
 
                 skillId = SlowPulseSkillId;
                 break;
