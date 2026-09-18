@@ -17,7 +17,27 @@ MonoBehaviour:
   choiceNumber: 2
   backgroundImage: {fileID: 21300000, guid: cc8e9881603aecd409693da00262b4ba, type: 3}
   choices:
-  - effects: []
+  - effects:
+    - type: 1
+      probability: 1
+      lifetime: 0
+      statEffects:
+      - statType: 12
+        value: 5
+      healthPercent: 0
+      amount: 1
+      item: {fileID: 0}
+      rarity: 0
+      destination: 0
+    - type: 3
+      probability: 1
+      lifetime: 0
+      statEffects: []
+      healthPercent: 5
+      amount: 1
+      item: {fileID: 0}
+      rarity: 0
+      destination: 0
   - effects:
     - type: 2
       probability: 1

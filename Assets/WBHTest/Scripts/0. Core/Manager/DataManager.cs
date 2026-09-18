@@ -210,7 +210,7 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확정 AddGold/None, 이번 런 지속 스탯, 최대 체력 비례 회복을 지원한다.
+        /// 확정 AddGold/None, 이번 런 지속 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
@@ -283,10 +283,11 @@ namespace Core
                 if (effect.Probability != 1f ||
                     (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
                      effect.Type != YJ_UnknownEffectType.ModifyStats &&
-                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent) ||
+                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
+                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent) ||
                     (effect.Type == YJ_UnknownEffectType.ModifyStats && effect.Lifetime != YJ_UnknownEffectLifetime.ThisRun))
                 {
-                    error = "현재는 확정 크레딧 지급, 효과 없음, 이번 런 지속 스탯, 즉시 회복만 지원합니다. 선택 전체를 적용하지 않았습니다.";
+                    error = "현재는 확정 크레딧 지급, 효과 없음, 이번 런 지속 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
                     return false;
                 }
                 if (effect.Type == YJ_UnknownEffectType.ModifyStats)
@@ -305,18 +306,28 @@ namespace Core
                 }
                 if (effect.Type == YJ_UnknownEffectType.AddGold)
                     gold += effect.Amount;
-                if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent)
+                if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent ||
+                    effect.Type == YJ_UnknownEffectType.DamageMaxHealthPercent)
                 {
                     if (float.IsNaN(health) || float.IsInfinity(health) || health <= 0f)
                     {
-                        error = "회복 가능한 생존 상태의 저장 체력이 없습니다.";
+                        error = "체력 효과를 적용할 수 있는 생존 상태의 저장 체력이 없습니다.";
                         return false;
                     }
                     if (!TryGetUnknownMaxHealth(data, newBuffs, out float maxHealth, out error))
                         return false;
-                    // 실제 Heal과 동일하게 회복량을 올림한다. 선택 전체 성공 전에는 저장값을 바꾸지 않는다.
-                    double healed = health + System.Math.Ceiling((double)maxHealth * effect.HealthPercent / 100d);
-                    health = (float)System.Math.Min(maxHealth, healed);
+                    double amount = (double)maxHealth * effect.HealthPercent / 100d;
+                    if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent)
+                    {
+                        // 실제 Heal과 동일하게 회복량을 올림한다.
+                        health = (float)System.Math.Min(maxHealth, health + System.Math.Ceiling(amount));
+                    }
+                    else
+                    {
+                        // 실제 TakeDamage처럼 버림하되 이벤트 피해는 체력 1을 보장한다.
+                        // 사망/부활 이벤트를 발생시키거나 부활 횟수를 소모하지 않는다.
+                        health = (float)System.Math.Max(1d, health - System.Math.Floor(amount));
+                    }
                 }
                 if (gold > int.MaxValue)
                 {
@@ -351,7 +362,7 @@ namespace Core
             if (levels == null || passive == null || passive.CurrentProfile == null ||
                 passive.GetDefinition(PassiveSkillId.MaxHealth) == null || database == null)
             {
-                error = "회복 계산에 필요한 캐릭터, 패시브 프로필 또는 아이템 데이터가 준비되지 않았습니다.";
+                error = "체력 효과 계산에 필요한 캐릭터, 패시브 프로필 또는 아이템 데이터가 준비되지 않았습니다.";
                 return false;
             }
 
@@ -400,7 +411,7 @@ namespace Core
                     foreach (var stat in conditional.StatEffects)
                         if (stat.statType == StatType.healthFlat || stat.statType == StatType.healthPercent)
                         {
-                            error = "조건부 최대 체력 효과가 있어 저장 데이터만으로 회복량을 확정할 수 없습니다.";
+                            error = "조건부 최대 체력 효과가 있어 저장 데이터만으로 체력 변화량을 확정할 수 없습니다.";
                             return false;
                         }
                 }
