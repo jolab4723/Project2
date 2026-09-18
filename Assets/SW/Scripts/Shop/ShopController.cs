@@ -11,6 +11,13 @@ public class ShopController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI logText;
     [SerializeField] private InventoryController inventoryController;
     [SerializeField] private InventoryItemUISpawner itemUISpawner;
+
+    [Header("할인 표시")]
+    [Tooltip("상점 강화 패시브로 할인이 걸려 있을 때만 켜지는 라벨(ShopSaleLabel).")]
+    [SerializeField] private GameObject saleLabel;
+
+    [Tooltip("할인율 숫자를 넣을 텍스트. 비워두면 saleLabel에서 찾는다.")]
+    [SerializeField] private TextMeshProUGUI saleLabelText;
     public InventoryGrid ShopGrid => shopGrid;
     public InventoryGrid PlayerGrid => playerGrid;
     public InventoryController BoundPlayer => inventoryController;
@@ -26,6 +33,42 @@ public class ShopController : MonoBehaviour
             BindPlayer(inventoryController);
         else if (playerWallet != null)
             tradeService = new ShopTradeService(playerWallet, stockService);
+    }
+
+    /// <summary>
+    /// 상점을 열 때마다(ShopPopup 활성화) 할인 표시를 다시 계산한다.
+    /// 캠프 사이에 패시브를 새로 해금하고 돌아올 수 있어서 여는 시점마다 확인해야 한다.
+    /// </summary>
+    private void OnEnable()
+    {
+        RefreshSaleLabel();
+    }
+
+    /// <summary>
+    /// 상점 강화 패시브 할인이 걸려 있을 때만 라벨을 켜고, 실제 할인율을 문구에 넣는다.
+    ///
+    /// !! 퍼센트 숫자를 씬에 박아두지 않는다 - 패시브 수치(PassiveSkillDatabase의 valuesPerLevel)를
+    ///    나중에 조정하면 라벨만 옛 값으로 남아 거짓말을 하게 된다. 항상 ShopPricing에서 읽어 온다.
+    /// </summary>
+    private void RefreshSaleLabel()
+    {
+        if (saleLabel == null)
+            return;
+
+        float ratio = ShopPricing.DiscountRatio;
+        bool hasDiscount = ratio > 0f;
+
+        saleLabel.SetActive(hasDiscount);
+
+        if (!hasDiscount)
+            return;
+
+        if (saleLabelText == null)
+            saleLabelText = saleLabel.GetComponent<TextMeshProUGUI>()
+                            ?? saleLabel.GetComponentInChildren<TextMeshProUGUI>(true);
+
+        if (saleLabelText != null)
+            saleLabelText.text = $"- {Mathf.RoundToInt(ratio * 100f)}%";
     }
 
     public bool BindPlayer(InventoryController owner)
@@ -54,6 +97,14 @@ public class ShopController : MonoBehaviour
         if (stock == null) return false;
         stockService = stock;
         return BindPlayer(owner);
+    }
+
+    /// <summary>이 instanceId가 지금 상점 재고에 올라와 있는지. 툴팁이 할인가 표시 여부를 판단할 때 쓴다.</summary>
+    public bool IsInStock(string instanceId)
+    {
+        return stockService != null &&
+               !string.IsNullOrWhiteSpace(instanceId) &&
+               stockService.TryGetEntry(instanceId, out _);
     }
 
     public void UnbindPlayer(InventoryController owner)
