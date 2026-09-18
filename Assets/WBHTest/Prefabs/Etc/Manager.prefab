@@ -192,6 +192,9 @@ MonoBehaviour:
   - enemyDef: {fileID: 11400000, guid: 101b67b2f5ac4b240bb664af1d8da129, type: 2}
     prefab: {fileID: 7390368169253506753, guid: 37ec74448642db34fbc910d3a6b7d21f, type: 3}
     poolSize: 2
+  - enemyDef: {fileID: 11400000, guid: 2496a1d744cdd2e4b8720e9868a0a660, type: 2}
+    prefab: {fileID: 8563215236915382762, guid: 51770f3e1bf7e7b49871b9bc069c6b31, type: 3}
+    poolSize: 2
 --- !u!114 &7740657695786710182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,7 +208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemySpawnManager
   defaultWaveSet: {fileID: 0}
-  spawnAreas: []
+  spawnArea: {fileID: 0}
   player: {fileID: 0}
   enemyDataProvider: {fileID: 8478993714791160529}
   statContext:

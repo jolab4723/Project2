@@ -58,7 +58,9 @@ public class WBH_EnemyMovement : MonoBehaviour
         if (!CanControl)
             return;
 
-        if ((destination - lastDestination).sqrMagnitude < 0.01f)
+        bool isSameDestination = (destination - lastDestination).sqrMagnitude < 0.01f;
+
+        if (isSameDestination && !agent.isStopped && agent.hasPath)
             return;
 
         lastDestination = destination;
