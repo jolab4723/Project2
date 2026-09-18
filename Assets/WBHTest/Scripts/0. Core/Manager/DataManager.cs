@@ -210,7 +210,8 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 현재 단계는 확정 AddGold/None만 지원하며, 다른 효과가 섞이면 아무것도 지급하지 않는다.
+        /// 확정 AddGold/None, 이번 런 지속 스탯, 최대 체력 비례 회복을 지원한다.
+        /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
             int choiceIndex, out string error)
@@ -270,18 +271,53 @@ namespace Core
             }
             if (!stage.TryGetChoice(choiceIndex, out YJ_UnknownStageChoice choice, out error))
                 return false;
+            if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out error))
+                return false;
 
             long gold = data.status.gold;
-            foreach (YJ_UnknownStageEffect effect in choice.Effects)
+            float health = data.status.currentHealth;
+            var newBuffs = new List<UnknownStageBuffRecord>();
+            for (int i = 0; i < choice.Effects.Count; i++)
             {
+                YJ_UnknownStageEffect effect = choice.Effects[i];
                 if (effect.Probability != 1f ||
-                    (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold))
+                    (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
+                     effect.Type != YJ_UnknownEffectType.ModifyStats &&
+                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent) ||
+                    (effect.Type == YJ_UnknownEffectType.ModifyStats && effect.Lifetime != YJ_UnknownEffectLifetime.ThisRun))
                 {
-                    error = "현재는 확정 크레딧 지급(AddGold)과 효과 없음(None)만 지원합니다. 지급하지 않았습니다.";
+                    error = "현재는 확정 크레딧 지급, 효과 없음, 이번 런 지속 스탯, 즉시 회복만 지원합니다. 선택 전체를 적용하지 않았습니다.";
                     return false;
+                }
+                if (effect.Type == YJ_UnknownEffectType.ModifyStats)
+                {
+                    string effectKey = $"{nodeKey}:{choiceIndex}:{i}";
+                    if (data.unknownStageBuffs != null && data.unknownStageBuffs.Exists(b => b.effectKey == effectKey))
+                    {
+                        error = "Unknown 보상 기록과 지속 효과 기록이 일치하지 않습니다.";
+                        return false;
+                    }
+                    newBuffs.Add(new UnknownStageBuffRecord
+                    {
+                        effectKey = effectKey, stageId = stage.StageId, displayName = stage.StageName,
+                        statEffects = YJ_UnknownRunBuffSource.CopyStats(effect.StatEffects)
+                    });
                 }
                 if (effect.Type == YJ_UnknownEffectType.AddGold)
                     gold += effect.Amount;
+                if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent)
+                {
+                    if (float.IsNaN(health) || float.IsInfinity(health) || health <= 0f)
+                    {
+                        error = "회복 가능한 생존 상태의 저장 체력이 없습니다.";
+                        return false;
+                    }
+                    if (!TryGetUnknownMaxHealth(data, newBuffs, out float maxHealth, out error))
+                        return false;
+                    // 실제 Heal과 동일하게 회복량을 올림한다. 선택 전체 성공 전에는 저장값을 바꾸지 않는다.
+                    double healed = health + System.Math.Ceiling((double)maxHealth * effect.HealthPercent / 100d);
+                    health = (float)System.Math.Min(maxHealth, healed);
+                }
                 if (gold > int.MaxValue)
                 {
                     error = "크레딧 보유 한도를 초과하여 지급하지 않았습니다.";
@@ -290,6 +326,9 @@ namespace Core
             }
 
             data.status.gold = (int)gold;
+            data.status.currentHealth = health;
+            data.unknownStageBuffs ??= new List<UnknownStageBuffRecord>();
+            data.unknownStageBuffs.AddRange(newBuffs);
             data.unknownStageChoices ??= new List<UnknownStageChoiceRecord>();
             data.unknownStageChoices.Add(new UnknownStageChoiceRecord
             {
@@ -297,6 +336,105 @@ namespace Core
             });
             changed = true;
             return true;
+        }
+
+        private static bool TryGetUnknownMaxHealth(GameSaveData data,
+            List<UnknownStageBuffRecord> pendingBuffs, out float maxHealth, out string error)
+        {
+            maxHealth = 0f;
+            error = null;
+            // 실제 스테이지에 사용하는 Resources 캐릭터 프리팹의 레벨 데이터가 원본이다.
+            var prefab = Resources.Load<GameObject>("Prefabs/Character/Player/" + data.selectedCharacter);
+            var levels = prefab != null ? prefab.GetComponent<PlayerLevelManager>() : null;
+            var passive = PassiveSkillManager.Instance;
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (levels == null || passive == null || passive.CurrentProfile == null ||
+                passive.GetDefinition(PassiveSkillId.MaxHealth) == null || database == null)
+            {
+                error = "회복 계산에 필요한 캐릭터, 패시브 프로필 또는 아이템 데이터가 준비되지 않았습니다.";
+                return false;
+            }
+
+            StatSet character = StatSet.Zero;
+            foreach (var stat in levels.GetStatsForLevel(data.status.playerLevel))
+                StatSetMapper.AddStat(ref character, stat.Key, stat.Value);
+            if (character.maxHealthFlat <= 0f)
+            {
+                error = "캐릭터의 기본 최대 체력을 조회하지 못했습니다.";
+                return false;
+            }
+
+            StatSet equipment = StatSet.Zero;
+            var tracker = new BuffTracker(); // 런타임 플레이어/인벤토리를 변경하지 않는 독립 계산용.
+            var slots = new HashSet<EquipSlotType>();
+            foreach (var saved in data.inventory?.items ?? new List<ItemSaveData>())
+            {
+                var definition = saved != null ? database.GetById(saved.itemId) : null;
+                if (definition == null)
+                {
+                    error = "저장 아이템의 원본이 없어 최대 체력을 계산할 수 없습니다.";
+                    return false;
+                }
+                if (saved.isEquipped)
+                {
+                    if (!slots.Add(saved.equippedSlotType) || !EquipSlotRules.CanEquipTo(definition, saved.equippedSlotType))
+                    {
+                        error = "저장된 장비 슬롯이 중복되었거나 장착할 수 없는 아이템입니다.";
+                        return false;
+                    }
+                    if (saved.equippedSlotType != EquipSlotType.Potion)
+                        equipment += PlayerEquipManager.ToStatSet(CreateSavedItem(saved, definition));
+                }
+                if (!saved.isEquipped && definition.category != ItemCategory.Relic)
+                    continue;
+                // OnEquip을 호출하면 전역 버프/오브젝트가 변경되므로 순수 BuffTracker API만 재사용한다.
+                if (definition.uniqueEffect is PassiveBuffUniqueEffectSO always)
+                    tracker.ApplyBuff(always);
+                else if (definition.uniqueEffect is TriggeredBuffUniqueEffectSO triggered)
+                {
+                    if (triggered.persistStackOnItem && saved.persistedStackCount > 0)
+                        tracker.SetStack(triggered, saved.persistedStackCount);
+                }
+                else if (definition.uniqueEffect is IBuffSource conditional && conditional.StatEffects != null)
+                {
+                    foreach (var stat in conditional.StatEffects)
+                        if (stat.statType == StatType.healthFlat || stat.statType == StatType.healthPercent)
+                        {
+                            error = "조건부 최대 체력 효과가 있어 저장 데이터만으로 회복량을 확정할 수 없습니다.";
+                            return false;
+                        }
+                }
+            }
+            StatSet buffs = tracker.GetStatSet();
+            if (data.unknownStageBuffs != null)
+                foreach (var record in data.unknownStageBuffs)
+                    foreach (var stat in record.statEffects)
+                        StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
+            // 앞선 효과로 추가된 최대 체력도 뒤의 회복량에 반영한다.
+            foreach (var record in pendingBuffs)
+                foreach (var stat in record.statEffects)
+                    StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
+
+            var calculated = new PlayerStat();
+            calculated.Recalculate(character, equipment, buffs, passive.GetStatSet());
+            maxHealth = calculated.maxHealth;
+            if (float.IsNaN(maxHealth) || float.IsInfinity(maxHealth) || maxHealth <= 0f)
+            {
+                error = "계산한 최대 체력이 유효하지 않습니다.";
+                return false;
+            }
+            return true;
+        }
+
+        private static ItemInstance CreateSavedItem(ItemSaveData saved, ItemDefinitionSO definition)
+        {
+            return new ItemInstance
+            {
+                instanceId = saved.instanceId, definition = definition,
+                rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>(),
+                rolledElement = saved.rolledElement, upgradeLevel = saved.upgradeLevel,
+                persistedStackCount = saved.persistedStackCount
+            };
         }
 
         private static void WriteGameplayDataAtomic(string path, GameSaveData data)
@@ -384,6 +522,14 @@ namespace Core
             var stat = stats.EnsureInitialized();
             stat.currentLevel = data.status.playerLevel;
             stat.currentExp = data.status.playerExp;
+
+            // 최대 체력/마나 및 장비 복원에서 스탯을 조회하기 전에 런 보상을 복원한다.
+            // 새 게임의 빈 목록은 이전 런의 이벤트 버프만 제거한다.
+            if (!YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string buffError))
+            {
+                Debug.LogError($"[DataManager] {buffError}");
+                return false;
+            }
 
             // 장비 복원 과정에서 스탯을 조회할 수 있으므로 먼저 계산합니다.
             stats.Recalculate();
@@ -610,13 +756,7 @@ namespace Core
                 if (definition == null)
                     continue; // GetById가 이미 경고를 남김
 
-                var itemInstance = new ItemInstance();
-                itemInstance.instanceId = saved.instanceId;
-                itemInstance.definition = definition;
-                itemInstance.rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>();
-                itemInstance.rolledElement = saved.rolledElement;
-                itemInstance.upgradeLevel = saved.upgradeLevel;
-                itemInstance.persistedStackCount = saved.persistedStackCount;
+                var itemInstance = CreateSavedItem(saved, definition);
 
                 var invItem = new InventoryItem(itemInstance);
                 invItem.isRotated = saved.isRotated;

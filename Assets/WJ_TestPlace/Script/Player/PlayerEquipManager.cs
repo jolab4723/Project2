@@ -106,7 +106,7 @@ public class PlayerEquipManager : MonoBehaviour, IStatSetProvider
     }
 
     /// <summary>메인 옵션(강화 적용됨) + 서브 옵션(속성 보너스 포함)을 전부 StatSet에 더한다.</summary>
-    private static StatSet ToStatSet(ItemInstance itemData)
+    public static StatSet ToStatSet(ItemInstance itemData)
     {
         StatSet result = StatSet.Zero;
 

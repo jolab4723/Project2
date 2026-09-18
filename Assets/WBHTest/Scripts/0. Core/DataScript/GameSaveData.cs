@@ -20,6 +20,7 @@ namespace Core
         public bool needsPlayerInitialization; // 플레이어 초기화(새 게임시 사용)
         public CharacterClass selectedCharacter = CharacterClass.Fighter; // 이번 게임에서 사용할 클래스
         public List<UnknownStageChoiceRecord> unknownStageChoices = new();
+        public List<UnknownStageBuffRecord> unknownStageBuffs = new();
     }
 
     [Serializable]
@@ -28,5 +29,15 @@ namespace Core
         public string nodeKey; // Act + 맵 seed + 노드 ID. 새 게임은 목록 자체를 초기화한다.
         public string stageId;
         public int choiceIndex;
+    }
+
+    [Serializable]
+    public class UnknownStageBuffRecord
+    {
+        public string effectKey; // nodeKey + choiceIndex + effectIndex
+        public string stageId;
+        public string displayName;
+        // 선택 당시 수치의 복제본. 이후 SO 편집이 이미 받은 보상을 바꾸지 않는다.
+        public FixedStatValue[] statEffects;
     }
 }
