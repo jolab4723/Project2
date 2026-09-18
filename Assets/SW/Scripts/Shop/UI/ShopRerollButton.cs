@@ -1,5 +1,6 @@
 using Core;
 using ItemSystem;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,18 @@ public sealed class ShopRerollButton : MonoBehaviour
     [Header("리롤 규칙")]
     [SerializeField, Min(0)] private int baseFreeRerollCount = 1;
     [SerializeField, Min(0)] private int paidRerollCost = 100;
+
+    [Header("표시")]
+    [Tooltip("비용 + '리롤' 문구를 함께 그리는 텍스트. 고정 문구가 섞여 있어 UILabelText가 아니라 이 스크립트가 채운다.")]
+    [SerializeField] private TMP_Text costText;
+
+    [Tooltip("남은 무료 리롤 횟수 텍스트.")]
+    [SerializeField] private TMP_Text countText;
+
+    [Tooltip("고정 문구 다국어 테이블. 비워두면 Resources의 공용 DB를 자동으로 찾아 쓴다.")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
+    private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
 
     private int usedFreeRerollCount;
 
@@ -51,18 +64,61 @@ public sealed class ShopRerollButton : MonoBehaviour
 
         if (shopController == null)
             shopController = GetComponentInParent<ShopController>() ?? ShopController.Instance;
+
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>(UiLabelResourcePath);
     }
 
     private void OnEnable()
     {
         if (button != null)
             button.onClick.AddListener(HandleRerollClicked);
+
+        // 상점을 다시 열 때마다 최신 상태로 그린다(패시브 해금으로 무료 횟수가 늘었을 수 있다).
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+
+        RefreshView();
     }
 
     private void OnDisable()
     {
         if (button != null)
             button.onClick.RemoveListener(HandleRerollClicked);
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _) => RefreshView();
+
+    /// <summary>
+    /// 비용/남은 횟수 표시를 현재 상태로 다시 그린다.
+    ///
+    /// !! 비용 텍스트는 숫자와 "리롤" 문구가 섞여 있어 UILabelText(고정 문구 전용)를 쓸 수 없다.
+    ///    UILabelText는 언어가 바뀔 때마다 DB 문구로 텍스트를 통째로 덮어써서 런타임 값이 날아간다.
+    ///    대신 포맷 문자열 하나를 받아 여기서 조립한다 - 언어별로 숫자와 문구의 어순도 바꿀 수 있다.
+    /// </summary>
+    private void RefreshView()
+    {
+        if (costText != null)
+        {
+            costText.text = IsFree
+                ? GetLabel("shop_ui.reroll_free", "무료 리롤")
+                : string.Format(GetLabel("shop_ui.reroll_cost_format", "<color=#FFEB04>{0}</color> 리롤"), paidRerollCost);
+        }
+
+        if (countText != null)
+            countText.text = string.Format(GetLabel("shop_ui.reroll_count_format", "[ {0} ]"), RemainingFreeRerolls);
+    }
+
+    private string GetLabel(string key, string fallback)
+    {
+        if (uiLabels == null)
+            return fallback;
+
+        string value = uiLabels.GetLabel(key);
+        return string.IsNullOrEmpty(value) || value == key ? fallback : value;
     }
 
     private void HandleRerollClicked()
@@ -89,6 +145,7 @@ public sealed class ShopRerollButton : MonoBehaviour
             }
 
             usedFreeRerollCount++;
+            RefreshView();
             string msg = $"상점 상품을 새로고침했습니다. (남은 무료: {RemainingFreeRerolls}회)";
             shopController?.SetLogMessage(msg);
             return;
@@ -116,6 +173,7 @@ public sealed class ShopRerollButton : MonoBehaviour
             return;
         }
 
+        RefreshView();
         string paidMsg = $"{paidRerollCost}골드를 지불하고 상점 상품을 새로고침했습니다.";
         shopController?.SetLogMessage(paidMsg);
     }

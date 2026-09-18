@@ -250,9 +250,7 @@ public class TooltipUI : MonoBehaviour
         bool hasDescription = ApplyItemDescription(definition);
 
         if (itemPriceText != null)
-        {
-            itemPriceText.text = definition.sellPrice.ToString("N0");
-        }
+            itemPriceText.text = BuildPriceText(itemData, definition);
 
         if (itemSizeText != null)
         {
@@ -410,6 +408,35 @@ public class TooltipUI : MonoBehaviour
         }
 
         return effect.EffectDescription;
+    }
+
+    /// <summary>취소선으로 지워지는 정가 색.</summary>
+    private const string OriginalPriceColor = "#808080";
+
+    /// <summary>할인 적용된 실제 결제가 색. 리롤 비용 표시와 같은 노랑을 쓴다.</summary>
+    private const string DiscountedPriceColor = "#FFEB04";
+
+    /// <summary>
+    /// 가격 문구를 만든다. 상점 재고에 올라와 있고 할인이 걸려 있으면
+    /// "정가(취소선) 할인가" 두 값을 함께 보여주고, 그 외에는 정가 하나만 보여준다.
+    ///
+    /// !! 인벤토리에 이미 들어온 아이템에는 할인가를 쓰지 않는다 - 그 값에 다시 살 수 있는 것처럼 오해된다.
+    /// </summary>
+    private static string BuildPriceText(ItemInstance itemData, ItemDefinitionSO definition)
+    {
+        int original = definition.sellPrice;
+
+        if (!ShopPricing.IsShopItem(itemData))
+            return original.ToString("N0");
+
+        int discounted = ShopPricing.GetBuyPrice(definition);
+
+        // 할인이 없거나(패시브 미해금) 올림 때문에 값이 같아지면 굳이 두 번 보여주지 않는다.
+        if (discounted >= original)
+            return original.ToString("N0");
+
+        return $"<s><color={OriginalPriceColor}>{original:N0}</color></s> " +
+               $"<color={DiscountedPriceColor}>{discounted:N0}</color>";
     }
 
     private void ApplyColor(ItemInstance itemData)

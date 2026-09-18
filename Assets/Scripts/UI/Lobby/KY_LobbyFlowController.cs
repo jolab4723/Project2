@@ -7,6 +7,7 @@ public class KY_LobbyFlowController : MonoBehaviour
     [Header("패널")]
     [SerializeField] private GameObject characterSelectionPanel;
     [SerializeField] private GameObject multiplayerLobbyPanel;
+
     [Header("화면 컨트롤러")]
     [SerializeField] private KY_CharacterSelectionController characterSelectionController;
     [SerializeField] private KY_MultiplayerLobbyController multiplayerLobbyController;
