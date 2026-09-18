@@ -1042,6 +1042,7 @@ GameObject:
   - component: {fileID: 3782006741066805893}
   - component: {fileID: 8921874906585930509}
   - component: {fileID: 8455667395802180815}
+  - component: {fileID: -2467015901774684575}
   m_Layer: 10
   m_Name: Normal_Melee_01
   m_TagString: Untagged
@@ -1149,7 +1150,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &-4878034140046804760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1646,6 +1648,20 @@ MonoBehaviour:
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &-2467015901774684575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0

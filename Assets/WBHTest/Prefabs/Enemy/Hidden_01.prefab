@@ -494,6 +494,7 @@ GameObject:
   - component: {fileID: 7757329787646148024}
   - component: {fileID: 5994299511490144775}
   - component: {fileID: 6073355952399879043}
+  - component: {fileID: 3046649213058389308}
   m_Layer: 10
   m_Name: Hidden_01
   m_TagString: Untagged
@@ -641,7 +642,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &1725755232086921467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -792,6 +794,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &5994299511490144775
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1075,6 +1079,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
+--- !u!114 &3046649213058389308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3739265698496582589}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &4015147346351100969
 GameObject:
   m_ObjectHideFlags: 0
