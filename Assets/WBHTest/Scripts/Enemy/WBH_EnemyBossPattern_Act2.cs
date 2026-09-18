@@ -38,7 +38,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 페이즈 및 패턴 관련 변수
     private const float PhaseTwoHpRatio = 0.5f;
     private const float TargetChangeInterval = 10f;
-    private const float SpecialCooldown = 20f;
+    private const float SpecialCooldown = 15f;
 
     private const float BasicPatternDelay = 1f;
     private float actionDelayTimer;

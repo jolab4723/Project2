@@ -413,7 +413,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
     private void FireProjectile()
     {
-        Vector3 dir = (pattern.Target.position - pattern.FirePoint.position).normalized;
+        Vector3 dir = GetFlatFireDirection();
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1);
 
