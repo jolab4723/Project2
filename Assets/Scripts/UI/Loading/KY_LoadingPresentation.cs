@@ -7,6 +7,9 @@ using UnityEngine.UI;
 /// </summary>
 public class KY_LoadingPresentation : MonoBehaviour
 {
+    // 로딩 씬이 다시 열려도 직전 팁을 기억해 연속 표시를 막는다.
+    private static int lastShownEntryIndex = -1;
+
     [Header("표시 대상")]
     [SerializeField] private Image loadingImage;
     [SerializeField] private TMP_Text titleText;
@@ -45,6 +48,7 @@ public class KY_LoadingPresentation : MonoBehaviour
         index = Mathf.Clamp(index, 0, KY_LoadingTipDatabase.Count - 1);
         currentEntryIndex = index;
         KY_LoadingTipDatabase.Entry entry = KY_LoadingTipDatabase.Get(index);
+        lastShownEntryIndex = index;
         Sprite image = Resources.Load<Sprite>(entry.ImageResourcePath);
 
         if (loadingImage != null)
@@ -62,6 +66,13 @@ public class KY_LoadingPresentation : MonoBehaviour
 
     private int GetRandomEntryIndex()
     {
-        return UnityEngine.Random.Range(0, KY_LoadingTipDatabase.Count);
+        int count = KY_LoadingTipDatabase.Count;
+        if (count <= 1 || lastShownEntryIndex < 0 || lastShownEntryIndex >= count)
+            return UnityEngine.Random.Range(0, count);
+
+        // 직전 번호 하나를 제외한 개수만큼만 먼저 무작위로 뽑는다.
+        int index = UnityEngine.Random.Range(0, count - 1);
+        // 직전 번호 이상이면 한 칸 건너뛰어 그 번호가 다시 선택되지 않게 한다.
+        return index >= lastShownEntryIndex ? index + 1 : index;
     }
 }

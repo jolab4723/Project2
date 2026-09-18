@@ -12,6 +12,7 @@ public class KY_QuestConditionData
 public class KY_QuestData
 {
     public string questName;
+    public string objectiveTypeLabel;
     public string description;
     public KY_QuestConditionData[] conditions;
     public string reward;
