@@ -210,7 +210,7 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확정 AddGold/None, 이번 런 지속 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
+        /// 확정 크레딧 지급/지불/전액 손실, None, 이번 런 지속 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
@@ -282,12 +282,13 @@ namespace Core
                 YJ_UnknownStageEffect effect = choice.Effects[i];
                 if (effect.Probability != 1f ||
                     (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
+                     effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
                      effect.Type != YJ_UnknownEffectType.ModifyStats &&
                      effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
                      effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent) ||
                     (effect.Type == YJ_UnknownEffectType.ModifyStats && effect.Lifetime != YJ_UnknownEffectLifetime.ThisRun))
                 {
-                    error = "현재는 확정 크레딧 지급, 효과 없음, 이번 런 지속 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
+                    error = "현재는 확정 크레딧 지급/지불/전액 손실, 효과 없음, 이번 런 지속 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
                     return false;
                 }
                 if (effect.Type == YJ_UnknownEffectType.ModifyStats)
@@ -306,6 +307,17 @@ namespace Core
                 }
                 if (effect.Type == YJ_UnknownEffectType.AddGold)
                     gold += effect.Amount;
+                else if (effect.Type == YJ_UnknownEffectType.SpendGold)
+                {
+                    if (gold < effect.Amount)
+                    {
+                        error = $"크레딧이 부족합니다. 필요: {effect.Amount}, 보유: {gold}. 선택 전체를 적용하지 않았습니다.";
+                        return false;
+                    }
+                    gold -= effect.Amount;
+                }
+                else if (effect.Type == YJ_UnknownEffectType.LoseAllGold)
+                    gold = 0; // 잔액이 0이어도 정상 완료. 영구 프로필 크레딧은 변경하지 않는다.
                 if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent ||
                     effect.Type == YJ_UnknownEffectType.DamageMaxHealthPercent)
                 {
