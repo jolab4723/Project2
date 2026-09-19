@@ -40,6 +40,7 @@ public class KY_ConfirmDialog : KY_PopupBase
         }
 
         Open();
+        GetComponent<KY_CurtainEffect>()?.Open();
     }
 
     private void OnYesClicked()
