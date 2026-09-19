@@ -14,6 +14,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
     private Animator animator;
     WBH_EnemyMovement movement;
     WBH_EnemyCombat combat;
+    WBH_EnemyEffect effect;
 
     public const int DashSkillId = 1;
     public const int ShootBurstSkillId = 2;
@@ -43,6 +44,7 @@ public class WBH_EnemyAnimation : MonoBehaviour
         animator = GetComponent<Animator>();
         movement = GetComponent<WBH_EnemyMovement>();
         combat = GetComponent<WBH_EnemyCombat>();
+        effect = GetComponent<WBH_EnemyEffect>();
     }
 
     private void Update()
@@ -124,6 +126,23 @@ public class WBH_EnemyAnimation : MonoBehaviour
         IsSkillAniPlaying = false;
     }
 
+    private bool TryGetEffectCue(int cueValue, out WBH_EnemyEffectCue cue)
+    {
+        cue = WBH_EnemyEffectCue.None;
+
+        if (!Enum.IsDefined(typeof(WBH_EnemyEffectCue), cueValue))
+        {
+            Log.Warning($"{name} : 정의되지 않은 EnemyEffectCue 입니다. value = {cueValue}");
+            return false;
+        }
+        cue = (WBH_EnemyEffectCue)cueValue;
+
+        if(cue == WBH_EnemyEffectCue.None)
+            return false;
+
+        return true;
+    }
+
     // 애니메이션 이벤트
     public void OnAttackEvent()
     {
@@ -139,5 +158,24 @@ public class WBH_EnemyAnimation : MonoBehaviour
     public void OnSkillAniEnd()
     {
         IsSkillAniPlaying = false;
+    }
+
+    public void OnPlayEffect(int cueValue)
+    {
+        if (!TryGetEffectCue(cueValue, out WBH_EnemyEffectCue cue))
+            return;
+
+        effect?.PlayEffect(cue, Vector3.one);
+    }
+
+    public void OnPlaySfx(AnimationEvent animationEvent)
+    {
+        if (animationEvent == null)
+            return;
+
+        if (!TryGetEffectCue(animationEvent.intParameter, out WBH_EnemyEffectCue cue))
+            return;
+
+        effect?.ScheduleSfx(cue, animator, animationEvent);
     }
 }

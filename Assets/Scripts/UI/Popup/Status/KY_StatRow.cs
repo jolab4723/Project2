@@ -9,7 +9,8 @@ public class KY_StatRow : MonoBehaviour
     public TextMeshProUGUI totalValueText;
     public TextMeshProUGUI detailValueText;
 
-    private Image iconImage;
+    [Tooltip("이 행의 아이콘 이미지. 비워두면 자식 중 이름이 \"Icon\"인 Image를 찾아 쓴다(구버전 행 호환).")]
+    [SerializeField] private Image iconImage;
 
     private const string ValueFormat = "0.##";
     private const string IntegerFormat = "0";
@@ -47,7 +48,14 @@ public class KY_StatRow : MonoBehaviour
             nameText.text = label;
     }
 
-    /// <summary>행 안의 Icon 이미지를 찾아 스프라이트를 적용한다.</summary>
+    /// <summary>
+    /// 이 행의 아이콘 스프라이트를 적용한다.
+    ///
+    /// !! 예전엔 자식 중 이름이 정확히 "Icon"인 Image를 찾는 방식뿐이었다. 그래서 UI 재작업으로
+    ///    오브젝트 이름을 바꾸면(예: img_Icon) 아이콘을 못 찾고 **아무 경고 없이 조용히 넘어가서**,
+    ///    에디터에서 손으로 넣어둔 스프라이트가 그대로 남아 정상처럼 보였다. 지금은 인스펙터에
+    ///    직접 등록하는 것을 기본으로 하고, 비어 있을 때만 예전 이름 검색으로 폴백한다.
+    /// </summary>
     public void SetIcon(Sprite icon)
     {
         if (icon == null)
@@ -66,8 +74,13 @@ public class KY_StatRow : MonoBehaviour
             }
         }
 
-        if (iconImage != null)
-            iconImage.sprite = icon;
+        if (iconImage == null)
+        {
+            Debug.LogWarning($"[KY_StatRow] '{name}'에 아이콘 이미지가 없습니다. 인스펙터의 Icon Image에 연결해주세요.", this);
+            return;
+        }
+
+        iconImage.sprite = icon;
     }
 
     public void UpdateMode(KY_StatTypeData data, bool isDetailed)

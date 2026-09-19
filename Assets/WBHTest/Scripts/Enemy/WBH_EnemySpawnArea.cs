@@ -36,10 +36,11 @@ public class WBH_EnemySpawnArea : MonoBehaviour
                            Func<Vector3, Transform> findClosestPlayer,
                            WBH_FloatTextPoolManager damagePool,
                            WBH_HighEnemyHpbarView eliteView,
-                           PlayerWallet playerWallet)
+                           PlayerWallet playerWallet,
+                           YJ_SfxPlayer sfxPlayer)
     {
         this.findClosestPlayer = findClosestPlayer;
-        enemySpawner.Initialize(spawnManager, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet);
+        enemySpawner.Initialize(spawnManager, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet, sfxPlayer);
     }
 
     public bool TryGetSpawnPoint(int index, out Transform point)

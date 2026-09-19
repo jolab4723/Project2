@@ -413,7 +413,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
     private void FireProjectile()
     {
-        Vector3 dir = (pattern.Target.position - pattern.FirePoint.position).normalized;
+        Vector3 dir = GetFlatFireDirection();
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1);
 
@@ -772,21 +772,27 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 원형 범위 데미지 + 상태이상
-    public bool TryAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float hitDelay = 0.5f, float recoveryDuration = 0.4f)
+    public bool TryAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float startDelay, float hitDelay = 0.5f, float recoveryDuration = 0.4f, System.Action onStarted = null)
     {
         if(IsActionInProgress)
             return false;
 
         BeginAction();
 
-        StartCoroutine(CoAreaDamageAndStatus(center, radius, damageMul, statusEffect, hitDelay, recoveryDuration));
+        StartCoroutine(CoAreaDamageAndStatus(center, radius, damageMul, statusEffect, startDelay, hitDelay, recoveryDuration, onStarted));
 
         return true;
     }
 
-    private IEnumerator CoAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float hitDelay, float recoveryDuration)
+    private IEnumerator CoAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float startDelay, float hitDelay = 0.5f, float recoveryDuration = 0.4f, System.Action onStarted = null)
     {
-        yield return new WaitForSeconds(hitDelay);
+        if(startDelay > 0f)
+            yield return new WaitForSeconds(startDelay);
+
+        onStarted?.Invoke(); // 포효 후 Attack3 가 시작되는 시점에 인디케이터 표시
+
+        if (hitDelay > 0f)
+            yield return new WaitForSeconds(hitDelay);
 
         areaHitTargets.Clear();
 
@@ -804,7 +810,8 @@ public class WBH_EnemyCombat : MonoBehaviour
             player.AddStatusEffect(statusEffect);
         }
 
-        yield return new WaitForSeconds(recoveryDuration);
+        if(recoveryDuration > 0f)
+            yield return new WaitForSeconds(recoveryDuration);
 
         EndAction();
     }

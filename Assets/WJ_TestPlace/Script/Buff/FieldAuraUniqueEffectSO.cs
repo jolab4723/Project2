@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ItemSystem
 {
@@ -108,5 +108,6 @@ namespace ItemSystem
         public BuffStackBehavior StackBehavior => buffSpec != null ? buffSpec.stackBehavior : BuffStackBehavior.Ignore;
         public int MaxStack => buffSpec != null ? buffSpec.maxStack : 0;
         public bool IsPermanent => buffSpec == null || buffSpec.IsPermanent;
+        public BuffDisplayKind DisplayKind => buffSpec != null ? buffSpec.displayKind : BuffDisplayKind.Auto;
     }
 }

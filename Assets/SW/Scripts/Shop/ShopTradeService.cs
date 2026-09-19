@@ -46,7 +46,8 @@ internal sealed class ShopTradeService
             return TradeResult.NoSpace;
         }
 
-        int price = item.itemData.definition.sellPrice;
+        // 상점 강화 패시브 할인을 적용한 값. 툴팁 표시도 같은 ShopPricing을 쓴다.
+        int price = ShopPricing.GetBuyPrice(item.itemData.definition);
 
         if (!playerWallet.TrySpendGold(price))
             return TradeResult.NotEnoughGold;

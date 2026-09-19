@@ -10454,6 +10454,7 @@ GameObject:
   - component: {fileID: 8173771098670772904}
   - component: {fileID: 2259114766307225492}
   - component: {fileID: 3370519809924486276}
+  - component: {fileID: -6627660707190376356}
   m_Layer: 10
   m_Name: Boss_Act_02
   m_TagString: Untagged
@@ -11133,6 +11134,20 @@ MonoBehaviour:
   maxSpawnRadius: 6
   navMeshSearchRadius: 2
   positionSearchAttempts: 4
+--- !u!114 &-6627660707190376356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011109773374467229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &9017157100209275396
 GameObject:
   m_ObjectHideFlags: 0

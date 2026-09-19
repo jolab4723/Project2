@@ -753,6 +753,10 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public int MaxStack => maxStack;
         public bool IsPermanent => isPermanent;
 
+        // 스냅샷에는 표시 성격을 싣지 않는다. Auto면 표시하는 쪽이 스탯 값의 부호로 추정해서
+        // 이 필드가 생기기 전과 똑같이 동작한다.
+        public BuffDisplayKind DisplayKind => BuffDisplayKind.Auto;
+
         public SnapshotBuffSource(BuffSnapshot snapshot)
         {
             displayName = snapshot.displayName;

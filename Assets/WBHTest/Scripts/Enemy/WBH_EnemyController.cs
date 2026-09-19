@@ -26,6 +26,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBH_EnemyGradeVisual gradeVisual;
     private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyInfo info;
+    private WBH_EnemyEffect effect;
 
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
     private bool isDying;
@@ -47,6 +48,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
         bossDeathView = GetComponent<WBH_EnemyBossDeathView>();
         gradeVisual = GetComponent<WBH_EnemyGradeVisual>();
+        effect = GetComponent<WBH_EnemyEffect>();
     }
 
     private void OnEnable()
@@ -62,7 +64,8 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     public void Initialize(WBH_EnemyInfo info,
                            WBH_EnemyPoolManager poolManager,
                            WBH_EffectSpawner effectSpawner,
-                           WBH_ProjectileSpawner projectileSpawner)
+                           WBH_ProjectileSpawner projectileSpawner,
+                           YJ_SfxPlayer sfxPlayer)
     {
         this.info = info;
         this.poolManager = poolManager;
@@ -77,6 +80,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         status.Initialize(info);
         movement.Initialize(info);
+        effect.Initialize(effectSpawner, sfxPlayer);
         combat.Initialize(info, projectileSpawner);
         enemyAnimation.Initialize();
         pattern.Initialize(this, effectSpawner, projectileSpawner);

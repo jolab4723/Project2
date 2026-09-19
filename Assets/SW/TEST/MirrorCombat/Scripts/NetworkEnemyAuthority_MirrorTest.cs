@@ -214,7 +214,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         }
 
         ResolveSharedSpawners();
-        controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner); // @!@
+        controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner, YJ_SfxPlayer.Instance); // @!@
         //InitializeLocalEffectSpawner(); @!@
         // Gameplay effects do not require a visual spawner on the server.
         originalStatusEffectsReady = GetComponent<WBH_EnemyStatusEffectController>() != null;
