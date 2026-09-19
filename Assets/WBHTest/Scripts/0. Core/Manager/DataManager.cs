@@ -256,11 +256,11 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확률 효과, 크레딧/지정·무작위 장비, None, 런/다음 전투 스탯, 회복/비치명 피해를 지원한다.
+        /// 확률 효과, 크레딧/아이템 지급·폐기, None, 런/다음 전투 스탯, 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
-            int choiceIndex, out string error)
+            int choiceIndex, out string error, IReadOnlyList<string> discardedItemIds = null)
         {
             error = null;
             if (Mirror.NetworkClient.active || Mirror.NetworkServer.active ||
@@ -274,7 +274,7 @@ namespace Core
             {
                 string path = GetSavePath(GameplaySaveFileName);
                 GameSaveData data = ReadJson<GameSaveData>(path);
-                if (!TryApplyUnknownChoiceToData(data, nodeKey, stage, choiceIndex, out bool changed, out error))
+                if (!TryApplyUnknownChoiceToData(data, nodeKey, stage, choiceIndex, out bool changed, out error, discardedItemIds))
                     return false;
 
                 // 보상과 중복 방지 기록은 반드시 동일 파일 교체로 확정한다.
@@ -290,7 +290,8 @@ namespace Core
         }
 
         private static bool TryApplyUnknownChoiceToData(GameSaveData data, string nodeKey,
-            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error)
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error,
+            IReadOnlyList<string> discardedItemIds = null)
         {
             // 같은 맵/노드/선택은 저장 실패나 공간 부족 후에도 같은 결과를 낸다.
             // ItemDataCreator의 기존 옵션 생성기를 쓰되 다른 시스템의 Random에는 영향을 주지 않는다.
@@ -300,7 +301,7 @@ namespace Core
                 byte[] hash = GetUnknownRewardHash($"{nodeKey}|{stage?.StageId}|{choiceIndex}");
                 int seed = hash[0] | hash[1] << 8 | hash[2] << 16 | hash[3] << 24;
                 UnityEngine.Random.InitState(seed);
-                return TryApplyUnknownChoiceCore(data, nodeKey, stage, choiceIndex, out changed, out error);
+                return TryApplyUnknownChoiceCore(data, nodeKey, stage, choiceIndex, out changed, out error, discardedItemIds);
             }
             finally { UnityEngine.Random.state = state; }
         }
@@ -312,7 +313,8 @@ namespace Core
         }
 
         private static bool TryApplyUnknownChoiceCore(GameSaveData data, string nodeKey,
-            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error)
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error,
+            IReadOnlyList<string> discardedItemIds)
         {
             changed = false;
             error = null;
@@ -349,12 +351,20 @@ namespace Core
                     effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
                     effect.Type != YJ_UnknownEffectType.ModifyStats && effect.Type != YJ_UnknownEffectType.GrantItem &&
                     effect.Type != YJ_UnknownEffectType.GrantRandomEquipment &&
+                    effect.Type != YJ_UnknownEffectType.DiscardSelectedItems &&
+                    effect.Type != YJ_UnknownEffectType.DiscardRandomItems &&
                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent)
                 {
                     error = "미지원 효과가 포함되어 선택 전체를 적용하지 않았습니다.";
                     return false;
                 }
+            }
+            if (!TryGetUnknownDiscardCount(choice, out int required, out error)) return false;
+            if ((discardedItemIds?.Count ?? 0) != required)
+            {
+                error = $"폐기할 아이템을 정확히 {required}개 선택해야 합니다.";
+                return false;
             }
 
             long gold = data.status.gold;
@@ -371,6 +381,13 @@ namespace Core
                 if (effect.Probability <= 0f ||
                     effect.Probability < 1f && UnityEngine.Random.value >= effect.Probability)
                     continue; // 미당첨도 아래에서 선택 완료 기록을 저장한다.
+
+                if ((effect.Type == YJ_UnknownEffectType.DiscardSelectedItems ||
+                     effect.Type == YJ_UnknownEffectType.DiscardRandomItems) &&
+                    !TryDiscardUnknownItems(rewardInventory ?? data.inventory, effect.Amount,
+                        effect.Type == YJ_UnknownEffectType.DiscardSelectedItems ? discardedItemIds : null,
+                        out rewardInventory, out error))
+                    return false;
 
                 if (effect.Type == YJ_UnknownEffectType.GrantItem ||
                     effect.Type == YJ_UnknownEffectType.GrantRandomEquipment)
@@ -454,6 +471,101 @@ namespace Core
                 nodeKey = nodeKey, stageId = stage.StageId, choiceIndex = choiceIndex
             });
             changed = true;
+            return true;
+        }
+
+        // UI에는 독립적인 저장 스냅샷만 전달한다. 확정 시 파일을 다시 읽고 ID/수량을 재검증한다.
+        public bool TryGetUnknownDiscardOptions(string nodeKey, YJ_UnknownStageDefinitionSO stage, int choiceIndex,
+            out List<ItemSaveData> items, out int required, out bool completed, out string error)
+        {
+            items = null; required = 0; completed = false; error = null;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || stage == null || string.IsNullOrWhiteSpace(nodeKey))
+            {
+                error = "싱글 Unknown 선택 정보가 필요합니다.";
+                return false;
+            }
+            try
+            {
+                var data = ReadJson<GameSaveData>(GetSavePath(GameplaySaveFileName));
+                if (data == null || data.needsPlayerInitialization)
+                {
+                    error = "초기화된 런 저장 데이터가 없습니다.";
+                    return false;
+                }
+                var record = data.unknownStageChoices?.Find(r => r != null && r.nodeKey == nodeKey);
+                if (record != null)
+                {
+                    completed = record.stageId == stage.StageId && record.choiceIndex == choiceIndex;
+                    if (!completed) error = "이미 다른 선택으로 완료된 노드입니다.";
+                    return completed;
+                }
+                if (!stage.TryGetChoice(choiceIndex, out var choice, out error) ||
+                    !TryGetUnknownDiscardCount(choice, out required, out error) ||
+                    !TryGetUnknownBackpack(data.inventory, out items, out error)) return false;
+                if (items.Count >= required) return true;
+                error = $"가방 아이템이 부족합니다. 필요: {required}, 보유: {items.Count}.";
+                return false;
+            }
+            catch (System.Exception exception) { error = $"폐기 목록 조회 실패: {exception.Message}"; return false; }
+        }
+
+        private static bool TryGetUnknownDiscardCount(YJ_UnknownStageChoice choice, out int required, out string error)
+        {
+            required = 0; error = null;
+            foreach (var effect in choice.Effects)
+            {
+                if (effect.Type != YJ_UnknownEffectType.DiscardSelectedItems) continue;
+                if (required != 0 || effect.Probability != 1f)
+                {
+                    error = "직접 선택 폐기는 한 선택지에 확정 효과 하나만 설정할 수 있습니다.";
+                    return false;
+                }
+                required = effect.Amount;
+            }
+            return true;
+        }
+
+        private static bool TryGetUnknownBackpack(InventorySaveData inventory, out List<ItemSaveData> items, out string error)
+        {
+            items = new List<ItemSaveData>(); error = null;
+            var ids = new HashSet<string>();
+            if (inventory?.items == null) { error = "인벤토리 저장 데이터가 없습니다."; return false; }
+            foreach (var item in inventory.items)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.instanceId) || !ids.Add(item.instanceId))
+                { error = "인벤토리 아이템 ID가 누락되거나 중복되었습니다."; return false; }
+                if (!item.isEquipped) items.Add(item);
+            }
+            items.Sort((a, b) => string.CompareOrdinal(a.instanceId, b.instanceId));
+            return true;
+        }
+
+        private static bool TryDiscardUnknownItems(InventorySaveData inventory, int amount,
+            IReadOnlyList<string> selectedIds, out InventorySaveData result, out string error)
+        {
+            result = null;
+            if (!TryGetUnknownBackpack(inventory, out var candidates, out error)) return false;
+            if (amount <= 0 || candidates.Count < amount)
+            { error = $"가방 아이템이 부족합니다. 필요: {amount}, 보유: {candidates.Count}."; return false; }
+            var removed = new HashSet<string>();
+            if (selectedIds != null)
+            {
+                if (selectedIds.Count != amount) { error = "폐기 수량이 일치하지 않습니다."; return false; }
+                foreach (string id in selectedIds)
+                    if (string.IsNullOrWhiteSpace(id) || !removed.Add(id) || !candidates.Exists(item => item.instanceId == id))
+                    { error = "폐기 대상이 중복되었거나 더 이상 가방에 없습니다. 다시 선택하세요."; return false; }
+            }
+            else
+            {
+                for (int i = 0; i < amount; i++)
+                {
+                    int index = UnityEngine.Random.Range(0, candidates.Count);
+                    removed.Add(candidates[index].instanceId);
+                    candidates.RemoveAt(index);
+                }
+            }
+            result = new InventorySaveData { gridWidth = inventory.gridWidth, gridHeight = inventory.gridHeight,
+                items = inventory.items.FindAll(item => !removed.Contains(item.instanceId)) };
             return true;
         }
 

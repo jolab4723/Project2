@@ -25,6 +25,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
     private bool isProcessingChoice;
     private string requestedNodeKey;
     private string requestedNodeId;
+    private YJ_UnknownDiscardPanel discardPanel;
 
     private void OnEnable()
     {
@@ -33,6 +34,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelDiscardSelection();
         UnbindLanguageManager();
     }
 
@@ -77,6 +79,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void HandleLanguageChanged(GameLanguage _)
     {
+        CancelDiscardSelection();
         if (selectedStage != null && labelDatabase != null)
             ApplySelectedStage(false);
     }
@@ -237,6 +240,9 @@ public class YJ_UnknownStageManager : MonoBehaviour
     }
 
     private void HandleChoiceSelected(string stageId, int choiceIndex)
+        => HandleChoiceSelected(stageId, choiceIndex, null);
+
+    private void HandleChoiceSelected(string stageId, int choiceIndex, List<string> discardedItemIds)
     {
         if (!isActiveAndEnabled || isProcessingChoice || selectedStage == null ||
             choiceButtonBox == null || !choiceButtonBox.CanSelect ||
@@ -266,7 +272,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
             if (selectedButton == null)
                 return;
 
-            if (!selectedStage.TryGetChoice(choiceIndex, out _, out string error))
+            if (!selectedStage.TryGetChoice(choiceIndex, out var choice, out string error))
             {
                 Log.Warning($"[Unknown] {stageId} / 선택지 {choiceIndex + 1}: {error}");
                 return;
@@ -282,7 +288,20 @@ public class YJ_UnknownStageManager : MonoBehaviour
                 Log.Error("DataManager가 없어 Unknown 선택을 저장할 수 없습니다.");
                 return;
             }
-            if (!Core.DataManager.Instance.TryApplyUnknownStageChoice(requestedNodeKey, selectedStage, choiceIndex, out error))
+            if (discardedItemIds == null)
+            {
+                foreach (var effect in choice.Effects)
+                {
+                    if (effect.Type != YJ_UnknownEffectType.DiscardSelectedItems) continue;
+                    if (!Core.DataManager.Instance.TryGetUnknownDiscardOptions(requestedNodeKey, selectedStage, choiceIndex,
+                        out var items, out int required, out bool completed, out error))
+                    { Log.Warning($"[Unknown] {error}"); return; }
+                    if (completed) break; // 노드 완료/이동 재시도는 선택창을 다시 열지 않는다.
+                    keepLocked = OpenDiscardSelection(stageId, choiceIndex, items, required);
+                    return;
+                }
+            }
+            if (!Core.DataManager.Instance.TryApplyUnknownStageChoice(requestedNodeKey, selectedStage, choiceIndex, out error, discardedItemIds))
             {
                 Log.Warning($"[Unknown] {error}");
                 return;
@@ -314,6 +333,41 @@ public class YJ_UnknownStageManager : MonoBehaviour
             if (!keepLocked && choiceButtonBox != null)
                 choiceButtonBox.SetButtonsInteractable(true);
         }
+    }
+
+    private bool OpenDiscardSelection(string stageId, int choiceIndex, List<Core.ItemSaveData> items, int required)
+    {
+        var canvas = choiceButtonBox.GetComponentInParent<Canvas>();
+        var template = choiceButtonBox.GetComponentInChildren<TMPro.TMP_Text>(true);
+        var database = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
+        if (canvas == null || template == null || template.font == null || database == null)
+        { Log.Error("[Unknown] 폐기 선택창의 Canvas, 폰트 또는 아이템 DB가 없습니다."); return false; }
+        var entries = new List<YJ_UnknownDiscardPanel.Entry>();
+        var statNames = ItemSystem.ItemDisplayNames.StatNames;
+        foreach (var saved in items)
+        {
+            var definition = string.IsNullOrWhiteSpace(saved.itemId) ? null : database.GetById(saved.itemId);
+            if (definition == null) { Log.Warning("[Unknown] 아이템 원본이 없어 폐기 목록을 표시할 수 없습니다."); return false; }
+            string text = $"{definition.itemName} (+{saved.upgradeLevel}) · 가방 ({saved.gridX + 1}, {saved.gridY + 1})";
+            if (saved.rolledSubStats != null)
+                foreach (var stat in saved.rolledSubStats)
+                    text += $"\n{(statNames.TryGetValue(stat.statType, out var name) ? name : stat.statType.ToString())}: {stat.value:0.##}";
+            entries.Add(new YJ_UnknownDiscardPanel.Entry { id = saved.instanceId, text = text, icon = definition.icon });
+        }
+        discardPanel = YJ_UnknownDiscardPanel.Open(canvas, template.font, entries, required, ids =>
+        {
+            CancelDiscardSelection();
+            HandleChoiceSelected(stageId, choiceIndex, ids);
+        }, CancelDiscardSelection);
+        return true;
+    }
+
+    private void CancelDiscardSelection()
+    {
+        if (discardPanel == null) return;
+        discardPanel.Close(); discardPanel = null;
+        isProcessingChoice = false;
+        if (choiceButtonBox != null) choiceButtonBox.SetButtonsInteractable(true);
     }
 
     private bool TryResolveSelectionNode(out string error)
