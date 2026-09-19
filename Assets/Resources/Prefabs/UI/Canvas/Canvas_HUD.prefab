@@ -6041,7 +6041,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2895835940298925155
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11615,6 +11615,7 @@ GameObject:
   - component: {fileID: 5343279748103518571}
   - component: {fileID: 1870307999241496885}
   - component: {fileID: 6105158837552002758}
+  - component: {fileID: 4130379771388679873}
   m_Layer: 5
   m_Name: ItemSlot
   m_TagString: Untagged
@@ -11767,6 +11768,24 @@ MonoBehaviour:
   cooldownFillImage: {fileID: 2028212359814587173}
   cooldownText: {fileID: 4584862681850740602}
   stackText: {fileID: 1469680135353275559}
+--- !u!114 &4130379771388679873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6176398570853272311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fa158e020110214682e76cf3a299c55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PotionSlotView
+  chargeText: {fileID: 1469680135353275559}
+  iconImage: {fileID: 341422017094902213}
+  backgroundImage: {fileID: 963800279691569036}
+  depletedOverlay: {fileID: 2028212359814587173}
+  emptyBackgroundColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+  depletedOverlayColor: {r: 0, g: 0, b: 0, a: 0.6}
 --- !u!1 &6192118848150383790
 GameObject:
   m_ObjectHideFlags: 0
