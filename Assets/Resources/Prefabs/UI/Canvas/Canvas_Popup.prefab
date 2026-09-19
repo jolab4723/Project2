@@ -149,7 +149,7 @@ GameObject:
   - component: {fileID: 6912793011029853365}
   - component: {fileID: 8062914268904890311}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Back
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -412,7 +412,7 @@ GameObject:
   - component: {fileID: 4840468161015141993}
   - component: {fileID: 8180023540945726996}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: Shadow_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -561,7 +561,7 @@ GameObject:
   - component: {fileID: 1440644630904553264}
   - component: {fileID: 8862781314606539705}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Shadow_Up
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -810,7 +810,7 @@ GameObject:
   - component: {fileID: 767299178907252133}
   - component: {fileID: 2842116724622617924}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1035,7 +1035,7 @@ GameObject:
   - component: {fileID: 3063518031666891260}
   - component: {fileID: 1429980703501438518}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Shadow_Down
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1292,7 +1292,7 @@ GameObject:
   - component: {fileID: 7176924150481770904}
   - component: {fileID: 6651695300631966800}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: Shadow_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1532,7 +1532,7 @@ GameObject:
   - component: {fileID: 6206674168333245965}
   - component: {fileID: 206267628775145813}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: Frame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2104,10 +2104,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1884090790988181804, guid: 31aeacd12926998418867ced9a5e98a3, type: 3}
-      propertyPath: ignoreTimeScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2649844159458677807, guid: 31aeacd12926998418867ced9a5e98a3, type: 3}
       propertyPath: m_Name
       value: AlertDialog
@@ -2448,17 +2444,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2972188525425275767}
     m_Modifications:
-    - target: {fileID: 2234523010497910262, guid: ede78eff005d45c419204e368566ec52, type: 3}
-      propertyPath: ignoreTimeScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 7684601365567562215, guid: ede78eff005d45c419204e368566ec52, type: 3}
       propertyPath: m_Name
       value: ConfirmDialog
-      objectReference: {fileID: 0}
-    - target: {fileID: 7684601365567562215, guid: ede78eff005d45c419204e368566ec52, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8226017748885037865, guid: ede78eff005d45c419204e368566ec52, type: 3}
       propertyPath: m_Pivot.x
@@ -3211,6 +3199,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3798028347574226692, guid: 78a45e674bdb445458025a981521bdf0, type: 3}
+      propertyPath: m_Name
+      value: NameText
+      objectReference: {fileID: 0}
     - target: {fileID: 4692365136985024949, guid: 78a45e674bdb445458025a981521bdf0, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
@@ -3331,6 +3323,18 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -250
       objectReference: {fileID: 0}
+    - target: {fileID: 8227890745932801136, guid: 78a45e674bdb445458025a981521bdf0, type: 3}
+      propertyPath: m_Name
+      value: Icon
+      objectReference: {fileID: 0}
+    - target: {fileID: 8350642681563756986, guid: 78a45e674bdb445458025a981521bdf0, type: 3}
+      propertyPath: m_Name
+      value: DescriptionText
+      objectReference: {fileID: 0}
+    - target: {fileID: 8699232724751880211, guid: 78a45e674bdb445458025a981521bdf0, type: 3}
+      propertyPath: m_Name
+      value: Background
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3444,18 +3448,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7467189137167902904, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
-      propertyPath: curtainEffect
-      value: 
-      objectReference: {fileID: 3776234389979124532}
-    m_RemovedComponents:
-    - {fileID: 342099334311820734, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1659039713072595663, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3776234389979124532}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
 --- !u!114 &59338472426454728 stripped
 MonoBehaviour:
@@ -3473,26 +3469,3 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6795388908360527725, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
   m_PrefabInstance: {fileID: 7454047768126051952}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &8103118292140889279 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1659039713072595663, guid: b8f3cba48478cb943b10940fa2393a1e, type: 3}
-  m_PrefabInstance: {fileID: 7454047768126051952}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &3776234389979124532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8103118292140889279}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9867acf96a7eee142be38cf3f64196f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
-  axis: 1
-  openDuration: 0.5
-  closeDuration: 0.25
-  openEase: 18
-  closeEase: 17
-  ignoreTimeScale: 1
