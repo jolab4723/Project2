@@ -35,7 +35,8 @@ public enum MirrorCombatRequestResult : byte
 public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 {
     private const float BaseImpactSeconds = 0.6836111f;
-    private const float BaseAttackDurationSeconds = 2.175f;
+    // Fighter_Attack_Short의 AniEvent_EndAttack 시각(1.0833334f). AnimatorAttackStateSpeed(2f) 적용 시 0.5417s
+    private const float BaseAttackDurationSeconds = 1.0833334f;
     private const float AnimatorAttackStateSpeed = 2f;
     // 현재 GunnerController_Short / Gunner_Attack_Short의 실행 이벤트와 EndAttack 시각.
     private const float GunnerImpactSeconds = 0.16666667f;
