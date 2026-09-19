@@ -37,5 +37,11 @@ namespace ItemSystem
         int MaxStack { get; }
 
         bool IsPermanent { get; }
+
+        /// <summary>
+        /// 버프 HUD에서 보여줄 성격(이로움/해로움/트레이드오프).
+        /// Auto면 표시하는 쪽이 스탯 값의 부호로 추정한다 - 값을 지정하지 않은 기존 버프는 예전과 똑같이 동작한다.
+        /// </summary>
+        BuffDisplayKind DisplayKind { get; }
     }
 }

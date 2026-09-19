@@ -12,6 +12,7 @@ public class WBH_EnemySpawner : MonoBehaviour
     private WBH_FloatTextPoolManager floatTextPool;
     private WBH_HighEnemyHpbarView eliteView;
     private PlayerWallet wallet;
+    private YJ_SfxPlayer sfxPlayer;
 
     private float spawnNavSearchRadius = 2f;
 
@@ -29,7 +30,8 @@ public class WBH_EnemySpawner : MonoBehaviour
                            Transform localPlayer, // eliteView 에만 사용
                            WBH_FloatTextPoolManager floatTextPool,
                            WBH_HighEnemyHpbarView eliteView,
-                           PlayerWallet wallet)
+                           PlayerWallet wallet,
+                           YJ_SfxPlayer sfxPlayer)
     {
         this.spawnManager = spawnManager;
         this.enemyPool = poolManager;
@@ -40,7 +42,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         this.eliteView = eliteView;
         this.eliteView.Initialize(localPlayer);
         this.wallet = wallet;
-
+        this.sfxPlayer = sfxPlayer;
     }
 
     public WBH_EnemyController Spawn(string enemyId, Transform spawnPoint, Transform target, WBH_EnemyStatContext context)
@@ -86,7 +88,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.GetComponent<EnemyKillReward>()?.Initialize(wallet);
         enemy.GetComponent<WBH_EnemyView>()?.Initialize(floatTextPool, eliteView);
 
-        enemy.Initialize(info, enemyPool, effectSpawner, projectileSpawner);
+        enemy.Initialize(info, enemyPool, effectSpawner, projectileSpawner, sfxPlayer);
 
         if(enemy.TryGetComponent(out WBH_BossMinionSpawner bossMinionSpawner))
         {

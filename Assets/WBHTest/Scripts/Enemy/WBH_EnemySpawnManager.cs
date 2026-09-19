@@ -29,6 +29,7 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     private WBH_EnemyPoolManager enemyPool;
     private WBH_FloatTextPoolManager damagePool;
     private PlayerWallet wallet;
+    private YJ_SfxPlayer sfxPlayer;
     private WBH_WaveSetSO activeWaveSet;
     private WBH_WaveData[] activeWaves;
     private readonly Queue<EnemyGrade> pendingSpawns = new();
@@ -99,13 +100,18 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         if (!TrySetPlayer(controller))
             return false;
 
+        if(sfxPlayer == null)
+        {
+            sfxPlayer = YJ_SfxPlayer.Instance;
+        }
+
         if(spawnArea == null || !spawnArea.isActiveAndEnabled || enemyPool == null || enemyDataProvider == null || player == null || highEnemyView == null)
         {
             Log.Error($"{name} 데이터 참조를 확인하세요.");
             return false;
         }
 
-        spawnArea.Initialize(this, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet);
+        spawnArea.Initialize(this, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet, sfxPlayer);
 
         spawnAreaInitialized = true;
         return true;

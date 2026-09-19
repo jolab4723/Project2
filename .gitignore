@@ -38,6 +38,10 @@ ExportedObj/
 *.svd
 *.pdb
 *.mdb
+# .mdb 본체가 무시 대상이라 짝이 되는 .meta도 함께 무시한다.
+# (추적된 .meta만 남으면 Unity가 원본 없는 고아 meta로 보고 지우고, 체크아웃 때 다시 살아나는 일이 반복된다)
+# *.pdb.meta는 넣지 않는다 - ExternalDependencyManager의 .pdb는 실제로 추적 중이라 짝 meta가 있어야 한다.
+*.mdb.meta
 *.opendb
 *.VC.db
 *.DotSettings.user

@@ -58,7 +58,9 @@ public class KY_QuestSlot : MonoBehaviour
             titleText.text = data.questName ?? string.Empty;
 
         if (subText != null)
-            subText.text = data.description ?? string.Empty;
+            subText.text = string.IsNullOrWhiteSpace(data.objectiveTypeLabel)
+                ? data.description ?? string.Empty
+                : data.objectiveTypeLabel;
 
         if (button != null)
             button.interactable = true;
