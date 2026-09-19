@@ -73,7 +73,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
             bool showText = remaining > 0f && remaining <= remainingTextThreshold;
             remainingText.gameObject.SetActive(showText);
             if (showText)
-                remainingText.text = Mathf.CeilToInt(remaining).ToString();
+                remainingText.text = CooldownTextFormat.Format(remaining); // 스킬 슬롯과 같은 표기 규칙
         }
     }
 
