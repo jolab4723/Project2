@@ -256,7 +256,7 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확정 크레딧/지정 아이템, None, 이번 런/다음 전투 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
+        /// 확률 효과, 크레딧/지정·무작위 장비, None, 런/다음 전투 스탯, 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
@@ -292,6 +292,28 @@ namespace Core
         private static bool TryApplyUnknownChoiceToData(GameSaveData data, string nodeKey,
             YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error)
         {
+            // 같은 맵/노드/선택은 저장 실패나 공간 부족 후에도 같은 결과를 낸다.
+            // ItemDataCreator의 기존 옵션 생성기를 쓰되 다른 시스템의 Random에는 영향을 주지 않는다.
+            var state = UnityEngine.Random.state;
+            try
+            {
+                byte[] hash = GetUnknownRewardHash($"{nodeKey}|{stage?.StageId}|{choiceIndex}");
+                int seed = hash[0] | hash[1] << 8 | hash[2] << 16 | hash[3] << 24;
+                UnityEngine.Random.InitState(seed);
+                return TryApplyUnknownChoiceCore(data, nodeKey, stage, choiceIndex, out changed, out error);
+            }
+            finally { UnityEngine.Random.state = state; }
+        }
+
+        private static byte[] GetUnknownRewardHash(string key)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            return sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(key));
+        }
+
+        private static bool TryApplyUnknownChoiceCore(GameSaveData data, string nodeKey,
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error)
+        {
             changed = false;
             error = null;
             if (data == null || data.needsPlayerInitialization || data.status == null ||
@@ -320,6 +342,21 @@ namespace Core
             if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out error))
                 return false;
 
+            // 미지원 효과를 확률 판정으로 건너뛰어 선택이 부분 완료되는 것을 막는다.
+            foreach (var effect in choice.Effects)
+            {
+                if (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
+                    effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
+                    effect.Type != YJ_UnknownEffectType.ModifyStats && effect.Type != YJ_UnknownEffectType.GrantItem &&
+                    effect.Type != YJ_UnknownEffectType.GrantRandomEquipment &&
+                    effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
+                    effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent)
+                {
+                    error = "미지원 효과가 포함되어 선택 전체를 적용하지 않았습니다.";
+                    return false;
+                }
+            }
+
             long gold = data.status.gold;
             float health = data.status.currentHealth;
             InventorySaveData rewardInventory = null;
@@ -327,21 +364,26 @@ namespace Core
             for (int i = 0; i < choice.Effects.Count; i++)
             {
                 YJ_UnknownStageEffect effect = choice.Effects[i];
-                if (effect.Probability != 1f ||
-                    (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
-                     effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
-                     effect.Type != YJ_UnknownEffectType.ModifyStats &&
-                     effect.Type != YJ_UnknownEffectType.GrantItem &&
-                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
-                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent))
+                List<ItemDefinitionSO> candidates = null;
+                if (effect.Type == YJ_UnknownEffectType.GrantRandomEquipment &&
+                    !TryGetUnknownEquipmentCandidates(effect.Rarity, out candidates, out error))
+                    return false;
+                if (effect.Probability <= 0f ||
+                    effect.Probability < 1f && UnityEngine.Random.value >= effect.Probability)
+                    continue; // 미당첨도 아래에서 선택 완료 기록을 저장한다.
+
+                if (effect.Type == YJ_UnknownEffectType.GrantItem ||
+                    effect.Type == YJ_UnknownEffectType.GrantRandomEquipment)
                 {
-                    error = "현재는 확정 크레딧, 지정 아이템, 효과 없음, 이번 런/다음 전투 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
-                    return false;
+                    for (int count = 0; count < effect.Amount; count++)
+                    {
+                        var definition = candidates == null ? effect.Item : candidates[UnityEngine.Random.Range(0, candidates.Count)];
+                        string rewardKey = $"{nodeKey}|{stage.StageId}|{choiceIndex}|{i}|{count}";
+                        if (!TryGrantUnknownItem(rewardInventory ?? data.inventory, definition, rewardKey,
+                            out rewardInventory, out error))
+                            return false;
+                    }
                 }
-                if (effect.Type == YJ_UnknownEffectType.GrantItem &&
-                    !TryGrantUnknownItem(rewardInventory ?? data.inventory, effect,
-                        out rewardInventory, out error))
-                    return false;
                 if (effect.Type == YJ_UnknownEffectType.ModifyStats)
                 {
                     string effectKey = $"{nodeKey}:{choiceIndex}:{i}";
@@ -415,7 +457,39 @@ namespace Core
             return true;
         }
 
-        private static bool TryGrantUnknownItem(InventorySaveData inventory, YJ_UnknownStageEffect effect,
+        private static bool TryGetUnknownEquipmentCandidates(ItemRarity rarity,
+            out List<ItemDefinitionSO> candidates, out string error)
+        {
+            candidates = new List<ItemDefinitionSO>();
+            error = null;
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (database == null || database.allItems == null)
+            {
+                error = "무작위 장비 지급에 필요한 아이템 DB가 없습니다.";
+                return false;
+            }
+            var ids = new HashSet<string>();
+            foreach (var item in database.allItems)
+            {
+                if (item == null || item.rarity != rarity ||
+                    (item.category != ItemCategory.Weapon && item.category != ItemCategory.Armor))
+                    continue;
+                if (string.IsNullOrWhiteSpace(item.itemId) || item.itemWidth <= 0 || item.itemHeight <= 0 ||
+                    database.GetById(item.itemId) != item)
+                {
+                    error = "무작위 장비 후보의 ID, 크기 또는 DB 등록이 잘못되었습니다.";
+                    return false;
+                }
+                if (ids.Add(item.itemId)) candidates.Add(item);
+            }
+            // DB 목록 순서가 바뀌어도 추첨 결과를 유지한다. 후보/옵션 데이터 수정까지 고정하는 스냅샷은 아니다.
+            candidates.Sort((a, b) => string.CompareOrdinal(a.itemId, b.itemId));
+            if (candidates.Count > 0) return true;
+            error = $"{rarity} 등급의 무기/방어구 후보가 없습니다.";
+            return false;
+        }
+
+        private static bool TryGrantUnknownItem(InventorySaveData inventory, ItemDefinitionSO reward, string rewardKey,
             out InventorySaveData result, out string error)
         {
             result = null;
@@ -426,8 +500,8 @@ namespace Core
                 return false;
             }
             var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
-            if (database == null || effect.Item == null || database.GetById(effect.Item.itemId) != effect.Item ||
-                effect.Item.itemWidth <= 0 || effect.Item.itemHeight <= 0 || effect.Amount <= 0)
+            if (database == null || reward == null || database.GetById(reward.itemId) != reward ||
+                reward.itemWidth <= 0 || reward.itemHeight <= 0)
             {
                 error = "지급 아이템이 아이템 데이터베이스에 등록되지 않았거나 크기/수량이 잘못되었습니다.";
                 return false;
@@ -465,34 +539,40 @@ namespace Core
                 gridWidth = inventory.gridWidth, gridHeight = inventory.gridHeight,
                 items = new List<ItemSaveData>(inventory.items)
             };
-            for (int count = 0; count < effect.Amount; count++)
+            bool placed = false;
+            // InventoryGrid와 같은 순서: 기본 방향을 먼저 탐색하고, 다음 회전 방향.
+            for (int rotation = 0; rotation < 2 && !placed; rotation++)
             {
-                bool placed = false;
-                // InventoryGrid와 같은 순서: 기본 방향을 먼저 탐색하고, 다음 회전 방향.
-                for (int rotation = 0; rotation < 2 && !placed; rotation++)
+                int width = rotation == 0 ? reward.itemWidth : reward.itemHeight;
+                int height = rotation == 0 ? reward.itemHeight : reward.itemWidth;
+                for (int y = 0; y <= inventory.gridHeight - height && !placed; y++)
+                for (int x = 0; x <= inventory.gridWidth - width && !placed; x++)
                 {
-                    int width = rotation == 0 ? effect.Item.itemWidth : effect.Item.itemHeight;
-                    int height = rotation == 0 ? effect.Item.itemHeight : effect.Item.itemWidth;
-                    for (int y = 0; y <= inventory.gridHeight - height && !placed; y++)
-                    for (int x = 0; x <= inventory.gridWidth - width && !placed; x++)
+                    var rect = new RectInt(x, y, width, height);
+                    if (occupied.Exists(other => other.Overlaps(rect)))
+                        continue;
+                    var instance = ItemDataCreator.CreateItemData(reward);
+                    byte[] id = new byte[16];
+                    System.Array.Copy(GetUnknownRewardHash(rewardKey), id, id.Length);
+                    instance.instanceId = new System.Guid(id).ToString();
+                    if (ids.Contains(instance.instanceId))
                     {
-                        var rect = new RectInt(x, y, width, height);
-                        if (occupied.Exists(other => other.Overlaps(rect)))
-                            continue;
-                        var item = new InventoryItem(ItemDataCreator.CreateItemData(effect.Item));
-                        item.x = x;
-                        item.y = y;
-                        item.isRotated = rotation != 0;
-                        pending.items.Add(ToItemSaveData(item, false, default));
-                        occupied.Add(rect);
-                        placed = true;
+                        error = "보상 아이템 ID와 선택 완료 기록이 일치하지 않습니다.";
+                        return false;
                     }
+                    var item = new InventoryItem(instance);
+                    item.x = x;
+                    item.y = y;
+                    item.isRotated = rotation != 0;
+                    pending.items.Add(ToItemSaveData(item, false, default));
+                    occupied.Add(rect);
+                    placed = true;
                 }
-                if (!placed)
-                {
-                    error = "인벤토리 공간이 부족합니다. 선택 전체를 적용하지 않았습니다.";
-                    return false;
-                }
+            }
+            if (!placed)
+            {
+                error = "인벤토리 공간이 부족합니다. 선택 전체를 적용하지 않았습니다.";
+                return false;
             }
             result = pending;
             return true;
