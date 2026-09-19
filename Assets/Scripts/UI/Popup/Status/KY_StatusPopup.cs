@@ -1,4 +1,5 @@
 using DG.Tweening;
+using ItemSystem;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -264,6 +265,28 @@ public class KY_StatusPopup : KY_PopupBase
         fireRow.SetData(data.fireDamage);
         iceRow.SetData(data.iceDamage);
         lightningRow.SetData(data.lightningDamage);
+
+        ApplyEnchantState();
+    }
+
+    /// <summary>
+    /// 장착 무기의 속성(인챈트)에 해당하는 칸만 강조 표시한다.
+    /// 무기가 없거나 무속성이면 세 칸 모두 해제된다.
+    ///
+    /// !! 인챈트는 "현재 장착 무기의 속성"이다. 속성별 피해 보너스 수치와는 별개라서
+    ///    보너스가 0이어도 인챈트 표시는 켜질 수 있다.
+    /// </summary>
+    void ApplyEnchantState()
+    {
+        ElementType enchanted = ElementType.None;
+
+        PlayerStatManager statManager = PlayerStatManager.Instance;
+        if (statManager != null && statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon))
+            enchanted = weapon.elementType;
+
+        fireRow.SetEnchanted(enchanted == ElementType.Fire);
+        iceRow.SetEnchanted(enchanted == ElementType.Ice);
+        lightningRow.SetEnchanted(enchanted == ElementType.Electric);
     }
 
     void OnDetailToggleChanged(bool isOn)

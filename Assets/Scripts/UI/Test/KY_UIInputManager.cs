@@ -39,9 +39,21 @@ public class KY_UIInputManager : MonoBehaviour
             InventoryPartView inventoryView = GetCampInventoryView();
 
             if (inventoryView != null)
+            {
+                // 캠프 인벤토리는 KY_PopupManager를 거치지 않고 자기가 직접 창을 켜고 끈다.
+                // 그래서 매니저는 인벤토리가 열린 걸 모르고 currentSidePopup을 그대로 들고 있어서,
+                // 스테이터스를 열어둔 채 인벤토리를 열면 **둘 다 떠 있는** 상태가 됐다.
+                // 스테이터스/스킬/퀘스트 키가 CloseCampInventoryIfOpen()으로 반대 방향을 막고 있으니
+                // 여기서도 대칭으로, 새로 열 때만 다른 사이드 팝업을 닫아준다.
+                if (!inventoryView.HasOpenWindow)
+                    KY_PopupManager.Instance?.HideSidePopup();
+
                 inventoryView.ToggleInventory();
+            }
             else
+            {
                 KY_GameEvents.InventoryRequested();
+            }
         }
 
         if (inputActions.Player.OpenSkill.triggered)

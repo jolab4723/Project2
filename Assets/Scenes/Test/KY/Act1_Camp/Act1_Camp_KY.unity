@@ -1415,6 +1415,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6921367047209539506, guid: ce987b7e0e2621c489ee7a9d6eeef55f, type: 3}
   m_PrefabInstance: {fileID: 448326389}
   m_PrefabAsset: {fileID: 0}
+--- !u!134 &451007332
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1001 &457516282
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1539,19 +1552,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4722873777333514, guid: b6712d2ad02ba6a488d56bad63b983b4, type: 3}
   m_PrefabInstance: {fileID: 471835912}
   m_PrefabAsset: {fileID: 0}
---- !u!134 &492637308
-PhysicsMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 2
-  m_DynamicFriction: 0.6
-  m_StaticFriction: 0.6
-  m_Bounciness: 0
-  m_FrictionCombine: 0
-  m_BounceCombine: 0
 --- !u!114 &501784707 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9166841276540169364, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -1784,9 +1784,9 @@ RectTransform:
   m_Children:
   - {fileID: 959182}
   - {fileID: 992844062}
-  - {fileID: 1340594796}
   - {fileID: 1984896757}
   - {fileID: 1669805381}
+  - {fileID: 1340594796}
   m_Father: {fileID: 820769968}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4166,6 +4166,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5450061290756097097, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5870942681883242654, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -4228,7 +4232,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7256728229564661899, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000019575516
+      value: 0.0000698215
       objectReference: {fileID: 0}
     - target: {fileID: 7895197896215492909, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
@@ -10627,7 +10631,7 @@ PrefabInstance:
     - target: {fileID: 7932784689011167153, guid: aafa371722528124eb7acd7943bc56ce, type: 3}
       propertyPath: m_Material
       value: 
-      objectReference: {fileID: 492637308}
+      objectReference: {fileID: 451007332}
     - target: {fileID: 8517000206410722550, guid: aafa371722528124eb7acd7943bc56ce, type: 3}
       propertyPath: rmsCount
       value: 3

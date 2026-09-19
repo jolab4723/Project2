@@ -70,7 +70,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
   axis: 1
-  openDuration: 0.01
+  openDuration: 0.5
   closeDuration: 0.01
   openEase: 18
   closeEase: 17
@@ -87,7 +87,7 @@ GameObject:
   - component: {fileID: 6772330114164994960}
   - component: {fileID: 679329432038848793}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Corner_DownRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,7 +160,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5877359373340543069}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -198,7 +198,7 @@ GameObject:
   - component: {fileID: 2208538200642486017}
   - component: {fileID: 2096770089570952962}
   m_Layer: 5
-  m_Name: Prodress
+  m_Name: ProdressText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -335,7 +335,7 @@ GameObject:
   - component: {fileID: 6913242117087367313}
   - component: {fileID: 8540989211917468012}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Glow_Up
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -410,7 +410,7 @@ GameObject:
   - component: {fileID: 1053059722640511128}
   - component: {fileID: 5941074106872707865}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: CenterGlow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -726,7 +726,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8271553963583007170}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -744,7 +744,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8053483125497329258}
+  - {fileID: 819166161949661679}
   m_Father: {fileID: 8378347486532879406}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -762,7 +762,7 @@ GameObject:
   m_Component:
   - component: {fileID: 183936649814535910}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -877,7 +877,7 @@ GameObject:
   - component: {fileID: 3053388503766043389}
   - component: {fileID: 2422003559446795477}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: CenterGlow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1127,7 +1127,7 @@ GameObject:
   - component: {fileID: 13238188238854572}
   - component: {fileID: 4791052968954271226}
   m_Layer: 5
-  m_Name: Description
+  m_Name: DescriptionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1265,42 +1265,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
---- !u!1 &2814997650509143855
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8053483125497329258}
-  m_Layer: 5
-  m_Name: Image (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &8053483125497329258
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2814997650509143855}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 819166161949661679}
-  m_Father: {fileID: 8271553963583007170}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 42.9}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3121203969716907291
 GameObject:
   m_ObjectHideFlags: 0
@@ -1402,7 +1366,7 @@ GameObject:
   - component: {fileID: 4880710148142614071}
   - component: {fileID: 2869996656893913946}
   m_Layer: 5
-  m_Name: Condition
+  m_Name: ConditionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1539,7 +1503,7 @@ GameObject:
   - component: {fileID: 3086246077676739802}
   - component: {fileID: 5462255948325380934}
   m_Layer: 5
-  m_Name: Condition
+  m_Name: ConditionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1674,7 +1638,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7051500982043677132}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1825,7 +1789,7 @@ GameObject:
   - component: {fileID: 4129165154020847091}
   - component: {fileID: 3370516046744457274}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: Corner_UpRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2167,7 +2131,7 @@ GameObject:
   - component: {fileID: 587354932806371744}
   - component: {fileID: 2942817824640011712}
   m_Layer: 5
-  m_Name: Prodress
+  m_Name: ProdressText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2304,7 +2268,7 @@ GameObject:
   - component: {fileID: 1777487706437168808}
   - component: {fileID: 885844163290624861}
   m_Layer: 5
-  m_Name: Condition
+  m_Name: Condition_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2456,7 +2420,7 @@ GameObject:
   - component: {fileID: 4907990091285731094}
   - component: {fileID: 2561116885861155000}
   m_Layer: 5
-  m_Name: Reward
+  m_Name: RewardText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2605,7 +2569,7 @@ GameObject:
   - component: {fileID: 9099638209628389981}
   - component: {fileID: 2933876661337173768}
   m_Layer: 5
-  m_Name: Prodress
+  m_Name: ProdressText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2742,7 +2706,7 @@ GameObject:
   - component: {fileID: 34045037244258320}
   - component: {fileID: 6422780023333746295}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: Corner_UpLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3178,7 +3142,7 @@ GameObject:
   - component: {fileID: 1120970361345542462}
   - component: {fileID: 2434020765230388215}
   m_Layer: 5
-  m_Name: Outline (1)
+  m_Name: Outline_Corner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3266,7 +3230,7 @@ GameObject:
   - component: {fileID: 8960023169969591366}
   - component: {fileID: 4760392054130127063}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: Corner_DownLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3341,7 +3305,7 @@ GameObject:
   - component: {fileID: 2641829816395874279}
   - component: {fileID: 7983088808717949558}
   m_Layer: 5
-  m_Name: Image (1)
+  m_Name: CenterGlow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3417,7 +3381,7 @@ GameObject:
   - component: {fileID: 2914434850065258576}
   - component: {fileID: 3600040488234386556}
   m_Layer: 5
-  m_Name: Outline (1)
+  m_Name: Outline_Corner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3564,7 +3528,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
   axis: 1
-  openDuration: 0.01
+  openDuration: 0.5
   closeDuration: 0.01
   openEase: 18
   closeEase: 17
@@ -3738,7 +3702,7 @@ GameObject:
   - component: {fileID: 137316222678921554}
   - component: {fileID: 1748244487143185201}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3759,11 +3723,11 @@ RectTransform:
   - {fileID: 7977962117956163954}
   - {fileID: 8921468307751117755}
   - {fileID: 8574744092601347121}
-  m_Father: {fileID: 8053483125497329258}
+  m_Father: {fileID: 8271553963583007170}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -48.36}
+  m_AnchoredPosition: {x: 0, y: -5.4600067}
   m_SizeDelta: {x: 600, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8074214201232101424
@@ -3830,7 +3794,7 @@ GameObject:
   - component: {fileID: 4098650154477629200}
   - component: {fileID: 5336759180775078603}
   m_Layer: 5
-  m_Name: Outline (1)
+  m_Name: Outline_Corner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3919,7 +3883,7 @@ GameObject:
   - component: {fileID: 6886562336905075017}
   - component: {fileID: 5257580099993684009}
   m_Layer: 5
-  m_Name: Outline (1)
+  m_Name: Outline_Corner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4024,8 +3988,8 @@ RectTransform:
   m_GameObject: {fileID: 7814523231544949097}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.90909, y: 0.90909, z: 0.90909}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5048490565950165174}
   - {fileID: 4008870935187549260}
@@ -4034,8 +3998,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 600, y: 260}
-  m_SizeDelta: {x: 30, y: 30}
+  m_AnchoredPosition: {x: 620, y: 282}
+  m_SizeDelta: {x: 75, y: 75}
   m_Pivot: {x: 1, y: 1}
 --- !u!222 &5723109036426618029
 CanvasRenderer:
@@ -4152,6 +4116,26 @@ MonoBehaviour:
     hoverColor: {r: 1, g: 1, b: 1, a: 1}
     clickColor: {r: 1, g: 1, b: 1, a: 1}
     originalColor: {r: 0, g: 0, b: 0, a: 0}
+  - graphic: {fileID: 679329432038848793}
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 1, b: 1, a: 1}
+    originalColor: {r: 0, g: 0, b: 0, a: 0}
+  - graphic: {fileID: 4760392054130127063}
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 1, b: 1, a: 1}
+    originalColor: {r: 0, g: 0, b: 0, a: 0}
+  - graphic: {fileID: 3370516046744457274}
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 1, b: 1, a: 1}
+    originalColor: {r: 0, g: 0, b: 0, a: 0}
+  - graphic: {fileID: 6422780023333746295}
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 1, b: 1, a: 1}
+    originalColor: {r: 0, g: 0, b: 0, a: 0}
+  - graphic: {fileID: 5793801212830510669}
+    hoverColor: {r: 1, g: 1, b: 1, a: 1}
+    clickColor: {r: 1, g: 1, b: 1, a: 1}
+    originalColor: {r: 0, g: 0, b: 0, a: 0}
   hoverDuration: 0.15
   clickDuration: 0.1
   button: {fileID: 0}
@@ -4167,7 +4151,7 @@ GameObject:
   - component: {fileID: 7150994053334371045}
   - component: {fileID: 5681026423325688209}
   m_Layer: 5
-  m_Name: Condition
+  m_Name: ConditionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4387,7 +4371,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.10980392, g: 0.5764706, b: 0.61960787, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4475,7 +4459,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
   axis: 0
-  openDuration: 0.01
+  openDuration: 0.5
   closeDuration: 0.01
   openEase: 18
   closeEase: 17
@@ -4656,7 +4640,7 @@ GameObject:
   - component: {fileID: 7135263400812465351}
   - component: {fileID: 6572465626155005015}
   m_Layer: 5
-  m_Name: Condition (1)
+  m_Name: Condition_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4783,7 +4767,7 @@ GameObject:
   - component: {fileID: 6810179440152844077}
   - component: {fileID: 5854342523518781383}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4874,7 +4858,7 @@ GameObject:
   - component: {fileID: 2832334250817374883}
   - component: {fileID: 6676867455602881178}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: Glow_Down
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5038,7 +5022,7 @@ GameObject:
   - component: {fileID: 8811854737441669544}
   - component: {fileID: 7344051443401616251}
   m_Layer: 5
-  m_Name: Condition (2)
+  m_Name: Condition_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5099,7 +5083,7 @@ GameObject:
   - component: {fileID: 4466138748487215674}
   - component: {fileID: 9100301857296134360}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Glow_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5264,7 +5248,7 @@ GameObject:
   - component: {fileID: 2511569949663949319}
   - component: {fileID: 1727628024989005977}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: Glow_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -19,6 +19,9 @@ public class PotionUseManager : MonoBehaviour
     [Tooltip("플레이어가 기본으로 가지는 포션 충전 최대치. 포션 종류와 무관하게 고정값이다.")]
     [SerializeField] private int basePotionCharges = 3;
 
+    [Tooltip("포션 사용 후 다시 쓸 수 있을 때까지의 대기 시간(초). 쿨타임 감소 스탯의 영향을 받지 않는 고정값이다.")]
+    [SerializeField, Min(0f)] private float useCooldownSeconds = 1f;
+
     // 장착된 포션이 어떤 효과(회복/능력치 증가)인지 알아야 해서 여전히 참조가 필요하다.
     // InventoryController.Instance를 그때그때 찾는 대신 PlayerStatManager와 같은 방식(직렬화 참조)을 쓴다 -
     // 런타임에 찾으면 스크립트 실행 순서 문제로 초기화 시점에 아직 준비 안 됐을 수 있다.
@@ -29,6 +32,24 @@ public class PotionUseManager : MonoBehaviour
 
     /// <summary>플레이어의 최대 충전량. 포션 종류와 무관한 고정값이다.</summary>
     public int MaxCharges => basePotionCharges;
+
+    /// <summary>포션 사용 쿨타임 전체 길이(초). 쿨타임 감소와 무관한 고정값이다.</summary>
+    public float UseCooldownSeconds => useCooldownSeconds;
+
+    /// <summary>남은 쿨타임(초). 사용 가능하면 0.</summary>
+    public float RemainingCooldown =>
+        Mathf.Max(0f, nextUsableTime - Time.time);
+
+    /// <summary>지금 쿨타임이 끝나서 쓸 수 있는 상태인지.</summary>
+    public bool IsCooldownReady => Time.time >= nextUsableTime;
+
+    /// <summary>
+    /// 다음에 포션을 쓸 수 있게 되는 시각.
+    ///
+    /// !! 일부러 PlayerStat의 쿨타임 감소(cdr)를 타지 않는다. 스킬 쿨타임과 달리 포션 연타를 막는
+    ///    최소 간격이라, 쿨감이 높아진다고 줄어들면 의미가 없어진다.
+    /// </summary>
+    private float nextUsableTime;
 
     private void Awake()
     {
@@ -85,7 +106,10 @@ public class PotionUseManager : MonoBehaviour
         Instance = this;
     }
 
-    /// <summary>현재 장착된 포션을 사용한다. 장착된 포션이 없거나 공유 풀 충전이 없으면 조용히 실패한다.</summary>
+    /// <summary>
+    /// 현재 장착된 포션을 사용한다. 장착된 포션이 없거나, 공유 풀 충전이 없거나,
+    /// 아직 사용 쿨타임이 안 끝났으면 조용히 실패한다.
+    /// </summary>
     public bool TryUsePotion()
     {
         if (!TryGetEquippedPotion(out ItemInstance potion))
@@ -94,8 +118,12 @@ public class PotionUseManager : MonoBehaviour
         if (CurrentCharges <= 0)
             return false;
 
+        if (!IsCooldownReady)
+            return false;
+
         ApplyPotionEffect(potion.definition);
         CurrentCharges--;
+        nextUsableTime = Time.time + useCooldownSeconds;
         return true;
     }
 

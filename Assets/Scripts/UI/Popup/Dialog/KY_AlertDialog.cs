@@ -15,6 +15,9 @@ public class KY_AlertDialog : KY_PopupBase
     [Header("Button")]
     [SerializeField] private Button confirmButton;
 
+    [Header("Effect")]
+    [SerializeField] private KY_CurtainEffect curtainEffect;
+
     private KY_AlertData currentData;
 
     private void Awake()
@@ -35,6 +38,7 @@ public class KY_AlertDialog : KY_PopupBase
             warningText.text = data.warningText;
 
         Open();
+        curtainEffect?.Open();
     }
 
     private void OnConfirmClicked()

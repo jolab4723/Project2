@@ -20,6 +20,11 @@ public class UpgradeController : MonoBehaviour
     [Tooltip("고정 UI 문구(스탯 표기, 강화 결과 메시지 등) 다국어 테이블. 비워두면 하드코딩된 한국어 문구를 그대로 쓴다.")]
     [SerializeField] private UILabelDatabaseSO uiLabels;
 
+    [Tooltip("아이템 이름 다국어 테이블. 비워두면 ItemDefinitionSO.itemName(한국어 스냅샷)을 그대로 쓴다.")]
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
+
+    private const string ItemLabelResourcePath = "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
+
     private ItemInstance selectedItem;
     private UpgradeService upgradeService;
 
@@ -34,6 +39,9 @@ public class UpgradeController : MonoBehaviour
         // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
         if (uiLabels == null)
             uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
+        if (itemLabels == null)
+            itemLabels = Resources.Load<ItemLabelDatabaseSO>(ItemLabelResourcePath);
 
         upgradeService = new UpgradeService(playerWallet);
     }
@@ -131,12 +139,31 @@ public class UpgradeController : MonoBehaviour
 
         ShowUpgradeMessage(result);
     }
+    /// <summary>
+    /// 강화 결과 메시지에 넣을 아이템 이름을 현재 언어로 가져온다.
+    ///
+    /// !! ItemDefinitionSO.itemName은 한국어 스냅샷이라 그대로 쓰면 다른 언어에서도 한국어로 나온다.
+    ///    (메시지 틀은 upgrade_ui.result_success로 번역되는데 이름만 한국어로 남던 문제)
+    ///    TooltipUI.GetItemName과 같은 방식으로 ItemLabelDatabaseSO를 먼저 보고, 없으면 원본으로 폴백한다.
+    /// </summary>
+    private string ResolveItemName(ItemDefinitionSO definition)
+    {
+        if (definition == null)
+            return GetUILabel("upgrade_ui.unknown_item", "아이템");
+
+        if (itemLabels != null &&
+            itemLabels.TryGetName(definition.itemId, out string localized) &&
+            !string.IsNullOrEmpty(localized))
+        {
+            return localized;
+        }
+
+        return definition.itemName;
+    }
+
     private void ShowUpgradeMessage(UpgradeResult result)
     {
-        string itemName =
-            selectedItem?.definition != null
-                ? selectedItem.definition.itemName
-                : GetUILabel("upgrade_ui.unknown_item", "아이템");
+        string itemName = ResolveItemName(selectedItem?.definition);
 
         int upgradeLevel =
             selectedItem != null
