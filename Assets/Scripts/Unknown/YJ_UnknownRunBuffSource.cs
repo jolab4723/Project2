@@ -12,6 +12,7 @@ public sealed class YJ_UnknownRunBuffSource : IBuffSource
     public string BuffDisplayName { get; }
     public string BuffDescription => string.Empty;
     public Sprite BuffIcon => null;
+    public BuffDisplayKind DisplayKind => BuffDisplayKind.Auto;
     public FixedStatValue[] StatEffects { get; }
     public float Duration => 0f;
     public BuffStackBehavior StackBehavior => BuffStackBehavior.Ignore;

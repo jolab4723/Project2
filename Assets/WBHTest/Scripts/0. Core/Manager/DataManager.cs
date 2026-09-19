@@ -256,7 +256,7 @@ namespace Core
 
         /// <summary>
         /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
-        /// 확정 크레딧 지급/지불/전액 손실, None, 이번 런/다음 전투 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
+        /// 확정 크레딧/지정 아이템, None, 이번 런/다음 전투 스탯, 최대 체력 비례 회복/비치명 피해를 지원한다.
         /// 미지원 효과가 섞이면 전체 지급을 보류한다.
         /// </summary>
         public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
@@ -322,6 +322,7 @@ namespace Core
 
             long gold = data.status.gold;
             float health = data.status.currentHealth;
+            InventorySaveData rewardInventory = null;
             var newBuffs = new List<UnknownStageBuffRecord>();
             for (int i = 0; i < choice.Effects.Count; i++)
             {
@@ -330,12 +331,17 @@ namespace Core
                     (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
                      effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
                      effect.Type != YJ_UnknownEffectType.ModifyStats &&
+                     effect.Type != YJ_UnknownEffectType.GrantItem &&
                      effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
                      effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent))
                 {
-                    error = "현재는 확정 크레딧 지급/지불/전액 손실, 효과 없음, 이번 런/다음 전투 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
+                    error = "현재는 확정 크레딧, 지정 아이템, 효과 없음, 이번 런/다음 전투 스탯, 즉시 회복/비치명 피해만 지원합니다. 선택 전체를 적용하지 않았습니다.";
                     return false;
                 }
+                if (effect.Type == YJ_UnknownEffectType.GrantItem &&
+                    !TryGrantUnknownItem(rewardInventory ?? data.inventory, effect,
+                        out rewardInventory, out error))
+                    return false;
                 if (effect.Type == YJ_UnknownEffectType.ModifyStats)
                 {
                     string effectKey = $"{nodeKey}:{choiceIndex}:{i}";
@@ -372,7 +378,7 @@ namespace Core
                         error = "체력 효과를 적용할 수 있는 생존 상태의 저장 체력이 없습니다.";
                         return false;
                     }
-                    if (!TryGetUnknownMaxHealth(data, newBuffs, out float maxHealth, out error))
+                    if (!TryGetUnknownMaxHealth(data, newBuffs, out float maxHealth, out error, rewardInventory))
                         return false;
                     double amount = (double)maxHealth * effect.HealthPercent / 100d;
                     if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent)
@@ -395,6 +401,8 @@ namespace Core
             }
 
             data.status.gold = (int)gold;
+            if (rewardInventory != null)
+                data.inventory = rewardInventory;
             data.status.currentHealth = health;
             data.unknownStageBuffs ??= new List<UnknownStageBuffRecord>();
             data.unknownStageBuffs.AddRange(newBuffs);
@@ -407,8 +415,92 @@ namespace Core
             return true;
         }
 
+        private static bool TryGrantUnknownItem(InventorySaveData inventory, YJ_UnknownStageEffect effect,
+            out InventorySaveData result, out string error)
+        {
+            result = null;
+            error = null;
+            if (inventory == null || inventory.items == null || inventory.gridWidth <= 0 || inventory.gridHeight <= 0)
+            {
+                error = "인벤토리 크기 정보가 없습니다. 전투 스테이지에서 저장한 후 다시 시도하세요.";
+                return false;
+            }
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (database == null || effect.Item == null || database.GetById(effect.Item.itemId) != effect.Item ||
+                effect.Item.itemWidth <= 0 || effect.Item.itemHeight <= 0 || effect.Amount <= 0)
+            {
+                error = "지급 아이템이 아이템 데이터베이스에 등록되지 않았거나 크기/수량이 잘못되었습니다.";
+                return false;
+            }
+
+            var occupied = new List<RectInt>();
+            var ids = new HashSet<string>();
+            foreach (var saved in inventory.items)
+            {
+                var definition = saved != null && !string.IsNullOrWhiteSpace(saved.itemId)
+                    ? database.GetById(saved.itemId) : null;
+                if (definition == null || string.IsNullOrWhiteSpace(saved.instanceId) || !ids.Add(saved.instanceId))
+                {
+                    error = "저장 아이템의 원본 또는 인스턴스 ID가 잘못되었습니다.";
+                    return false;
+                }
+                if (saved.isEquipped)
+                    continue;
+                int width = saved.isRotated ? definition.itemHeight : definition.itemWidth;
+                int height = saved.isRotated ? definition.itemWidth : definition.itemHeight;
+                var rect = new RectInt(saved.gridX, saved.gridY, width, height);
+                if (width <= 0 || height <= 0 || rect.x < 0 || rect.y < 0 ||
+                    width > inventory.gridWidth || height > inventory.gridHeight ||
+                    rect.x > inventory.gridWidth - width || rect.y > inventory.gridHeight - height ||
+                    occupied.Exists(other => other.Overlaps(rect)))
+                {
+                    error = "저장 인벤토리의 아이템 배치가 겹치거나 범위를 벗어났습니다.";
+                    return false;
+                }
+                occupied.Add(rect);
+            }
+
+            var pending = new InventorySaveData
+            {
+                gridWidth = inventory.gridWidth, gridHeight = inventory.gridHeight,
+                items = new List<ItemSaveData>(inventory.items)
+            };
+            for (int count = 0; count < effect.Amount; count++)
+            {
+                bool placed = false;
+                // InventoryGrid와 같은 순서: 기본 방향을 먼저 탐색하고, 다음 회전 방향.
+                for (int rotation = 0; rotation < 2 && !placed; rotation++)
+                {
+                    int width = rotation == 0 ? effect.Item.itemWidth : effect.Item.itemHeight;
+                    int height = rotation == 0 ? effect.Item.itemHeight : effect.Item.itemWidth;
+                    for (int y = 0; y <= inventory.gridHeight - height && !placed; y++)
+                    for (int x = 0; x <= inventory.gridWidth - width && !placed; x++)
+                    {
+                        var rect = new RectInt(x, y, width, height);
+                        if (occupied.Exists(other => other.Overlaps(rect)))
+                            continue;
+                        var item = new InventoryItem(ItemDataCreator.CreateItemData(effect.Item));
+                        item.x = x;
+                        item.y = y;
+                        item.isRotated = rotation != 0;
+                        pending.items.Add(ToItemSaveData(item, false, default));
+                        occupied.Add(rect);
+                        placed = true;
+                    }
+                }
+                if (!placed)
+                {
+                    error = "인벤토리 공간이 부족합니다. 선택 전체를 적용하지 않았습니다.";
+                    return false;
+                }
+            }
+            result = pending;
+            return true;
+        }
+
         private static bool TryGetUnknownMaxHealth(GameSaveData data,
-            List<UnknownStageBuffRecord> pendingBuffs, out float maxHealth, out string error)
+            List<UnknownStageBuffRecord> pendingBuffs, out float maxHealth, out string error,
+            InventorySaveData pendingInventory = null)
         {
             maxHealth = 0f;
             error = null;
@@ -436,7 +528,7 @@ namespace Core
             StatSet equipment = StatSet.Zero;
             var tracker = new BuffTracker(); // 런타임 플레이어/인벤토리를 변경하지 않는 독립 계산용.
             var slots = new HashSet<EquipSlotType>();
-            foreach (var saved in data.inventory?.items ?? new List<ItemSaveData>())
+            foreach (var saved in (pendingInventory ?? data.inventory)?.items ?? new List<ItemSaveData>())
             {
                 var definition = saved != null ? database.GetById(saved.itemId) : null;
                 if (definition == null)
@@ -755,6 +847,8 @@ namespace Core
 
             if (InventoryController.Instance.PlayerGrid != null)
             {
+                data.gridWidth = InventoryController.Instance.PlayerGrid.GridWidth;
+                data.gridHeight = InventoryController.Instance.PlayerGrid.GridHeight;
                 foreach (var item in InventoryController.Instance.PlayerGrid.GetAllItems())
                     data.items.Add(ToItemSaveData(item, false, default(EquipSlotType)));
             }
