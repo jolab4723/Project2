@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using ItemSystem;
 using Mirror;
 using UnityEditor;
@@ -40,7 +39,7 @@ public static class ArmorRelicP3BValidation_MirrorTest
     [MenuItem("SW/Mirror Test/Validate Armor Relic P3-B H3 (Live Server Play Mode)")]
     public static void RunPlayModeServer() => ValidatePlayModeServer();
 
-    [MenuItem("SW/Mirror Test/Validate Stage C (Actual Helmet Gameplay & Passive)")]
+    [MenuItem("SW/Mirror Test/Validate Stage C (Actual Equipped Helmet Runtime)")]
     public static void RunStageC() => ValidateStageC();
 
     // =========================================================================
@@ -1089,302 +1088,218 @@ public static class ArmorRelicP3BValidation_MirrorTest
     }
 
     /// <summary>
-    /// Stage C: 실제 품목(powersavingheadset / UE_LowManaRecovery)의 게임플레이 및 개인 패시브 회귀를 검증합니다.
-    /// C1(실제 품목), C2(가방/장착), C3(경계/최대치 불변), C4(자연 재생 틱 및 자동 해제),
-    /// C5(장비 트랜잭션), C6(Fighter & Gunner 2종 클래스), C7(비영점 패시브 회귀), C8(표시/라벨 일치)
+    /// 실제 Host 플레이어가 이미 장착한 절전모드 헤드셋을 검사합니다.
+    /// 마나 경계와 실제 자동 회복을 확인하며, 패시브 원본과 장비는 변경하지 않습니다.
+    /// 획득·UI 교체·Shop 패시브 변경·다른 클래스의 결과를 대신하지 않습니다.
     /// </summary>
     public static void ValidateStageC()
     {
-        if (Application.isPlaying)
-            throw new InvalidOperationException("Stage C 검사는 Play Mode를 종료한 뒤 EditMode에서 실행하세요.");
+        if (!Application.isPlaying || !NetworkServer.active ||
+            !NetworkClient.active || !NetworkClient.ready)
+            throw new InvalidOperationException("Play Mode에서 기존 TEST Host를 시작하세요.");
+        if (isLiveValidationRunning || liveSequence != null || releaseVerificationWatcher != null)
+            throw new InvalidOperationException("다른 검사 또는 회수 확인이 진행 중입니다.");
+        if (NetworkServer.connections.Count != 1 || NetworkClient.localPlayer == null)
+            throw new InvalidOperationException("로컬 플레이어 한 명만 접속한 폐기용 Host가 필요합니다.");
+        if (EditorApplication.isPaused || !Mathf.Approximately(Time.timeScale, 1f))
+            throw new InvalidOperationException("Pause를 해제하고 시간 배율 1에서 검사하세요.");
+        if (!SceneManager.GetActiveScene().path.StartsWith("Assets/SW/TEST/", StringComparison.Ordinal))
+            throw new InvalidOperationException("저장된 SW TEST 씬에서만 실행할 수 있습니다.");
 
-        int checks = 0;
-        void Check(bool condition, string caseId, string detail)
-        {
-            Debug.Log($"[ArmorEffectValidation] case={caseId} passed={condition} detail={detail}");
-            if (!condition)
-                throw new InvalidOperationException($"[ArmorEffectValidation] FAIL: {caseId} - {detail}");
-            checks++;
-        }
+        PlayerContext context = NetworkClient.localPlayer.GetComponent<PlayerContext>();
+        RequireRealServerPlayer(context); // 정상 스폰·서버 권한·소유 참조를 기존 함수로 검사합니다.
+        RequireStageCManaReady(context);
+        if (!context.Equipment.TryGetEquippedItemInstance(EquipSlotType.Helmet, out ItemInstance helmet) ||
+            helmet?.definition == null ||
+            helmet.definition.itemId != "item.armor.helmet.powersavingheadset")
+            throw new InvalidOperationException("실제 인벤토리 UI에서 절전모드 헤드셋을 먼저 장착하세요.");
 
-        // C1. 실제 품목 확인
-        ItemDefinitionSO helmetDef = AssetDatabase.LoadAssetAtPath<ItemDefinitionSO>(
-            "Assets/Resources/DataFiles/ItemData/3. GeneratedAssets/Items/item.armor.helmet.powersavingheadset_절전모드 헤드셋.asset");
-        Check(helmetDef != null, "C01-RealItemAssetExists", "절전모드 헤드셋 SO 자산 존재");
-        Check(helmetDef.itemId == "item.armor.helmet.powersavingheadset", "C01-ItemIdExact", "정식 itemId=item.armor.helmet.powersavingheadset 일치");
-        Check(helmetDef.itemName == "절전모드 헤드셋", "C01-ItemNameExact", "정식 itemName=절전모드 헤드셋 일치");
-        Check(helmetDef.category == ItemCategory.Armor && helmetDef.armorType == ArmorType.Helmet, "C01-ArmorCategory", "방어구 투구 슬롯");
+        StatThresholdBuffUniqueEffectSO effect = RequireLowManaHelmetAsset(helmet.definition);
+        if (effect.name != "UE_LowManaRecovery" ||
+            !Mathf.Approximately(effect.thresholdValue, 25f) ||
+            !Mathf.Approximately(effect.buffSpec.statEffects[0].value, 30f))
+            throw new InvalidOperationException("이번 대표 검사는 UE_LowManaRecovery의 25% / +30% 설정을 사용합니다.");
+        if (!EditorUtility.DisplayDialog("실제 투구 검사",
+            "현재 마나와 회복 일시정지 상태를 잠시 변경한 뒤 복원합니다.\n" +
+            "다른 버프와 전투가 없는 폐기용 세션에서, 검사 중 입력하지 마세요.", "검사 시작", "취소"))
+            return;
 
-        var effect = helmetDef.uniqueEffect as StatThresholdBuffUniqueEffectSO;
-        Check(effect != null, "C01-EffectType", "StatThresholdBuffUniqueEffectSO 타입 일치");
-        Check(helmetDef.uniqueEffectId == "UE_LowManaRecovery" && effect.name == "UE_LowManaRecovery", "C01-EffectIdMatch", "효과 ID UE_LowManaRecovery 일치");
-        Check(effect.referenceStat == StatReference.CurrentManaPercent, "C01-ReferenceStat", "CurrentManaPercent 조건");
-        Check(effect.comparisonOperator == ComparisonOperator.LessOrEqual, "C01-ComparisonOp", "LessOrEqual 연산자");
-        Check(Mathf.Approximately(effect.thresholdValue, 25f), "C01-ThresholdValue", "25% 기준값");
-        Check(effect.buffSpec != null && effect.buffSpec.statEffects.Length == 1, "C01-BuffSpec", "버프 스펙 단일 옵션");
-        Check(effect.buffSpec.statEffects[0].statType == StatType.mpRegenPercent && Mathf.Approximately(effect.buffSpec.statEffects[0].value, 30f),
-            "C01-StatEffectValue", "mpRegenPercent 30% 증가");
-
-        LogAssetReference("C01-아이템", helmetDef);
-        LogAssetReference("C01-연결 효과", effect);
-
-        // C8. 표시 및 라벨 일치
-        Check(effect.effectName == "절전 모드", "C08-EffectName", "효과명 '절전 모드' 일치");
-        Check(effect.coefficients != null && effect.coefficients.Length == 2 &&
-              Mathf.Approximately(effect.coefficients[0], 25f) && Mathf.Approximately(effect.coefficients[1], 30f),
-            "C08-Coefficients", "계수 25;30 일치");
-        Check(!string.IsNullOrWhiteSpace(effect.effectDescription) && effect.effectDescription.Contains("{0}") && effect.effectDescription.Contains("{1}"),
-            "C08-DescriptionFormat", "효과 설명 포맷 스트링 포함");
-        Check(helmetDef.icon != null && effect.icon != null, "C08-IconExists", "아이템 및 효과 아이콘 스프라이트 존재");
-        Check(helmetDef.icon == effect.icon, "C08-IconSame", "아이템과 효과 아이콘 스프라이트 일치");
-
-        // C6: 두 클래스 (Fighter and Gunner) 검증
-        var classesToTest = new[]
-        {
-            (
-                CharacterClass.Fighter,
-                "Assets/SW/TEST/MirrorPlayerContext/Prefabs/FighterNetworkPlayer.prefab",
-                "Fighter"
-            ),
-            (
-                CharacterClass.Gunner,
-                "Assets/SW/TEST/MirrorPlayerContext/Prefabs/GunnerNetworkPlayer_MirrorTest.prefab",
-                "Gunner"
-            ),
-        };
-
-        bool wasServerActive = NetworkServer.active;
-        typeof(NetworkServer).GetProperty("active", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-            ?.SetValue(null, true);
-
+        isLiveValidationRunning = true;
+        isLiveValidationCancelled = false;
+        liveSequenceOwner = context;
+        liveSequence = RunEquippedHelmetCheck(context, helmet, effect);
         try
         {
-            foreach (var (charClass, prefabPath, className) in classesToTest)
+            AttachLiveExecutionLifetime();
+            if (context.StartCoroutine(liveSequence) == null)
+                throw new InvalidOperationException("검사 코루틴을 시작하지 못했습니다.");
+        }
+        catch
+        {
+            CancelLiveValidationInternal(isForcedEnvironmentExit: false);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 마나를 고치는 대신 정상 초기화 여부와 최종 스탯→최대 마나 연결을 확인합니다.
+    /// 최대치가 0이면 서버 상태를 위조하거나 임의의 100을 넣지 않고 원본 수치를 기록합니다.
+    /// </summary>
+    private static void RequireStageCManaReady(PlayerContext context)
+    {
+        if (context == null || context.Stats == null || context.Mana == null || context.Buffs == null ||
+            context.Health == null || context.Health.CurrentHealth <= 0f)
+            throw new InvalidOperationException("살아 있는 플레이어의 상태 참조가 필요합니다.");
+        if (!context.Stats.didAwake || !context.Stats.didStart ||
+            !context.Mana.didAwake || !context.Mana.didStart || !context.Buffs.didAwake)
+            throw new InvalidOperationException("Awake/Start가 끝나지 않았습니다. 수동 호출하지 말고 정상 스폰 완료 후 실행하세요.");
+        if (!context.Mana.isActiveAndEnabled || !context.Buffs.isActiveAndEnabled ||
+            context.Mana.GetComponent<PlayerStatManager>() != context.Stats ||
+            context.Buffs.GetComponent<PlayerStatManager>() != context.Stats)
+            throw new InvalidOperationException("같은 플레이어의 활성 Mana/Buffs/Stats 연결이 필요합니다.");
+        if (context.Stats.Stat == null)
+            throw new InvalidOperationException("PlayerStat이 초기화되지 않았습니다.");
+
+        context.Mana.RefreshMaxMana();
+        context.Stats.GetLayerStatSets(out StatSet character, out StatSet equipment,
+            out StatSet buff, out StatSet passive);
+        float maximum = context.Stats.Stat.maxMana;
+        Debug.Log($"[ArmorEffectValidation] 준비 진단: player={context.name} " +
+            $"statMax={maximum} cachedMax={context.Mana.MaxMana} " +
+            $"maxManaFlat(캐릭터/장비/버프/패시브)=" +
+            $"{character.maxManaFlat}/{equipment.maxManaFlat}/{buff.maxManaFlat}/{passive.maxManaFlat}");
+        if (float.IsNaN(maximum) || float.IsInfinity(maximum) || maximum <= 0f ||
+            !Mathf.Approximately(context.Mana.MaxMana, maximum))
+            throw new InvalidOperationException("계산된 최대 마나와 캐시가 유효하지 않습니다. 위 원본 수치와 초기화 경로를 확인하세요.");
+    }
+
+    /// <summary>
+    /// 이미 장착된 실제 아이템의 경계와 자동 회복 한 틱을 확인합니다.
+    /// 임시 플레이어·효과 러너를 만들지 않으며, 저장 자산을 파괴하지 않습니다.
+    /// </summary>
+    private static IEnumerator RunEquippedHelmetCheck(PlayerContext context,
+        ItemInstance helmet, StatThresholdBuffUniqueEffectSO effect)
+    {
+        bool saved = false;
+        bool completed = false;
+        bool oldPaused = false;
+        float oldMana = 0f;
+        string className = context.Equipment.CurrentCharacterClass?.ToString() ?? "클래스 미확인";
+        try
+        {
+            yield return null; // 실제 게임 프레임을 거칩니다. 초기화 완료는 아래에서 별도로 검사합니다.
+            RequireStageCManaReady(context);
+            RequireStageCHelmetUnchanged(context, helmet);
+            if (context.Buffs.ActiveBuffs.Any(b => b != null && !ReferenceEquals(b.source, effect)))
+                throw new InvalidOperationException("분리된 검사를 위해 다른 버프가 없는 세션을 사용하세요. 검사기가 버프를 강제 삭제하지는 않습니다.");
+
+            oldMana = context.Mana.CurrentMana;
+            oldPaused = context.Mana.IsRegenPaused;
+            saved = true;
+            context.Mana.IsRegenPaused = true;
+            float maximum = context.Mana.MaxMana;
+            context.Mana.SetCurrentMana(maximum); // 효과가 꺼진 상태의 실제 기본 재생량을 읽습니다.
+            float baseRegen = context.Stats.Stat.mpRegen;
+            if (float.IsNaN(baseRegen) || float.IsInfinity(baseRegen) || baseRegen <= 0f)
+                throw new InvalidOperationException("자동 회복 시험에는 양수의 기본 재생량이 필요합니다. 기본 재생 0은 별도 대조군으로 검사하세요.");
+            float boostedRegen = baseRegen * 1.3f;
+            ExpectPlayerState(context, effect, 0, maximum, maximum, baseRegen, $"C-실제기준-{className}");
+            yield return null; // 일시정지된 Mana.Update가 기존 회복 타이머를 비우게 합니다.
+
+            float[] percentages = { 20f, 24.9f, 25f, 25.1f, 0f };
+            foreach (float percent in percentages)
             {
-                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-                Check(prefab != null, $"C06-PrefabExists-{className}", $"{className} 프리팹 존재");
-
-                GameObject player = UnityEngine.Object.Instantiate(prefab, Vector3.zero, Quaternion.identity);
-                player.name = $"StageC_Validation_{className}";
-
-                try
-                {
-                    PlayerContext context = player.GetComponent<PlayerContext>();
-                    NetworkIdentity identity = player.GetComponent<NetworkIdentity>();
-                    foreach (NetworkBehaviour behaviour in player.GetComponentsInChildren<NetworkBehaviour>(true))
-                        SetNetworkServerState(identity, behaviour);
-
-                    // EditMode: Awake()는 실행되지만 isLocalPlayer=false 경로로 인해
-                    // statManager 할당 후 early-return해 Recalculate 트리거가 누락됨.
-                    // reflection으로 statManager를 명시적으로 재주입해 ApplyBuff 후 재계산 보장.
-                    {
-                        var smFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-                        typeof(PlayerManaManager).GetField("statManager", smFlags)?.SetValue(context.Mana, context.Stats);
-                        typeof(PlayerHealthManager).GetField("statManager", smFlags)?.SetValue(context.Health, context.Stats);
-                        typeof(PlayerBuffManager).GetField("statManager", smFlags)?.SetValue(context.Buffs, context.Stats);
-                    }
-
-                    context.Equipment.SetActiveCharacterClass(charClass);
-                    context.Stats.EnsureInitialized();
-                    context.Stats.GetLayerStatSets(out StatSet ch, out _, out _, out _);
-                    context.Stats.SetPassiveStats(new StatSet
-                    {
-                        maxManaFlat = 100f - ch.maxManaFlat,
-                        mpRegenFlat = 10f - ch.mpRegenFlat
-                    });
-                    context.Mana.RefreshMaxMana();
-                    context.Mana.SetCurrentMana(100f);
-
-                    PlayerArmorEffectProvider_MirrorTest provider = player.GetComponent<PlayerArmorEffectProvider_MirrorTest>();
-                    Check(provider != null, $"C06-ProviderExists-{className}", $"{className} PlayerArmorEffectProvider 부착");
-                    provider.OnStartServer();
-
-                    var transaction = new EquipmentTransaction(context.Equipment);
-
-                    // 기존 투구 장착 해제 (있다면)
-                    if (context.Equipment.TryGetEquippedItem(EquipSlotType.Helmet, out InventoryItem existingHelmet))
-                    {
-                        transaction.TryUnequipForTransfer(EquipSlotType.Helmet, existingHelmet);
-                    }
-
-                    var helmetItem = new InventoryItem(new ItemInstance
-                    {
-                        instanceId = $"stage_c_{className}_headset",
-                        definition = helmetDef,
-                        rolledSubStats = new List<RolledSubStat>()
-                    });
-
-                    // -------------------------------------------------------------
-                    // C2. 가방·장착 (Backpack vs Equipped)
-                    // -------------------------------------------------------------
-                    // 아이템 미착용(가방 소지 상태)에서 마나 20%로 감소
-                    context.Mana.SetCurrentMana(20f);
-                    Check(!HasBuff(context, effect), $"C02-BackpackOnlyInactive-{className}", "가방에만 보관 시 마나 20%에서도 버프 비활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 10f), $"C02-BackpackRegenBase-{className}", "가방 보관 시 기본 마나 재생 10 유지");
-
-                    // 장착 수행
-                    var equipResult = transaction.TryRestoreEquippedItem(helmetItem, EquipSlotType.Helmet);
-                    Check(equipResult.IsSuccess, $"C05-EquipSuccess-{className}", "트랜잭션을 통한 투구 정상 장착");
-
-                    // EditMode에서 ReconcileEquipment()는 isServer 가드에서 막힌다.
-                    // 실제 런타임과 같은 결과를 만들기 위해 StatThresholdRunner를 수동으로 생성·바인딩.
-                    context.Stats.Recalculate();
-                    context.Mana.RefreshMaxMana();
-                    var runnerGO = new GameObject("LowManaEffect_C2_Test");
-                    runnerGO.transform.SetParent(player.transform, false);
-                    var runner = runnerGO.AddComponent<StatThresholdRunner_MirrorTest>();
-                    runner.Bind(context.Stats, context.Health, context.Mana, context.Buffs, effect);
-                    // 진단 로그
-                    Debug.Log($"[C02-Diag-{className}] MaxMana={context.Mana.MaxMana} CurrentMana={context.Mana.CurrentMana} Stat.maxMana={context.Stats.Stat?.maxMana} activeBuffs={context.Buffs?.ActiveBuffs?.Count} hasBuff={HasBuff(context,effect)}");
-                    Check(HasBuff(context, effect), $"C02-EquippedActiveAt20-{className}", "장착 후 마나 20% 조건 만족 시 버프 즉시 활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C02-EquippedRegenBoost-{className}", "버프 활성 시 마나 재생 13 적용 (10 * 1.3)");
-
-                    // -------------------------------------------------------------
-                    // C3. 경계·최대치 불변 (Threshold Boundaries & MaxMana Invariant)
-                    // -------------------------------------------------------------
-                    float initialMaxMana = context.Mana.MaxMana;
-
-                    // 24.9% 경계 -> 활성
-                    context.Mana.SetCurrentMana(24.9f);
-                    Check(HasBuff(context, effect), $"C03-Boundary24.9-Active-{className}", "마나 24.9%에서 활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C03-RegenAt24.9-{className}", "24.9%에서 재생 13");
-                    Check(Mathf.Approximately(context.Mana.MaxMana, initialMaxMana), $"C03-MaxManaInvariant-1-{className}", "최대 마나 불변 유지");
-
-                    // 25.0% 경계 -> 활성
-                    context.Mana.SetCurrentMana(25.0f);
-                    Check(HasBuff(context, effect), $"C03-Boundary25.0-Active-{className}", "마나 25.0%에서 활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C03-RegenAt25.0-{className}", "25.0%에서 재생 13");
-                    Check(Mathf.Approximately(context.Mana.MaxMana, initialMaxMana), $"C03-MaxManaInvariant-2-{className}", "최대 마나 불변 유지");
-
-                    // 25.1% 경계 -> 비활성
-                    context.Mana.SetCurrentMana(25.1f);
-                    Check(!HasBuff(context, effect), $"C03-Boundary25.1-Inactive-{className}", "마나 25.1%에서 비활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 10f), $"C03-RegenAt25.1-{className}", "25.1%에서 기본 재생 10 복귀");
-                    Check(Mathf.Approximately(context.Mana.MaxMana, initialMaxMana), $"C03-MaxManaInvariant-3-{className}", "최대 마나 불변 유지");
-
-                    // 26.0% 경계 -> 비활성
-                    context.Mana.SetCurrentMana(26.0f);
-                    Check(!HasBuff(context, effect), $"C03-Boundary26.0-Inactive-{className}", "마나 26.0%에서 비활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 10f), $"C03-RegenAt26.0-{className}", "26.0%에서 기본 재생 10 복귀");
-
-                    // 0% -> 활성
-                    context.Mana.SetCurrentMana(0f);
-                    Check(HasBuff(context, effect), $"C03-Boundary0.0-Active-{className}", "마나 0%에서 활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C03-RegenAt0.0-{className}", "0%에서 재생 13");
-
-                    // -------------------------------------------------------------
-                    // C4. 자연 재생 틱 및 자동 해제 (Natural Mana Regen Tick)
-                    // -------------------------------------------------------------
-                    // 24 마나 설정 (24% -> 활성, regen 13)
-                    context.Mana.SetCurrentMana(24f);
-                    Check(HasBuff(context, effect), $"C04-PreTick-Active-{className}", "자연 재생 전 마나 24%에서 활성");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C04-PreTick-Regen-{className}", "자연 재생 전 재생 13");
-
-                    // 1틱 자연 회복 시뮬레이션: GetMpRegen() * regenMultiplier = 13
-                    float regenAmount = context.Stats.Stat.mpRegen * context.Mana.RegenMultiplier;
-                    context.Mana.RestoreMana(regenAmount); // 24 + ceil(13) = 37 마나 (37% > 25%)
-
-                    Check(Mathf.Approximately(context.Mana.CurrentMana, 37f), $"C04-PostTick-Mana37-{className}", "자연 재생 1틱 후 마나 37 도달");
-                    Check(!HasBuff(context, effect), $"C04-PostTick-BuffRemoved-{className}", "자연 재생으로 25% 초과 시 버프 자동 제거");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 10f), $"C04-PostTick-RegenBase-{className}", "버프 제거 후 기본 재생 10 복귀");
-
-                    // -------------------------------------------------------------
-                    // C5. 장비 거래 트랜잭션 (Equipment Transactions)
-                    // -------------------------------------------------------------
-                    // 마나를 10%로 낮춰 버프 활성 조건으로 만듦
-                    context.Mana.SetCurrentMana(10f);
-                    Check(HasBuff(context, effect), $"C05-ActiveAt10-{className}", "마나 10%에서 버프 활성");
-
-                    // TryUnequipForTransfer로 해제
-                    var unequipResult = transaction.TryUnequipForTransfer(EquipSlotType.Helmet, helmetItem);
-                    Check(unequipResult.IsSuccess, $"C05-UnequipSuccess-{className}", "투구 해제 트랜잭션 성공");
-                    Check(!HasBuff(context, effect), $"C05-UnequipBuffRemoved-{className}", "투구 해제 직후 버프 완전 제거");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 10f), $"C05-UnequipRegenBase-{className}", "해제 후 마나 10%여도 기본 재생 10 복귀");
-
-                    // 잘못된 거래 시도 (빈 슬롯 해제)
-                    var invalidUnequip = transaction.TryUnequipForTransfer(EquipSlotType.Helmet, helmetItem);
-                    Check(!invalidUnequip.IsSuccess, $"C05-InvalidUnequipFails-{className}", "이미 빈 슬롯 해제 실패 반환 (안전)");
-                    Check(!HasBuff(context, effect), $"C05-InvalidTransactionNoSideEffect-{className}", "실패한 트랜잭션으로 인한 부작용 없음");
-
-                    // 재장착 복원
-                    var reequipResult = transaction.TryRestoreEquippedItem(helmetItem, EquipSlotType.Helmet);
-                    Check(reequipResult.IsSuccess, $"C05-ReequipSuccess-{className}", "투구 재장착 트랜잭션 성공");
-                    Check(HasBuff(context, effect), $"C05-ReequipBuffActive-{className}", "재장착 후 마나 10%에서 버프 정상 복원");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 13f), $"C05-ReequipRegenBoost-{className}", "재장착 후 마나 재생 13 적용");
-
-                    // -------------------------------------------------------------
-                    // C7. 비영점 개인 패시브 회귀 (Code A Passive Stat Regression)
-                    // -------------------------------------------------------------
-                    // 비영점 패시브 스탯 설정 (maxManaFlat = 150 - ch.maxManaFlat, mpRegenFlat = 20 - ch.mpRegenFlat)
-                    context.Stats.SetPassiveStats(new StatSet
-                    {
-                        maxManaFlat = 150f - ch.maxManaFlat,
-                        mpRegenFlat = 20f - ch.mpRegenFlat,
-                    });
-                    // 기본 maxMana = 150. 기본 mpRegen = 20.
-                    context.Mana.RefreshMaxMana();
-                    Check(Mathf.Approximately(context.Mana.MaxMana, 150f), $"C07-PassiveMaxMana150-{className}", "패시브 반영 후 최대 마나 150");
-
-                    // 마나 30으로 설정 (30 / 150 = 20% <= 25% -> 버프 활성)
-                    context.Mana.SetCurrentMana(30f);
-                    Check(HasBuff(context, effect), $"C07-PassiveManaActive-{className}", "150 기준 20%(30) 마나에서 버프 활성");
-                    // 20 * 1.3 = 26.
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 26f), $"C07-PassiveRegenBoost26-{className}", "기본 20 + 30% = 재생 26");
-
-                    // Code A 검증: 다양한 스탯 변경 이벤트가 발생해도 개인 패시브 스탯이 0으로 날아가지 않는지 확인
-                    context.Stats.Stat.NotifyValuesChanged();
-                    PublishEquipmentChanged(context.Equipment);
-                    context.Mana.RefreshMaxMana();
-                    context.Stats.Recalculate();
-
-                    // 이벤트 발생 후에도 패시브 스탯과 총합 150/26이 정확히 보존되는지 확인
-                    Check(Mathf.Approximately(context.Mana.MaxMana, 150f), $"C07-PassiveRetainedMaxMana-{className}", "이벤트 후 개인 패시브 maxMana=150 보존 (회귀 없음)");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 26f), $"C07-PassiveRetainedRegen-{className}", "이벤트 후 개인 패시브 mpRegen=26 보존 (회귀 없음)");
-
-                    // 마나 50으로 증가 (50 / 150 = 33.3% > 25% -> 버프 해제)
-                    context.Mana.SetCurrentMana(50f);
-                    Check(!HasBuff(context, effect), $"C07-PassiveAboveThreshold-{className}", "마나 33.3%에서 버프 해제");
-                    Check(Mathf.Approximately(context.Stats.Stat.mpRegen, 20f), $"C07-PassiveBaseRegen20-{className}", "버프 해제 후 패시브 포함 기본 재생 20 복귀");
-
-                    // 최종 정리: 투구 해제
-                    transaction.TryUnequipForTransfer(EquipSlotType.Helmet, helmetItem);
-                    Check(!HasBuff(context, effect), $"C07-FinalCleanUnequip-{className}", "최종 해제 후 버프 없음");
-
-                    provider.OnStopServer();
-                }
-                finally
-                {
-                    if (player != null)
-                        UnityEngine.Object.DestroyImmediate(player);
-                }
+                RequireStageCHelmetUnchanged(context, helmet);
+                float target = maximum * (percent / 100f);
+                context.Mana.SetCurrentMana(target); // 경계 검사 입력이며 자연 회복 결과는 아닙니다.
+                bool active = percent <= 25f;
+                ExpectPlayerState(context, effect, active ? 1 : 0, target, maximum,
+                    active ? boostedRegen : baseRegen, $"C-마나{percent}%-{className}");
             }
 
-            Debug.Log($"[ArmorEffectValidation] PASS Stage C 전체 통과: 총 {checks}개 조건 검증 완료. (Fighter & Gunner 2종, C1~C8 전수 검증)");
+            // 실제 Update의 시간 경과를 기다립니다. RestoreMana나 Update를 직접 호출하지 않습니다.
+            float beforeTick = maximum * 0.25f;
+            context.Mana.SetCurrentMana(beforeTick);
+            ExpectPlayerState(context, effect, 1, beforeTick, maximum, boostedRegen,
+                $"C-실제자동회복전-{className}");
+            float multiplier = context.Mana.RegenMultiplier;
+            if (float.IsNaN(multiplier) || float.IsInfinity(multiplier) || multiplier <= 0f)
+                throw new InvalidOperationException("자동 회복 시험에는 양수의 회복 배율이 필요합니다.");
+            float interval;
+            using (var settings = new SerializedObject(context.Mana))
+            {
+                SerializedProperty property = settings.FindProperty("regenTickInterval");
+                if (property == null)
+                    throw new InvalidOperationException("마나 회복 주기 설정을 찾지 못했습니다.");
+                interval = property.floatValue; // 직렬화된 설정을 읽을 뿐 변경하지 않습니다.
+            }
+            if (float.IsNaN(interval) || float.IsInfinity(interval) || interval <= 0f)
+                throw new InvalidOperationException("회복 주기는 양수의 유한한 값이어야 합니다.");
+            float expectedMana = Mathf.Min(maximum, beforeTick + Mathf.Ceil(boostedRegen * multiplier));
+            if (expectedMana <= beforeTick)
+                throw new InvalidOperationException("이 구성에서는 다음 회복으로 마나 증가를 관찰할 수 없습니다.");
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + Math.Max(5.0, interval * 3.0 + 2.0);
+            context.Mana.IsRegenPaused = false;
+            while (Mathf.Approximately(context.Mana.CurrentMana, beforeTick))
+            {
+                if (EditorApplication.timeSinceStartup > deadline)
+                    throw new InvalidOperationException("실제 마나 자동 회복이 제한 시간 안에 발생하지 않았습니다.");
+                yield return null;
+                RequireStageCHelmetUnchanged(context, helmet);
+                if (!context.Mana.isActiveAndEnabled || context.Mana.IsRegenPaused)
+                    throw new InvalidOperationException("자연 회복 대기 중 마나 컴포넌트가 멈췄습니다.");
+            }
+            context.Mana.IsRegenPaused = true;
+            ExpectPlayerState(context, effect, 0, expectedMana, maximum, baseRegen,
+                $"C-실제자동회복후해제-{className}");
+            Debug.Log($"[ArmorEffectValidation] 실제 회복 관찰: 경과=" +
+                $"{EditorApplication.timeSinceStartup - startedAt:F3}초, 주기설정={interval}초, " +
+                $"배율={multiplier}, 마나={beforeTick}->{context.Mana.CurrentMana}");
+            completed = true;
         }
         finally
         {
-            typeof(NetworkServer).GetProperty("active", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                ?.SetValue(null, wasServerActive);
+            bool cancelled = isLiveValidationCancelled;
+            bool canRestore = saved && Application.isPlaying && NetworkServer.active &&
+                context != null && context.Mana != null &&
+                context.Health != null && context.Health.CurrentHealth > 0f;
+            if (canRestore)
+            {
+                NetworkIdentity identity = context.GetComponent<NetworkIdentity>();
+                canRestore = identity != null &&
+                    NetworkServer.spawned.TryGetValue(identity.netId, out NetworkIdentity registered) &&
+                    registered == identity;
+            }
+            bool restored = TryCleanupStep("StageC마나복원", () =>
+            {
+                if (canRestore) context.Mana.SetCurrentMana(oldMana);
+            });
+            restored &= TryCleanupStep("StageC회복설정복원", () =>
+            {
+                if (saved && context != null && context.Mana != null)
+                    context.Mana.IsRegenPaused = oldPaused;
+            });
+            DetachLifetimeEvents();
+            isLiveValidationRunning = false;
+            isLiveValidationCancelled = false;
+            if (completed && !cancelled && canRestore && restored)
+                Debug.Log($"[ArmorEffectValidation] PASS 실제 장착 투구의 경계·자동회복: {className}. " +
+                    "UI 획득/교체, Shop 패시브 변경, 다른 클래스, 원격 검증은 별도입니다.");
+            else
+                Debug.LogWarning($"[ArmorEffectValidation] Stage C 정상 완료 아님. " +
+                    $"completed={completed} cancelled={cancelled} restoreAvailable={canRestore} restoreOk={restored}");
         }
     }
 
-    private static bool HasBuff(PlayerContext context, IBuffSource source)
+    /// <summary>검사 중 플레이어가 사라지거나 장비가 바뀌면 다른 상태를 성공으로 판정하지 않습니다.</summary>
+    private static void RequireStageCHelmetUnchanged(PlayerContext context, ItemInstance helmet)
     {
-        return context != null && context.Buffs != null &&
-            context.Buffs.ActiveBuffs.Any(buff => ReferenceEquals(buff.source, source));
-    }
-
-    private static void PublishEquipmentChanged(EquipmentSystem equipment)
-    {
-        typeof(EquipmentSystem).GetMethod("PublishChanged", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-            ?.Invoke(equipment, null);
-    }
-
-    private static void SetNetworkServerState(NetworkIdentity identity, NetworkBehaviour behaviour)
-    {
-        typeof(NetworkIdentity).GetProperty("isServer", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            ?.SetValue(identity, true);
-        typeof(NetworkBehaviour).GetProperty("netIdentity", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            ?.SetValue(behaviour, identity);
+        if (!Application.isPlaying || !NetworkServer.active || context == null ||
+            context.Health == null || context.Health.CurrentHealth <= 0f ||
+            context.Mana == null || context.Equipment == null ||
+            !context.Equipment.TryGetEquippedItemInstance(EquipSlotType.Helmet, out ItemInstance current) ||
+            !ReferenceEquals(current, helmet))
+            throw new InvalidOperationException("검사 중 서버·플레이어·장착 아이템이 바뀌었습니다.");
     }
 }

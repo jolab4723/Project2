@@ -482,6 +482,8 @@ MonoBehaviour:
   defaultTabToggle: {fileID: 0}
   masterVolumeSlider: {fileID: 1765597643}
   muteToggle: {fileID: 489684749}
+  bgmVolumeSlider: {fileID: 0}
+  sfxVolumeSlider: {fileID: 0}
   skill1Slot: {fileID: 634660749}
   skill2Slot: {fileID: 1635839083}
   skill3Slot: {fileID: 445237275}
@@ -20306,7 +20308,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 964465453}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &132171398
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21393,6 +21394,8 @@ MonoBehaviour:
   nameText: {fileID: 2131978972}
   totalValueText: {fileID: 151875429}
   detailValueText: {fileID: 669243491}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &140109022
 GameObject:
   m_ObjectHideFlags: 0
@@ -23981,7 +23984,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 721534217}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &169049128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27727,6 +27729,29 @@ MonoBehaviour:
   - {fileID: 733789108}
   - {fileID: 765800633}
   - {fileID: 681114967}
+  skillIconSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  enhancementIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  evolutionIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  unselectedOptionIcon: {fileID: 0}
+  skillOptionBadges:
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
   evolutionButtons:
   - {fileID: 169049128}
   - {fileID: 1187245369}
@@ -28274,6 +28299,8 @@ MonoBehaviour:
   nameText: {fileID: 118096738}
   totalValueText: {fileID: 544600010}
   detailValueText: {fileID: 109355531}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &232546974
 GameObject:
   m_ObjectHideFlags: 0
@@ -30427,6 +30454,8 @@ MonoBehaviour:
   nameText: {fileID: 390019223}
   totalValueText: {fileID: 1532627502}
   detailValueText: {fileID: 338660009}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &270829415
 GameObject:
   m_ObjectHideFlags: 0
@@ -34386,6 +34415,8 @@ MonoBehaviour:
   nameText: {fileID: 114284862}
   totalValueText: {fileID: 2080740482}
   detailValueText: {fileID: 649796339}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &328840507
 GameObject:
   m_ObjectHideFlags: 0
@@ -37579,7 +37610,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb1875d19ec53e46b3f632181ee3ce7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItemTooltipScanner
-  player: {fileID: 0}
+  playerOverride: {fileID: 0}
   tooltipView: {fileID: 1113776613}
   worldCamera: {fileID: 0}
   worldItemLayer:
@@ -39552,6 +39583,7 @@ MonoBehaviour:
   content: {fileID: 536183479}
   quests:
   - questName: "\uBA74\uB3C4\uAE30 \uBAA8\uD130\uAC00 \uD544\uC694\uD574"
+    objectiveTypeLabel: 
     description: "\uC5B4\uC6B0, \uC624\uB7AB\uB3D9\uC548 \uBA74\uB3C4\uB97C \uBABB\uD588\uB124.
       \uB85C\uBD07\uB4E4\uC5D0\uAC8C\uC11C \uBA74\uB3C4\uAE30 \uBAA8\uD130\uB85C
       \uC4F8 \uB9CC\uD55C \uC791\uC740 \uBAA8\uD130\uB97C \uC880 \uAC00\uC838\uC640
@@ -41654,7 +41686,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 185572616}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &416524817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -47179,6 +47210,8 @@ MonoBehaviour:
   logText: {fileID: 867474733}
   inventoryController: {fileID: 1912764911}
   itemUISpawner: {fileID: 1912764909}
+  saleLabel: {fileID: 0}
+  saleLabelText: {fileID: 0}
 --- !u!1 &477906343
 GameObject:
   m_ObjectHideFlags: 0
@@ -57217,7 +57250,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 1734943486}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &608423927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63267,7 +63299,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 1101052348}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &681114967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65273,6 +65304,8 @@ MonoBehaviour:
   nameText: {fileID: 539347742}
   totalValueText: {fileID: 1508356746}
   detailValueText: {fileID: 319902314}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &704622576
 GameObject:
   m_ObjectHideFlags: 0
@@ -67364,7 +67397,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 186827352}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &733789108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69513,7 +69545,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 1803114887}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &765800633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78342,6 +78373,8 @@ MonoBehaviour:
   nameText: {fileID: 439275734}
   totalValueText: {fileID: 655035509}
   detailValueText: {fileID: 1754216252}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &889814897
 GameObject:
   m_ObjectHideFlags: 0
@@ -102352,7 +102385,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 1618414785}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &1187245369
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103133,7 +103165,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 483474574}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!114 &1193022880
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124985,6 +125016,8 @@ MonoBehaviour:
   nameText: {fileID: 944647632}
   totalValueText: {fileID: 1678807745}
   detailValueText: {fileID: 137356385}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1289593980
 GameObject:
   m_ObjectHideFlags: 0
@@ -140932,6 +140965,8 @@ MonoBehaviour:
   nameText: {fileID: 324390396}
   totalValueText: {fileID: 1228315007}
   detailValueText: {fileID: 283054989}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1425994383
 GameObject:
   m_ObjectHideFlags: 0
@@ -145442,6 +145477,8 @@ MonoBehaviour:
   nameText: {fileID: 1626178146}
   totalValueText: {fileID: 1008800394}
   detailValueText: {fileID: 34572201}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1494833176
 GameObject:
   m_ObjectHideFlags: 0
@@ -166572,7 +166609,6 @@ MonoBehaviour:
   activeHighlight: {fileID: 1844229278}
   missingIconLabel: {fileID: 0}
   levelLabel: {fileID: 0}
-  skillLevelText: {fileID: 0}
 --- !u!1 &1640227716
 GameObject:
   m_ObjectHideFlags: 0
@@ -176845,6 +176881,8 @@ MonoBehaviour:
   nameText: {fileID: 521045402}
   totalValueText: {fileID: 759156028}
   detailValueText: {fileID: 651095988}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1788915911
 GameObject:
   m_ObjectHideFlags: 0
@@ -186675,6 +186713,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
+  useLowManaHelmetEffect: 0
 --- !u!114 &1912764908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -191787,6 +191826,8 @@ MonoBehaviour:
   nameText: {fileID: 1696417361}
   totalValueText: {fileID: 124424060}
   detailValueText: {fileID: 2118683352}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1992712413
 GameObject:
   m_ObjectHideFlags: 0
@@ -201956,6 +201997,8 @@ MonoBehaviour:
   nameText: {fileID: 171025903}
   totalValueText: {fileID: 569767288}
   detailValueText: {fileID: 644269412}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &2078607798
 GameObject:
   m_ObjectHideFlags: 0

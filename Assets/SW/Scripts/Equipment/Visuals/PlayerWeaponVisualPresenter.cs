@@ -266,6 +266,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private static Transform FindDescendant(Transform root, string objectName)
     {
+        Transform directChild = root.Find(objectName);
+        if (directChild != null)
+            return directChild;
+
         foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
         {
             if (candidate.name == objectName)
