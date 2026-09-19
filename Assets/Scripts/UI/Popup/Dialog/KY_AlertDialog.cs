@@ -35,6 +35,7 @@ public class KY_AlertDialog : KY_PopupBase
             warningText.text = data.warningText;
 
         Open();
+        GetComponent<KY_CurtainEffect>()?.Open();
     }
 
     private void OnConfirmClicked()

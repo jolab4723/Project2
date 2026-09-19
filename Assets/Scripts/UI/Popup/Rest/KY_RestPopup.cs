@@ -100,6 +100,7 @@ public class KY_RestPopup : KY_PopupBase
     public override void Open()
     {
         base.Open();
+        GetComponentInChildren<KY_CurtainEffect>(true)?.Open();
         HideCompletionMessage();
         RefreshView();
     }
