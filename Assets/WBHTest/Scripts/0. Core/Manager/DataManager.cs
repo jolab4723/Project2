@@ -214,9 +214,8 @@ namespace Core
                     YJ_UnknownRunBuffSource.CompleteBattle(data, completedUnknownBattleKey);
                 }
                 WriteGameplayDataAtomic(path, data);
-                if (!string.IsNullOrEmpty(completedUnknownBattleKey) &&
-                    !YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string restoreError))
-                    throw new System.InvalidOperationException(restoreError);
+                if (!string.IsNullOrEmpty(completedUnknownBattleKey))
+                    YJ_UnknownRunBuffSource.RemoveCompletedBattle(stats.GetComponent<PlayerBuffManager>(), completedUnknownBattleKey);
                 return true;
             }
             catch (System.Exception exception)

@@ -8,6 +8,7 @@ using UnityEngine;
 public sealed class YJ_UnknownRunBuffSource : IBuffSource
 {
     public string EffectKey { get; }
+    public string BattleKey { get; }
     public string BuffDisplayName { get; }
     public string BuffDescription => string.Empty;
     public Sprite BuffIcon => null;
@@ -20,6 +21,7 @@ public sealed class YJ_UnknownRunBuffSource : IBuffSource
     private YJ_UnknownRunBuffSource(UnknownStageBuffRecord record)
     {
         EffectKey = record.effectKey;
+        BattleKey = record.battleKey;
         BuffDisplayName = string.IsNullOrWhiteSpace(record.displayName) ? record.stageId : record.displayName;
         StatEffects = CopyStats(record.statEffects);
     }
@@ -129,5 +131,16 @@ public sealed class YJ_UnknownRunBuffSource : IBuffSource
         if (string.IsNullOrWhiteSpace(battleKey)) throw new ArgumentException("전투 노드 키가 없습니다.");
         data.unknownStageBuffs?.RemoveAll(r => r.lifetime == YJ_UnknownEffectLifetime.NextBattle && r.battleKey == battleKey);
         data.lastCompletedUnknownBattleKey = battleKey;
+    }
+
+    /// <summary>클리어한 전투 효과만 제거한다. 지속 버프를 재적용하여 체력을 재클램프하지 않는다.</summary>
+    public static void RemoveCompletedBattle(PlayerBuffManager target, string battleKey)
+    {
+        if (target == null || string.IsNullOrEmpty(battleKey)) return;
+        var expired = new List<IBuffSource>();
+        foreach (var buff in target.ActiveBuffs)
+            if (buff.source is YJ_UnknownRunBuffSource source && source.BattleKey == battleKey)
+                expired.Add(source);
+        foreach (var source in expired) target.RemoveBuff(source);
     }
 }
