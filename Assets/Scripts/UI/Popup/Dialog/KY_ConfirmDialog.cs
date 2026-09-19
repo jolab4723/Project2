@@ -14,6 +14,9 @@ public class KY_ConfirmDialog : KY_PopupBase
     [SerializeField] private Button yesButton;
     [SerializeField] private Button noButton;
 
+    [Header("Effect")]
+    [SerializeField] private KY_CurtainEffect curtainEffect;
+
     private KY_DialogData currentData;
 
     private void Awake()
@@ -40,7 +43,7 @@ public class KY_ConfirmDialog : KY_PopupBase
         }
 
         Open();
-        GetComponent<KY_CurtainEffect>()?.Open();
+        curtainEffect?.Open();
     }
 
     private void OnYesClicked()
