@@ -1832,6 +1832,7 @@ GameObject:
   - component: {fileID: 5328428069815637793}
   - component: {fileID: -898899859643495909}
   - component: {fileID: -5780356104711510655}
+  - component: {fileID: 387757446132418227}
   m_Layer: 10
   m_Name: Elite_Melee_01
   m_TagString: Untagged
@@ -1956,7 +1957,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &6011413235303914579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2168,6 +2170,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &-5780356104711510655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2439,6 +2443,20 @@ MonoBehaviour:
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &387757446132418227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8343252582345304491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &8449699787935935056
 GameObject:
   m_ObjectHideFlags: 0
