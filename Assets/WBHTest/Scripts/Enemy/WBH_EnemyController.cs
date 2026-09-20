@@ -174,16 +174,23 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern.SetTarget(target);
     }
 
+    /// <summary>
+    /// SW 수정: 살아 있는 활성 적에게 전달합니다. Mirror는 원본 AI만 끄므로
+    /// 이 컨트롤러의 enabled 대신 실제 상태이상 컴포넌트를 확인합니다.
+    /// </summary>
     public void AddStatusEffect(WBH_StatusEffectData data)
     {
-        if (isActiveAndEnabled || isDying || status == null || status.IsDead || statusEffectController == null || !statusEffectController.isActiveAndEnabled)
+        if (!gameObject.activeInHierarchy || isDying || status == null || status.IsDead ||
+            statusEffectController == null || !statusEffectController.isActiveAndEnabled)
             return;
 
         statusEffectController.AddStatusEffect(data);
     }
 
+    /// <summary>SW 수정: 풀에 돌려줄 때 이전 상태이상도 즉시 해제합니다.</summary>
     public void ResetForPool()
     {
+        statusEffectController?.ClearAllStatusEffects();
         gradeVisual?.ResetForPool();
     }
 
