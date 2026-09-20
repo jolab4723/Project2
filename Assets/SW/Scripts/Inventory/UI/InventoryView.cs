@@ -71,7 +71,7 @@ public sealed class InventoryView : MonoBehaviour
 
     public bool Bind(PlayerContext context)
     {
-        if (context == null || !Bind(context.Inventory))
+        if (context == null || !context.IsComplete || !Bind(context.Inventory))
             return false;
 
         if (tooltipManager != null)

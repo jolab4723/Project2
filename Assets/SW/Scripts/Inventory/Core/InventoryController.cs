@@ -48,6 +48,22 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
     public PlayerWallet PlayerWallet => playerWallet;
+    public PlayerContext BoundPlayer { get; private set; }
+
+    /// <summary>씬 인벤토리를 한 싱글 플레이어에게만 연결한다. 아이템과 지갑은 그대로 유지한다.</summary>
+    internal bool TryBindPlayer(PlayerContext player)
+    {
+        if (player == null || (BoundPlayer != null && BoundPlayer != player))
+            return false;
+        BoundPlayer = player;
+        return true;
+    }
+
+    internal void UnbindPlayer(PlayerContext player)
+    {
+        if (BoundPlayer == player)
+            BoundPlayer = null;
+    }
 
     public static EquipmentSystem GetLocalEquipmentSystem(Component owner)
     {
@@ -55,9 +71,14 @@ public class InventoryController : MonoBehaviour, IItemReceiver
             return null;
 
         var identity = owner.GetComponentInParent<Mirror.NetworkIdentity>();
-        return identity == null || identity.isLocalPlayer
-            ? Instance?.EquipmentSystem
-            : null;
+        if (identity != null && !identity.isLocalPlayer)
+            return null;
+
+        PlayerContext context = owner.GetComponentInParent<PlayerContext>();
+        if (context != null)
+            return context.HasInventoryRuntime ? context.Equipment : null;
+
+        return Instance?.EquipmentSystem;
     }
 
     // ponytail: 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
