@@ -414,9 +414,22 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         float targetWeight =
             hasActiveLeftHandGrip && IsGunnerHoldingWeapon() ? 1f : 0f;
 
+        // Recovery can lower the weapon beyond the support arm's reach. Release
+        // the authored hand pose gradually instead of pinning a straight elbow.
+        var arm = leftHandIkConstraint.data;
+        if (targetWeight > 0f && arm.root != null && arm.mid != null &&
+            arm.tip != null && arm.target != null)
+        {
+            float armLength = Vector3.Distance(arm.root.position, arm.mid.position) +
+                              Vector3.Distance(arm.mid.position, arm.tip.position);
+            float reach = Vector3.Distance(arm.root.position, arm.target.position);
+            if (armLength > 0.0001f && reach > armLength)
+                targetWeight *= 1f - Mathf.InverseLerp(armLength, armLength * 1.08f, reach);
+        }
+
         // The shot is authored from the first attack event, so do not leave the
         // support hand in the blend-in window while the weapon fires.
-        if (targetWeight > 0f && IsGunnerAttackState())
+        if (targetWeight >= 1f && IsGunnerAttackState())
         {
             leftHandIkConstraint.weight = 1f;
             return;
