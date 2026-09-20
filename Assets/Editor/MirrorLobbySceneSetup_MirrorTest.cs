@@ -235,8 +235,8 @@ public static class MirrorLobbySceneSetup_MirrorTest
         foreach (string path in new[] { FighterPath, GunnerPath })
         {
             GameObject player = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (player == null || !player.GetComponent<PlayerContext>().IsComplete)
-                throw new InvalidOperationException("PlayerContext 필수 참조: " + path);
+            if (player == null || player.GetComponent<MirrorSpawnedPlayerBinder>()?.IsConfigured != true)
+                throw new InvalidOperationException("PlayerContext/미러 필수 참조: " + path);
             VerifyReferences(new[] { player });
             foreach (Component component in player.GetComponentsInChildren<Component>(true))
             {

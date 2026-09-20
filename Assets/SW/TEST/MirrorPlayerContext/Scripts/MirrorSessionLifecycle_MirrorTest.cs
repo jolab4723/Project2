@@ -280,10 +280,23 @@ public sealed partial class MirrorTestNetworkManager
                 ? Instantiate(prefab, start.position, start.rotation)
                 : Instantiate(prefab);
             context = player.GetComponent<PlayerContext>();
+            if (context == null || player.GetComponent<MirrorSpawnedPlayerBinder>()?.IsConfigured != true)
+            {
+                Destroy(player);
+                SetAdmissionStatus("플레이어의 공통 상태 또는 필수 네트워크 참조가 비어 있습니다.");
+                connection.Disconnect();
+                return;
+            }
             member.RuntimeContext = context;
             context.Equipment.SetActiveCharacterClass(member.CharacterClass);
         }
         MirrorSpawnedPlayerBinder binder = context.GetComponent<MirrorSpawnedPlayerBinder>();
+        if (binder == null || !binder.IsConfigured)
+        {
+            SetAdmissionStatus("보존된 플레이어의 필수 네트워크 구성을 확인할 수 없습니다.");
+            connection.Disconnect();
+            return;
+        }
         binder.ServerSetDisplayIdentity(member);
         context.GetComponent<PlayerInventorySync_MirrorTest>().ServerResetOwnerRequests();
         context.GetComponent<NetworkShopPlayerState_MirrorTest>().ServerResetOwnerRequests();

@@ -159,7 +159,8 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
         // Scene 전환 중 원격 복제본의 생명주기 콜백이 섞여 들어와도 UI 소유자가 바뀌지 않도록
         // Mirror가 확정한 실제 localPlayer와 같은 NetworkIdentity만 로컬 Context로 등록한다.
         PlayerContext mirrorLocalContext = ResolveMirrorLocalPlayerContext();
-        if (context == null || mirrorLocalContext != context || LocalPlayerContext == context)
+        if (context == null || context.GetComponent<MirrorSpawnedPlayerBinder>()?.IsConfigured != true ||
+            mirrorLocalContext != context || LocalPlayerContext == context)
             return;
 
         LocalPlayerContext = context;
@@ -179,7 +180,8 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
 
     internal void RegisterServerPlayer(PlayerContext context)
     {
-        if (context == null || !serverPlayerContexts.Add(context))
+        if (context == null || context.GetComponent<MirrorSpawnedPlayerBinder>()?.IsConfigured != true ||
+            !serverPlayerContexts.Add(context))
             return;
 
         FindFirstObjectByType<NetworkShopState_MirrorTest>()?.ServerRefreshPartyBenefits();
@@ -263,7 +265,7 @@ public sealed partial class MirrorTestNetworkManager : NetworkManager
             ServerRoster.Disconnect(connection.connectionId, Time.realtimeSinceStartupAsDouble);
         if (ServerRoster.RunStarted && member?.RuntimeContext != null)
         {
-            member.RuntimeContext.GetComponent<MirrorSpawnedPlayerBinder>().ServerSetTemporarilyAbsent(true);
+            member.RuntimeContext.GetComponent<MirrorSpawnedPlayerBinder>()?.ServerSetTemporarilyAbsent(true);
             UnregisterServerPlayer(member.RuntimeContext);
             NetworkServer.RemovePlayerForConnection(connection, RemovePlayerOptions.KeepActive);
         }

@@ -46,13 +46,22 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private NavMeshAgent absentAgent;
 
     public PlayerContext Context => context;
+    /// <summary>미러 플레이어의 필수 상태와 같은 루트의 네트워크 구성만 허용한다.</summary>
+    public bool IsConfigured => context != null && context.gameObject == gameObject && context.IsComplete &&
+        context.Potions != null && context.Potions.gameObject == gameObject &&
+        context.ItemTriggers != null && context.ItemTriggers.gameObject == gameObject &&
+        context.RuntimeState != null && context.RuntimeState.gameObject == gameObject &&
+        context.CombatAuthority != null && context.CombatAuthority.gameObject == gameObject &&
+        GetComponent<PlayerInventorySync_MirrorTest>() != null &&
+        GetComponent<NetworkShopPlayerState_MirrorTest>() != null &&
+        GetComponent<PlayerNetworkTransform_MirrorTest>() != null;
     public string ParticipantDisplayName => participantDisplayName;
     public int ParticipantSlot => participantSlot;
     /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
     public bool IsTemporarilyAbsent => temporarilyAbsent;
     /// <summary>같은 이름의 Scene 재방문도 구분하여 소유자의 시작 위치 최종 확정을 확인한다.</summary>
     public bool IsSceneStartConfirmed => confirmedSceneHandle == SceneManager.GetActiveScene().handle;
-    private bool CanRestoreGameplay => !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
+    private bool CanRestoreGameplay => IsConfigured && !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
         !context.RuntimeState.IsDead && (!isLocalPlayer || !RequiresNavMesh || IsSceneStartConfirmed);
     private bool RequiresNavMesh => GetTestNetworkManager()?.CurrentSessionRoute is
         MirrorSessionRoute.Combat or MirrorSessionRoute.Camp;
@@ -94,6 +103,12 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+        if (!IsConfigured)
+        {
+            Debug.LogError("[MirrorSpawnedPlayerBinder] 필수 네트워크 참조가 없어 로컬 등록을 중단합니다.", this);
+            SetLocalOnlyBehaviours(false);
+            return;
+        }
         RegisterLocalContext();
 
         textInputBlocked = false;
@@ -150,6 +165,11 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        if (!IsConfigured)
+        {
+            Debug.LogError("[MirrorSpawnedPlayerBinder] 필수 네트워크 참조가 없어 서버 등록을 중단합니다.", this);
+            return;
+        }
         PreserveAcrossNetworkSceneChange();
         GetTestNetworkManager()?.RegisterServerPlayer(context);
     }
