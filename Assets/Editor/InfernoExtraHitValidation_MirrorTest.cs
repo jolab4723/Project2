@@ -14,6 +14,14 @@ public static class InfernoExtraHitValidation_MirrorTest
     [MenuItem("SW/Mirror Test/Validate Inferno Extra Hit P2-B")]
     public static void Validate()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
+            throw new InvalidOperationException("컴파일이 끝난 Edit Mode에서 실행하세요.");
+
+        // 열린 맵의 적을 공격하지 않도록 시험 전용 빈 위치를 먼저 확인합니다.
+        Vector3 testOrigin = new Vector3(40000f, 0f, 40000f);
+        if (Physics.OverlapSphere(testOrigin, 100f).Length != 0)
+            throw new InvalidOperationException("인페르노 시험 위치에 기존 Collider가 있습니다. 검사를 중단합니다.");
+
         int checks = 0;
         void Check(bool condition, string label)
         {
@@ -49,17 +57,21 @@ public static class InfernoExtraHitValidation_MirrorTest
                 "Assets/SW/TEST/MirrorCombat/Prefabs/Normal_Melee_MirrorTest.prefab");
             Check(playerPrefab != null && enemyPrefab != null, "SW Fighter·적 프리팹 존재");
 
-            GameObject player = UnityEngine.Object.Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+            GameObject player = UnityEngine.Object.Instantiate(playerPrefab, testOrigin, Quaternion.identity);
             player.name = "InfernoValidation_Player";
             created.Add(player);
             PlayerContext context = InitializePlayer(player, definition);
             SetPlayerStats(context, 100f, 100f, 50f);
             float fighterRange = player.GetComponent<WBH_PlayerStatus>().FighterAttackRange;
-            float targetZ = Mathf.Max(0.6f, fighterRange * 0.8f);
+            Vector3 targetPosition = testOrigin + Vector3.forward * Mathf.Max(0.6f, fighterRange * 0.8f);
 
             (GameObject snapshotTarget, WBH_EnemyStatus snapshotStatus, NetworkEnemyAuthority_MirrorTest snapshotAuthority) =
-                CreateEnemy(enemyPrefab, "Snapshot", new Vector3(0f, 0f, targetZ), 1000f);
+                CreateEnemy(enemyPrefab, "Snapshot", targetPosition, 1000f);
             created.Add(snapshotTarget);
+            snapshotTarget.AddComponent<BoxCollider>().size = Vector3.one * 0.25f;
+            Physics.SyncTransforms();
+            Check(snapshotTarget.GetComponentsInChildren<Collider>().Length >= 2,
+                "다중 Collider 시험 전제 확인");
             var snapshotResults = new List<WBH_DamageResult>();
             Action<WBH_DamageResult> captureSnapshot = result =>
             {
@@ -93,7 +105,7 @@ public static class InfernoExtraHitValidation_MirrorTest
 
             (GameObject directKillTarget, WBH_EnemyStatus directKillStatus,
                 NetworkEnemyAuthority_MirrorTest directKillAuthority) =
-                CreateEnemy(enemyPrefab, "DirectKill", new Vector3(0f, 0f, targetZ), 50f);
+                CreateEnemy(enemyPrefab, "DirectKill", targetPosition, 50f);
             created.Add(directKillTarget);
             var directKillResults = new List<WBH_DamageResult>();
             directKillStatus.OnDamaged += directKillResults.Add;
@@ -110,7 +122,7 @@ public static class InfernoExtraHitValidation_MirrorTest
 
             (GameObject effectKillTarget, WBH_EnemyStatus effectKillStatus,
                 NetworkEnemyAuthority_MirrorTest effectKillAuthority) =
-                CreateEnemy(enemyPrefab, "EffectKill", new Vector3(0f, 0f, targetZ), 110f);
+                CreateEnemy(enemyPrefab, "EffectKill", targetPosition, 110f);
             created.Add(effectKillTarget);
             var effectKillResults = new List<WBH_DamageResult>();
             effectKillStatus.OnDamaged += effectKillResults.Add;
@@ -128,7 +140,7 @@ public static class InfernoExtraHitValidation_MirrorTest
             foreach (DamageCause excludedCause in new[] { DamageCause.Skill, DamageCause.Effect, DamageCause.DoT })
             {
                 (GameObject excludedTarget, WBH_EnemyStatus excludedStatus, _) =
-                    CreateEnemy(enemyPrefab, "Excluded_" + excludedCause, new Vector3(0f, 0f, targetZ), 1000f);
+                    CreateEnemy(enemyPrefab, "Excluded_" + excludedCause, targetPosition, 1000f);
                 created.Add(excludedTarget);
                 var excludedResults = new List<WBH_DamageResult>();
                 excludedStatus.OnDamaged += excludedResults.Add;
@@ -142,7 +154,7 @@ public static class InfernoExtraHitValidation_MirrorTest
             }
 
             (GameObject unclassifiedTarget, WBH_EnemyStatus unclassifiedStatus, _) =
-                CreateEnemy(enemyPrefab, "UnclassifiedDirect", new Vector3(0f, 0f, targetZ), 1000f);
+                CreateEnemy(enemyPrefab, "UnclassifiedDirect", targetPosition, 1000f);
             created.Add(unclassifiedTarget);
             var unclassifiedResults = new List<WBH_DamageResult>();
             unclassifiedStatus.OnDamaged += unclassifiedResults.Add;
@@ -273,7 +285,8 @@ public static class InfernoExtraHitValidation_MirrorTest
         }
         catch (TargetInvocationException exception) when (exception.InnerException != null)
         {
-            throw exception.InnerException;
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+            throw;
         }
     }
 

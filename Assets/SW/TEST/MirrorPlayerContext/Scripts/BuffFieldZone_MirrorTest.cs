@@ -17,6 +17,7 @@ public sealed class BuffFieldZone_MirrorTest : MonoBehaviour
     private static readonly Dictionary<IBuffTarget, Dictionary<IBuffSource, int>> ActiveZoneCounts = new();
 
     private readonly Dictionary<IBuffTarget, int> insideColliderCounts = new();
+    private readonly HashSet<IBuffTarget> appliedTargets = new();
 
     private IBuffSource buffSource;
     private bool targetEnemies;
@@ -39,13 +40,43 @@ public sealed class BuffFieldZone_MirrorTest : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         IBuffTarget target = Resolve(other);
-        if (!IsTargetAlive(target) || buffSource == null)
+        if (!TargetExists(target) || buffSource == null)
             return;
 
         insideColliderCounts.TryGetValue(target, out int colliderCount);
         insideColliderCounts[target] = colliderCount + 1;
-        if (colliderCount == 0)
+        RefreshTarget(target);
+    }
+
+    /// <summary>자기 자신은 Collider 진입 여부와 관계없이 아군 오라를 받습니다.</summary>
+    public void IncludeOwner(PlayerBuffManager owner)
+    {
+        if (targetEnemies || owner == null || buffSource == null)
+            return;
+        insideColliderCounts.TryGetValue(owner, out int count);
+        insideColliderCounts[owner] = count + 1;
+        RefreshTarget(owner);
+    }
+
+    /// <summary>영역 안에서 사망하거나 부활해도 현재 생존 상태에 맞춰 효과를 갱신합니다.</summary>
+    private void FixedUpdate()
+    {
+        foreach (IBuffTarget target in insideColliderCounts.Keys)
+            RefreshTarget(target);
+    }
+
+    private void RefreshTarget(IBuffTarget target)
+    {
+        bool alive = TargetExists(target);
+        if (alive && target is PlayerBuffManager player)
+        {
+            PlayerHealthManager health = player.GetComponent<PlayerHealthManager>();
+            alive = player.isActiveAndEnabled && health != null && health.CurrentHealth > 0f;
+        }
+        if (alive && appliedTargets.Add(target))
             RegisterZone(target, buffSource);
+        else if (!alive && appliedTargets.Remove(target))
+            UnregisterZone(target, buffSource);
     }
 
     private void OnTriggerExit(Collider other)
@@ -61,7 +92,7 @@ public sealed class BuffFieldZone_MirrorTest : MonoBehaviour
         }
 
         insideColliderCounts.Remove(target);
-        if (removeOnExit && buffSource != null)
+        if (removeOnExit && buffSource != null && appliedTargets.Remove(target))
             UnregisterZone(target, buffSource);
     }
 
@@ -70,13 +101,15 @@ public sealed class BuffFieldZone_MirrorTest : MonoBehaviour
         if (!removeWhenZoneDisabled || buffSource == null)
         {
             insideColliderCounts.Clear();
+            appliedTargets.Clear();
             return;
         }
 
-        foreach (IBuffTarget target in insideColliderCounts.Keys)
+        foreach (IBuffTarget target in appliedTargets)
             UnregisterZone(target, buffSource);
 
         insideColliderCounts.Clear();
+        appliedTargets.Clear();
     }
 
     private IBuffTarget Resolve(Collider other)
@@ -121,11 +154,11 @@ public sealed class BuffFieldZone_MirrorTest : MonoBehaviour
         if (sourceCounts.Count == 0)
             ActiveZoneCounts.Remove(target);
 
-        if (IsTargetAlive(target))
+        if (TargetExists(target))
             target.RemoveBuff(source);
     }
 
-    private static bool IsTargetAlive(IBuffTarget target)
+    private static bool TargetExists(IBuffTarget target)
     {
         return target != null && (!(target is Object unityObject) || unityObject != null);
     }

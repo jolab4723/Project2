@@ -96,8 +96,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Buffs.enabled = false;
         if (context?.Mana != null)
             context.Mana.enabled = false;
-        if (context?.ItemTriggers != null)
-            context.ItemTriggers.enabled = false;
+        // 로컬 회피 이벤트를 서버에 전달해야 하므로 ItemTriggers는 켜 둔다.
+        // 효과 적용과 쿨타임 변경은 ItemTriggers의 서버 검사에서만 허용한다.
 
         SubscribeClientState();
         clientApplyQueued = !string.IsNullOrWhiteSpace(snapshotJson);

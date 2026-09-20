@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
@@ -33,8 +34,7 @@ public static class MirrorBossFightVerification_MirrorTest
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
         {
-            EditorUtility.DisplayDialog("Edit Mode 필요", "컴파일 완료 후 Edit Mode에서 실행해주세요.", "확인");
-            return;
+            throw new InvalidOperationException("컴파일 완료 후 Edit Mode에서 실행해주세요.");
         }
 
         int checks = 0;
@@ -132,7 +132,7 @@ public static class MirrorBossFightVerification_MirrorTest
 
             SerializedObject spawnerData = new SerializedObject(spawner);
             var spawnerBossProp = spawnerData.FindProperty("bossPrefab");
-            Check(spawnerBossProp != null && spawnerBossProp.objectReferenceValue != null, "SpawnerBossPrefab", "Spawner에 bossPrefab 할당됨");
+            Check(spawnerBossProp != null && spawnerBossProp.objectReferenceValue == bossPrefab, "SpawnerBossPrefab", "Spawner가 검증 대상 보스 프리팹을 사용해야 합니다.");
 
             var spawnerIntroProp = spawnerData.FindProperty("bossIntro");
             Check(spawnerIntroProp != null && spawnerIntroProp.objectReferenceValue != null, "SpawnerBossIntro", "Spawner에 bossIntro 할당됨");
@@ -140,6 +140,8 @@ public static class MirrorBossFightVerification_MirrorTest
             // 5-4. MirrorBossIntro 검증
             var bossIntro = spawnerIntroProp.objectReferenceValue as MirrorBossIntro_MirrorTest;
             Check(bossIntro != null, "BossIntroComponent", "MirrorBossIntro_MirrorTest 인스턴스 확인");
+            ValidateIntroReferences(bossIntro, previewScene);
+            Check(true, "IntroReferences", "같은 씬의 연출 지점, 지정 Timeline 및 트랙 바인딩 확인");
 
             SerializedObject introData = new SerializedObject(bossIntro);
             var directorProp = introData.FindProperty("director");
@@ -184,6 +186,47 @@ public static class MirrorBossFightVerification_MirrorTest
         Debug.Log($"<color=green>[BossFightVerification] PASS! 총 {checks}개 검증 항목 통과.</color>");
         Debug.Log("[BossFightVerification] 참고: 세션 규칙, 씬 배정, 11개 씬 자산 무결성, 보스 인트로 타임라인 4인 연출, 체력바/클리어 UI 동기화 참조가 정적 검증되었습니다.");
         Debug.Log("[BossFightVerification] 실제 4인 동시 접속 시의 네트워크 지연 및 MPPM 환경 전투 검증은 필요 시 별도 라이브 테스트 러너로 실행하십시오.");
+    }
+
+    /// <summary>배열 길이만 맞거나 다른 씬·Timeline을 가리키는 잘못된 연결을 거절합니다.</summary>
+    internal static void ValidateIntroReferences(MirrorBossIntro_MirrorTest intro, Scene scene)
+    {
+        void Require(bool valid, string message)
+        {
+            if (!valid) throw new InvalidOperationException("[BossFightVerification] " + message);
+        }
+        Require(intro != null && intro.gameObject.scene == scene, "인트로가 보스 씬에 있어야 합니다.");
+        using var data = new SerializedObject(intro);
+        var director = data.FindProperty("director").objectReferenceValue as PlayableDirector;
+        var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(
+            "Assets/WBHTest/making/TimeLine_Act1_Boss_test.playable");
+        Require(director != null && director.gameObject.scene == scene && timeline != null &&
+            director.playableAsset == timeline, "지정된 보스 Timeline과 같은 씬의 Director가 필요합니다.");
+        var track = data.FindProperty("playerTrack").objectReferenceValue as AnimationTrack;
+        Require(track != null && timeline.GetOutputTracks().Contains(track), "플레이어 트랙이 지정 Timeline에 속해야 합니다.");
+        var points = data.FindProperty("playerPoints");
+        var distinctPoints = new System.Collections.Generic.HashSet<Transform>();
+        Require(points.arraySize == 4, "플레이어 연출 지점은 4개여야 합니다.");
+        for (int i = 0; i < points.arraySize; i++)
+        {
+            var point = points.GetArrayElementAtIndex(i).objectReferenceValue as Transform;
+            Require(point != null && point.gameObject.scene == scene && distinctPoints.Add(point),
+                "연출 지점은 같은 씬의 서로 다른 Transform이어야 합니다.");
+        }
+        foreach (PlayableBinding output in timeline.outputs)
+        {
+            // 플레이어 Animator는 BeginPresentation에서 캐릭터 종류에 맞춰 연결합니다.
+            if (output.sourceObject == track || output.outputTargetType == null) continue;
+            // 2026-09-10 보스 인계 문서: 원본에도 대상이 없는 잔여 트랙입니다.
+            if (output.sourceObject is ActivationTrack activation && activation.name == "Activation Track (2)") continue;
+            UnityEngine.Object binding = director.GetGenericBinding(output.sourceObject);
+            Require(binding != null && output.outputTargetType.IsInstanceOfType(binding),
+                "필수 Timeline 바인딩 누락 또는 타입 불일치: " + output.streamName);
+            if (binding is Component component)
+                Require(component.gameObject.scene == scene, "Timeline이 다른 씬의 컴포넌트를 참조합니다.");
+            if (binding is GameObject gameObject)
+                Require(gameObject.scene == scene, "Timeline이 다른 씬의 오브젝트를 참조합니다.");
+        }
     }
 }
 #endif

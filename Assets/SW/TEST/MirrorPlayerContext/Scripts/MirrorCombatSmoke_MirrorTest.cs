@@ -99,7 +99,8 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     {
         if (Completed || failed) return;
         if (manager == null) return; // 재접속 중 로비가 새 NetworkManager를 만드는 프레임.
-        double timeout = Argument("--mirror-smoke-skills") == "true" || Argument("--mirror-smoke-quests") == "true" ? 720d : 240d;
+        double timeout = Argument("--mirror-smoke-q1") == "true" ? 1200d :
+            Argument("--mirror-smoke-skills") == "true" || Argument("--mirror-smoke-quests") == "true" ? 720d : 240d;
         if (Time.realtimeSinceStartupAsDouble - startedAt > timeout) { Fail("combat timeout " + timeout); return; }
         if (NetworkServer.active && !serverRegistered)
         {
@@ -147,6 +148,11 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             p.GetComponent<NetworkEnemyAuthority_MirrorTest>() != null);
         Require(prefab != null, "registered Normal_Melee_MirrorTest prefab");
         ItemDefinitionSO[] definitions = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items");
+        if (Argument("--mirror-smoke-q1") == "true")
+        {
+            yield return RunUniqueEffects(actors, definitions, prefab);
+            yield break;
+        }
         ValidateAuthoredP0Effects(definitions);
         yield return new WaitForSecondsRealtime(2f);
         var initialEquipment = actors.ToDictionary(p => p.CombatAuthority.netId, EquipmentIds);
@@ -532,6 +538,11 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 
     private IEnumerator RunClient(StepMessage message)
     {
+        if (message.Phase == 112)
+        {
+            yield return ReadyUniqueNewRun();
+            yield break;
+        }
         yield return Wait(() => manager.LocalPlayerContext?.RuntimeState?.HasSnapshot == true, "local runtime ready");
         PlayerContext local = manager.LocalPlayerContext;
         bool owner = local.CombatAuthority.netId == message.Actor;
@@ -544,7 +555,9 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             initialClientInventory = InventoryIds(local);
             initialEquipmentCaptured = true;
         }
-        if (message.Phase == 0)
+        if (message.Phase >= 100)
+            yield return RunUniqueEffectsClient(message, local, owner, sync);
+        else if (message.Phase == 0)
         {
             if (message.Target != 0)
                 yield return Wait(() => ClientTarget(message.Target) != null &&
@@ -895,6 +908,9 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 
     private void CleanupServer()
     {
+        foreach (var enemy in uniqueTargets)
+            if (enemy != null && enemy != target) NetworkServer.Destroy(enemy.gameObject);
+        uniqueTargets.Clear();
         if (target != null) NetworkServer.Destroy(target.gameObject);
         target = null;
         if (fixtureOwner == null) return;
