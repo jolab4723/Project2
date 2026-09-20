@@ -17,3 +17,35 @@ MonoBehaviour:
   stageName: "\uC720\uD1B5\uAE30\uD55C: 3\uC138\uAE30 \uC804"
   choiceNumber: 2
   backgroundImage: {fileID: 21300000, guid: 114cb09760b949644b56b6ff6f294f3c, type: 3}
+  choices:
+  - effects:
+    - type: 2
+      probability: 1
+      lifetime: 0
+      statEffects: []
+      healthPercent: 30
+      amount: 1
+      item: {fileID: 0}
+      rarity: 0
+      destination: 0
+    - type: 1
+      probability: 1
+      lifetime: 1
+      statEffects:
+      - statType: 5
+        value: -30
+      healthPercent: 0
+      amount: 1
+      item: {fileID: 0}
+      rarity: 0
+      destination: 0
+  - effects:
+    - type: 0
+      probability: 1
+      lifetime: 0
+      statEffects: []
+      healthPercent: 0
+      amount: 1
+      item: {fileID: 0}
+      rarity: 0
+      destination: 0

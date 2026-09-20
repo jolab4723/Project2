@@ -111,6 +111,10 @@ public class PlayerLevelManager : MonoBehaviour
     /// </summary>
     private FighterLevelStatData FindRow(int level)
     {
+        // Unknown 씬에서는 실제 플레이어를 생성하지 않고 프리팹의 원본 데이터를 조회한다.
+        if (levelStatList == null)
+            Load();
+
         if (levelStatList == null || levelStatList.Count == 0)
         {
             Debug.LogWarning("[PlayerLevelManager] 로드된 레벨 스탯 데이터가 없습니다.");
