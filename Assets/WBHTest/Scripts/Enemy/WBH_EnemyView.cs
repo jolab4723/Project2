@@ -34,6 +34,7 @@ public class WBH_EnemyView : MonoBehaviour
     private WBH_FloatTextPoolManager poolManager;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
+    private WBH_EnemyStatusEffectController statusEffects;
     private WBH_HighEnemyHpbarView highEnemyHpView; // !@ 차후 UI 와 합일 필요
     private EnemyKillReward killReward;
     private Camera mainCamera;
@@ -54,6 +55,7 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
+        statusEffects = GetComponent<WBH_EnemyStatusEffectController>(); // SW 수정: 상태 반응만 구독합니다.
         killReward = GetComponent<EnemyKillReward>();
 
         mainCamera = Camera.main;
@@ -71,6 +73,8 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status.OnDamaged += ViewOnDamaged;
         status.OnHpChanged += UpdateHpBar;
+        if (statusEffects != null)
+            statusEffects.OnBurnResponse += ShowBurnResponse;
 
         if(killReward != null)
         {
@@ -82,6 +86,8 @@ public class WBH_EnemyView : MonoBehaviour
     {
         status.OnDamaged -= ViewOnDamaged;
         status.OnHpChanged -= UpdateHpBar;
+        if (statusEffects != null)
+            statusEffects.OnBurnResponse -= ShowBurnResponse;
 
         if (killReward != null)
         {
@@ -146,6 +152,18 @@ public class WBH_EnemyView : MonoBehaviour
             return;
 
         highEnemyHpView?.BindElite(controller);
+    }
+
+    /// <summary>SW 수정: 일반 플레이의 화상 저항·면역도 기존 데미지 텍스트 풀로 표시합니다.</summary>
+    private void ShowBurnResponse(bool immune)
+    {
+        if (poolManager == null)
+            return;
+        WBH_DamageText text = poolManager.GetDamageText();
+        if (text == null)
+            return;
+        Vector3 position = damageTextRoot != null ? damageTextRoot.position : transform.position + Vector3.up;
+        text.ShowBurnResponse(position + Vector3.up * 0.5f, immune);
     }
 
     private void ShowCreditReward(int amount)
