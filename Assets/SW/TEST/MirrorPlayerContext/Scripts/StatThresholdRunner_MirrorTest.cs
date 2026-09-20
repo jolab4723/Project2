@@ -68,9 +68,10 @@ public sealed class StatThresholdRunner_MirrorTest : MonoBehaviour
     private void Subscribe()
     {
         if (effect == null) return;
+        // 마나 조건도 사망 시 해제하고 부활 시 다시 평가합니다.
+        if (health != null) health.OnHealthChanged += Refresh;
         if (effect.referenceStat == StatReference.CurrentHealthPercent)
         {
-            if (health != null) health.OnHealthChanged += Refresh;
             return;
         }
         subscribedStat = stats != null ? stats.Stat : null;
@@ -108,7 +109,7 @@ public sealed class StatThresholdRunner_MirrorTest : MonoBehaviour
         if (effect == null || buffs == null) return;
         bool valid = TryGetValue(out float value) &&
             !float.IsNaN(value) && !float.IsInfinity(value);
-        bool shouldBeActive = valid &&
+        bool shouldBeActive = health != null && health.CurrentHealth > 0f && valid &&
             (effect.comparisonOperator == ComparisonOperator.GreaterOrEqual
                 ? value >= effect.thresholdValue : value <= effect.thresholdValue);
         if (active == shouldBeActive) return;

@@ -25,6 +25,7 @@ public enum MirrorAct1BossPhase : byte
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(NetworkAnimator), typeof(WBH_EnemyController))]
+[RequireComponent(typeof(WBH_EnemyEffect))]
 public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 {
     private const float MeleeAngle = 120f;
@@ -102,6 +103,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private Vector3 lastImpactPoint;
     private Vector3 lastAttackDirection;
     private bool originalStatusEffectsReady;
+    private bool lastDamageWasDot;
     private bool localEffectSpawnerInitialized;
 
     private WBH_EffectSpawner sharedEffectSpawner;
@@ -222,6 +224,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         status.OnHpChanged += HandleHealthChanged;
         status.OnDamaged += HandleDamaged;
         status.OnDead += HandleDead;
+        GetComponent<WBH_EnemyStatusEffectController>().OnBurnResponse += HandleBurnResponse;
         serverDamageSubscribed = true;
 
         currentHealth = status.CurrentHp;
@@ -255,6 +258,9 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     public override void OnStopServer()
     {
         serverDamageSubscribed = false;
+        var statusEffects = GetComponent<WBH_EnemyStatusEffectController>();
+        if (statusEffects != null)
+            statusEffects.OnBurnResponse -= HandleBurnResponse;
         if (status != null)
         {
             status.OnHpChanged -= HandleHealthChanged;
@@ -523,8 +529,28 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         if (isDead || !originalStatusEffectsReady || controller == null)
             return false;
 
+        var effects = GetComponent<WBH_EnemyStatusEffectController>();
+        if (effects == null)
+            return false;
+        bool canApply = effects.CanApplyStatusEffect(data);
         controller.AddStatusEffect(data);
-        return true;
+        return canApply && effects.HasStatusEffect(data.Type);
+    }
+
+    /// <summary>서버가 확정한 반응만 관찰자에게 보냅니다. Host도 같은 RPC로 한 번 표시합니다.</summary>
+    private void HandleBurnResponse(bool immune)
+    {
+        if (netId != 0 && NetworkServer.spawned.ContainsKey(netId))
+            RpcShowBurnResponse(immune, transform.position);
+    }
+
+    /// <summary>화상 상태의 저항·면역을 표시하며 직접 화염 피해 숫자는 그대로 둡니다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcShowBurnResponse(bool immune, Vector3 enemyPosition)
+    {
+        if (combatView == null)
+            combatView = GetComponent<NetworkEnemyCombatView_MirrorTest>();
+        combatView?.ShowBurnResponse(immune, enemyPosition);
     }
 
     [Server]
@@ -614,6 +640,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [Server]
     private void HandleDamaged(WBH_DamageResult result)
     {
+        lastDamageWasDot = result.DamageCause == DamageCause.DoT;
         lastDamage = result.FinalDamage;
         lastDamageCritical = result.IsCritical;
         receivedDamagePresentationCount++;
@@ -638,11 +665,20 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackerNetId = GetNetId(attacker);
             lastAttackDirection = (transform.position - attacker.transform.position).normalized;
             // 원본 스킬·일반 공격 모두 실제 피해 수신 뒤 공격자 자신의 장비 효과를 발동한다.
-            attacker.ItemTriggers?.FireDamageDealt(result, controller);
-            attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
+            if (!lastDamageWasDot)
+            {
+                attacker.ItemTriggers?.FireDamageDealt(result, controller);
+                attacker.GetComponent<FighterSkillAuthority_MirrorTest>()?.ServerRecordSkillHit(result);
+            }
         }
         else
         {
+            // 점화자가 사라진 화상 처치를 직전 공격자에게 잘못 넘기지 않습니다.
+            if (lastDamageWasDot)
+            {
+                lastAttackerContext = null;
+                lastAttackerNetId = 0;
+            }
             lastAttackDirection = -transform.forward;
         }
 
@@ -737,7 +773,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             return;
 
         PlayerContext rewardRecipient = lastAttackerContext;
-        if (rewardRecipient == null)
+        if (rewardRecipient == null && !lastDamageWasDot)
         {
             if (NetworkManager.singleton is MirrorTestNetworkManager session && session.ServerPlayerContexts.Count > 0)
             {

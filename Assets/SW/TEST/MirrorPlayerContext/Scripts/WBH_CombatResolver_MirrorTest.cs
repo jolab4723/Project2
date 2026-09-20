@@ -195,6 +195,13 @@ public static class WBH_CombatResolver_MirrorTest
         damage *= targetStatus.DamageTakenModifier;
         damage = Mathf.Max(1f, damage);
 
+        if (statusEffect.HasValue)
+        {
+            WBH_StatusEffectData applied = statusEffect.Value;
+            applied.Attacker = attacker.Controller;
+            applied.AttackId = attackId;
+            statusEffect = applied;
+        }
         result = new WBH_DamageResult(attacker.Controller, damage, isCritical, elementType, statusEffect,
             null, null, null, damageCause, attackId);
         target.TakeDamage(result);
