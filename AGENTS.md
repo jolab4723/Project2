@@ -184,6 +184,7 @@
 - Scene과 Prefab은 가능한 Unity Editor/MCP를 통해 수정하고 YAML을 직접 편집하지 않는다.
 - 사용자가 열어 둔 Dirty Scene이나 Prefab Stage를 관련 작업 없이 저장하지 않는다.
 - 스크립트 수정 후 컴파일 완료를 기다린 뒤 Console을 확인한다. 불필요한 연속 Refresh를 호출하지 않는다.
+- Mirror 자동 검증의 실행 여부와 명시적 인자 해석은 `Assets/SW/TEST/MirrorPlayerContext/Scripts/MirrorSmokeConfiguration_MirrorTest.cs` 한 곳에서만 시작한다. 충돌을 막기 위해 `RuntimeInitializeOnLoadMethod`나 명령행 인자 기반 검증 진입점·임시 네트워크 메시지·러너를 다른 런타임 스크립트에 추가하지 않는다. 일회성 검증 로직도 이 파일에만 임시로 두고 검증이 끝나면 제거한다.
 - 기존 경고·오류가 있으면 기준 상태와 비교해 새 오류가 생기지 않았는지 구분한다.
 - 시각 변경은 Game/Scene 화면 또는 캡처로 확인하고, Scene/Prefab의 Missing Script와 끊어진 참조를 검증한다.
 - `ProjectSettings/**`, `Packages/**`, Build Settings는 팀 공용 영향 범위로 보고 변경 이유와 영향을 명확히 알린다.
