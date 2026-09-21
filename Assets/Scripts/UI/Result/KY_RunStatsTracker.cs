@@ -27,6 +27,8 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         }
 
         Instance = this;
+        // Start 씬의 Managers 아래에 배치되어도 이 오브젝트만 씬 전환 후 유지한다.
+        transform.SetParent(null, true);
         DontDestroyOnLoad(gameObject);
     }
 

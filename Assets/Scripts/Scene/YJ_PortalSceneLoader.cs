@@ -5,13 +5,15 @@ using Core;
 public class YJ_PortalSceneLoader : MonoBehaviour
 {
     public string loadSceneName = "StageSelect";
-    [SerializeField] private string clearSceneName = "ClearScene";
+    // 기존 포탈 프리팹에 남은 ClearScene 직렬화값 대신 실제 공용 결과 씬을 사용한다.
+    private const string ResultSceneName = "ClearResultScene";
     [SerializeField] private bool completePendingStage = true;
     [SerializeField] private YJ_StageManager stageManager;
     [SerializeField] private YJ_PortalEffect portalEffect;
 
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
     private bool transitionRequested;
+    private bool clearResultRecorded;
 
     private void Awake()
     {
@@ -28,6 +30,12 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (transitionRequested || ! other.CompareTag("Player"))
+            return;
+
+        var controller = other.GetComponentInParent<T_PlayerController>();
+        var loader = SceneLoader.Instance;
+        if (controller == null || !controller.IsControlEnabled || stageManager == null ||
+            loader == null || loader.IsLoading)
             return;
 
         transitionRequested = true;
@@ -118,6 +126,40 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
         }
 
+        // 최종 노드를 완료하기 전에 목적 씬과 결과 전달을 확인한다.
+        // 실패한 상태에서 pending을 지우면 재시도 때 일반 StageSelect로 이동할 수 있다.
+        if (!saveService.TryLoadSaveData(out StageMapSaveData map))
+            return false;
+        StageNodeSaveData pending = map.nodes?.Find(node => node != null && node.id == map.pendingNodeId);
+        // 노드 완료 저장 후 씬 이동만 실패한 경우 결과 씬으로 다시 시도한다.
+        if (clearResultRecorded && string.IsNullOrEmpty(map.pendingNodeId) && map.act == StageActType.Act3)
+        {
+            destinationSceneName = ResultSceneName;
+            return true;
+        }
+        bool finalBoss = map.act == StageActType.Act3 && pending != null && pending.type == StageNodeType.Boss;
+        if (finalBoss)
+        {
+            var loader = SceneLoader.Instance;
+            if (loader == null || loader.IsLoading ||
+                !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                Log.Error("Act3 클리어 결과 씬 또는 SceneLoader 설정을 확인하세요.");
+                return false;
+            }
+            if (!clearResultRecorded)
+            {
+                var tracker = KY_RunStatsTracker.Instance;
+                if (tracker == null || !tracker.FinishRun(true))
+                {
+                    Log.Error("클리어 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
+                    return false;
+                }
+                clearResultRecorded = true;
+            }
+        }
+
         if ( ! saveService.CompletePendingNode(out StageNodeSaveData completedNode, out StageActType completedAct))
         {
             return false;
@@ -131,8 +173,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
         if (completedAct == StageActType.Act3)
         {
-            KY_RunStatsTracker.Instance?.FinishRun(true); // 결과창 데이터 집계용으로 추가
-            destinationSceneName = clearSceneName;
+            destinationSceneName = ResultSceneName;
             return true;
         }
 
