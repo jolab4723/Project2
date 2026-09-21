@@ -97,7 +97,7 @@ public sealed partial class MirrorTestNetworkManager
 
     internal static int CreateInitialRunSeed()
     {
-        string smokeRole = MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-role");
+        string smokeRole = MirrorSmokeConfiguration_MirrorTest.Argument("--mirror-smoke-role");
         if (!string.IsNullOrWhiteSpace(smokeRole) && !smokeRole.StartsWith("--")) return InitialRunSeed;
         return new System.Random(Guid.NewGuid().GetHashCode()).Next(1, int.MaxValue);
     }
