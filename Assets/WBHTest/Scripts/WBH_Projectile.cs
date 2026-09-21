@@ -323,7 +323,7 @@ public class WBH_Projectile : MonoBehaviour
                 effectSpawner.SpawnEffect(hitEffectData, explosionPos);
             }
 
-            PlayImpactEffectCue(explosionPos, Vector3.up);
+            PlayImpactEffectCue(explosionPos);
 
             // SW 추가:
             // 유탄의 대표 피격면은 지면이므로 전용 Impact의 로컬 +Z가 월드 +Y를 향하게 배치합니다.
@@ -502,23 +502,12 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // 폭발 이펙트 큐 재생
-    private void PlayImpactEffectCue(Vector3 position, Vector3 outward)
+    private void PlayImpactEffectCue(Vector3 position)
     {
         if (enemyEffect == null || impactEffectCue == WBH_EnemyEffectCue.None)
             return;
 
-        Quaternion rotation = Quaternion.identity;
-
-        if(outward.sqrMagnitude > 0.0001f)
-        {
-            Vector3 forward = outward.normalized;
-
-            Vector3 up = Mathf.Abs(Vector3.Dot(forward,Vector3.up)) >0.99f ? Vector3.forward : Vector3.up;
-
-            rotation = Quaternion.LookRotation(forward, up);
-        }
-
-        enemyEffect.PlayWorldCue(impactEffectCue, position, rotation);
+        enemyEffect.PlayWorldCue(impactEffectCue, position, Quaternion.identity);
     }
 
     private void ResetImpactEffectCue()
