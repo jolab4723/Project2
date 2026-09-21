@@ -7,6 +7,7 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>전달받은 원정 결과를 표시하고 결과 행·보상·다음 행동의 진입 연출을 재생한다.</summary>
 public sealed class KY_ResultScreen : MonoBehaviour
 {
     [Header("결과 전달")]

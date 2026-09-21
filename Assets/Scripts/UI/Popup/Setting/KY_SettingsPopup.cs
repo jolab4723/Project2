@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
 
+/// <summary>화면·사운드·언어·키 바인딩 설정을 표시하고 적용하는 설정 팝업이다.</summary>
 public class KY_SettingsPopup : KY_PopupBase
 {
     [Header("화면")]

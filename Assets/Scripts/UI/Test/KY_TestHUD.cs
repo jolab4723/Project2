@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>키보드 입력으로 HUD 이벤트를 발생시키는 테스트용 컴포넌트다.</summary>
 public class KY_TestHUD : MonoBehaviour
 {
     public Sprite testIcon;

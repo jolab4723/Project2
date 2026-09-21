@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 
+/// <summary>현재 입력 바인딩을 사람이 읽는 단축키 텍스트로 HUD에 표시한다.</summary>
 public class KY_ShortcutView : MonoBehaviour
 {
     [Header("키 텍스트")]
