@@ -251,49 +251,35 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("폭탄이 떨어지기 시작한 뒤 실제 피해가 들어가기까지의 시간(초). 낙하 연출과 타격 타이밍을 맞추는 값이다.")]
     public float carpetImpactDelay = 0.35f;
 
-    [Header("CarpetBombing 진화 전용 (거너 궁극기)")]
-    [Tooltip("진화1(제압 폭격): 공격속도와 일반공격 피해 특화 버프. 기본 융단폭격은 버프가 없어서 진화가 새로 부여한다.")]
-    public BuffDefinitionSO evoCarpetBuff1;
-    [Tooltip("진화2(화력 관제): 스킬 쿨타임 감소와 스킬 피해 특화 버프.")]
-    public BuffDefinitionSO evoCarpetBuff2;
-    [Tooltip("진화1·2 공통: 버프를 얻는 대신 낮아지는 회당 피해 계수.")]
-    public float evoSuppressDamagePerWave = 0.9f;
+    [Header("CarpetBombing 진화1 전용 (레이저 폭격 - 지연 후 단일 타격)")]
+    [Tooltip("시전 후 타격까지의 지연(초). 기본 융단폭격의 carpetImpactDelay 대신 쓴다.")]
+    public float evoLaserStrikeDelay = 0.5f;
+    [Tooltip("한 번에 들어가는 피해 계수. 여러 번 나눠 때리지 않고 이 값이 전부다.")]
+    public float evoLaserStrikeDamage = 3.6f;
 
-    [Tooltip("진화3(초토화): 여러 번 나눠 때리는 대신 한 번에 몰아친다.")]
-    public int evoScorchWaveCount = 1;
-    [Tooltip("진화3(초토화): 한 번에 들어가는 피해 계수.")]
-    public float evoScorchDamagePerWave = 5f;
-    [Tooltip("진화3(초토화): 좁아지는 폭격 반경. 총 피해는 크지만 맞히기 어렵다.")]
-    public float evoScorchAreaRadius = 5f;
+    [Header("CarpetBombing 진화2 전용 (마커 폭격 - 횟수 증가 + 마커 부여)")]
+    [Tooltip("타격 횟수.")]
+    public int evoMarkerWaveCount = 4;
+    [Tooltip("회당 피해 계수.")]
+    public float evoMarkerDamagePerWave = 0.9f;
+    [Tooltip("맞은 적에게 거는 마커(Marked) 지속시간(초). 0이면 마커 없음.")]
+    public float evoMarkerDuration = 6f;
+    [Tooltip("마커가 걸린 적이 받는 모든 피해의 배율.")]
+    public float evoMarkerDamageMultiplier = 1.25f;
 
-    /// <summary>진화에 맞는 융단폭격 버프. 진화3과 기본은 버프가 없다.</summary>
-    public BuffDefinitionSO GetCarpetBuff(SkillEvolutionId evolution)
-    {
-        return evolution switch
-        {
-            SkillEvolutionId.Evolution1 => evoCarpetBuff1,
-            SkillEvolutionId.Evolution2 => evoCarpetBuff2,
-            _ => null,
-        };
-    }
-
-    /// <summary>진화별 폭격 수치(횟수 / 회당 계수 / 반경). 기본은 carpet* 값 그대로.</summary>
-    public void GetCarpetShape(SkillEvolutionId evolution, out int waveCount, out float damagePerWave, out float areaRadius)
-    {
-        if (evolution == SkillEvolutionId.Evolution3)
-        {
-            waveCount = evoScorchWaveCount;
-            damagePerWave = evoScorchDamagePerWave;
-            areaRadius = evoScorchAreaRadius;
-            return;
-        }
-
-        waveCount = carpetWaveCount;
-        areaRadius = carpetAreaRadius;
-        damagePerWave = evolution == SkillEvolutionId.Evolution1 || evolution == SkillEvolutionId.Evolution2
-            ? evoSuppressDamagePerWave
-            : carpetDamagePerWave;
-    }
+    [Header("CarpetBombing 진화3 전용 (산탄 폭격 - 랜덤 위치 소범위 연속 포격)")]
+    [Tooltip("포탄 발수.")]
+    public int evoBarrageShellCount = 9;
+    [Tooltip("포탄과 포탄 사이 간격(초).")]
+    public float evoBarrageInterval = 0.3f;
+    [Tooltip("포탄 한 발의 폭발 반경. 영역 전체가 아니라 이 범위만 맞는다.")]
+    public float evoBarrageShellRadius = 2f;
+    [Tooltip("포탄 한 발의 피해 계수.")]
+    public float evoBarrageDamagePerShell = 2f;
+    [Tooltip("포탄이 떨어질 수 있는 범위(폭격 중심 기준). 좁을수록 한 대상에게 여러 발이 겹친다. " +
+             "한 대상의 발당 명중률은 대략 (포탄반경/산포반경)^2다 - 기본 융단폭격 반경인 8로 두면 " +
+             "발당 6%라 9발을 쏴도 기대 명중이 1발이 안 된다. 4면 발당 25%로 기대 2.25발이다.")]
+    public float evoBarrageScatterRadius = 4f;
 
     [Header("AwakeningBurst 전용 (파이터 궁극기)")]
     [Tooltip("시전과 동시에 자신에게 거는 강화 버프. 지속시간·스탯 수치는 이 버프 에셋이 들고 있다. " +

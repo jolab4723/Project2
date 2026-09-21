@@ -419,25 +419,43 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : transform.position + toCursor;
         center.y = transform.position.y;
 
-        // 진화별 폭격 수치.
-        //   진화1(제압 폭격) / 진화2(화력 관제) : 회당 피해를 낮추는 대신 강화 버프를 얻는다.
-        //   진화3(초토화)                      : 여러 번 대신 한 번에, 반경을 좁히고 계수를 크게 올린다.
-        def.GetCarpetShape(pendingEvo, out int waveCount, out float damagePerWave, out float areaRadius);
+        // 진화3(산탄 폭격)은 "영역 전체를 때린다"는 기본 구조 자체가 달라서 별도 코루틴으로 뺀다.
+        if (pendingEvo == SkillEvolutionId.Evolution3)
+        {
+            yield return ExecuteBarrageBombing(def, index, center);
+            yield break;
+        }
 
+        // 진화1(레이저 폭격) : 1회만, 지연이 더 길다.
+        // 진화2(마커 폭격)   : 횟수를 늘리고 맞은 적에게 마커를 건다.
+        int waveCount = def.carpetWaveCount;
+        float damagePerWave = def.carpetDamagePerWave;
+        float impactDelay = def.carpetImpactDelay;
+
+        if (pendingEvo == SkillEvolutionId.Evolution1)
+        {
+            waveCount = 1;
+            damagePerWave = def.evoLaserStrikeDamage;
+            impactDelay = def.evoLaserStrikeDelay;
+        }
+        else if (pendingEvo == SkillEvolutionId.Evolution2)
+        {
+            waveCount = def.evoMarkerWaveCount;
+            damagePerWave = def.evoMarkerDamagePerWave;
+        }
+
+        float areaRadius = def.carpetAreaRadius;
         float totalDuration = waveCount * def.carpetWaveInterval;
 
         SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
-                                    totalDuration + def.carpetImpactDelay + 0.3f);
+                                    totalDuration + impactDelay + 0.3f);
 
         float damageMultiplier = damagePerWave;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        // 버프는 폭격이 끝난 뒤가 아니라 시작할 때 건다. 폭격이 1.5초 이어지는데 끝나고 걸면
-        // 그만큼 버프 시간을 손해 보고, "폭격을 시작하면서 전투 태세로 들어간다"는 의도와도 맞지 않는다.
-        var carpetBuff = def.GetCarpetBuff(pendingEvo);
-        if (carpetBuff != null && buffManager != null)
-            buffManager.ApplyBuff(carpetBuff);
+        // 진화2만 마커를 건다. 0이면 ApplyCarpetWaveDamage가 상태이상을 붙이지 않는다.
+        float markDuration = pendingEvo == SkillEvolutionId.Evolution2 ? def.evoMarkerDuration : 0f;
 
         WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
         WBH_PlayerEffectCue explosionCue =
@@ -448,10 +466,50 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             SpawnFallingBombs(def, center, areaRadius, explosionCue);
 
             // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
-            yield return new WaitForSeconds(def.carpetImpactDelay);
-            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData);
+            yield return new WaitForSeconds(impactDelay);
+            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData, markDuration);
 
-            float rest = def.carpetWaveInterval - def.carpetImpactDelay;
+            float rest = def.carpetWaveInterval - impactDelay;
+            if (rest > 0f)
+                yield return new WaitForSeconds(rest);
+        }
+    }
+
+    /// <summary>
+    /// 진화3 - 산탄 폭격. 영역 전체를 때리는 기본 융단폭격과 달리, 폭격 범위 안의 <b>랜덤한 지점</b>에
+    /// 작은 반경의 포탄을 연속으로 떨어뜨린다. 한 발의 피해는 크지만 범위가 좁아 명중이 운에 달린다.
+    ///
+    /// !! 한 대상이 맞을 확률은 (포탄 반경 / 산포 반경)^2 정도다. 기본값(반경 2 / 산포 8)이면 한 발당
+    ///    약 6%고 9발이면 기대 명중이 1발도 되지 않는다. 좁은 곳에 몰린 적이나 큰 적에게 쓰는 용도이고,
+    ///    체감이 너무 약하면 evoBarrageScatterRadius를 줄여 포탄을 모으는 쪽으로 조정한다.
+    /// </summary>
+    private IEnumerator ExecuteBarrageBombing(SkillDefinitionSO def, int index, Vector3 center)
+    {
+        float scatterRadius = def.evoBarrageScatterRadius;
+        float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
+
+        SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
+                                    totalDuration + def.carpetImpactDelay + 0.3f);
+
+        float damageMultiplier = def.evoBarrageDamagePerShell;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue explosionCue =
+            PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
+
+        for (int shell = 0; shell < def.evoBarrageShellCount; shell++)
+        {
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * scatterRadius;
+            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
+
+            SpawnFallingBombAt(def, impactPos, explosionCue);
+
+            yield return new WaitForSeconds(def.carpetImpactDelay);
+            ApplyCarpetWaveDamage(def, index, impactPos, def.evoBarrageShellRadius, damageMultiplier, effectData, 0f);
+
+            float rest = def.evoBarrageInterval - def.carpetImpactDelay;
             if (rest > 0f)
                 yield return new WaitForSeconds(rest);
         }
@@ -466,31 +524,43 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         for (int i = 0; i < def.carpetVisualBombsPerWave; i++)
         {
             Vector2 offset = UnityEngine.Random.insideUnitCircle * areaRadius;
-            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
-            Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
-
-            GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
-            GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
-            if (bomb == null)
-            {
-                Destroy(bombGO);
-                return;
-            }
-
-            // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
-            float fallSpeed = def.carpetImpactDelay > 0f
-                ? def.carpetDropHeight / def.carpetImpactDelay
-                : def.bombThrowSpeed;
-
-            bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
-            bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
-            SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+            SpawnFallingBombAt(def, center + new Vector3(offset.x, 0f, offset.y), explosionCue);
         }
     }
 
+    /// <summary>연출용 폭탄 한 발을 지정한 착탄 지점에 떨어뜨린다(진화3처럼 착탄점이 정해진 경우).</summary>
+    private void SpawnFallingBombAt(SkillDefinitionSO def, Vector3 impactPos, WBH_PlayerEffectCue explosionCue)
+    {
+        if (def.bombPrefab == null)
+            return;
+
+        Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+
+        GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
+        GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
+        if (bomb == null)
+        {
+            Destroy(bombGO);
+            return;
+        }
+
+        // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
+        float fallSpeed = def.carpetImpactDelay > 0f
+            ? def.carpetDropHeight / def.carpetImpactDelay
+            : def.bombThrowSpeed;
+
+        bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+        bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+    }
+
     /// <summary>폭격 한 번 분량의 피해를 영역 안 모든 적에게 적용한다.</summary>
+    /// <summary>
+    /// 지정한 지점 주변 범위의 적을 때린다. markDuration이 0보다 크면 맞은 적에게 Marked를 건다
+    /// (진화2 - 마커 폭격). 마커 자체는 글리터 폭탄(폭탄 투척 진화3)이 쓰는 것과 같은 상태이상이다.
+    /// </summary>
     private void ApplyCarpetWaveDamage(SkillDefinitionSO def, int index, Vector3 center, float areaRadius,
-                                       float damageMultiplier, WBH_EffectData effectData)
+                                       float damageMultiplier, WBH_EffectData effectData, float markDuration)
     {
         Collider[] targets = Physics.OverlapSphere(center, areaRadius, enemyLayer);
         foreach (Collider target in targets)
@@ -506,6 +576,13 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                                                                    effectData: effectData,
                                                                    hitPosition: hitPosition);
             WBH_CombatManager.ProcessDamage(request);
+
+            if (markDuration > 0f && !combatTarget.Status.IsDead)
+            {
+                combatTarget.AddStatusEffect(new WBH_StatusEffectData(WBH_StatusEffectType.Marked,
+                                                                      duration: markDuration,
+                                                                      value: def.evoMarkerDamageMultiplier));
+            }
         }
     }
 
