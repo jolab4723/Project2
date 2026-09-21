@@ -21,6 +21,8 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     private UniqueEffectPresentation_MirrorTest presentation;
     private bool missingInfernoPresenterReported;
     private double nextDodgeTriggerAt;
+    private string preparedAttackSourceInstanceId;
+    private uint empoweredAttackId;
 
     private readonly SyncDictionary<string, double> cooldownEndTimes = new();
     private readonly Dictionary<ChainLightningUniqueEffectSO, uint> lastChainAttackIds = new();
@@ -31,6 +33,8 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     [SyncVar] private uint infernoResolvedHitCount;
     [SyncVar] private uint glassRailTriggerCount;
     [SyncVar] private uint glassRailResolvedHitCount;
+    [SyncVar(hook = nameof(OnPreparedAttackChanged))] private bool preparedAttackReady;
+    [SyncVar] private uint preparedAttackConsumeCount;
 
     public static uint LocalChainLightningPresentationCount { get; private set; }
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
@@ -39,6 +43,8 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     public uint InfernoResolvedHitCount => infernoResolvedHitCount;
     public uint GlassRailTriggerCount => glassRailTriggerCount;
     public uint GlassRailResolvedHitCount => glassRailResolvedHitCount;
+    public bool PreparedAttackReady => preparedAttackReady;
+    public uint PreparedAttackConsumeCount => preparedAttackConsumeCount;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
@@ -73,19 +79,53 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     private void OnEnable()
     {
         if (health != null)
+        {
             health.OnDamageTaken += HandleHitTaken;
+            health.OnDeath += HandleDeath;
+        }
 
         if (stateMachine != null)
             stateMachine.OnEnterState += HandleStateEntered;
+
+        if (isClient)
+            SetPreparedAttackPresentation(preparedAttackReady);
     }
 
     private void OnDisable()
     {
         if (health != null)
+        {
             health.OnDamageTaken -= HandleHitTaken;
+            health.OnDeath -= HandleDeath;
+        }
 
         if (stateMachine != null)
             stateMachine.OnEnterState -= HandleStateEntered;
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        context ??= GetComponent<PlayerContext>();
+        if (context?.Equipment != null)
+        {
+            context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+            context.Equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        }
+    }
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        SetPreparedAttackPresentation(preparedAttackReady);
+    }
+
+    public override void OnStopServer()
+    {
+        if (context?.Equipment != null)
+            context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        ClearPreparedAttack();
+        base.OnStopServer();
     }
 
     /// <summary>공격 적중 피해의 Direct 전용 고유효과 진입점이다.</summary>
@@ -161,6 +201,33 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     public void ResetAttackLifetime()
     {
         lastChainAttackIds.Clear();
+        ClearPreparedAttack();
+    }
+
+    /// <summary>유효한 직접 기본 공격이 확정될 때 공격 번호당 한 번 준비 상태를 소비합니다.</summary>
+    [Server]
+    public float ConsumePreparedAttackMultiplier(DamageCause cause, uint attackId)
+    {
+        if (cause != DamageCause.Direct || attackId == 0)
+            return 1f;
+        if (!TryGetPreparedAttackEffect(out ItemInstance weapon, out DodgePreparedAttackUniqueEffectSO effect) ||
+            (!string.IsNullOrEmpty(preparedAttackSourceInstanceId) &&
+             preparedAttackSourceInstanceId != weapon.instanceId))
+        {
+            ClearPreparedAttack();
+            return 1f;
+        }
+        if (empoweredAttackId == attackId)
+            return ValidDamageMultiplier(effect);
+
+        empoweredAttackId = 0;
+        if (!preparedAttackReady)
+            return 1f;
+
+        empoweredAttackId = attackId;
+        preparedAttackReady = false;
+        preparedAttackConsumeCount++;
+        return ValidDamageMultiplier(effect);
     }
 
     [Server]
@@ -311,6 +378,11 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 
     private void HandleStateEntered(PlayerState state)
     {
+        if (state == PlayerState.Dead)
+        {
+            if (isServer) ClearPreparedAttack();
+            return;
+        }
         if (state != PlayerState.Dodge)
             return;
         if (isServer)
@@ -338,7 +410,69 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
             return;
         nextDodgeTriggerAt = NetworkTime.time + Mathf.Max(0f, status.DodgeCooltime);
         Fire(TriggerCondition.OnDodge);
+        PrepareDodgeAttack();
     }
+
+    private void HandleDeath()
+    {
+        if (isServer)
+            ClearPreparedAttack();
+    }
+
+    [Server]
+    private void PrepareDodgeAttack()
+    {
+        if (!TryGetPreparedAttackEffect(out ItemInstance weapon, out _))
+            return;
+        preparedAttackSourceInstanceId = weapon.instanceId;
+        empoweredAttackId = 0;
+        preparedAttackReady = true;
+    }
+
+    private bool TryGetPreparedAttackEffect(out ItemInstance weapon, out DodgePreparedAttackUniqueEffectSO effect)
+    {
+        weapon = null;
+        effect = null;
+        if (inventory?.EquipmentSystem == null ||
+            !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out weapon) ||
+            weapon?.definition?.characterClass != CharacterClass.Fighter)
+            return false;
+        effect = weapon.definition.uniqueEffect as DodgePreparedAttackUniqueEffectSO;
+        return effect != null;
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] equipmentSnapshot)
+    {
+        if (!isServer || !preparedAttackReady && empoweredAttackId == 0)
+            return;
+        if (!TryGetPreparedAttackEffect(out ItemInstance weapon, out _) ||
+            preparedAttackSourceInstanceId != weapon.instanceId)
+            ClearPreparedAttack();
+    }
+
+    [Server]
+    private void ClearPreparedAttack()
+    {
+        preparedAttackReady = false;
+        preparedAttackSourceInstanceId = null;
+        empoweredAttackId = 0;
+    }
+
+    private void OnPreparedAttackChanged(bool _, bool ready)
+        => SetPreparedAttackPresentation(ready);
+
+    private void SetPreparedAttackPresentation(bool ready)
+    {
+        if (!isClient) return;
+        presentation ??= GetComponent<UniqueEffectPresentation_MirrorTest>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation_MirrorTest>();
+        presentation.SetPreparedAttack(ready);
+    }
+
+    private static float ValidDamageMultiplier(DodgePreparedAttackUniqueEffectSO effect)
+        => effect != null && float.IsFinite(effect.damageMultiplier)
+            ? Mathf.Max(1f, effect.damageMultiplier)
+            : 1f;
 
     private void FireIfReady(ItemInstance item, TriggerCondition condition)
     {

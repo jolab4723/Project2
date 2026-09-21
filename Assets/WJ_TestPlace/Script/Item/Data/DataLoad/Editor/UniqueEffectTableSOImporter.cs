@@ -135,6 +135,15 @@ namespace DataSystem
                 case GlassRailExtraHitUniqueEffectSO glass:
                     glass.damageMultiplier = asset.coefficients[0] / 100f;
                     break;
+                case DodgePreparedAttackUniqueEffectSO preparedAttack:
+                    preparedAttack.damageMultiplier = 1f + asset.coefficients[0] / 100f;
+                    break;
+                case SolarGraceShieldUniqueEffectSO shield:
+                    shield.minimumHealthFraction = asset.coefficients[0] / 100f;
+                    shield.undamagedSeconds = asset.coefficients[1];
+                    shield.shieldFraction = asset.coefficients[2] / 100f;
+                    shield.shieldDurationSeconds = asset.coefficients[3];
+                    break;
                 case PassiveBuffUniqueEffectSO passive:
                     passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
                     break;
@@ -261,6 +270,8 @@ namespace DataSystem
                 case nameof(ChainLightningUniqueEffectSO): return typeof(ChainLightningUniqueEffectSO);
                 case nameof(InfernoExtraHitUniqueEffectSO): return typeof(InfernoExtraHitUniqueEffectSO);
                 case nameof(GlassRailExtraHitUniqueEffectSO): return typeof(GlassRailExtraHitUniqueEffectSO);
+                case nameof(DodgePreparedAttackUniqueEffectSO): return typeof(DodgePreparedAttackUniqueEffectSO);
+                case nameof(SolarGraceShieldUniqueEffectSO): return typeof(SolarGraceShieldUniqueEffectSO);
             }
 
             Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
@@ -289,8 +300,27 @@ namespace DataSystem
                 }
                 Type type = ResolveEffectType(row.effectType, id);
                 if (type == null) { valid = false; continue; }
+                if (type == typeof(SolarGraceShieldUniqueEffectSO))
+                {
+                    string[] shieldParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] shieldValues = new float[shieldParts.Length];
+                    bool shieldValid = shieldParts.Length == 4;
+                    for (int i = 0; i < shieldParts.Length; i++)
+                        shieldValid &= float.TryParse(shieldParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out shieldValues[i]) &&
+                            !float.IsNaN(shieldValues[i]) && !float.IsInfinity(shieldValues[i]);
+                    shieldValid = shieldValid && shieldValues[0] > 0f && shieldValues[0] <= 100f &&
+                        shieldValues[1] >= 0f && shieldValues[2] > 0f && shieldValues[2] <= 100f &&
+                        shieldValues[3] > 0f;
+                    if (!shieldValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 보호막 계수는 HP 기준%(0~100);무피격 초;보호막%;유지 초 순서의 유효한 숫자여야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
                 bool chain = type == typeof(ChainLightningUniqueEffectSO);
-                if (!chain && type != typeof(InfernoExtraHitUniqueEffectSO) && type != typeof(GlassRailExtraHitUniqueEffectSO))
+                if (!chain && type != typeof(InfernoExtraHitUniqueEffectSO) && type != typeof(GlassRailExtraHitUniqueEffectSO) &&
+                    type != typeof(DodgePreparedAttackUniqueEffectSO))
                     continue;
                 string[] parts = (row.coefficients ?? string.Empty).Split(new[] { ';', ',' }, StringSplitOptions.None);
                 var values = new float[parts.Length];

@@ -505,6 +505,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             return false;
 
         float before = target.Health.CurrentHealth;
+        float shieldBefore = target.GetComponent<PlayerArmorEffectProvider_MirrorTest>()?.ShieldAmount ?? 0f;
         WBH_CombatManager.ProcessDamage(new WBH_DamageRequest(
             controller,
             target.Controller,
@@ -512,7 +513,8 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             ElementType.None,
             1f));
 
-        if (target.Health.CurrentHealth >= before)
+        float shieldAfter = target.GetComponent<PlayerArmorEffectProvider_MirrorTest>()?.ShieldAmount ?? 0f;
+        if (target.Health.CurrentHealth >= before && shieldAfter >= shieldBefore)
             return false;
 
         hitCount++;

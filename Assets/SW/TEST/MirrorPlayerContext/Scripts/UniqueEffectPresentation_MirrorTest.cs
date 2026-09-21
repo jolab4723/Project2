@@ -15,6 +15,51 @@ public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
 
     private readonly List<GameObject> activeBolts = new();
     private Material chainLightningMaterial;
+    private GameObject preparedAttackRing;
+    private Material preparedAttackMaterial;
+
+    public void SetPreparedAttack(bool ready)
+    {
+        if (!ready)
+        {
+            if (preparedAttackRing != null) preparedAttackRing.SetActive(false);
+            return;
+        }
+        if (!isActiveAndEnabled) return;
+        if (preparedAttackRing == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) return;
+            preparedAttackMaterial = new Material(shader)
+            {
+                name = "Prepared Attack Runtime Material",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            preparedAttackRing = new GameObject("NightSwordPreparedAttack")
+            {
+                hideFlags = HideFlags.DontSave,
+            };
+            preparedAttackRing.transform.SetParent(transform, false);
+            preparedAttackRing.transform.localPosition = new Vector3(0f, 0.18f, 0f);
+            LineRenderer line = preparedAttackRing.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = 32;
+            line.widthMultiplier = 0.045f;
+            line.numCornerVertices = 2;
+            line.startColor = new Color(0.48f, 0.12f, 0.85f, 0.9f);
+            line.endColor = line.startColor;
+            line.sharedMaterial = preparedAttackMaterial;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            for (int i = 0; i < line.positionCount; i++)
+            {
+                float radians = i * Mathf.PI * 2f / line.positionCount;
+                line.SetPosition(i, new Vector3(Mathf.Cos(radians) * 0.72f, 0f, Mathf.Sin(radians) * 0.72f));
+            }
+        }
+        preparedAttackRing.SetActive(true);
+    }
 
     public void PresentChainLightning(Vector3 start, Vector3 end)
     {
@@ -136,6 +181,17 @@ public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
                 DestroyOwnedObject(hit);
         }
         activeInfernoHits.Clear();
+
+        if (preparedAttackRing != null)
+        {
+            DestroyOwnedObject(preparedAttackRing);
+            preparedAttackRing = null;
+        }
+        if (preparedAttackMaterial != null)
+        {
+            DestroyOwnedObject(preparedAttackMaterial);
+            preparedAttackMaterial = null;
+        }
 
         if (chainLightningMaterial != null)
         {
