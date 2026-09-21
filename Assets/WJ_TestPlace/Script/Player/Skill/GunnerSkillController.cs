@@ -431,6 +431,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         int waveCount = def.carpetWaveCount;
         float damagePerWave = def.carpetDamagePerWave;
         float impactDelay = def.carpetImpactDelay;
+        float waveInterval = def.carpetWaveInterval;
 
         if (pendingEvo == SkillEvolutionId.Evolution1)
         {
@@ -442,10 +443,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         {
             waveCount = def.evoMarkerWaveCount;
             damagePerWave = def.evoMarkerDamagePerWave;
+            waveInterval = def.evoMarkerWaveInterval;
         }
 
         float areaRadius = def.carpetAreaRadius;
-        float totalDuration = waveCount * def.carpetWaveInterval;
+        float totalDuration = waveCount * waveInterval;
 
         SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
                                     totalDuration + impactDelay + 0.3f);
@@ -469,7 +471,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             yield return new WaitForSeconds(impactDelay);
             ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData, markDuration);
 
-            float rest = def.carpetWaveInterval - impactDelay;
+            float rest = waveInterval - impactDelay;
             if (rest > 0f)
                 yield return new WaitForSeconds(rest);
         }
@@ -486,6 +488,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private IEnumerator ExecuteBarrageBombing(SkillDefinitionSO def, int index, Vector3 center)
     {
         float scatterRadius = def.evoBarrageScatterRadius;
+        // 포탄 반경만 스킬 범위 증가의 영향을 받는다. 산포 반경까지 넓히면 오히려 명중률이 떨어져서
+        // "범위 증가"가 하향으로 작동한다.
+        float shellRadius = ApplySkillRangeBonus(def, index, def.evoBarrageShellRadius);
         float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
 
         SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
@@ -507,7 +512,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             SpawnFallingBombAt(def, impactPos, explosionCue);
 
             yield return new WaitForSeconds(def.carpetImpactDelay);
-            ApplyCarpetWaveDamage(def, index, impactPos, def.evoBarrageShellRadius, damageMultiplier, effectData, 0f);
+            ApplyCarpetWaveDamage(def, index, impactPos, shellRadius, damageMultiplier, effectData, 0f);
 
             float rest = def.evoBarrageInterval - def.carpetImpactDelay;
             if (rest > 0f)
@@ -579,8 +584,15 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
             if (markDuration > 0f && !combatTarget.Status.IsDead)
             {
+                // 마커는 갱신이 아니라 누적이다. WBH_StatusEffectBase.Refresh가 남은 시간을 새 값으로
+                // 덮어쓰므로, 남은 시간을 미리 읽어 더한 총량을 넘긴다(상태이상 시스템은 손대지 않는다).
+                var effectController = target.GetComponentInParent<WBH_StatusEffectController>();
+                float remaining = effectController != null
+                    ? effectController.GetRemainingTime(WBH_StatusEffectType.Marked)
+                    : 0f;
+
                 combatTarget.AddStatusEffect(new WBH_StatusEffectData(WBH_StatusEffectType.Marked,
-                                                                      duration: markDuration,
+                                                                      duration: remaining + markDuration,
                                                                       value: def.evoMarkerDamageMultiplier));
             }
         }

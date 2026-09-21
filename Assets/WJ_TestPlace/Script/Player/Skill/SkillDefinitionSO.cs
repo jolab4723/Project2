@@ -255,15 +255,18 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("시전 후 타격까지의 지연(초). 기본 융단폭격의 carpetImpactDelay 대신 쓴다.")]
     public float evoLaserStrikeDelay = 0.5f;
     [Tooltip("한 번에 들어가는 피해 계수. 여러 번 나눠 때리지 않고 이 값이 전부다.")]
-    public float evoLaserStrikeDamage = 3.6f;
+    public float evoLaserStrikeDamage = 4.5f;
 
     [Header("CarpetBombing 진화2 전용 (마커 폭격 - 횟수 증가 + 마커 부여)")]
     [Tooltip("타격 횟수.")]
     public int evoMarkerWaveCount = 4;
+    [Tooltip("타격과 타격 사이 간격(초). 기본 융단폭격의 carpetWaveInterval 대신 쓴다.")]
+    public float evoMarkerWaveInterval = 1f;
     [Tooltip("회당 피해 계수.")]
-    public float evoMarkerDamagePerWave = 0.9f;
-    [Tooltip("맞은 적에게 거는 마커(Marked) 지속시간(초). 0이면 마커 없음.")]
-    public float evoMarkerDuration = 6f;
+    public float evoMarkerDamagePerWave = 1f;
+    [Tooltip("맞은 적에게 거는 마커(Marked) 지속시간(초). 0이면 마커 없음. " +
+             "이미 걸려 있으면 남은 시간에 이 값을 더한다(갱신이 아니라 누적).")]
+    public float evoMarkerDuration = 5f;
     [Tooltip("마커가 걸린 적이 받는 모든 피해의 배율.")]
     public float evoMarkerDamageMultiplier = 1.25f;
 
@@ -272,10 +275,10 @@ public class SkillDefinitionSO : ScriptableObject
     public int evoBarrageShellCount = 9;
     [Tooltip("포탄과 포탄 사이 간격(초).")]
     public float evoBarrageInterval = 0.3f;
-    [Tooltip("포탄 한 발의 폭발 반경. 영역 전체가 아니라 이 범위만 맞는다.")]
-    public float evoBarrageShellRadius = 2f;
+    [Tooltip("포탄 한 발의 폭발 반경. 영역 전체가 아니라 이 범위만 맞는다. 스킬 범위 증가의 영향을 받는다.")]
+    public float evoBarrageShellRadius = 3f;
     [Tooltip("포탄 한 발의 피해 계수.")]
-    public float evoBarrageDamagePerShell = 2f;
+    public float evoBarrageDamagePerShell = 0.6f;
     [Tooltip("포탄이 떨어질 수 있는 범위(폭격 중심 기준). 좁을수록 한 대상에게 여러 발이 겹친다. " +
              "한 대상의 발당 명중률은 대략 (포탄반경/산포반경)^2다 - 기본 융단폭격 반경인 8로 두면 " +
              "발당 6%라 9발을 쏴도 기대 명중이 1발이 안 된다. 4면 발당 25%로 기대 2.25발이다.")]
