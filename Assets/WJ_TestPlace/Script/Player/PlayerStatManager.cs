@@ -464,6 +464,8 @@ public class PlayerStatManager : MonoBehaviour
         Add("쿨감", set.cdrFlat, 0f);
         Add("마나재생", set.mpRegenFlat, set.mpRegenPercent);
         Add("스킬사거리", set.skillRangeFlat, set.skillRangePercent);
+        Add("일반공격피해", 0f, set.normalDamagePercent);
+        Add("스킬피해", 0f, set.skillDamagePercent);
         Add("화염", set.fireBonusFlat, set.fireBonusPercent);
         Add("빙결", set.iceBonusFlat, set.iceBonusPercent);
         Add("전기", set.electricBonusFlat, set.electricBonusPercent);

@@ -122,6 +122,8 @@ namespace ItemSystem
             { StatType.penetrationFlat, Get("stat.penetrationflat", "관통력") },
             { StatType.skillRangeFlat, Get("stat.skillrangeflat", "스킬 범위") },
             { StatType.skillRangePercent, Get("stat.skillrangepercent", "스킬 범위%") },
+            { StatType.normalDamagePercent, Get("stat.normaldamagepercent", "일반공격 피해%") },
+            { StatType.skillDamagePercent, Get("stat.skilldamagepercent", "스킬 피해%") },
             { StatType.fireBonusFlat, Get("stat.firebonusflat", "불 속성 보너스") },
             { StatType.iceBonusFlat, Get("stat.icebonusflat", "얼음 속성 보너스") },
             { StatType.electricBonusFlat, Get("stat.electricbonusflat", "전기 속성 보너스") },
