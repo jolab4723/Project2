@@ -6,8 +6,10 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class YJ_PlayerDead : MonoBehaviour
 {
-    [Header("Title Transition")]
-    [SerializeField] private string titleSceneName = "TitleScene";
+    // 결과 씬을 고정하여 기존 프리팹의 titleSceneName 값에 영향을 받지 않는다.
+    private const string ResultSceneName = "ClearResultScene";
+
+    [Header("Result Transition")]
     [Tooltip("사망 이미지 페이드인이 끝난 뒤 암전 시작까지의 대기 시간입니다.")]
     [SerializeField, Min(0f)] private float deathDelay = 1f;
     [SerializeField, Min(0f)] private float deathFadeOutDuration = 5f;
@@ -17,6 +19,9 @@ public class YJ_PlayerDead : MonoBehaviour
     private NetworkIdentity networkIdentity;
     private Coroutine transitionRoutine;
     private bool transitionRequested;
+    private bool deathResultRecorded;
+    private SceneLoader transitionLoader;
+    private YJ_BgmPlayer deathAudioPlayer;
     private bool IsSinglePlayer => !NetworkClient.active && !NetworkServer.active && networkIdentity == null;
 
     [Header("Death Presentation")]
@@ -54,7 +59,8 @@ public class YJ_PlayerDead : MonoBehaviour
             StopCoroutine(transitionRoutine);
 
         HideDeathScreen();
-        ResetRequest();
+        // 로딩 씬으로 넘어갈 때는 영구 BGM 플레이어가 목적 씬에서 복구한다.
+        ResetRequest(transitionLoader == null || !transitionLoader.IsLoading);
     }
 
     private void HandleDeath()
@@ -62,10 +68,10 @@ public class YJ_PlayerDead : MonoBehaviour
         if (transitionRequested || !IsSinglePlayer || controller.reviveCount > 0)
             return;
         transitionRequested = true;
-        transitionRoutine = StartCoroutine(ReturnToTitle());
+        transitionRoutine = StartCoroutine(ReturnToResult());
     }
 
-    private IEnumerator ReturnToTitle()
+    private IEnumerator ReturnToResult()
     {
         yield return null;
 
@@ -78,9 +84,8 @@ public class YJ_PlayerDead : MonoBehaviour
 
         SceneLoader loader = SceneLoader.Instance;
 
-        if (loader == null || string.IsNullOrWhiteSpace(titleSceneName) ||
-            titleSceneName == "LoadingScene" ||
-            !Application.CanStreamedLevelBeLoaded(titleSceneName) ||
+        if (loader == null ||
+            !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
             !Application.CanStreamedLevelBeLoaded("LoadingScene"))
         {
             Debug.LogError(
@@ -97,8 +102,23 @@ public class YJ_PlayerDead : MonoBehaviour
             yield break;
         }
 
-        // 기존 BGM 페이드 시간에 따라 음량이 줄어든 뒤 정지합니다.
-        YJ_BgmPlayer.Instance?.Stop();
+        // 플레이어/지갑이 사라지기 전에 실패 결과를 확정한다.
+        // 로드 재시도 시 FinishRun을 반복하면 기존 집계가 초기화될 수 있다.
+        if (!deathResultRecorded)
+        {
+            var tracker = KY_RunStatsTracker.Instance;
+            if (tracker == null || !tracker.FinishRun(false))
+            {
+                Debug.LogError("[YJ_PlayerDead] 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.", this);
+                ResetRequest();
+                yield break;
+            }
+            deathResultRecorded = true;
+        }
+
+        transitionLoader = loader;
+        deathAudioPlayer = YJ_BgmPlayer.Instance;
+        deathAudioPlayer?.BeginDeathAudio(deathSfx, deathSfxVolume);
 
         if (deathScreenPrefab != null)
         {
@@ -111,10 +131,6 @@ public class YJ_PlayerDead : MonoBehaviour
             deathScreenGroup.interactable = false;
             deathScreenGroup.blocksRaycasts = true;
         }
-
-        // 카메라와 플레이어 사이 거리에 영향받지 않는 2D 효과음
-        if (deathSfx != null)
-            YJ_SfxPlayer.Instance?.PlayUI(deathSfx, deathSfxVolume);
 
         yield return FadeInDeathScreen();
 
@@ -132,7 +148,7 @@ public class YJ_PlayerDead : MonoBehaviour
         }
 
         // 이미지를 표시한 상태에서 기존 Fader가 화면 전체를 덮습니다.
-        loader.LoadScene(titleSceneName, deathFadeOutDuration);
+        loader.LoadScene(ResultSceneName, deathFadeOutDuration);
 
         while (loader != null && loader.IsLoading)
             yield return null;
@@ -161,8 +177,12 @@ public class YJ_PlayerDead : MonoBehaviour
             deathScreenGroup.alpha = 1f;
     }
 
-    private void ResetRequest()
+    private void ResetRequest(bool restoreAudio = true)
     {
+        if (restoreAudio && deathAudioPlayer != null)
+            deathAudioPlayer.EndDeathAudio();
+        deathAudioPlayer = null;
+        transitionLoader = null;
         transitionRoutine = null;
         transitionRequested = false;
     }

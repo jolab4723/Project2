@@ -71,7 +71,7 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
 
     public void PlayImmediate(AudioClip clip, Vector3 position, float volume)
     {
-        if (clip == null || ! isActiveAndEnabled || sources == null)
+        if (YJ_BgmPlayer.IsDeathAudioActive || clip == null || ! isActiveAndEnabled || sources == null)
             return;
 
         // 일시정지 중에는 새 소리를 재생하거나 기존 소스를 재사용하지 않는다.
@@ -98,7 +98,7 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
 
     public void PlayDelayed(AudioClip clip, Vector3 position, float volume, float delay)
     {
-        if (clip == null || !isActiveAndEnabled || sources == null)
+        if (YJ_BgmPlayer.IsDeathAudioActive || clip == null || !isActiveAndEnabled || sources == null)
             return;
 
         if (AudioListener.pause)
@@ -153,6 +153,9 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
     {
         StopAllCoroutines();
 
+        if (uiSource != null)
+            uiSource.Stop();
+
         if (sources == null)
             return;
 
@@ -168,7 +171,7 @@ public class YJ_SfxPlayer : Singleton<YJ_SfxPlayer>
 
     public void PlayUI(AudioClip clip, float volume = 1f)
     {
-        if (clip == null || ! isActiveAndEnabled || uiSource == null)
+        if (YJ_BgmPlayer.IsDeathAudioActive || clip == null || ! isActiveAndEnabled || uiSource == null)
             return;
 
         volume = Mathf.Clamp01(volume);

@@ -147,7 +147,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
             return false;
         }
 
-        if (pendingNode.type != StageNodeType.Event ||
+        if ((pendingNode.type != StageNodeType.Event && pendingNode.type != StageNodeType.Battle &&
+             pendingNode.type != StageNodeType.Elite && pendingNode.type != StageNodeType.Camp) ||
             string.IsNullOrWhiteSpace(pendingNode.unknownStageId))
         {
             Log.Warning(
@@ -288,6 +289,16 @@ public class YJ_UnknownStageManager : MonoBehaviour
                 Log.Error("DataManager가 없어 Unknown 선택을 저장할 수 없습니다.");
                 return;
             }
+            var destination = YJ_UnknownStageDestination.StageSelect;
+            foreach (var effect in choice.Effects)
+                if (effect.Type == YJ_UnknownEffectType.MoveToStage) destination = effect.Destination;
+            bool redirect = destination != YJ_UnknownStageDestination.StageSelect;
+            string targetScene = stageSelectSceneName;
+            if (redirect && !stageSaveService.TryResolveUnknownDestination(requestedNodeKey, stageId, destination, out targetScene, out error))
+            { Log.Warning($"[Unknown] {error}"); return; }
+            if (targetScene == gameObject.scene.name || targetScene == "LoadingScene" || !Application.CanStreamedLevelBeLoaded(targetScene) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            { Log.Error($"[Unknown] 목적 씬 설정 또는 LoadingScene 빌드 등록을 확인하세요: {targetScene}"); return; }
             if (discardedItemIds == null)
             {
                 foreach (var effect in choice.Effects)
@@ -308,7 +319,12 @@ public class YJ_UnknownStageManager : MonoBehaviour
             }
 
             // 지급은 이미 기록되었다. 완료 저장 실패 시 같은 선택을 재시도해도 재지급하지 않는다.
-            if (!stageSaveService.CompletePendingNode())
+            if (redirect)
+            {
+                if (!stageSaveService.TryRedirectUnknownNode(requestedNodeKey, stageId, destination, targetScene, out error))
+                { Log.Warning($"[Unknown] {error}"); return; }
+            }
+            else if (!stageSaveService.CompletePendingNode())
             {
                 Log.Warning("[Unknown] 보상은 저장되었지만 노드 완료에 실패했습니다. 같은 선택을 다시 눌러 재시도하세요.");
                 return;
@@ -317,7 +333,12 @@ public class YJ_UnknownStageManager : MonoBehaviour
             keepLocked = choiceButtonBox.PlayExit(selectedButton, () =>
             {
                 if (loader != null && !loader.IsLoading)
-                    loader.LoadScene(stageSelectSceneName);
+                {
+                    loader.LoadScene(targetScene);
+                    StartCoroutine(RestoreChoicesAfterFailedLoad(loader));
+                }
+                else if (loader != null)
+                    StartCoroutine(RestoreChoicesAfterFailedLoad(loader));
                 else if (loader == null)
                 {
                     Log.Error("[Unknown] SceneLoader가 사라졌습니다. 보상 재지급 없이 이동을 재시도할 수 있습니다.");
@@ -332,6 +353,19 @@ public class YJ_UnknownStageManager : MonoBehaviour
             isProcessingChoice = keepLocked;
             if (!keepLocked && choiceButtonBox != null)
                 choiceButtonBox.SetButtonsInteractable(true);
+        }
+    }
+
+    private System.Collections.IEnumerator RestoreChoicesAfterFailedLoad(Core.SceneLoader loader)
+    {
+        yield return null;
+        while (loader != null && loader.IsLoading) yield return null;
+        // 성공하면 이 씬과 코루틴은 파괴된다. 이전 화면에 남았다면 재시도 허용.
+        if (isActiveAndEnabled && choiceButtonBox != null)
+        {
+            isProcessingChoice = false;
+            choiceButtonBox.HideButtons();
+            choiceButtonBox.PlayReveal();
         }
     }
 
@@ -380,7 +414,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
             return false;
         }
         StageNodeSaveData node = map.nodes.Find(n => n != null && n.id == map.pendingNodeId);
-        if (node != null && node.type == StageNodeType.Event && node.unknownStageId == selectedStage.StageId)
+        if (node != null && (node.type == StageNodeType.Event || node.type == StageNodeType.Battle ||
+            node.type == StageNodeType.Elite || node.type == StageNodeType.Camp) && node.unknownStageId == selectedStage.StageId)
         {
             string key = $"{(int)map.act}:{map.mapSeed}:{node.id}";
             if (requestedNodeKey != null && requestedNodeKey != key)
