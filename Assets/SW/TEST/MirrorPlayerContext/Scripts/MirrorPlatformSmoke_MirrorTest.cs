@@ -92,7 +92,7 @@ public sealed class MirrorPlatformSmoke_MirrorTest : MonoBehaviour
     private bool inputsCaptured;
 
     private static string Argument(string key) =>
-        MirrorSessionSmokeDriver_MirrorTest.Argument(key);
+        MirrorSmokeConfiguration_MirrorTest.Argument(key);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetResult()
