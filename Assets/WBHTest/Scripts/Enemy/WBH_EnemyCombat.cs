@@ -451,7 +451,8 @@ public class WBH_EnemyCombat : MonoBehaviour
                            float explosionRadius, 
                            float warningDuration, 
                            float recoveryDuration, 
-                           WBH_IndicatorSpawner indicatorSpawner, 
+                           WBH_IndicatorSpawner indicatorSpawner,
+                           WBH_EnemyEffectCue impactEffectCue,
                            System.Action onCompleted = null)
     {
         if (IsActionInProgress || impactPoints == null || impactPoints.Count == 0 || indicatorSpawner == null)
@@ -459,7 +460,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         BeginAction();
 
-        StartCoroutine(CoMissile(impactPoints, explosionRadius, warningDuration, recoveryDuration, indicatorSpawner, onCompleted));
+        StartCoroutine(CoMissile(impactPoints, explosionRadius, warningDuration, recoveryDuration, indicatorSpawner, impactEffectCue, onCompleted));
 
         return true;
     }
@@ -469,7 +470,8 @@ public class WBH_EnemyCombat : MonoBehaviour
                                   float explosionRadius, 
                                   float warningDuration, 
                                   float recoveryDuration, 
-                                  WBH_IndicatorSpawner indicatorSpawner, 
+                                  WBH_IndicatorSpawner indicatorSpawner,
+                                  WBH_EnemyEffectCue impactEffectCue,
                                   System.Action onCompleted = null)
     {
         Vector3 spawnPos = pattern.GrenadePoint.position;
@@ -494,7 +496,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
             float launchDelay = impactTime - flightTimes[i];
 
-            StartCoroutine(CoLaunchMissileAfter(launchDelay, spawnPos, impactPoints[i], explosionRadius));
+            StartCoroutine(CoLaunchMissileAfter(launchDelay, spawnPos, impactPoints[i], explosionRadius, impactEffectCue));
         }
 
         yield return new WaitForSeconds(impactTime + recoveryDuration);
@@ -503,13 +505,13 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 미사일 실제 발사 메서드
-    private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius)
+    private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius, WBH_EnemyEffectCue impactEffectCue)
     {
         yield return new WaitForSeconds(delay);
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, missileEffect);
+        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, enemyEffect: pattern.EnemyEffect, impactEffectCue: impactEffectCue);
     }
 
 
