@@ -44,8 +44,30 @@ public class KY_SettingsPopup : KY_PopupBase
     [Header("게임 플레이")]
     public TMP_Dropdown languageDropdown;
 
+    [Header("다국어")]
+    [Tooltip("비워두면 Resources에서 공용 UILabelDatabase를 자동으로 찾아 쓴다.")]
+    [SerializeField] private UILabelDatabaseSO labelDatabase;
+
+    private const string LabelDatabaseResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
+
     private GameInputActions inputActions;
     private KY_SettingsData tempData;
+
+    /// <summary>
+    /// 고정 문구 하나를 현재 언어로 가져온다. DB가 없거나 키가 없으면 한국어 원문으로 떨어진다
+    /// (UILabelDatabaseSO.GetLabel은 못 찾으면 key를 그대로 돌려주므로 화면에 키가 노출되지 않게 막는다).
+    /// </summary>
+    private string GetUILabel(string key, string fallback)
+    {
+        if (labelDatabase == null)
+            labelDatabase = Resources.Load<UILabelDatabaseSO>(LabelDatabaseResourcePath);
+
+        if (labelDatabase == null)
+            return fallback;
+
+        string label = labelDatabase.GetLabel(key);
+        return string.IsNullOrEmpty(label) || label == key ? fallback : label;
+    }
 
     void Awake()
     {
@@ -57,13 +79,15 @@ public class KY_SettingsPopup : KY_PopupBase
         "2560 x 1440",
         "3840 x 2160"
     });
+        // 언어 이름은 번역하지 않는다 - 각 언어를 그 언어의 표기로 보여줘야 현재 언어를 모르는
+        // 사용자도 자기 언어를 찾을 수 있다. 그래서 라벨 DB를 타지 않는 고정 목록이다.
         languageDropdown.ClearOptions();
         languageDropdown.AddOptions(new System.Collections.Generic.List<string>
     {
         "한국어",
-        "English ",
+        "English",
         "日本語",
-        "中國語"
+        "中文"
     });
         languageDropdown.onValueChanged.AddListener(OnLanguageDropdownChanged);
 
@@ -96,7 +120,7 @@ public class KY_SettingsPopup : KY_PopupBase
     {
         rebindOperation?.Cancel();
         rebindOverlay.SetActive(true);
-        rebindText.text = "변경할 키를 입력해주세요";
+        rebindText.text = GetUILabel("settings_ui.rebind_prompt", "변경할 키를 입력해주세요");
 
         action.Disable();
 
@@ -210,8 +234,8 @@ public class KY_SettingsPopup : KY_PopupBase
 
         KY_PopupManager.Instance.ShowConfirm(new KY_DialogData
         {
-            message = "설정을 기본값으로 초기화하시겠습니까?",
-            warningText = "현재 설정이 모두 기본값으로 변경됩니다.",
+            message = GetUILabel("settings_ui.reset_confirm", "설정을 기본값으로 초기화하시겠습니까?"),
+            warningText = GetUILabel("settings_ui.reset_warning", "현재 설정이 모두 기본값으로 변경됩니다."),
             onYes = ResetSettingsConfirmed
         });
     }
