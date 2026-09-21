@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Core;
 
+/// <summary>일시정지 메뉴의 시간 정지, 설정, 포기 및 저장 후 종료 흐름을 관리한다.</summary>
 public class KY_PausePopup : KY_PopupBase
 {
     [SerializeField] private bool pauseGameTime = true; // SW 수정

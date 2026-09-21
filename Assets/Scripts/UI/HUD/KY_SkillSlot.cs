@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>HUD의 개별 스킬 아이콘, 키 안내, 쿨타임과 스택 표시를 갱신한다.</summary>
 public class KY_SkillSlot : MonoBehaviour
 {
     public Image icon;

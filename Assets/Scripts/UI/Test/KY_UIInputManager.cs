@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>UI 단축키 입력을 받아 열린 팝업을 닫거나 HUD 팝업 요청을 전달한다.</summary>
 public class KY_UIInputManager : MonoBehaviour
 {
     private GameInputActions inputActions;

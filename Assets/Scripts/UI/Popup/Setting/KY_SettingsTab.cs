@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>설정 탭 토글의 선택 상태에 맞춰 연결된 패널과 탭 색상을 갱신한다.</summary>
 public class KY_SettingsTab : MonoBehaviour
 {
     public GameObject panel;

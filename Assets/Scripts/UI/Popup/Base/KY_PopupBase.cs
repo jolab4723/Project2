@@ -1,5 +1,6 @@
 using UnityEngine;
 
+/// <summary>모든 팝업의 열기·닫기와 다른 팝업에 가려질 때의 공통 표시 상태를 제공한다.</summary>
 public class KY_PopupBase : MonoBehaviour
 {
     private CanvasGroup coverGroup;

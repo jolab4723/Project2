@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>설정 항목 호버 시 해당 항목의 설명을 설명 패널에 표시한다.</summary>
 public class KY_SettingItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [TextArea]
