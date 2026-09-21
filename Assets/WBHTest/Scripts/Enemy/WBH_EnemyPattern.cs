@@ -49,8 +49,6 @@ public class WBH_EnemyPattern : MonoBehaviour
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
-    [SerializeField] private Transform meleeEffectPoint;
-    [SerializeField] private WBH_EffectData normalMeleeEffect;
 
     public WBH_EnemyAnimation enemyAnimation; // pattern 에서의 참조를 위해 public
     private WBH_EnemyController controller;
@@ -59,6 +57,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_EnemyStatus status;
     private WBH_IndicatorSpawner indicatorSpawner;
     private WBH_EnemyView view;
+    private WBH_EnemyEffect enemyEffect;
 
     private WBH_EffectSpawner effectSpawner;
 
@@ -79,6 +78,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     public WBH_EnemyMovement Movement => movement;
     public WBH_EnemyCombat Combat => combat;
     public WBH_EnemyStatus Status => status;
+    public WBH_EnemyEffect EnemyEffect => enemyEffect;
     public WBH_EffectSpawner EffectSpawner => effectSpawner;
     public WBH_IndicatorSpawner IndicatorSpawner => indicatorSpawner;
     public float AttackRange => status.AttackRange;
@@ -101,6 +101,7 @@ public class WBH_EnemyPattern : MonoBehaviour
         combat = GetComponent<WBH_EnemyCombat>();
         status = GetComponent<WBH_EnemyStatus>();
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
+        enemyEffect = GetComponent<WBH_EnemyEffect>();
         effectSpawner = GetComponent<WBH_EffectSpawner>();
         projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
         indicatorSpawner = GetComponent <WBH_IndicatorSpawner>();
@@ -277,7 +278,6 @@ public class WBH_EnemyPattern : MonoBehaviour
     protected virtual void MeleeAttack()
     {
         SectorAttack(status.AttackRange, basicMeleeAttackAngle);
-        //effectSpawner.SpawnEffect(normalMeleeEffect, meleeEffectPoint); //!@ 노말 등급 애니메이션 만든다면 삭제해도?
     }
 
     protected virtual void RangedAttack()
@@ -289,6 +289,8 @@ public class WBH_EnemyPattern : MonoBehaviour
         WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, basicAttackMult);
 
         projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, firePoint.position, direction, request, status.ProjectileSpeed, status.AttackRange, playerLayer);
+
+        enemyEffect.PlayCue(WBH_EnemyEffectCue.Normal_Range_01_Attack, transform.localScale);
     }
 
     // player 공격 코드 재활용

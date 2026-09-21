@@ -5,6 +5,7 @@ using UnityEngine;
 ///                              2(적 공격 방식) 0부터 차례로 근접 / 원거리 / 자폭 / 히든 / 보스
 ///                              3(적 종류) 0부터 9
 ///                              45(동작, 큐 등 해당 적에 따라 자유롭게 작성) 0부터 99
+/// 애니메이션이 없는 경우 WBH_EnemyEffect 의 PlayCue, PlayWorldCue 코드에서 재생
 /// </summary>
 public enum WBH_EnemyEffectCue
 {
@@ -13,10 +14,10 @@ public enum WBH_EnemyEffectCue
     // 일반 및 어드밴스드 등급
     Normal_Melee_01_Attack = 10000, // 근접공격
 
-    Normal_Range_01_Attack = 11000, // 원거리공격. 탄환 발사(애니메이션 없음)
+    Normal_Range_01_Attack = 11000, // 원거리공격. 탄환 발사(애니메이션 없음. WBH_EnemyPattern-293)
 
-    Normal_SelfDestruct_FuseStart = 12000, // 자폭시퀀스 스타트 (애니메이션 없음)
-    Normal_SelfDestruct_Explosion = 12001, // 폭발 (애니메이션 없음)
+    Normal_SelfDestruct_FuseStart = 12000, // 자폭시퀀스 스타트 (애니메이션 없음.WBH_EnemySelfDestructPattern-103)
+    Normal_SelfDestruct_Explosion = 12001, // 폭발 (애니메이션 없음.WBH_EnemySelfDestructPattern-133)
 
 
     // 엘리트
@@ -36,10 +37,11 @@ public enum WBH_EnemyEffectCue
     Boss_Act1_Barrage = 55003, // 원거리 공격. 탄환 부채꼴 범위 일제사격
     Boss_Act1_Missile = 55004, // 원거리 공격. 미사일 3발 일제사격
     Boss_Act1_PhaseMissile = 55005, // 페이즈 전환 모션. 보스 주위 미사일 일제사격
-    Boss_Act1_WaitDash = 55006, // 돌진 전 준비 모션
-    Boss_Act1_Dash = 55007, // 돌진 모션
-    Boss_Act1_JumpAttack = 55008, // 점프 공격
-    Boss_Act1_Death = 55009, // 사망 (디졸브 적용됨)
+    Boss_Act1_MissileExplosion = 55006, // 미사일 폭발 이펙트 및 사운드. (해당 큐만 투사체에 부여되도록 코드 처리.)
+    Boss_Act1_WaitDash = 55007, // 돌진 전 준비 모션
+    Boss_Act1_Dash = 55008, // 돌진 모션
+    Boss_Act1_JumpAttack = 55009, // 점프 공격
+    Boss_Act1_Death = 55010, // 사망 (디졸브 적용됨)
 
 
     Boss_Act2_TrackingFire = 55100, // 원거리 공격. 타겟 방향으로 회전하며 탄환 5번 연사 
