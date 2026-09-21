@@ -25,6 +25,10 @@ public sealed class KY_LoginPopup : MonoBehaviour
     [SerializeField] private Button loginButton;
     [SerializeField] private Button createAccountButton;
 
+    [Header("임시 로그인 우회")]
+    [Tooltip("로그인 구현 전 테스트용입니다. 입력 없이 TitleScene으로 이동합니다. 정식 로그인 연결 시 끄세요.")]
+    [SerializeField] private bool bypassLoginTemporarily = true;
+
     [Header("선택 표시")]
     [SerializeField] private TMP_Text feedbackText;
 
@@ -42,7 +46,19 @@ public sealed class KY_LoginPopup : MonoBehaviour
         contentFade?.SetAlphaImmediate(0f);
 
         if (loginButton != null)
+        {
+            // 씬에 남아 있는 직접 이동 연결은 입력 검증을 우회하고,
+            // 부트 씬의 싱글톤이 유지될 때 파괴된 중복 로더를 참조할 수 있다.
+            // 우회 옵션을 꺼도 이 연결이 인증 전에 실행되지 않게 한다.
+            for (int i = 0; i < loginButton.onClick.GetPersistentEventCount(); i++)
+            {
+                var target = loginButton.onClick.GetPersistentTarget(i);
+                if (loginButton.onClick.GetPersistentMethodName(i) == nameof(Core.SceneLoader.LoadScene) &&
+                    (target == null || target is Core.SceneLoader))
+                    loginButton.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            }
             loginButton.onClick.AddListener(SubmitLogin);
+        }
 
         if (createAccountButton != null)
             createAccountButton.onClick.AddListener(RequestCreateAccount);
@@ -91,9 +107,33 @@ public sealed class KY_LoginPopup : MonoBehaviour
             .OnComplete(() => contentFade.FadeIn());
     }
 
-    /// <summary>입력값을 검증한 뒤 로그인 요청을 전달한다.</summary>
+    /// <summary>임시 우회가 켜져 있으면 타이틀로 이동하고, 아니면 입력값을 검증해 로그인 요청을 전달한다.</summary>
     public void SubmitLogin()
     {
+        if (bypassLoginTemporarily)
+        {
+            var loader = Core.SceneLoader.Instance;
+            if (loader == null || !loader.isActiveAndEnabled)
+            {
+                ShowError("씬 로더가 준비되지 않았습니다. Start 씬부터 실행해주세요.");
+                return;
+            }
+
+            if (loader.IsLoading)
+                return;
+
+            if (!Application.CanStreamedLevelBeLoaded("TitleScene") ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                ShowError("TitleScene과 LoadingScene의 빌드 씬 등록을 확인해주세요.");
+                return;
+            }
+
+            ClearFeedback();
+            loader.LoadScene("TitleScene");
+            return;
+        }
+
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
 

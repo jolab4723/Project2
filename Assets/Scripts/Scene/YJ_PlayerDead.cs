@@ -17,6 +17,8 @@ public class YJ_PlayerDead : MonoBehaviour
     private NetworkIdentity networkIdentity;
     private Coroutine transitionRoutine;
     private bool transitionRequested;
+    private SceneLoader transitionLoader;
+    private YJ_BgmPlayer deathAudioPlayer;
     private bool IsSinglePlayer => !NetworkClient.active && !NetworkServer.active && networkIdentity == null;
 
     [Header("Death Presentation")]
@@ -54,7 +56,8 @@ public class YJ_PlayerDead : MonoBehaviour
             StopCoroutine(transitionRoutine);
 
         HideDeathScreen();
-        ResetRequest();
+        // 로딩 씬으로 넘어갈 때는 영구 BGM 플레이어가 목적 씬에서 복구한다.
+        ResetRequest(transitionLoader == null || !transitionLoader.IsLoading);
     }
 
     private void HandleDeath()
@@ -97,8 +100,9 @@ public class YJ_PlayerDead : MonoBehaviour
             yield break;
         }
 
-        // 기존 BGM 페이드 시간에 따라 음량이 줄어든 뒤 정지합니다.
-        YJ_BgmPlayer.Instance?.Stop();
+        transitionLoader = loader;
+        deathAudioPlayer = YJ_BgmPlayer.Instance;
+        deathAudioPlayer?.BeginDeathAudio(deathSfx, deathSfxVolume);
 
         if (deathScreenPrefab != null)
         {
@@ -111,10 +115,6 @@ public class YJ_PlayerDead : MonoBehaviour
             deathScreenGroup.interactable = false;
             deathScreenGroup.blocksRaycasts = true;
         }
-
-        // 카메라와 플레이어 사이 거리에 영향받지 않는 2D 효과음
-        if (deathSfx != null)
-            YJ_SfxPlayer.Instance?.PlayUI(deathSfx, deathSfxVolume);
 
         yield return FadeInDeathScreen();
 
@@ -161,8 +161,12 @@ public class YJ_PlayerDead : MonoBehaviour
             deathScreenGroup.alpha = 1f;
     }
 
-    private void ResetRequest()
+    private void ResetRequest(bool restoreAudio = true)
     {
+        if (restoreAudio && deathAudioPlayer != null)
+            deathAudioPlayer.EndDeathAudio();
+        deathAudioPlayer = null;
+        transitionLoader = null;
         transitionRoutine = null;
         transitionRequested = false;
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
 public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
 {
@@ -16,7 +17,8 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
         Act3Bgm,
         Act1BossBgm,
         Act2BossBgm,
-        Act3BossBgm
+        Act3BossBgm,
+        LoginBgm
     }
 
     [Serializable]
@@ -42,6 +44,13 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
     private AudioClip requestedClip;
     private float requestedVolume;
     private bool isTransitioning;
+    public static bool IsDeathAudioActive { get; private set; }
+    private bool ownsDeathAudio;
+    private bool listenerWasPaused;
+    private int deathSceneHandle;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetDeathAudioState() => IsDeathAudioActive = false;
 
     protected override void Awake()
     {
@@ -73,7 +82,7 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
 
     public void Play(YJ_BgmType type)
     {
-        if ( ! isActiveAndEnabled || source == null)
+        if (IsDeathAudioActive || ! isActiveAndEnabled || source == null)
             return;
 
         BgmEntry entry = FindEntry(type);
@@ -99,7 +108,7 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
 
     public void Stop()
     {
-        if ( ! isActiveAndEnabled || source == null)
+        if (IsDeathAudioActive || ! isActiveAndEnabled || source == null)
             return;
 
         if (requestedClip == null &&
@@ -109,6 +118,61 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
         }
 
         BeginTransition(null, 0f);
+    }
+
+    /// <summary>최종 사망 연출 동안 기존 음악과 효과음을 차단하고 사망 음악만 재생한다.</summary>
+    public void BeginDeathAudio(AudioClip clip, float volume)
+    {
+        if (!isActiveAndEnabled || source == null || IsDeathAudioActive)
+            return;
+
+        listenerWasPaused = AudioListener.pause;
+        deathSceneHandle = SceneManager.GetActiveScene().handle;
+        ownsDeathAudio = true;
+        IsDeathAudioActive = true;
+        SceneManager.sceneLoaded += HandleDeathSceneLoaded;
+
+        StopAllCoroutines();
+        isTransitioning = false;
+        requestedClip = null;
+        requestedVolume = 0f;
+        source.Stop(); // 기존 BGM은 페이드 대기 없이 즉시 종료한다.
+        YJ_SfxPlayer.Instance?.StopAll();
+        AudioListener.pause = true; // 몬스터·투사체·발소리의 개별 AudioSource도 차단한다.
+
+        source.clip = clip;
+        source.loop = false;
+        source.volume = Mathf.Clamp01(volume);
+        // 이 소스만 pause를 무시한다. 일반 UI SFX는 재생 진입점에서 차단한다.
+        source.ignoreListenerPause = true;
+        if (clip != null)
+            source.Play();
+    }
+
+    private void HandleDeathSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // 플레이어가 LoadingScene 전환 중 파괴되어도 차단을 유지한다.
+        if (mode == LoadSceneMode.Single && scene.handle != deathSceneHandle && scene.name != "LoadingScene")
+            EndDeathAudio();
+    }
+
+    /// <summary>사망 연출 취소 또는 목적 씬 도착 시 기존 오디오 상태를 복구한다.</summary>
+    public void EndDeathAudio()
+    {
+        if (!ownsDeathAudio)
+            return;
+
+        SceneManager.sceneLoaded -= HandleDeathSceneLoaded;
+        if (source != null)
+        {
+            source.Stop();
+            source.clip = null;
+            source.loop = true;
+            source.volume = 0f;
+        }
+        AudioListener.pause = listenerWasPaused;
+        ownsDeathAudio = false;
+        IsDeathAudioActive = false;
     }
 
     private BgmEntry FindEntry(YJ_BgmType type)
@@ -192,6 +256,7 @@ public class YJ_BgmPlayer : Singleton<YJ_BgmPlayer>
 
     private void OnDisable()
     {
+        EndDeathAudio();
         StopAllCoroutines();
 
         isTransitioning = false;

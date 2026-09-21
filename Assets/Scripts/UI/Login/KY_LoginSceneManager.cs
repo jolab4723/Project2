@@ -53,6 +53,8 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
         ClearLogText();
         loginPopup?.FocusAccountIdInput();
         isInitialized = true;
+
+        YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.LobbyBgm);
     }
 
     /// <summary>계정 생성 팝업에서 로그인 팝업으로 전환한다.</summary>
@@ -143,4 +145,6 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
         if (popup != null)
             popup.gameObject.SetActive(isVisible);
     }
+
+    // YJ_BgmPlayer.Instance.Stop(); BGM 종료 문구
 }
