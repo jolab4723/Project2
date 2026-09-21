@@ -21,7 +21,9 @@ public class KY_StatusPopup : KY_PopupBase
     public KY_StatRow cooldownReductionRow;
     public KY_StatRow mpRegenRow;
     public KY_StatRow penetrationRow;
-    public KY_StatRow skillRangeRow;     
+    public KY_StatRow skillRangeRow;
+    public KY_StatRow normalDamageRow;
+    public KY_StatRow skillDamageRow;
 
     [Header("속성 행")]
     public KY_ElementRow fireRow;
@@ -49,6 +51,9 @@ public class KY_StatusPopup : KY_PopupBase
     public Sprite mpRegenIcon;
     public Sprite penetrationIcon;
     public Sprite skillRangeIcon;
+    [Tooltip("전용 아이콘이 없어 기존 것을 임시로 쓴다. 디자인 나오면 교체.")]
+    public Sprite normalDamageIcon;
+    public Sprite skillDamageIcon;
 
     private KY_StatData currentData;
     private bool isDetailed = false;
@@ -103,7 +108,9 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.SetLabel(statLabels.GetLabel("cdr"));
         mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
         penetrationRow.SetLabel(statLabels.GetLabel("pen"));
-        skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));   
+        skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));
+        normalDamageRow?.SetLabel(statLabels.GetLabel("normalDamage"));
+        skillDamageRow?.SetLabel(statLabels.GetLabel("skillDamage"));
     }
 
     /// <summary>루트 인스펙터에 지정한 아이콘을 각 스탯 행에 반영한다.</summary>
@@ -121,6 +128,8 @@ public class KY_StatusPopup : KY_PopupBase
         mpRegenRow?.SetIcon(mpRegenIcon);
         penetrationRow?.SetIcon(penetrationIcon);
         skillRangeRow?.SetIcon(skillRangeIcon);
+        normalDamageRow?.SetIcon(normalDamageIcon);
+        skillDamageRow?.SetIcon(skillDamageIcon);
     }
 
     void OnEnable()
@@ -226,6 +235,10 @@ public class KY_StatusPopup : KY_PopupBase
             mpRegen = Build(c.mpRegenFlat, eq.mpRegenFlat, eq.mpRegenPercent, bu.mpRegenPercent, bu.mpRegenFlat, pa.mpRegenPercent, pa.mpRegenFlat),
             penetration = Build(c.penFlat, eq.penFlat, eq.penPercent, bu.penPercent, bu.penFlat, pa.penPercent, pa.penFlat),
             skillRange = Build(c.skillRangeFlat, eq.skillRangeFlat, eq.skillRangePercent, bu.skillRangePercent, bu.skillRangeFlat, pa.skillRangePercent, pa.skillRangeFlat),
+            // 피해 증감 %는 기준이 되는 캐릭터 기본값이 없다. mp와 같은 flat 합산 패턴으로 기본값 0에
+            // 각 레이어의 %를 그대로 더한다(BuildClamped는 0 밑으로 잘려서 디버프를 표현 못 한다).
+            normalDamage = Build(0f, eq.normalDamagePercent, 0f, 0f, bu.normalDamagePercent, 0f, pa.normalDamagePercent),
+            skillDamage = Build(0f, eq.skillDamagePercent, 0f, 0f, bu.skillDamagePercent, 0f, pa.skillDamagePercent),
             fireDamage = Build(c.fireBonusFlat, eq.fireBonusFlat, eq.fireBonusPercent, bu.fireBonusPercent, bu.fireBonusFlat, pa.fireBonusPercent, pa.fireBonusFlat),
             iceDamage = Build(c.iceBonusFlat, eq.iceBonusFlat, eq.iceBonusPercent, bu.iceBonusPercent, bu.iceBonusFlat, pa.iceBonusPercent, pa.iceBonusFlat),
             lightningDamage = Build(c.electricBonusFlat, eq.electricBonusFlat, eq.electricBonusPercent, bu.electricBonusPercent, bu.electricBonusFlat, pa.electricBonusPercent, pa.electricBonusFlat),
@@ -261,7 +274,9 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.UpdateMode(data.cooldownReduction, isDetailed);
         mpRegenRow.UpdateMode(data.mpRegen, isDetailed);
         penetrationRow.UpdateMode(data.penetration, isDetailed);
-        skillRangeRow.UpdateMode(data.skillRange, isDetailed);      
+        skillRangeRow.UpdateMode(data.skillRange, isDetailed);
+        normalDamageRow?.UpdateMode(data.normalDamage, isDetailed);
+        skillDamageRow?.UpdateMode(data.skillDamage, isDetailed);
         fireRow.SetData(data.fireDamage);
         iceRow.SetData(data.iceDamage);
         lightningRow.SetData(data.lightningDamage);
