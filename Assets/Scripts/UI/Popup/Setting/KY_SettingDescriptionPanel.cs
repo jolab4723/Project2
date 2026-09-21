@@ -6,9 +6,6 @@ public class KY_SettingDescriptionPanel : MonoBehaviour
 {
     public static KY_SettingDescriptionPanel Instance;
 
-    public Image icon;
-    public Image background;
-    public TextMeshProUGUI nameText;
     public TextMeshProUGUI descriptionText;
 
     void Awake()
@@ -16,17 +13,10 @@ public class KY_SettingDescriptionPanel : MonoBehaviour
         Instance = this;
     }
 
-    public void Show(string name, string description, Sprite iconSprite, Sprite bgSprite)
+    public void Show(string description)
     {
         gameObject.SetActive(true);
-        nameText.text = name;
         descriptionText.text = description;
-
-        if (iconSprite != null)
-            icon.sprite = iconSprite;
-
-        if (bgSprite != null)
-            background.sprite = bgSprite;
     }
 
     public void Hide()
