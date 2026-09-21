@@ -24,6 +24,8 @@ public class WBH_Projectile : MonoBehaviour
     private WBH_EffectSpawner effectSpawner;
     private WBH_EffectData hitEffectData;
     private WBH_EnemyStatus deathOwner;
+    private WBH_EnemyEffect enemyEffect;
+    private WBH_EnemyEffectCue impactEffectCue;
 
     private bool isInitialized;
 
@@ -71,7 +73,9 @@ public class WBH_Projectile : MonoBehaviour
                            // 예전 호출은 원본 Renderer와 피해 처리를 그대로 사용하고, 새 VFX가 연결된 무기만 전용 외형을 사용합니다.
                            GameObject projectileVisualPrefab = null,
                            GameObject impactVisualPrefab = null,
-                           bool dealsDamage = true)
+                           bool dealsDamage = true,
+                           WBH_EnemyEffect enemyEffect = null,
+                           WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         this.request = request;
         this.speed = speed;
@@ -83,6 +87,9 @@ public class WBH_Projectile : MonoBehaviour
 
         movedirection = direction.normalized;
         startPosition = transform.position;
+
+        this.enemyEffect = enemyEffect;
+        this.impactEffectCue = impactEffectCue;
 
     // SW 추가:
         // PrepareVisuals는 이동을 시작하기 전에 비주얼을 재생하고 이 발사의 피해 허용 여부를 저장합니다.
@@ -102,7 +109,9 @@ public class WBH_Projectile : MonoBehaviour
                                    // 유탄도 기존 EffectSpawner/EffectData 뒤에 기본값이 있는 선택 인수를 추가했습니다.
                                    // 예전 호출은 값이 비어 있어 원본 외형을 쓰고, 새 VFX 호출만 전용 비행/명중 프리팹을 받습니다.
                                    GameObject projectileVisualPrefab = null,
-                                   GameObject impactVisualPrefab = null)
+                                   GameObject impactVisualPrefab = null,
+                                   WBH_EnemyEffect enemyEffect = null,
+                                   WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         this.request = request;
         this.speed = speed;
@@ -111,6 +120,8 @@ public class WBH_Projectile : MonoBehaviour
         this.explosionRadius = explosionRadius;
         this.effectSpawner = spawner;
         this.hitEffectData = data;
+        this.enemyEffect = enemyEffect;
+        this.impactEffectCue = impactEffectCue;
 
 
         startPosition = transform.position;
@@ -312,6 +323,8 @@ public class WBH_Projectile : MonoBehaviour
                 effectSpawner.SpawnEffect(hitEffectData, explosionPos);
             }
 
+            PlayImpactEffectCue(explosionPos);
+
             // SW 추가:
             // 유탄의 대표 피격면은 지면이므로 전용 Impact의 로컬 +Z가 월드 +Y를 향하게 배치합니다.
             // 팀원이 만든 기존 폭발 효과와 새 무기별 명중 효과를 같은 폭발 위치에서 함께 재생합니다.
@@ -360,9 +373,11 @@ public class WBH_Projectile : MonoBehaviour
 
         isInitialized = false;
 
+        ResetImpactEffectCue();
+
     // SW 추가:
-        // 풀 오브젝트를 비활성화하기 전에 Trail/Particle을 StopEmittingAndClear로 비웁니다. 다음 발사에서 지난 프레임의
-        // 꼬리나 입자가 순간적으로 보이지 않게 하고, 새 VFX를 쓰지 않는 예전 호출을 위해 원본 Renderer도 복원합니다.
+    // 풀 오브젝트를 비활성화하기 전에 Trail/Particle을 StopEmittingAndClear로 비웁니다. 다음 발사에서 지난 프레임의
+    // 꼬리나 입자가 순간적으로 보이지 않게 하고, 새 VFX를 쓰지 않는 예전 호출을 위해 원본 Renderer도 복원합니다.
         StopProjectileVisual();
         SetLegacyRenderersVisible(true);
 
@@ -486,7 +501,20 @@ public class WBH_Projectile : MonoBehaviour
         deathOwner = null;
     }
 
+    // 폭발 이펙트 큐 재생
+    private void PlayImpactEffectCue(Vector3 position)
+    {
+        if (enemyEffect == null || impactEffectCue == WBH_EnemyEffectCue.None)
+            return;
 
+        enemyEffect.PlayWorldCue(impactEffectCue, position, Quaternion.identity);
+    }
+
+    private void ResetImpactEffectCue()
+    {
+        enemyEffect = null;
+        impactEffectCue = WBH_EnemyEffectCue.None;
+    }
 
     // ------- 
 
