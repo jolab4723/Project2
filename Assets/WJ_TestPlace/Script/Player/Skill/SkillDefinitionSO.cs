@@ -256,6 +256,33 @@ public class SkillDefinitionSO : ScriptableObject
              "엑셀에서는 오브젝트 참조를 표현할 수 없어 인스펙터/에디터에서 직접 연결한다(evoDashDamageBuff와 같은 방식).")]
     public BuffDefinitionSO awakeningBuff;
 
+    [Header("AwakeningBurst 진화 전용 - 진화별로 거는 버프가 달라진다")]
+    [Tooltip("진화1(가속 각성): 공격속도와 일반공격 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff1;
+    [Tooltip("진화2(연산 각성): 스킬 쿨타임 감소와 스킬 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff2;
+    [Tooltip("진화3(과부하 각성): 지속시간이 짧은 대신 시전 폭발에 투자. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff3;
+
+    [Tooltip("진화3 전용: 시전 폭발의 데미지 계수. 기본 계수(damageMultiplier) 대신 이 값을 쓴다.")]
+    public float evoOverloadDamageMultiplier = 4f;
+    [Tooltip("진화3 전용: 시전 폭발 반경 배율. 1.7이면 기본 반경의 1.7배.")]
+    public float evoOverloadRangeMultiplier = 1.7f;
+
+    /// <summary>진화에 맞는 각성 버프. 진화용 버프가 비어 있으면 기본 버프로 떨어진다.</summary>
+    public BuffDefinitionSO GetAwakeningBuff(SkillEvolutionId evolution)
+    {
+        BuffDefinitionSO evoBuff = evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evoAwakeningBuff1,
+            SkillEvolutionId.Evolution2 => evoAwakeningBuff2,
+            SkillEvolutionId.Evolution3 => evoAwakeningBuff3,
+            _ => null,
+        };
+
+        return evoBuff != null ? evoBuff : awakeningBuff;
+    }
+
     [Header("강화 - 위력(Enhance1), 전 스킬 공통이지만 shapeType별로 의미가 다름")]
     [Tooltip("SectorSlash/LineSlam 전용: 데미지 계수(damageMultiplier)에 곱해지는 보너스(%).")]
     public float enhanceDamageMultiplierBonusPercent = 15f;

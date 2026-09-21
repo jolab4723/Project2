@@ -118,5 +118,35 @@
     "stackBehavior": "RefreshDuration",
     "maxStack": 0,
     "note": "파이터 궁극기(각성) 전용"
+  },
+  {
+    "buffId": "buff.fighter_awakening_evo1",
+    "buffName": "가속 각성",
+    "description": "일정 시간 동안 공격 속도와 일반공격 피해가 크게 증가합니다.",
+    "statEffects": "attackSpeedPercent:50;normalDamagePercent:50;attackPowerPercent:15;moveSpeedPercent:15;defensePowerPercent:30",
+    "duration": 15.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": "파이터 궁극기(각성) 진화1"
+  },
+  {
+    "buffId": "buff.fighter_awakening_evo2",
+    "buffName": "연산 각성",
+    "description": "일정 시간 동안 스킬 재사용 대기시간이 줄고 스킬 피해가 크게 증가합니다.",
+    "statEffects": "cdrFlat:25;skillDamagePercent:50;attackPowerPercent:15;moveSpeedPercent:15;defensePowerPercent:30",
+    "duration": 15.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": "파이터 궁극기(각성) 진화2"
+  },
+  {
+    "buffId": "buff.fighter_awakening_evo3",
+    "buffName": "과부하 각성",
+    "description": "짧은 시간 동안 능력치가 크게 증가합니다.",
+    "statEffects": "attackPowerPercent:30;attackSpeedPercent:25;moveSpeedPercent:15;defensePowerPercent:30",
+    "duration": 5.0,
+    "stackBehavior": "RefreshDuration",
+    "maxStack": 0,
+    "note": "파이터 궁극기(각성) 진화3 - 지속시간 단축"
   }
 ]

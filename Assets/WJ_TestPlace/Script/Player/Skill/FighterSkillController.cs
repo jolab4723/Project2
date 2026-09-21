@@ -446,17 +446,36 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     /// 범위 표시는 visibleSkillArea(디버그용 전역 토글)와 무관하게 항상 그린다 - 궁극기는 어디까지
     /// 맞는지가 플레이어에게 보여야 하는 연출의 일부라서 디버그 옵션에 묶어두지 않는다.
     /// </summary>
+    /// <summary>
+    /// 각성 - 자기 주변 360도를 즉시 때리고 자신에게 강화 버프를 건다.
+    ///
+    /// 진화는 버프를 갈아끼우는 것으로 갈린다(SkillDefinitionSO.GetAwakeningBuff).
+    ///   진화1(가속 각성) : 공격속도 + 일반공격 피해
+    ///   진화2(연산 각성) : 스킬 쿨타임 감소 + 스킬 피해
+    ///   진화3(과부하 각성) : 버프 지속을 줄이는 대신 시전 폭발의 계수와 반경을 키운다 - 유일하게
+    ///                       이 메서드에서 수치를 바꾼다.
+    ///
+    /// !! ApplyHit과 같은 기준으로 pendingEvo를 읽는다. GetEvolution(index)를 다시 부르면
+    ///    시전 도중 진화가 바뀐 경우 폭발과 이펙트가 서로 다른 진화를 가리킬 수 있다.
+    /// </summary>
     private void ExecuteAwakeningBurst(SkillDefinitionSO def, int index)
     {
+        bool isOverload = pendingEvo == SkillEvolutionId.Evolution3;
+
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        if (isOverload)
+            range *= def.evoOverloadRangeMultiplier;
+
+        float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
 
         SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
-            ApplyHit(target, def, def.damageMultiplier, index);
+            ApplyHit(target, def, damageMultiplier, index);
 
-        if (def.awakeningBuff != null && buffManager != null)
-            buffManager.ApplyBuff(def.awakeningBuff);
+        var buff = def.GetAwakeningBuff(pendingEvo);
+        if (buff != null && buffManager != null)
+            buffManager.ApplyBuff(buff);
     }
 
     // 스킬 종료 후 Idle 상태로 복귀.

@@ -10,18 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18336f3c7908755408b9201dc1cc81ab, type: 3}
-  m_Name: debuff.curse
+  m_Name: buff.fighter_awakening_evo1
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.BuffDefinitionSO
-  buffId: debuff.curse
-  buffName: "\uC800\uC8FC"
+  buffId: buff.fighter_awakening_evo1
+  buffName: "\uAC00\uC18D \uAC01\uC131"
   icon: {fileID: 0}
-  description: "\uACF5\uACA9\uB825\uACFC \uBC29\uC5B4\uB825\uC774 \uD568\uAED8 \uAC10\uC18C\uD569\uB2C8\uB2E4."
-  duration: 12
+  description: "\uC77C\uC815 \uC2DC\uAC04 \uB3D9\uC548 \uACF5\uACA9 \uC18D\uB3C4\uC640
+    \uC77C\uBC18\uACF5\uACA9 \uD53C\uD574\uAC00 \uD06C\uAC8C \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  duration: 15
   stackBehavior: 0
   maxStack: 0
   statEffects:
+  - statType: 9
+    value: 50
+  - statType: 22
+    value: 50
   - statType: 3
-    value: -15
+    value: 15
+  - statType: 7
+    value: 15
   - statType: 5
-    value: -15
+    value: 30
   displayKind: 0
