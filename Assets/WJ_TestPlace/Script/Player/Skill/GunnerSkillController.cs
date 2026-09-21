@@ -419,21 +419,31 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : transform.position + toCursor;
         center.y = transform.position.y;
 
-        float areaRadius = def.carpetAreaRadius;
-        float totalDuration = def.carpetWaveCount * def.carpetWaveInterval;
+        // 진화별 폭격 수치.
+        //   진화1(제압 폭격) / 진화2(화력 관제) : 회당 피해를 낮추는 대신 강화 버프를 얻는다.
+        //   진화3(초토화)                      : 여러 번 대신 한 번에, 반경을 좁히고 계수를 크게 올린다.
+        def.GetCarpetShape(pendingEvo, out int waveCount, out float damagePerWave, out float areaRadius);
+
+        float totalDuration = waveCount * def.carpetWaveInterval;
 
         SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
                                     totalDuration + def.carpetImpactDelay + 0.3f);
 
-        float damageMultiplier = def.carpetDamagePerWave;
+        float damageMultiplier = damagePerWave;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        // 버프는 폭격이 끝난 뒤가 아니라 시작할 때 건다. 폭격이 1.5초 이어지는데 끝나고 걸면
+        // 그만큼 버프 시간을 손해 보고, "폭격을 시작하면서 전투 태세로 들어간다"는 의도와도 맞지 않는다.
+        var carpetBuff = def.GetCarpetBuff(pendingEvo);
+        if (carpetBuff != null && buffManager != null)
+            buffManager.ApplyBuff(carpetBuff);
 
         WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
         WBH_PlayerEffectCue explosionCue =
             PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
 
-        for (int wave = 0; wave < def.carpetWaveCount; wave++)
+        for (int wave = 0; wave < waveCount; wave++)
         {
             SpawnFallingBombs(def, center, areaRadius, explosionCue);
 

@@ -251,6 +251,50 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("폭탄이 떨어지기 시작한 뒤 실제 피해가 들어가기까지의 시간(초). 낙하 연출과 타격 타이밍을 맞추는 값이다.")]
     public float carpetImpactDelay = 0.35f;
 
+    [Header("CarpetBombing 진화 전용 (거너 궁극기)")]
+    [Tooltip("진화1(제압 폭격): 공격속도와 일반공격 피해 특화 버프. 기본 융단폭격은 버프가 없어서 진화가 새로 부여한다.")]
+    public BuffDefinitionSO evoCarpetBuff1;
+    [Tooltip("진화2(화력 관제): 스킬 쿨타임 감소와 스킬 피해 특화 버프.")]
+    public BuffDefinitionSO evoCarpetBuff2;
+    [Tooltip("진화1·2 공통: 버프를 얻는 대신 낮아지는 회당 피해 계수.")]
+    public float evoSuppressDamagePerWave = 0.9f;
+
+    [Tooltip("진화3(초토화): 여러 번 나눠 때리는 대신 한 번에 몰아친다.")]
+    public int evoScorchWaveCount = 1;
+    [Tooltip("진화3(초토화): 한 번에 들어가는 피해 계수.")]
+    public float evoScorchDamagePerWave = 5f;
+    [Tooltip("진화3(초토화): 좁아지는 폭격 반경. 총 피해는 크지만 맞히기 어렵다.")]
+    public float evoScorchAreaRadius = 5f;
+
+    /// <summary>진화에 맞는 융단폭격 버프. 진화3과 기본은 버프가 없다.</summary>
+    public BuffDefinitionSO GetCarpetBuff(SkillEvolutionId evolution)
+    {
+        return evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evoCarpetBuff1,
+            SkillEvolutionId.Evolution2 => evoCarpetBuff2,
+            _ => null,
+        };
+    }
+
+    /// <summary>진화별 폭격 수치(횟수 / 회당 계수 / 반경). 기본은 carpet* 값 그대로.</summary>
+    public void GetCarpetShape(SkillEvolutionId evolution, out int waveCount, out float damagePerWave, out float areaRadius)
+    {
+        if (evolution == SkillEvolutionId.Evolution3)
+        {
+            waveCount = evoScorchWaveCount;
+            damagePerWave = evoScorchDamagePerWave;
+            areaRadius = evoScorchAreaRadius;
+            return;
+        }
+
+        waveCount = carpetWaveCount;
+        areaRadius = carpetAreaRadius;
+        damagePerWave = evolution == SkillEvolutionId.Evolution1 || evolution == SkillEvolutionId.Evolution2
+            ? evoSuppressDamagePerWave
+            : carpetDamagePerWave;
+    }
+
     [Header("AwakeningBurst 전용 (파이터 궁극기)")]
     [Tooltip("시전과 동시에 자신에게 거는 강화 버프. 지속시간·스탯 수치는 이 버프 에셋이 들고 있다. " +
              "엑셀에서는 오브젝트 참조를 표현할 수 없어 인스펙터/에디터에서 직접 연결한다(evoDashDamageBuff와 같은 방식).")]
