@@ -159,6 +159,80 @@ public class YJ_StageSaveService : MonoBehaviour
         return WriteSaveData(saveData);
     }
 
+    /// <summary>보상을 지급하기 전에 목적 씬을 검증한다. 저장/노드 완료는 하지 않는다.</summary>
+    public bool TryResolveUnknownDestination(string nodeKey, string stageId, YJ_UnknownStageDestination destination,
+        out string sceneName, out string error)
+    {
+        sceneName = null; error = null;
+        if (!TryLoadSaveData(out var map)) { error = "스테이지 진행 데이터를 읽지 못했습니다."; return false; }
+        return TryResolveUnknownDestinationData(map, nodeKey, stageId, destination, out sceneName, out _, out error);
+    }
+
+    private static bool TryResolveUnknownDestinationData(StageMapSaveData map, string nodeKey, string stageId,
+        YJ_UnknownStageDestination destination, out string sceneName, out StageNodeType type, out string error)
+    {
+        sceneName = null; error = null; type = StageNodeType.Event;
+        switch (destination)
+        {
+            case YJ_UnknownStageDestination.Battle: type = StageNodeType.Battle; break;
+            case YJ_UnknownStageDestination.Elite: type = StageNodeType.Elite; break;
+            case YJ_UnknownStageDestination.Camp: type = StageNodeType.Camp; break;
+            default: error = "Unknown의 후속 목적지가 잘못되었습니다."; return false;
+        }
+        var node = map?.nodes?.Find(n => n != null && n.id == map.pendingNodeId);
+        if (node == null || string.IsNullOrWhiteSpace(stageId) || node.unknownStageId != stageId ||
+            nodeKey != $"{(int)map.act}:{map.mapSeed}:{node.id}" || map.clearedNodeIds?.Contains(node.id) == true)
+        { error = "이동 요청과 진행 중인 Unknown 노드가 일치하지 않습니다."; return false; }
+        if (node.type != StageNodeType.Event)
+        {
+            if (node.type != type || string.IsNullOrWhiteSpace(node.sceneName))
+            { error = "이미 다른 목적지로 이동 처리된 노드입니다."; return false; }
+            sceneName = node.sceneName;
+            return true; // 이동 저장 이후 씬 로드만 재시도.
+        }
+        if (type == StageNodeType.Camp) sceneName = map.unknownCampSceneName;
+        else
+        {
+            var candidates = new System.Collections.Generic.List<string>();
+            foreach (var scene in map.unknownCombatSceneNames ?? new System.Collections.Generic.List<string>())
+                if (!string.IsNullOrWhiteSpace(scene) && !candidates.Contains(scene.Trim())) candidates.Add(scene.Trim());
+            candidates.Sort(StringComparer.Ordinal);
+            var unused = candidates.FindAll(scene => map.usedStageSceneNames?.Contains(scene) != true);
+            if (unused.Count > 0) candidates = unused;
+            if (candidates.Count > 0)
+            {
+                int seed = unchecked((map.mapSeed * 397 ^ node.floor) * 397 ^ node.nodeIndex);
+                sceneName = candidates[new System.Random(seed).Next(candidates.Count)];
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(sceneName)) { sceneName = sceneName.Trim(); return true; }
+        error = "현재 Act의 목적 씬 정보가 없습니다. StageSelect를 거쳐 진입하고 Act별 씬 설정을 확인하세요.";
+        return false;
+    }
+
+    /// <summary>보상 저장 성공 뒤 호출. 같은 노드를 후속 스테이지로 전환하며 완료/층 진행은 포탈에 맡긴다.</summary>
+    public bool TryRedirectUnknownNode(string nodeKey, string stageId, YJ_UnknownStageDestination destination,
+        string expectedSceneName, out string error)
+    {
+        error = null;
+        if (!TryLoadSaveData(out var map)) { error = "이동할 진행 데이터를 읽지 못했습니다."; return false; }
+        if (!TryResolveUnknownDestinationData(map, nodeKey, stageId, destination, out string scene, out var type, out error)) return false;
+        if (scene != expectedSceneName) { error = "보상 처리 중 목적 씬이 변경되었습니다. 다시 시도하세요."; return false; }
+        var node = map.nodes.Find(n => n != null && n.id == map.pendingNodeId);
+        if (node.type == type && node.sceneName == scene) return true;
+        node.type = type;
+        node.sceneName = scene;
+        // unknownStageId는 보상/이동 실패 재시도용 출처로 유지한다.
+        if (type == StageNodeType.Battle || type == StageNodeType.Elite)
+        {
+            map.usedStageSceneNames ??= new System.Collections.Generic.List<string>();
+            AddUnique(map.usedStageSceneNames, scene);
+        }
+        if (WriteSaveData(map)) return true;
+        error = "보상은 저장되었지만 목적지 저장에 실패했습니다. 같은 선택으로 재시도하세요.";
+        return false;
+    }
+
     /// <summary>
     /// 다음 StageSelect 진입 시 지정한 Act의 새 맵을 생성하도록 저장 상태를 교체합니다.
     /// </summary>

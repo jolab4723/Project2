@@ -353,10 +353,16 @@ namespace Core
                     effect.Type != YJ_UnknownEffectType.GrantRandomEquipment &&
                     effect.Type != YJ_UnknownEffectType.DiscardSelectedItems &&
                     effect.Type != YJ_UnknownEffectType.DiscardRandomItems &&
+                    effect.Type != YJ_UnknownEffectType.MoveToStage &&
                     effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
                     effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent)
                 {
                     error = "미지원 효과가 포함되어 선택 전체를 적용하지 않았습니다.";
+                    return false;
+                }
+                if (effect.Type == YJ_UnknownEffectType.MoveToStage && effect.Probability != 1f)
+                {
+                    error = "목적지 이동은 확정 효과로만 설정할 수 있습니다.";
                     return false;
                 }
             }

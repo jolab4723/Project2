@@ -17,6 +17,9 @@ public class StageMapSaveData
     public List<string> clearedNodeIds = new(); // 클리어된 노드들
     public List<string> visitedNodeIds = new(); // 플레이어가 지나온 노드들
     public List<string> usedStageSceneNames = new(); // 일반/엘리트 노드에서 실제로 사용한 전투 씬들
+    // StageSelect의 Act별 Inspector 설정을 Unknown 씬에서도 같은 기준으로 사용한다.
+    public List<string> unknownCombatSceneNames = new();
+    public string unknownCampSceneName;
     public List<StageNodeSaveData> nodes = new(); // 노드 종류와 실제 배치 좌표
 }
 
