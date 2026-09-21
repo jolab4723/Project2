@@ -25,7 +25,11 @@ public class KY_BuffSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         myData = data;
 
         iconImage.sprite = data.source.BuffIcon;
-        nameText.text = data.source.BuffDisplayName;
+
+        // BuffDisplayName은 SO에 적힌 한국어 원문이라 언어를 따라가지 않는다. HUD 버프 아이콘 툴팁과
+        // 같은 경로(BuffLabelDatabase/UniqueEffectLabelDatabase 조회)로 현재 언어 이름을 받는다.
+        // 스택은 아래 stackText가 따로 표시하므로 BuildName이 아니라 BuildBaseName을 쓴다.
+        nameText.text = BuffTextComposer.BuildBaseName(data.source);
 
         bool isPermanent = data.source.IsPermanent;
         timeText.gameObject.SetActive(!isPermanent);

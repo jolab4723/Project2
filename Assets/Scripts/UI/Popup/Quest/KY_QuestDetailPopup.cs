@@ -14,6 +14,13 @@ public class KY_QuestDetailPopup : KY_PopupBase
 
     [SerializeField] private KY_QuestConditionRow[] conditionRows; // 인스펙터에서 3개 연결
 
+    [Header("다국어")]
+    [Tooltip("비워두면 Resources에서 공용 QuestLabelDatabase를 자동으로 찾아 쓴다.")]
+    [SerializeField] private QuestLabelDatabaseSO questLabels;
+
+    [Tooltip("'의뢰 개요' 구획 제목. 의뢰 제시 팝업과 같은 quest_ui.section_content를 쓴다.")]
+    [SerializeField] private TextMeshProUGUI descriptionSectionLabel;
+
     [Header("연출용 - 내부 구획 커튼")]
     [SerializeField] private KY_CurtainEffect questNameCurtain;
     [SerializeField] private KY_CurtainEffect descriptionCurtain;
@@ -22,6 +29,42 @@ public class KY_QuestDetailPopup : KY_PopupBase
     [SerializeField, Min(0f)] private float curtainInterval = 0.06f;
 
     private Sequence openingSequence;
+
+    private void Awake()
+    {
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (questLabels == null)
+            questLabels = Resources.Load<QuestLabelDatabaseSO>("DataFiles/QuestData/3. GeneratedAssets/QuestLabelDatabase");
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+
+        ApplyStaticLabels();
+    }
+
+    private void OnDestroy()
+    {
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _) => ApplyStaticLabels();
+
+    /// <summary>
+    /// 퀘스트 데이터와 무관한 구획 제목을 현재 언어로 맞춘다.
+    ///
+    /// !! 퀘스트 이름/설명/조건/보상은 여기서 손대지 않는다. 그쪽은 QuestPopupBridge가 KY_QuestData를
+    ///    만들 때 이미 questLabels/itemLabels를 거쳐 번역된 문자열로 들어온다.
+    /// </summary>
+    private void ApplyStaticLabels()
+    {
+        if (questLabels == null || descriptionSectionLabel == null)
+            return;
+
+        string label = questLabels.GetLabel("quest_ui.section_content");
+        if (!string.IsNullOrEmpty(label))
+            descriptionSectionLabel.text = label;
+    }
 
     /// <summary>상세 팝업에 표시할 퀘스트 데이터를 설정한다.</summary>
     public void SetData(KY_QuestData data)
