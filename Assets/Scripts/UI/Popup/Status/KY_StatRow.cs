@@ -3,6 +3,7 @@ using TMPro;
 using DG.Tweening;
 using UnityEngine.UI;
 
+/// <summary>스탯 팝업의 한 행에 총합·상세 분해값·아이콘과 전환 연출을 표시한다.</summary>
 public class KY_StatRow : MonoBehaviour
 {
     public TextMeshProUGUI nameText;

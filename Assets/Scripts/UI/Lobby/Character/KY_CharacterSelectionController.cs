@@ -60,6 +60,14 @@ public class KY_CharacterSelectionController : MonoBehaviour
         radarChartCurtain?.Open();
     }
 
+    /// <summary>게임 시작 전 선택 UI를 화면 밖으로 내보낸다.</summary>
+    public void PlayExitEffects()
+    {
+        if (selectionSlideAnimators != null)
+            foreach (KY_SlideAnimator slideAnimator in selectionSlideAnimators) slideAnimator?.SlideOut();
+        radarChartCurtain?.Close();
+    }
+
     /// <summary>캐릭터 카드를 눌렀을 때 상세 정보와 3D 미리보기를 갱신한다.</summary>
     private void OnCharacterSelected(KY_CharacterId characterId)
     {

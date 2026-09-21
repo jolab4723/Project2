@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using DG.Tweening;
+using System;
 
 /// <summary>
 /// 비활성(interactable == false) 버튼을 클릭했을 때 클릭이 불가능 하다며 흔들리는 연출
@@ -9,6 +10,9 @@ using DG.Tweening;
 /// </summary>
 public class KY_ButtonShakeEffect : MonoBehaviour, IPointerClickHandler
 {
+    /// <summary>비활성 버튼을 눌렀을 때, 버튼별 추가 피드백을 연결할 수 있다.</summary>
+    public event Action DisabledClicked;
+
     [Header("Target")]
     [SerializeField] private Button button;
 
@@ -30,7 +34,9 @@ public class KY_ButtonShakeEffect : MonoBehaviour, IPointerClickHandler
     /// <summary>비활성 상태에서 클릭 시에만 셰이크를 실행한다. 활성 상태이거나 이미 흔들리는 중이면 무시한다.</summary>
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (button.interactable) return;
+        if (button == null || button.interactable) return;
+
+        DisabledClicked?.Invoke();
         if (isShaking) return;
 
         isShaking = true;

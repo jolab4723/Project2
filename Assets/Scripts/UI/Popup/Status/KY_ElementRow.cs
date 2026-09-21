@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>속성 피해 수치와 인챈트 상태에 따른 아이콘·배지·광원 표시를 관리한다.</summary>
 public class KY_ElementRow : MonoBehaviour
 {
     public TextMeshProUGUI totalValueText;

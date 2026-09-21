@@ -1118,6 +1118,8 @@ GameObject:
   - component: {fileID: 9174074053718173390}
   - component: {fileID: 7041780503811767613}
   - component: {fileID: 5912134321608608718}
+  - component: {fileID: 2550417588401012973}
+  - component: {fileID: 6188253894280854875}
   m_Layer: 0
   m_Name: btn_SkillClear
   m_TagString: Untagged
@@ -1249,6 +1251,41 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &2550417588401012973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 429584569148023860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &6188253894280854875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 429584569148023860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe41cdcebf913f49b620416a8c12d8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonShakeEffect
+  button: {fileID: 0}
+  shakeDuration: 0.3
+  shakeStrength: 10
+  vibrato: 20
+  randomness: 90
 --- !u!1 &441457000165138777
 GameObject:
   m_ObjectHideFlags: 0
@@ -7932,6 +7969,7 @@ GameObject:
   - component: {fileID: 3586264381155185472}
   - component: {fileID: 6649071228169914361}
   - component: {fileID: 6289207609764624196}
+  - component: {fileID: 4422560905579611678}
   m_Layer: 5
   m_Name: btnClosePopup
   m_TagString: Untagged
@@ -8042,6 +8080,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4422560905579611678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3326889285301746013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &3346954481671410854
 GameObject:
   m_ObjectHideFlags: 0
@@ -8915,6 +8971,8 @@ GameObject:
   - component: {fileID: 6136294451002265171}
   - component: {fileID: 5730088319536259270}
   - component: {fileID: 3106965571551447685}
+  - component: {fileID: 9013684776225535915}
+  - component: {fileID: 1267953345545025748}
   m_Layer: 0
   m_Name: btn_LevelDown
   m_TagString: Untagged
@@ -9071,6 +9129,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!114 &9013684776225535915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3733989361361333371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &1267953345545025748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3733989361361333371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe41cdcebf913f49b620416a8c12d8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonShakeEffect
+  button: {fileID: 0}
+  shakeDuration: 0.3
+  shakeStrength: 10
+  vibrato: 20
+  randomness: 90
 --- !u!1 &3786494322784411493
 GameObject:
   m_ObjectHideFlags: 0
@@ -9638,6 +9731,7 @@ GameObject:
   - component: {fileID: 6477244346368128673}
   - component: {fileID: 8893560242309833124}
   - component: {fileID: 5770536882071338213}
+  - component: {fileID: 3003291941737135779}
   m_Layer: 5
   m_Name: innerShadow
   m_TagString: Untagged
@@ -9746,6 +9840,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3003291941737135779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4028405305858319618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &4044704674371987178
 GameObject:
   m_ObjectHideFlags: 0
@@ -14727,6 +14839,8 @@ GameObject:
   - component: {fileID: 6223732163360297498}
   - component: {fileID: 1247364488646554984}
   - component: {fileID: 6556331435030210268}
+  - component: {fileID: 1259711981520026714}
+  - component: {fileID: 2559908983391753572}
   m_Layer: 0
   m_Name: btn_LevelUp
   m_TagString: Untagged
@@ -14883,6 +14997,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!114 &1259711981520026714
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6788236197248507286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &2559908983391753572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6788236197248507286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe41cdcebf913f49b620416a8c12d8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonShakeEffect
+  button: {fileID: 0}
+  shakeDuration: 0.3
+  shakeStrength: 10
+  vibrato: 20
+  randomness: 90
 --- !u!1 &6831316659830683178
 GameObject:
   m_ObjectHideFlags: 0
@@ -16147,6 +16296,8 @@ GameObject:
   - component: {fileID: 6457373051433895864}
   - component: {fileID: 9145388736024833126}
   - component: {fileID: 1587033387551048257}
+  - component: {fileID: 7953145704579739996}
+  - component: {fileID: 8856048338187711545}
   m_Layer: 0
   m_Name: btn_Confilm
   m_TagString: Untagged
@@ -16304,6 +16455,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!114 &7953145704579739996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7199300612366310785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &8856048338187711545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7199300612366310785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fe41cdcebf913f49b620416a8c12d8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonShakeEffect
+  button: {fileID: 0}
+  shakeDuration: 0.3
+  shakeStrength: 10
+  vibrato: 20
+  randomness: 90
 --- !u!1 &7258438557129599328
 GameObject:
   m_ObjectHideFlags: 0
