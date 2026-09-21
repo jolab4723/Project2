@@ -121,7 +121,7 @@ public sealed class MirrorSessionAuthenticator_MirrorTest : NetworkAuthenticator
         try
         {
             passiveJson = profile == null ?
-                MirrorSessionSmokeDriver_MirrorTest.PassiveFixtureJson() ?? MirrorPassiveProfile_MirrorTest.ReadLocalPayload() : null;
+                MirrorSmokeConfiguration_MirrorTest.PassiveFixtureJson() ?? MirrorPassiveProfile_MirrorTest.ReadLocalPayload() : null;
         }
         catch (System.Exception exception) when (exception is System.IO.IOException ||
             exception is System.UnauthorizedAccessException || exception is System.ArgumentException)
