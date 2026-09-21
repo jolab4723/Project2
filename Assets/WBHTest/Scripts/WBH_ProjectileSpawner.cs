@@ -17,7 +17,9 @@ public class WBH_ProjectileSpawner : MonoBehaviour
                                // 54종 장착 무기 호출만 Projectile/Impact와 산탄의 피해 여부를 추가로 전달할 수 있습니다.
                                GameObject projectileVisualPrefab = null,
                                GameObject impactVisualPrefab = null,
-                               bool dealsDamage = true)
+                               bool dealsDamage = true,
+                               WBH_EnemyEffect enemyEffect = null,
+                               WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         WBH_Projectile projectile = poolManager.GetProjectile(projectileType);
 
@@ -34,19 +36,23 @@ public class WBH_ProjectileSpawner : MonoBehaviour
         projectile.Initialize(request, speed, maxDistance, direction, targetLayer,
                               projectileVisualPrefab: projectileVisualPrefab,
                               impactVisualPrefab: impactVisualPrefab,
-                              dealsDamage: dealsDamage);
+                              dealsDamage: dealsDamage,
+                              enemyEffect: enemyEffect,
+                              impactEffectCue: impactEffectCue);
     }
 
     // 유탄 발사 메서드
     public void FireGrenade(ProjectileType projectileType,
                             Vector3 spawnPosition, Vector3 targetPosition,
                                WBH_DamageRequest request, float speed, float maxDistance, float explosionRadius,
-                               LayerMask targetLayer, WBH_EffectData explosionEffect,
+                               LayerMask targetLayer, WBH_EffectData explosionEffect = null,
                                // SW 추가:
                                // 기존 유탄 시그니처 끝에 기본값이 있는 선택 인수로 추가했습니다. 기존 FireMultipleGrenade를 포함한 호출부는
                                // 아무 수정 없이 계속 동작하며, 새 VFX가 연결된 무기만 비행/명중 프리팹을 전달합니다.
                                GameObject projectileVisualPrefab = null,
-                               GameObject impactVisualPrefab = null)
+                               GameObject impactVisualPrefab = null,
+                               WBH_EnemyEffect enemyEffect = null,
+                               WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         WBH_Projectile projectile = poolManager.GetProjectile(projectileType);
 
@@ -59,7 +65,7 @@ public class WBH_ProjectileSpawner : MonoBehaviour
         // 앞의 값들은 기존 유탄의 포물선 이동과 폭발 효과에 그대로 쓰입니다. 새 비행/명중 프리팹은 맨 뒤에만 덧붙여서
         // 기존 폭발 EffectData, 광역 피해, 풀 반환 순서를 WBH_Projectile 안에서 계속 재사용합니다.
         projectile.InitializeGrenade(request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, explosionEffect,
-                                     projectileVisualPrefab, impactVisualPrefab);
+                                     projectileVisualPrefab, impactVisualPrefab, enemyEffect: enemyEffect,impactEffectCue: impactEffectCue);
     }
 
     public void FireMultipleProjectile(ProjectileType projectileType,
