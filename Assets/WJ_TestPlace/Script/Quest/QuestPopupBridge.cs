@@ -133,7 +133,7 @@ public class QuestPopupBridge : MonoBehaviour
         questLabels != null ? questLabels.GetConditionDescription(def.questId, index) : def.conditions[index].description;
 
     /// <summary>퀘스트 유형에 따라 맞는 텍스트를 반환한다.</summary>
-    private static string GetObjectiveTypeLabel(QuestDefinitionSO def)
+    private string GetObjectiveTypeLabel(QuestDefinitionSO def)
     {
         if (def == null || def.conditions == null || def.conditions.Length == 0)
             return string.Empty;
@@ -141,12 +141,28 @@ public class QuestPopupBridge : MonoBehaviour
         switch (def.conditions[0].conditionType)
         {
             case QuestConditionType.KillEnemy:
-                return "적 처치";
+                return GetUILabel("quest_ui.objective_kill", "적 처치");
             case QuestConditionType.CollectItem:
-                return "물건 수집";
+                return GetUILabel("quest_ui.objective_collect", "물건 수집");
             default:
                 return string.Empty;
         }
+    }
+
+    /// <summary>
+    /// 고정 문구 하나를 현재 언어로 가져온다.
+    ///
+    /// !! QuestLabelDatabaseSO.GetLabel은 키를 못 찾으면 **키 문자열을 그대로 돌려준다.** 라벨을
+    ///    엑셀에만 넣고 변환 파이프라인을 아직 안 돌린 상태면 화면에 "quest_ui.objective_kill"이
+    ///    그대로 뜨게 되므로, 그 경우엔 한국어 원문으로 폴백한다.
+    /// </summary>
+    private string GetUILabel(string key, string fallback)
+    {
+        if (questLabels == null)
+            return fallback;
+
+        string label = questLabels.GetLabel(key);
+        return string.IsNullOrEmpty(label) || label == key ? fallback : label;
     }
 
     private string BuildRewardText(QuestDefinitionSO def)
