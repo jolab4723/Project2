@@ -72,6 +72,9 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
     public float IceBonus => currentIceBonus;
     public float ElectricBonus => currentElectricBonus;
     public float DamageTakenModifier => statusDamageTakenModifier;
+    // 적은 아직 "가하는 피해"를 일반공격/스킬로 나누는 스탯이 없다. 인터페이스 구현만 채운다.
+    public float NormalDamageModifier => 1f;
+    public float SkillDamageModifier => 1f;
 
     // -- 외부 사용을 위한 프로퍼티
     public float MoveSpeed => currentMoveSpeed;

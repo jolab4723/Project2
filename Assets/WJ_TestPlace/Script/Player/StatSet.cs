@@ -44,6 +44,11 @@ public struct StatSet
     public float skillRangeFlat;
     public float skillRangePercent;
 
+    // 피해 배율 계열 - 기준값이 없는 순수 증감이라 Percent만 있다.
+    // 일반공격(WBH_AttackType.Normal)과 스킬(Skill)에 각각 적용된다.
+    public float normalDamagePercent;
+    public float skillDamagePercent;
+
     // 속성 보너스
     public float fireBonusFlat;
     public float fireBonusPercent;
@@ -89,6 +94,9 @@ public struct StatSet
 
             skillRangeFlat = a.skillRangeFlat + b.skillRangeFlat,
             skillRangePercent = a.skillRangePercent + b.skillRangePercent,
+
+            normalDamagePercent = a.normalDamagePercent + b.normalDamagePercent,
+            skillDamagePercent = a.skillDamagePercent + b.skillDamagePercent,
 
             fireBonusFlat = a.fireBonusFlat + b.fireBonusFlat,
             fireBonusPercent = a.fireBonusPercent + b.fireBonusPercent,
