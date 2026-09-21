@@ -51,9 +51,9 @@ public sealed partial class MirrorTestNetworkManager
     public MirrorSessionRoster_MirrorTest ServerRoster { get; } = new();
     public bool ServerDevelopmentCommandsEnabled => NetworkServer.active &&
         (Application.isEditor || Debug.isDebugBuild) && (enableDevelopmentCommands ||
-            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-inventory") == "true" ||
-            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-combat") == "true" ||
-            MirrorSessionSmokeDriver_MirrorTest.Argument("--mirror-smoke-platform") == "true");
+            MirrorSmokeConfiguration_MirrorTest.Argument("--mirror-smoke-inventory") == "true" ||
+            MirrorSmokeConfiguration_MirrorTest.Argument("--mirror-smoke-combat") == "true" ||
+            MirrorSmokeConfiguration_MirrorTest.Argument("--mirror-smoke-platform") == "true");
     public string ClientDisplayName { get; set; } = "Player";
     public string LocalParticipantId { get; private set; }
     public MirrorReconnectProfile_MirrorTest RequestedReconnectProfile { get; set; }
@@ -83,7 +83,7 @@ public sealed partial class MirrorTestNetworkManager
         {
             try
             {
-                passiveJson = MirrorSessionSmokeDriver_MirrorTest.PassiveFixtureJson() ??
+                passiveJson = MirrorSmokeConfiguration_MirrorTest.PassiveFixtureJson() ??
                     MirrorPassiveProfile_MirrorTest.ReadLocalPayload();
             }
             catch (Exception exception) when (exception is System.IO.IOException ||
