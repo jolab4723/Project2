@@ -3,11 +3,9 @@ using UnityEngine.EventSystems;
 
 public class KY_SettingItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    public string settingName;
     [TextArea]
+    [Tooltip("다국어 조회에 실패했을 때 쓰는 원문. descriptionKey가 비어 있으면 이 값이 그대로 나온다.")]
     public string description;
-    public Sprite icon;
-    public Sprite background;
 
     [Header("다국어(비워두면 description을 그대로 사용)")]
     [SerializeField] private string descriptionKey;
@@ -19,7 +17,7 @@ public class KY_SettingItem : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             ? labelDatabase.GetLabel(descriptionKey)
             : description;
 
-        KY_SettingDescriptionPanel.Instance.Show(settingName, localizedDescription, icon, background);
+        KY_SettingDescriptionPanel.Instance.Show(localizedDescription);
     }
 
     public void OnPointerExit(PointerEventData eventData)

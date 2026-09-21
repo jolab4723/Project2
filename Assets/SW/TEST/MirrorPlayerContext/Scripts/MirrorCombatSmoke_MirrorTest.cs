@@ -149,7 +149,8 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
         ItemDefinitionSO[] definitions = Resources.LoadAll<ItemDefinitionSO>("DataFiles/ItemData/3. GeneratedAssets/Items");
         if (Argument("--mirror-smoke-q1") == "true")
         {
-            yield return RunUniqueEffects(actors, definitions, prefab);
+            // [임시 비활성화] MirrorUniqueEffectSmoke_MirrorTest.cs 삭제(main 머지)로 정의가 사라진 호출부.
+            // yield return RunUniqueEffects(actors, definitions, prefab);
             yield break;
         }
         yield return new WaitForSecondsRealtime(2f);
@@ -536,7 +537,8 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
     {
         if (message.Phase == 112)
         {
-            yield return ReadyUniqueNewRun();
+            // [임시 비활성화] MirrorUniqueEffectSmoke_MirrorTest.cs 삭제(main 머지)로 정의가 사라진 호출부.
+            // yield return ReadyUniqueNewRun();
             yield break;
         }
         yield return Wait(() => manager.LocalPlayerContext?.RuntimeState?.HasSnapshot == true, "local runtime ready");
@@ -551,7 +553,10 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
             initialEquipmentCaptured = true;
         }
         if (message.Phase >= 100)
-            yield return RunUniqueEffectsClient(message, local, owner, sync);
+        {
+            // [임시 비활성화] MirrorUniqueEffectSmoke_MirrorTest.cs 삭제(main 머지)로 정의가 사라진 호출부.
+            // yield return RunUniqueEffectsClient(message, local, owner, sync);
+        }
         else if (message.Phase == 0)
         {
             if (message.Target != 0)
@@ -887,9 +892,10 @@ public sealed partial class MirrorCombatSmoke_MirrorTest : MonoBehaviour
 
     private void CleanupServer()
     {
-        foreach (var enemy in uniqueTargets)
-            if (enemy != null && enemy != target) NetworkServer.Destroy(enemy.gameObject);
-        uniqueTargets.Clear();
+        // [임시 비활성화] MirrorUniqueEffectSmoke_MirrorTest.cs 삭제(main 머지)로 uniqueTargets 필드가 사라진 정리 구간.
+        // foreach (var enemy in uniqueTargets)
+        //     if (enemy != null && enemy != target) NetworkServer.Destroy(enemy.gameObject);
+        // uniqueTargets.Clear();
         if (target != null) NetworkServer.Destroy(target.gameObject);
         target = null;
         if (fixtureOwner == null) return;
