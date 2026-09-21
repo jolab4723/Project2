@@ -25,8 +25,13 @@ public static class MirrorInventoryRulesValidation_MirrorTest
             "실제 PlayerStatManager와 InventoryController의 EquipmentSystem 참조가 다릅니다.");
         Require(!owner.EquipmentSystem.TryGetEquippedItem(EquipSlotType.Helmet, out _), "검증하려면 Helmet 슬롯이 비어 있어야 합니다.");
         InventoryPartView view = Object.FindFirstObjectByType<InventoryPartView>(FindObjectsInactive.Include);
-        Require(view != null, "실제 InventoryPartView가 없습니다.");
-        view.OpenInventory();
+        if (view != null) view.OpenInventory();
+        else
+        {
+            var popup = owner.PlayerGrid != null ? owner.PlayerGrid.GridRect?.GetComponentInParent<KY_InventoryPopup>(true) : null;
+            Require(popup != null, "실제 싱글 인벤토리 화면이 없습니다.");
+            popup.Open();
+        }
         InventoryGrid grid = owner.PlayerGrid;
         Require(grid != null && grid.HasView && owner.PlayerWallet != null && EventSystem.current != null, "실제 Grid View/지갑/EventSystem이 없습니다.");
         ItemDefinitionSO definition = AssetDatabase.LoadAssetAtPath<ItemDefinitionSO>(ItemPath);

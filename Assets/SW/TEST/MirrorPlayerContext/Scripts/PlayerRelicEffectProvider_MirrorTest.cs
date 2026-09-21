@@ -20,11 +20,17 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 
     private readonly Dictionary<PassiveBuffUniqueEffectSO, int> passiveCounts = new();
     private readonly Dictionary<ItemInstance, GameObject> runtimeObjects = new();
+    private readonly HashSet<ItemInstance> ownedItems = new();
+    private PlayerContext owner;
+    private bool reconcileQueued = true;
+    private bool wasServer;
+    private bool wasAlive;
 
     private void Awake()
     {
         inventory ??= GetComponentInChildren<InventoryController>(true);
         buffs ??= GetComponent<PlayerBuffManager>();
+        owner ??= GetComponent<PlayerContext>();
     }
 
     private void OnEnable()
@@ -34,15 +40,48 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 
         inventory.OnItemOwnershipGained += HandleOwnershipGained;
         inventory.OnItemOwnershipLost += HandleOwnershipLost;
+        reconcileQueued = true;
     }
 
     private void Start()
     {
-        if (inventory?.PlayerGrid == null)
+        reconcileQueued = true;
+    }
+
+    /// <summary>
+    /// 거래와 실패 복구가 끝난 가방을 기준으로 유물 효과를 맞춥니다.
+    /// 이동·회전·중복 알림은 기존 실행 객체와 쿨다운을 다시 만들지 않습니다.
+    /// </summary>
+    private void LateUpdate()
+    {
+        bool server = NetworkServer.active && owner != null &&
+            owner.RuntimeState != null && owner.RuntimeState.isServer;
+        bool alive = owner != null && (server
+            ? owner.Health != null && owner.Health.CurrentHealth > 0f
+            : owner.RuntimeState != null && !owner.RuntimeState.IsDead);
+        if (wasServer != server)
+        {
+            ClearEffects();
+            reconcileQueued = true;
+        }
+        if (wasAlive != alive)
+            reconcileQueued = true;
+        wasServer = server;
+        wasAlive = alive;
+        if (!reconcileQueued || inventory?.PlayerGrid == null)
             return;
 
-        foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
-            HandleOwnershipGained(item);
+        reconcileQueued = false;
+        var nextItems = new HashSet<ItemInstance>();
+        if (alive)
+        {
+            foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
+                if (IsRelic(item)) nextItems.Add(item.itemData);
+        }
+        foreach (ItemInstance item in new List<ItemInstance>(ownedItems))
+            if (!nextItems.Contains(item)) RemoveEffect(item);
+        foreach (ItemInstance item in nextItems)
+            if (ownedItems.Add(item)) AddEffect(item);
     }
 
     private void OnDisable()
@@ -53,27 +92,20 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
             inventory.OnItemOwnershipLost -= HandleOwnershipLost;
         }
 
-        foreach (PassiveBuffUniqueEffectSO passive in passiveCounts.Keys)
-            buffs?.RemoveBuff(passive);
-
-        passiveCounts.Clear();
-
-        foreach (GameObject runtimeObject in runtimeObjects.Values)
-        {
-            if (runtimeObject != null)
-                Destroy(runtimeObject);
-        }
-
-        runtimeObjects.Clear();
+        ClearEffects();
     }
 
-    private void HandleOwnershipGained(InventoryItem item)
-    {
-        if (!IsRelic(item) || buffs == null)
-            return;
+    private void HandleOwnershipGained(InventoryItem item) => reconcileQueued = true;
+    private void HandleOwnershipLost(InventoryItem item) => reconcileQueued = true;
 
-        ItemInstance ownerItem = item.itemData;
+    /// <summary>소유 사본마다 한 번 등록하고, 게임 규칙은 서버 플레이어에서만 실행합니다.</summary>
+    private void AddEffect(ItemInstance ownerItem)
+    {
+        if (buffs == null)
+            return;
         UniqueEffectSO effect = ownerItem.definition.uniqueEffect;
+        if (!wasServer && !(effect is FieldAuraUniqueEffectSO))
+            return;
 
         switch (effect)
         {
@@ -99,23 +131,25 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
         }
     }
 
-    private void HandleOwnershipLost(InventoryItem item)
+    /// <summary>마지막 소유 사본이 사라질 때만 같은 효과의 버프를 제거합니다.</summary>
+    private void RemoveEffect(ItemInstance ownerItem)
     {
-        if (!IsRelic(item) || buffs == null)
+        if (!ownedItems.Remove(ownerItem))
             return;
-
-        ItemInstance ownerItem = item.itemData;
         UniqueEffectSO effect = ownerItem.definition.uniqueEffect;
 
-        if (NetworkServer.active && effect is TriggeredBuffUniqueEffectSO triggered)
-            buffs.RemoveBuff(triggered);
+        bool sameEffectRemains = false;
+        foreach (ItemInstance item in ownedItems)
+            if (item.definition.uniqueEffect == effect) sameEffectRemains = true;
+        if (wasServer && !sameEffectRemains && effect is TriggeredBuffUniqueEffectSO triggered)
+            buffs?.RemoveBuff(triggered);
 
         if (effect is PassiveBuffUniqueEffectSO passive && passiveCounts.TryGetValue(passive, out int count))
         {
             if (count <= 1)
             {
                 passiveCounts.Remove(passive);
-                buffs.RemoveBuff(passive);
+                buffs?.RemoveBuff(passive);
             }
             else
             {
@@ -124,7 +158,19 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
         }
 
         if (runtimeObjects.Remove(ownerItem, out GameObject runtimeObject) && runtimeObject != null)
-            Destroy(runtimeObject);
+        {
+            // 다음 프레임의 Destroy를 기다리지 않고 오라와 이벤트 구독을 먼저 정리합니다.
+            runtimeObject.SetActive(false);
+            if (Application.isPlaying) Destroy(runtimeObject);
+            else DestroyImmediate(runtimeObject);
+        }
+    }
+
+    /// <summary>비활성화·서버 종료 때 이 Provider가 만든 효과만 정리합니다.</summary>
+    private void ClearEffects()
+    {
+        foreach (ItemInstance item in new List<ItemInstance>(ownedItems))
+            RemoveEffect(item);
     }
 
     private void CreateAura(ItemInstance ownerItem, FieldAuraUniqueEffectSO aura)
@@ -141,7 +187,7 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
 
         // 적과 오라 양쪽에 Rigidbody가 없으면 Unity Trigger 이벤트가 발생하지 않는다.
         // 판정은 서버 한 곳에서만 만들고, 클라이언트의 로컬 복제본이 적 스탯을 임의로 바꾸지 않게 한다.
-        if (NetworkServer.active)
+        if (wasServer)
         {
             SphereCollider collider = zoneObject.AddComponent<SphereCollider>();
             collider.isTrigger = true;
@@ -157,6 +203,7 @@ public sealed class PlayerRelicEffectProvider_MirrorTest : MonoBehaviour
                 targetEnemies: aura.targetEnemies,
                 removeOnExit: true,
                 removeWhenZoneDisabled: true);
+            zone.IncludeOwner(buffs);
         }
 
         // 전용 서버에는 렌더링용 링을 만들지 않는다. Host와 일반 Client에서만 표시한다.

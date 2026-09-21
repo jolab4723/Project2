@@ -34641,7 +34641,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb1875d19ec53e46b3f632181ee3ce7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItemTooltipScanner
-  player: {fileID: 0}
+  playerOverride: {fileID: 0}
   tooltipView: {fileID: 1113776613}
   worldCamera: {fileID: 0}
   worldItemLayer:
@@ -36970,6 +36970,8 @@ MonoBehaviour:
   nameText: {fileID: 1293931520}
   totalValueText: {fileID: 195012633}
   detailValueText: {fileID: 1306930731}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &411517975
 GameObject:
   m_ObjectHideFlags: 0
@@ -41265,6 +41267,8 @@ MonoBehaviour:
   logText: {fileID: 867474733}
   inventoryController: {fileID: 1912764911}
   itemUISpawner: {fileID: 1912764909}
+  saleLabel: {fileID: 0}
+  saleLabelText: {fileID: 0}
 --- !u!1 &478742035
 GameObject:
   m_ObjectHideFlags: 0
@@ -46429,6 +46433,8 @@ MonoBehaviour:
   nameText: {fileID: 498295550}
   totalValueText: {fileID: 528333745}
   detailValueText: {fileID: 372807597}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &557107493
 GameObject:
   m_ObjectHideFlags: 0
@@ -48280,6 +48286,8 @@ MonoBehaviour:
   defaultTabToggle: {fileID: 0}
   masterVolumeSlider: {fileID: 1319815129}
   muteToggle: {fileID: 204550018}
+  bgmVolumeSlider: {fileID: 0}
+  sfxVolumeSlider: {fileID: 0}
   skill1Slot: {fileID: 335963563}
   skill2Slot: {fileID: 976004801}
   skill3Slot: {fileID: 124224122}
@@ -67296,6 +67304,7 @@ MonoBehaviour:
   content: {fileID: 1571618279}
   quests:
   - questName: "\uBA74\uB3C4\uAE30 \uBAA8\uD130\uAC00 \uD544\uC694\uD574"
+    objectiveTypeLabel: 
     description: "\uC5B4\uC6B0, \uC624\uB7AB\uB3D9\uC548 \uBA74\uB3C4\uB97C \uBABB\uD588\uB124.
       \uB85C\uBD07\uB4E4\uC5D0\uAC8C\uC11C \uBA74\uB3C4\uAE30 \uBAA8\uD130\uB85C
       \uC4F8 \uB9CC\uD55C \uC791\uC740 \uBAA8\uD130\uB97C \uC880 \uAC00\uC838\uC640
@@ -78520,7 +78529,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00018910281, y: 5.2213964}
+  m_AnchoredPosition: {x: 0.00018910281, y: 300.00003}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &942211704
@@ -78691,6 +78700,8 @@ MonoBehaviour:
   nameText: {fileID: 2045034769}
   totalValueText: {fileID: 893486272}
   detailValueText: {fileID: 1949717332}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &948602115
 GameObject:
   m_ObjectHideFlags: 0
@@ -97887,6 +97898,8 @@ MonoBehaviour:
   nameText: {fileID: 259052466}
   totalValueText: {fileID: 334931859}
   detailValueText: {fileID: 1299780827}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1224761457
 GameObject:
   m_ObjectHideFlags: 0
@@ -112859,7 +112872,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1243953609}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.4
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -134958,6 +134971,8 @@ MonoBehaviour:
   nameText: {fileID: 1095153360}
   totalValueText: {fileID: 2064043585}
   detailValueText: {fileID: 408691019}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1660654749
 GameObject:
   m_ObjectHideFlags: 0
@@ -135475,6 +135490,8 @@ MonoBehaviour:
   nameText: {fileID: 751930555}
   totalValueText: {fileID: 1276694139}
   detailValueText: {fileID: 382327088}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1665129987
 GameObject:
   m_ObjectHideFlags: 0
@@ -137399,6 +137416,8 @@ MonoBehaviour:
   nameText: {fileID: 186204790}
   totalValueText: {fileID: 954388223}
   detailValueText: {fileID: 1474293187}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1683583179
 GameObject:
   m_ObjectHideFlags: 0
@@ -141500,6 +141519,8 @@ MonoBehaviour:
   nameText: {fileID: 347195789}
   totalValueText: {fileID: 1351882185}
   detailValueText: {fileID: 914790560}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1722019484
 GameObject:
   m_ObjectHideFlags: 0
@@ -159756,6 +159777,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78a08f77c9445e14b9137da0e6e7af09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
+  useLowManaHelmetEffect: 0
 --- !u!114 &1912764908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162189,6 +162211,8 @@ MonoBehaviour:
   nameText: {fileID: 918653086}
   totalValueText: {fileID: 1953395727}
   detailValueText: {fileID: 1413488342}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &1940773544
 GameObject:
   m_ObjectHideFlags: 0
@@ -165896,6 +165920,20 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  evolutionIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  unselectedOptionIcon: {fileID: 0}
+  skillOptionBadges:
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
+  - evolutionBadge: {fileID: 0}
+    enhancementBadge: {fileID: 0}
   evolutionButtons:
   - {fileID: 1760909170}
   - {fileID: 758713329}
@@ -169540,6 +169578,8 @@ MonoBehaviour:
   nameText: {fileID: 1033231497}
   totalValueText: {fileID: 1326205672}
   detailValueText: {fileID: 991272228}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &2051983426
 GameObject:
   m_ObjectHideFlags: 0
@@ -171814,6 +171854,8 @@ MonoBehaviour:
   nameText: {fileID: 1237518985}
   totalValueText: {fileID: 749284590}
   detailValueText: {fileID: 355252248}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &2085899376
 GameObject:
   m_ObjectHideFlags: 0
@@ -181054,6 +181096,8 @@ MonoBehaviour:
   nameText: {fileID: 1953822288}
   totalValueText: {fileID: 1625970563}
   detailValueText: {fileID: 1876131724}
+  iconImage: {fileID: 0}
+  displayAsInteger: 0
 --- !u!1 &2140920572
 GameObject:
   m_ObjectHideFlags: 0

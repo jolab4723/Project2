@@ -96,8 +96,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Buffs.enabled = false;
         if (context?.Mana != null)
             context.Mana.enabled = false;
-        if (context?.ItemTriggers != null)
-            context.ItemTriggers.enabled = false;
+        // 로컬 회피 이벤트를 서버에 전달해야 하므로 ItemTriggers는 켜 둔다.
+        // 효과 적용과 쿨타임 변경은 ItemTriggers의 서버 검사에서만 허용한다.
 
         SubscribeClientState();
         clientApplyQueued = !string.IsNullOrWhiteSpace(snapshotJson);
@@ -540,10 +540,19 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Potions.ChargesChanged -= HandleClientChargesChanged;
     }
 
+    /// <summary>
+    /// 계산이 끝난 스탯을 체력·마나의 최대치와 전송 예약에 반영합니다.
+    /// 이 알림에서 패시브 원본을 다시 설정하면 계산 결과를 덮을 수 있습니다.
+    /// 패시브 원본 변경은 기존 ServerPassiveStatsChanged에서 처리합니다.
+    /// </summary>
     private void HandleServerStatChanged()
     {
-        if (!recalculatingServerStats)
-            RecalculateServerStats();
+        if (recalculatingServerStats)
+            return;
+
+        context.Health?.RefreshMaxHealth();
+        context.Mana?.RefreshMaxMana();
+        serverPublishQueued = true;
     }
 
     private void QueueServerPublish()

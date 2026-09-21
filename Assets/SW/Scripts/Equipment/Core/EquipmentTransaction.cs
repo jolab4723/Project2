@@ -525,21 +525,30 @@ public class EquipmentTransaction
     }
 
     /// <summary>
-    /// 장착 성공 시 고유 효과를 적용한다.
-    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// 장착이 확정된 아이템의 기존 고유효과 콜백을 호출합니다.
+    /// 플레이어별 저마나 투구 효과는 장비 변경 이벤트에서 처리하므로 제외합니다.
     /// </summary>
-    private static void NotifyEquipped(InventoryItem item)
+    private void NotifyEquipped(InventoryItem item)
     {
-        item?.itemData?.definition?.uniqueEffect?
-            .OnEquip(item.itemData);
+        ItemInstance instance = item?.itemData;
+        if (instance?.definition == null)
+            return;
+        if (equipmentSystem.UsesLowManaHelmetEffect(instance))
+            return;
+        instance.definition.uniqueEffect?.OnEquip(instance);
     }
+
     /// <summary>
-    /// 해제 성공 시 고유 효과를 제거한다.
-    /// 스탯 갱신은 EquipmentSystem 변경 이벤트 구독자가 담당한다.
+    /// 해제가 확정된 아이템의 기존 고유효과 콜백을 호출합니다.
+    /// 플레이어별 저마나 투구 효과의 정리는 담당 컴포넌트에 맡깁니다.
     /// </summary>
-    private static void NotifyUnequipped(InventoryItem item)
+    private void NotifyUnequipped(InventoryItem item)
     {
-        item?.itemData?.definition?.uniqueEffect?
-            .OnUnequip(item.itemData);
+        ItemInstance instance = item?.itemData;
+        if (instance?.definition == null)
+            return;
+        if (equipmentSystem.UsesLowManaHelmetEffect(instance))
+            return;
+        instance.definition.uniqueEffect?.OnUnequip(instance);
     }
 }

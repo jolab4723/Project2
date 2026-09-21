@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e909bbe1c75c883418094841f1a0fbd1, type: 3}
+  m_Name: UE_ManaRelay
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.FieldAuraUniqueEffectSO
+  effectName: "\uB9C8\uB098 \uC911\uACC4"
+  icon: {fileID: 21300000, guid: bc73094060621974a94fd84d59f45415, type: 3}
+  effectDescription: "\uBC18\uACBD {0}m \uC548\uC758 \uC790\uC2E0\uACFC \uC0B4\uC544
+    \uC788\uB294 \uC544\uAD70\uC758 \uB9C8\uB098 \uC7AC\uC0DD\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4.
+    \uAC19\uC740 \uD6A8\uACFC\uB294 \uC911\uCCA9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+  coefficients:
+  - 6
+  - 15
+  radius: 6
+  targetEnemies: 0
+  buffSpec:
+    statEffects:
+    - statType: 14
+      value: 15
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1
+    displayKind: 0
+  showAreaVisual: 1
+  areaVisualColor: {r: 0.4, g: 0.8, b: 1, a: 0.8}

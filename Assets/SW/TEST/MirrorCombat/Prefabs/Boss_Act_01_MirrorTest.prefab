@@ -5371,6 +5371,7 @@ GameObject:
   - component: {fileID: 2037351736359302958}
   - component: {fileID: 7615446308596589444}
   - component: {fileID: 1196328464714457756}
+  - component: {fileID: 3714674677763793028}
   m_Layer: 10
   m_Name: Boss_Act_01_MirrorTest
   m_TagString: Untagged
@@ -5496,7 +5497,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
   grabPoint: {fileID: 0}
 --- !u!114 &4863905477784235105
 MonoBehaviour:
@@ -5588,6 +5589,7 @@ MonoBehaviour:
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
   markedEffect: {fileID: 0}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &7056045415955417540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6179,3 +6181,17 @@ MonoBehaviour:
   healthBarSlider: {fileID: 0}
   bossPhaseView: {fileID: 5297122012163549294}
   damageTextSpacingPixels: {x: 56, y: 28}
+--- !u!114 &3714674677763793028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9109071794180357373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []

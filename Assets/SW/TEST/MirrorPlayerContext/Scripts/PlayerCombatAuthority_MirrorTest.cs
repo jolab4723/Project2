@@ -35,7 +35,8 @@ public enum MirrorCombatRequestResult : byte
 public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 {
     private const float BaseImpactSeconds = 0.6836111f;
-    private const float BaseAttackDurationSeconds = 2.175f;
+    // Fighter_Attack_Short의 AniEvent_EndAttack 시각(1.0833334f). AnimatorAttackStateSpeed(2f) 적용 시 0.5417s
+    private const float BaseAttackDurationSeconds = 1.0833334f;
     private const float AnimatorAttackStateSpeed = 2f;
     // 현재 GunnerController_Short / Gunner_Attack_Short의 실행 이벤트와 EndAttack 시각.
     private const float GunnerImpactSeconds = 0.16666667f;
@@ -836,6 +837,10 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         GunnerCombatPresentation_MirrorTest.PlayImpact(gameObject, itemId, weaponType, position, direction);
     }
 
+    /// <summary>
+    /// 투사체 귀속 정책 도입으로 장착 세대 추적이 불필요해졌다. 검증기·호출부의 호환을 위해 상수 1을 유지한다.
+    /// </summary>
+    [System.Obsolete("투사체 귀속 정책으로 장착 세대 추적 불필요. 호환 유지 목적의 상수값이며 실제 세대를 반영하지 않는다.")]
     public uint WeaponEquipGeneration => 1u;
 
     private uint activeHitAttackId;
@@ -905,9 +910,13 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         return false;
     }
 
+    /// <summary>
+    /// <para>투사체 귀속 정책에서 장착 상태는 추가타 자격 판단에 사용되지 않는다.</para>
+    /// <para><c>sourceStillEquipped</c>는 항상 false를 반환하며 호환 목적으로만 남아 있다.</para>
+    /// </summary>
     public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon, out bool sourceStillEquipped)
     {
-        sourceStillEquipped = TryGetGunnerWeapon(out GunnerWeaponType currentWeapon, out _) && currentWeapon == activeHitWeaponType;
+        sourceStillEquipped = false; // 투사체 귀속 정책: 장착 상태와 무관하게 발사 시점 효과로 판단
         return TryGetGunnerHitSource(attackId, out sourceEffect, out sourceWeapon);
     }
 

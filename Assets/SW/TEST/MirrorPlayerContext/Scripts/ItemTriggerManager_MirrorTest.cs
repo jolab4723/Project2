@@ -20,6 +20,7 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
     private UniqueEffectPresentation_MirrorTest presentation;
     private bool missingInfernoPresenterReported;
+    private double nextDodgeTriggerAt;
 
     private readonly SyncDictionary<string, double> cooldownEndTimes = new();
     private readonly Dictionary<ChainLightningUniqueEffectSO, uint> lastChainAttackIds = new();
@@ -310,8 +311,33 @@ public sealed class ItemTriggerManager_MirrorTest : NetworkBehaviour
 
     private void HandleStateEntered(PlayerState state)
     {
-        if (state == PlayerState.Dodge)
-            Fire(TriggerCondition.OnDodge);
+        if (state != PlayerState.Dodge)
+            return;
+        if (isServer)
+            ConfirmDodgeTrigger();
+        else if (isLocalPlayer)
+            CmdNotifyDodge();
+    }
+
+    /// <summary>원격 소유자가 실제 회피 상태에 들어갔을 때 서버에 알립니다.</summary>
+    [Command]
+    private void CmdNotifyDodge()
+    {
+        ConfirmDodgeTrigger();
+    }
+
+    /// <summary>회피 이동은 기존 소유자 경로를 유지하고, 장비 발동은 서버의 생존·조작·대기 시간으로 제한합니다.</summary>
+    private void ConfirmDodgeTrigger()
+    {
+        if (!isServer || health == null || health.CurrentHealth <= 0f ||
+            context?.Controller == null || !context.Controller.IsControlEnabled ||
+            NetworkTime.time < nextDodgeTriggerAt)
+            return;
+        var status = GetComponent<WBH_PlayerStatus>();
+        if (status == null)
+            return;
+        nextDodgeTriggerAt = NetworkTime.time + Mathf.Max(0f, status.DodgeCooltime);
+        Fire(TriggerCondition.OnDodge);
     }
 
     private void FireIfReady(ItemInstance item, TriggerCondition condition)

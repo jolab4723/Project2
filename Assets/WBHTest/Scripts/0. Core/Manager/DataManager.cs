@@ -171,29 +171,646 @@ namespace Core
         [ContextMenu("게임플레이 데이터 전체 세이브")]
         public void SaveGameplayData()
         {
+            TrySaveGameplayData();
+        }
+
+        private bool TrySaveGameplayData(string completedUnknownBattleKey = null)
+        {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out _) || stats.Stat == null
                                                                               || stats.Stat.currentLevel < 1
                                                                               || health.MaxHealth <= 0f)
             {
                 Debug.LogWarning("[DataManager] 플레이어가 준비되지 않아 저장하지 않습니다.");
-                return;
+                return false;
             }
 
             if ( ! TryGetSavedCharacter(out CharacterClass character))
             {
                 Debug.LogError(
                     "[DataManager] 캐릭터 정보를 확인하지 못해 저장을 중단합니다.");
-                return;
+                return false;
             }
 
-            var data = new GameSaveData{selectedCharacter = character};
-            data.status = BuildPlayerStatusData();
-            data.inventory = BuildInventorySaveData();
-            data.activeSkill = BuildActiveSkillSaveData();
-            // TODO : 스킬트리 데이터 세이브
-            // TODO : 스테이지 데이터 세이브
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                // 현재 런의 선택 처리 기록 등 플레이어 객체에 없는 데이터도 보존한다.
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (data == null || data.selectedCharacter != character)
+                {
+                    Debug.LogError("[DataManager] 기존 런을 확인하지 못해 저장을 중단합니다.");
+                    return false;
+                }
+                data.status = BuildPlayerStatusData();
+                data.inventory = BuildInventorySaveData();
+                data.activeSkill = BuildActiveSkillSaveData();
+                data.needsPlayerInitialization = false;
+                if (!string.IsNullOrEmpty(completedUnknownBattleKey))
+                {
+                    if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out string error))
+                        throw new System.InvalidOperationException(error);
+                    if (stats.GetComponent<PlayerBuffManager>() == null)
+                        throw new System.InvalidOperationException("PlayerBuffManager가 없어 전투 효과를 종료할 수 없습니다.");
+                    YJ_UnknownRunBuffSource.CompleteBattle(data, completedUnknownBattleKey);
+                }
+                WriteGameplayDataAtomic(path, data);
+                if (!string.IsNullOrEmpty(completedUnknownBattleKey))
+                    YJ_UnknownRunBuffSource.RemoveCompletedBattle(stats.GetComponent<PlayerBuffManager>(), completedUnknownBattleKey);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 게임플레이 저장 실패: {exception.Message}");
+                return false;
+            }
+        }
 
-            WriteJson(GetSavePath(GameplaySaveFileName), data);
+        public bool TryPrepareUnknownBattle(string battleKey, out bool completed)
+        {
+            completed = false;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active) return false;
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                var data = ReadJson<GameSaveData>(path);
+                // 새 게임의 첫 전투에는 이어받을 효과가 없고, 실제 스탯 초기화는 아래 로드 단계가 담당한다.
+                if (data != null && data.needsPlayerInitialization) return true;
+                if (data == null || data.needsPlayerInitialization || data.status == null || data.status.playerLevel < 1)
+                    throw new System.InvalidOperationException("초기화된 런 저장이 없습니다.");
+                if (!YJ_UnknownRunBuffSource.TryBindBattle(data, battleKey, out bool changed, out string error))
+                    throw new System.InvalidOperationException(error);
+                if (changed) WriteGameplayDataAtomic(path, data);
+                completed = data.lastCompletedUnknownBattleKey == battleKey;
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[DataManager] 다음 전투 효과 준비 실패: {e.Message}");
+                return false;
+            }
+        }
+
+        public bool TryCompleteUnknownBattle(string battleKey) =>
+            !Mirror.NetworkClient.active && !Mirror.NetworkServer.active &&
+            !string.IsNullOrWhiteSpace(battleKey) && TrySaveGameplayData(battleKey);
+
+        /// <summary>
+        /// 실제 플레이어가 없는 싱글 Unknown 씬에서만 사용한다.
+        /// 확률 효과, 크레딧/아이템 지급·폐기, None, 런/다음 전투 스탯, 회복/비치명 피해를 지원한다.
+        /// 미지원 효과가 섞이면 전체 지급을 보류한다.
+        /// </summary>
+        public bool TryApplyUnknownStageChoice(string nodeKey, YJ_UnknownStageDefinitionSO stage,
+            int choiceIndex, out string error, IReadOnlyList<string> discardedItemIds = null)
+        {
+            error = null;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active ||
+                PlayerStatManager.Instance != null && PlayerStatManager.Instance.isActiveAndEnabled)
+            {
+                error = "플레이어가 없는 싱글 Unknown 씬에서만 저장 보상을 적용할 수 있습니다.";
+                return false;
+            }
+
+            try
+            {
+                string path = GetSavePath(GameplaySaveFileName);
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (!TryApplyUnknownChoiceToData(data, nodeKey, stage, choiceIndex, out bool changed, out error, discardedItemIds))
+                    return false;
+
+                // 보상과 중복 방지 기록은 반드시 동일 파일 교체로 확정한다.
+                if (changed)
+                    WriteGameplayDataAtomic(path, data);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                error = $"Unknown 선택 저장 실패: {exception.Message}";
+                return false;
+            }
+        }
+
+        private static bool TryApplyUnknownChoiceToData(GameSaveData data, string nodeKey,
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error,
+            IReadOnlyList<string> discardedItemIds = null)
+        {
+            // 같은 맵/노드/선택은 저장 실패나 공간 부족 후에도 같은 결과를 낸다.
+            // ItemDataCreator의 기존 옵션 생성기를 쓰되 다른 시스템의 Random에는 영향을 주지 않는다.
+            var state = UnityEngine.Random.state;
+            try
+            {
+                byte[] hash = GetUnknownRewardHash($"{nodeKey}|{stage?.StageId}|{choiceIndex}");
+                int seed = hash[0] | hash[1] << 8 | hash[2] << 16 | hash[3] << 24;
+                UnityEngine.Random.InitState(seed);
+                return TryApplyUnknownChoiceCore(data, nodeKey, stage, choiceIndex, out changed, out error, discardedItemIds);
+            }
+            finally { UnityEngine.Random.state = state; }
+        }
+
+        private static byte[] GetUnknownRewardHash(string key)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            return sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(key));
+        }
+
+        private static bool TryApplyUnknownChoiceCore(GameSaveData data, string nodeKey,
+            YJ_UnknownStageDefinitionSO stage, int choiceIndex, out bool changed, out string error,
+            IReadOnlyList<string> discardedItemIds)
+        {
+            changed = false;
+            error = null;
+            if (data == null || data.needsPlayerInitialization || data.status == null ||
+                data.status.playerLevel < 1 || data.status.gold < 0 ||
+                (data.selectedCharacter != CharacterClass.Fighter && data.selectedCharacter != CharacterClass.Gunner))
+            {
+                error = "초기화된 런 저장 데이터가 없습니다. 정상적인 새 게임 흐름으로 진입하세요.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(nodeKey) || stage == null || string.IsNullOrWhiteSpace(stage.StageId))
+            {
+                error = "Unknown 노드 또는 이벤트 정보가 없습니다.";
+                return false;
+            }
+
+            UnknownStageChoiceRecord previous = data.unknownStageChoices?.Find(r => r != null && r.nodeKey == nodeKey);
+            if (previous != null)
+            {
+                if (previous.stageId == stage.StageId && previous.choiceIndex == choiceIndex)
+                    return true; // 지급 후 노드 완료가 실패한 재시도: 재지급하지 않는다.
+                error = "이 노드는 이미 다른 선택으로 처리되었습니다.";
+                return false;
+            }
+            if (!stage.TryGetChoice(choiceIndex, out YJ_UnknownStageChoice choice, out error))
+                return false;
+            if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out error))
+                return false;
+
+            // 미지원 효과를 확률 판정으로 건너뛰어 선택이 부분 완료되는 것을 막는다.
+            foreach (var effect in choice.Effects)
+            {
+                if (effect.Type != YJ_UnknownEffectType.None && effect.Type != YJ_UnknownEffectType.AddGold &&
+                    effect.Type != YJ_UnknownEffectType.SpendGold && effect.Type != YJ_UnknownEffectType.LoseAllGold &&
+                    effect.Type != YJ_UnknownEffectType.ModifyStats && effect.Type != YJ_UnknownEffectType.GrantItem &&
+                    effect.Type != YJ_UnknownEffectType.GrantRandomEquipment &&
+                    effect.Type != YJ_UnknownEffectType.DiscardSelectedItems &&
+                    effect.Type != YJ_UnknownEffectType.DiscardRandomItems &&
+                    effect.Type != YJ_UnknownEffectType.HealMaxHealthPercent &&
+                    effect.Type != YJ_UnknownEffectType.DamageMaxHealthPercent)
+                {
+                    error = "미지원 효과가 포함되어 선택 전체를 적용하지 않았습니다.";
+                    return false;
+                }
+            }
+            if (!TryGetUnknownDiscardCount(choice, out int required, out error)) return false;
+            if ((discardedItemIds?.Count ?? 0) != required)
+            {
+                error = $"폐기할 아이템을 정확히 {required}개 선택해야 합니다.";
+                return false;
+            }
+
+            long gold = data.status.gold;
+            float health = data.status.currentHealth;
+            InventorySaveData rewardInventory = null;
+            var newBuffs = new List<UnknownStageBuffRecord>();
+            for (int i = 0; i < choice.Effects.Count; i++)
+            {
+                YJ_UnknownStageEffect effect = choice.Effects[i];
+                List<ItemDefinitionSO> candidates = null;
+                if (effect.Type == YJ_UnknownEffectType.GrantRandomEquipment &&
+                    !TryGetUnknownEquipmentCandidates(effect.Rarity, out candidates, out error))
+                    return false;
+                if (effect.Probability <= 0f ||
+                    effect.Probability < 1f && UnityEngine.Random.value >= effect.Probability)
+                    continue; // 미당첨도 아래에서 선택 완료 기록을 저장한다.
+
+                if ((effect.Type == YJ_UnknownEffectType.DiscardSelectedItems ||
+                     effect.Type == YJ_UnknownEffectType.DiscardRandomItems) &&
+                    !TryDiscardUnknownItems(rewardInventory ?? data.inventory, effect.Amount,
+                        effect.Type == YJ_UnknownEffectType.DiscardSelectedItems ? discardedItemIds : null,
+                        out rewardInventory, out error))
+                    return false;
+
+                if (effect.Type == YJ_UnknownEffectType.GrantItem ||
+                    effect.Type == YJ_UnknownEffectType.GrantRandomEquipment)
+                {
+                    for (int count = 0; count < effect.Amount; count++)
+                    {
+                        var definition = candidates == null ? effect.Item : candidates[UnityEngine.Random.Range(0, candidates.Count)];
+                        string rewardKey = $"{nodeKey}|{stage.StageId}|{choiceIndex}|{i}|{count}";
+                        if (!TryGrantUnknownItem(rewardInventory ?? data.inventory, definition, rewardKey,
+                            out rewardInventory, out error))
+                            return false;
+                    }
+                }
+                if (effect.Type == YJ_UnknownEffectType.ModifyStats)
+                {
+                    string effectKey = $"{nodeKey}:{choiceIndex}:{i}";
+                    if (data.unknownStageBuffs != null && data.unknownStageBuffs.Exists(b => b.effectKey == effectKey))
+                    {
+                        error = "Unknown 보상 기록과 지속 효과 기록이 일치하지 않습니다.";
+                        return false;
+                    }
+                    newBuffs.Add(new UnknownStageBuffRecord
+                    {
+                        effectKey = effectKey, stageId = stage.StageId, displayName = stage.StageName,
+                        lifetime = effect.Lifetime,
+                        statEffects = YJ_UnknownRunBuffSource.CopyStats(effect.StatEffects)
+                    });
+                }
+                if (effect.Type == YJ_UnknownEffectType.AddGold)
+                    gold += effect.Amount;
+                else if (effect.Type == YJ_UnknownEffectType.SpendGold)
+                {
+                    if (gold < effect.Amount)
+                    {
+                        error = $"크레딧이 부족합니다. 필요: {effect.Amount}, 보유: {gold}. 선택 전체를 적용하지 않았습니다.";
+                        return false;
+                    }
+                    gold -= effect.Amount;
+                }
+                else if (effect.Type == YJ_UnknownEffectType.LoseAllGold)
+                    gold = 0; // 잔액이 0이어도 정상 완료. 영구 프로필 크레딧은 변경하지 않는다.
+                if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent ||
+                    effect.Type == YJ_UnknownEffectType.DamageMaxHealthPercent)
+                {
+                    if (float.IsNaN(health) || float.IsInfinity(health) || health <= 0f)
+                    {
+                        error = "체력 효과를 적용할 수 있는 생존 상태의 저장 체력이 없습니다.";
+                        return false;
+                    }
+                    if (!TryGetUnknownMaxHealth(data, newBuffs, out float maxHealth, out error, rewardInventory))
+                        return false;
+                    double amount = (double)maxHealth * effect.HealthPercent / 100d;
+                    if (effect.Type == YJ_UnknownEffectType.HealMaxHealthPercent)
+                    {
+                        // 실제 Heal과 동일하게 회복량을 올림한다.
+                        health = (float)System.Math.Min(maxHealth, health + System.Math.Ceiling(amount));
+                    }
+                    else
+                    {
+                        // 실제 TakeDamage처럼 버림하되 이벤트 피해는 체력 1을 보장한다.
+                        // 사망/부활 이벤트를 발생시키거나 부활 횟수를 소모하지 않는다.
+                        health = (float)System.Math.Max(1d, health - System.Math.Floor(amount));
+                    }
+                }
+                if (gold > int.MaxValue)
+                {
+                    error = "크레딧 보유 한도를 초과하여 지급하지 않았습니다.";
+                    return false;
+                }
+            }
+
+            data.status.gold = (int)gold;
+            if (rewardInventory != null)
+                data.inventory = rewardInventory;
+            data.status.currentHealth = health;
+            data.unknownStageBuffs ??= new List<UnknownStageBuffRecord>();
+            data.unknownStageBuffs.AddRange(newBuffs);
+            data.unknownStageChoices ??= new List<UnknownStageChoiceRecord>();
+            data.unknownStageChoices.Add(new UnknownStageChoiceRecord
+            {
+                nodeKey = nodeKey, stageId = stage.StageId, choiceIndex = choiceIndex
+            });
+            changed = true;
+            return true;
+        }
+
+        // UI에는 독립적인 저장 스냅샷만 전달한다. 확정 시 파일을 다시 읽고 ID/수량을 재검증한다.
+        public bool TryGetUnknownDiscardOptions(string nodeKey, YJ_UnknownStageDefinitionSO stage, int choiceIndex,
+            out List<ItemSaveData> items, out int required, out bool completed, out string error)
+        {
+            items = null; required = 0; completed = false; error = null;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || stage == null || string.IsNullOrWhiteSpace(nodeKey))
+            {
+                error = "싱글 Unknown 선택 정보가 필요합니다.";
+                return false;
+            }
+            try
+            {
+                var data = ReadJson<GameSaveData>(GetSavePath(GameplaySaveFileName));
+                if (data == null || data.needsPlayerInitialization)
+                {
+                    error = "초기화된 런 저장 데이터가 없습니다.";
+                    return false;
+                }
+                var record = data.unknownStageChoices?.Find(r => r != null && r.nodeKey == nodeKey);
+                if (record != null)
+                {
+                    completed = record.stageId == stage.StageId && record.choiceIndex == choiceIndex;
+                    if (!completed) error = "이미 다른 선택으로 완료된 노드입니다.";
+                    return completed;
+                }
+                if (!stage.TryGetChoice(choiceIndex, out var choice, out error) ||
+                    !TryGetUnknownDiscardCount(choice, out required, out error) ||
+                    !TryGetUnknownBackpack(data.inventory, out items, out error)) return false;
+                if (items.Count >= required) return true;
+                error = $"가방 아이템이 부족합니다. 필요: {required}, 보유: {items.Count}.";
+                return false;
+            }
+            catch (System.Exception exception) { error = $"폐기 목록 조회 실패: {exception.Message}"; return false; }
+        }
+
+        private static bool TryGetUnknownDiscardCount(YJ_UnknownStageChoice choice, out int required, out string error)
+        {
+            required = 0; error = null;
+            foreach (var effect in choice.Effects)
+            {
+                if (effect.Type != YJ_UnknownEffectType.DiscardSelectedItems) continue;
+                if (required != 0 || effect.Probability != 1f)
+                {
+                    error = "직접 선택 폐기는 한 선택지에 확정 효과 하나만 설정할 수 있습니다.";
+                    return false;
+                }
+                required = effect.Amount;
+            }
+            return true;
+        }
+
+        private static bool TryGetUnknownBackpack(InventorySaveData inventory, out List<ItemSaveData> items, out string error)
+        {
+            items = new List<ItemSaveData>(); error = null;
+            var ids = new HashSet<string>();
+            if (inventory?.items == null) { error = "인벤토리 저장 데이터가 없습니다."; return false; }
+            foreach (var item in inventory.items)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.instanceId) || !ids.Add(item.instanceId))
+                { error = "인벤토리 아이템 ID가 누락되거나 중복되었습니다."; return false; }
+                if (!item.isEquipped) items.Add(item);
+            }
+            items.Sort((a, b) => string.CompareOrdinal(a.instanceId, b.instanceId));
+            return true;
+        }
+
+        private static bool TryDiscardUnknownItems(InventorySaveData inventory, int amount,
+            IReadOnlyList<string> selectedIds, out InventorySaveData result, out string error)
+        {
+            result = null;
+            if (!TryGetUnknownBackpack(inventory, out var candidates, out error)) return false;
+            if (amount <= 0 || candidates.Count < amount)
+            { error = $"가방 아이템이 부족합니다. 필요: {amount}, 보유: {candidates.Count}."; return false; }
+            var removed = new HashSet<string>();
+            if (selectedIds != null)
+            {
+                if (selectedIds.Count != amount) { error = "폐기 수량이 일치하지 않습니다."; return false; }
+                foreach (string id in selectedIds)
+                    if (string.IsNullOrWhiteSpace(id) || !removed.Add(id) || !candidates.Exists(item => item.instanceId == id))
+                    { error = "폐기 대상이 중복되었거나 더 이상 가방에 없습니다. 다시 선택하세요."; return false; }
+            }
+            else
+            {
+                for (int i = 0; i < amount; i++)
+                {
+                    int index = UnityEngine.Random.Range(0, candidates.Count);
+                    removed.Add(candidates[index].instanceId);
+                    candidates.RemoveAt(index);
+                }
+            }
+            result = new InventorySaveData { gridWidth = inventory.gridWidth, gridHeight = inventory.gridHeight,
+                items = inventory.items.FindAll(item => !removed.Contains(item.instanceId)) };
+            return true;
+        }
+
+        private static bool TryGetUnknownEquipmentCandidates(ItemRarity rarity,
+            out List<ItemDefinitionSO> candidates, out string error)
+        {
+            candidates = new List<ItemDefinitionSO>();
+            error = null;
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (database == null || database.allItems == null)
+            {
+                error = "무작위 장비 지급에 필요한 아이템 DB가 없습니다.";
+                return false;
+            }
+            var ids = new HashSet<string>();
+            foreach (var item in database.allItems)
+            {
+                if (item == null || item.rarity != rarity ||
+                    (item.category != ItemCategory.Weapon && item.category != ItemCategory.Armor))
+                    continue;
+                if (string.IsNullOrWhiteSpace(item.itemId) || item.itemWidth <= 0 || item.itemHeight <= 0 ||
+                    database.GetById(item.itemId) != item)
+                {
+                    error = "무작위 장비 후보의 ID, 크기 또는 DB 등록이 잘못되었습니다.";
+                    return false;
+                }
+                if (ids.Add(item.itemId)) candidates.Add(item);
+            }
+            // DB 목록 순서가 바뀌어도 추첨 결과를 유지한다. 후보/옵션 데이터 수정까지 고정하는 스냅샷은 아니다.
+            candidates.Sort((a, b) => string.CompareOrdinal(a.itemId, b.itemId));
+            if (candidates.Count > 0) return true;
+            error = $"{rarity} 등급의 무기/방어구 후보가 없습니다.";
+            return false;
+        }
+
+        private static bool TryGrantUnknownItem(InventorySaveData inventory, ItemDefinitionSO reward, string rewardKey,
+            out InventorySaveData result, out string error)
+        {
+            result = null;
+            error = null;
+            if (inventory == null || inventory.items == null || inventory.gridWidth <= 0 || inventory.gridHeight <= 0)
+            {
+                error = "인벤토리 크기 정보가 없습니다. 전투 스테이지에서 저장한 후 다시 시도하세요.";
+                return false;
+            }
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (database == null || reward == null || database.GetById(reward.itemId) != reward ||
+                reward.itemWidth <= 0 || reward.itemHeight <= 0)
+            {
+                error = "지급 아이템이 아이템 데이터베이스에 등록되지 않았거나 크기/수량이 잘못되었습니다.";
+                return false;
+            }
+
+            var occupied = new List<RectInt>();
+            var ids = new HashSet<string>();
+            foreach (var saved in inventory.items)
+            {
+                var definition = saved != null && !string.IsNullOrWhiteSpace(saved.itemId)
+                    ? database.GetById(saved.itemId) : null;
+                if (definition == null || string.IsNullOrWhiteSpace(saved.instanceId) || !ids.Add(saved.instanceId))
+                {
+                    error = "저장 아이템의 원본 또는 인스턴스 ID가 잘못되었습니다.";
+                    return false;
+                }
+                if (saved.isEquipped)
+                    continue;
+                int width = saved.isRotated ? definition.itemHeight : definition.itemWidth;
+                int height = saved.isRotated ? definition.itemWidth : definition.itemHeight;
+                var rect = new RectInt(saved.gridX, saved.gridY, width, height);
+                if (width <= 0 || height <= 0 || rect.x < 0 || rect.y < 0 ||
+                    width > inventory.gridWidth || height > inventory.gridHeight ||
+                    rect.x > inventory.gridWidth - width || rect.y > inventory.gridHeight - height ||
+                    occupied.Exists(other => other.Overlaps(rect)))
+                {
+                    error = "저장 인벤토리의 아이템 배치가 겹치거나 범위를 벗어났습니다.";
+                    return false;
+                }
+                occupied.Add(rect);
+            }
+
+            var pending = new InventorySaveData
+            {
+                gridWidth = inventory.gridWidth, gridHeight = inventory.gridHeight,
+                items = new List<ItemSaveData>(inventory.items)
+            };
+            bool placed = false;
+            // InventoryGrid와 같은 순서: 기본 방향을 먼저 탐색하고, 다음 회전 방향.
+            for (int rotation = 0; rotation < 2 && !placed; rotation++)
+            {
+                int width = rotation == 0 ? reward.itemWidth : reward.itemHeight;
+                int height = rotation == 0 ? reward.itemHeight : reward.itemWidth;
+                for (int y = 0; y <= inventory.gridHeight - height && !placed; y++)
+                for (int x = 0; x <= inventory.gridWidth - width && !placed; x++)
+                {
+                    var rect = new RectInt(x, y, width, height);
+                    if (occupied.Exists(other => other.Overlaps(rect)))
+                        continue;
+                    var instance = ItemDataCreator.CreateItemData(reward);
+                    byte[] id = new byte[16];
+                    System.Array.Copy(GetUnknownRewardHash(rewardKey), id, id.Length);
+                    instance.instanceId = new System.Guid(id).ToString();
+                    if (ids.Contains(instance.instanceId))
+                    {
+                        error = "보상 아이템 ID와 선택 완료 기록이 일치하지 않습니다.";
+                        return false;
+                    }
+                    var item = new InventoryItem(instance);
+                    item.x = x;
+                    item.y = y;
+                    item.isRotated = rotation != 0;
+                    pending.items.Add(ToItemSaveData(item, false, default));
+                    occupied.Add(rect);
+                    placed = true;
+                }
+            }
+            if (!placed)
+            {
+                error = "인벤토리 공간이 부족합니다. 선택 전체를 적용하지 않았습니다.";
+                return false;
+            }
+            result = pending;
+            return true;
+        }
+
+        private static bool TryGetUnknownMaxHealth(GameSaveData data,
+            List<UnknownStageBuffRecord> pendingBuffs, out float maxHealth, out string error,
+            InventorySaveData pendingInventory = null)
+        {
+            maxHealth = 0f;
+            error = null;
+            // 실제 스테이지에 사용하는 Resources 캐릭터 프리팹의 레벨 데이터가 원본이다.
+            var prefab = Resources.Load<GameObject>("Prefabs/Character/Player/" + data.selectedCharacter);
+            var levels = prefab != null ? prefab.GetComponent<PlayerLevelManager>() : null;
+            var passive = PassiveSkillManager.Instance;
+            var database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+            if (levels == null || passive == null || passive.CurrentProfile == null ||
+                passive.GetDefinition(PassiveSkillId.MaxHealth) == null || database == null)
+            {
+                error = "체력 효과 계산에 필요한 캐릭터, 패시브 프로필 또는 아이템 데이터가 준비되지 않았습니다.";
+                return false;
+            }
+
+            StatSet character = StatSet.Zero;
+            foreach (var stat in levels.GetStatsForLevel(data.status.playerLevel))
+                StatSetMapper.AddStat(ref character, stat.Key, stat.Value);
+            if (character.maxHealthFlat <= 0f)
+            {
+                error = "캐릭터의 기본 최대 체력을 조회하지 못했습니다.";
+                return false;
+            }
+
+            StatSet equipment = StatSet.Zero;
+            var tracker = new BuffTracker(); // 런타임 플레이어/인벤토리를 변경하지 않는 독립 계산용.
+            var slots = new HashSet<EquipSlotType>();
+            foreach (var saved in (pendingInventory ?? data.inventory)?.items ?? new List<ItemSaveData>())
+            {
+                var definition = saved != null ? database.GetById(saved.itemId) : null;
+                if (definition == null)
+                {
+                    error = "저장 아이템의 원본이 없어 최대 체력을 계산할 수 없습니다.";
+                    return false;
+                }
+                if (saved.isEquipped)
+                {
+                    if (!slots.Add(saved.equippedSlotType) || !EquipSlotRules.CanEquipTo(definition, saved.equippedSlotType))
+                    {
+                        error = "저장된 장비 슬롯이 중복되었거나 장착할 수 없는 아이템입니다.";
+                        return false;
+                    }
+                    if (saved.equippedSlotType != EquipSlotType.Potion)
+                        equipment += PlayerEquipManager.ToStatSet(CreateSavedItem(saved, definition));
+                }
+                if (!saved.isEquipped && definition.category != ItemCategory.Relic)
+                    continue;
+                // OnEquip을 호출하면 전역 버프/오브젝트가 변경되므로 순수 BuffTracker API만 재사용한다.
+                if (definition.uniqueEffect is PassiveBuffUniqueEffectSO always)
+                    tracker.ApplyBuff(always);
+                else if (definition.uniqueEffect is TriggeredBuffUniqueEffectSO triggered)
+                {
+                    if (triggered.persistStackOnItem && saved.persistedStackCount > 0)
+                        tracker.SetStack(triggered, saved.persistedStackCount);
+                }
+                else if (definition.uniqueEffect is IBuffSource conditional && conditional.StatEffects != null)
+                {
+                    foreach (var stat in conditional.StatEffects)
+                        if (stat.statType == StatType.healthFlat || stat.statType == StatType.healthPercent)
+                        {
+                            error = "조건부 최대 체력 효과가 있어 저장 데이터만으로 체력 변화량을 확정할 수 없습니다.";
+                            return false;
+                        }
+                }
+            }
+            StatSet buffs = tracker.GetStatSet();
+            if (data.unknownStageBuffs != null)
+                foreach (var record in data.unknownStageBuffs)
+                    if (YJ_UnknownRunBuffSource.IsActive(record))
+                    foreach (var stat in record.statEffects)
+                        StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
+            // 앞선 효과로 추가된 최대 체력도 뒤의 회복량에 반영한다.
+            foreach (var record in pendingBuffs)
+                if (YJ_UnknownRunBuffSource.IsActive(record))
+                foreach (var stat in record.statEffects)
+                    StatSetMapper.AddStat(ref buffs, stat.statType, stat.value);
+
+            var calculated = new PlayerStat();
+            calculated.Recalculate(character, equipment, buffs, passive.GetStatSet());
+            maxHealth = calculated.maxHealth;
+            if (float.IsNaN(maxHealth) || float.IsInfinity(maxHealth) || maxHealth <= 0f)
+            {
+                error = "계산한 최대 체력이 유효하지 않습니다.";
+                return false;
+            }
+            return true;
+        }
+
+        private static ItemInstance CreateSavedItem(ItemSaveData saved, ItemDefinitionSO definition)
+        {
+            return new ItemInstance
+            {
+                instanceId = saved.instanceId, definition = definition,
+                rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>(),
+                rolledElement = saved.rolledElement, upgradeLevel = saved.upgradeLevel,
+                persistedStackCount = saved.persistedStackCount
+            };
+        }
+
+        private static void WriteGameplayDataAtomic(string path, GameSaveData data)
+        {
+            string temporaryPath = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporaryPath, JsonUtility.ToJson(data, true));
+                if (File.Exists(path))
+                    File.Replace(temporaryPath, path, path + ".bak");
+                else
+                    File.Move(temporaryPath, path);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                {
+                    try { File.Delete(temporaryPath); }
+                    catch (System.Exception exception) { Debug.LogWarning($"[DataManager] 임시 파일 정리 실패: {exception.Message}"); }
+                }
+            }
         }
 
         [ContextMenu("게임플레이 데이터 전체 로드")]
@@ -203,7 +820,7 @@ namespace Core
         }
 
         // 플레이어와 관련 시스템의 Start 초기화가 끝난 뒤 호출합니다.
-        public bool TryLoadGameplayData()
+        public bool TryLoadGameplayData(string unknownBattleKey = null)
         {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out var mana))
             {
@@ -260,6 +877,14 @@ namespace Core
             var stat = stats.EnsureInitialized();
             stat.currentLevel = data.status.playerLevel;
             stat.currentExp = data.status.playerExp;
+
+            // 최대 체력/마나 및 장비 복원에서 스탯을 조회하기 전에 런 보상을 복원한다.
+            // 새 게임의 빈 목록은 이전 런의 이벤트 버프만 제거한다.
+            if (!YJ_UnknownRunBuffSource.TryRestore(stats.GetComponent<PlayerBuffManager>(), data.unknownStageBuffs, out string buffError, unknownBattleKey))
+            {
+                Debug.LogError($"[DataManager] {buffError}");
+                return false;
+            }
 
             // 장비 복원 과정에서 스탯을 조회할 수 있으므로 먼저 계산합니다.
             stats.Recalculate();
@@ -414,6 +1039,8 @@ namespace Core
 
             if (InventoryController.Instance.PlayerGrid != null)
             {
+                data.gridWidth = InventoryController.Instance.PlayerGrid.GridWidth;
+                data.gridHeight = InventoryController.Instance.PlayerGrid.GridHeight;
                 foreach (var item in InventoryController.Instance.PlayerGrid.GetAllItems())
                     data.items.Add(ToItemSaveData(item, false, default(EquipSlotType)));
             }
@@ -486,13 +1113,7 @@ namespace Core
                 if (definition == null)
                     continue; // GetById가 이미 경고를 남김
 
-                var itemInstance = new ItemInstance();
-                itemInstance.instanceId = saved.instanceId;
-                itemInstance.definition = definition;
-                itemInstance.rolledSubStats = saved.rolledSubStats ?? new List<RolledSubStat>();
-                itemInstance.rolledElement = saved.rolledElement;
-                itemInstance.upgradeLevel = saved.upgradeLevel;
-                itemInstance.persistedStackCount = saved.persistedStackCount;
+                var itemInstance = CreateSavedItem(saved, definition);
 
                 var invItem = new InventoryItem(itemInstance);
                 invItem.isRotated = saved.isRotated;

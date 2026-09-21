@@ -19,13 +19,23 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     [SerializeField] private WBH_EffectData stunEffect;
     [SerializeField] private WBH_EffectData markedEffect;
 
+    [Header("Burn")]
+    [Tooltip("SW 수정: 보스의 화상 피해 배율입니다. 1은 기존 피해, 0은 면역입니다.")]
+    [SerializeField, Range(0f, 1f)] private float bossBurnDamageMultiplier = 1f;
+
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
     private readonly HashSet<WBH_StatusEffectType> controlBlockingEffects = new();
+    private readonly HashSet<(WBH_ICombat, uint, int)> burnResponses = new();
+    private readonly Queue<(WBH_ICombat, uint, int)> burnResponseOrder = new();
+
+    /// <summary>SW 수정: 유효한 화상 시도의 저항·면역을 알립니다. true는 면역입니다.</summary>
+    public event System.Action<bool> OnBurnResponse;
 
     private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyStatus status;
     private WBH_EnemyController controller;
     private WBH_EnemyMovement movement;
+    private Mirror.NetworkIdentity networkIdentity;
     private Coroutine knockbackRoutine;
     private Coroutine airborneRoutine;
     private float airborneGroundY; // 에어본 시작 전 지면 높이. 도중에 넉백이 끼어들 때 지면으로 되돌리기 위해 기억해둔다.
@@ -35,26 +45,77 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         status = GetComponent<WBH_EnemyStatus>();
         controller = GetComponent<WBH_EnemyController>();
         movement = GetComponent<WBH_EnemyMovement>();
+        networkIdentity = GetComponent<Mirror.NetworkIdentity>();
     }
+
+    /// <summary>SW 수정: 일반 적은 기존 피해를 받고 보스만 Inspector의 화상 저항을 사용합니다.</summary>
+    public float BurnDamageMultiplier => controller != null && controller.Info != null &&
+        controller.Info.enemyGrade == EnemyGrade.Boss ? Mathf.Clamp01(bossBurnDamageMultiplier) : 1f;
 
     public void Initialize(WBH_EffectSpawner effectSpawner)
     {
+        // SW 수정: 재사용 전에 이전 화상·이동 제약·이펙트를 제거합니다.
+        ClearAllStatusEffects();
+        burnResponses.Clear();
+        burnResponseOrder.Clear();
         this.effectSpawner = effectSpawner;
 
         controlBlockingEffects.Clear();
         movement.SetStatusEffectControlBlock(false);
     }
 
+    /// <summary>SW 수정: 서버의 살아 있는 적에게만 적용하며, 화상 면역이면 등록하지 않습니다.</summary>
+    public override bool CanApplyStatusEffect(WBH_StatusEffectData data)
+    {
+        return CanReceiveStatusEffect(data) &&
+            (data.Type != WBH_StatusEffectType.Burn || BurnDamageMultiplier > 0f);
+    }
+
+    /// <summary>SW 수정: 잘못된 요청과 죽은 적을 제외합니다. 면역도 유효한 요청에는 반응을 표시합니다.</summary>
+    private bool CanReceiveStatusEffect(WBH_StatusEffectData data)
+    {
+        if (!isActiveAndEnabled || status == null || status.IsDead ||
+            (networkIdentity != null && !networkIdentity.isServer))
+            return false;
+        return base.CanApplyStatusEffect(data);
+    }
+
+    /// <summary>SW 수정: 게임 규칙 적용 뒤 저항·면역을 한 번 알리며 DoT 틱에는 표시하지 않습니다.</summary>
+    public override void AddStatusEffect(WBH_StatusEffectData data)
+    {
+        if (!CanReceiveStatusEffect(data))
+            return;
+
+        base.AddStatusEffect(data);
+        if (data.Type != WBH_StatusEffectType.Burn || BurnDamageMultiplier >= 1f)
+            return;
+
+        // SW 수정: 서로 다른 플레이어의 같은 공격 번호는 구별합니다.
+        // 번호 없는 기존 공격은 같은 프레임에서만 합치고 다음 프레임에는 다시 표시합니다.
+        var key = (data.Attacker, data.AttackId, data.AttackId == 0 ? Time.frameCount : 0);
+        if (!burnResponses.Add(key))
+            return;
+        burnResponseOrder.Enqueue(key);
+        // 최근 64개만 보관해 오래 살아 있는 보스의 기록이 계속 늘지 않게 합니다.
+        if (burnResponseOrder.Count > 64)
+            burnResponses.Remove(burnResponseOrder.Dequeue());
+        OnBurnResponse?.Invoke(BurnDamageMultiplier <= 0f);
+    }
+
+    /// <summary>SW 수정: 재사용한 적은 이전 공격의 반응 표시 기록을 이어받지 않습니다.</summary>
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        burnResponses.Clear();
+        burnResponseOrder.Clear();
+    }
+
     // 몬스터 등급별 예외처리
     protected override void UpdateEffects(float deltaTime)
     {
-        if (controller == null || controller.Info == null)
+        if (controller == null || controller.Info == null || status == null || status.IsDead ||
+            (networkIdentity != null && !networkIdentity.isServer))
             return;
-
-        if (controller.Info.enemyGrade == EnemyGrade.Boss)
-        {
-            // 보스의 경우 면역되는 상태이상.
-        }
 
         base.UpdateEffects(deltaTime);
     }
@@ -102,8 +163,26 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     // 도트데미지 (화상)
     public override void ApplyDotDamage(float damage)
     {
-        // SW 수정
-        status.TakeDamage(new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire));
+        ApplyDotDamage(damage, default);
+    }
+
+    /// <summary>
+    /// SW 수정: 화상을 적용한 공격자에게 DoT 처치를 귀속합니다.
+    /// 대상 최대 체력 비례 계산은 유지하고 보스 저항을 한 번만 적용합니다.
+    /// </summary>
+    public override void ApplyDotDamage(float damage, WBH_StatusEffectData data)
+    {
+        if (!isActiveAndEnabled || status == null || status.IsDead ||
+            (networkIdentity != null && !networkIdentity.isServer))
+            return;
+        damage *= BurnDamageMultiplier;
+        if (!float.IsFinite(damage) || damage <= 0f)
+            return;
+        WBH_ICombat attacker = data.Attacker;
+        if (attacker is Object unityObject && unityObject == null)
+            attacker = null;
+        status.TakeDamage(new WBH_DamageResult(attacker, damage, false,
+            ItemSystem.ElementType.Fire, null, null, transform.position, null, DamageCause.DoT, data.AttackId));
     }
 
     // 넉백

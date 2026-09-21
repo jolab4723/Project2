@@ -1025,6 +1025,7 @@ GameObject:
   - component: {fileID: 7454581624532826259}
   - component: {fileID: 1704976161695319765}
   - component: {fileID: 17425674188547550}
+  - component: {fileID: 2620708477305541264}
   m_Layer: 10
   m_Name: Normal_Melee_MirrorTest
   m_TagString: Untagged
@@ -1132,7 +1133,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
-  bossMissileEffect: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &-2777707044376071587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1295,6 +1297,7 @@ MonoBehaviour:
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
   markedEffect: {fileID: 0}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &3732678896662894666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1351,6 +1354,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &3517661445103982069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1791,6 +1796,7 @@ MonoBehaviour:
   healthBarRoot: {fileID: 8370071735663241610}
   healthBarSlider: {fileID: 4061675389082596751}
   bossPhaseView: {fileID: 0}
+  damageTextSpacingPixels: {x: 56, y: 28}
 --- !u!114 &17425674188547550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1803,6 +1809,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7d9b021e06205c4eb6e69abb5bab7e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBuffManager
+--- !u!114 &2620708477305541264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings: []
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0

@@ -217,7 +217,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (characterClass == CharacterClass.Fighter)
             CalibrateDefaultVisualToRightHand();
         defaultVisual.SetActive(true);
-        currentLeftHandGrip = defaultVisual.transform.Find(LeftHandGripName);
+        currentLeftHandGrip = FindDescendant(defaultVisual.transform, LeftHandGripName);
         ApplyLeftHandIk(currentLeftHandGrip);
     }
 
@@ -266,6 +266,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private static Transform FindDescendant(Transform root, string objectName)
     {
+        Transform directChild = root.Find(objectName);
+        if (directChild != null)
+            return directChild;
+
         foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
         {
             if (candidate.name == objectName)
@@ -308,7 +312,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (defaultVisual != null)
             defaultVisual.SetActive(false);
 
-        currentLeftHandGrip = currentVisual.transform.Find(LeftHandGripName);
+        currentLeftHandGrip = FindDescendant(currentVisual.transform, LeftHandGripName);
         ApplyLeftHandIk(currentLeftHandGrip);
     }
 
@@ -409,10 +413,43 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
         float targetWeight =
             hasActiveLeftHandGrip && IsGunnerHoldingWeapon() ? 1f : 0f;
+
+        // Recovery can lower the weapon beyond the support arm's reach. Release
+        // the authored hand pose gradually instead of pinning a straight elbow.
+        var arm = leftHandIkConstraint.data;
+        if (targetWeight > 0f && arm.root != null && arm.mid != null &&
+            arm.tip != null && arm.target != null)
+        {
+            float armLength = Vector3.Distance(arm.root.position, arm.mid.position) +
+                              Vector3.Distance(arm.mid.position, arm.tip.position);
+            float reach = Vector3.Distance(arm.root.position, arm.target.position);
+            if (armLength > 0.0001f && reach > armLength)
+                targetWeight *= 1f - Mathf.InverseLerp(armLength, armLength * 1.08f, reach);
+        }
+
+        // The shot is authored from the first attack event, so do not leave the
+        // support hand in the blend-in window while the weapon fires.
+        if (targetWeight >= 1f && IsGunnerAttackState())
+        {
+            leftHandIkConstraint.weight = 1f;
+            return;
+        }
+
         leftHandIkConstraint.weight = Mathf.MoveTowards(
             leftHandIkConstraint.weight,
             targetWeight,
             leftHandIkBlendSpeed * Time.deltaTime);
+    }
+
+    private bool IsGunnerAttackState()
+    {
+        if (characterAnimator == null || !characterAnimator.isActiveAndEnabled)
+            return false;
+
+        AnimatorStateInfo state = characterAnimator.IsInTransition(0)
+            ? characterAnimator.GetNextAnimatorStateInfo(0)
+            : characterAnimator.GetCurrentAnimatorStateInfo(0);
+        return state.shortNameHash == AttackStateHash;
     }
 
     private bool IsGunnerHoldingWeapon()

@@ -31,6 +31,7 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
     private MirrorAct1BossPhase observedBossPhase;
 
     public uint PresentedDamageTextCount { get; private set; }
+    public uint PresentedBurnResponseCount { get; private set; }
     public bool BossPhaseTwoApplied => bossPhaseTwoApplied;
 
     private void Awake()
@@ -125,14 +126,36 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
     public void ShowDamage(float damage, bool critical,
         ElementType element, Vector3 enemyPosition)
     {
-        if (!Mirror.NetworkClient.active || !isActiveAndEnabled ||
-            !float.IsFinite(damage) || damage <= 0f)
+        if (!float.IsFinite(damage) || damage <= 0f)
             return;
+
+        WBH_DamageText text = RentDamageText(enemyPosition);
+        if (text == null)
+            return;
+        text.Show(text.transform.position, new WBH_DamageResult(null, damage, critical, element));
+        PresentedDamageTextCount++;
+    }
+
+    /// <summary>서버가 보낸 화상 반응을 숫자와 겹치지 않게 같은 풀에서 표시합니다.</summary>
+    public void ShowBurnResponse(bool immune, Vector3 enemyPosition)
+    {
+        WBH_DamageText text = RentDamageText(enemyPosition);
+        if (text == null)
+            return;
+        text.ShowBurnResponse(text.transform.position, immune);
+        PresentedBurnResponseCount++;
+    }
+
+    /// <summary>숫자와 상태 문구가 카메라·풀·앵커·연속 타격 배치를 공유합니다.</summary>
+    private WBH_DamageText RentDamageText(Vector3 enemyPosition)
+    {
+        if (!Mirror.NetworkClient.active || !isActiveAndEnabled)
+            return null;
 
         if (mainCamera == null)
             mainCamera = Camera.main;
         if (mainCamera == null)
-            return;
+            return null;
 
         if (damageTextPool == null)
             damageTextPool = FindFirstObjectByType<WBH_FloatTextPoolManager>(FindObjectsInactive.Exclude);
@@ -143,7 +166,7 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
                 missingPoolReported = true;
                 Debug.LogWarning("[NetworkEnemyCombatView_MirrorTest] 씬의 데미지 텍스트 풀이 없습니다.", this);
             }
-            return;
+            return null;
         }
 
         Vector3 anchorOffset = damageTextRoot != null
@@ -152,11 +175,11 @@ public sealed class NetworkEnemyCombatView_MirrorTest : MonoBehaviour
         Vector3 position = OffsetDamageText(enemyPosition + anchorOffset);
         WBH_DamageText damageText = damageTextPool.GetDamageText();
         if (damageText == null)
-            return;
+            return null;
 
         damageText.Initialize(damageTextPool);
-        damageText.Show(position, new WBH_DamageResult(null, damage, critical, element));
-        PresentedDamageTextCount++;
+        damageText.transform.position = position;
+        return damageText;
     }
 
     private Vector3 OffsetDamageText(Vector3 position)

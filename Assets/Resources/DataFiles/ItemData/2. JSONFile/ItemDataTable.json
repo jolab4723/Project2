@@ -74,7 +74,7 @@
       "mainStat1Value": 1.3,
       "mainStat2Type": "",
       "mainStat2Value": 0.0,
-      "uniqueEffectId": "",
+      "uniqueEffectId": "UE_DodgeMoveBoost",
       "description": "폐기된 기동 로봇에서 떼어낸 부스터 모듈입니다. 안전 기준은 충족하지 못했지만, 속도 기준은 확실히 충족합니다.",
       "itemWidth": 2,
       "itemHeight": 2,
@@ -639,6 +639,22 @@
       "itemWidth": 2,
       "itemHeight": 3,
       "itemPrice": 12000
+    },
+    {
+      "itemId": "item.armor.helmet.powersavingheadset",
+      "itemName": "절전모드 헤드셋",
+      "category": "Armor",
+      "armorType": "Helmet",
+      "rarity": "Rare",
+      "mainStat1Type": "healthFlat",
+      "mainStat1Value": 130.0,
+      "mainStat2Type": "",
+      "mainStat2Value": 0.0,
+      "uniqueEffectId": "UE_LowManaRecovery",
+      "description": "마나가 낮을 때 비상 전력으로 전환하여 마나 회복을 돕는 헤드셋입니다.",
+      "itemWidth": 2,
+      "itemHeight": 2,
+      "itemPrice": 2500
     }
   ],
   "weaponDefinitions": [
@@ -2608,6 +2624,17 @@
       "itemWidth": 2,
       "itemHeight": 1,
       "itemPrice": 4500
+    },
+    {
+      "itemId": "item.relic.manarelay",
+      "itemName": "마나 중계기",
+      "category": "Relic",
+      "rarity": "Rare",
+      "uniqueEffectId": "UE_ManaRelay",
+      "description": "주변 동료에게 회복 에너지를 전달하는 휴대용 중계 장치입니다.",
+      "itemWidth": 2,
+      "itemHeight": 2,
+      "itemPrice": 2500
     }
   ]
 }

@@ -41,6 +41,12 @@ public static class GlassRailExtraHitValidation_MirrorTest
             Check(Mathf.Approximately(effect.damageMultiplier, 0.15f) &&
                   effect.coefficients is { Length: 1 } && Mathf.Approximately(effect.coefficients[0], 15f),
                 "공격력 15% 실행·표시 계수");
+            // [R03-01] 효과 asset 설명에 투사체 귀속 정책(교체·해제 후 유지)과 비치명 안내가 포함되어 있는지 확인한다.
+            Check(!string.IsNullOrEmpty(effect.effectDescription) &&
+                  effect.effectDescription.Contains("교체") &&
+                  effect.effectDescription.Contains("해제") &&
+                  effect.effectDescription.Contains("비치명"),
+                "효과 설명에 교체·해제 후 유지 정책 및 비치명 안내 포함");
 
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/SW/TEST/MirrorPlayerContext/Prefabs/GunnerNetworkPlayer_MirrorTest.prefab");
@@ -247,10 +253,15 @@ public static class GlassRailExtraHitValidation_MirrorTest
             Check(!authority2.TryGetGunnerHitSource(9720u, out _, out _),
                 "플레이어 2 종료 후 플레이어 2 스코프 정리");
 
-            // [R02-01] 예외 발생 시 스코프 정리 및 다음 탄 정상 동작 검증
+            // [R02-01 / R03-03] 예외 발생 시 스코프 정리 및 다음 탄 정상 동작 검증
+            // BeginGunnerHitScope 래퍼 대신 Try를 사용해 획득 실패 시 Check가 실패하도록 한다.
+            Check(authority.TryBeginGunnerHitScope(9730u, GunnerWeaponType.Rifle, effect, out System.IDisposable exScope),
+                "예외 탈출 전 스코프(9730u) 획득 성공");
+            Check(authority.TryGetGunnerHitSource(9730u, out UniqueEffectSO exEff, out _) && exEff == effect,
+                "예외 탈출 전 스코프(9730u)의 출처가 GlassRail 효과와 일치");
             try
             {
-                using (authority.BeginGunnerHitScope(9730u, GunnerWeaponType.Rifle, effect))
+                using (exScope)
                 {
                     throw new System.InvalidOperationException("Simulated exception inside hit scope");
                 }
@@ -266,7 +277,7 @@ public static class GlassRailExtraHitValidation_MirrorTest
             nextScope.Dispose();
 
             Debug.Log($"[GlassRailExtraHitValidation] PASS {checks} checks. " +
-                      "실제 Gunner 탄 출처·중첩 거절·다인 격리·예외 정리·명시적 다중 Collider·스냅샷·교체·동일 정의·맨손·재장착·소급 차단·역순 도착 확인.");
+                      "실제 Gunner 탄 출처·중첩 거절·다인 격리·예외 정리(획득-출처 선단언)·명시적 다중 Collider·스냅샷·교체·동일 정의·맨손·재장착·소급 차단·역순 도착 확인.");
         }
         finally
         {

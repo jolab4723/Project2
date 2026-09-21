@@ -16,7 +16,7 @@ namespace DataSystem
     /// "{ItemDefinitionSO.uniqueEffectId}.asset" 경로로 찾아 연결하기 때문에 접미사를 붙이면 안 된다.
     ///
     /// !! 고유 효과는 effectType에 따라 실제 SO 클래스가 달라진다. ScriptableObject는 생성 후 타입을
-    ///    바꿀 수 없으므로, 기존 에셋과 시트의 effectType이 다르면 덮어쓰지 않고 경고 후 건너뛴다
+    ///    바꿀 수 없으므로, 기존 에셋과 시트의 effectType이 다르면 쓰기 전에 전체 생성을 중단한다
     ///    (지우고 다시 만들면 GUID가 바뀌어 아이템 에셋의 참조가 끊긴다). 타입을 바꾸려면
     ///    기존 에셋을 직접 지우고 다시 실행하면 된다.
     /// </summary>
@@ -48,8 +48,8 @@ namespace DataSystem
             if (string.IsNullOrEmpty(jsonPath))
                 return false;
 
-            GenerateAllFromJson(jsonPath, UniqueEffectFolder);
-            return true;
+            // SW 수정: JSON이 있어도 타입/데이터 오류로 SO를 못 만들었다면 실패를 그대로 돌려준다.
+            return GenerateAllFromJson(jsonPath, UniqueEffectFolder);
         }
 
         [MenuItem("DataLoader/Unique Effect/0. Run All Steps")]
@@ -59,80 +59,55 @@ namespace DataSystem
 
             if (!RunExcelToSoWithDefaultPaths())
             {
-                Debug.LogError("[UniqueEffect] 엑셀을 찾지 못해 중단했습니다.");
+                Debug.LogError("[UniqueEffect] 데이터 변환 또는 SO 생성에 실패해 중단했습니다. 앞의 오류를 확인해주세요.");
                 return;
             }
 
             Debug.Log("[UniqueEffect] ===== 통합 실행 완료 =====");
         }
 
-        public static void GenerateAllFromJson(string jsonPath, string outputFolder)
+        /// <summary>SW 수정: 모든 행과 기존 타입을 먼저 검사하여 잘못된 표가 SO 일부만 덮어쓰지 않게 한다.</summary>
+        public static bool GenerateAllFromJson(string jsonPath, string outputFolder)
         {
             List<UniqueEffectTableRow> rows = LoadJson(jsonPath);
-            if (rows == null)
-                return;
-
-            EnsureAssetFolder(outputFolder);
-
-            int created = 0, updated = 0, skipped = 0;
+            if (!ValidateRows(rows))
+                return false;
 
             foreach (UniqueEffectTableRow row in rows)
             {
-                string id = (row.uniqueEffectId ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(id))
+                string path = CombineAssetPath(outputFolder, row.uniqueEffectId.Trim() + ".asset");
+                UnityEngine.Object existing = AssetDatabase.LoadMainAssetAtPath(path);
+                if (existing != null && existing.GetType() != ResolveEffectType(row.effectType, row.uniqueEffectId))
                 {
-                    skipped++;
-                    continue;
+                    Debug.LogError($"[UniqueEffect] '{row.uniqueEffectId}'의 기존 타입이 표와 다릅니다. GUID와 참조를 보존하기 위해 전체 생성을 중단합니다: {path}");
+                    return false;
                 }
+            }
 
-                Type soType = ResolveEffectType(row.effectType, id);
-                if (soType == null)
-                {
-                    skipped++;
-                    continue;
-                }
+            EnsureAssetFolder(outputFolder);
 
-                string assetPath = CombineAssetPath(outputFolder, SanitizeFileName(id) + ".asset");
+            int created = 0, updated = 0;
+            foreach (UniqueEffectTableRow row in rows)
+            {
+                string id = row.uniqueEffectId.Trim();
+                string assetPath = CombineAssetPath(outputFolder, id + ".asset");
                 UniqueEffectSO asset = AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(assetPath);
-
                 if (asset == null)
                 {
-                    UnityEngine.Object other = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                    if (other != null)
-                    {
-                        Debug.LogError($"[UniqueEffect] '{id}' 경로에 UniqueEffectSO가 아닌 에셋이 이미 있습니다: {assetPath}");
-                        skipped++;
-                        continue;
-                    }
-
-                    asset = (UniqueEffectSO)ScriptableObject.CreateInstance(soType);
+                    asset = (UniqueEffectSO)ScriptableObject.CreateInstance(ResolveEffectType(row.effectType, id));
                     AssetDatabase.CreateAsset(asset, assetPath);
                     created++;
                 }
-                else if (asset.GetType() != soType)
-                {
-                    // 타입 변경은 GUID를 잃지 않고는 불가능하다. 사람이 판단하도록 남긴다.
-                    Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 기존 에셋과 다릅니다 " +
-                                     $"(기존 {asset.GetType().Name} -> 시트 {soType.Name}). " +
-                                     "GUID 유지를 위해 건너뜁니다. 타입을 바꾸려면 기존 에셋을 직접 삭제한 뒤 다시 실행해주세요.");
-                    skipped++;
-                    continue;
-                }
-                else
-                {
-                    updated++;
-                }
+                else updated++;
 
                 ApplyRow(asset, row);
                 EditorUtility.SetDirty(asset);
+                // SW 수정: 이 가져오기에서 바꾼 SO만 저장하고 다른 작업의 Dirty 에셋은 저장하지 않는다.
+                AssetDatabase.SaveAssetIfDirty(asset);
             }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            Debug.Log($"[UniqueEffect] SO 생성/갱신 완료. 신규 {created}개, 갱신 {updated}개, 건너뜀 {skipped}개");
+            Debug.Log($"[UniqueEffect] SO 생성/갱신 완료. 신규 {created}개, 갱신 {updated}개");
+            return true;
         }
-
         /// <summary>
         /// 공통 필드를 채운 뒤 effectType별 고유 필드를 채운다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
@@ -146,6 +121,20 @@ namespace DataSystem
 
             switch (asset)
             {
+                // SW 수정: 기존 설명 계수와 cooldown 열을 재사용하여 툴팁과 실제 피해 수치를 함께 갱신한다.
+                case ChainLightningUniqueEffectSO chain:
+                    chain.maxAdditionalTargets = (int)asset.coefficients[0];
+                    chain.jumpRadius = asset.coefficients[1];
+                    chain.firstDamageMultiplier = asset.coefficients[2] / 100f;
+                    chain.subsequentDamageMultiplier = asset.coefficients[3] / 100f;
+                    chain.cooldownSeconds = row.cooldownSeconds;
+                    break;
+                case InfernoExtraHitUniqueEffectSO inferno:
+                    inferno.damageMultiplier = asset.coefficients[0] / 100f;
+                    break;
+                case GlassRailExtraHitUniqueEffectSO glass:
+                    glass.damageMultiplier = asset.coefficients[0] / 100f;
+                    break;
                 case PassiveBuffUniqueEffectSO passive:
                     passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
                     break;
@@ -256,7 +245,7 @@ namespace DataSystem
             string name = (effectType ?? string.Empty).Trim();
             if (string.IsNullOrEmpty(name))
             {
-                Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 비어있어 건너뜁니다.");
+                Debug.LogError($"[UniqueEffect] '{id}'의 effectType이 비어있습니다.");
                 return null;
             }
 
@@ -268,11 +257,60 @@ namespace DataSystem
                 case nameof(FieldAuraUniqueEffectSO): return typeof(FieldAuraUniqueEffectSO);
                 case nameof(PeriodicLogUniqueEffectSO): return typeof(PeriodicLogUniqueEffectSO);
                 case nameof(DropRarityModifierUniqueEffectSO): return typeof(DropRarityModifierUniqueEffectSO);
+                // SW 수정: 수동 SO로만 있던 세 무기도 같은 표에서 재생성한다.
+                case nameof(ChainLightningUniqueEffectSO): return typeof(ChainLightningUniqueEffectSO);
+                case nameof(InfernoExtraHitUniqueEffectSO): return typeof(InfernoExtraHitUniqueEffectSO);
+                case nameof(GlassRailExtraHitUniqueEffectSO): return typeof(GlassRailExtraHitUniqueEffectSO);
             }
 
-            Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 건너뜁니다. " +
+            Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
                              "엑셀 ComboBox 시트의 값 중 하나여야 합니다. (새 효과 타입을 추가했다면 이 변환기에도 등록해야 함)");
             return null;
+        }
+
+        /// <summary>SW 수정: Excel과 직접 JSON 입력을 같은 기준으로 검사한다. 위치가 중요한 무기 계수는 누락·오타를 허용하지 않는다.</summary>
+        internal static bool ValidateRows(List<UniqueEffectTableRow> rows)
+        {
+            if (rows == null || rows.Count == 0)
+            {
+                Debug.LogError("[UniqueEffect] 변환할 행이 없습니다.");
+                return false;
+            }
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool valid = true;
+            foreach (UniqueEffectTableRow row in rows)
+            {
+                string id = row?.uniqueEffectId?.Trim();
+                if (string.IsNullOrEmpty(id) || id != SanitizeFileName(id) || id == "." || id == ".." || !ids.Add(id))
+                {
+                    Debug.LogError($"[UniqueEffect] 비어 있거나 중복된 ID 또는 파일명으로 쓸 수 없는 ID입니다: '{id}'");
+                    valid = false;
+                    continue;
+                }
+                Type type = ResolveEffectType(row.effectType, id);
+                if (type == null) { valid = false; continue; }
+                bool chain = type == typeof(ChainLightningUniqueEffectSO);
+                if (!chain && type != typeof(InfernoExtraHitUniqueEffectSO) && type != typeof(GlassRailExtraHitUniqueEffectSO))
+                    continue;
+                string[] parts = (row.coefficients ?? string.Empty).Split(new[] { ';', ',' }, StringSplitOptions.None);
+                var values = new float[parts.Length];
+                bool numbers = parts.Length == (chain ? 5 : 1);
+                for (int i = 0; i < parts.Length; i++)
+                    numbers &= float.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out values[i]) &&
+                        !float.IsNaN(values[i]) && !float.IsInfinity(values[i]);
+                bool ranges = numbers && (chain
+                    ? values[0] >= 1 && values[0] <= 16 && values[0] == Mathf.Floor(values[0]) && values[1] > 0 &&
+                      values[2] > 0 && values[3] >= 0 && values[3] <= 100 && values[4] >= 0 &&
+                      !float.IsNaN(row.cooldownSeconds) && !float.IsInfinity(row.cooldownSeconds) &&
+                      Mathf.Approximately(values[4], row.cooldownSeconds)
+                    : values[0] > 0);
+                if (ranges) continue;
+                Debug.LogError($"[UniqueEffect] '{id}'의 무기 계수를 확인해주세요. " +
+                    (chain ? "coefficients는 대상 수(1~16);반경;첫 피해%;이후 피해%(0~100);쿨다운 순서이며 마지막 값은 cooldownSeconds와 같아야 합니다."
+                        : "coefficients에는 양수인 추가 피해% 하나가 필요합니다."));
+                valid = false;
+            }
+            return valid;
         }
 
         private static TEnum ParseEnumOrDefault<TEnum>(string value, TEnum fallback, string id) where TEnum : struct
@@ -296,12 +334,16 @@ namespace DataSystem
                 return null;
             }
 
-            string json = File.ReadAllText(absoluteJsonPath);
-            List<UniqueEffectTableRow> rows = JsonConvert.DeserializeObject<List<UniqueEffectTableRow>>(json);
-            if (rows == null)
-                Debug.LogError("[UniqueEffect] JSON parse failed.");
-
-            return rows;
+            // SW 수정: 파싱 실패를 성공으로 넘기거나 기존 SO에 부분 반영하지 않는다.
+            try
+            {
+                return JsonConvert.DeserializeObject<List<UniqueEffectTableRow>>(File.ReadAllText(absoluteJsonPath));
+            }
+            catch (Exception exception) when (exception is JsonException || exception is IOException)
+            {
+                Debug.LogError($"[UniqueEffect] JSON을 읽지 못했습니다: {exception.Message}");
+                return null;
+            }
         }
 
         private static void EnsureAssetFolder(string assetFolder)

@@ -149,6 +149,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     }
 
     /// <summary>적 투사체의 이동 경계를 재사용하는 Gunner 기본 공격 시험판. 피해 공식은 기존 SW resolver만 사용한다.</summary>
+    /// <param name="instanceId">투사체 귀속 정책에서 장착 세대 추적이 불필요해 사용되지 않음. 호환 목적으로 유지.</param>
+    /// <param name="equipGeneration">동일. 사용되지 않음.</param>
     [Server]
     public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
         ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,

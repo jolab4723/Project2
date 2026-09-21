@@ -28,6 +28,14 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
     public bool IsExitPlaying =>
         exitSequence != null && exitSequence.IsActive();
 
+    public YJ_ChoiceButton GetChoiceButton(int index) => index >= 0 && index < buttons.Count && buttons[index] != null
+        ? buttons[index].GetComponent<YJ_ChoiceButton>() : null;
+
+    public bool CanSelect => isActiveAndEnabled && buttons.Count > 0 &&
+        !IsExitPlaying && (revealSequence == null || !revealSequence.IsActive()) && buttonsInteractable;
+
+    private bool buttonsInteractable;
+
     private void Awake()
     {
         buttons.Clear();
@@ -44,7 +52,16 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
     public void ButtonCreate(int num)
     {
         if (choiceButtonPrefab == null || num <= 0 || num > 3)
+        {
+            Log.Error("Unknown 선택 버튼 생성에 필요한 프리팹/개수가 잘못되었습니다.");
             return;
+        }
+
+        if (buttons.Count != 0 || choiceButtonPrefab.GetComponent<YJ_ChoiceButton>() == null)
+        {
+            Log.Error("Unknown 버튼이 이미 생성되었거나 프리팹에 YJ_ChoiceButton이 없습니다.");
+            return;
+        }
 
         for (int i = 0; i < num; i++)
         {
@@ -78,6 +95,7 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
     /// </summary>
     public void HideButtons()
     {
+        buttonsInteractable = false;
         StopReveal();
         Canvas.ForceUpdateCanvases();
         PinLayoutHeight();
@@ -142,6 +160,8 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
         {
             foreach (GameObject button in buttons)
                 SetButtonVisible(button, true);
+
+            buttonsInteractable = true;
 
             RestoreLayout();
             revealSequence = null;
@@ -212,6 +232,33 @@ public class YJ_ChoiceButtonBox : MonoBehaviour
         });
 
         return true;
+    }
+
+    /// <summary>선택 검증/적용 중에는 전체 버튼 입력만 잠근다. 표시 상태는 유지한다.</summary>
+    public void SetButtonsInteractable(bool interactable)
+    {
+        buttonsInteractable = interactable;
+        foreach (GameObject button in buttons)
+        {
+            if (button == null)
+                continue;
+            CanvasGroup group = GetCanvasGroup(button);
+            group.interactable = interactable;
+            group.blocksRaycasts = interactable;
+        }
+    }
+
+    /// <summary>싱글 선택 경로를 연결한다. Mirror 어댑터의 별도 버튼 바인딩은 유지한다.</summary>
+    public void BindChoices(string stageId, System.Action<string, int> onSelected)
+    {
+        if (string.IsNullOrWhiteSpace(stageId) || onSelected == null)
+        {
+            Log.Error("Unknown 선택지 이벤트 ID/콜백이 없습니다.");
+            return;
+        }
+
+        for (int i = 0; i < buttons.Count; i++)
+            buttons[i].GetComponent<YJ_ChoiceButton>().Initialize(stageId, i, onSelected);
     }
 
     private static CanvasGroup GetCanvasGroup(GameObject button)

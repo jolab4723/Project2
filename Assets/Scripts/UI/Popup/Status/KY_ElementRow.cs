@@ -16,6 +16,9 @@ public class KY_ElementRow : MonoBehaviour
     [Tooltip("인챈트 중에만 켜지는 'Enchanted' 배지.")]
     [SerializeField] private GameObject enchantedBadge;
 
+    [Tooltip("인챈트 중에만 켜지는 아이콘 뒤 빛 효과 오브젝트.")]
+    [SerializeField] private GameObject enchantedGlow;
+
     [Tooltip("인챈트 중 배경색을 얼마나 진하게 만들지. 0.5면 원색의 절반 밝기.")]
     [SerializeField, Range(0.1f, 1f)] private float enchantedDarken = 0.5f;
 
@@ -85,6 +88,9 @@ public class KY_ElementRow : MonoBehaviour
 
         if (enchantedBadge != null)
             enchantedBadge.SetActive(isEnchanted);
+
+        if (enchantedGlow != null)
+            enchantedGlow.SetActive(isEnchanted);
 
         if (elementIcon != null)
         {

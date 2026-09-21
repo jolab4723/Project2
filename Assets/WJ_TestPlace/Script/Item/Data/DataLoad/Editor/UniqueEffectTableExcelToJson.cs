@@ -55,9 +55,8 @@ namespace DataSystem
                 AssetPathToAbsolutePath(DefaultJsonFolder),
                 Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
 
-            Convert(excelAbsolutePath, jsonAbsolutePath);
-
-            return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
+            // SW 수정: 예전 JSON이 남아 있어도 이번 Excel 변환이 실패했다면 이어서 가져오지 않는다.
+            return Convert(excelAbsolutePath, jsonAbsolutePath) ? jsonAbsolutePath : null;
         }
 
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
@@ -73,12 +72,13 @@ namespace DataSystem
             return EditorUtility.OpenFilePanel("Select unique effect table", Application.dataPath, "xlsx");
         }
 
-        public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
+        /// <summary>SW 수정: 이번 변환의 실제 성공 여부를 반환하여 이전 JSON을 잘못 재사용하지 않게 한다.</summary>
+        public static bool Convert(string excelAbsolutePath, string jsonAbsolutePath)
         {
             if (!File.Exists(excelAbsolutePath))
             {
                 Debug.LogError($"[UniqueEffect] Excel file not found: {excelAbsolutePath}");
-                return;
+                return false;
             }
 
             List<UniqueEffectTableRow> rows;
@@ -94,11 +94,11 @@ namespace DataSystem
             if (rows.Count == 0)
             {
                 Debug.LogError("[UniqueEffect] 변환할 데이터 행이 없습니다. 시트 구조(1행 헤더 / 2행 타입 힌트 / 3행부터 데이터)를 확인해주세요.");
-                return;
+                return false;
             }
 
-            if (!Validate(rows))
-                return;
+            if (!Validate(rows) || !UniqueEffectTableSOImporter.ValidateRows(rows))
+                return false;
 
             string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
             string directory = Path.GetDirectoryName(jsonAbsolutePath);
@@ -109,6 +109,7 @@ namespace DataSystem
             AssetDatabase.Refresh();
 
             Debug.Log($"[UniqueEffect] JSON generated: {jsonAbsolutePath}\n고유 효과 {rows.Count}개");
+            return true;
         }
 
         /// <summary>

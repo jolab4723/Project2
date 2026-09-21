@@ -15,6 +15,10 @@ public class YJ_PlayerSpawner : MonoBehaviour
     [SerializeField] private YJ_MinimapPing minimapPing;
     public T_PlayerController SpawnedPlayer { get; private set; }
 
+    /// <summary>
+    /// 선택한 플레이어를 생성하고 HUD를 연결합니다.
+    /// SW 수정: 생성 직후 공통 PlayerContext에 기존 씬 인벤토리를 연결합니다.
+    /// </summary>
     private void Start()
     {
         DataManager dataManager = DataManager.Instance;
@@ -43,6 +47,12 @@ public class YJ_PlayerSpawner : MonoBehaviour
 
         // SpawnPoint의 자식으로 두지 않아 부모 스케일/회전의 영향을 받지 않습니다.
         SpawnedPlayer = Instantiate(prefab, transform.position, transform.rotation);
+        // SW 수정: 기존 Awake/OnEnable 초기화를 마친 뒤 싱글의 상태 참조만 연결합니다.
+        PlayerContext context = SpawnedPlayer.GetComponent<PlayerContext>();
+        if (context == null) context = SpawnedPlayer.gameObject.AddComponent<PlayerContext>();
+        if (!context.BindSinglePlayerInventory(InventoryController.Instance))
+            Log.Error("플레이어 상태 연결 실패: 같은 씬의 인벤토리와 필수 상태 컴포넌트를 확인하세요.");
+
         // Bind inactive HUDs too; they subscribe when enabled.
         if (minimapPing == null)
             minimapPing = FindFirstObjectByType<YJ_MinimapPing>(FindObjectsInactive.Include);
