@@ -138,11 +138,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &50251085156742390
@@ -1126,11 +1123,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &442362450233975540
@@ -4010,11 +4004,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uC801 \uCCB4\uB825 \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
     \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &1439784271472013529
@@ -5091,6 +5082,8 @@ GameObject:
   - component: {fileID: 8620621829281810292}
   - component: {fileID: 6655568685771399251}
   - component: {fileID: 2202475242022772369}
+  - component: {fileID: 3557434181081498256}
+  - component: {fileID: 4842330120329448833}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -5201,6 +5194,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3557434181081498256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875212929068972611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &4842330120329448833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875212929068972611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &1970915892491382390
 GameObject:
   m_ObjectHideFlags: 0
@@ -6315,11 +6344,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uD488\uC9C8\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &2286120276526421690
@@ -6334,6 +6360,8 @@ GameObject:
   - component: {fileID: 1585298926830588293}
   - component: {fileID: 3464862631571827532}
   - component: {fileID: 4047625192668902547}
+  - component: {fileID: 2984586183331205229}
+  - component: {fileID: 1435280803978770160}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -6444,6 +6472,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2984586183331205229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2286120276526421690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &1435280803978770160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2286120276526421690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &2294435256982930119
 GameObject:
   m_ObjectHideFlags: 0
@@ -6657,11 +6721,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &2403520964347551083
@@ -7000,10 +7061,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uC5B8\uC5B4 \uC124\uC815\uC744 \uBCC0\uACBD\uD569\uB2C8\uB2E4"
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &2530288467025096729
@@ -9462,10 +9520,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uD6A8\uACFC\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &3128035537661481105
@@ -9646,7 +9701,7 @@ GameObject:
   - component: {fileID: 772799312695201004}
   - component: {fileID: 7727894273157962124}
   m_Layer: 0
-  m_Name: Descriptoin
+  m_Name: Description
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9683,9 +9738,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec26535e5c1d15041b8e707e83872930, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingDescriptionPanel
-  icon: {fileID: 899462833755824951}
-  background: {fileID: 3106882559440055277}
-  nameText: {fileID: 1894050150390840479}
   descriptionText: {fileID: 6168932109510352959}
 --- !u!1 &3248263655928338394
 GameObject:
@@ -10521,10 +10573,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uC74C\uC18C\uAC70 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &3549993931228817734
@@ -10960,11 +11009,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uC18C\uBAA8\uD488 \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &3642001326013845659
@@ -11990,11 +12036,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uCC3D\uBAA8\uB4DC\uC758 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218
     \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &4091485931748340321
@@ -12481,11 +12524,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uCD5C\uB300 FPS\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &4372511535264513380
@@ -13265,10 +13305,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uC804\uCCB4\uC74C\uB7C9\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &4617473188803521816
@@ -14433,6 +14470,8 @@ GameObject:
   - component: {fileID: 5512423147332100408}
   - component: {fileID: 7861552448745276863}
   - component: {fileID: 1018173532929859762}
+  - component: {fileID: 6820261475424461136}
+  - component: {fileID: 8816470544898141799}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -14543,6 +14582,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6820261475424461136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4963993338113304836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &8816470544898141799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4963993338113304836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &4992415361564923435
 GameObject:
   m_ObjectHideFlags: 0
@@ -15145,11 +15220,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uD29C\uD1A0\uB9AC\uC5BC \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
     \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &5337270941995730769
@@ -15274,11 +15346,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uD654\uBA74\uC758 \uD574\uC0C1\uB3C4\uB97C \uBCC0\uACBD\uD560 \uC218
     \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &5362210927695544353
@@ -15293,6 +15362,8 @@ GameObject:
   - component: {fileID: 3455024980508764413}
   - component: {fileID: 1445849300276426005}
   - component: {fileID: 9139420292851291448}
+  - component: {fileID: 6823996022707363175}
+  - component: {fileID: 5057071946737652394}
   m_Layer: 0
   m_Name: Image (2)
   m_TagString: Untagged
@@ -15415,6 +15486,42 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &6823996022707363175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5362210927695544353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &5057071946737652394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5362210927695544353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &5364237085710425293
 GameObject:
   m_ObjectHideFlags: 0
@@ -16008,11 +16115,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &5734285170198617854
@@ -16102,6 +16206,8 @@ GameObject:
   - component: {fileID: 6349795501652112153}
   - component: {fileID: 6400402139128925312}
   - component: {fileID: 1322904326919950096}
+  - component: {fileID: 7560109287367102488}
+  - component: {fileID: 7256753201345809635}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -16212,6 +16318,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7560109287367102488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5825531475148375689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &7256753201345809635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5825531475148375689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &5837704096125765495
 GameObject:
   m_ObjectHideFlags: 0
@@ -16483,6 +16625,8 @@ GameObject:
   - component: {fileID: 3982405452502028188}
   - component: {fileID: 797128280608374788}
   - component: {fileID: 5015491480072188073}
+  - component: {fileID: 7729066162810707972}
+  - component: {fileID: 7018181191892524214}
   m_Layer: 0
   m_Name: Image (1)
   m_TagString: Untagged
@@ -16605,6 +16749,42 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &7729066162810707972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5948516896536418067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &7018181191892524214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5948516896536418067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &6008785480783616133
 GameObject:
   m_ObjectHideFlags: 0
@@ -18670,10 +18850,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uBC30\uACBD\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &6714797002049598611
@@ -19067,6 +19244,8 @@ GameObject:
   - component: {fileID: 583618617767363549}
   - component: {fileID: 6788613543713991686}
   - component: {fileID: 8859139320094751461}
+  - component: {fileID: 1178038991330519840}
+  - component: {fileID: 350808333850392277}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -19189,6 +19368,42 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &1178038991330519840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6852095960730950913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &350808333850392277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6852095960730950913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &6906182126098122693
 GameObject:
   m_ObjectHideFlags: 0
@@ -19236,10 +19451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uBC1D\uAE30\uB97C \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &6933599193756140220
@@ -19931,11 +20143,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784\uC758 \uD68C\uD53C \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &7461049215967163970
@@ -19948,7 +20157,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7075755008250488007}
   m_Layer: 5
-  m_Name: RebindingPannel
+  m_Name: RebindingPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20429,6 +20638,8 @@ GameObject:
   - component: {fileID: 6218629020785793561}
   - component: {fileID: 18447388693977258}
   - component: {fileID: 6683661674638583026}
+  - component: {fileID: 8268329953098769798}
+  - component: {fileID: 7912964109376461695}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -20539,6 +20750,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8268329953098769798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7530783243412601726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &7912964109376461695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7530783243412601726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &7604721037343449813
 GameObject:
   m_ObjectHideFlags: 0
@@ -22499,7 +22746,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2371064938494564579}
   m_Layer: 0
-  m_Name: OptionPannel
+  m_Name: OptionPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22643,11 +22890,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uAC8C\uC784 \uC911 \uD654\uBA74 \uD754\uB4E4\uB9BC \uC5EC\uBD80\uC5D0
     \uB300\uD574 \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &8204694618406554790
@@ -23041,6 +23285,8 @@ GameObject:
   - component: {fileID: 7983107474994473793}
   - component: {fileID: 7307516626765422897}
   - component: {fileID: 1979430960672959605}
+  - component: {fileID: 728291103352577197}
+  - component: {fileID: 8391686327252916857}
   m_Layer: 0
   m_Name: Image
   m_TagString: Untagged
@@ -23151,6 +23397,42 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &728291103352577197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8289011630461689158}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &8391686327252916857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8289011630461689158}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &8335668245264281962
 GameObject:
   m_ObjectHideFlags: 0
@@ -24901,11 +25183,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  settingName: 
   description: "\uB370\uBBF8\uC9C0 \uD45C\uC2DC\uC5D0 \uC5EC\uBD80\uB97C \uC124\uC815\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  icon: {fileID: 0}
-  background: {fileID: 0}
   descriptionKey: 
   labelDatabase: {fileID: 0}
 --- !u!1 &8765063554082939415

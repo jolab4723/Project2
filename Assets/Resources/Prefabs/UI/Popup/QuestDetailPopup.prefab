@@ -3972,6 +3972,8 @@ GameObject:
   - component: {fileID: 4392334271011696121}
   - component: {fileID: 6746555234490826536}
   - component: {fileID: 2929790531489060606}
+  - component: {fileID: 3535123228973553514}
+  - component: {fileID: 7722118499389836060}
   m_Layer: 5
   m_Name: Close_Button
   m_TagString: Untagged
@@ -4138,6 +4140,42 @@ MonoBehaviour:
     originalColor: {r: 0, g: 0, b: 0, a: 0}
   hoverDuration: 0.15
   clickDuration: 0.1
+  button: {fileID: 0}
+--- !u!114 &3535123228973553514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7814523231544949097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
+--- !u!114 &7722118499389836060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7814523231544949097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
   button: {fileID: 0}
 --- !u!1 &7946543972754264415
 GameObject:
