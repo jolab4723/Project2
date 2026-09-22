@@ -27,6 +27,36 @@
       },
       "hash": "2fcc17957823f2494b7b1f7ade92c0fb56f4adb1"
     },
+    "com.google.external-dependency-manager": {
+      "version": "file:../GooglePackages/com.google.external-dependency-manager-1.2.189.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {}
+    },
+    "com.google.firebase.app": {
+      "version": "file:../GooglePackages/com.google.firebase.app-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.186"
+      }
+    },
+    "com.google.firebase.auth": {
+      "version": "file:../GooglePackages/com.google.firebase.auth-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.17.0"
+      }
+    },
+    "com.google.firebase.firestore": {
+      "version": "file:../GooglePackages/com.google.firebase.firestore-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.17.0"
+      }
+    },
     "com.projectdawn.navigation": {
       "version": "file:com.projectdawn.navigation",
       "depth": 0,

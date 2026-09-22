@@ -4,8 +4,8 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Core;
 
 /// <summary>전달받은 원정 결과를 표시하고 결과 행·보상·다음 행동의 진입 연출을 재생한다.</summary>
 public sealed class KY_ResultScreen : MonoBehaviour
@@ -24,6 +24,9 @@ public sealed class KY_ResultScreen : MonoBehaviour
     [SerializeField] private Image titleLogo;
     [SerializeField] private Sprite clearLogo;
     [SerializeField] private Sprite gameOverLogo;
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite clearBackground;
+    [SerializeField] private Sprite gameOverBackground;
 
     [Header("결과 수치 진입 연출")]
     [SerializeField] private CanvasGroup[] scoreRows;
@@ -128,6 +131,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         if (titleText) titleText.gameObject.SetActive(logo == null);
         SetText(titleText, data.cleared ? "GAME CLEAR" : "GAME OVER");
+        if (backgroundImage) backgroundImage.sprite = data.cleared ? clearBackground : gameOverBackground;
         SetText(subtitleText, data.cleared ? "모든 스테이지를 클리어했습니다!" : "이번 원정이 종료되었습니다.");
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
@@ -282,7 +286,15 @@ public sealed class KY_ResultScreen : MonoBehaviour
         }
         else if (!string.IsNullOrWhiteSpace(fallbackSceneName))
         {
-            SceneManager.LoadScene(fallbackSceneName);
+            SceneLoader loader = SceneLoader.Instance;
+            if (loader != null && !loader.IsLoading)
+            {
+                loader.LoadScene(fallbackSceneName);
+                // LoadingScene 전환이 시작되면 현재 결과 씬의 와이프는 유지한다.
+                yield break;
+            }
+
+            Debug.LogError("[KY_ResultScreen] SceneLoader가 없어 결과 화면의 씬 전환을 시작할 수 없습니다.", this);
         }
 
         // 이동 요청이 처리되지 않아도 검은 화면에 남지 않는다.

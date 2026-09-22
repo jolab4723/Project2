@@ -5531,6 +5531,7 @@ MonoBehaviour:
   firePoint: {fileID: 5945891765140044628}
   grenadePoint: {fileID: 287411858876415683}
   enemyAnimation: {fileID: 0}
+  isShowSkillRange: 0
 --- !u!114 &3087450008224212433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5622,6 +5623,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
   circleIndicator: {fileID: 11400000, guid: 1048d6390086dbf439e648b750cbddb8, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
+  cone60Indicator: {fileID: 0}
+  cone150Indicator: {fileID: 0}
+  cone180Indicator: {fileID: 0}
 --- !u!114 &5297122012163549294
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6103,4 +6107,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
   sfxPlayer: {fileID: 0}
-  effectBindings: []
+  effectBindings:
+  - cue: 55000
+    data: {fileID: 11400000, guid: 48698b60a1f6b894ca050a5150667919, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55001
+    data: {fileID: 11400000, guid: d49283a18a7c98b4ab81b1440588588b, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55002
+    data: {fileID: 11400000, guid: f1b1d08830c9d8f42be71918f1b5a08c, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55003
+    data: {fileID: 11400000, guid: e8458451b668ccb469f606297a2d165f, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55004
+    data: {fileID: 11400000, guid: 11326cbab968e914bbdb3f34fce2b032, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55005
+    data: {fileID: 11400000, guid: 0c09652d50ef03a44a3e395c7ba661b7, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55006
+    data: {fileID: 11400000, guid: 6f0c8931b1e4d9b48a1a444209fbeffc, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55007
+    data: {fileID: 11400000, guid: 3817a3e2897e8a446aaba6da296faa25, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55007
+    data: {fileID: 11400000, guid: 3817a3e2897e8a446aaba6da296faa25, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55007
+    data: {fileID: 11400000, guid: 3817a3e2897e8a446aaba6da296faa25, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55007
+    data: {fileID: 11400000, guid: 3817a3e2897e8a446aaba6da296faa25, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []

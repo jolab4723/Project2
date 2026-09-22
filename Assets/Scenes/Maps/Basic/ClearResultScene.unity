@@ -1315,6 +1315,7 @@ GameObject:
   - component: {fileID: 732440319}
   - component: {fileID: 732440318}
   - component: {fileID: 732440322}
+  - component: {fileID: 732440323}
   m_Layer: 0
   m_Name: TitleButton
   m_TagString: Untagged
@@ -1341,7 +1342,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.45, g: 1, b: 1, a: 1}
@@ -1437,6 +1438,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &732440323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732440317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &738148395
 GameObject:
   m_ObjectHideFlags: 0
@@ -1450,6 +1469,7 @@ GameObject:
   - component: {fileID: 738148397}
   - component: {fileID: 738148396}
   - component: {fileID: 738148400}
+  - component: {fileID: 738148401}
   m_Layer: 0
   m_Name: RetryButton
   m_TagString: Untagged
@@ -1476,7 +1496,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.45, g: 1, b: 1, a: 1}
@@ -1572,6 +1592,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &738148401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 738148395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &787174279
 GameObject:
   m_ObjectHideFlags: 0
@@ -4974,6 +5012,9 @@ MonoBehaviour:
   titleLogo: {fileID: 860139676}
   clearLogo: {fileID: 21300000, guid: 47fbc9948417a24439cfb638ce7cc852, type: 3}
   gameOverLogo: {fileID: 21300000, guid: da740cc9124878544ada3b007facbe8d, type: 3}
+  backgroundImage: {fileID: 155018650}
+  clearBackground: {fileID: 21300000, guid: 95f58b83f79b67147a9c4f86eae3a316, type: 3}
+  gameOverBackground: {fileID: 21300000, guid: 2844c1fa60c2eee4183e6f76b115b61e, type: 3}
   scoreRows:
   - {fileID: 1051888733}
   - {fileID: 1411316796}

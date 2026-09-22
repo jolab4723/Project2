@@ -1,4 +1,3 @@
-using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,11 +22,9 @@ public class KY_RestPopup : KY_PopupBase
     [SerializeField] private TMP_Text potionRecoveryText;
     [SerializeField] private TMP_Text costText;
 
-    [Header("완료 알림(팝업이 닫히며 나오는 것이기에 팝업 외부에서 연결)")]
-    [Tooltip("팝업 바깥에서 완료 문구와 배경을 함께 표시할 패널")]
-    [SerializeField] private GameObject completionMessagePanel;
-    [SerializeField] private TMP_Text completionMessageText;
-    [Min(0f)] [SerializeField] private float completionMessageDuration = 1f;
+    [Header("공용 화면 알림")]
+    [Tooltip("팝업 바깥의 ScreenNotice. 휴식 외 안내도 같은 오브젝트를 재사용한다.")]
+    [SerializeField] private KY_ScreenNotice screenNotice;
 
     [Header("버튼")]
     [SerializeField] private Button confirmButton;
@@ -43,19 +40,12 @@ public class KY_RestPopup : KY_PopupBase
     private int potionAmount;
     private int cost;
     private int currentCredits;
-    private Tween completionMessageTween;
     private KY_ButtonShakeEffect confirmButtonShakeEffect;
-
-    /// <summary>완료 알림 패널의 커튼 연출. 이걸 열어주지 않으면 패널을 켜도 세로로 접힌 채(스케일 0) 안 보인다.</summary>
-    private KY_CurtainEffect completionCurtain;
 
     private void Awake()
     {
         if (uiLabels == null)
             uiLabels = Resources.Load<UILabelDatabaseSO>(UiLabelResourcePath);
-
-        if (completionMessagePanel != null)
-            completionCurtain = completionMessagePanel.GetComponent<KY_CurtainEffect>();
 
         if (confirmButton != null)
         {
@@ -71,13 +61,10 @@ public class KY_RestPopup : KY_PopupBase
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
 
-        HideCompletionMessage();
     }
 
     private void OnDestroy()
     {
-        completionMessageTween?.Kill();
-
         if (confirmButton != null)
             confirmButton.onClick.RemoveListener(HandleConfirmClicked);
 
@@ -110,7 +97,6 @@ public class KY_RestPopup : KY_PopupBase
     {
         base.Open();
         GetComponentInChildren<KY_CurtainEffect>(true)?.Open();
-        HideCompletionMessage();
         RefreshView();
     }
 
@@ -196,17 +182,7 @@ public class KY_RestPopup : KY_PopupBase
 
     private void ShowMessage(string message)
     {
-        if (completionMessageText != null)
-            completionMessageText.text = message;
-
-        if (completionMessagePanel == null)
-            return;
-
-        completionMessagePanel.SetActive(true);
-        completionCurtain?.Open();
-
-        completionMessageTween?.Kill();
-        completionMessageTween = DOVirtual.DelayedCall(completionMessageDuration, HideCompletionMessage, true);
+        screenNotice?.Show(message);
     }
 
     private void HandleCancelClicked()
@@ -214,24 +190,4 @@ public class KY_RestPopup : KY_PopupBase
         CloseThroughManager();
     }
 
-    private void HideCompletionMessage()
-    {
-        completionMessageTween?.Kill();
-        completionMessageTween = null;
-
-        if (completionMessagePanel == null)
-            return;
-
-        if (!completionMessagePanel.activeSelf || completionCurtain == null)
-        {
-            completionMessagePanel.SetActive(false);
-            return;
-        }
-
-        completionCurtain.Close().OnComplete(() =>
-        {
-            if (completionMessagePanel != null)
-                completionMessagePanel.SetActive(false);
-        });
-    }
 }

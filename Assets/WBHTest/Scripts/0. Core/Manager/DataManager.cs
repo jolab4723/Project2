@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using ItemSystem;
 
@@ -19,7 +20,14 @@ namespace Core
         private const string OptionsSaveFileName = "options.json";
 
         private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
+        private const string SinglePlayerProfileOwnerFileName = "profile_singleplayer_owner.json";
         private const int MultiplayerSlotCount = 3;
+
+        [System.Serializable]
+        private sealed class SinglePlayerProfileOwnerData
+        {
+            public string firebaseUserId;
+        }
 
         private static string MultiplayerSlotFileName(int slotIndex) => "profile_multiplayer_" + slotIndex + ".json";
 
@@ -54,11 +62,223 @@ namespace Core
 
             data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
             WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
+            QueueProfileSave(data.profile);
         }
 
         public SinglePlayerSlotData LoadSinglePlayerSlot()
         {
             return ReadJson<SinglePlayerSlotData>(GetSavePath(SinglePlayerSlotFileName));
+        }
+
+        /// <summary>
+        /// 로그인한 사용자의 Firestore 프로필과 기존 로컬 프로필을 비교해 더 최근 데이터를 양쪽에 반영합니다.
+        /// </summary>
+        public static async Task<SaveDataOperationResult> SynchronizeSinglePlayerProfileWithFirebaseAsync()
+        {
+            string firebaseUserId = FirebaseService.Default.CurrentUserId;
+            if (string.IsNullOrWhiteSpace(firebaseUserId))
+            {
+                return SaveDataOperationResult.Failure(
+                    SaveDataFailureReason.AuthenticationRequired,
+                    "로그인한 Firebase 사용자가 없습니다.");
+            }
+
+            string localPath = GetSavePath(SinglePlayerSlotFileName);
+            string ownerPath = GetSavePath(SinglePlayerProfileOwnerFileName);
+            SinglePlayerSlotData localSlot;
+            SinglePlayerProfileOwnerData ownerData;
+            try
+            {
+                ownerData = ReadJson<SinglePlayerProfileOwnerData>(ownerPath);
+                bool belongsToAnotherUser =
+                    !string.IsNullOrWhiteSpace(ownerData?.firebaseUserId) &&
+                    ownerData.firebaseUserId != firebaseUserId;
+                localSlot = belongsToAnotherUser
+                    ? null
+                    : ReadJson<SinglePlayerSlotData>(localPath);
+            }
+            catch (System.Exception exception)
+            {
+                return SaveDataOperationResult.Failure(
+                    SaveDataFailureReason.SerializationFailed,
+                    $"로컬 프로필을 읽지 못했습니다: {exception.Message}");
+            }
+
+            SaveDataReadResult cloudResult = await SaveDataService.Default.LoadAsync(
+                SaveDataCategory.PlayerProfile);
+            if (cloudResult.IsSuccess)
+            {
+                PlayerProfileData cloudProfile;
+                try
+                {
+                    cloudProfile = JsonUtility.FromJson<PlayerProfileData>(
+                        cloudResult.Envelope.payloadJson);
+                }
+                catch (System.Exception exception)
+                {
+                    return SaveDataOperationResult.Failure(
+                        SaveDataFailureReason.SerializationFailed,
+                        $"Firestore 프로필을 변환하지 못했습니다: {exception.Message}");
+                }
+
+                if (cloudProfile == null)
+                {
+                    return SaveDataOperationResult.Failure(
+                        SaveDataFailureReason.SerializationFailed,
+                        "Firestore 프로필의 내용이 비어 있습니다.");
+                }
+
+                if (localSlot?.profile != null &&
+                    IsProfileNewer(localSlot.profile, cloudProfile))
+                {
+                    SaveDataOperationResult uploadResult =
+                        await SaveProfilePayloadAsync(localSlot.profile);
+                    if (uploadResult.IsSuccess)
+                    {
+                        WriteSinglePlayerProfileOwner(ownerPath, firebaseUserId);
+                    }
+
+                    return uploadResult;
+                }
+
+                try
+                {
+                    localSlot ??= new SinglePlayerSlotData();
+                    localSlot.profile = cloudProfile;
+                    WriteJson(localPath, localSlot);
+                    WriteSinglePlayerProfileOwner(ownerPath, firebaseUserId);
+                }
+                catch (System.Exception exception)
+                {
+                    return SaveDataOperationResult.Failure(
+                        SaveDataFailureReason.FileAccessFailed,
+                        $"Firebase 프로필을 로컬에 반영하지 못했습니다: {exception.Message}");
+                }
+
+                return SaveDataOperationResult.Success(
+                    cloudResult.IsCloudSynchronized,
+                    cloudResult.Message);
+            }
+
+            if (localSlot?.profile == null &&
+                cloudResult.FailureReason == SaveDataFailureReason.NotFound)
+            {
+                localSlot = new SinglePlayerSlotData
+                {
+                    profile = new PlayerProfileData
+                    {
+                        playerId = GenerateNewPlayerId(),
+                        lastPlayedUtc = System.DateTime.UtcNow.ToString("O")
+                    }
+                };
+
+                try
+                {
+                    WriteJson(localPath, localSlot);
+                }
+                catch (System.Exception exception)
+                {
+                    return SaveDataOperationResult.Failure(
+                        SaveDataFailureReason.FileAccessFailed,
+                        $"새 로컬 프로필을 만들지 못했습니다: {exception.Message}");
+                }
+            }
+
+            if (localSlot?.profile != null &&
+                (cloudResult.FailureReason == SaveDataFailureReason.NotFound ||
+                cloudResult.FailureReason == SaveDataFailureReason.CloudAccessFailed)
+               )
+            {
+                SaveDataOperationResult uploadResult =
+                    await SaveProfilePayloadAsync(localSlot.profile);
+                if (uploadResult.IsSuccess)
+                {
+                    WriteSinglePlayerProfileOwner(ownerPath, firebaseUserId);
+                }
+
+                return uploadResult;
+            }
+
+            return cloudResult;
+        }
+
+        /// <summary>현재 싱글플레이 작업 파일을 소유한 Firebase 사용자 ID를 기록합니다.</summary>
+        private static void WriteSinglePlayerProfileOwner(
+            string ownerPath,
+            string firebaseUserId)
+        {
+            WriteJson(
+                ownerPath,
+                new SinglePlayerProfileOwnerData
+                {
+                    firebaseUserId = firebaseUserId
+                });
+        }
+
+        /// <summary>
+        /// 기존 동기식 로컬 저장을 유지하면서 프로필을 Firestore에 비동기로 저장하도록 요청합니다.
+        /// </summary>
+        private static void QueueProfileSave(PlayerProfileData profile)
+        {
+            if (profile == null || !FirebaseService.Default.IsSignedIn)
+                return;
+
+            _ = SaveProfileToFirebaseAsync(profile);
+        }
+
+        /// <summary>
+        /// 프로필의 Firestore 저장 결과를 확인하고 로컬 저장 성공과 구분해 로그로 남깁니다.
+        /// </summary>
+        private static async Task SaveProfileToFirebaseAsync(PlayerProfileData profile)
+        {
+            SaveDataOperationResult result = await SaveProfilePayloadAsync(profile);
+            if (!result.IsSuccess)
+            {
+                Debug.LogWarning($"[DataManager] Firebase 프로필 저장 보류: {result.Message}");
+            }
+            else if (!result.IsCloudSynchronized)
+            {
+                Debug.LogWarning($"[DataManager] {result.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 기존 프로필 DTO를 JSON으로 변환해 공통 Firebase 저장 서비스에 전달합니다.
+        /// </summary>
+        private static Task<SaveDataOperationResult> SaveProfilePayloadAsync(
+            PlayerProfileData profile)
+        {
+            return SaveDataService.Default.SaveAsync(
+                SaveDataCategory.PlayerProfile,
+                JsonUtility.ToJson(profile, true));
+        }
+
+        /// <summary>
+        /// 두 프로필의 마지막 플레이 UTC 시각을 비교해 로컬 프로필이 더 최근인지 확인합니다.
+        /// </summary>
+        private static bool IsProfileNewer(
+            PlayerProfileData localProfile,
+            PlayerProfileData cloudProfile)
+        {
+            if (!System.DateTime.TryParse(
+                    localProfile?.lastPlayedUtc,
+                    null,
+                    System.Globalization.DateTimeStyles.RoundtripKind,
+                    out System.DateTime localTime))
+            {
+                return false;
+            }
+
+            if (!System.DateTime.TryParse(
+                    cloudProfile?.lastPlayedUtc,
+                    null,
+                    System.Globalization.DateTimeStyles.RoundtripKind,
+                    out System.DateTime cloudTime))
+            {
+                return true;
+            }
+
+            return localTime.ToUniversalTime() > cloudTime.ToUniversalTime();
         }
 
         /// <summary>slotIndex: 0~2 (멀티플레이 슬롯 3개 중 하나). 호스트가 참가자 전원의 데이터를 이 한 번의 호출로 저장한다.</summary>
