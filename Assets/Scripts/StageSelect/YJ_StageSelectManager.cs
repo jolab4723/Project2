@@ -371,6 +371,8 @@ public class YJ_StageSelectManager : MonoBehaviour
 
         saveData.usedStageSceneNames.AddRange(usedStageSceneNames);
         saveData.usedStageSceneNames.Sort(StringComparer.Ordinal);
+        CollectConfiguredCombatSceneNames(currentAct, true, saveData.unknownCombatSceneNames);
+        saveData.unknownCampSceneName = GetStageSceneList(currentAct)?.CampSceneName;
 
         foreach (List<YJ_StageNodeData> floorNodes in generatedFloors)
         {

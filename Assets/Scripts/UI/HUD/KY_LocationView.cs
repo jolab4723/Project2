@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using TMPro;
 
+/// <summary>현재 Act·층·캠프·보스 위치를 HUD 텍스트로 표시한다.</summary>
 public class KY_LocationView : MonoBehaviour
 {
     [FormerlySerializedAs("chapterText")]

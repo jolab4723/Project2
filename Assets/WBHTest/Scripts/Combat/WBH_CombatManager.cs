@@ -82,7 +82,25 @@ public class WBH_CombatManager
 
     private static float CalculateBaseDamage(WBH_ICombatStatus attackerStat, WBH_DamageRequest request)
     {
-        return attackerStat.AttackPower * request.DamageMultiplier;
+        return attackerStat.AttackPower * request.DamageMultiplier * GetAttackTypeModifier(attackerStat, request.AttackType);
+    }
+
+    /// <summary>
+    /// 공격 유형별 "가하는 피해" 배율. 일반공격과 스킬을 구분해서 올리는 스탯을 위한 것이다
+    /// (attackPowerPercent는 둘 다 올리므로 구분이 안 된다).
+    ///
+    /// !! 방어력 차감 '전'에 곱한다. 방어력은 곱이 아니라 뺄셈이라, 차감 후에 곱하면 같은 +30%라도
+    ///    고방어 적에게 체감이 확 줄어든다. 기존 attackPowerPercent가 AttackPower에 녹아 차감 전에
+    ///    적용되므로, 플레이어가 두 스탯을 같은 감각으로 비교하려면 여기도 차감 전이어야 한다.
+    /// </summary>
+    private static float GetAttackTypeModifier(WBH_ICombatStatus attackerStat, WBH_AttackType attackType)
+    {
+        return attackType switch
+        {
+            WBH_AttackType.Normal => attackerStat.NormalDamageModifier,
+            WBH_AttackType.Skill => attackerStat.SkillDamageModifier,
+            _ => 1f,
+        };
     }
 
     private static float CalculateElementDamage(float damage, WBH_ICombatStatus attackerStat, ElementType elementType)

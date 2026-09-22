@@ -27,6 +27,8 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         }
 
         Instance = this;
+        // Start 씬의 Managers 아래에 배치되어도 이 오브젝트만 씬 전환 후 유지한다.
+        transform.SetParent(null, true);
         DontDestroyOnLoad(gameObject);
     }
 
@@ -134,6 +136,7 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
 }
 
 [System.Serializable]
+/// <summary>한 번의 원정에서 수집한 결과 화면 표시용 수치다.</summary>
 public sealed class KY_RunStats
 {
     public string stageName;

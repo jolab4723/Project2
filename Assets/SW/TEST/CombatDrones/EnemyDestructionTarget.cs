@@ -27,6 +27,8 @@ public sealed class EnemyDestructionTarget : MonoBehaviour,
     public float IceBonus => 0f;
     public float ElectricBonus => 0f;
     public float DamageTakenModifier => 1f; // WBH_ICombatStatus에 추가된 항목 - 인터페이스 구현을 위한 단순 추가(118번)
+    public float NormalDamageModifier => 1f; // 파괴 연출용 더미라 공격하지 않는다 - 인터페이스 구현만 채움
+    public float SkillDamageModifier => 1f;
     public bool IsDead => true; // 0729 WBH 추가. 인터페이스 구현을 위한 단순 추가
 
     public void Configure(

@@ -197,6 +197,9 @@ public class TrainingDummyStatus : MonoBehaviour, WBH_ICombat, WBH_ICombatStatus
     public float ElectricBonus => 0f;
     /// <summary>허수아비는 Marked(받는 데미지 증가) 디버프를 반영하지 않아서 항상 1(영향 없음).</summary>
     public float DamageTakenModifier => 1f;
+    // 허수아비는 공격하지 않는다. 인터페이스 구현만 채운다.
+    public float NormalDamageModifier => 1f;
+    public float SkillDamageModifier => 1f;
 
     /// <summary>허수아비는 죽지 않고 체력만 초기화되므로 항상 false.</summary>
     public bool IsDead => false;

@@ -48,7 +48,11 @@ namespace ItemSystem
                 : $"{name} <nobr>({stacks})</nobr>";
         }
 
-        private static string BuildBaseName(IBuffSource source)
+        /// <summary>
+        /// 스택 표기를 뺀 순수한 버프 이름(현재 언어). 스택을 별도 텍스트로 따로 표시하는 화면
+        /// (버프 팝업 슬롯 등)은 BuildName 대신 이걸 써야 스택이 두 번 나오지 않는다.
+        /// </summary>
+        public static string BuildBaseName(IBuffSource source)
         {
             if (source == null)
                 return string.Empty;

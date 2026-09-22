@@ -30,6 +30,10 @@ public class PlayerStat
     public float maxMana;
     public float pen;
     public float skillRange;
+    /// <summary>일반공격 피해 증감 %(0이면 영향 없음). 기준값이 없어 레이어 %를 그대로 더한다.</summary>
+    public float normalDamagePercent;
+    /// <summary>스킬 피해 증감 %(0이면 영향 없음). 기준값이 없어 레이어 %를 그대로 더한다.</summary>
+    public float skillDamagePercent;
     public float fireBonus;
     public float iceBonus;
     public float electricBonus;
@@ -111,6 +115,12 @@ public class PlayerStat
         skillRange = Mathf.Max(0f, CalcFinal(
             character.skillRangeFlat, equipment.skillRangeFlat, equipment.skillRangePercent,
             buff.skillRangePercent, buff.skillRangeFlat, passive.skillRangePercent, passive.skillRangeFlat));
+
+        // 피해 증감 %는 CalcFinal을 쓰지 않는다. CalcFinal은 "캐릭터 기본값에 장비/버프 %를 곱하는"
+        // 3단 공식인데, 이 둘은 기준이 되는 기본값 자체가 없는 순수 증감이라 레이어 %를 그대로 더한다.
+        // (캐릭터 레이어는 Flat만 채우므로 대상이 아니다 - ToCharacterStatSet 참고)
+        normalDamagePercent = equipment.normalDamagePercent + buff.normalDamagePercent + passive.normalDamagePercent;
+        skillDamagePercent = equipment.skillDamagePercent + buff.skillDamagePercent + passive.skillDamagePercent;
 
         fireBonus = Mathf.Max(0f, CalcFinal(
             character.fireBonusFlat, equipment.fireBonusFlat, equipment.fireBonusPercent,

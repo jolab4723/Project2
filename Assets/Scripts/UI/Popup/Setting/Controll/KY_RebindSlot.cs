@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.UI;
 
+/// <summary>하나의 입력 액션을 표시하고 설정 팝업에 키 재지정을 요청한다.</summary>
 public class KY_RebindSlot : MonoBehaviour
 {
     public string actionName;

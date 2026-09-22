@@ -99,7 +99,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
         if (missileTimer <= 0f)
         {
             Vector3[] impactPoints = CreateMissilePoints();
-            if(owner.Combat.TryMissile(impactPoints, missileExplsionRadius,missileWarningDuration, missileRecoveryDuration, owner.IndicatorSpawner))
+            if(owner.Combat.TryMissile(impactPoints, missileExplsionRadius,missileWarningDuration, missileRecoveryDuration, owner.IndicatorSpawner, WBH_EnemyEffectCue.Boss_Act1_MissileExplosion))
             {
                 owner.enemyAnimation.PlaySkill(4);
                 missileTimer = missileCooldown;
@@ -165,7 +165,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
         Vector3[] impactPoints = CreatePhaseMissilePoints();
 
-        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, FormChange);
+        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, WBH_EnemyEffectCue.Boss_Act1_MissileExplosion ,FormChange);
         owner.enemyAnimation.PlaySkill(5);
 
         if(!started) // 특이 오류로 페이즈 전환 실패 시 재시도.
