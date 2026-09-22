@@ -1414,5 +1414,29 @@
     "intervalSeconds": 0.0,
     "message": "",
     "note": "P6-A: 충돌 위치 고정 둔화 장판. 무기 교체 후에도 유지하고 소유자 사망·장면 변경·지속시간 종료 시 제거."
+  },
+  {
+    "uniqueEffectId": "UE_SingularityDelayedExplosion",
+    "effectType": "SingularityDelayedExplosionUniqueEffectSO",
+    "effectName": "지연 특이점",
+    "effectDescription": "유탄이 충돌한 자리에 특이점을 예약해 {0}초 후 반경 {1}m 적에게 공격력의 {2}% 피해를 줍니다. 최대 {3}개까지 유지됩니다.",
+    "coefficients": "2;4;100;3",
+    "statEffects": "",
+    "duration": 0.0,
+    "stackBehavior": "",
+    "maxStack": 0,
+    "displayKind": "Damage",
+    "triggerCondition": "",
+    "cooldownSeconds": 0.0,
+    "duplicatePolicy": "",
+    "persistStackOnItem": false,
+    "referenceStat": "",
+    "comparisonOperator": "",
+    "thresholdValue": 0.0,
+    "radius": 0.0,
+    "targetEnemies": false,
+    "intervalSeconds": 0.0,
+    "message": "",
+    "note": "P6-B: 충돌 위치 고정 지연 폭발. 무기 교체에는 유지하고 소유자 사망·씬 전환·상한 초과 시 취소."
   }
 ]

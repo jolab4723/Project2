@@ -31,6 +31,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     public static uint ClientPlayerObservedCount { get; private set; }
 
     private static readonly Dictionary<uint, List<NetworkEnemyProjectile_MirrorTest>> GravityWellFieldsByOwner = new();
+    // SW 수정: 별도 Manager 없이 현재 네트워크 투사체만으로 소유자별 지연 폭발 상한을 관리합니다.
+    private static readonly Dictionary<uint, List<NetworkEnemyProjectile_MirrorTest>> SingularityExplosionsByOwner = new();
 
     [SerializeField, Min(0.01f)] private float collisionRadius = 0.2f;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
@@ -44,6 +46,11 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     [SyncVar] private Color gravityWellColor;
     // SW 수정: 반경과 색을 먼저 역직렬화한 뒤 활성 Hook이 링을 만들도록 선언 순서를 유지합니다.
     [SyncVar(hook = nameof(OnGravityWellActiveChanged))] private bool gravityWellActive;
+    [SyncVar] private float singularityExplosionRadius;
+    [SyncVar] private Color singularityWarningColor;
+    [SyncVar] private double singularityDetonatesAt;
+    // SW 수정: 반경·색·기폭 시각을 먼저 복제한 뒤 활성 Hook이 경고 링을 만들도록 선언 순서를 유지합니다.
+    [SyncVar(hook = nameof(OnSingularityActiveChanged))] private bool singularityActive;
 
     private NetworkEnemyAuthority_MirrorTest owner;
     private Vector3 direction;
@@ -75,6 +82,9 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private float gravityWellSlowRefreshSeconds;
     private GameObject gravityWellVisual;
     private readonly HashSet<NetworkEnemyAuthority_MirrorTest> gravityWellTargets = new();
+    private float singularityDamageMultiplier;
+    private GameObject singularityVisual;
+    private readonly HashSet<NetworkEnemyAuthority_MirrorTest> singularityTargets = new();
 
     public bool IsMissile => missile;
     public bool IsPlayerShot => playerShot;
@@ -82,7 +92,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private bool IsPlayerShotAvailable => playerOwner != null && playerOwner.CombatAuthority?.CanContinueGunnerProjectile == true &&
         SceneManager.GetActiveScene().handle == shotSceneHandle && NetworkTime.time < shotExpiresAt;
 
-    /// <summary>SW 수정: Play Mode를 새로 시작할 때 중력 우물 포함 투사체 진단값과 활성 목록을 초기화합니다.</summary>
+    /// <summary>SW 수정: Play Mode를 새로 시작할 때 장판·지연 폭발 포함 투사체 진단값과 활성 목록을 초기화합니다.</summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
     {
@@ -94,6 +104,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         ServerPlayerSpawnCount = 0;
         ClientPlayerObservedCount = 0;
         GravityWellFieldsByOwner.Clear();
+        SingularityExplosionsByOwner.Clear();
     }
 
     private void Awake()
@@ -102,7 +113,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         projectileCollider.isTrigger = true;
     }
 
-    /// <summary>SW 수정: 클라이언트가 투사체 또는 이미 활성화된 중력 우물을 처음 관찰할 때 외형을 연결합니다.</summary>
+    /// <summary>SW 수정: 클라이언트가 투사체 또는 이미 활성화된 장판·지연 폭발을 처음 관찰할 때 외형을 연결합니다.</summary>
     public override void OnStartClient()
     {
         base.OnStartClient();
@@ -119,6 +130,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             projectileCollider.enabled = false;
         if (gravityWellActive)
             ShowGravityWellVisual();
+        if (singularityActive)
+            ShowSingularityVisual();
     }
 
     public override void OnStartServer()
@@ -130,10 +143,11 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             ServerMissileSpawnCount++;
     }
 
-    /// <summary>SW 수정: 서버가 중력 우물 네트워크 객체를 제거할 때 소유자별 활성 목록도 함께 정리합니다.</summary>
+    /// <summary>SW 수정: 서버가 장판·지연 폭발 네트워크 객체를 제거할 때 소유자별 활성 목록도 함께 정리합니다.</summary>
     public override void OnStopServer()
     {
         UnregisterGravityWellField();
+        UnregisterSingularityExplosion();
         base.OnStopServer();
     }
 
@@ -215,12 +229,12 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     }
 
     /// <summary>
-    /// SW 수정: 서버는 비행 중인 탄과 충돌 후 고정된 중력 우물을 같은 네트워크 객체에서 갱신합니다.
-    /// 클라이언트는 발사 외형을 연결하고 서버가 복제한 장판 상태만 표시합니다.
+    /// SW 수정: 서버는 비행 중인 탄과 충돌 후 고정된 장판·지연 폭발을 같은 네트워크 객체에서 갱신합니다.
+    /// 클라이언트는 발사 외형을 연결하고 서버가 복제한 지속 상태만 표시합니다.
     /// </summary>
     private void Update()
     {
-        if (isClient && playerShot && !gravityWellActive && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
+        if (isClient && playerShot && !gravityWellActive && !singularityActive && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
             TryBindPlayerVisual();
         if (!isServer)
             return;
@@ -228,6 +242,12 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         if (gravityWellActive)
         {
             UpdateGravityWellField();
+            return;
+        }
+
+        if (singularityActive)
+        {
+            UpdateSingularityExplosion();
             return;
         }
 
@@ -357,14 +377,14 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
     /// <summary>
     /// SW 수정: 서버가 플레이어 탄의 직접 피해와 충돌 연출을 확정합니다.
-    /// 중력 우물 유탄이면 탄을 지우지 않고 충돌 위치의 고정 둔화 장판으로 전환합니다.
+    /// 중력 우물은 고정 둔화 장판으로, 특이점 박격포는 고정 지연 폭발 예약체로 전환합니다.
     /// </summary>
     [Server]
     private void FinishPlayerImpact(Vector3 point, Vector3 hitDirection, Collider directHit)
     {
         if (consumed) return;
         consumed = true;
-        bool keepAsGravityWell = false;
+        bool keepAfterImpact = false;
         try
         {
             if (!IsPlayerShotAvailable) return;
@@ -379,14 +399,108 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             if (missile && shotUniqueEffect is GravityWellFieldUniqueEffectSO gravityWell)
             {
                 ActivateGravityWellField(point, gravityWell);
-                keepAsGravityWell = true;
+                keepAfterImpact = true;
+            }
+            else if (missile && shotUniqueEffect is SingularityDelayedExplosionUniqueEffectSO singularity)
+            {
+                ActivateSingularityExplosion(point, singularity);
+                keepAfterImpact = true;
             }
         }
         finally
         {
-            if (!keepAsGravityWell)
+            if (!keepAfterImpact)
                 NetworkServer.Destroy(gameObject);
         }
+    }
+
+    /// <summary>
+    /// SW 수정: 충돌한 유탄을 서버 시간 기준 지연 폭발 예약체로 전환하고 소유자별 최대 개수를 지킵니다.
+    /// 발사 뒤 무기 교체에는 유지하지만 소유자 사망·씬 전환에는 취소합니다.
+    /// </summary>
+    [Server]
+    private void ActivateSingularityExplosion(Vector3 point, SingularityDelayedExplosionUniqueEffectSO effect)
+    {
+        transform.SetPositionAndRotation(point, Quaternion.identity);
+        missile = false;
+        speed = 0f;
+        singularityExplosionRadius = effect.explosionRadius;
+        singularityDamageMultiplier = effect.damageMultiplier;
+        singularityWarningColor = effect.warningColor;
+        singularityDetonatesAt = NetworkTime.time + effect.delaySeconds;
+        singularityActive = true;
+        if (projectileCollider != null)
+            projectileCollider.enabled = false;
+
+        RegisterSingularityExplosion(effect.maxPendingExplosions);
+        if (isClient)
+            ShowSingularityVisual();
+    }
+
+    /// <summary>
+    /// SW 수정: 서버가 예약 수명과 소유자 상태를 확인하고 기폭 시 살아 있는 적을 한 번씩만 판정합니다.
+    /// 다음 프레임 효과이므로 현재 서버 Stat을 새로 읽으며 직접 공격 트리거는 다시 발동하지 않습니다.
+    /// </summary>
+    [Server]
+    private void UpdateSingularityExplosion()
+    {
+        if (playerOwner == null || playerOwner.RuntimeState?.IsDead == true ||
+            SceneManager.GetActiveScene().handle != shotSceneHandle)
+        {
+            NetworkServer.Destroy(gameObject);
+            return;
+        }
+        if (NetworkTime.time < singularityDetonatesAt)
+            return;
+
+        singularityTargets.Clear();
+        uint effectAttackId = shotAttackId ^ 0x80000000u;
+        if (effectAttackId == 0u)
+            effectAttackId = uint.MaxValue;
+        foreach (Collider hit in Physics.OverlapSphere(transform.position, singularityExplosionRadius,
+                     1 << 10, QueryTriggerInteraction.Collide))
+        {
+            NetworkEnemyAuthority_MirrorTest authority = hit.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>();
+            WBH_ICombat target = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
+            if (authority == null || target == null || target.Status == null || target.Status.IsDead ||
+                !singularityTargets.Add(authority))
+                continue;
+
+            if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement,
+                    singularityDamageMultiplier, null, out WBH_DamageResult result,
+                    DamageCause.Effect, effectAttackId))
+                playerOwner.CombatAuthority?.ServerRecordGunnerHit(target, result);
+        }
+        playerOwner.CombatAuthority?.ServerPresentGunnerImpact(shotItemId, shotWeaponType, transform.position, Vector3.up);
+        NetworkServer.Destroy(gameObject);
+    }
+
+    /// <summary>SW 수정: 같은 소유자의 예약이 상한을 넘으면 가장 오래된 특이점부터 취소합니다.</summary>
+    [Server]
+    private void RegisterSingularityExplosion(int maxPendingExplosions)
+    {
+        if (!SingularityExplosionsByOwner.TryGetValue(playerOwnerNetId, out List<NetworkEnemyProjectile_MirrorTest> explosions))
+            SingularityExplosionsByOwner[playerOwnerNetId] = explosions = new List<NetworkEnemyProjectile_MirrorTest>();
+        explosions.RemoveAll(explosion => explosion == null || !explosion.singularityActive);
+        while (explosions.Count >= maxPendingExplosions)
+        {
+            NetworkEnemyProjectile_MirrorTest oldest = explosions[0];
+            explosions.RemoveAt(0);
+            if (oldest != null)
+                NetworkServer.Destroy(oldest.gameObject);
+        }
+        explosions.Add(this);
+    }
+
+    /// <summary>SW 수정: 지연 폭발이 끝나거나 취소될 때 소유자별 예약 목록에서 안전하게 제거합니다.</summary>
+    [Server]
+    private void UnregisterSingularityExplosion()
+    {
+        if (!SingularityExplosionsByOwner.TryGetValue(playerOwnerNetId, out List<NetworkEnemyProjectile_MirrorTest> explosions))
+            return;
+        explosions.Remove(this);
+        if (explosions.Count == 0)
+            SingularityExplosionsByOwner.Remove(playerOwnerNetId);
     }
 
     /// <summary>
@@ -539,6 +653,32 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         AreaRingVisual ring = gravityWellVisual.AddComponent<AreaRingVisual>();
         ring.SetColor(gravityWellColor);
         ring.SetRadius(gravityWellRadius);
+    }
+
+    /// <summary>SW 수정: 지연 폭발 활성 상태가 복제되면 각 클라이언트의 경고 링을 생성하거나 정리합니다.</summary>
+    private void OnSingularityActiveChanged(bool _, bool active)
+    {
+        if (active)
+            ShowSingularityVisual();
+        else if (singularityVisual != null)
+            Destroy(singularityVisual);
+    }
+
+    /// <summary>SW 수정: 충돌 위치와 폭발 반경을 보라색 바닥 링으로 표시해 기폭 전 위험 범위를 알립니다.</summary>
+    private void ShowSingularityVisual()
+    {
+        if (!isClient || singularityVisual != null)
+            return;
+        if (playerProjectileVisual != null)
+            playerProjectileVisual.SetActive(false);
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+            renderer.enabled = false;
+
+        singularityVisual = new GameObject("SingularityDelayedExplosionVisual");
+        singularityVisual.transform.SetParent(transform, false);
+        AreaRingVisual ring = singularityVisual.AddComponent<AreaRingVisual>();
+        ring.SetColor(singularityWarningColor);
+        ring.SetRadius(singularityExplosionRadius);
     }
 
     [ClientRpc]
