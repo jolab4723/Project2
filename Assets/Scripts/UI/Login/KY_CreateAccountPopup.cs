@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -32,6 +33,8 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
 
     [SerializeField] private UnityEvent loginRequested = new();
 
+    private bool isAccountCreationInProgress;
+
     private void Awake()
     {
         if (createButton != null)
@@ -52,9 +55,12 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
             loginButton.onClick.RemoveListener(RequestLogin);
     }
 
-    /// <summary>입력값을 검증한 뒤 외부 계정 시스템에 가입 요청을 전달한다.</summary>
+    /// <summary>입력값을 확인하고 중복 요청 없이 Firebase 계정 생성을 시작한다.</summary>
     public void SubmitAccountCreation()
     {
+        if (isAccountCreationInProgress)
+            return;
+
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
         string passwordConfirmation = passwordConfirmationInput != null ? passwordConfirmationInput.text : string.Empty;
@@ -78,7 +84,63 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
         }
 
         ClearFeedback();
-        createAccountRequested?.Invoke(accountId, password);
+        _ = SubmitFirebaseAccountCreationAsync(accountId, password);
+    }
+
+    /// <summary>Firebase 계정을 만든 뒤 기본 프로필을 준비하고 다시 로그인할 수 있게 세션을 종료한다.</summary>
+    private async Task SubmitFirebaseAccountCreationAsync(string email, string password)
+    {
+        isAccountCreationInProgress = true;
+        SetSubmitting(true);
+        ClearFeedback();
+
+        try
+        {
+            Core.FirebaseLoginResult accountResult = await Core.FirebaseService.Default
+                .CreateUserWithEmailAndPasswordAsync(email, password);
+            if (!accountResult.IsSuccess)
+            {
+                ShowError(accountResult.Message);
+                return;
+            }
+
+            Core.SaveDataOperationResult profileResult =
+                await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+            Core.FirebaseService.Default.SignOut();
+
+            if (!profileResult.IsSuccess)
+            {
+                ShowError(
+                    "계정은 생성되었지만 기본 프로필을 준비하지 못했습니다. 로그인 화면에서 다시 로그인해 주세요.");
+                return;
+            }
+
+            if (!profileResult.IsCloudSynchronized)
+            {
+                Debug.LogWarning(
+                    $"[KY_CreateAccountPopup] 프로필은 로컬 캐시에 보관되었습니다: {profileResult.Message}");
+            }
+
+            if (passwordInput != null)
+                passwordInput.text = string.Empty;
+
+            if (passwordConfirmationInput != null)
+                passwordConfirmationInput.text = string.Empty;
+
+            createAccountRequested?.Invoke(email, password);
+            ShowFeedback("계정 생성이 완료되었습니다. 로그인 화면에서 새 계정으로 로그인해 주세요.");
+        }
+        catch (Exception exception)
+        {
+            Core.FirebaseService.Default.SignOut();
+            Debug.LogError($"[KY_CreateAccountPopup] Firebase 계정 생성 처리 실패: {exception}");
+            ShowError("계정 생성 처리 중 오류가 발생했습니다.");
+        }
+        finally
+        {
+            isAccountCreationInProgress = false;
+            SetSubmitting(false);
+        }
     }
 
     /// <summary>로그인 화면 전환 요청을 외부 흐름에 전달한다.</summary>
@@ -110,6 +172,12 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
 
     /// <summary>외부 계정 시스템이 전달한 오류 문구를 표시한다.</summary>
     public void ShowError(string message)
+    {
+        ShowFeedback(message);
+    }
+
+    /// <summary>계정 생성 결과 안내 문구를 표시한다.</summary>
+    private void ShowFeedback(string message)
     {
         if (feedbackText == null)
             return;

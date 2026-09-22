@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -27,7 +28,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     [Header("임시 로그인 우회")]
     [Tooltip("로그인 구현 전 테스트용입니다. 입력 없이 TitleScene으로 이동합니다. 정식 로그인 연결 시 끄세요.")]
-    [SerializeField] private bool bypassLoginTemporarily = true;
+    [SerializeField] private bool bypassLoginTemporarily;
 
     [Header("선택 표시")]
     [SerializeField] private TMP_Text feedbackText;
@@ -38,6 +39,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     private Tween entranceDelayTween;
     private bool hasPlayedEntrance;
+    private bool isLoginInProgress;
 
     public event Action CreateAccountPopupRequested;
 
@@ -107,30 +109,15 @@ public sealed class KY_LoginPopup : MonoBehaviour
             .OnComplete(() => contentFade.FadeIn());
     }
 
-    /// <summary>임시 우회가 켜져 있으면 타이틀로 이동하고, 아니면 입력값을 검증해 로그인 요청을 전달한다.</summary>
+    /// <summary>입력값을 확인하고 중복 요청 없이 Firebase 로그인 처리를 시작한다.</summary>
     public void SubmitLogin()
     {
+        if (isLoginInProgress)
+            return;
+
         if (bypassLoginTemporarily)
         {
-            var loader = Core.SceneLoader.Instance;
-            if (loader == null || !loader.isActiveAndEnabled)
-            {
-                ShowError("씬 로더가 준비되지 않았습니다. Start 씬부터 실행해주세요.");
-                return;
-            }
-
-            if (loader.IsLoading)
-                return;
-
-            if (!Application.CanStreamedLevelBeLoaded("TitleScene") ||
-                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
-            {
-                ShowError("TitleScene과 LoadingScene의 빌드 씬 등록을 확인해주세요.");
-                return;
-            }
-
-            ClearFeedback();
-            loader.LoadScene("TitleScene");
+            TryLoadTitleScene();
             return;
         }
 
@@ -139,12 +126,88 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (string.IsNullOrEmpty(accountId) || string.IsNullOrEmpty(password))
         {
-            ShowError("계정 ID와 비밀번호를 입력하십시오.");
+            ShowError("이메일과 비밀번호를 입력해 주세요.");
             return;
         }
 
+        _ = SubmitFirebaseLoginAsync(accountId, password);
+    }
+
+    /// <summary>Firebase 이메일 인증과 프로필 동기화를 순서대로 처리한 뒤 타이틀 씬으로 이동한다.</summary>
+    private async Task SubmitFirebaseLoginAsync(string email, string password)
+    {
+        isLoginInProgress = true;
+        SetSubmitting(true);
         ClearFeedback();
-        loginRequested?.Invoke(accountId, password);
+
+        try
+        {
+            Core.FirebaseLoginResult loginResult = await Core.FirebaseService.Default
+                .SignInWithEmailAndPasswordAsync(email, password);
+            if (!loginResult.IsSuccess)
+            {
+                ShowError(loginResult.Message);
+                return;
+            }
+
+            Core.SaveDataOperationResult synchronizationResult =
+                await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+            if (!synchronizationResult.IsSuccess &&
+                synchronizationResult.FailureReason != Core.SaveDataFailureReason.NotFound)
+            {
+                Core.FirebaseService.Default.SignOut();
+                ShowError(synchronizationResult.Message);
+                return;
+            }
+
+            if (synchronizationResult.IsSuccess &&
+                !synchronizationResult.IsCloudSynchronized)
+            {
+                Debug.LogWarning(
+                    $"[KY_LoginPopup] 프로필은 로컬 캐시에 보관되었습니다: {synchronizationResult.Message}");
+            }
+
+            if (passwordInput != null)
+                passwordInput.text = string.Empty;
+
+            loginRequested?.Invoke(email, password);
+            TryLoadTitleScene();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[KY_LoginPopup] Firebase 로그인 처리 실패: {exception}");
+            ShowError("로그인 처리 중 오류가 발생했습니다.");
+        }
+        finally
+        {
+            isLoginInProgress = false;
+            SetSubmitting(false);
+        }
+    }
+
+    /// <summary>필요한 씬과 로더 상태를 확인한 뒤 타이틀 씬 이동을 시작한다.</summary>
+    private bool TryLoadTitleScene()
+    {
+        var loader = Core.SceneLoader.Instance;
+        if (loader == null || !loader.isActiveAndEnabled)
+        {
+            ShowError("씬 로더가 준비되지 않았습니다. Start 씬부터 실행해 주세요.");
+            return false;
+        }
+
+        if (loader.IsLoading)
+            return false;
+
+        if (!Application.CanStreamedLevelBeLoaded("TitleScene") ||
+            !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+        {
+            ShowError("TitleScene과 LoadingScene의 빌드 등록을 확인해 주세요.");
+            return false;
+        }
+
+        ClearFeedback();
+        loader.LoadScene("TitleScene");
+        return true;
     }
 
     /// <summary>계정 생성 팝업 전환을 요청한다.</summary>
