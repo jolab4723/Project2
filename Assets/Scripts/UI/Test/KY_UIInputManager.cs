@@ -33,7 +33,15 @@ public class KY_UIInputManager : MonoBehaviour
         {
             if (!CloseCampInventoryIfOpen() && !CloseQuestOfferIfOpen())
                 KY_GameEvents.EscPressed();
+
+            // ESC는 모달을 닫는 입력이므로, 같은 프레임에 다른 단축키를 이어서 처리하지 않는다.
+            return;
         }
+
+        // 퀘스트 상세/휴식/확인창 같은 일반 모달이 열린 동안에는 그 창의 닫기(ESC)만 허용한다.
+        // 사이드 팝업은 닫지 않고 가린 채 유지되므로, 상세 창을 닫으면 원래 퀘스트 팝업으로 돌아온다.
+        if (KY_PopupManager.Instance != null && KY_PopupManager.Instance.HasOpenModalPopup)
+            return;
 
         if (inputActions.Player.OpenInventory.triggered)
         {

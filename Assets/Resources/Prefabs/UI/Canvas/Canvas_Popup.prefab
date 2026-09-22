@@ -1125,7 +1125,6 @@ GameObject:
   - component: {fileID: 4461978785561044229}
   - component: {fileID: 4696975393959056068}
   - component: {fileID: 8002414966718337834}
-  - component: {fileID: 24400822929795751}
   m_Layer: 5
   m_Name: Canvas_Popup
   m_TagString: Untagged
@@ -1221,20 +1220,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &24400822929795751
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7039001446181280916}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86e7d41aff0158342adb91b7be00d563, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KY_QuestCompletionScreenNoticeBridge
-  database: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
-  screenNotice: {fileID: 5224846478736912344}
 --- !u!1 &7252231643805775178
 GameObject:
   m_ObjectHideFlags: 0
@@ -2240,10 +2225,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7692967980038973821}
     m_Modifications:
-    - target: {fileID: 861605055862489246, guid: b120abdbf47c88e49ac75b6768fd9aa8, type: 3}
-      propertyPath: screenNotice
-      value: 
-      objectReference: {fileID: 5224846478736912344}
     - target: {fileID: 7968568904147494793, guid: b120abdbf47c88e49ac75b6768fd9aa8, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

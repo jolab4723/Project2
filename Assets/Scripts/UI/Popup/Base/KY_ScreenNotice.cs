@@ -17,7 +17,6 @@ public class KY_ScreenNotice : MonoBehaviour
     private void Awake()
     {
         curtainEffect = GetComponent<KY_CurtainEffect>();
-        gameObject.SetActive(false);
     }
 
     private void OnDestroy()

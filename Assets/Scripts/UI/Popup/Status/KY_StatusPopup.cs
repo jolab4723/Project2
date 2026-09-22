@@ -156,6 +156,10 @@ public class KY_StatusPopup : KY_PopupBase
     public override void Open()
     {
         transitionSequence?.Kill();
+        // 슬라이드 중에 정상 크기 콘텐츠가 한 프레임 보였다가 다시 접히지 않도록,
+        // 비활성 상태에서 먼저 접어 둔 뒤 슬라이드와 함께 펼친다.
+        curtainEffect ??= GetComponentInChildren<KY_CurtainEffect>(true);
+        curtainEffect?.PrepareOpen();
         gameObject.SetActive(true);
 
         // 닫혀 있는 동안 언어가 바뀌었을 수 있으므로 열 때마다 다시 채운다.
@@ -164,6 +168,7 @@ public class KY_StatusPopup : KY_PopupBase
 
         animationManager?.PlayPanelOpen();
 
+        // 팝업이 화면 안으로 들어온 뒤에 내용을 전개한다.
         transitionSequence = DOTween.Sequence();
         float slideDuration = slideAnimator != null ? slideAnimator.duration : 0f;
         transitionSequence.AppendInterval(slideDuration);

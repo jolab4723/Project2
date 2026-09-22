@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -66,9 +67,18 @@ public sealed class KY_LoginPopup : MonoBehaviour
         ClearFeedback();
     }
 
-    /// <summary>처음 로그인 팝업이 표시될 때 판넬과 내용을 순서대로 등장시킨다.</summary>
-    private void Start()
+    /// <summary>로딩 화면이 목적 씬을 완전히 드러낸 뒤 판넬과 내용을 순서대로 등장시킨다.</summary>
+    private IEnumerator Start()
     {
+        if (Core.SceneLoader.Instance != null && Core.SceneLoader.Instance.IsLoading)
+        {
+            yield return new WaitUntil(() =>
+                Core.SceneLoader.Instance == null || !Core.SceneLoader.Instance.IsLoading);
+
+            // 로더의 마지막 페이드가 화면에 반영된 뒤 커튼을 시작한다.
+            yield return new WaitForEndOfFrame();
+        }
+
         PlayEntranceEffect();
     }
 
