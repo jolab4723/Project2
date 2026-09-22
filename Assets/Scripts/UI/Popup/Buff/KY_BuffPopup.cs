@@ -15,21 +15,33 @@ public class KY_BuffPopup : KY_PopupBase
 
     private List<KY_BuffSlot> spawnedSlots = new List<KY_BuffSlot>();
     private List<BuffInstance> currentBuffs = new List<BuffInstance>();
+    private PlayerBuffManager observedBuffManager;
+    private KY_SlideAnimator slideAnimator;
+    private KY_CurtainEffect descriptionCurtain;
+
+    void Awake()
+    {
+        slideAnimator = GetComponent<KY_SlideAnimator>();
+        descriptionCurtain = descriptionView != null
+            ? descriptionView.GetComponent<KY_CurtainEffect>()
+            : null;
+    }
 
     void OnEnable()
     {
-        if (PlayerBuffManager.Instance != null)
-            PlayerBuffManager.Instance.OnBuffsChanged += RefreshList;
+        BindBuffManager();
     }
 
     void OnDisable()
     {
-        if (PlayerBuffManager.Instance != null)
-            PlayerBuffManager.Instance.OnBuffsChanged -= RefreshList;
+        UnbindBuffManager();
     }
 
     void Update()
     {
+        if (observedBuffManager != PlayerBuffManager.Instance)
+            BindBuffManager();
+
         // 팝업이 열려있는 동안, 목록 재구성 없이 남은 시간만 매 프레임 갱신
         for (int i = 0; i < currentBuffs.Count && i < spawnedSlots.Count; i++)
             spawnedSlots[i].RefreshTimeOnly();
@@ -38,19 +50,54 @@ public class KY_BuffPopup : KY_PopupBase
     public override void Open()
     {
         base.Open();
+        BindBuffManager();
         RefreshList();
+        slideAnimator?.SlideIn();
+        HideDescription();
+    }
+
+    public override void Close()
+    {
+        if (slideAnimator != null)
+            slideAnimator.SlideOut(() => gameObject.SetActive(false));
+        else
+            base.Close();
+    }
+
+    private void BindBuffManager()
+    {
+        PlayerBuffManager current = PlayerBuffManager.Instance;
+        if (observedBuffManager == current)
+            return;
+
+        UnbindBuffManager();
+        observedBuffManager = current;
+
+        if (observedBuffManager != null)
+            observedBuffManager.OnBuffsChanged += RefreshList;
+    }
+
+    private void UnbindBuffManager()
+    {
+        if (observedBuffManager != null)
+            observedBuffManager.OnBuffsChanged -= RefreshList;
+
+        observedBuffManager = null;
     }
 
     // 목록 구성(추가/제거)이 바뀌었을 때만 호출됨
     void RefreshList()
     {
-        if (PlayerBuffManager.Instance == null)
+        if (observedBuffManager == null)
         {
-            Debug.LogWarning("[KY_BuffPopup] PlayerBuffManager.Instance가 없습니다.");
+            currentBuffs.Clear();
+            SetSlotVisibility(0);
+            if (emptyStateText != null) emptyStateText.SetActive(true);
+            HideDescription();
             return;
         }
 
-        currentBuffs = KY_BuffSortRule.Sort(PlayerBuffManager.Instance.ActiveBuffs);
+        currentBuffs = KY_BuffSortRule.Sort(observedBuffManager.ActiveBuffs);
 
         // 슬롯이 부족하면 그만큼만 새로 생성 (Destroy는 안 함)
         while (spawnedSlots.Count < currentBuffs.Count)
@@ -62,26 +109,41 @@ public class KY_BuffPopup : KY_PopupBase
         }
 
         // 슬롯 전체를 순회하며 필요한 만큼만 켜고 데이터 채움, 나머지는 꺼둠
+        SetSlotVisibility(currentBuffs.Count);
+        if (emptyStateText != null) emptyStateText.SetActive(currentBuffs.Count == 0);
+        HideDescription();
+    }
+
+    private void SetSlotVisibility(int count)
+    {
         for (int i = 0; i < spawnedSlots.Count; i++)
         {
-            bool hasData = i < currentBuffs.Count;
+            bool hasData = i < count;
             spawnedSlots[i].gameObject.SetActive(hasData);
-
-            if (hasData)
-                spawnedSlots[i].Render(currentBuffs[i]);
+            if (hasData) spawnedSlots[i].Render(currentBuffs[i]);
         }
-
-        emptyStateText.SetActive(currentBuffs.Count == 0);
-        descriptionView.Clear();
     }
 
     void OnSlotHoverEnter(BuffInstance data)
     {
+        if (descriptionView == null)
+            return;
+
         descriptionView.Render(data);
+        descriptionCurtain?.Open();
     }
 
     void OnSlotHoverExit()
     {
-        descriptionView.Clear();
+        HideDescription();
+    }
+
+    private void HideDescription()
+    {
+        if (descriptionView != null)
+            descriptionView.Clear();
+
+        // 버프가 없거나 슬롯을 벗어난 동안에는 Description을 세로 축으로 접어 둔다.
+        descriptionCurtain?.Close();
     }
 }

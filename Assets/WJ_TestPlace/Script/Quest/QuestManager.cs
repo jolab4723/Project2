@@ -235,6 +235,7 @@ public class QuestManager : Singleton<QuestManager>
         active.isCompleted = true;
         GrantReward(def);
         NotifyQuestCompleted(def);
+        activeQuests.Remove(active);
         OnQuestCompleted?.Invoke(active);
         OnQuestListChanged?.Invoke();
     }

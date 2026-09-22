@@ -22,13 +22,18 @@ public class KY_ButtonShakeEffect : MonoBehaviour, IPointerClickHandler
     [SerializeField] private int vibrato = 20;
     [SerializeField, Range(0f, 90f)] private float randomness = 90f;
 
-    private bool isShaking = false;
+    private RectTransform targetRect;
+    private Tween shakeTween;
+    private Vector2 originalAnchoredPosition;
+    private bool isShaking;
 
     /// <summary>인스펙터에서 button이 지정되지 않았다면 같은 GameObject에서 자동으로 찾는다.</summary>
     void Awake()
     {
         if (button == null)
             button = GetComponent<Button>();
+
+        targetRect = transform as RectTransform;
     }
 
     /// <summary>비활성 상태에서 클릭 시에만 셰이크를 실행한다. 활성 상태이거나 이미 흔들리는 중이면 무시한다.</summary>
@@ -39,9 +44,35 @@ public class KY_ButtonShakeEffect : MonoBehaviour, IPointerClickHandler
         DisabledClicked?.Invoke();
         if (isShaking) return;
 
+        if (targetRect == null)
+            return;
+
+        // UI 레이아웃이 갱신된 뒤의 좌표를 매번 기준점으로 삼는다.
+        // DOShakePosition은 월드 Transform 위치를 건드려 UI가 중간 위치에 남을 수 있다.
+        shakeTween?.Kill();
+        originalAnchoredPosition = targetRect.anchoredPosition;
         isShaking = true;
-        transform.DOShakePosition(shakeDuration, shakeStrength, vibrato, randomness)
+        shakeTween = targetRect.DOShakeAnchorPos(shakeDuration, shakeStrength, vibrato, randomness)
             .SetUpdate(true)
-            .OnComplete(() => isShaking = false);
+            .OnComplete(RestorePosition)
+            .OnKill(RestorePosition);
+    }
+
+    private void OnDisable()
+    {
+        if (!isShaking)
+            return;
+
+        shakeTween?.Kill();
+        RestorePosition();
+    }
+
+    private void RestorePosition()
+    {
+        if (targetRect != null)
+            targetRect.anchoredPosition = originalAnchoredPosition;
+
+        shakeTween = null;
+        isShaking = false;
     }
 }

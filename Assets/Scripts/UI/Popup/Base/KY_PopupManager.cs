@@ -55,6 +55,7 @@ public class KY_PopupManager : MonoBehaviour
         KY_GameEvents.OnSkillRequested += OnSkillRequested;
         KY_GameEvents.OnInventoryRequested += OnInventoryRequested;
         KY_GameEvents.OnQuestRequested += OnQuestRequested;
+        KY_GameEvents.OnBuffRequested += OnBuffRequested;
     }
 
     void OnDisable()
@@ -64,6 +65,7 @@ public class KY_PopupManager : MonoBehaviour
         KY_GameEvents.OnSkillRequested -= OnSkillRequested;
         KY_GameEvents.OnInventoryRequested -= OnInventoryRequested;
         KY_GameEvents.OnQuestRequested -= OnQuestRequested;
+        KY_GameEvents.OnBuffRequested -= OnBuffRequested;
     }
 
     /// <summary>
@@ -184,6 +186,11 @@ public class KY_PopupManager : MonoBehaviour
     void OnQuestRequested()
     {
         ShowSidePopup(PopupType.Quest);
+    }
+
+    void OnBuffRequested()
+    {
+        ShowSidePopup(PopupType.Buff);
     }
 
     private KY_QuestData displayedQuestData;

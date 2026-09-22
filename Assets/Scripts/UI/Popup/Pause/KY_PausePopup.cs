@@ -1,11 +1,12 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Core;
 
 /// <summary>일시정지 메뉴의 시간 정지, 설정, 포기 및 저장 후 종료 흐름을 관리한다.</summary>
 public class KY_PausePopup : KY_PopupBase
 {
+    private const string ResultSceneName = "ClearResultScene";
+
     [SerializeField] private bool pauseGameTime = true; // SW 수정
     private KY_SlideAnimator slideAnimator;
     private bool ownsTimePause;
@@ -139,7 +140,7 @@ private void SaveAndExitGame()
         }
         DataManager.Instance?.SaveGameplayData();
         DataManager.Instance?.SavePassiveData();
-        SceneManager.LoadScene("TitleScene");
+        LoadSceneThroughLoader("TitleScene");
     }
 
     private void GiveUpGame()
@@ -150,7 +151,35 @@ private void SaveAndExitGame()
             externalGiveUp.Value.onYes?.Invoke();
             return;
         }
+
+        // 포기는 실패한 원정 종료다. 저장 데이터를 지우기 전에 현재 기록과 지갑을 결과 Payload에 남긴다.
+        SceneLoader loader = SceneLoader.Instance;
+        if (loader == null || loader.IsLoading)
+        {
+            Debug.LogError("[KY_PausePopup] SceneLoader가 없어 포기 결과 화면으로 전환할 수 없습니다.", this);
+            return;
+        }
+
+        var tracker = KY_RunStatsTracker.Instance;
+        if (tracker == null || !tracker.FinishRun(false))
+        {
+            Debug.LogError("[KY_PausePopup] 포기 결과 기록에 실패했습니다. KY_RunStatsTracker와 ResultPayload 연결을 확인하세요.", this);
+            return;
+        }
+
         DataManager.Instance?.ResetAllData();
-        SceneManager.LoadScene("TitleScene");
+        loader.LoadScene(ResultSceneName);
+    }
+
+    private void LoadSceneThroughLoader(string sceneName)
+    {
+        SceneLoader loader = SceneLoader.Instance;
+        if (loader == null || loader.IsLoading)
+        {
+            Debug.LogError($"[KY_PausePopup] SceneLoader가 없어 {sceneName} 씬으로 전환할 수 없습니다.", this);
+            return;
+        }
+
+        loader.LoadScene(sceneName);
     }
 }
