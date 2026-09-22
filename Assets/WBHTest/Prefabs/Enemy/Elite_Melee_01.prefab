@@ -692,7 +692,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8188614607946331113}
   m_Father: {fileID: 6062315388799342508}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4945256665029317294
@@ -1858,7 +1859,6 @@ Transform:
   - {fileID: 6979028824434092731}
   - {fileID: 1661950488867914113}
   - {fileID: 4691396479016513494}
-  - {fileID: 8188614607946331113}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &4303064652511115372
@@ -2022,6 +2022,7 @@ MonoBehaviour:
   firePoint: {fileID: 6979028824434092731}
   grenadePoint: {fileID: 0}
   enemyAnimation: {fileID: 0}
+  isShowSkillRange: 0
 --- !u!114 &2251570876085871364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2117,6 +2118,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
   circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
+  cone60Indicator: {fileID: 0}
+  cone150Indicator: {fileID: 0}
+  cone180Indicator: {fileID: 0}
 --- !u!114 &2328701373923703901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2590,7 +2594,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6062315388799342508}
+    m_TransformParent: {fileID: 1661950488867914113}
     m_Modifications:
     - target: {fileID: 133312, guid: 5beb4d460c39f14449ffdc14da4c4522, type: 3}
       propertyPath: m_Name
@@ -2602,11 +2606,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 463234, guid: 5beb4d460c39f14449ffdc14da4c4522, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 463234, guid: 5beb4d460c39f14449ffdc14da4c4522, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 463234, guid: 5beb4d460c39f14449ffdc14da4c4522, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2638,7 +2642,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 19840940, guid: 5beb4d460c39f14449ffdc14da4c4522, type: 3}
       propertyPath: playOnAwake
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
