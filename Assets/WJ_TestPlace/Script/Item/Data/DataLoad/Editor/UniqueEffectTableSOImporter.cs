@@ -110,7 +110,7 @@ namespace DataSystem
         }
         /// <summary>
         /// SW 수정: 공통 표시 정보와 effectType별 실제 전투 수치를 함께 채운다.
-        /// 중력 우물은 표의 반경·지속시간·둔화율·갱신 주기·동시 장판 수를 런타임 설정으로 변환한다.
+        /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
         /// </summary>
@@ -151,6 +151,12 @@ namespace DataSystem
                     gravityWell.slowMultiplier = 1f - asset.coefficients[2] / 100f;
                     gravityWell.slowRefreshSeconds = asset.coefficients[3];
                     gravityWell.maxConcurrentFields = (int)asset.coefficients[4];
+                    break;
+                case SingularityDelayedExplosionUniqueEffectSO singularity:
+                    singularity.delaySeconds = asset.coefficients[0];
+                    singularity.explosionRadius = asset.coefficients[1];
+                    singularity.damageMultiplier = asset.coefficients[2] / 100f;
+                    singularity.maxPendingExplosions = (int)asset.coefficients[3];
                     break;
                 case PassiveBuffUniqueEffectSO passive:
                     passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
@@ -284,6 +290,7 @@ namespace DataSystem
                 case nameof(DodgePreparedAttackUniqueEffectSO): return typeof(DodgePreparedAttackUniqueEffectSO);
                 case nameof(SolarGraceShieldUniqueEffectSO): return typeof(SolarGraceShieldUniqueEffectSO);
                 case nameof(GravityWellFieldUniqueEffectSO): return typeof(GravityWellFieldUniqueEffectSO);
+                case nameof(SingularityDelayedExplosionUniqueEffectSO): return typeof(SingularityDelayedExplosionUniqueEffectSO);
             }
 
             Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
@@ -345,6 +352,24 @@ namespace DataSystem
                     if (!fieldValid)
                     {
                         Debug.LogError($"[UniqueEffect] '{id}'의 중력 우물 계수는 반경;지속 초;둔화율%(0~100);갱신 초;동시 장판 수(1~8) 순서여야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
+                if (type == typeof(SingularityDelayedExplosionUniqueEffectSO))
+                {
+                    string[] delayedParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] delayedValues = new float[delayedParts.Length];
+                    bool delayedValid = delayedParts.Length == 4;
+                    for (int i = 0; i < delayedParts.Length; i++)
+                        delayedValid &= float.TryParse(delayedParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out delayedValues[i]) &&
+                            !float.IsNaN(delayedValues[i]) && !float.IsInfinity(delayedValues[i]);
+                    delayedValid = delayedValid && delayedValues[0] > 0f && delayedValues[0] <= 30f &&
+                        delayedValues[1] > 0f && delayedValues[2] > 0f && delayedValues[3] >= 1f && delayedValues[3] <= 8f &&
+                        delayedValues[3] == Mathf.Floor(delayedValues[3]);
+                    if (!delayedValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 지연 폭발 계수는 지연 초(0~30);반경;피해%;동시 예약 수(1~8) 순서여야 합니다.");
                         valid = false;
                     }
                     continue;
