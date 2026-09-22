@@ -251,10 +251,70 @@ public class SkillDefinitionSO : ScriptableObject
     [Tooltip("폭탄이 떨어지기 시작한 뒤 실제 피해가 들어가기까지의 시간(초). 낙하 연출과 타격 타이밍을 맞추는 값이다.")]
     public float carpetImpactDelay = 0.35f;
 
+    [Header("CarpetBombing 진화1 전용 (레이저 폭격 - 지연 후 단일 타격)")]
+    [Tooltip("시전 후 타격까지의 지연(초). 기본 융단폭격의 carpetImpactDelay 대신 쓴다.")]
+    public float evoLaserStrikeDelay = 0.5f;
+    [Tooltip("한 번에 들어가는 피해 계수. 여러 번 나눠 때리지 않고 이 값이 전부다.")]
+    public float evoLaserStrikeDamage = 4.5f;
+
+    [Header("CarpetBombing 진화2 전용 (마커 폭격 - 횟수 증가 + 마커 부여)")]
+    [Tooltip("타격 횟수.")]
+    public int evoMarkerWaveCount = 4;
+    [Tooltip("타격과 타격 사이 간격(초). 기본 융단폭격의 carpetWaveInterval 대신 쓴다.")]
+    public float evoMarkerWaveInterval = 1f;
+    [Tooltip("회당 피해 계수.")]
+    public float evoMarkerDamagePerWave = 1f;
+    [Tooltip("맞은 적에게 거는 마커(Marked) 지속시간(초). 0이면 마커 없음. " +
+             "이미 걸려 있으면 남은 시간에 이 값을 더한다(갱신이 아니라 누적).")]
+    public float evoMarkerDuration = 5f;
+    [Tooltip("마커가 걸린 적이 받는 모든 피해의 배율.")]
+    public float evoMarkerDamageMultiplier = 1.25f;
+
+    [Header("CarpetBombing 진화3 전용 (산탄 폭격 - 랜덤 위치 소범위 연속 포격)")]
+    [Tooltip("포탄 발수.")]
+    public int evoBarrageShellCount = 9;
+    [Tooltip("포탄과 포탄 사이 간격(초).")]
+    public float evoBarrageInterval = 0.3f;
+    [Tooltip("포탄 한 발의 폭발 반경. 영역 전체가 아니라 이 범위만 맞는다. 스킬 범위 증가의 영향을 받는다.")]
+    public float evoBarrageShellRadius = 3f;
+    [Tooltip("포탄 한 발의 피해 계수.")]
+    public float evoBarrageDamagePerShell = 0.6f;
+    [Tooltip("포탄이 떨어질 수 있는 범위(폭격 중심 기준). 좁을수록 한 대상에게 여러 발이 겹친다. " +
+             "한 대상의 발당 명중률은 대략 (포탄반경/산포반경)^2다 - 기본 융단폭격 반경인 8로 두면 " +
+             "발당 6%라 9발을 쏴도 기대 명중이 1발이 안 된다. 4면 발당 25%로 기대 2.25발이다.")]
+    public float evoBarrageScatterRadius = 4f;
+
     [Header("AwakeningBurst 전용 (파이터 궁극기)")]
     [Tooltip("시전과 동시에 자신에게 거는 강화 버프. 지속시간·스탯 수치는 이 버프 에셋이 들고 있다. " +
              "엑셀에서는 오브젝트 참조를 표현할 수 없어 인스펙터/에디터에서 직접 연결한다(evoDashDamageBuff와 같은 방식).")]
     public BuffDefinitionSO awakeningBuff;
+
+    [Header("AwakeningBurst 진화 전용 - 진화별로 거는 버프가 달라진다")]
+    [Tooltip("진화1(가속 각성): 공격속도와 일반공격 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff1;
+    [Tooltip("진화2(연산 각성): 스킬 쿨타임 감소와 스킬 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff2;
+    [Tooltip("진화3(과부하 각성): 지속시간이 짧은 대신 시전 폭발에 투자. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff3;
+
+    [Tooltip("진화3 전용: 시전 폭발의 데미지 계수. 기본 계수(damageMultiplier) 대신 이 값을 쓴다.")]
+    public float evoOverloadDamageMultiplier = 4f;
+    [Tooltip("진화3 전용: 시전 폭발 반경 배율. 1.7이면 기본 반경의 1.7배.")]
+    public float evoOverloadRangeMultiplier = 1.7f;
+
+    /// <summary>진화에 맞는 각성 버프. 진화용 버프가 비어 있으면 기본 버프로 떨어진다.</summary>
+    public BuffDefinitionSO GetAwakeningBuff(SkillEvolutionId evolution)
+    {
+        BuffDefinitionSO evoBuff = evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evoAwakeningBuff1,
+            SkillEvolutionId.Evolution2 => evoAwakeningBuff2,
+            SkillEvolutionId.Evolution3 => evoAwakeningBuff3,
+            _ => null,
+        };
+
+        return evoBuff != null ? evoBuff : awakeningBuff;
+    }
 
     [Header("강화 - 위력(Enhance1), 전 스킬 공통이지만 shapeType별로 의미가 다름")]
     [Tooltip("SectorSlash/LineSlam 전용: 데미지 계수(damageMultiplier)에 곱해지는 보너스(%).")]
