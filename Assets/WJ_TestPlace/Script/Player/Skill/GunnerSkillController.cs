@@ -176,7 +176,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         arcBusterStacks = Mathf.Min(arcBusterStacks + 1, def.maxStacks);
         if (arcBusterStacks < def.maxStacks)
-            arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+            arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
     }
 
     private void HandleSkillKeyPressed(int index) => TryUseSkill(index);
@@ -294,8 +294,10 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
         int arcBusterStacksBeforeConsume = arcBusterStacks;
 
-        ConsumeSkillUse(index, def);
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
         skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def);
         combat.CancelChase();
 
         PreparePendingSkill(index, evo, arcBusterStacksBeforeConsume, aimDir, cursorPos);
@@ -813,7 +815,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsArcBusterSlot(index) ? def.stackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>아크 버스터(ArcProjectile)면 현재/최대 스택을 낸다. 그 외 스킬은 스택 개념이 없어서 false.</summary>
@@ -854,14 +856,39 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             else
                 arcBusterStacks--;
 
-            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화(쿨타임감소)와는 별개 개념이라 안 줄임
+            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화·쿨감과는 별개 개념이라 안 줄임
             if (arcBusterStackTimer <= 0f)
-                arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+                arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
+
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// FighterSkillController와 같은 공식이다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프의 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>쿨감 스탯을 배율로. PlayerStat에서 이미 0~70 클램프지만 여기서도 한 번 더 막는다.</summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임을 줄인다. FighterSkillController와 동일한 공식.</summary>
     private float ApplyCooldownEnhancement(SkillDefinitionSO def, int index, float baseCooldown)

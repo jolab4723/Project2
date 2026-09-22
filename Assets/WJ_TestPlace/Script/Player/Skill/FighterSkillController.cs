@@ -202,7 +202,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         dashStacks = Mathf.Min(dashStacks + 1, def.evoDashMaxStacks);
         if (dashStacks < def.evoDashMaxStacks)
-            dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화(쿨감) 반영)
+            dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화·쿨감 반영)
     }
 
     private void UpdateCharge()
@@ -254,7 +254,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsDashStackSlot(index) ? def.evoDashStackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>슬롯(0~2)이 지금 스택 모드(Dash 진화2)인지, 맞다면 현재/최대 스택 수를 낸다.
@@ -368,8 +368,10 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (status != null && !status.TryUseMana(def.GetManaCost(evolution)))
             return false;
 
-        ConsumeSkillUse(index, def);
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데, 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
         skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def);
         pendingAimDirection = aimDirection;
         transform.forward = aimDirection;
         combat.CancelChase();
@@ -729,11 +731,11 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         {
             dashStacks--;
             if (dashStackRechargeTimer <= 0f)
-                dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds);
+                dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임/스택 충전 시간을 줄인다.</summary>
@@ -744,6 +746,34 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         return baseCooldown * (1f - def.enhanceCooldownReductionPercent / 100f);
     }
+
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// 강화 15% + 쿨감 25%면 0.85 × 0.75 = 0.6375배가 된다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프로 들어오는 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>
+    /// 플레이어 쿨감 스탯을 배율로 바꾼다. PlayerStat.cdr은 이미 0~70으로 클램프돼 있지만,
+    /// 외부에서 다른 경로로 들어와도 쿨타임이 0 이하가 되지 않도록 여기서도 한 번 더 막는다.
+    /// </summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값으로 맞춘다.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
 
     private void StartCharge(int index)
     {
