@@ -10455,6 +10455,7 @@ GameObject:
   - component: {fileID: 2259114766307225492}
   - component: {fileID: 3370519809924486276}
   - component: {fileID: -6627660707190376356}
+  - component: {fileID: -364745694667191063}
   m_Layer: 10
   m_Name: Boss_Act_02
   m_TagString: Untagged
@@ -10643,9 +10644,8 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 279016196059227232}
   grenadePoint: {fileID: 0}
-  meleeEffectPoint: {fileID: 0}
-  normalMeleeEffect: {fileID: 0}
   enemyAnimation: {fileID: 8400595717009425348}
+  isShowSkillRange: 0
 --- !u!114 &3679686638235563972
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10667,6 +10667,7 @@ MonoBehaviour:
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
   markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &814312352904093149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10723,8 +10724,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b7e15b96c6b62842981894d8f4cf160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
-  circleIndicator: {fileID: 0}
-  rectIndicator: {fileID: 0}
+  circleIndicator: {fileID: 11400000, guid: 03b7f8c678f2ceb46a7160b3d37c9f43, type: 2}
+  rectIndicator: {fileID: 11400000, guid: a8b278bb35d9b6544bca9736895380d1, type: 2}
+  cone60Indicator: {fileID: 11400000, guid: 8a504d4d9b8752641b285f6ea9584a76, type: 2}
+  cone150Indicator: {fileID: 11400000, guid: 3f7c0c5a8a8a7954d9170c3df03e3d36, type: 2}
+  cone180Indicator: {fileID: 11400000, guid: bb80674a833a43d4c988df0127478fd1, type: 2}
 --- !u!114 &7328535092929103980
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11148,6 +11152,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
   sfxPlayer: {fileID: 0}
   effectBindings: []
+--- !u!114 &-364745694667191063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9011109773374467229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc3aaa83ac1742d47ad5e32e114a5928, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_Effect
 --- !u!1 &9017157100209275396
 GameObject:
   m_ObjectHideFlags: 0
