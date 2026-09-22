@@ -4,7 +4,8 @@ using Unity.Cinemachine;
 public enum Pivot
 {
     CameraPivot_Combat,
-    CameraPivot_Camp
+    CameraPivot_Camp,
+    Etc
 }
 
 public class YJ_SearchTrackingTarget : MonoBehaviour
@@ -35,6 +36,9 @@ public class YJ_SearchTrackingTarget : MonoBehaviour
             case Pivot.CameraPivot_Camp:
                 cinemachineCamera.transform.rotation = Quaternion.Euler(campRotation);
                 break;
+
+            case Pivot.Etc:
+                break;
         }
 
         cinemachineCamera.Target.TrackingTarget = trackingTarget;
@@ -50,6 +54,7 @@ public class YJ_SearchTrackingTarget : MonoBehaviour
             return null;
         }
 
-        return player.transform.Find(pivot.ToString());
+        string targetName = pivot == Pivot.Etc ? nameof(Pivot.CameraPivot_Combat) : pivot.ToString();
+        return player.transform.Find(targetName);
     }
 }
