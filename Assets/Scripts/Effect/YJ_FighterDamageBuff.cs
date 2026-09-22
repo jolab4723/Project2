@@ -3,7 +3,20 @@ using UnityEngine;
 
 public class YJ_FighterDamageBuff : MonoBehaviour
 {
+    public enum BuffType
+    {
+        DashDamage = 0,
+        Awakening = 1,
+    }
+
     private const int DashSkillIndex = 2;
+    private const int AwakeningSkillIndex = 3;
+
+    [Header("Buff Source")]
+    [Tooltip("DashDamage: 3번 스킬의 공격력 버프. Awakening: 4번 스킬의 각성 버프.")]
+    [SerializeField] private BuffType buffType = BuffType.DashDamage;
+    [Tooltip("Awakening에서 참조할 진화. None은 기본 궁극기이며, 현재 플레이어의 진화를 자동 선택하지 않습니다.")]
+    [SerializeField] private SkillEvolutionId awakeningEvolution = SkillEvolutionId.None;
 
     [Header("Damage Buff Effect")]
     [SerializeField, Min(0f)] private float fallbackBuffDuration = 4f;
@@ -126,11 +139,14 @@ public class YJ_FighterDamageBuff : MonoBehaviour
     private float ResolveRemainingBuffDuration()
     {
         FighterSkillController skillController = GetComponentInParent<FighterSkillController>();
+        int skillIndex = buffType == BuffType.Awakening ? AwakeningSkillIndex : DashSkillIndex;
         SkillDefinitionSO skillDefinition = skillController != null
-            ? skillController.GetSkillDefinition(DashSkillIndex)
+            ? skillController.GetSkillDefinition(skillIndex)
             : null;
         var buffDefinition = skillDefinition != null
-            ? skillDefinition.evoDashDamageBuff
+            ? (buffType == BuffType.Awakening
+                ? skillDefinition.GetAwakeningBuff(awakeningEvolution)
+                : skillDefinition.evoDashDamageBuff)
             : null;
 
         if (buffDefinition == null)
