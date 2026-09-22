@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
@@ -46,6 +47,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
     private void Awake()
     {
         contentFade?.SetAlphaImmediate(0f);
+        panelCurtain?.PrepareOpen();
 
         if (loginButton != null)
         {
@@ -69,8 +71,14 @@ public sealed class KY_LoginPopup : MonoBehaviour
     }
 
     /// <summary>처음 로그인 팝업이 표시될 때 판넬과 내용을 순서대로 등장시킨다.</summary>
-    private void Start()
+    private IEnumerator Start()
     {
+        var loader = Core.SceneLoader.Instance;
+        if (loader != null && loader.IsLoading)
+            yield return new WaitUntil(() => !loader.IsLoading);
+
+        // 로딩 씬의 페이드가 끝난 다음 프레임에 시작해야 커튼 연출이 가려지지 않는다.
+        yield return new WaitForEndOfFrame();
         PlayEntranceEffect();
     }
 
