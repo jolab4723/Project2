@@ -202,7 +202,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a3c7c7cb311feec4ab2de8737df9e743, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 42cec6391c178774183a01cb27abc313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -750,8 +750,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7251389822024265002}
   - component: {fileID: 8934967071234372643}
+  - component: {fileID: 5224846478736912344}
   m_Layer: 5
-  m_Name: RestMessage
+  m_Name: Message
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -798,6 +799,20 @@ MonoBehaviour:
   openEase: 18
   closeEase: 17
   ignoreTimeScale: 0
+--- !u!114 &5224846478736912344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5602586165597591302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb7a30de71335984eaad9832a8dc0e17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ScreenNotice
+  messageText: {fileID: 5765920483933691555}
+  displayDuration: 2.5
 --- !u!1 &5957231057452870041
 GameObject:
   m_ObjectHideFlags: 0
@@ -1110,6 +1125,7 @@ GameObject:
   - component: {fileID: 4461978785561044229}
   - component: {fileID: 4696975393959056068}
   - component: {fileID: 8002414966718337834}
+  - component: {fileID: 24400822929795751}
   m_Layer: 5
   m_Name: Canvas_Popup
   m_TagString: Untagged
@@ -1205,6 +1221,20 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &24400822929795751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7039001446181280916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86e7d41aff0158342adb91b7be00d563, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_QuestCompletionScreenNoticeBridge
+  database: {fileID: 11400000, guid: 36b486f71653ad2428c9ee6d827594b9, type: 2}
+  screenNotice: {fileID: 5224846478736912344}
 --- !u!1 &7252231643805775178
 GameObject:
   m_ObjectHideFlags: 0
@@ -2170,6 +2200,10 @@ PrefabInstance:
       value: RestPopup
       objectReference: {fileID: 0}
     - target: {fileID: 6077280605150361260, guid: 136ba27303851df439af1ef2cdb1e88e, type: 3}
+      propertyPath: screenNotice
+      value: 
+      objectReference: {fileID: 5224846478736912344}
+    - target: {fileID: 6077280605150361260, guid: 136ba27303851df439af1ef2cdb1e88e, type: 3}
       propertyPath: completionMessageText
       value: 
       objectReference: {fileID: 5765920483933691555}
@@ -2206,6 +2240,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7692967980038973821}
     m_Modifications:
+    - target: {fileID: 861605055862489246, guid: b120abdbf47c88e49ac75b6768fd9aa8, type: 3}
+      propertyPath: screenNotice
+      value: 
+      objectReference: {fileID: 5224846478736912344}
     - target: {fileID: 7968568904147494793, guid: b120abdbf47c88e49ac75b6768fd9aa8, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
