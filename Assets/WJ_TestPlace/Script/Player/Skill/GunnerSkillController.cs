@@ -51,6 +51,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     [SerializeField] private Color sectorVisualColor = new Color(0.2f, 0.6f, 1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(0.2f, 0.9f, 1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
+    [SerializeField] private Color shellImpactVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
 
     // 슬롯 수(skills.Length)에 맞춰 Awake에서 다시 잡는다 - 궁극기(Skill4)처럼 슬롯이 늘어나도
     // 쿨타임 배열만 3칸으로 남아 IndexOutOfRange가 나지 않도록 하기 위함.
@@ -462,13 +463,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float markDuration = pendingEvo == SkillEvolutionId.Evolution2 ? def.evoMarkerDuration : 0f;
 
         WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
-        WBH_PlayerEffectCue explosionCue =
-            PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
 
         for (int wave = 0; wave < waveCount; wave++)
         {
-            SpawnFallingBombs(def, center, areaRadius, explosionCue);
-
             // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
             yield return new WaitForSeconds(impactDelay);
             ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData, markDuration);
@@ -511,7 +508,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             Vector2 offset = UnityEngine.Random.insideUnitCircle * scatterRadius;
             Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
 
-            SpawnFallingBombAt(def, impactPos, explosionCue);
+            SkillRangeVisual.ShowSector(impactPos, Vector3.forward, shellRadius, 360f, shellImpactVisualColor, Mathf.Max(0.05f, def.carpetImpactDelay));
+
+            SpawnBarrageProjectile(def, impactPos, explosionCue);
 
             yield return new WaitForSeconds(def.carpetImpactDelay);
             ApplyCarpetWaveDamage(def, index, impactPos, shellRadius, damageMultiplier, effectData, 0f);
@@ -520,6 +519,33 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             if (rest > 0f)
                 yield return new WaitForSeconds(rest);
         }
+    }
+
+    private void SpawnBarrageProjectile(SkillDefinitionSO def, Vector3 impactPos, WBH_PlayerEffectCue explosionCue)
+    {
+        GameObject prefab = def.evoBarrageBombPrefab;
+        if(prefab == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] 진화 3 폭격 투사체 프리팹이 없습니다.");
+            return;
+        }
+
+        Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+        GameObject projectileGO = Instantiate(prefab, skyPos, Quaternion.identity);
+
+        if(!projectileGO.TryGetComponent(out GunnerBomb projectile))
+        {
+            Destroy(projectileGO);
+            return;
+        }
+
+        float fallSpeed = def.carpetImpactDelay > 0f ? def.carpetDropHeight / def.carpetImpactDelay : def.bombThrowSpeed;
+
+        projectile.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+
+        projectile.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+
+        SkillObjectSpawned?.Invoke(projectileGO, prefab);
     }
 
     /// <summary>폭격 연출용 폭탄을 하늘에서 떨어뜨린다. 폭발 반경 0이라 판정은 없고 낙하·폭발 이펙트만 남는다.</summary>
