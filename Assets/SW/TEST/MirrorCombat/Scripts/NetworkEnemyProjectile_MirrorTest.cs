@@ -30,6 +30,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     public static uint ServerPlayerSpawnCount { get; private set; }
     public static uint ClientPlayerObservedCount { get; private set; }
 
+    private static readonly Dictionary<uint, List<NetworkEnemyProjectile_MirrorTest>> GravityWellFieldsByOwner = new();
+
     [SerializeField, Min(0.01f)] private float collisionRadius = 0.2f;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
 
@@ -38,6 +40,10 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     [SyncVar] private uint playerOwnerNetId;
     [SyncVar] private string shotItemId;
     [SyncVar] private GunnerWeaponType shotWeaponType;
+    [SyncVar] private float gravityWellRadius;
+    [SyncVar] private Color gravityWellColor;
+    // SW 수정: 반경과 색을 먼저 역직렬화한 뒤 활성 Hook이 링을 만들도록 선언 순서를 유지합니다.
+    [SyncVar(hook = nameof(OnGravityWellActiveChanged))] private bool gravityWellActive;
 
     private NetworkEnemyAuthority_MirrorTest owner;
     private Vector3 direction;
@@ -63,6 +69,12 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private GameObject playerProjectileVisual;
     private GameObject playerImpactVisualPrefab;
     private float visualBindUntil;
+    private double gravityWellExpiresAt;
+    private double gravityWellNextApplyAt;
+    private float gravityWellSlowMultiplier;
+    private float gravityWellSlowRefreshSeconds;
+    private GameObject gravityWellVisual;
+    private readonly HashSet<NetworkEnemyAuthority_MirrorTest> gravityWellTargets = new();
 
     public bool IsMissile => missile;
     public bool IsPlayerShot => playerShot;
@@ -70,6 +82,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private bool IsPlayerShotAvailable => playerOwner != null && playerOwner.CombatAuthority?.CanContinueGunnerProjectile == true &&
         SceneManager.GetActiveScene().handle == shotSceneHandle && NetworkTime.time < shotExpiresAt;
 
+    /// <summary>SW 수정: Play Mode를 새로 시작할 때 중력 우물 포함 투사체 진단값과 활성 목록을 초기화합니다.</summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetDiagnostics()
     {
@@ -80,6 +93,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         ClientMissileObservedCount = 0;
         ServerPlayerSpawnCount = 0;
         ClientPlayerObservedCount = 0;
+        GravityWellFieldsByOwner.Clear();
     }
 
     private void Awake()
@@ -88,6 +102,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         projectileCollider.isTrigger = true;
     }
 
+    /// <summary>SW 수정: 클라이언트가 투사체 또는 이미 활성화된 중력 우물을 처음 관찰할 때 외형을 연결합니다.</summary>
     public override void OnStartClient()
     {
         base.OnStartClient();
@@ -102,6 +117,8 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             ClientMissileObservedCount++;
         if (!isServer && projectileCollider != null)
             projectileCollider.enabled = false;
+        if (gravityWellActive)
+            ShowGravityWellVisual();
     }
 
     public override void OnStartServer()
@@ -111,6 +128,13 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         else ServerSpawnCount++;
         if (missile && !playerShot)
             ServerMissileSpawnCount++;
+    }
+
+    /// <summary>SW 수정: 서버가 중력 우물 네트워크 객체를 제거할 때 소유자별 활성 목록도 함께 정리합니다.</summary>
+    public override void OnStopServer()
+    {
+        UnregisterGravityWellField();
+        base.OnStopServer();
     }
 
     [Server]
@@ -159,6 +183,10 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         InitializePlayerServer(attackOwner, weaponType, itemId, element, moveDirection, moveSpeed, maxDistance, impactPoint, explosionRadius, attackId, effect);
     }
 
+    /// <summary>
+    /// SW 수정: 플레이어가 발사한 탄의 무기·아이템·속성과 발사 시 고유효과를 서버에 보관합니다.
+    /// 장착을 바꿔도 이미 발사한 탄은 이 스냅샷으로 충돌 결과를 처리합니다.
+    /// </summary>
     [Server]
     public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
         ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
@@ -186,11 +214,24 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// SW 수정: 서버는 비행 중인 탄과 충돌 후 고정된 중력 우물을 같은 네트워크 객체에서 갱신합니다.
+    /// 클라이언트는 발사 외형을 연결하고 서버가 복제한 장판 상태만 표시합니다.
+    /// </summary>
     private void Update()
     {
-        if (isClient && playerShot && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
+        if (isClient && playerShot && !gravityWellActive && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
             TryBindPlayerVisual();
-        if (!isServer || consumed)
+        if (!isServer)
+            return;
+
+        if (gravityWellActive)
+        {
+            UpdateGravityWellField();
+            return;
+        }
+
+        if (consumed)
             return;
 
         if (playerShot && !IsPlayerShotAvailable)
@@ -314,11 +355,16 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// SW 수정: 서버가 플레이어 탄의 직접 피해와 충돌 연출을 확정합니다.
+    /// 중력 우물 유탄이면 탄을 지우지 않고 충돌 위치의 고정 둔화 장판으로 전환합니다.
+    /// </summary>
     [Server]
     private void FinishPlayerImpact(Vector3 point, Vector3 hitDirection, Collider directHit)
     {
         if (consumed) return;
         consumed = true;
+        bool keepAsGravityWell = false;
         try
         {
             if (!IsPlayerShotAvailable) return;
@@ -330,8 +376,108 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
             }
             else if (directHit != null) ApplyPlayerDamage(directHit);
             playerOwner?.CombatAuthority?.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, hitDirection);
+            if (missile && shotUniqueEffect is GravityWellFieldUniqueEffectSO gravityWell)
+            {
+                ActivateGravityWellField(point, gravityWell);
+                keepAsGravityWell = true;
+            }
         }
-        finally { NetworkServer.Destroy(gameObject); }
+        finally
+        {
+            if (!keepAsGravityWell)
+                NetworkServer.Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// SW 수정: 충돌한 유탄을 서버 권한의 고정 장판으로 바꾸고 소유자별 최대 개수를 지킵니다.
+    /// 장판은 무기 교체와 무관하게 유지되며 소유자 사망·장면 변경·지속시간 종료 때 사라집니다.
+    /// </summary>
+    [Server]
+    private void ActivateGravityWellField(Vector3 point, GravityWellFieldUniqueEffectSO effect)
+    {
+        transform.SetPositionAndRotation(point, Quaternion.identity);
+        missile = false;
+        speed = 0f;
+        gravityWellRadius = effect.radius;
+        gravityWellColor = effect.fieldColor;
+        gravityWellSlowMultiplier = effect.slowMultiplier;
+        gravityWellSlowRefreshSeconds = effect.slowRefreshSeconds;
+        gravityWellExpiresAt = NetworkTime.time + effect.durationSeconds;
+        gravityWellNextApplyAt = 0d;
+        gravityWellActive = true;
+        if (projectileCollider != null)
+            projectileCollider.enabled = false;
+
+        RegisterGravityWellField(effect.maxConcurrentFields);
+        if (isClient)
+            ShowGravityWellVisual();
+    }
+
+    /// <summary>
+    /// SW 수정: 서버가 장판 안의 살아 있는 적을 한 번씩만 찾아 짧은 둔화를 갱신합니다.
+    /// 짧은 갱신 방식이라 적이 범위를 벗어나면 곧바로 원래 속도로 돌아옵니다.
+    /// </summary>
+    [Server]
+    private void UpdateGravityWellField()
+    {
+        if (playerOwner == null || playerOwner.RuntimeState?.IsDead == true ||
+            SceneManager.GetActiveScene().handle != shotSceneHandle || NetworkTime.time >= gravityWellExpiresAt)
+        {
+            NetworkServer.Destroy(gameObject);
+            return;
+        }
+
+        if (NetworkTime.time < gravityWellNextApplyAt)
+            return;
+
+        gravityWellNextApplyAt = NetworkTime.time + gravityWellSlowRefreshSeconds;
+        gravityWellTargets.Clear();
+        foreach (Collider hit in Physics.OverlapSphere(transform.position, gravityWellRadius, 1 << 10, QueryTriggerInteraction.Collide))
+        {
+            NetworkEnemyAuthority_MirrorTest target = hit.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>();
+            if (target == null || !gravityWellTargets.Add(target))
+                continue;
+
+            var slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow,
+                gravityWellSlowRefreshSeconds + 0.1f, gravityWellSlowMultiplier)
+            {
+                Attacker = playerOwner.Controller,
+                AttackId = shotAttackId,
+            };
+            target.ServerTryApplyStatusEffect(slow);
+        }
+    }
+
+    /// <summary>
+    /// SW 수정: 같은 플레이어가 허용 수보다 많은 중력 우물을 만들면 가장 오래된 장판부터 제거합니다.
+    /// 별도 Manager 없이 현재 네트워크 투사체 목록만 사용합니다.
+    /// </summary>
+    [Server]
+    private void RegisterGravityWellField(int maxConcurrentFields)
+    {
+        if (!GravityWellFieldsByOwner.TryGetValue(playerOwnerNetId, out List<NetworkEnemyProjectile_MirrorTest> fields))
+            GravityWellFieldsByOwner[playerOwnerNetId] = fields = new List<NetworkEnemyProjectile_MirrorTest>();
+        fields.RemoveAll(field => field == null || !field.gravityWellActive);
+        while (fields.Count >= maxConcurrentFields)
+        {
+            NetworkEnemyProjectile_MirrorTest oldest = fields[0];
+            fields.RemoveAt(0);
+            if (oldest != null)
+                NetworkServer.Destroy(oldest.gameObject);
+        }
+        fields.Add(this);
+    }
+
+    /// <summary>SW 수정: 서버 장판이 끝날 때 소유자별 활성 목록에서도 안전하게 제거합니다.</summary>
+    [Server]
+    private void UnregisterGravityWellField()
+    {
+        if (!GravityWellFieldsByOwner.TryGetValue(playerOwnerNetId, out List<NetworkEnemyProjectile_MirrorTest> fields))
+            return;
+        fields.Remove(this);
+        if (fields.Count == 0)
+            GravityWellFieldsByOwner.Remove(playerOwnerNetId);
     }
 
     [Server]
@@ -367,6 +513,32 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         playerProjectileVisual = Instantiate(binding.ProjectileVisualPrefab, transform, false);
         playerProjectileVisual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         GunnerVfxPlayback.Restart(playerProjectileVisual);
+    }
+
+    /// <summary>SW 수정: 중력 우물 활성 상태가 복제되면 각 클라이언트가 같은 반경의 바닥 링을 표시하거나 정리합니다.</summary>
+    private void OnGravityWellActiveChanged(bool _, bool active)
+    {
+        if (active)
+            ShowGravityWellVisual();
+        else if (gravityWellVisual != null)
+            Destroy(gravityWellVisual);
+    }
+
+    /// <summary>SW 수정: 기존 투사체 외형을 숨기고 네트워크로 받은 위치·반경·색상으로 장판 링을 만듭니다.</summary>
+    private void ShowGravityWellVisual()
+    {
+        if (!isClient || gravityWellVisual != null)
+            return;
+        if (playerProjectileVisual != null)
+            playerProjectileVisual.SetActive(false);
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+            renderer.enabled = false;
+
+        gravityWellVisual = new GameObject("GravityWellFieldVisual");
+        gravityWellVisual.transform.SetParent(transform, false);
+        AreaRingVisual ring = gravityWellVisual.AddComponent<AreaRingVisual>();
+        ring.SetColor(gravityWellColor);
+        ring.SetRadius(gravityWellRadius);
     }
 
     [ClientRpc]
