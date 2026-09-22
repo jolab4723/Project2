@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using System;
 using TMPro;
 
+/// <summary>패시브 스킬 한 칸의 아이콘·단계 표시와 좌우 클릭·호버 입력을 전달한다.</summary>
 public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public Image iconImage;

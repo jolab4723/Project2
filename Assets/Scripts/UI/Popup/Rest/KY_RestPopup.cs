@@ -44,6 +44,7 @@ public class KY_RestPopup : KY_PopupBase
     private int cost;
     private int currentCredits;
     private Tween completionMessageTween;
+    private KY_ButtonShakeEffect confirmButtonShakeEffect;
 
     /// <summary>완료 알림 패널의 커튼 연출. 이걸 열어주지 않으면 패널을 켜도 세로로 접힌 채(스케일 0) 안 보인다.</summary>
     private KY_CurtainEffect completionCurtain;
@@ -57,7 +58,12 @@ public class KY_RestPopup : KY_PopupBase
             completionCurtain = completionMessagePanel.GetComponent<KY_CurtainEffect>();
 
         if (confirmButton != null)
+        {
             confirmButton.onClick.AddListener(HandleConfirmClicked);
+            confirmButtonShakeEffect = confirmButton.GetComponent<KY_ButtonShakeEffect>();
+            if (confirmButtonShakeEffect != null)
+                confirmButtonShakeEffect.DisabledClicked += HandleInsufficientConfirmClicked;
+        }
 
         if (cancelButton != null)
             cancelButton.onClick.AddListener(HandleCancelClicked);
@@ -74,6 +80,9 @@ public class KY_RestPopup : KY_PopupBase
 
         if (confirmButton != null)
             confirmButton.onClick.RemoveListener(HandleConfirmClicked);
+
+        if (confirmButtonShakeEffect != null)
+            confirmButtonShakeEffect.DisabledClicked -= HandleInsufficientConfirmClicked;
 
         if (cancelButton != null)
             cancelButton.onClick.RemoveListener(HandleCancelClicked);
@@ -161,6 +170,12 @@ public class KY_RestPopup : KY_PopupBase
         CloseThroughManager();
     }
 
+    private void HandleInsufficientConfirmClicked()
+    {
+        if (currentCredits < cost)
+            ShowInsufficientCreditsMessage();
+    }
+
     /// <summary>
     /// 완료 알림을 띄운다. 알림 패널은 팝업 바깥에 있어서 팝업을 닫아도 남는다.
     /// !! 자동 숨김을 코루틴으로 돌리면 팝업이 닫히는 순간(SetActive(false)) 같이 죽어서 알림이 영원히 남는다.
@@ -168,10 +183,21 @@ public class KY_RestPopup : KY_PopupBase
     /// </summary>
     private void ShowCompletionMessage()
     {
+        ShowMessage(string.Format(
+            L("rest_ui.complete_message", "{0} 크레딧을 소비하여 체력 {1}, 포션 {2}개를 채웠습니다."),
+            cost, healthAmount, potionAmount));
+    }
+
+    /// <summary>비용이 부족해 확인 버튼을 누를 수 없을 때, 완료 알림과 같은 화면 내 알림으로 안내한다.</summary>
+    private void ShowInsufficientCreditsMessage()
+    {
+        ShowMessage(L("rest_ui.insufficient_credits", "크레딧이 부족합니다."));
+    }
+
+    private void ShowMessage(string message)
+    {
         if (completionMessageText != null)
-            completionMessageText.text = string.Format(
-                L("rest_ui.complete_message", "{0} 크레딧을 소비하여 체력 {1}, 포션 {2}개를 채웠습니다."),
-                cost, healthAmount, potionAmount);
+            completionMessageText.text = message;
 
         if (completionMessagePanel == null)
             return;
@@ -193,7 +219,19 @@ public class KY_RestPopup : KY_PopupBase
         completionMessageTween?.Kill();
         completionMessageTween = null;
 
-        if (completionMessagePanel != null)
+        if (completionMessagePanel == null)
+            return;
+
+        if (!completionMessagePanel.activeSelf || completionCurtain == null)
+        {
             completionMessagePanel.SetActive(false);
+            return;
+        }
+
+        completionCurtain.Close().OnComplete(() =>
+        {
+            if (completionMessagePanel != null)
+                completionMessagePanel.SetActive(false);
+        });
     }
 }

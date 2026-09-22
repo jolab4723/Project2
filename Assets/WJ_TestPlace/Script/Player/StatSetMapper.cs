@@ -37,6 +37,8 @@ namespace ItemSystem
                 case StatType.penetrationFlat: s.penFlat += value; break;
                 case StatType.skillRangeFlat: s.skillRangeFlat += value; break;
                 case StatType.skillRangePercent: s.skillRangePercent += value; break;
+                case StatType.normalDamagePercent: s.normalDamagePercent += value; break;
+                case StatType.skillDamagePercent: s.skillDamagePercent += value; break;
                 case StatType.fireBonusFlat: s.fireBonusFlat += value; break;
                 case StatType.iceBonusFlat: s.iceBonusFlat += value; break;
                 case StatType.electricBonusFlat: s.electricBonusFlat += value; break;

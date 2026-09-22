@@ -14,6 +14,8 @@ public static class WBH_CombatResolver_MirrorTest
         public readonly float FireBonus;
         public readonly float IceBonus;
         public readonly float ElectricBonus;
+        public readonly float NormalDamageModifier;
+        public readonly float SkillDamageModifier;
 
         public DamageSourceSnapshot(WBH_ICombatStatus status)
         {
@@ -24,6 +26,19 @@ public static class WBH_CombatResolver_MirrorTest
             FireBonus = status.FireBonus;
             IceBonus = status.IceBonus;
             ElectricBonus = status.ElectricBonus;
+            NormalDamageModifier = status.NormalDamageModifier;
+            SkillDamageModifier = status.SkillDamageModifier;
+        }
+
+        /// <summary>WBH_CombatManager.GetAttackTypeModifier와 같은 규칙. 두 공식이 갈라지지 않게 맞춰야 한다.</summary>
+        public float GetAttackTypeModifier(WBH_AttackType attackType)
+        {
+            return attackType switch
+            {
+                WBH_AttackType.Normal => NormalDamageModifier,
+                WBH_AttackType.Skill => SkillDamageModifier,
+                _ => 1f,
+            };
         }
 
         public float GetElementBonus(ElementType elementType)
@@ -173,6 +188,23 @@ public static class WBH_CombatResolver_MirrorTest
             Debug.LogWarning($"[WBH_CombatResolver_MirrorTest] {reason}: 대기 중인 후속 피해 {count}건을 폐기했습니다.");
     }
 
+    /// <summary>
+    /// 이 경로는 WBH_AttackType을 들고 다니지 않고 DamageCause만 받는다. WBH_DamageRequest가
+    /// AttackType을 DamageCause로 옮길 때 쓰는 규칙(Skill -> Skill, 그 외 -> Direct)을 되짚어
+    /// 공격 유형을 복원한다.
+    ///
+    /// !! Effect(고유효과 추가타)와 DoT(지속 피해)는 Normal로 본다. 단일 경로(WBH_CombatManager)에서도
+    ///    이런 요청은 호출부가 WBH_AttackType.Normal을 담아 보내므로 NormalDamageModifier를 타는데,
+    ///    여기서만 1f로 빼면 두 공식의 결과가 갈라진다.
+    ///
+    /// !! 복원이라 완전하지는 않다. 단일 경로에서 AttackType.Skill과 DamageCause.Effect를 함께 넘기면
+    ///    그쪽은 스킬 배율을 타지만 여기서는 일반 배율을 탄다. 현재 그런 호출부는 없다.
+    /// </summary>
+    private static WBH_AttackType ToAttackType(DamageCause damageCause)
+    {
+        return damageCause == DamageCause.Skill ? WBH_AttackType.Skill : WBH_AttackType.Normal;
+    }
+
     private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_ICombat target,
         ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
         DamageCause damageCause, uint attackId, DamageSourceSnapshot sourceSnapshot,
@@ -187,7 +219,7 @@ public static class WBH_CombatResolver_MirrorTest
         if (attackerStatus == null || targetStatus == null || attackerStatus.IsDead || targetStatus.IsDead)
             return false;
 
-        float damage = sourceSnapshot.AttackPower * damageMultiplier;
+        float damage = sourceSnapshot.AttackPower * damageMultiplier * sourceSnapshot.GetAttackTypeModifier(ToAttackType(damageCause));
         damage *= 1f + sourceSnapshot.GetElementBonus(elementType);
         bool isCritical = canCrit && Random.value <= sourceSnapshot.CritRate;
         if (isCritical) damage *= sourceSnapshot.CritMult;

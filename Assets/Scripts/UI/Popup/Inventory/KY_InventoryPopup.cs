@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>인벤토리 팝업의 슬라이드 전환과 입력 레이캐스트 상태를 관리한다.</summary>
 public class KY_InventoryPopup : KY_PopupBase
 {
     private KY_SlideAnimator slideAnimator;
