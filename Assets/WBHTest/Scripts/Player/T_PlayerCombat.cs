@@ -166,11 +166,14 @@ public class T_PlayerCombat : MonoBehaviour
             effect.TryGetEffectData(hitCue, out effectData);
 
         // 투사체용 데미지 요청 생성. ElementType은 현재 장착 무기에 인챈트된 속성을 그대로 사용한다.
+        // 부여할 상태이상도 같은 속성에서 뽑아 쓰므로, 무속성 무기는 상태이상 없이 순수 피해만 준다.
+        ItemSystem.ElementType element = status.CurrentElement;
+
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal,
-                                                        status.CurrentElement,
+                                                        element,
                                                         basicAttackMult,
-                                                        WBH_StatusEffectPresets.Burn1, // Burn1은 아직 테스트값
-                                                        effectData: effectData); 
+                                                        GetElementStatusEffect(element),
+                                                        effectData: effectData);
 
         // SW 추가:
         // 아래 switch의 피해 방식은 팀원 기존 구현을 그대로 사용합니다. 달라지는 것은 발사 위치와 전달되는 시각 프리팹뿐입니다.
@@ -271,6 +274,10 @@ public class T_PlayerCombat : MonoBehaviour
 
         Collider[] targets = Physics.OverlapSphere(origin, range, enemyLayer);
 
+        // 한 번의 공격 안에서는 인챈트 속성이 바뀌지 않으므로 루프 밖에서 한 번만 조회한다.
+        ItemSystem.ElementType element = status.CurrentElement;
+        WBH_StatusEffectData? elementStatusEffect = GetElementStatusEffect(element);
+
         foreach (Collider target in targets)
         {
             Vector3 dirToTarget = (target.transform.position - origin).normalized;
@@ -292,9 +299,9 @@ public class T_PlayerCombat : MonoBehaviour
 
             WBH_DamageRequest request = CreateDamageRequest(combatTarget,
                                                             WBH_AttackType.Normal,
-                                                            status.CurrentElement,
+                                                            element,
                                                             basicAttackMult,
-                                                            statusEffect: WBH_StatusEffectPresets.Slow1, // Slow1은 아직 테스트값
+                                                            statusEffect: elementStatusEffect,
                                                             effectData: effectData,
                                                             hitPosition: hitPosition,
                                                             hitEffectDirection: lookDirection,
@@ -309,6 +316,30 @@ public class T_PlayerCombat : MonoBehaviour
                 impactVisualPrefab,
                 target.transform.position,
                 -dirToTarget);
+        }
+    }
+
+    /// <summary>
+    /// 인챈트 속성에 대응하는 기본 공격 상태이상을 돌려준다. 무속성(None)이면 null이라 상태이상이 붙지 않는다.
+    /// 예전에는 호출부에 Burn1/Slow1이 고정으로 박혀 있어서, 인챈트가 없거나 무기를 끼지 않아도
+    /// 거너 기본 공격은 항상 화상, 파이터 근접과 산탄은 항상 둔화를 걸었다.
+    /// 상태이상 수치 자체는 WBH_StatusEffectPresets가 소유하므로 밸런스 조정은 그쪽에서 한다.
+    /// </summary>
+    private static WBH_StatusEffectData? GetElementStatusEffect(ItemSystem.ElementType elementType)
+    {
+        switch (elementType)
+        {
+            case ItemSystem.ElementType.Fire:
+                return WBH_StatusEffectPresets.Burn1;      // 화상 : 5초동안 1초마다 최대 체력의 1% 감소
+
+            case ItemSystem.ElementType.Ice:
+                return WBH_StatusEffectPresets.Freeze1;    // 동상 : 5초동안 공격속도, 이동속도 50% 감소
+
+            case ItemSystem.ElementType.Electric:
+                return WBH_StatusEffectPresets.Electric1;  // 감전 : 5초동안 공격력 50% 감소
+
+            default:
+                return null;                               // 무속성 - 상태이상 없이 피해만
         }
     }
 
