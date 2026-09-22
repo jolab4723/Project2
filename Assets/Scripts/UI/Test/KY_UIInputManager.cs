@@ -74,6 +74,12 @@ public class KY_UIInputManager : MonoBehaviour
             CloseCampInventoryIfOpen();
             KY_GameEvents.QuestRequested();
         }
+
+        if (inputActions.Player.OpenBuff.triggered)
+        {
+            CloseCampInventoryIfOpen();
+            KY_GameEvents.BuffRequested();
+        }
     }
 
     private InventoryPartView GetCampInventoryView()

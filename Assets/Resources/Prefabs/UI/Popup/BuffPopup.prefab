@@ -2025,6 +2025,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4402447414018315244}
   - component: {fileID: 984260207751408743}
+  - component: {fileID: 1692165470655698498}
   m_Layer: 5
   m_Name: Description
   m_TagString: Untagged
@@ -2068,6 +2069,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KY_BuffDescriptionView
   nameText: {fileID: 1714293077362725663}
   descriptionText: {fileID: 8179674784307432844}
+--- !u!114 &1692165470655698498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115627868753862830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9867acf96a7eee142be38cf3f64196f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_CurtainEffect
+  axis: 0
+  openDuration: 0.16
+  closeDuration: 0.12
+  openEase: 18
+  closeEase: 17
+  ignoreTimeScale: 0
 --- !u!1 &2348146642040025175
 GameObject:
   m_ObjectHideFlags: 0
@@ -2601,9 +2620,9 @@ RectTransform:
   - {fileID: 5143093734045970423}
   m_Father: {fileID: 3041207744781592789}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 250, y: -42.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 480, y: 85}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1961187303360349317
@@ -2632,6 +2651,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4467060281668240055}
   - component: {fileID: 4911476964535702782}
+  - component: {fileID: 3981159139085300661}
   m_Layer: 5
   m_Name: BuffPopup
   m_TagString: Untagged
@@ -2678,6 +2698,24 @@ MonoBehaviour:
   slotPrefab: {fileID: 1961187303360349317}
   descriptionView: {fileID: 984260207751408743}
   emptyStateText: {fileID: 9178331974429538338}
+--- !u!114 &3981159139085300661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3053945182849515881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48bc5717bebd4a3438231bdbb68f8e2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_SlideAnimator
+  duration: 0.3
+  inEase: 27
+  outEase: 26
+  hiddenOffsetX: 500
+  hiddenOffsetY: 0
+  ignoreTimeScale: 0
 --- !u!1 &3073655458571199518
 GameObject:
   m_ObjectHideFlags: 0
