@@ -11,6 +11,8 @@
 
 고유효과는 장비 이름에 어울리는 행동과 선택을 만든다. 무기는 공격·표적 선택, 투구는 행동 순서·자원 관리, 상의는 생존·피격 대응, 부츠는 이동 리듬, 유물은 가방 공간을 사용하는 빌드 변화를 맡는다.
 
+아이템 등급은 효과 복잡도와 전투 영향에 맞춘다. **유일(Unique)은 밤의 칼날을 기준으로 자신의 스탯 변화, 조건부 강화, 다음 공격 계수처럼 수치 중심 효과를 우선한다.** 장판·연쇄·관통·공격 재생·상태 전파·아군 소비 표식처럼 전장 규칙이나 공격 흐름을 크게 바꾸는 무기 효과는 전설(Legendary)에 둔다. 이 기준에 따라 아크 블레이드, 수호자의 정의, 폐열 절단 대검, 와일드파이어, 초냉매, 코어 브레이커, 중력 우물, 반물질 랜스, 스마일 시그널, 에코 챔버를 전설로 승격했다. 특이점 박격포를 비롯해 이미 전설인 같은 계열 무기는 유지한다. 유물은 이번 등급 조정 대상에서 제외한다.
+
 빌드 단위는 **무기 1개 + 실제 장착 가능한 방어구 + 소지 유물 + 기존 스킬**이다. 무기 두 개를 동시에 장착한 것처럼 시너지를 계산하지 않는다. 같은 유물 여러 개의 효과는 기본적으로 중첩하지 않는다. 각 효과는 강한 상황, 약한 상황, 조건이나 공간 비용을 함께 정한다.
 
 기존 PlayerContext·Stat·Buff·상태이상·인벤토리·풀·Mirror 권한 경로를 재사용한다. 실제 첫 효과에 필요한 기능부터 만들고, 범용 Manager·Factory·스케줄러를 미리 추가하지 않는다. 피해·생명주기·서버 권한을 줄여서 코드를 간결하게 만들지는 않는다.
@@ -33,20 +35,20 @@
 
 P4에서 보류했던 BH 스크립트 수정은 사용자 승인 후 반영했다. 일반 적의 활성 컨트롤러가 상태이상을 거절하던 조건을 수정했고, 풀 반환 즉시 상태를 지운다. 저항·면역은 기존 텍스트 풀로 표시하며 Host에서 같은 공격의 직접타·추가타가 문구를 중복 생성하지 않는다. 숫자 글꼴은 유지하고 한글 문구용 글꼴만 연결했다.
 
-완료한 장비 묶음은 다음 9종이다.
+완료한 장비 묶음은 다음 10종이다.
 
 | 역할 | 실제 장비 / itemId | 현재 효과 |
 | --- | --- | --- |
-| P2-A | 아크 블레이드 / `item.weapon.greatsword.arcblade` | 기본 공격 적중 후 최대 3대 연쇄 번개 |
+| P2-A | 아크 블레이드(전설) / `item.weapon.greatsword.arcblade` | 기본 공격 적중 후 최대 3대 연쇄 번개 |
 | P2-B | 인페르노 / `item.weapon.axe.inferno` | 근접 기본 공격 적중 후 같은 대상에 공격력 20% Fire 추가타 |
 | P3-A | 유리빛 궤도 / `item.weapon.rifle.glassrail` | 발사 때 자격을 가진 탄이 적중하면 공격력 15% Ice 추가타 |
 | H3 | 절전모드 헤드셋 / `item.armor.helmet.powersavingheadset` | 마나 25% 이하에서 마나 재생 +30% |
 | B1 | 폐기된 부스터 모듈 / `item.armor.boots.discardedboostermodule` | 회피 사용 후 2초 이동속도 +20%, 재발동 대기 6초 |
 | R2 | 마나 중계기 / `item.relic.manarelay` | 가방 소지 중 반경 6m의 자신·아군 마나 재생 +15%, 같은 효과 비중첩 |
 | P5-A | 태양의 은혜 / `item.armor.chest.solargrace` | 높은 체력·8초 무피격 후 최대 체력 15% 보호막, 12초 유지 |
-| P5-B | 밤의 칼날 / `item.weapon.greatsword.nightsword` | 회피 후 다음 Fighter 직접 기본 공격 피해 40% 증가, 1회 소비 |
-| P6-A | 중력 우물 / `item.weapon.grenadelauncher.gravitywell` | 유탄 충돌 위치에 반경 3.5m·5초 장판, 이동속도 45% 감소, 소유자별 최대 3개 |
-| P6-B | 특이점 박격포 / `item.weapon.grenadelauncher.singularitymortar` | 유탄 충돌 위치에 2초 뒤 반경 4m·공격력 100% Effect 폭발, 소유자별 최대 3개 |
+| P5-B | 밤의 칼날(유일 기준점) / `item.weapon.greatsword.nightsword` | 회피 후 다음 Fighter 직접 기본 공격 피해 40% 증가, 1회 소비 |
+| P6-A | 중력 우물(전설) / `item.weapon.grenadelauncher.gravitywell` | 유탄 충돌 위치에 반경 3.5m·5초 장판, 이동속도 45% 감소, 소유자별 최대 3개 |
+| P6-B | 특이점 박격포(전설) / `item.weapon.grenadelauncher.singularitymortar` | 유탄 충돌 위치에 2초 뒤 반경 4m·공격력 100% Effect 폭발, 소유자별 최대 3개 |
 
 ## 3. 현재 데이터 현황
 
@@ -67,18 +69,18 @@ P4에서 보류했던 BH 스크립트 수정은 사용자 승인 후 반영했�
 | 구분 | 장비 / itemId | 적용 방향 | 선행 단계 |
 | --- | --- | --- | --- |
 | Fighter | 크루세이더 / `item.weapon.greatsword.crusader` | 치명타 조건의 강한 연쇄. 일반 연쇄와 발동 조건 구분 | P1 치명·공격 분류 보강, P2 재사용 |
-| Fighter | 수호자의 정의 / `item.weapon.greatsword.guardiansjustice` | 피격으로 준비한 효과를 보호막으로 전환 | P5-A/B |
-| Fighter | 폐열 절단 대검 / `item.weapon.greatsword.wasteheatcleaver` | 열 축적·소모로 공격 리듬 변경 | P5-B, 필요 시 P6 |
-| Fighter | 와일드파이어 / `item.weapon.axe.wildfire` | 자신이 건 화상 처치에서 제한된 1세대 전파 | P4 후속, P6 |
-| Fighter | 초냉매 / `item.weapon.blunt.superrefrigerant` | 냉기 둔화 축적 후 제한된 빙결 | P4 후속 |
-| Fighter | 밤의 칼날 / `item.weapon.greatsword.nightsword` | 회피 사용 후 다음 유효 기본 공격 강화 | P5-B |
+| Fighter | 수호자의 정의(전설) / `item.weapon.greatsword.guardiansjustice` | 피격으로 준비한 효과를 보호막으로 전환 | P5-A/B |
+| Fighter | 폐열 절단 대검(전설) / `item.weapon.greatsword.wasteheatcleaver` | 열 축적·소모로 공격 리듬 변경 | P5-B, 필요 시 P6 |
+| Fighter | 와일드파이어(전설) / `item.weapon.axe.wildfire` | 자신이 건 화상 처치에서 제한된 1세대 전파 | P4 후속, P6 |
+| Fighter | 초냉매(전설) / `item.weapon.blunt.superrefrigerant` | 냉기 둔화 축적 후 제한된 빙결 | P4 후속 |
+| Fighter | 밤의 칼날(유일 기준점) / `item.weapon.greatsword.nightsword` | 회피 사용 후 다음 유효 기본 공격 강화 | P5-B |
 | Fighter | 공허의 수확자 / `item.weapon.axe.phaseharvester` | 처치 위치·방향을 기준으로 파동 발생 | P6 |
-| Fighter | 코어 브레이커 / `item.weapon.greatsword.corebreaker` | 관통에서 출발해 같은 적의 방어 약화로 확장 | P4 후속; 단순 관통과 약화 구분 |
-| Gunner | 중력 우물 / `item.weapon.grenadelauncher.gravitywell` | 충돌 위치 고정 둔화 장판. 실제 끌어당김은 별도 | P6 장판 |
-| Gunner | 반물질 랜스 / `item.weapon.rifle.antimatterlance` | 대장갑 특성 후 실제 직선 투사체 관통 | P6 투사체 |
+| Fighter | 코어 브레이커(전설) / `item.weapon.greatsword.corebreaker` | 관통에서 출발해 같은 적의 방어 약화로 확장 | P4 후속; 단순 관통과 약화 구분 |
+| Gunner | 중력 우물(전설) / `item.weapon.grenadelauncher.gravitywell` | 충돌 위치 고정 둔화 장판. 실제 끌어당김은 별도 | P6 장판 |
+| Gunner | 반물질 랜스(전설) / `item.weapon.rifle.antimatterlance` | 대장갑 특성 후 실제 직선 투사체 관통 | P6 투사체 |
 | Gunner | 월드 엔더 / `item.weapon.grenadelauncher.worldender` | 빈도가 제한된 강한 폭발 | P6 |
-| Gunner | 스마일 시그널 / `item.weapon.rifle.smilesignal` | 지원 오라에서 시작해 아군이 소비하는 적중 표식 | R2 재사용, 팀 소비권 계약 |
-| Gunner | 에코 챔버 / `item.weapon.shotgun.echovault` | 이전 위치·방향의 공격을 한 번 재생 | P6 기록·지연 |
+| Gunner | 스마일 시그널(전설) / `item.weapon.rifle.smilesignal` | 지원 오라에서 시작해 아군이 소비하는 적중 표식 | R2 재사용, 팀 소비권 계약 |
+| Gunner | 에코 챔버(전설) / `item.weapon.shotgun.echovault` | 이전 위치·방향의 공격을 한 번 재생 | P6 기록·지연 |
 | Gunner | 일식 기관 / `item.weapon.grenadelauncher.sunfallengine` | 충돌 위치의 지속 화염 지대 | P4 Burn, P6 장판 |
 | Gunner | 스타 브리처 / `item.weapon.shotgun.starforgebreach` | 가까운 거리 적중에 조건부 폭발 | P6 거리 판정; 근접 공격으로 오분류 금지 |
 | 방어구 | 닌자의 움직임 / `item.armor.boots.ninja_movement` | 회피 후 다음 공격 준비 | P5-B |
