@@ -40,6 +40,9 @@ public class PlayerHealthManager : MonoBehaviour
     /// <summary>데미지를 받을 때마다 발행 (보정된 실제 데미지량 전달). 회복와 구별해서 발행되기 때문에 "피격 시" 발동 조건에 쓸 수 있음.</summary>
     public event System.Action<float> OnDamageTaken;
 
+    /// <summary>SW 수정: 피해가 체력에 적용되기 전에 보호막 등이 처리한 뒤 남은 피해를 반환합니다.</summary>
+    public event System.Func<float, float> OnBeforeDamageApplied;
+
     private PlayerStatManager statManager;
 
     private void Awake()
@@ -147,21 +150,33 @@ public class PlayerHealthManager : MonoBehaviour
     }
 
     /// <summary>
-    /// amount만큼 데미지를 받는다. 소모성 처리라 amount는 Mathf.Floor로 버림 처리한 뒤 적용한다.
-    /// 0 밑으로는 안 내려가며, 0이 되면 OnDeath를 발행한다.
+    /// SW 수정: amount만큼 피해를 소수점 아래로 버린 뒤 적용합니다.
+    /// 보호막이 먼저 피해를 줄이고, 남은 피해만 체력에 적용합니다.
+    /// OnDamageTaken은 보호막으로 모두 막아도 처음 받은 피해량을 전달하며, 체력이 0이 되면 OnDeath를 발행합니다.
     /// </summary>
     public void TakeDamage(float amount)
     {
-        float dmg = Mathf.Floor(amount);
-        if (dmg <= 0f)
+        float damageAmount = Mathf.Floor(amount);
+        if (damageAmount <= 0f || CurrentHealth <= 0f)
             return;
 
-        bool wasAlive = CurrentHealth > 0f;
-        CurrentHealth = Mathf.Max(0f, CurrentHealth - dmg);
-        OnHealthChanged?.Invoke();
-        OnDamageTaken?.Invoke(dmg);
+        float remainingDamage = damageAmount;
+        if (OnBeforeDamageApplied != null)
+        {
+            foreach (System.Func<float, float> reduceDamage in OnBeforeDamageApplied.GetInvocationList())
+                remainingDamage = Mathf.Clamp(reduceDamage(remainingDamage), 0f, remainingDamage);
+        }
 
-        if (wasAlive && CurrentHealth <= 0f)
+        float actualDamage = Mathf.Min(CurrentHealth, remainingDamage);
+        if (actualDamage > 0f)
+        {
+            CurrentHealth -= actualDamage;
+            OnHealthChanged?.Invoke();
+        }
+        // SW 수정: 보호막으로 모두 막아도 피격 효과의 조건은 처음 받은 피해량을 사용합니다.
+        OnDamageTaken?.Invoke(damageAmount);
+
+        if (actualDamage > 0f && CurrentHealth <= 0f)
             OnDeath?.Invoke();
     }
 
