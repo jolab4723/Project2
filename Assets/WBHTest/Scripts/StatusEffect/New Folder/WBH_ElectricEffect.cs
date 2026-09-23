@@ -18,4 +18,10 @@ public class WBH_ElectricEffect : WBH_StatusEffectBase
 
         controller.StopStatusEffect(EffectType);
     }
+
+    public override void Refresh(WBH_StatusEffectData data)
+    {
+        base.Refresh(data);
+        controller.SetAttackModifier(this, data.Value);
+    }
 }

@@ -205,29 +205,4 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
             healthManager.Heal(amount);
             return;
     }
-
-    public void MultiplyMoveSpeed(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
-        //    return;
-
-        //currentMoveSpeed = moveSpeed * modifier;
-        //Debug.Log($"CurrentMoveSpeed : {currentMoveSpeed}");
-        //playerController.SetMoveSpeed(currentMoveSpeed);
-    }
-    public void MultiplyAttackSpeed(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
-        //    return;
-
-        //currentAttackSpeed = attackSpeed * modifier;
-        //OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
-    }
-    public void MultiplyAttack(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
-        //    return;
-
-        //currentAttackPower = attackPower * modifier;
-    }
 }

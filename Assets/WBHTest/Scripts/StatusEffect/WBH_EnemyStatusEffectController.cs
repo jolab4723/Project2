@@ -67,8 +67,19 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     /// <summary>SW 수정: 서버의 살아 있는 적에게만 적용하며, 화상 면역이면 등록하지 않습니다.</summary>
     public override bool CanApplyStatusEffect(WBH_StatusEffectData data)
     {
-        return CanReceiveStatusEffect(data) &&
+        return CanReceiveStatusEffect(data) && !IsControlEffectImmune(data.Type) &&
             (data.Type != WBH_StatusEffectType.Burn || BurnDamageMultiplier > 0f);
+    }
+
+    private bool IsControlEffectImmune(WBH_StatusEffectType type)
+    {
+        EnemyGrade grade = controller.Info.enemyGrade;
+
+        bool immuneGrade = grade == EnemyGrade.Elite || grade == EnemyGrade.Boss;
+
+        if (!immuneGrade)
+            return false;
+        return type == WBH_StatusEffectType.Airborne || type == WBH_StatusEffectType.KnockBack || type == WBH_StatusEffectType.Stun;
     }
 
     /// <summary>SW 수정: 잘못된 요청과 죽은 적을 제외합니다. 면역도 유효한 요청에는 반응을 표시합니다.</summary>
