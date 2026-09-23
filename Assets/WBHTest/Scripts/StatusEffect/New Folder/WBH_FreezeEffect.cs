@@ -20,4 +20,11 @@ public class WBH_FreezeEffect : WBH_StatusEffectBase
 
         controller.StopStatusEffect(EffectType);
     }
+
+    public override void Refresh(WBH_StatusEffectData data)
+    {
+        base.Refresh(data);
+        controller.SetMoveSpeedModifier(this, data.Value);
+        controller.SetAttackSpeedModifier(this, data.Value);
+    }
 }

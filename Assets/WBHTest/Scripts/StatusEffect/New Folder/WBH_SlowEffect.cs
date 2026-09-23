@@ -19,4 +19,10 @@ public class WBH_SlowEffect : WBH_StatusEffectBase
 
         controller.StopStatusEffect(EffectType);
     }
+
+    public override void Refresh(WBH_StatusEffectData data)
+    {
+        base.Refresh(data);
+        controller.SetMoveSpeedModifier(this, data.Value);
+    }
 }
