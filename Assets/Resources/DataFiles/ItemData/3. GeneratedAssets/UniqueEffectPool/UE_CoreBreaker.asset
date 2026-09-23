@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_CoreBreaker
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uCF54\uC5B4 \uB178\uCD9C"
+  icon: {fileID: 21300000, guid: 29cfd1aa29148494f81c5f62534e4ef8, type: 3}
+  effectDescription: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uAD00\uD1B5\uB825\uC774
+    {1} \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
+  coefficients:
+  - 8
+  - 10
+  - 4
+  triggerCondition: 3
+  cooldownSeconds: 0
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 15
+      value: 10
+    duration: 8
+    stackBehavior: 1
+    maxStack: 4
+    displayKind: 1
+  persistStackOnItem: 0

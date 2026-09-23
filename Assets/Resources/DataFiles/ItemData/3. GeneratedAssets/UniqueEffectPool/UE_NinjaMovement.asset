@@ -10,18 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
-  m_Name: UE_TestHelmet
+  m_Name: UE_NinjaMovement
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
-  effectName: "\uBC29\uC5B4 \uAC15\uD654"
-  icon: {fileID: 0}
-  effectDescription: "\uC7A5\uCC29 \uC911 \uBC29\uC5B4\uB825\uC774 {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  effectName: "\uADF8\uB9BC\uC790 \uBCF4\uBC95"
+  icon: {fileID: 21300000, guid: c142e62e574cdde4089f7b2cf654b2db, type: 3}
+  effectDescription: "\uC7A5\uCC29 \uC911 \uC774\uB3D9 \uC18D\uB3C4\uAC00 {0}%, \uCE58\uBA85\uD0C0
+    \uD655\uB960\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
   coefficients:
+  - 25
   - 10
   buffSpec:
     statEffects:
-    - statType: 5
+    - statType: 7
+      value: 25
+    - statType: 10
       value: 10
     duration: 0
     stackBehavior: 2
-    maxStack: 1
-    displayKind: 0
+    maxStack: 0
+    displayKind: 1
