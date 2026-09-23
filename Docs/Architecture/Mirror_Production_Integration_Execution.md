@@ -2,6 +2,7 @@
 
 > 계획: [기존 싱글을 보존하는 Mirror 단계별 정식 통합](Mirror_Production_Integration_Plan.md)
 > 이 문서 하나에 단계별 조사·구현·검증을 누적한다. 회차별 인계 문서를 새로 만들지 않는다.
+> 현행 기준: **1~4단계 완료, 5~6단계 대기**. 2026-09-23 계획 개정은 §7, 4단계 구현·검증은 §8에 기록한다. 과거 절의 상태·검증 범위는 당시 이력이며 현행 계획을 덮어쓰지 않는다.
 
 ## 1. 갱신 규칙
 
@@ -10,9 +11,12 @@
 - 코드 확인, 현재 Editor 확인, 과거 실행 증거, 이번 실행 검증을 구분한다. 기존 PASS를 이번 실행 결과로 복사하지 않는다.
 - 팀원 스크립트 수정 전 대상·이유·싱글 영향을 제시하고 승인을 기록한다. 승인된 변경에 `SW 수정`과 쉬운 XML `<summary>`를 적용한다.
 - 기존 팀원이 작성한 주석은 변경 내용과 직접 충돌하지 않는 한 삭제하지 않는다. 코드 이동·공통화 시에도 적합한 위치에 설명과 작성 의도를 보존하며, 실제 동작과 충돌하는 부분만 필요한 범위로 수정한다.
-- 서브에이전트는 사용자 지정에 따라 **`gpt-5.6-sol` / `medium`만 사용**한다. 역할에 고정된 다른 모델을 호출하지 않는다.
+- 서브에이전트 운영은 현재 `AGENTS.md` §1-2를 따른다. 아래 이전 회차의 모델 표기는 당시 실행 이력이며, 현재 운영 규칙을 덮어쓰지 않는다.
 - 구현 완료 시 변경 내용 / 싱글 유지 방식 / 멀티 동작 / 검증 결과를 요약한다. 필요한 개인 구현 로그는 실제 구현·검증 후 별도로 갱신한다.
 - 계획의 변경이 필요하면 변경 이유와 사용자 결정을 먼저 이 문서에 기록한다. 승인 없이 원래 계획을 축소하거나 단계를 완료로 바꾸지 않는다.
+- 검증은 해당 단계의 실제 싱글·멀티 동작과 변경된 권한/참조 경계에 한정한다. 무관한 변경사항을 위한 추가 빌드·재검증, 검사기·생성기 자체를 검증하는 부차적 작업을 늘리지 않는다. 필요한 최종 후보 빌드에서 첫 로딩·전투·씬 진행을 함께 확인하며, 관련 변경/실패가 없으면 완료된 조합을 반복하지 않는다.
+- 2026-09-23 사용자 지시: Editor에서 가능한 검증은 Editor에서 수행하고 매번 Player를 빌드하지 않는다. 원격 동기화 검증은 유효한 기존 빌드를 재사용하며, 검증할 Player 코드·자산 변경으로 재빌드가 필요한 경우만 빌드한다.
+- 시험 씬·승인된 빌드 등록은 대체 경로 검증 전까지 유지하되 6단계 최종 전환에서 정식 공용 씬 등록으로 교체한다. 최종 `MirrorTest` 계열 파일·타입·실행 의존성 0건 목표에 검사기·Smoke·생성기도 포함한다. 과거 문서·증거의 당시 명칭은 이력으로 보존한다.
 
 ## 2. 단계 상태
 
@@ -21,13 +25,15 @@
 | 0 | 현재 동작·차이·상태 소유자 기준선 | 조사 완료 | 2026-09-20 소스·실제 프리팹·Editor 기준선 기록; Play 재실행은 하지 않음 |
 | 1 | PlayerContext와 플레이어 소유 상태 | 완료 | 2026-09-20 싱글 실제 UI·장착, 별도 서버+4클라이언트 인벤토리·Q1 107단계 검증 |
 | 2 | 포션·장비·인벤토리·경제 | 완료 | 2026-09-23 싱글 실제 플레이어·Host+Client·전용 서버+4 Client 규칙/동시 구매/중복·버전 거절/재접속 보존 PASS; 실행 환경 제한은 §5 |
-| 3 | 기본 전투·상태이상 | 대기 | — |
-| 4 | 완료 고유효과 6종 공통화 | 대기 | — |
-| 5 | 로비·진행·Act1 멀티 씬 | 대기 | — |
-| 6 | 결과·복귀·정식 자산 승격 | 대기 | — |
+| 3 | 기본 공격·스킬·상태이상 | 완료 | 2026-09-23 공통 피해·스킬 4슬롯·연출 동등성 정리. 싱글 128 / Host 128 / 전용4인 124조합. 무작위 산탄 폭격과 좁은 직선의 표적 경계 차이는 사용자 수용 후 추가 검증 종료. 제한·B04 후속은 §6.3 |
+| 4 | 현재 완료 고유효과 10종 공통화·B04 정상 부활 | 완료 | 2026-09-23 공통 실행·후속 큐·장판 수명, 실제 싱글/Host 공격과 정상 부활·재접속 검증. 초기 표시 조건과 제한은 §8 |
+| 5 | 기존 싱글 씬 공용화·초기 로딩·Act1 연결 | 대기 | 같은 콘텐츠 씬에 멀티일 때만 Mirror 계층 활성화. Editor 하늘색 사각형과 Player 첫 로딩을 구분; §7 |
+| 6 | 결과·복귀·정식 승격·MirrorTest 잔존 0건 | 대기 | 대체 공용 경로 검증 후 시험 코드/자산/도구·빌드 등록 전환 및 최종 후보 검증; §7 |
 | 7 | Act1 이후 확대 | 대기 | — |
 
 ## 3. 0단계 — 2026-09-20
+
+이 절의 “현재”는 **2026-09-20 조사 당시**를 뜻한다. 이후 해소된 Context·포션·피해 계산 차이와 Build Settings의 Mirror 11개 씬 등록은 §4~6을, 이번 남은 계획은 §7을 따른다.
 
 ### 3.1 착수 및 보존 범위
 
@@ -262,28 +268,6 @@ Unity CLI로 연결 프로젝트 `I:/git/Project2-test/Project2`, Unity `6000.3.
 - 개인 구현 로그 `ImplementationLogs/김성우.md`의 Git 구현 이력과 로그 이관 이력에 구현·검증·한계를 추가했다. Commit·Push 없음.
 - 다음 작업은 3단계 기본 전투·상태이상 공통화다. 이번 완료에 오프라인 Gunner 별도 Play, 캠프 NPC의 마우스 클릭 경로, 강제 예외 주입을 통한 모든 복구 분기, 다중 PC LAN/WAN을 포함하지 않는다. 로컬 Context 재연결의 120프레임 제한과 같은 PC의 설정 파일 경합은 후속 세션 검증 시 확인할 항목으로 남긴다.
 
-## 6. 후속 단계 기록 형식
-
-각 단계에 다음 항목을 같은 문서의 새 절로 추가한다.
-
-- 날짜 / 단계 / 상태 / 이번 실행 범위
-- 수정 대상과 승인: 팀원 파일, 변경 이유, 승인 여부
-- 변경 내용: 실제 수정한 동작과 파일
-- 싱글 유지 방식 / 멀티 동작
-- 검증: 실행 환경, 호출 경로, PASS·FAIL, 증거 경로
-- 남은 위험·미검증 / 다음 작업
-- 개인 구현 로그 갱신 여부
-
-## 7. 실행 이력
-
-| 날짜 | 단계 | 수행 | 검증·제한 | 다음 작업 |
-|---|---|---|---|---|
-| 2026-09-20 | 0 | 계획 원문·누적 실행 기록 문서 생성, 기준선 조사 착수 | 게임 자산 변경 없음; 현재 런타임 재검증 결과 아님 | 기준선과 근거 기록 |
-| 2026-09-20 | 0 | Sol medium 2개 읽기 조사 + 주 에이전트 소스·Editor 자산 대조; 소유자/호출/차이 B01~B12 기록 | 프리팹4개 Missing0, 미러 Context2개 소유 참조 정상, 현재 Console 오류0. Play는 재실행하지 않음 | 1단계 Context와 싱글 InventoryCommon 소유 연결 |
-| 2026-09-20 | 1 | 공통 Context·싱글 인벤토리 명시적 연결·미러 필수 구성 검사 구현. 승인된 YJ 스포너 수정. 사용자 요청으로 이전 빌드 약 21.97GB 정리 | 싱글 실제 UI/장착, 별도 서버+4 Player 인벤토리/소유 분리, Q1 서버·각 client 107단계 PASS. 기존 보스 셰이더 오류 10건·다중 PC/전체 전투 미검증은 별도 | 2단계 공통 게임 규칙 |
-| 2026-09-20 | 1 후속 | Start→거너 싱글 진입·사망 복귀, 완료 보조로 Act1~3 최종 보스까지 경로 추적 | Context·인벤토리 소유 검사 35회 통과. Act3 보스 미완은 사용자 확인, 결과 씬 연결은 별도 확인 항목. 전체 전투 클리어 검증 아님. 저장·Editor 설정 복원 | 2단계 공통 게임 규칙 |
-| 2026-09-23 | 2 | 승인된 WJ 포션 공통화, 서버 1초 제한·소유 검증, 가격·강화 서비스 공유와 지갑 동기화. 주석 보존·검증 씬 유지 지침 반영 | 실제 싱글 규칙/UI/거래/드롭·획득, Host+Client 및 서버+4 Client 동시 구매/중복·버전 거절/재접속 보존 PASS. 셰이더·MPPM·씬 연결·설정 파일 경합 및 다중 PC 미검증은 §5에 구분 | 3단계 기본 전투·상태이상 |
-
 ## 6. 3단계 — 2026-09-23
 
 - 상태: 완료(§6.3의 사용자 수용 및 제한 포함). 아래 조사·구현 중 표현은 착수부터 종료까지의 이력이다. `unity-cli`, 사용자 재호출에 따른 `ponytail full` 적용. 기본 공격뿐 아니라 Fighter·Gunner의 현재 구현된 액티브 스킬·진화·강화 분기를 포함한다.
@@ -348,3 +332,130 @@ Unity CLI로 연결 프로젝트 `I:/git/Project2-test/Project2`, Unity `6000.3.
 - 검사 프로세스를 종료하고 일회성 중앙 런타임 계측을 원래 코드로 복원했다. 저장 9개와 빌드 자동 변경 설정을 백업 바이트와 동일하게 복원하고, 테스트 Play 시작 씬 지정을 해제했다. 승인된 공용 Build Settings의 미러 씬은 유지한다. 증거 로그·화면은 git 제외 경로 `RunValidation/MirrorStage3_20260923/`에 보관한다.
 - 정리 후 Unity 컴파일 완료·실패 없음·Console 오류 0건을 확인했다. 코드·문서의 `git diff --check`는 통과했다. Unity가 저장한 시각 프리팹의 빈 YAML 필드 뒤 공백은 직접 YAML 편집으로 제거하지 않았다. 김성우 개인 구현 로그의 Git 구현 이력과 마지막 기록 표를 갱신했다. Commit·Push는 하지 않았다.
 
+## 7. 2026-09-23 계획 개정과 남은 실행 순서
+
+### 7.1 사용자 결정과 이번 작업 범위
+
+- 사용자는 3단계까지 진행했음을 확인하고 오늘 정식 통합을 마칠 방향으로 계획 수정을 요청했다. 기존 싱글 씬을 공통 기반으로 삼고 **멀티일 때만 Mirror 권한·동기화 계층을 추가**한다. 싱글·멀티 맵 복제와 공용화를 7단계로 미루는 기존 방침은 변경한다.
+- 최종 목표는 실제 싱글·멀티 정상 동작과 **MirrorTest 계열 코드·씬·프리팹·설정·도구 잔존 0건**이다. 검사기·Smoke만 예외로 남기는 방침도 변경한다. 필요한 네트워크 기능은 정식화하고 공통화된 복제 규칙·시험 전용 기능은 제거한다.
+- 최초 “빌드 후 파란 이펙트” 설명은 사용자 후속 답변으로 명확해졌다. **Editor에서 첫 사용 전에 파란색/하늘색 사각형이 잠시 표시되는 현상**이며, 분홍색 셰이더 오류나 정상 청색 범위 표시를 뜻하지 않는다. **빌드한 실행 파일에서의 재현은 아직 미확인**이고 최종 통합 테스트에 포함한다.
+- 기존 팀원 코드 규약·수정 승인·`SW 수정`·XML 설명·주석/API/직렬화 보존 규칙은 그대로 적용한다. 단계와 무관한 추가 빌드·재검증, 검증용 생성기/검사기 자체의 부차적 검증은 최대한 자제한다.
+- 이번은 **조사·계획·문서 수정만** 수행했다. 브랜치는 `codex/unity-6000-3-22-test`; 기존 3단계 코드·자산·빌드 등록 등 미커밋 변경을 보존했다. `unity-cli`, `ponytail full`을 적용했고 AGENTS §1-2에 따라 씬/효과/로딩의 독립 읽기 조사를 나눴다. 주 에이전트가 핵심 소스와 공식 문서를 대조해 아래 계획을 채택했다. Unity 상태 변경·Play·빌드·게임 코드 수정은 하지 않았다.
+
+### 7.2 현재 구조와 계획에 반영한 근거
+
+아래는 **현재 작업 트리의 소스·저장된 자산·문서 확인**이다. 실제 통합된 씬 동작이나 이번 실행의 PASS를 뜻하지 않는다.
+
+| 확인 항목 | 근거와 현재 상태 | 남은 작업에 미치는 영향 |
+|---|---|---|
+| 1~3단계 공통 기반 | `PlayerContext.IsComplete`는 네트워크 필수 조건과 분리됨. `PotionUseState` 공통화는 §5 이력. 현재 `WBH_CombatResolver.TryProcessPlayerDamage`는 원본 `WBH_CombatManager.CalculateDamage`를 호출 | 기존 공유 규칙을 다시 만들지 않고 효과/씬 경계를 연결 |
+| 고유효과 최신 범위 | [고유효과 계획 §2](UniqueEffect_Implementation_Plan.md#2-완료된-단계)는 P6-B까지 **10종** 완료로 기록. 추가 4종은 `PlayerArmorEffectProvider_MirrorTest`, `ItemTriggerManager_MirrorTest`, `NetworkEnemyProjectile_MirrorTest`에도 구현 존재 | 4단계의 6종 고정 범위를 10종으로 갱신. 107은 이전 6종 Q1 기록이며 추가 4종의 정식 통합 PASS로 해석하지 않음 |
+| 팀원 스킬·전투 변경 | `WBH_CombatManager`의 스냅샷/공통 계산, `WBH_PlayerEffect`의 월드 연출 이벤트, Fighter/Gunner 컨트롤러 및 `GunnerArcProjectile`의 범위 표시 이벤트, 적 상태이상의 표시/풀 정리가 현재 Diff에 있음 | 3단계 변경과 원본 주석·4슬롯·Animator·VFX/SFX를 보존. 최신 원본을 구형 Mirror 복제본으로 덮어쓰지 않음 |
+| 정상 부활 B04 | `T_PlayerController.TryRevive/CompleteRevive`는 횟수·패시브 비율·10초 무적·입력 복구. Mirror 애니메이션은 원본 호출을 차단하고 현재 확인한 부활 API는 `ServerReviveForTest` | 3단계 완료 상태는 유지하되 4단계 필수 후속으로 정상 서버 권한 부활 연결. 개발 부활로 대체 불가 |
+| 싱글 생성·웨이브 | [YJ_PlayerSpawner.Start](../../Assets/Scripts/Scene/YJ_PlayerSpawner.cs)는 모드 가드 없이 Instantiate 후 Context 연결. [YJ_StageManager.Start](../../Assets/Scripts/Scene/YJ_StageManager.cs)는 한 프레임 후 스포너 검사→StartStage. 일부 저장 분기만 Mirror active를 검사 | 모드를 씬 생명주기 시작 전에 정하고 싱글/서버 드라이버 중 하나만 허용. 한 프레임 뒤 정지하는 우회는 불충분 |
+| 세션·경로·준비 | `MirrorTestNetworkManager.OnServerReady`→`MirrorSessionLifecycle.AttachReadyParticipant`→플레이어 등록 및 `TryStartCombatWhenPartyReady`. `MirrorAct1SceneRoute`는 시험 맵 경로를 하드코딩 | 기존 lifecycle/서버 route를 공통 정식 경로로 변경. Mirror Ready/Identity와 로컬 자산·표시 준비를 구분하고 서버 시작 허가에 연결 |
+| StageSelect·저장·포탈 | `MirrorStageSelectRouteAdapter`는 private FieldInfo와 NodeSelected 구독을 사용. 원본 Select/Transition 및 `YJ_PortalSceneLoader`는 로컬 저장/씬 전환 수행 | 외부 제어의 최소 공개 API와 기존 이벤트를 사용해 로컬 이동/저장과 서버 전환의 이중 실행 차단 |
+| 공통 씬·프리팹·빌드 목록 | FighterNetworkPlayer는 원본 Fighter 기반 Variant. `PlayerContext`는 아직 TEST 폴더에 있으나 싱글에서도 사용. 현재 Build Settings에는 기존 정식 씬과 Mirror 11개 씬이 enabled로 등록 | 네트워크 Variant로 원본 자산 공유; 싱글 씬 인벤토리와 네트워크 플레이어 인벤토리 소유 차이 보존. TEST 런타임 승격 후 중복 씬/등록 제거 |
+| 결과 | `KY_ResultPayload.SetResult`는 기존 표시 API. `KY_RunStatsTracker.FinishRun`은 로컬 `InventoryController.Instance`의 Wallet 조회 | 참가자별 서버 결과를 기존 표시 API로 전달. 전역 싱글 정산을 멀티 인원별 결과로 오용하지 않음 |
+| 시작·씬 로더 | [YJ_StartBootstrap](../../Assets/Scripts/Scene/YJ_StartBootstrap.cs)은 GameManager 초기화와 최소시간 대기. [SceneLoader.LoadSceneRoutine](<../../Assets/WBHTest/Scripts/0. Core/Manager/SceneLoader.cs>)은 목적 씬 활성화→OnSceneLoaded→한 프레임 렌더 후 FadeFromBlack | 씬 로드 완료와 전투 자산/첫 표시 준비 완료가 같지 않음. 기존 페이드를 유지한 채 필요한 준비가 끝난 뒤 공개·입력 허용 |
+| 무기와 스킬 로딩 | [PlayerWeaponVisualPresenter](../../Assets/SW/Scripts/Equipment/Visuals/PlayerWeaponVisualPresenter.cs)는 InstantiateAsync와 요청 버전·ReleaseInstance/Release 처리. [WBH_PlayerEffect](../../Assets/WBHTest/Scripts/Player/WBH_PlayerEffect.cs)는 EffectData/AudioClip 직접 참조. [WBH_EffectPoolManager](../../Assets/WBHTest/Scripts/WBH_EffectPoolManager.cs)는 Awake 사전 생성 및 첫 요청 동기 생성 | 스킬 이펙트가 현재 Addressables 비동기 대기 중이라고 단정하지 않음. 기존 외형 캐시·풀과 최소 완료 신호 재사용; 실제 필수 preload 직렬화 목록은 구현 시 확인 |
+| Addressables 콘텐츠 빌드 | 설치 2.8.1. 설정값 `m_BuildAddressablesWithPlayerBuild=0`은 설치 패키지 enum상 `PreferencesValue`. [MirrorLanTestBuilder](../../Assets/SW/TEST/MirrorCombat/Editor/MirrorLanTestBuilder.cs)는 `PrepareWindowsAddressables`에서 BuildPlayerContent 명시 호출 후 Player 포함 확인 | 자동 빌드가 꺼져 있다고 단정하지 않음. 기존 명시적 콘텐츠 준비를 정식 빌드에 연결하고 같은 후보 버전 산출물을 사용 |
+
+### 7.3 남은 단계별 실행과 수정 후보
+
+| 순서 | 실행 내용과 종료 조건 | 주요 수정 후보 / 담당 경계 |
+|---|---|---|
+| 4-A | **10종**을 기존 SO·아이템 데이터와 실제 공통 효과 실행에 연결. Direct/Skill/Effect/DoT, AttackId, 발사 스냅샷, 후속 큐, 보호막/준비공격/장판/예약 폭발의 소비·정리 보존 | SW 효과/인벤토리 및 TEST의 ItemTriggerManager·Armor/Relic Provider·StatThresholdRunner·투사체. 원본 효과 호출까지 수정이 필요하면 실제 팀원 파일을 먼저 지정 |
+| 4-B | B04 정상 패시브 부활: 해당 플레이어의 패시브/횟수·HP·무적·애니메이션·입력 복구를 서버 1회 실행으로 연결 | BH `T_PlayerController.cs`, `WBH_PlayerAnimation.cs`와 SW RuntimeStateSync/미러 애니메이션 후보. 필요 파일별 승인 후 구현 |
+| 5-A | 공용 StageSelect→정식 Stage1→복귀부터 연결. 스폰·웨이브·포탈·저장 1회 실행 및 로컬 UI 재연결 확인 후 Stage2~6·캠프·이벤트·보스로 확대 | YJ `YJ_PlayerSpawner.cs`, `YJ_StageManager.cs`, `YJ_PortalSceneLoader.cs`, `YJ_StageSelectManager.cs`, 필요 시 `YJ_StageSaveService.cs`; SW NetworkManager·Lifecycle·route/adapter·세션 구성 |
+| 5-B | 필수 자산/풀·스폰/Context/HUD·첫 표시 준비를 기존 로딩에 연결. 실패·끊김·오래된 콜백 정리 후 입력/웨이브 허용 | BH `SceneLoader.cs`, `WBH_EffectPoolManager.cs`, `WBH_PlayerEffect.cs`; 필요 시 YJ `YJ_StartBootstrap.cs`, WJ Fighter/Gunner 입력 경계; SW 무기 Presenter·세션 준비 경계. 호출부마다 같은 대기를 복사하지 않음 |
+| 6-A | 참가자별 결과→싱글 복귀 또는 서버 로비 복귀→새 런 초기화 | 기존 KY `KY_ResultPayload.SetResult` 우선 사용; `KY_ResultScreen.cs`/`KY_RunStatsTracker.cs` 변경은 필요할 때만 별도 승인 |
+| 6-B | 런타임/최소 검사 도구 정식화, 경로·타입·키·GUID 연결 이전, 대체 검증 후 시험 자산/빌드 등록 제거, 동일 최종 후보로 실제 싱글/멀티 확인 | SW TEST 런타임·프리팹·Editor 도구, 원본 공통 씬, 빌더·Build Settings·관련 참조 및 중앙 검증 진입점 지침 |
+
+이 표는 **승인 요청 대상의 후보 목록**이며 수정 승인이 아니다. 실제 구현 직전에 파일·이유·싱글 영향을 정리하고 저장소 지침의 `이 스크립트를 수정할까요?` 절차를 따른다. 이번에는 팀원 스크립트를 수정하지 않았다. 신규 Manager/Factory/범용 로딩 계층 없이 기존 세션·로더·풀·이벤트·API에 필요한 경계만 추가한다.
+
+### 7.4 초기 표시·Addressables 계획
+
+- Editor의 하늘색 사각형은 Unity가 비동기 셰이더 variant 컴파일 중 쓰는 cyan 임시 표시와 부합한다. **대상 스킬의 실제 컴파일 상태 확인 전 원인 확정은 하지 않는다.** [Unity 6.3 설명](https://docs.unity3d.com/6000.3/Documentation/Manual/AsynchronousShaderCompilation-introduction.html). 이 기능은 Editor의 Game/Scene View에 한정되므로 실제 Player 결과와 구분한다. [EditorSettings 문서](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/EditorSettings-asyncShaderCompilation.html).
+- Editor에서는 해당 머터리얼/variant의 컴파일 완료 전후만 확인한다. 최종 Player에서는 새 프로세스의 첫 씬·첫 스킬과 재진입 표시를 싱글·Host·원격 관찰 흐름에 묶어 확인한다. 첫 사용 지연이나 불완전한 표시가 실제로 있으면 필수 자산·풀·렌더링 준비를 로딩 화면 안에서 마친다. 분홍색 오류나 잘못된 VFX 바인딩은 별도 원인이므로 대기시간 증가로 덮지 않는다.
+- `SceneLoader`의 씬 활성화와 `OnSceneLoaded` 계약은 보존한다. 씬 활성화 뒤 생성되는 객체를 활성화 전에 기다리지 않고, 기존 화면 페이드/입력 잠금을 통해 준비 구간을 감춘다. 준비 중에는 마나·쿨다운·피해·웨이브를 진행하지 않는다.
+- Mirror 프로토콜 Ready와 게임플레이 준비를 구분한다. Identity/Context 생성에 필요한 네트워크 메시지를 막지 않으며, 스폰·자산·바인딩 완료 후 해당 씬 전환 번호에 대한 준비를 전달한다. 서버는 참가자/전환 번호를 검증하고 실제 전투를 시작한다. 늦은 접속·재접속·실패·시간 초과의 정리와 Host 중복 방지를 포함한다. 전용 서버는 화면용 VFX/SFX/GPU 준비를 기다리지 않는다.
+- Addressables는 무기 외형의 기존 캐시·요청 버전·해제를 우선 재사용한다. 스킬 VFX/SFX는 현재 직접 참조·동기 풀을 유지한다. 메모리/로딩 근거가 생기면 캐릭터별 시각 효과·음원, 맵별 큰 적 외형/파괴 VFX를 순차 이관할 수 있다. 씬 전체·핵심 데이터·네트워크 프리팹 전면 이관은 오늘 통합의 선행 조건으로 만들지 않는다.
+- 이관 시 `Resources`/씬 직접 참조와 번들의 중복, 풀 생존 동안의 핸들 소유/해제, 실패/취소를 확인한다. 네트워크 프리팹은 spawn 전 등록/로드와 동일 컴포넌트 구성이 필요하다. Addressables 초기화·로드와 GPU 프리웜을 같은 완료 신호로 취급하지 않는다. API 근거는 [현행 계획 §5.2](Mirror_Production_Integration_Plan.md#52-addressables-확장-범위)에 연결했다.
+
+### 7.5 최종 정리·필수 검증·이번 결과
+
+- `MirrorTest`, `_MirrorTest`, `MirrorSessionTest`, `MirrorCombatTest`, `MirrorPlayerContextTest` 및 동일 시험 계보의 코드·파일·씬·Prefab/SO·키·설정·메뉴·빌더 참조를 함께 정리한다. 필요한 네트워크 기능/최소 회귀 검사는 정식 명칭으로 이전하고 불필요한 시험 기능은 제거한다. 검사기·Smoke·생성기를 예외로 남기지 않는다.
+- `PlayerContext`의 TEST 경로와 선택적 MirrorTest 타입 참조를 포함해 공통 코드의 시험 런타임 의존성도 제거한다. 이전 시 `.meta`·GUID를 보존하고 Script/UnityEvent/리소스/네트워크 프리팹 등록을 확인한다. 단순 파일명 치환이나 빌드 제외만으로 0건이라 하지 않는다.
+- 승인된 시험 씬 등록을 지금 지우지 않는다. **공용 경로의 대응 흐름 검증 → 정식 빌더·Build Settings 등록 교체 → 시험 자산 삭제 → 최종 후보 빌드/플레이** 순서로 끝낸다. 기존 `MirrorSmokeConfiguration_MirrorTest.cs` 단일 진입점 규칙은 전환 전까지 유지하고, 최종 정리 때 후계 단일 진입점/폐기 방침과 `AGENTS.md`의 경로 지침을 함께 갱신한다.
+- 최종 실제 검증은 기존 계획의 싱글·Host+Client·별도 서버+혼합 4인, 공용 맵 진행·전투·사망/정상 부활·재접속·결과·새 런, 저장 분리·권한 거절, 최초 표시와 필수 참조 확인이다. 실제 다중 PC LAN 여부는 loopback과 구분해 기록한다. 3단계 수용 분기나 변경 없는 128조합을 관성적으로 전부 다시 돌리지 않는다.
+- 같은 최종 후보 빌드로 필요한 항목을 묶는다. 단계와 직접 관계없는 변경사항, 생성기/검사기 자체를 위한 추가 빌드·재검증·전 씬 재생성은 하지 않는다. 코드/자산이 바뀌거나 실패가 난 관련 범위는 필요한 만큼 재확인한다. 기존 데이터·보스 셰이더·MPPM·설정 경합을 이유로 무관한 수정 과제를 늘리지도, 실제 완료를 막는 오류를 숨기지도 않는다.
+- **이번 결과:** 두 정식 전환 문서의 현행 방향·상태·참조와 Diff를 확인했다. 1~3단계 완료 이력과 기존 변경을 보존했고 4~6단계는 대기로 남겼다. 실제 단일 씬 통합·10종 공통화·B04·Player 첫 표시·시험 자산 0건은 아직 구현/검증 전이다. 이번에는 Unity 컴파일·Console·Play·빌드를 실행하지 않았으며 개인 구현 로그·팀 결정 기록은 갱신하지 않았다. Commit·Push 없음.
+
+## 8. 4단계 — 2026-09-23
+
+### 8.1 범위·승인·구현
+
+- 주 에이전트가 모든 스크립트를 직접 구현했다. Luna는 읽기 전용 조사만 수행했다. `$ponytail full`에 따라 기존 계산·버프·이벤트·Mirror 동기화를 재사용했고 새 전역 Manager·인터페이스·패키지를 추가하지 않았다.
+- 사용자 승인: WJ `ItemTriggerManager.cs`, BH `WBH_CombatManager.cs`·`T_PlayerCombat.cs`·`WBH_Projectile.cs`의 공통화, BH `T_PlayerController.cs`의 B04 정상 부활, BH `WBH_PlayerAnimation.cs`의 현재 Attack/Hit 상태 종료 검사. 기존 API·직렬화 필드·팀원 주석을 보존하고 이동한 설명은 공통 실행 위치에 옮겼다.
+- `PlayerContext.Effects`의 `PlayerItemEffectState`가 아이템별 쿨타임·공격별 중복·밤의 칼날 준비 상태를 소유한다. 원본 `ItemTriggerManager`는 싱글 이벤트를, 미러 어댑터는 서버 이벤트·원격 복제를 연결한다. SO 공유 쿨타임을 실제 10종의 실행 상태로 사용하지 않는다.
+- `PlayerDamageResolver`에 기존 미러의 동기 FIFO·후속 대상 중복 방지·재진입 거절·예외 정리를 모았다. BH 계산 순서는 그대로다. 발사 시 무기/효과/속성/연출을 유지하고 **적중 시 스탯 스냅샷을 해당 후속 큐까지 공유**한다. 특이점은 기폭 시점 스탯을 사용한다. 계획의 “발사 시 아이템/스탯” 문구는 이 기존 동작을 정확히 표현하도록 수정했다.
+- `PlayerArmorEffectRuntime`는 절전모드 헤드셋·태양의 은혜, `PlayerRelicEffectRuntime`는 마나 중계기의 공통 실행을 담당한다. 같은 유물 SO의 오라는 하나이며 첫 사본 제거 시 남은 사본으로 소유를 옮기고 마지막 제거 시 정리한다. 서버 시작 시 장비를 명시적으로 재확인한다.
+- `PlayerGrenadeEffect`는 두 유탄 효과의 고정 위치·대상 중복 제거·종류별 최대 3개/오래된 것 우선 취소·소유자 사망/비활성화/씬 종료 정리를 공유한다. 싱글의 풀 반환과 장판 수명을 분리하고 미러 원격 표시·RPC를 유지했다. Fighter 원본 프리팹에는 기존 미러와 같은 고유효과 Presenter를 Editor에서 연결했다.
+- B04는 실제 패시브 프로필의 HP 비율과 원본 `BeginRevive`의 10초 무적을 사용한다. 서버가 사용 여부를 확정하고 원본 사망/부활 AnimationEvent로 시작·완료하며 그동안 입력을 잠근다. 치명적 피격과 남은 Attack/Hit 종료 이벤트가 Dead를 덮어쓰지 않게 했다. 부재 중 부활이 끝나면 Binder의 복구할 입력 상태도 갱신한다. 재접속 시 이미 복원된 NetworkAnimator의 `revival01` 진행 위치를 처음부터 다시 시작하지 않는다.
+
+### 8.2 이번 실행 검증
+
+Unity 6000.3.22f1의 실제 Fighter/Gunner·Normal_Melee 적 프리팹을 사용했다. 적 AI 정지·HP/방어 고정의 **효과 격리 검사**이며 Act1 전체 진행 검증은 아니다. 원격은 한 PC의 Editor Host + 별도 Windows Player loopback으로 두 캐릭터의 Host/Client 역할을 교대했다. 후반 공통 규칙 대조는 Editor 싱글/단독 Host에서 진행했다.
+
+| 항목 | 이번 결과 |
+|---|---|
+| 헤드셋·부스터·마나 중계기 | 마나 25%/26% 조건, 회피 속도 +20%·2초 지속·6초 재사용 제한, 유물 2개 비중첩·비활성화/재활성화·첫/마지막 사본 제거 PASS |
+| 태양의 은혜 | 8초 무피격 뒤 최대 HP 15% 생성, HP 적용 전 흡수와 기존 floor 처리, 비활성화 정리 PASS. 별도 Player 화면의 보호막과 제거 확인 |
+| 아크·인페르노·밤의 칼날 | 실제 싱글 및 Host 공격 요청/AnimationEvent에서 연쇄·화염 후속 피해·준비 공격 1회 소비 PASS. 장비 해제 시 준비 상태 제거 PASS |
+| 유리빛 궤도·중력 우물·특이점 | 실제 발사/충돌, Glass Direct+Effect, 중력 장판 생성/만료, 특이점 2초 예약 피해 PASS. 발사 뒤 적중 전에 무기를 바꿔도 두 유탄 효과 유지 |
+| 스탯·중복·권한 | Direct 콜백에서 공격력 +1000을 적용해도 Inferno/Glass 후속 피해는 기존 적중 스냅샷과 일치. 같은 적에 추가 Collider를 넣은 싱글 Fighter 7·Gunner 8·Host Gunner 9개의 `(대상, 원인, 공격 ID)` 기록 모두 1회. Skill/Effect/DoT 재발동·준비 소비 금지, 실제 Context별 상태 분리·원격 효과 실행 금지 PASS |
+| 유탄 수명 | 두 종류 각각 4개 생성 시 가장 오래된 1개 취소/3개 유지, 소유자 공격 수명 종료 시 전부 취소 PASS |
+| B04 | 실제 레벨1 HP 20%, 서버 1회 사용, 원본 사망→부활→종료 이벤트, 입력 잠금/복구, 9.8초 무적 유지·10.2초 종료 PASS. 거너 사망→부활은 싱글 1.102초/Host 1.100초, 부활 클립은 2.902초/2.921초 |
+| B04 재접속 | 진행 중 HP/횟수 보존·클립 진행 위치 유지, 완료 후 횟수 미보충, 두 번째 사망 Dead 유지 PASS. 부재 중 종료 후 재접속 입력 복구 PASS; 이 경합 검사는 서버 Animator 속도를 높여 종료 시점을 강제로 만들었으므로 정상 클립 시간 계측과 구분 |
+| 자산·최종 상태 | 싱글/미러 Fighter·Gunner 프리팹 4개 Missing Script 0, Relic 실행 연결·Fighter 고유효과 바인딩 확인. 임시 검사 제거 후 C# 컴파일 성공·Console Error 0 |
+
+- 증거는 `RunValidation/MirrorStage4_20260923/`의 `single-Fighter.txt`, `single-Gunner.txt`, `host-Fighter.txt`, `host-Gunner.txt`, `client-fighter-final.log`, `client-gunner-final3.log`, `dedup-summary.json`과 화면 캡처다. 특이점 후속 피해는 교체 검사에서 싱글 2.006초/Host 2.005초였다. 서로 다른 표적 위치에 따른 대상 수는 지연/효과 손실로 취급하지 않는다.
+- fixture 실패도 로그에 보존했다. 초기 거너 Host 검사는 private 발사 함수에 필요한 입력 필드를 누락했으며 실제 `TryBeginLocalAttack`으로 교정했다. 마지막 Fighter 스냅샷 검사는 직접 대상 등록을 빠뜨려 Inferno가 정당하게 거절했고, 등록 후 PASS했다. 포트 충돌·캐시된 NetworkManager 재접속 fixture 실패도 성공 기록과 구분한다.
+- Windows 첫 빌드 `Succeeded`의 기존 보스 셰이더 오류 16건은 3단계와 같은 기준선이다. 마지막 증분 빌드는 오류 0/경고 17이었다. 사용자 요청 이후 추가 빌드 없이 Editor와 기존 Player를 사용했다. 바이너리에 남은 일회성 probe는 검증 산출물이며 배포 후보가 아니다.
+- 일회성 런타임 검사·메시지·자동 진입은 중앙 `MirrorSmokeConfiguration_MirrorTest.cs`에만 두었고 착수 백업과 바이트 동일하게 복원했다. 세이브 9개도 착수 백업과 동일하게 복원했다. 빌드가 만든 무관한 ProjectSettings/URP 캐시·캐릭터 프리뷰 변경을 복원하고 기존 Dirty 변경·승인된 빌드 씬 목록을 유지했다. 원래 LoginScene은 미저장 변경 없이 복구했다.
+
+### 8.3 초기 표시 조건·남은 범위
+
+- `PlayerWeaponVisualPresenter`는 Addressables 요청 버전·해제를 관리하고 외형 활성화 시 아이템을 확정하지만 명시적 준비 완료 신호는 없다. `WBH_EffectPoolManager`의 사전 생성/첫 Get 동기 생성은 GPU 셰이더 준비를 보장하지 않는다. 다음 단계는 이 기존 경계에 준비 완료를 연결한다.
+- 현재 Editor의 `asyncShaderCompilation=true`, 검사 시 `ShaderUtil.anythingCompiling=false`를 확인했다. Unity의 Editor 비동기 variant 컴파일은 cyan 임시 표시를 사용할 수 있다([공식 설명](https://docs.unity.com/en-us/engine/6000.0/manual/materials-and-shaders/shaders/shader-troubleshooting/shader-reduce-stalling/asynchronous-shader-compilation/introduction)). 이는 하늘색 사각형의 유력한 설명이며 **과거 해당 프레임의 원인을 직접 재현·확정한 결과는 아니다**. 현재 Player 보호막 화면에는 해당 임시 사각형이 없었다. 전역 셰이더 설정은 바꾸지 않았다.
+- 5단계 준비 조건: 데이터/Context/소유권·필수 외형 Addressables 성공 또는 명시적 실패·VFX/SFX 풀/참조·첫 표시 준비를 구분하고 기존 로딩/페이드/입력 잠금에 연결한다. 씬 활성화 전에는 아직 생성되지 않은 객체를 기다리지 않는다. 서버는 전환 번호별 참가자 준비를 검증하며 GPU를 기다리지 않는다. 취소·늦은 콜백·끊김·시간 초과 정리는 §7.4를 따른다.
+- 격리 전투에서 StageSelect→전투의 pending route를 임시 설정했으므로 정상 Act 경로·새 런 전체 초기화의 증거가 아니다. 공용 씬/전투 시작 준비는 5단계, 결과/복귀/새 런·전용 서버 혼합4인·최종 cold Player 첫 표시·다중 PC/지연 환경은 6단계 최종 후보에서 남은 범위에 맞춰 확인한다. 사용자가 수용한 3단계 산탄/표적 경계와 128조합은 반복하지 않았다.
+- MPPM Assertion, 격리 씬의 pending node/Context 복구 오류, 기존 패시브 SO Instance 경고는 기존 기준선·fixture와 구분했다. 성공 실행에서 새 공통 효과 예외는 없었다. 원격 보호막/인페르노 표시와 기존 이벤트 전달은 확인했지만 모든 효과의 cold 최초 프레임·오디오 샘플을 다시 계측한 것은 아니다.
+- 테스트 포트 정리를 위한 마지막 Editor 재시작에서 기존 MPPM 초기화 오류 3건(ScenarioConfig Assertion 2건·PlayModeUserSettings 저장 오류 1건)이 다시 나타났다. 위 Console 0은 임시 검사 제거 후 컴파일 시점이며 재시작 뒤 전체 Console 0을 뜻하지 않는다. 해당 오류는 이번 공통 전투 코드의 컴파일/런타임 오류와 구분한다. 재시작 후 LoginScene clean·Play 정지·테스트 포트 해제를 확인했다.
+- SW 개인 구현 로그를 갱신했다. Commit·Push 없음. 다음은 **5단계 공용 씬·초기 로딩·Act1 연결**이며, TEST 명칭/자산/도구 정리는 6단계에서 수행한다.
+
+## 9. 후속 단계 기록 형식
+
+각 단계에 다음 항목을 같은 문서의 새 절로 추가한다.
+
+- 날짜 / 단계 / 상태 / 이번 실행 범위
+- 수정 대상과 승인: 팀원 파일, 변경 이유, 승인 여부
+- 변경 내용: 실제 수정한 동작과 파일
+- 싱글 유지 방식 / 멀티 동작
+- 검증: 실행 환경, 호출 경로, PASS·FAIL, 증거 경로
+- 남은 위험·미검증 / 다음 작업
+- 개인 구현 로그 갱신 여부
+
+## 10. 실행 이력
+
+| 날짜 | 단계 | 수행 | 검증·제한 | 다음 작업 |
+|---|---|---|---|---|
+| 2026-09-20 | 0 | 계획 원문·누적 실행 기록 문서 생성, 기준선 조사 착수 | 게임 자산 변경 없음; 현재 런타임 재검증 결과 아님 | 기준선과 근거 기록 |
+| 2026-09-20 | 0 | Sol medium 2개 읽기 조사 + 주 에이전트 소스·Editor 자산 대조; 소유자/호출/차이 B01~B12 기록 | 프리팹4개 Missing0, 미러 Context2개 소유 참조 정상, 현재 Console 오류0. Play는 재실행하지 않음 | 1단계 Context와 싱글 InventoryCommon 소유 연결 |
+| 2026-09-20 | 1 | 공통 Context·싱글 인벤토리 명시적 연결·미러 필수 구성 검사 구현. 승인된 YJ 스포너 수정. 사용자 요청으로 이전 빌드 약 21.97GB 정리 | 싱글 실제 UI/장착, 별도 서버+4 Player 인벤토리/소유 분리, Q1 서버·각 client 107단계 PASS. 기존 보스 셰이더 오류 10건·다중 PC/전체 전투 미검증은 별도 | 2단계 공통 게임 규칙 |
+| 2026-09-20 | 1 후속 | Start→거너 싱글 진입·사망 복귀, 완료 보조로 Act1~3 최종 보스까지 경로 추적 | Context·인벤토리 소유 검사 35회 통과. Act3 보스 미완은 사용자 확인, 결과 씬 연결은 별도 확인 항목. 전체 전투 클리어 검증 아님. 저장·Editor 설정 복원 | 2단계 공통 게임 규칙 |
+| 2026-09-23 | 2 | 승인된 WJ 포션 공통화, 서버 1초 제한·소유 검증, 가격·강화 서비스 공유와 지갑 동기화. 주석 보존·검증 씬 유지 지침 반영 | 실제 싱글 규칙/UI/거래/드롭·획득, Host+Client 및 서버+4 Client 동시 구매/중복·버전 거절/재접속 보존 PASS. 셰이더·MPPM·씬 연결·설정 파일 경합 및 다중 PC 미검증은 §5에 구분 | 3단계 기본 전투·상태이상 |
+| 2026-09-23 | 3 | 공통 피해·스냅샷·상태 출처, 실제 4슬롯·원본 Animator·VFX/SFX·범위 표시 연결 | 싱글128·Host128·전용4인124조합, 평타·요청 거절·DoT·차징 사망/끊김 완료. 산탄 무작위성과 직선 표적 경계는 사용자 수용 후 추가 검사 종료. 정리 후 컴파일 성공·Console 오류0, 개인 로그 갱신. 제한은 §6.3 | 4단계 및 별도 B04 정상 패시브 부활 후속 |
+| 2026-09-23 | 4~6 계획 개정 | 현재 구조·최신 효과 10종·팀원 변경·로딩 확인 후 공용 싱글 씬+멀티 Mirror 계층, B04, 시험 코드/자산/도구 0건 및 필요한 검증 범위로 두 문서 갱신 | 문서·소스 조사만. 하늘색 사각형은 Editor에서 관찰, Player는 미확인. 게임 코드/자산·Unity 상태·개인 로그 변경 없음 | 4단계 10종 공통화·정상 부활 → 5단계 공용 씬/준비 완료 → 6단계 결과/정리/최종 검증 |
+| 2026-09-23 | 4 | 10종 공통 실행·플레이어별 상태·FIFO·장판 수명·B04 정상 부활 및 재접속 종료 경합 수정 | 실제 싱글/Editor Host/별도 Player, 발사 후 교체·콜백 스탯·중복 Collider·부활/재접속 PASS. 임시 검사 제거·세이브9개/설정 복원·컴파일/Console 오류0. 제한은 §8 | 5단계 공용 씬·로딩·Act1, Editor 우선 검증 |

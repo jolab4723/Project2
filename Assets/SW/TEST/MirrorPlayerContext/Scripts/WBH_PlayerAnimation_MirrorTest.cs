@@ -159,9 +159,8 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
                 networkAnimator.SetTrigger("Dead");
                 break;
 
-            case PlayerState.Revive:
-                networkAnimator.SetTrigger("Revive");
-                break;
+            // 정상 부활은 서버 스냅샷의 ApplyAuthoritativePassiveRevive에서 재생한다.
+            // 재접속 때 NetworkAnimator가 복원한 재생 위치를 로컬 Trigger로 덮지 않는다.
         }
     }
 
@@ -245,13 +244,13 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_EndAttack()
     {
-        if (isLocalPlayer)
+        if (isLocalPlayer && stateMachine.Is(PlayerState.Attack))
             stateMachine.ChangeState(PlayerState.Idle);
     }
 
     public void AniEvent_HitEnd()
     {
-        if (isLocalPlayer)
+        if (isLocalPlayer && stateMachine.Is(PlayerState.Hit))
             stateMachine.ChangeState(PlayerState.Idle);
     }
 
@@ -275,11 +274,13 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     public void AniEvent_EndDead()
     {
         // Mirror 사망/부활은 PlayerRuntimeStateSync_MirrorTest의 서버 스냅샷만 확정한다.
+        if (isServer) GetComponent<PlayerRuntimeStateSync_MirrorTest>()?.ServerTryPassiveRevive();
     }
 
     public void AniEvent_EndRevive()
     {
         // 서버 부활 스냅샷이 입력 복구까지 함께 처리한다.
+        if (isServer) GetComponent<PlayerRuntimeStateSync_MirrorTest>()?.ServerCompletePassiveRevive();
     }
 
     /// <summary>Fighter_Hit 클립에 남아 있는 기존 이벤트 이름을 테스트 복제본에서 호환한다.</summary>
@@ -407,6 +408,18 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         animator.SetFloat("MoveSpeed", 0f);
         animator.Play("Base Layer.Locomotion", 0, 0f);
         animator.Update(0f);
+    }
+
+    public void ApplyAuthoritativePassiveRevive()
+    {
+        if (animator == null) return;
+        animator.ResetTrigger("Dead");
+        animator.ResetTrigger("Revive");
+        animator.SetFloat("MoveSpeed", 0f);
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("revival01") ||
+            (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName("revival01")))
+            return;
+        animator.SetTrigger("Revive");
     }
 
     private WBH_EffectSpawner ResolveSceneEffectSpawner()

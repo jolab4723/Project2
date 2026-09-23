@@ -80,7 +80,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         playerEffect.Initialize(effectSpawner);
 
         // 부활 패시브(Revive)를 해금한 경우에만 1회 부활 가능
-        reviveCount = PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.HasRevive ? 1 : 0;
+        // SW 수정: 네트워크 플레이어는 서버가 보유한 개별 프로필과 소비 상태를 사용합니다.
+        if (GetComponent<Mirror.NetworkIdentity>() == null)
+            reviveCount = PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.HasRevive ? 1 : 0;
     }
 
     private void OnEnable()
@@ -340,7 +342,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         status.TakeDamage(result);
 
         // 최대 hp 대비 큰 피해(10%) 입으면 피격 애니메이션
-        if(result.FinalDamage >= status.MaxHealth *0.1f )
+        // SW 수정: 치명적인 피해의 OnDead가 확정한 사망 상태를 피격 상태로 덮어쓰지 않습니다.
+        if(!status.IsDead && result.FinalDamage >= status.MaxHealth *0.1f )
         {
             stateMachine.ChangeState(PlayerState.Hit);
         }
@@ -428,7 +431,20 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         reviveCount--;
 
         float healthRatio = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.ReviveHealthPercent / 100f : 1f;
+        if (!TryBeginPassiveRevive(healthRatio))
+            reviveCount++;
+    }
+
+    /// <summary>SW 수정: 횟수 소비는 호출자가 소유하고 정상 패시브의 회복·무적·상태 전이는 공유합니다.</summary>
+    public bool TryBeginPassiveRevive(float healthRatio)
+    {
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        if ((identity != null && !identity.isServer) || !float.IsFinite(healthRatio) || healthRatio <= 0f ||
+            !stateMachine.Is(PlayerState.Dead) || !status.IsDead)
+            return false;
+        SetControlEnable(false);
         BeginRevive(healthRatio, 10f);
+        return true;
     }
 
     public void CompleteRevive()

@@ -17,6 +17,21 @@ public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
     private Material chainLightningMaterial;
     private GameObject preparedAttackRing;
     private Material preparedAttackMaterial;
+    private PlayerItemEffectState singleEffects;
+
+    private void OnEnable()
+    {
+        if (singleEffects != null) return;
+        if (GetComponent<Mirror.NetworkIdentity>() != null) return;
+        singleEffects = GetComponent<PlayerContext>()?.Effects;
+        if (singleEffects == null) return;
+        singleEffects.ChainPresented += PresentChainLightning;
+        singleEffects.InfernoPresented += PresentInfernoHit;
+        singleEffects.PreparedChanged += SetPreparedAttack;
+        SetPreparedAttack(singleEffects.PreparedAttackReady);
+    }
+
+    private void Start() => OnEnable();
 
     public void SetPreparedAttack(bool ready)
     {
@@ -121,7 +136,8 @@ public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
 
     public void PresentInfernoHit(Vector3 position)
     {
-        if (!Application.isPlaying || !Mirror.NetworkClient.active || !isActiveAndEnabled)
+        if (!Application.isPlaying || !isActiveAndEnabled ||
+            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
             return;
 
         if (infernoHitPrefab == null)
@@ -157,6 +173,13 @@ public sealed class UniqueEffectPresentation_MirrorTest : MonoBehaviour
 
     private void OnDisable()
     {
+        if (singleEffects != null)
+        {
+            singleEffects.ChainPresented -= PresentChainLightning;
+            singleEffects.InfernoPresented -= PresentInfernoHit;
+            singleEffects.PreparedChanged -= SetPreparedAttack;
+            singleEffects = null;
+        }
         ReleaseOwnedResources();
     }
 

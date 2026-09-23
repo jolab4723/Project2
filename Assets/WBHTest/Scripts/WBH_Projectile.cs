@@ -11,6 +11,9 @@ public class WBH_Projectile : MonoBehaviour
     [SerializeField] private float explosionRangeDuration = 0.25f;
 
     private WBH_DamageRequest request;
+    private PlayerContext playerOwner;
+    private ItemSystem.UniqueEffectSO launchEffect;
+    private readonly System.Collections.Generic.HashSet<WBH_ICombat> hitTargets = new();
     private float speed;
     private float maxDistance;
 
@@ -78,6 +81,7 @@ public class WBH_Projectile : MonoBehaviour
                            WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         this.request = request;
+        CapturePlayerSource(request);
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
@@ -114,6 +118,7 @@ public class WBH_Projectile : MonoBehaviour
                                    WBH_EnemyEffectCue impactEffectCue = WBH_EnemyEffectCue.None)
     {
         this.request = request;
+        CapturePlayerSource(request);
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
@@ -168,6 +173,12 @@ public class WBH_Projectile : MonoBehaviour
     {
         if (!isInitialized)
             return;
+        if (playerOwner != null && (playerOwner.Health == null || playerOwner.Health.CurrentHealth <= 0f ||
+            !playerOwner.isActiveAndEnabled || playerOwner.gameObject.scene != gameObject.scene))
+        {
+            ReturnToPool();
+            return;
+        }
 
         Move();
         CheckDistance();
@@ -261,7 +272,8 @@ public class WBH_Projectile : MonoBehaviour
             return;
         }
 
-        if (other.TryGetComponent<WBH_ICombat>(out var combatTarget))
+        WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(other);
+        if (combatTarget != null)
         {
             Vector3 hitPosition = other.ClosestPoint(transform.position);
             Vector3 lookDirection = -movedirection.normalized;
@@ -306,7 +318,8 @@ public class WBH_Projectile : MonoBehaviour
 
             foreach(Collider hit in hits)
             {
-                if (!hit.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
+                if (combatTarget == null)
                     continue;
 
                 Vector3 hitPosition = hit.ClosestPoint(explosionPos);
@@ -329,6 +342,7 @@ public class WBH_Projectile : MonoBehaviour
             // 유탄의 대표 피격면은 지면이므로 전용 Impact의 로컬 +Z가 월드 +Y를 향하게 배치합니다.
             // 팀원이 만든 기존 폭발 효과와 새 무기별 명중 효과를 같은 폭발 위치에서 함께 재생합니다.
             SpawnImpactVisual(explosionPos, Vector3.up);
+            CreateGrenadeEffect(explosionPos);
         }
         finally
         {
@@ -343,10 +357,10 @@ public class WBH_Projectile : MonoBehaviour
     /// </summary>
     private void ProcessHit(WBH_ICombat target, Vector3 hitPosition, Vector3 hitEffectDirection)
     {
-    // SW 추가:
+        // SW 추가:
         // 산탄은 T_PlayerCombat.SectorAttack에서 이미 실제 피해를 처리합니다. 산탄의 이동 VFX가 적 Trigger에 닿더라도
         // dealsDamage=false이면 여기서 끝내어 같은 공격에 피해가 두 번 들어가지 않게 합니다.
-        if (!dealsDamage)
+        if (!dealsDamage || !hitTargets.Add(target))
             return;
 
         WBH_DamageRequest hitRequest = new WBH_DamageRequest(request.Attacker,
@@ -364,12 +378,48 @@ public class WBH_Projectile : MonoBehaviour
                                                                  // 메인 머지에서 WBH_DamageRequest에 EffectData가 추가됐습니다.
                                                                  // 원본 요청을 명중 대상용 요청으로 복제할 때 이 값도 넘겨야
                                                                  // WBH_EnemyController의 새 명중 효과 흐름이 소실되지 않습니다.
-        WBH_CombatManager.ProcessDamage(hitRequest);
+        // SW 수정: 발사 당시 효과 자격은 장비 교체 이후에도 유지하고, 실제 적중 경계 안에서만 읽습니다.
+        using (playerOwner?.Effects.BeginGunnerHitScope(request.AttackId,
+                   isExplosion ? GunnerWeaponType.GrenadeLauncher : GunnerWeaponType.Rifle, launchEffect))
+            WBH_CombatManager.ProcessDamage(hitRequest);
+    }
+
+    private void CapturePlayerSource(WBH_DamageRequest source)
+    {
+        playerOwner = (source.Attacker as T_PlayerController)?.GetComponent<PlayerContext>();
+        launchEffect = null;
+        hitTargets.Clear();
+        if (playerOwner?.Equipment != null &&
+            playerOwner.Equipment.TryGetEquippedItemInstance(ItemSystem.EquipSlotType.Weapon, out var weapon))
+            launchEffect = weapon?.definition?.uniqueEffect;
+    }
+
+    private void CreateGrenadeEffect(Vector3 position)
+    {
+        if (playerOwner == null || !playerOwner.Effects.CanExecute || request.DamageCause != DamageCause.Direct ||
+            (launchEffect is not ItemSystem.GravityWellFieldUniqueEffectSO &&
+             launchEffect is not ItemSystem.SingularityDelayedExplosionUniqueEffectSO))
+            return;
+        // SW 수정: 원본 투사체는 즉시 풀로 돌리고 고정 효과만 독립 수명으로 유지합니다.
+        var effectObject = new GameObject("PlayerGrenadeEffect");
+        effectObject.transform.position = position;
+        UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(effectObject, gameObject.scene);
+        GameObject impact = impactVisualPrefab;
+        effectObject.AddComponent<PlayerGrenadeEffect>().Initialize(playerOwner, launchEffect, request.AttackId,
+            request.ElementType, () => GunnerVfxPlayback.SpawnTransient(impact, position, Vector3.up),
+            () => Destroy(effectObject));
+        if (launchEffect is ItemSystem.GravityWellFieldUniqueEffectSO field)
+            PlayerGrenadeEffect.CreateRing(effectObject.transform, "GravityWellFieldVisual", field.radius, field.fieldColor);
+        else if (launchEffect is ItemSystem.SingularityDelayedExplosionUniqueEffectSO explosion)
+            PlayerGrenadeEffect.CreateRing(effectObject.transform, "SingularityDelayedExplosionVisual", explosion.explosionRadius, explosion.warningColor);
     }
 
     private void ReturnToPool()
     {
         UnbindDeathOwner();
+        playerOwner = null;
+        launchEffect = null;
+        hitTargets.Clear();
 
         isInitialized = false;
 

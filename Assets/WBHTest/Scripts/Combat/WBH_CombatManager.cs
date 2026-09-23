@@ -38,6 +38,15 @@ public class WBH_CombatManager
     {
         if (request.Attacker == null || request.Target == null)
             return;
+        // SW 수정: 플레이어의 발동 상태와 후속 피해 큐는 싱글·서버가 동일한 경계를 사용합니다.
+        if (request.Attacker is T_PlayerController player && player.TryGetComponent(out PlayerContext context))
+        {
+            if (context.CombatAuthority != null)
+                WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, request, out _);
+            else
+                PlayerDamageResolver.TryProcessPlayerDamage(context, request, out _);
+            return;
+        }
         WBH_ICombatStatus attackerStat = request.Attacker.Status;
         WBH_ICombatStatus targetStat = request.Target.Status;
         if (attackerStat == null || targetStat == null || targetStat.IsDead)

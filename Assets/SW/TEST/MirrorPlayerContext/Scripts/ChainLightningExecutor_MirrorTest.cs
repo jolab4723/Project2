@@ -4,7 +4,7 @@ using ItemSystem;
 using Mirror;
 using UnityEngine;
 
-/// <summary>연쇄 번개의 표적 선택, 감쇠, 후속 피해 등록만 담당하는 서버 실행기다.</summary>
+/// <summary>연쇄 번개의 표적 선택, 감쇠, 후속 피해 등록을 싱글·서버에서 함께 수행한다.</summary>
 internal static class ChainLightningExecutor_MirrorTest
 {
     private const int EnemyLayerMask = 1 << 10;
@@ -36,7 +36,7 @@ internal static class ChainLightningExecutor_MirrorTest
             excluded.Add(nextTarget);
             Vector3 segmentStart = currentPoint;
             Vector3 segmentEnd = nextPoint;
-            if (!WBH_CombatResolver_MirrorTest.EnqueueFollowUpDamage(
+            if (!PlayerDamageResolver.EnqueueFollowUpDamage(
                     context,
                     nextTarget,
                     ElementType.Electric,
@@ -72,7 +72,7 @@ internal static class ChainLightningExecutor_MirrorTest
         {
             WBH_ICombat candidate = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
             if (candidate == null || excluded.Contains(candidate) || candidate.Status == null || candidate.Status.IsDead ||
-                context.CombatAuthority?.IsDirectTargetForAttack(attackId, candidate) == true ||
+                context.Effects.IsDirectTargetForAttack(attackId, candidate) ||
                 !TryGetCombatPoint(candidate, out Vector3 candidatePoint) ||
                 Physics.Linecast(sourcePoint, candidatePoint, ObstacleLayerMask, QueryTriggerInteraction.Ignore))
             {

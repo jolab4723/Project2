@@ -245,13 +245,18 @@ public class WBH_PlayerAnimation : MonoBehaviour
     {
         combat.ExecuteAttack();
     }
+    /// <summary>SW 수정: 현재 공격 상태일 때만 공격 종료 이벤트를 적용합니다.</summary>
     public void AniEvent_EndAttack()
     {
-        stateMachine.ChangeState(PlayerState.Idle);
+        // SW 수정: 전이 중 남은 클립 이벤트가 사망·부활 상태를 덮어쓰지 않게 합니다.
+        if (stateMachine.Is(PlayerState.Attack))
+            stateMachine.ChangeState(PlayerState.Idle);
     }
+    /// <summary>SW 수정: 현재 피격 상태일 때만 피격 종료 이벤트를 적용합니다.</summary>
     public void AniEvent_HitEnd()
     {
-        stateMachine.ChangeState(PlayerState.Idle);
+        if (stateMachine.Is(PlayerState.Hit))
+            stateMachine.ChangeState(PlayerState.Idle);
     }
     public void AniEvent_ExecuteSkill()
     {

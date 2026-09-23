@@ -278,6 +278,8 @@ public class T_PlayerCombat : MonoBehaviour
         ItemSystem.ElementType element = status.CurrentElement;
         WBH_StatusEffectData? elementStatusEffect = GetElementStatusEffect(element);
 
+        // SW 수정: 피해 적용 전에 직접 대상 전체를 확정해 연쇄 대상 제외와 Collider 중복 제거에 공유합니다.
+        var directTargets = new System.Collections.Generic.Dictionary<WBH_ICombat, Collider>();
         foreach (Collider target in targets)
         {
             Vector3 dirToTarget = (target.transform.position - origin).normalized;
@@ -288,8 +290,20 @@ public class T_PlayerCombat : MonoBehaviour
             if (targetAngle > angle * 0.5f)
                 continue;
 
-            if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+            WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(target);
+            if (combatTarget == null || directTargets.ContainsKey(combatTarget))
                 continue;
+            directTargets.Add(combatTarget, target);
+        }
+
+        PlayerContext context = GetComponent<PlayerContext>();
+        context?.Effects.SetDirectTargets(attackId, directTargets.Keys);
+        foreach (var pair in directTargets)
+        {
+            WBH_ICombat combatTarget = pair.Key;
+            Collider target = pair.Value;
+            Vector3 dirToTarget = (target.transform.position - origin).normalized;
+            dirToTarget.y = 0;
 
             Vector3 hitPosition = target.ClosestPoint(transform.position);
             Vector3 lookDirection = transform.position - hitPosition;
