@@ -24,9 +24,16 @@ namespace Core
 
         public string lastPlayedUtc; // DateTime.UtcNow.ToString("O") 형태로 저장
 
-        public void ApplyCredit(int creditAmount)
+        /// <summary>
+        /// 양수 크레딧을 영구 보유량에 더합니다. 음수와 int 범위를 넘는 값은 적용하지 않습니다.
+        /// </summary>
+        public bool TryApplyCredit(int creditAmount)
         {
+            if (creditAmount <= 0 || credit > int.MaxValue - creditAmount)
+                return false;
+
             credit += creditAmount;
+            return true;
         }
     }
 }
