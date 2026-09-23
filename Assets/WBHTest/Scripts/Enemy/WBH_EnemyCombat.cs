@@ -545,6 +545,8 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitUntil(() => landed);
 
+        // 애니메이션 전환 시점과 무관하게 실제 착지 후 한 번 재생한다.
+        pattern.EnemyEffect?.PlayEffect(WBH_EnemyEffectCue.Boss_Act1_JumpAttack, Vector3.one);
         ApplyAreaDamage(landingPos, damageRadius);
 
         yield return new WaitForSeconds(recoveryDuration);
