@@ -356,32 +356,68 @@ namespace Core
         }
 
         /// <summary>
-        /// 런 종료 시 호출. 현재 인벤토리의 크레딧(PlayerWallet.Gold)를 profile의 영구 크레딧에 더하고,
-        /// 인게임 크레딧은 0으로 초기화한다. 실제로 언제 부를지(스테이지 클리어/사망/메뉴 복귀 등)는 호출부에서 결정.
-        /// 여기서는 이전만 하고 파일 저장은 안 함 - 필요하면 호출부에서 SaveSinglePlayerSlot/SaveMultiplayerSlot을 이어서 불러야 함.
+        /// 현재 인벤토리의 런 크레딧을 프로필에 더해 로컬과 Firebase 저장을 요청합니다.
+        /// 저장 요청이 시작된 뒤에만 인게임 크레딧을 0으로 초기화합니다.
         /// </summary>
-        public void TransferRunGoldToProfile(PlayerProfileData profile)
+        public bool TransferRunGoldToProfile(PlayerProfileData profile)
         {
             if (profile == null)
             {
                 Debug.LogWarning("[DataManager] TransferRunGoldToProfile - profile이 null입니다.");
-                return;
+                return false;
             }
 
             if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
             {
                 Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
-                return;
+                return false;
             }
 
             int runGold = InventoryController.Instance.PlayerWallet.Gold;
             if (runGold <= 0)
-                return;
+                return true;
 
-            profile.credit += runGold;
+            if (!TrySaveRunCredits(profile, runGold))
+                return false;
+
             InventoryController.Instance.PlayerWallet.SetGold(0);
+            return true;
+        }
 
-            Debug.Log("[DataManager] 런 크레딧 " + runGold + " 이전 완료. 프로필 영구 크레딧 = " + profile.credit);
+        /// <summary>
+        /// 서버가 확정한 런 크레딧을 지정한 프로필에 더하고 로컬 저장 후 Firebase 저장을 요청합니다.
+        /// </summary>
+        public bool TrySaveRunCredits(PlayerProfileData profile, int runCredits)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("[DataManager] TrySaveRunCredits - profile이 null입니다.");
+                return false;
+            }
+
+            if (runCredits <= 0)
+                return true;
+
+            int previousCredits = profile.credit;
+            if (!profile.TryApplyCredit(runCredits))
+            {
+                Debug.LogWarning($"[DataManager] 유효하지 않은 런 크레딧을 저장하지 않았습니다: {runCredits}");
+                return false;
+            }
+
+            try
+            {
+                SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = profile });
+            }
+            catch (System.Exception exception)
+            {
+                profile.credit = previousCredits;
+                Debug.LogError($"[DataManager] 런 크레딧 저장 실패: {exception.Message}");
+                return false;
+            }
+
+            Debug.Log("[DataManager] 런 크레딧 " + runCredits + " 저장 완료. 프로필 영구 크레딧 = " + profile.credit);
+            return true;
         }
 
         #endregion

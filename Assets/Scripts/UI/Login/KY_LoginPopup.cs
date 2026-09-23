@@ -101,6 +101,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
         // 로딩 씬의 페이드가 끝난 다음 프레임에 시작해야 커튼 연출이 가려지지 않는다.
         yield return new WaitForEndOfFrame();
         PlayEntranceEffect();
+        _ = TryResumeCachedSessionAsync();
     }
 
     private void OnDisable()
@@ -214,28 +215,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
                 return;
             }
 
-            Core.SaveDataOperationResult synchronizationResult =
-                await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
-            if (!synchronizationResult.IsSuccess &&
-                synchronizationResult.FailureReason != Core.SaveDataFailureReason.NotFound)
-            {
-                Core.FirebaseService.Default.SignOut();
-                ShowError(synchronizationResult.Message);
-                return;
-            }
-
-            if (synchronizationResult.IsSuccess &&
-                !synchronizationResult.IsCloudSynchronized)
-            {
-                Debug.LogWarning(
-                    $"[KY_LoginPopup] 프로필은 로컬 캐시에 보관되었습니다: {synchronizationResult.Message}");
-            }
-
-            if (passwordInput != null)
-                passwordInput.text = string.Empty;
-
-            loginRequested?.Invoke(email, password);
-            TryLoadTitleScene();
+            await CompleteAuthenticatedLoginAsync(email, password);
         }
         catch (Exception exception)
         {
@@ -247,6 +227,66 @@ public sealed class KY_LoginPopup : MonoBehaviour
             isLoginInProgress = false;
             SetSubmitting(false);
         }
+    }
+
+    /// <summary>
+    /// Firebase가 기기에 보존한 이전 로그인 세션이 있으면 사용자별 로컬 캐시를 불러와 자동으로 진행합니다.
+    /// </summary>
+    private async Task TryResumeCachedSessionAsync()
+    {
+        if (isLoginInProgress || bypassLoginTemporarily)
+            return;
+
+        isLoginInProgress = true;
+        SetSubmitting(true);
+        try
+        {
+            Core.FirebaseInitializationResult initialization =
+                await Core.FirebaseService.Default.InitializeAsync();
+            if (!initialization.IsSuccess || !Core.FirebaseService.Default.IsSignedIn)
+                return;
+
+            ClearFeedback();
+            await CompleteAuthenticatedLoginAsync(string.Empty, string.Empty);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[KY_LoginPopup] 저장된 Firebase 세션 복구 실패: {exception.Message}");
+        }
+        finally
+        {
+            isLoginInProgress = false;
+            SetSubmitting(false);
+        }
+    }
+
+    /// <summary>
+    /// 인증된 사용자의 프로필을 Firestore 또는 로컬 캐시에서 동기화한 뒤 타이틀 씬으로 이동합니다.
+    /// </summary>
+    private async Task CompleteAuthenticatedLoginAsync(string email, string password)
+    {
+        Core.SaveDataOperationResult synchronizationResult =
+            await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+        if (!synchronizationResult.IsSuccess &&
+            synchronizationResult.FailureReason != Core.SaveDataFailureReason.NotFound)
+        {
+            ShowError(synchronizationResult.Message);
+            return;
+        }
+
+        if (synchronizationResult.IsSuccess &&
+            !synchronizationResult.IsCloudSynchronized)
+        {
+            Debug.LogWarning(
+                $"[KY_LoginPopup] Firestore 대신 사용자별 로컬 캐시를 불러왔습니다: {synchronizationResult.Message}");
+        }
+
+        if (passwordInput != null)
+            passwordInput.text = string.Empty;
+
+        if (!string.IsNullOrEmpty(email))
+            loginRequested?.Invoke(email, password);
+        TryLoadTitleScene();
     }
 
     /// <summary>필요한 씬과 로더 상태를 확인한 뒤 타이틀 씬 이동을 시작한다.</summary>

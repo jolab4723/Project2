@@ -224,7 +224,17 @@ public sealed partial class MirrorTestNetworkManager
         }
 
         foreach (MirrorSessionRoster_MirrorTest.Member member in ServerRoster.Members)
+        {
+            NetworkShopPlayerState_MirrorTest shopState =
+                member.RuntimeContext?.GetComponent<NetworkShopPlayerState_MirrorTest>();
+            if (shopState != null && !shopState.ServerTransferRunCreditsToOwner())
+            {
+                Debug.LogWarning(
+                    $"[MirrorTestNetworkManager] {member.DisplayName}의 런 크레딧을 소유 클라이언트에 전달하지 못했습니다.");
+            }
+
             DestroyRetainedPlayer(member);
+        }
         ServerRoster.ReturnToLobby();
         ResetRunSnapshot();
         SetPartyAbsentPause(false);

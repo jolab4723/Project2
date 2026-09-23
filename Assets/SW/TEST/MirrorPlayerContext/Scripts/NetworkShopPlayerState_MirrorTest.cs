@@ -180,6 +180,42 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         processedRequestOrder.Clear();
     }
 
+    /// <summary>
+    /// 서버 지갑의 런 크레딧을 소유 클라이언트에 전달한 뒤 서버 지갑을 비웁니다.
+    /// 각 클라이언트가 자신의 Firebase 로그인 계정에 영구 크레딧을 저장합니다.
+    /// </summary>
+    [Server]
+    public bool ServerTransferRunCreditsToOwner()
+    {
+        if (context?.Wallet == null || connectionToClient == null)
+            return false;
+
+        int runCredits = context.Wallet.Gold;
+        if (runCredits <= 0)
+            return true;
+
+        TargetSaveRunCredits(runCredits);
+        context.Wallet.SetGold(0);
+        return true;
+    }
+
+    /// <summary>
+    /// 서버가 확정한 런 크레딧을 로컬 프로필에 더하고 기존 Firebase 저장 경로로 전달합니다.
+    /// </summary>
+    [TargetRpc]
+    private void TargetSaveRunCredits(int runCredits)
+    {
+        DataManager dataManager = DataManager.Instance;
+        PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ??
+                                    dataManager?.LoadSinglePlayerSlot()?.profile;
+        if (dataManager == null || !dataManager.TrySaveRunCredits(profile, runCredits))
+        {
+            Debug.LogError(
+                $"[NetworkShopPlayerState_MirrorTest] 액트 클리어 크레딧 저장 실패: {runCredits}",
+                this);
+        }
+    }
+
     [Server]
     public void ServerApplyPassiveProfile(MirrorPassiveProfile_MirrorTest profile)
     {

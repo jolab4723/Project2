@@ -137,7 +137,8 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             destinationSceneName = ResultSceneName;
             return true;
         }
-        bool finalBoss = map.act == StageActType.Act3 && pending != null && pending.type == StageNodeType.Boss;
+        bool bossClear = pending != null && pending.type == StageNodeType.Boss;
+        bool finalBoss = map.act == StageActType.Act3 && bossClear;
         if (finalBoss)
         {
             var loader = SceneLoader.Instance;
@@ -160,6 +161,9 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             }
         }
 
+        if (bossClear && !TransferRunCreditsToProfile())
+            return false;
+
         if ( ! saveService.CompletePendingNode(out StageNodeSaveData completedNode, out StageActType completedAct))
         {
             return false;
@@ -178,6 +182,21 @@ public class YJ_PortalSceneLoader : MonoBehaviour
         }
 
         Log.Error($"보스 클리어 후 이동 경로가 없는 Act입니다: {completedAct}");
+        return false;
+    }
+
+    /// <summary>
+    /// 보스 클리어 시 현재 런 크레딧을 영구 프로필로 옮기고 로컬 및 Firebase 저장을 요청합니다.
+    /// </summary>
+    private static bool TransferRunCreditsToProfile()
+    {
+        DataManager dataManager = DataManager.Instance;
+        PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ??
+                                    dataManager?.LoadSinglePlayerSlot()?.profile;
+        if (dataManager != null && dataManager.TransferRunGoldToProfile(profile))
+            return true;
+
+        Log.Error("액트 클리어 크레딧을 프로필에 저장하지 못했습니다.");
         return false;
     }
 
