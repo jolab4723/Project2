@@ -9,6 +9,11 @@ namespace Core
             new Dictionary<SaveDataCategory, SaveDataDefinition>
             {
                 {
+                    SaveDataCategory.MultiplayerCheckpoint,
+                    new SaveDataDefinition(SaveDataCategory.MultiplayerCheckpoint,
+                        "multiplayerCheckpoint", "multiplayer_checkpoint.json", SaveStorageLocation.CloudWithLocalCache, 1)
+                },
+                {
                     SaveDataCategory.PlayerProfile,
                     new SaveDataDefinition(
                         SaveDataCategory.PlayerProfile,

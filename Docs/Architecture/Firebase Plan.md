@@ -280,7 +280,7 @@ Unity Package Manager 방식으로 공식 Firebase Unity SDK를 재구성하는 
 
 현재 Unity 6000.3.22 컴파일과 Edit Mode 테스트 11개가 통과했다. 사용자별 로컬 프로필·Firebase 캐시 파일 존재도 확인했다. 실제 네트워크 어댑터를 끈 상태의 로그인 씬 자동 전환과 멀티 호스트/원격 클라이언트별 크레딧 반영은 수동 플레이 검증 항목으로 남긴다.
 
-## 12. 현재 구현 상태와 다음 승인 지점
+## 12-1. 초기 구현 상태와 승인 이력
 
 2026-09-22 기준으로 김성우 담당 영역과 패키지 기반에는 아래 항목이 구현되어 있다.
 
@@ -303,3 +303,33 @@ Unity Package Manager 방식으로 공식 Firebase Unity SDK를 재구성하는 
 - `Assets/Scripts/UI/Login/KY_CreateAccountPopup.cs`: 이메일/비밀번호 계정 생성과 기본 프로필 준비를 Firebase Auth에 연결
 
 설정 파일은 추가되었으며 Unity가 `Assets/StreamingAssets/google-services-desktop.json`을 정상 생성했다. 실제 프로젝트 `project2-d063b`에서 Firebase 초기화, 임시 이메일 계정 생성, 본인 UID Firestore 쓰기·읽기, `SaveDataService` 저장·재로드, 다른 UID 경로 쓰기 거부를 확인했다. 기존 공용 로컬 프로필의 소유 UID가 다른 경우 새 계정으로 업로드하지 않고 새 프로필을 만드는 격리 흐름도 검증했으며, 검증용 계정·문서·로컬 캐시는 모두 제거하고 기존 로컬 파일은 원상 복구했다. 남은 실제 플레이 검증은 로그인 씬의 버튼 입력, 타이틀 씬 전환, 플레이 후 저장, 앱 재실행 뒤 복구 흐름이다.
+
+## 13. 3차 연동 구현과 집 PC 인계 (2026-09-23)
+
+**현재 상태는 구현·컴파일 확인, 새 빌드와 최종 실제 저장 검증 대기다.** 사용자 요청으로 빌드는 집에서 이어가고 현재 변경을 기능별로 커밋한다. 위 1·2차의 테스트 통과는 당시 버전의 결과이며 이번 변경의 재검증 결과가 아니다. Mirror 체크포인트 연결은 후속 Mirror 5·6단계 커밋에도 걸쳐 있으므로 인계 시 변경 묶음을 모두 받아야 한다.
+
+### 저장 기반과 기존 DataManager 연결
+
+- `DataManager`의 프로필·게임·퀘스트 및 관련 작업 파일을 `persistentDataPath/PlayerSaves/{uid}`로 분리한다. 기존 옵션 등 로컬 공용 설정은 유지한다. 기존 루트 세이브는 소유 UID와 프로필 일치 조건을 확인해 허용된 계정에만 이관하며 원본을 보존한다.
+- `SaveDataService`는 저장/읽기를 직렬화하고 요청을 시작한 UID를 고정한다. 대기 중 계정이 바뀌면 다른 계정으로 저장하지 않는다. 클라우드 처리 전 같은 UID의 pending 캐시를 먼저 기록하고, 실패·충돌 시 pending 데이터를 보존한다.
+- `FirestoreSaveDataStore`는 서버 revision을 트랜잭션에서 읽고 `baseCloudRevision`과 비교해 저장한다. 동일 revision·동일 payload 재전송은 허용하지만 충돌을 클라이언트 시간으로 덮어쓰지 않는다. 마지막 수정 시각만으로 프로필을 선택하던 경로를 제거했다.
+- 비동기 업로드 전에 UID 폴더의 `{SaveDataCategory}.pending.json` 저널을 동기·원자적으로 기록한다. 다음 로그인 동기화 때 재전송하며 성공하고 현재 저널 payload가 같은 경우에만 제거한다. 작업 파일도 임시 파일·교체로 저장한다.
+- GameSaveData·QuestSaveData를 기존 저장 진입점에서 연결하고 로그인 시 동기화 결과를 UID 작업 파일에 복구한다. Mirror 중에는 게스트 런을 싱글 Gameplay/Quest 저장으로 덮어쓰지 않는다.
+
+### Mirror 체크포인트와 정산 연결
+
+- `MultiplayerCheckpoint` 카테고리와 `multiplayerCheckpoint` 문서를 추가했다. `MirrorPlayerCheckpoint`는 스테이지/보스 완료와 결과 확정 시 참가자별 GameSaveData·QuestSaveData, session/participant/checkpoint revision, Act·완료 노드·종료 여부를 묶는다. 전체 스테이지 그래프와 매 프레임 상태를 저장하지 않는다.
+- 서버가 소유 클라이언트에만 체크포인트를 전달하고 세션 시작 시 고정한 자기 UID로 저장한다. 오래된 revision과 이전 런의 비동기 완료가 현재 런 상태를 바꾸지 않도록 session·participant·generation을 확인한다.
+- `PlayerProfileData.lastRunSettlementId`와 `DataManager.TrySaveRunCredits`로 같은 정산의 중복 지급을 막는다. 서버는 소유 클라이언트의 로컬 저장 확인 전 지갑을 유지하고 미확인 정산을 재전송한다. 결과 재접속에서 결과·정산을 다시 연결하고 정산 확인 전 결과 이탈/로비 복귀를 제한한다.
+- 정산 확인은 **소유 계정의 로컬 영구 저장 성공**을 뜻한다. 클라우드 반영이 실패하면 pending 캐시·저널로 재시도하며 ACK 자체를 Firestore 저장 성공으로 해석하지 않는다.
+- 서버 메모리에 남아 있는 세션 재접속 복구와 Firebase 체크포인트 보관을 연결한 상태다. 서버 재시작 후 클라우드에서 전체 세션을 재생성하는 복구는 아직 구현하지 않았다. 클라이언트가 보내는 UID/정산 ACK는 신뢰 가능한 서버 측 Firebase 인증 또는 치트 방지의 증거가 아니다.
+
+### 집에서 확인할 항목
+
+1. [Mirror 실행 기록 §9.6](Mirror_Production_Integration_Execution.md)의 같은 후보 Player/전용 서버 빌드 순서로 진행한다. Unity 6000.3.22f1, 필요한 Windows 모듈, Git LFS의 `GooglePackages` 실파일을 준비한다. 이번에는 새 빌드·Edit Mode 테스트·실계정 저장 테스트를 실행하지 않았다.
+2. 로그인→게임/퀘스트 저장→앱 재시작 복구와 서로 다른 두 UID 전환을 검사한다. 저장 대기 중 계정 변경과 구형 공용 세이브의 소유 불일치도 포함한다.
+3. 오프라인 저장 직후 종료→재실행→재연결에서 pending 저널/캐시가 유지되는지, 다른 기기의 revision 선행 변경을 조용히 덮어쓰지 않는지 확인한다. 충돌의 사용자 선택 UI나 자동 병합은 구현하지 않았다.
+4. Host/게스트 각 UID의 체크포인트와 크레딧을 대조하고 정산 ACK 유실·재접속·중복 재전송·로컬 파일 저장 실패를 검사한다. 새 런에서 이전 체크포인트·정산 상태가 남지 않는지 확인한다.
+5. 기존 Firebase 규칙의 본인 UID 접근 제한을 현재 저장 카테고리로 확인하고 실제 DTO 크기·요청 횟수를 측정한다. 수행 전 데이터를 백업하고 시험 계정/문서만 정리한다.
+
+Unity 재컴파일 완료(`failed=false`, errors=[]), 마지막 요청의 `up_to_date`까지 확인했다. 이는 위 저장 실패/복구 시나리오의 통과를 의미하지 않는다. 최종 기능 검증 전이므로 이번 묶음에 대한 개인 구현 로그는 갱신하지 않았다. Push는 하지 않는다.

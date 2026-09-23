@@ -8,7 +8,8 @@ namespace Core
         Gameplay,
         Quest,
         SystemOptions,
-        StageMap
+        StageMap,
+        MultiplayerCheckpoint
     }
 
     public enum SaveStorageLocation
@@ -39,6 +40,8 @@ namespace Core
         public string updatedAtUtc;
         public string payloadJson;
         public bool pendingCloudUpload;
+        // 오프라인에서 여러 번 저장해도 마지막으로 확인한 서버 버전을 보존한다.
+        public long baseCloudRevision = -1;
 
         /// <summary>
         /// 기존 저장 DTO의 JSON을 공통 저장 형식으로 감싸 새 봉투를 만듭니다.

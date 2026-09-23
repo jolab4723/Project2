@@ -34,7 +34,7 @@ namespace Core
             try
             {
                 DocumentSnapshot snapshot = await GetDocument(userId, definition)
-                    .GetSnapshotAsync();
+                    .GetSnapshotAsync(Source.Server);
                 if (!snapshot.Exists)
                 {
                     return SaveDataReadResult.Failure(
@@ -99,8 +99,23 @@ namespace Core
                     { "serverUpdatedAt", FieldValue.ServerTimestamp }
                 };
 
-                await GetDocument(userId, definition).SetAsync(fields);
-                return SaveDataOperationResult.Success(true);
+                // 재시도 중 다른 기기의 쓰기가 들어와도 읽었던 버전에 대해서만 확정한다.
+                DocumentReference document = GetDocument(userId, definition);
+                return await firestore.RunTransactionAsync(async transaction =>
+                {
+                    DocumentSnapshot current = await transaction.GetSnapshotAsync(document);
+                    long revision = current.Exists ? current.GetValue<long>("revision") : 0;
+                    if (current.Exists && revision == envelope.revision &&
+                        current.GetValue<string>("payloadJson") == envelope.payloadJson)
+                        return SaveDataOperationResult.Success(true);
+                    long expected = envelope.baseCloudRevision >= 0
+                        ? envelope.baseCloudRevision : Math.Max(0, envelope.revision - 1);
+                    if (revision != expected)
+                        return SaveDataOperationResult.Failure(SaveDataFailureReason.Conflict,
+                            "다른 기기의 저장이 변경되었습니다. 로컬 데이터를 보존했습니다.");
+                    transaction.Set(document, fields);
+                    return SaveDataOperationResult.Success(true);
+                });
             }
             catch (FirebaseException exception)
             {
