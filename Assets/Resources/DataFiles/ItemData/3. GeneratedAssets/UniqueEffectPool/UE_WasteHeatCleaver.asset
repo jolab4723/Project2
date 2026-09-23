@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
+  m_Name: UE_WasteHeatCleaver
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
+  effectName: "\uD3D0\uC5F4 \uC9D1\uC911"
+  icon: {fileID: 21300000, guid: 7603188c79c03924095e0aa7138bbce1, type: 3}
+  effectDescription: "\uC7A5\uCC29 \uC911 \uAD00\uD1B5\uB825\uC774 {0}, \uD654\uC5FC
+    \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {1} \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 18
+  - 15
+  buffSpec:
+    statEffects:
+    - statType: 15
+      value: 18
+    - statType: 17
+      value: 15
+    duration: 0
+    stackBehavior: 2
+    maxStack: 0
+    displayKind: 1

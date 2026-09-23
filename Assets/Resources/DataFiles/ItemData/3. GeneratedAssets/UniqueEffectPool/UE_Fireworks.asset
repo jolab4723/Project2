@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_Fireworks
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uCD95\uD3EC"
+  icon: {fileID: 21300000, guid: 2101c6e9942c00d438f0f27728c1509a, type: 3}
+  effectDescription: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uC774\uB3D9 \uC18D\uB3C4\uAC00
+    {1}%, \uD654\uC5FC \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {2} \uC99D\uAC00\uD569\uB2C8\uB2E4.
+    (\uCFE8\uD0C0\uC784 {3}\uCD08)"
+  coefficients:
+  - 4
+  - 15
+  - 8
+  - 5
+  triggerCondition: 3
+  cooldownSeconds: 5
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 7
+      value: 15
+    - statType: 17
+      value: 8
+    duration: 4
+    stackBehavior: 0
+    maxStack: 1
+    displayKind: 1
+  persistStackOnItem: 0

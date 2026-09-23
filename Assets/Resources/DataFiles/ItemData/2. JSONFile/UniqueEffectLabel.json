@@ -1,19 +1,9 @@
 {
   "korLabels": [
     {
-      "uniqueEffectId": "UE_TestHelmet",
-      "effectName": "방어 강화",
-      "effectDescription": "장착 중 방어력이 {0}% 증가합니다."
-    },
-    {
       "uniqueEffectId": "UE_QuantumShoes",
       "effectName": "퀀텀 부스트",
       "effectDescription": "이동 속도가 {0:F1} 증가합니다."
-    },
-    {
-      "uniqueEffectId": "UE_TestGreatSword",
-      "effectName": "쾌속 강타",
-      "effectDescription": "발동 시 {1}초간 공격속도가 {0}% 증가합니다."
     },
     {
       "uniqueEffectId": "UE_MassProducedCore",
@@ -27,8 +17,8 @@
     },
     {
       "uniqueEffectId": "UE_AdvancedCore",
-      "effectName": "헬로 월드 발신기",
-      "effectDescription": "보유 중 {0}초마다 콘솔에 \"HELLO WORLD!\"를 출력합니다."
+      "effectName": "증강",
+      "effectDescription": "최대 체력이 {0} 증가합니다."
     },
     {
       "uniqueEffectId": "UE_CyberneticCore",
@@ -264,23 +254,188 @@
       "uniqueEffectId": "UE_ManaRelay",
       "effectName": "마나 중계",
       "effectDescription": "반경 {0}m 안의 자신과 살아 있는 아군의 마나 재생이 {1}% 증가합니다. 같은 효과는 중첩되지 않습니다."
+    },
+    {
+      "uniqueEffectId": "UE_HelloWorldBeacon",
+      "effectName": "영역: 헬로 월드!",
+      "effectDescription": "반경 {0}유닛 안의 플레이어들의 공격력이 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_ArcBladeChainLightning",
+      "effectName": "아크 연쇄",
+      "effectDescription": "직접 기본 공격 시 적 최대 {0}명에게 반경 {1}m 이내로 공격력의 {2}% 전기 피해를 연쇄로 줍니다. 이후 전이는 이전 피해 계수의 {3}%입니다. (쿨타임 {4}초)"
+    },
+    {
+      "uniqueEffectId": "UE_InfernoExtraHit",
+      "effectName": "지옥불 추가타",
+      "effectDescription": "근접 기본 공격 적중 시 같은 대상에게 공격력의 {0}% 화염 피해를 추가로 줍니다."
+    },
+    {
+      "uniqueEffectId": "UE_GlassRailExtraHit",
+      "effectName": "빙궤 추가타",
+      "effectDescription": "라이플 탄 적중 시 같은 대상에게 공격력의 {0}% 냉기 피해를 추가로 줍니다. (발사 후 무기 교체 또는 해제 시에도 유지, 비치명)"
+    },
+    {
+      "uniqueEffectId": "UE_SolarGraceShield",
+      "effectName": "태양의 은혜 보호막",
+      "effectDescription": "체력 {0}% 이상에서 {1}초간 피격되지 않으면 최대 체력의 {2}% 보호막을 {3}초 동안 얻습니다. 보호막은 중첩되지 않습니다."
+    },
+    {
+      "uniqueEffectId": "UE_NightSwordDodgeStrike",
+      "effectName": "그림자 기습",
+      "effectDescription": "회피 후 다음 기본 공격의 피해가 {0}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_GravityWellField",
+      "effectName": "중력 우물",
+      "effectDescription": "유탄이 충돌한 자리에 반경 {0}m의 중력장을 {1}초 동안 남깁니다. 장판 안의 적은 이동 속도가 {2}% 감소하며, 효과는 {3}초마다 갱신됩니다. 장판은 최대 {4}개까지 유지됩니다."
+    },
+    {
+      "uniqueEffectId": "UE_SingularityDelayedExplosion",
+      "effectName": "지연 특이점",
+      "effectDescription": "유탄이 충돌한 자리에 특이점을 예약해 {0}초 후 반경 {1}m 적에게 공격력의 {2}% 피해를 줍니다. 최대 {3}개까지 유지됩니다."
+    },
+    {
+      "uniqueEffectId": "UE_Wildfire",
+      "effectName": "되살아나는 불씨",
+      "effectDescription": "공격 적중 시 {0}초간 화염 피해 보너스가 {1} 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_PhaseHarvester",
+      "effectName": "공간 절단",
+      "effectDescription": "장착 중 관통력이 {0}, 공격력이 {1}% 증가하지만 공격 속도가 {2}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_SuperRefrigerant",
+      "effectName": "열 강탈",
+      "effectDescription": "피격 시 {0}초간 빙결 피해 보너스가 {1}, 방어력이 {2}% 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_Crusader",
+      "effectName": "성스러운 일격",
+      "effectDescription": "장착 중 치명타 확률이 {0}%, 치명타 피해가 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_GuardiansJustice",
+      "effectName": "정의는 승리한다",
+      "effectDescription": "체력이 {0}% 이상일 때 공격력이 {1}%, 방어력이 {2}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatCleaver",
+      "effectName": "폐열 집중",
+      "effectDescription": "장착 중 관통력이 {0}, 화염 피해 보너스가 {1} 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_CoreBreaker",
+      "effectName": "코어 노출",
+      "effectDescription": "적 처치 시 {0}초간 관통력이 {1} 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_WorldEnder",
+      "effectName": "종말 포격",
+      "effectDescription": "장착 중 스킬 피해가 {0}%, 스킬 범위가 {1}% 증가하지만 이동 속도가 {2}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_SunfallEngine",
+      "effectName": "일식 점화",
+      "effectDescription": "체력이 {0}% 이하일 때 화염 피해 보너스가 {1}, 스킬 피해가 {2}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_AntimatterLance",
+      "effectName": "집속 사격",
+      "effectDescription": "장착 중 일반 공격 피해가 {0}%, 치명타 확률이 {1}% 증가하지만 공격 속도가 {2}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_SmileSignal",
+      "effectName": "기분 전환",
+      "effectDescription": "회피 시 {0}초간 공격 속도가 {1}%, 이동 속도가 {2}% 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_EchoVault",
+      "effectName": "충격파 축적",
+      "effectDescription": "공격 적중 시 {0}초간 일반 공격 피해가 {1}% 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_StarforgeBreach",
+      "effectName": "제련로 개방",
+      "effectDescription": "적 처치 시 {0}초간 공격력이 {1}%, 치명타 피해가 {2}% 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_NinjaMovement",
+      "effectName": "그림자 보법",
+      "effectDescription": "장착 중 이동 속도가 {0}%, 치명타 확률이 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_ExcavatorTooth",
+      "effectName": "파쇄 이빨",
+      "effectDescription": "장착 중 관통력이 {0} 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_MaintenanceDroneWing",
+      "effectName": "회전 날개",
+      "effectDescription": "장착 중 공격 속도가 {0}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_MorningStar",
+      "effectName": "별이 보인다",
+      "effectDescription": "치명타 적중 시 {0}초간 공격력이 {1}% 증가합니다. (쿨타임 {2}초)"
+    },
+    {
+      "uniqueEffectId": "UE_PhysicalMagicStaff",
+      "effectName": "물리 마법",
+      "effectDescription": "장착 중 일반 공격 피해가 {0}% 증가하지만 스킬 피해가 {1}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_MagneticStormHammer",
+      "effectName": "폭풍 충전",
+      "effectDescription": "공격 적중 시 {0}초간 전기 피해 보너스가 {1} 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_Chainsaw",
+      "effectName": "폐기 판정 생략",
+      "effectDescription": "적 처치 시 {0}초간 공격 속도가 {1}% 증가합니다. (쿨타임 {2}초)"
+    },
+    {
+      "uniqueEffectId": "UE_CeremonialSword",
+      "effectName": "준공식 예우",
+      "effectDescription": "체력이 {0}% 이상일 때 치명타 확률이 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_SnowballFight",
+      "effectName": "눈덩이 굴리기",
+      "effectDescription": "적 처치 시 {0}초간 공격력이 {1}% 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_Fireworks",
+      "effectName": "축포",
+      "effectDescription": "적 처치 시 {0}초간 이동 속도가 {1}%, 화염 피해 보너스가 {2} 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_SiegeFrame",
+      "effectName": "중장갑 거치",
+      "effectDescription": "장착 중 방어력이 {0}% 증가하지만 이동 속도가 {1}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_SignalJammer",
+      "effectName": "신호 교란",
+      "effectDescription": "장착 중 치명타 확률이 {0}% 증가하지만 마나 재생이 {1}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_PreciousMetalDetector",
+      "effectName": "코어 탐지",
+      "effectDescription": "아이템 드랍 시 Rare·Unique·Legendary 등급 가중치가 각각 {0:F1}배가 됩니다. 전체 드랍 확률은 변하지 않으며, 더 높은 배율의 효과를 함께 보유하면 그쪽만 적용됩니다."
+    },
+    {
+      "uniqueEffectId": "UE_MilitaryNeuralStimulator",
+      "effectName": "신경 과부하",
+      "effectDescription": "장착 중 공격 속도가 {0}% 증가하지만 최대 체력이 {1}% 감소합니다."
     }
   ],
   "engLabels": [
     {
-      "uniqueEffectId": "UE_TestHelmet",
-      "effectName": "Defense Boost",
-      "effectDescription": "Defense increases by {0}% while equipped."
-    },
-    {
       "uniqueEffectId": "UE_QuantumShoes",
       "effectName": "Quantum Boost",
       "effectDescription": "Movement speed increases by {0:F1}."
-    },
-    {
-      "uniqueEffectId": "UE_TestGreatSword",
-      "effectName": "Swift Strike",
-      "effectDescription": "On trigger, attack speed increases by {0}% for {1} seconds."
     },
     {
       "uniqueEffectId": "UE_MassProducedCore",
@@ -294,8 +449,8 @@
     },
     {
       "uniqueEffectId": "UE_AdvancedCore",
-      "effectName": "Hello World Transmitter",
-      "effectDescription": "While held, prints \"HELLO WORLD!\" to the console every {0} seconds."
+      "effectName": "Augment",
+      "effectDescription": "Max HP increases by {0}."
     },
     {
       "uniqueEffectId": "UE_CyberneticCore",
@@ -420,7 +575,7 @@
     {
       "uniqueEffectId": "UE_ScrapCubeCore",
       "effectName": "Scrap Layering",
-      "effectDescription": "Defeating an enemy increases Defense by {0}%. (Maximum: {1} stacks)"
+      "effectDescription": "Defeating an enemy increases Defense by {0}%. (Max {1} stacks)"
     },
     {
       "uniqueEffectId": "UE_LuckyCharm",
@@ -435,7 +590,7 @@
     {
       "uniqueEffectId": "UE_AlienHeart",
       "effectName": "Predatory Growth",
-      "effectDescription": "Defeating an enemy increases Attack and max HP by {0}%. (Maximum: {1} stacks)"
+      "effectDescription": "Defeating an enemy increases Attack and max HP by {0}%. (Max {1} stacks)"
     },
     {
       "uniqueEffectId": "UE_DimensionalCompass",
@@ -505,7 +660,7 @@
     {
       "uniqueEffectId": "UE_ConversationStarter",
       "effectName": "Rebuttal Denied",
-      "effectDescription": "When hit, Attack Speed increases by {1}% and Defense by {2}% for {0} seconds. (Cooldown: {3} seconds)"
+      "effectDescription": "When hit, Attack Speed increases by {1}% and Defense by {2}% for {0} seconds. (Cooldown: {3}s)"
     },
     {
       "uniqueEffectId": "UE_GravityFieldCore",
@@ -525,29 +680,194 @@
     {
       "uniqueEffectId": "UE_DodgeMoveBoost",
       "effectName": "Residual Thrust",
-      "effectDescription": "After using dodge, normal movement speed increases by {1}% for {0} seconds. Cooldown: {2} seconds."
+      "effectDescription": "After using dodge, normal movement speed increases by {1}% for {0} seconds. (Cooldown: {2}s)"
     },
     {
       "uniqueEffectId": "UE_ManaRelay",
       "effectName": "Mana Relay",
       "effectDescription": "Increases mana regeneration of you and living allies within {0}m by {1}%. Does not stack with the same effect."
+    },
+    {
+      "uniqueEffectId": "UE_HelloWorldBeacon",
+      "effectName": "Aura: Hello World!",
+      "effectDescription": "Increases Attack of players within {0} units by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_ArcBladeChainLightning",
+      "effectName": "Arc Chain",
+      "effectDescription": "Direct basic attacks chain Electric damage equal to {2}% of Attack to up to {0} enemies within {1}m. Each subsequent jump deals {3}% of the previous multiplier. (Cooldown: {4}s)"
+    },
+    {
+      "uniqueEffectId": "UE_InfernoExtraHit",
+      "effectName": "Hellfire Follow-up",
+      "effectDescription": "On melee basic attack hit, deals additional Fire damage equal to {0}% of Attack to the same target."
+    },
+    {
+      "uniqueEffectId": "UE_GlassRailExtraHit",
+      "effectName": "Frost Rail Follow-up",
+      "effectDescription": "When a rifle round hits, deals additional Ice damage equal to {0}% of Attack to the same target. (Persists even if the weapon is swapped or unequipped after firing; cannot crit.)"
+    },
+    {
+      "uniqueEffectId": "UE_SolarGraceShield",
+      "effectName": "Solar Grace Shield",
+      "effectDescription": "If you take no hits for {1} seconds while at {0}% HP or higher, gain a shield equal to {2}% of max HP for {3} seconds. Shields do not stack."
+    },
+    {
+      "uniqueEffectId": "UE_NightSwordDodgeStrike",
+      "effectName": "Shadow Ambush",
+      "effectDescription": "After dodging, your next basic attack deals {0}% more damage."
+    },
+    {
+      "uniqueEffectId": "UE_GravityWellField",
+      "effectName": "Gravity Well",
+      "effectDescription": "Grenade impacts leave a gravity field with a {0}m radius for {1} seconds. Enemies inside have their Move Speed reduced by {2}%, refreshed every {3} seconds. Up to {4} fields can exist at once."
+    },
+    {
+      "uniqueEffectId": "UE_SingularityDelayedExplosion",
+      "effectName": "Delayed Singularity",
+      "effectDescription": "Grenade impacts seed a singularity that, after {0} seconds, deals damage equal to {2}% of Attack to enemies within {1}m. Up to {3} can be pending at once."
+    },
+    {
+      "uniqueEffectId": "UE_Wildfire",
+      "effectName": "Rekindled Ember",
+      "effectDescription": "On attack hit, Fire damage bonus increases by {1} for {0} seconds. (Max {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_PhaseHarvester",
+      "effectName": "Spatial Rend",
+      "effectDescription": "While equipped, Penetration increases by {0} and Attack by {1}%, but Attack Speed decreases by {2}%."
+    },
+    {
+      "uniqueEffectId": "UE_SuperRefrigerant",
+      "effectName": "Heat Theft",
+      "effectDescription": "On taking a hit, Ice damage bonus increases by {1} and Defense by {2}% for {0} seconds. (Cooldown: {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_Crusader",
+      "effectName": "Holy Strike",
+      "effectDescription": "While equipped, Critical Rate increases by {0}% and Critical Damage by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_GuardiansJustice",
+      "effectName": "Justice Prevails",
+      "effectDescription": "While HP is {0}% or higher, Attack increases by {1}% and Defense by {2}%."
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatCleaver",
+      "effectName": "Waste Heat Focus",
+      "effectDescription": "While equipped, Penetration increases by {0} and Fire damage bonus by {1}."
+    },
+    {
+      "uniqueEffectId": "UE_CoreBreaker",
+      "effectName": "Core Exposure",
+      "effectDescription": "On defeating an enemy, Penetration increases by {1} for {0} seconds. (Max {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_WorldEnder",
+      "effectName": "Doomsday Barrage",
+      "effectDescription": "While equipped, Skill Damage increases by {0}% and Skill Range by {1}%, but Move Speed decreases by {2}%."
+    },
+    {
+      "uniqueEffectId": "UE_SunfallEngine",
+      "effectName": "Eclipse Ignition",
+      "effectDescription": "While HP is {0}% or lower, Fire damage bonus increases by {1} and Skill Damage by {2}%."
+    },
+    {
+      "uniqueEffectId": "UE_AntimatterLance",
+      "effectName": "Focused Fire",
+      "effectDescription": "While equipped, basic attack damage increases by {0}% and Critical Rate by {1}%, but Attack Speed decreases by {2}%."
+    },
+    {
+      "uniqueEffectId": "UE_SmileSignal",
+      "effectName": "Mood Boost",
+      "effectDescription": "On dodge, Attack Speed increases by {1}% and Move Speed by {2}% for {0} seconds. (Cooldown: {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_EchoVault",
+      "effectName": "Shockwave Buildup",
+      "effectDescription": "On attack hit, basic attack damage increases by {1}% for {0} seconds. (Max {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_StarforgeBreach",
+      "effectName": "Forge Unleashed",
+      "effectDescription": "On defeating an enemy, Attack increases by {1}% and Critical Damage by {2}% for {0} seconds. (Cooldown: {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_NinjaMovement",
+      "effectName": "Shadow Step",
+      "effectDescription": "While equipped, Move Speed increases by {0}% and Critical Rate by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_ExcavatorTooth",
+      "effectName": "Crushing Tooth",
+      "effectDescription": "While equipped, Penetration increases by {0}."
+    },
+    {
+      "uniqueEffectId": "UE_MaintenanceDroneWing",
+      "effectName": "Rotor Blade",
+      "effectDescription": "While equipped, Attack Speed increases by {0}%."
+    },
+    {
+      "uniqueEffectId": "UE_MorningStar",
+      "effectName": "Seeing Stars",
+      "effectDescription": "On a critical hit, Attack increases by {1}% for {0} seconds. (Cooldown: {2}s)"
+    },
+    {
+      "uniqueEffectId": "UE_PhysicalMagicStaff",
+      "effectName": "Physical Magic",
+      "effectDescription": "While equipped, basic attack damage increases by {0}%, but Skill Damage decreases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_MagneticStormHammer",
+      "effectName": "Storm Charge",
+      "effectDescription": "On attack hit, Electric damage bonus increases by {1} for {0} seconds. (Max {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_Chainsaw",
+      "effectName": "No Verdict Needed",
+      "effectDescription": "On defeating an enemy, Attack Speed increases by {1}% for {0} seconds. (Cooldown: {2}s)"
+    },
+    {
+      "uniqueEffectId": "UE_CeremonialSword",
+      "effectName": "Ceremonial Honors",
+      "effectDescription": "While HP is {0}% or higher, Critical Rate increases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_SnowballFight",
+      "effectName": "Snowballing",
+      "effectDescription": "On defeating an enemy, Attack increases by {1}% for {0} seconds. (Max {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_Fireworks",
+      "effectName": "Celebration Salvo",
+      "effectDescription": "On defeating an enemy, Move Speed increases by {1}% and Fire damage bonus by {2} for {0} seconds. (Cooldown: {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_SiegeFrame",
+      "effectName": "Heavy Mount",
+      "effectDescription": "While equipped, Defense increases by {0}%, but Move Speed decreases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_SignalJammer",
+      "effectName": "Signal Jamming",
+      "effectDescription": "While equipped, Critical Rate increases by {0}%, but MP regen decreases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_PreciousMetalDetector",
+      "effectName": "Core Detection",
+      "effectDescription": "When an item drops, Rare, Unique, and Legendary rarity weights are each multiplied by {0:F1}. Overall item drop chance is unchanged, and if you also hold an effect with a higher multiplier, only that one applies."
+    },
+    {
+      "uniqueEffectId": "UE_MilitaryNeuralStimulator",
+      "effectName": "Neural Overload",
+      "effectDescription": "While equipped, Attack Speed increases by {0}%, but max HP decreases by {1}%."
     }
   ],
   "jpnLabels": [
     {
-      "uniqueEffectId": "UE_TestHelmet",
-      "effectName": "防御強化",
-      "effectDescription": "装備中、防御力が{0}%増加します。"
-    },
-    {
       "uniqueEffectId": "UE_QuantumShoes",
       "effectName": "クォンタムブースト",
       "effectDescription": "移動速度が{0:F1}増加します。"
-    },
-    {
-      "uniqueEffectId": "UE_TestGreatSword",
-      "effectName": "快速強打",
-      "effectDescription": "発動時、{1}秒間攻撃速度が{0}%増加します。"
     },
     {
       "uniqueEffectId": "UE_MassProducedCore",
@@ -561,18 +881,18 @@
     },
     {
       "uniqueEffectId": "UE_AdvancedCore",
-      "effectName": "ハローワールド発信機",
-      "effectDescription": "保有中、{0}秒ごとにコンソールに「HELLO WORLD!」を出力します。"
+      "effectName": "増強",
+      "effectDescription": "最大HPが{0}上昇します。"
     },
     {
       "uniqueEffectId": "UE_CyberneticCore",
       "effectName": "基礎的なインプラント",
-      "effectDescription": "回避使用時、神経加速モードに入ります。{0}秒間移動速度が{1}増加します。(クールタイム{2}秒)"
+      "effectDescription": "回避使用時、神経加速モードに入ります。{0}秒間移動速度が{1}増加します。（クールダウン：{2}秒）"
     },
     {
       "uniqueEffectId": "UE_LightSaber",
       "effectName": "光子加速",
-      "effectDescription": "通常攻撃時、{0}秒間攻撃速度が{1}%増加します。(最大{2}スタック)"
+      "effectDescription": "通常攻撃時、{0}秒間攻撃速度が{1}%増加します。（最大{2}スタック）"
     },
     {
       "uniqueEffectId": "UE_MechanicalDestroyer",
@@ -772,7 +1092,7 @@
     {
       "uniqueEffectId": "UE_ConversationStarter",
       "effectName": "反論封鎖",
-      "effectDescription": "被弾時、{0}秒間、攻撃速度が{1}%、防御力が{2}%増加します。（クールタイム{3}秒）"
+      "effectDescription": "被弾時、{0}秒間、攻撃速度が{1}%、防御力が{2}%増加します。（クールダウン：{3}秒）"
     },
     {
       "uniqueEffectId": "UE_GravityFieldCore",
@@ -792,29 +1112,194 @@
     {
       "uniqueEffectId": "UE_DodgeMoveBoost",
       "effectName": "残留推力",
-      "effectDescription": "回避使用後{0}秒間、通常移動速度が{1}%増加します。クールタイム：{2}秒。"
+      "effectDescription": "回避使用後{0}秒間、通常移動速度が{1}%増加します。（クールダウン：{2}秒）"
     },
     {
       "uniqueEffectId": "UE_ManaRelay",
       "effectName": "マナ中継",
       "effectDescription": "半径{0}m以内の自分と生存中の味方のマナ回復が{1}%増加します。同じ効果は重複しません。"
+    },
+    {
+      "uniqueEffectId": "UE_HelloWorldBeacon",
+      "effectName": "領域：ハロー・ワールド！",
+      "effectDescription": "半径{0}ユニット内のプレイヤーの攻撃力が{1}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_ArcBladeChainLightning",
+      "effectName": "アークチェーン",
+      "effectDescription": "直接の通常攻撃時、半径{1}m以内の敵最大{0}体に攻撃力の{2}%の電気ダメージを連鎖させます。以降の連鎖は前回のダメージ係数の{3}%です。（クールダウン：{4}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_InfernoExtraHit",
+      "effectName": "業火の追撃",
+      "effectDescription": "近接通常攻撃命中時、同じ対象に攻撃力の{0}%の炎ダメージを追加で与えます。"
+    },
+    {
+      "uniqueEffectId": "UE_GlassRailExtraHit",
+      "effectName": "氷軌の追撃",
+      "effectDescription": "ライフル弾命中時、同じ対象に攻撃力の{0}%の氷ダメージを追加で与えます。（発射後に武器を交換・解除しても維持、クリティカルなし）"
+    },
+    {
+      "uniqueEffectId": "UE_SolarGraceShield",
+      "effectName": "太陽の恩寵シールド",
+      "effectDescription": "HP{0}%以上で{1}秒間被弾しないと、最大HPの{2}%のシールドを{3}秒間得ます。シールドは重複しません。"
+    },
+    {
+      "uniqueEffectId": "UE_NightSwordDodgeStrike",
+      "effectName": "影の奇襲",
+      "effectDescription": "回避後、次の通常攻撃のダメージが{0}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_GravityWellField",
+      "effectName": "重力井戸",
+      "effectDescription": "榴弾の着弾地点に半径{0}mの重力場を{1}秒間残します。範囲内の敵は移動速度が{2}%低下し、効果は{3}秒ごとに更新されます。重力場は最大{4}個まで維持されます。"
+    },
+    {
+      "uniqueEffectId": "UE_SingularityDelayedExplosion",
+      "effectName": "遅延特異点",
+      "effectDescription": "榴弾の着弾地点に特異点を設置し、{0}秒後に半径{1}mの敵に攻撃力の{2}%のダメージを与えます。最大{3}個まで維持されます。"
+    },
+    {
+      "uniqueEffectId": "UE_Wildfire",
+      "effectName": "甦る残り火",
+      "effectDescription": "攻撃命中時、{0}秒間炎ダメージボーナスが{1}上昇します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_PhaseHarvester",
+      "effectName": "空間切断",
+      "effectDescription": "装備中、貫通力が{0}、攻撃力が{1}%上昇しますが、攻撃速度が{2}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_SuperRefrigerant",
+      "effectName": "熱の強奪",
+      "effectDescription": "被弾時、{0}秒間氷ダメージボーナスが{1}、防御力が{2}%上昇します。（クールダウン：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_Crusader",
+      "effectName": "聖なる一撃",
+      "effectDescription": "装備中、クリティカル率が{0}%、クリティカルダメージが{1}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_GuardiansJustice",
+      "effectName": "正義は勝つ",
+      "effectDescription": "HPが{0}%以上の間、攻撃力が{1}%、防御力が{2}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatCleaver",
+      "effectName": "廃熱集中",
+      "effectDescription": "装備中、貫通力が{0}、炎ダメージボーナスが{1}上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_CoreBreaker",
+      "effectName": "コア露出",
+      "effectDescription": "敵を倒すと、{0}秒間貫通力が{1}上昇します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_WorldEnder",
+      "effectName": "終末砲撃",
+      "effectDescription": "装備中、スキルダメージが{0}%、スキル範囲が{1}%上昇しますが、移動速度が{2}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_SunfallEngine",
+      "effectName": "日食点火",
+      "effectDescription": "HPが{0}%以下の間、炎ダメージボーナスが{1}、スキルダメージが{2}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_AntimatterLance",
+      "effectName": "集束射撃",
+      "effectDescription": "装備中、通常攻撃ダメージが{0}%、クリティカル率が{1}%上昇しますが、攻撃速度が{2}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_SmileSignal",
+      "effectName": "気分転換",
+      "effectDescription": "回避時、{0}秒間攻撃速度が{1}%、移動速度が{2}%上昇します。（クールダウン：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_EchoVault",
+      "effectName": "衝撃波蓄積",
+      "effectDescription": "攻撃命中時、{0}秒間通常攻撃ダメージが{1}%上昇します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_StarforgeBreach",
+      "effectName": "製錬炉開放",
+      "effectDescription": "敵を倒すと、{0}秒間攻撃力が{1}%、クリティカルダメージが{2}%上昇します。（クールダウン：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_NinjaMovement",
+      "effectName": "影の歩法",
+      "effectDescription": "装備中、移動速度が{0}%、クリティカル率が{1}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_ExcavatorTooth",
+      "effectName": "破砕の歯",
+      "effectDescription": "装備中、貫通力が{0}上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_MaintenanceDroneWing",
+      "effectName": "回転翼",
+      "effectDescription": "装備中、攻撃速度が{0}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_MorningStar",
+      "effectName": "星が見える",
+      "effectDescription": "クリティカル命中時、{0}秒間攻撃力が{1}%上昇します。（クールダウン：{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_PhysicalMagicStaff",
+      "effectName": "物理魔法",
+      "effectDescription": "装備中、通常攻撃ダメージが{0}%上昇しますが、スキルダメージが{1}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_MagneticStormHammer",
+      "effectName": "嵐の充電",
+      "effectDescription": "攻撃命中時、{0}秒間電気ダメージボーナスが{1}上昇します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_Chainsaw",
+      "effectName": "廃棄判定省略",
+      "effectDescription": "敵を倒すと、{0}秒間攻撃速度が{1}%上昇します。（クールダウン：{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_CeremonialSword",
+      "effectName": "竣工式の礼遇",
+      "effectDescription": "HPが{0}%以上の間、クリティカル率が{1}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_SnowballFight",
+      "effectName": "雪だるま式",
+      "effectDescription": "敵を倒すと、{0}秒間攻撃力が{1}%上昇します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_Fireworks",
+      "effectName": "祝砲",
+      "effectDescription": "敵を倒すと、{0}秒間移動速度が{1}%、炎ダメージボーナスが{2}上昇します。（クールダウン：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_SiegeFrame",
+      "effectName": "重装甲据付",
+      "effectDescription": "装備中、防御力が{0}%上昇しますが、移動速度が{1}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_SignalJammer",
+      "effectName": "信号撹乱",
+      "effectDescription": "装備中、クリティカル率が{0}%上昇しますが、MP回復が{1}%低下します。"
+    },
+    {
+      "uniqueEffectId": "UE_PreciousMetalDetector",
+      "effectName": "コア探知",
+      "effectDescription": "アイテムドロップ時、レア・ユニーク・レジェンダリーの等級ウェイトがそれぞれ{0:F1}倍になります。全体のドロップ率は変わらず、より高い倍率の効果も所持している場合はそちらのみ適用されます。"
+    },
+    {
+      "uniqueEffectId": "UE_MilitaryNeuralStimulator",
+      "effectName": "神経過負荷",
+      "effectDescription": "装備中、攻撃速度が{0}%上昇しますが、最大HPが{1}%低下します。"
     }
   ],
   "chnLabels": [
     {
-      "uniqueEffectId": "UE_TestHelmet",
-      "effectName": "防御强化",
-      "effectDescription": "装备期间防御力增加{0}%。"
-    },
-    {
       "uniqueEffectId": "UE_QuantumShoes",
       "effectName": "量子推进",
       "effectDescription": "移动速度增加{0:F1}。"
-    },
-    {
-      "uniqueEffectId": "UE_TestGreatSword",
-      "effectName": "疾风强击",
-      "effectDescription": "发动时，{1}秒内攻击速度增加{0}%。"
     },
     {
       "uniqueEffectId": "UE_MassProducedCore",
@@ -828,18 +1313,18 @@
     },
     {
       "uniqueEffectId": "UE_AdvancedCore",
-      "effectName": "Hello World发射器",
-      "effectDescription": "持有期间，每{0}秒在控制台输出\"HELLO WORLD!\"。"
+      "effectName": "增强",
+      "effectDescription": "最大生命值提高{0}。"
     },
     {
       "uniqueEffectId": "UE_CyberneticCore",
       "effectName": "基础植入体",
-      "effectDescription": "使用闪避时进入神经加速模式。{0}秒内移动速度增加{1}。（冷却时间{2}秒）"
+      "effectDescription": "使用闪避时进入神经加速模式。{0}秒内移动速度增加{1}。（冷却：{2}秒）"
     },
     {
       "uniqueEffectId": "UE_LightSaber",
       "effectName": "光子加速",
-      "effectDescription": "普通攻击时，{0}秒内攻击速度增加{1}%。(最多{2}层)"
+      "effectDescription": "普通攻击时，{0}秒内攻击速度增加{1}%。（最多{2}层）"
     },
     {
       "uniqueEffectId": "UE_MechanicalDestroyer",
@@ -1039,7 +1524,7 @@
     {
       "uniqueEffectId": "UE_ConversationStarter",
       "effectName": "驳回反论",
-      "effectDescription": "受到攻击时，攻击速度提高{1}%，防御力提高{2}%，持续{0}秒。（冷却时间{3}秒）"
+      "effectDescription": "受到攻击时，攻击速度提高{1}%，防御力提高{2}%，持续{0}秒。（冷却：{3}秒）"
     },
     {
       "uniqueEffectId": "UE_GravityFieldCore",
@@ -1059,12 +1544,187 @@
     {
       "uniqueEffectId": "UE_DodgeMoveBoost",
       "effectName": "残余推力",
-      "effectDescription": "使用闪避后，普通移动速度提高{1}%，持续{0}秒。冷却时间：{2}秒。"
+      "effectDescription": "使用闪避后，普通移动速度提高{1}%，持续{0}秒。（冷却：{2}秒）"
     },
     {
       "uniqueEffectId": "UE_ManaRelay",
       "effectName": "法力中继",
       "effectDescription": "自身和半径{0}米内存活队友的法力恢复提高{1}%。同类效果不叠加。"
+    },
+    {
+      "uniqueEffectId": "UE_HelloWorldBeacon",
+      "effectName": "领域：你好世界！",
+      "effectDescription": "半径{0}单位内玩家的攻击力提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_ArcBladeChainLightning",
+      "effectName": "电弧连锁",
+      "effectDescription": "直接普通攻击时，对半径{1}米内最多{0}名敌人造成攻击力{2}%的连锁电击伤害。之后每次传导为前一次伤害系数的{3}%。（冷却：{4}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_InfernoExtraHit",
+      "effectName": "地狱火追击",
+      "effectDescription": "近战普通攻击命中时，对同一目标额外造成攻击力{0}%的火焰伤害。"
+    },
+    {
+      "uniqueEffectId": "UE_GlassRailExtraHit",
+      "effectName": "冰轨追击",
+      "effectDescription": "步枪子弹命中时，对同一目标额外造成攻击力{0}%的冰霜伤害。（发射后更换或卸下武器仍然有效，不会暴击）"
+    },
+    {
+      "uniqueEffectId": "UE_SolarGraceShield",
+      "effectName": "太阳恩典护盾",
+      "effectDescription": "生命值不低于{0}%时，若{1}秒内未受到攻击，获得最大生命值{2}%的护盾，持续{3}秒。护盾不叠加。"
+    },
+    {
+      "uniqueEffectId": "UE_NightSwordDodgeStrike",
+      "effectName": "暗影奇袭",
+      "effectDescription": "闪避后，下一次普通攻击的伤害提高{0}%。"
+    },
+    {
+      "uniqueEffectId": "UE_GravityWellField",
+      "effectName": "重力井",
+      "effectDescription": "榴弹着弹处留下半径{0}米的重力场，持续{1}秒。场内敌人的移动速度降低{2}%，效果每{3}秒刷新一次。重力场最多同时存在{4}个。"
+    },
+    {
+      "uniqueEffectId": "UE_SingularityDelayedExplosion",
+      "effectName": "延迟奇点",
+      "effectDescription": "在榴弹着弹处预设奇点，{0}秒后对半径{1}米内的敌人造成攻击力{2}%的伤害。最多同时存在{3}个。"
+    },
+    {
+      "uniqueEffectId": "UE_Wildfire",
+      "effectName": "复燃余烬",
+      "effectDescription": "攻击命中时，火焰伤害加成提高{1}，持续{0}秒。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_PhaseHarvester",
+      "effectName": "空间斩裂",
+      "effectDescription": "装备时，穿透提高{0}，攻击力提高{1}%，但攻击速度降低{2}%。"
+    },
+    {
+      "uniqueEffectId": "UE_SuperRefrigerant",
+      "effectName": "热量掠夺",
+      "effectDescription": "受到攻击时，冰霜伤害加成提高{1}，防御力提高{2}%，持续{0}秒。（冷却：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_Crusader",
+      "effectName": "神圣一击",
+      "effectDescription": "装备时，暴击率提高{0}%，暴击伤害提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_GuardiansJustice",
+      "effectName": "正义必胜",
+      "effectDescription": "生命值不低于{0}%时，攻击力提高{1}%，防御力提高{2}%。"
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatCleaver",
+      "effectName": "废热集中",
+      "effectDescription": "装备时，穿透提高{0}，火焰伤害加成提高{1}。"
+    },
+    {
+      "uniqueEffectId": "UE_CoreBreaker",
+      "effectName": "核心暴露",
+      "effectDescription": "击败敌人时，穿透提高{1}，持续{0}秒。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_WorldEnder",
+      "effectName": "末日炮击",
+      "effectDescription": "装备时，技能伤害提高{0}%，技能范围提高{1}%，但移动速度降低{2}%。"
+    },
+    {
+      "uniqueEffectId": "UE_SunfallEngine",
+      "effectName": "日蚀点火",
+      "effectDescription": "生命值不高于{0}%时，火焰伤害加成提高{1}，技能伤害提高{2}%。"
+    },
+    {
+      "uniqueEffectId": "UE_AntimatterLance",
+      "effectName": "集束射击",
+      "effectDescription": "装备时，普通攻击伤害提高{0}%，暴击率提高{1}%，但攻击速度降低{2}%。"
+    },
+    {
+      "uniqueEffectId": "UE_SmileSignal",
+      "effectName": "转换心情",
+      "effectDescription": "闪避时，攻击速度提高{1}%，移动速度提高{2}%，持续{0}秒。（冷却：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_EchoVault",
+      "effectName": "冲击波蓄积",
+      "effectDescription": "攻击命中时，普通攻击伤害提高{1}%，持续{0}秒。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_StarforgeBreach",
+      "effectName": "熔炉开启",
+      "effectDescription": "击败敌人时，攻击力提高{1}%，暴击伤害提高{2}%，持续{0}秒。（冷却：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_NinjaMovement",
+      "effectName": "暗影步法",
+      "effectDescription": "装备时，移动速度提高{0}%，暴击率提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_ExcavatorTooth",
+      "effectName": "粉碎之齿",
+      "effectDescription": "装备时，穿透提高{0}。"
+    },
+    {
+      "uniqueEffectId": "UE_MaintenanceDroneWing",
+      "effectName": "旋转翼",
+      "effectDescription": "装备时，攻击速度提高{0}%。"
+    },
+    {
+      "uniqueEffectId": "UE_MorningStar",
+      "effectName": "眼冒金星",
+      "effectDescription": "暴击命中时，攻击力提高{1}%，持续{0}秒。（冷却：{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_PhysicalMagicStaff",
+      "effectName": "物理魔法",
+      "effectDescription": "装备时，普通攻击伤害提高{0}%，但技能伤害降低{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_MagneticStormHammer",
+      "effectName": "风暴充能",
+      "effectDescription": "攻击命中时，电击伤害加成提高{1}，持续{0}秒。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_Chainsaw",
+      "effectName": "跳过报废判定",
+      "effectDescription": "击败敌人时，攻击速度提高{1}%，持续{0}秒。（冷却：{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_CeremonialSword",
+      "effectName": "竣工典礼礼遇",
+      "effectDescription": "生命值不低于{0}%时，暴击率提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_SnowballFight",
+      "effectName": "滚雪球",
+      "effectDescription": "击败敌人时，攻击力提高{1}%，持续{0}秒。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_Fireworks",
+      "effectName": "礼炮",
+      "effectDescription": "击败敌人时，移动速度提高{1}%，火焰伤害加成提高{2}，持续{0}秒。（冷却：{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_SiegeFrame",
+      "effectName": "重甲架设",
+      "effectDescription": "装备时，防御力提高{0}%，但移动速度降低{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_SignalJammer",
+      "effectName": "信号干扰",
+      "effectDescription": "装备时，暴击率提高{0}%，但法力回复降低{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_PreciousMetalDetector",
+      "effectName": "核心探测",
+      "effectDescription": "物品掉落时，稀有、独特和传说品质的权重各乘以{0:F1}。整体物品掉落概率不变；若同时持有倍率更高的效果，则仅适用该效果。"
+    },
+    {
+      "uniqueEffectId": "UE_MilitaryNeuralStimulator",
+      "effectName": "神经过载",
+      "effectDescription": "装备时，攻击速度提高{0}%，但最大生命值降低{1}%。"
     }
   ]
 }

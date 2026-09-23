@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_Chainsaw
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uD3D0\uAE30 \uD310\uC815 \uC0DD\uB7B5"
+  icon: {fileID: 21300000, guid: be44dfb905b8aeb47a5aea507721fd3c, type: 3}
+  effectDescription: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+    {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {2}\uCD08)"
+  coefficients:
+  - 4
+  - 20
+  - 4
+  triggerCondition: 3
+  cooldownSeconds: 4
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 9
+      value: 20
+    duration: 4
+    stackBehavior: 0
+    maxStack: 1
+    displayKind: 1
+  persistStackOnItem: 0

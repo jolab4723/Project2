@@ -9,14 +9,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29f21f417178d0347997534cc441de8e, type: 3}
+  m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
   m_Name: UE_AdvancedCore
-  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PeriodicLogUniqueEffectSO
-  effectName: "\uD5EC\uB85C \uC6D4\uB4DC \uBC1C\uC2E0\uAE30"
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
+  effectName: "\uC99D\uAC15"
   icon: {fileID: 21300000, guid: 2fa8aa6a0ca84c54693843a6e9fdd2a0, type: 3}
-  effectDescription: "\uBCF4\uC720 \uC911 {0}\uCD08\uB9C8\uB2E4 \uCF58\uC194\uC5D0
-    \"HELLO WORLD!\"\uB97C \uCD9C\uB825\uD569\uB2C8\uB2E4."
+  effectDescription: "\uCD5C\uB300 \uCCB4\uB825\uC774 {0} \uC99D\uAC00\uD569\uB2C8\uB2E4."
   coefficients:
-  - 10
-  intervalSeconds: 10
-  message: HELLO WORLD!
+  - 20
+  buffSpec:
+    statEffects:
+    - statType: 0
+      value: 20
+    duration: 0
+    stackBehavior: 2
+    maxStack: 0
+    displayKind: 0
