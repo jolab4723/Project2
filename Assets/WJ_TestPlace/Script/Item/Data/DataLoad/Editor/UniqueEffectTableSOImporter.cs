@@ -109,7 +109,8 @@ namespace DataSystem
             return true;
         }
         /// <summary>
-        /// 공통 필드를 채운 뒤 effectType별 고유 필드를 채운다.
+        /// SW 수정: 공통 표시 정보와 effectType별 실제 전투 수치를 함께 채운다.
+        /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
         /// </summary>
@@ -134,6 +135,28 @@ namespace DataSystem
                     break;
                 case GlassRailExtraHitUniqueEffectSO glass:
                     glass.damageMultiplier = asset.coefficients[0] / 100f;
+                    break;
+                case DodgePreparedAttackUniqueEffectSO preparedAttack:
+                    preparedAttack.damageMultiplier = 1f + asset.coefficients[0] / 100f;
+                    break;
+                case SolarGraceShieldUniqueEffectSO shield:
+                    shield.minimumHealthFraction = asset.coefficients[0] / 100f;
+                    shield.undamagedSeconds = asset.coefficients[1];
+                    shield.shieldFraction = asset.coefficients[2] / 100f;
+                    shield.shieldDurationSeconds = asset.coefficients[3];
+                    break;
+                case GravityWellFieldUniqueEffectSO gravityWell:
+                    gravityWell.radius = asset.coefficients[0];
+                    gravityWell.durationSeconds = asset.coefficients[1];
+                    gravityWell.slowMultiplier = 1f - asset.coefficients[2] / 100f;
+                    gravityWell.slowRefreshSeconds = asset.coefficients[3];
+                    gravityWell.maxConcurrentFields = (int)asset.coefficients[4];
+                    break;
+                case SingularityDelayedExplosionUniqueEffectSO singularity:
+                    singularity.delaySeconds = asset.coefficients[0];
+                    singularity.explosionRadius = asset.coefficients[1];
+                    singularity.damageMultiplier = asset.coefficients[2] / 100f;
+                    singularity.maxPendingExplosions = (int)asset.coefficients[3];
                     break;
                 case PassiveBuffUniqueEffectSO passive:
                     passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
@@ -239,7 +262,10 @@ namespace DataSystem
             return values.ToArray();
         }
 
-        /// <summary>effectType 문자열을 실제 UniqueEffectSO 파생 타입으로 바꾼다.</summary>
+        /// <summary>
+        /// SW 수정: 표의 effectType 이름을 실제 UniqueEffectSO 타입으로 바꾼다.
+        /// 등록되지 않은 이름은 일부 데이터만 생성하지 않도록 전체 변환을 실패시킨다.
+        /// </summary>
         private static Type ResolveEffectType(string effectType, string id)
         {
             string name = (effectType ?? string.Empty).Trim();
@@ -261,6 +287,10 @@ namespace DataSystem
                 case nameof(ChainLightningUniqueEffectSO): return typeof(ChainLightningUniqueEffectSO);
                 case nameof(InfernoExtraHitUniqueEffectSO): return typeof(InfernoExtraHitUniqueEffectSO);
                 case nameof(GlassRailExtraHitUniqueEffectSO): return typeof(GlassRailExtraHitUniqueEffectSO);
+                case nameof(DodgePreparedAttackUniqueEffectSO): return typeof(DodgePreparedAttackUniqueEffectSO);
+                case nameof(SolarGraceShieldUniqueEffectSO): return typeof(SolarGraceShieldUniqueEffectSO);
+                case nameof(GravityWellFieldUniqueEffectSO): return typeof(GravityWellFieldUniqueEffectSO);
+                case nameof(SingularityDelayedExplosionUniqueEffectSO): return typeof(SingularityDelayedExplosionUniqueEffectSO);
             }
 
             Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
@@ -289,8 +319,64 @@ namespace DataSystem
                 }
                 Type type = ResolveEffectType(row.effectType, id);
                 if (type == null) { valid = false; continue; }
+                if (type == typeof(SolarGraceShieldUniqueEffectSO))
+                {
+                    string[] shieldParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] shieldValues = new float[shieldParts.Length];
+                    bool shieldValid = shieldParts.Length == 4;
+                    for (int i = 0; i < shieldParts.Length; i++)
+                        shieldValid &= float.TryParse(shieldParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out shieldValues[i]) &&
+                            !float.IsNaN(shieldValues[i]) && !float.IsInfinity(shieldValues[i]);
+                    shieldValid = shieldValid && shieldValues[0] > 0f && shieldValues[0] <= 100f &&
+                        shieldValues[1] >= 0f && shieldValues[2] > 0f && shieldValues[2] <= 100f &&
+                        shieldValues[3] > 0f;
+                    if (!shieldValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 보호막 계수는 HP 기준%(0~100);무피격 초;보호막%;유지 초 순서의 유효한 숫자여야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
+                if (type == typeof(GravityWellFieldUniqueEffectSO))
+                {
+                    string[] fieldParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] fieldValues = new float[fieldParts.Length];
+                    bool fieldValid = fieldParts.Length == 5;
+                    for (int i = 0; i < fieldParts.Length; i++)
+                        fieldValid &= float.TryParse(fieldParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out fieldValues[i]) &&
+                            !float.IsNaN(fieldValues[i]) && !float.IsInfinity(fieldValues[i]);
+                    fieldValid = fieldValid && fieldValues[0] > 0f && fieldValues[1] > 0f &&
+                        fieldValues[2] > 0f && fieldValues[2] < 100f && fieldValues[3] > 0f &&
+                        fieldValues[3] <= fieldValues[1] && fieldValues[4] >= 1f && fieldValues[4] <= 8f &&
+                        fieldValues[4] == Mathf.Floor(fieldValues[4]);
+                    if (!fieldValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 중력 우물 계수는 반경;지속 초;둔화율%(0~100);갱신 초;동시 장판 수(1~8) 순서여야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
+                if (type == typeof(SingularityDelayedExplosionUniqueEffectSO))
+                {
+                    string[] delayedParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] delayedValues = new float[delayedParts.Length];
+                    bool delayedValid = delayedParts.Length == 4;
+                    for (int i = 0; i < delayedParts.Length; i++)
+                        delayedValid &= float.TryParse(delayedParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out delayedValues[i]) &&
+                            !float.IsNaN(delayedValues[i]) && !float.IsInfinity(delayedValues[i]);
+                    delayedValid = delayedValid && delayedValues[0] > 0f && delayedValues[0] <= 30f &&
+                        delayedValues[1] > 0f && delayedValues[2] > 0f && delayedValues[3] >= 1f && delayedValues[3] <= 8f &&
+                        delayedValues[3] == Mathf.Floor(delayedValues[3]);
+                    if (!delayedValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 지연 폭발 계수는 지연 초(0~30);반경;피해%;동시 예약 수(1~8) 순서여야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
                 bool chain = type == typeof(ChainLightningUniqueEffectSO);
-                if (!chain && type != typeof(InfernoExtraHitUniqueEffectSO) && type != typeof(GlassRailExtraHitUniqueEffectSO))
+                if (!chain && type != typeof(InfernoExtraHitUniqueEffectSO) && type != typeof(GlassRailExtraHitUniqueEffectSO) &&
+                    type != typeof(DodgePreparedAttackUniqueEffectSO))
                     continue;
                 string[] parts = (row.coefficients ?? string.Empty).Split(new[] { ';', ',' }, StringSplitOptions.None);
                 var values = new float[parts.Length];
