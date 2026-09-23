@@ -183,6 +183,7 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
     [Server]
     public void ServerApplyPassiveProfile(MirrorPassiveProfile_MirrorTest profile)
     {
+        ServerReviveHealthFraction = profile?.ReviveHealthFraction ?? 0f;
         serverPassiveStats = profile?.Stats ?? StatSet.Zero;
         shopEnhanceLevel = profile?.ShopLevel ?? 0;
         extraRerollCount = profile?.ExtraRerolls ?? 0;
@@ -190,6 +191,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         ServerPassiveStatsChanged?.Invoke();
         ResolveShopState()?.ServerRefreshPartyBenefits();
     }
+
+    public float ServerReviveHealthFraction { get; private set; }
 
     private void LateUpdate()
     {

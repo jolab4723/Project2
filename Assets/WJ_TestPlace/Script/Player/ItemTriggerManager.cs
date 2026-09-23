@@ -10,22 +10,25 @@ using ItemSystem;
 /// 나머지 조건(치명타/처치/공격 적중)은 전투 시스템이 생기면, 해당 이벤트가 발생하는 지점에서
 /// Fire(TriggerCondition.OnCrit) 같은 식으로 이 매니저의 Fire()만 불러주면 된다 (조건 판정 로직은 여기 없음).
 ///
-/// !! 멀티플레이 대비: 이 매니저는 "내가 맞은 데미지로 내가 장착한 아이템을 발동"시키는,
-///    본질적으로 로컬 플레이어 전용 편의 매니저다. (다른 플레이어가 맞은 데미지로 그 플레이어의
-///    아이템이 발동하는 건 그 플레이어의 클라이언트에서 처리될 일이라 여기서 다룰 필요가 없음.)
-///    그래서 All 목록 없이, 로컬 인스턴스일 때만 실제로 동작(구독/발동)하도록 막아뒀다.
-///    InventoryController.Instance/PlayerHealthManager.Instance도 "로컬 플레이어의 것"이라는
-///    보장 하에 그대로 쓴다.
+/// SW 수정: 싱글 플레이어의 이벤트를 같은 객체의 PlayerContext.Effects로 전달한다.
+/// 멀티에서는 서버 어댑터가 공통 상태를 호출하므로 여기서는 구독하지 않는다.
+/// Instance는 기존 호출 계약을 유지하며, 효과 대상은 해당 플레이어가 소유한다.
 /// </summary>
 public class ItemTriggerManager : MonoBehaviour
 {
     public static ItemTriggerManager Instance { get; private set; }
 
+    private PlayerContext context;
+    private PlayerHealthManager health;
+    private EquipmentSystem subscribedEquipment;
+
     private void Awake()
     {
+        context = GetComponent<PlayerContext>();
+        health = GetComponent<PlayerHealthManager>();
         var identity = GetComponent<Mirror.NetworkIdentity>();
-        if (identity != null && !identity.isLocalPlayer)
-            return; // 로컬이 아니면 이 매니저는 아무 것도 안 함 (Instance 등록도 안 함)
+        if (identity != null)
+            return; // 미러에서는 서버 어댑터가 담당하므로 Instance 등록도 하지 않음
 
         if (Instance != null && Instance != this)
         {
@@ -53,7 +56,7 @@ public class ItemTriggerManager : MonoBehaviour
         if (Instance != this)
         {
             var identity = GetComponent<Mirror.NetworkIdentity>();
-            bool isLocal = identity == null || identity.isLocalPlayer;
+            bool isLocal = identity == null;
 
             if (isLocal && Instance == null)
                 Instance = this;
@@ -63,20 +66,47 @@ public class ItemTriggerManager : MonoBehaviour
         if (Instance != this)
             return;
 
-        if (PlayerHealthManager.Instance != null)
-            PlayerHealthManager.Instance.OnDamageTaken += HandleHitTaken;
+        if (health != null)
+        {
+            health.OnDamageTaken += HandleHitTaken;
+            health.OnDeath += HandleDeath;
+        }
 
         // 회피는 별도 이벤트가 없어서 상태머신의 상태 진입을 보고 판단한다.
         // 이렇게 하면 회피 로직(T_PlayerController, BH 담당)을 건드리지 않아도 된다.
         subscribedStateMachine = GetComponent<WBH_PlayerStateMachine>();
         if (subscribedStateMachine != null)
             subscribedStateMachine.OnEnterState += HandleStateEntered;
+        SubscribeEquipment();
     }
+
+    // 씬 인벤토리는 Instantiate 직후 연결되므로 Start에서 구독을 마무리한다.
+    private void Start() => SubscribeEquipment();
+
+    private void SubscribeEquipment()
+    {
+        context ??= GetComponent<PlayerContext>();
+        if (Instance != this || context?.Equipment == null || subscribedEquipment == context.Equipment)
+            return;
+        if (subscribedEquipment != null)
+            subscribedEquipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        subscribedEquipment = context.Equipment;
+        subscribedEquipment.OnEquipmentChanged += HandleEquipmentChanged;
+    }
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] _) => context.Effects.ReconcileEquipment();
+    private void HandleDeath() => context?.Effects.ResetAttackLifetime();
 
     private void OnDisable()
     {
-        if (PlayerHealthManager.Instance != null)
-            PlayerHealthManager.Instance.OnDamageTaken -= HandleHitTaken;
+        if (health != null)
+        {
+            health.OnDamageTaken -= HandleHitTaken;
+            health.OnDeath -= HandleDeath;
+        }
+        if (subscribedEquipment != null)
+            subscribedEquipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        subscribedEquipment = null;
 
         if (subscribedStateMachine != null)
         {
@@ -99,7 +129,12 @@ public class ItemTriggerManager : MonoBehaviour
     private void HandleStateEntered(PlayerState state)
     {
         if (state == PlayerState.Dodge)
+        {
             Fire(TriggerCondition.OnDodge);
+            context?.Effects.PrepareDodgeAttack();
+        }
+        else if (state == PlayerState.Dead)
+            HandleDeath();
     }
 
     /// <summary>
@@ -112,40 +147,7 @@ public class ItemTriggerManager : MonoBehaviour
     /// </summary>
     public void Fire(TriggerCondition condition)
     {
-        if (InventoryController.Instance == null)
-            return;
-
-        if (InventoryController.Instance.EquipmentSystem != null)
-        {
-            foreach (var pair in InventoryController.Instance.EquipmentSystem.GetEquippedItems())
-                FireIfMatches(pair.Value != null ? pair.Value.itemData : null, condition);
-        }
-
-        FireRelics(condition);
-    }
-
-    /// <summary>인벤토리에 있는 유물(Relic 카테고리) 중 조건이 일치하는 발동형 고유효과를 발동시킨다.</summary>
-    private void FireRelics(TriggerCondition condition)
-    {
-        InventoryGrid playerGrid = InventoryController.Instance.PlayerGrid;
-        if (playerGrid == null)
-            return;
-
-        foreach (InventoryItem inventoryItem in playerGrid.GetAllItems())
-        {
-            ItemInstance itemData = inventoryItem?.itemData;
-            if (itemData?.definition == null || itemData.definition.category != ItemCategory.Relic)
-                continue;
-
-            FireIfMatches(itemData, condition);
-        }
-    }
-
-    private static void FireIfMatches(ItemInstance itemInstance, TriggerCondition condition)
-    {
-        var uniqueEffect = itemInstance != null && itemInstance.definition != null ? itemInstance.definition.uniqueEffect : null;
-
-        if (uniqueEffect is TriggeredBuffUniqueEffectSO triggered && triggered.triggerCondition == condition)
-            triggered.OnTrigger(itemInstance);
+        if (Instance == this)
+            context?.Effects.Fire(condition);
     }
 }

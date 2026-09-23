@@ -62,7 +62,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// <summary>같은 이름의 Scene 재방문도 구분하여 소유자의 시작 위치 최종 확정을 확인한다.</summary>
     public bool IsSceneStartConfirmed => confirmedSceneHandle == SceneManager.GetActiveScene().handle;
     private bool CanRestoreGameplay => IsConfigured && !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
-        !context.RuntimeState.IsDead && (!isLocalPlayer || !RequiresNavMesh || IsSceneStartConfirmed);
+        !context.RuntimeState.IsDead && !context.RuntimeState.IsReviving && (!isLocalPlayer || !RequiresNavMesh || IsSceneStartConfirmed);
     private bool RequiresNavMesh => GetTestNetworkManager()?.CurrentSessionRoute is
         MirrorSessionRoute.Combat or MirrorSessionRoute.Camp;
 
@@ -289,6 +289,13 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// </summary>
     public void SetLocalInputEnabled(bool enabled)
     {
+        // 부재 중 부활이 끝나면 재접속 복구에도 새 생존 상태를 사용한다.
+        if (temporarilyAbsent && absenceApplied && enabled && isServer &&
+            context?.RuntimeState?.IsDead == false && !context.RuntimeState.IsReviving)
+        {
+            controllerWasEnabled = true;
+            controllerHadControl = true;
+        }
         // 생존 스냅샷이 Controller를 켠 직후에도 예약 상태의 정지를 다시 적용한다.
         if (temporarilyAbsent) ApplyTemporaryAbsence();
         if (!RequiresNavMesh)
@@ -361,7 +368,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         absenceApplied = false;
         for (int i = 0; i < absentRenderers.Length; i++) if (absentRenderers[i] != null) absentRenderers[i].enabled = rendererStates[i];
         for (int i = 0; i < absentColliders.Length; i++) if (absentColliders[i] != null) absentColliders[i].enabled = colliderStates[i];
-        bool alive = context?.RuntimeState?.IsDead == false;
+        bool alive = context?.RuntimeState?.IsDead == false && !context.RuntimeState.IsReviving;
         if (absentAgent != null)
         {
             absentAgent.enabled = false;

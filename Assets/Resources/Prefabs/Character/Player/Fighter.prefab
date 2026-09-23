@@ -8523,6 +8523,7 @@ GameObject:
   - component: {fileID: 4896227351667689570}
   - component: {fileID: 6056062155033957943}
   - component: {fileID: 6122456883110343695}
+  - component: {fileID: 5409952598730534647}
   m_Layer: 15
   m_Name: Fighter
   m_TagString: Player
@@ -9283,6 +9284,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb87689cc9ef7634fa8bba69bcfc5df4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
+  inventory: {fileID: 0}
+  buffs: {fileID: 0}
   inventoryController: {fileID: 0}
 --- !u!114 &4313363775894171516
 MonoBehaviour:
@@ -9397,6 +9400,20 @@ MonoBehaviour:
   deathScreenFadeInDuration: 2
   deathSfx: {fileID: 8300000, guid: 2d88b010a97d454448f4f8bb32c7055a, type: 3}
   deathSfxVolume: 0.7
+--- !u!114 &5409952598730534647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874953783023553297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9151c2faf12acc44197e9b11ad454122, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UniqueEffectPresentation_MirrorTest
+  infernoHitPrefab: {fileID: 80597605194578926, guid: 69917f5c1021e9749964eea5159d42f8, type: 3}
+  infernoHitLifetime: 2
 --- !u!1 &8918607210474184876
 GameObject:
   m_ObjectHideFlags: 0

@@ -30,6 +30,9 @@ public sealed class PlayerContext : MonoBehaviour
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
     private bool usesSceneInventory;
+    private PlayerItemEffectState effects;
+
+    public PlayerItemEffectState Effects => effects ??= new PlayerItemEffectState(this);
 
     public InventoryController Inventory => inventory;
     public EquipmentSystem Equipment => equipment;
@@ -72,6 +75,8 @@ public sealed class PlayerContext : MonoBehaviour
         // 싱글은 생성 직후 Spawner가 씬 인벤토리를 전달한다.
         ValidateRequiredReferences();
         ValidateOwnedReferences();
+        if (GetComponent<Mirror.NetworkIdentity>() == null && GetComponent<PlayerArmorEffectRuntime>() == null)
+            gameObject.AddComponent<PlayerArmorEffectRuntime>();
     }
 
     private void OnEnable()
@@ -82,6 +87,7 @@ public sealed class PlayerContext : MonoBehaviour
 
     private void OnDisable()
     {
+        effects?.ResetAttackLifetime();
         if (usesSceneInventory)
             inventory?.UnbindPlayer(this);
     }

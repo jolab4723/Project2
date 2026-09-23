@@ -11,7 +11,7 @@ using UnityEngine;
 /// 서버 스냅샷을 그 Context의 기존 Manager에 투영해 HUD와 전투 어댑터가 같은 값을 읽게 한다.</para>
 /// <para>정식 계정 서버에서는 클라이언트가 보고한 패시브 StatSet 대신 인증된 프로필을 서버가 불러와야 한다.</para>
 /// <para>4-B 차이: 체력 0과 별도로 사망 여부를 스냅샷에 저장하고, 서버가 입력·Controller·타깃 제외 기준을 확정한다.
-/// 기존 <c>T_PlayerController.Update</c>의 자동 부활 대신 서버 상황판의 명시적 테스트 부활만 허용한다.</para>
+/// 정상 패시브 부활은 서버가 횟수와 HP 비율을 확정하며, 상황판의 테스트 부활과 분리한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity), typeof(PlayerContext), typeof(NetworkShopPlayerState_MirrorTest))]
@@ -38,6 +38,10 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     private bool testMutationActive;
     private float nextTimedBuffPublishAt;
     private uint reviveSequence;
+    private bool passiveReviveConsumed;
+    private bool passiveReviving;
+    public bool IsReviving => isServer ? passiveReviving : latestSnapshot?.isReviving == true;
+    public bool HasConsumedPassiveRevive => isServer ? passiveReviveConsumed : latestSnapshot?.passiveReviveConsumed == true;
 
     public bool HasSnapshot => latestSnapshot != null;
     public uint StateRevision => latestSnapshot?.revision ?? 0;
@@ -160,6 +164,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             !manager.ServerDevelopmentCommandsEnabled || context?.Health == null)
             return false;
 
+        passiveReviving = false;
         context.Health.FillHealth();
         reviveSequence++;
         if (reviveSequence == 0)
@@ -168,6 +173,37 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         ApplyDeadState(false, true);
         serverPublishQueued = true;
         return true;
+    }
+
+    /// <summary>원본 사망 클립이 끝난 서버에서 정상 패시브 횟수를 한 번만 소비합니다.</summary>
+    [Server]
+    public bool ServerTryPassiveRevive()
+    {
+        float fraction = shopPlayerState?.ServerReviveHealthFraction ?? 0f;
+        if (passiveReviveConsumed || passiveReviving || !IsDead || context?.Controller == null || fraction <= 0f)
+            return false;
+        passiveReviveConsumed = true;
+        if (!context.Controller.TryBeginPassiveRevive(fraction))
+        {
+            passiveReviveConsumed = false;
+            return false;
+        }
+        passiveReviving = true;
+        reviveSequence++;
+        ApplyDeadState(false, true);
+        serverPublishQueued = true;
+        return true;
+    }
+
+    [Server]
+    public void ServerCompletePassiveRevive()
+    {
+        if (!passiveReviving || context?.StateMachine == null || !context.StateMachine.Is(PlayerState.Revive))
+            return;
+        passiveReviving = false;
+        context.Controller.CompleteRevive();
+        ApplyDeadState(false);
+        serverPublishQueued = true;
     }
 
     /// <summary>서버가 부재·사망·조작 가능 상태를 확인한 후 공통 포션 규칙을 실행합니다.</summary>
@@ -299,6 +335,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             testMutationActive = testMutationActive,
             isDead = IsDead,
             reviveSequence = reviveSequence,
+            isReviving = passiveReviving,
+            passiveReviveConsumed = passiveReviveConsumed,
             buffs = buffs.ToArray(),
         };
     }
@@ -343,7 +381,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             context.Mana.RefreshMaxMana();
             context.Mana.SetCurrentMana(snapshot.currentMana);
             context.Potions?.ApplyAuthoritativeCharges(snapshot.potionCharges);
-            bool forceReviveVisual = latestSnapshot != null &&
+            bool forceReviveVisual = latestSnapshot == null ? snapshot.isReviving :
                                      snapshot.reviveSequence != latestSnapshot.reviveSequence;
             bool forceDeathVisual = snapshot.isDead &&
                                     (latestSnapshot == null || !latestSnapshot.isDead);
@@ -566,6 +604,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
     [Server]
     private void HandleServerDeath()
     {
+        passiveReviving = false;
         ApplyDeadState(true, false, true);
         serverPublishQueued = true;
     }
@@ -596,12 +635,20 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             if (forceDeathVisual)
                 GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativeDeath();
         }
+        else if (IsReviving)
+        {
+            if (controller != null) controller.enabled = true;
+            controller?.SetControlEnable(false);
+            stateMachine?.ChangeState(PlayerState.Revive);
+            if (forceReviveVisual || stateBeforeApply != PlayerState.Revive)
+                GetComponent<WBH_PlayerAnimation_MirrorTest>()?.ApplyAuthoritativePassiveRevive();
+        }
         else
         {
             if (controller != null)
                 controller.enabled = true;
 
-            bool shouldRevive = forceReviveVisual || stateBeforeApply == PlayerState.Dead;
+            bool shouldRevive = forceReviveVisual || stateBeforeApply == PlayerState.Dead || stateBeforeApply == PlayerState.Revive;
             if (shouldRevive)
             {
                 stateMachine?.ChangeState(PlayerState.Idle);
@@ -615,7 +662,7 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
             controller?.SetControlEnable(true);
         }
 
-        GetComponent<MirrorSpawnedPlayerBinder>()?.SetLocalInputEnabled(!dead);
+        GetComponent<MirrorSpawnedPlayerBinder>()?.SetLocalInputEnabled(!dead && !IsReviving);
     }
 
     private void HandleServerChargesChanged(int current, int max)
@@ -662,6 +709,8 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         public bool testMutationActive;
         public bool isDead;
         public uint reviveSequence;
+        public bool isReviving;
+        public bool passiveReviveConsumed;
         public BuffSnapshot[] buffs;
         public StatSet passiveStats;
     }
