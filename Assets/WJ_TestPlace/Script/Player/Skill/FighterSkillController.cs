@@ -470,7 +470,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
 
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
             ApplyHit(target, def, damageMultiplier, index);
