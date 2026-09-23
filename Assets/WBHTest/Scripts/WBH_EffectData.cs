@@ -9,6 +9,12 @@ public enum EffectAttachType
     Follow_Billboard
 }
 
+public enum EffectOffsetScaleMode
+{
+    ScaledLocal = 0,
+    IgnoreTargetScale = 1
+}
+
 [CreateAssetMenu(fileName = "EffectData", menuName = "WBH/Effect Data")]
 public class WBH_EffectData : ScriptableObject
 {
@@ -27,6 +33,7 @@ public class WBH_EffectData : ScriptableObject
     [Header("Play Option")]
     public float autoReturnTime = 1f;
     public EffectAttachType attachType;
+    public EffectOffsetScaleMode offsetScaleMode = EffectOffsetScaleMode.ScaledLocal;
     public Vector3 localPos;
     public Vector3 localRot;
     public bool applyEnhancementScale = true;

@@ -174,8 +174,17 @@ public class WBH_EffectSpawner : MonoBehaviour
     private void SetAttachedTransform(Transform effectTransform, WBH_EffectData data, Transform attachTarget)
     {
         effectTransform.SetParent(attachTarget, false);
-        effectTransform.localPosition = data.localPos;
         effectTransform.localRotation = Quaternion.Euler(data.localRot);
+
+        if(data.offsetScaleMode == EffectOffsetScaleMode.IgnoreTargetScale)
+        {
+            effectTransform.position = attachTarget.position + attachTarget.rotation * data.localPos;
+        }
+        else
+        {
+            effectTransform.localPosition = data.localPos;
+        }
+
     }
 
     private bool ValidateRequest(WBH_EffectData data)

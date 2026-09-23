@@ -403,6 +403,22 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : transform.position + toCursor;
         center.y = transform.position.y;
 
+        // 모든 진화의 메인 이펙트를 폭격 중심에 1회 출력.
+        if (playerEffect != null)
+        {
+            WBH_PlayerEffectCue cue =
+                PlayerEffectCueUtility.CreateGunnerSkillCue(
+                    index + 1,
+                    pendingEvo,
+                    SkillEffectPart.Main);
+
+            playerEffect.PlayWorldEffect(
+                cue,
+                center,
+                Quaternion.identity,
+                GetPendingSkillEffectScale((int)SkillEffectPart.Main));
+        }
+
         // 진화3(산탄 폭격)은 "영역 전체를 때린다"는 기본 구조 자체가 달라서 별도 코루틴으로 뺀다.
         if (pendingEvo == SkillEvolutionId.Evolution3)
         {
@@ -433,7 +449,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float areaRadius = def.carpetAreaRadius;
         float totalDuration = waveCount * waveInterval;
 
-        SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
                                     totalDuration + impactDelay + 0.3f);
 
         float damageMultiplier = damagePerWave;
@@ -473,7 +490,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float shellRadius = ApplySkillRangeBonus(def, index, def.evoBarrageShellRadius);
         float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
 
-        SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
                                     totalDuration + def.carpetImpactDelay + 0.3f);
 
         float damageMultiplier = def.evoBarrageDamagePerShell;
@@ -489,7 +507,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             Vector2 offset = UnityEngine.Random.insideUnitCircle * scatterRadius;
             Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
 
-            SkillRangeVisual.ShowSector(impactPos, Vector3.forward, shellRadius, 360f, shellImpactVisualColor, Mathf.Max(0.05f, def.carpetImpactDelay));
+            if (visibleSkillArea)
+                SkillRangeVisual.ShowSector(impactPos, Vector3.forward, shellRadius, 360f, shellImpactVisualColor, Mathf.Max(0.05f, def.carpetImpactDelay));
 
             SpawnBarrageProjectile(def, impactPos, explosionCue);
 
