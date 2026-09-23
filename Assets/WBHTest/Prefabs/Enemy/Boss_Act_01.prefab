@@ -2750,7 +2750,7 @@ Transform:
   m_GameObject: {fileID: 4445623979006266443}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.3, z: 1.34}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3208,6 +3208,37 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.000000029802322, y: 1.0916277, z: 0.010198057}
     m_Extent: {x: 0.39559606, y: 0.11284804, z: 0.270138}
   m_DirtyAABB: 0
+--- !u!1 &5185137459638852076
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3266729944174951839}
+  m_Layer: 0
+  m_Name: EffectPoint(Muzzle)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3266729944174951839
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5185137459638852076}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8440374778960160327}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5274640136026078084
 GameObject:
   m_ObjectHideFlags: 0
@@ -3367,7 +3398,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1072797204313020006}
   m_Layer: 0
-  m_Name: EffectPoint
+  m_Name: EffectPoint(Body)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3382,7 +3413,7 @@ Transform:
   m_GameObject: {fileID: 6173305681937534433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5389,6 +5420,7 @@ Transform:
   - {fileID: 287411858876415683}
   - {fileID: 5945891765140044628}
   - {fileID: 1072797204313020006}
+  - {fileID: 3266729944174951839}
   - {fileID: 7534506397720038980}
   - {fileID: 8022356021190811761}
   m_Father: {fileID: 0}
@@ -6118,11 +6150,11 @@ MonoBehaviour:
     sounds: []
   - cue: 55002
     data: {fileID: 11400000, guid: f1b1d08830c9d8f42be71918f1b5a08c, type: 2}
-    anchor: {fileID: 1072797204313020006}
+    anchor: {fileID: 3266729944174951839}
     sounds: []
   - cue: 55003
     data: {fileID: 11400000, guid: e8458451b668ccb469f606297a2d165f, type: 2}
-    anchor: {fileID: 1072797204313020006}
+    anchor: {fileID: 3266729944174951839}
     sounds: []
   - cue: 55004
     data: {fileID: 11400000, guid: 11326cbab968e914bbdb3f34fce2b032, type: 2}
