@@ -1109,10 +1109,10 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (item?.itemData == null)
             return MirrorTestInventoryRequestResult.ItemUnavailable;
 
-        if (playerState == null || context?.Equipment == null)
+        if (playerState == null || context?.Equipment == null || context.Wallet == null)
             return MirrorTestInventoryRequestResult.ServerSetupInvalid;
 
-        if (!UpgradeService.TryGetUpgradeCost(item.itemData, out int cost))
+        if (!UpgradeService.TryGetUpgradeCost(item.itemData, out _))
         {
             return MirrorTestInventoryRequestResult.UpgradeUnavailable;
         }
@@ -1129,15 +1129,17 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
         if (isEquipped && !ReferenceEquals(item, equippedItem))
             return MirrorTestInventoryRequestResult.StateApplyFailed;
 
-        if (!playerState.ServerTrySpendGold(cost))
-            return MirrorTestInventoryRequestResult.NotEnoughGold;
-
         int previousLevel = item.itemData.upgradeLevel;
+        int previousGold = context.Wallet.Gold;
         string previousSnapshot = itemSnapshots[snapshotIndex];
 
         try
         {
-            item.itemData.upgradeLevel++;
+            UpgradeResult upgrade = new UpgradeService(context.Wallet).TryUpgrade(item.itemData);
+            if (upgrade != UpgradeResult.Success)
+                return upgrade == UpgradeResult.NotEnoughGold
+                    ? MirrorTestInventoryRequestResult.NotEnoughGold
+                    : MirrorTestInventoryRequestResult.UpgradeUnavailable;
             itemSnapshots[snapshotIndex] = ToSnapshotJson(item, isEquipped, equippedSlot);
 
             if (isEquipped)
@@ -1153,7 +1155,7 @@ public sealed class PlayerInventorySync_MirrorTest : NetworkBehaviour
             {
                 item.itemData.upgradeLevel = previousLevel;
                 itemSnapshots[snapshotIndex] = previousSnapshot;
-                playerState.ServerAddGold(cost);
+                playerState.ServerSetGold(previousGold);
 
                 if (isEquipped)
                     context.Equipment.NotifyEquippedItemChanged(item.itemData);

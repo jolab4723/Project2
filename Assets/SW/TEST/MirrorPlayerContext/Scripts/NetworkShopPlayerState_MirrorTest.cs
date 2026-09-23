@@ -129,8 +129,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             return;
         }
 
+        context.Wallet.OnGoldChanged += HandleServerGoldChanged;
         context.Wallet.SetGold(0);
-        syncedGold = context.Wallet.Gold;
         shopEnhanceLevel = 0;
         extraRerollCount = 0;
         discountPercent = 0;
@@ -163,6 +163,8 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
 
     public override void OnStopServer()
     {
+        if (context?.Wallet != null)
+            context.Wallet.OnGoldChanged -= HandleServerGoldChanged;
         NetworkShopState_MirrorTest shop = ResolveShopState();
         processedRequestIds.Clear();
         processedRequestOrder.Clear();
@@ -301,7 +303,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
         if (context?.Wallet == null || amount < 0 || !context.Wallet.TrySpendGold(amount))
             return false;
 
-        syncedGold = context.Wallet.Gold;
         return true;
     }
 
@@ -312,7 +313,6 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             return;
 
         context.Wallet.AddGold(amount);
-        syncedGold = context.Wallet.Gold;
     }
 
     [Server]
@@ -322,7 +322,12 @@ public sealed class NetworkShopPlayerState_MirrorTest : NetworkBehaviour
             return;
 
         context.Wallet.SetGold(Mathf.Max(0, amount));
-        syncedGold = context.Wallet.Gold;
+    }
+
+    /// <summary>공통 거래·강화 서비스가 바꾼 서버 지갑을 소유 클라이언트에 복제합니다.</summary>
+    private void HandleServerGoldChanged(int amount)
+    {
+        syncedGold = amount;
     }
 
     /// <summary>
