@@ -3,7 +3,7 @@ using ItemSystem;
 using UnityEngine;
 
 /// <summary>
-/// WJ 원본 <c>PotionUseManager</c>의 PlayerContext 전환 검증용 복제본이다.
+/// 공통 PotionUseState 규칙을 서버에서 실행하고 충전량 변경을 동기화에 알립니다.
 /// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/PotionUseManager.cs</c></para>
 /// <para><c>Instance</c>, 중복 오브젝트 삭제와 내부 로컬 플레이어 판정을 제거하고 Equipment·Health·Buff를 같은 플레이어 참조로 받는다.</para>
 /// <para>충전량은 컴포넌트 인스턴스마다 따로 보관하며, UI가 직접 조회하지 않아도 되도록 <c>ChargesChanged</c>를 발행한다.</para>
@@ -13,14 +13,19 @@ using UnityEngine;
 public sealed class PotionUseManager_MirrorTest : MonoBehaviour
 {
     [SerializeField, Min(0)] private int basePotionCharges = 3;
+    [SerializeField, Min(0f)] private float useCooldownSeconds = 1f;
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private PlayerHealthManager health;
     [SerializeField] private PlayerBuffManager buffs;
 
     public event Action<int, int> ChargesChanged;
 
-    public int CurrentCharges { get; private set; }
+    private readonly PotionUseState useState = new PotionUseState();
+
+    public int CurrentCharges => useState.CurrentCharges;
     public int MaxCharges => basePotionCharges;
+    public float UseCooldownSeconds => useCooldownSeconds;
+    public float RemainingCooldown => useState.RemainingCooldown;
 
     private void Awake()
     {
@@ -39,31 +44,19 @@ public sealed class PotionUseManager_MirrorTest : MonoBehaviour
     }
 #endif
 
+    /// <summary>서버만 공통 사용 규칙을 실행합니다. 클라이언트는 요청과 결과 표시만 합니다.</summary>
     public bool TryUsePotion()
     {
-        if (CurrentCharges <= 0 || !TryGetEquippedPotion(out ItemInstance potion))
+        if (!Mirror.NetworkServer.active || !TryGetEquippedPotion(out ItemInstance potion) ||
+            !useState.TryUse(potion.definition, health, buffs, useCooldownSeconds))
             return false;
-
-        switch (potion.definition.potionEffectType)
-        {
-            case PotionEffectType.Heal:
-                health.Heal(potion.definition.potionEffectValue);
-                break;
-
-            case PotionEffectType.StatBoost:
-                if (potion.definition.potionBuff != null)
-                    buffs.ApplyBuff(potion.definition.potionBuff);
-                break;
-        }
-
-        CurrentCharges--;
         ChargesChanged?.Invoke(CurrentCharges, MaxCharges);
         return true;
     }
 
     public void RechargeAllPotions()
     {
-        CurrentCharges = MaxCharges;
+        useState.Recharge(MaxCharges);
         ChargesChanged?.Invoke(CurrentCharges, MaxCharges);
     }
 
@@ -73,24 +66,13 @@ public sealed class PotionUseManager_MirrorTest : MonoBehaviour
         if (CurrentCharges == clamped)
             return;
 
-        CurrentCharges = clamped;
+        useState.ApplyCharges(clamped, MaxCharges);
         ChargesChanged?.Invoke(CurrentCharges, MaxCharges);
     }
 
     public bool TryGetEquippedPotion(out ItemInstance potion)
     {
-        potion = null;
-
-        if (equipmentSystem == null ||
-            !equipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Potion, out ItemInstance equipped) ||
-            equipped?.definition == null ||
-            equipped.definition.category != ItemCategory.Potion)
-        {
-            return false;
-        }
-
-        potion = equipped;
-        return true;
+        return PotionUseState.TryGetEquippedPotion(equipmentSystem, out potion);
     }
 
     private void ResolveReferences()

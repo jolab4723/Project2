@@ -170,12 +170,15 @@ public sealed class PlayerRuntimeStateSync_MirrorTest : NetworkBehaviour
         return true;
     }
 
+    /// <summary>서버가 부재·사망·조작 가능 상태를 확인한 후 공통 포션 규칙을 실행합니다.</summary>
     [Command]
     private void CmdUsePotion()
     {
-        if (GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true) return;
-        context?.Potions?.TryUsePotion();
-        serverPublishQueued = true;
+        if (GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
+            IsDead || context?.Controller == null || !context.Controller.IsControlEnabled)
+            return;
+        if (context.Potions != null && context.Potions.TryUsePotion())
+            serverPublishQueued = true;
     }
 
     [Command]

@@ -244,7 +244,7 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
             return MirrorTestShopRequestResult.InventoryFull;
         }
 
-        int price = CalculateBuyPrice(itemData.definition.sellPrice, requester.DiscountPercent);
+        int price = ShopPricing.GetBuyPrice(itemData.definition.sellPrice, requester.DiscountPercent);
         if (!requester.ServerTrySpendGold(price))
             return MirrorTestShopRequestResult.NotEnoughGold;
 
@@ -659,12 +659,6 @@ public sealed class NetworkShopState_MirrorTest : NetworkBehaviour
         EquipmentTransactionResult result =
             new EquipmentTransaction(context.Equipment).TryUnequipForTransfer(equippedSlot, item);
         return result.IsSuccess;
-    }
-
-    private static int CalculateBuyPrice(int basePrice, float discountPercent)
-    {
-        float discounted = Mathf.Max(0, basePrice) * (1f - Mathf.Clamp(discountPercent, 0f, 0.95f));
-        return Mathf.Max(0, Mathf.CeilToInt(discounted));
     }
 
     private int FindStockIndex(string instanceId, out MirrorTestShopItemSnapshot snapshot)

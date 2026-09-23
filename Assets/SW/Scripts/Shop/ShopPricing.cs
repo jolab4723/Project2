@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 public static class ShopPricing
 {
-    /// <summary>할인 상한. 전부 공짜가 되는 상황을 막는다(미러 테스트의 CalculateBuyPrice와 같은 값).</summary>
+    /// <summary>싱글과 서버에 같은 할인 상한을 적용해 전부 공짜가 되는 상황을 막습니다.</summary>
     private const float MaxDiscountRatio = 0.95f;
 
     /// <summary>지금 적용 중인 상점 할인 비율(0~0.95). 패시브가 없거나 프로필이 없으면 0.</summary>
@@ -26,7 +26,7 @@ public static class ShopPricing
                 return 0f;
 
             // !! PassiveSkillManager.ShopDiscountPercent는 "10"처럼 퍼센트 숫자를 돌려준다(0.1이 아님).
-            //    미러 테스트 쪽 CalculateBuyPrice는 비율을 받으므로 여기서 100으로 나눠 단위를 맞춘다.
+            //    공통 GetBuyPrice는 비율을 받으므로 여기서 100으로 나눠 미러 서버와 단위를 맞춘다.
             return Mathf.Clamp(passive.ShopDiscountPercent / 100f, 0f, MaxDiscountRatio);
         }
     }
@@ -43,7 +43,15 @@ public static class ShopPricing
     /// <summary>정가에 현재 할인을 적용한다. 올림이라 1골드짜리가 0원이 되지 않는다.</summary>
     public static int GetBuyPrice(int basePrice)
     {
-        float discounted = Mathf.Max(0, basePrice) * (1f - DiscountRatio);
+        return GetBuyPrice(basePrice, DiscountRatio);
+    }
+
+    /// <summary>전달된 플레이어의 할인율로 구매가를 계산합니다. 서버는 검증한 참가자 할인율을 전달합니다.</summary>
+    public static int GetBuyPrice(int basePrice, float discountRatio)
+    {
+        if (float.IsNaN(discountRatio) || float.IsInfinity(discountRatio))
+            discountRatio = 0f;
+        float discounted = Mathf.Max(0, basePrice) * (1f - Mathf.Clamp(discountRatio, 0f, MaxDiscountRatio));
         return Mathf.Max(0, Mathf.CeilToInt(discounted));
     }
 
