@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,7 +26,9 @@ public class WBH_EnemyCombat : MonoBehaviour
     private bool isGrabDash;
     private float grabCollisionRadius;
     private float grabReleaseRadius = 1.5f;
+    private float SkillRangeFlashDuration = 0.3f;
 
+    private readonly Color DefaultRangeColor = new Color(1f, 0.15f, 0.1f, 0.35f);
 
     private readonly HashSet<WBH_ICombat> dashHitTargets = new(); // 대쉬 피해 시, 플레이어가 여러 번 충돌하더라도 데미지 1번만 받도록 하기 위한 변수
     private readonly HashSet<WBH_ICombat> areaHitTargets = new(); // 범위 피해 시, 플레이어가 여러 컬라이더 가져도 데미지 1번만
@@ -158,6 +161,8 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
 
+        ShowDebugLine(transform.position, transform.forward, distance, indicatorWidth);
+
         movement.Dash(transform.forward, distance, duration, EndAction);
     }
 
@@ -179,16 +184,17 @@ public class WBH_EnemyCombat : MonoBehaviour
             return false;
         }
 
-        SkillRangeVisual.ShowLine(transform.position, dashDir, distance, indicatorWidth, indicatorColor, readyDuration);
+        pattern.IndicatorSpawner?.ShowRect(transform.position, dashDir, indicatorWidth, distance, readyDuration, growOverTime: true);
 
-        StartCoroutine(CoDashAttackWithRangeVisual(dashDir, distance, duration, readyDuration));
+        StartCoroutine(CoDashAttackWithRangeVisual(dashDir, distance, indicatorWidth, duration, readyDuration));
         return true;
     }
 
-    private IEnumerator CoDashAttackWithRangeVisual(Vector3 dashDir, float distance, float duration, float readyDuration)
+    private IEnumerator CoDashAttackWithRangeVisual(Vector3 dashDir, float distance, float indicatorWidth ,float duration, float readyDuration)
     {
         yield return new WaitForSeconds(readyDuration);
 
+        ShowDebugLine(transform.position, dashDir, distance, indicatorWidth);
         movement.Dash(dashDir, distance, duration, EndAction);
     }
 
@@ -273,7 +279,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         transform.rotation = Quaternion.LookRotation(dashDir);
 
-        SkillRangeVisual.ShowLine(transform.position, dashDir, dashDistance, collisionRadius * 2f, indicatorColor, roarDuration);
+        pattern.IndicatorSpawner?.ShowRect(transform.position, dashDir, collisionRadius * 2f, dashDistance, roarDuration, growOverTime : true);
 
         StartCoroutine(CoGrabAndSlam(dashTarget, dashDir, dashDistance, roarDuration, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul));
         return true;
@@ -305,6 +311,8 @@ public class WBH_EnemyCombat : MonoBehaviour
         isGrabDash = true;
 
         bool dashFinished = false;
+
+        ShowDebugLine(transform.position, dashDir, dashDistance, grabCollisionRadius * 2);
 
         movement.Dash(dashDir, dashDistance, dashDuration, () => dashFinished = true);
 
@@ -569,6 +577,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         areaHitTargets.Clear();
 
+        ShowDebugSector(center, Vector3.forward, radius, 360f);
+
         Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer);
 
         foreach (Collider hit in hits)
@@ -663,6 +673,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         yield return new WaitForSeconds(hitDelay);
 
+        ShowDebugSector(transform.position, transform.forward, range, angle);
         ApplySectorDamage(range, angle, damageMul);
 
         yield return new WaitForSeconds(recoverDuration);
@@ -740,23 +751,34 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 부채꼴 범위 틱데미지
-    public bool TryFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul = 0.25f)
+    public bool TryFlameThrow(float range, float angle, float duration, float damageInterval, float readyDuration, WBH_IndicatorSpawner indicatorSpawner, float damageMul = 0.25f)
     {
-        if (IsActionInProgress || pattern.Target == null)
+        if (IsActionInProgress || pattern.Target == null || indicatorSpawner == null ||readyDuration <= 0f)
             return false;
         
         BeginAction();
         FaceTarget(pattern.Target);
 
-        StartCoroutine(CoFlameThrow(range, angle, duration, damageInterval, damageMul));
+        WBH_Effect warning = indicatorSpawner.ShowCone(transform.position, transform.forward, range, angle, readyDuration, growOverTime: true);
+
+        if(warning == null || !warning.IsPlaying)
+        {
+            EndAction();
+            return false;
+        }
+
+        StartCoroutine(CoFlameThrow(range, angle, duration, damageInterval, damageMul, readyDuration));
 
         return true;
     }
 
-    private IEnumerator CoFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul)
+    private IEnumerator CoFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul, float readyDuration)
     {
+        yield return new WaitForSeconds(readyDuration);
+
         float elapsed = 0f;
         float damageTimer = 0f;
+        float interval = Mathf.Max(0.01f, damageInterval);
 
         while(elapsed < duration)
         {
@@ -765,7 +787,9 @@ public class WBH_EnemyCombat : MonoBehaviour
 
             if(damageTimer <= 0f)
             {
-                damageTimer = damageInterval;
+                ShowDebugSector(transform.position, transform.forward, range, angle);
+
+                damageTimer = interval;
                 ApplySectorDamage(range, angle, damageMul);
             }
             yield return null;
@@ -795,6 +819,8 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         if (hitDelay > 0f)
             yield return new WaitForSeconds(hitDelay);
+
+        ShowDebugSector(center, Vector3.forward, radius, 360f);
 
         areaHitTargets.Clear();
 
@@ -854,4 +880,20 @@ public class WBH_EnemyCombat : MonoBehaviour
         return dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
     }
     #endregion
+
+    // 이펙트 및 디버그용 스킬 범위 표시 메서드.
+    private void ShowDebugSector(Vector3 center, Vector3 forward, float range, float angle)
+    {
+        if (pattern == null || !pattern.isShowSkillRange)
+            return;
+
+        SkillRangeVisual.ShowSector(center, forward, range, angle, DefaultRangeColor, SkillRangeFlashDuration);
+    }
+    private void ShowDebugLine(Vector3 origin, Vector3 forward, float length, float width)
+    {
+        if (pattern == null || !pattern.isShowSkillRange)
+            return;
+
+        SkillRangeVisual.ShowLine(origin, forward, length, width, DefaultRangeColor, SkillRangeFlashDuration);
+    }
 }

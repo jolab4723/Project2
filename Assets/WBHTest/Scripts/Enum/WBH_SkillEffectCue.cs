@@ -39,6 +39,14 @@ public enum WBH_PlayerEffectCue
     F_skill3_evo2_etc0 = 1320,  // 3번스킬 2변형
     F_skill3_evo3_etc0 = 1330,  // 3번스킬 3변형
     F_skill3_evo3_etc1 = 1331,  // 3번스킬 3변형, 공증버프 이펙트
+    F_skill4_evo0_etc0 = 1400,  // 4번스킬(궁극기) 기본
+    F_skill4_evo0_etc1 = 1401,  // 4번스킬(궁극기) 기본, 버프 이펙트
+    F_skill4_evo1_etc0 = 1410,  // 4번스킬(궁극기) 1변형
+    F_skill4_evo1_etc1 = 1411,  // 4번스킬(궁극기) 1변형, 버프 이펙트
+    F_skill4_evo2_etc0 = 1420,  // 4번스킬(궁극기) 2변형
+    F_skill4_evo2_etc1 = 1421,  // 4번스킬(궁극기) 2변형, 버프 이펙트
+    F_skill4_evo3_etc0 = 1430,  // 4번스킬(궁극기) 3변형
+    F_skill4_evo3_etc1 = 1431,  // 4번스킬(궁극기) 3변형, 버프 이펙트
 
     // --------------------------------------------------------------------------------------------- 거너
     G_normal0_evo0_etc0 = 2000, // 평타, 라이플
@@ -67,6 +75,11 @@ public enum WBH_PlayerEffectCue
     G_skill3_evo2_etc0 = 2320,  // 3번스킬 2변형
     G_skill3_evo2_etc1 = 2321,  // 3번스킬 2변형, 쉴드 이펙트
     G_skill3_evo3_etc0 = 2330,  // 3번스킬 3변형
+    G_skill4_evo0_etc0 = 2400,  // 4번스킬(궁극기)
+    G_skill4_evo1_etc0 = 2410,  // 4번스킬(궁극기) 1변형
+    G_skill4_evo2_etc0 = 2420,  // 4번스킬(궁극기) 2변형
+    G_skill4_evo3_etc0 = 2430,  // 4번스킬(궁극기) 3변형
+    G_skill4_evo3_etc8 = 2438,  // 4번스킬(궁극기) 3변형, 폭발 이펙트
 }
 
 public static class PlayerEffectCueUtility

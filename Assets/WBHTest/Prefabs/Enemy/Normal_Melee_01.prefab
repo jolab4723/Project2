@@ -1190,8 +1190,6 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 0}
   grenadePoint: {fileID: 0}
-  meleeEffectPoint: {fileID: 3207281568816389647}
-  normalMeleeEffect: {fileID: 11400000, guid: 08a9d8ae06c3471458c9581cc26eb5ef, type: 2}
   enemyAnimation: {fileID: 0}
 --- !u!114 &-5431423992665652879
 MonoBehaviour:
@@ -1286,6 +1284,7 @@ MonoBehaviour:
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
   markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &3732678896662894666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1663,13 +1662,13 @@ MonoBehaviour:
   sfxPlayer: {fileID: 0}
   effectBindings:
   - cue: 10000
-    data: {fileID: 11400000, guid: b9f9c67fe0bf61c4e918c8f3e0152629, type: 2}
+    data: {fileID: 11400000, guid: 44acf3923b177f144ac85f165c584ed5, type: 2}
     anchor: {fileID: 3207281568816389647}
     sounds:
-    - clip: {fileID: 8300000, guid: a37f44cbf8c2a7443a3c361efa2f233a, type: 3}
-      volume: 1
-      baseTime: 0
-      offset: 0
+    - clip: {fileID: 8300000, guid: 901973b38114ef143a95543da04572a0, type: 3}
+      volume: 0.15
+      baseTime: 0.2
+      offset: 0.05
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0

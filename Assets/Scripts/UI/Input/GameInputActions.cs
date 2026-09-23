@@ -183,6 +183,15 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""OpenBuff"",
+                    ""type"": ""Button"",
+                    ""id"": ""c6dc3732-b850-4b68-a93b-13e9a9d73693"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Pause"",
                     ""type"": ""Button"",
                     ""id"": ""47da3b1a-1713-4969-8c77-9d139ee2fb79"",
@@ -283,6 +292,17 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""d369d93a-80f5-4ae0-9cc1-7e7307ab9b12"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""OpenBuff"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""6523d238-b5b1-4101-93f9-e9d14150094e"",
                     ""path"": ""<Keyboard>/escape"",
                     ""interactions"": """",
@@ -331,6 +351,7 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
         m_Player_OpenInventory = m_Player.FindAction("OpenInventory", throwIfNotFound: true);
         m_Player_OpenStatus = m_Player.FindAction("OpenStatus", throwIfNotFound: true);
         m_Player_OpenQuest = m_Player.FindAction("OpenQuest", throwIfNotFound: true);
+        m_Player_OpenBuff = m_Player.FindAction("OpenBuff", throwIfNotFound: true);
         m_Player_Pause = m_Player.FindAction("Pause", throwIfNotFound: true);
     }
 
@@ -422,6 +443,7 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_OpenInventory;
     private readonly InputAction m_Player_OpenStatus;
     private readonly InputAction m_Player_OpenQuest;
+    private readonly InputAction m_Player_OpenBuff;
     private readonly InputAction m_Player_Pause;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
@@ -474,6 +496,10 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/OpenQuest".
         /// </summary>
         public InputAction @OpenQuest => m_Wrapper.m_Player_OpenQuest;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/OpenBuff".
+        /// </summary>
+        public InputAction @OpenBuff => m_Wrapper.m_Player_OpenBuff;
         /// <summary>
         /// Provides access to the underlying input action "Player/Pause".
         /// </summary>
@@ -534,6 +560,9 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
             @OpenQuest.started += instance.OnOpenQuest;
             @OpenQuest.performed += instance.OnOpenQuest;
             @OpenQuest.canceled += instance.OnOpenQuest;
+            @OpenBuff.started += instance.OnOpenBuff;
+            @OpenBuff.performed += instance.OnOpenBuff;
+            @OpenBuff.canceled += instance.OnOpenBuff;
             @Pause.started += instance.OnPause;
             @Pause.performed += instance.OnPause;
             @Pause.canceled += instance.OnPause;
@@ -578,6 +607,9 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
             @OpenQuest.started -= instance.OnOpenQuest;
             @OpenQuest.performed -= instance.OnOpenQuest;
             @OpenQuest.canceled -= instance.OnOpenQuest;
+            @OpenBuff.started -= instance.OnOpenBuff;
+            @OpenBuff.performed -= instance.OnOpenBuff;
+            @OpenBuff.canceled -= instance.OnOpenBuff;
             @Pause.started -= instance.OnPause;
             @Pause.performed -= instance.OnPause;
             @Pause.canceled -= instance.OnPause;
@@ -691,6 +723,13 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnOpenQuest(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "OpenBuff" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnOpenBuff(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Pause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>

@@ -84,8 +84,17 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     }
 
     // 도트데미지 (화상)
+    //
+    // 무적 중에는 도트도 들어가지 않는다. 일반 피해는 T_PlayerController.TakeDamage가 IsInvincible을
+    // 검사해서 막지만, 도트는 여기서 status.TakeDamage(float)로 직행해 그 검사를 통째로 우회했다.
+    // 그래서 사망 직전에 걸린 화상이 부활 무적(TryRevive의 10초) 동안에도 계속 체력을 깎았고,
+    // 최대 체력 20%로 부활하는 도중에 다시 죽을 수 있었다.
+    // 적 쪽(WBH_EnemyStatusEffectController.ApplyDotDamage)에는 원래 같은 성격의 가드가 있다.
     public override void ApplyDotDamage(float damage)
     {
+        if (controller != null && controller.IsInvincible)
+            return;
+
         status.TakeDamage(damage);
     }
 

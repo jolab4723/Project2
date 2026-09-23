@@ -9016,6 +9016,86 @@ MonoBehaviour:
     data: {fileID: 11400000, guid: 2c983f0ecd11fc6439812165bcb46b53, type: 2}
     anchor: {fileID: 5022215380906037386}
     sounds: []
+  - cue: 1400
+    data: {fileID: 11400000, guid: 282eab37f0cd8c44587ae6ed537daaf6, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds:
+    - clip: {fileID: 8300000, guid: 36ddab1df61f7094baffa4b9ff82a71a, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: b9daa5d171a31d34184e539f7636f8f9, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 947719fd38845824ba3638af9d8e4e54, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 1401
+    data: {fileID: 11400000, guid: c67aaa68ac826f042b5231c9df6aa113, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds: []
+  - cue: 1410
+    data: {fileID: 11400000, guid: 4d36fe10cd0624645a516d32a3fef040, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds:
+    - clip: {fileID: 8300000, guid: 36ddab1df61f7094baffa4b9ff82a71a, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: b9daa5d171a31d34184e539f7636f8f9, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 947719fd38845824ba3638af9d8e4e54, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 1411
+    data: {fileID: 11400000, guid: d0c455806d8ca2149b77773d876c8a68, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds: []
+  - cue: 1420
+    data: {fileID: 11400000, guid: 4a5cbc4a8bb160b4cb94489d44e31d83, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds:
+    - clip: {fileID: 8300000, guid: 36ddab1df61f7094baffa4b9ff82a71a, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: b9daa5d171a31d34184e539f7636f8f9, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 947719fd38845824ba3638af9d8e4e54, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 1421
+    data: {fileID: 11400000, guid: 8090b6a29f9e3bc4cb07d383323ad8fe, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds: []
+  - cue: 1430
+    data: {fileID: 11400000, guid: 2fcf5e3ee5b938544881a9607c81c227, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds:
+    - clip: {fileID: 8300000, guid: 36ddab1df61f7094baffa4b9ff82a71a, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: b9daa5d171a31d34184e539f7636f8f9, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 947719fd38845824ba3638af9d8e4e54, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 1430
+    data: {fileID: 11400000, guid: afda8eaa3dcd0bf418b456991c42290b, type: 2}
+    anchor: {fileID: 5022215380906037386}
+    sounds: []
   sfxPlayer: {fileID: 0}
   chargeEffect: {fileID: 11400000, guid: 81f264fb089d16c44b5fe589cdf509da, type: 2}
   chargeRangeEffect: {fileID: 11400000, guid: 89935942cf7a2f04c8c6557a390f5543, type: 2}
@@ -9231,6 +9311,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PotionUseManager
   basePotionCharges: 3
+  useCooldownSeconds: 1
   equipmentSystem: {fileID: 0}
 --- !u!114 &7151127679895332328
 MonoBehaviour:
@@ -9310,7 +9391,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 155810fe7a00d274ca9feb95edd6e915, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_PlayerDead
-  titleSceneName: TitleScene
   deathDelay: 1
   deathFadeOutDuration: 5
   deathScreenPrefab: {fileID: 8894719189734768699, guid: 8cc5162aab952c941bf361e0f7af3843, type: 3}

@@ -202,7 +202,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         dashStacks = Mathf.Min(dashStacks + 1, def.evoDashMaxStacks);
         if (dashStacks < def.evoDashMaxStacks)
-            dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화(쿨감) 반영)
+            dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화·쿨감 반영)
     }
 
     private void UpdateCharge()
@@ -254,7 +254,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsDashStackSlot(index) ? def.evoDashStackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>슬롯(0~2)이 지금 스택 모드(Dash 진화2)인지, 맞다면 현재/최대 스택 수를 낸다.
@@ -368,8 +368,10 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (status != null && !status.TryUseMana(def.GetManaCost(evolution)))
             return false;
 
-        ConsumeSkillUse(index, def);
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데, 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
         skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def);
         pendingAimDirection = aimDirection;
         transform.forward = aimDirection;
         combat.CancelChase();
@@ -446,17 +448,36 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     /// 범위 표시는 visibleSkillArea(디버그용 전역 토글)와 무관하게 항상 그린다 - 궁극기는 어디까지
     /// 맞는지가 플레이어에게 보여야 하는 연출의 일부라서 디버그 옵션에 묶어두지 않는다.
     /// </summary>
+    /// <summary>
+    /// 각성 - 자기 주변 360도를 즉시 때리고 자신에게 강화 버프를 건다.
+    ///
+    /// 진화는 버프를 갈아끼우는 것으로 갈린다(SkillDefinitionSO.GetAwakeningBuff).
+    ///   진화1(가속 각성) : 공격속도 + 일반공격 피해
+    ///   진화2(연산 각성) : 스킬 쿨타임 감소 + 스킬 피해
+    ///   진화3(과부하 각성) : 버프 지속을 줄이는 대신 시전 폭발의 계수와 반경을 키운다 - 유일하게
+    ///                       이 메서드에서 수치를 바꾼다.
+    ///
+    /// !! ApplyHit과 같은 기준으로 pendingEvo를 읽는다. GetEvolution(index)를 다시 부르면
+    ///    시전 도중 진화가 바뀐 경우 폭발과 이펙트가 서로 다른 진화를 가리킬 수 있다.
+    /// </summary>
     private void ExecuteAwakeningBurst(SkillDefinitionSO def, int index)
     {
+        bool isOverload = pendingEvo == SkillEvolutionId.Evolution3;
+
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        if (isOverload)
+            range *= def.evoOverloadRangeMultiplier;
+
+        float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
 
         SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
-            ApplyHit(target, def, def.damageMultiplier, index);
+            ApplyHit(target, def, damageMultiplier, index);
 
-        if (def.awakeningBuff != null && buffManager != null)
-            buffManager.ApplyBuff(def.awakeningBuff);
+        var buff = def.GetAwakeningBuff(pendingEvo);
+        if (buff != null && buffManager != null)
+            buffManager.ApplyBuff(buff);
     }
 
     // 스킬 종료 후 Idle 상태로 복귀.
@@ -502,20 +523,20 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f);
     }
 
-    // 스킬 애니메이션 실행을 위한 이벤트 요청.
+    // 스킬 애니메이션 실행을 위한 이벤트 요청. 
     private void RequestSkillAni(int index, bool isCharging, float targetDuration = 0f)
     {
-        OnSkillAniRequested?.Invoke(GetPresentationSkillNumber(index), isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
+        OnSkillAniRequested?.Invoke((index + 1), isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
     }
 
     /// <summary>각성 시전 타격은 자기 주변 전방위라 부채꼴 질의를 360도(=원형)로 쓴다.</summary>
     private const float AwakeningBurstAngle = 360f;
 
     /// <summary>궁극기 슬롯. 전용 애니메이션·이펙트가 준비되면 이 보정을 통째로 지운다.</summary>
-    private const int UltimateSlotIndex = 3;
+    //private const int UltimateSlotIndex = 3; // 0922 WBH : 정식 이관을 위해 필요없는 코드이므로 주석처리
 
     /// <summary>궁극기가 임시로 빌려 쓰는 스킬 번호(= 데이터를 복사해 온 1번 스킬).</summary>
-    private const int UltimateBorrowedSkillNumber = 1;
+    //private const int UltimateBorrowedSkillNumber = 1;
 
     /// <summary>
     /// 애니메이터와 이펙트 큐에 보낼 스킬 번호(0=없음, 1부터 스킬).
@@ -527,8 +548,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     ///
     /// 실제 스킬 로직은 계속 원래 슬롯 인덱스(pendingSkillIndex)로 돌아가므로 궁극기 데이터가 그대로 쓰인다.
     /// </summary>
-    private static int GetPresentationSkillNumber(int index) =>
-        index == UltimateSlotIndex ? UltimateBorrowedSkillNumber : index + 1;
+    //private static int GetPresentationSkillNumber(int index) =>
+    //    index == UltimateSlotIndex ? UltimateBorrowedSkillNumber : index + 1;
 
     // 초기화
     private void ClearPendingSkill()
@@ -560,7 +581,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         SkillEffectPart part = (SkillEffectPart)partValue;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(pendingSkillIndex), pendingEvo, part);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((pendingSkillIndex + 1 ), pendingEvo, part);
 
         Vector3 scaleMultiplier = GetPendingSkillEffectScale(partValue);
 
@@ -710,11 +731,11 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         {
             dashStacks--;
             if (dashStackRechargeTimer <= 0f)
-                dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds);
+                dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임/스택 충전 시간을 줄인다.</summary>
@@ -725,6 +746,34 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         return baseCooldown * (1f - def.enhanceCooldownReductionPercent / 100f);
     }
+
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// 강화 15% + 쿨감 25%면 0.85 × 0.75 = 0.6375배가 된다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프로 들어오는 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>
+    /// 플레이어 쿨감 스탯을 배율로 바꾼다. PlayerStat.cdr은 이미 0~70으로 클램프돼 있지만,
+    /// 외부에서 다른 경로로 들어와도 쿨타임이 0 이하가 되지 않도록 여기서도 한 번 더 막는다.
+    /// </summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값으로 맞춘다.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
 
     private void StartCharge(int index)
     {
@@ -1062,7 +1111,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((index + 1), pendingEvo, SkillEffectPart.Main);
 
         playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
 
@@ -1175,7 +1224,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (skills[pendingSkillIndex] == null || playerEffect == null)
             return;
 
-        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue(GetPresentationSkillNumber(pendingSkillIndex),
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((pendingSkillIndex + 1),
                                                                               pendingEvo,
                                                                               (SkillEffectPart)partValue);
 

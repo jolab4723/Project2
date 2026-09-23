@@ -31,9 +31,9 @@ public enum WBH_EnemyEffectCue
 
 
     // 보스
-    Boss_Act1_Attack0 = 55000, // 근접공격 1
-    Boss_Act1_Attack1 = 55001, // 근접공격 2. 1과 바로 이어서 실행
-    Boss_Act1_Shoot = 55002, // 원거리 공격. 탄환 5번 연사
+    Boss_Act1_Attack0 = 55000, // Craw_R 근접공격 1
+    Boss_Act1_Attack1 = 55001, // Claw_L 근접공격 2. 1과 바로 이어서 실행
+    Boss_Act1_Shoot = 55002, // Shoot 원거리 공격. 탄환 5번 연사
     Boss_Act1_Barrage = 55003, // 원거리 공격. 탄환 부채꼴 범위 일제사격
     Boss_Act1_Missile = 55004, // 원거리 공격. 미사일 3발 일제사격
     Boss_Act1_PhaseMissile = 55005, // 페이즈 전환 모션. 보스 주위 미사일 일제사격

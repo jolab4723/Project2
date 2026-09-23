@@ -176,7 +176,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         arcBusterStacks = Mathf.Min(arcBusterStacks + 1, def.maxStacks);
         if (arcBusterStacks < def.maxStacks)
-            arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+            arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
     }
 
     private void HandleSkillKeyPressed(int index) => TryUseSkill(index);
@@ -294,8 +294,10 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
         int arcBusterStacksBeforeConsume = arcBusterStacks;
 
-        ConsumeSkillUse(index, def);
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
         skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def);
         combat.CancelChase();
 
         PreparePendingSkill(index, evo, arcBusterStacksBeforeConsume, aimDir, cursorPos);
@@ -419,13 +421,84 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : transform.position + toCursor;
         center.y = transform.position.y;
 
+        // 진화3(산탄 폭격)은 "영역 전체를 때린다"는 기본 구조 자체가 달라서 별도 코루틴으로 뺀다.
+        if (pendingEvo == SkillEvolutionId.Evolution3)
+        {
+            yield return ExecuteBarrageBombing(def, index, center);
+            yield break;
+        }
+
+        // 진화1(레이저 폭격) : 1회만, 지연이 더 길다.
+        // 진화2(마커 폭격)   : 횟수를 늘리고 맞은 적에게 마커를 건다.
+        int waveCount = def.carpetWaveCount;
+        float damagePerWave = def.carpetDamagePerWave;
+        float impactDelay = def.carpetImpactDelay;
+        float waveInterval = def.carpetWaveInterval;
+
+        if (pendingEvo == SkillEvolutionId.Evolution1)
+        {
+            waveCount = 1;
+            damagePerWave = def.evoLaserStrikeDamage;
+            impactDelay = def.evoLaserStrikeDelay;
+        }
+        else if (pendingEvo == SkillEvolutionId.Evolution2)
+        {
+            waveCount = def.evoMarkerWaveCount;
+            damagePerWave = def.evoMarkerDamagePerWave;
+            waveInterval = def.evoMarkerWaveInterval;
+        }
+
         float areaRadius = def.carpetAreaRadius;
-        float totalDuration = def.carpetWaveCount * def.carpetWaveInterval;
+        float totalDuration = waveCount * waveInterval;
 
         SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
+                                    totalDuration + impactDelay + 0.3f);
+
+        float damageMultiplier = damagePerWave;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        // 진화2만 마커를 건다. 0이면 ApplyCarpetWaveDamage가 상태이상을 붙이지 않는다.
+        float markDuration = pendingEvo == SkillEvolutionId.Evolution2 ? def.evoMarkerDuration : 0f;
+
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue explosionCue =
+            PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
+
+        for (int wave = 0; wave < waveCount; wave++)
+        {
+            SpawnFallingBombs(def, center, areaRadius, explosionCue);
+
+            // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
+            yield return new WaitForSeconds(impactDelay);
+            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData, markDuration);
+
+            float rest = waveInterval - impactDelay;
+            if (rest > 0f)
+                yield return new WaitForSeconds(rest);
+        }
+    }
+
+    /// <summary>
+    /// 진화3 - 산탄 폭격. 영역 전체를 때리는 기본 융단폭격과 달리, 폭격 범위 안의 <b>랜덤한 지점</b>에
+    /// 작은 반경의 포탄을 연속으로 떨어뜨린다. 한 발의 피해는 크지만 범위가 좁아 명중이 운에 달린다.
+    ///
+    /// !! 한 대상이 맞을 확률은 (포탄 반경 / 산포 반경)^2 정도다. 기본값(반경 2 / 산포 8)이면 한 발당
+    ///    약 6%고 9발이면 기대 명중이 1발도 되지 않는다. 좁은 곳에 몰린 적이나 큰 적에게 쓰는 용도이고,
+    ///    체감이 너무 약하면 evoBarrageScatterRadius를 줄여 포탄을 모으는 쪽으로 조정한다.
+    /// </summary>
+    private IEnumerator ExecuteBarrageBombing(SkillDefinitionSO def, int index, Vector3 center)
+    {
+        float scatterRadius = def.evoBarrageScatterRadius;
+        // 포탄 반경만 스킬 범위 증가의 영향을 받는다. 산포 반경까지 넓히면 오히려 명중률이 떨어져서
+        // "범위 증가"가 하향으로 작동한다.
+        float shellRadius = ApplySkillRangeBonus(def, index, def.evoBarrageShellRadius);
+        float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
+
+        SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
                                     totalDuration + def.carpetImpactDelay + 0.3f);
 
-        float damageMultiplier = def.carpetDamagePerWave;
+        float damageMultiplier = def.evoBarrageDamagePerShell;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
@@ -433,15 +506,17 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         WBH_PlayerEffectCue explosionCue =
             PlayerEffectCueUtility.CreateGunnerSkillCue(GetPresentationSkillNumber(index), pendingEvo, SkillEffectPart.ProjectileExplosion1);
 
-        for (int wave = 0; wave < def.carpetWaveCount; wave++)
+        for (int shell = 0; shell < def.evoBarrageShellCount; shell++)
         {
-            SpawnFallingBombs(def, center, areaRadius, explosionCue);
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * scatterRadius;
+            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
 
-            // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
+            SpawnFallingBombAt(def, impactPos, explosionCue);
+
             yield return new WaitForSeconds(def.carpetImpactDelay);
-            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData);
+            ApplyCarpetWaveDamage(def, index, impactPos, shellRadius, damageMultiplier, effectData, 0f);
 
-            float rest = def.carpetWaveInterval - def.carpetImpactDelay;
+            float rest = def.evoBarrageInterval - def.carpetImpactDelay;
             if (rest > 0f)
                 yield return new WaitForSeconds(rest);
         }
@@ -456,31 +531,43 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         for (int i = 0; i < def.carpetVisualBombsPerWave; i++)
         {
             Vector2 offset = UnityEngine.Random.insideUnitCircle * areaRadius;
-            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
-            Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
-
-            GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
-            GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
-            if (bomb == null)
-            {
-                Destroy(bombGO);
-                return;
-            }
-
-            // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
-            float fallSpeed = def.carpetImpactDelay > 0f
-                ? def.carpetDropHeight / def.carpetImpactDelay
-                : def.bombThrowSpeed;
-
-            bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
-            bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
-            SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+            SpawnFallingBombAt(def, center + new Vector3(offset.x, 0f, offset.y), explosionCue);
         }
     }
 
+    /// <summary>연출용 폭탄 한 발을 지정한 착탄 지점에 떨어뜨린다(진화3처럼 착탄점이 정해진 경우).</summary>
+    private void SpawnFallingBombAt(SkillDefinitionSO def, Vector3 impactPos, WBH_PlayerEffectCue explosionCue)
+    {
+        if (def.bombPrefab == null)
+            return;
+
+        Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+
+        GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
+        GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
+        if (bomb == null)
+        {
+            Destroy(bombGO);
+            return;
+        }
+
+        // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
+        float fallSpeed = def.carpetImpactDelay > 0f
+            ? def.carpetDropHeight / def.carpetImpactDelay
+            : def.bombThrowSpeed;
+
+        bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+        bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+    }
+
     /// <summary>폭격 한 번 분량의 피해를 영역 안 모든 적에게 적용한다.</summary>
+    /// <summary>
+    /// 지정한 지점 주변 범위의 적을 때린다. markDuration이 0보다 크면 맞은 적에게 Marked를 건다
+    /// (진화2 - 마커 폭격). 마커 자체는 글리터 폭탄(폭탄 투척 진화3)이 쓰는 것과 같은 상태이상이다.
+    /// </summary>
     private void ApplyCarpetWaveDamage(SkillDefinitionSO def, int index, Vector3 center, float areaRadius,
-                                       float damageMultiplier, WBH_EffectData effectData)
+                                       float damageMultiplier, WBH_EffectData effectData, float markDuration)
     {
         Collider[] targets = Physics.OverlapSphere(center, areaRadius, enemyLayer);
         foreach (Collider target in targets)
@@ -496,6 +583,20 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                                                                    effectData: effectData,
                                                                    hitPosition: hitPosition);
             WBH_CombatManager.ProcessDamage(request);
+
+            if (markDuration > 0f && !combatTarget.Status.IsDead)
+            {
+                // 마커는 갱신이 아니라 누적이다. WBH_StatusEffectBase.Refresh가 남은 시간을 새 값으로
+                // 덮어쓰므로, 남은 시간을 미리 읽어 더한 총량을 넘긴다(상태이상 시스템은 손대지 않는다).
+                var effectController = target.GetComponentInParent<WBH_StatusEffectController>();
+                float remaining = effectController != null
+                    ? effectController.GetRemainingTime(WBH_StatusEffectType.Marked)
+                    : 0f;
+
+                combatTarget.AddStatusEffect(new WBH_StatusEffectData(WBH_StatusEffectType.Marked,
+                                                                      duration: remaining + markDuration,
+                                                                      value: def.evoMarkerDamageMultiplier));
+            }
         }
     }
 
@@ -714,7 +815,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsArcBusterSlot(index) ? def.stackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>아크 버스터(ArcProjectile)면 현재/최대 스택을 낸다. 그 외 스킬은 스택 개념이 없어서 false.</summary>
@@ -755,14 +856,39 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             else
                 arcBusterStacks--;
 
-            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화(쿨타임감소)와는 별개 개념이라 안 줄임
+            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화·쿨감과는 별개 개념이라 안 줄임
             if (arcBusterStackTimer <= 0f)
-                arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+                arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
+
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// FighterSkillController와 같은 공식이다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프의 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>쿨감 스탯을 배율로. PlayerStat에서 이미 0~70 클램프지만 여기서도 한 번 더 막는다.</summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임을 줄인다. FighterSkillController와 동일한 공식.</summary>
     private float ApplyCooldownEnhancement(SkillDefinitionSO def, int index, float baseCooldown)

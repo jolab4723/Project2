@@ -17,6 +17,8 @@ public class KY_StatData
     public KY_StatTypeData mpRegen;
     public KY_StatTypeData penetration;
     public KY_StatTypeData skillRange;
+    public KY_StatTypeData normalDamage;
+    public KY_StatTypeData skillDamage;
 
     public KY_StatTypeData fireDamage;
     public KY_StatTypeData iceDamage;

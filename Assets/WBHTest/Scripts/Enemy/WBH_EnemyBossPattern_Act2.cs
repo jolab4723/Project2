@@ -58,7 +58,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 1,2 페이즈 공통 기본 패턴 관련 변수
     private const float ShortDashRange = 5f;
     private const float ShortDashDuration = 0.45f;
-    private const float ShortDashReadyDuration = 0.25f;
+    private const float ShortDashReadyDuration = 1f;
 
     private const float ShortSectorRange = 4f;
     private const float ShortSectorAngle = 150f;
@@ -67,7 +67,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float WideSectorRange = 5f;
     private const float WideSectorAngle = 180f;
     private const float WideSectorDamageMul = 1f;
-    private const float SectorHitDelay = 0.35f;
+    private const float SectorHitDelay = 1f;
 
     // 페이즈 전환 패턴
     private const int TransitionRotationCount = 3;
@@ -85,6 +85,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float FlameAngle = 60f;
     private const float FlameDuration = 4f;
     private const float FlameDamageInterval = 0.5f;
+    private const float FlameReadyDuration = 1.8f;
     private bool isBoosted;
 
     private const float GrabRoarDuration = 1.8f;
@@ -337,7 +338,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 started = owner.Combat.TrySectorAttack(ShortSectorRange, ShortSectorAngle, ShortSectorDamageMul, hitDelay: SectorHitDelay);
                 if (started)
                 {
-                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, ShortSectorRange, ShortSectorAngle, BasicRangeColor, SectorHitDelay);
+                    owner.IndicatorSpawner?.ShowCone(owner.transform.position, owner.transform.forward, ShortSectorRange, ShortSectorAngle, SectorHitDelay, true);
                     owner.enemyAnimation.PlaySkill(ShortSectorSkillId);
                 }
                 break;
@@ -345,7 +346,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 started = owner.Combat.TrySectorAttack(WideSectorRange, WideSectorAngle, WideSectorDamageMul, hitDelay: SectorHitDelay);
                 if (started)
                 {
-                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, WideSectorRange, WideSectorAngle, BasicRangeColor, SectorHitDelay);
+                    owner.IndicatorSpawner?.ShowCone(owner.transform.position, owner.transform.forward, WideSectorRange, WideSectorAngle, SectorHitDelay, true);
                     owner.enemyAnimation.PlaySkill(WideSectorSkillId);
                 }
                 break;
@@ -452,12 +453,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 if (!RotateTowardsTarget(deltaTime))
                     return;
 
-                started = owner.Combat.TryFlameThrow(FlameRange, FlameAngle, FlameDuration, FlameDamageInterval);
-
-                if(started)
-                {
-                    SkillRangeVisual.ShowSector(owner.transform.position, owner.transform.forward, FlameRange, FlameAngle, BasicRangeColor, FlameDuration);
-                }
+                started = owner.Combat.TryFlameThrow(FlameRange, FlameAngle, FlameDuration, FlameDamageInterval, readyDuration: FlameReadyDuration, indicatorSpawner : owner.IndicatorSpawner);
 
                 skillId = FlameSkillId;
                 break;
@@ -475,7 +471,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
                 Vector3 pulseCenter = owner.transform.position;
 
                 started = owner.Combat.TryAreaDamageAndStatus(pulseCenter, SlowPulseRange, SlowPulseDamageMul, slow, startDelay: SlowPulseStartDelay, hitDelay: SlowPulseHitDelay, SlowPulseRecoveryDuration,
-                                                              onStarted: () => { SkillRangeVisual.ShowSector(pulseCenter, owner.transform.forward, SlowPulseRange, 360f, DebuffRangeColor, SlowPulseHitDelay); });
+                                                              onStarted: () => { owner.IndicatorSpawner?.ShowCircle(pulseCenter, SlowPulseRange, SlowPulseHitDelay, true); });
 
                 skillId = SlowPulseSkillId;
                 break;

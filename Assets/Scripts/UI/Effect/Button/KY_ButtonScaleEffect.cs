@@ -24,6 +24,7 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
 
     private Vector3 originalScale;  // 버튼의 원래 크기를 저장할 변수.
     private bool isHovering = false;
+    private Tween scaleTween;
 
     /// <summary>버튼의 원래 크기를 저장하고, button이 비어있으면 같은 GameObject에서 찾는다.</summary>
     void Awake()
@@ -40,8 +41,8 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
         if (button != null && !button.interactable) return;
 
         isHovering = true;
-        transform.DOKill();
-        transform.DOScale(originalScale * hoverScale, hoverDuration)
+        scaleTween?.Kill();
+        scaleTween = transform.DOScale(originalScale * hoverScale, hoverDuration)
             .SetEase(ease)
             .SetUpdate(true);
     }
@@ -52,8 +53,8 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
         if (!isHovering) return;
 
         isHovering = false;
-        transform.DOKill();
-        transform.DOScale(originalScale, hoverDuration)
+        scaleTween?.Kill();
+        scaleTween = transform.DOScale(originalScale, hoverDuration)
             .SetEase(ease)
             .SetUpdate(true);
     }
@@ -63,18 +64,26 @@ public class KY_ButtonScaleEffect : MonoBehaviour, IPointerEnterHandler, IPointe
     {
         if (button != null && !button.interactable) return;
 
-        transform.DOKill();
+        scaleTween?.Kill();
 
         Vector3 restoreTarget = isHovering ? originalScale * hoverScale : originalScale;
 
-        transform.DOScale(originalScale * clickScale, clickDuration)
+        scaleTween = transform.DOScale(originalScale * clickScale, clickDuration)
             .SetEase(ease)
             .SetUpdate(true)
             .OnComplete(() =>
             {
-                transform.DOScale(restoreTarget, clickDuration)
+                scaleTween = transform.DOScale(restoreTarget, clickDuration)
                     .SetEase(ease)
                     .SetUpdate(true);
             });
+    }
+
+    private void OnDisable()
+    {
+        scaleTween?.Kill();
+        scaleTween = null;
+        transform.localScale = originalScale;
+        isHovering = false;
     }
 }

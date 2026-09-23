@@ -30,12 +30,14 @@ public static class KY_GameEvents
     public static event Action OnSkillRequested;
     public static event Action OnStatusRequested;
     public static event Action OnQuestRequested;
+    public static event Action OnBuffRequested;
 
     public static void EscPressed() => OnEscPressed?.Invoke();
     public static void InventoryRequested() => OnInventoryRequested?.Invoke();
     public static void SkillRequested() => OnSkillRequested?.Invoke();
     public static void StatusRequested() => OnStatusRequested?.Invoke();
     public static void QuestRequested() => OnQuestRequested?.Invoke();
+    public static void BuffRequested() => OnBuffRequested?.Invoke();
 
     // ===== 상태창 데이터 제공 =====
     public static event Action<KY_StatData> OnStatusDataProvided;

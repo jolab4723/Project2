@@ -68,6 +68,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     private WBH_IEnemyPattern currentPattern;
 
     public float Distance { get; private set; } = 0;
+    public bool isShowSkillRange;
     private float basicAttackMult = 1f;
     private float basicMeleeAttackAngle = 120; // % int 로 변경하면 최적화?
     protected float dashHitRadius = 3f;

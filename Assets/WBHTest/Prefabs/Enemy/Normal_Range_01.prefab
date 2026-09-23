@@ -471,8 +471,6 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 7296589998092933746}
   grenadePoint: {fileID: 0}
-  meleeEffectPoint: {fileID: 0}
-  normalMeleeEffect: {fileID: 0}
   enemyAnimation: {fileID: 0}
 --- !u!114 &3940889281802786302
 MonoBehaviour:
@@ -495,6 +493,7 @@ MonoBehaviour:
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
   markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &5791879278000763495
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -937,7 +936,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
   sfxPlayer: {fileID: 0}
-  effectBindings: []
+  effectBindings:
+  - cue: 11000
+    data: {fileID: 11400000, guid: 921e8e4b8a3f4d845ac56016342f1ba3, type: 2}
+    anchor: {fileID: 4678223037892282004}
+    sounds:
+    - clip: {fileID: 8300000, guid: 09a5a83bc48d6984a965ea2bc02446ab, type: 3}
+      volume: 0.15
+      baseTime: 0.2
+      offset: -0.2
 --- !u!1 &7418149949931920296
 GameObject:
   m_ObjectHideFlags: 0
