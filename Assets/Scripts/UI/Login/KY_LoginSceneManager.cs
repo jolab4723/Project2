@@ -20,6 +20,7 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
     private Tween transitionTween;
     private MonoBehaviour nextPopup;
     private KY_FadeEffect nextFade;
+    private string nextEmail;
     private bool focusLoginAfterTransition;
     private bool isInitialized;
     private bool isTransitioning;
@@ -50,8 +51,9 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
     {
         SetPopupState(loginPopup, true);
         SetPopupState(createAccountPopup, false);
+        loginPopup?.PrepareForShow(string.Empty);
+        createAccountPopup?.ClearSensitiveInputs();
         ClearLogText();
-        loginPopup?.FocusAccountIdInput();
         isInitialized = true;
 
         YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.LobbyBgm);
@@ -60,32 +62,40 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
     /// <summary>계정 생성 팝업에서 로그인 팝업으로 전환한다.</summary>
     public void ShowLoginPopup()
     {
+        string email = createAccountPopup != null ? createAccountPopup.GetEnteredEmail() : string.Empty;
+        createAccountPopup?.ClearSensitiveInputs();
+
         if (!isInitialized)
         {
             SetPopupState(loginPopup, true);
             SetPopupState(createAccountPopup, false);
+            loginPopup?.PrepareForShow(email);
             loginPopup?.FocusAccountIdInput();
             return;
         }
 
-        BeginTransition(createAccountPopup, createAccountContentFade, loginPopup, loginContentFade, true);
+        BeginTransition(createAccountPopup, createAccountContentFade, loginPopup, loginContentFade, true, email);
     }
 
     /// <summary>로그인 팝업에서 계정 생성 팝업으로 전환한다.</summary>
     public void ShowCreateAccountPopup()
     {
+        string email = loginPopup != null ? loginPopup.GetEnteredEmail() : string.Empty;
+        loginPopup?.ClearSensitiveInputs();
+
         if (!isInitialized)
         {
             SetPopupState(loginPopup, false);
             SetPopupState(createAccountPopup, true);
+            createAccountPopup?.PrepareForShow(email);
             return;
         }
 
-        BeginTransition(loginPopup, loginContentFade, createAccountPopup, createAccountContentFade, false);
+        BeginTransition(loginPopup, loginContentFade, createAccountPopup, createAccountContentFade, false, email);
     }
 
     /// <summary>현재 내용을 페이드아웃한 뒤 다음 팝업 내용을 페이드인한다.</summary>
-    private void BeginTransition(MonoBehaviour currentPopup, KY_FadeEffect currentFade, MonoBehaviour targetPopup, KY_FadeEffect targetFade, bool focusLogin)
+    private void BeginTransition(MonoBehaviour currentPopup, KY_FadeEffect currentFade, MonoBehaviour targetPopup, KY_FadeEffect targetFade, bool focusLogin, string email)
     {
         if (isTransitioning)
             return;
@@ -94,6 +104,7 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
         ClearLogText();
         nextPopup = targetPopup;
         nextFade = targetFade;
+        nextEmail = email;
         focusLoginAfterTransition = focusLogin;
 
         if (currentFade == null)
@@ -111,6 +122,11 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
     {
         SetPopupState(loginPopup, nextPopup == loginPopup);
         SetPopupState(createAccountPopup, nextPopup == createAccountPopup);
+
+        if (nextPopup == loginPopup)
+            loginPopup?.PrepareForShow(nextEmail);
+        else if (nextPopup == createAccountPopup)
+            createAccountPopup?.PrepareForShow(nextEmail);
 
         if (nextFade == null)
         {
@@ -130,6 +146,7 @@ public sealed class KY_LoginSceneManager : MonoBehaviour
         isTransitioning = false;
         nextPopup = null;
         nextFade = null;
+        nextEmail = null;
     }
 
     /// <summary>팝업 전환 시 이전 안내 문구를 지운다.</summary>
