@@ -271,6 +271,8 @@ public class SkillDefinitionSO : ScriptableObject
     public float evoMarkerDamageMultiplier = 1.25f;
 
     [Header("CarpetBombing 진화3 전용 (산탄 폭격 - 랜덤 위치 소범위 연속 포격)")]
+    [Tooltip("산탄 폭격 전용 낙하 투사체.")]
+    public GameObject evoBarrageBombPrefab;
     [Tooltip("포탄 발수.")]
     public int evoBarrageShellCount = 9;
     [Tooltip("포탄과 포탄 사이 간격(초).")]
