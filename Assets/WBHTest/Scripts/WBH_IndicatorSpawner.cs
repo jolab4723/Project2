@@ -10,6 +10,12 @@ public class WBH_IndicatorSpawner : MonoBehaviour
 
     private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyStatus ownerStatus;
+    /// <summary>SW 수정: 표시 자산이 없는 서버에서도 범위 예고 요청을 전달합니다.</summary>
+    public event System.Action<Vector3, float, float, bool> CircleRequested;
+    /// <summary>SW 수정: 사각 예고의 원본 방향·크기·시간을 원격 표시에 전달합니다.</summary>
+    public event System.Action<Vector3, Vector3, float, float, float, bool> RectRequested;
+    /// <summary>SW 수정: 기존 부채꼴 예고의 위치와 규격을 원격 표시에도 전달합니다.</summary>
+    public event System.Action<Vector3, Vector3, float, float, float, bool> ConeRequested;
 
     private void Awake()
     {
@@ -23,6 +29,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
 
     public WBH_Effect ShowCircle(Vector3 pos, float radius, float duration, bool growOverTime)
     {
+        CircleRequested?.Invoke(pos, radius, duration, growOverTime);
         WBH_Effect effect = Spawn(circleIndicator, pos, Quaternion.identity, out WBH_IndicatorView view);
 
         if (effect == null)
@@ -47,6 +54,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
             return null;
 
         flatForward.Normalize();
+        RectRequested?.Invoke(origin, flatForward, width, length, duration, growOverTime);
 
         Vector3 center = origin + flatForward * (length * 0.5f);
 
@@ -66,6 +74,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
 
     public WBH_Effect ShowCone(Vector3 origin, Vector3 forward, float radius, float angle, float duration, bool growOverTime)
     {
+        ConeRequested?.Invoke(origin, forward, radius, angle, duration, growOverTime);
         Vector3 direction = Vector3.ProjectOnPlane(forward, Vector3.up);
 
         if(direction.sqrMagnitude < 0.0001f)

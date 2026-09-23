@@ -42,7 +42,7 @@ public class WBH_CombatManager
         if (request.Attacker is T_PlayerController player && player.TryGetComponent(out PlayerContext context))
         {
             if (context.CombatAuthority != null)
-                WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, request, out _);
+                WBH_CombatResolver.TryProcessPlayerDamage(context, request, out _);
             else
                 PlayerDamageResolver.TryProcessPlayerDamage(context, request, out _);
             return;
@@ -56,7 +56,7 @@ public class WBH_CombatManager
 
         bool isHandledByMirrorAuthority = false;
         if (request.Target is Component comp &&
-            comp.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>() is NetworkEnemyAuthority_MirrorTest authority)
+            comp.GetComponentInParent<NetworkEnemyAuthority>() is NetworkEnemyAuthority authority)
         {
             isHandledByMirrorAuthority = authority.IsServerDamageHandlingActive;
         }

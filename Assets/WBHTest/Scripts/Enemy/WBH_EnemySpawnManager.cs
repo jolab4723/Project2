@@ -46,6 +46,9 @@ public class WBH_EnemySpawnManager : MonoBehaviour
     public int CurrentWaveIndex => currentWave;
     public bool HasUsableWaveSet => activeWaves != null && activeWaves.Length > 0;
     public int WaveCount => activeWaves?.Length ?? 0;
+    /// <summary>SW 수정: 같은 씬에서 확정한 웨이브를 서버 스포너에도 읽기 전용으로 제공합니다.</summary>
+    public WBH_WaveData GetConfiguredWave(int index) =>
+        activeWaves != null && index >= 0 && index < activeWaves.Length ? activeWaves[index] : null;
     public bool HasNextWave => currentWave + 1 < WaveCount;
     public bool AllwavesCompleted => HasUsableWaveSet && currentWave == WaveCount - 1 && !waveInProgress && !isSpawningWave && pendingSpawns.Count == 0 && aliveEnemyCount == 0;
 

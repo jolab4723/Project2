@@ -272,7 +272,7 @@ public class WBH_Projectile : MonoBehaviour
             return;
         }
 
-        WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(other);
+        WBH_ICombat combatTarget = PlayerCombatAuthority.FindCombatTarget(other);
         if (combatTarget != null)
         {
             Vector3 hitPosition = other.ClosestPoint(transform.position);
@@ -318,7 +318,7 @@ public class WBH_Projectile : MonoBehaviour
 
             foreach(Collider hit in hits)
             {
-                WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
+                WBH_ICombat combatTarget = PlayerCombatAuthority.FindCombatTarget(hit);
                 if (combatTarget == null)
                     continue;
 

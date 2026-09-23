@@ -89,7 +89,7 @@ public sealed class ChatPanel : MonoBehaviour
 
     private void TryBindSession()
     {
-        ChatSession candidate = (NetworkManager.singleton as MirrorTestNetworkManager)?.Chat;
+        ChatSession candidate = (NetworkManager.singleton as MirrorNetworkManager)?.Chat;
         candidate ??= InventoryController.Instance?.SinglePlayerMessages;
         if (ReferenceEquals(candidate, session)) return;
         if (session != null) { session.Changed -= Refresh; session.SetInputFocused(false); }
@@ -249,7 +249,7 @@ public sealed class ChatPanel : MonoBehaviour
 
     private void RefreshAppearance()
     {
-        bool showInput = NetworkManager.singleton is MirrorTestNetworkManager;
+        bool showInput = NetworkManager.singleton is MirrorNetworkManager;
         input.gameObject.SetActive(showInput);
         hint.gameObject.SetActive(showInput);
         if (title != null) title.SetActive(showInput);
@@ -267,7 +267,7 @@ public sealed class ChatPanel : MonoBehaviour
         input.interactable = session?.IsConnected == true;
         input.targetGraphic.raycastTarget = input.interactable;
         hint.text = session?.IsConnected != true ?
-            (NetworkManager.singleton is MirrorTestNetworkManager ? "접속 후 대화할 수 있습니다" : string.Empty) :
+            (NetworkManager.singleton is MirrorNetworkManager ? "접속 후 대화할 수 있습니다" : string.Empty) :
             session.IsSending ? "전송 중…" : editing ? "Enter 전송 · Esc 취소" : "Enter 키로 대화";
         unreadButton.gameObject.SetActive(unread > 0 && editing);
     }

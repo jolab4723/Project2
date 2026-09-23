@@ -34,7 +34,25 @@ public class WBH_EnemyCombat : MonoBehaviour
     private readonly HashSet<WBH_ICombat> areaHitTargets = new(); // 범위 피해 시, 플레이어가 여러 컬라이더 가져도 데미지 1번만
     private readonly HashSet<T_PlayerController> grabbedPlayers = new();
 
-    public bool IsActionInProgress { get; private set; }
+    private bool actionInProgress;
+    public bool IsActionInProgress { get => actionInProgress || externalActionInProgress?.Invoke() == true; private set => actionInProgress = value; }
+    private System.Func<bool> externalAttack;
+    private System.Func<bool> externalActionInProgress;
+    private System.Action<Vector3, float> externalProjectile;
+    private System.Action<int> externalSkill;
+    public System.Func<T_PlayerController, bool> ExternalBeginGrab { get; set; }
+    public System.Action<T_PlayerController, Vector3> ExternalHoldGrab { get; set; }
+    public System.Action<T_PlayerController, Vector3> ExternalEndGrab { get; set; }
+
+    /// <summary>SW 수정: 패턴과 돌진 판정은 재사용하고 공격·투사체·애니메이션의 권한 경계만 연결합니다.</summary>
+    public void BindExternalActions(System.Func<bool> attack, System.Func<bool> actionInProgress,
+        System.Action<Vector3, float> projectile, System.Action<int> skill)
+    {
+        externalAttack = attack;
+        externalActionInProgress = actionInProgress;
+        externalProjectile = projectile;
+        externalSkill = skill;
+    }
 
 
     private void Awake()
@@ -85,6 +103,8 @@ public class WBH_EnemyCombat : MonoBehaviour
         // 현재 다른 행동 중이 아니거나 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
         if (IsActionInProgress || !CanAttack() || !movement.CanControl)
             return false;
+
+        if (externalAttack != null) return externalAttack();
 
         BeginAction();
         ResetAttackCoolTime();
@@ -159,7 +179,8 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitForSeconds(readyDuration);
 
-        enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
+        if (externalSkill != null) externalSkill(1);
+        else enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
 
         ShowDebugLine(transform.position, transform.forward, distance, indicatorWidth);
 
@@ -236,7 +257,7 @@ public class WBH_EnemyCombat : MonoBehaviour
             if (player == null || grabbedPlayers.Contains(player))
                 continue;
 
-            if (!player.TryBeginGrab())
+            if (!(ExternalBeginGrab != null ? ExternalBeginGrab(player) : player.TryBeginGrab()))
                 continue;
 
             grabbedPlayers.Add(player);
@@ -354,7 +375,8 @@ public class WBH_EnemyCombat : MonoBehaviour
             if (player == null || !player.gameObject.activeInHierarchy)
                 continue;
 
-            player.SetGrabPosition(holdPos);
+            if (ExternalHoldGrab != null) ExternalHoldGrab(player, holdPos);
+            else player.SetGrabPosition(holdPos);
         }
     }
 
@@ -387,7 +409,8 @@ public class WBH_EnemyCombat : MonoBehaviour
             Vector3 dir = Quaternion.Euler(0f, angle, 0f) * transform.forward;
             Vector3 releasPos = transform.position + dir * grabReleaseRadius;
 
-            player.EndGrab(releasPos);
+            if (ExternalEndGrab != null) ExternalEndGrab(player, releasPos);
+            else player.EndGrab(releasPos);
             index++;
         }
         grabbedPlayers.Clear();
@@ -402,7 +425,8 @@ public class WBH_EnemyCombat : MonoBehaviour
         BeginAction();
         FaceTarget(pattern.Target);
 
-        enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
+        if (externalSkill != null) externalSkill(2);
+        else enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
         StartCoroutine(CoShootBurst(count, soundCue));
         return true;
     }
@@ -425,6 +449,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     private void FireProjectile()
     {
         Vector3 dir = GetFlatFireDirection();
+        if (externalProjectile != null) { externalProjectile(dir, 12f); return; }
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1);
 
@@ -637,7 +662,8 @@ public class WBH_EnemyCombat : MonoBehaviour
             Vector3 dir = (pattern.Target.position + Vector3.up - pattern.FirePoint.position).normalized;
             WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-            projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, maxDistance, pattern.PlayerLayer);
+            if (externalProjectile != null) externalProjectile(dir, maxDistance);
+            else projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, maxDistance, pattern.PlayerLayer);
         }
         yield return new WaitForSeconds(0.25f);
         EndAction();
@@ -745,7 +771,8 @@ public class WBH_EnemyCombat : MonoBehaviour
             {
                 WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-                projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, transform.forward, request, status.ProjectileSpeed, bulletRange, pattern.PlayerLayer);
+                if (externalProjectile != null) externalProjectile(transform.forward, bulletRange);
+                else projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, transform.forward, request, status.ProjectileSpeed, bulletRange, pattern.PlayerLayer);
 
                 firedCount++;
             }
@@ -766,7 +793,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_Effect warning = indicatorSpawner.ShowCone(transform.position, transform.forward, range, angle, readyDuration, growOverTime: true);
 
-        if(warning == null || !warning.IsPlaying)
+        if (externalProjectile == null && (warning == null || !warning.IsPlaying))
         {
             EndAction();
             return false;

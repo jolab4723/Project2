@@ -137,16 +137,29 @@ public class WBH_EnemyPattern : MonoBehaviour
         if (!movement.CanControl)
             return;
 
+        TickPattern(Time.deltaTime);
+    }
+
+    /// <summary>SW 수정: 외부 권한 소유자가 지정한 대상만 사용하며 로컬 플레이어 검색을 실행하지 않습니다.</summary>
+    public void TickWithTarget(Transform authoritativeTarget, float deltaTime)
+    {
+        SetTarget(authoritativeTarget);
+        if (status == null || controller == null || status.IsDead || target == null || !movement.CanControl) return;
+        TickPattern(deltaTime);
+    }
+
+    private void TickPattern(float deltaTime)
+    {
         Distance = Vector3.Distance(transform.position, target.position);
 
         if(currentPattern != null)
         {
-            currentPattern?.Tick(Time.deltaTime);
+            currentPattern.Tick(deltaTime);
         }
         else
         {
             UpdateMove(Distance);
-            UpdateFacing(Distance, Time.deltaTime);
+            UpdateFacing(Distance, deltaTime);
             UpdateAttack(Distance);
         }
     }
@@ -333,6 +346,21 @@ public class WBH_EnemyPattern : MonoBehaviour
         waitingForTarget = false;
     }
 
+    private System.Func<System.Collections.Generic.IEnumerable<Transform>> externalTargets;
+
+    /// <summary>SW 수정: 서버가 확정한 생존 참가자 목록을 기존 보스 대상 선택 규칙에 공급합니다.</summary>
+    public void BindExternalTargets(System.Func<System.Collections.Generic.IEnumerable<Transform>> targets)
+        => externalTargets = targets;
+
+    public System.Collections.Generic.IEnumerable<Transform> GetActiveTargets()
+    {
+        if (externalTargets != null) return externalTargets();
+        var result = new System.Collections.Generic.List<Transform>();
+        foreach (var player in FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            if (player.isActiveAndEnabled) result.Add(player.transform);
+        return result;
+    }
+
     // 타겟 유효성 검사
     private bool IsTargetValid()
     {
@@ -341,6 +369,11 @@ public class WBH_EnemyPattern : MonoBehaviour
         if(!target.gameObject.activeInHierarchy)
             return false;
 
+        if (externalTargets != null)
+        {
+            foreach (var candidate in externalTargets()) if (candidate == target) return true;
+            return false;
+        }
         return target.TryGetComponent<T_PlayerController>(out T_PlayerController player) && player.isActiveAndEnabled;
     }
 
@@ -352,14 +385,14 @@ public class WBH_EnemyPattern : MonoBehaviour
             waitingForTarget = false;
             return true;
         }
-        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var players = GetActiveTargets();
 
         Transform closetPlayer = null;
         float closestSqrDistance = float.MaxValue;
 
-        foreach(T_PlayerController player in players)
+        foreach(Transform player in players)
         {
-            if (!player.isActiveAndEnabled)
+            if (player == null || !player.gameObject.activeInHierarchy)
                 continue;
 
             float sqrDistance = (player.transform.position - transform.position).sqrMagnitude;
@@ -392,14 +425,14 @@ public class WBH_EnemyPattern : MonoBehaviour
     // 랜덤 타겟 선택
     public bool TrySelectAnotherActivePlayer()
     {
-        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var players = GetActiveTargets();
 
         Transform selected = null;
         int candidateCount = 0;
 
-        foreach(T_PlayerController player in players)
+        foreach(Transform player in players)
         {
-            if (!player.isActiveAndEnabled || player.transform == target)
+            if (player == null || !player.gameObject.activeInHierarchy || player.transform == target)
                 continue;
 
             candidateCount++;
@@ -420,15 +453,15 @@ public class WBH_EnemyPattern : MonoBehaviour
     // 사거리 이내 가장 먼 거리의 타겟 선택
     public bool TrySelectFarTarget(float maxRange)
     {
-        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var players = GetActiveTargets();
 
         float maxRangeSqr = maxRange * maxRange;
         float farSqr = -1f;
         Transform selected = null;
 
-        foreach (T_PlayerController player in players)
+        foreach (Transform player in players)
         {
-            if (!player.isActiveAndEnabled)
+            if (player == null || !player.gameObject.activeInHierarchy)
                 continue;
 
             float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
@@ -450,14 +483,14 @@ public class WBH_EnemyPattern : MonoBehaviour
     // 가장 가까운 타겟 선택. 가까운 타겟이기에 TrySelectFarTarget 과 달리 유효거리를 매개변수로 받지 않음
     public bool TrySelectNearTarget()
     {
-        T_PlayerController[] players = FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        var players = GetActiveTargets();
 
         Transform near = null;
         float nearSqrDistance = float.MaxValue;
 
-        foreach (T_PlayerController player in players)
+        foreach (Transform player in players)
         {
-            if (!player.isActiveAndEnabled)
+            if (player == null || !player.gameObject.activeInHierarchy)
                 continue;
 
             float sqrDistance = (player.transform.position - transform.position).sqrMagnitude;

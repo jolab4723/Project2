@@ -105,13 +105,11 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         if(count <= 0 || enemySpawner == null || !TryGetSpawnPoint(spawnPointIndex, out Transform point) || !CanSpawn(grade))
             return 0;
 
-        EnemyGradeSpawnData data = Array.Find(spawnDatas, entry => entry != null && entry.grade == grade);
-
         int spawnedCount = 0;
 
         for (int i = 0; i < count; i++)
         {
-            EnemyDefinitionSO def = data.enemies[UnityEngine.Random.Range(0, data.enemies.Length)];
+            EnemyDefinitionSO def = ChooseEnemy(grade);
             Transform target = findClosestPlayer?.Invoke(point.position);
 
             WBH_EnemyController enemy = enemySpawner.Spawn(def.enemyId, point, target, context);
@@ -121,5 +119,13 @@ public class WBH_EnemySpawnArea : MonoBehaviour
             spawnedCount++;
         }
         return spawnedCount;
+    }
+
+    /// <summary>SW 수정: 원본 SpawnData와 같은 무작위 선택을 네트워크 생성 경계에서도 사용합니다.</summary>
+    public EnemyDefinitionSO ChooseEnemy(EnemyGrade grade)
+    {
+        if (!CanSpawn(grade)) return null;
+        EnemyGradeSpawnData data = Array.Find(spawnDatas, entry => entry != null && entry.grade == grade);
+        return data.enemies[UnityEngine.Random.Range(0, data.enemies.Length)];
     }
 }

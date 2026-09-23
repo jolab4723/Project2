@@ -19,6 +19,8 @@ public class BuffIconUIContainer : MonoBehaviour
     [SerializeField] private Transform slotParent;
 
     private PlayerBuffManager buffManager;
+    private bool explicitOwner;
+    public PlayerBuffManager BoundBuffManager => buffManager;
     private readonly List<BuffIconSlot> pool = new List<BuffIconSlot>();
 
     private void Awake()
@@ -40,7 +42,7 @@ public class BuffIconUIContainer : MonoBehaviour
 
     private void Update()
     {
-        if (buffManager != PlayerBuffManager.Instance)
+        if (!explicitOwner && !MirrorNetworkManager.OwnsGameplay && buffManager != PlayerBuffManager.Instance)
         {
             TrySubscribe();
             return;
@@ -59,14 +61,27 @@ public class BuffIconUIContainer : MonoBehaviour
         if (buffManager != null)
             buffManager.OnBuffsChanged -= Rebuild;
 
-        buffManager = PlayerBuffManager.Instance;
+        if (!explicitOwner && !MirrorNetworkManager.OwnsGameplay) buffManager = PlayerBuffManager.Instance;
 
         if (buffManager != null)
         {
-            buffManager.OnBuffsChanged += Rebuild;
+            if (isActiveAndEnabled) buffManager.OnBuffsChanged += Rebuild;
             Rebuild();
         }
     }
+
+    /// <summary>SW 수정: 공통 버프 아이콘을 지정한 플레이어의 버프에 연결합니다.</summary>
+    public void Bind(PlayerBuffManager owner)
+    {
+        if (buffManager != null) buffManager.OnBuffsChanged -= Rebuild;
+        explicitOwner = true;
+        buffManager = owner;
+        TrySubscribe();
+        if (owner == null) foreach (var slot in pool) if (slot != null) slot.gameObject.SetActive(false);
+    }
+
+    /// <summary>SW 수정: 플레이어 교체·씬 종료 때 이전 소유자의 아이콘과 구독을 해제합니다.</summary>
+    public void Unbind() => Bind(null);
 
     /// <summary>현재 활성 버프 목록에 맞춰 아이콘 슬롯을 다시 배치한다. 슬롯 오브젝트는 풀링해서 재사용한다.</summary>
     private void Rebuild()

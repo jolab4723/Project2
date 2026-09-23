@@ -176,7 +176,7 @@ public static class PlayerDamageResolver
 
         result = WBH_CombatManager.CalculateDamage(request, sourceSnapshot, canCrit);
         WBH_StatusEffectData? statusEffect = result.StatusEffect;
-        NetworkEnemyAuthority_MirrorTest authority = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>();
+        NetworkEnemyAuthority authority = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
         bool handledByAuthority = authority != null && authority.IsServerDamageHandlingActive;
         target.TakeDamage(result);
         // 네트워크 적은 TakeDamage 내부의 서버 이벤트가 같은 플레이어 효과를 발행한다.
@@ -186,7 +186,7 @@ public static class PlayerDamageResolver
         if (!target.Status.IsDead && statusEffect.HasValue)
         {
             if (target is Component targetComponent &&
-                targetComponent.TryGetComponent(out NetworkEnemyAuthority_MirrorTest networkEnemy))
+                targetComponent.TryGetComponent(out NetworkEnemyAuthority networkEnemy))
                 networkEnemy.ServerTryApplyStatusEffect(statusEffect.Value);
             else
                 target.AddStatusEffect(statusEffect.Value);

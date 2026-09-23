@@ -39,6 +39,9 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     private GameObject pooledVisual;
     private Transform currentLeftHandGrip;
     private int visualRequestVersion;
+    /// <summary>현재 장비 요청의 완료 여부입니다. 실패한 기본 외형 대체는 준비 성공으로 취급하지 않습니다.</summary>
+    public bool IsVisualReady => pendingItemId == null && VisualLoadError == null;
+    public string VisualLoadError { get; private set; }
 
     private void Update()
     {
@@ -122,6 +125,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (string.IsNullOrEmpty(itemId))
         {
+            VisualLoadError = null;
             CancelPendingVisualRequest();
             ShowDefaultVisual();
             return;
@@ -142,6 +146,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
 
         int requestVersion = ++visualRequestVersion;
+        VisualLoadError = null;
         pendingItemId = itemId;
 
         if (weaponMount == null ||
@@ -154,6 +159,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
                 $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}'에 연결된 무기 외형을 찾지 못했습니다.",
                 this);
             pendingItemId = null;
+            VisualLoadError = $"무기 외형 참조 누락: {itemId}";
             if (currentVisual == null)
                 ShowDefaultVisual();
             return;
@@ -181,6 +187,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
                 isActiveAndEnabled)
             {
                 pendingItemId = null;
+                VisualLoadError = $"무기 외형 로드 실패: {itemId}";
                 Debug.LogWarning(
                     $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}' 무기 외형 로드에 실패했습니다.",
                     this);

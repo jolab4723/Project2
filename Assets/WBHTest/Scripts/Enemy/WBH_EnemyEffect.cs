@@ -33,6 +33,8 @@ public class WBH_EnemyEffect : MonoBehaviour
     private readonly Dictionary<WBH_EnemyEffectCue, EffectBinding> bindingMap = new();
 
     private float PlaybackSpeed => status != null ? Mathf.Max(0.01f, status.AttackSpeed) : 1f;
+    /// <summary>SW 수정: 서버 어댑터가 같은 큐를 원격 화면에 전달하기 위한 관측 이벤트입니다.</summary>
+    public event Action<WBH_EnemyEffectCue, bool, Vector3, Quaternion, Vector3> CueRequested;
 
     private void Awake()
     {
@@ -88,6 +90,8 @@ public class WBH_EnemyEffect : MonoBehaviour
         if (!TryGetBinding(cue, out EffectBinding binding))
             return;
 
+        CueRequested?.Invoke(cue, false, transform.position, transform.rotation, scaleMultiplier);
+
         Vector3 soundPosition = binding.anchor != null ? binding.anchor.position : transform.position;
 
         PlayBindingSfx(binding, soundPosition);
@@ -116,6 +120,8 @@ public class WBH_EnemyEffect : MonoBehaviour
     {
         if (!TryGetBinding(cue, out EffectBinding binding))
             return;
+
+        CueRequested?.Invoke(cue, true, position, rotation, scaleMultiplier);
 
         PlayBindingSfx(binding, position);
 

@@ -290,7 +290,7 @@ public class T_PlayerCombat : MonoBehaviour
             if (targetAngle > angle * 0.5f)
                 continue;
 
-            WBH_ICombat combatTarget = PlayerCombatAuthority_MirrorTest.FindCombatTarget(target);
+            WBH_ICombat combatTarget = PlayerCombatAuthority.FindCombatTarget(target);
             if (combatTarget == null || directTargets.ContainsKey(combatTarget))
                 continue;
             directTargets.Add(combatTarget, target);

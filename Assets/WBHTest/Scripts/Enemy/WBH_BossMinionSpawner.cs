@@ -15,6 +15,9 @@ public class WBH_BossMinionSpawner : MonoBehaviour
     private WBH_EnemySpawner spawner;
     private WBH_EnemyStatContext statContext;
 
+    /// <summary>SW 수정: 위치와 회전은 기존 규칙을 쓰며 멀티의 실제 생성·클리어 집계만 서버에 위임합니다.</summary>
+    public System.Func<string, Vector3, Quaternion, Transform, bool> ExternalSpawn { get; set; }
+
     public void Initialize(WBH_EnemySpawnManager spawnManager, WBH_EnemySpawner spawner, WBH_EnemyStatContext statContext)
     {
         this.spawnManager = spawnManager;
@@ -24,9 +27,10 @@ public class WBH_BossMinionSpawner : MonoBehaviour
 
     public int Spawn(int count, Transform initialTarget)
     {
-        if(spawnManager == null || selfDestructEnemy == null)
+        if ((ExternalSpawn == null && (spawnManager == null || spawner == null)) || selfDestructEnemy == null || count <= 0)
         {
             Log.Error($"EnemySpawner 혹은 자폭병SO가 할당되지 않았습니다.");
+            return 0;
         }
 
         float startAngle = Random.Range(0f, 360f);
@@ -40,12 +44,18 @@ public class WBH_BossMinionSpawner : MonoBehaviour
 
             Quaternion spawnRotation = GetSpawnRotation(spawnPosition, initialTarget);
 
+            if (ExternalSpawn != null)
+            {
+                if (ExternalSpawn(selfDestructEnemy.enemyId, spawnPosition, spawnRotation, initialTarget)) spawnedCount++;
+                continue;
+            }
+
             WBH_EnemyController enemy = spawner.Spawn(selfDestructEnemy.enemyId, spawnPosition, spawnRotation, initialTarget, statContext);
 
             if (enemy != null)
                 spawnedCount++;
         }
-        spawnManager.RegisterAdditionalEnemies(spawnedCount); // 소환된 적만큼 클리어조건 ++
+        if (ExternalSpawn == null) spawnManager.RegisterAdditionalEnemies(spawnedCount); // 소환된 적만큼 클리어조건 ++
         return spawnedCount;
     }
 

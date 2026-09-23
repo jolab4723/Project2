@@ -17,6 +17,8 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
     private void Awake()
     {
+        // SW 수정: 세션 모드에서는 로컬 진행 관리자를 초기화하거나 검색하지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (stageManager == null)
             stageManager = FindFirstObjectByType<YJ_StageManager>();
 
@@ -29,6 +31,8 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // SW 수정: 멀티 포탈의 소유권·클리어·전환은 세션의 서버 포탈이 확인합니다.
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (transitionRequested || ! other.CompareTag("Player"))
             return;
 

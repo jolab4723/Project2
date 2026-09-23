@@ -82,13 +82,29 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 전달 데이터 또는 미리보기 데이터로 첫 화면을 구성한다.
     private IEnumerator Start()
     {
+        // SW 수정: 멀티 결과는 서버가 보낸 자기 참가자 수치만 기존 Payload에 전달합니다.
+        var session = Mirror.NetworkManager.singleton as MirrorNetworkManager;
+        if (session != null)
+        {
+            payload?.Clear();
+            double deadline = Time.realtimeSinceStartupAsDouble + 30;
+            while (!session.HasLocalRunResult && Mirror.NetworkClient.active && Time.realtimeSinceStartupAsDouble < deadline)
+                yield return null;
+            if (session.TryGetLocalRunResult(out var result))
+            {
+                payload?.SetResult(result);
+                ApplyResult(result);
+            }
+            if (retryButton != null) SetText(retryButton.GetComponentInChildren<TMP_Text>(), "로비로 돌아가기");
+            if (titleButton != null) SetText(titleButton.GetComponentInChildren<TMP_Text>(), "세션 나가기");
+        }
         if (!hasResult)
         {
             if (payload != null && payload.TryRead(out var data))
             {
                 ApplyResult(data);
             }
-            else if (usePreviewData)
+            else if (usePreviewData && session == null)
             {
                 ApplyPreview();
             }
@@ -253,10 +269,35 @@ public sealed class KY_ResultScreen : MonoBehaviour
     }
 
     // 다시 시작 요청을 보내거나 로비 씬으로 이동한다.
-    public void Retry() => Request(retryRequested, GetRetrySceneName());
+    public void Retry()
+    {
+        // SW 수정: 정식 멀티 로비 복귀와 런 정리는 서버에 요청합니다.
+        if (Mirror.NetworkManager.singleton is MirrorNetworkManager session)
+        {
+            if (hasResult) session.RequestReturnToLobby();
+            return;
+        }
+        Request(retryRequested, GetRetrySceneName());
+    }
 
     // 타이틀 복귀 요청을 보내거나 타이틀 씬으로 이동한다.
-    public void ReturnToTitle() => Request(titleRequested, "TitleScene");
+    public void ReturnToTitle()
+    {
+        // SW 수정: 멀티를 종료한 뒤 기존 세션 이탈 경로로 복귀합니다.
+        if (Mirror.NetworkManager.singleton is MirrorNetworkManager session)
+        {
+            session.RequestLeaveSession();
+            return;
+        }
+        Request(titleRequested, "TitleScene");
+    }
+
+    private void LateUpdate()
+    {
+        if (initialRevealCompleted && hasResult && !leaving && retryButton != null &&
+            Mirror.NetworkManager.singleton is MirrorNetworkManager session)
+            retryButton.interactable = session.CanLocalClientControlSession;
+    }
 
     // Mirror 연결 상태로 싱글·멀티 로비 목적지를 정한다.
     private static string GetRetrySceneName()

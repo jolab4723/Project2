@@ -38,9 +38,9 @@ public sealed class ChatSession
     private readonly HashSet<ulong> completedRequests = new();
     private readonly Queue<ulong> completedOrder = new();
     private Func<NetworkConnectionToClient, bool> isApproved;
-    private PlayerInventorySync_MirrorTest inventory;
+    private PlayerInventorySync inventory;
     private InventoryController localInventory;
-    private NetworkShopPlayerState_MirrorTest shop;
+    private NetworkShopPlayerState shop;
     private MirrorSpawnedPlayerBinder inputBinder;
     private int lastInputFrame = -1;
     private uint nextRequestId;
@@ -197,9 +197,9 @@ public sealed class ChatSession
         if (inventory != null) inventory.RequestCompleted -= HandleInventory;
         if (localInventory != null) localInventory.EquipmentRejected -= HandleLocalEquipmentRejection;
         if (shop != null) shop.RequestCompleted -= HandleShop;
-        inventory = context != null ? context.GetComponent<PlayerInventorySync_MirrorTest>() : null;
+        inventory = context != null ? context.GetComponent<PlayerInventorySync>() : null;
         localInventory = context != null ? context.Inventory : null;
-        shop = context != null ? context.GetComponent<NetworkShopPlayerState_MirrorTest>() : null;
+        shop = context != null ? context.GetComponent<NetworkShopPlayerState>() : null;
         inputBinder = context != null ? context.GetComponent<MirrorSpawnedPlayerBinder>() : null;
         if (inputBinder != null) inputBinder.SetTextInputBlocked(InputFocused);
         completedRequests.Clear();
@@ -216,7 +216,7 @@ public sealed class ChatSession
         if (inputBinder != null) inputBinder.SetTextInputBlocked(focused);
     }
 
-    private void HandleInventory(MirrorTestInventoryRequestCompleted result)
+    private void HandleInventory(MirrorInventoryRequestCompleted result)
     {
         if (inventory == null || !inventory.isLocalPlayer ||
             !RememberRequest(result.RequestId, false)) return;
@@ -230,7 +230,7 @@ public sealed class ChatSession
             Append(ChatKind.Warning, EquipMessageMapper.GetMessage(result));
     }
 
-    private void HandleShop(MirrorTestShopRequestCompleted result)
+    private void HandleShop(MirrorShopRequestCompleted result)
     {
         if (shop == null || !shop.isLocalPlayer || !RememberRequest(result.RequestId, true)) return;
         if (ChatMessageMapper.TryMap(result, out ChatEntry entry)) Append(entry.Kind, entry.Text);

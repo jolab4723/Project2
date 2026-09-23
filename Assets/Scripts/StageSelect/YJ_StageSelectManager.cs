@@ -141,6 +141,22 @@ public class YJ_StageSelectManager : MonoBehaviour
     // 노드가 유효하게 선택된 직후 해당 노드 데이터를 외부 시스템에 전달합니다.
     public event Action<YJ_StageNodeData> NodeSelected;
 
+    /// <summary>SW 수정: 세션 소유자가 있을 때 선택 의도만 전달하고 로컬 진행을 확정하지 않습니다.</summary>
+    public bool IsExternallyControlled => MirrorNetworkManager.OwnsGameplay;
+
+    /// <summary>SW 수정: 서버가 최초 런의 시드와 초기 진행을 지정하고 기존 맵 생성 규칙을 사용합니다.</summary>
+    public void GenerateSessionMap(int seed, StageActType act = StageActType.Act1)
+    {
+        if (!IsExternallyControlled || !Mirror.NetworkServer.active) return;
+        if (act != StageActType.Act1 && act != StageActType.Act2) return;
+        currentAct = act;
+        mapSeed = seed;
+        clearedFloor = 0;
+        lastClearedNodeId = string.Empty;
+        ClearSelection();
+        GenerateMap();
+    }
+
     /// <summary>
     /// Singleton 중복을 방지하고 현재 Act 규칙 및 필수 컴포넌트 참조를 준비합니다.
     /// </summary>
@@ -163,6 +179,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     private void Start()
     {
+        // SW 수정: 멀티 맵은 서버 스냅샷만 사용하며 로컬 세이브를 읽지 않습니다.
+        if (IsExternallyControlled) return;
         // 임시 런의 씬 간 진행 복원은 유지하되, 디스크 저장은 SaveService에서 차단한다.
         if ((YJ_StageSaveService.IsSessionOnly || loadSavedMapOnStart) &&
             stageSaveService != null &&
@@ -529,6 +547,13 @@ public class YJ_StageSelectManager : MonoBehaviour
         if (data == null || data.floor != CurrentSelectableFloor)
             return false;
 
+        // SW 수정: 투표는 선택 가능한 다른 노드를 잠그거나 pending 진행을 생성하지 않습니다.
+        if (IsExternallyControlled)
+        {
+            NodeSelected?.Invoke(data);
+            return true;
+        }
+
         if (SelectedNode == node)
             return false;
 
@@ -598,6 +623,7 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     public void CompleteSelectedNode()
     {
+        if (IsExternallyControlled) return;
         if (testCompletionRoutine != null)
         {
             StopCoroutine(testCompletionRoutine);
@@ -624,6 +650,7 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     public void TransitionToSelectedNodeScene(YJ_StageNodeData nodeData)
     {
+        if (IsExternallyControlled) return;
         if (nodeData == null)
         {
             Log.Warning("씬으로 전환할 노드 데이터가 없습니다.");
@@ -677,6 +704,7 @@ public class YJ_StageSelectManager : MonoBehaviour
     /// </summary>
     public void NotifyReticleAnimationCompleted(YJ_StageNodeData nodeData)
     {
+        if (IsExternallyControlled) return;
         if (nodeData == null)
             return;
 

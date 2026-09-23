@@ -48,7 +48,12 @@ public class WBH_EnemyView : MonoBehaviour
     private float selfDestructFlashTargetStrength; // 자폭병 최대 eimission 값
     private float selfDestructFlashTargetDuration; // 자폭병 최대 emission 도달 시간 
     private float selfDestructFlashTargetElapsed; 
-    private bool isSelfDestructFlashTransition; 
+    private bool isSelfDestructFlashTransition;
+    /// <summary>SW 수정: 서버의 자폭 점멸 전환을 원격 표시에도 전달합니다. duration 0은 즉시 표시입니다.</summary>
+    public event System.Action<bool, float> SelfDestructFlashRequested;
+
+    /// <summary>SW 수정: 기존 로컬 HP 구독을 끈 네트워크 표시도 동일한 점멸 보간을 사용합니다.</summary>
+    public void TickExternalFlash(float deltaTime) => UpdateSelfDestructFlash(deltaTime);
 
 
     private void Awake()
@@ -261,6 +266,7 @@ public class WBH_EnemyView : MonoBehaviour
     // 자폭병 반짝임
     public void SetSelfDestructFlash(bool visible,float transitionDuration)
     {
+        SelfDestructFlashRequested?.Invoke(visible, transitionDuration);
         float targetStrength = visible ? 1f : 0f;
 
         selfDestructFlashStartStrength = selfDestructFlashStrength;
@@ -274,6 +280,7 @@ public class WBH_EnemyView : MonoBehaviour
 
     public void SetSelfDestructFlash(bool visible)
     {
+        SelfDestructFlashRequested?.Invoke(visible, 0f);
         selfDestructFlashStrength = visible ? 1f : 0f;
         ApplyFlashStrength();
     }

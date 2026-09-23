@@ -64,6 +64,10 @@ public class KY_StatusPopup : KY_PopupBase
     private Sequence transitionSequence;
 
     private PlayerStatManager statManager;
+    private PlayerStat subscribedStat;
+    private bool explicitOwner;
+    public bool IsOpen => gameObject.activeSelf;
+    public PlayerStatManager BoundStats => statManager;
     private KY_StatRow[] statRows;
 
     void Awake()
@@ -134,9 +138,8 @@ public class KY_StatusPopup : KY_PopupBase
 
     void OnEnable()
     {
-        statManager = PlayerStatManager.Instance;
-        if (statManager != null)
-            statManager.Stat.OnStatChanged += HandleStatChanged;
+        if (!explicitOwner && !MirrorNetworkManager.OwnsGameplay) statManager = PlayerStatManager.Instance;
+        SubscribeStats();
 
         // 팝업이 떠 있는 동안 언어가 바뀌면 즉시 반영되도록 구독한다.
         if (YJ_LanguageManager.Instance != null)
@@ -145,8 +148,7 @@ public class KY_StatusPopup : KY_PopupBase
 
     void OnDisable()
     {
-        if (statManager != null)
-            statManager.Stat.OnStatChanged -= HandleStatChanged;
+        UnsubscribeStats();
 
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
@@ -201,12 +203,41 @@ public class KY_StatusPopup : KY_PopupBase
 
     void OnDestroy()
     {
+        UnsubscribeStats();
         transitionSequence?.Kill();
+    }
+
+    /// <summary>SW 수정: 싱글 표시 기능을 유지하며 멀티에서는 지정한 로컬 플레이어만 구독합니다.</summary>
+    public void Bind(PlayerStatManager owner)
+    {
+        UnsubscribeStats();
+        explicitOwner = true;
+        statManager = owner;
+        if (isActiveAndEnabled) { SubscribeStats(); RequestData(); }
+    }
+
+    /// <summary>SW 수정: 씬 전환 때 기존 플레이어 구독과 참조를 해제합니다.</summary>
+    public void Unbind() { UnsubscribeStats(); explicitOwner = true; statManager = null; }
+
+    /// <summary>SW 수정: 씬 전환 중 남은 UI 연출을 종료합니다.</summary>
+    public void CloseImmediate() { transitionSequence?.Kill(); gameObject.SetActive(false); }
+
+    private void SubscribeStats()
+    {
+        UnsubscribeStats();
+        subscribedStat = statManager != null ? statManager.Stat : null;
+        if (subscribedStat != null) subscribedStat.OnStatChanged += HandleStatChanged;
+    }
+
+    private void UnsubscribeStats()
+    {
+        if (subscribedStat != null) subscribedStat.OnStatChanged -= HandleStatChanged;
+        subscribedStat = null;
     }
 
     void RequestData()
     {
-        if (statManager == null)
+        if (statManager == null && !explicitOwner && !MirrorNetworkManager.OwnsGameplay)
             statManager = PlayerStatManager.Instance;
 
         if (statManager == null || statManager.Stat == null)
@@ -300,7 +331,6 @@ public class KY_StatusPopup : KY_PopupBase
     {
         ElementType enchanted = ElementType.None;
 
-        PlayerStatManager statManager = PlayerStatManager.Instance;
         if (statManager != null && statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon))
             enchanted = weapon.elementType;
 

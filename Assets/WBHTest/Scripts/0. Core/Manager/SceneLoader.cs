@@ -62,6 +62,18 @@ namespace Core
 
         private void RequestLoadScene(string sceneName, float? initialFadeOutDuration)
         {
+            // SW 수정: 기존 타이틀의 멀티 로비 요청을 정식 네트워크 로비에 연결합니다.
+            if (sceneName == "MultiplayerLobbyScene") sceneName = MirrorNetworkManager.SessionLobbyScene;
+            if (MirrorNetworkManager.OwnsGameplay && sceneName != MirrorNetworkManager.SessionLobbyScene)
+            {
+                if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
+                {
+                    Log.Warning("[SceneLoader] 세션을 종료한 뒤 일반 씬으로 이동해 주세요.");
+                    return;
+                }
+                Destroy(Mirror.NetworkManager.singleton.gameObject);
+                KeyBindingService.ConfigureProfile(null);
+            }
             if (IsLoading)
             {
                 Log.Warning("[SceneLoader] 이미 씬을 불러오는 중이므로 " + sceneName + " 요청을 무시합니다.");
@@ -177,6 +189,24 @@ namespace Core
             CurrentSceneName = sceneName;
             OnSceneLoaded?.Invoke(sceneName);
 
+            // SW 수정: 씬 활성화와 플레이 준비는 다릅니다. 실패 시 암전과 입력 잠금을 유지합니다.
+            YJ_StageManager stage = FindFirstObjectByType<YJ_StageManager>();
+            if (stage != null && !MirrorNetworkManager.OwnsGameplay)
+            {
+                double deadline = Time.realtimeSinceStartupAsDouble + 60;
+                while (!stage.IsGameplayReady)
+                {
+                    if (stage.GameplayPreparationError != null || Time.realtimeSinceStartupAsDouble >= deadline)
+                    {
+                        Log.Error(stage.GameplayPreparationError ?? "플레이 준비 시간이 초과되었습니다.");
+                        // 준비 오류 안내는 목적 씬의 입력 차단 화면에서 보여 줍니다.
+                        if (screenFader != null) yield return screenFader.FadeFromBlack();
+                        yield break;
+                    }
+                    yield return null;
+                }
+            }
+
             // Render the destination scene before revealing it.
             yield return new WaitForEndOfFrame();
 
@@ -195,6 +225,15 @@ namespace Core
 
             if (screenFader == null)
                 screenFader = GetComponentInChildren<YJ_ScreenFader>(true);
+        }
+
+        // SW 수정: 준비 실패 화면의 복귀만 허용하며 입력이나 웨이브를 준비 완료로 바꾸지 않습니다.
+        /// <summary>준비 실패 상태를 종료하고 기존 타이틀 진입 경로로 돌아갑니다.</summary>
+        public void ReturnFromPreparationFailure()
+        {
+            StopAllCoroutines();
+            IsLoading = false;
+            LoadScene("TitleScene");
         }
     }
 }
