@@ -1,3 +1,5 @@
+using ItemSystem;
+using Mirror.BouncyCastle.Math.EC.Multiplier;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +8,41 @@ using UnityEngine;
 [RequireComponent(typeof(T_PlayerController))]
 public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
 {
+    private sealed class StatusEffectStatSource : IBuffSource
+    {
+        private readonly FixedStatValue[] statEffects =
+        {
+            new FixedStatValue {statType = StatType.moveSpeedPercent, value = 0},
+            new FixedStatValue {statType = StatType.attackSpeedPercent, value = 0},
+            new FixedStatValue {statType = StatType.attackPowerPercent, value = 0}
+        };
+        public string BuffDisplayName => "상태이상 능력치 감소";
+        public string BuffDescription => string.Empty;
+        public Sprite BuffIcon => null;
+        public FixedStatValue[] StatEffects => statEffects;
+
+        public float Duration => 0f;
+        public BuffStackBehavior StackBehavior => BuffStackBehavior.RefreshDuration;
+        public int MaxStack => 1;
+        public bool IsPermanent => true;
+        public BuffDisplayKind DisplayKind => BuffDisplayKind.Debuff;
+
+        public void SetMultipliers(float moveSpeedMultiplier, float attackSpeedMultiplier, float attackPowerMultiplier)
+        {
+            statEffects[0].value = MultiplierToPercent(moveSpeedMultiplier);
+            statEffects[1].value = MultiplierToPercent(moveSpeedMultiplier);
+            statEffects[2].value = MultiplierToPercent(moveSpeedMultiplier);
+        }
+
+        private float MultiplierToPercent(float multiplier)
+        {
+            if(!float.IsFinite(multiplier))
+                return 0f;
+
+            return (Mathf.Max(0f, multiplier) - 1f) * 100f;
+        }
+    };
+
     [SerializeField] private Transform statusEffectRoot;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
