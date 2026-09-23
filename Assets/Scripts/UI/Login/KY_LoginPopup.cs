@@ -5,6 +5,7 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -22,6 +23,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
     [Header("시작 연출")]
     [SerializeField] private KY_CurtainEffect panelCurtain;
     [SerializeField] private KY_FadeEffect contentFade;
+    [Tooltip("패널 커튼 전개가 끝난 뒤에만 활성화할 테두리 후광입니다.")]
+    [SerializeField] private GameObject panelGlow;
 
     [Header("버튼")]
     [SerializeField] private Button loginButton;
@@ -39,6 +42,10 @@ public sealed class KY_LoginPopup : MonoBehaviour
     [SerializeField] private UnityEvent createAccountRequested = new();
 
     private Tween entranceDelayTween;
+    private TMP_Text loginButtonText;
+    private string defaultLoginButtonText;
+    private KY_InputFieldFeedbackEffect accountIdFeedback;
+    private KY_InputFieldFeedbackEffect passwordFeedback;
     private bool hasPlayedEntrance;
     private bool isLoginInProgress;
 
@@ -48,9 +55,14 @@ public sealed class KY_LoginPopup : MonoBehaviour
     {
         contentFade?.SetAlphaImmediate(0f);
         panelCurtain?.PrepareOpen();
+        panelGlow?.SetActive(false);
 
         if (loginButton != null)
         {
+            loginButtonText = loginButton.GetComponentInChildren<TMP_Text>(true);
+            if (loginButtonText != null)
+                defaultLoginButtonText = loginButtonText.text;
+
             // 씬에 남아 있는 직접 이동 연결은 입력 검증을 우회하고,
             // 부트 씬의 싱글톤이 유지될 때 파괴된 중복 로더를 참조할 수 있다.
             // 우회 옵션을 꺼도 이 연결이 인증 전에 실행되지 않게 한다.
@@ -66,6 +78,15 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (createAccountButton != null)
             createAccountButton.onClick.AddListener(RequestCreateAccount);
+
+        if (accountIdInput != null)
+            accountIdInput.onSubmit.AddListener(FocusPasswordInput);
+
+        if (passwordInput != null)
+            passwordInput.onSubmit.AddListener(SubmitLoginFromInput);
+
+        accountIdFeedback = GetOrAddInputFeedback(accountIdInput);
+        passwordFeedback = GetOrAddInputFeedback(passwordInput);
 
         ClearFeedback();
     }
@@ -87,6 +108,17 @@ public sealed class KY_LoginPopup : MonoBehaviour
         entranceDelayTween?.Kill();
     }
 
+    private void Update()
+    {
+        if (Keyboard.current == null || !Keyboard.current.tabKey.wasPressedThisFrame)
+            return;
+
+        if (accountIdInput != null && accountIdInput.isFocused)
+            FocusPasswordInput(string.Empty);
+        else if (passwordInput != null && passwordInput.isFocused)
+            FocusAccountIdInput();
+    }
+
     private void OnDestroy()
     {
         if (loginButton != null)
@@ -94,6 +126,12 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (createAccountButton != null)
             createAccountButton.onClick.RemoveListener(RequestCreateAccount);
+
+        if (accountIdInput != null)
+            accountIdInput.onSubmit.RemoveListener(FocusPasswordInput);
+
+        if (passwordInput != null)
+            passwordInput.onSubmit.RemoveListener(SubmitLoginFromInput);
     }
 
     /// <summary>판넬을 세로로 펼친 뒤 내부 내용을 페이드인한다.</summary>
@@ -103,18 +141,30 @@ public sealed class KY_LoginPopup : MonoBehaviour
             return;
 
         hasPlayedEntrance = true;
-        if (contentFade == null)
-            return;
-
         entranceDelayTween?.Kill();
         if (panelCurtain == null)
         {
-            contentFade.FadeIn();
+            FinishEntranceEffect();
             return;
         }
 
         entranceDelayTween = panelCurtain.Open()
-            .OnComplete(() => contentFade.FadeIn());
+            .OnComplete(FinishEntranceEffect);
+    }
+
+    /// <summary>내용 노출이 끝난 뒤 ID 입력칸을 기본 포커스로 설정한다.</summary>
+    private void FinishEntranceEffect()
+    {
+        panelGlow?.SetActive(true);
+
+        if (contentFade == null)
+        {
+            FocusAccountIdInput();
+            return;
+        }
+
+        entranceDelayTween = contentFade.FadeIn()
+            .OnComplete(FocusAccountIdInput);
     }
 
     /// <summary>입력값을 확인하고 중복 요청 없이 Firebase 로그인 처리를 시작한다.</summary>
@@ -135,6 +185,10 @@ public sealed class KY_LoginPopup : MonoBehaviour
         if (string.IsNullOrEmpty(accountId) || string.IsNullOrEmpty(password))
         {
             ShowError("이메일과 비밀번호를 입력해 주세요.");
+            if (string.IsNullOrEmpty(accountId))
+                accountIdFeedback?.PlayError();
+            if (string.IsNullOrEmpty(password))
+                passwordFeedback?.PlayError();
             return;
         }
 
@@ -145,8 +199,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
     private async Task SubmitFirebaseLoginAsync(string email, string password)
     {
         isLoginInProgress = true;
-        SetSubmitting(true);
         ClearFeedback();
+        SetSubmitting(true);
 
         try
         {
@@ -155,6 +209,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
             if (!loginResult.IsSuccess)
             {
                 ShowError(loginResult.Message);
+                accountIdFeedback?.PlayError();
+                passwordFeedback?.PlayError();
                 return;
             }
 
@@ -232,9 +288,54 @@ public sealed class KY_LoginPopup : MonoBehaviour
             accountIdInput.ActivateInputField();
     }
 
+    /// <summary>다른 인증 팝업으로 전달할 이메일 값을 반환한다.</summary>
+    public string GetEnteredEmail()
+    {
+        return accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
+    }
+
+    /// <summary>팝업 전환 후 이메일은 유지하고 비밀번호와 안내 문구만 초기화한다.</summary>
+    public void PrepareForShow(string email)
+    {
+        if (accountIdInput != null)
+            accountIdInput.text = email ?? string.Empty;
+
+        ClearSensitiveInputs();
+        ClearFeedback();
+    }
+
+    /// <summary>전환 시 비밀번호를 다른 팝업이나 다음 표시 상태에 남기지 않는다.</summary>
+    public void ClearSensitiveInputs()
+    {
+        if (passwordInput != null)
+            passwordInput.text = string.Empty;
+    }
+
+    /// <summary>이메일 입력칸에서 Enter를 누르면 비밀번호 입력칸으로 이동한다.</summary>
+    private void FocusPasswordInput(string _)
+    {
+        if (passwordInput != null && passwordInput.interactable)
+            passwordInput.ActivateInputField();
+    }
+
+    /// <summary>비밀번호 입력칸의 Enter를 로그인 버튼과 같은 요청으로 처리한다.</summary>
+    private void SubmitLoginFromInput(string _) => SubmitLogin();
+
+    private static KY_InputFieldFeedbackEffect GetOrAddInputFeedback(TMP_InputField inputField)
+    {
+        if (inputField == null)
+            return null;
+
+        return inputField.GetComponent<KY_InputFieldFeedbackEffect>() ??
+               inputField.gameObject.AddComponent<KY_InputFieldFeedbackEffect>();
+    }
+
     /// <summary>요청 중에는 입력과 버튼을 잠근다.</summary>
     public void SetSubmitting(bool isSubmitting)
     {
+        if (loginButtonText != null)
+            loginButtonText.text = isSubmitting ? "로그인 중..." : defaultLoginButtonText;
+
         if (loginButton != null)
             loginButton.interactable = !isSubmitting;
 
@@ -250,6 +351,12 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     /// <summary>오류 문구를 표시한다.</summary>
     public void ShowError(string message)
+    {
+        ShowFeedback(message);
+    }
+
+    /// <summary>요청 상태 또는 오류 안내 문구를 표시한다.</summary>
+    private void ShowFeedback(string message)
     {
         if (feedbackText == null)
             return;

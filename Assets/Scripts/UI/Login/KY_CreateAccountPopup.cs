@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -34,14 +35,38 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     [SerializeField] private UnityEvent loginRequested = new();
 
     private bool isAccountCreationInProgress;
+    private TMP_Text createButtonText;
+    private string defaultCreateButtonText;
+    private KY_InputFieldFeedbackEffect accountIdFeedback;
+    private KY_InputFieldFeedbackEffect passwordFeedback;
+    private KY_InputFieldFeedbackEffect passwordConfirmationFeedback;
 
     private void Awake()
     {
         if (createButton != null)
+        {
+            createButtonText = createButton.GetComponentInChildren<TMP_Text>(true);
+            if (createButtonText != null)
+                defaultCreateButtonText = createButtonText.text;
+
             createButton.onClick.AddListener(SubmitAccountCreation);
+        }
 
         if (loginButton != null)
             loginButton.onClick.AddListener(RequestLogin);
+
+        if (accountIdInput != null)
+            accountIdInput.onSubmit.AddListener(FocusPasswordInput);
+
+        if (passwordInput != null)
+            passwordInput.onSubmit.AddListener(FocusPasswordConfirmationInput);
+
+        if (passwordConfirmationInput != null)
+            passwordConfirmationInput.onSubmit.AddListener(SubmitAccountCreationFromInput);
+
+        accountIdFeedback = GetOrAddInputFeedback(accountIdInput);
+        passwordFeedback = GetOrAddInputFeedback(passwordInput);
+        passwordConfirmationFeedback = GetOrAddInputFeedback(passwordConfirmationInput);
         
         ClearFeedback();
     }
@@ -53,6 +78,28 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
 
         if (loginButton != null)
             loginButton.onClick.RemoveListener(RequestLogin);
+
+        if (accountIdInput != null)
+            accountIdInput.onSubmit.RemoveListener(FocusPasswordInput);
+
+        if (passwordInput != null)
+            passwordInput.onSubmit.RemoveListener(FocusPasswordConfirmationInput);
+
+        if (passwordConfirmationInput != null)
+            passwordConfirmationInput.onSubmit.RemoveListener(SubmitAccountCreationFromInput);
+    }
+
+    private void Update()
+    {
+        if (Keyboard.current == null || !Keyboard.current.tabKey.wasPressedThisFrame)
+            return;
+
+        if (accountIdInput != null && accountIdInput.isFocused)
+            FocusPasswordInput(string.Empty);
+        else if (passwordInput != null && passwordInput.isFocused)
+            FocusPasswordConfirmationInput(string.Empty);
+        else if (passwordConfirmationInput != null && passwordConfirmationInput.isFocused)
+            FocusAccountIdInput();
     }
 
     /// <summary>입력값을 확인하고 중복 요청 없이 Firebase 계정 생성을 시작한다.</summary>
@@ -68,18 +115,24 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
         if (string.IsNullOrEmpty(accountId) || string.IsNullOrEmpty(password))
         {
             ShowError("계정 ID와 비밀번호를 입력하십시오.");
+            if (string.IsNullOrEmpty(accountId))
+                accountIdFeedback?.PlayError();
+            if (string.IsNullOrEmpty(password))
+                passwordFeedback?.PlayError();
             return;
         }
 
         if (string.IsNullOrEmpty(passwordConfirmation))
         {
             ShowError("비밀번호 확인을 입력하십시오.");
+            passwordConfirmationFeedback?.PlayError();
             return;
         }
 
         if (password != passwordConfirmation)
         {
             ShowError("비밀번호가 일치하지 않습니다.");
+            passwordConfirmationFeedback?.PlayError();
             return;
         }
 
@@ -91,8 +144,8 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     private async Task SubmitFirebaseAccountCreationAsync(string email, string password)
     {
         isAccountCreationInProgress = true;
-        SetSubmitting(true);
         ClearFeedback();
+        SetSubmitting(true);
 
         try
         {
@@ -101,6 +154,8 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
             if (!accountResult.IsSuccess)
             {
                 ShowError(accountResult.Message);
+                accountIdFeedback?.PlayError();
+                passwordFeedback?.PlayError();
                 return;
             }
 
@@ -150,9 +205,71 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
         LoginPopupRequested?.Invoke();
     }
 
+    /// <summary>계정 생성 팝업을 열었을 때와 Tab 순환 시 이메일 입력칸에 포커스를 둔다.</summary>
+    public void FocusAccountIdInput()
+    {
+        if (accountIdInput != null && accountIdInput.interactable)
+            accountIdInput.ActivateInputField();
+    }
+
+    /// <summary>다른 인증 팝업으로 전달할 이메일 값을 반환한다.</summary>
+    public string GetEnteredEmail()
+    {
+        return accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
+    }
+
+    /// <summary>팝업 전환 후 이메일은 유지하고 비밀번호 입력칸과 안내 문구를 초기화한다.</summary>
+    public void PrepareForShow(string email)
+    {
+        if (accountIdInput != null)
+            accountIdInput.text = email ?? string.Empty;
+
+        ClearSensitiveInputs();
+        ClearFeedback();
+    }
+
+    /// <summary>전환 시 비밀번호와 확인 비밀번호를 남기지 않는다.</summary>
+    public void ClearSensitiveInputs()
+    {
+        if (passwordInput != null)
+            passwordInput.text = string.Empty;
+
+        if (passwordConfirmationInput != null)
+            passwordConfirmationInput.text = string.Empty;
+    }
+
+    /// <summary>이메일 입력칸의 Enter를 다음 입력칸 이동으로 처리한다.</summary>
+    private void FocusPasswordInput(string _)
+    {
+        if (passwordInput != null && passwordInput.interactable)
+            passwordInput.ActivateInputField();
+    }
+
+    /// <summary>비밀번호 입력칸의 Enter를 확인 입력칸 이동으로 처리한다.</summary>
+    private void FocusPasswordConfirmationInput(string _)
+    {
+        if (passwordConfirmationInput != null && passwordConfirmationInput.interactable)
+            passwordConfirmationInput.ActivateInputField();
+    }
+
+    /// <summary>비밀번호 확인 입력칸의 Enter를 가입 버튼과 같은 요청으로 처리한다.</summary>
+    private void SubmitAccountCreationFromInput(string _) => SubmitAccountCreation();
+
+    private static KY_InputFieldFeedbackEffect GetOrAddInputFeedback(TMP_InputField inputField)
+    {
+        if (inputField == null)
+            return null;
+
+        return inputField.GetComponent<KY_InputFieldFeedbackEffect>() ??
+               inputField.gameObject.AddComponent<KY_InputFieldFeedbackEffect>();
+    }
+
     /// <summary>서버 요청 중에는 중복 입력을 막고 버튼을 비활성화한다.</summary>
     public void SetSubmitting(bool isSubmitting)
     {
+        if (createButtonText != null)
+            createButtonText.text = isSubmitting ? "계정 생성 중..." : defaultCreateButtonText;
+
         if (createButton != null)
             createButton.interactable = !isSubmitting;
 
