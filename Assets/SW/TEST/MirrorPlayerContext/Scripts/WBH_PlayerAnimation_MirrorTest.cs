@@ -193,6 +193,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
     public void PlaySkillAnimation(int skillId, bool isCharging, float targetDuration)
     {
         ResolveSceneEffectSpawner();
+        playerEffect?.CancelPendingSfx();
         float skillSpeed = 1f;
         const int DashSkillId = 3;
 
@@ -292,16 +293,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
         if (ResolveSceneEffectSpawner() == null) return;
         WBH_PlayerEffectCue cue = (WBH_PlayerEffectCue)cueValue;
 
-        // 최신 원본 Fighter의 기본 공격 클립은 1000 cue를 보내지만 현재 원본 프리팹에는
-        // 해당 binding이 없다. 기존 공격 EffectData만 이 Mirror 어댑터에서 재사용한다.
-        if (cue == WBH_PlayerEffectCue.F_normal0_evo0_etc0)
-        {
-            WBH_EffectSpawner spawner = ResolveSceneEffectSpawner();
-            if (spawner != null && Eff_fighterAtk != null && fighterEffectRoot != null)
-                spawner.SpawnEffect(Eff_fighterAtk, fighterEffectRoot);
-            return;
-        }
-
+        // 원본의 최신 바인딩·재생 속도·앵커를 그대로 사용한다.
         playerEffect?.PlayEffect(cue, Vector3.one);
     }
 
@@ -313,16 +305,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_PlaySkillSfx(AnimationEvent animationEvent)
     {
-        if (!isClient || playerEffect == null || skillAuthority == null) return;
-        int index = animator.GetInteger(skillIdHash) - 1;
-        if (index < 0 || index >= skillAuthority.SkillCount) return;
-        var evolution = skillAuthority.GetEvolution(index);
-        var part = (SkillEffectPart)animationEvent.intParameter;
-        if (!System.Enum.IsDefined(typeof(SkillEffectPart), part)) return;
-        var cue = GetComponent<PlayerContext>()?.Equipment?.CurrentCharacterClass == ItemSystem.CharacterClass.Gunner
-            ? PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evolution, part)
-            : PlayerEffectCueUtility.CreateFighterSkillCue(index + 1, evolution, part);
-        playerEffect.ScheduleSfx(cue, animator, animationEvent);
+        skillAuthority?.PlayPendingSkillSfx(animationEvent, animator);
     }
 
     public void AniEvent_PlayFighterChargeEffect()
@@ -345,7 +328,7 @@ public sealed class WBH_PlayerAnimation_MirrorTest : NetworkBehaviour
 
     public void AniEvent_GunnerAttackEvent()
     {
-        // Mirror의 총구/샷건 VFX는 승인된 발사 Rpc가 한 번만 재생한다.
+        // 총구 VFX는 소유자의 타격 이벤트와 원격 발사 RPC가 각 화면에서 한 번만 재생한다.
         if (combatAuthority != null) return;
         WBH_EffectSpawner spawner = ResolveSceneEffectSpawner();
         if (combat.currentWeapon == GunnerWeaponType.Shotgun &&

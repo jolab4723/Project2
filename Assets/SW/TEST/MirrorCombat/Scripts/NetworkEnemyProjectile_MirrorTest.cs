@@ -36,6 +36,11 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
     [SerializeField, Min(0.01f)] private float collisionRadius = 0.2f;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
+    [Header("원본 거너 유탄의 폭발 연출")]
+    [SerializeField] private WBH_EffectData playerGrenadeExplosionEffect;
+    [SerializeField] private bool showPlayerGrenadeRange;
+    [SerializeField] private Color playerGrenadeRangeColor;
+    [SerializeField] private float playerGrenadeRangeDuration;
 
     [SyncVar] private bool missile;
     [SyncVar] private bool playerShot;
@@ -72,6 +77,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     private int shotSceneHandle;
     private double shotExpiresAt;
     private UniqueEffectSO shotUniqueEffect;
+    private WBH_EffectData shotHitEffectData;
     private int playerShotCollisionMask;
     private GameObject playerProjectileVisual;
     private GameObject playerImpactVisualPrefab;
@@ -214,6 +220,7 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
         shotElement = element;
         shotAttackId = attackId;
         shotUniqueEffect = uniqueEffect;
+        shotHitEffectData = GunnerCombatPresentation_MirrorTest.GetHitEffectData(attackOwner.gameObject, weaponType);
         shotSceneHandle = SceneManager.GetActiveScene().handle;
         shotExpiresAt = NetworkTime.time + 20d;
         playerShotCollisionMask = LayerMask.GetMask("Enemy", "Wall", "Prop", "Ground") | (1 << 10);
@@ -608,9 +615,13 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
 
         using (hitScope)
         {
-            if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, target, shotElement, 1f,
-                    PlayerCombatAuthority_MirrorTest.GetStatusEffectForElement(shotElement),
-                    out WBH_DamageResult result, DamageCause.Direct, shotAttackId))
+            Vector3 hitPosition = hit.ClosestPoint(transform.position);
+            Vector3 hitDirection = missile ? transform.position - hitPosition : -direction;
+            if (hitDirection.sqrMagnitude <= 0.0001f) hitDirection = transform.position - hit.bounds.center;
+            var request = new WBH_DamageRequest(playerOwner.Controller, target, WBH_AttackType.Normal,
+                shotElement, 1f, PlayerCombatAuthority_MirrorTest.GetStatusEffectForElement(shotElement),
+                shotHitEffectData, hitPosition, hitDirection, DamageCause.Direct, shotAttackId);
+            if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(playerOwner, request, out WBH_DamageResult result))
                 playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
         }
     }
@@ -684,11 +695,17 @@ public sealed class NetworkEnemyProjectile_MirrorTest : NetworkBehaviour
     [ClientRpc]
     private void RpcPlayerImpact(Vector3 point, Vector3 hitDirection)
     {
+        if (missile)
+        {
+            if (showPlayerGrenadeRange)
+                SkillRangeVisual.ShowSector(point, Vector3.forward, missileExplosionRadius, 360f,
+                    playerGrenadeRangeColor, playerGrenadeRangeDuration);
+            var spawner = FindFirstObjectByType<WBH_EffectPoolManager>()?.GetComponent<WBH_EffectSpawner>();
+            if (spawner != null && playerGrenadeExplosionEffect != null)
+                spawner.SpawnEffect(playerGrenadeExplosionEffect, point);
+        }
         if (playerImpactVisualPrefab != null)
             GunnerVfxPlayback.SpawnTransient(playerImpactVisualPrefab, point, hitDirection);
-        else if (missile)
-            SkillRangeVisual.ShowSector(point, Vector3.forward, missileExplosionRadius, 360f,
-                new Color(1f, 0.6f, 0.2f, 0.35f), 0.2f);
     }
 
     [Server]

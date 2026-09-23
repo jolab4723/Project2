@@ -29,7 +29,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         public int maxStacks;
     }
 
-    private const int SkillSlotCount = 3;
+    private const int SkillSlotCount = 4;
     private const float MaxAimDistance = 1000f;
     private static readonly SkillEffectPart[] EffectParts = (SkillEffectPart[])Enum.GetValues(typeof(SkillEffectPart));
 
@@ -80,7 +80,7 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
     private Vector3[] presentationScales;
 
     public event Action SkillStateChanged;
-    public int SkillCount => Mathf.Min(SkillSlotCount, skills?.Length ?? 0);
+    public int SkillCount => skills?.Length ?? 0;
     public MirrorSkillRequestResult LastResult => lastResult;
     public int LastSkillIndex => lastSkillIndex == byte.MaxValue ? -1 : lastSkillIndex;
     public int LastHitCount => lastHitCount;
@@ -359,7 +359,8 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
         var scales = new Vector3[10];
         foreach (SkillEffectPart part in EffectParts)
             scales[(int)part] = fighterSkills != null ? fighterSkills.GetPendingSkillEffectScale((int)part) : gunnerSkills.GetPendingSkillEffectScale((int)part);
-        var evolution = Original.GetEvolution(skillId - 1);
+        // 궁극기는 기존 1번 스킬 애니메이션을 빌리지만 진화는 실제 요청 슬롯을 사용한다.
+        var evolution = Original.GetEvolution(pendingServerSlot);
         BeginPresentation(skillId - 1, evolution, charging, duration, transform.forward, scales);
         RpcBeginPresentation(pendingServerRequestId, (byte)(skillId - 1), evolution, charging, duration, transform.forward, scales);
     }
@@ -453,6 +454,18 @@ public sealed class FighterSkillAuthority_MirrorTest : NetworkBehaviour, ISkillC
             ? PlayerEffectCueUtility.CreateFighterSkillCue(presentationSkillIndex + 1, presentationEvolution, (SkillEffectPart)partValue)
             : PlayerEffectCueUtility.CreateGunnerSkillCue(presentationSkillIndex + 1, presentationEvolution, (SkillEffectPart)partValue);
         playerEffect.PlayEffect(cue, presentationScales[partValue]);
+    }
+
+    /// <summary>서버가 확정한 요청의 진화로 사운드를 재생한다. 궁극기의 차용 애니메이션도 같은 진화를 유지한다.</summary>
+    public void PlayPendingSkillSfx(AnimationEvent animationEvent, Animator animator)
+    {
+        if (!isClient || presentationSkillIndex < 0 || playerEffect == null ||
+            !Enum.IsDefined(typeof(SkillEffectPart), animationEvent.intParameter)) return;
+        var part = (SkillEffectPart)animationEvent.intParameter;
+        var cue = fighterSkills != null
+            ? PlayerEffectCueUtility.CreateFighterSkillCue(presentationSkillIndex + 1, presentationEvolution, part)
+            : PlayerEffectCueUtility.CreateGunnerSkillCue(presentationSkillIndex + 1, presentationEvolution, part);
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
     }
 
     [Server]

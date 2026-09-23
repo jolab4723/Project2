@@ -26,6 +26,9 @@ using UnityEngine.AI;
 /// </summary>
 public class GunnerSkillController : MonoBehaviour, ISkillController
 {
+    /// <summary>SW 수정: 기존 범위 표시의 위치·방향·반경·각도·색·수명을 알립니다.</summary>
+    public event Action<Vector3, Vector3, float, float, Color, float> SkillRangePresented;
+
     [SerializeField] private PlayerActionInputHandler inputHandler;
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private T_PlayerController controller;
@@ -409,6 +412,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     ///
     /// 낙하 지점은 영역 안 무작위이고, 폭탄은 지면이 아니라 영역 위 하늘에서 생성해 수직으로 내려꽂힌다.
     /// 범위 표시는 전체 폭격 영역 하나만 폭격이 끝날 때까지 유지한다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
     /// </summary>
     private IEnumerator ExecuteCarpetBombing(SkillDefinitionSO def, int index, Vector3 cursorPos)
     {
@@ -451,7 +455,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float areaRadius = def.carpetAreaRadius;
         float totalDuration = waveCount * waveInterval;
 
-        SkillRangeVisual.ShowSector(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
+        ShowSkillRange(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
                                     totalDuration + impactDelay + 0.3f);
 
         float damageMultiplier = damagePerWave;
@@ -486,6 +490,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// !! 한 대상이 맞을 확률은 (포탄 반경 / 산포 반경)^2 정도다. 기본값(반경 2 / 산포 8)이면 한 발당
     ///    약 6%고 9발이면 기대 명중이 1발도 되지 않는다. 좁은 곳에 몰린 적이나 큰 적에게 쓰는 용도이고,
     ///    체감이 너무 약하면 evoBarrageScatterRadius를 줄여 포탄을 모으는 쪽으로 조정한다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
     /// </summary>
     private IEnumerator ExecuteBarrageBombing(SkillDefinitionSO def, int index, Vector3 center)
     {
@@ -495,7 +500,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float shellRadius = ApplySkillRangeBonus(def, index, def.evoBarrageShellRadius);
         float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
 
-        SkillRangeVisual.ShowSector(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
+        ShowSkillRange(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
                                     totalDuration + def.carpetImpactDelay + 0.3f);
 
         float damageMultiplier = def.evoBarrageDamagePerShell;
@@ -940,13 +945,16 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return new List<Collider>(candidates);
     }
 
-    /// <summary>확산 사격 - 정면 부채꼴 범위를 즉시 명중시킨다(투사체 없음, 위 클래스 주석 참고).</summary>
+    /// <summary>
+    /// 확산 사격 - 정면 부채꼴 범위를 즉시 명중시킨다(투사체 없음, 위 클래스 주석 참고).
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorShot(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
 
         if(visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -1134,6 +1142,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// 넘겨서 처리한다(118번).
     /// </summary>
     /// // 9.1 WBH 입력 당시 진화와 위치정보 매개변수를 추가로 전달받기 위해 매개변수 추가.
+    /// <summary>SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.</summary>
     private void ExecuteBombThrow(SkillDefinitionSO def, int index, SkillEvolutionId evo, Vector3 cursorPos)
     {
         if (def.bombPrefab == null)
@@ -1160,13 +1169,13 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float showDuration = Mathf.Max(0.2f, Vector3.Distance(spawnPos, targetPos) / def.bombThrowSpeed) + def.bombFuseSeconds;
 
         if(visibleSkillArea)
-            SkillRangeVisual.ShowSector(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
+            ShowSkillRange(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
 
         // 진화1(집속 폭탄) - 2차 폭발 범위도 같은 자리에 겹쳐서 표시한다. 1차 원이 사라지는 시점(showDuration)에
         // 맞춰 2차 원이 evoClusterDelaySeconds만큼 더 유지되다 사라지게 해서, "작은 원이 먼저 없어지고 큰 원이
         // 그 다음에 없어짐"으로 두 번 터진다는 걸 시각적으로 알 수 있게 했다.
         if (evo == SkillEvolutionId.Evolution1 && visibleSkillArea)
-            SkillRangeVisual.ShowSector(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
+            ShowSkillRange(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
 
         float damageMultiplier = def.damageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
@@ -1326,6 +1335,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// evoDecoyFuseSeconds 후 evoDecoyExplosionRadius 범위로 자동 폭발(GunnerDecoy 내부 처리). "적을
     /// 도발"하는 부분은 구현하지 않았다(사용자 선택 - 120번 로그 참고, BH님 소유 적 AI 타겟팅을
     /// 안 건드리기로 함).
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
     /// </summary>
     private void ExecuteDecoyDeploy(SkillDefinitionSO def, int index, Vector3 spawnPosition)
     {
@@ -1336,7 +1346,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         if(visibleSkillArea)
-            SkillRangeVisual.ShowSector(spawnPosition,
+            ShowSkillRange(spawnPosition,
                                         Vector3.forward,
                                         def.evoDecoyExplosionRadius,
                                         360f,
@@ -1426,6 +1436,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     //}
 
     // 스킬 3 (D 스킬) 공격부분
+    /// <summary>SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.</summary>
     private void ExecuteBackstepAction(SkillDefinitionSO def, int index, SkillEvolutionId evo)
     {
         if(evo == SkillEvolutionId.Evolution1)
@@ -1437,7 +1448,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
 
         if(visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
         {
@@ -1576,5 +1587,12 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
                                                                               (SkillEffectPart)partValue);
 
         playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    /// <summary>SW 수정: 싱글이 실제로 표시한 범위와 같은 정보를 원격 표시 경로에 전달합니다.</summary>
+    private void ShowSkillRange(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 0.25f)
+    {
+        SkillRangeVisual.ShowSector(position, direction, radius, angle, color, duration);
+        SkillRangePresented?.Invoke(position, direction, radius, angle, color, duration);
     }
 }
