@@ -97,8 +97,11 @@ public static class WBH_CombatResolver_MirrorTest
             return false;
 
         WBH_ICombatStatus attackerStatus = attacker.Controller.Status;
-        if (attackerStatus == null || attackerStatus.IsDead)
+        WBH_ICombatStatus targetStatus = target.Status;
+        if (attackerStatus == null || attackerStatus.IsDead || targetStatus == null || targetStatus.IsDead)
             return false;
+
+        damageMultiplier *= attacker.ItemTriggers?.ConsumePreparedAttackMultiplier(damageCause, attackId) ?? 1f;
 
         if (state == null)
         {
