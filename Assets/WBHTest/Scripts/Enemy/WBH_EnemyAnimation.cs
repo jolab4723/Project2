@@ -39,6 +39,9 @@ public class WBH_EnemyAnimation : MonoBehaviour
     public bool IsSkillAniPlaying { get; private set; }
     public bool UseDieAni => useDieAni;
 
+    /// <summary>SW 수정: 스킬 트리거 전달만 외부 권한 소유자에 맡기고 기존 애니메이션 상태는 유지합니다.</summary>
+    public Action<int> ExternalSkillRequested { get; set; }
+
     private void Awake()
     {
         animator = GetComponent<Animator>();
@@ -99,6 +102,12 @@ public class WBH_EnemyAnimation : MonoBehaviour
             return;
 
         IsSkillAniPlaying = true;
+
+        if (ExternalSkillRequested != null)
+        {
+            ExternalSkillRequested(skillId);
+            return;
+        }
 
         animator.SetInteger(SkillIdHash, skillId);
         animator.SetTrigger(SkillHash);

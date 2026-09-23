@@ -25,6 +25,8 @@ public class YJ_StageManager : MonoBehaviour
     private bool unknownBattleCompleted;
 
     public bool StageClear => stageClear;
+    public bool IsGameplayReady { get; private set; }
+    public string GameplayPreparationError { get; private set; }
 
     private void Awake()
     {
@@ -47,11 +49,14 @@ public class YJ_StageManager : MonoBehaviour
             enemySpawnManager.WaveCompleted -= HandleWaveCompleted;
     }
 
+    /// <summary>SW 수정: 싱글 초기화만 실행하며 멀티의 웨이브·저장은 서버 세션이 담당합니다.</summary>
     private IEnumerator Start()
     {
+        if (MirrorNetworkManager.OwnsGameplay) yield break;
         if (bootScene)
         {
             Initialize();
+            IsGameplayReady = true;
             yield break;
         }
 
@@ -67,16 +72,45 @@ public class YJ_StageManager : MonoBehaviour
         if (!TryStartScene())
             yield break;
 
+        // SW 수정: 저장 데이터 복원 후 현재 장착 외형과 선택 스킬만 준비합니다.
+        if (playerSpawner != null)
+        {
+            PlayerContext context = playerSpawner.SpawnedPlayer.GetComponent<PlayerContext>();
+            double deadline = Time.realtimeSinceStartupAsDouble + 60;
+            while (true)
+            {
+                bool ready = false;
+                string error = "플레이어 상태 연결이 없습니다.";
+                if (context == null || !context.TryPreparePresentation(out ready, out error))
+                {
+                    GameplayPreparationError = context == null ? "플레이어 상태 연결이 없습니다." : error;
+                    Log.Error(GameplayPreparationError);
+                    yield break;
+                }
+                if (ready) break;
+                if (Time.realtimeSinceStartupAsDouble >= deadline)
+                {
+                    GameplayPreparationError = "플레이 준비 시간이 초과되었습니다.";
+                    Log.Error(GameplayPreparationError);
+                    yield break;
+                }
+                yield return null;
+            }
+        }
+
         // 기존 고정 플레이어 씬에서는 SpawnManager가 최초 웨이브 직전에 참조를 찾습니다.
         if (playerSpawner != null && enemySpawnManager != null &&
             !enemySpawnManager.TrySetPlayer(playerSpawner.SpawnedPlayer))
             yield break;
 
+        IsGameplayReady = true;
+        playerSpawner?.SetGameplayInput(true);
         StartStage();
     }
 
     public void Initialize()
     {
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (!TryGetDataManager())
             return;
 
@@ -94,6 +128,7 @@ public class YJ_StageManager : MonoBehaviour
 
     private bool TryStartScene()
     {
+        if (MirrorNetworkManager.OwnsGameplay) return false;
         if (!TryGetDataManager())
             return false;
 
@@ -122,8 +157,10 @@ public class YJ_StageManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>SW 수정: 멀티 참가자의 진행을 오프라인 저장 파일에 기록하지 않습니다.</summary>
     public void EndScene()
     {
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (!TryGetDataManager())
             return;
 
@@ -302,6 +339,18 @@ public class YJ_StageManager : MonoBehaviour
             };
         }
         return enemySpawnManager.TrySetWaves(waves);
+    }
+
+    /// <summary>SW 수정: 로컬 저장이나 적 생성을 실행하지 않고 서버 노드로 원본 웨이브만 확정합니다.</summary>
+    public bool TryPrepareSessionWaves(StageMapSaveData snapshot)
+    {
+        if (!MirrorNetworkManager.OwnsGameplay || !Mirror.NetworkServer.active ||
+            enemySpawnManager == null || snapshot?.nodes == null) return false;
+        StageNodeSaveData node = snapshot.nodes.Find(value => value != null && value.id == snapshot.pendingNodeId);
+        if (node == null) return false;
+        return node.type == StageNodeType.Boss
+            ? TryUseDefaultWaveSet("서버 보스 스테이지")
+            : UsesEnemyWaves(node.type) && TryConfigureGeneratedWaves(node.type, CreateWaveSeed(snapshot.mapSeed, node));
     }
 
     // 씬에 저장된 default 웨이브 정보를 불러오거나 웨이브 정보 로드를 실패할 경우들의 오류 처리

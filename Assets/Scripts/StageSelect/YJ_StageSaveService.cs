@@ -61,7 +61,9 @@ public class YJ_StageSaveService : MonoBehaviour
     /// <summary>
     /// 현재 저장 경로에 JSON 파일이 존재하는지 반환합니다.
     /// </summary>
-    public bool HasSaveFile => IsSessionOnly
+    public bool HasSaveFile => MirrorNetworkManager.OwnsGameplay
+        ? ((MirrorNetworkManager)Mirror.NetworkManager.singleton).HasRunSnapshot
+        : IsSessionOnly
         ? sessionJson != null
         : File.Exists(SavePath);
 
@@ -168,7 +170,9 @@ public class YJ_StageSaveService : MonoBehaviour
         return TryResolveUnknownDestinationData(map, nodeKey, stageId, destination, out sceneName, out _, out error);
     }
 
-    private static bool TryResolveUnknownDestinationData(StageMapSaveData map, string nodeKey, string stageId,
+    // SW 수정: 서버도 동일한 목적지 규칙만 조회하고 싱글 저장은 호출하지 않습니다.
+    /// <summary>맵 스냅샷에서 이벤트 목적지를 계산하며 파일이나 진행 상태는 변경하지 않습니다.</summary>
+    public static bool TryResolveUnknownDestinationData(StageMapSaveData map, string nodeKey, string stageId,
         YJ_UnknownStageDestination destination, out string sceneName, out StageNodeType type, out string error)
     {
         sceneName = null; error = null; type = StageNodeType.Event;
@@ -258,6 +262,8 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     private bool WriteSaveData(StageMapSaveData saveData)
     {
+        // SW 수정: 서버 스냅샷은 세션만 갱신하며 싱글 파일/임시 런에 쓰지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return false;
         if (saveData == null)
         {
             Log.Error("저장할 스테이지 맵 데이터가 없습니다.");
@@ -376,6 +382,9 @@ public class YJ_StageSaveService : MonoBehaviour
     public bool TryLoadSaveData(out StageMapSaveData saveData)
     {
         saveData = null;
+        // SW 수정: 멀티 조회는 독립 복사된 서버 스냅샷을 사용합니다.
+        if (MirrorNetworkManager.OwnsGameplay)
+            return ((MirrorNetworkManager)Mirror.NetworkManager.singleton).TryGetRunSnapshot(out saveData);
         string path = SavePath;
 
         if (!HasSaveFile)
@@ -455,6 +464,8 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     public bool DeleteSaveFile()
     {
+        // SW 수정: 멀티 종료/재시작은 오프라인 진행을 삭제하지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return false;
         if (IsSessionOnly)
         {
             sessionJson = null;

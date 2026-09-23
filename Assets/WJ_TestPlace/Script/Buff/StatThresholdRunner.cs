@@ -16,7 +16,7 @@ namespace ItemSystem
     /// 아직 세팅되기 전)에도 호출될 수 있어서, 구독은 모든 Awake가 끝난 뒤 보장되는 Start에서도 재시도한다.
     /// (Begin() 시점에 바로 구독하면 Instance가 null이라 조용히 구독이 누락되는 경우가 있었음)
     /// </summary>
-    internal class StatThresholdRunner : MonoBehaviour
+    public class StatThresholdRunner : MonoBehaviour
     {
         private StatReference referenceStat;
         private ComparisonOperator comparisonOperator;
@@ -24,9 +24,48 @@ namespace ItemSystem
         private IBuffSource buffSource;
         private bool isActive;
         private bool subscribed;
+        private bool explicitOwner;
+        private PlayerStatManager stats;
+        private PlayerHealthManager health;
+        private PlayerManaManager mana;
+        private PlayerBuffManager buffs;
+        private PlayerStat subscribedStat;
+
+        /// <summary>SW 수정: 같은 조건 계산기를 지정된 플레이어 참조로 실행합니다.</summary>
+        public void Bind(PlayerStatManager stats, PlayerHealthManager health, PlayerManaManager mana,
+            PlayerBuffManager buffs, StatThresholdBuffUniqueEffectSO effect)
+        {
+            Unbind();
+            explicitOwner = true;
+            this.stats = stats; this.health = health; this.mana = mana; this.buffs = buffs;
+            if (effect != null) Begin(effect.referenceStat, effect.comparisonOperator, effect.thresholdValue, effect);
+        }
+
+        /// <summary>SW 수정: 실제 구독한 인스턴스와 이 실행기의 버프만 해제합니다.</summary>
+        public void Unbind()
+        {
+            if (health != null) health.OnHealthChanged -= CheckCondition;
+            if (mana != null) mana.OnManaChanged -= CheckCondition;
+            if (subscribedStat != null)
+            {
+                subscribedStat.OnStatChanged -= CheckCondition;
+                subscribedStat.OnStatChanged -= HandleManaStatChanged;
+            }
+            bool remove = isActive;
+            isActive = false; subscribed = false; subscribedStat = null;
+            if (remove && buffs != null && buffSource != null) buffs.RemoveBuff(buffSource);
+            buffSource = null;
+        }
+
+        private void HandleManaStatChanged()
+        {
+            mana?.RefreshMaxMana();
+            CheckCondition();
+        }
 
         public void Begin(StatReference reference, ComparisonOperator op, float threshold, IBuffSource source)
         {
+            Unbind();
             referenceStat = reference;
             comparisonOperator = op;
             thresholdValue = threshold;
@@ -43,71 +82,56 @@ namespace ItemSystem
             CheckCondition();
         }
 
+        private void OnEnable()
+        {
+            TrySubscribe();
+            CheckCondition();
+        }
+
+        private void OnDisable()
+        {
+            IBuffSource source = buffSource;
+            Unbind();
+            buffSource = source;
+        }
+
         private void TrySubscribe()
         {
-            if (subscribed)
-                return;
-
-            switch (referenceStat)
+            if (!isActiveAndEnabled || subscribed || buffSource == null) return;
+            if (!explicitOwner)
             {
-                case StatReference.CurrentHealthPercent:
-                    if (PlayerHealthManager.Instance == null)
-                        return;
-                    PlayerHealthManager.Instance.OnHealthChanged += CheckCondition;
-                    break;
-
-                case StatReference.CurrentManaPercent:
-                    if (PlayerManaManager.Instance == null)
-                        return;
-                    PlayerManaManager.Instance.OnManaChanged += CheckCondition;
-                    break;
-
-                default:
-                    if (PlayerStatManager.Instance == null || PlayerStatManager.Instance.Stat == null)
-                        return;
-                    PlayerStatManager.Instance.Stat.OnStatChanged += CheckCondition;
-                    break;
+                stats = PlayerStatManager.Instance; health = PlayerHealthManager.Instance;
+                mana = PlayerManaManager.Instance; buffs = PlayerBuffManager.Instance;
             }
-
+            if (health == null || buffs == null || stats?.Stat == null || mana == null) return;
+            health.OnHealthChanged += CheckCondition;
+            subscribedStat = stats.Stat;
+            if (referenceStat == StatReference.CurrentManaPercent)
+            {
+                mana.OnManaChanged += CheckCondition;
+                subscribedStat.OnStatChanged += HandleManaStatChanged;
+                mana.RefreshMaxMana();
+            }
+            else if (referenceStat != StatReference.CurrentHealthPercent)
+                subscribedStat.OnStatChanged += CheckCondition;
             subscribed = true;
         }
 
         private void OnDestroy()
         {
-            if (subscribed)
-            {
-                switch (referenceStat)
-                {
-                    case StatReference.CurrentHealthPercent:
-                        if (PlayerHealthManager.Instance != null)
-                            PlayerHealthManager.Instance.OnHealthChanged -= CheckCondition;
-                        break;
-
-                    case StatReference.CurrentManaPercent:
-                        if (PlayerManaManager.Instance != null)
-                            PlayerManaManager.Instance.OnManaChanged -= CheckCondition;
-                        break;
-
-                    default:
-                        if (PlayerStatManager.Instance != null && PlayerStatManager.Instance.Stat != null)
-                            PlayerStatManager.Instance.Stat.OnStatChanged -= CheckCondition;
-                        break;
-                }
-            }
-
             // 해제되는 순간 버프가 켜져있었다면 남지 않도록 정리한다.
-            if (isActive && buffSource != null && PlayerBuffManager.Instance != null)
-                PlayerBuffManager.Instance.RemoveBuff(buffSource);
+            Unbind();
         }
 
         private void CheckCondition()
         {
-            if (buffSource == null || PlayerBuffManager.Instance == null || !TryGetValue(out float value))
+            if (!isActiveAndEnabled || buffSource == null || buffs == null || !TryGetValue(out float value))
                 return;
 
-            bool shouldBeActive = comparisonOperator == ComparisonOperator.GreaterOrEqual
-                ? value >= thresholdValue
-                : value <= thresholdValue;
+            bool shouldBeActive = health != null && health.CurrentHealth > 0f &&
+                !float.IsNaN(value) && !float.IsInfinity(value) &&
+                (comparisonOperator == ComparisonOperator.GreaterOrEqual
+                    ? value >= thresholdValue : value <= thresholdValue);
 
             if (shouldBeActive == isActive)
                 return; // 상태가 그대로면 중복으로 켜고 끄지 않는다.
@@ -115,9 +139,9 @@ namespace ItemSystem
             isActive = shouldBeActive;
 
             if (isActive)
-                PlayerBuffManager.Instance.ApplyBuff(buffSource);
+                buffs.ApplyBuff(buffSource);
             else
-                PlayerBuffManager.Instance.RemoveBuff(buffSource);
+                buffs.RemoveBuff(buffSource);
         }
 
         /// <summary>referenceStat이 가리키는 현재 값을 읽는다. 값을 아직 낼 수 없는 상태면 false.</summary>
@@ -128,19 +152,19 @@ namespace ItemSystem
             switch (referenceStat)
             {
                 case StatReference.CurrentHealthPercent:
-                    if (PlayerHealthManager.Instance == null || PlayerHealthManager.Instance.MaxHealth <= 0f)
+                    if (health == null || health.MaxHealth <= 0f)
                         return false;
-                    value = PlayerHealthManager.Instance.CurrentHealth / PlayerHealthManager.Instance.MaxHealth * 100f;
+                    value = health.CurrentHealth / health.MaxHealth * 100f;
                     return true;
 
                 case StatReference.CurrentManaPercent:
-                    if (PlayerManaManager.Instance == null || PlayerManaManager.Instance.MaxMana <= 0f)
+                    if (mana == null || mana.MaxMana <= 0f)
                         return false;
-                    value = PlayerManaManager.Instance.CurrentMana / PlayerManaManager.Instance.MaxMana * 100f;
+                    value = mana.CurrentMana / mana.MaxMana * 100f;
                     return true;
 
                 default:
-                    PlayerStat stat = PlayerStatManager.Instance != null ? PlayerStatManager.Instance.Stat : null;
+                    PlayerStat stat = stats != null ? stats.Stat : null;
                     if (stat == null)
                         return false;
 

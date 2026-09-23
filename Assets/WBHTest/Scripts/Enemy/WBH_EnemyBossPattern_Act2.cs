@@ -500,13 +500,11 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 플레이어 수 체크 (자폭병 소환 시, 플레이어 수 * 3 만큼 소환하기 위함)
     private int GetActivePlayerCount()
     {
-        T_PlayerController[] players = Object.FindObjectsByType<T_PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-
         int count = 0;
-
-        foreach(T_PlayerController player in players)
+        // SW 수정: 싱글은 기존 활성 플레이어, 멀티는 서버가 공급한 생존 참가자를 셉니다.
+        foreach (Transform player in owner.GetActiveTargets())
         {
-            if (player.isActiveAndEnabled)
+            if (player != null && player.gameObject.activeInHierarchy)
                 count++;
         }
         return Mathf.Max(1, count);

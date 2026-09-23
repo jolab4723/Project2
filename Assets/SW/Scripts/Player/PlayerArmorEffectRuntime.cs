@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 싱글·서버에서 장착된 투구와 상의의 동일한 고유효과를 관리합니다.
-/// 마나 조건과 버프 적용은 StatThresholdRunner_MirrorTest에 맡깁니다.
+/// 마나 조건과 버프 적용은 StatThresholdRunner에 맡깁니다.
 /// 장비 해제, 컴포넌트 비활성화, 서버 종료 때 기존 실행 객체를 정리합니다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -120,7 +120,7 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         activeEffect = nextEffect;
         runtimeObject = new GameObject("LowManaHelmetEffect");
         runtimeObject.transform.SetParent(transform, false);
-        runtimeObject.AddComponent<StatThresholdRunner_MirrorTest>()
+        runtimeObject.AddComponent<StatThresholdRunner>()
             .Bind(stats, health, mana, buffs, nextEffect);
     }
 
@@ -277,7 +277,7 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
             return;
 
         // 객체가 실제로 파괴되기 전에 이벤트 구독과 버프를 먼저 정리합니다.
-        previous.GetComponent<StatThresholdRunner_MirrorTest>()?.Unbind();
+        previous.GetComponent<StatThresholdRunner>()?.Unbind();
         previous.SetActive(false);
         if (Application.isPlaying)
             Destroy(previous);

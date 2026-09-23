@@ -67,14 +67,14 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
         {
             foreach (Collider hit in Physics.OverlapSphere(transform.position, radius, 1 << 10, QueryTriggerInteraction.Collide))
             {
-                WBH_ICombat target = PlayerCombatAuthority_MirrorTest.FindCombatTarget(hit);
+                WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
                 if (target == null || target.Status == null || target.Status.IsDead || !targets.Add(target)) continue;
                 if (gravity)
                 {
                     // 짧게 갱신하므로 범위를 벗어나면 원래 속도로 돌아온다.
                     var slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow, refreshSeconds + 0.1f, multiplier)
                     { Attacker = owner.Controller, AttackId = attackId };
-                    var network = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority_MirrorTest>();
+                    var network = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
                     if (network != null && network.IsServerDamageHandlingActive) network.ServerTryApplyStatusEffect(slow);
                     else target.AddStatusEffect(slow);
                 }

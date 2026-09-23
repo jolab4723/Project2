@@ -26,6 +26,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
     private string requestedNodeKey;
     private string requestedNodeId;
     private YJ_UnknownDiscardPanel discardPanel;
+    private MirrorNetworkManager session;
+    private bool sessionDiscardSubmitted;
 
     private void OnEnable()
     {
@@ -34,12 +36,15 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void OnDisable()
     {
+        if (session != null) session.UnknownChoiceChanged -= HandleSessionChoiceChanged;
         CancelDiscardSelection();
         UnbindLanguageManager();
     }
 
     private void Start()
     {
+        // SW 수정: 멀티는 서버의 pending 이벤트를 표시하며 싱글 세이브를 변경하지 않습니다.
+        session = MirrorNetworkManager.singleton as MirrorNetworkManager;
         if (!ResolveReferences())
             return;
 
@@ -51,6 +56,49 @@ public class YJ_UnknownStageManager : MonoBehaviour
         }
 
         ApplySelectedStage(true);
+        if (session != null)
+        {
+            session.UnknownChoiceChanged += HandleSessionChoiceChanged;
+            HandleSessionChoiceChanged();
+        }
+    }
+
+    private void Update()
+    {
+        if (session == null || choiceButtonBox == null) return;
+        choiceButtonBox.SetButtonsInteractable(session.IsLocalGameplayReady && session.CanLocalClientControlSession &&
+            !isProcessingChoice && string.IsNullOrEmpty(session.UnknownChoice.NodeId));
+        if (!sessionDiscardSubmitted && discardPanel == null && session.IsLocalGameplayReady &&
+            !string.IsNullOrEmpty(session.UnknownChoice.NodeId)) HandleSessionChoiceChanged();
+    }
+
+    /// <summary>서버가 확정한 선택지에서 자기 인벤토리의 폐기 항목만 고릅니다.</summary>
+    private void HandleSessionChoiceChanged()
+    {
+        if (session == null || selectedStage == null) return;
+        var state = session.UnknownChoice;
+        if (string.IsNullOrEmpty(state.NodeId))
+        {
+            CancelDiscardSelection();
+            sessionDiscardSubmitted = false;
+            isProcessingChoice = false;
+            if (!string.IsNullOrEmpty(state.Error))
+            {
+                var label = labelDatabase.GetLabel(selectedStage.StageId);
+                unknownStageContents.PlayTextReveal(label.stageName, state.Error, choiceButtonBox.PlayReveal);
+            }
+            return;
+        }
+        if (session.LocalPlayerContext == null || !session.IsLocalGameplayReady || sessionDiscardSubmitted || discardPanel != null) return;
+        if (!selectedStage.TryGetChoice(state.Choice, out var choice, out _)) return;
+        int required = 0;
+        foreach (var effect in choice.Effects)
+            if (effect.Type == YJ_UnknownEffectType.DiscardSelectedItems) required += effect.Amount;
+        isProcessingChoice = true;
+        if (required == 0) { sessionDiscardSubmitted = true; return; }
+        var items = session.LocalPlayerContext.GetComponent<PlayerInventorySync>().CaptureEventInventory().items;
+        items.RemoveAll(item => item.isEquipped);
+        OpenDiscardSelection(selectedStage.StageId, state.Choice, items, required);
     }
 
     private void BindLanguageManager()
@@ -245,6 +293,19 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void HandleChoiceSelected(string stageId, int choiceIndex, List<string> discardedItemIds)
     {
+        // SW 수정: 서버 요청만 전달하며 아래 싱글 저장/이동 경로는 실행하지 않습니다.
+        if (session != null)
+        {
+            if (discardedItemIds != null)
+            {
+                sessionDiscardSubmitted = session.SubmitUnknownDiscard(session.UnknownChoice.NodeId, choiceIndex, discardedItemIds);
+                isProcessingChoice = sessionDiscardSubmitted;
+            }
+            else if (isActiveAndEnabled && selectedStage != null && stageId == selectedStage.StageId &&
+                     session.IsLocalGameplayReady && session.CanLocalClientControlSession)
+                isProcessingChoice = session.RequestUnknownStageChoice(choiceIndex);
+            return;
+        }
         if (!isActiveAndEnabled || isProcessingChoice || selectedStage == null ||
             choiceButtonBox == null || !choiceButtonBox.CanSelect ||
             Core.SceneLoader.Instance != null && Core.SceneLoader.Instance.IsLoading)
@@ -373,7 +434,9 @@ public class YJ_UnknownStageManager : MonoBehaviour
     {
         var canvas = choiceButtonBox.GetComponentInParent<Canvas>();
         var template = choiceButtonBox.GetComponentInChildren<TMPro.TMP_Text>(true);
-        var database = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
+        var database = session != null
+            ? Resources.Load<ItemSystem.ItemDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/AllItems")
+            : Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
         if (canvas == null || template == null || template.font == null || database == null)
         { Log.Error("[Unknown] 폐기 선택창의 Canvas, 폰트 또는 아이템 DB가 없습니다."); return false; }
         var entries = new List<YJ_UnknownDiscardPanel.Entry>();

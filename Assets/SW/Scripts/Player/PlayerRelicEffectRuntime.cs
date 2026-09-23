@@ -9,7 +9,7 @@ using UnityEngine;
 /// <para>유물 SO의 전역 <c>OnEquip/OnUnequip</c> 호출 대신 같은 플레이어의 Inventory와 Buff를 직접 참조해 효과를 적용한다.</para>
 /// <para>패시브 중첩 수, 오라 GameObject, 조건부 버프 Runner를 이 플레이어 컴포넌트가 소유하여 다른 플레이어와 런타임 상태를 공유하지 않는다.</para>
 /// <para>비활성화 시 이벤트 구독, 버프와 생성한 런타임 오브젝트를 모두 정리한다.</para>
-/// <para>WJ 적 디버프 병합 차이: 오라의 판정용 Collider·Rigidbody·BuffFieldZone_MirrorTest는 서버에서만 만들고,
+/// <para>WJ 적 디버프 병합 차이: 오라의 판정용 Collider·Rigidbody·BuffFieldZone는 서버에서만 만들고,
 /// <c>FieldAuraUniqueEffectSO.targetEnemies</c>를 그대로 전달한다. 클라이언트는 판정 없이 자기 오라의 시각 표시만 만든다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -198,7 +198,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
         if (HasRuntimeForEffect(aura))
             return;
 
-        GameObject zoneObject = new($"[MirrorTest Aura] {aura.name}");
+        GameObject zoneObject = new($"[Mirror Aura] {aura.name}");
         zoneObject.layer = 2;
         zoneObject.transform.position = transform.position;
 
@@ -217,7 +217,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
             rigidbody.isKinematic = true;
             rigidbody.useGravity = false;
 
-            BuffFieldZone_MirrorTest zone = zoneObject.AddComponent<BuffFieldZone_MirrorTest>();
+            BuffFieldZone zone = zoneObject.AddComponent<BuffFieldZone>();
             zone.ConfigureRuntime(
                 aura,
                 targetEnemies: aura.targetEnemies,
@@ -242,9 +242,9 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
         if (HasRuntimeForEffect(effect))
             return;
 
-        GameObject runnerObject = new($"[MirrorTest Threshold] {effect.name}");
+        GameObject runnerObject = new($"[Mirror Threshold] {effect.name}");
         runnerObject.transform.SetParent(transform, false);
-        runnerObject.AddComponent<StatThresholdRunner_MirrorTest>().Bind(
+        runnerObject.AddComponent<StatThresholdRunner>().Bind(
             GetComponent<PlayerStatManager>(),
             GetComponent<PlayerHealthManager>(),
             GetComponent<PlayerManaManager>(),

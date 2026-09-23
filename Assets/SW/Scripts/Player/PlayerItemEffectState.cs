@@ -222,7 +222,7 @@ public sealed class PlayerItemEffectState
         if (cooldownEndTimes.TryGetValue(cooldownKey, out double cooldownEnd) && now < cooldownEnd)
             return;
 
-        int queuedCount = ChainLightningExecutor_MirrorTest.Enqueue(
+        int queuedCount = ChainLightningExecutor.Enqueue(
             context,
             effect,
             result,

@@ -235,6 +235,54 @@ public class WBH_PlayerEffect : MonoBehaviour
         return data != null;
     }
 
+    /// <summary>SW 수정: 현재 선택한 스킬의 바인딩만 재생 없이 준비합니다. 로딩 실패와 진행 중을 구분합니다.</summary>
+    public bool TryPrepareCurrentEffects(WBH_EffectPoolManager pool, ISkillController skills,
+        bool fighter, out bool ready, out string error)
+    {
+        ready = false;
+        error = null;
+        if (pool == null || skills == null) { error = "효과 풀 또는 스킬 연결이 없습니다."; return false; }
+        bool loading = false;
+        foreach (EffectBinding binding in bindingMap.Values)
+        {
+            int code = (int)binding.cue;
+            if (code != (int)WBH_PlayerEffectCue.Dodge)
+            {
+                if (code / 1000 != (fighter ? 1 : 2)) continue;
+                int slot = code % 1000 / 100 - 1;
+                if (slot >= 0)
+                {
+                    if (slot >= skills.SkillCount) continue;
+                    int selected = (int)(fighter
+                        ? PlayerEffectCueUtility.CreateFighterSkillCue(slot + 1, skills.GetEvolution(slot), SkillEffectPart.Main)
+                        : PlayerEffectCueUtility.CreateGunnerSkillCue(slot + 1, skills.GetEvolution(slot), SkillEffectPart.Main));
+                    if (code / 10 != selected / 10) continue;
+                }
+            }
+            if (binding.data != null && !pool.PrepareEffect(binding.data))
+            { error = $"효과 준비 실패: {binding.cue}"; return false; }
+            if (binding.sounds == null) continue;
+            foreach (SfxEntry sound in binding.sounds)
+            {
+                AudioClip clip = sound?.clip;
+                if (clip == null) continue;
+                if (clip.loadState == AudioDataLoadState.Unloaded && !clip.LoadAudioData())
+                { error = $"소리 준비 실패: {clip.name}"; return false; }
+                if (clip.loadState == AudioDataLoadState.Failed)
+                { error = $"소리 준비 실패: {clip.name}"; return false; }
+                loading |= clip.loadState != AudioDataLoadState.Loaded;
+            }
+        }
+        if (fighter && skills.SkillCount > 0 && skills.GetEvolution(0) == SkillEvolutionId.Evolution3)
+        {
+            if ((chargeEffect != null && !pool.PrepareEffect(chargeEffect)) ||
+                (chargeRangeEffect != null && !pool.PrepareEffect(chargeRangeEffect)))
+            { error = "차징 효과 준비 실패"; return false; }
+        }
+        ready = !loading;
+        return true;
+    }
+
     private void PlayBindingSfx(EffectBinding binding, Vector3 position)
     {
         if (sfxPlayer == null || binding.sounds == null)

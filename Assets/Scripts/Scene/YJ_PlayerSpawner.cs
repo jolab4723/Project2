@@ -14,13 +14,24 @@ public class YJ_PlayerSpawner : MonoBehaviour
     [SerializeField] private WorldItemTooltipScanner worldItemScanner;
     [SerializeField] private YJ_MinimapPing minimapPing;
     public T_PlayerController SpawnedPlayer { get; private set; }
+    private PlayerActionInputHandler actionInput;
+    private bool actionInputWasEnabled;
+
+    /// <summary>SW 수정: 상태·외형 준비가 끝날 때까지 이동과 포션/스킬 입력을 함께 보류합니다.</summary>
+    public void SetGameplayInput(bool ready)
+    {
+        SpawnedPlayer?.SetControlEnable(ready);
+        if (actionInput != null) actionInput.enabled = ready && actionInputWasEnabled;
+    }
 
     /// <summary>
     /// 선택한 플레이어를 생성하고 HUD를 연결합니다.
     /// SW 수정: 생성 직후 공통 PlayerContext에 기존 씬 인벤토리를 연결합니다.
+    /// 멀티 세션에서는 기존 SessionLifecycle이 참가자를 생성합니다.
     /// </summary>
     private void Start()
     {
+        if (MirrorNetworkManager.OwnsGameplay) return;
         DataManager dataManager = DataManager.Instance;
         if (dataManager == null)
         {
@@ -47,6 +58,9 @@ public class YJ_PlayerSpawner : MonoBehaviour
 
         // SpawnPoint의 자식으로 두지 않아 부모 스케일/회전의 영향을 받지 않습니다.
         SpawnedPlayer = Instantiate(prefab, transform.position, transform.rotation);
+        actionInput = SpawnedPlayer.GetComponent<PlayerActionInputHandler>();
+        actionInputWasEnabled = actionInput != null && actionInput.enabled;
+        SetGameplayInput(false);
         // SW 수정: 기존 Awake/OnEnable 초기화를 마친 뒤 싱글의 상태 참조만 연결합니다.
         PlayerContext context = SpawnedPlayer.GetComponent<PlayerContext>();
         if (context == null) context = SpawnedPlayer.gameObject.AddComponent<PlayerContext>();
