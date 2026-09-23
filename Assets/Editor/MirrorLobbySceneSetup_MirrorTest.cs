@@ -285,6 +285,10 @@ public static class MirrorLobbySceneSetup_MirrorTest
             SceneManager.MoveGameObjectToScene(managerObject, lobbyScene);
             EditorSceneManager.CloseScene(sourceScene, true);
             SceneManager.SetActiveScene(lobbyScene);
+            // 싱글과 같은 효과음 재생기를 플레이어 생성 전에 준비한다. 영구 사운드 객체는 씬 이동에도 유지된다.
+            if (!InScene<YJ_SfxPlayer>(lobbyScene).Any())
+                PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/Resources/Prefabs/Manager/SoundManager.prefab"), lobbyScene);
             Object.DestroyImmediate(managerObject.GetComponent<NetworkManagerHUD>());
             Object.DestroyImmediate(managerObject.GetComponent<DataManager_MirrorTest>());
             MirrorTestNetworkManager manager = managerObject.GetComponent<MirrorTestNetworkManager>();

@@ -29,6 +29,10 @@ public enum MirrorAct1BossPhase : byte
 public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
 {
     private const float MeleeAngle = 120f;
+    private static readonly WBH_StatusEffectType[] StatusTypes =
+        (WBH_StatusEffectType[])System.Enum.GetValues(typeof(WBH_StatusEffectType));
+    private static readonly WBH_PlayerEffectCue[] PlayerEffectCues =
+        (WBH_PlayerEffectCue[])System.Enum.GetValues(typeof(WBH_PlayerEffectCue));
 
     /// <summary>현재 실행에서 서버가 확정한 적 사망 누적 횟수다.</summary>
     public static uint ServerDeathCount { get; private set; }
@@ -72,6 +76,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     [SyncVar] private float currentHealth;
     [SyncVar] private float maxHealth;
     [SyncVar] private bool isDead;
+    [SyncVar(hook = nameof(OnStatusVisualMaskChanged))] private uint statusVisualMask;
     [SyncVar] private uint targetNetId;
     [SyncVar] private uint lastAttackerNetId;
     [SyncVar] private uint stateChangeNumber;
@@ -110,6 +115,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
     private WBH_ProjectileSpawner sharedProjectileSpawner;
     private NetworkEnemyCombatView_MirrorTest combatView;
     private bool missingCombatViewReported;
+    private WBH_EnemyStatusEffectController statusEffects;
 
     private bool ResolveSharedSpawners()
     {
@@ -253,6 +259,43 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             agent.enabled = false;
         if (networkPattern != null)
             networkPattern.enabled = false;
+        ApplyStatusVisualMask(statusVisualMask);
+    }
+
+    private void LateUpdate()
+    {
+        if (!isServer) return;
+        statusEffects ??= GetComponent<WBH_EnemyStatusEffectController>();
+        uint mask = 0;
+        if (!isDead && statusEffects != null)
+            foreach (WBH_StatusEffectType type in StatusTypes)
+                if (type != WBH_StatusEffectType.None && statusEffects.HasStatusEffect(type))
+                    mask |= 1u << (int)type;
+        statusVisualMask = mask;
+    }
+
+    private void OnStatusVisualMaskChanged(uint _, uint value)
+    {
+        if (isClient && !isServer) ApplyStatusVisualMask(value);
+    }
+
+    private void ApplyStatusVisualMask(uint mask)
+    {
+        statusEffects ??= GetComponent<WBH_EnemyStatusEffectController>();
+        if (statusEffects == null || enemyInfo == null) return;
+        foreach (WBH_StatusEffectType type in StatusTypes)
+        {
+            if (type == WBH_StatusEffectType.None) continue;
+            if ((mask & (1u << (int)type)) != 0)
+                statusEffects.PlayStatusEffect(type, enemyInfo.enemyGrade);
+            else statusEffects.StopStatusEffect(type);
+        }
+    }
+
+    public override void OnStopClient()
+    {
+        if (!isServer) ApplyStatusVisualMask(0);
+        base.OnStopClient();
     }
 
     public override void OnStopServer()
@@ -646,6 +689,10 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         lastDamage = result.FinalDamage;
         lastDamageCritical = result.IsCritical;
         receivedDamagePresentationCount++;
+        Component attackerComponent = result.Attacker as Component;
+        PlayerContext attacker = attackerComponent != null
+            ? attackerComponent.GetComponentInParent<PlayerContext>()
+            : null;
 
         // 실제 Spawn된 적만 전송한다. Editor의 미Spawn 로직 검사는 그대로 실행한다.
         if (netIdentity != null && netIdentity.netId != 0 &&
@@ -654,12 +701,18 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         {
             RpcShowDamage(result.FinalDamage, result.IsCritical,
                 result.ElementType, transform.position);
+            if (attacker != null && result.EffectData != null && result.EffectData.hitEffectPrefab != null)
+            {
+                var effects = attacker.GetComponent<WBH_PlayerEffect>();
+                foreach (WBH_PlayerEffectCue cue in PlayerEffectCues)
+                {
+                    if (effects == null || !effects.TryGetEffectData(cue, out WBH_EffectData data) || data != result.EffectData) continue;
+                    RpcShowHitEffect(GetNetId(attacker), cue, result.HitPosition ?? transform.position,
+                        result.HitEffectDirection ?? Vector3.zero);
+                    break;
+                }
+            }
         }
-
-        Component attackerComponent = result.Attacker as Component;
-        PlayerContext attacker = attackerComponent != null
-            ? attackerComponent.GetComponentInParent<PlayerContext>()
-            : null;
 
         if (attacker != null)
         {
@@ -684,10 +737,25 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
             lastAttackDirection = -transform.forward;
         }
 
-        lastImpactPoint = transform.position;
+        lastImpactPoint = result.HitPosition ?? transform.position;
+        if (result.HitEffectDirection.HasValue && result.HitEffectDirection.Value.sqrMagnitude > 0.0001f)
+            lastAttackDirection = -result.HitEffectDirection.Value.normalized;
         stateChangeNumber++;
         if (!status.IsDead)
             networkAnimator?.SetTrigger("Hit");
+    }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcShowHitEffect(uint attackerId, WBH_PlayerEffectCue cue, Vector3 point, Vector3 direction)
+    {
+        // Host는 WBH_EnemyController.TakeDamage에서 같은 이펙트를 이미 재생한다.
+        if (isServer || !NetworkClient.spawned.TryGetValue(attackerId, out NetworkIdentity attacker)) return;
+        var effects = attacker.GetComponent<WBH_PlayerEffect>();
+        if (effects == null || !effects.TryGetEffectData(cue, out WBH_EffectData data) || data == null) return;
+        if (sharedEffectSpawner == null) ResolveSharedSpawners();
+        Quaternion rotation = direction.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(direction.normalized, Vector3.up) : Quaternion.identity;
+        sharedEffectSpawner?.SpawnHitEffect(data, point, rotation);
     }
 
     [ClientRpc(channel = Channels.Reliable)]
@@ -721,6 +789,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         if (NetworkManager.singleton is MirrorTestNetworkManager session)
             session.ServerReportQuestKill(enemyInfo?.enemyId);
         isDead = true;
+        statusVisualMask = 0;
         if (enemyInfo?.enemyAttackType == EnemyAttackType.Boss)
             bossPhase = MirrorAct1BossPhase.Dead;
         currentHealth = 0f;
@@ -888,6 +957,7 @@ public sealed class NetworkEnemyAuthority_MirrorTest : NetworkBehaviour
         if (isServer)
             return;
 
+        ApplyStatusVisualMask(0);
         PresentDeath(position, rotation, scale, impactPoint, attackDirection, killingDamage, enemyMaxHealth);
     }
 

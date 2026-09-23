@@ -113,10 +113,13 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         OnBurnResponse?.Invoke(BurnDamageMultiplier <= 0f);
     }
 
-    /// <summary>SW 수정: 재사용한 적은 이전 공격의 반응 표시 기록을 이어받지 않습니다.</summary>
+    /// <summary>SW 수정: 재사용한 적은 이전 공격 기록과 원격 화면에만 재생한 잔여 이펙트를 이어받지 않습니다.</summary>
     protected override void OnDisable()
     {
         base.OnDisable();
+        foreach (WBH_Effect effect in activeEffects.Values)
+            if (effect != null) effect.StopEffect();
+        activeEffects.Clear();
         burnResponses.Clear();
         burnResponseOrder.Clear();
     }
@@ -276,7 +279,14 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     }
 
     // 상태이상 이펙트 재생
+    /// <summary>SW 수정: 기존 적 등급으로 동일한 시각 효과 재생 경로를 사용합니다.</summary>
     public override void PlayStatusEffect(WBH_StatusEffectType type)
+    {
+        PlayStatusEffect(type, controller.Info.enemyGrade);
+    }
+
+    /// <summary>SW 수정: 피해나 스탯을 변경하지 않고 지정 등급의 상태이상 연출만 재생합니다.</summary>
+    public void PlayStatusEffect(WBH_StatusEffectType type, EnemyGrade grade)
     {
         if (activeEffects.ContainsKey(type))
             return;
@@ -291,7 +301,7 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
         if (effect == null)
             return;
 
-        float scale = GetEffectScale();
+        float scale = GetEffectScale(grade);
 
         effect.transform.localScale *= scale;
         activeEffects.Add(type, effect);
@@ -326,10 +336,9 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
     }
 
     // 몬스터 등급별 이펙트 크기 조정
-    private float GetEffectScale()
+    /// <summary>SW 수정: 원본과 원격 표시가 같은 등급별 이펙트 크기를 사용합니다.</summary>
+    private static float GetEffectScale(EnemyGrade grade)
     {
-        EnemyGrade grade = controller.Info.enemyGrade;
-
         return grade switch
         {
             EnemyGrade.Normal => 1f,

@@ -30,6 +30,9 @@ using UnityEngine.AI;
 /// </summary>
 public class FighterSkillController : MonoBehaviour, ISkillController
 {
+    /// <summary>SW 수정: 기존 범위 표시의 위치·방향·반경·각도·색·수명을 알립니다.</summary>
+    public event Action<Vector3, Vector3, float, float, Color, float> SkillRangePresented;
+
     [SerializeField] private PlayerActionInputHandler inputHandler;
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private T_PlayerController controller;
@@ -459,6 +462,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     ///
     /// !! ApplyHit과 같은 기준으로 pendingEvo를 읽는다. GetEvolution(index)를 다시 부르면
     ///    시전 도중 진화가 바뀐 경우 폭발과 이펙트가 서로 다른 진화를 가리킬 수 있다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
     /// </summary>
     private void ExecuteAwakeningBurst(SkillDefinitionSO def, int index)
     {
@@ -471,7 +475,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
 
         if (visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
             ApplyHit(target, def, damageMultiplier, index);
@@ -959,25 +963,31 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return new List<Collider>(candidates);
     }
 
-    /// <summary>기본 반원 베기 - 진화 미선택일 때.</summary>
+    /// <summary>
+    /// 기본 반원 베기 - 진화 미선택일 때.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlash(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
 
         if (visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
     }
 
-    /// <summary>진화1: 밀치기 + 기절 - 기본 판정에 넉백/기절 상태이상을 추가로 건다.</summary>
+    /// <summary>
+    /// 진화1: 밀치기 + 기절 - 기본 판정에 넉백/기절 상태이상을 추가로 건다.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo1(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
 
         if (visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
         {
@@ -986,13 +996,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
     }
 
-    /// <summary>진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.</summary>
+    /// <summary>
+    /// 진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo2(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
 
         if (visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -1004,14 +1017,17 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
     }
 
-    /// <summary>진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.</summary>
+    /// <summary>
+    /// 진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo3(SkillDefinitionSO def, float chargeRatio, int index)
     {
         float multiplier = Mathf.Lerp(def.evoChargeMinDamageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
 
         if (visibleSkillArea)
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, range, 360f, sectorVisualColor);
+            ShowSkillRange(transform.position, transform.forward, range, 360f, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, 360f))
             ApplyHit(target, def, multiplier, index);
@@ -1230,5 +1246,12 @@ public class FighterSkillController : MonoBehaviour, ISkillController
                                                                               (SkillEffectPart)partValue);
 
         playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    /// <summary>SW 수정: 싱글이 실제로 표시한 범위와 같은 정보를 원격 표시 경로에 전달합니다.</summary>
+    private void ShowSkillRange(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 0.25f)
+    {
+        SkillRangeVisual.ShowSector(position, direction, radius, angle, color, duration);
+        SkillRangePresented?.Invoke(position, direction, radius, angle, color, duration);
     }
 }

@@ -95,6 +95,8 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     private ElementType pendingGunnerElement;
     private float pendingGunnerRange;
     private float pendingGunnerSpeed;
+    private GunnerWeaponType localGunnerWeapon;
+    private string localGunnerItemId;
 
     public MirrorCombatRequestResult LastResult => lastResult;
     public uint LastTargetNetId => lastTargetNetId;
@@ -332,6 +334,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         localImpactConfirmationExpiresAt =
             localImpactAt + GetImpactConfirmationGraceSeconds();
         localNextAttackAt = localAttackStartedAt + AttackDurationSeconds / effectiveAnimationSpeed;
+        if (IsGunner) TryGetGunnerWeapon(out localGunnerWeapon, out localGunnerItemId);
 
         CmdRequestAttack(nextLocalRequestId, aimPoint, localAttackStartedAt);
         return true;
@@ -388,6 +391,14 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
         activeLocalRequestId = 0;
         localImpactAt = 0d;
         localImpactConfirmationExpiresAt = 0d;
+        // 소유자의 총구 연출은 싱글과 같은 AnimationEvent에서 재생한다. 피해·탄 생성은 서버만 확정한다.
+        if (IsGunner && IsGunnerShotCurrent(localGunnerItemId, localGunnerWeapon))
+        {
+            Vector3 origin = gunnerFirePoint != null ? gunnerFirePoint.position : transform.position;
+            Vector3 direction = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            GunnerCombatPresentation_MirrorTest.PlayShot(gameObject, localGunnerItemId, localGunnerWeapon,
+                origin, direction, status.GunnerAttackRange);
+        }
         CmdConfirmAttackAnimationImpact(confirmedRequestId, animationImpactAt);
         return true;
     }
@@ -609,7 +620,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         Collider[] hits = Physics.OverlapSphere(transform.position, status.FighterAttackRange, enemyLayer);
         var targets = new List<WBH_ICombat>();
-        var uniqueTargets = new HashSet<WBH_ICombat>();
+        var targetColliders = new Dictionary<WBH_ICombat, Collider>();
         bool hitAny = false;
 
         foreach (Collider hit in hits)
@@ -626,7 +637,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
             }
 
             WBH_ICombat target = FindCombatTarget(hit);
-            if (target == null || !uniqueTargets.Add(target))
+            if (target == null || !targetColliders.TryAdd(target, hit))
                 continue;
 
             targets.Add(target);
@@ -640,17 +651,15 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
 
         try
         {
+            WBH_EffectData effectData = null;
+            GetComponent<WBH_PlayerEffect>()?.TryGetEffectData(WBH_PlayerEffectCue.F_normal0_evo0_etc0, out effectData);
             foreach (WBH_ICombat target in targets)
             {
-                if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(
-                        context,
-                        target,
-                        status.CurrentElement,
-                        1f,
-                        GetStatusEffectForElement(status.CurrentElement),
-                        out WBH_DamageResult result,
-                        DamageCause.Direct,
-                        attackId))
+                Vector3 hitPosition = targetColliders[target].ClosestPoint(transform.position);
+                var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
+                    status.CurrentElement, 1f, GetStatusEffectForElement(status.CurrentElement), effectData,
+                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
+                if (!WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
                 {
                     continue;
                 }
@@ -784,12 +793,17 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
                 Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
                 if (Vector3.Angle(direction, flat) > 45f ||
                     Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
-                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, target, pendingGunnerElement, 1f,
-                        GetStatusEffectForElement(pendingGunnerElement),
-                        out WBH_DamageResult result, DamageCause.Direct, attackId))
+                Vector3 hitPosition = hit.ClosestPoint(transform.position);
+                var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
+                    pendingGunnerElement, 1f, GetStatusEffectForElement(pendingGunnerElement),
+                    GunnerCombatPresentation_MirrorTest.GetHitEffectData(gameObject, pendingGunnerWeapon),
+                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
+                if (WBH_CombatResolver_MirrorTest.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
                 {
                     ServerRecordGunnerHit(target, result);
-                    RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.ClosestPoint(origin), -direction);
+                    Vector3 impactDirection = (hit.transform.position - origin).normalized;
+                    impactDirection.y = 0f;
+                    RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.transform.position, -impactDirection);
                 }
             }
             if (lastResult != MirrorCombatRequestResult.Hit) lastResult = MirrorCombatRequestResult.NoTarget;
@@ -822,6 +836,7 @@ public sealed class PlayerCombatAuthority_MirrorTest : NetworkBehaviour
     [ClientRpc]
     private void RpcPresentGunnerShot(string itemId, GunnerWeaponType weaponType, Vector3 origin, Vector3 direction, float range)
     {
+        if (isLocalPlayer) return; // 실제 타격 이벤트에서 이미 표시한 소유자 연출을 중복 재생하지 않는다.
         GunnerCombatPresentation_MirrorTest.PlayShot(gameObject, itemId, weaponType, origin, direction, range);
     }
 

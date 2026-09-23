@@ -5,63 +5,10 @@ using UnityEngine;
 /// <summary>BH 원본 전투 계산을 Mirror 서버 권한 경계에서 수행한다.</summary>
 public static class WBH_CombatResolver_MirrorTest
 {
-    private readonly struct DamageSourceSnapshot
-    {
-        public readonly float AttackPower;
-        public readonly float CritRate;
-        public readonly float CritMult;
-        public readonly float Pen;
-        public readonly float FireBonus;
-        public readonly float IceBonus;
-        public readonly float ElectricBonus;
-        public readonly float NormalDamageModifier;
-        public readonly float SkillDamageModifier;
-
-        public DamageSourceSnapshot(WBH_ICombatStatus status)
-        {
-            AttackPower = status.AttackPower;
-            CritRate = status.CritRate;
-            CritMult = status.CritMult;
-            Pen = status.Pen;
-            FireBonus = status.FireBonus;
-            IceBonus = status.IceBonus;
-            ElectricBonus = status.ElectricBonus;
-            NormalDamageModifier = status.NormalDamageModifier;
-            SkillDamageModifier = status.SkillDamageModifier;
-        }
-
-        /// <summary>WBH_CombatManager.GetAttackTypeModifier와 같은 규칙. 두 공식이 갈라지지 않게 맞춰야 한다.</summary>
-        public float GetAttackTypeModifier(WBH_AttackType attackType)
-        {
-            return attackType switch
-            {
-                WBH_AttackType.Normal => NormalDamageModifier,
-                WBH_AttackType.Skill => SkillDamageModifier,
-                _ => 1f,
-            };
-        }
-
-        public float GetElementBonus(ElementType elementType)
-        {
-            return elementType switch
-            {
-                ElementType.Fire => FireBonus,
-                ElementType.Ice => IceBonus,
-                ElementType.Electric => ElectricBonus,
-                _ => 0f,
-            };
-        }
-    }
-
     private struct PendingFollowUpDamage
     {
         public PlayerContext Attacker;
-        public WBH_ICombat Target;
-        public ElementType ElementType;
-        public float DamageMultiplier;
-        public WBH_StatusEffectData? StatusEffect;
-        public DamageCause DamageCause;
-        public uint AttackId;
+        public WBH_DamageRequest Request;
         public System.Action<WBH_DamageResult> OnResolved;
         public bool CanCrit;
     }
@@ -70,7 +17,7 @@ public static class WBH_CombatResolver_MirrorTest
     {
         public readonly Queue<PendingFollowUpDamage> PendingQueue = new();
         public readonly HashSet<(uint AttackId, DamageCause Cause, WBH_ICombat Target)> FollowUpTargets = new();
-        public DamageSourceSnapshot SourceSnapshot;
+        public WBH_CombatManager.DamageSourceSnapshot SourceSnapshot;
         public bool IsResolving;
     }
 
@@ -80,9 +27,20 @@ public static class WBH_CombatResolver_MirrorTest
     public static bool TryProcessPlayerDamage(PlayerContext attacker, WBH_ICombat target,
         ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
         out WBH_DamageResult result, DamageCause damageCause = DamageCause.Direct, uint attackId = 0)
+        => TryProcessPlayerDamage(attacker, new WBH_DamageRequest(attacker?.Controller, target,
+            ToAttackType(damageCause), elementType, damageMultiplier, statusEffect, null, null, null,
+            damageCause, attackId), out result);
+
+    /// <summary>기존 요청의 공격 유형·출처·피격 연출을 보존하면서 서버 권한 경계를 통과한다.</summary>
+    public static bool TryProcessPlayerDamage(PlayerContext attacker, WBH_DamageRequest request,
+        out WBH_DamageResult result)
     {
         result = default;
+        WBH_ICombat target = request.Target;
+        uint attackId = request.AttackId;
+        float damageMultiplier = request.DamageMultiplier;
         if (attacker == null || !Mirror.NetworkServer.active || attacker.Controller == null || target == null ||
+            request.Attacker != attacker.Controller ||
             !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
             return false;
 
@@ -101,7 +59,10 @@ public static class WBH_CombatResolver_MirrorTest
         if (attackerStatus == null || attackerStatus.IsDead || targetStatus == null || targetStatus.IsDead)
             return false;
 
-        damageMultiplier *= attacker.ItemTriggers?.ConsumePreparedAttackMultiplier(damageCause, attackId) ?? 1f;
+        damageMultiplier *= attacker.ItemTriggers?.ConsumePreparedAttackMultiplier(request.DamageCause, attackId) ?? 1f;
+        request = new WBH_DamageRequest(request.Attacker, target, request.AttackType, request.ElementType,
+            damageMultiplier, request.StatusEffect, request.EffectData, request.HitPosition,
+            request.HitEffectDirection, request.DamageCause, attackId);
 
         if (state == null)
         {
@@ -109,13 +70,12 @@ public static class WBH_CombatResolver_MirrorTest
             resolutionStates.Add(attacker, state);
         }
 
-        state.SourceSnapshot = new DamageSourceSnapshot(attackerStatus);
+        state.SourceSnapshot = new WBH_CombatManager.DamageSourceSnapshot(attackerStatus);
         state.IsResolving = true;
         bool success;
         try
         {
-            success = ExecuteDamageInternal(attacker, target, elementType, damageMultiplier, statusEffect,
-                damageCause, attackId, state.SourceSnapshot, out result);
+            success = ExecuteDamageInternal(attacker, request, state.SourceSnapshot, out result);
             DrainPendingQueue(state);
         }
         catch (System.Exception)
@@ -153,12 +113,8 @@ public static class WBH_CombatResolver_MirrorTest
         state.PendingQueue.Enqueue(new PendingFollowUpDamage
         {
             Attacker = attacker,
-            Target = target,
-            ElementType = elementType,
-            DamageMultiplier = damageMultiplier,
-            StatusEffect = statusEffect,
-            DamageCause = damageCause,
-            AttackId = attackId,
+            Request = new WBH_DamageRequest(attacker.Controller, target, ToAttackType(damageCause),
+                elementType, damageMultiplier, statusEffect, null, null, null, damageCause, attackId),
             OnResolved = onResolved,
             CanCrit = canCrit,
         });
@@ -170,14 +126,14 @@ public static class WBH_CombatResolver_MirrorTest
         while (state.PendingQueue.Count > 0)
         {
             PendingFollowUpDamage pending = state.PendingQueue.Dequeue();
-            if (pending.Target == null || (pending.Target is Component comp && comp == null))
+            WBH_ICombat target = pending.Request.Target;
+            if (target == null || (target is Component comp && comp == null))
                 continue;
-            WBH_ICombatStatus targetStatus = pending.Target.Status;
+            WBH_ICombatStatus targetStatus = target.Status;
             if (targetStatus == null || targetStatus.IsDead)
                 continue;
 
-            if (ExecuteDamageInternal(pending.Attacker, pending.Target, pending.ElementType,
-                    pending.DamageMultiplier, pending.StatusEffect, pending.DamageCause, pending.AttackId,
+            if (ExecuteDamageInternal(pending.Attacker, pending.Request,
                     state.SourceSnapshot, out WBH_DamageResult resolvedResult, pending.CanCrit))
                 pending.OnResolved?.Invoke(resolvedResult);
         }
@@ -192,7 +148,7 @@ public static class WBH_CombatResolver_MirrorTest
     }
 
     /// <summary>
-    /// 이 경로는 WBH_AttackType을 들고 다니지 않고 DamageCause만 받는다. WBH_DamageRequest가
+    /// 기존 인자형 API는 WBH_AttackType을 들고 다니지 않고 DamageCause만 받는다. WBH_DamageRequest가
     /// AttackType을 DamageCause로 옮길 때 쓰는 규칙(Skill -> Skill, 그 외 -> Direct)을 되짚어
     /// 공격 유형을 복원한다.
     ///
@@ -201,44 +157,29 @@ public static class WBH_CombatResolver_MirrorTest
     ///    여기서만 1f로 빼면 두 공식의 결과가 갈라진다.
     ///
     /// !! 복원이라 완전하지는 않다. 단일 경로에서 AttackType.Skill과 DamageCause.Effect를 함께 넘기면
-    ///    그쪽은 스킬 배율을 타지만 여기서는 일반 배율을 탄다. 현재 그런 호출부는 없다.
+    ///    그쪽은 스킬 배율을 타지만 기존 인자형 API는 일반 배율을 탄다. 이런 조합은 요청형 API를 사용한다.
     /// </summary>
     private static WBH_AttackType ToAttackType(DamageCause damageCause)
     {
         return damageCause == DamageCause.Skill ? WBH_AttackType.Skill : WBH_AttackType.Normal;
     }
 
-    private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_ICombat target,
-        ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
-        DamageCause damageCause, uint attackId, DamageSourceSnapshot sourceSnapshot,
+    private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_DamageRequest request,
+        WBH_CombatManager.DamageSourceSnapshot sourceSnapshot,
         out WBH_DamageResult result, bool canCrit = true)
     {
         result = default;
+        WBH_ICombat target = request.Target;
         if (!Mirror.NetworkServer.active || attacker?.Controller == null || target == null ||
-            !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
+            !float.IsFinite(request.DamageMultiplier) || request.DamageMultiplier <= 0f)
             return false;
         WBH_ICombatStatus attackerStatus = attacker.Controller.Status;
         WBH_ICombatStatus targetStatus = target.Status;
         if (attackerStatus == null || targetStatus == null || attackerStatus.IsDead || targetStatus.IsDead)
             return false;
 
-        float damage = sourceSnapshot.AttackPower * damageMultiplier * sourceSnapshot.GetAttackTypeModifier(ToAttackType(damageCause));
-        damage *= 1f + sourceSnapshot.GetElementBonus(elementType);
-        bool isCritical = canCrit && Random.value <= sourceSnapshot.CritRate;
-        if (isCritical) damage *= sourceSnapshot.CritMult;
-        damage -= targetStatus.DefensePower - sourceSnapshot.Pen;
-        damage *= targetStatus.DamageTakenModifier;
-        damage = Mathf.Max(1f, damage);
-
-        if (statusEffect.HasValue)
-        {
-            WBH_StatusEffectData applied = statusEffect.Value;
-            applied.Attacker = attacker.Controller;
-            applied.AttackId = attackId;
-            statusEffect = applied;
-        }
-        result = new WBH_DamageResult(attacker.Controller, damage, isCritical, elementType, statusEffect,
-            null, null, null, damageCause, attackId);
+        result = WBH_CombatManager.CalculateDamage(request, sourceSnapshot, canCrit);
+        WBH_StatusEffectData? statusEffect = result.StatusEffect;
         target.TakeDamage(result);
 
         if (!target.Status.IsDead && statusEffect.HasValue)

@@ -16,6 +16,9 @@ public class GunnerArcProjectile : MonoBehaviour
     [SerializeField] private Color explosionRangeColor = new Color(1f, 0.45f, 0.1f, 0.35f);
     [SerializeField] private float explosionRangeDuration = 0.25f;
 
+    /// <summary>SW 수정: 실제 폭발 범위 표시의 위치·반경·색·수명을 외부 시각 경로에 전달합니다.</summary>
+    public event System.Action<Vector3, float, Color, float> ExplosionRangePresented;
+
 
     private Vector3 direction;
     private float speed;
@@ -111,11 +114,13 @@ public class GunnerArcProjectile : MonoBehaviour
         }
     }
 
+    /// <summary>SW 수정: 기존 폭발 판정과 표시를 유지하며 범위 표시 요청을 함께 알립니다.</summary>
     private void Explode()
     {
         if(showExplosionRange)
         {
             SkillRangeVisual.ShowSector(transform.position, Vector3.forward, explosionRadius, 360, explosionRangeColor, explosionRangeDuration);
+            ExplosionRangePresented?.Invoke(transform.position, explosionRadius, explosionRangeColor, explosionRangeDuration);
         }
 
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);

@@ -12,7 +12,6 @@ using Object = UnityEngine.Object;
 public static class MirrorSkillSceneSetup_MirrorTest
 {
     private const string Folder = "Assets/SW/TEST/MirrorPlayerContext/Prefabs/";
-    private const string GunnerControllerPath = "Assets/SW/TEST/MirrorCombat/Animations/GunnerSkills_MirrorTest.controller";
     private const string VisualFolder = "Assets/SW/TEST/MirrorCombat/Prefabs/SkillVisuals";
     public const string NetworkVisualPath = VisualFolder + "/NetworkSkillVisual_MirrorTest.prefab";
 
@@ -49,10 +48,33 @@ public static class MirrorSkillSceneSetup_MirrorTest
 
     public static void ConfigurePlayer(GameObject root, GameObject source)
     {
+        var sourceEffect = source.GetComponent<WBH_PlayerEffect>();
+        var effect = root.GetComponent<WBH_PlayerEffect>();
+        if (sourceEffect == null || effect == null)
+            throw new InvalidOperationException("원본 또는 미러 플레이어 이펙트 연결이 없습니다: " + source.name);
+        // 기반 프리팹에 추가된 원본과 예전 미러 전용 컴포넌트가 함께 남으면
+        // 스킬·애니메이션이 서로 다른 스포너와 바인딩을 사용한다. 직렬화 참조도 함께 통합한다.
+        foreach (var duplicate in root.GetComponents<WBH_PlayerEffect>().Where(candidate => candidate != effect))
+        {
+            foreach (var component in root.GetComponentsInChildren<Component>(true))
+            {
+                if (component == null || component == duplicate) continue;
+                var serialized = new SerializedObject(component);
+                var property = serialized.GetIterator();
+                while (property.Next(true))
+                    if (property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue == duplicate)
+                        property.objectReferenceValue = effect;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            Object.DestroyImmediate(duplicate);
+        }
+        EditorUtility.CopySerializedManagedFieldsOnly(sourceEffect, effect);
+        RemapOwnedReferences(effect, source.transform, root.transform);
+
         var sourceSkill = (MonoBehaviour)source.GetComponent<FighterSkillController>() ?? source.GetComponent<GunnerSkillController>();
         if (sourceSkill == null) throw new InvalidOperationException("원본 스킬 실행기가 없습니다: " + source.name);
         var original = root.GetComponent(sourceSkill.GetType()) as MonoBehaviour ?? (MonoBehaviour)root.AddComponent(sourceSkill.GetType());
-        EditorUtility.CopySerialized(sourceSkill, original);
+        EditorUtility.CopySerializedManagedFieldsOnly(sourceSkill, original);
         RemapOwnedReferences(original, source.transform, root.transform);
         var data = new SerializedObject(original);
         data.FindProperty("inputHandler").objectReferenceValue = null;
@@ -73,6 +95,7 @@ public static class MirrorSkillSceneSetup_MirrorTest
         authorityData.FindProperty("fighterSkills").objectReferenceValue = original as FighterSkillController;
         authorityData.FindProperty("gunnerSkills").objectReferenceValue = original as GunnerSkillController;
         authorityData.FindProperty("animationView").objectReferenceValue = root.GetComponent<WBH_PlayerAnimation_MirrorTest>();
+        authorityData.FindProperty("playerEffect").objectReferenceValue = effect;
         CopyArray(data.FindProperty("skills"), authorityData.FindProperty("skills"));
         var evolutions = authorityData.FindProperty("activeEvolutions");
         var originals = data.FindProperty("activeEvolutions");
@@ -81,8 +104,24 @@ public static class MirrorSkillSceneSetup_MirrorTest
             evolutions.GetArrayElementAtIndex(i).intValue = originals.GetArrayElementAtIndex(i).intValue;
         authorityData.ApplyModifiedPropertiesWithoutUndo();
 
+        if (sourceSkill is GunnerSkillController)
+        {
+            var combatData = new SerializedObject(root.GetComponent<PlayerCombatAuthority_MirrorTest>());
+            var projectile = (NetworkEnemyProjectile_MirrorTest)combatData.FindProperty("gunnerProjectilePrefab").objectReferenceValue;
+            var projectileData = new SerializedObject(projectile);
+            var sourceCombat = new SerializedObject(source.GetComponent<T_PlayerCombat>());
+            projectileData.FindProperty("playerGrenadeExplosionEffect").objectReferenceValue = sourceCombat.FindProperty("basicGrenadeEffect").objectReferenceValue;
+            var grenade = AssetDatabase.LoadAssetAtPath<WBH_Projectile>("Assets/WBHTest/Prefabs/Projectile/GunnerGrenade.prefab");
+            var grenadeData = new SerializedObject(grenade);
+            projectileData.FindProperty("showPlayerGrenadeRange").boolValue = grenadeData.FindProperty("showExplosionRange").boolValue;
+            projectileData.FindProperty("playerGrenadeRangeColor").colorValue = grenadeData.FindProperty("explosionRangeColor").colorValue;
+            projectileData.FindProperty("playerGrenadeRangeDuration").floatValue = grenadeData.FindProperty("explosionRangeDuration").floatValue;
+            projectileData.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         var animator = root.GetComponent<Animator>();
-        if (original is GunnerSkillController) animator.runtimeAnimatorController = PrepareGunnerController(source.GetComponent<Animator>().runtimeAnimatorController);
+        // 원본과 같은 전이·이벤트 시점을 사용한다. 별도 복제본은 최신 타이밍 변경을 놓칠 수 있다.
+        animator.runtimeAnimatorController = source.GetComponent<Animator>().runtimeAnimatorController;
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         var clips = animator.runtimeAnimatorController.animationClips.Distinct().ToArray();
         var animationData = new SerializedObject(root.GetComponent<WBH_PlayerAnimation_MirrorTest>());
@@ -116,33 +155,6 @@ public static class MirrorSkillSceneSetup_MirrorTest
         }
         foreach (var component in root.GetComponentsInChildren<MonoBehaviour>(true))
             if (component == null) throw new InvalidOperationException("스킬 연결 결과에 Missing Script가 있습니다.");
-    }
-
-    private static RuntimeAnimatorController PrepareGunnerController(RuntimeAnimatorController source)
-    {
-        if (AssetDatabase.LoadAssetAtPath<AnimatorController>(GunnerControllerPath) == null &&
-            !AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(source), GunnerControllerPath))
-            throw new InvalidOperationException("거너 Mirror 컨트롤러를 복제할 수 없습니다.");
-        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(GunnerControllerPath);
-        var queue = new Queue<AnimatorStateMachine>(controller.layers.Select(l => l.stateMachine));
-        while (queue.Count > 0)
-        {
-            var machine = queue.Dequeue();
-            foreach (var child in machine.stateMachines) queue.Enqueue(child.stateMachine);
-            foreach (var child in machine.states)
-            {
-                if (child.state.name is not ("BackStep_Shot_Idle" or "BackStep_Shot_Evo1")) continue;
-                foreach (var transition in child.state.transitions)
-                {
-                    if (transition.destinationState == null || transition.destinationState.name != "BackStep_Step") continue;
-                    // 짧은 클립의 마지막 프레임에 있는 사격 이벤트를 실행한 뒤 이동한다.
-                    transition.exitTime = 1f;
-                    EditorUtility.SetDirty(transition);
-                }
-            }
-        }
-        EditorUtility.SetDirty(controller);
-        return controller;
     }
 
     private static void PrepareSkillVisuals()
@@ -248,6 +260,7 @@ public static class MirrorSkillSceneSetup_MirrorTest
         var property = data.GetIterator();
         while (property.Next(true))
         {
+            if (property.propertyPath.StartsWith("m_", StringComparison.Ordinal)) continue;
             if (property.propertyType != SerializedPropertyType.ObjectReference) continue;
             Object value = property.objectReferenceValue;
             Transform original = value is Component c ? c.transform : (value as GameObject)?.transform;

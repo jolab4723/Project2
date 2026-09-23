@@ -3,6 +3,20 @@ using UnityEngine;
 /// <summary>이미 로드된 동일 무기의 VFX만 재사용한다. 피해나 Addressables 로딩을 소유하지 않는다.</summary>
 public static class GunnerCombatPresentation_MirrorTest
 {
+    public static WBH_EffectData GetHitEffectData(GameObject owner, GunnerWeaponType weaponType)
+    {
+        WBH_PlayerEffectCue cue = weaponType switch
+        {
+            GunnerWeaponType.Rifle => WBH_PlayerEffectCue.G_normal0_evo0_etc0,
+            GunnerWeaponType.Shotgun => WBH_PlayerEffectCue.G_normal0_evo0_etc1,
+            GunnerWeaponType.GrenadeLauncher => WBH_PlayerEffectCue.G_normal0_evo0_etc2,
+            _ => WBH_PlayerEffectCue.None,
+        };
+        WBH_EffectData data = null;
+        owner.GetComponent<WBH_PlayerEffect>()?.TryGetEffectData(cue, out data);
+        return data;
+    }
+
     public static GunnerWeaponVfxBinding FindBinding(GameObject owner, string itemId, GunnerWeaponType weaponType)
     {
         if (owner == null) return null;

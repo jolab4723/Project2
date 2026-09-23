@@ -36,6 +36,8 @@ public class WBH_PlayerEffect : MonoBehaviour
     private readonly Dictionary<WBH_PlayerEffectCue, EffectBinding> bindingMap = new();
     private readonly Dictionary<WBH_EffectData, WBH_Effect> activeLocalEffects = new();
     private Vector3 chargeEnhancementScale = Vector3.one;
+    /// <summary>SW 수정: 원본이 요청한 월드 VFX/SFX 정보를 알립니다. 피해나 네트워크 전송은 구독자가 결정합니다.</summary>
+    public event Action<WBH_PlayerEffectCue, Vector3, Quaternion, Vector3> WorldEffectRequested;
     private float PlaybackSpeed => playerStatus != null ? Mathf.Max(0.01f, playerStatus.AttackSpeed) : 1f;
 
     private void Awake()
@@ -176,6 +178,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         activeLocalEffects.Remove(effectData);
     }
 
+    /// <summary>SW 수정: 기존 월드 연출을 재생하고 같은 큐·위치·회전·배율을 외부 표시 경로에 알립니다.</summary>
     public void PlayWorldEffect(WBH_PlayerEffectCue cue, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
     {
         if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
@@ -184,6 +187,7 @@ public class WBH_PlayerEffect : MonoBehaviour
             return;
         }
 
+        WorldEffectRequested?.Invoke(cue, position, rotation, scaleMultiplier);
         PlayBindingSfx(binding, position);
 
         if (binding.data == null || spawner == null)
