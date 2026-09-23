@@ -34,6 +34,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenInventory()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         OpenIfClosed(inventory);
         NotifyOpened(hadOpenWindow);
@@ -41,6 +43,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenShop()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(upgrade);
         OpenIfClosed(inventory);
@@ -50,6 +54,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenUpgrade()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(shop);
         OpenIfClosed(inventory);
