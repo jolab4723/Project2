@@ -114,7 +114,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
             return;
         }
 
-        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5))
+        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5, WBH_EnemyEffectCue.Boss_Act1_Shoot))
         {
             burstTimer = burstCooldown;
         }
