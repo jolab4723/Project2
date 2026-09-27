@@ -70,7 +70,7 @@ public sealed partial class MirrorNetworkManager
                 string name = act + "_Stage" + stage;
                 if (!snapshot.usedStageSceneNames.Contains(name)) remaining.Add(name);
             }
-            // ponytail: 여섯 맵을 모두 방문한 뒤에만 재사용한다. 맵별 가중치 계층은 필요할 때 추가한다.
+            // 여섯 맵을 모두 방문한 뒤에만 재사용한다. 맵별 가중치 계층은 필요할 때 추가한다.
             if (remaining.Count == 0)
                 for (int stage = 1; stage <= 6; stage++) remaining.Add(act + "_Stage" + stage);
 

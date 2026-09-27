@@ -361,6 +361,13 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         if (sessionPhase != MirrorSessionPhase.Playing || manager == null ||
             !manager.TryGetPendingStageNode(out var node)) return false;
         var prefab = System.Array.Find(authoredEnemyPrefabs, p => p != null && p.EnemyInfo?.enemyId == enemyId);
+        // Act2 보스 소환 자폭병처럼 데이터(SO)만 분리된 적은 같은 등급·유형 계열의 네트워크 외형을 재사용합니다.
+        // 전용 외형이 필요해지면 네트워크 프리팹을 추가하고 이 대체 조회를 제거합니다.
+        if (prefab == null && enemyId != null && enemyId.LastIndexOf('.') > 0)
+        {
+            string family = enemyId.Substring(0, enemyId.LastIndexOf('.') + 1);
+            prefab = System.Array.Find(authoredEnemyPrefabs, p => p != null && p.EnemyInfo?.enemyId != null && p.EnemyInfo.enemyId.StartsWith(family));
+        }
         var context = new WBH_EnemyStatContext(node.floor, "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
         if (prefab == null || !enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out var info)) return false;
         var enemy = Instantiate(prefab, position, rotation);

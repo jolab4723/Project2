@@ -89,6 +89,10 @@ public class BuffIconUIContainer : MonoBehaviour
         if (buffManager == null || iconSlotPrefab == null)
             return;
 
+        // SW 수정: 멀티 HUD는 이 컴포넌트의 Awake 전에 Bind될 수 있어 기본 부모를 여기서도 보장한다.
+        if (slotParent == null)
+            slotParent = transform;
+
         IReadOnlyList<BuffInstance> active = buffManager.ActiveBuffs;
 
         int before = pool.Count;

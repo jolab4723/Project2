@@ -119,7 +119,7 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
             if (upgradeButton.onClick.GetPersistentTarget(i) == upgradeController &&
                 upgradeButton.onClick.GetPersistentMethodName(i) == nameof(UpgradeController.TryUpgrade))
             {
-                // ponytail: 테스트 Variant의 고정 버튼 한 개만 가로챈다. 정식 전환 때는 원본 버튼 연결을 교체한다.
+                // 테스트 Variant의 고정 버튼 한 개만 가로챈다. 정식 전환 때는 원본 버튼 연결을 교체한다.
                 upgradeButton.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
             }
         }

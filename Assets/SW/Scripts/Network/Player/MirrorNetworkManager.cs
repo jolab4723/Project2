@@ -49,9 +49,10 @@ public struct MirrorSessionLeadershipMessage : NetworkMessage
 public sealed partial class MirrorNetworkManager : NetworkManager
 {
     /// <summary>연결 전·씬 전환·종료 중에도 세션 소유자가 살아 있는 동안 싱글 실행을 막습니다.</summary>
-    public static bool OwnsGameplay => singleton is MirrorNetworkManager;
+    /// <remarks>SW 수정: 세션 종료 후 매니저가 파괴돼도 Mirror 정적 singleton은 파괴된 객체를 가리키므로 Unity null 판정을 함께 한다.</remarks>
+    public static bool OwnsGameplay => singleton is MirrorNetworkManager session && session != null;
 
-    // ponytail: 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
+    // 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
     public const int CompatibilityVersion = 2026092301;
     internal const int InitialRunSeed = 382597156;
@@ -147,6 +148,24 @@ public sealed partial class MirrorNetworkManager : NetworkManager
             GetComponentInChildren<UnityEngine.EventSystems.EventSystem>(true);
         if (sessionEventSystem != null && !sessionEventSystem.gameObject.activeSelf)
             sessionEventSystem.gameObject.SetActive(true);
+        SceneManager.sceneLoaded += DisableSceneEventSystems;
+    }
+
+    /// <summary>
+    /// 세션이 DontDestroyOnLoad EventSystem을 소유하므로, 결과 씬처럼 자체 EventSystem을 가진 씬이 로드되면
+    /// 씬 쪽 EventSystem을 꺼서 입력 처리 주체를 하나로 유지합니다(중복 시 매 프레임 경고 및 UI 선택 혼선).
+    /// </summary>
+    private void DisableSceneEventSystems(Scene scene, LoadSceneMode mode)
+    {
+        foreach (GameObject root in scene.GetRootGameObjects())
+            foreach (var eventSystem in root.GetComponentsInChildren<UnityEngine.EventSystems.EventSystem>(true))
+                eventSystem.enabled = false;
+    }
+
+    public override void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= DisableSceneEventSystems;
+        base.OnDestroy();
     }
 
     /// <summary>

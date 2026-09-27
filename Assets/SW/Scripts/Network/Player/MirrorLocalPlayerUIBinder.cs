@@ -55,10 +55,8 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
                 inventoryPartView.GetComponentInChildren<NetworkUpgradeButton>(true);
         }
 
-        formalHudBridge ??= FindFirstObjectByType<PlayerHudEventBridge>(
-            FindObjectsInactive.Include);
-        statusPopup ??= FindFirstObjectByType<KY_StatusPopup>(
-            FindObjectsInactive.Include);
+        formalHudBridge ??= FindInBinderScene<PlayerHudEventBridge>();
+        statusPopup ??= FindInBinderScene<KY_StatusPopup>();
 
 #if UNITY_EDITOR
         Canvas inventoryCanvas = inventoryView != null
@@ -82,6 +80,15 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         networkManager.RunSnapshotChanged += RefreshLocation;
         RefreshLocation(0);
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
+        BindCampNpcWindows();
+    }
+
+    /// <summary>
+    /// MirrorSceneMode가 멀티 객체를 순서대로 켜므로 OnEnable 시점에는 멀티 NPC가 아직 꺼져 있을 수 있다.
+    /// 모든 활성화가 끝난 뒤 한 번 더 연결한다(리스너 추가는 중복 없이 멱등).
+    /// </summary>
+    private void Start()
+    {
         BindCampNpcWindows();
     }
 
@@ -385,17 +392,8 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     /// </summary>
     private T FindInBinderScene<T>() where T : Component
     {
-        T[] candidates = FindObjectsByType<T>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
-
-        foreach (T candidate in candidates)
-        {
-            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
-                return candidate;
-        }
-
-        return null;
+        // SW 수정: 공용 씬의 싱글·멀티 UI 중 현재 모드 쪽을 우선 선택한다.
+        return MirrorSceneMode.FindInActiveMode<T>(gameObject.scene);
     }
 
     /// <summary>
