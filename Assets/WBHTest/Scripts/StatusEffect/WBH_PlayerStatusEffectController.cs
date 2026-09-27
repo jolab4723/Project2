@@ -1,3 +1,4 @@
+using ItemSystem;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,41 @@ using UnityEngine;
 [RequireComponent(typeof(T_PlayerController))]
 public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
 {
+    private sealed class StatusEffectStatSource : IBuffSource
+    {
+        private readonly FixedStatValue[] statEffects =
+        {
+            new FixedStatValue {statType = StatType.moveSpeedPercent, value = 0},
+            new FixedStatValue {statType = StatType.attackSpeedPercent, value = 0},
+            new FixedStatValue {statType = StatType.attackPowerPercent, value = 0}
+        };
+        public string BuffDisplayName => "상태이상 능력치 감소";
+        public string BuffDescription => string.Empty;
+        public Sprite BuffIcon => null;
+        public FixedStatValue[] StatEffects => statEffects;
+
+        public float Duration => 0f;
+        public BuffStackBehavior StackBehavior => BuffStackBehavior.RefreshDuration;
+        public int MaxStack => 1;
+        public bool IsPermanent => true;
+        public BuffDisplayKind DisplayKind => BuffDisplayKind.Debuff;
+
+        public void SetMultipliers(float moveSpeedMultiplier, float attackSpeedMultiplier, float attackPowerMultiplier)
+        {
+            statEffects[0].value = MultiplierToPercent(moveSpeedMultiplier);
+            statEffects[1].value = MultiplierToPercent(moveSpeedMultiplier);
+            statEffects[2].value = MultiplierToPercent(moveSpeedMultiplier);
+        }
+
+        private float MultiplierToPercent(float multiplier)
+        {
+            if(!float.IsFinite(multiplier))
+                return 0f;
+
+            return (Mathf.Max(0f, multiplier) - 1f) * 100f;
+        }
+    };
+
     [SerializeField] private Transform statusEffectRoot;
     [SerializeField] private WBH_EffectSpawner effectSpawner;
 
@@ -20,22 +56,46 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
 
     private readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
     private readonly HashSet<WBH_StatusEffectType> controlBlockingEffects = new();
+    private readonly StatusEffectStatSource statusEffectStatSource = new StatusEffectStatSource();
 
+    private PlayerBuffManager playerBuffManager;
     private WBH_PlayerStatus status;
     private T_PlayerController controller;
     private Coroutine knockbackRoutine;
     private Coroutine airborneRoutine;
     private float airborneGroundY; // 에어본 시작 전 지면 높이. 도중에 넉백이 끼어들 때 지면으로 되돌리기 위해 기억해둔다.
+    private float statusMoveSpeedMultiplier = 1f;
+    private float statusAttackSpeedMultiplier = 1f;
+    private float statusAttackPowerMultiplier = 1f;
+    private bool statusStatSourceApplied;
+
 
     private void Awake()
     {
         status = GetComponent<WBH_PlayerStatus>();
         controller = GetComponent<T_PlayerController>();
+        playerBuffManager = GetComponent<PlayerBuffManager>();
     }
-    
+
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        ResetStatusStatSource();
+
+        controlBlockingEffects.Clear();
+
+        if(controller != null)
+        {
+            controller.SetStatusEffectControlBlock(false);
+        }
+    }
+
     public void Initialize(WBH_EffectSpawner effectSpawner)
     {
         this.effectSpawner = effectSpawner;
+
+        ClearAllStatusEffects();
+        ResetStatusStatSource();
 
         controlBlockingEffects.Clear();
         controller.SetStatusEffectControlBlock(false);
@@ -50,16 +110,58 @@ public class WBH_PlayerStatusEffectController : WBH_StatusEffectController
     // 능력치 변경
     public override void ApplyMoveSpeedModifier(float modifier)
     {
-        status.MultiplyMoveSpeed(modifier);
+        statusMoveSpeedMultiplier = SanitizeMultiplier(modifier);
+        RefreshStatusStatSource();
     }
     public override void ApplyAttackSpeedModifier(float modifier)
     {
-        status.MultiplyAttackSpeed(modifier);
+        statusAttackSpeedMultiplier = SanitizeMultiplier(modifier);
+        RefreshStatusStatSource();
     }
     public override void ApplyAttackModifier(float modifier)
     {
-        status.MultiplyAttack(modifier);
+        statusAttackPowerMultiplier = SanitizeMultiplier(modifier);
+        RefreshStatusStatSource();
     }
+    private float SanitizeMultiplier(float modifier)
+    {
+        return float.IsFinite(modifier) ? Mathf.Max(0f, modifier) : 1f;
+    }
+
+    private void RefreshStatusStatSource()
+    {
+        if (playerBuffManager == null)
+            return;
+
+        statusEffectStatSource.SetMultipliers(statusMoveSpeedMultiplier, statusAttackSpeedMultiplier, statusAttackPowerMultiplier);
+
+        bool hasModifier = !Mathf.Approximately(statusMoveSpeedMultiplier, 1f) || !Mathf.Approximately(statusAttackSpeedMultiplier, 1f) || !Mathf.Approximately(statusAttackPowerMultiplier, 1f);
+
+        if(hasModifier)
+        {
+            playerBuffManager.ApplyBuff(statusEffectStatSource);
+            statusStatSourceApplied = true;
+        }
+        else if(statusStatSourceApplied)
+        {
+            playerBuffManager.RemoveBuff(statusEffectStatSource);
+            statusStatSourceApplied = false;
+        }
+    }
+
+    private void ResetStatusStatSource()
+    {
+        statusMoveSpeedMultiplier = 1f;
+        statusMoveSpeedMultiplier = 1f;
+        statusMoveSpeedMultiplier = 1f;
+
+        if(playerBuffManager != null && statusStatSourceApplied)
+        {
+            playerBuffManager.RemoveBuff(statusEffectStatSource);
+        }
+        statusStatSourceApplied = false;
+    }
+
     // 플레이어 방어감소 디버프는 아직 사용하지 않음. 차후 구현 필요
     public override void ApplyDefenseModifier(float modifier)
     {

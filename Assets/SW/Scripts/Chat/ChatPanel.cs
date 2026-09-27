@@ -44,8 +44,6 @@ public sealed class ChatPanel : MonoBehaviour
         rect = (RectTransform)transform;
         canvas = GetComponentInParent<Canvas>();
         title = transform.Find("Title")?.gameObject;
-        // 입력 중이 아니어도 패널 전체를 UI로 판정해 뒤쪽 전투 클릭을 막는다.
-        background.raycastTarget = true;
         input.richText = false;
         input.characterLimit = ChatSession.MaxTextLength;
         input.lineType = TMP_InputField.LineType.SingleLine;
@@ -261,6 +259,8 @@ public sealed class ChatPanel : MonoBehaviour
         Color color = background.color;
         color.a = editing ? 0.8f : 0.25f;
         background.color = color;
+        // 입력 중일 때만 패널 전체를 UI로 판정해 뒤쪽 전투 클릭을 막는다. 평소에는 채팅창 위 클릭도 공격으로 통과한다.
+        background.raycastTarget = editing;
         recordInteraction.blocksRaycasts = editing;
         recordInteraction.interactable = editing;
         scroll.enabled = editing;

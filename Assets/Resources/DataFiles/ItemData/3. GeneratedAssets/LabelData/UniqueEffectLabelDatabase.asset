@@ -13,16 +13,9 @@ MonoBehaviour:
   m_Name: UniqueEffectLabelDatabase
   m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.UniqueEffectLabelDatabaseSO
   korLabels:
-  - uniqueEffectId: UE_TestHelmet
-    name: "\uBC29\uC5B4 \uAC15\uD654"
-    description: "\uC7A5\uCC29 \uC911 \uBC29\uC5B4\uB825\uC774 {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
   - uniqueEffectId: UE_QuantumShoes
     name: "\uD000\uD140 \uBD80\uC2A4\uD2B8"
     description: "\uC774\uB3D9 \uC18D\uB3C4\uAC00 {0:F1} \uC99D\uAC00\uD569\uB2C8\uB2E4."
-  - uniqueEffectId: UE_TestGreatSword
-    name: "\uCF8C\uC18D \uAC15\uD0C0"
-    description: "\uBC1C\uB3D9 \uC2DC {1}\uCD08\uAC04 \uACF5\uACA9\uC18D\uB3C4\uAC00
-      {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
   - uniqueEffectId: UE_MassProducedCore
     name: "\uCF8C\uC18D \uBC1C\uB180\uB9BC"
     description: "\uAE30\uBCF8 \uACF5\uACA9 \uC801\uC911 \uC2DC {0}\uCD08\uAC04 \uC774\uB3D9
@@ -33,9 +26,8 @@ MonoBehaviour:
       \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. \uB2E4\uC2DC
       \uB118\uC5B4\uC11C\uBA74 \uD574\uC81C\uB429\uB2C8\uB2E4."
   - uniqueEffectId: UE_AdvancedCore
-    name: "\uD5EC\uB85C \uC6D4\uB4DC \uBC1C\uC2E0\uAE30"
-    description: "\uBCF4\uC720 \uC911 {0}\uCD08\uB9C8\uB2E4 \uCF58\uC194\uC5D0 \"HELLO
-      WORLD!\"\uB97C \uCD9C\uB825\uD569\uB2C8\uB2E4."
+    name: "\uC99D\uAC15"
+    description: "\uCD5C\uB300 \uCCB4\uB825\uC774 {0} \uC99D\uAC00\uD569\uB2C8\uB2E4."
   - uniqueEffectId: UE_CyberneticCore
     name: "\uAE30\uCD08\uC801\uC778 \uC784\uD50C\uB780\uD2B8"
     description: "\uD68C\uD53C \uC0AC\uC6A9 \uC2DC \uC2E0\uACBD \uAC00\uC18D \uBAA8\uB4DC\uC5D0
@@ -241,16 +233,173 @@ MonoBehaviour:
     description: "\uBC18\uACBD {0}m \uC548\uC758 \uC790\uC2E0\uACFC \uC0B4\uC544
       \uC788\uB294 \uC544\uAD70\uC758 \uB9C8\uB098 \uC7AC\uC0DD\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4.
       \uAC19\uC740 \uD6A8\uACFC\uB294 \uC911\uCCA9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+  - uniqueEffectId: UE_HelloWorldBeacon
+    name: "\uC601\uC5ED: \uD5EC\uB85C \uC6D4\uB4DC!"
+    description: "\uBC18\uACBD {0}\uC720\uB2DB \uC548\uC758 \uD50C\uB808\uC774\uC5B4\uB4E4\uC758
+      \uACF5\uACA9\uB825\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_ArcBladeChainLightning
+    name: "\uC544\uD06C \uC5F0\uC1C4"
+    description: "\uC9C1\uC811 \uAE30\uBCF8 \uACF5\uACA9 \uC2DC \uC801 \uCD5C\uB300
+      {0}\uBA85\uC5D0\uAC8C \uBC18\uACBD {1}m \uC774\uB0B4\uB85C \uACF5\uACA9\uB825\uC758
+      {2}% \uC804\uAE30 \uD53C\uD574\uB97C \uC5F0\uC1C4\uB85C \uC90D\uB2C8\uB2E4.
+      \uC774\uD6C4 \uC804\uC774\uB294 \uC774\uC804 \uD53C\uD574 \uACC4\uC218\uC758
+      {3}%\uC785\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {4}\uCD08)"
+  - uniqueEffectId: UE_InfernoExtraHit
+    name: "\uC9C0\uC625\uBD88 \uCD94\uAC00\uD0C0"
+    description: "\uADFC\uC811 \uAE30\uBCF8 \uACF5\uACA9 \uC801\uC911 \uC2DC \uAC19\uC740
+      \uB300\uC0C1\uC5D0\uAC8C \uACF5\uACA9\uB825\uC758 {0}% \uD654\uC5FC \uD53C\uD574\uB97C
+      \uCD94\uAC00\uB85C \uC90D\uB2C8\uB2E4."
+  - uniqueEffectId: UE_GlassRailExtraHit
+    name: "\uBE59\uADA4 \uCD94\uAC00\uD0C0"
+    description: "\uB77C\uC774\uD50C \uD0C4 \uC801\uC911 \uC2DC \uAC19\uC740 \uB300\uC0C1\uC5D0\uAC8C
+      \uACF5\uACA9\uB825\uC758 {0}% \uB0C9\uAE30 \uD53C\uD574\uB97C \uCD94\uAC00\uB85C
+      \uC90D\uB2C8\uB2E4. (\uBC1C\uC0AC \uD6C4 \uBB34\uAE30 \uAD50\uCCB4 \uB610\uB294
+      \uD574\uC81C \uC2DC\uC5D0\uB3C4 \uC720\uC9C0, \uBE44\uCE58\uBA85)"
+  - uniqueEffectId: UE_SolarGraceShield
+    name: "\uD0DC\uC591\uC758 \uC740\uD61C \uBCF4\uD638\uB9C9"
+    description: "\uCCB4\uB825 {0}% \uC774\uC0C1\uC5D0\uC11C {1}\uCD08\uAC04 \uD53C\uACA9\uB418\uC9C0
+      \uC54A\uC73C\uBA74 \uCD5C\uB300 \uCCB4\uB825\uC758 {2}% \uBCF4\uD638\uB9C9\uC744
+      {3}\uCD08 \uB3D9\uC548 \uC5BB\uC2B5\uB2C8\uB2E4. \uBCF4\uD638\uB9C9\uC740 \uC911\uCCA9\uB418\uC9C0
+      \uC54A\uC2B5\uB2C8\uB2E4."
+  - uniqueEffectId: UE_NightSwordDodgeStrike
+    name: "\uADF8\uB9BC\uC790 \uAE30\uC2B5"
+    description: "\uD68C\uD53C \uD6C4 \uB2E4\uC74C \uAE30\uBCF8 \uACF5\uACA9\uC758
+      \uD53C\uD574\uAC00 {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_GravityWellField
+    name: "\uC911\uB825 \uC6B0\uBB3C"
+    description: "\uC720\uD0C4\uC774 \uCDA9\uB3CC\uD55C \uC790\uB9AC\uC5D0 \uBC18\uACBD
+      {0}m\uC758 \uC911\uB825\uC7A5\uC744 {1}\uCD08 \uB3D9\uC548 \uB0A8\uAE41\uB2C8\uB2E4.
+      \uC7A5\uD310 \uC548\uC758 \uC801\uC740 \uC774\uB3D9 \uC18D\uB3C4\uAC00 {2}%
+      \uAC10\uC18C\uD558\uBA70, \uD6A8\uACFC\uB294 {3}\uCD08\uB9C8\uB2E4 \uAC31\uC2E0\uB429\uB2C8\uB2E4.
+      \uC7A5\uD310\uC740 \uCD5C\uB300 {4}\uAC1C\uAE4C\uC9C0 \uC720\uC9C0\uB429\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SingularityDelayedExplosion
+    name: "\uC9C0\uC5F0 \uD2B9\uC774\uC810"
+    description: "\uC720\uD0C4\uC774 \uCDA9\uB3CC\uD55C \uC790\uB9AC\uC5D0 \uD2B9\uC774\uC810\uC744
+      \uC608\uC57D\uD574 {0}\uCD08 \uD6C4 \uBC18\uACBD {1}m \uC801\uC5D0\uAC8C \uACF5\uACA9\uB825\uC758
+      {2}% \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4. \uCD5C\uB300 {3}\uAC1C\uAE4C\uC9C0
+      \uC720\uC9C0\uB429\uB2C8\uB2E4."
+  - uniqueEffectId: UE_Wildfire
+    name: "\uB418\uC0B4\uC544\uB098\uB294 \uBD88\uC528"
+    description: "\uACF5\uACA9 \uC801\uC911 \uC2DC {0}\uCD08\uAC04 \uD654\uC5FC \uD53C\uD574
+      \uBCF4\uB108\uC2A4\uAC00 {1} \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300
+      {2}\uC2A4\uD0DD)"
+  - uniqueEffectId: UE_PhaseHarvester
+    name: "\uACF5\uAC04 \uC808\uB2E8"
+    description: "\uC7A5\uCC29 \uC911 \uAD00\uD1B5\uB825\uC774 {0}, \uACF5\uACA9\uB825\uC774
+      {1}% \uC99D\uAC00\uD558\uC9C0\uB9CC \uACF5\uACA9 \uC18D\uB3C4\uAC00 {2}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SuperRefrigerant
+    name: "\uC5F4 \uAC15\uD0C8"
+    description: "\uD53C\uACA9 \uC2DC {0}\uCD08\uAC04 \uBE59\uACB0 \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00
+      {1}, \uBC29\uC5B4\uB825\uC774 {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784
+      {3}\uCD08)"
+  - uniqueEffectId: UE_Crusader
+    name: "\uC131\uC2A4\uB7EC\uC6B4 \uC77C\uACA9"
+    description: "\uC7A5\uCC29 \uC911 \uCE58\uBA85\uD0C0 \uD655\uB960\uC774 {0}%,
+      \uCE58\uBA85\uD0C0 \uD53C\uD574\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_GuardiansJustice
+    name: "\uC815\uC758\uB294 \uC2B9\uB9AC\uD55C\uB2E4"
+    description: "\uCCB4\uB825\uC774 {0}% \uC774\uC0C1\uC77C \uB54C \uACF5\uACA9\uB825\uC774
+      {1}%, \uBC29\uC5B4\uB825\uC774 {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_WasteHeatCleaver
+    name: "\uD3D0\uC5F4 \uC9D1\uC911"
+    description: "\uC7A5\uCC29 \uC911 \uAD00\uD1B5\uB825\uC774 {0}, \uD654\uC5FC
+      \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {1} \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_CoreBreaker
+    name: "\uCF54\uC5B4 \uB178\uCD9C"
+    description: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uAD00\uD1B5\uB825\uC774
+      {1} \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
+  - uniqueEffectId: UE_WorldEnder
+    name: "\uC885\uB9D0 \uD3EC\uACA9"
+    description: "\uC7A5\uCC29 \uC911 \uC2A4\uD0AC \uD53C\uD574\uAC00 {0}%, \uC2A4\uD0AC
+      \uBC94\uC704\uAC00 {1}% \uC99D\uAC00\uD558\uC9C0\uB9CC \uC774\uB3D9 \uC18D\uB3C4\uAC00
+      {2}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SunfallEngine
+    name: "\uC77C\uC2DD \uC810\uD654"
+    description: "\uCCB4\uB825\uC774 {0}% \uC774\uD558\uC77C \uB54C \uD654\uC5FC
+      \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {1}, \uC2A4\uD0AC \uD53C\uD574\uAC00
+      {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_AntimatterLance
+    name: "\uC9D1\uC18D \uC0AC\uACA9"
+    description: "\uC7A5\uCC29 \uC911 \uC77C\uBC18 \uACF5\uACA9 \uD53C\uD574\uAC00
+      {0}%, \uCE58\uBA85\uD0C0 \uD655\uB960\uC774 {1}% \uC99D\uAC00\uD558\uC9C0\uB9CC
+      \uACF5\uACA9 \uC18D\uB3C4\uAC00 {2}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SmileSignal
+    name: "\uAE30\uBD84 \uC804\uD658"
+    description: "\uD68C\uD53C \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+      {1}%, \uC774\uB3D9 \uC18D\uB3C4\uAC00 {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4.
+      (\uCFE8\uD0C0\uC784 {3}\uCD08)"
+  - uniqueEffectId: UE_EchoVault
+    name: "\uCDA9\uACA9\uD30C \uCD95\uC801"
+    description: "\uACF5\uACA9 \uC801\uC911 \uC2DC {0}\uCD08\uAC04 \uC77C\uBC18 \uACF5\uACA9
+      \uD53C\uD574\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
+  - uniqueEffectId: UE_StarforgeBreach
+    name: "\uC81C\uB828\uB85C \uAC1C\uBC29"
+    description: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9\uB825\uC774
+      {1}%, \uCE58\uBA85\uD0C0 \uD53C\uD574\uAC00 {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4.
+      (\uCFE8\uD0C0\uC784 {3}\uCD08)"
+  - uniqueEffectId: UE_NinjaMovement
+    name: "\uADF8\uB9BC\uC790 \uBCF4\uBC95"
+    description: "\uC7A5\uCC29 \uC911 \uC774\uB3D9 \uC18D\uB3C4\uAC00 {0}%, \uCE58\uBA85\uD0C0
+      \uD655\uB960\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_ExcavatorTooth
+    name: "\uD30C\uC1C4 \uC774\uBE68"
+    description: "\uC7A5\uCC29 \uC911 \uAD00\uD1B5\uB825\uC774 {0} \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_MaintenanceDroneWing
+    name: "\uD68C\uC804 \uB0A0\uAC1C"
+    description: "\uC7A5\uCC29 \uC911 \uACF5\uACA9 \uC18D\uB3C4\uAC00 {0}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_MorningStar
+    name: "\uBCC4\uC774 \uBCF4\uC778\uB2E4"
+    description: "\uCE58\uBA85\uD0C0 \uC801\uC911 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9\uB825\uC774
+      {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {2}\uCD08)"
+  - uniqueEffectId: UE_PhysicalMagicStaff
+    name: "\uBB3C\uB9AC \uB9C8\uBC95"
+    description: "\uC7A5\uCC29 \uC911 \uC77C\uBC18 \uACF5\uACA9 \uD53C\uD574\uAC00
+      {0}% \uC99D\uAC00\uD558\uC9C0\uB9CC \uC2A4\uD0AC \uD53C\uD574\uAC00 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_MagneticStormHammer
+    name: "\uD3ED\uD48D \uCDA9\uC804"
+    description: "\uACF5\uACA9 \uC801\uC911 \uC2DC {0}\uCD08\uAC04 \uC804\uAE30 \uD53C\uD574
+      \uBCF4\uB108\uC2A4\uAC00 {1} \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300
+      {2}\uC2A4\uD0DD)"
+  - uniqueEffectId: UE_Chainsaw
+    name: "\uD3D0\uAE30 \uD310\uC815 \uC0DD\uB7B5"
+    description: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+      {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {2}\uCD08)"
+  - uniqueEffectId: UE_CeremonialSword
+    name: "\uC900\uACF5\uC2DD \uC608\uC6B0"
+    description: "\uCCB4\uB825\uC774 {0}% \uC774\uC0C1\uC77C \uB54C \uCE58\uBA85\uD0C0
+      \uD655\uB960\uC774 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SnowballFight
+    name: "\uB208\uB369\uC774 \uAD74\uB9AC\uAE30"
+    description: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uACF5\uACA9\uB825\uC774
+      {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300 {2}\uC2A4\uD0DD)"
+  - uniqueEffectId: UE_Fireworks
+    name: "\uCD95\uD3EC"
+    description: "\uC801 \uCC98\uCE58 \uC2DC {0}\uCD08\uAC04 \uC774\uB3D9 \uC18D\uB3C4\uAC00
+      {1}%, \uD654\uC5FC \uD53C\uD574 \uBCF4\uB108\uC2A4\uAC00 {2} \uC99D\uAC00\uD569\uB2C8\uB2E4.
+      (\uCFE8\uD0C0\uC784 {3}\uCD08)"
+  - uniqueEffectId: UE_SiegeFrame
+    name: "\uC911\uC7A5\uAC11 \uAC70\uCE58"
+    description: "\uC7A5\uCC29 \uC911 \uBC29\uC5B4\uB825\uC774 {0}% \uC99D\uAC00\uD558\uC9C0\uB9CC
+      \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_SignalJammer
+    name: "\uC2E0\uD638 \uAD50\uB780"
+    description: "\uC7A5\uCC29 \uC911 \uCE58\uBA85\uD0C0 \uD655\uB960\uC774 {0}%
+      \uC99D\uAC00\uD558\uC9C0\uB9CC \uB9C8\uB098 \uC7AC\uC0DD\uC774 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_PreciousMetalDetector
+    name: "\uCF54\uC5B4 \uD0D0\uC9C0"
+    description: "\uC544\uC774\uD15C \uB4DC\uB78D \uC2DC Rare\xB7Unique\xB7Legendary
+      \uB4F1\uAE09 \uAC00\uC911\uCE58\uAC00 \uAC01\uAC01 {0:F1}\uBC30\uAC00 \uB429\uB2C8\uB2E4.
+      \uC804\uCCB4 \uB4DC\uB78D \uD655\uB960\uC740 \uBCC0\uD558\uC9C0 \uC54A\uC73C\uBA70,
+      \uB354 \uB192\uC740 \uBC30\uC728\uC758 \uD6A8\uACFC\uB97C \uD568\uAED8 \uBCF4\uC720\uD558\uBA74
+      \uADF8\uCABD\uB9CC \uC801\uC6A9\uB429\uB2C8\uB2E4."
+  - uniqueEffectId: UE_MilitaryNeuralStimulator
+    name: "\uC2E0\uACBD \uACFC\uBD80\uD558"
+    description: "\uC7A5\uCC29 \uC911 \uACF5\uACA9 \uC18D\uB3C4\uAC00 {0}% \uC99D\uAC00\uD558\uC9C0\uB9CC
+      \uCD5C\uB300 \uCCB4\uB825\uC774 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
   engLabels:
-  - uniqueEffectId: UE_TestHelmet
-    name: Defense Boost
-    description: Defense increases by {0}% while equipped.
   - uniqueEffectId: UE_QuantumShoes
     name: Quantum Boost
     description: Movement speed increases by {0:F1}.
-  - uniqueEffectId: UE_TestGreatSword
-    name: Swift Strike
-    description: On trigger, attack speed increases by {0}% for {1} seconds.
   - uniqueEffectId: UE_MassProducedCore
     name: Swift Footwork
     description: On basic attack hit, movement speed increases by {1}% for {0} seconds.
@@ -259,8 +408,8 @@ MonoBehaviour:
     description: When health drops to {0}% or below, movement speed increases by
       {1}%. Reverts once health rises above it again.
   - uniqueEffectId: UE_AdvancedCore
-    name: Hello World Transmitter
-    description: While held, prints "HELLO WORLD!" to the console every {0} seconds.
+    name: Augment
+    description: Max HP increases by {0}.
   - uniqueEffectId: UE_CyberneticCore
     name: Basic Implant
     description: 'Using dodge activates Neural Acceleration Mode. Movement speed
@@ -350,7 +499,7 @@ MonoBehaviour:
     description: Attack increases by {0}%, but Move Speed decreases by {1}%.
   - uniqueEffectId: UE_ScrapCubeCore
     name: Scrap Layering
-    description: 'Defeating an enemy increases Defense by {0}%. (Maximum: {1} stacks)'
+    description: Defeating an enemy increases Defense by {0}%. (Max {1} stacks)
   - uniqueEffectId: UE_LuckyCharm
     name: Strange Luck
     description: When an item drops, Rare, Unique, and Legendary rarity weights are
@@ -361,8 +510,8 @@ MonoBehaviour:
     description: Skill cooldowns decrease by {0}% and Move Speed increases by {1}%.
   - uniqueEffectId: UE_AlienHeart
     name: Predatory Growth
-    description: 'Defeating an enemy increases Attack and max HP by {0}%. (Maximum:
-      {1} stacks)'
+    description: Defeating an enemy increases Attack and max HP by {0}%. (Max {1}
+      stacks)
   - uniqueEffectId: UE_DimensionalCompass
     name: Dimensional Alignment
     description: 'On dodging, skill cooldowns decrease by {1}% and Move Speed increases
@@ -418,7 +567,7 @@ MonoBehaviour:
   - uniqueEffectId: UE_ConversationStarter
     name: Rebuttal Denied
     description: 'When hit, Attack Speed increases by {1}% and Defense by {2}% for
-      {0} seconds. (Cooldown: {3} seconds)'
+      {0} seconds. (Cooldown: {3}s)'
   - uniqueEffectId: UE_GravityFieldCore
     name: Gravity Field
     description: Enemies within {0} units have their Move Speed reduced by {1}%.
@@ -432,21 +581,155 @@ MonoBehaviour:
   - uniqueEffectId: UE_DodgeMoveBoost
     name: Residual Thrust
     description: 'After using dodge, normal movement speed increases by {1}% for
-      {0} seconds. Cooldown: {2} seconds.'
+      {0} seconds. (Cooldown: {2}s)'
   - uniqueEffectId: UE_ManaRelay
     name: Mana Relay
     description: Increases mana regeneration of you and living allies within {0}m
       by {1}%. Does not stack with the same effect.
+  - uniqueEffectId: UE_HelloWorldBeacon
+    name: 'Aura: Hello World!'
+    description: Increases Attack of players within {0} units by {1}%.
+  - uniqueEffectId: UE_ArcBladeChainLightning
+    name: Arc Chain
+    description: 'Direct basic attacks chain Electric damage equal to {2}% of Attack
+      to up to {0} enemies within {1}m. Each subsequent jump deals {3}% of the previous
+      multiplier. (Cooldown: {4}s)'
+  - uniqueEffectId: UE_InfernoExtraHit
+    name: Hellfire Follow-up
+    description: On melee basic attack hit, deals additional Fire damage equal to
+      {0}% of Attack to the same target.
+  - uniqueEffectId: UE_GlassRailExtraHit
+    name: Frost Rail Follow-up
+    description: When a rifle round hits, deals additional Ice damage equal to {0}%
+      of Attack to the same target. (Persists even if the weapon is swapped or unequipped
+      after firing; cannot crit.)
+  - uniqueEffectId: UE_SolarGraceShield
+    name: Solar Grace Shield
+    description: If you take no hits for {1} seconds while at {0}% HP or higher,
+      gain a shield equal to {2}% of max HP for {3} seconds. Shields do not stack.
+  - uniqueEffectId: UE_NightSwordDodgeStrike
+    name: Shadow Ambush
+    description: After dodging, your next basic attack deals {0}% more damage.
+  - uniqueEffectId: UE_GravityWellField
+    name: Gravity Well
+    description: Grenade impacts leave a gravity field with a {0}m radius for {1}
+      seconds. Enemies inside have their Move Speed reduced by {2}%, refreshed every
+      {3} seconds. Up to {4} fields can exist at once.
+  - uniqueEffectId: UE_SingularityDelayedExplosion
+    name: Delayed Singularity
+    description: Grenade impacts seed a singularity that, after {0} seconds, deals
+      damage equal to {2}% of Attack to enemies within {1}m. Up to {3} can be pending
+      at once.
+  - uniqueEffectId: UE_Wildfire
+    name: Rekindled Ember
+    description: On attack hit, Fire damage bonus increases by {1} for {0} seconds.
+      (Max {2} stacks)
+  - uniqueEffectId: UE_PhaseHarvester
+    name: Spatial Rend
+    description: While equipped, Penetration increases by {0} and Attack by {1}%,
+      but Attack Speed decreases by {2}%.
+  - uniqueEffectId: UE_SuperRefrigerant
+    name: Heat Theft
+    description: 'On taking a hit, Ice damage bonus increases by {1} and Defense
+      by {2}% for {0} seconds. (Cooldown: {3}s)'
+  - uniqueEffectId: UE_Crusader
+    name: Holy Strike
+    description: While equipped, Critical Rate increases by {0}% and Critical Damage
+      by {1}%.
+  - uniqueEffectId: UE_GuardiansJustice
+    name: Justice Prevails
+    description: While HP is {0}% or higher, Attack increases by {1}% and Defense
+      by {2}%.
+  - uniqueEffectId: UE_WasteHeatCleaver
+    name: Waste Heat Focus
+    description: While equipped, Penetration increases by {0} and Fire damage bonus
+      by {1}.
+  - uniqueEffectId: UE_CoreBreaker
+    name: Core Exposure
+    description: On defeating an enemy, Penetration increases by {1} for {0} seconds.
+      (Max {2} stacks)
+  - uniqueEffectId: UE_WorldEnder
+    name: Doomsday Barrage
+    description: While equipped, Skill Damage increases by {0}% and Skill Range by
+      {1}%, but Move Speed decreases by {2}%.
+  - uniqueEffectId: UE_SunfallEngine
+    name: Eclipse Ignition
+    description: While HP is {0}% or lower, Fire damage bonus increases by {1} and
+      Skill Damage by {2}%.
+  - uniqueEffectId: UE_AntimatterLance
+    name: Focused Fire
+    description: While equipped, basic attack damage increases by {0}% and Critical
+      Rate by {1}%, but Attack Speed decreases by {2}%.
+  - uniqueEffectId: UE_SmileSignal
+    name: Mood Boost
+    description: 'On dodge, Attack Speed increases by {1}% and Move Speed by {2}%
+      for {0} seconds. (Cooldown: {3}s)'
+  - uniqueEffectId: UE_EchoVault
+    name: Shockwave Buildup
+    description: On attack hit, basic attack damage increases by {1}% for {0} seconds.
+      (Max {2} stacks)
+  - uniqueEffectId: UE_StarforgeBreach
+    name: Forge Unleashed
+    description: 'On defeating an enemy, Attack increases by {1}% and Critical Damage
+      by {2}% for {0} seconds. (Cooldown: {3}s)'
+  - uniqueEffectId: UE_NinjaMovement
+    name: Shadow Step
+    description: While equipped, Move Speed increases by {0}% and Critical Rate by
+      {1}%.
+  - uniqueEffectId: UE_ExcavatorTooth
+    name: Crushing Tooth
+    description: While equipped, Penetration increases by {0}.
+  - uniqueEffectId: UE_MaintenanceDroneWing
+    name: Rotor Blade
+    description: While equipped, Attack Speed increases by {0}%.
+  - uniqueEffectId: UE_MorningStar
+    name: Seeing Stars
+    description: 'On a critical hit, Attack increases by {1}% for {0} seconds. (Cooldown:
+      {2}s)'
+  - uniqueEffectId: UE_PhysicalMagicStaff
+    name: Physical Magic
+    description: While equipped, basic attack damage increases by {0}%, but Skill
+      Damage decreases by {1}%.
+  - uniqueEffectId: UE_MagneticStormHammer
+    name: Storm Charge
+    description: On attack hit, Electric damage bonus increases by {1} for {0} seconds.
+      (Max {2} stacks)
+  - uniqueEffectId: UE_Chainsaw
+    name: No Verdict Needed
+    description: 'On defeating an enemy, Attack Speed increases by {1}% for {0} seconds.
+      (Cooldown: {2}s)'
+  - uniqueEffectId: UE_CeremonialSword
+    name: Ceremonial Honors
+    description: While HP is {0}% or higher, Critical Rate increases by {1}%.
+  - uniqueEffectId: UE_SnowballFight
+    name: Snowballing
+    description: On defeating an enemy, Attack increases by {1}% for {0} seconds.
+      (Max {2} stacks)
+  - uniqueEffectId: UE_Fireworks
+    name: Celebration Salvo
+    description: 'On defeating an enemy, Move Speed increases by {1}% and Fire damage
+      bonus by {2} for {0} seconds. (Cooldown: {3}s)'
+  - uniqueEffectId: UE_SiegeFrame
+    name: Heavy Mount
+    description: While equipped, Defense increases by {0}%, but Move Speed decreases
+      by {1}%.
+  - uniqueEffectId: UE_SignalJammer
+    name: Signal Jamming
+    description: While equipped, Critical Rate increases by {0}%, but MP regen decreases
+      by {1}%.
+  - uniqueEffectId: UE_PreciousMetalDetector
+    name: Core Detection
+    description: When an item drops, Rare, Unique, and Legendary rarity weights are
+      each multiplied by {0:F1}. Overall item drop chance is unchanged, and if you
+      also hold an effect with a higher multiplier, only that one applies.
+  - uniqueEffectId: UE_MilitaryNeuralStimulator
+    name: Neural Overload
+    description: While equipped, Attack Speed increases by {0}%, but max HP decreases
+      by {1}%.
   jpnLabels:
-  - uniqueEffectId: UE_TestHelmet
-    name: "\u9632\u5FA1\u5F37\u5316"
-    description: "\u88C5\u5099\u4E2D\u3001\u9632\u5FA1\u529B\u304C{0}%\u5897\u52A0\u3057\u307E\u3059\u3002"
   - uniqueEffectId: UE_QuantumShoes
     name: "\u30AF\u30A9\u30F3\u30BF\u30E0\u30D6\u30FC\u30B9\u30C8"
     description: "\u79FB\u52D5\u901F\u5EA6\u304C{0:F1}\u5897\u52A0\u3057\u307E\u3059\u3002"
-  - uniqueEffectId: UE_TestGreatSword
-    name: "\u5FEB\u901F\u5F37\u6253"
-    description: "\u767A\u52D5\u6642\u3001{1}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{0}%\u5897\u52A0\u3057\u307E\u3059\u3002"
   - uniqueEffectId: UE_MassProducedCore
     name: "\u5FEB\u901F\u30D5\u30C3\u30C8\u30EF\u30FC\u30AF"
     description: "\u901A\u5E38\u653B\u6483\u547D\u4E2D\u6642\u3001{0}\u79D2\u9593\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002"
@@ -454,15 +737,14 @@ MonoBehaviour:
     name: "\u6B7B\u529B\u3092\u5C3D\u304F\u3057\u305F\u75BE\u8D70"
     description: "\u4F53\u529B\u304C{0}%\u4EE5\u4E0B\u306B\u306A\u308B\u3068\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002\u518D\u3073\u4E0A\u56DE\u308B\u3068\u89E3\u9664\u3055\u308C\u307E\u3059\u3002"
   - uniqueEffectId: UE_AdvancedCore
-    name: "\u30CF\u30ED\u30FC\u30EF\u30FC\u30EB\u30C9\u767A\u4FE1\u6A5F"
-    description: "\u4FDD\u6709\u4E2D\u3001{0}\u79D2\u3054\u3068\u306B\u30B3\u30F3\u30BD\u30FC\u30EB\u306B\u300CHELLO
-      WORLD!\u300D\u3092\u51FA\u529B\u3057\u307E\u3059\u3002"
+    name: "\u5897\u5F37"
+    description: "\u6700\u5927HP\u304C{0}\u4E0A\u6607\u3057\u307E\u3059\u3002"
   - uniqueEffectId: UE_CyberneticCore
     name: "\u57FA\u790E\u7684\u306A\u30A4\u30F3\u30D7\u30E9\u30F3\u30C8"
-    description: "\u56DE\u907F\u4F7F\u7528\u6642\u3001\u795E\u7D4C\u52A0\u901F\u30E2\u30FC\u30C9\u306B\u5165\u308A\u307E\u3059\u3002{0}\u79D2\u9593\u79FB\u52D5\u901F\u5EA6\u304C{1}\u5897\u52A0\u3057\u307E\u3059\u3002(\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{2}\u79D2)"
+    description: "\u56DE\u907F\u4F7F\u7528\u6642\u3001\u795E\u7D4C\u52A0\u901F\u30E2\u30FC\u30C9\u306B\u5165\u308A\u307E\u3059\u3002{0}\u79D2\u9593\u79FB\u52D5\u901F\u5EA6\u304C{1}\u5897\u52A0\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{2}\u79D2\uFF09"
   - uniqueEffectId: UE_LightSaber
     name: "\u5149\u5B50\u52A0\u901F"
-    description: "\u901A\u5E38\u653B\u6483\u6642\u3001{0}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002(\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF)"
+    description: "\u901A\u5E38\u653B\u6483\u6642\u3001{0}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
   - uniqueEffectId: UE_MechanicalDestroyer
     name: "\u653B\u6483\u5F37\u5316"
     description: "\u88C5\u5099\u4E2D\u3001\u653B\u6483\u529B\u304C{0}%\u5897\u52A0\u3057\u307E\u3059\u3002"
@@ -582,7 +864,7 @@ MonoBehaviour:
     description: "\u4F53\u529B\u304C{0}%\u4EE5\u4E0B\u306E\u9593\u3001\u653B\u6483\u529B\u304C{1}%\u3001\u8CAB\u901A\u529B\u304C{2}\u5897\u52A0\u3057\u307E\u3059\u3002"
   - uniqueEffectId: UE_ConversationStarter
     name: "\u53CD\u8AD6\u5C01\u9396"
-    description: "\u88AB\u5F3E\u6642\u3001{0}\u79D2\u9593\u3001\u653B\u6483\u901F\u5EA6\u304C{1}%\u3001\u9632\u5FA1\u529B\u304C{2}%\u5897\u52A0\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{3}\u79D2\uFF09"
+    description: "\u88AB\u5F3E\u6642\u3001{0}\u79D2\u9593\u3001\u653B\u6483\u901F\u5EA6\u304C{1}%\u3001\u9632\u5FA1\u529B\u304C{2}%\u5897\u52A0\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{3}\u79D2\uFF09"
   - uniqueEffectId: UE_GravityFieldCore
     name: "\u91CD\u529B\u5834\u767A\u751F"
     description: "\u534A\u5F84{0}\u30E6\u30CB\u30C3\u30C8\u5185\u306E\u6575\u306E\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u6E1B\u5C11\u3057\u307E\u3059\u3002"
@@ -594,20 +876,119 @@ MonoBehaviour:
     description: "\u73FE\u5728MP\u304C\u6700\u5927MP\u306E{0}%\u4EE5\u4E0B\u306E\u6642\u3001MP\u56DE\u5FA9\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002"
   - uniqueEffectId: UE_DodgeMoveBoost
     name: "\u6B8B\u7559\u63A8\u529B"
-    description: "\u56DE\u907F\u4F7F\u7528\u5F8C{0}\u79D2\u9593\u3001\u901A\u5E38\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0\uFF1A{2}\u79D2\u3002"
+    description: "\u56DE\u907F\u4F7F\u7528\u5F8C{0}\u79D2\u9593\u3001\u901A\u5E38\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{2}\u79D2\uFF09"
   - uniqueEffectId: UE_ManaRelay
     name: "\u30DE\u30CA\u4E2D\u7D99"
     description: "\u534A\u5F84{0}m\u4EE5\u5185\u306E\u81EA\u5206\u3068\u751F\u5B58\u4E2D\u306E\u5473\u65B9\u306E\u30DE\u30CA\u56DE\u5FA9\u304C{1}%\u5897\u52A0\u3057\u307E\u3059\u3002\u540C\u3058\u52B9\u679C\u306F\u91CD\u8907\u3057\u307E\u305B\u3093\u3002"
+  - uniqueEffectId: UE_HelloWorldBeacon
+    name: "\u9818\u57DF\uFF1A\u30CF\u30ED\u30FC\u30FB\u30EF\u30FC\u30EB\u30C9\uFF01"
+    description: "\u534A\u5F84{0}\u30E6\u30CB\u30C3\u30C8\u5185\u306E\u30D7\u30EC\u30A4\u30E4\u30FC\u306E\u653B\u6483\u529B\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_ArcBladeChainLightning
+    name: "\u30A2\u30FC\u30AF\u30C1\u30A7\u30FC\u30F3"
+    description: "\u76F4\u63A5\u306E\u901A\u5E38\u653B\u6483\u6642\u3001\u534A\u5F84{1}m\u4EE5\u5185\u306E\u6575\u6700\u5927{0}\u4F53\u306B\u653B\u6483\u529B\u306E{2}%\u306E\u96FB\u6C17\u30C0\u30E1\u30FC\u30B8\u3092\u9023\u9396\u3055\u305B\u307E\u3059\u3002\u4EE5\u964D\u306E\u9023\u9396\u306F\u524D\u56DE\u306E\u30C0\u30E1\u30FC\u30B8\u4FC2\u6570\u306E{3}%\u3067\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{4}\u79D2\uFF09"
+  - uniqueEffectId: UE_InfernoExtraHit
+    name: "\u696D\u706B\u306E\u8FFD\u6483"
+    description: "\u8FD1\u63A5\u901A\u5E38\u653B\u6483\u547D\u4E2D\u6642\u3001\u540C\u3058\u5BFE\u8C61\u306B\u653B\u6483\u529B\u306E{0}%\u306E\u708E\u30C0\u30E1\u30FC\u30B8\u3092\u8FFD\u52A0\u3067\u4E0E\u3048\u307E\u3059\u3002"
+  - uniqueEffectId: UE_GlassRailExtraHit
+    name: "\u6C37\u8ECC\u306E\u8FFD\u6483"
+    description: "\u30E9\u30A4\u30D5\u30EB\u5F3E\u547D\u4E2D\u6642\u3001\u540C\u3058\u5BFE\u8C61\u306B\u653B\u6483\u529B\u306E{0}%\u306E\u6C37\u30C0\u30E1\u30FC\u30B8\u3092\u8FFD\u52A0\u3067\u4E0E\u3048\u307E\u3059\u3002\uFF08\u767A\u5C04\u5F8C\u306B\u6B66\u5668\u3092\u4EA4\u63DB\u30FB\u89E3\u9664\u3057\u3066\u3082\u7DAD\u6301\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u306A\u3057\uFF09"
+  - uniqueEffectId: UE_SolarGraceShield
+    name: "\u592A\u967D\u306E\u6069\u5BF5\u30B7\u30FC\u30EB\u30C9"
+    description: "HP{0}%\u4EE5\u4E0A\u3067{1}\u79D2\u9593\u88AB\u5F3E\u3057\u306A\u3044\u3068\u3001\u6700\u5927HP\u306E{2}%\u306E\u30B7\u30FC\u30EB\u30C9\u3092{3}\u79D2\u9593\u5F97\u307E\u3059\u3002\u30B7\u30FC\u30EB\u30C9\u306F\u91CD\u8907\u3057\u307E\u305B\u3093\u3002"
+  - uniqueEffectId: UE_NightSwordDodgeStrike
+    name: "\u5F71\u306E\u5947\u8972"
+    description: "\u56DE\u907F\u5F8C\u3001\u6B21\u306E\u901A\u5E38\u653B\u6483\u306E\u30C0\u30E1\u30FC\u30B8\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_GravityWellField
+    name: "\u91CD\u529B\u4E95\u6238"
+    description: "\u69B4\u5F3E\u306E\u7740\u5F3E\u5730\u70B9\u306B\u534A\u5F84{0}m\u306E\u91CD\u529B\u5834\u3092{1}\u79D2\u9593\u6B8B\u3057\u307E\u3059\u3002\u7BC4\u56F2\u5185\u306E\u6575\u306F\u79FB\u52D5\u901F\u5EA6\u304C{2}%\u4F4E\u4E0B\u3057\u3001\u52B9\u679C\u306F{3}\u79D2\u3054\u3068\u306B\u66F4\u65B0\u3055\u308C\u307E\u3059\u3002\u91CD\u529B\u5834\u306F\u6700\u5927{4}\u500B\u307E\u3067\u7DAD\u6301\u3055\u308C\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SingularityDelayedExplosion
+    name: "\u9045\u5EF6\u7279\u7570\u70B9"
+    description: "\u69B4\u5F3E\u306E\u7740\u5F3E\u5730\u70B9\u306B\u7279\u7570\u70B9\u3092\u8A2D\u7F6E\u3057\u3001{0}\u79D2\u5F8C\u306B\u534A\u5F84{1}m\u306E\u6575\u306B\u653B\u6483\u529B\u306E{2}%\u306E\u30C0\u30E1\u30FC\u30B8\u3092\u4E0E\u3048\u307E\u3059\u3002\u6700\u5927{3}\u500B\u307E\u3067\u7DAD\u6301\u3055\u308C\u307E\u3059\u3002"
+  - uniqueEffectId: UE_Wildfire
+    name: "\u7526\u308B\u6B8B\u308A\u706B"
+    description: "\u653B\u6483\u547D\u4E2D\u6642\u3001{0}\u79D2\u9593\u708E\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{1}\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
+  - uniqueEffectId: UE_PhaseHarvester
+    name: "\u7A7A\u9593\u5207\u65AD"
+    description: "\u88C5\u5099\u4E2D\u3001\u8CAB\u901A\u529B\u304C{0}\u3001\u653B\u6483\u529B\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u653B\u6483\u901F\u5EA6\u304C{2}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SuperRefrigerant
+    name: "\u71B1\u306E\u5F37\u596A"
+    description: "\u88AB\u5F3E\u6642\u3001{0}\u79D2\u9593\u6C37\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{1}\u3001\u9632\u5FA1\u529B\u304C{2}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_Crusader
+    name: "\u8056\u306A\u308B\u4E00\u6483"
+    description: "\u88C5\u5099\u4E2D\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C{0}%\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30C0\u30E1\u30FC\u30B8\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_GuardiansJustice
+    name: "\u6B63\u7FA9\u306F\u52DD\u3064"
+    description: "HP\u304C{0}%\u4EE5\u4E0A\u306E\u9593\u3001\u653B\u6483\u529B\u304C{1}%\u3001\u9632\u5FA1\u529B\u304C{2}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_WasteHeatCleaver
+    name: "\u5EC3\u71B1\u96C6\u4E2D"
+    description: "\u88C5\u5099\u4E2D\u3001\u8CAB\u901A\u529B\u304C{0}\u3001\u708E\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{1}\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_CoreBreaker
+    name: "\u30B3\u30A2\u9732\u51FA"
+    description: "\u6575\u3092\u5012\u3059\u3068\u3001{0}\u79D2\u9593\u8CAB\u901A\u529B\u304C{1}\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
+  - uniqueEffectId: UE_WorldEnder
+    name: "\u7D42\u672B\u7832\u6483"
+    description: "\u88C5\u5099\u4E2D\u3001\u30B9\u30AD\u30EB\u30C0\u30E1\u30FC\u30B8\u304C{0}%\u3001\u30B9\u30AD\u30EB\u7BC4\u56F2\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u79FB\u52D5\u901F\u5EA6\u304C{2}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SunfallEngine
+    name: "\u65E5\u98DF\u70B9\u706B"
+    description: "HP\u304C{0}%\u4EE5\u4E0B\u306E\u9593\u3001\u708E\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{1}\u3001\u30B9\u30AD\u30EB\u30C0\u30E1\u30FC\u30B8\u304C{2}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_AntimatterLance
+    name: "\u96C6\u675F\u5C04\u6483"
+    description: "\u88C5\u5099\u4E2D\u3001\u901A\u5E38\u653B\u6483\u30C0\u30E1\u30FC\u30B8\u304C{0}%\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u653B\u6483\u901F\u5EA6\u304C{2}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SmileSignal
+    name: "\u6C17\u5206\u8EE2\u63DB"
+    description: "\u56DE\u907F\u6642\u3001{0}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{1}%\u3001\u79FB\u52D5\u901F\u5EA6\u304C{2}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_EchoVault
+    name: "\u885D\u6483\u6CE2\u84C4\u7A4D"
+    description: "\u653B\u6483\u547D\u4E2D\u6642\u3001{0}\u79D2\u9593\u901A\u5E38\u653B\u6483\u30C0\u30E1\u30FC\u30B8\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
+  - uniqueEffectId: UE_StarforgeBreach
+    name: "\u88FD\u932C\u7089\u958B\u653E"
+    description: "\u6575\u3092\u5012\u3059\u3068\u3001{0}\u79D2\u9593\u653B\u6483\u529B\u304C{1}%\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30C0\u30E1\u30FC\u30B8\u304C{2}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_NinjaMovement
+    name: "\u5F71\u306E\u6B69\u6CD5"
+    description: "\u88C5\u5099\u4E2D\u3001\u79FB\u52D5\u901F\u5EA6\u304C{0}%\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_ExcavatorTooth
+    name: "\u7834\u7815\u306E\u6B6F"
+    description: "\u88C5\u5099\u4E2D\u3001\u8CAB\u901A\u529B\u304C{0}\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_MaintenanceDroneWing
+    name: "\u56DE\u8EE2\u7FFC"
+    description: "\u88C5\u5099\u4E2D\u3001\u653B\u6483\u901F\u5EA6\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_MorningStar
+    name: "\u661F\u304C\u898B\u3048\u308B"
+    description: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u547D\u4E2D\u6642\u3001{0}\u79D2\u9593\u653B\u6483\u529B\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{2}\u79D2\uFF09"
+  - uniqueEffectId: UE_PhysicalMagicStaff
+    name: "\u7269\u7406\u9B54\u6CD5"
+    description: "\u88C5\u5099\u4E2D\u3001\u901A\u5E38\u653B\u6483\u30C0\u30E1\u30FC\u30B8\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u30B9\u30AD\u30EB\u30C0\u30E1\u30FC\u30B8\u304C{1}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_MagneticStormHammer
+    name: "\u5D50\u306E\u5145\u96FB"
+    description: "\u653B\u6483\u547D\u4E2D\u6642\u3001{0}\u79D2\u9593\u96FB\u6C17\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{1}\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
+  - uniqueEffectId: UE_Chainsaw
+    name: "\u5EC3\u68C4\u5224\u5B9A\u7701\u7565"
+    description: "\u6575\u3092\u5012\u3059\u3068\u3001{0}\u79D2\u9593\u653B\u6483\u901F\u5EA6\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{2}\u79D2\uFF09"
+  - uniqueEffectId: UE_CeremonialSword
+    name: "\u7AE3\u5DE5\u5F0F\u306E\u793C\u9047"
+    description: "HP\u304C{0}%\u4EE5\u4E0A\u306E\u9593\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SnowballFight
+    name: "\u96EA\u3060\u308B\u307E\u5F0F"
+    description: "\u6575\u3092\u5012\u3059\u3068\u3001{0}\u79D2\u9593\u653B\u6483\u529B\u304C{1}%\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u6700\u5927{2}\u30B9\u30BF\u30C3\u30AF\uFF09"
+  - uniqueEffectId: UE_Fireworks
+    name: "\u795D\u7832"
+    description: "\u6575\u3092\u5012\u3059\u3068\u3001{0}\u79D2\u9593\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u3001\u708E\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C{2}\u4E0A\u6607\u3057\u307E\u3059\u3002\uFF08\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_SiegeFrame
+    name: "\u91CD\u88C5\u7532\u636E\u4ED8"
+    description: "\u88C5\u5099\u4E2D\u3001\u9632\u5FA1\u529B\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u79FB\u52D5\u901F\u5EA6\u304C{1}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_SignalJammer
+    name: "\u4FE1\u53F7\u64B9\u4E71"
+    description: "\u88C5\u5099\u4E2D\u3001\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001MP\u56DE\u5FA9\u304C{1}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_PreciousMetalDetector
+    name: "\u30B3\u30A2\u63A2\u77E5"
+    description: "\u30A2\u30A4\u30C6\u30E0\u30C9\u30ED\u30C3\u30D7\u6642\u3001\u30EC\u30A2\u30FB\u30E6\u30CB\u30FC\u30AF\u30FB\u30EC\u30B8\u30A7\u30F3\u30C0\u30EA\u30FC\u306E\u7B49\u7D1A\u30A6\u30A7\u30A4\u30C8\u304C\u305D\u308C\u305E\u308C{0:F1}\u500D\u306B\u306A\u308A\u307E\u3059\u3002\u5168\u4F53\u306E\u30C9\u30ED\u30C3\u30D7\u7387\u306F\u5909\u308F\u3089\u305A\u3001\u3088\u308A\u9AD8\u3044\u500D\u7387\u306E\u52B9\u679C\u3082\u6240\u6301\u3057\u3066\u3044\u308B\u5834\u5408\u306F\u305D\u3061\u3089\u306E\u307F\u9069\u7528\u3055\u308C\u307E\u3059\u3002"
+  - uniqueEffectId: UE_MilitaryNeuralStimulator
+    name: "\u795E\u7D4C\u904E\u8CA0\u8377"
+    description: "\u88C5\u5099\u4E2D\u3001\u653B\u6483\u901F\u5EA6\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u6700\u5927HP\u304C{1}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
   chnLabels:
-  - uniqueEffectId: UE_TestHelmet
-    name: "\u9632\u5FA1\u5F3A\u5316"
-    description: "\u88C5\u5907\u671F\u95F4\u9632\u5FA1\u529B\u589E\u52A0{0}%\u3002"
   - uniqueEffectId: UE_QuantumShoes
     name: "\u91CF\u5B50\u63A8\u8FDB"
     description: "\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{0:F1}\u3002"
-  - uniqueEffectId: UE_TestGreatSword
-    name: "\u75BE\u98CE\u5F3A\u51FB"
-    description: "\u53D1\u52A8\u65F6\uFF0C{1}\u79D2\u5185\u653B\u51FB\u901F\u5EA6\u589E\u52A0{0}%\u3002"
   - uniqueEffectId: UE_MassProducedCore
     name: "\u75BE\u98CE\u6B65\u6CD5"
     description: "\u666E\u901A\u653B\u51FB\u547D\u4E2D\u65F6\uFF0C{0}\u79D2\u5185\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{1}%\u3002"
@@ -615,15 +996,14 @@ MonoBehaviour:
     name: "\u6B8A\u6B7B\u51B2\u523A"
     description: "\u751F\u547D\u503C\u964D\u81F3{0}%\u4EE5\u4E0B\u65F6\uFF0C\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{1}%\u3002\u518D\u6B21\u8D85\u8FC7\u540E\u89E3\u9664\u3002"
   - uniqueEffectId: UE_AdvancedCore
-    name: "Hello World\u53D1\u5C04\u5668"
-    description: "\u6301\u6709\u671F\u95F4\uFF0C\u6BCF{0}\u79D2\u5728\u63A7\u5236\u53F0\u8F93\u51FA\"HELLO
-      WORLD!\"\u3002"
+    name: "\u589E\u5F3A"
+    description: "\u6700\u5927\u751F\u547D\u503C\u63D0\u9AD8{0}\u3002"
   - uniqueEffectId: UE_CyberneticCore
     name: "\u57FA\u7840\u690D\u5165\u4F53"
-    description: "\u4F7F\u7528\u95EA\u907F\u65F6\u8FDB\u5165\u795E\u7ECF\u52A0\u901F\u6A21\u5F0F\u3002{0}\u79D2\u5185\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{1}\u3002\uFF08\u51B7\u5374\u65F6\u95F4{2}\u79D2\uFF09"
+    description: "\u4F7F\u7528\u95EA\u907F\u65F6\u8FDB\u5165\u795E\u7ECF\u52A0\u901F\u6A21\u5F0F\u3002{0}\u79D2\u5185\u79FB\u52A8\u901F\u5EA6\u589E\u52A0{1}\u3002\uFF08\u51B7\u5374\uFF1A{2}\u79D2\uFF09"
   - uniqueEffectId: UE_LightSaber
     name: "\u5149\u5B50\u52A0\u901F"
-    description: "\u666E\u901A\u653B\u51FB\u65F6\uFF0C{0}\u79D2\u5185\u653B\u51FB\u901F\u5EA6\u589E\u52A0{1}%\u3002(\u6700\u591A{2}\u5C42)"
+    description: "\u666E\u901A\u653B\u51FB\u65F6\uFF0C{0}\u79D2\u5185\u653B\u51FB\u901F\u5EA6\u589E\u52A0{1}%\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
   - uniqueEffectId: UE_MechanicalDestroyer
     name: "\u653B\u51FB\u5F3A\u5316"
     description: "\u88C5\u5907\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{0}%\u3002"
@@ -743,7 +1123,7 @@ MonoBehaviour:
     description: "\u751F\u547D\u503C\u4E0D\u9AD8\u4E8E{0}%\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u7A7F\u900F\u529B\u63D0\u9AD8{2}\u3002"
   - uniqueEffectId: UE_ConversationStarter
     name: "\u9A73\u56DE\u53CD\u8BBA"
-    description: "\u53D7\u5230\u653B\u51FB\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u9632\u5FA1\u529B\u63D0\u9AD8{2}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\u65F6\u95F4{3}\u79D2\uFF09"
+    description: "\u53D7\u5230\u653B\u51FB\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u9632\u5FA1\u529B\u63D0\u9AD8{2}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{3}\u79D2\uFF09"
   - uniqueEffectId: UE_GravityFieldCore
     name: "\u91CD\u529B\u573A\u53D1\u751F"
     description: "\u534A\u5F84{0}\u5355\u4F4D\u5185\u654C\u4EBA\u7684\u79FB\u52A8\u901F\u5EA6\u964D\u4F4E{1}%\u3002"
@@ -755,7 +1135,112 @@ MonoBehaviour:
     description: "\u5F53\u5F53\u524D\u6CD5\u529B\u503C\u4F4E\u4E8E\u6216\u7B49\u4E8E\u6700\u5927\u6CD5\u529B\u503C\u7684{0}%\u65F6\uFF0C\u6CD5\u529B\u56DE\u590D\u589E\u52A0{1}%\u3002"
   - uniqueEffectId: UE_DodgeMoveBoost
     name: "\u6B8B\u4F59\u63A8\u529B"
-    description: "\u4F7F\u7528\u95EA\u907F\u540E\uFF0C\u666E\u901A\u79FB\u52A8\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\u51B7\u5374\u65F6\u95F4\uFF1A{2}\u79D2\u3002"
+    description: "\u4F7F\u7528\u95EA\u907F\u540E\uFF0C\u666E\u901A\u79FB\u52A8\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{2}\u79D2\uFF09"
   - uniqueEffectId: UE_ManaRelay
     name: "\u6CD5\u529B\u4E2D\u7EE7"
     description: "\u81EA\u8EAB\u548C\u534A\u5F84{0}\u7C73\u5185\u5B58\u6D3B\u961F\u53CB\u7684\u6CD5\u529B\u6062\u590D\u63D0\u9AD8{1}%\u3002\u540C\u7C7B\u6548\u679C\u4E0D\u53E0\u52A0\u3002"
+  - uniqueEffectId: UE_HelloWorldBeacon
+    name: "\u9886\u57DF\uFF1A\u4F60\u597D\u4E16\u754C\uFF01"
+    description: "\u534A\u5F84{0}\u5355\u4F4D\u5185\u73A9\u5BB6\u7684\u653B\u51FB\u529B\u63D0\u9AD8{1}%\u3002"
+  - uniqueEffectId: UE_ArcBladeChainLightning
+    name: "\u7535\u5F27\u8FDE\u9501"
+    description: "\u76F4\u63A5\u666E\u901A\u653B\u51FB\u65F6\uFF0C\u5BF9\u534A\u5F84{1}\u7C73\u5185\u6700\u591A{0}\u540D\u654C\u4EBA\u9020\u6210\u653B\u51FB\u529B{2}%\u7684\u8FDE\u9501\u7535\u51FB\u4F24\u5BB3\u3002\u4E4B\u540E\u6BCF\u6B21\u4F20\u5BFC\u4E3A\u524D\u4E00\u6B21\u4F24\u5BB3\u7CFB\u6570\u7684{3}%\u3002\uFF08\u51B7\u5374\uFF1A{4}\u79D2\uFF09"
+  - uniqueEffectId: UE_InfernoExtraHit
+    name: "\u5730\u72F1\u706B\u8FFD\u51FB"
+    description: "\u8FD1\u6218\u666E\u901A\u653B\u51FB\u547D\u4E2D\u65F6\uFF0C\u5BF9\u540C\u4E00\u76EE\u6807\u989D\u5916\u9020\u6210\u653B\u51FB\u529B{0}%\u7684\u706B\u7130\u4F24\u5BB3\u3002"
+  - uniqueEffectId: UE_GlassRailExtraHit
+    name: "\u51B0\u8F68\u8FFD\u51FB"
+    description: "\u6B65\u67AA\u5B50\u5F39\u547D\u4E2D\u65F6\uFF0C\u5BF9\u540C\u4E00\u76EE\u6807\u989D\u5916\u9020\u6210\u653B\u51FB\u529B{0}%\u7684\u51B0\u971C\u4F24\u5BB3\u3002\uFF08\u53D1\u5C04\u540E\u66F4\u6362\u6216\u5378\u4E0B\u6B66\u5668\u4ECD\u7136\u6709\u6548\uFF0C\u4E0D\u4F1A\u66B4\u51FB\uFF09"
+  - uniqueEffectId: UE_SolarGraceShield
+    name: "\u592A\u9633\u6069\u5178\u62A4\u76FE"
+    description: "\u751F\u547D\u503C\u4E0D\u4F4E\u4E8E{0}%\u65F6\uFF0C\u82E5{1}\u79D2\u5185\u672A\u53D7\u5230\u653B\u51FB\uFF0C\u83B7\u5F97\u6700\u5927\u751F\u547D\u503C{2}%\u7684\u62A4\u76FE\uFF0C\u6301\u7EED{3}\u79D2\u3002\u62A4\u76FE\u4E0D\u53E0\u52A0\u3002"
+  - uniqueEffectId: UE_NightSwordDodgeStrike
+    name: "\u6697\u5F71\u5947\u88AD"
+    description: "\u95EA\u907F\u540E\uFF0C\u4E0B\u4E00\u6B21\u666E\u901A\u653B\u51FB\u7684\u4F24\u5BB3\u63D0\u9AD8{0}%\u3002"
+  - uniqueEffectId: UE_GravityWellField
+    name: "\u91CD\u529B\u4E95"
+    description: "\u69B4\u5F39\u7740\u5F39\u5904\u7559\u4E0B\u534A\u5F84{0}\u7C73\u7684\u91CD\u529B\u573A\uFF0C\u6301\u7EED{1}\u79D2\u3002\u573A\u5185\u654C\u4EBA\u7684\u79FB\u52A8\u901F\u5EA6\u964D\u4F4E{2}%\uFF0C\u6548\u679C\u6BCF{3}\u79D2\u5237\u65B0\u4E00\u6B21\u3002\u91CD\u529B\u573A\u6700\u591A\u540C\u65F6\u5B58\u5728{4}\u4E2A\u3002"
+  - uniqueEffectId: UE_SingularityDelayedExplosion
+    name: "\u5EF6\u8FDF\u5947\u70B9"
+    description: "\u5728\u69B4\u5F39\u7740\u5F39\u5904\u9884\u8BBE\u5947\u70B9\uFF0C{0}\u79D2\u540E\u5BF9\u534A\u5F84{1}\u7C73\u5185\u7684\u654C\u4EBA\u9020\u6210\u653B\u51FB\u529B{2}%\u7684\u4F24\u5BB3\u3002\u6700\u591A\u540C\u65F6\u5B58\u5728{3}\u4E2A\u3002"
+  - uniqueEffectId: UE_Wildfire
+    name: "\u590D\u71C3\u4F59\u70EC"
+    description: "\u653B\u51FB\u547D\u4E2D\u65F6\uFF0C\u706B\u7130\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{1}\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
+  - uniqueEffectId: UE_PhaseHarvester
+    name: "\u7A7A\u95F4\u65A9\u88C2"
+    description: "\u88C5\u5907\u65F6\uFF0C\u7A7F\u900F\u63D0\u9AD8{0}\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u4F46\u653B\u51FB\u901F\u5EA6\u964D\u4F4E{2}%\u3002"
+  - uniqueEffectId: UE_SuperRefrigerant
+    name: "\u70ED\u91CF\u63A0\u593A"
+    description: "\u53D7\u5230\u653B\u51FB\u65F6\uFF0C\u51B0\u971C\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{1}\uFF0C\u9632\u5FA1\u529B\u63D0\u9AD8{2}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_Crusader
+    name: "\u795E\u5723\u4E00\u51FB"
+    description: "\u88C5\u5907\u65F6\uFF0C\u66B4\u51FB\u7387\u63D0\u9AD8{0}%\uFF0C\u66B4\u51FB\u4F24\u5BB3\u63D0\u9AD8{1}%\u3002"
+  - uniqueEffectId: UE_GuardiansJustice
+    name: "\u6B63\u4E49\u5FC5\u80DC"
+    description: "\u751F\u547D\u503C\u4E0D\u4F4E\u4E8E{0}%\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u9632\u5FA1\u529B\u63D0\u9AD8{2}%\u3002"
+  - uniqueEffectId: UE_WasteHeatCleaver
+    name: "\u5E9F\u70ED\u96C6\u4E2D"
+    description: "\u88C5\u5907\u65F6\uFF0C\u7A7F\u900F\u63D0\u9AD8{0}\uFF0C\u706B\u7130\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{1}\u3002"
+  - uniqueEffectId: UE_CoreBreaker
+    name: "\u6838\u5FC3\u66B4\u9732"
+    description: "\u51FB\u8D25\u654C\u4EBA\u65F6\uFF0C\u7A7F\u900F\u63D0\u9AD8{1}\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
+  - uniqueEffectId: UE_WorldEnder
+    name: "\u672B\u65E5\u70AE\u51FB"
+    description: "\u88C5\u5907\u65F6\uFF0C\u6280\u80FD\u4F24\u5BB3\u63D0\u9AD8{0}%\uFF0C\u6280\u80FD\u8303\u56F4\u63D0\u9AD8{1}%\uFF0C\u4F46\u79FB\u52A8\u901F\u5EA6\u964D\u4F4E{2}%\u3002"
+  - uniqueEffectId: UE_SunfallEngine
+    name: "\u65E5\u8680\u70B9\u706B"
+    description: "\u751F\u547D\u503C\u4E0D\u9AD8\u4E8E{0}%\u65F6\uFF0C\u706B\u7130\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{1}\uFF0C\u6280\u80FD\u4F24\u5BB3\u63D0\u9AD8{2}%\u3002"
+  - uniqueEffectId: UE_AntimatterLance
+    name: "\u96C6\u675F\u5C04\u51FB"
+    description: "\u88C5\u5907\u65F6\uFF0C\u666E\u901A\u653B\u51FB\u4F24\u5BB3\u63D0\u9AD8{0}%\uFF0C\u66B4\u51FB\u7387\u63D0\u9AD8{1}%\uFF0C\u4F46\u653B\u51FB\u901F\u5EA6\u964D\u4F4E{2}%\u3002"
+  - uniqueEffectId: UE_SmileSignal
+    name: "\u8F6C\u6362\u5FC3\u60C5"
+    description: "\u95EA\u907F\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u79FB\u52A8\u901F\u5EA6\u63D0\u9AD8{2}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_EchoVault
+    name: "\u51B2\u51FB\u6CE2\u84C4\u79EF"
+    description: "\u653B\u51FB\u547D\u4E2D\u65F6\uFF0C\u666E\u901A\u653B\u51FB\u4F24\u5BB3\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
+  - uniqueEffectId: UE_StarforgeBreach
+    name: "\u7194\u7089\u5F00\u542F"
+    description: "\u51FB\u8D25\u654C\u4EBA\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u66B4\u51FB\u4F24\u5BB3\u63D0\u9AD8{2}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_NinjaMovement
+    name: "\u6697\u5F71\u6B65\u6CD5"
+    description: "\u88C5\u5907\u65F6\uFF0C\u79FB\u52A8\u901F\u5EA6\u63D0\u9AD8{0}%\uFF0C\u66B4\u51FB\u7387\u63D0\u9AD8{1}%\u3002"
+  - uniqueEffectId: UE_ExcavatorTooth
+    name: "\u7C89\u788E\u4E4B\u9F7F"
+    description: "\u88C5\u5907\u65F6\uFF0C\u7A7F\u900F\u63D0\u9AD8{0}\u3002"
+  - uniqueEffectId: UE_MaintenanceDroneWing
+    name: "\u65CB\u8F6C\u7FFC"
+    description: "\u88C5\u5907\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{0}%\u3002"
+  - uniqueEffectId: UE_MorningStar
+    name: "\u773C\u5192\u91D1\u661F"
+    description: "\u66B4\u51FB\u547D\u4E2D\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{2}\u79D2\uFF09"
+  - uniqueEffectId: UE_PhysicalMagicStaff
+    name: "\u7269\u7406\u9B54\u6CD5"
+    description: "\u88C5\u5907\u65F6\uFF0C\u666E\u901A\u653B\u51FB\u4F24\u5BB3\u63D0\u9AD8{0}%\uFF0C\u4F46\u6280\u80FD\u4F24\u5BB3\u964D\u4F4E{1}%\u3002"
+  - uniqueEffectId: UE_MagneticStormHammer
+    name: "\u98CE\u66B4\u5145\u80FD"
+    description: "\u653B\u51FB\u547D\u4E2D\u65F6\uFF0C\u7535\u51FB\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{1}\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
+  - uniqueEffectId: UE_Chainsaw
+    name: "\u8DF3\u8FC7\u62A5\u5E9F\u5224\u5B9A"
+    description: "\u51FB\u8D25\u654C\u4EBA\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{2}\u79D2\uFF09"
+  - uniqueEffectId: UE_CeremonialSword
+    name: "\u7AE3\u5DE5\u5178\u793C\u793C\u9047"
+    description: "\u751F\u547D\u503C\u4E0D\u4F4E\u4E8E{0}%\u65F6\uFF0C\u66B4\u51FB\u7387\u63D0\u9AD8{1}%\u3002"
+  - uniqueEffectId: UE_SnowballFight
+    name: "\u6EDA\u96EA\u7403"
+    description: "\u51FB\u8D25\u654C\u4EBA\u65F6\uFF0C\u653B\u51FB\u529B\u63D0\u9AD8{1}%\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u6700\u591A{2}\u5C42\uFF09"
+  - uniqueEffectId: UE_Fireworks
+    name: "\u793C\u70AE"
+    description: "\u51FB\u8D25\u654C\u4EBA\u65F6\uFF0C\u79FB\u52A8\u901F\u5EA6\u63D0\u9AD8{1}%\uFF0C\u706B\u7130\u4F24\u5BB3\u52A0\u6210\u63D0\u9AD8{2}\uFF0C\u6301\u7EED{0}\u79D2\u3002\uFF08\u51B7\u5374\uFF1A{3}\u79D2\uFF09"
+  - uniqueEffectId: UE_SiegeFrame
+    name: "\u91CD\u7532\u67B6\u8BBE"
+    description: "\u88C5\u5907\u65F6\uFF0C\u9632\u5FA1\u529B\u63D0\u9AD8{0}%\uFF0C\u4F46\u79FB\u52A8\u901F\u5EA6\u964D\u4F4E{1}%\u3002"
+  - uniqueEffectId: UE_SignalJammer
+    name: "\u4FE1\u53F7\u5E72\u6270"
+    description: "\u88C5\u5907\u65F6\uFF0C\u66B4\u51FB\u7387\u63D0\u9AD8{0}%\uFF0C\u4F46\u6CD5\u529B\u56DE\u590D\u964D\u4F4E{1}%\u3002"
+  - uniqueEffectId: UE_PreciousMetalDetector
+    name: "\u6838\u5FC3\u63A2\u6D4B"
+    description: "\u7269\u54C1\u6389\u843D\u65F6\uFF0C\u7A00\u6709\u3001\u72EC\u7279\u548C\u4F20\u8BF4\u54C1\u8D28\u7684\u6743\u91CD\u5404\u4E58\u4EE5{0:F1}\u3002\u6574\u4F53\u7269\u54C1\u6389\u843D\u6982\u7387\u4E0D\u53D8\uFF1B\u82E5\u540C\u65F6\u6301\u6709\u500D\u7387\u66F4\u9AD8\u7684\u6548\u679C\uFF0C\u5219\u4EC5\u9002\u7528\u8BE5\u6548\u679C\u3002"
+  - uniqueEffectId: UE_MilitaryNeuralStimulator
+    name: "\u795E\u7ECF\u8FC7\u8F7D"
+    description: "\u88C5\u5907\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{0}%\uFF0C\u4F46\u6700\u5927\u751F\u547D\u503C\u964D\u4F4E{1}%\u3002"

@@ -474,7 +474,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
 
-        ShowSkillRange(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
             ApplyHit(target, def, damageMultiplier, index);

@@ -14,7 +14,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
     private float dashTargetRange = 30f;    // 2페) 돌진 타겟 설정 사거리
     private float dashDistance = 30f;       // 2페) 최대 돌진 거리
-    private float dashDuration = 0.8f;      // 2페) 돌진 시간
+    private float dashDuration = 0.2f;      // 2페) 돌진 시간
     private float dashReadyDuration = 1f;  // 2페) 돌진 대기 시간
     private float jumpTargetRange = 20f;    // 2페) 낙하공격 타겟 설정 최대 거리(최대 낙하공격 사거리)
 
@@ -114,7 +114,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
             return;
         }
 
-        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5))
+        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5, WBH_EnemyEffectCue.Boss_Act1_Shoot))
         {
             burstTimer = burstCooldown;
         }

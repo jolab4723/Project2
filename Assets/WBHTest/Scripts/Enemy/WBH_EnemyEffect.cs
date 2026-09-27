@@ -103,6 +103,19 @@ public class WBH_EnemyEffect : MonoBehaviour
         PlayCue(cue, Vector3.one);
     }
 
+    // 애니메이션 상태와 무관하게 실제 행동 시점을 기준으로 사운드만 재생한다.
+    public void PlaySfx(WBH_EnemyEffectCue cue)
+    {
+        if (!isActiveAndEnabled || cue == WBH_EnemyEffectCue.None)
+            return;
+
+        if (!TryGetBinding(cue, out EffectBinding binding))
+            return;
+
+        Vector3 soundPosition = binding.anchor != null ? binding.anchor.position : transform.position;
+        PlayBindingSfx(binding, soundPosition);
+    }
+
     public void PlayWorldCue(WBH_EnemyEffectCue cue, Vector3 position, Quaternion rotation, Vector3 scaleMultiplier)
     {
         if (!TryGetBinding(cue, out EffectBinding binding))
