@@ -73,6 +73,20 @@ public partial class MirrorNetworkManager
         if (NetworkTime.time - partyDefeatedAt >= 5) FinalizeRunResult(false);
     }
 
+    /// <summary>SW 수정: 싱글 결과(KY_RunStatsTracker)와 같은 "ACT n · FLOOR m" 표기를 서버 런 스냅샷으로 만듭니다.</summary>
+    private static string FormatReachedStage(StageMapSaveData snapshot)
+    {
+        if (snapshot == null) return SceneManager.GetActiveScene().name;
+        int floor = snapshot.clearedFloor;
+        StageNodeSaveData pending = string.IsNullOrWhiteSpace(snapshot.pendingNodeId)
+            ? null
+            : snapshot.nodes?.Find(node => node != null && node.id == snapshot.pendingNodeId);
+        if (pending != null) floor = pending.floor;
+        return (int)snapshot.act > 0 && floor > 0
+            ? $"ACT {(int)snapshot.act} · FLOOR {floor}"
+            : SceneManager.GetActiveScene().name;
+    }
+
     [Server]
     private void FinalizeRunResult(bool cleared)
     {
@@ -87,7 +101,7 @@ public partial class MirrorNetworkManager
             var result = new KY_ResultData
             {
                 cleared = cleared,
-                stageName = snapshot != null ? $"Act{(int)snapshot.act} · {SceneManager.GetActiveScene().name}" : SceneManager.GetActiveScene().name,
+                stageName = FormatReachedStage(snapshot),
                 defeatedEnemies = kills,
                 playTimeSeconds = Mathf.Max(0, (float)(NetworkTime.time - runStartedAt)),
                 // 기존 로비 복귀가 이전하는 런 지갑 금액을 표시하며 새 계정 보상을 만들지 않습니다.

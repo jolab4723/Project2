@@ -77,6 +77,10 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
         if ( ! dataManager.BeginNewGame(character))
             return;
 
+        // SW 수정: 결과창의 다시 시작도 새 게임이므로 이전 런의 임시 맵(대기 노드 포함)을 버리고 Act1 첫 층부터 시작한다.
+        if (YJ_StageSaveService.IsSessionOnly)
+            YJ_StageSaveService.BeginTemporaryRun();
+
         Debug.Log($"[YJ_SinglePlayerStartFlow] 새 게임 캐릭터: {character}", this);
 
         KY_RunStatsTracker.Instance?.BeginRun(); // 결과창 데이터 집계용으로 추가

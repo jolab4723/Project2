@@ -478,17 +478,8 @@ public sealed class NetworkShopState : NetworkBehaviour
     /// </summary>
     private T FindInOwningScene<T>() where T : Component
     {
-        T[] candidates = FindObjectsByType<T>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
-
-        foreach (T candidate in candidates)
-        {
-            if (candidate != null && candidate.gameObject.scene == gameObject.scene)
-                return candidate;
-        }
-
-        return null;
+        // SW 수정: 공용 씬의 싱글·멀티 UI 중 현재 모드 쪽을 우선 선택한다.
+        return MirrorSceneMode.FindInActiveMode<T>(gameObject.scene);
     }
 
     private bool TryMarkOccupied(IReadOnlyList<string> snapshots, bool[,] occupied)

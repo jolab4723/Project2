@@ -45,7 +45,13 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
         manaManager = context.Mana;
         stats = context.Stats;
         cooldownHud ??= GetComponent<MirrorCooldownHud>();
-        buffHud ??= GetComponentInChildren<BuffIconUIContainer>(true);
+        // 멀티 HUD에는 비활성 사본이 함께 붙은 경우가 있어 실제 표시하는(활성) 컨테이너를 우선 연결한다.
+        if (buffHud == null)
+        {
+            BuffIconUIContainer[] buffHuds = GetComponentsInChildren<BuffIconUIContainer>(true);
+            buffHud = System.Array.Find(buffHuds, candidate => candidate.enabled) ??
+                      (buffHuds.Length > 0 ? buffHuds[0] : null);
+        }
 
         if (isActiveAndEnabled) SubscribeState();
 

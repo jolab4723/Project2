@@ -547,6 +547,11 @@ Unity 6000.3.22f1의 실제 Fighter/Gunner·Normal_Melee 적 프리팹을 사용
 - 이전·삭제 전 백업은 Git 제외 `RunValidation/production-migration/backup`에 보존했다. 인계에 꼭 필요한 원본이 생기면 별도 전달한다. 이 폴더의 일회성 이전 스크립트/manifest는 현재 코드보다 오래됐으므로 집에서 재실행하지 않는다.
 - 기존 무관한 `Assets/AddressableAssetsData/link.xml` 및 `.meta` 삭제와 `Assets/Resources/Texture/RT_SelectPreview.renderTexture` 변경은 이번 커밋에서 제외한다. 사용자의 다른 작업을 되돌리지 않는다.
 
+### 9.7 병합 이후 싱글·멀티(Host) 전체 검증 — 2026-09-28
+
+- `main` 체리픽/병합(`67913ea46`) 후 Editor에서 싱글 Act1→Act2 보스→Act3 맵, 멀티 Host Act1→Act2 보스→GAME CLEAR를 완주하며 16건을 수정했다. 핵심: 싱글 StageSelect 미표시(씬 NetworkIdentity 비활성), 고해상도 Canvas 고정, 멀티 전투 미시작(일반 자폭 드론 SO GUID가 Act2 보스 소환병으로 바뀐 main 커밋), 멀티 상점/상태창의 싱글 UI 바인딩, 전투 씬 멀티 UI 옛 사본 교체, 세션 종료 후 싱글 진입 불가.
+- 상세 원인·수정 파일·검증·미검증 항목은 [Mirror_Integration_Verification_2026-09-28.md](Mirror_Integration_Verification_2026-09-28.md)를 따른다. 새 Player/Server 빌드와 실제 원격 Client 검증은 아직 수행하지 않았다.
+
 ### 후속 단계 기록 형식
 
 각 단계에 다음 항목을 같은 문서의 새 절로 추가한다.
@@ -573,3 +578,4 @@ Unity 6000.3.22f1의 실제 Fighter/Gunner·Normal_Melee 적 프리팹을 사용
 | 2026-09-23 | 4 | 10종 공통 실행·플레이어별 상태·FIFO·장판 수명·B04 정상 부활 및 재접속 종료 경합 수정 | 실제 싱글/Editor Host/별도 Player, 발사 후 교체·콜백 스탯·중복 Collider·부활/재접속 PASS. 임시 검사 제거·세이브9개/설정 복원·컴파일/Console 오류0. 제한은 §8 | 5단계 공용 씬·로딩·Act1, Editor 우선 검증 |
 | 2026-09-23 | 5·6 중단 기록 | 3·4단계 개별 커밋 후 Act2까지 범위 확정, 공용 씬·준비·이벤트·Act2 보스 연결 및 결과 코드 일부 작성 | StageSelect/Act2 Stage1 Host 진입 확인. 보스 생성기 오류 수정 후 재검증 전, 최신 결과 코드 컴파일 미확인. Play 정지·세이브9개 복원. 사용자 요청으로 중단 | 사용자 재개 지시 후 §9.5부터 확인 |
 | 2026-09-23 | 5·6 재개 후 인계 | 정식 경로/이름 이전·공통 구현 통합·시험 자산 제거·결과 정산/재접속·Firebase 체크포인트와 빌더 연결 | Unity 컴파일 성공. 사용자 요청으로 새 빌드와 최종 Play/Firebase 검증 생략, 완료 판정 보류. 변경은 기능별 커밋, Push 없음 | 집 PC에서 §9.6 순서로 같은 후보 빌드·최종 검증 |
+| 2026-09-28 | 병합 후 검증 | main 병합 이후 Editor 싱글·멀티 Host 완주, 16건 수정(§9.7) | 컴파일 성공·Console Error 0·빌드 씬 Missing 0·저장 105개 복원. 새 빌드·원격 Client 미검증 | 새 Player/Server 빌드 후 로그아웃 로그인 화면·2인 이상 확인 |

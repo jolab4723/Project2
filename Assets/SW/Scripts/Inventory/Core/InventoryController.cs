@@ -81,7 +81,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         return Instance?.EquipmentSystem;
     }
 
-    // ponytail: 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
+    // 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
     // 해당 자산들이 InventoryView로 전환된 뒤 함께 제거한다.
     public TextMeshProUGUI logText;
     [SerializeField] public EquipSlotUI[] allEquipSlots = System.Array.Empty<EquipSlotUI>();

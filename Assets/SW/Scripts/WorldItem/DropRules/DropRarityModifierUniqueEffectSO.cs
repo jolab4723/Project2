@@ -61,7 +61,7 @@ namespace ItemSystem
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeState()
         {
-            // ponytail: EffectContext 전까지 로컬 플레이어 단일 상태만 보관한다. 멀티플레이 연동 시 컨텍스트별 상태로 교체한다.
+            // EffectContext 전까지 로컬 플레이어 단일 상태만 보관한다. 멀티플레이 연동 시 컨텍스트별 상태로 교체한다.
             ActiveMultipliersByItem.Clear();
         }
     }

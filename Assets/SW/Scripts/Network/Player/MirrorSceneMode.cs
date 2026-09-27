@@ -1,3 +1,4 @@
+using Mirror;
 using UnityEngine;
 using System.Collections;
 using TMPro;
@@ -24,10 +25,54 @@ public sealed class MirrorSceneMode : MonoBehaviour
         SetBehaviours(singlePlayerBehaviours, !multiplayer);
         SetObjects(multiplayerObjects, multiplayer);
         SetBehaviours(multiplayerBehaviours, multiplayer);
+        if (!multiplayer) ActivateSharedSceneIdentities();
+    }
+
+    /// <summary>
+    /// Mirror는 Play/빌드 시 씬 NetworkIdentity 객체를 끄고 서버 스폰 때만 켭니다. 싱글에는 스폰이 없으므로
+    /// 멀티 전용 객체 밖의 공용 객체(StageSelect 매니저, 엘리베이터 발판 등)를 서버 스폰과 같이 다시 켭니다.
+    /// 멀티 전용 컴포넌트는 위의 multiplayerBehaviours에서 이미 꺼져 있습니다.
+    /// Player는 빌드 시 꺼진 상태라 Awake로 충분하지만, Editor는 씬 로드 후처리가 Awake 뒤에 다시 끄므로 Start에서도 호출합니다.
+    /// </summary>
+    private void ActivateSharedSceneIdentities()
+    {
+        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+            foreach (NetworkIdentity identity in root.GetComponentsInChildren<NetworkIdentity>(true))
+                if (identity.sceneId != 0 && !IsUnderAny(identity.transform, multiplayerObjects))
+                    identity.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 공용 씬에는 싱글 UI와 멀티 UI가 함께 있다. 닫힌 팝업 자신은 둘 다 비활성이므로,
+    /// 이 컴포넌트가 켜 둔 현재 모드 쪽(부모가 활성인 후보)을 우선 반환하고 없으면 같은 씬의 첫 후보를 반환한다.
+    /// </summary>
+    public static T FindInActiveMode<T>(UnityEngine.SceneManagement.Scene scene) where T : Component
+    {
+        T fallback = null;
+        foreach (T candidate in FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (candidate == null || candidate.gameObject.scene != scene)
+                continue;
+            Transform parent = candidate.transform.parent;
+            if (parent == null || parent.gameObject.activeInHierarchy)
+                return candidate;
+            fallback ??= candidate;
+        }
+        return fallback;
+    }
+
+    private static bool IsUnderAny(Transform target, GameObject[] roots)
+    {
+        if (roots == null) return false;
+        for (Transform current = target; current != null; current = current.parent)
+            foreach (var root in roots)
+                if (root != null && current == root.transform) return true;
+        return false;
     }
 
     private IEnumerator Start()
     {
+        if (!MirrorNetworkManager.OwnsGameplay) ActivateSharedSceneIdentities();
         if (preparationScreen == null) yield break;
 #if UNITY_SERVER
         preparationScreen.gameObject.SetActive(false);

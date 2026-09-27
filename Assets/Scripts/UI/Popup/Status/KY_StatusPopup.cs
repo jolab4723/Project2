@@ -177,6 +177,14 @@ public class KY_StatusPopup : KY_PopupBase
         ApplyLabels();
         RequestData();
 
+        // SW 수정: 씬마다 저장된 스크롤 위치가 달라 상단 행(속성·HP·MP·공격력)이 가려지지 않도록 항상 맨 위부터 연다.
+        var scrollRect = GetComponentInChildren<UnityEngine.UI.ScrollRect>(true);
+        if (scrollRect != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 1f;
+        }
+
         animationManager?.PlayPanelOpen();
 
         // 팝업이 화면 안으로 들어온 뒤에 내용을 전개한다.

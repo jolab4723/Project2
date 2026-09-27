@@ -1785,7 +1785,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
                 snapshots.Add(ToSnapshotJson(pair.Value, true, pair.Key));
             }
 
-            // ponytail: 테스트 소유 아이템이 적으므로 전체 항목을 확인해 장비 교환 동기화를 단순하게 유지한다.
+            // 테스트 소유 아이템이 적으므로 전체 항목을 확인해 장비 교환 동기화를 단순하게 유지한다.
             // 실제 대규모 인벤토리로 승격할 때만 instanceId 인덱스 캐시로 교체한다.
             for (int i = 0; i < indexes.Count; i++)
             {
