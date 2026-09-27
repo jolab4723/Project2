@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
+  m_Name: UE_SiegeFrame
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
+  effectName: "\uC911\uC7A5\uAC11 \uAC70\uCE58"
+  icon: {fileID: 21300000, guid: 2707e75994e20b84a835cfa98b65879c, type: 3}
+  effectDescription: "\uC7A5\uCC29 \uC911 \uBC29\uC5B4\uB825\uC774 {0}% \uC99D\uAC00\uD558\uC9C0\uB9CC
+    \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 15
+  - 8
+  buffSpec:
+    statEffects:
+    - statType: 5
+      value: 15
+    - statType: 7
+      value: -8
+    duration: 0
+    stackBehavior: 2
+    maxStack: 0
+    displayKind: 3

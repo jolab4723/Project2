@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79519643c6f566046bfbb7ee5e3701be, type: 3}
+  m_Name: UE_GuardiansJustice
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.StatThresholdBuffUniqueEffectSO
+  effectName: "\uC815\uC758\uB294 \uC2B9\uB9AC\uD55C\uB2E4"
+  icon: {fileID: 21300000, guid: d8c30eb039e77f741bbf5941286b491f, type: 3}
+  effectDescription: "\uCCB4\uB825\uC774 {0}% \uC774\uC0C1\uC77C \uB54C \uACF5\uACA9\uB825\uC774
+    {1}%, \uBC29\uC5B4\uB825\uC774 {2}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 70
+  - 45
+  - 25
+  referenceStat: 0
+  comparisonOperator: 0
+  thresholdValue: 70
+  buffSpec:
+    statEffects:
+    - statType: 3
+      value: 45
+    - statType: 5
+      value: 25
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1
+    displayKind: 1

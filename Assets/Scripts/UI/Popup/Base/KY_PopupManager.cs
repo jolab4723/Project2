@@ -20,6 +20,18 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    [SerializeField] private InventoryPartView inventoryPartView;
+
+    private InventoryPartView InventoryPartViewRef
+    {
+        get
+        {
+            if (inventoryPartView == null)
+                inventoryPartView = FindFirstObjectByType<InventoryPartView>();
+            return inventoryPartView;
+        }
+    }
+
     /// <summary>일반 팝업이 열려 있는지 알려준다. 멀티플레이 입력은 게임 시간을 멈추지 않고 이 상태로 차단한다.</summary>
     public bool HasOpenModalPopup => popupStack.Count > 0; // SW 수정
 
@@ -127,6 +139,8 @@ public class KY_PopupManager : MonoBehaviour
         if (!popupDict.TryGetValue(type, out KY_PopupBase popup) || popup == null)
             return;
         Debug.Log("ShowSidePopup 호출됨: " + type);
+
+        InventoryPartViewRef?.CloseAll(); // [추가] Inventory/Shop/Upgrade/Quest 그룹 닫기
 
         if (currentSidePopup == popup)
         {
