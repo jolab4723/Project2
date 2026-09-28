@@ -82,6 +82,10 @@ namespace Core
                 return;
             }
 
+            // 다른 계정(또는 로그아웃 상태)에서 불러온 메모리 프로필을 현재 계정에 덮어쓰지 않는다.
+            if (IsPassiveProfileFromOtherAccount && ReferenceEquals(data.profile, PassiveSkillManager.Instance.CurrentProfile))
+                throw new System.InvalidOperationException("다른 계정에서 불러온 프로필은 저장할 수 없습니다.");
+
             data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
             QueueProfileSave(data.profile);
             WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
@@ -97,7 +101,14 @@ namespace Core
         /// </summary>
         public static async Task<SaveDataOperationResult> SynchronizeSinglePlayerProfileWithFirebaseAsync()
         {
-            try { return await SynchronizePlayerAccountCoreAsync(); }
+            try
+            {
+                var result = await SynchronizePlayerAccountCoreAsync();
+                // 로그인 전(로그아웃 상태)에 불러온 전역 프로필이 메모리에 남지 않도록 이 계정의 프로필로 교체한다.
+                if (result.IsSuccess || result.FailureReason == SaveDataFailureReason.NotFound)
+                    Instance?.LoadPassiveData();
+                return result;
+            }
             catch (System.Exception exception)
             {
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.FileAccessFailed,
@@ -336,12 +347,27 @@ namespace Core
         #endregion
 
         #region ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
+        // PassiveSkillManager.CurrentProfile은 씬·로그인 전환 후에도 유지되므로, 어느 계정 기준으로 불러왔는지 기록한다.
+        // null은 로그아웃 상태(전역 파일)에서 불러온 프로필이다.
+        private string passiveProfileUserId;
+
+        private bool IsPassiveProfileFromOtherAccount =>
+            PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.CurrentProfile != null &&
+            passiveProfileUserId != (string.IsNullOrEmpty(FirebaseService.Default.CurrentUserId) ? null : FirebaseService.Default.CurrentUserId);
+
         [ContextMenu("패시브 데이터 저장")]
         public void SavePassiveData()
         {
             if (PassiveSkillManager.Instance == null || PassiveSkillManager.Instance.CurrentProfile == null)
             {
                 Debug.LogWarning("[DataManager] SavePassiveData - PassiveSkillManager 또는 CurrentProfile이 없습니다.");
+                return;
+            }
+
+            if (IsPassiveProfileFromOtherAccount)
+            {
+                Debug.LogWarning("[DataManager] 다른 계정에서 불러온 패시브 프로필이라 저장하지 않고 현재 계정 프로필을 다시 불러옵니다.");
+                LoadPassiveData();
                 return;
             }
 
@@ -361,6 +387,8 @@ namespace Core
                 return false;
             }
 
+            string uid = FirebaseService.Default.CurrentUserId;
+            passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
             var slot = LoadSinglePlayerSlot();
             if (slot != null && slot.profile != null)
             {
@@ -1878,7 +1906,11 @@ namespace Core
             var profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };
 
             if (PassiveSkillManager.Instance != null)
+            {
+                string uid = FirebaseService.Default.CurrentUserId;
+                passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
                 PassiveSkillManager.Instance.SetActiveProfile(profile);
+            }
 
             SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = profile });
         }
@@ -1887,6 +1919,9 @@ namespace Core
         [ContextMenu("패시브 데이터 초기화")]
         public void ResetPassiveData()
         {
+            if (IsPassiveProfileFromOtherAccount)
+                LoadPassiveData();
+
             var profile = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.CurrentProfile : null;
             if (profile == null)
                 profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };
