@@ -6,6 +6,17 @@ using ItemSystem;
 
 namespace Core
 {
+    /// <summary>싱글 런이 끝난 방식. 계정으로 옮기는 크레딧 규칙이 달라진다(DataManager.CalculateRunEndCredits).</summary>
+    public enum RunEndReason
+    {
+        /// <summary>Act3 최종 보스 클리어.</summary>
+        Clear,
+        /// <summary>액트를 1개 이상 클리어한 뒤 비전투 상황에서 일시정지 메뉴의 정산으로 종료.</summary>
+        Settle,
+        /// <summary>사망.</summary>
+        Death
+    }
+
     public class DataManager : Singleton<DataManager>, IManagerModule
     {
         public string ModuleName => "DataManager";
@@ -361,32 +372,59 @@ namespace Core
             return false;
         }
 
+        /// <summary>사망 시 계정으로 옮기는 보유 크레딧 비율(%).</summary>
+        public const int DeathCreditPercent = 30;
+
+        /// <summary>클리어·정산 시 크레딧으로 바꿔 주는 인벤토리·장착 아이템 원가 합의 비율(%).</summary>
+        public const int ItemValueCreditPercent = 50;
+
         /// <summary>
-        /// 현재 인벤토리의 런 크레딧을 프로필에 더해 로컬과 Firebase 저장을 요청합니다.
-        /// 저장 요청이 시작된 뒤에만 인게임 크레딧을 0으로 초기화합니다.
+        /// 싱글 런이 끝날 때 계정 크레딧으로 옮길 금액을 계산한다. 적립은 하지 않는다.
+        /// - 클리어·정산: 보유 크레딧 전부 + 인벤토리·장착 아이템 원가 합의 50%
+        /// - 사망: 보유 크레딧의 30% (아이템 제외)
+        /// 소수점은 버린다. 결과 화면에 미리 금액을 보여줄 때도 이 값을 쓴다.
         /// </summary>
-        public bool TransferRunGoldToProfile(PlayerProfileData profile)
+        public int CalculateRunEndCredits(RunEndReason reason)
         {
+            InventoryController inventory = InventoryController.Instance;
+            long gold = inventory != null && inventory.PlayerWallet != null
+                ? Mathf.Max(0, inventory.PlayerWallet.Gold)
+                : 0;
+
+            long credits = reason == RunEndReason.Death
+                ? gold * DeathCreditPercent / 100
+                : gold + (long)ItemValueCalculator.GetOwnedItemsBasePrice(inventory) * ItemValueCreditPercent / 100;
+
+            return (int)System.Math.Min(credits, int.MaxValue);
+        }
+
+        /// <summary>
+        /// 싱글 런 종료 크레딧(CalculateRunEndCredits)을 현재 프로필에 더해 로컬과 Firebase 저장을 요청하고,
+        /// 저장 요청이 시작된 뒤에만 인게임 크레딧을 0으로 초기화한다.
+        /// 액트 중간 보스에서는 부르지 않는다 - 크레딧은 런이 끝날 때(클리어·정산·사망) 한 번만 옮긴다.
+        /// 아이템은 인벤토리에 남아 있으므로, 같은 런에서 두 번 부르지 않도록 호출하는 쪽이 막아야 한다.
+        /// </summary>
+        public bool SettleRunCredits(RunEndReason reason)
+        {
+            PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ?? LoadSinglePlayerSlot()?.profile;
             if (profile == null)
             {
-                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - profile이 null입니다.");
+                Debug.LogWarning("[DataManager] SettleRunCredits - 프로필을 찾지 못해 크레딧을 이전하지 못했습니다.");
                 return false;
             }
 
             if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
             {
-                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
+                Debug.LogWarning("[DataManager] SettleRunCredits - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
                 return false;
             }
 
-            int runGold = InventoryController.Instance.PlayerWallet.Gold;
-            if (runGold <= 0)
-                return true;
-
-            if (!TrySaveRunCredits(profile, runGold))
+            int credits = CalculateRunEndCredits(reason);
+            if (credits > 0 && !TrySaveRunCredits(profile, credits))
                 return false;
 
             InventoryController.Instance.PlayerWallet.SetGold(0);
+            Debug.Log($"[DataManager] 런 종료({reason}) 크레딧 {credits} 이전 완료.");
             return true;
         }
 

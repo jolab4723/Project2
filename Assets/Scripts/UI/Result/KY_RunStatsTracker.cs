@@ -65,8 +65,12 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         stats.defeatedEnemies += Mathf.Max(0, count);
     }
 
-    /// <summary>원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.</summary>
-    public bool FinishRun(bool cleared)
+    /// <summary>
+    /// 원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.
+    /// earnedCredits를 넘기면 결과 화면에 그 금액을 표시한다(실제 계정 적립액 - 사망 30%, 클리어·정산은
+    /// 보유 크레딧 + 아이템 원가 50%, DataManager.CalculateRunEndCredits). 생략하면 기존처럼 지갑 잔액을 표시한다.
+    /// </summary>
+    public bool FinishRun(bool cleared, int? earnedCredits = null)
     {
         if (payload == null)
         {
@@ -86,7 +90,7 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
             stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,
             playTimeSeconds = stats.elapsedSeconds,
-            earnedCredits = ResolveRemainingCredits(),
+            earnedCredits = earnedCredits.HasValue ? Mathf.Max(0, earnedCredits.Value) : ResolveRemainingCredits(),
             combo = 0
         });
 

@@ -14,6 +14,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
     private bool transitionRequested;
     private bool clearResultRecorded;
+    private bool runCreditsSettled;
 
     private void Awake()
     {
@@ -156,7 +157,11 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             if (!clearResultRecorded)
             {
                 var tracker = KY_RunStatsTracker.Instance;
-                if (tracker == null || !tracker.FinishRun(true))
+                // 결과 화면에는 실제로 계정에 적립되는 금액(보유 크레딧 + 아이템 원가 50%)을 표시한다.
+                int clearCredits = DataManager.Instance != null
+                    ? DataManager.Instance.CalculateRunEndCredits(RunEndReason.Clear)
+                    : 0;
+                if (tracker == null || !tracker.FinishRun(true, clearCredits))
                 {
                     Log.Error("클리어 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
                     return false;
@@ -165,8 +170,15 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             }
         }
 
-        if (bossClear && !TransferRunCreditsToProfile())
-            return false;
+        // 크레딧은 액트 중간 보스가 아니라 최종 클리어에서만 계정으로 옮긴다.
+        // (중간에 옮기면 지갑이 0이 되어 다음 액트 상점에서 쓸 수 없고, 아이템 원가가 여러 번 계산된다.)
+        // 노드 완료 저장만 실패해 재시도하는 경우 아이템을 다시 더하지 않도록 한 번만 정산한다.
+        if (finalBoss && !runCreditsSettled)
+        {
+            if (!TransferRunCreditsToProfile())
+                return false;
+            runCreditsSettled = true;
+        }
 
         if ( ! saveService.CompletePendingNode(out StageNodeSaveData completedNode, out StageActType completedAct))
         {
@@ -190,17 +202,16 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// 보스 클리어 시 현재 런 크레딧을 영구 프로필로 옮기고 로컬 및 Firebase 저장을 요청합니다.
+    /// 최종 보스 클리어 시 현재 런 크레딧(보유 크레딧 + 아이템 원가 50%)을 영구 프로필로 옮기고
+    /// 로컬 및 Firebase 저장을 요청합니다.
     /// </summary>
     private static bool TransferRunCreditsToProfile()
     {
         DataManager dataManager = DataManager.Instance;
-        PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ??
-                                    dataManager?.LoadSinglePlayerSlot()?.profile;
-        if (dataManager != null && dataManager.TransferRunGoldToProfile(profile))
+        if (dataManager != null && dataManager.SettleRunCredits(RunEndReason.Clear))
             return true;
 
-        Log.Error("액트 클리어 크레딧을 프로필에 저장하지 못했습니다.");
+        Log.Error("게임 클리어 크레딧을 프로필에 저장하지 못했습니다.");
         return false;
     }
 
