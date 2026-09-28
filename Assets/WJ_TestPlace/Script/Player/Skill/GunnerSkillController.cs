@@ -536,7 +536,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
-        GameObject projectileGO = Instantiate(prefab, skyPos, Quaternion.identity);
+        GameObject projectileGO = Instantiate(prefab, skyPos, prefab.transform.rotation);
 
         if(!projectileGO.TryGetComponent(out GunnerBomb projectile))
         {
