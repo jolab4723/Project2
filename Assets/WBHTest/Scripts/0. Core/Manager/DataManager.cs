@@ -386,16 +386,63 @@ namespace Core
         /// </summary>
         public int CalculateRunEndCredits(RunEndReason reason)
         {
-            InventoryController inventory = InventoryController.Instance;
-            long gold = inventory != null && inventory.PlayerWallet != null
-                ? Mathf.Max(0, inventory.PlayerWallet.Gold)
-                : 0;
+            if (!TryGetRunValue(out long gold, out long itemBasePrice, out _))
+                return 0;
 
             long credits = reason == RunEndReason.Death
                 ? gold * DeathCreditPercent / 100
-                : gold + (long)ItemValueCalculator.GetOwnedItemsBasePrice(inventory) * ItemValueCreditPercent / 100;
+                : gold + itemBasePrice * ItemValueCreditPercent / 100;
 
             return (int)System.Math.Min(credits, int.MaxValue);
+        }
+
+        /// <summary>
+        /// 런 종료 크레딧 계산에 쓸 보유 크레딧과 아이템 원가 합을 구한다.
+        /// 인벤토리가 있는 씬(캠프·전투)은 실제 인벤토리를, 없는 씬(스테이지 선택)은 gamesave를 쓴다.
+        /// 스테이지 선택으로 오기 전 노드를 나올 때(YJ_StageManager.EndScene) gamesave가 저장되므로 값이 같다.
+        /// </summary>
+        private bool TryGetRunValue(out long gold, out long itemBasePrice, out bool fromLiveInventory)
+        {
+            InventoryController inventory = InventoryController.Instance;
+            fromLiveInventory = inventory != null && inventory.PlayerWallet != null;
+            if (fromLiveInventory)
+            {
+                gold = Mathf.Max(0, inventory.PlayerWallet.Gold);
+                itemBasePrice = ItemValueCalculator.GetOwnedItemsBasePrice(inventory);
+                return true;
+            }
+
+            gold = 0;
+            itemBasePrice = 0;
+            string path = GetSavePath(GameplaySaveFileName);
+            if (!File.Exists(path))
+                return false;
+
+            try
+            {
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (data == null)
+                    return false;
+                // 새 게임 직후(아직 한 번도 저장 전)는 보유 크레딧·아이템이 없다.
+                if (data.needsPlayerInitialization)
+                    return true;
+
+                ItemDatabaseSO database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+                if (database == null && data.inventory?.items != null && data.inventory.items.Count > 0)
+                {
+                    Debug.LogWarning("[DataManager] 아이템 DB가 없어 저장된 아이템 원가를 계산하지 못했습니다.");
+                    return false;
+                }
+
+                gold = Mathf.Max(0, data.status != null ? data.status.gold : 0);
+                itemBasePrice = ItemValueCalculator.GetSavedItemsBasePrice(data.inventory, database);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 저장된 런 정보를 읽지 못했습니다: {exception.Message}");
+                return false;
+            }
         }
 
         /// <summary>
@@ -413,9 +460,9 @@ namespace Core
                 return false;
             }
 
-            if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
+            if (!TryGetRunValue(out _, out _, out bool fromLiveInventory))
             {
-                Debug.LogWarning("[DataManager] SettleRunCredits - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
+                Debug.LogWarning("[DataManager] SettleRunCredits - 보유 크레딧(지갑 또는 저장 데이터)을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
                 return false;
             }
 
@@ -423,8 +470,10 @@ namespace Core
             if (credits > 0 && !TrySaveRunCredits(profile, credits))
                 return false;
 
-            InventoryController.Instance.PlayerWallet.SetGold(0);
-            Debug.Log($"[DataManager] 런 종료({reason}) 크레딧 {credits} 이전 완료.");
+            // 저장 데이터로 정산한 경우(스테이지 선택)는 지갑이 없다. 호출하는 쪽이 곧바로 런을 초기화(ResetGameplayData)한다.
+            if (fromLiveInventory)
+                InventoryController.Instance.PlayerWallet.SetGold(0);
+            Debug.Log($"[DataManager] 런 종료({reason}) 크레딧 {credits} 이전 완료.{(fromLiveInventory ? "" : " (저장 데이터 기준)")}");
             return true;
         }
 

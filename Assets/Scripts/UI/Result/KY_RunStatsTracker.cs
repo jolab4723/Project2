@@ -122,7 +122,9 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
             stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,
             playTimeSeconds = stats.elapsedSeconds,
+            // 액트 중간에는 계정 적립이 없으므로 "파밍 가치 현황"으로 보유 크레딧과 장비 가치(원가 50%)를 나눠 보여준다.
             earnedCredits = ResolveRemainingCredits(),
+            itemValueCredits = ResolveItemValueCredits(),
             combo = 0
         });
 
@@ -137,6 +139,13 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
             : null;
 
         return wallet != null ? Mathf.Max(0, wallet.Gold) : 0;
+    }
+
+    /// <summary>인벤토리·장착 장비 원가 합에서 정산 때 크레딧으로 바뀌는 비율(50%)만큼을 반환한다.</summary>
+    private static int ResolveItemValueCredits()
+    {
+        int basePrice = ItemSystem.ItemValueCalculator.GetOwnedItemsBasePrice(InventoryController.Instance);
+        return (int)((long)basePrice * Core.DataManager.ItemValueCreditPercent / 100);
     }
 
     /// <summary>저장된 현재 노드 또는 마지막 클리어 노드에서 Act와 도달 층을 만든다.</summary>

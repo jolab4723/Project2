@@ -22,6 +22,10 @@ public sealed class KY_ResultScreen : MonoBehaviour
     [SerializeField] private TMP_Text defeatedText;
     [SerializeField] private TMP_Text playTimeText;
     [SerializeField] private TMP_Text creditsText;
+    [Tooltip("비워두면 creditsText와 같은 행의 CreditsLabel을 자동으로 찾는다.")]
+    [SerializeField] private TMP_Text creditsLabelText;
+    [Tooltip("액트 중간 정산의 파밍 가치 현황에서 장비 가치(원가 50%)를 표시하는 색")]
+    [SerializeField] private Color itemValueColor = new Color(1f, 0.85f, 0.2f, 1f);
     [SerializeField] private Image titleLogo;
     [SerializeField] private Sprite clearLogo;
     [SerializeField] private Sprite actClearLogo;
@@ -68,6 +72,9 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private Tween creditsHighlightTween;
     private Sequence buttonRevealSequence;
     private Color creditsBaseColor;
+    // 씬에 입력된 기본 라벨("획득 크레딧"). 액트 중간 정산 후 다른 결과를 표시할 때 되돌린다.
+    private string defaultCreditsLabel;
+    private const string ActClearCreditsLabel = "파밍 가치 현황";
 
     public KY_ResultData CurrentData { get; private set; }
     public KY_ResultType CurrentResultType { get; private set; }
@@ -77,6 +84,21 @@ public sealed class KY_ResultScreen : MonoBehaviour
     {
         if (creditsHighlightGraphic != null)
             creditsBaseColor = creditsHighlightGraphic.color;
+
+        // 씬을 수정하지 않도록 라벨 참조가 비어 있으면 같은 행(CreditsRow)에서 찾는다.
+        if (creditsLabelText == null && creditsText != null && creditsText.transform.parent != null)
+        {
+            foreach (TMP_Text text in creditsText.transform.parent.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (text != creditsText && text.name == "CreditsLabel")
+                {
+                    creditsLabelText = text;
+                    break;
+                }
+            }
+        }
+        if (creditsLabelText != null)
+            defaultCreditsLabel = creditsLabelText.text;
 
         if (retryButton) retryButton.onClick.AddListener(Retry);
         if (titleButton) titleButton.onClick.AddListener(ReturnToTitle);
@@ -158,8 +180,10 @@ public sealed class KY_ResultScreen : MonoBehaviour
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
+        if (defaultCreditsLabel != null)
+            SetText(creditsLabelText, CurrentResultType == KY_ResultType.ActClear ? ActClearCreditsLabel : defaultCreditsLabel);
         // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
-        SetText(creditsText, "0");
+        SetText(creditsText, FormatCredits(0f));
         ApplyAccentColor(GetAccentColor(CurrentResultType));
         SetActionButtonLabels(CurrentResultType);
         SetButtons(!leaving);
@@ -199,13 +223,14 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         if (creditsText == null) yield break;
 
-        int credits = Mathf.Max(0, CurrentData.earnedCredits);
-        creditsText.text = "0";
-        yield return DOVirtual.Int(0, credits, creditsCountDuration,
-                value => creditsText.text = value.ToString("N0"))
+        // 진행률(0→1)로 카운트업한다. 액트 중간 정산은 보유 크레딧과 장비 가치를 함께 올린다.
+        creditsText.text = FormatCredits(0f);
+        yield return DOVirtual.Float(0f, 1f, creditsCountDuration,
+                progress => creditsText.text = FormatCredits(progress))
             .SetLink(gameObject)
             .SetEase(Ease.OutCubic)
             .WaitForCompletion();
+        creditsText.text = FormatCredits(1f);
 
         yield return PulseCredits();
         yield return RevealActionButtons();
@@ -460,6 +485,17 @@ public sealed class KY_ResultScreen : MonoBehaviour
             SetText(retryButton.GetComponentInChildren<TMP_Text>(), resultType == KY_ResultType.ActClear ? "계속하기" : "다시 시작");
         if (titleButton != null)
             SetText(titleButton.GetComponentInChildren<TMP_Text>(), "타이틀로");
+    }
+
+    // 크레딧 칸 문구. 액트 중간 정산은 "보유 크레딧(흰색) + 장비 가치(노란색)", 그 외는 실제 적립액 하나.
+    private string FormatCredits(float progress)
+    {
+        int credits = Mathf.RoundToInt(Mathf.Max(0, CurrentData.earnedCredits) * progress);
+        if (CurrentResultType != KY_ResultType.ActClear)
+            return credits.ToString("N0");
+
+        int itemValue = Mathf.RoundToInt(Mathf.Max(0, CurrentData.itemValueCredits) * progress);
+        return $"<color=#FFFFFF>{credits:N0} +</color> <color=#{ColorUtility.ToHtmlStringRGB(itemValueColor)}>{itemValue:N0}</color>";
     }
 
     // 초 단위 시간을 HH:MM:SS 형식으로 변환한다.

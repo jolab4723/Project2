@@ -52,6 +52,32 @@ namespace ItemSystem
             return (int)System.Math.Min(total, int.MaxValue);
         }
 
+        /// <summary>
+        /// 저장된 인벤토리(gamesave의 가방·장착 아이템)의 원가 합. 인벤토리가 없는 씬(스테이지 선택 등)에서 쓴다.
+        /// itemId로 DB에서 정의를 찾고, 같은 instanceId는 한 번만 센다. DB에 없는 아이템은 0으로 친다.
+        /// </summary>
+        public static int GetSavedItemsBasePrice(Core.InventorySaveData inventory, ItemDatabaseSO database)
+        {
+            if (inventory?.items == null || database == null)
+                return 0;
+
+            var counted = new HashSet<string>();
+            long total = 0;
+            foreach (Core.ItemSaveData saved in inventory.items)
+            {
+                if (saved == null || string.IsNullOrWhiteSpace(saved.itemId))
+                    continue;
+                if (!string.IsNullOrEmpty(saved.instanceId) && !counted.Add(saved.instanceId))
+                    continue;
+
+                ItemDefinitionSO definition = database.GetById(saved.itemId);
+                if (definition != null)
+                    total += Mathf.Max(0, definition.sellPrice);
+            }
+
+            return (int)System.Math.Min(total, int.MaxValue);
+        }
+
         private static int CountOnce(ItemInstance item, HashSet<ItemInstance> counted)
         {
             if (item == null || !counted.Add(item))
