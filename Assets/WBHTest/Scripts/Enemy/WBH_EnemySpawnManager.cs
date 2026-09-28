@@ -86,8 +86,10 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         }
 
         player = controller.transform;
-        // 현재 지갑은 캐릭터가 아니라 씬의 PlayerManager에 배치되어 있습니다.
-        wallet = FindFirstObjectByType<PlayerWallet>();
+        // 현재 지갑은 캐릭터가 아니라 씬에 배치되어 있습니다.
+        // 씬에 PlayerWallet이 여러 개라 Find는 저장되지 않는 지갑을 고를 수 있으므로,
+        // DataManager가 저장·복원하는 인벤토리 지갑을 사용합니다.
+        wallet = InventoryController.Instance != null ? InventoryController.Instance.PlayerWallet : null;
         return true;
     }
 
