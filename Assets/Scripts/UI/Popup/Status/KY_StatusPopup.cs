@@ -84,6 +84,17 @@ public class KY_StatusPopup : KY_PopupBase
 
         ApplyLabels();
         ApplyIcons();
+        ApplyValueSuffixes();
+    }
+
+    /// <summary>
+    /// 값 자체가 %p인 행(크리티컬 확률 0~100, 쿨타임 감소 0~70)은 총합 뒤에 %를 붙인다.
+    /// 아이템 툴팁 등의 표기(ItemDisplayNames.StatUnit)와 맞춘다.
+    /// </summary>
+    void ApplyValueSuffixes()
+    {
+        critChanceRow?.SetValueSuffix("%");
+        cooldownReductionRow?.SetValueSuffix("%");
     }
 
     void OnValidate()

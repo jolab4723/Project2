@@ -125,6 +125,7 @@ namespace ItemSystem
             if (total >= 0f)
                 builder.Append('+');
             builder.Append(total.ToString("0.#"));
+            builder.Append(ItemDisplayNames.StatUnit(effect.statType));
 
             return builder.ToString();
         }
