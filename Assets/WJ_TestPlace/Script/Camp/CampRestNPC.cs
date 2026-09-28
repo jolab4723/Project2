@@ -8,6 +8,9 @@ using UnityEngine;
 /// 팝업의 KY_RestPopup.OnConfirmed(확인 버튼이 비용 검사를 통과했을 때)를 구독해서 실제 크레딧 차감,
 /// 체력 회복, 포션 충전을 적용한다 - 팝업 자체는 표시/버튼 흐름만 담당하고 실제 처리는 여기서 한다.
 ///
+/// 휴식 규칙: 비용 = creditPerAct × 현재 액트 번호(고정), 체력 = 최대 체력의 baseHealPercent%
+/// (캠프 회복 패시브 해금 시 패시브 수치), 포션 = potionRechargeAmount회 충전. 둘 다 최대치까지만 채운다.
+///
 /// !! 회복 비율/비용 수치는 RestData.xlsx에서 관리한다(DataLoader/Rest Data 파이프라인 → RestDatabaseSO).
 ///    아래 SerializeField 값은 DB를 못 찾았을 때만 쓰는 폴백이다.
 /// </summary>
@@ -18,9 +21,11 @@ public class CampRestNPC : MonoBehaviour
 
     [Header("데이터를 못 찾았을 때 쓰는 폴백 값")]
     [Tooltip("캠프 회복 증가 패시브 미해금 시 기본 회복 비율(최대 체력 대비 %)")]
-    [SerializeField] private float baseHealPercent = 20f;
-    [SerializeField] private int creditPerHealthPoint = 2;
-    [SerializeField] private int creditPerPotionCharge = 50;
+    [SerializeField] private float baseHealPercent = 25f;
+    [Tooltip("휴식 1회 비용 = 이 값 × 현재 액트 번호")]
+    [SerializeField] private int creditPerAct = 500;
+    [Tooltip("휴식 1회로 채우는 포션 충전 수")]
+    [SerializeField] private int potionRechargeAmount = 3;
 
     private const string RestDatabaseResourcePath = "DataFiles/RestData/3. GeneratedAssets/RestDatabase";
 
@@ -63,21 +68,29 @@ public class CampRestNPC : MonoBehaviour
 
         RestDatabaseSO.RestEntry settings = restDatabase != null ? restDatabase.Default : null;
         float basePercent = settings != null ? settings.baseHealPercent : baseHealPercent;
-        int healthCost = settings != null ? settings.creditPerHealthPoint : creditPerHealthPoint;
-        int potionCost = settings != null ? settings.creditPerPotionCharge : creditPerPotionCharge;
+        int costPerAct = settings != null ? settings.creditPerAct : creditPerAct;
+        int rechargeAmount = settings != null ? settings.potionRechargeAmount : potionRechargeAmount;
 
         float healPercent = PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.CampHealPercent > 0f
             ? PassiveSkillManager.Instance.CampHealPercent
             : basePercent;
 
+        // 회복량은 최대 체력의 healPercent%이되, 부족한 체력만큼만 채운다.
         int missingHealth = Mathf.Max(0, Mathf.RoundToInt(status.MaxHealth - status.CurrentHp));
         int healthAmount = Mathf.Min(missingHealth, Mathf.RoundToInt(status.MaxHealth * healPercent / 100f));
 
+        // 포션은 rechargeAmount만큼 채우되, 최대 충전량을 넘지 않는다.
         int potionAmount = 0;
         if (PotionUseManager.Instance != null)
-            potionAmount = Mathf.Max(0, PotionUseManager.Instance.MaxCharges - PotionUseManager.Instance.CurrentCharges);
+        {
+            int missingCharges = Mathf.Max(0, PotionUseManager.Instance.MaxCharges - PotionUseManager.Instance.CurrentCharges);
+            potionAmount = Mathf.Min(missingCharges, Mathf.Max(0, rechargeAmount));
+        }
 
-        int cost = healthAmount * healthCost + potionAmount * potionCost;
+        // 비용은 회복량과 무관한 고정값(액트 번호 × creditPerAct). 채울 것이 하나도 없으면 받지 않는다.
+        int cost = healthAmount > 0 || potionAmount > 0
+            ? Mathf.Max(0, costPerAct) * GetCurrentActNumber()
+            : 0;
 
         pendingHealthAmount = healthAmount;
         pendingPotionAmount = potionAmount;
@@ -107,7 +120,23 @@ public class CampRestNPC : MonoBehaviour
         }
 
         if (pendingPotionAmount > 0 && PotionUseManager.Instance != null)
-            PotionUseManager.Instance.RechargeAllPotions();
+            PotionUseManager.Instance.RechargePotions(pendingPotionAmount);
+    }
+
+    /// <summary>
+    /// 스테이지 저장의 현재 액트 번호(Act1=1, Act2=2, Act3=3). 저장이 없거나 읽지 못하면(씬 직접 실행) 1.
+    /// 캠프 씬의 YJ_StageSaveService를 쓰고, 없으면 포탈과 같은 방식으로 이 오브젝트에 붙여 조회만 한다.
+    /// </summary>
+    private int GetCurrentActNumber()
+    {
+        YJ_StageSaveService saveService = FindFirstObjectByType<YJ_StageSaveService>();
+        if (saveService == null)
+            saveService = gameObject.AddComponent<YJ_StageSaveService>();
+
+        if (!saveService.HasSaveFile || !saveService.TryLoadSaveData(out StageMapSaveData map) || map == null)
+            return 1;
+
+        return Mathf.Max(1, (int)map.act);
     }
 
     private static WBH_PlayerStatus GetPlayerStatus()

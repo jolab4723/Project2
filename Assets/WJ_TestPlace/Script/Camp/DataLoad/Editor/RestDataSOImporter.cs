@@ -88,8 +88,8 @@ namespace DataSystem
                 SerializedProperty element = settingsProp.GetArrayElementAtIndex(index);
                 element.FindPropertyRelative("restId").stringValue = row.restId;
                 element.FindPropertyRelative("baseHealPercent").floatValue = row.baseHealPercent;
-                element.FindPropertyRelative("creditPerHealthPoint").intValue = row.creditPerHealthPoint;
-                element.FindPropertyRelative("creditPerPotionCharge").intValue = row.creditPerPotionCharge;
+                element.FindPropertyRelative("creditPerAct").intValue = row.creditPerAct;
+                element.FindPropertyRelative("potionRechargeAmount").intValue = row.potionRechargeAmount;
                 index++;
             }
 

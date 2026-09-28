@@ -135,6 +135,18 @@ public class PotionUseManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 공유 충전 풀에 amount만큼 더한다(최대치를 넘지 않음). 캠프 휴식처럼 일부만 채울 때 쓴다.
+    /// 공통 규칙(PotionUseState.ApplyCharges)으로 범위를 맞추며 남은 쿨타임은 유지한다.
+    /// </summary>
+    public void RechargePotions(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        useState.ApplyCharges(CurrentCharges + amount, MaxCharges);
+    }
+
+    /// <summary>
     /// 현재 장착된 포션 인스턴스를 가져온다. 장착된 게 없거나 포션이 아니면 false.
     /// SW 수정: 기존 장비 연결을 유지하고 공통 규칙으로 장착 포션을 찾습니다.
     /// </summary>
