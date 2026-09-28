@@ -224,6 +224,7 @@ GameObject:
   - component: {fileID: 3976075048780567732}
   - component: {fileID: 8762472566167597388}
   - component: {fileID: 6807657560883665350}
+  - component: {fileID: 3569493835362848687}
   m_Layer: 5
   m_Name: No
   m_TagString: Untagged
@@ -334,6 +335,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3569493835362848687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 266365453907403042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &841179242811119561
 GameObject:
   m_ObjectHideFlags: 0
@@ -1250,8 +1269,8 @@ RectTransform:
   - {fileID: 7189012581258144707}
   m_Father: {fileID: 8226017748885037865}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1585,6 +1604,7 @@ GameObject:
   - component: {fileID: 7994980107476353137}
   - component: {fileID: 5931302974144440805}
   - component: {fileID: 5749120931445813044}
+  - component: {fileID: 5365118837177843388}
   m_Layer: 5
   m_Name: Yes
   m_TagString: Untagged
@@ -1695,6 +1715,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5365118837177843388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6547389385888190848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1 &7065723962044447167
 GameObject:
   m_ObjectHideFlags: 0
