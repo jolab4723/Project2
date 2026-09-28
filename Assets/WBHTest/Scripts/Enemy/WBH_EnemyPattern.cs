@@ -49,6 +49,7 @@ public class WBH_EnemyPattern : MonoBehaviour
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
+    [SerializeField] public WBH_EffectData act2TransitionEffect;
 
     public WBH_EnemyAnimation enemyAnimation; // pattern 에서의 참조를 위해 public
     private WBH_EnemyController controller;
