@@ -30,6 +30,11 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private ItemInstance boundItem;
     private TriggeredBuffUniqueEffectSO boundEffect;
 
+    // 고유효과 대신 거너 아크 레이저(진화1)의 발사 간격을 표시할 때 쓰는 바인딩.
+    private GunnerSkillController boundArcLaser;
+    private string arcLaserTooltipName;
+    private string arcLaserTooltipDescription;
+
     /// <summary>지금 이 슬롯 위에 마우스가 올라와 있는지(언어 변경 시 툴팁을 다시 그릴지 판단용).</summary>
     private bool hovered;
 
@@ -38,6 +43,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         boundItem = item;
         boundEffect = effect;
+        boundArcLaser = null;
 
         if (iconImage != null)
         {
@@ -52,14 +58,50 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         Refresh();
     }
 
+    /// <summary>
+    /// 이 슬롯에 거너 아크 레이저(진화1)의 발사 간격을 연결한다. 아이콘은 아크 버스터 스킬 아이콘,
+    /// 툴팁은 호출 쪽에서 만든 이름/설명을 쓴다. 남은 시간은 매 프레임 컨트롤러에서 직접 읽는다.
+    /// </summary>
+    public void BindArcLaser(GunnerSkillController controller, Sprite icon, string tooltipName, string tooltipDescription)
+    {
+        boundItem = null;
+        boundEffect = null;
+        boundArcLaser = controller;
+        arcLaserTooltipName = tooltipName;
+        arcLaserTooltipDescription = tooltipDescription;
+
+        if (iconImage != null)
+        {
+            iconImage.sprite = icon;
+            iconImage.enabled = icon != null;
+            iconImage.preserveAspect = true;
+        }
+
+        if (borderImage != null)
+            borderImage.color = borderColor;
+
+        Refresh();
+    }
+
     /// <summary>남은 쿨타임처럼 매 프레임 바뀌는 값만 갱신한다.</summary>
     public void Refresh()
     {
-        if (boundEffect == null)
-            return;
+        float remaining;
+        float duration;
 
-        float remaining = boundEffect.GetRemainingCooldown(boundItem);
-        float duration = boundEffect.cooldownSeconds;
+        if (boundArcLaser != null)
+        {
+            if (!boundArcLaser.TryGetArcLaserCooldown(out remaining, out duration, out _))
+                remaining = 0f;
+        }
+        else
+        {
+            if (boundEffect == null)
+                return;
+
+            remaining = boundEffect.GetRemainingCooldown(boundItem);
+            duration = boundEffect.cooldownSeconds;
+        }
 
         if (cooldownFillImage != null)
         {
@@ -117,7 +159,16 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     /// <summary>쿨타임은 스택 개념이 없어서 스택 수는 항상 1로 넘긴다(아이콘의 숫자는 남은 초다).</summary>
     private void ShowTooltip()
     {
-        if (boundEffect == null || BuffTooltipUI.Instance == null)
+        if (BuffTooltipUI.Instance == null)
+            return;
+
+        if (boundArcLaser != null)
+        {
+            BuffTooltipUI.Instance.Show(arcLaserTooltipName, arcLaserTooltipDescription);
+            return;
+        }
+
+        if (boundEffect == null)
             return;
 
         BuffTooltipUI.Instance.Show(BuffTextComposer.BuildName(boundEffect, 1),

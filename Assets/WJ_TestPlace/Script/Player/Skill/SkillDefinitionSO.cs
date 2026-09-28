@@ -87,9 +87,9 @@ public class SkillDefinitionSO : ScriptableObject
     public float projectileSpeed = 15f;
     [Tooltip("적에게 닿는 순간 이 반경 안의 적 전부에게 데미지(관통 없이 첫 접촉 즉시 폭발).")]
     public float explosionRadius = 1f;
-    [Tooltip("최대 스택 수. 스택이 있어야 사용 가능하고, cooldownSeconds는 스택과 별개로 연사 속도를 제한한다.")]
+    [Tooltip("최대 스택 수. 스택이 있어야 사용 가능하고, 연사 간격은 GunnerSkillController의 고정값(1초)이 제한한다.")]
     public int maxStacks = 6;
-    [Tooltip("스택 1개가 다시 차는 데 걸리는 시간(초).")]
+    [Tooltip("스택 1개가 다시 차는 데 걸리는 시간(초). SkillData 시트의 cooldownSeconds 값이 파이프라인으로 들어온다.")]
     public float stackRechargeSeconds = 4f;
     [Tooltip("직선으로 날아가다 적에게 닿으면 폭발하는 투사체 프리팹(GunnerArcProjectile 컴포넌트 포함).")]
     public GameObject arcProjectilePrefab;

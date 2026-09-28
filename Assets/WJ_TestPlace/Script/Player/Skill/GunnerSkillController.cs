@@ -66,6 +66,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private int arcBusterStacks = -1;
     private float arcBusterStackTimer;
 
+    // 아크 버스터 연속 발사 최소 간격(초). 스택 충전 시간과 별개인 고정값이다.
+    private const float ArcBusterFireInterval = 1f;
+    // 아크 레이저(진화1)의 연속 발사 최소 간격(초). 스택을 몰아 쓰는 진화라 기본 발사보다 길게 고정한다.
+    private const float ArcLaserFireInterval = 4f;
+
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
         PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
@@ -291,17 +296,32 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
         // 쿨타임/스택은 전혀 건드리지 않는다(138번 후속 - manaCost 수치 자체는 137/138번에서 이미 반영됨).
         // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
-        if (status != null && !status.TryUseMana(def.GetManaCost(evo)))
+        float manaCost = def.GetManaCost(evo);
+
+        // 아크 레이저(진화1)는 소모하는 스택 1개당 manaCost를 쓴다. 마나가 모자라면
+        // "소모 스택 × manaCost ≤ 현재 마나"를 만족하는 만큼만 스택을 소모한다(1스택도 안 되면 시전 실패).
+        int arcLaserStacks = -1;
+        if (IsArcBusterSlot(index) && evo == SkillEvolutionId.Evolution1)
+        {
+            arcLaserStacks = arcBusterStacks;
+            if (status != null && manaCost > 0f)
+                arcLaserStacks = Mathf.Min(arcLaserStacks, Mathf.FloorToInt((status.CurrentMp + 0.001f) / manaCost));
+            if (arcLaserStacks <= 0)
+                return false;
+            manaCost *= arcLaserStacks;
+        }
+
+        if (status != null && !status.TryUseMana(manaCost))
             return false;
 
-        // 아크 레이저(진화1)가 "현재 스택을 모두" 소모하므로, ConsumeSkillUse가 스택을 지우기 전에
-        // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
-        int arcBusterStacksBeforeConsume = arcBusterStacks;
+        // 아크 레이저는 소모한 스택 수로 데미지(소모 스택당 보너스)를 계산하므로, ConsumeSkillUse가
+        // 스택을 깎기 전에 소모 스택 수를 캡처해서 넘겨준다. 다른 진화는 기존처럼 현재 스택을 넘긴다.
+        int arcBusterStacksBeforeConsume = arcLaserStacks >= 0 ? arcLaserStacks : arcBusterStacks;
 
         // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데 그 계산이
         //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
         skillOwnerStats = ownerStats;
-        ConsumeSkillUse(index, def);
+        ConsumeSkillUse(index, def, arcLaserStacks);
         combat.CancelChase();
 
         PreparePendingSkill(index, evo, arcBusterStacksBeforeConsume, aimDir, cursorPos);
@@ -864,6 +884,29 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return true;
     }
 
+    /// <summary>
+    /// HUD 쿨타임 아이콘(CooldownIconUIContainer)용. 아크 레이저(진화1)의 발사 간격(4초)이 진행 중이면
+    /// 남은 시간·전체 시간·스킬 정의를 돌려준다. 진화1이 아니거나 간격이 끝났으면 false.
+    /// </summary>
+    public bool TryGetArcLaserCooldown(out float remaining, out float duration, out SkillDefinitionSO definition)
+    {
+        remaining = 0f;
+        duration = ArcLaserFireInterval;
+        definition = null;
+
+        for (int i = 0; i < skills.Length && i < cooldownRemaining.Length; i++)
+        {
+            if (!IsArcBusterSlot(i) || GetEvolution(i) != SkillEvolutionId.Evolution1)
+                continue;
+
+            remaining = cooldownRemaining[i];
+            definition = skills[i];
+            return remaining > 0f;
+        }
+
+        return false;
+    }
+
     private bool IsSkillReady(int index)
     {
         if (IsArcBusterSlot(index))
@@ -875,19 +918,23 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return cooldownRemaining[index] <= 0f;
     }
 
-    private void ConsumeSkillUse(int index, SkillDefinitionSO def)
+    /// <param name="arcLaserStacks">아크 레이저(진화1)가 소모할 스택 수. 음수면 현재 스택을 모두 소모한다.</param>
+    private void ConsumeSkillUse(int index, SkillDefinitionSO def, int arcLaserStacks = -1)
     {
         if (IsArcBusterSlot(index))
         {
             SkillEvolutionId evo = GetEvolution(index);
             if (evo == SkillEvolutionId.Evolution1)
-                arcBusterStacks = 0; // 아크 레이저 - "현재의 모든 스택을 소모"
+                // 아크 레이저 - 마나가 충분하면 현재의 모든 스택, 모자라면 마나로 감당 가능한 스택만 소모
+                arcBusterStacks = arcLaserStacks < 0 ? 0 : Mathf.Max(0, arcBusterStacks - arcLaserStacks);
             else if (evo == SkillEvolutionId.Evolution3)
                 arcBusterStacks -= def.evoCannonStackCost; // 아크 캐논 - 스택 2개 소모
             else
                 arcBusterStacks--;
 
-            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화·쿨감과는 별개 개념이라 안 줄임
+            // 연사 제한(기본 1초, 아크 레이저 4초 고정) - 강화·쿨감과는 별개 개념이라 안 줄인다.
+            // 시트의 cooldownSeconds는 아크 버스터에서 스택 충전 시간(stackRechargeSeconds)으로 쓰인다(SkillDataSOImporter).
+            cooldownRemaining[index] = evo == SkillEvolutionId.Evolution1 ? ArcLaserFireInterval : ArcBusterFireInterval;
             if (arcBusterStackTimer <= 0f)
                 arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
             return;
