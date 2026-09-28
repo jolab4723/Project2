@@ -74,6 +74,7 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     private const float TransitionDuration = 4f;
     private const int TransitionBulletCount = 48;
     private const float TransitionBulletRange = 15f;
+    private WBH_Effect transitionEffect;
 
     // 2페이즈 특수 패턴 관련 변수
     private const float GrabDamageMul = 1.8f;
@@ -378,10 +379,15 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
         }
 
         owner.enemyAnimation.PlaySkill(TransitionSkillId);
+        transitionEffect = owner.EffectSpawner.SpawnPersistentEffect(owner.act2TransitionEffect, owner.transform);
     }
 
     private void CompletePhaseTransition()
     {
+        if (transitionEffect != null)
+            transitionEffect.StopEffect();
+        transitionEffect = null;
+
         owner.enemyAnimation.SetPhaseTransition(false);
 
         owner.SetPatternDamageBlock(false);
@@ -521,6 +527,10 @@ public class WBH_EnemyBossPattern_Act2 : WBH_IEnemyPattern
     // 패턴관련 변수 일괄 초기화
     public void Cleanup()
     {
+        if(transitionEffect != null)
+            transitionEffect.StopEffect();
+        transitionEffect = null;
+
         SetFlameApproachBoost(false);
 
         pendingSpecial = null;
