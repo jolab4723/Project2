@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// 휴식 NPC. 상호작용하면(YJ_ClickNPC.onClicked에 이 컴포넌트의 Interact()를 연결) 휴식 팝업(KY_RestPopup)을
-/// 열고 실제 회복 미리보기 값을 계산해 넣는다. QuestBoardNPC와 같은 관례로, 팝업이 비활성 상태여도
-/// FindFirstObjectByType(Include)로 찾아 직접 연다.
+/// 열고 실제 회복 미리보기 값을 계산해 넣는다. 팝업은 KY_PopupManager에 등록된 휴식 팝업을 우선 쓰고,
+/// 매니저가 없을 때만 FindFirstObjectByType(Include)로 찾는다(ResolveRestPopup 참고).
 ///
 /// 팝업의 KY_RestPopup.OnConfirmed(확인 버튼이 비용 검사를 통과했을 때)를 구독해서 실제 크레딧 차감,
 /// 체력 회복, 포션 충전을 적용한다 - 팝업 자체는 표시/버튼 흐름만 담당하고 실제 처리는 여기서 한다.
@@ -39,9 +39,7 @@ public class CampRestNPC : MonoBehaviour
         if (restDatabase == null)
             restDatabase = Resources.Load<RestDatabaseSO>(RestDatabaseResourcePath);
 
-        restPopup = FindFirstObjectByType<KY_RestPopup>(FindObjectsInactive.Include);
-        if (restPopup != null)
-            restPopup.OnConfirmed += HandleConfirmed;
+        ResolveRestPopup();
     }
 
     private void OnDestroy()
@@ -50,9 +48,46 @@ public class CampRestNPC : MonoBehaviour
             restPopup.OnConfirmed -= HandleConfirmed;
     }
 
+    /// <summary>
+    /// 실제로 화면에 열리는 휴식 팝업을 찾아 확인 이벤트를 연결한다.
+    /// !! Act1/Act2 캠프에는 비활성 Multiplayer 그룹 안에 휴식 팝업이 하나 더 있어서, 씬 전체에서 처음 찾은
+    ///    팝업을 쓰면 멀티용 팝업에 값을 넣고 화면에는 싱글용 팝업이 0으로 열렸다(확인해도 회복이 적용되지 않음).
+    ///    그래서 KY_PopupManager.Show(PopupType.Rest)가 여는 등록 팝업을 우선 쓴다. 매니저가 Awake 순서상
+    ///    아직 없을 수 있으므로 Interact 때마다 다시 확인한다.
+    /// </summary>
+    private KY_RestPopup ResolveRestPopup()
+    {
+        KY_RestPopup target = null;
+        if (KY_PopupManager.Instance != null && KY_PopupManager.Instance.popupEntries != null)
+        {
+            foreach (KY_PopupManager.PopupEntry entry in KY_PopupManager.Instance.popupEntries)
+            {
+                if (entry != null && entry.type == PopupType.Rest && entry.popup is KY_RestPopup registered)
+                {
+                    target = registered;
+                    break;
+                }
+            }
+        }
+
+        if (target == null)
+            target = restPopup != null ? restPopup : FindFirstObjectByType<KY_RestPopup>(FindObjectsInactive.Include);
+
+        if (target != restPopup)
+        {
+            if (restPopup != null)
+                restPopup.OnConfirmed -= HandleConfirmed;
+            restPopup = target;
+            if (restPopup != null)
+                restPopup.OnConfirmed += HandleConfirmed;
+        }
+
+        return restPopup;
+    }
+
     public void Interact()
     {
-        if (restPopup == null)
+        if (ResolveRestPopup() == null)
         {
             Debug.LogWarning("[CampRestNPC] KY_RestPopup을 씬에서 찾지 못했습니다.");
             return;
