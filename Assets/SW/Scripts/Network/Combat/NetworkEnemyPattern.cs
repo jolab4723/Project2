@@ -48,7 +48,7 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
     private const float DashCooldown = 15f;
     private const float DashTargetRange = 30f;
     private const float DashMaxDistance = 30f;
-    private const float DashDuration = 0.8f;
+    private const float DashDuration = 0.2f;
     private const float DashReadyDuration = 1f;
     private const float DashHitRadius = 3f;
 
@@ -489,6 +489,8 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
 
         transform.position = landingPoint;
         EndManualMovement(landingPoint, restoreAgent);
+        authority.ServerPlayBossImpactCue(WBH_EnemyEffectCue.Boss_Act1_JumpAttack,
+            landingPoint, transform.rotation);
         authority.ServerDamagePlayersInRadius(landingPoint, JumpDamageRadius);
         yield return new WaitForSeconds(JumpRecoveryDuration);
         bossActionRoutine = null;

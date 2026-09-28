@@ -341,6 +341,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         }
 
         ApplyMissileAreaDamage();
+        owner?.ServerPlayBossImpactCue(WBH_EnemyEffectCue.Boss_Act1_MissileExplosion,
+            missileImpactPoint, Quaternion.identity);
         ServerMissileImpactCount++;
         ServerDestroy();
     }

@@ -72,6 +72,12 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private Tween creditsHighlightTween;
     private Sequence buttonRevealSequence;
     private Color creditsBaseColor;
+    private MirrorNetworkManager session;
+    private YJ_LanguageManager languageManager;
+    private UILabelDatabaseSO uiLabels;
+    private string feedbackMessage;
+    private double resultDeadline;
+    private bool multiplayerResult;
     // 씬에 입력된 기본 라벨("획득 크레딧"). 액트 중간 정산 후 다른 결과를 표시할 때 되돌린다.
     private string defaultCreditsLabel;
     private const string ActClearCreditsLabel = "파밍 가치 현황";
@@ -104,24 +110,52 @@ public sealed class KY_ResultScreen : MonoBehaviour
         if (titleButton) titleButton.onClick.AddListener(ReturnToTitle);
     }
 
+    private void OnEnable()
+    {
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        session = Mirror.NetworkManager.singleton as MirrorNetworkManager;
+        multiplayerResult = session != null;
+        if (session != null) session.AdmissionStatusChanged += ShowSessionFeedback;
+    }
+
+    private void ShowSessionFeedback(string message)
+    {
+        feedbackMessage = message;
+        RefreshLanguage(default);
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        SetText(subtitleText, SessionUIMessageLocalizer.GetMessage(uiLabels,
+            !string.IsNullOrEmpty(feedbackMessage) ? feedbackMessage : hasResult
+                ? (CurrentResultType == KY_ResultType.ActClear ? GetSubtitle(CurrentResultType)
+                    : CurrentResultType == KY_ResultType.GameClear ? "result_ui.clear_description" : "result_ui.defeat_description")
+                : "result_ui.data_waiting"));
+        SetText(stageLabelText, hasResult && CurrentResultType == KY_ResultType.ActClear
+            ? "현재 도달 스테이지" : uiLabels?.GetLabel("result_ui.stage") ?? "최종 도달 스테이지");
+        SetActionButtonLabels(CurrentResultType);
+    }
+
+    private bool TryApplySessionResult()
+    {
+        if (session == null || !session.TryGetLocalRunResult(out var result)) return false;
+        payload?.SetResult(result);
+        feedbackMessage = null;
+        ApplyResult(result);
+        return true;
+    }
+
     // 전달 데이터 또는 미리보기 데이터로 첫 화면을 구성한다.
     private IEnumerator Start()
     {
         // SW 수정: 멀티 결과는 서버가 보낸 자기 참가자 수치만 기존 Payload에 전달합니다.
-        var session = Mirror.NetworkManager.singleton as MirrorNetworkManager;
         if (session != null)
         {
             payload?.Clear();
-            double deadline = Time.realtimeSinceStartupAsDouble + 30;
-            while (!session.HasLocalRunResult && Mirror.NetworkClient.active && Time.realtimeSinceStartupAsDouble < deadline)
-                yield return null;
-            if (session.TryGetLocalRunResult(out var result))
-            {
-                payload?.SetResult(result);
-                ApplyResult(result);
-            }
-            if (retryButton != null) SetText(retryButton.GetComponentInChildren<TMP_Text>(), "로비로 돌아가기");
-            if (titleButton != null) SetText(titleButton.GetComponentInChildren<TMP_Text>(), "세션 나가기");
+            resultDeadline = Time.realtimeSinceStartupAsDouble + 30;
+            TryApplySessionResult();
         }
         if (!hasResult)
         {
@@ -135,14 +169,17 @@ public sealed class KY_ResultScreen : MonoBehaviour
             }
             else
             {
-                SetText(subtitleText, "결과 데이터가 연결되지 않았습니다.");
+                feedbackMessage = multiplayerResult ? "result_ui.data_waiting" : "result_ui.data_missing";
                 SetText(stageText, "—");
                 SetText(defeatedText, "—");
                 SetText(playTimeText, "—");
                 SetText(creditsText, "—");
-                SetButtons(false);
+                SetActionButtonsVisible(true);
+                if (retryButton != null) retryButton.interactable = false;
+                if (titleButton != null) titleButton.interactable = true;
             }
         }
+        RefreshLanguage(default);
 
         if (hasResult)
         {
@@ -175,8 +212,6 @@ public sealed class KY_ResultScreen : MonoBehaviour
         SetText(titleText, GetTitle(CurrentResultType));
         if (backgroundImage)
             backgroundImage.sprite = CurrentResultType == KY_ResultType.GameOver ? gameOverBackground : clearBackground;
-        SetText(subtitleText, GetSubtitle(CurrentResultType));
-        SetText(stageLabelText, CurrentResultType == KY_ResultType.ActClear ? "현재 도달 스테이지" : "최종 도달 스테이지");
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
@@ -185,7 +220,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
         SetText(creditsText, FormatCredits(0f));
         ApplyAccentColor(GetAccentColor(CurrentResultType));
-        SetActionButtonLabels(CurrentResultType);
+        RefreshLanguage(default);
         SetButtons(!leaving);
 
         // 씬 실행 뒤 미리보기나 외부 호출로 결과를 받았을 때도 연출을 다시 재생한다.
@@ -221,16 +256,17 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         yield return resultRevealSequence.WaitForCompletion();
 
-        if (creditsText == null) yield break;
-
-        // 진행률(0→1)로 카운트업한다. 액트 중간 정산은 보유 크레딧과 장비 가치를 함께 올린다.
-        creditsText.text = FormatCredits(0f);
-        yield return DOVirtual.Float(0f, 1f, creditsCountDuration,
-                progress => creditsText.text = FormatCredits(progress))
-            .SetLink(gameObject)
-            .SetEase(Ease.OutCubic)
-            .WaitForCompletion();
-        creditsText.text = FormatCredits(1f);
+        if (creditsText != null)
+        {
+            // 진행률(0→1)로 카운트업한다. 액트 중간 정산은 보유 크레딧과 장비 가치를 함께 올린다.
+            creditsText.text = FormatCredits(0f);
+            yield return DOVirtual.Float(0f, 1f, creditsCountDuration,
+                    progress => creditsText.text = FormatCredits(progress))
+                .SetLink(gameObject)
+                .SetEase(Ease.OutCubic)
+                .WaitForCompletion();
+            creditsText.text = FormatCredits(1f);
+        }
 
         yield return PulseCredits();
         yield return RevealActionButtons();
@@ -306,7 +342,9 @@ public sealed class KY_ResultScreen : MonoBehaviour
         // SW 수정: 정식 멀티 로비 복귀와 런 정리는 서버에 요청합니다.
         if (Mirror.NetworkManager.singleton is MirrorNetworkManager session)
         {
-            if (hasResult) session.RequestReturnToLobby();
+            ShowSessionFeedback("result_ui.request_pending");
+            if (!hasResult || !session.RequestReturnToLobby())
+                ShowSessionFeedback("서버가 결과를 확정한 뒤 방장만 파티를 로비로 이동할 수 있습니다.");
             return;
         }
         string destination = CurrentResultType == KY_ResultType.ActClear ? "StageSelect" : GetRetrySceneName();
@@ -319,6 +357,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         // SW 수정: 멀티를 종료한 뒤 기존 세션 이탈 경로로 복귀합니다.
         if (Mirror.NetworkManager.singleton is MirrorNetworkManager session)
         {
+            ShowSessionFeedback("result_ui.request_pending");
             session.RequestLeaveSession();
             return;
         }
@@ -327,8 +366,18 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void LateUpdate()
     {
+        // 늦은 결과도 적용한다. 결과가 오지 않더라도 사용자가 세션에서 나갈 수 있어야 한다.
+        if (initialRevealCompleted && multiplayerResult && !hasResult && !leaving && !TryApplySessionResult())
+        {
+            if (session == null || !Mirror.NetworkClient.active)
+            {
+                if (feedbackMessage != "connection_ui.disconnected") ShowSessionFeedback("connection_ui.disconnected");
+            }
+            else if (Time.realtimeSinceStartupAsDouble >= resultDeadline && feedbackMessage == "result_ui.data_waiting")
+                ShowSessionFeedback("result_ui.data_missing");
+        }
         if (initialRevealCompleted && hasResult && !leaving && retryButton != null &&
-            Mirror.NetworkManager.singleton is MirrorNetworkManager session)
+            session != null)
             retryButton.interactable = session.CanLocalClientControlSession;
     }
 
@@ -342,7 +391,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 중복 입력을 막고 화면 전환 코루틴을 시작한다.
     private void Request(UnityEvent request, string fallbackSceneName)
     {
-        if (!hasResult || leaving) return;
+        if (leaving) return;
         StartCoroutine(Leave(request, fallbackSceneName));
     }
 
@@ -492,9 +541,13 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private void SetActionButtonLabels(KY_ResultType resultType)
     {
         if (retryButton != null)
-            SetText(retryButton.GetComponentInChildren<TMP_Text>(), resultType == KY_ResultType.ActClear ? "계속하기" : "다시 시작");
+            SetText(retryButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
+                ? uiLabels?.GetLabel("result_ui.return_lobby") ?? "로비로 돌아가기"
+                : resultType == KY_ResultType.ActClear ? "계속하기" : uiLabels?.GetLabel("result_ui.retry") ?? "다시 시작");
         if (titleButton != null)
-            SetText(titleButton.GetComponentInChildren<TMP_Text>(), "타이틀로");
+            SetText(titleButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
+                ? uiLabels?.GetLabel("result_ui.leave_session") ?? "세션 나가기"
+                : uiLabels?.GetLabel("connection_ui.return_title") ?? "타이틀로");
     }
 
     // 크레딧 칸 문구. 액트 중간 정산은 "보유 크레딧(흰색) + 장비 가치(노란색)", 그 외는 실제 적립액 하나.
@@ -520,12 +573,17 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 대상이 있을 때만 TMP 텍스트를 갱신한다.
     private static void SetText(TMP_Text target, string value)
     {
-        if (target) target.text = value;
+        if (!target) return;
+        target.text = value;
+        var font = YJ_LanguageManager.Instance?.GetCurrentFont();
+        if (font != null) target.font = font;
     }
 
     // 비활성화 시 전환 코루틴과 입력 잠금 상태를 정리한다.
     private void OnDisable()
     {
+        if (session != null) session.AdmissionStatusChanged -= ShowSessionFeedback;
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
         resultRevealSequence?.Kill();
         creditsHighlightTween?.Kill();
         buttonRevealSequence?.Kill();
