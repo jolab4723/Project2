@@ -887,7 +887,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private static NetworkWorldItem cachedWorldItemPrefab;
     private static readonly ItemDropRollService universalDropRollService = new();
 
-    private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade)
+    private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade, PlayerContext rarityOwner)
     {
         ItemSystemController itemSystem = ItemSystemController.Instance ?? Object.FindFirstObjectByType<ItemSystemController>();
         if (cachedUniversalDropTable == null)
@@ -905,7 +905,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         ItemDropTableSO table = itemSystem != null && itemSystem.itemDropTable != null
             ? itemSystem.itemDropTable : cachedUniversalDropTable;
         // NoDrop도 정상 결과다. 원본 확률을 보존하도록 처치당 한 번만 추첨한다.
-        ItemDropRollResultData result = universalDropRollService.Roll(table, itemDatabase, grade);
+        ItemDropRollResultData result = universalDropRollService.Roll(table, itemDatabase, grade, rarityOwner: rarityOwner);
         if (!result.HasDrop && result.Result != ItemDropRollResult.NoDrop)
             Debug.LogWarning($"[NetworkEnemyAuthority] {ItemDropMessageMapper.GetMessage(result)}");
         return result.HasDrop ? result.ItemDefinition : null;
@@ -947,7 +947,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         killRewardCount++;
         ServerRewardCount++;
 
-        ItemDefinitionSO definition = ResolveDropItemDefinition(enemyInfo.enemyGrade);
+        ItemDefinitionSO definition = ResolveDropItemDefinition(enemyInfo.enemyGrade, rewardRecipient);
         if (definition == null)
             return;
 

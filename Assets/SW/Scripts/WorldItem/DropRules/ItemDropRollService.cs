@@ -9,7 +9,8 @@ public sealed class ItemDropRollService
         ItemDropTableSO dropTable,
         ItemDatabaseSO itemDatabase,
         EnemyGrade enemyGrade,
-        System.Random random = null)
+        System.Random random = null,
+        PlayerContext rarityOwner = null)
     {
         if (dropTable == null)
         {
@@ -35,7 +36,7 @@ public sealed class ItemDropRollService
         if (!TryPickWeighted(
                 enemyRule.rarityWeights,
                 row => row.weight *
-                       DropRarityModifierUniqueEffectSO.GetRarityWeightMultiplier(row.rarity),
+                       DropRarityModifierUniqueEffectSO.GetRarityWeightMultiplier(row.rarity, rarityOwner),
                 random,
                 out ItemDropTypes.ItemDropRarityWeight rarityWeight))
         {

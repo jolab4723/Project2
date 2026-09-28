@@ -4,7 +4,7 @@ using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// 싱글·서버가 공유하는 플레이어별 유물 실행기다.
+/// 싱글·서버가 공유하는 플레이어별 장비·유물 실행기다.
 /// <para>원본: <c>Assets/SW/Scripts/Player/PlayerRelicEffectProvider.cs</c></para>
 /// <para>유물 SO의 전역 <c>OnEquip/OnUnequip</c> 호출 대신 같은 플레이어의 Inventory와 Buff를 직접 참조해 효과를 적용한다.</para>
 /// <para>패시브 중첩 수, 오라 GameObject, 조건부 버프 Runner를 이 플레이어 컴포넌트가 소유하여 다른 플레이어와 런타임 상태를 공유하지 않는다.</para>
@@ -22,6 +22,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
     private readonly Dictionary<ItemInstance, GameObject> runtimeObjects = new();
     private readonly HashSet<ItemInstance> ownedItems = new();
     private PlayerContext owner;
+    private EquipmentSystem equipment;
     private bool reconcileQueued = true;
     private bool wasServer;
     private bool wasAlive;
@@ -37,6 +38,12 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
     {
         owner ??= GetComponent<PlayerContext>();
         inventory ??= owner?.Inventory;
+        equipment ??= owner?.Equipment;
+        if (equipment != null)
+        {
+            equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+            equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        }
         if (inventory == null)
             return;
 
@@ -50,16 +57,24 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
     protected virtual void Start() => OnEnable();
 
     /// <summary>
-    /// 거래와 실패 복구가 끝난 가방을 기준으로 유물 효과를 맞춥니다.
+    /// 거래와 실패 복구가 끝난 가방과 장비를 기준으로 효과를 맞춥니다.
     /// 이동·회전·중복 알림은 기존 실행 객체와 쿨다운을 다시 만들지 않습니다.
     /// </summary>
     protected virtual void LateUpdate()
     {
-        if (owner == null || owner.Inventory != inventory || owner.Buffs != buffs)
+        if (owner == null)
         {
             ClearEffects();
             reconcileQueued = true;
             return;
+        }
+        if (owner.Inventory != inventory || owner.Equipment != equipment || owner.Buffs != buffs)
+        {
+            OnDisable();
+            inventory = owner.Inventory;
+            equipment = owner.Equipment;
+            buffs = owner.Buffs;
+            OnEnable();
         }
         bool server = owner != null && owner.Effects.CanExecute;
         bool alive = owner != null && (server
@@ -74,15 +89,21 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
             reconcileQueued = true;
         wasServer = server;
         wasAlive = alive;
-        if (!reconcileQueued || inventory?.PlayerGrid == null)
+        if (!reconcileQueued)
             return;
 
         reconcileQueued = false;
         var nextItems = new HashSet<ItemInstance>();
         if (alive)
         {
-            foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
-                if (IsRelic(item)) nextItems.Add(item.itemData);
+            if (inventory?.PlayerGrid != null)
+                foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
+                    if (IsRelic(item)) nextItems.Add(item.itemData);
+            if (equipment != null)
+                foreach (var slot in equipment.GetEquippedItems())
+                    if (slot.Value?.itemData?.definition != null &&
+                        !equipment.UsesLowManaHelmetEffect(slot.Value.itemData))
+                        nextItems.Add(slot.Value.itemData);
         }
         foreach (ItemInstance item in new List<ItemInstance>(ownedItems))
             if (!nextItems.Contains(item)) RemoveEffect(item);
@@ -92,6 +113,8 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
 
     protected virtual void OnDisable()
     {
+        if (equipment != null)
+            equipment.OnEquipmentChanged -= HandleEquipmentChanged;
         if (inventory != null)
         {
             inventory.OnItemOwnershipGained -= HandleOwnershipGained;
@@ -103,6 +126,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
 
     private void HandleOwnershipGained(InventoryItem item) => reconcileQueued = true;
     private void HandleOwnershipLost(InventoryItem item) => reconcileQueued = true;
+    private void HandleEquipmentChanged(EquippedItemInfo[] _) => reconcileQueued = true;
 
     /// <summary>소유 사본마다 한 번 등록하고, 게임 규칙은 서버 플레이어에서만 실행합니다.</summary>
     private void AddEffect(ItemInstance ownerItem)
@@ -173,6 +197,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
                     return;
                 }
             // 다음 프레임의 Destroy를 기다리지 않고 오라와 이벤트 구독을 먼저 정리합니다.
+            runtimeObject.GetComponent<StatThresholdRunner>()?.Unbind();
             runtimeObject.SetActive(false);
             if (Application.isPlaying) Destroy(runtimeObject);
             else DestroyImmediate(runtimeObject);
