@@ -46,6 +46,14 @@ public class UpgradeController : MonoBehaviour
         upgradeService = new UpgradeService(playerWallet);
     }
 
+    // 팝업이 열릴 때마다 현재 상태(선택 아이템 유무)와 현재 언어로 화면을 다시 채운다.
+    // 싱글 플레이는 BindPlayer가 호출되지 않아서, 씬 시작 후 첫 열림에는 초기화가 한 번도 돌지 않고
+    // 오브젝트에 들어 있던 한국어 기본 문구가 그대로 보였다(일본어·중국어 폰트에서는 □로 깨짐).
+    private void OnEnable()
+    {
+        RefreshUI();
+    }
+
     private void OnDisable()
     {
         ClearItem();
