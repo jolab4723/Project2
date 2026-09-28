@@ -1266,6 +1266,37 @@ Transform:
   - {fileID: 8070064708671302638}
   m_Father: {fileID: 750839420111760841}
   m_LocalEulerAnglesHint: {x: -21.012466, y: 21.359444, z: -6.5396953}
+--- !u!1 &942954735714014434
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1532673874094795633}
+  m_Layer: 0
+  m_Name: EffectPoint(Muzzle)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1532673874094795633
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942954735714014434}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.931, z: 1.2420001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9065833207638796154}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &947798644538511358
 GameObject:
   m_ObjectHideFlags: 0
@@ -2692,6 +2723,37 @@ Transform:
   - {fileID: 4344936007897546230}
   m_Father: {fileID: 5303605053611582108}
   m_LocalEulerAnglesHint: {x: 47.631104, y: -65.12179, z: -112.54294}
+--- !u!1 &2321869650169648708
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2148260614184517069}
+  m_Layer: 0
+  m_Name: EffectPoint(Body)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2148260614184517069
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321869650169648708}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9065833207638796154}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2389582108576880493
 GameObject:
   m_ObjectHideFlags: 0
@@ -7954,7 +8016,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 1.312, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1532673874094795633}
+  - {fileID: 2148260614184517069}
   m_Father: {fileID: 8522556742934558247}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6771846633247616198
@@ -10650,6 +10714,7 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 279016196059227232}
   grenadePoint: {fileID: 0}
+  act2TransitionEffect: {fileID: 11400000, guid: cafbb9dc39a6c114b8d5ae5b82cdb186, type: 2}
   enemyAnimation: {fileID: 8400595717009425348}
   isShowSkillRange: 0
 --- !u!114 &3679686638235563972
@@ -11157,7 +11222,55 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
   sfxPlayer: {fileID: 0}
-  effectBindings: []
+  effectBindings:
+  - cue: 55100
+    data: {fileID: 11400000, guid: bc56fa172911cf943a2eae5ffdb8320c, type: 2}
+    anchor: {fileID: 1532673874094795633}
+    sounds: []
+  - cue: 55101
+    data: {fileID: 11400000, guid: 9373e46014fac3340b84816524927da9, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55102
+    data: {fileID: 11400000, guid: e84e554abb332574f8dccd3cd5fe7bbb, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55103
+    data: {fileID: 11400000, guid: 5e93bce5dfe299a4c80dbf9455a63b00, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55104
+    data: {fileID: 11400000, guid: c5987fcc016fd5f469bd7f457f5c19b9, type: 2}
+    anchor: {fileID: 1532673874094795633}
+    sounds: []
+  - cue: 55105
+    data: {fileID: 11400000, guid: ecf6ca0503ef49f42a7c0026905f5fcb, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55106
+    data: {fileID: 11400000, guid: c915975e183947a4896af78430422e54, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55107
+    data: {fileID: 11400000, guid: 19743fb3420b13340a72734c48b23f8f, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55109
+    data: {fileID: 11400000, guid: 5f8f100c30fa7c0459e6dac37e2dab24, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55110
+    data: {fileID: 11400000, guid: 169291838e47bcf44aae2d627e28c984, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55112
+    data: {fileID: 11400000, guid: 113c17230edd2b5418a0693304f1cab6, type: 2}
+    anchor: {fileID: 2148260614184517069}
+    sounds: []
+  - cue: 55111
+    data: {fileID: 11400000, guid: bd29b2b4222e6ee45bb06660458599b6, type: 2}
+    anchor: {fileID: 1532673874094795633}
+    sounds: []
 --- !u!114 &-364745694667191063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11288,7 +11401,6 @@ MonoBehaviour:
     exp: 1000
     credit: 1000
     patternID: 102
-  attackImpactDelay: 0.45
   destroyDelay: 0.35
   useAnimatorOnlyDeathPresentation: 1
   playerLayer:
