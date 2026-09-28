@@ -94,6 +94,37 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 원정을 끝내지 않고 현재 기록만 액트 중간 정산 결과로 복사한다.
+    /// 다음 Act에서도 시간과 처치 수를 이어서 집계한다.
+    /// </summary>
+    public bool PublishActClearSnapshot()
+    {
+        if (payload == null)
+        {
+            Debug.LogError("[KY_RunStatsTracker] ResultPayload가 연결되지 않았습니다.");
+            return false;
+        }
+
+        EnsureRun();
+
+        if (runActive)
+            stats.elapsedSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - runStartRealtime);
+
+        payload.SetResult(new KY_ResultData
+        {
+            resultType = KY_ResultType.ActClear,
+            cleared = true,
+            stageName = ResolveReachedStage(),
+            defeatedEnemies = stats.defeatedEnemies,
+            playTimeSeconds = stats.elapsedSeconds,
+            earnedCredits = ResolveRemainingCredits(),
+            combo = 0
+        });
+
+        return true;
+    }
+
     /// <summary>인게임 지갑의 종료 시점 크레디트를 결과 보상으로 사용한다.</summary>
     private static int ResolveRemainingCredits()
     {

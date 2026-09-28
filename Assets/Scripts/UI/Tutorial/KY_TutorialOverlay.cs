@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -24,7 +25,14 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     [SerializeField] private GameObject dimLayer;
     [SerializeField] private GameObject highlightLayer;
     [SerializeField] private RectTransform circleHighlight;
-    [SerializeField] private float highlightPadding = 24f;
+    [SerializeField] private Material spotlightMaterial;
+    [Tooltip("대상 크기와 무관한 고정 원 지름입니다. Canvas 기준 단위입니다.")]
+    [SerializeField, Min(1f)] private float circleDiameter = 300f;
+    [SerializeField, Min(0f)] private float edgeSoftness = 2f;
+
+    private Image dimImage;
+    private Material originalDimMaterial;
+    private Material runtimeSpotlight;
 
     [Header("안내 패널")]
     [SerializeField] private TMP_Text guideText;
@@ -38,6 +46,8 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     [Header("테스트")]
     [Tooltip("현재 씬에서 튜토리얼 화면을 바로 확인하기 위한 옵션입니다.")]
     [SerializeField] private bool openOnStartForPreview;
+    [Tooltip("테스트 자동 표시를 시작하기 전 대기 시간입니다.")]
+    [SerializeField, Min(0f)] private float previewOpenDelay = 2f;
 
     private int currentStepIndex = -1;
     private float previousTimeScale = 1f;
@@ -50,6 +60,7 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     private void Awake()
     {
         canvasGroup ??= GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+        InitializeSpotlight();
         if (nextButton != null)
             nextButton.onClick.AddListener(ShowNextStep);
         if (skipButton != null)
@@ -62,8 +73,16 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     {
         if (openOnStartForPreview)
         {
-            Open();
+            StartCoroutine(OpenPreviewAfterDelay());
         }
+    }
+
+    private IEnumerator OpenPreviewAfterDelay()
+    {
+        if (previewOpenDelay > 0f)
+            yield return new WaitForSecondsRealtime(previewOpenDelay);
+
+        Open();
     }
 
     private void OnDestroy()
@@ -74,6 +93,54 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
             skipButton.onClick.RemoveListener(Skip);
 
         RestoreTimeScale();
+        if (runtimeSpotlight != null)
+        {
+            if (dimImage != null) dimImage.material = originalDimMaterial;
+            Destroy(runtimeSpotlight);
+        }
+    }
+
+    private void OnDisable()
+    {
+        Close();
+    }
+
+    private void InitializeSpotlight()
+    {
+        if (runtimeSpotlight != null || spotlightMaterial == null || dimLayer == null)
+            return;
+        dimImage = dimLayer.GetComponent<Image>();
+        if (dimImage == null) return;
+        originalDimMaterial = dimImage.material;
+        runtimeSpotlight = new Material(spotlightMaterial);
+        runtimeSpotlight.name = "Tutorial Spotlight (Instance)";
+        dimImage.material = runtimeSpotlight;
+    }
+
+    private void LateUpdate()
+    {
+        if (isOpen && currentStepIndex >= 0 && currentStepIndex < steps.Count)
+            UpdateSpotlight(steps[currentStepIndex].highlightTarget);
+    }
+
+    private void UpdateSpotlight(RectTransform target)
+    {
+        if (runtimeSpotlight == null) return;
+        Rect dimRect = dimImage.rectTransform.rect;
+        runtimeSpotlight.SetVector("_DimRect", new Vector4(dimRect.xMin, dimRect.yMin, dimRect.width, dimRect.height));
+        bool visible = target != null && target.gameObject.activeInHierarchy;
+        runtimeSpotlight.SetFloat("_HoleEnabled", visible ? 1f : 0f);
+        if (!visible) return;
+
+        // Convert via screen space so different Canvas scales/cameras remain aligned.
+        Canvas sourceCanvas = target.GetComponentInParent<Canvas>();
+        Canvas dimCanvas = dimImage.canvas;
+        Camera sourceCamera = sourceCanvas != null && sourceCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? sourceCanvas.worldCamera : null;
+        Camera dimCamera = dimCanvas != null && dimCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? dimCanvas.worldCamera : null;
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(sourceCamera, target.TransformPoint(target.rect.center));
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(dimImage.rectTransform, screen, dimCamera, out Vector2 center);
+        runtimeSpotlight.SetVector("_HoleCircle", new Vector4(center.x, center.y, Mathf.Max(1f, circleDiameter) * 0.5f, 0f));
+        runtimeSpotlight.SetFloat("_Softness", edgeSoftness);
     }
 
     /// <summary>첫 안내부터 오버레이를 표시한다.</summary>
@@ -147,11 +214,12 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
         if (dimLayer != null)
             dimLayer.SetActive(step.showDim);
 
-        bool showHighlight = step.highlightTarget != null && circleHighlight != null;
+        bool showHighlight = runtimeSpotlight == null && step.highlightTarget != null && circleHighlight != null;
         if (highlightLayer != null)
             highlightLayer.SetActive(showHighlight);
         if (showHighlight)
             PositionCircleHighlight(step.highlightTarget);
+        UpdateSpotlight(step.highlightTarget);
 
         foreach (TutorialStep tutorialStep in steps)
         {
@@ -166,10 +234,8 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
         if (overlayRect == null || target == null)
             return;
 
-        Bounds targetBounds = RectTransformUtility.CalculateRelativeRectTransformBounds(overlayRect, target);
-        circleHighlight.anchoredPosition = targetBounds.center;
-        float diameter = Mathf.Max(targetBounds.size.x, targetBounds.size.y) + highlightPadding * 2f;
-        circleHighlight.sizeDelta = Vector2.one * diameter;
+        circleHighlight.position = target.TransformPoint(target.rect.center);
+        circleHighlight.sizeDelta = Vector2.one * Mathf.Max(1f, circleDiameter);
     }
 
     private void SetVisible(bool visible)
