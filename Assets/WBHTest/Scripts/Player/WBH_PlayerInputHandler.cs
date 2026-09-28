@@ -128,7 +128,8 @@ public class WBH_PlayerInputHandler : MonoBehaviour
             }
         }
 
-        Plane plane = new Plane(Vector3.up, Vector3.zero);
+        // 고층맵에서도 조준점이 바닥 아래로 밀리지 않도록 플레이어 높이의 평면을 사용한다.
+        Plane plane = new Plane(Vector3.up, transform.position);
 
         if(plane.Raycast(ray, out float distance))
         {
