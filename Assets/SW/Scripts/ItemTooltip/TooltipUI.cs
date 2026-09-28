@@ -742,7 +742,8 @@ public class TooltipUI : MonoBehaviour
         string sign =
             value >= 0f ? "+" : string.Empty;
 
-        return $"{statName} {sign}{value:F1}";
+        // 퍼센트 스탯은 이름이 아니라 수치 뒤에 %를 붙인다(예: "공격속도 -45.0%").
+        return $"{statName} {sign}{value:F1}{ItemDisplayNames.StatUnit(statType)}";
     }
 
     private static string GetDisplayName<T>(

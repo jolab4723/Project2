@@ -230,6 +230,8 @@ public class UpgradeController : MonoBehaviour
         FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
 
         string statName = ItemDisplayNames.StatNames[mainOption.statType];
+        // 퍼센트 스탯은 이름이 아니라 수치 뒤에 %를 붙인다.
+        string statUnit = ItemDisplayNames.StatUnit(mainOption.statType);
 
         string currentStatLabel = GetUILabel("upgrade_ui.current_stat", "현재 스탯 : {0} + {1}")
             .Replace("{0}", "\n{0}");
@@ -239,10 +241,10 @@ public class UpgradeController : MonoBehaviour
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
         currentStatText.text = string.Format(
             currentStatLabel,
-            statName, $"{currentValue:0.#}");
+            statName, $"{currentValue:0.#}{statUnit}");
         nextStatText.text = string.Format(
             nextStatLabel,
-            statName, $"{nextValue:0.#}");
+            statName, $"{nextValue:0.#}{statUnit}");
         costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
             ? string.Format(GetUILabel("upgrade_ui.cost", "강화비용 : {0}"), cost)
             : GetUILabel("upgrade_ui.cost_unavailable", "강화비용 : -");

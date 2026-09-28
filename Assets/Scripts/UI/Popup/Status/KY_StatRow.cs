@@ -19,6 +19,9 @@ public class KY_StatRow : MonoBehaviour
     [Tooltip("최대 체력·마나처럼 소수점이 의미 없는 행은 켠다. 총합과 세부값 모두 정수로 표시한다.")]
     [SerializeField] private bool displayAsInteger;
 
+    // 총합 뒤에 붙일 단위(예: 크리티컬 확률·쿨타임 감소의 "%"). 세부 분해값에는 붙이지 않는다.
+    private string valueSuffix = string.Empty;
+
     private Color baseColor;
     private Color equipColor;
     private Color passiveColor;
@@ -47,6 +50,12 @@ public class KY_StatRow : MonoBehaviour
     {
         if (nameText != null)
             nameText.text = label;
+    }
+
+    /// <summary>총합 값 뒤에 붙일 단위를 설정한다(예: "%"). 다음 UpdateMode부터 반영된다.</summary>
+    public void SetValueSuffix(string suffix)
+    {
+        valueSuffix = suffix ?? string.Empty;
     }
 
     /// <summary>
@@ -120,7 +129,7 @@ public class KY_StatRow : MonoBehaviour
         }
 
         string format = displayAsInteger ? IntegerFormat : ValueFormat;
-        totalValueText.text = total.ToString(format);
+        totalValueText.text = total.ToString(format) + valueSuffix;
 
         detailValueText.gameObject.SetActive(isDetailed);
 

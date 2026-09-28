@@ -448,7 +448,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
             string text = $"{definition.itemName} (+{saved.upgradeLevel}) · 가방 ({saved.gridX + 1}, {saved.gridY + 1})";
             if (saved.rolledSubStats != null)
                 foreach (var stat in saved.rolledSubStats)
-                    text += $"\n{(statNames.TryGetValue(stat.statType, out var name) ? name : stat.statType.ToString())}: {stat.value:0.##}";
+                    text += $"\n{(statNames.TryGetValue(stat.statType, out var name) ? name : stat.statType.ToString())}: {stat.value:0.##}{ItemSystem.ItemDisplayNames.StatUnit(stat.statType)}";
             entries.Add(new YJ_UnknownDiscardPanel.Entry { id = saved.instanceId, text = text, icon = definition.icon });
         }
         discardPanel = YJ_UnknownDiscardPanel.Open(canvas, template.font, entries, required, ids =>
