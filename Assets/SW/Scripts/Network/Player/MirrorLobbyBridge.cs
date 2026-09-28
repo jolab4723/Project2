@@ -23,9 +23,13 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private string displayedParticipantId;
     private bool? passiveChangesAllowed;
     private KY_PausePopup pausePopup;
+    private UILabelDatabaseSO uiLabels;
+    private YJ_LanguageManager languageManager;
+    private string statusMessage = string.Empty;
 
     private void Awake()
     {
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         Core.SettingManager.Instance?.Activate();
         Core.DataManager.Instance?.LoadPassiveData();
         flow.ConfigureExternalFlow();
@@ -39,6 +43,24 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         lobby.CharacterChangeRequested += ChangeCharacter;
         lobby.GameStartRequested += StartRun;
         flow.LeaveRequested += Leave;
+    }
+
+    private void OnEnable()
+    {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        RefreshLanguage(default);
+    }
+
+    private void OnDisable()
+    {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        if (statusText != null)
+            statusText.text = SessionUIMessageLocalizer.GetMessage(uiLabels, statusMessage);
     }
 
     private void Update()
@@ -146,7 +168,11 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         var loader = Core.SceneLoader.Instance;
         if (loader != null) loader.LoadScene("TitleScene");
     }
-    private void SetStatus(string message) { if (statusText != null) statusText.text = message; }
+    private void SetStatus(string message)
+    {
+        statusMessage = message ?? string.Empty;
+        RefreshLanguage(default);
+    }
 
     private void RefreshLobby()
     {

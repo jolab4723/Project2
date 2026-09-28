@@ -36,18 +36,20 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
 
     private bool isAccountCreationInProgress;
     private TMP_Text createButtonText;
-    private string defaultCreateButtonText;
+    private UILabelDatabaseSO uiLabels;
+    private YJ_LanguageManager languageManager;
+    private string feedbackMessage = string.Empty;
+    private bool submittingLabel;
     private KY_InputFieldFeedbackEffect accountIdFeedback;
     private KY_InputFieldFeedbackEffect passwordFeedback;
     private KY_InputFieldFeedbackEffect passwordConfirmationFeedback;
 
     private void Awake()
     {
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         if (createButton != null)
         {
             createButtonText = createButton.GetComponentInChildren<TMP_Text>(true);
-            if (createButtonText != null)
-                defaultCreateButtonText = createButtonText.text;
 
             createButton.onClick.AddListener(SubmitAccountCreation);
         }
@@ -69,6 +71,26 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
         passwordConfirmationFeedback = GetOrAddInputFeedback(passwordConfirmationInput);
         
         ClearFeedback();
+    }
+
+    private void OnEnable()
+    {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        RefreshLanguage(default);
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        if (createButtonText != null && uiLabels != null)
+            createButtonText.text = uiLabels.GetLabel(submittingLabel ? "login_ui.creating" : "login_ui.create");
+        if (feedbackText != null)
+            feedbackText.text = SessionUIMessageLocalizer.GetMessage(uiLabels, feedbackMessage);
+    }
+
+    private void OnDisable()
+    {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
     }
 
     private void OnDestroy()
@@ -267,8 +289,8 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     /// <summary>서버 요청 중에는 중복 입력을 막고 버튼을 비활성화한다.</summary>
     public void SetSubmitting(bool isSubmitting)
     {
-        if (createButtonText != null)
-            createButtonText.text = isSubmitting ? "계정 생성 중..." : defaultCreateButtonText;
+        submittingLabel = isSubmitting;
+        RefreshLanguage(default);
 
         if (createButton != null)
             createButton.interactable = !isSubmitting;
@@ -296,16 +318,18 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     /// <summary>계정 생성 결과 안내 문구를 표시한다.</summary>
     private void ShowFeedback(string message)
     {
+        feedbackMessage = message ?? string.Empty;
         if (feedbackText == null)
             return;
 
         feedbackText.gameObject.SetActive(true);
-        feedbackText.text = message;
+        feedbackText.text = SessionUIMessageLocalizer.GetMessage(uiLabels, feedbackMessage);
     }
 
     /// <summary>표시 중인 오류 문구를 지운다.</summary>
     public void ClearFeedback()
     {
+        feedbackMessage = string.Empty;
         if (feedbackText == null)
             return;
 
