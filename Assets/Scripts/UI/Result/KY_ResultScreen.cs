@@ -14,6 +14,11 @@ public sealed class KY_ResultScreen : MonoBehaviour
     [SerializeField] private KY_ResultPayload payload;
     [SerializeField] private KY_ResultWipe wipe;
 
+    [Header("다국어")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
+    private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
+
     [Header("수치 표시")]
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text subtitleText;
@@ -68,6 +73,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private Tween creditsHighlightTween;
     private Sequence buttonRevealSequence;
     private Color creditsBaseColor;
+    private bool languageChangedSubscribed;
 
     public KY_ResultData CurrentData { get; private set; }
     public KY_ResultType CurrentResultType { get; private set; }
@@ -75,11 +81,21 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 정식 버튼의 클릭 이벤트를 등록한다.
     private void Awake()
     {
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>(UiLabelResourcePath);
+
         if (creditsHighlightGraphic != null)
             creditsBaseColor = creditsHighlightGraphic.color;
 
         if (retryButton) retryButton.onClick.AddListener(Retry);
         if (titleButton) titleButton.onClick.AddListener(ReturnToTitle);
+    }
+
+    private void OnEnable()
+    {
+        if (languageChangedSubscribed || YJ_LanguageManager.Instance == null) return;
+        YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+        languageChangedSubscribed = true;
     }
 
     // 전달 데이터 또는 미리보기 데이터로 첫 화면을 구성한다.
@@ -113,7 +129,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
             }
             else
             {
-                SetText(subtitleText, "결과 데이터가 연결되지 않았습니다.");
+                SetText(subtitleText, L("result_ui.data_unavailable", "결과 데이터가 연결되지 않았습니다."));
                 SetText(stageText, "—");
                 SetText(defeatedText, "—");
                 SetText(playTimeText, "—");
@@ -153,15 +169,13 @@ public sealed class KY_ResultScreen : MonoBehaviour
         SetText(titleText, GetTitle(CurrentResultType));
         if (backgroundImage)
             backgroundImage.sprite = CurrentResultType == KY_ResultType.GameOver ? gameOverBackground : clearBackground;
-        SetText(subtitleText, GetSubtitle(CurrentResultType));
-        SetText(stageLabelText, CurrentResultType == KY_ResultType.ActClear ? "현재 도달 스테이지" : "최종 도달 스테이지");
+        RefreshLocalizedText();
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
         // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
         SetText(creditsText, "0");
         ApplyAccentColor(GetAccentColor(CurrentResultType));
-        SetActionButtonLabels(CurrentResultType);
         SetButtons(!leaving);
 
         // 씬 실행 뒤 미리보기나 외부 호출로 결과를 받았을 때도 연출을 다시 재생한다.
@@ -439,13 +453,13 @@ public sealed class KY_ResultScreen : MonoBehaviour
         };
     }
 
-    private static string GetSubtitle(KY_ResultType resultType)
+    private string GetSubtitle(KY_ResultType resultType)
     {
         return resultType switch
         {
-            KY_ResultType.ActClear => "엑트를 클리어 했습니다.",
-            KY_ResultType.GameClear => "모든 스테이지를 클리어했습니다!",
-            _ => "이번 원정이 종료되었습니다."
+            KY_ResultType.ActClear => L("result_ui.subtitle_act_clear", "엑트를 클리어 했습니다."),
+            KY_ResultType.GameClear => L("result_ui.subtitle_game_clear", "모든 스테이지를 클리어했습니다!"),
+            _ => L("result_ui.subtitle_game_over", "이번 원정이 종료되었습니다.")
         };
     }
 
@@ -457,9 +471,33 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private void SetActionButtonLabels(KY_ResultType resultType)
     {
         if (retryButton != null)
-            SetText(retryButton.GetComponentInChildren<TMP_Text>(), resultType == KY_ResultType.ActClear ? "계속하기" : "다시 시작");
+            SetText(retryButton.GetComponentInChildren<TMP_Text>(), resultType == KY_ResultType.ActClear
+                ? L("result_ui.button_continue", "계속하기")
+                : L("result_ui.button_retry", "다시 시작"));
         if (titleButton != null)
-            SetText(titleButton.GetComponentInChildren<TMP_Text>(), "타이틀로");
+            SetText(titleButton.GetComponentInChildren<TMP_Text>(), L("result_ui.button_title", "타이틀로"));
+    }
+
+    private void HandleLanguageChanged(GameLanguage _)
+    {
+        if (hasResult)
+            RefreshLocalizedText();
+    }
+
+    private void RefreshLocalizedText()
+    {
+        SetText(subtitleText, GetSubtitle(CurrentResultType));
+        SetText(stageLabelText, CurrentResultType == KY_ResultType.ActClear
+            ? L("result_ui.stage_current", "현재 도달 스테이지")
+            : L("result_ui.stage_final", "최종 도달 스테이지"));
+        SetActionButtonLabels(CurrentResultType);
+    }
+
+    private string L(string key, string korFallback)
+    {
+        if (uiLabels == null) return korFallback;
+        string value = uiLabels.GetLabel(key);
+        return string.IsNullOrEmpty(value) || value == key ? korFallback : value;
     }
 
     // 초 단위 시간을 HH:MM:SS 형식으로 변환한다.
@@ -480,6 +518,12 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 비활성화 시 전환 코루틴과 입력 잠금 상태를 정리한다.
     private void OnDisable()
     {
+        if (languageChangedSubscribed && YJ_LanguageManager.Instance != null)
+        {
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+            languageChangedSubscribed = false;
+        }
+
         resultRevealSequence?.Kill();
         creditsHighlightTween?.Kill();
         buttonRevealSequence?.Kill();
