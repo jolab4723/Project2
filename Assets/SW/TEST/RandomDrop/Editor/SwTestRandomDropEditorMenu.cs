@@ -59,37 +59,58 @@ namespace SW.Test.RandomDrop.Editor
         [MenuItem("SW/TEST/Random Drop/Validate Drop Rarity Modifier")]
         public static void ValidateDropRarityModifier()
         {
+            if (Application.isPlaying || Mirror.NetworkServer.active || Mirror.NetworkClient.active)
+                throw new InvalidOperationException("세션을 종료한 Edit Mode에서 실행하세요.");
             var effect = ScriptableObject.CreateInstance<DropRarityModifierUniqueEffectSO>();
             effect.coefficients = new[] { 1.2f };
-
-            var first = new ItemInstance { instanceId = "drop-rarity-check-1" };
-            var second = new ItemInstance { instanceId = "drop-rarity-check-2" };
+            var definition = ScriptableObject.CreateInstance<ItemDefinitionSO>();
+            definition.category = ItemCategory.Relic;
+            definition.itemWidth = definition.itemHeight = 1;
+            definition.uniqueEffect = effect;
+            var preview = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+            var root = new GameObject("Drop rarity check");
+            root.SetActive(false);
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, preview);
+            var grid = root.AddComponent<InventoryGrid>();
+            var inventory = root.AddComponent<InventoryController>();
+            var owner = root.AddComponent<PlayerContext>();
+            var serializedInventory = new SerializedObject(inventory);
+            serializedInventory.FindProperty("playerGrid").objectReferenceValue = grid;
+            serializedInventory.ApplyModifiedPropertiesWithoutUndo();
+            var serializedOwner = new SerializedObject(owner);
+            serializedOwner.FindProperty("inventory").objectReferenceValue = inventory;
+            serializedOwner.ApplyModifiedPropertiesWithoutUndo();
+            typeof(InventoryGrid).GetMethod("Awake", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(grid, null);
+            var first = new InventoryItem(new ItemInstance { definition = definition, instanceId = "drop-rarity-check-1" });
+            var second = new InventoryItem(new ItemInstance { definition = definition, instanceId = "drop-rarity-check-2" });
 
             try
             {
-                effect.OnEquip(first);
-                RequireMultiplier(ItemRarity.Common, 1f);
-                RequireMultiplier(ItemRarity.Rare, 1.2f);
+                grid.TryPlaceItem(first, 0, 0);
+                RequireMultiplier(ItemRarity.Common, 1f, owner);
+                RequireMultiplier(ItemRarity.Rare, 1.2f, owner);
+                RequireMultiplier(ItemRarity.Rare, 1f, null);
 
-                effect.OnEquip(second);
-                effect.OnUnequip(first);
-                RequireMultiplier(ItemRarity.Legendary, 1.2f);
+                grid.TryPlaceItem(second, 1, 0);
+                RequireMultiplier(ItemRarity.Unique, 1.2f, owner);
+                grid.TryRemoveItem(first);
+                RequireMultiplier(ItemRarity.Legendary, 1.2f, owner);
 
-                effect.OnUnequip(second);
-                RequireMultiplier(ItemRarity.Unique, 1f);
+                grid.TryRemoveItem(second);
+                RequireMultiplier(ItemRarity.Unique, 1f, owner);
                 Debug.Log("[SW TEST 드랍] 희귀도 가중치 효과 검증을 통과했습니다.");
             }
             finally
             {
-                effect.OnUnequip(first);
-                effect.OnUnequip(second);
+                UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(preview);
+                UnityEngine.Object.DestroyImmediate(definition);
                 UnityEngine.Object.DestroyImmediate(effect);
             }
         }
 
-        private static void RequireMultiplier(ItemRarity rarity, float expected)
+        private static void RequireMultiplier(ItemRarity rarity, float expected, PlayerContext owner)
         {
-            float actual = DropRarityModifierUniqueEffectSO.GetRarityWeightMultiplier(rarity);
+            float actual = DropRarityModifierUniqueEffectSO.GetRarityWeightMultiplier(rarity, owner);
             if (!Mathf.Approximately(actual, expected))
             {
                 throw new InvalidOperationException(
