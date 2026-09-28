@@ -102,31 +102,51 @@ namespace ItemSystem
         };
 
         // 마스터 변수 시트 기준 이름
+        //
+        // 퍼센트 스탯도 이름에는 %를 붙이지 않는다. "공격속도% -45" 대신 "공격속도 -45%"로 쓰도록
+        // 수치 뒤에 StatUnit()을 붙인다(2026-09-28 사용자 요청). 그래서 공격력/공격력%처럼
+        // 이름이 같은 스탯은 수치 뒤의 %로 구분된다.
         public static Dictionary<StatType, string> StatNames => new Dictionary<StatType, string>
         {
             { StatType.healthFlat, Get("stat.healthflat", "체력") },
-            { StatType.healthPercent, Get("stat.healthpercent", "체력%") },
+            { StatType.healthPercent, Get("stat.healthpercent", "체력") },
             { StatType.attackPowerFlat, Get("stat.attackpowerflat", "공격력") },
-            { StatType.attackPowerPercent, Get("stat.attackpowerpercent", "공격력%") },
+            { StatType.attackPowerPercent, Get("stat.attackpowerpercent", "공격력") },
             { StatType.defensePowerFlat, Get("stat.defensepowerflat", "방어력") },
-            { StatType.defensePowerPercent, Get("stat.defensepowerpercent", "방어력%") },
+            { StatType.defensePowerPercent, Get("stat.defensepowerpercent", "방어력") },
             { StatType.moveSpeedFlat, Get("stat.movespeedflat", "이동속도") },
-            { StatType.moveSpeedPercent, Get("stat.movespeedpercent", "이동속도%") },
+            { StatType.moveSpeedPercent, Get("stat.movespeedpercent", "이동속도") },
             { StatType.attackSpeedFlat, Get("stat.attackspeedflat", "공격속도") },
-            { StatType.attackSpeedPercent, Get("stat.attackspeedpercent", "공격속도%") },
+            { StatType.attackSpeedPercent, Get("stat.attackspeedpercent", "공격속도") },
             { StatType.critRateFlat, Get("stat.critrateflat", "크리티컬 확률") },
             { StatType.critMultFlat, Get("stat.critmultflat", "크리티컬 배율") },
             { StatType.cdrFlat, Get("stat.cdrflat", "스킬 쿨타임 감소") },
             { StatType.mpRegenFlat, Get("stat.mpregenflat", "MP 재생력") },
-            { StatType.mpRegenPercent, Get("stat.mpregenpercent", "MP 재생력%") },
+            { StatType.mpRegenPercent, Get("stat.mpregenpercent", "MP 재생력") },
             { StatType.penetrationFlat, Get("stat.penetrationflat", "관통력") },
             { StatType.skillRangeFlat, Get("stat.skillrangeflat", "스킬 범위") },
-            { StatType.skillRangePercent, Get("stat.skillrangepercent", "스킬 범위%") },
-            { StatType.normalDamagePercent, Get("stat.normaldamagepercent", "일반공격 피해%") },
-            { StatType.skillDamagePercent, Get("stat.skilldamagepercent", "스킬 피해%") },
+            { StatType.skillRangePercent, Get("stat.skillrangepercent", "스킬 범위") },
+            { StatType.normalDamagePercent, Get("stat.normaldamagepercent", "일반공격 피해") },
+            { StatType.skillDamagePercent, Get("stat.skilldamagepercent", "스킬 피해") },
             { StatType.fireBonusFlat, Get("stat.firebonusflat", "불 속성 보너스") },
             { StatType.iceBonusFlat, Get("stat.icebonusflat", "얼음 속성 보너스") },
             { StatType.electricBonusFlat, Get("stat.electricbonusflat", "전기 속성 보너스") },
         };
+
+        /// <summary>
+        /// 스탯 수치 뒤에 붙일 단위. 퍼센트 스탯(StatTypeUtility.IsPercent)이면 "%", 아니면 빈 문자열.
+        /// 스탯 이름(StatNames)에는 %가 없으므로, 수치를 표시하는 UI는 "이름 +수치" 뒤에 이 값을 붙인다.
+        /// 예: $"{StatNames[type]} {sign}{value:F1}{StatUnit(type)}" → "공격속도 -45.0%"
+        ///
+        /// 크리티컬 확률·쿨타임 감소는 합연산 전용이라 이름이 Flat이지만 값 자체가 %p(0~100, 0~70)라서
+        /// 표시할 때는 %를 붙인다(PlayerStatUIManager도 같은 표기). IsPercent는 계산 분류에 쓰이므로 건드리지 않는다.
+        /// </summary>
+        public static string StatUnit(StatType statType)
+        {
+            if (statType == StatType.critRateFlat || statType == StatType.cdrFlat)
+                return "%";
+
+            return StatTypeUtility.IsPercent(statType) ? "%" : string.Empty;
+        }
     }
 }
