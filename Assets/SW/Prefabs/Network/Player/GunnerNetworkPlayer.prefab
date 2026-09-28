@@ -24299,7 +24299,7 @@ MonoBehaviour:
   stateMachine: {fileID: 8605050849527392173}
   playerClass: 1
   basicGrenadeEffect: {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
-  showAtkRange: 1
+  showAtkRange: 0
   atkAreaColor: {r: 1, g: 0.2, b: 0.1, a: 0.25}
   showDuration: 0.25
 --- !u!114 &9061743800565114677
@@ -24624,6 +24624,74 @@ MonoBehaviour:
       volume: 0.5
       baseTime: 0.2
       offset: -0.12
+  - cue: 2400
+    data: {fileID: 11400000, guid: d9c32f47778044649b72e20e46027ec3, type: 2}
+    anchor: {fileID: 9203263277211680605}
+    sounds:
+    - clip: {fileID: 8300000, guid: 281e15cc92254794eaf05caf4d044b76, type: 3}
+      volume: 0.5
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 07bf26a63cee1da478f7746053f0c776, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 2410
+    data: {fileID: 11400000, guid: 65b86692228672e4c83a5f9afa32b4d0, type: 2}
+    anchor: {fileID: 9203263277211680605}
+    sounds:
+    - clip: {fileID: 8300000, guid: 281e15cc92254794eaf05caf4d044b76, type: 3}
+      volume: 0.5
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 1fd31868d68903d4f9e2c4a3b7ef98f3, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.2
+    - clip: {fileID: 8300000, guid: 8a44b12d3e3f24b1a89dc7f0b66756f4, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.3
+  - cue: 2420
+    data: {fileID: 11400000, guid: 83d2670fa74ad014cbeabfff6e858a35, type: 2}
+    anchor: {fileID: 9203263277211680605}
+    sounds:
+    - clip: {fileID: 8300000, guid: 281e15cc92254794eaf05caf4d044b76, type: 3}
+      volume: 0.5
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 8334e10be38a319489f503c45f1c1822, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 8334e10be38a319489f503c45f1c1822, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 1
+    - clip: {fileID: 8300000, guid: 8334e10be38a319489f503c45f1c1822, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 2
+    - clip: {fileID: 8300000, guid: 8334e10be38a319489f503c45f1c1822, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 3
+  - cue: 2430
+    data: {fileID: 11400000, guid: 96d298d9f64d143489567820faf5d2ff, type: 2}
+    anchor: {fileID: 9203263277211680605}
+    sounds:
+    - clip: {fileID: 8300000, guid: 281e15cc92254794eaf05caf4d044b76, type: 3}
+      volume: 0.5
+      baseTime: 0
+      offset: 0
+  - cue: 2438
+    data: {fileID: 11400000, guid: 5939ba82f50dd8249b3248163d0fae32, type: 2}
+    anchor: {fileID: 9203263277211680605}
+    sounds:
+    - clip: {fileID: 8300000, guid: e0f66190b1c9c314398bc2ea49174d3c, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
   sfxPlayer: {fileID: 0}
   chargeEffect: {fileID: 0}
   chargeRangeEffect: {fileID: 0}
@@ -25151,6 +25219,7 @@ MonoBehaviour:
   sectorVisualColor: {r: 0.2, g: 0.6, b: 1, a: 0.35}
   lineVisualColor: {r: 0.2, g: 0.9, b: 1, a: 0.35}
   dashVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
+  shellImpactVisualColor: {r: 0.2, g: 0.7, b: 1, a: 0.35}
 --- !u!114 &1541500590879433877
 MonoBehaviour:
   m_ObjectHideFlags: 0

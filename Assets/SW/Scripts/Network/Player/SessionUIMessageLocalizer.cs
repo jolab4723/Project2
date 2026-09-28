@@ -58,21 +58,50 @@ public static class SessionUIMessageLocalizer
         "connection_ui.before_connect",
         "connection_ui.waiting",
         "connection_ui.disconnected",
+        "session_ui.end_host",
+        "session_ui.leave",
+        "session_ui.leave_temporarily",
+        "session_ui.confirm_end_host",
+        "session_ui.warn_end_host",
+        "session_ui.confirm_leave",
+        "session_ui.warn_leave",
+        "session_ui.confirm_temporary_leave",
+        "session_ui.warn_temporary_leave",
+        "session_ui.passive_locked",
+        "session_ui.settlement_wait",
+        "session_ui.settlement_wait_host",
+        "session_ui.settlement_wait_player",
+        "session_ui.lobby_loading",
+        "session_ui.player_prefabs_missing",
+        "session_ui.session_missing",
+        "session_ui.unsupported_request",
+        "session_ui.return_lobby_denied",
+        "session_ui.passive_invalid",
+        "session_ui.party_not_ready",
+        "preparation_ui.timeout",
+        "preparation_ui.timeout_retry",
+        "preparation_ui.combat_failed",
+        "preparation_ui.disconnected",
     };
 
     public static string GetMessage(UILabelDatabaseSO labels, string message)
     {
         if (labels == null || string.IsNullOrEmpty(message)) return message ?? string.Empty;
+        string direct = labels.GetLabel(message);
+        if (direct != message) return direct;
         foreach (string key in MessageKeys)
         {
             string source = labels.GetLabel(key, GameLanguage.KOR);
             if (source == message) return labels.GetLabel(key);
-            // Firebase 의존성 오류는 끝에 플랫폼 상태 코드가 붙는다.
-            if (key == "login_ui.dependencies" && source.EndsWith("{0}", StringComparison.Ordinal))
+            // 서버 진단 코드와 참가자 이름처럼 한 값이 들어가는 기존 메시지도 번역한다.
+            int placeholder = source.IndexOf("{0}", StringComparison.Ordinal);
+            if (placeholder >= 0)
             {
-                string prefix = source.Substring(0, source.Length - 3);
-                if (message.StartsWith(prefix, StringComparison.Ordinal))
-                    return string.Format(labels.GetLabel(key), message.Substring(prefix.Length));
+                string prefix = source.Substring(0, placeholder);
+                string suffix = source.Substring(placeholder + 3);
+                if (message.Length >= prefix.Length + suffix.Length &&
+                    message.StartsWith(prefix, StringComparison.Ordinal) && message.EndsWith(suffix, StringComparison.Ordinal))
+                    return string.Format(labels.GetLabel(key), message.Substring(prefix.Length, message.Length - prefix.Length - suffix.Length));
             }
         }
         return message;

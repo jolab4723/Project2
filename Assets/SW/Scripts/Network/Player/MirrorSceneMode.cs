@@ -17,6 +17,28 @@ public sealed class MirrorSceneMode : MonoBehaviour
     [SerializeField] private CanvasGroup preparationScreen;
     [SerializeField] private TMP_Text preparationMessage;
     [SerializeField] private Button preparationExit;
+    private YJ_LanguageManager languageManager;
+    private UILabelDatabaseSO uiLabels;
+    private string preparationStatus = "preparation_ui.waiting";
+
+    private void RefreshPreparationLanguage(GameLanguage _)
+    {
+        if (preparationMessage != null)
+            preparationMessage.text = SessionUIMessageLocalizer.GetMessage(uiLabels, preparationStatus);
+        var label = preparationExit != null ? preparationExit.GetComponentInChildren<TMP_Text>(true) : null;
+        if (label != null) label.text = SessionUIMessageLocalizer.GetMessage(uiLabels, "preparation_ui.exit");
+        var font = languageManager != null ? languageManager.GetCurrentFont() : null;
+        if (font != null)
+        {
+            if (preparationMessage != null) preparationMessage.font = font;
+            if (label != null) label.font = font;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshPreparationLanguage;
+    }
 
     private void Awake()
     {
@@ -78,6 +100,11 @@ public sealed class MirrorSceneMode : MonoBehaviour
         preparationScreen.gameObject.SetActive(false);
         yield break;
 #else
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshPreparationLanguage;
+        RefreshPreparationLanguage(default);
+        preparationExit.onClick.AddListener(ReturnFromPreparationFailure);
         var session = MirrorNetworkManager.singleton as MirrorNetworkManager;
         bool multiplayer = session != null;
         preparationScreen.gameObject.SetActive(true);
@@ -91,10 +118,13 @@ public sealed class MirrorSceneMode : MonoBehaviour
             if (ready) { preparationScreen.gameObject.SetActive(false); yield break; }
             if (error != null || Time.realtimeSinceStartupAsDouble >= deadline)
             {
-                preparationMessage.text = error ?? "플레이 준비 시간이 초과되었습니다.";
+                string status = error ?? "플레이 준비 시간이 초과되었습니다.";
+                if (preparationStatus != status)
+                {
+                    preparationStatus = status;
+                    RefreshPreparationLanguage(default);
+                }
                 preparationExit.gameObject.SetActive(true);
-                preparationExit.onClick.AddListener(ReturnFromPreparationFailure);
-                yield break;
             }
             yield return null;
         }

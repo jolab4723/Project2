@@ -383,6 +383,7 @@ public sealed class NetworkShopState : NetworkBehaviour
     private bool ValidateRequester(NetworkShopPlayerState requester)
     {
         return requester != null &&
+               !requester.IsServerEconomyLocked &&
                requester.Context?.Inventory?.PlayerGrid != null &&
                requester.Context.Wallet != null &&
                requester.InventorySync != null;

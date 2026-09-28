@@ -77,6 +77,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     [SyncVar] private float maxHealth;
     [SyncVar] private bool isDead;
     [SyncVar(hook = nameof(OnStatusVisualMaskChanged))] private uint statusVisualMask;
+    [SyncVar(hook = nameof(OnEffectPlaybackSpeedChanged))] private float effectPlaybackSpeed = 1f;
     [SyncVar] private uint targetNetId;
     [SyncVar] private uint lastAttackerNetId;
     [SyncVar] private uint stateChangeNumber;
@@ -235,6 +236,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
         currentHealth = status.CurrentHp;
         maxHealth = status.MaxHealth;
+        effectPlaybackSpeed = status.AttackSpeed;
         isDead = false;
         deathHandled = false;
         stateChangeNumber++;
@@ -266,7 +268,13 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (isServer)
             return;
 
-        if (enemyInfo != null) GetComponent<WBH_EnemyGradeVisual>()?.ApplyGrade(enemyInfo.enemyGrade);
+        if (enemyInfo != null)
+        {
+            // 기존 효과가 읽는 표시용 스탯도 초기화한다. 피해·AI 권한은 서버에 유지한다.
+            status?.Initialize(enemyInfo);
+            OnEffectPlaybackSpeedChanged(effectPlaybackSpeed, effectPlaybackSpeed);
+            GetComponent<WBH_EnemyGradeVisual>()?.ApplyGrade(enemyInfo.enemyGrade);
+        }
 
         DisableOriginalRuntimeDrivers();
         if (agent != null)
@@ -280,6 +288,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     {
         if (originalView != null && !originalView.enabled) originalView.TickExternalFlash(Time.deltaTime);
         if (!isServer) return;
+        if (status != null) effectPlaybackSpeed = status.AttackSpeed;
         statusEffects ??= GetComponent<WBH_EnemyStatusEffectController>();
         uint mask = 0;
         if (!isDead && statusEffects != null)
@@ -368,6 +377,31 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (isServer || originalView == null) return;
         if (duration > 0f) originalView.SetSelfDestructFlash(visible, duration);
         else originalView.SetSelfDestructFlash(visible);
+    }
+
+    private void OnEffectPlaybackSpeedChanged(float _, float value)
+    {
+        if (!isServer && enemyInfo != null)
+            status?.MultiplyAttackSpeed(value / Mathf.Max(0.01f, enemyInfo.attackSpeed));
+    }
+
+    // Act1의 폭발·착지는 애니메이션 이벤트가 아닌 실제 서버 충돌 시점에 재생한다.
+    // RPC가 Host를 포함한 각 클라이언트에서 한 번 실행하므로 로컬 선재생을 하지 않는다.
+    [Server]
+    public void ServerPlayBossImpactCue(WBH_EnemyEffectCue cue, Vector3 position, Quaternion rotation)
+    {
+        RpcBossImpactCue(cue, position, rotation);
+    }
+
+    [ClientRpc]
+    private void RpcBossImpactCue(WBH_EnemyEffectCue cue, Vector3 position, Quaternion rotation)
+    {
+        var effects = GetComponent<WBH_EnemyEffect>();
+        // 착지는 싱글과 같은 AttachOnce 앵커를 써서 화면에 표시된 보스 위치·크기를 보존한다.
+        if (cue == WBH_EnemyEffectCue.Boss_Act1_JumpAttack)
+            effects?.PlayEffect(cue, Vector3.one);
+        else
+            effects?.PlayWorldCue(cue, position, rotation);
     }
 
     [ClientRpc]
@@ -724,7 +758,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         Transform firePoint = networkPattern.FirePoint;
         Vector3 targetPoint = target.transform.position + Vector3.up;
         Vector3 direction = (targetPoint - firePoint.position).normalized;
-        SpawnStraightProjectile(direction, status.AttackRange);
+        if (SpawnStraightProjectile(direction, status.AttackRange))
+            GetComponent<WBH_EnemyEffect>().PlayCue(WBH_EnemyEffectCue.Normal_Range_01_Attack, transform.localScale);
     }
 
     [Server]
