@@ -170,6 +170,28 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             }
         }
 
+        // 다음 Act가 있는 보스는 원정을 끝내지 않고, 현재 기록을 중간 정산으로 복사한다.
+        // (크레딧은 이 시점에 계정으로 옮기지 않는다 - 아래 최종 클리어 정산 참고)
+        bool hasNextAct = bossClear && TryGetNextAct(map.act, out _);
+        if (hasNextAct)
+        {
+            var loader = SceneLoader.Instance;
+            if (loader == null || loader.IsLoading ||
+                !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                Log.Error("액트 중간 정산 결과 씬 또는 SceneLoader 설정을 확인하세요.");
+                return false;
+            }
+
+            var tracker = KY_RunStatsTracker.Instance;
+            if (tracker == null || !tracker.PublishActClearSnapshot())
+            {
+                Log.Error("액트 중간 정산 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
+                return false;
+            }
+        }
+
         // 크레딧은 액트 중간 보스가 아니라 최종 클리어에서만 계정으로 옮긴다.
         // (중간에 옮기면 지갑이 0이 되어 다음 액트 상점에서 쓸 수 없고, 아이템 원가가 여러 번 계산된다.)
         // 노드 완료 저장만 실패해 재시도하는 경우 아이템을 다시 더하지 않도록 한 번만 정산한다.
@@ -189,7 +211,13 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
 
         if (TryGetNextAct(completedAct, out StageActType nextAct))
-            return saveService.PrepareNewAct(nextAct);
+        {
+            if (!saveService.PrepareNewAct(nextAct))
+                return false;
+
+            destinationSceneName = ResultSceneName;
+            return true;
+        }
 
         if (completedAct == StageActType.Act3)
         {
