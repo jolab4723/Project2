@@ -69,8 +69,10 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
     /// 원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.
     /// earnedCredits를 넘기면 결과 화면에 그 금액을 표시한다(실제 계정 적립액 - 사망 30%, 클리어·정산은
     /// 보유 크레딧 + 아이템 원가 50%, DataManager.CalculateRunEndCredits). 생략하면 기존처럼 지갑 잔액을 표시한다.
+    /// resultType을 넘기면 결과 종류를 직접 지정한다(정산 종료는 KY_ResultType.Settle).
+    /// 생략하면 기존처럼 cleared로 GameClear/GameOver를 정한다.
     /// </summary>
-    public bool FinishRun(bool cleared, int? earnedCredits = null)
+    public bool FinishRun(bool cleared, int? earnedCredits = null, KY_ResultType? resultType = null)
     {
         if (payload == null)
         {
@@ -86,6 +88,7 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
 
         payload.SetResult(new KY_ResultData
         {
+            resultType = resultType ?? (cleared ? KY_ResultType.GameClear : KY_ResultType.GameOver),
             cleared = cleared,
             stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,

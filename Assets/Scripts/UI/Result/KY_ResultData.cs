@@ -5,7 +5,9 @@ public enum KY_ResultType
 {
     GameOver,
     ActClear,
-    GameClear
+    GameClear,
+    // 일시정지·스테이지 선택의 정산 종료. 끝까지 깬 것은 아니므로 GameClear와 구분한다(맨 뒤에 추가해 기존 값 유지).
+    Settle
 }
 
 [Serializable]

@@ -256,7 +256,7 @@ public void OnClickSaveAndExit()
         // 지갑이 비워지기 전에 결과 화면에 표시할 실제 적립액을 기록한다.
         int credits = dataManager.CalculateRunEndCredits(RunEndReason.Settle);
         var tracker = KY_RunStatsTracker.Instance;
-        if (tracker == null || !tracker.FinishRun(true, credits))
+        if (tracker == null || !tracker.FinishRun(true, credits, KY_ResultType.Settle))
         {
             Debug.LogError("[KY_PausePopup] 정산 결과 기록에 실패했습니다. KY_RunStatsTracker와 ResultPayload 연결을 확인하세요.", this);
             return;

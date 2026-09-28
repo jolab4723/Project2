@@ -399,6 +399,12 @@ public sealed class KY_ResultScreen : MonoBehaviour
         ApplyPreview(KY_ResultType.ActClear);
     }
 
+    [ContextMenu("미리보기/정산")]
+    public void PreviewSettle()
+    {
+        ApplyPreview(KY_ResultType.Settle);
+    }
+
     [ContextMenu("미리보기/게임오버")]
     public void PreviewGameOver()
     {
@@ -449,6 +455,8 @@ public sealed class KY_ResultScreen : MonoBehaviour
         return resultType switch
         {
             KY_ResultType.ActClear => actClearLogo != null ? actClearLogo : clearLogo,
+            // 정산은 끝까지 깬 것이 아니므로 GAME CLEAR 대신 액트 결과와 같은 GAME RESULT 로고를 쓴다.
+            KY_ResultType.Settle => actClearLogo != null ? actClearLogo : clearLogo,
             KY_ResultType.GameClear => clearLogo,
             _ => gameOverLogo
         };
@@ -459,6 +467,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         return resultType switch
         {
             KY_ResultType.ActClear => "GAME RESULT",
+            KY_ResultType.Settle => "GAME RESULT",
             KY_ResultType.GameClear => "GAME CLEAR",
             _ => "GAME OVER"
         };
@@ -469,6 +478,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         return resultType switch
         {
             KY_ResultType.ActClear => "엑트를 클리어 했습니다.",
+            KY_ResultType.Settle => "정산을 완료했습니다.",
             KY_ResultType.GameClear => "모든 스테이지를 클리어했습니다!",
             _ => "이번 원정이 종료되었습니다."
         };
