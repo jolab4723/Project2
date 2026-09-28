@@ -16,8 +16,8 @@ public class RestDatabaseSO : ScriptableObject
     {
         public string restId;
         public float baseHealPercent;
-        public int creditPerHealthPoint;
-        public int creditPerPotionCharge;
+        public int creditPerAct;
+        public int potionRechargeAmount;
     }
 
     [SerializeField] private List<RestEntry> restSettings = new List<RestEntry>();

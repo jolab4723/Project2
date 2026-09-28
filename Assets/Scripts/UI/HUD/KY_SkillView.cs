@@ -33,6 +33,9 @@ public class KY_SkillView : MonoBehaviour
         inputActions = KeyBindingService.InputActions;
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
         RefreshAllKeyTexts();
+
+        // 회피는 스택형이 아니라서 스택 숫자를 쓰지 않는다. 프리팹 기본값("0")이 켜진 채로 남지 않게 끈다.
+        dodgeSlot.SetStacks(null);
     }
 
     void OnEnable()

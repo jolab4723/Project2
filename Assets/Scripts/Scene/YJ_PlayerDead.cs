@@ -20,6 +20,7 @@ public class YJ_PlayerDead : MonoBehaviour
     private Coroutine transitionRoutine;
     private bool transitionRequested;
     private bool deathResultRecorded;
+    private bool deathCreditsSettled;
     private SceneLoader transitionLoader;
     private YJ_BgmPlayer deathAudioPlayer;
     private bool IsSinglePlayer => !NetworkClient.active && !NetworkServer.active && networkIdentity == null;
@@ -107,7 +108,11 @@ public class YJ_PlayerDead : MonoBehaviour
         if (!deathResultRecorded)
         {
             var tracker = KY_RunStatsTracker.Instance;
-            if (tracker == null || !tracker.FinishRun(false))
+            // 결과 화면에는 실제로 계정에 적립되는 금액(보유 크레딧의 30%)을 표시한다.
+            int deathCredits = DataManager.Instance != null
+                ? DataManager.Instance.CalculateRunEndCredits(RunEndReason.Death)
+                : 0;
+            if (tracker == null || !tracker.FinishRun(false, deathCredits))
             {
                 Debug.LogError("[YJ_PlayerDead] 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.", this);
                 ResetRequest();
@@ -145,6 +150,15 @@ public class YJ_PlayerDead : MonoBehaviour
             HideDeathScreen();
             ResetRequest();
             yield break;
+        }
+
+        // 부활 가능성이 사라진 이 시점에만 사망 크레딧(보유 크레딧의 30%)을 계정으로 옮긴다.
+        // 저장이 실패해도 사망 흐름은 막지 않는다(결과 씬으로는 이동).
+        if (!deathCreditsSettled)
+        {
+            deathCreditsSettled = true;
+            if (DataManager.Instance == null || !DataManager.Instance.SettleRunCredits(RunEndReason.Death))
+                Debug.LogError("[YJ_PlayerDead] 사망 크레딧을 프로필에 저장하지 못했습니다.", this);
         }
 
         // 이미지를 표시한 상태에서 기존 Fader가 화면 전체를 덮습니다.
