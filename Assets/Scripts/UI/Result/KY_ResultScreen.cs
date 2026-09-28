@@ -17,12 +17,14 @@ public sealed class KY_ResultScreen : MonoBehaviour
     [Header("수치 표시")]
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text subtitleText;
+    [SerializeField] private TMP_Text stageLabelText;
     [SerializeField] private TMP_Text stageText;
     [SerializeField] private TMP_Text defeatedText;
     [SerializeField] private TMP_Text playTimeText;
     [SerializeField] private TMP_Text creditsText;
     [SerializeField] private Image titleLogo;
     [SerializeField] private Sprite clearLogo;
+    [SerializeField] private Sprite actClearLogo;
     [SerializeField] private Sprite gameOverLogo;
     [SerializeField] private Image backgroundImage;
     [SerializeField] private Sprite clearBackground;
@@ -68,6 +70,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private Color creditsBaseColor;
 
     public KY_ResultData CurrentData { get; private set; }
+    public KY_ResultType CurrentResultType { get; private set; }
 
     // 정식 버튼의 클릭 이벤트를 등록한다.
     private void Awake()
@@ -138,7 +141,8 @@ public sealed class KY_ResultScreen : MonoBehaviour
     {
         hasResult = true;
         CurrentData = data;
-        Sprite logo = data.cleared ? clearLogo : gameOverLogo;
+        CurrentResultType = ResolveResultType(data);
+        Sprite logo = GetLogo(CurrentResultType);
         if (titleLogo)
         {
             titleLogo.sprite = logo;
@@ -146,15 +150,18 @@ public sealed class KY_ResultScreen : MonoBehaviour
         }
 
         if (titleText) titleText.gameObject.SetActive(logo == null);
-        SetText(titleText, data.cleared ? "GAME CLEAR" : "GAME OVER");
-        if (backgroundImage) backgroundImage.sprite = data.cleared ? clearBackground : gameOverBackground;
-        SetText(subtitleText, data.cleared ? "모든 스테이지를 클리어했습니다!" : "이번 원정이 종료되었습니다.");
+        SetText(titleText, GetTitle(CurrentResultType));
+        if (backgroundImage)
+            backgroundImage.sprite = CurrentResultType == KY_ResultType.GameOver ? gameOverBackground : clearBackground;
+        SetText(subtitleText, GetSubtitle(CurrentResultType));
+        SetText(stageLabelText, CurrentResultType == KY_ResultType.ActClear ? "현재 도달 스테이지" : "최종 도달 스테이지");
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
         // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
         SetText(creditsText, "0");
-        ApplyAccentColor(data.cleared ? clearAccentColor : gameOverAccentColor);
+        ApplyAccentColor(GetAccentColor(CurrentResultType));
+        SetActionButtonLabels(CurrentResultType);
         SetButtons(!leaving);
 
         // 씬 실행 뒤 미리보기나 외부 호출로 결과를 받았을 때도 연출을 다시 재생한다.
@@ -210,7 +217,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         if (creditsHighlightGraphic == null) yield break;
 
         creditsHighlightTween?.Kill();
-        Color highlight = CurrentData.cleared ? clearAccentColor : gameOverAccentColor;
+        Color highlight = GetAccentColor(CurrentResultType);
         highlight.a = Mathf.Max(creditsBaseColor.a, 0.65f);
         creditsHighlightTween = DOTween.Sequence()
             .Append(creditsHighlightGraphic.DOColor(highlight, creditsHighlightDuration).SetEase(Ease.OutCubic))
@@ -277,7 +284,8 @@ public sealed class KY_ResultScreen : MonoBehaviour
             if (hasResult) session.RequestReturnToLobby();
             return;
         }
-        Request(retryRequested, GetRetrySceneName());
+        string destination = CurrentResultType == KY_ResultType.ActClear ? "StageSelect" : GetRetrySceneName();
+        Request(retryRequested, destination);
     }
 
     // 타이틀 복귀 요청을 보내거나 타이틀 씬으로 이동한다.
@@ -360,6 +368,12 @@ public sealed class KY_ResultScreen : MonoBehaviour
         ApplyPreview();
     }
 
+    [ContextMenu("미리보기/액트 정산")]
+    public void PreviewActClear()
+    {
+        ApplyPreview(KY_ResultType.ActClear);
+    }
+
     [ContextMenu("미리보기/게임오버")]
     public void PreviewGameOver()
     {
@@ -370,9 +384,82 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 인스펙터에 입력한 미리보기 데이터를 결과 화면에 적용한다.
     private void ApplyPreview()
     {
+        ApplyPreview(previewClear ? KY_ResultType.GameClear : KY_ResultType.GameOver);
+    }
+
+    private void ApplyPreview(KY_ResultType resultType)
+    {
         var data = previewData;
-        data.cleared = previewClear;
+        data.resultType = resultType;
+        data.cleared = resultType == KY_ResultType.GameClear;
         ApplyResult(data);
+    }
+
+    /// <summary>외부 호출용: 게임오버 결과를 표시한다.</summary>
+    public void ShowGameOver(KY_ResultData data) => Show(data, KY_ResultType.GameOver);
+
+    /// <summary>외부 호출용: 액트 중간 정산 결과를 표시한다.</summary>
+    public void ShowActClear(KY_ResultData data) => Show(data, KY_ResultType.ActClear);
+
+    /// <summary>외부 호출용: 최종 게임 클리어 결과를 표시한다.</summary>
+    public void ShowGameClear(KY_ResultData data) => Show(data, KY_ResultType.GameClear);
+
+    private void Show(KY_ResultData data, KY_ResultType resultType)
+    {
+        data.resultType = resultType;
+        data.cleared = resultType == KY_ResultType.GameClear;
+        ApplyResult(data);
+    }
+
+    private static KY_ResultType ResolveResultType(KY_ResultData data)
+    {
+        // 기존 호출부는 cleared bool만 전달하므로, 새 enum을 지정하지 않은 과거 데이터도 유지한다.
+        return data.resultType == KY_ResultType.GameOver && data.cleared
+            ? KY_ResultType.GameClear
+            : data.resultType;
+    }
+
+    private Sprite GetLogo(KY_ResultType resultType)
+    {
+        return resultType switch
+        {
+            KY_ResultType.ActClear => actClearLogo != null ? actClearLogo : clearLogo,
+            KY_ResultType.GameClear => clearLogo,
+            _ => gameOverLogo
+        };
+    }
+
+    private static string GetTitle(KY_ResultType resultType)
+    {
+        return resultType switch
+        {
+            KY_ResultType.ActClear => "GAME RESULT",
+            KY_ResultType.GameClear => "GAME CLEAR",
+            _ => "GAME OVER"
+        };
+    }
+
+    private static string GetSubtitle(KY_ResultType resultType)
+    {
+        return resultType switch
+        {
+            KY_ResultType.ActClear => "엑트를 클리어 했습니다.",
+            KY_ResultType.GameClear => "모든 스테이지를 클리어했습니다!",
+            _ => "이번 원정이 종료되었습니다."
+        };
+    }
+
+    private Color GetAccentColor(KY_ResultType resultType)
+    {
+        return resultType == KY_ResultType.GameOver ? gameOverAccentColor : clearAccentColor;
+    }
+
+    private void SetActionButtonLabels(KY_ResultType resultType)
+    {
+        if (retryButton != null)
+            SetText(retryButton.GetComponentInChildren<TMP_Text>(), resultType == KY_ResultType.ActClear ? "계속하기" : "다시 시작");
+        if (titleButton != null)
+            SetText(titleButton.GetComponentInChildren<TMP_Text>(), "타이틀로");
     }
 
     // 초 단위 시간을 HH:MM:SS 형식으로 변환한다.

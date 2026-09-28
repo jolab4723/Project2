@@ -165,6 +165,27 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             }
         }
 
+        // 다음 Act가 있는 보스는 원정을 끝내지 않고, 크레딧 이전 전에 현재 기록을 중간 정산으로 복사한다.
+        bool hasNextAct = bossClear && TryGetNextAct(map.act, out _);
+        if (hasNextAct)
+        {
+            var loader = SceneLoader.Instance;
+            if (loader == null || loader.IsLoading ||
+                !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                Log.Error("액트 중간 정산 결과 씬 또는 SceneLoader 설정을 확인하세요.");
+                return false;
+            }
+
+            var tracker = KY_RunStatsTracker.Instance;
+            if (tracker == null || !tracker.PublishActClearSnapshot())
+            {
+                Log.Error("액트 중간 정산 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
+                return false;
+            }
+        }
+
         if (bossClear && !TransferRunCreditsToProfile())
             return false;
 
@@ -177,7 +198,13 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
 
         if (TryGetNextAct(completedAct, out StageActType nextAct))
-            return saveService.PrepareNewAct(nextAct);
+        {
+            if (!saveService.PrepareNewAct(nextAct))
+                return false;
+
+            destinationSceneName = ResultSceneName;
+            return true;
+        }
 
         if (completedAct == StageActType.Act3)
         {
