@@ -129,6 +129,8 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
         if (sharedCombat != null)
         {
             sharedCombat.CancelCurrentAction();
+            // 비활성 원본 Pattern은 GameObject 종료 때 OnDisable이 다시 오지 않으므로 직접 정리한다.
+            sharedPattern?.Die();
             sharedCombat.ExternalBeginGrab = null;
             sharedCombat.ExternalHoldGrab = null;
             sharedCombat.ExternalEndGrab = null;

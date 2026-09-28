@@ -136,3 +136,15 @@
 - 거너 궁극기 진화3의 `G_S4_E3_8_Projectile`도 네트워크 외형 목록에 누락돼 있었다. SW 외형 프리팹을 만들고 기존 목록의5번째 항목으로 등록했다. 원본 VFX·메시·사운드를 유지하고 GunnerBomb/Collider/Rigidbody를 제외했다. 이 자산 수정은50항목 검사 이후이며 별도 Editor 검증에서 원격 표시 본문을 실행하여 Renderer6개(원본과 동일), 피해 컴포넌트0, Collider0을 확인했다. 실제 원격 패킷 수신 검사는 아니다.
 - 거너의 빈 itemId 대체 무기 외형은 싱글 `DefaultGun`, 멀티 `smP02_Gun`으로 아직 다르다. 장착 무기는 같은 카탈로그/itemId 경로를 쓴다. 무장 해제 상태까지 외형 동일하다고 판정하지 않는다.
 - 재시작 뒤 자산217항목 재통과, 적9종의 검사 대상 effect/indicator/destruction 직렬화 필드 차이0을 확인했다. Editor는 컴파일 완료·Edit Mode·깨끗한 Lobby와 원래 CircleIndicator Prefab Stage로 복원했다. 최종 근거는 `RunValidation/final-combat-parity.json` 및 `RunValidation/UXFix_20260928/checks.json`에 남겼다.
+
+## 새 Act2 커밋 반영 및 남은 두 차이 수정 (2026-09-28)
+
+`c46b10609` 병합 이후, `9d43c43b6`의 Act2 효과를 기준으로 재검증했다. 위의 “Act2 Stomp 효과 없음”은 새 커밋 이전 기록이며 현재에는 적용되지 않는다.
+
+- 기본 공격: NetworkEnemyAuthority가 원본 PlayAttack의 타격·종료 콜백을 사용한다. 일반/고급 근접·엘리트·Act1 클립을 실제 재생해 싱글과 같은 시점을 확인했다. 원거리2종은 즉시 발사한다. 취소·사망·비활성·서버 종료 후 지연 콜백을 차단하고, 중단된 애니메이션은 피해 없이 행동 잠금을 해제한다.
+- 거너: 네트워크 fallback을 원본 DefaultGun과 같은 메시·재질·WeaponSocket·LeftHandGrip으로 복원했다. 빈 itemId 표시, 장착 시 숨김, 해제 시 복구를 검사했다.
+- Act2: 새 효과12개 cue/data/SFX/앵커와 지속형 전환 EffectData를 연결했다. 공유 애니메이션 이벤트를 그대로 재사용한다. `WBH_EnemyBossPattern_Act2`의 BeginPhaseTransition/CompletePhaseTransition/Cleanup에 맞춰 원격 표시를 NetworkAnimator bool로 생성·반환하고 Host 중복을 피한다. 비활성인 원본 Pattern도 서버 종료에서 Die→Cleanup을 호출한다.
+- 추가 오류: 새 Slam 효과의 Effect01에 AudioSource 없이 남은 SciFiPitchRandomizer를 실제 실행 오류로 확인해 해당 프로젝트 프리팹에서 제거했다. 외부 에셋 원본·스크립트는 그대로다.
+- 최신 검증: 컴파일 완료, 자산49·Play60 assertion 통과. 실제 프리팹의 공격 이벤트, 12개 효과 생성, 지속 효과 완료·서버 비활성·클라이언트 종료·비활성 및 Mirror 초기 스냅샷 전달을 검사했다. 화면 비교에서 지속 효과의 같은 크기·재질을 확인했다. `RunValidation/FinalParity_20260928/checks.json`, `assets.json`, `act2-phase-single-right-remote-left.png`에 근거를 남겼다. 숫자는 assertion 수다.
+- Play 종료는 정상 응답했다. 로컬 Play 시나리오를 백업 후 Default로 전환했으나 기존 MPPM ScenarioConfig 전환 예외는 남았다. 재검증에서 수정 게임 코드·효과의 오류는 재발하지 않았지만 Console 전체 오류0을 주장하지 않는다. URP 자동 마이그레이션 변경은 이 기능 수정과 별개로 남아 있다.
+- 계정 정산·런 시작·빌드·커밋·푸시는 하지 않았다. 원격 표시 검사는 동일 Editor 복제본과 실제 Mirror 직렬화/역직렬화로 실행했으며 별도 클라이언트 패킷 전송·Linux 서버 실행은 미검증이다. 모든 스킬·장비·네트워크 지연 조합의 완전 동일성을 보장하는 결과는 아니다.
