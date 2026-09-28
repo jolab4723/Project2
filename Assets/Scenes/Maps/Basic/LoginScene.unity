@@ -411,6 +411,7 @@ GameObject:
   - component: {fileID: 78747707}
   - component: {fileID: 78747709}
   - component: {fileID: 78747708}
+  - component: {fileID: 78747710}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -487,9 +488,9 @@ MonoBehaviour:
   m_fontSize: 18
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 18
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -537,6 +538,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 78747706}
   m_CullTransparentMesh: 1
+--- !u!114 &78747710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78747706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.create_account
+  database: {fileID: 0}
 --- !u!1 &83336787
 GameObject:
   m_ObjectHideFlags: 0
@@ -661,6 +676,7 @@ GameObject:
   - component: {fileID: 166151440}
   - component: {fileID: 166151442}
   - component: {fileID: 166151441}
+  - component: {fileID: 166151443}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -737,9 +753,9 @@ MonoBehaviour:
   m_fontSize: 42
   m_fontSizeBase: 42
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 42
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -787,6 +803,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 166151439}
   m_CullTransparentMesh: 1
+--- !u!114 &166151443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 166151439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.create_account
+  database: {fileID: 0}
 --- !u!1 &182185737
 GameObject:
   m_ObjectHideFlags: 0
@@ -948,6 +978,7 @@ GameObject:
   - component: {fileID: 233348172}
   - component: {fileID: 233348171}
   - component: {fileID: 233348170}
+  - component: {fileID: 233348173}
   m_Layer: 0
   m_Name: Placeholder
   m_TagString: Untagged
@@ -1005,9 +1036,9 @@ MonoBehaviour:
   m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 24
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -1074,6 +1105,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &233348173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 233348169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.email_placeholder
+  database: {fileID: 0}
 --- !u!1 &255122375
 GameObject:
   m_ObjectHideFlags: 0
@@ -1160,6 +1205,7 @@ GameObject:
   - component: {fileID: 286147950}
   - component: {fileID: 286147952}
   - component: {fileID: 286147951}
+  - component: {fileID: 286147953}
   m_Layer: 0
   m_Name: Placeholder
   m_TagString: Untagged
@@ -1236,9 +1282,9 @@ MonoBehaviour:
   m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 24
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -1286,6 +1332,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 286147949}
   m_CullTransparentMesh: 1
+--- !u!114 &286147953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286147949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.password
+  database: {fileID: 0}
 --- !u!1 &287637195
 GameObject:
   m_ObjectHideFlags: 0
@@ -1558,6 +1618,7 @@ GameObject:
   - component: {fileID: 326490624}
   - component: {fileID: 326490626}
   - component: {fileID: 326490625}
+  - component: {fileID: 326490627}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -1634,9 +1695,9 @@ MonoBehaviour:
   m_fontSize: 18
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 18
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -1684,6 +1745,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 326490623}
   m_CullTransparentMesh: 1
+--- !u!114 &326490627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 326490623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.login
+  database: {fileID: 0}
 --- !u!21 &357915753
 Material:
   serializedVersion: 8
@@ -1921,6 +1996,7 @@ GameObject:
   - component: {fileID: 442635073}
   - component: {fileID: 442635075}
   - component: {fileID: 442635074}
+  - component: {fileID: 442635076}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -1997,9 +2073,9 @@ MonoBehaviour:
   m_fontSize: 15
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -2047,6 +2123,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 442635072}
   m_CullTransparentMesh: 1
+--- !u!114 &442635076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442635072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.confirm_password
+  database: {fileID: 0}
 --- !u!1 &454938931
 GameObject:
   m_ObjectHideFlags: 0
@@ -2601,6 +2691,7 @@ GameObject:
   - component: {fileID: 635244698}
   - component: {fileID: 635244700}
   - component: {fileID: 635244699}
+  - component: {fileID: 635244701}
   m_Layer: 0
   m_Name: Subtitle
   m_TagString: Untagged
@@ -2679,9 +2770,9 @@ MonoBehaviour:
   m_fontSize: 14
   m_fontSizeBase: 14
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 14
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -2729,6 +2820,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 635244697}
   m_CullTransparentMesh: 1
+--- !u!114 &635244701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635244697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.subtitle
+  database: {fileID: 0}
 --- !u!1 &635464996
 GameObject:
   m_ObjectHideFlags: 0
@@ -2740,6 +2845,7 @@ GameObject:
   - component: {fileID: 635464997}
   - component: {fileID: 635464999}
   - component: {fileID: 635464998}
+  - component: {fileID: 635465000}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -2816,9 +2922,9 @@ MonoBehaviour:
   m_fontSize: 18
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 18
   m_fontStyle: 0
   m_HorizontalAlignment: 4
   m_VerticalAlignment: 512
@@ -2866,6 +2972,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 635464996}
   m_CullTransparentMesh: 1
+--- !u!114 &635465000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635464996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.no_account
+  database: {fileID: 0}
 --- !u!1 &640425186
 GameObject:
   m_ObjectHideFlags: 0
@@ -3246,6 +3366,7 @@ GameObject:
   - component: {fileID: 687733951}
   - component: {fileID: 687733953}
   - component: {fileID: 687733952}
+  - component: {fileID: 687733954}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -3322,9 +3443,9 @@ MonoBehaviour:
   m_fontSize: 15
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -3372,6 +3493,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 687733950}
   m_CullTransparentMesh: 1
+--- !u!114 &687733954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687733950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.password
+  database: {fileID: 0}
 --- !u!1 &703221997
 GameObject:
   m_ObjectHideFlags: 0
@@ -3570,6 +3705,7 @@ GameObject:
   - component: {fileID: 753481407}
   - component: {fileID: 753481409}
   - component: {fileID: 753481408}
+  - component: {fileID: 753481410}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -3646,9 +3782,9 @@ MonoBehaviour:
   m_fontSize: 32
   m_fontSizeBase: 32
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 32
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -3696,6 +3832,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 753481406}
   m_CullTransparentMesh: 1
+--- !u!114 &753481410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753481406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &755425540
 GameObject:
   m_ObjectHideFlags: 0
@@ -3707,6 +3855,7 @@ GameObject:
   - component: {fileID: 755425541}
   - component: {fileID: 755425543}
   - component: {fileID: 755425542}
+  - component: {fileID: 755425544}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -3785,9 +3934,9 @@ MonoBehaviour:
   m_fontSize: 18
   m_fontSizeBase: 18
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 18
   m_fontStyle: 0
   m_HorizontalAlignment: 4
   m_VerticalAlignment: 512
@@ -3835,6 +3984,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 755425540}
   m_CullTransparentMesh: 1
+--- !u!114 &755425544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 755425540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.has_account
+  database: {fileID: 0}
 --- !u!1 &758102704
 GameObject:
   m_ObjectHideFlags: 0
@@ -4132,6 +4295,7 @@ GameObject:
   - component: {fileID: 828002418}
   - component: {fileID: 828002420}
   - component: {fileID: 828002419}
+  - component: {fileID: 828002421}
   m_Layer: 0
   m_Name: Subtitle
   m_TagString: Untagged
@@ -4210,9 +4374,9 @@ MonoBehaviour:
   m_fontSize: 14
   m_fontSizeBase: 14
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 14
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -4260,6 +4424,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 828002417}
   m_CullTransparentMesh: 1
+--- !u!114 &828002421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828002417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.subtitle
+  database: {fileID: 0}
 --- !u!1 &892998555
 GameObject:
   m_ObjectHideFlags: 0
@@ -4271,6 +4449,7 @@ GameObject:
   - component: {fileID: 892998556}
   - component: {fileID: 892998558}
   - component: {fileID: 892998557}
+  - component: {fileID: 892998559}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -4397,6 +4576,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 892998555}
   m_CullTransparentMesh: 1
+--- !u!114 &892998559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 892998555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &912307041
 GameObject:
   m_ObjectHideFlags: 0
@@ -4617,6 +4808,7 @@ GameObject:
   - component: {fileID: 960236988}
   - component: {fileID: 960236990}
   - component: {fileID: 960236989}
+  - component: {fileID: 960236991}
   m_Layer: 0
   m_Name: Placeholder
   m_TagString: Untagged
@@ -4693,9 +4885,9 @@ MonoBehaviour:
   m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 24
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -4743,6 +4935,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 960236987}
   m_CullTransparentMesh: 1
+--- !u!114 &960236991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 960236987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.password
+  database: {fileID: 0}
 --- !u!1 &962432259
 GameObject:
   m_ObjectHideFlags: 0
@@ -5089,6 +5295,7 @@ GameObject:
   - component: {fileID: 1063669345}
   - component: {fileID: 1063669347}
   - component: {fileID: 1063669346}
+  - component: {fileID: 1063669348}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -5165,9 +5372,9 @@ MonoBehaviour:
   m_fontSize: 15
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -5215,6 +5422,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1063669344}
   m_CullTransparentMesh: 1
+--- !u!114 &1063669348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1063669344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.account
+  database: {fileID: 0}
 --- !u!1 &1092487053
 GameObject:
   m_ObjectHideFlags: 0
@@ -5778,6 +5999,7 @@ GameObject:
   - component: {fileID: 1258637507}
   - component: {fileID: 1258637509}
   - component: {fileID: 1258637508}
+  - component: {fileID: 1258637510}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -5854,9 +6076,9 @@ MonoBehaviour:
   m_fontSize: 15
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -5904,6 +6126,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1258637506}
   m_CullTransparentMesh: 1
+--- !u!114 &1258637510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1258637506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.account
+  database: {fileID: 0}
 --- !u!1 &1282150195
 GameObject:
   m_ObjectHideFlags: 0
@@ -5915,6 +6151,7 @@ GameObject:
   - component: {fileID: 1282150196}
   - component: {fileID: 1282150198}
   - component: {fileID: 1282150197}
+  - component: {fileID: 1282150199}
   m_Layer: 5
   m_Name: LogText (TMP)
   m_TagString: Untagged
@@ -5991,9 +6228,9 @@ MonoBehaviour:
   m_fontSize: 20
   m_fontSizeBase: 20
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 20
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
@@ -6041,6 +6278,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282150195}
   m_CullTransparentMesh: 1
+--- !u!114 &1282150199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1282150195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1292429982
 GameObject:
   m_ObjectHideFlags: 0
@@ -6052,6 +6301,7 @@ GameObject:
   - component: {fileID: 1292429983}
   - component: {fileID: 1292429985}
   - component: {fileID: 1292429984}
+  - component: {fileID: 1292429986}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -6178,6 +6428,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1292429982}
   m_CullTransparentMesh: 1
+--- !u!114 &1292429986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1292429982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1306454782
 GameObject:
   m_ObjectHideFlags: 0
@@ -7178,6 +7440,7 @@ GameObject:
   - component: {fileID: 1445843755}
   - component: {fileID: 1445843757}
   - component: {fileID: 1445843756}
+  - component: {fileID: 1445843758}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -7254,9 +7517,9 @@ MonoBehaviour:
   m_fontSize: 42
   m_fontSizeBase: 42
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 42
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -7304,6 +7567,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1445843754}
   m_CullTransparentMesh: 1
+--- !u!114 &1445843758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445843754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.title
+  database: {fileID: 0}
 --- !u!1 &1520776412
 GameObject:
   m_ObjectHideFlags: 0
@@ -7427,6 +7704,7 @@ GameObject:
   - component: {fileID: 1568815820}
   - component: {fileID: 1568815822}
   - component: {fileID: 1568815821}
+  - component: {fileID: 1568815823}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -7503,9 +7781,9 @@ MonoBehaviour:
   m_fontSize: 15
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 15
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
@@ -7553,6 +7831,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568815819}
   m_CullTransparentMesh: 1
+--- !u!114 &1568815823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1568815819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.password
+  database: {fileID: 0}
 --- !u!1 &1607474860
 GameObject:
   m_ObjectHideFlags: 0
@@ -7639,6 +7931,7 @@ GameObject:
   - component: {fileID: 1614841441}
   - component: {fileID: 1614841443}
   - component: {fileID: 1614841442}
+  - component: {fileID: 1614841444}
   m_Layer: 0
   m_Name: Placeholder
   m_TagString: Untagged
@@ -7715,9 +8008,9 @@ MonoBehaviour:
   m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 24
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -7765,6 +8058,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1614841440}
   m_CullTransparentMesh: 1
+--- !u!114 &1614841444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1614841440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.confirm_password
+  database: {fileID: 0}
 --- !u!1 &1658293896
 GameObject:
   m_ObjectHideFlags: 0
@@ -7927,6 +8234,7 @@ GameObject:
   - component: {fileID: 1708326599}
   - component: {fileID: 1708326601}
   - component: {fileID: 1708326600}
+  - component: {fileID: 1708326602}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -8005,9 +8313,9 @@ MonoBehaviour:
   m_fontSize: 12
   m_fontSizeBase: 12
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 12
+  m_fontSizeMax: 12
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -8055,6 +8363,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1708326598}
   m_CullTransparentMesh: 1
+--- !u!114 &1708326602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1708326598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.footer
+  database: {fileID: 0}
 --- !u!1 &1725672503
 GameObject:
   m_ObjectHideFlags: 0
@@ -8103,6 +8425,7 @@ GameObject:
   - component: {fileID: 1739239093}
   - component: {fileID: 1739239092}
   - component: {fileID: 1739239091}
+  - component: {fileID: 1739239094}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -8229,6 +8552,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1739239094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1739239090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1739680663
 GameObject:
   m_ObjectHideFlags: 0
@@ -8716,6 +9051,7 @@ GameObject:
   - component: {fileID: 1872910984}
   - component: {fileID: 1872910986}
   - component: {fileID: 1872910985}
+  - component: {fileID: 1872910987}
   m_Layer: 0
   m_Name: Placeholder
   m_TagString: Untagged
@@ -8792,9 +9128,9 @@ MonoBehaviour:
   m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 24
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -8842,6 +9178,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1872910983}
   m_CullTransparentMesh: 1
+--- !u!114 &1872910987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872910983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.email_placeholder
+  database: {fileID: 0}
 --- !u!1 &1877984954
 GameObject:
   m_ObjectHideFlags: 0
@@ -9653,6 +10003,7 @@ GameObject:
   - component: {fileID: 1918815889}
   - component: {fileID: 1918815891}
   - component: {fileID: 1918815890}
+  - component: {fileID: 1918815892}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -9779,6 +10130,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1918815888}
   m_CullTransparentMesh: 1
+--- !u!114 &1918815892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1918815888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &1927614862
 GameObject:
   m_ObjectHideFlags: 0
@@ -10081,6 +10444,7 @@ GameObject:
   - component: {fileID: 2005223391}
   - component: {fileID: 2005223393}
   - component: {fileID: 2005223392}
+  - component: {fileID: 2005223394}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -10157,9 +10521,9 @@ MonoBehaviour:
   m_fontSize: 12
   m_fontSizeBase: 12
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 12
+  m_fontSizeMax: 12
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -10207,6 +10571,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2005223390}
   m_CullTransparentMesh: 1
+--- !u!114 &2005223394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005223390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: login_ui.footer
+  database: {fileID: 0}
 --- !u!1 &2009326953
 GameObject:
   m_ObjectHideFlags: 0
@@ -10387,6 +10765,7 @@ GameObject:
   - component: {fileID: 2022077938}
   - component: {fileID: 2022077940}
   - component: {fileID: 2022077939}
+  - component: {fileID: 2022077941}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -10463,9 +10842,9 @@ MonoBehaviour:
   m_fontSize: 32
   m_fontSizeBase: 32
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 14
+  m_fontSizeMax: 32
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -10513,6 +10892,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2022077937}
   m_CullTransparentMesh: 1
+--- !u!114 &2022077941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2022077937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &2033345357
 GameObject:
   m_ObjectHideFlags: 0
@@ -10524,6 +10915,7 @@ GameObject:
   - component: {fileID: 2033345358}
   - component: {fileID: 2033345360}
   - component: {fileID: 2033345359}
+  - component: {fileID: 2033345361}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -10650,6 +11042,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2033345357}
   m_CullTransparentMesh: 1
+--- !u!114 &2033345361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033345357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1218b83b748a54eaacafa99319922d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YJ_LocalizedFont
 --- !u!1 &2040904565
 GameObject:
   m_ObjectHideFlags: 0
