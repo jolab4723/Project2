@@ -144,9 +144,12 @@ namespace DataSystem
 
                 case SkillShapeType.ArcProjectile:
                     asset.projectileMaxDistance = row.range;
-                    // maxStacks/stackRechargeSeconds/projectileSpeed/explosionRadius/arcProjectilePrefab은
+                    // 아크 버스터는 쿨타임 대신 스택으로 관리하므로, 시트의 cooldownSeconds를 스택 1개 충전 시간으로 쓴다.
+                    // 연속 발사 간격은 GunnerSkillController의 고정값(1초)이다.
+                    asset.stackRechargeSeconds = row.cooldownSeconds;
+                    // maxStacks/projectileSpeed/explosionRadius/arcProjectilePrefab은
                     // 이 시트의 2개 범용 컬럼(range/rangeWidthOrAngle)으로 표현하기엔 항목이 너무 많아서
-                    // SkillDefinitionSO의 C# 기본값(6스택/4초/15/1유닛)을 그대로 쓰고, 프리팹은 코드에서 직접 연결한다.
+                    // SkillDefinitionSO의 C# 기본값(6스택/15/1유닛)을 그대로 쓰고, 프리팹은 코드에서 직접 연결한다.
                     break;
 
                 case SkillShapeType.BombThrow:

@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
   skillId: 2
   skillName: "\uCEE4\uC11C \uB300\uC2DC"
-  icon: {fileID: 21300000, guid: 00d86b59c3037d2429f023b8e1af8437, type: 3}
+  icon: {fileID: 21300000, guid: 85f078bacbb15b342a5eab5e9c59e724, type: 3}
   cooldownSeconds: 4
   damageMultiplier: 1.5
-  manaCost: 10
+  manaCost: 25
   evolution1ManaCost: 0
   evolution2ManaCost: 0
   evolution3ManaCost: 0
@@ -95,7 +95,25 @@ MonoBehaviour:
   carpetVisualBombsPerWave: 6
   carpetDropHeight: 14
   carpetImpactDelay: 0.35
+  evoLaserStrikeDelay: 0.5
+  evoLaserStrikeDamage: 4.5
+  evoMarkerWaveCount: 4
+  evoMarkerWaveInterval: 1
+  evoMarkerDamagePerWave: 1
+  evoMarkerDuration: 5
+  evoMarkerDamageMultiplier: 1.25
+  evoBarrageBombPrefab: {fileID: 0}
+  evoBarrageShellCount: 9
+  evoBarrageInterval: 0.3
+  evoBarrageShellRadius: 3
+  evoBarrageDamagePerShell: 0.6
+  evoBarrageScatterRadius: 4
   awakeningBuff: {fileID: 0}
+  evoAwakeningBuff1: {fileID: 0}
+  evoAwakeningBuff2: {fileID: 0}
+  evoAwakeningBuff3: {fileID: 0}
+  evoOverloadDamageMultiplier: 4
+  evoOverloadRangeMultiplier: 1.7
   enhanceDamageMultiplierBonusPercent: 55
   enhanceDashSpeedBonusPercent: 55
   enhanceCooldownReductionPercent: 35
