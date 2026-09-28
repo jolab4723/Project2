@@ -16,7 +16,10 @@ public class KY_SkillView : MonoBehaviour
     // 했고, 안 바꾸면 비활성 캐릭터의 컨트롤러를 계속 보다가 초기화 안 된 값 - 예: 스택 -1 - 을 그대로
     // 표시하는 문제가 있었다), 지금은 ActiveSkillControllerLocator로 지금 활성 캐릭터의 컨트롤러를
     // 그때그때 찾아서 쓴다(SkillEvolutionSelectUI와 같은 방식, 116/124번).
-    private ISkillController SkillController => ActiveSkillControllerLocator.Find();
+    // 멀티에서는 PlayerHudEventBridge가 로컬 플레이어를 Bind하며, 바인딩된 대상이 전역 검색보다 우선한다.
+    private ISkillController boundController;
+    private ISkillController SkillController =>
+        boundController ?? (MirrorNetworkManager.OwnsGameplay ? null : ActiveSkillControllerLocator.Find());
 
     /// <summary>아이콘을 이미 채워 넣은 컨트롤러. 캐릭터(클래스)가 바뀐 프레임에만 아이콘을 다시 채우려고 들고 있는다.</summary>
     private ISkillController iconSyncedController;
@@ -25,10 +28,23 @@ public class KY_SkillView : MonoBehaviour
     private T_PlayerController playerController;
     private WBH_PlayerStatus playerStatus;
 
+    /// <summary>멀티 로컬 플레이어를 명시한다. 같은 객체의 원본 스킬 컨트롤러가 아니라 동기화된 Authority를 읽는다.</summary>
+    public void Bind(PlayerContext player)
+    {
+        FighterSkillAuthority authority = player != null ? player.GetComponent<FighterSkillAuthority>() : null;
+        boundController = authority != null ? authority : null; // Unity 가짜 null이 ??를 통과하지 않게 한다.
+        playerController = player != null ? player.GetComponent<T_PlayerController>() : null;
+        playerStatus = player != null ? player.GetComponent<WBH_PlayerStatus>() : null;
+        iconSyncedController = null;
+    }
+
     void Start()
     {
-        playerController = FindFirstObjectByType<T_PlayerController>();
-        playerStatus = FindFirstObjectByType<WBH_PlayerStatus>();
+        if (!MirrorNetworkManager.OwnsGameplay)
+        {
+            playerController ??= FindFirstObjectByType<T_PlayerController>();
+            playerStatus ??= FindFirstObjectByType<WBH_PlayerStatus>();
+        }
 
         inputActions = KeyBindingService.InputActions;
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
@@ -78,6 +94,9 @@ public class KY_SkillView : MonoBehaviour
             else
                 skillSlots[i].SetStacks(null);
         }
+
+        if (playerController == null || playerStatus == null)
+            return;
 
         float dodgeRemaining = playerController.currentDodgeCooltime;
         float dodgeTotal = playerStatus.DodgeCooltime;

@@ -43,7 +43,10 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     private Tween entranceDelayTween;
     private TMP_Text loginButtonText;
-    private string defaultLoginButtonText;
+    private UILabelDatabaseSO uiLabels;
+    private YJ_LanguageManager languageManager;
+    private string feedbackMessage = string.Empty;
+    private bool submittingLabel;
     private KY_InputFieldFeedbackEffect accountIdFeedback;
     private KY_InputFieldFeedbackEffect passwordFeedback;
     private bool hasPlayedEntrance;
@@ -53,6 +56,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     private void Awake()
     {
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         contentFade?.SetAlphaImmediate(0f);
         panelCurtain?.PrepareOpen();
         panelGlow?.SetActive(false);
@@ -60,8 +64,6 @@ public sealed class KY_LoginPopup : MonoBehaviour
         if (loginButton != null)
         {
             loginButtonText = loginButton.GetComponentInChildren<TMP_Text>(true);
-            if (loginButtonText != null)
-                defaultLoginButtonText = loginButtonText.text;
 
             // 씬에 남아 있는 직접 이동 연결은 입력 검증을 우회하고,
             // 부트 씬의 싱글톤이 유지될 때 파괴된 중복 로더를 참조할 수 있다.
@@ -106,6 +108,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     private void OnDisable()
     {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
         entranceDelayTween?.Kill();
     }
 
@@ -118,6 +121,21 @@ public sealed class KY_LoginPopup : MonoBehaviour
             FocusPasswordInput(string.Empty);
         else if (passwordInput != null && passwordInput.isFocused)
             FocusAccountIdInput();
+    }
+
+    private void OnEnable()
+    {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        RefreshLanguage(default);
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        if (loginButtonText != null && uiLabels != null)
+            loginButtonText.text = uiLabels.GetLabel(submittingLabel ? "login_ui.submitting" : "login_ui.submit");
+        if (feedbackText != null)
+            feedbackText.text = SessionUIMessageLocalizer.GetMessage(uiLabels, feedbackMessage);
     }
 
     private void OnDestroy()
@@ -373,8 +391,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
     /// <summary>요청 중에는 입력과 버튼을 잠근다.</summary>
     public void SetSubmitting(bool isSubmitting)
     {
-        if (loginButtonText != null)
-            loginButtonText.text = isSubmitting ? "로그인 중..." : defaultLoginButtonText;
+        submittingLabel = isSubmitting;
+        RefreshLanguage(default);
 
         if (loginButton != null)
             loginButton.interactable = !isSubmitting;
@@ -398,16 +416,18 @@ public sealed class KY_LoginPopup : MonoBehaviour
     /// <summary>요청 상태 또는 오류 안내 문구를 표시한다.</summary>
     private void ShowFeedback(string message)
     {
+        feedbackMessage = message ?? string.Empty;
         if (feedbackText == null)
             return;
 
         feedbackText.gameObject.SetActive(true);
-        feedbackText.text = message;
+        feedbackText.text = SessionUIMessageLocalizer.GetMessage(uiLabels, feedbackMessage);
     }
 
     /// <summary>표시 중인 오류 문구를 지운다.</summary>
     public void ClearFeedback()
     {
+        feedbackMessage = string.Empty;
         if (feedbackText == null)
             return;
 

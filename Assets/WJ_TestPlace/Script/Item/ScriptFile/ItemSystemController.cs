@@ -30,6 +30,11 @@ namespace ItemSystem
         [SerializeField] private MonoBehaviour receiverBehaviour; // IItemReceiver 구현체
         private IItemReceiver Receiver => receiverBehaviour as IItemReceiver;
 
+        // 구형 싱글 호출의 소유자 연결은 이 진입점에서만 처리한다. 멀티는 처치자가 명시된 서버 경로를 쓴다.
+        private PlayerContext SinglePlayerRarityOwner =>
+            Mirror.NetworkServer.active || Mirror.NetworkClient.active ? null :
+            ((receiverBehaviour as InventoryController) ?? InventoryController.Instance)?.BoundPlayer;
+
         [Header("스폰 위치")]
         [Tooltip("아이템이 바닥에 절반쯤 묻히지 않도록 스폰 위치를 y축으로 띄우는 높이")]
         [SerializeField] private float spawnHeightOffset = 0.5f;
@@ -97,7 +102,8 @@ namespace ItemSystem
             rollResult = dropRollService.Roll(
                 itemDropTable,
                 itemDatabase,
-                grade);
+                grade,
+                rarityOwner: SinglePlayerRarityOwner);
 
             if (!rollResult.HasDrop)
             {
@@ -205,7 +211,8 @@ namespace ItemSystem
         public ItemDefinitionSO GetRandomItemSO(EnemyGrade grade)
         {
             var itemDatabase = Core.ItemManager.Instance != null ? Core.ItemManager.Instance.ItemDatabase : null;
-            ItemDropRollResultData result = dropRollService.Roll(itemDropTable, itemDatabase, grade);
+            ItemDropRollResultData result = dropRollService.Roll(itemDropTable, itemDatabase, grade,
+                rarityOwner: SinglePlayerRarityOwner);
 
             if (!result.HasDrop)
             {

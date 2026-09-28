@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 public class WBH_BossTimeLineController : MonoBehaviour
 {
@@ -28,6 +29,13 @@ public class WBH_BossTimeLineController : MonoBehaviour
 
     private bool[] previousInputStates;
     private bool isCutscenePlaying;
+
+    // 타임라인의 플레이어 트랙은 원점 기준(ApplyTransformOffsets)이라 런타임 플레이어를
+    // 현재 위치의 임시 앵커 아래에 두고 바인딩한다. (멀티의 MirrorBossIntro와 같은 방식)
+    private const string PlayerTrackName = "PlayerDodge";
+    private AnimationTrack playerTrack;
+    private Transform playerAnchor;
+    private Transform playerOriginalParent;
 
 
     private void OnEnable()
@@ -115,6 +123,7 @@ public class WBH_BossTimeLineController : MonoBehaviour
         boss.SetCutSceneDamageBlock(true);
 
         HideRuntimeBoss();
+        BindPlayerTrack();
 
         director.time = 0d;
         director.Play();
@@ -149,6 +158,8 @@ public class WBH_BossTimeLineController : MonoBehaviour
             boss.SetCutSceneDamageBlock(false);
             boss.SetCutSceneControlBlock(false);
         }
+
+        ReleasePlayerTrack();
 
         if(player != null)
         {
@@ -199,6 +210,61 @@ public class WBH_BossTimeLineController : MonoBehaviour
         }
 
         previousInputStates = null;
+    }
+
+    private void BindPlayerTrack()
+    {
+        playerTrack = null;
+        foreach (TrackAsset track in ((TimelineAsset)director.playableAsset).GetOutputTracks())
+        {
+            if (track is AnimationTrack animationTrack && track.name == PlayerTrackName)
+            {
+                playerTrack = animationTrack;
+                break;
+            }
+        }
+
+        Animator playerAnimator = player.GetComponent<Animator>();
+        if (playerTrack == null || playerAnimator == null)
+            return;
+
+        Transform playerTransform = player.transform;
+        playerAnchor = new GameObject("BossIntro Player Anchor").transform;
+        playerAnchor.SetPositionAndRotation(playerTransform.position, playerTransform.rotation);
+        playerOriginalParent = playerTransform.parent;
+        playerTransform.SetParent(playerAnchor, true);
+
+        // 컷씬 동안 NavMeshAgent가 타임라인 이동을 덮어쓰지 않게 한다.
+        if (player.agent != null)
+            player.agent.updatePosition = false;
+
+        director.SetGenericBinding(playerTrack, playerAnimator);
+    }
+
+    private void ReleasePlayerTrack()
+    {
+        if (playerTrack != null && director != null)
+            director.ClearGenericBinding(playerTrack);
+        playerTrack = null;
+
+        if (playerAnchor == null)
+            return;
+
+        if (player != null)
+        {
+            player.transform.SetParent(playerOriginalParent, true);
+
+            if (player.agent != null)
+            {
+                player.agent.updatePosition = true;
+                if (player.agent.isActiveAndEnabled)
+                    player.agent.Warp(player.transform.position);
+            }
+        }
+
+        Destroy(playerAnchor.gameObject);
+        playerAnchor = null;
+        playerOriginalParent = null;
     }
 
     /// <summary>언어 반응형 적 이름 DB가 있으면 그 값을, 없으면 스폰 시점에 저장된 이름을 그대로 반환한다.</summary>

@@ -107,3 +107,48 @@
 - 사용자 허용에 따라 Act1_Stage1의 미저장 레이아웃 소수점 차이 1건만 폐기했고 사본은 보존했다. 테스트 전 로컬 저장 JSON/BAK 100개를 종료 후 복원하여 SHA256 일치 100/100을 확인했다. Editor는 Play 종료 후 저장된 Act1_Stage1로 복귀했다.
 - 근거: `RunValidation/UIPrefabReconnect_20260928/`의 변환·재로드 보고서, 저장 복원 보고서 및 싱글/Host 캡처(Git 제외). 일회성 스크립트와 Assets에 생성된 캡처 임시 폴더는 제거했다.
 - 커밋 전 해상도 설정 재확인: 활성 Build Settings 34씬을 Preview Scene으로 읽어 화면용 최상위 Canvas 159개를 검사했다. 142개는 `ScaleWithScreenSize 1920×1080`, StageSelect 1개는 기존 `3840×2160` 높이 기준이다. 나머지 16개는 기존 월드 드롭 전용 Canvas로 Scaler가 없으며 이번 화면 해상도 변경 대상이 아니다. 변경된 메뉴 루트 match0.5·스테이지 루트 match0을 확인했다. FHD/QHD/4K처럼 동일한 16:9 해상도에서 비례 스케일하는 설정이며, 전 씬·전 화면비의 실제 렌더 검증을 수행했다는 의미는 아니다. 근거: `resolution-audit.json`.
+
+## 7. Act 정산·Firebase 및 보스 연출 재검증 (2026-09-28)
+
+### 수정
+
+- 사용자 결정에 따라 멀티도 싱글처럼 **Act 종료마다** 런 골드를 영구 크레딧으로 정산한다. Act1 종료 시 기존 정산 ID/ACK 경로를 사용하고, 미포기 참가자의 로컬 저장 확인을 기다린 뒤 지갑이 비워진 체크포인트를 발행하고 다음 Act로 전환한다. 대기 중 세션 종료도 저장 확인을 거친다. ACK는 원자적 로컬 저장·업로드 대기 기록 확인이며 Firestore 반영 완료와 동일하지 않다.
+- 최종 결과의 정산 ACK 뒤 체크포인트를 다시 발행해 이미 지급한 금액이 체크포인트 지갑에 남지 않게 했다.
+- 로컬 체크포인트 캐시가 없는 상태에서 기존 서버 문서를 읽지 않고 저장해 revision 충돌이 반복되는 문제를 재현했다. 최초 저장 전에 기존 SaveDataService로 서버 버전을 읽고, 연속 체크포인트 저장은 직렬 실행한다. 세션 세대·계정 검사를 유지하며 기존 미전송 데이터의 충돌 보호를 우회하지 않는다.
+- 멀티 Act1 보스 소개를 구형 `TimeLine_Act1_Boss_test`(5.833초)에서 싱글의 `TimeLine_Act1_Boss_Intro`(8.233초)로 연결했다. 카메라·보스 모션·착지 효과·이름·HUD·오디오 바인딩을 맞추고, 서버 시간 재생 및 4인 연출용 플레이어 구조는 유지했다. DropEffect는 원본 프리팹 연결을 유지한다. 보스 이름도 싱글과 같은 공용 언어 DB를 사용한다.
+- Act1 실제 스폰 경로는 authored wave의 `enemy.boss.boss.SpiderX.prefab`이다. 이 프리팹과 fallback `Boss_Act_01.prefab`의 원형·직사각형 경고를 싱글의 `CircleIndicator.asset`·`SquareIndicator.asset`으로 교체했다. fallback만 수정해서는 실제 전투에 반영되지 않음을 런타임에서 확인했다. Act2 GoliathT의 경고 참조는 이미 싱글과 같아 유지했다.
+- 변경 코드: SW의 `MirrorNetworkManager`, `MirrorRunResult`, `MirrorSessionLifecycle`, `MirrorPlayerCheckpoint`, `NetworkShopPlayerState`, `MirrorBossIntro`. 변경 자산: SW 보스 연출 프리팹·Act1 네트워크 보스 프리팹 2개·공용 `Act1_BossStage`의 멀티 바인딩. 팀원 스크립트·원본 Timeline·인디케이터 데이터는 수정하지 않았다.
+
+### 실제 Editor 및 서버 저장 결과
+
+| 검증 | 관찰 결과 |
+|---|---|
+| 싱글 Fighter Act1 | Start→로그인→싱글 로비→맵·전투·캠프→보스→Act2. 크레딧 16,140→18,895(+2,755), Firestore 프로필 revision 8 및 Gameplay 서버 저장 확인 |
+| 멀티 Gunner 사망 | 실제 전투 중 HP 0→GAME OVER, 크레딧 +10 서버 반영 |
+| 멀티 Fighter 피격 | 테스트 무적 적용 전 실제 피해 처리로 HP 600→590. 무적은 검증 중 런타임에만 적용했고 플레이어 기본 체력/피해 코드는 변경하지 않음 |
+| 체크포인트 수정 재현 | 로컬 캐시 없는 새 세션에서 서버 revision 81→83, 업로드 대기 false. Act1 정산 뒤 revision 94·gold 0도 확인 |
+| 최종 자산 적용 Host Act1 | 크레딧 36,040→40,390(+4,350), 프로필 revision 13. 체크포인트 revision 105·act 1·gold 0·runEnded false |
+| 같은 Host Act2 최종 결과 | GAME CLEAR, ACT 2 · FLOOR 12, 처치 448, 획득 크레딧 5,030. 프로필 40,390→45,420(revision 14). 체크포인트 revision 119·act 2·gold 0·runEnded true. 모두 Firestore 서버 직접 조회에서 업로드 대기 false |
+| 중복 정산 요청 | 최종 지갑 0에서 재요청해도 크레딧 45,420 유지 |
+| 보스 시각 확인 | 새 Timeline 0.5/2/3.4/5.5/7.8초 구간과 완료 후 HUD 복귀, 실제 네트워크 SpiderX의 새 원형·직사각형 인디케이터 캡처 확인 |
+| 이름 현지화 회귀 | 정상 Host Act1 노드 진행으로 재진입, 연출의 `스파이더 X` 한글 표시·연출 완료 확인. 마지막 코드 컴파일 성공 |
+| 자산 검사 | 빌드 씬 34개 Missing Script 0. 변경 씬·프리팹 재로드 검사 Missing Script 0, 새 Timeline·ControlTrack 효과·AudioTrack 연결 확인. PlayerDodge 트랙은 기존 런타임 동적 바인딩 |
+
+서버 저장 수치는 `FirestoreSaveDataStore.LoadAsync`의 서버 조회로 확인했다. 멀티의 개인 Gameplay/Quest 스냅샷은 MultiplayerCheckpoint에 포함된다. 별도 Quest 문서는 테스트 중 수락·완료한 퀘스트가 없어 NotFound였으며, 퀘스트 저장 검증 통과로 간주하지 않는다.
+
+### 남은 차이와 검증 한계
+
+- **종료 Act는 동일하지 않다.** 현재 멀티는 Act2 보스를 최종 클리어로 처리한다(`MirrorNetworkManager.IsRunCompleted`). 싱글은 Act2 다음 Act3로 넘어가 Act3 보스에서 클리어한다(`YJ_PortalSceneLoader`). 이번 변경은 정산 시점을 맞춘 것이며 종료 Act 정책은 변경하지 않았다.
+- 이번은 Editor 단일 Host 검증이다. 수정 후 원격 Client·전용 서버·다중 PC·새 Player 빌드는 검증하지 않았다. 새 연출의 원격 시간 동기화·여러 플레이어 배치·원격 인디케이터는 후속 범위다.
+- 적 처치는 실제 피해 함수 호출, 진행은 기존 노드 선택·포탈·UI API로 가속했다. 테스트 무적을 사용했으므로 사람의 조작 난이도·밸런스·전 스킬 시각 품질·파괴 성능을 보증하지 않는다.
+- 오프라인·강제 종료·재접속 중 정산/업로드 장애 주입은 수행하지 않았다. 오프라인 로컬 fallback 이후 서버 revision 충돌 가능성은 기존 충돌 보호로 남으며, 별도 복구 정책 검증이 필요하다.
+- 기존 보스 셰이더 오류와 MPPM 초기화 오류, 보스 Shoot/Death 바인딩·NavMesh 풀 배치 경고는 별도 기준선이다. 마지막 전체 Host 진행 중 조회한 Console에는 Error가 없었다. 이 결과가 프로젝트의 기존 모든 셰이더/에디터 오류 해결을 의미하지 않는다.
+- 작업 중 Editor 재시작으로 초기 컴파일 연결 문제를 복구했고, 첫 시각 복제 자동화는 네이티브 크래시로 중단됐다. 해당 시도는 저장되지 않았음을 확인 후 Unity 객체 복제와 기존 연출용 보스 재사용으로 다시 구성했다.
+- 이름만 확인하려고 대기 노드 없이 보스 씬으로 직접 이동한 진단에서는 정상적인 전투 준비 실패 화면이 표시됐다. 그 캡처는 통과 증거에서 제외하고 정상 맵 경로로 다시 진행해 한글 이름을 확인했다. `invalid-direct-scene-preview.png`는 이 실패한 진단의 기록이다.
+
+### 증거와 정리
+
+- `RunValidation/EditorAudit_20260928/`(Git 제외): `final-assets-act1-cloud.json`, `final-assets-act2-cloud.json`, `checkpoint-fix-smoke-cloud.json`, `fighter-damage.json`, `boss-intro-runtime.json`, `final-asset-check.json`, `host-result-final.png`, `boss-intro-*.png`, `boss-circle-fixed.png`, `boss-rect-fixed.png`.
+- 테스트 전 로컬 JSON/BAK 56개를 복원하여 SHA256 56/56 일치를 확인했다. 전체 런 검사에서 생성된 17개, 후속 이름 검사에서 다시 생성된 12개 파일은 각각 결과 사본을 보존한 뒤 로컬 캐시에서 제거했다. 실제 지급된 테스트 계정의 서버 크레딧은 되돌리지 않았다.
+- 최종 이름 검사는 Act1 보스 도착에서 중단했다. 따라서 위 revision119의 최종 결과는 전체 런 검사 시점의 서버 조회 증거이며, 테스트 계정의 가장 최근 체크포인트가 항상 그 결과라는 의미는 아니다.
+- Play 종료로 테스트 무적을 해제하고 원래 Network Lobby 씬으로 복귀했다. 임시 검증 코드는 Assets 밖에서 실행했으며 검증 종료 후 제거했다. 시작 시 존재한 Addressables link 삭제·렌더 텍스처·URP 설정 변경은 보존했다. Commit·Push 없음.

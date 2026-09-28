@@ -19,6 +19,7 @@ public partial class MirrorNetworkManager
     private KY_ResultData localRunResult;
     public bool HasLocalRunResult { get; private set; }
     private bool serverResultFinalized;
+    private bool actCreditSettlementPending;
     private string sessionSaveUserId;
     public bool CanSaveToSessionAccount => !string.IsNullOrEmpty(sessionSaveUserId) &&
         sessionSaveUserId == Core.FirebaseService.Default.CurrentUserId;
@@ -34,6 +35,7 @@ public partial class MirrorNetworkManager
         participantKills.Clear();
         runResults.Clear();
         serverResultFinalized = false;
+        actCreditSettlementPending = false;
         HasLocalRunResult = false;
         localRunResult = default;
         runStartedAt = NetworkTime.time;

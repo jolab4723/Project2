@@ -31,6 +31,25 @@ public class EquipmentSystem : MonoBehaviour
 
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
 
+    // 네트워크 장비는 전역 SO 콜백을 호출하지 않는다. 클라이언트도 서버의 버프 동기화만 받는다.
+    // 싱글의 외부 씬 인벤토리는 명시적으로 연결된 PlayerContext를 사용한다.
+    internal bool UsesPlayerEffectRuntime(ItemInstance item)
+    {
+        UniqueEffectSO effect = item?.definition?.uniqueEffect;
+        if (!(effect is PassiveBuffUniqueEffectSO || effect is StatThresholdBuffUniqueEffectSO ||
+              effect is TriggeredBuffUniqueEffectSO || effect is FieldAuraUniqueEffectSO ||
+              effect is DropRarityModifierUniqueEffectSO))
+            return false;
+
+        if (GetComponentInParent<Mirror.NetworkIdentity>() != null)
+            return true;
+        PlayerContext owner = GetComponentInParent<PlayerContext>();
+        if (owner == null)
+            owner = GetComponentInParent<InventoryController>()?.BoundPlayer;
+        return owner != null && owner.Equipment == this &&
+               owner.GetComponent<PlayerRelicEffectRuntime>() != null;
+    }
+
     /// <summary>
     /// 지금 이 인벤토리를 쓰고 있는 캐릭터(Fighter/Gunner)의 클래스. 인벤토리/장비 상태는
     /// 캐릭터와 무관하게 공용이라 이 값을 별도로 기억해야 무기 장착 시 클래스를 검증할 수 있다.

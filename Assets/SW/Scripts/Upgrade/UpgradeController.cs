@@ -1,7 +1,6 @@
 using ItemSystem;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class UpgradeController : MonoBehaviour
@@ -27,6 +26,10 @@ public class UpgradeController : MonoBehaviour
 
     private ItemInstance selectedItem;
     private UpgradeService upgradeService;
+    private YJ_LanguageManager languageManager;
+    private UpgradeResult? displayedResult;
+    private string displayedMessageKey;
+    private string displayedMessageFallback;
 
     public PlayerWallet BoundPlayerWallet => playerWallet;
     public EquipmentSystem BoundEquipment => equipmentSystem;
@@ -51,12 +54,25 @@ public class UpgradeController : MonoBehaviour
     // 오브젝트에 들어 있던 한국어 기본 문구가 그대로 보였다(일본어·중국어 폰트에서는 □로 깨짐).
     private void OnEnable()
     {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
         RefreshUI();
     }
 
     private void OnDisable()
     {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
         ClearItem();
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        var result = displayedResult;
+        string key = displayedMessageKey;
+        string fallback = displayedMessageFallback;
+        RefreshUI();
+        if (result.HasValue) ShowUpgradeMessage(result.Value, false);
+        else if (key != null) ShowLocalizedMessage(key, fallback);
     }
 
     public bool BindPlayer(PlayerWallet wallet, EquipmentSystem equipment)
@@ -169,7 +185,7 @@ public class UpgradeController : MonoBehaviour
         return definition.itemName;
     }
 
-    private void ShowUpgradeMessage(UpgradeResult result)
+    public void ShowUpgradeMessage(UpgradeResult result, bool reportRejection = true)
     {
         string itemName = ResolveItemName(selectedItem?.definition);
 
@@ -184,7 +200,8 @@ public class UpgradeController : MonoBehaviour
                 upgradeLevel,
                 uiLabels);
         ShowMessage(message);
-        if (result != UpgradeResult.Success) ReportRejection(message);
+        displayedResult = result;
+        if (reportRejection && result != UpgradeResult.Success) ReportRejection(message);
     }
 
     private void ReportRejection(string message)
@@ -197,10 +214,19 @@ public class UpgradeController : MonoBehaviour
     /// <summary>강화 화면의 결과 메시지를 갱신한다.</summary>
     public void ShowMessage(string message)
     {
+        displayedResult = null;
+        displayedMessageKey = null;
         if (logText != null)
         {
             logText.text = message;
         }
+    }
+
+    public void ShowLocalizedMessage(string key, string fallback)
+    {
+        ShowMessage(GetUILabel(key, fallback));
+        displayedMessageKey = key;
+        displayedMessageFallback = fallback;
     }
 
     private float GetMainOptionValue(ItemInstance item, int previewUpgradeLevel)
@@ -219,6 +245,11 @@ public class UpgradeController : MonoBehaviour
 
     private void RefreshUI()
     {
+        TMP_FontAsset font = YJ_LanguageManager.Instance?.GetCurrentFont();
+        if (font != null)
+            foreach (TMP_Text text in new TMP_Text[] { upgradeLevelText, costText, logText, currentStatText, nextStatText })
+                if (text != null) text.font = font;
+
         if (selectedItem?.definition == null)
         {
             ShowEmptyState();
@@ -321,9 +352,4 @@ public class UpgradeController : MonoBehaviour
             rarityFrame.enabled = isEnabled;
     }
 
-    private void Update()
-    {
-        if (Keyboard.current?.cKey.wasPressedThisFrame == true && playerWallet != null)
-            playerWallet.AddGold(999999999);
-    }
 }

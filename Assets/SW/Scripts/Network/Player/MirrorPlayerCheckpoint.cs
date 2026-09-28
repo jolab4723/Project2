@@ -26,6 +26,15 @@ public sealed partial class MirrorNetworkManager
     private uint localCheckpointRevision;
     private uint serverCheckpointRevision;
     private uint checkpointGeneration;
+    private readonly System.Threading.SemaphoreSlim checkpointSaveGate = new(1, 1);
+    private bool checkpointCacheLoaded;
+
+    /// <summary>최종 결과의 정산 ACK 뒤에는 이미 이전한 크레딧을 체크포인트 지갑에 남기지 않는다.</summary>
+    [Server]
+    internal void ServerRefreshSettledResultCheckpoint()
+    {
+        if (serverResultFinalized) PublishPlayerCheckpoints(true);
+    }
 
     /// <summary>스테이지 완료·결과 확정에서만 개인 DTO를 만들고 해당 소유 연결에 전달합니다.</summary>
     [Server]
@@ -69,18 +78,34 @@ public sealed partial class MirrorNetworkManager
     private async void ReceivePlayerCheckpoint(MirrorPlayerCheckpointMessage message)
     {
         if (!CanSaveToSessionAccount || string.IsNullOrEmpty(message.Json)) return;
+        uint generation = checkpointGeneration;
+        string userId = sessionSaveUserId;
+        await checkpointSaveGate.WaitAsync();
         try
         {
+            if (this == null || generation != checkpointGeneration || !CanSaveToSessionAccount || userId != sessionSaveUserId) return;
             var checkpoint = JsonUtility.FromJson<MirrorPlayerCheckpoint>(message.Json);
             if (checkpoint == null || checkpoint.participantId != LocalParticipantId || checkpoint.sessionId != LocalSessionId ||
                 checkpoint.revision <= localCheckpointRevision) return;
-            uint generation = checkpointGeneration;
-            var result = await SaveDataService.Default.SaveAsync(SaveDataCategory.MultiplayerCheckpoint, message.Json, sessionSaveUserId);
+            // 새 기기에서도 서버 버전을 확인한 뒤 저장한다. 미전송 로컬 데이터의 충돌 보호는 유지한다.
+            if (!checkpointCacheLoaded)
+            {
+                var loaded = await SaveDataService.Default.LoadAsync(SaveDataCategory.MultiplayerCheckpoint, userId);
+                if (this == null || generation != checkpointGeneration || !CanSaveToSessionAccount || userId != sessionSaveUserId) return;
+                if (!loaded.IsSuccess && loaded.FailureReason != SaveDataFailureReason.NotFound)
+                {
+                    Debug.LogWarning($"[Mirror checkpoint] {loaded.Message}");
+                    return;
+                }
+                checkpointCacheLoaded = true;
+            }
+            var result = await SaveDataService.Default.SaveAsync(SaveDataCategory.MultiplayerCheckpoint, message.Json, userId);
             if (this == null || generation != checkpointGeneration || checkpoint.sessionId != LocalSessionId) return;
             if (result.IsSuccess) localCheckpointRevision = Math.Max(localCheckpointRevision, checkpoint.revision);
             if (!result.IsSuccess || !result.IsCloudSynchronized)
                 Debug.LogWarning($"[Mirror checkpoint] {result.Message}");
         }
         catch (Exception exception) { Debug.LogError($"[Mirror checkpoint] 저장 실패: {exception.Message}"); }
+        finally { checkpointSaveGate.Release(); }
     }
 }

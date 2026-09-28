@@ -634,30 +634,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 964734e06afd33542bb1109c5856a503, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_PopupManager
---- !u!1 &99586358 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6119728316008152204, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
-  m_PrefabInstance: {fileID: 1715016521}
-  m_PrefabAsset: {fileID: 0}
---- !u!224 &99586359 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 6009228395136556002, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
-  m_PrefabInstance: {fileID: 1715016521}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &99586360
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 99586358}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c50c4e29050e8e4480fb28c914a9fb3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BuffIconUIContainer
-  iconSlotPrefab: {fileID: 6389161830042187043, guid: feae83538b342ae4b9927ae701817766, type: 3}
-  slotParent: {fileID: 99586359}
 --- !u!1 &114283561
 GameObject:
   m_ObjectHideFlags: 0
@@ -12172,6 +12148,18 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 983424514246395504, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1175335153437914770, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -12254,19 +12242,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1193705246940687459, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4504737768255364456, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5450061290756097097, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5450061290756097097, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5870942681883242654, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       propertyPath: m_AnchorMax.x
@@ -12310,9 +12298,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5918235290903513371, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
       insertIndex: -1
       addedObject: {fileID: 240411407}
-    - targetCorrespondingSourceObject: {fileID: 6119728316008152204, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 99586360}
   m_SourcePrefab: {fileID: 100100000, guid: 40e8dc970ee820e41ab0db6ab1a7c169, type: 3}
 --- !u!1001 &1734547951
 PrefabInstance:

@@ -48,7 +48,6 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
     [Header("일반 적 데이터")]
     [SerializeField, SyncVar] private WBH_EnemyInfo enemyInfo;
-    [SerializeField, Min(0.01f)] private float attackImpactDelay = 0.45f;
     [SerializeField, Min(0.05f)] private float destroyDelay = 0.35f;
     [SerializeField] private bool useAnimatorOnlyDeathPresentation;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
@@ -77,6 +76,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     [SyncVar] private float maxHealth;
     [SyncVar] private bool isDead;
     [SyncVar(hook = nameof(OnStatusVisualMaskChanged))] private uint statusVisualMask;
+    [SyncVar(hook = nameof(OnEffectPlaybackSpeedChanged))] private float effectPlaybackSpeed = 1f;
     [SyncVar] private uint targetNetId;
     [SyncVar] private uint lastAttackerNetId;
     [SyncVar] private uint stateChangeNumber;
@@ -101,7 +101,15 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private readonly HashSet<PlayerContext> meleeTargets = new();
     private PlayerContext pendingAttackTarget;
     private PlayerContext lastAttackerContext;
-    private double attackImpactAt;
+    private double attackDeadline;
+    private uint attackVersion;
+    private bool attackHitResolved;
+    private bool attackAnimationEntered;
+    private float attackAnimationTimeout = 1f;
+    private readonly HashSet<AnimationClip> attackClips = new();
+    private readonly List<AnimatorClipInfo> attackClipInfo = new();
+    private WBH_Effect remoteAct2TransitionEffect;
+    private static readonly int PhaseTransitionHash = Animator.StringToHash("IsPhaseTransition");
     private double nextAttackAt;
     private bool attackPending;
     private bool deathHandled;
@@ -194,7 +202,6 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private void OnValidate()
     {
         ResolveReferences();
-        attackImpactDelay = Mathf.Max(0.01f, attackImpactDelay);
         destroyDelay = Mathf.Max(0.05f, destroyDelay);
     }
 #endif
@@ -223,6 +230,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
         ResolveSharedSpawners();
         controller.Initialize(enemyInfo, null,sharedEffectSpawner, sharedProjectileSpawner, YJ_SfxPlayer.Instance); // @!@
+        ConfigureAttackAnimation();
         //InitializeLocalEffectSpawner(); @!@
         // Gameplay effects do not require a visual spawner on the server.
         originalStatusEffectsReady = GetComponent<WBH_EnemyStatusEffectController>() != null;
@@ -235,6 +243,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
         currentHealth = status.CurrentHp;
         maxHealth = status.MaxHealth;
+        effectPlaybackSpeed = status.AttackSpeed;
         isDead = false;
         deathHandled = false;
         stateChangeNumber++;
@@ -266,7 +275,13 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (isServer)
             return;
 
-        if (enemyInfo != null) GetComponent<WBH_EnemyGradeVisual>()?.ApplyGrade(enemyInfo.enemyGrade);
+        if (enemyInfo != null)
+        {
+            // 기존 효과가 읽는 표시용 스탯도 초기화한다. 피해·AI 권한은 서버에 유지한다.
+            status?.Initialize(enemyInfo);
+            OnEffectPlaybackSpeedChanged(effectPlaybackSpeed, effectPlaybackSpeed);
+            GetComponent<WBH_EnemyGradeVisual>()?.ApplyGrade(enemyInfo.enemyGrade);
+        }
 
         DisableOriginalRuntimeDrivers();
         if (agent != null)
@@ -279,7 +294,9 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private void LateUpdate()
     {
         if (originalView != null && !originalView.enabled) originalView.TickExternalFlash(Time.deltaTime);
+        if (isClient && !isServer) UpdateRemoteAct2TransitionEffect();
         if (!isServer) return;
+        if (status != null) effectPlaybackSpeed = status.AttackSpeed;
         statusEffects ??= GetComponent<WBH_EnemyStatusEffectController>();
         uint mask = 0;
         if (!isDead && statusEffects != null)
@@ -309,12 +326,15 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
     public override void OnStopClient()
     {
+        StopRemoteAct2TransitionEffect();
         if (!isServer) ApplyStatusVisualMask(0);
         base.OnStopClient();
     }
 
     public override void OnStopServer()
     {
+        FinishServerAttack();
+        networkPattern?.StopServer();
         GetComponent<WBH_EnemyEffect>().CueRequested -= ForwardPatternCue;
         if (originalView != null) originalView.SelfDestructFlashRequested -= ForwardPatternFlash;
         if (indicatorSpawner != null)
@@ -370,6 +390,31 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         else originalView.SetSelfDestructFlash(visible);
     }
 
+    private void OnEffectPlaybackSpeedChanged(float _, float value)
+    {
+        if (!isServer && enemyInfo != null)
+            status?.MultiplyAttackSpeed(value / Mathf.Max(0.01f, enemyInfo.attackSpeed));
+    }
+
+    // Act1의 폭발·착지는 애니메이션 이벤트가 아닌 실제 서버 충돌 시점에 재생한다.
+    // RPC가 Host를 포함한 각 클라이언트에서 한 번 실행하므로 로컬 선재생을 하지 않는다.
+    [Server]
+    public void ServerPlayBossImpactCue(WBH_EnemyEffectCue cue, Vector3 position, Quaternion rotation)
+    {
+        RpcBossImpactCue(cue, position, rotation);
+    }
+
+    [ClientRpc]
+    private void RpcBossImpactCue(WBH_EnemyEffectCue cue, Vector3 position, Quaternion rotation)
+    {
+        var effects = GetComponent<WBH_EnemyEffect>();
+        // 착지는 싱글과 같은 AttachOnce 앵커를 써서 화면에 표시된 보스 위치·크기를 보존한다.
+        if (cue == WBH_EnemyEffectCue.Boss_Act1_JumpAttack)
+            effects?.PlayEffect(cue, Vector3.one);
+        else
+            effects?.PlayWorldCue(cue, position, rotation);
+    }
+
     [ClientRpc]
     private void RpcPatternRect(Vector3 origin, Vector3 forward, float width, float length, float duration, bool grow)
     {
@@ -387,11 +432,79 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
     private void Update()
     {
-        if (!isServer || !attackPending || NetworkTime.time < attackImpactAt)
-            return;
+        if (!isServer || !attackPending) return;
+        // 타격은 원본 AnimationEvent만 처리한다. 중단/종료 누락에서는 피해 없이 잠금만 해제한다.
+        bool inAttack = IsPlayingAttackAnimation();
+        attackAnimationEntered |= inAttack;
+        if (isDead || animator == null || !animator.enabled ||
+            (attackAnimationEntered && !inAttack) || NetworkTime.time >= attackDeadline)
+            FinishServerAttack();
+    }
 
+    private void ConfigureAttackAnimation()
+    {
+        attackClips.Clear();
+        attackAnimationTimeout = 1f;
+        if (animator == null || animator.runtimeAnimatorController == null) return;
+        // 화면이 없는 서버에서도 싱글과 같은 타격/종료 이벤트가 실행되어야 한다.
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+            foreach (AnimationEvent evt in clip.events)
+                if (evt.functionName == nameof(WBH_EnemyAnimation.OnAttackEvent) ||
+                    evt.functionName == nameof(WBH_EnemyAnimation.OnAttackEndEvent))
+                {
+                    if (attackClips.Add(clip)) attackAnimationTimeout += clip.length * 2f;
+                    break;
+                }
+    }
+
+    private bool IsPlayingAttackAnimation()
+    {
+        if (animator == null || !animator.enabled || animator.runtimeAnimatorController == null) return false;
+        animator.GetCurrentAnimatorClipInfo(0, attackClipInfo);
+        foreach (AnimatorClipInfo clip in attackClipInfo)
+            if (attackClips.Contains(clip.clip)) return true;
+        if (!animator.IsInTransition(0)) return false;
+        animator.GetNextAnimatorClipInfo(0, attackClipInfo);
+        foreach (AnimatorClipInfo clip in attackClipInfo)
+            if (attackClips.Contains(clip.clip)) return true;
+        return false;
+    }
+
+    private void FinishServerAttack()
+    {
+        attackVersion++;
         attackPending = false;
-        ResolvePendingAttack();
+        pendingAttackTarget = null;
+    }
+
+    private void OnDisable()
+    {
+        FinishServerAttack();
+        if (isServer) networkPattern?.StopServer();
+        StopRemoteAct2TransitionEffect();
+    }
+
+    private void UpdateRemoteAct2TransitionEffect()
+    {
+        bool active = enemyInfo?.patternID == 102 && !isDead && animator != null &&
+            animator.runtimeAnimatorController != null && animator.GetBool(PhaseTransitionHash);
+        if (!active)
+        {
+            StopRemoteAct2TransitionEffect();
+            return;
+        }
+        // Host의 효과는 원본 Act2 패턴이 소유한다. 동기화된 Animator bool로 원격/늦은 참가만 보완한다.
+        if (remoteAct2TransitionEffect != null || originalPattern?.act2TransitionEffect == null) return;
+        if (sharedEffectSpawner == null) ResolveSharedSpawners();
+        if (sharedEffectSpawner != null)
+            remoteAct2TransitionEffect = sharedEffectSpawner.SpawnPersistentEffect(originalPattern.act2TransitionEffect, transform);
+    }
+
+    private void StopRemoteAct2TransitionEffect()
+    {
+        if (remoteAct2TransitionEffect != null) remoteAct2TransitionEffect.StopEffect();
+        remoteAct2TransitionEffect = null;
     }
 
     [Server]
@@ -590,7 +703,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     [Server]
     public bool ServerTryBeginAttack(PlayerContext target)
     {
-        if (isDead || attackPending || !IsAliveTarget(target) || NetworkTime.time < nextAttackAt)
+        if (isDead || attackPending || originalAnimation == null || !movement.CanControl ||
+            !IsAliveTarget(target) || NetworkTime.time < nextAttackAt)
             return false;
 
         Vector3 offset = target.transform.position - transform.position;
@@ -603,12 +717,25 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
         float attackSpeed = Mathf.Max(0.01f, status.AttackSpeed);
         pendingAttackTarget = target;
-        attackImpactAt = NetworkTime.time + attackImpactDelay / attackSpeed;
-        nextAttackAt = NetworkTime.time + Mathf.Max(attackImpactDelay, enemyInfo.attackCoolTime) / attackSpeed;
+        attackDeadline = NetworkTime.time + attackAnimationTimeout / Mathf.Max(0.01f, animator != null ? animator.speed : 1f);
+        nextAttackAt = NetworkTime.time + enemyInfo.attackCoolTime / attackSpeed;
         attackPending = true;
+        attackHitResolved = false;
+        attackAnimationEntered = false;
+        uint version = ++attackVersion;
         attackStartCount++;
         stateChangeNumber++;
-        TriggerNetworkAnimation("Attack");
+        // 무애니메이션 원거리는 이 호출 안에서 즉시 타격·종료한다. 근접은 공유 클립 이벤트를 따른다.
+        originalAnimation.PlayAttack(() =>
+        {
+            if (!isServer || !attackPending || attackVersion != version || attackHitResolved) return;
+            attackHitResolved = true;
+            ResolvePendingAttack();
+        }, () =>
+        {
+            if (isServer && attackPending && attackVersion == version) FinishServerAttack();
+        });
+        if (attackPending) TriggerNetworkAnimation("Attack");
         return true;
     }
 
@@ -724,7 +851,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         Transform firePoint = networkPattern.FirePoint;
         Vector3 targetPoint = target.transform.position + Vector3.up;
         Vector3 direction = (targetPoint - firePoint.position).normalized;
-        SpawnStraightProjectile(direction, status.AttackRange);
+        if (SpawnStraightProjectile(direction, status.AttackRange))
+            GetComponent<WBH_EnemyEffect>().PlayCue(WBH_EnemyEffectCue.Normal_Range_01_Attack, transform.localScale);
     }
 
     [Server]
@@ -868,8 +996,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             bossPhase = MirrorAct1BossPhase.Dead;
         currentHealth = 0f;
         targetNetId = 0;
-        attackPending = false;
-        pendingAttackTarget = null;
+        FinishServerAttack();
         stateChangeNumber++;
 
         networkPattern?.StopServer();
@@ -887,7 +1014,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private static NetworkWorldItem cachedWorldItemPrefab;
     private static readonly ItemDropRollService universalDropRollService = new();
 
-    private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade)
+    private static ItemDefinitionSO ResolveDropItemDefinition(EnemyGrade grade, PlayerContext rarityOwner)
     {
         ItemSystemController itemSystem = ItemSystemController.Instance ?? Object.FindFirstObjectByType<ItemSystemController>();
         if (cachedUniversalDropTable == null)
@@ -905,7 +1032,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         ItemDropTableSO table = itemSystem != null && itemSystem.itemDropTable != null
             ? itemSystem.itemDropTable : cachedUniversalDropTable;
         // NoDrop도 정상 결과다. 원본 확률을 보존하도록 처치당 한 번만 추첨한다.
-        ItemDropRollResultData result = universalDropRollService.Roll(table, itemDatabase, grade);
+        ItemDropRollResultData result = universalDropRollService.Roll(table, itemDatabase, grade, rarityOwner: rarityOwner);
         if (!result.HasDrop && result.Result != ItemDropRollResult.NoDrop)
             Debug.LogWarning($"[NetworkEnemyAuthority] {ItemDropMessageMapper.GetMessage(result)}");
         return result.HasDrop ? result.ItemDefinition : null;
@@ -947,7 +1074,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         killRewardCount++;
         ServerRewardCount++;
 
-        ItemDefinitionSO definition = ResolveDropItemDefinition(enemyInfo.enemyGrade);
+        ItemDefinitionSO definition = ResolveDropItemDefinition(enemyInfo.enemyGrade, rewardRecipient);
         if (definition == null)
             return;
 

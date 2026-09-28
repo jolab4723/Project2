@@ -900,6 +900,9 @@ public sealed class PlayerInventorySync : NetworkBehaviour
         if (playerState == null || context?.Equipment == null || context.Wallet == null)
             return MirrorInventoryRequestResult.ServerSetupInvalid;
 
+        if (playerState.IsServerEconomyLocked)
+            return MirrorInventoryRequestResult.InvalidRequest;
+
         if (!UpgradeService.TryGetUpgradeCost(item.itemData, out _))
         {
             return MirrorInventoryRequestResult.UpgradeUnavailable;
