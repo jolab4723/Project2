@@ -99,9 +99,12 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return TryUseSkillInternal(index, aimDirection, targetPosition, ownerStats, true);
     }
 
+    // 로컬 입력은 이동·공격 입력과 같은 조작 차단(포탈 이동·컷씬·상태이상·잡기)을 따른다.
+    // 외부 입력(멀티 권한 경로)은 호출자가 소유자 입력 차단을 따로 검증한다.
     private bool CanUseSkillFrom(bool externalInput) => stateMachine != null &&
         !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack, PlayerState.Skill,
-            PlayerState.Dodge, PlayerState.Dead) && (externalInput || !SkillPopupController.IsOpen);
+            PlayerState.Dodge, PlayerState.Dead) &&
+        (externalInput || (!SkillPopupController.IsOpen && (controller == null || controller.IsControlEnabled)));
 
     private static bool IsFinite(Vector3 value) =>
         float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);

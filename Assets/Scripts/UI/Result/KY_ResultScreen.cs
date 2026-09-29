@@ -78,9 +78,11 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private string feedbackMessage;
     private double resultDeadline;
     private bool multiplayerResult;
-    // 씬에 입력된 기본 라벨("획득 크레딧"). 액트 중간 정산 후 다른 결과를 표시할 때 되돌린다.
+    // 씬에 입력된 기본 라벨("획득 크레딧"). 다국어 DB를 찾지 못했을 때의 폴백이다.
     private string defaultCreditsLabel;
-    private const string ActClearCreditsLabel = "파밍 가치 현황";
+    // 스테이지·크레딧 라벨은 결과 종류(액트 중간 정산 등)에 따라 문구가 달라진다. 같은 라벨에 붙은
+    // UILabelText도 언어 변경 때 기본 키 문구로 다시 쓰므로, 한 프레임 늦게(LateUpdate) 결과에 맞는 문구를 다시 적용한다.
+    private bool resultLabelsDirty;
 
     public KY_ResultData CurrentData { get; private set; }
     public KY_ResultType CurrentResultType { get; private set; }
@@ -128,18 +130,38 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void RefreshLanguage(GameLanguage _)
     {
-        string subtitle = !string.IsNullOrEmpty(feedbackMessage)
-            ? GetLocalizedMessage(feedbackMessage, "결과를 확인할 수 없습니다.")
-            : hasResult ? GetSubtitle(CurrentResultType)
-            : GetLabel("result_ui.data_unavailable", "결과 데이터를 불러올 수 없습니다.");
-
-        bool isIntermediateResult = CurrentResultType == KY_ResultType.ActClear ||
-                                    CurrentResultType == KY_ResultType.Settle;
-        SetText(subtitleText, subtitle);
-        SetText(stageLabelText, GetLabel(
-            isIntermediateResult ? "result_ui.stage_current" : "result_ui.stage_final",
-            isIntermediateResult ? "현재 도달 스테이지" : "최종 도달 스테이지"));
+        SetText(subtitleText, SessionUIMessageLocalizer.GetMessage(uiLabels,
+            !string.IsNullOrEmpty(feedbackMessage) ? feedbackMessage : hasResult
+                ? GetSubtitle(CurrentResultType)
+                : "result_ui.data_waiting"));
+        ApplyResultTypeLabels();
         SetActionButtonLabels(CurrentResultType);
+        resultLabelsDirty = true;
+    }
+
+    /// <summary>
+    /// 결과 종류에 따라 바뀌는 스테이지·크레딧 라벨을 현재 언어로 적용한다.
+    /// 액트 중간 정산은 "현재 도달 스테이지"/"파밍 가치 현황", 그 외는 "최종 도달 스테이지"/"획득 크레딧".
+    /// </summary>
+    private void ApplyResultTypeLabels()
+    {
+        bool actClear = hasResult && CurrentResultType == KY_ResultType.ActClear;
+        SetText(stageLabelText, actClear
+            ? GetLabel("result_ui.current_stage", "현재 도달 스테이지")
+            : GetLabel("result_ui.stage", "최종 도달 스테이지"));
+
+        if (creditsLabelText != null)
+            SetText(creditsLabelText, actClear
+                ? GetLabel("result_ui.farming_value", "파밍 가치 현황")
+                : GetLabel("result_ui.credits", defaultCreditsLabel ?? "획득 크레딧"));
+    }
+
+    /// <summary>다국어 DB의 현재 언어 문구. DB가 없거나 키가 없으면 한국어 폴백을 쓴다.</summary>
+    private string GetLabel(string key, string fallback)
+    {
+        if (uiLabels == null) return fallback;
+        string label = uiLabels.GetLabel(key);
+        return string.IsNullOrEmpty(label) || label == key ? fallback : label;
     }
 
     private bool TryApplySessionResult()
@@ -219,8 +241,6 @@ public sealed class KY_ResultScreen : MonoBehaviour
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
         SetText(defeatedText, Mathf.Max(0, data.defeatedEnemies).ToString("N0"));
         SetText(playTimeText, FormatTime(data.playTimeSeconds));
-        if (defaultCreditsLabel != null)
-            SetText(creditsLabelText, CurrentResultType == KY_ResultType.ActClear ? ActClearCreditsLabel : defaultCreditsLabel);
         // 최종값은 CurrentData에 보관하고, 화면에는 카운트업 시작값만 먼저 표시한다.
         SetText(creditsText, FormatCredits(0f));
         ApplyAccentColor(GetAccentColor(CurrentResultType));
@@ -348,7 +368,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         {
             ShowSessionFeedback("result_ui.request_pending");
             if (!hasResult || !session.RequestReturnToLobby())
-                ShowSessionFeedback("서버가 결과를 확정한 뒤 방장만 파티를 로비로 이동할 수 있습니다.");
+                ShowSessionFeedback("session_ui.return_lobby_denied");
             return;
         }
         string destination = CurrentResultType == KY_ResultType.ActClear ? "StageSelect" : GetRetrySceneName();
@@ -370,6 +390,13 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void LateUpdate()
     {
+        // 같은 프레임에 UILabelText가 기본 키 문구로 덮어썼을 수 있으므로 결과 종류 라벨을 다시 적용한다.
+        if (resultLabelsDirty)
+        {
+            resultLabelsDirty = false;
+            ApplyResultTypeLabels();
+        }
+
         // 늦은 결과도 적용한다. 결과가 오지 않더라도 사용자가 세션에서 나갈 수 있어야 한다.
         if (initialRevealCompleted && multiplayerResult && !hasResult && !leaving && !TryApplySessionResult())
         {
@@ -526,28 +553,16 @@ public sealed class KY_ResultScreen : MonoBehaviour
         };
     }
 
-    private string GetSubtitle(KY_ResultType resultType)
+    /// <summary>결과 종류별 부제의 다국어 키. SessionUIMessageLocalizer.GetMessage가 현재 언어 문구로 바꾼다.</summary>
+    private static string GetSubtitle(KY_ResultType resultType)
     {
         return resultType switch
         {
-            KY_ResultType.ActClear => GetLabel("result_ui.subtitle_act_clear", "엑트를 클리어 했습니다."),
-            KY_ResultType.Settle => GetLabel("result_ui.subtitle_settle", "정산을 완료했습니다."),
-            KY_ResultType.GameClear => GetLabel("result_ui.subtitle_game_clear", "모든 스테이지를 클리어했습니다!"),
-            _ => GetLabel("result_ui.subtitle_game_over", "이번 원정이 종료되었습니다.")
+            KY_ResultType.ActClear => "result_ui.act_clear_description",
+            KY_ResultType.Settle => "result_ui.settle_description",
+            KY_ResultType.GameClear => "result_ui.clear_description",
+            _ => "result_ui.defeat_description"
         };
-    }
-
-    private string GetLabel(string key, string fallback)
-    {
-        string label = uiLabels?.GetLabel(key);
-        return string.IsNullOrEmpty(label) || label == key ? fallback : label;
-    }
-
-    private string GetLocalizedMessage(string message, string fallback)
-    {
-        string localized = SessionUIMessageLocalizer.GetMessage(uiLabels, message);
-        bool isLabelKey = message.Contains("_ui.");
-        return string.IsNullOrEmpty(localized) || (isLabelKey && localized == message) ? fallback : localized;
     }
 
     private Color GetAccentColor(KY_ResultType resultType)
@@ -557,19 +572,14 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void SetActionButtonLabels(KY_ResultType resultType)
     {
-        bool isIntermediateResult = resultType == KY_ResultType.ActClear ||
-                                    resultType == KY_ResultType.Settle;
-
         if (retryButton != null)
             SetText(retryButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
-                ? GetLabel("result_ui.return_lobby", "로비로 돌아가기")
-                : isIntermediateResult
-                    ? GetLabel("result_ui.button_continue", "계속하기")
-                    : GetLabel("result_ui.button_retry", "다시 시작"));
+                ? uiLabels?.GetLabel("result_ui.return_lobby") ?? "로비로 돌아가기"
+                : resultType == KY_ResultType.ActClear ? GetLabel("result_ui.continue", "계속하기") : uiLabels?.GetLabel("result_ui.retry") ?? "다시 시작");
         if (titleButton != null)
             SetText(titleButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
-                ? GetLabel("result_ui.leave_session", "세션 나가기")
-                : GetLabel("result_ui.button_title", "타이틀로"));
+                ? uiLabels?.GetLabel("result_ui.leave_session") ?? "세션 나가기"
+                : uiLabels?.GetLabel("connection_ui.return_title") ?? "타이틀로");
     }
 
     // 크레딧 칸 문구. 액트 중간 정산은 "보유 크레딧(흰색) + 장비 가치(노란색)", 그 외는 실제 적립액 하나.
