@@ -744,17 +744,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8241866003468608265, guid: 6a04caf3279fcfa4b98c44e3b409c645, type: 3}
   m_PrefabInstance: {fileID: 160263224}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &220180330 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4071098340328477785, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
-  m_PrefabInstance: {fileID: 1340594795}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &245338091
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -869,6 +858,29 @@ Transform:
   - {fileID: 1488857131}
   m_Father: {fileID: 1375811228}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &250645621 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 823973374739937431, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+  m_PrefabInstance: {fileID: 1340594795}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &250645626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250645621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1001 &251544203
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2554,6 +2566,29 @@ Transform:
   - {fileID: 1053384620}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &558365179 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1407464628165046181, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+  m_PrefabInstance: {fileID: 1340594795}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &558365184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 558365179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1001 &591902996
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7420,7 +7455,7 @@ PrefabInstance:
     - target: {fileID: 7668816821183856695, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       propertyPath: rebindText
       value: 
-      objectReference: {fileID: 220180330}
+      objectReference: {fileID: 0}
     - target: {fileID: 7668816821183856695, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       propertyPath: rebindOverlay
       value: 
@@ -7496,6 +7531,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6781473916395134885, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1912295008}
+    - targetCorrespondingSourceObject: {fileID: 2166998873162376631, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1459746351}
+    - targetCorrespondingSourceObject: {fileID: 1407464628165046181, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 558365184}
+    - targetCorrespondingSourceObject: {fileID: 823973374739937431, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 250645626}
   m_SourcePrefab: {fileID: 100100000, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
 --- !u!224 &1340594796 stripped
 RectTransform:
@@ -8169,6 +8213,29 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4709444968399504, guid: 4d403536f4340cd42946169702308a40, type: 3}
   m_PrefabInstance: {fileID: 1453219601}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1459746346 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2166998873162376631, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+  m_PrefabInstance: {fileID: 1340594795}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1459746351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1459746346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37740560442f65246b9e1a6d2b998886, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_ButtonScaleEffect
+  hoverScale: 1.08
+  hoverDuration: 0.15
+  clickScale: 0.95
+  clickDuration: 0.1
+  ease: 6
+  button: {fileID: 0}
 --- !u!1001 &1470296399
 PrefabInstance:
   m_ObjectHideFlags: 0

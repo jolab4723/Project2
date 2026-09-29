@@ -128,13 +128,17 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void RefreshLanguage(GameLanguage _)
     {
-        SetText(subtitleText, SessionUIMessageLocalizer.GetMessage(uiLabels,
-            !string.IsNullOrEmpty(feedbackMessage) ? feedbackMessage : hasResult
-                ? (CurrentResultType == KY_ResultType.ActClear ? GetSubtitle(CurrentResultType)
-                    : CurrentResultType == KY_ResultType.GameClear ? "result_ui.clear_description" : "result_ui.defeat_description")
-                : "result_ui.data_waiting"));
-        SetText(stageLabelText, hasResult && CurrentResultType == KY_ResultType.ActClear
-            ? "현재 도달 스테이지" : uiLabels?.GetLabel("result_ui.stage") ?? "최종 도달 스테이지");
+        string subtitle = !string.IsNullOrEmpty(feedbackMessage)
+            ? GetLocalizedMessage(feedbackMessage, "결과를 확인할 수 없습니다.")
+            : hasResult ? GetSubtitle(CurrentResultType)
+            : GetLabel("result_ui.data_unavailable", "결과 데이터를 불러올 수 없습니다.");
+
+        bool isIntermediateResult = CurrentResultType == KY_ResultType.ActClear ||
+                                    CurrentResultType == KY_ResultType.Settle;
+        SetText(subtitleText, subtitle);
+        SetText(stageLabelText, GetLabel(
+            isIntermediateResult ? "result_ui.stage_current" : "result_ui.stage_final",
+            isIntermediateResult ? "현재 도달 스테이지" : "최종 도달 스테이지"));
         SetActionButtonLabels(CurrentResultType);
     }
 
@@ -522,15 +526,28 @@ public sealed class KY_ResultScreen : MonoBehaviour
         };
     }
 
-    private static string GetSubtitle(KY_ResultType resultType)
+    private string GetSubtitle(KY_ResultType resultType)
     {
         return resultType switch
         {
-            KY_ResultType.ActClear => "엑트를 클리어 했습니다.",
-            KY_ResultType.Settle => "정산을 완료했습니다.",
-            KY_ResultType.GameClear => "모든 스테이지를 클리어했습니다!",
-            _ => "이번 원정이 종료되었습니다."
+            KY_ResultType.ActClear => GetLabel("result_ui.subtitle_act_clear", "엑트를 클리어 했습니다."),
+            KY_ResultType.Settle => GetLabel("result_ui.subtitle_settle", "정산을 완료했습니다."),
+            KY_ResultType.GameClear => GetLabel("result_ui.subtitle_game_clear", "모든 스테이지를 클리어했습니다!"),
+            _ => GetLabel("result_ui.subtitle_game_over", "이번 원정이 종료되었습니다.")
         };
+    }
+
+    private string GetLabel(string key, string fallback)
+    {
+        string label = uiLabels?.GetLabel(key);
+        return string.IsNullOrEmpty(label) || label == key ? fallback : label;
+    }
+
+    private string GetLocalizedMessage(string message, string fallback)
+    {
+        string localized = SessionUIMessageLocalizer.GetMessage(uiLabels, message);
+        bool isLabelKey = message.Contains("_ui.");
+        return string.IsNullOrEmpty(localized) || (isLabelKey && localized == message) ? fallback : localized;
     }
 
     private Color GetAccentColor(KY_ResultType resultType)
@@ -540,14 +557,19 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void SetActionButtonLabels(KY_ResultType resultType)
     {
+        bool isIntermediateResult = resultType == KY_ResultType.ActClear ||
+                                    resultType == KY_ResultType.Settle;
+
         if (retryButton != null)
             SetText(retryButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
-                ? uiLabels?.GetLabel("result_ui.return_lobby") ?? "로비로 돌아가기"
-                : resultType == KY_ResultType.ActClear ? "계속하기" : uiLabels?.GetLabel("result_ui.retry") ?? "다시 시작");
+                ? GetLabel("result_ui.return_lobby", "로비로 돌아가기")
+                : isIntermediateResult
+                    ? GetLabel("result_ui.button_continue", "계속하기")
+                    : GetLabel("result_ui.button_retry", "다시 시작"));
         if (titleButton != null)
             SetText(titleButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
-                ? uiLabels?.GetLabel("result_ui.leave_session") ?? "세션 나가기"
-                : uiLabels?.GetLabel("connection_ui.return_title") ?? "타이틀로");
+                ? GetLabel("result_ui.leave_session", "세션 나가기")
+                : GetLabel("result_ui.button_title", "타이틀로"));
     }
 
     // 크레딧 칸 문구. 액트 중간 정산은 "보유 크레딧(흰색) + 장비 가치(노란색)", 그 외는 실제 적립액 하나.
