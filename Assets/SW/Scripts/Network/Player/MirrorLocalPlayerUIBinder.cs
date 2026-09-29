@@ -35,6 +35,7 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     private PlayerContext boundContext;
     private PlayerInventorySync boundInventorySync;
     private NetworkShopState boundShopState;
+    private YJ_LanguageManager languageManager;
 
     public PlayerContext BoundContext => boundContext;
 
@@ -45,6 +46,8 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (networkManager == null)
             networkManager = FindFirstObjectByType<MirrorNetworkManager>();
         ConfigurePauseMenu(FindInBinderScene<KY_PausePopup>(), networkManager);
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshSessionLanguage;
 
         if (worldItemScanner == null)
             worldItemScanner = FindFirstObjectByType<WorldItemTooltipScanner>();
@@ -94,6 +97,7 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 
     private void OnDisable()
     {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshSessionLanguage;
         UnbindSkills();
         if (boundPlayerBinder != null) boundPlayerBinder.SetMenuInputBlocked(false);
         boundPlayerBinder = null;
@@ -132,16 +136,32 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     {
         if (popup == null || session == null) return;
         bool host = Mirror.NetworkServer.active;
+        var labels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
+        string Text(string source) => SessionUIMessageLocalizer.GetMessage(labels, source);
         popup.PauseGameTime = false;
+
+        // 확인 팝업 문구는 공용 다국어 DB에서 읽는다. DB가 없으면 기존 한국어 문구를 쓴다.
+        // 문구는 이 시점(세션 UI 연결)에 정해지므로, 세션 도중 언어를 바꾸면 다음 연결부터 반영된다.
+        // 키가 DB에 없으면(GetLabel이 키를 그대로 반환) 세션 메시지 변환기로 원문을 현지화한다.
+        string Label(string key, string fallback)
+        {
+            string label = labels != null ? labels.GetLabel(key) : null;
+            return string.IsNullOrEmpty(label) || label == key ? Text(fallback) : label;
+        }
+
         popup.BindExitActions(new KY_DialogData
         {
-            message = host ? "호스트 세션을 종료하시겠습니까?" : "이 세션에서 떠나시겠습니까?",
-            warningText = host ? "모든 참가자의 연결과 현재 런이 종료됩니다." : "현재 참가 자격을 포기하며 이 런에 재접속할 수 없습니다.",
+            message = host
+                ? Label("pause_ui.host_end_confirm", "호스트 세션을 종료하시겠습니까?")
+                : Label("pause_ui.leave_confirm", "이 세션에서 떠나시겠습니까?"),
+            warningText = host
+                ? Label("pause_ui.host_end_warning", "모든 참가자의 연결과 현재 런이 종료됩니다.")
+                : Label("pause_ui.leave_warning", "현재 참가 자격을 포기하며 이 런에 재접속할 수 없습니다."),
             onYes = () => { if (session != null) session.RequestLeaveSession(); }
         }, new KY_DialogData
         {
-            message = "잠시 세션에서 나가시겠습니까?",
-            warningText = "서버가 유지되는 동안 5분 안에 재접속할 수 있습니다. 파티의 게임은 계속됩니다.",
+            message = Label("pause_ui.temp_leave_confirm", "잠시 세션에서 나가시겠습니까?"),
+            warningText = Label("pause_ui.temp_leave_warning", "서버가 유지되는 동안 5분 안에 재접속할 수 있습니다. 파티의 게임은 계속됩니다."),
             onYes = () => { if (session != null && !Mirror.NetworkServer.active) session.StopClient(); }
         });
         foreach (var button in popup.GetComponentsInChildren<UnityEngine.UI.Button>(true))
@@ -154,10 +174,15 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             {
                 // 세션별 동적 문구를 싱글용 고정 라벨의 Awake가 덮어쓰지 않게 한다.
                 if (label.TryGetComponent<UILabelText>(out var fixedLabel)) Destroy(fixedLabel);
-                label.text = leave ? (host ? "호스트 세션 종료" : "세션 떠나기") : "잠시 나가기";
+                label.text = Text(leave ? (host ? "호스트 세션 종료" : "세션 떠나기") : "잠시 나가기");
+                var font = YJ_LanguageManager.Instance?.GetCurrentFont();
+                if (font != null) label.font = font;
             }
         }
     }
+
+    private void RefreshSessionLanguage(GameLanguage _) =>
+        ConfigurePauseMenu(FindInBinderScene<KY_PausePopup>(), networkManager);
 
     private void HandleLocalPlayerChanged(PlayerContext context)
     {

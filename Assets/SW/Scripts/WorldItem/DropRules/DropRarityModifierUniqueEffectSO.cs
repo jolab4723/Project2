@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace ItemSystem
@@ -12,40 +11,24 @@ namespace ItemSystem
     public sealed class DropRarityModifierUniqueEffectSO : UniqueEffectSO
     {
         private const float DefaultMultiplier = 1.2f;
-        private static readonly Dictionary<string, float> ActiveMultipliersByItem =
-            new Dictionary<string, float>();
-
-        public override void OnEquip(ItemInstance ownerItem)
+        public static float GetRarityWeightMultiplier(ItemRarity rarity, PlayerContext owner)
         {
-            string itemKey = GetItemKey(ownerItem);
-            if (string.IsNullOrEmpty(itemKey))
-            {
-                Debug.LogWarning("[DropRarityModifierUniqueEffectSO] 아이템 instanceId가 없어 효과를 적용할 수 없습니다.");
-                return;
-            }
-
-            ActiveMultipliersByItem[itemKey] = ConfiguredMultiplier;
-        }
-
-        public override void OnUnequip(ItemInstance ownerItem)
-        {
-            string itemKey = GetItemKey(ownerItem);
-            if (!string.IsNullOrEmpty(itemKey))
-                ActiveMultipliersByItem.Remove(itemKey);
-        }
-
-        public static float GetRarityWeightMultiplier(ItemRarity rarity)
-        {
-            if (rarity != ItemRarity.Rare &&
+            if (owner == null || !owner.Effects.CanExecute || (rarity != ItemRarity.Rare &&
                 rarity != ItemRarity.Unique &&
-                rarity != ItemRarity.Legendary)
+                rarity != ItemRarity.Legendary))
             {
                 return 1f;
             }
 
             float highestMultiplier = 1f;
-            foreach (float multiplier in ActiveMultipliersByItem.Values)
-                highestMultiplier = Mathf.Max(highestMultiplier, multiplier);
+            // 추첨 순간의 처치자 소유 상태를 읽어 해제·사망·재접속 때 남는 전역 장부를 없앤다.
+            if (owner.Equipment != null)
+                foreach (var slot in owner.Equipment.GetEquippedItems())
+                    highestMultiplier = Mathf.Max(highestMultiplier, GetMultiplier(slot.Value));
+            if (owner.Inventory?.PlayerGrid != null)
+                foreach (InventoryItem item in owner.Inventory.PlayerGrid.GetAllItems())
+                    if (item?.itemData?.definition?.category == ItemCategory.Relic)
+                        highestMultiplier = Mathf.Max(highestMultiplier, GetMultiplier(item));
 
             return highestMultiplier;
         }
@@ -55,14 +38,8 @@ namespace ItemSystem
                 ? Mathf.Max(1f, coefficients[0])
                 : DefaultMultiplier;
 
-        private static string GetItemKey(ItemInstance ownerItem) =>
-            ownerItem != null ? ownerItem.instanceId : null;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRuntimeState()
-        {
-            // EffectContext 전까지 로컬 플레이어 단일 상태만 보관한다. 멀티플레이 연동 시 컨텍스트별 상태로 교체한다.
-            ActiveMultipliersByItem.Clear();
-        }
+        private static float GetMultiplier(InventoryItem item) =>
+            item?.itemData?.definition?.uniqueEffect is DropRarityModifierUniqueEffectSO effect
+                ? effect.ConfiguredMultiplier : 1f;
     }
 }

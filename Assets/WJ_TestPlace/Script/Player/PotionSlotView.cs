@@ -47,6 +47,15 @@ public class PotionSlotView : MonoBehaviour
     private int shownMax = -1;
     private bool applied;
 
+    // 멀티는 싱글톤 PotionUseManager가 없으므로 로컬 플레이어의 NetworkPotionUseManager를 Bind해 읽는다.
+    private NetworkPotionUseManager boundPotions;
+
+    public void Bind(NetworkPotionUseManager potions)
+    {
+        boundPotions = potions;
+        applied = false;
+    }
+
     private void Awake()
     {
         CacheBaseColor();
@@ -65,16 +74,19 @@ public class PotionSlotView : MonoBehaviour
 
     private void Update()
     {
-        PotionUseManager manager = PotionUseManager.Instance;
-        if (manager == null)
+        PotionUseManager manager = boundPotions == null ? PotionUseManager.Instance : null;
+        if (boundPotions == null && manager == null)
             return;
 
         CacheBaseColor();
 
-        bool hasPotion = manager.TryGetEquippedPotion(out ItemInstance potion);
+        ItemInstance potion;
+        bool hasPotion = boundPotions != null
+            ? boundPotions.TryGetEquippedPotion(out potion)
+            : manager.TryGetEquippedPotion(out potion);
         Sprite icon = hasPotion && potion.definition != null ? potion.definition.icon : null;
-        int current = manager.CurrentCharges;
-        int max = manager.MaxCharges;
+        int current = boundPotions != null ? boundPotions.CurrentCharges : manager.CurrentCharges;
+        int max = boundPotions != null ? boundPotions.MaxCharges : manager.MaxCharges;
         bool depleted = hasPotion && current <= 0;
 
         if (applied &&

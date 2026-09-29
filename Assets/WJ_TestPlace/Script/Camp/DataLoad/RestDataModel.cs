@@ -22,10 +22,10 @@ namespace DataSystem
         /// <summary>캠프 회복 증가 패시브(CampHealBonus) 미해금 시 쓰는, 최대 체력 대비 회복 비율(%).</summary>
         public float baseHealPercent;
 
-        /// <summary>체력 1 회복당 필요한 크레딧.</summary>
-        public int creditPerHealthPoint;
+        /// <summary>휴식 1회 비용 = 이 값 × 현재 액트 번호(Act1=1, Act2=2, Act3=3).</summary>
+        public int creditPerAct;
 
-        /// <summary>포션 1충전당 필요한 크레딧.</summary>
-        public int creditPerPotionCharge;
+        /// <summary>휴식 1회로 채우는 포션 충전 수(최대 충전량을 넘지 않는다).</summary>
+        public int potionRechargeAmount;
     }
 }

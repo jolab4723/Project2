@@ -90,6 +90,9 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
     private StatSet serverPassiveStats;
     private uint nextRequestId;
     private string pendingSettlementId;
+    /// <summary>ACK 대기와 세션 전환 동안 거래·강화가 정산 금액을 다시 소비하지 못하게 합니다.</summary>
+    internal bool IsServerEconomyLocked => !string.IsNullOrEmpty(pendingSettlementId) ||
+        (NetworkManager.singleton as MirrorNetworkManager)?.IsServerEconomyLocked == true;
     private int pendingSettlementCredits;
     private double nextSettlementRetry;
 
@@ -240,6 +243,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         context.Wallet.SetGold(Mathf.Max(0, context.Wallet.Gold - pendingSettlementCredits));
         pendingSettlementId = null;
         pendingSettlementCredits = 0;
+        (NetworkManager.singleton as MirrorNetworkManager)?.ServerRefreshSettledResultCheckpoint();
     }
 
     [Server]

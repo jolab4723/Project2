@@ -6,6 +6,17 @@ using ItemSystem;
 
 namespace Core
 {
+    /// <summary>싱글 런이 끝난 방식. 계정으로 옮기는 크레딧 규칙이 달라진다(DataManager.CalculateRunEndCredits).</summary>
+    public enum RunEndReason
+    {
+        /// <summary>Act3 최종 보스 클리어.</summary>
+        Clear,
+        /// <summary>액트를 1개 이상 클리어한 뒤 비전투 상황에서 일시정지 메뉴의 정산으로 종료.</summary>
+        Settle,
+        /// <summary>사망.</summary>
+        Death
+    }
+
     public class DataManager : Singleton<DataManager>, IManagerModule
     {
         public string ModuleName => "DataManager";
@@ -71,6 +82,10 @@ namespace Core
                 return;
             }
 
+            // 다른 계정(또는 로그아웃 상태)에서 불러온 메모리 프로필을 현재 계정에 덮어쓰지 않는다.
+            if (IsPassiveProfileFromOtherAccount && ReferenceEquals(data.profile, PassiveSkillManager.Instance.CurrentProfile))
+                throw new System.InvalidOperationException("다른 계정에서 불러온 프로필은 저장할 수 없습니다.");
+
             data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
             QueueProfileSave(data.profile);
             WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
@@ -86,7 +101,14 @@ namespace Core
         /// </summary>
         public static async Task<SaveDataOperationResult> SynchronizeSinglePlayerProfileWithFirebaseAsync()
         {
-            try { return await SynchronizePlayerAccountCoreAsync(); }
+            try
+            {
+                var result = await SynchronizePlayerAccountCoreAsync();
+                // 로그인 전(로그아웃 상태)에 불러온 전역 프로필이 메모리에 남지 않도록 이 계정의 프로필로 교체한다.
+                if (result.IsSuccess || result.FailureReason == SaveDataFailureReason.NotFound)
+                    Instance?.LoadPassiveData();
+                return result;
+            }
             catch (System.Exception exception)
             {
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.FileAccessFailed,
@@ -325,12 +347,27 @@ namespace Core
         #endregion
 
         #region ===================== 2-1. 패시브 스킬 프로필 (저장/불러오기 전담) =====================
+        // PassiveSkillManager.CurrentProfile은 씬·로그인 전환 후에도 유지되므로, 어느 계정 기준으로 불러왔는지 기록한다.
+        // null은 로그아웃 상태(전역 파일)에서 불러온 프로필이다.
+        private string passiveProfileUserId;
+
+        private bool IsPassiveProfileFromOtherAccount =>
+            PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.CurrentProfile != null &&
+            passiveProfileUserId != (string.IsNullOrEmpty(FirebaseService.Default.CurrentUserId) ? null : FirebaseService.Default.CurrentUserId);
+
         [ContextMenu("패시브 데이터 저장")]
         public void SavePassiveData()
         {
             if (PassiveSkillManager.Instance == null || PassiveSkillManager.Instance.CurrentProfile == null)
             {
                 Debug.LogWarning("[DataManager] SavePassiveData - PassiveSkillManager 또는 CurrentProfile이 없습니다.");
+                return;
+            }
+
+            if (IsPassiveProfileFromOtherAccount)
+            {
+                Debug.LogWarning("[DataManager] 다른 계정에서 불러온 패시브 프로필이라 저장하지 않고 현재 계정 프로필을 다시 불러옵니다.");
+                LoadPassiveData();
                 return;
             }
 
@@ -350,6 +387,8 @@ namespace Core
                 return false;
             }
 
+            string uid = FirebaseService.Default.CurrentUserId;
+            passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
             var slot = LoadSinglePlayerSlot();
             if (slot != null && slot.profile != null)
             {
@@ -361,32 +400,108 @@ namespace Core
             return false;
         }
 
+        /// <summary>사망 시 계정으로 옮기는 보유 크레딧 비율(%).</summary>
+        public const int DeathCreditPercent = 30;
+
+        /// <summary>클리어·정산 시 크레딧으로 바꿔 주는 인벤토리·장착 아이템 원가 합의 비율(%).</summary>
+        public const int ItemValueCreditPercent = 50;
+
         /// <summary>
-        /// 현재 인벤토리의 런 크레딧을 프로필에 더해 로컬과 Firebase 저장을 요청합니다.
-        /// 저장 요청이 시작된 뒤에만 인게임 크레딧을 0으로 초기화합니다.
+        /// 싱글 런이 끝날 때 계정 크레딧으로 옮길 금액을 계산한다. 적립은 하지 않는다.
+        /// - 클리어·정산: 보유 크레딧 전부 + 인벤토리·장착 아이템 원가 합의 50%
+        /// - 사망: 보유 크레딧의 30% (아이템 제외)
+        /// 소수점은 버린다. 결과 화면에 미리 금액을 보여줄 때도 이 값을 쓴다.
         /// </summary>
-        public bool TransferRunGoldToProfile(PlayerProfileData profile)
+        public int CalculateRunEndCredits(RunEndReason reason)
         {
+            if (!TryGetRunValue(out long gold, out long itemBasePrice, out _))
+                return 0;
+
+            long credits = reason == RunEndReason.Death
+                ? gold * DeathCreditPercent / 100
+                : gold + itemBasePrice * ItemValueCreditPercent / 100;
+
+            return (int)System.Math.Min(credits, int.MaxValue);
+        }
+
+        /// <summary>
+        /// 런 종료 크레딧 계산에 쓸 보유 크레딧과 아이템 원가 합을 구한다.
+        /// 인벤토리가 있는 씬(캠프·전투)은 실제 인벤토리를, 없는 씬(스테이지 선택)은 gamesave를 쓴다.
+        /// 스테이지 선택으로 오기 전 노드를 나올 때(YJ_StageManager.EndScene) gamesave가 저장되므로 값이 같다.
+        /// </summary>
+        private bool TryGetRunValue(out long gold, out long itemBasePrice, out bool fromLiveInventory)
+        {
+            InventoryController inventory = InventoryController.Instance;
+            fromLiveInventory = inventory != null && inventory.PlayerWallet != null;
+            if (fromLiveInventory)
+            {
+                gold = Mathf.Max(0, inventory.PlayerWallet.Gold);
+                itemBasePrice = ItemValueCalculator.GetOwnedItemsBasePrice(inventory);
+                return true;
+            }
+
+            gold = 0;
+            itemBasePrice = 0;
+            string path = GetSavePath(GameplaySaveFileName);
+            if (!File.Exists(path))
+                return false;
+
+            try
+            {
+                GameSaveData data = ReadJson<GameSaveData>(path);
+                if (data == null)
+                    return false;
+                // 새 게임 직후(아직 한 번도 저장 전)는 보유 크레딧·아이템이 없다.
+                if (data.needsPlayerInitialization)
+                    return true;
+
+                ItemDatabaseSO database = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
+                if (database == null && data.inventory?.items != null && data.inventory.items.Count > 0)
+                {
+                    Debug.LogWarning("[DataManager] 아이템 DB가 없어 저장된 아이템 원가를 계산하지 못했습니다.");
+                    return false;
+                }
+
+                gold = Mathf.Max(0, data.status != null ? data.status.gold : 0);
+                itemBasePrice = ItemValueCalculator.GetSavedItemsBasePrice(data.inventory, database);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 저장된 런 정보를 읽지 못했습니다: {exception.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 싱글 런 종료 크레딧(CalculateRunEndCredits)을 현재 프로필에 더해 로컬과 Firebase 저장을 요청하고,
+        /// 저장 요청이 시작된 뒤에만 인게임 크레딧을 0으로 초기화한다.
+        /// 액트 중간 보스에서는 부르지 않는다 - 크레딧은 런이 끝날 때(클리어·정산·사망) 한 번만 옮긴다.
+        /// 아이템은 인벤토리에 남아 있으므로, 같은 런에서 두 번 부르지 않도록 호출하는 쪽이 막아야 한다.
+        /// </summary>
+        public bool SettleRunCredits(RunEndReason reason)
+        {
+            PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ?? LoadSinglePlayerSlot()?.profile;
             if (profile == null)
             {
-                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - profile이 null입니다.");
+                Debug.LogWarning("[DataManager] SettleRunCredits - 프로필을 찾지 못해 크레딧을 이전하지 못했습니다.");
                 return false;
             }
 
-            if (InventoryController.Instance == null || InventoryController.Instance.PlayerWallet == null)
+            if (!TryGetRunValue(out _, out _, out bool fromLiveInventory))
             {
-                Debug.LogWarning("[DataManager] TransferRunGoldToProfile - PlayerWallet을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
+                Debug.LogWarning("[DataManager] SettleRunCredits - 보유 크레딧(지갑 또는 저장 데이터)을 찾을 수 없어 크레딧을 이전하지 못했습니다.");
                 return false;
             }
 
-            int runGold = InventoryController.Instance.PlayerWallet.Gold;
-            if (runGold <= 0)
-                return true;
-
-            if (!TrySaveRunCredits(profile, runGold))
+            int credits = CalculateRunEndCredits(reason);
+            if (credits > 0 && !TrySaveRunCredits(profile, credits))
                 return false;
 
-            InventoryController.Instance.PlayerWallet.SetGold(0);
+            // 저장 데이터로 정산한 경우(스테이지 선택)는 지갑이 없다. 호출하는 쪽이 곧바로 런을 초기화(ResetGameplayData)한다.
+            if (fromLiveInventory)
+                InventoryController.Instance.PlayerWallet.SetGold(0);
+            Debug.Log($"[DataManager] 런 종료({reason}) 크레딧 {credits} 이전 완료.{(fromLiveInventory ? "" : " (저장 데이터 기준)")}");
             return true;
         }
 
@@ -1791,7 +1906,11 @@ namespace Core
             var profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };
 
             if (PassiveSkillManager.Instance != null)
+            {
+                string uid = FirebaseService.Default.CurrentUserId;
+                passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
                 PassiveSkillManager.Instance.SetActiveProfile(profile);
+            }
 
             SaveSinglePlayerSlot(new SinglePlayerSlotData { profile = profile });
         }
@@ -1800,6 +1919,9 @@ namespace Core
         [ContextMenu("패시브 데이터 초기화")]
         public void ResetPassiveData()
         {
+            if (IsPassiveProfileFromOtherAccount)
+                LoadPassiveData();
+
             var profile = PassiveSkillManager.Instance != null ? PassiveSkillManager.Instance.CurrentProfile : null;
             if (profile == null)
                 profile = new PlayerProfileData { playerId = GenerateNewPlayerId() };

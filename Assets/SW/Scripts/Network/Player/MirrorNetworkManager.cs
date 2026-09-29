@@ -54,7 +54,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
 
     // 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026092301;
+    public const int CompatibilityVersion = 2026092801;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =
@@ -99,6 +99,8 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         NetworkClient.localPlayer != null;
     public uint RunSnapshotRevision => runSnapshotRevision;
     public bool HasRunSnapshot => !string.IsNullOrEmpty(runSnapshotJson);
+    /// <summary>전환·정산·결과 확정 중에는 클라이언트의 경제 변경 요청을 받지 않습니다.</summary>
+    internal bool IsServerEconomyLocked => sessionSceneChangeRequested || actCreditSettlementPending || serverResultFinalized;
     /// <summary>서버가 마지막 층의 보스 완료를 기록한 런인지 확인한다. 결과 화면 자체는 완료 근거가 아니다.</summary>
     public bool IsRunCompleted
     {
@@ -305,6 +307,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         }
         base.OnServerDisconnect(connection);
         BroadcastLobby();
+        TryStartCombatWhenPartyReady();
     }
 
     public override void OnClientDisconnect()
@@ -606,7 +609,9 @@ public sealed partial class MirrorNetworkManager : NetworkManager
             return false;
 
         CompleteUnknownBattle(snapshot, completedNode);
-        PublishPlayerCheckpoints();
+        // Act1 체크포인트는 정산 ACK로 지갑을 비운 뒤 다음 Act 전환 시 발행한다.
+        if (snapshot.act != StageActType.Act1)
+            PublishPlayerCheckpoints();
         Debug.Log(
             $"[MirrorNetworkManager] Final boss node completed without scene change: " +
             $"node={completedNode.id}, floor={completedNode.floor}, revision={runSnapshotRevision}");
@@ -620,7 +625,26 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     private System.Collections.IEnumerator ContinueToNextAct()
     {
         sessionSceneChangeRequested = true;
-        yield return new WaitForSeconds(3f);
+        actCreditSettlementPending = true;
+        // 싱글과 같이 Act 종료마다 정산한다. 기존 정산 ID/ACK를 재사용하므로
+        // ACK 유실·재접속 재전송에도 한 번만 지급하고 저장 전에는 진행하지 않는다.
+        while (NetworkServer.active)
+        {
+            bool settled = true;
+            foreach (var member in ServerRoster.Members)
+            {
+                if (member.HasForfeited) continue;
+                var shop = member.RuntimeContext?.GetComponent<NetworkShopPlayerState>();
+                if (shop == null || !shop.ServerTransferRunCreditsToOwner())
+                    settled = false;
+            }
+            if (settled) break;
+            yield return new WaitForSecondsRealtime(0.25f);
+        }
+        actCreditSettlementPending = false;
+        if (!NetworkServer.active) yield break;
+        PublishPlayerCheckpoints();
+        yield return new WaitForSecondsRealtime(3f);
         if (!NetworkServer.active) yield break;
         pendingSessionRoute = MirrorSessionRoute.StageSelect;
         ServerChangeScene(SessionCampScene);
@@ -891,6 +915,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         localCheckpointRevision = 0;
         serverCheckpointRevision = 0;
         checkpointGeneration++;
+        checkpointCacheLoaded = false;
         ResetRunResults();
         ResetUnknownSession();
         runSnapshotRevision = 0;

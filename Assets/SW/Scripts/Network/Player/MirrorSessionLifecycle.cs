@@ -36,7 +36,7 @@ public struct MirrorLobbySnapshot : NetworkMessage
     public MirrorLobbyMember[] Members;
 }
 
-public struct MirrorSessionFeedback : NetworkMessage { public string Reason; }
+public struct MirrorSessionFeedback : NetworkMessage { public string Reason; public bool LeaveAccepted; }
 
 /// <summary>기존 NetworkManager의 참가 명부·로비 요청·재접속 수명주기 구현이다.</summary>
 public sealed partial class MirrorNetworkManager
@@ -99,19 +99,20 @@ public sealed partial class MirrorNetworkManager
     /// <summary>명시적으로 참여를 종료한다. 전송 끊김은 이 메서드를 호출하지 않아 재접속 자격을 유지한다.</summary>
     public void RequestLeaveSession()
     {
-        if (NetworkServer.active && serverResultFinalized)
+        if (NetworkServer.active && (serverResultFinalized || actCreditSettlementPending))
         {
-            foreach (var member in ServerRoster.ConnectedMembers)
-                if (member.RuntimeContext?.GetComponent<NetworkShopPlayerState>()?.ServerTransferRunCreditsToOwner() == false)
+            foreach (var member in ServerRoster.Members)
+                if (!member.HasForfeited &&
+                    member.RuntimeContext?.GetComponent<NetworkShopPlayerState>()?.ServerTransferRunCreditsToOwner() != true)
                 {
                     SetAdmissionStatus("참가자의 결과 저장을 기다리고 있습니다. 저장 후 세션을 종료해 주세요.");
                     return;
                 }
         }
-        MirrorReconnectProfile.Clear(out _);
-        RequestedReconnectProfile = null;
         if (mode == NetworkManagerMode.Host)
         {
+            MirrorReconnectProfile.Clear(out _);
+            RequestedReconnectProfile = null;
             StopHost();
             return;
         }
@@ -136,7 +137,24 @@ public sealed partial class MirrorNetworkManager
             clientLobby = snapshot;
             LobbyStateChanged?.Invoke();
         });
-        NetworkClient.RegisterHandler<MirrorSessionFeedback>(message => SetAdmissionStatus(message.Reason));
+        NetworkClient.RegisterHandler<MirrorSessionFeedback>(HandleSessionFeedback);
+    }
+
+    private void HandleSessionFeedback(MirrorSessionFeedback message)
+    {
+        if (!message.LeaveAccepted) { SetAdmissionStatus(message.Reason); return; }
+        // 거절되거나 응답 전에 연결이 끊기면 재접속 자격을 보존합니다.
+        if (!MirrorReconnectProfile.Clear(out string reason)) Debug.LogWarning(reason);
+        RequestedReconnectProfile = null;
+        StopClient();
+    }
+
+    private IEnumerator DisconnectAfterLeaveReply(NetworkConnectionToClient connection)
+    {
+        // 기존 인증 거절과 같이 응답을 전송할 시간을 주고, 응답을 무시한 연결도 정리합니다.
+        yield return new WaitForSecondsRealtime(0.25f);
+        if (NetworkServer.connections.TryGetValue(connection.connectionId, out var current) && current == connection)
+            connection.Disconnect();
     }
 
     private void HandleLobbyRequest(NetworkConnectionToClient connection, MirrorLobbyRequest request)
@@ -175,7 +193,7 @@ public sealed partial class MirrorNetworkManager
                 }
                 break;
             case MirrorLobbyOperation.Leave:
-                if (serverResultFinalized && ServerRoster.FindByConnection(connection.connectionId)?.RuntimeContext?
+                if ((serverResultFinalized || actCreditSettlementPending) && ServerRoster.FindByConnection(connection.connectionId)?.RuntimeContext?
                     .GetComponent<NetworkShopPlayerState>()?.ServerTransferRunCreditsToOwner() == false)
                 {
                     accepted = false;
@@ -184,8 +202,14 @@ public sealed partial class MirrorNetworkManager
                 }
                 MirrorSessionRoster.Member leaving = ServerRoster.Leave(connection.connectionId);
                 DestroyRetainedPlayer(leaving);
-                connection.Disconnect();
                 accepted = leaving != null;
+                if (accepted)
+                {
+                    connection.Send(new MirrorSessionFeedback { LeaveAccepted = true });
+                    StartCoroutine(DisconnectAfterLeaveReply(connection));
+                    TryStartCombatWhenPartyReady();
+                }
+                else reason = "참여 중인 세션을 찾을 수 없습니다.";
                 break;
             case MirrorLobbyOperation.ReturnToLobby:
                 accepted = TryReturnCompletedRunToLobby(connection, out reason);

@@ -14,6 +14,7 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     [SerializeField] private TMP_InputField addressInput;
     [SerializeField] private TMP_InputField displayNameInput;
     [SerializeField] private TMP_Text statusText;
+    [SerializeField] private TMP_Text admittedStatusText;
     [SerializeField] private Button hostButton;
     [SerializeField] private Button joinButton;
     [SerializeField] private Button serverButton;
@@ -23,9 +24,13 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private string displayedParticipantId;
     private bool? passiveChangesAllowed;
     private KY_PausePopup pausePopup;
+    private UILabelDatabaseSO uiLabels;
+    private YJ_LanguageManager languageManager;
+    private string statusMessage = string.Empty;
 
     private void Awake()
     {
+        uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         Core.SettingManager.Instance?.Activate();
         Core.DataManager.Instance?.LoadPassiveData();
         flow.ConfigureExternalFlow();
@@ -39,6 +44,40 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         lobby.CharacterChangeRequested += ChangeCharacter;
         lobby.GameStartRequested += StartRun;
         flow.LeaveRequested += Leave;
+    }
+
+    private void OnEnable()
+    {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        RefreshLanguage(default);
+    }
+
+    private void OnDisable()
+    {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        string message = SessionUIMessageLocalizer.GetMessage(uiLabels, statusMessage);
+        TMP_FontAsset font = languageManager?.GetCurrentFont();
+        if (statusText != null)
+        {
+            statusText.text = message;
+            if (font != null) statusText.font = font;
+        }
+        if (admittedStatusText != null)
+        {
+            admittedStatusText.text = message;
+            if (font != null) admittedStatusText.font = font;
+            admittedStatusText.transform.parent.gameObject.SetActive(manager != null &&
+                !string.IsNullOrEmpty(manager.LocalParticipantId) && !string.IsNullOrEmpty(message));
+        }
+        MirrorLocalPlayerUIBinder.ConfigurePauseMenu(pausePopup, manager);
+        if (passivePopup != null && passiveChangesAllowed.HasValue)
+            passivePopup.SetChangesAllowed(passiveChangesAllowed.Value,
+                SessionUIMessageLocalizer.GetMessage(uiLabels, "준비를 취소한 뒤 패시브를 변경할 수 있습니다."));
     }
 
     private void Update()
@@ -130,13 +169,14 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private void ChangeReady(bool ready)
     {
         if (manager == null) return;
+        SetStatus(string.Empty);
         if (ready) SetPassiveChangesAllowed(false);
         if (!manager.RequestLobbyChange(MirrorLobbyOperation.Ready, ready: ready)) RefreshLobby();
     }
     private void ChangeCharacter(KY_CharacterId character) => manager?.RequestLobbyChange(
         MirrorLobbyOperation.Character,
         character == KY_CharacterId.Gunner ? CharacterClass.Gunner : CharacterClass.Fighter);
-    private void StartRun() => manager?.RequestStartSession();
+    private void StartRun() { SetStatus(string.Empty); manager?.RequestStartSession(); }
     private void Leave() => manager?.RequestLeaveSession();
 
     /// <summary>연결을 종료한 로비에서 세션 소유자를 정리하고 기존 타이틀로 돌아갑니다.</summary>
@@ -146,13 +186,18 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         var loader = Core.SceneLoader.Instance;
         if (loader != null) loader.LoadScene("TitleScene");
     }
-    private void SetStatus(string message) { if (statusText != null) statusText.text = message; }
+    private void SetStatus(string message)
+    {
+        statusMessage = message ?? string.Empty;
+        RefreshLanguage(default);
+    }
 
     private void RefreshLobby()
     {
         MirrorLocalPlayerUIBinder.ConfigurePauseMenu(pausePopup, manager);
         bool admitted = !string.IsNullOrEmpty(manager.LocalParticipantId);
         connectionPanel.SetActive(!admitted);
+        RefreshLanguage(default);
         if (!admitted)
         {
             SetPassiveChangesAllowed(true);
@@ -183,6 +228,7 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         if (snapshot.RunStarted) flow.HidePanels();
         else if (displayedParticipantId != manager.LocalParticipantId)
         {
+            SetStatus(string.Empty);
             displayedParticipantId = manager.LocalParticipantId;
             if (local.HasCharacterChoice) flow.ShowLobby();
             else flow.ShowCharacterSelection();
@@ -194,7 +240,8 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     {
         if (passivePopup == null || passiveChangesAllowed == allowed) return;
         passiveChangesAllowed = allowed;
-        passivePopup.SetChangesAllowed(allowed, "준비를 취소한 뒤 패시브를 변경할 수 있습니다.");
+        passivePopup.SetChangesAllowed(allowed,
+            SessionUIMessageLocalizer.GetMessage(uiLabels, "준비를 취소한 뒤 패시브를 변경할 수 있습니다."));
     }
 
     private static KY_LobbyReadyState GetReadyState(MirrorLobbyMember member)

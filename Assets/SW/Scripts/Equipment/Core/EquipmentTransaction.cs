@@ -533,7 +533,7 @@ public class EquipmentTransaction
         ItemInstance instance = item?.itemData;
         if (instance?.definition == null)
             return;
-        if (equipmentSystem.UsesLowManaHelmetEffect(instance))
+        if (equipmentSystem.UsesLowManaHelmetEffect(instance) || equipmentSystem.UsesPlayerEffectRuntime(instance))
             return;
         instance.definition.uniqueEffect?.OnEquip(instance);
     }
@@ -547,7 +547,7 @@ public class EquipmentTransaction
         ItemInstance instance = item?.itemData;
         if (instance?.definition == null)
             return;
-        if (equipmentSystem.UsesLowManaHelmetEffect(instance))
+        if (equipmentSystem.UsesLowManaHelmetEffect(instance) || equipmentSystem.UsesPlayerEffectRuntime(instance))
             return;
         instance.definition.uniqueEffect?.OnUnequip(instance);
     }

@@ -16,7 +16,14 @@ public class CooldownIconUIContainer : MonoBehaviour
     {
         public ItemInstance item;
         public TriggeredBuffUniqueEffectSO effect;
+        // null이 아니면 고유효과 대신 거너 아크 레이저(진화1)의 발사 간격(4초) 항목이다.
+        public GunnerSkillController arcLaser;
     }
+
+    private const string UILabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
+    private const string SkillLabelResourcePath = "DataFiles/CharData/SkillData/3. GeneratedAssets/SkillLabelDatabase";
+    private UILabelDatabaseSO uiLabels;
+    private SkillLabelDatabaseSO skillLabels;
 
     [SerializeField] private CooldownIconSlot iconSlotPrefab;
 
@@ -48,7 +55,12 @@ public class CooldownIconUIContainer : MonoBehaviour
         {
             bool inUse = i < onCooldown.Count;
             pool[i].gameObject.SetActive(inUse);
-            if (inUse)
+            if (!inUse)
+                continue;
+
+            if (onCooldown[i].arcLaser != null)
+                BindArcLaser(pool[i], onCooldown[i].arcLaser);
+            else
                 pool[i].Bind(onCooldown[i].item, onCooldown[i].effect);
         }
 
@@ -67,6 +79,8 @@ public class CooldownIconUIContainer : MonoBehaviour
     private void CollectOnCooldownItems()
     {
         onCooldown.Clear();
+
+        CollectArcLaserCooldown();
 
         if (InventoryController.Instance == null)
             return;
@@ -87,6 +101,45 @@ public class CooldownIconUIContainer : MonoBehaviour
             if (itemData?.definition != null && itemData.definition.category == ItemCategory.Relic)
                 TryCollect(itemData);
         }
+    }
+
+    /// <summary>
+    /// 로컬 플레이어가 거너이고 아크 레이저(진화1) 발사 간격이 진행 중이면 쿨타임 아이콘 항목으로 넣는다.
+    /// 로컬 플레이어는 기존 HUD처럼 PlayerStatManager.Instance(로컬 전용)에서 찾는다.
+    /// </summary>
+    private void CollectArcLaserCooldown()
+    {
+        PlayerStatManager stats = PlayerStatManager.Instance;
+        if (stats == null)
+            return;
+
+        GunnerSkillController gunner = stats.GetComponent<GunnerSkillController>();
+        if (gunner == null)
+            gunner = stats.GetComponentInChildren<GunnerSkillController>();
+
+        if (gunner != null && gunner.isActiveAndEnabled && gunner.TryGetArcLaserCooldown(out _, out _, out _))
+            onCooldown.Add(new CooldownEntry { arcLaser = gunner });
+    }
+
+    /// <summary>아크 레이저 항목을 슬롯에 연결한다. 이름은 UILabel, 설명은 스킬 문구 DB(진화1 설명)를 쓴다.</summary>
+    private void BindArcLaser(CooldownIconSlot slot, GunnerSkillController gunner)
+    {
+        gunner.TryGetArcLaserCooldown(out _, out _, out SkillDefinitionSO definition);
+
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>(UILabelResourcePath);
+        if (skillLabels == null)
+            skillLabels = Resources.Load<SkillLabelDatabaseSO>(SkillLabelResourcePath);
+
+        string name = uiLabels != null ? uiLabels.GetLabel("skill_ui.arc_laser_name") : null;
+        if (string.IsNullOrEmpty(name) || name == "skill_ui.arc_laser_name")
+            name = "아크 레이저";
+
+        string description = definition != null && skillLabels != null
+            ? skillLabels.GetEvolutionDescription(definition.skillId, SkillEvolutionId.Evolution1)
+            : string.Empty;
+
+        slot.BindArcLaser(gunner, definition != null ? definition.icon : null, name, description);
     }
 
     private void TryCollect(ItemInstance itemData)

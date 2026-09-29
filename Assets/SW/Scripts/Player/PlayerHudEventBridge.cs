@@ -83,6 +83,9 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
         foreach (var view in GetComponentsInChildren<YJ_HUDInformationView>(true)) view.BindPlayer(status);
         foreach (var view in GetComponentsInChildren<YJ_MinimapPlayer>(true))
             view.BindPlayer(context != null ? context.transform : null);
+        // 스킬·회피·포션 슬롯은 싱글과 같은 뷰를 로컬 플레이어에 연결해 사용한다.
+        foreach (var view in GetComponentsInChildren<KY_SkillView>(true)) view.Bind(context);
+        foreach (var view in GetComponentsInChildren<PotionSlotView>(true)) view.Bind(context != null ? context.Potions : null);
     }
 
     private void OnDestroy()

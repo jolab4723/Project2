@@ -706,7 +706,9 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 0}
   grenadePoint: {fileID: 0}
+  act2TransitionEffect: {fileID: 0}
   enemyAnimation: {fileID: 0}
+  isShowSkillRange: 0
 --- !u!114 &6928898347433218325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -785,8 +787,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b7e15b96c6b62842981894d8f4cf160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
-  circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
+  circleIndicator: {fileID: 11400000, guid: 03b7f8c678f2ceb46a7160b3d37c9f43, type: 2}
   rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
+  cone60Indicator: {fileID: 0}
+  cone150Indicator: {fileID: 0}
+  cone180Indicator: {fileID: 0}
 --- !u!114 &3302628651622257774
 MonoBehaviour:
   m_ObjectHideFlags: 0

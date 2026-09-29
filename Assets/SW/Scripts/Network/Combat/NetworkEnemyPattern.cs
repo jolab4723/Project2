@@ -48,7 +48,7 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
     private const float DashCooldown = 15f;
     private const float DashTargetRange = 30f;
     private const float DashMaxDistance = 30f;
-    private const float DashDuration = 0.8f;
+    private const float DashDuration = 0.2f;
     private const float DashReadyDuration = 1f;
     private const float DashHitRadius = 3f;
 
@@ -129,6 +129,8 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
         if (sharedCombat != null)
         {
             sharedCombat.CancelCurrentAction();
+            // 비활성 원본 Pattern은 GameObject 종료 때 OnDisable이 다시 오지 않으므로 직접 정리한다.
+            sharedPattern?.Die();
             sharedCombat.ExternalBeginGrab = null;
             sharedCombat.ExternalHoldGrab = null;
             sharedCombat.ExternalEndGrab = null;
@@ -489,6 +491,8 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
 
         transform.position = landingPoint;
         EndManualMovement(landingPoint, restoreAgent);
+        authority.ServerPlayBossImpactCue(WBH_EnemyEffectCue.Boss_Act1_JumpAttack,
+            landingPoint, transform.rotation);
         authority.ServerDamagePlayersInRadius(landingPoint, JumpDamageRadius);
         yield return new WaitForSeconds(JumpRecoveryDuration);
         bossActionRoutine = null;

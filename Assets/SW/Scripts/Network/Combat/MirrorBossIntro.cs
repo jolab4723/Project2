@@ -16,6 +16,8 @@ public sealed class MirrorBossIntro : NetworkBehaviour
     [SerializeField] private Animator gunnerVisual;
     [SerializeField] private Transform playerTimelineOrigin;
     [SerializeField] private Transform[] playerPoints;
+    [SerializeField] private TMPro.TMP_Text bossNameText;
+    [SerializeField] private string bossEnemyId;
 
     [SyncVar] private double startsAt;
     [SyncVar] private double endsAt;
@@ -111,6 +113,12 @@ public sealed class MirrorBossIntro : NetworkBehaviour
         }
 
         presenting = true;
+        // 싱글 보스 연출과 같은 공용 DB에서 현재 언어의 이름을 가져온다.
+        if (bossNameText != null && !string.IsNullOrEmpty(bossEnemyId))
+        {
+            var labels = Resources.Load<EnemyLabelDatabaseSO>("DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase");
+            if (labels != null) bossNameText.text = labels.GetName(bossEnemyId);
+        }
         hudWasActive = hud != null && hud.activeSelf;
         if (hud != null) hud.SetActive(false);
         ResolvePlayerAnimation();

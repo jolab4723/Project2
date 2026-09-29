@@ -134,14 +134,14 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
 
         if (selectedItem?.definition == null)
         {
-            ShowMessage(UpgradeMessageMapper.GetSelectionRequired(null));
+            upgradeController.ShowLocalizedMessage("upgrade_ui.selection_required", "강화할 아이템을 선택하세요.");
             return;
         }
 
         if (inventorySync == null ||
             !inventorySync.TryRequestUpgradeItem(selectedItem.instanceId, out uint requestId))
         {
-            ShowMessage("서버 강화 요청을 시작하지 못했습니다.");
+            upgradeController.ShowLocalizedMessage("upgrade_ui.request_failed", "서버 강화 요청을 시작하지 못했습니다.");
             return;
         }
 
@@ -149,7 +149,7 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         pendingInstanceId = selectedItem.instanceId;
         idleInteractable = upgradeButton.interactable;
         upgradeButton.interactable = false;
-        ShowMessage("서버가 강화 가능 여부와 골드를 확인하고 있습니다.");
+        upgradeController.ShowLocalizedMessage("upgrade_ui.request_pending", "서버가 강화 가능 여부와 골드를 확인하고 있습니다.");
     }
 
     private void HandleRequestCompleted(MirrorInventoryRequestCompleted completed)
@@ -175,20 +175,11 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
 
         if (completed.Result == MirrorInventoryRequestResult.Success)
         {
-            string itemName = refreshedItem?.definition != null
-                ? refreshedItem.definition.itemName
-                : "아이템";
-            int upgradeLevel = refreshedItem?.upgradeLevel ?? 0;
-            ShowMessage(
-                UpgradeMessageMapper.GetMessage(
-                    UpgradeResult.Success,
-                    itemName,
-                    upgradeLevel,
-                    null));
+            upgradeController.ShowUpgradeMessage(UpgradeResult.Success);
             return;
         }
 
-        ShowMessage(GetFailureMessage(completed.Result));
+        ShowFailure(completed.Result);
     }
 
     private ItemInstance FindOwnedItem(string instanceId)
@@ -220,20 +211,20 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         return null;
     }
 
-    private void ShowMessage(string message)
+    private void ShowFailure(MirrorInventoryRequestResult result)
     {
-        upgradeController?.ShowMessage(message);
-    }
-
-    private static string GetFailureMessage(MirrorInventoryRequestResult result)
-    {
-        return result switch
+        switch (result)
         {
-            MirrorInventoryRequestResult.NotEnoughGold => "골드가 부족합니다.",
-            MirrorInventoryRequestResult.UpgradeUnavailable => "강화할 수 없는 아이템입니다.",
-            MirrorInventoryRequestResult.StaleRevision => "아이템 상태가 먼저 바뀌어 강화를 취소했습니다. 다시 선택해 주세요.",
-            MirrorInventoryRequestResult.ItemUnavailable => "내 인벤토리에서 해당 instance를 찾지 못했습니다.",
-            _ => $"서버가 강화를 확정하지 못했습니다: {result}",
-        };
+            case MirrorInventoryRequestResult.NotEnoughGold:
+                upgradeController.ShowUpgradeMessage(UpgradeResult.NotEnoughGold); break;
+            case MirrorInventoryRequestResult.UpgradeUnavailable:
+                upgradeController.ShowUpgradeMessage(UpgradeResult.InvalidItem); break;
+            case MirrorInventoryRequestResult.StaleRevision:
+                upgradeController.ShowLocalizedMessage("upgrade_ui.state_changed", "아이템 상태가 먼저 바뀌어 강화를 취소했습니다. 다시 선택해 주세요."); break;
+            case MirrorInventoryRequestResult.ItemUnavailable:
+                upgradeController.ShowLocalizedMessage("upgrade_ui.item_missing", "인벤토리에서 해당 아이템을 찾지 못했습니다."); break;
+            default:
+                upgradeController.ShowLocalizedMessage("upgrade_ui.result_failed", "강화에 실패했습니다."); break;
+        }
     }
 }

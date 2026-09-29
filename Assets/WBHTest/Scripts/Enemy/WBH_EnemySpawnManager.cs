@@ -86,8 +86,14 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         }
 
         player = controller.transform;
-        // 현재 지갑은 캐릭터가 아니라 씬의 PlayerManager에 배치되어 있습니다.
-        wallet = FindFirstObjectByType<PlayerWallet>();
+        // 현재 지갑은 캐릭터가 아니라 씬에 배치되어 있습니다.
+        // 씬에 PlayerWallet이 여러 개라 Find는 저장되지 않는 지갑을 고를 수 있으므로,
+        // 스포너가 BindSinglePlayerInventory로 연결한 전달받은 플레이어의 지갑을 사용합니다.
+        PlayerContext context = controller.GetComponent<PlayerContext>();
+        wallet = context != null ? context.Wallet : null;
+        // 스포너 없이 플레이어를 직접 배치한 테스트 씬은 보상만 건너뛰고 스폰은 계속합니다.
+        if (wallet == null)
+            Log.Warning("플레이어 지갑이 연결되지 않아 처치 크레딧이 지급되지 않습니다. PlayerSpawner 연결을 확인하세요.");
         return true;
     }
 

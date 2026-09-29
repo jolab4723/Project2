@@ -65,8 +65,14 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         stats.defeatedEnemies += Mathf.Max(0, count);
     }
 
-    /// <summary>원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.</summary>
-    public bool FinishRun(bool cleared)
+    /// <summary>
+    /// 원정을 종료하고 현재 지갑·스테이지 진행도와 함께 결과 Payload에 기록한다.
+    /// earnedCredits를 넘기면 결과 화면에 그 금액을 표시한다(실제 계정 적립액 - 사망 30%, 클리어·정산은
+    /// 보유 크레딧 + 아이템 원가 50%, DataManager.CalculateRunEndCredits). 생략하면 기존처럼 지갑 잔액을 표시한다.
+    /// resultType을 넘기면 결과 종류를 직접 지정한다(정산 종료는 KY_ResultType.Settle).
+    /// 생략하면 기존처럼 cleared로 GameClear/GameOver를 정한다.
+    /// </summary>
+    public bool FinishRun(bool cleared, int? earnedCredits = null, KY_ResultType? resultType = null)
     {
         if (payload == null)
         {
@@ -82,11 +88,12 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
 
         payload.SetResult(new KY_ResultData
         {
+            resultType = resultType ?? (cleared ? KY_ResultType.GameClear : KY_ResultType.GameOver),
             cleared = cleared,
             stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,
             playTimeSeconds = stats.elapsedSeconds,
-            earnedCredits = ResolveRemainingCredits(),
+            earnedCredits = earnedCredits.HasValue ? Mathf.Max(0, earnedCredits.Value) : ResolveRemainingCredits(),
             combo = 0
         });
 
@@ -118,7 +125,9 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
             stageName = ResolveReachedStage(),
             defeatedEnemies = stats.defeatedEnemies,
             playTimeSeconds = stats.elapsedSeconds,
+            // 액트 중간에는 계정 적립이 없으므로 "파밍 가치 현황"으로 보유 크레딧과 장비 가치(원가 50%)를 나눠 보여준다.
             earnedCredits = ResolveRemainingCredits(),
+            itemValueCredits = ResolveItemValueCredits(),
             combo = 0
         });
 
@@ -133,6 +142,13 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
             : null;
 
         return wallet != null ? Mathf.Max(0, wallet.Gold) : 0;
+    }
+
+    /// <summary>인벤토리·장착 장비 원가 합에서 정산 때 크레딧으로 바뀌는 비율(50%)만큼을 반환한다.</summary>
+    private static int ResolveItemValueCredits()
+    {
+        int basePrice = ItemSystem.ItemValueCalculator.GetOwnedItemsBasePrice(InventoryController.Instance);
+        return (int)((long)basePrice * Core.DataManager.ItemValueCreditPercent / 100);
     }
 
     /// <summary>저장된 현재 노드 또는 마지막 클리어 노드에서 Act와 도달 층을 만든다.</summary>
