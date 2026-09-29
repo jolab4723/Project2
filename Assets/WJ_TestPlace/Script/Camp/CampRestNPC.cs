@@ -152,6 +152,7 @@ public class CampRestNPC : MonoBehaviour
         {
             WBH_PlayerStatus status = GetPlayerStatus();
             status?.Heal(pendingHealthAmount);
+            if (status != null) KY_GameEvents.HealthChanged(status.CurrentHp, status.MaxHealth);
         }
 
         if (pendingPotionAmount > 0 && PotionUseManager.Instance != null)
