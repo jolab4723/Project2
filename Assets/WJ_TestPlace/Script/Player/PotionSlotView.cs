@@ -9,7 +9,7 @@ using UnityEngine.UI;
 /// 보여주기만 한다 - 별도 상태를 들고 있지 않는다.
 ///
 /// 표시 규칙
-///   - 포션 미장착   : 아이콘을 숨기고 배경을 회색으로 (빈 슬롯 임시 표기)
+///   - 포션 미장착   : 공용 "선택 없음" 아이콘(select_none)을 표시하고 배경을 회색으로
 ///   - 충전 남음     : 아이콘 정상, 배경 기본색
 ///   - 충전 0        : 아이콘 위에 반투명 검은 오버레이
 ///
@@ -27,6 +27,9 @@ public class PotionSlotView : MonoBehaviour
 
     [Tooltip("충전이 0일 때 아이콘 위에 덮는 반투명 검은 이미지.")]
     [SerializeField] private Image depletedOverlay;
+
+    [Tooltip("포션 미장착일 때 표시할 아이콘. 비워두면 Resources의 공용 select_none 아이콘을 쓴다(스킬 팝업 미선택 배지와 같은 이미지).")]
+    [SerializeField] private Sprite emptySlotIcon;
 
     [Header("색상")]
     [Tooltip("포션 미장착일 때의 배경색.")]
@@ -59,6 +62,9 @@ public class PotionSlotView : MonoBehaviour
     private void Awake()
     {
         CacheBaseColor();
+
+        if (emptySlotIcon == null)
+            emptySlotIcon = Resources.Load<Sprite>(SkillPopupController.SelectNoneIconResourcePath);
     }
 
     private void CacheBaseColor()
@@ -108,8 +114,10 @@ public class PotionSlotView : MonoBehaviour
 
         if (iconImage != null)
         {
-            iconImage.sprite = icon;
-            iconImage.enabled = icon != null;
+            // 미장착이면 빈 칸 대신 공용 "선택 없음" 아이콘을 보여준다.
+            Sprite displayIcon = hasPotion ? icon : emptySlotIcon;
+            iconImage.sprite = displayIcon;
+            iconImage.enabled = displayIcon != null;
         }
 
         if (chargeText != null)
