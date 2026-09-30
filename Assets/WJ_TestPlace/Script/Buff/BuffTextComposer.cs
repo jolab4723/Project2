@@ -31,7 +31,7 @@ namespace ItemSystem
             uniqueEffectLabelsCache != null ? uniqueEffectLabelsCache : uniqueEffectLabelsCache = Resources.Load<UniqueEffectLabelDatabaseSO>(UniqueEffectLabelResourcePath);
 
         /// <summary>
-        /// 툴팁 제목으로 쓸 버프 이름(현재 언어). 스택형 버프는 이름 뒤에 "(현재 / 최대)"를 붙인다
+        /// SW 수정: 싱글·클라이언트의 현재 언어 버프 이름에 스택형 "(현재 / 최대)"를 붙이며 폐열의 실제 0스택을 보존한다.
         /// (최대치가 없는 무제한 스택이면 "(현재)"만).
         /// </summary>
         public static string BuildName(IBuffSource source, int stackCount)
@@ -42,7 +42,7 @@ namespace ItemSystem
 
             // <nobr>로 묶어야 폭이 모자랄 때도 "(4 /" + "20)"처럼 스택 표기 안에서 줄이 끊기지 않는다.
             // (이름이 길어지는 언어에서 실제로 그렇게 잘렸다. 폭 자체는 NameText의 자동 크기 조절이 맞춘다.)
-            int stacks = Mathf.Max(1, stackCount);
+            int stacks = Mathf.Max(source is WasteHeatDischargeUniqueEffectSO ? 0 : 1, stackCount);
             return source.MaxStack > 0
                 ? $"{name} <nobr>({stacks} / {source.MaxStack})</nobr>"
                 : $"{name} <nobr>({stacks})</nobr>";

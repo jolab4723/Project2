@@ -109,7 +109,7 @@ namespace DataSystem
             return true;
         }
         /// <summary>
-        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동·스타 브리처 폭발을 포함한 effectType별 실제 전투 수치를 함께 채운다.
+        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동·스타 브리처 폭발·폐열 방출을 포함한 effectType별 실제 전투 수치를 함께 채운다.
         /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
@@ -137,6 +137,15 @@ namespace DataSystem
                     explosion.damageMultiplier = asset.coefficients[2] / 100f;
                     explosion.maxTargets = (int)asset.coefficients[3];
                     explosion.cooldownSeconds = row.cooldownSeconds;
+                    break;
+                // SW 수정: 폐열은 필요 열·길이·전체 각도·피해%·최대 대상·무적중 만료 초 순서이며 별도 쿨다운이 없다.
+                case WasteHeatDischargeUniqueEffectSO heat:
+                    heat.requiredHeat = (int)asset.coefficients[0];
+                    heat.length = asset.coefficients[1];
+                    heat.angleDegrees = asset.coefficients[2];
+                    heat.damageMultiplier = asset.coefficients[3] / 100f;
+                    heat.maxTargets = (int)asset.coefficients[4];
+                    heat.idleResetSeconds = asset.coefficients[5];
                     break;
                 // SW 수정: 기존 설명 계수와 cooldown 열을 재사용하여 툴팁과 실제 피해 수치를 함께 갱신한다.
                 case ChainLightningUniqueEffectSO chain:
@@ -279,7 +288,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동·스타 브리처 폭발을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
+        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동·스타 브리처 폭발·폐열 방출을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
         /// 등록되지 않은 이름은 일부 데이터만 생성하지 않도록 전체 변환을 실패시킨다.
         /// </summary>
         private static Type ResolveEffectType(string effectType, string id)
@@ -295,6 +304,7 @@ namespace DataSystem
             {
                 case nameof(PhaseHarvesterWaveUniqueEffectSO): return typeof(PhaseHarvesterWaveUniqueEffectSO);
                 case nameof(StarBreacherExplosionUniqueEffectSO): return typeof(StarBreacherExplosionUniqueEffectSO);
+                case nameof(WasteHeatDischargeUniqueEffectSO): return typeof(WasteHeatDischargeUniqueEffectSO);
                 case nameof(PassiveBuffUniqueEffectSO): return typeof(PassiveBuffUniqueEffectSO);
                 case nameof(TriggeredBuffUniqueEffectSO): return typeof(TriggeredBuffUniqueEffectSO);
                 case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
@@ -316,7 +326,7 @@ namespace DataSystem
             return null;
         }
 
-        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동·폭발 계수의 누락·비유한 값·오타를 차단한다.</summary>
+        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동·폭발·폐열 방출 계수의 누락·비유한 값·오타를 차단한다.</summary>
         internal static bool ValidateRows(List<UniqueEffectTableRow> rows)
         {
             if (rows == null || rows.Count == 0)
@@ -355,6 +365,25 @@ namespace DataSystem
                         string dimensions = type == typeof(PhaseHarvesterWaveUniqueEffectSO)
                             ? "길이;전체 폭" : "근거리 거리;폭발 반경";
                         Debug.LogError($"[UniqueEffect] '{id}'의 계수는 {dimensions};피해%;최대 대상(정수 1~16);쿨다운 순서이며 마지막 값은 cooldownSeconds와 같아야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
+                if (type == typeof(WasteHeatDischargeUniqueEffectSO))
+                {
+                    string[] heatParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] heatValues = new float[heatParts.Length];
+                    bool heatValid = heatParts.Length == 6;
+                    for (int i = 0; i < heatParts.Length; i++)
+                        heatValid &= float.TryParse(heatParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out heatValues[i]) &&
+                            float.IsFinite(heatValues[i]);
+                    heatValid = heatValid && heatValues[0] >= 1f && heatValues[0] < int.MaxValue && heatValues[0] == Mathf.Floor(heatValues[0]) &&
+                        heatValues[1] > 0f && heatValues[2] > 0f && heatValues[2] <= 180f && heatValues[3] > 0f &&
+                        heatValues[4] >= 1f && heatValues[4] <= 16f && heatValues[4] == Mathf.Floor(heatValues[4]) && heatValues[5] > 0f &&
+                        float.IsFinite(row.cooldownSeconds) && row.cooldownSeconds == 0f;
+                    if (!heatValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 폐열 계수는 필요 열(양의 정수);길이;전체 각도(0~180);피해%;최대 대상(정수 1~16);무적중 만료 초 순서이며 cooldownSeconds는 0이어야 합니다.");
                         valid = false;
                     }
                     continue;

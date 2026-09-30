@@ -657,8 +657,8 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         try
         {
-            // SW 수정: 서버가 확정한 Fighter 정면과 파동 출처를 피격 콜백 이전 값으로 보존한다.
-            context.Effects.SetDirectTargets(attackId, targets, forward, fighterAttack: true);
+            // SW 수정: 서버가 확정한 근접 원점을 폐열 방출에서도 피격 콜백 이전 값으로 보존한다.
+            context.Effects.SetDirectTargets(attackId, targets, forward, fighterAttack: true, attackOrigin: origin);
             WBH_EffectData effectData = null;
             GetComponent<WBH_PlayerEffect>()?.TryGetEffectData(WBH_PlayerEffectCue.F_normal0_evo0_etc0, out effectData);
             foreach (WBH_ICombat target in targets)

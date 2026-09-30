@@ -32,6 +32,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     [SyncVar] private uint glassRailResolvedHitCount;
     [SyncVar(hook = nameof(OnPreparedAttackChanged))] private bool preparedAttackReady;
     [SyncVar] private uint preparedAttackConsumeCount;
+    [SyncVar(hook = nameof(OnWasteHeatReadyChanged))] private bool wasteHeatReady;
 
     public static uint LocalChainLightningPresentationCount { get; private set; }
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
@@ -73,6 +74,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         stateMachine ??= GetComponent<WBH_PlayerStateMachine>();
     }
 
+    /// <summary>SW 수정: 실제 체력·상태 구독을 연결하고 클라이언트의 기존 준비 상태와 폐열 충전 완료 표시를 복원한다.</summary>
     private void OnEnable()
     {
         if (health != null)
@@ -85,7 +87,10 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             stateMachine.OnEnterState += HandleStateEntered;
 
         if (isClient)
+        {
             SetPreparedAttackPresentation(preparedAttackReady);
+            SetWasteHeatPresentation(wasteHeatReady);
+        }
     }
 
     private void OnDisable()
@@ -109,6 +114,8 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.InfernoPresented += RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
+        context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
+        context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
         context.Effects.StackChanged += SyncStack;
         if (context?.Equipment != null)
         {
@@ -117,10 +124,12 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         }
     }
 
+    /// <summary>SW 수정: 늦게 참여한 관찰자도 서버가 복제한 준비 상태와 폐열 충전 완료 표시를 적용한다.</summary>
     public override void OnStartClient()
     {
         base.OnStartClient();
         SetPreparedAttackPresentation(preparedAttackReady);
+        SetWasteHeatPresentation(wasteHeatReady);
     }
 
     /// <summary>SW 수정: 서버 종료 시 소유 플레이어의 효과 표시·장비 구독을 해제하며 공격 수명 정리는 기존 경로를 따른다.</summary>
@@ -133,6 +142,9 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.InfernoPresented -= RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
+        context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
+        context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
+        wasteHeatReady = false;
         context.Effects.StackChanged -= SyncStack;
         base.OnStopServer();
     }
@@ -235,6 +247,15 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         presentation.PresentStarBreacherExplosion(position, radius);
     }
 
+    /// <summary>SW 수정: 서버가 확정한 폐열 방출 영역을 Reliable RPC로 관찰자에게 한 번 표시하며 피해는 서버 FIFO에서만 처리한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
+    {
+        presentation ??= GetComponent<UniqueEffectPresentation>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
+        presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
+    }
+
     [ClientRpc]
     private void RpcPresentChainLightning(Vector3 start, Vector3 end)
     {
@@ -299,6 +320,8 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         PublishState();
     }
 
+
+
     private void HandleEquipmentChanged(EquippedItemInfo[] equipmentSnapshot)
     {
         if (isServer) context.Effects.ReconcileEquipment();
@@ -321,6 +344,21 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         presentation ??= GetComponent<UniqueEffectPresentation>();
         presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
         presentation.SetPreparedAttack(ready);
+    }
+
+    /// <summary>SW 수정: 서버 소유 열의 충전 완료 여부만 기존 관찰자 SyncVar 경로로 전달한다. 열 개수의 원본은 BuffInstance에 둔다.</summary>
+    private void SetWasteHeatReady(bool ready) => wasteHeatReady = ready;
+
+    /// <summary>SW 수정: 서버가 복제한 폐열 충전 완료 상태를 클라이언트 실제 장착 무기의 짧은 발광으로 표시한다.</summary>
+    private void OnWasteHeatReadyChanged(bool _, bool ready) => SetWasteHeatPresentation(ready);
+
+    /// <summary>SW 수정: 클라이언트만 폐열 충전 완료 표시를 적용해 Host에서 서버 표시가 중복되지 않도록 한다.</summary>
+    private void SetWasteHeatPresentation(bool ready)
+    {
+        if (!isClient) return;
+        presentation ??= GetComponent<UniqueEffectPresentation>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
+        presentation.SetWasteHeatReady(ready);
     }
 
     private static string GetCooldownKey(TriggeredBuffUniqueEffectSO effect, ItemInstance item)
