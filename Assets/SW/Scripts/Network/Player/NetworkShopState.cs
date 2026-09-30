@@ -25,7 +25,7 @@ internal sealed class MirrorShopItemSnapshot
 /// 거절된다. 별도의 전역 잠금 Manager는 만들지 않는다.</para>
 /// <para>기존 상점의 명시적인 재고 연결 API와 추첨 설정을 재사용한다.</para>
 /// <para>6-C 실제 StageSelect 복제 Scene에는 상점 Grid가 없으므로 그 Scene에서는 빈 서버 상태로 대기한다.
-/// Camp 또는 전투 Scene의 상점 UI와 함께 생성된 인스턴스만 실제 공유 재고를 초기화한다.</para>
+/// 상점 UI가 있는 Camp Scene의 인스턴스만 실제 공유 재고를 초기화한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity))]
@@ -89,7 +89,7 @@ public sealed class NetworkShopState : NetworkBehaviour
             if (manager != null && manager.CurrentSessionRoute == MirrorSessionRoute.StageSelect)
             {
                 // 실제 StageSelect에는 상점 Grid와 초기화 UI가 없다. 선택 화면에서는 빈 상태로 대기하고,
-                // Camp/전투 Scene에 생성되는 별도 NetworkShopState가 해당 Scene의 UI 설정으로 재고를 만든다.
+                // Camp Scene에 생성되는 별도 NetworkShopState가 해당 Scene의 UI 설정으로 재고를 만든다.
                 lastServerEvent = "스테이지 선택 화면에서는 공유 재고 생성을 대기";
                 return;
             }

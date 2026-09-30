@@ -26,6 +26,7 @@ public sealed class InventoryView : MonoBehaviour
 
     public InventoryController Owner => owner;
     public EquipSlotUI[] EquipmentSlots => equipmentSlots;
+    public bool HasShop => shopController != null;
 
     private void OnEnable()
     {
