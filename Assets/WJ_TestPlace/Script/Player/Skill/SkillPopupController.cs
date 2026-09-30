@@ -127,6 +127,8 @@ public class SkillPopupController : MonoBehaviour
     private void OnDisable()
     {
         IsOpen = false;
+        // 비활성화되면 코루틴은 Unity가 멈추므로 참조만 비운다(다음에 켜질 때 StopCoroutine이 헛돌지 않게).
+        deferredLayoutRoutine = null;
 
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
@@ -188,6 +190,48 @@ public class SkillPopupController : MonoBehaviour
         RefreshIcons(controller, iconSet);
         RefreshOptionBadges(controller, iconSet);
         RefreshDescription(controller, currentEvo, currentEnh);
+        RebuildDescriptionLayout();
+
+        // 팝업이 막 켜진 프레임에는 폰트·부모 레이아웃이 아직 확정되지 않을 수 있어 한 프레임 뒤에 한 번 더 맞춘다.
+        if (isActiveAndEnabled)
+        {
+            if (deferredLayoutRoutine != null)
+                StopCoroutine(deferredLayoutRoutine);
+            deferredLayoutRoutine = StartCoroutine(RebuildDescriptionLayoutNextFrame());
+        }
+    }
+
+    private Coroutine deferredLayoutRoutine;
+
+    private System.Collections.IEnumerator RebuildDescriptionLayoutNextFrame()
+    {
+        yield return null;
+        deferredLayoutRoutine = null;
+        RebuildDescriptionLayout();
+    }
+
+    /// <summary>
+    /// 하단 설명 영역(Bottom)의 배치를 지금 문구 기준으로 확정한다.
+    ///
+    /// !! Bottom은 VerticalLayoutGroup(자식 높이 미제어)이고 SkillDescriptionText만 자기 ContentSizeFitter로
+    ///    높이를 줄인다. 한 번의 레이아웃 패스에서는 부모가 자식 위치를 먼저 정하고 자식이 나중에 높이를
+    ///    바꾸므로, 처음 열 때(또는 언어를 바꿔 문구 길이가 달라질 때) 이전 높이 기준 위치에 텍스트가 겹쳐
+    ///    보였다. 텍스트 메시를 먼저 갱신한 뒤 설명 텍스트 → Bottom 순서로 다시 계산한다.
+    /// </summary>
+    private void RebuildDescriptionLayout()
+    {
+        if (skillDescriptionText == null)
+            return;
+
+        foreach (TextMeshProUGUI text in new[] { skillNameText, skillCostText, skillDescriptionText, skillExtraText })
+        {
+            if (text != null && text.isActiveAndEnabled)
+                text.ForceMeshUpdate();
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(skillDescriptionText.rectTransform);
+        if (skillDescriptionText.transform.parent is RectTransform bottom)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(bottom);
     }
 
     /// <summary>
