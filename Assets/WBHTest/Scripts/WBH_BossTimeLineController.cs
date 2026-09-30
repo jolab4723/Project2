@@ -337,7 +337,7 @@ public class WBH_BossTimeLineController : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            if (bossRenderers[i].enabled != null)
+            if (bossRenderers[i] != null)
             {
                 bossRenderers[i].enabled = previousBossRendererStates[i];
             }
