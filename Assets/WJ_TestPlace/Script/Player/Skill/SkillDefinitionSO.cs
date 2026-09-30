@@ -40,6 +40,8 @@ public class SkillDefinitionSO : ScriptableObject
     public ActiveSkillId skillId;
     public string skillName;
     public Sprite icon;
+    [Tooltip("진화1/2/3 전용 아이콘(스킬 창 진화 선택 버튼·슬롯 배지). 비어 있는 칸은 기본 icon으로 대신 표시한다. 스킬 데이터 파이프라인은 이 값을 덮어쓰지 않는다.")]
+    public Sprite[] evolutionIcons = new Sprite[3];
 
     [Header("공통")]
     public float cooldownSeconds = 5f;
@@ -65,6 +67,18 @@ public class SkillDefinitionSO : ScriptableObject
         };
 
         return evoCost > 0f ? evoCost : manaCost;
+    }
+
+    /// <summary>진화 전용 아이콘. 진화 없음이거나 해당 칸이 비어 있으면 null(호출 쪽에서 기본 icon으로 대체).</summary>
+    public Sprite GetEvolutionIcon(SkillEvolutionId evolution)
+    {
+        int index = (int)evolution - 1;
+        if (evolutionIcons == null || index < 0 || index >= evolutionIcons.Length)
+            return null;
+
+        // 직렬화된 배열의 빈 칸은 Unity의 "가짜 null"이라 ?? 폴백이 안 걸린다 - == 비교로 진짜 null을 돌려준다.
+        Sprite sprite = evolutionIcons[index];
+        return sprite != null ? sprite : null;
     }
     public SkillShapeType shapeType;
 

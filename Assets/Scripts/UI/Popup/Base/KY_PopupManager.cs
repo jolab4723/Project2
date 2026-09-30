@@ -20,6 +20,12 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    // 닫기를 요청했지만 닫힘 애니메이션(SlideOut/커튼)이 끝나지 않아 아직 활성 상태인 팝업과 요청 시각.
+    // 스택/사이드 참조에서는 즉시 빠지므로, 이 동안 ESC가 오면 "열린 팝업 없음"으로 보고 일시정지를 열어버렸다.
+    private readonly Dictionary<KY_PopupBase, float> closingPopups = new Dictionary<KY_PopupBase, float>();
+    // 닫힘 애니메이션이 비정상적으로 끝나지 않아도 ESC가 영원히 막히지 않게 하는 상한(실제 시간, 초).
+    private const float ClosingEscBlockSeconds = 1.5f;
+
     [SerializeField] private InventoryPartView inventoryPartView;
 
     private InventoryPartView InventoryPartViewRef
@@ -111,6 +117,7 @@ public class KY_PopupManager : MonoBehaviour
 
         KY_PopupBase top = popupStack.Pop();
         top.Close();
+        MarkClosing(top);
 
         if (popupStack.Count == 0)
         {
@@ -161,12 +168,51 @@ public class KY_PopupManager : MonoBehaviour
         if (currentSidePopup == null) return;
 
         currentSidePopup.Close();
+        MarkClosing(currentSidePopup);
         currentSidePopup = null;
         KY_GameEvents.SidePopupClosed();
     }
 
+    /// <summary>닫힘 애니메이션이 끝날 때까지(비활성화될 때까지) ESC 판정에서 "닫히는 중"으로 본다.</summary>
+    private void MarkClosing(KY_PopupBase popup)
+    {
+        if (popup != null && popup.gameObject.activeSelf)
+            closingPopups[popup] = Time.unscaledTime;
+    }
+
+    /// <summary>
+    /// 닫기를 요청한 팝업 중 아직 닫힘 애니메이션이 진행 중인 것이 있는지 확인한다.
+    /// 이미 비활성화됐거나, 다시 열렸거나(스택/사이드에 복귀), 상한 시간이 지난 항목은 정리한다.
+    /// </summary>
+    private bool IsAnyPopupClosing()
+    {
+        if (closingPopups.Count == 0) return false;
+
+        bool closing = false;
+        var finished = new List<KY_PopupBase>();
+        foreach (var pair in closingPopups)
+        {
+            KY_PopupBase popup = pair.Key;
+            bool done = popup == null || !popup.gameObject.activeSelf ||
+                        popupStack.Contains(popup) || popup == currentSidePopup ||
+                        Time.unscaledTime - pair.Value > ClosingEscBlockSeconds;
+            if (done) finished.Add(popup);
+            else closing = true;
+        }
+
+        foreach (KY_PopupBase popup in finished)
+            closingPopups.Remove(popup);
+
+        return closing;
+    }
+
     void OnEscPressed()
     {
+        // 직전 ESC로 닫은 팝업이 아직 들어가는 중이면 이 입력은 무시한다 - 연속 ESC가 닫힘 도중에
+        // 일시정지를 여는(또는 방금 닫은 일시정지를 다시 여는) 것을 막는다.
+        if (IsAnyPopupClosing())
+            return;
+
         if (popupStack.Count > 0)
         {
             Hide();
