@@ -13,11 +13,14 @@ public class SkillPopupController : MonoBehaviour
     [Tooltip("강화 선택 아이콘(Enhance1 위력 / Enhance2 쿨타임 감소 / Enhance3 범위). 강화 종류는 클래스와 무관해서 공용 아이콘을 쓴다. 비워두면 선택된 스킬 아이콘을 그대로 쓴다.")]
     [SerializeField] private Sprite[] enhancementIcons = new Sprite[3];
 
-    [Tooltip("진화 배지 아이콘(진화1/2/3). 전용 아이콘이 아직 없으면 비워두면 되고, 그 경우 해당 스킬의 아이콘으로 대신 표시한다.")]
+    [Tooltip("공용 진화 아이콘(진화1/2/3). 스킬 데이터(SkillDefinitionSO.evolutionIcons)에 전용 아이콘이 없을 때만 쓴다. 비워두면 해당 스킬의 아이콘으로 대신 표시한다.")]
     [SerializeField] private Sprite[] evolutionIcons = new Sprite[3];
 
-    [Tooltip("옵션을 아직 안 고른 배지에 넣을 전용 이미지. 비워두면 임시로 그 스킬 아이콘을 회색으로 표시한다.")]
+    [Tooltip("옵션을 아직 안 고른 배지에 넣을 전용 이미지. 비워두면 Resources의 공용 select_none 아이콘을 쓰고, 그것도 없으면 그 스킬 아이콘을 회색으로 표시한다.")]
     [SerializeField] private Sprite unselectedOptionIcon;
+
+    /// <summary>진화/강화 미선택 배지와 포션 미장착 슬롯이 함께 쓰는 공용 "선택 없음" 아이콘.</summary>
+    public const string SelectNoneIconResourcePath = "Images/Icon/Skill/Common/select_none";
 
     [Tooltip("스킬 슬롯 1~4의 배지(SkillSlot_N/Area_SkillOptions/option_*/img_OptionIcon). 아직 배지를 안 만든 슬롯은 비워두면 된다.")]
     [SerializeField] private SkillOptionBadges[] skillOptionBadges = new SkillOptionBadges[4];
@@ -87,6 +90,8 @@ public class SkillPopupController : MonoBehaviour
             labelDatabase = Resources.Load<SkillLabelDatabaseSO>("DataFiles/CharData/SkillData/3. GeneratedAssets/SkillLabelDatabase");
         if (uiLabels == null)
             uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+        if (unselectedOptionIcon == null)
+            unselectedOptionIcon = Resources.Load<Sprite>(SelectNoneIconResourcePath);
 
         for (int i = 0; i < skillSlotButtons.Length; i++)
         {
@@ -204,13 +209,12 @@ public class SkillPopupController : MonoBehaviour
             bool hasSkill = controller.GetSkillDefinition(i) != null;
             Sprite slotIcon = ResolveSlotIcon(controller, iconSet, i);
 
-            // !! 진화는 스킬마다 내용이 달라서 원래는 스킬별 아이콘이 맞지만 아직 에셋이 없다.
-            //    지금은 공용 3칸을 먼저 보고, 비어 있으면 그 스킬 아이콘으로 대신 표시한다.
-            //    진화1/2/3 아이콘이 준비되면 evolutionIcons에 꽂는 것만으로 교체된다.
+            // !! 진화는 스킬마다 내용이 달라서 스킬별 아이콘(SkillDefinitionSO.evolutionIcons)을 먼저 쓴다.
+            //    그게 비어 있으면 공용 3칸(evolutionIcons)을 보고, 그것도 없으면 그 스킬 아이콘으로 대신 표시한다.
             SkillEvolutionId evolution = hasSkill ? controller.GetEvolution(i) : SkillEvolutionId.None;
             SetBadge(badges.evolutionBadge,
                      evolution != SkillEvolutionId.None,
-                     PickIcon(evolutionIcons, (int)evolution - 1) ?? slotIcon,
+                     ResolveEvolutionIcon(controller.GetSkillDefinition(i), evolution) ?? slotIcon,
                      slotIcon);
 
             SkillEnhancementId enhancement = hasSkill ? controller.GetEnhancement(i) : SkillEnhancementId.None;
@@ -279,7 +283,8 @@ public class SkillPopupController : MonoBehaviour
     /// 활성 캐릭터의 스킬 아이콘을 팝업에 반영한다. 아이콘 출처는 HUD(KY_SkillView)와 동일하게
     /// 스킬 데이터(SkillDefinitionSO.icon)가 우선이고, 비어 있으면 캐릭터의 ClassSkillIconSet을 쓴다.
     ///
-    /// !! 진화/강화 선택 슬롯은 선택지별 전용 아이콘이 아직 없어서 '지금 선택된 스킬'의 아이콘을 따라간다
+    /// !! 진화 선택 슬롯은 선택된 스킬의 진화별 아이콘(SkillDefinitionSO.evolutionIcons)을 쓰고, 전용 아이콘이
+    ///    없는 칸(강화 포함)은 '지금 선택된 스킬'의 아이콘을 따라간다
     ///    (예전엔 파이터 1번 스킬 아이콘이 고정으로 박혀 있어 거너로 플레이해도 그대로 남았다).
     /// </summary>
     private void RefreshIcons(ISkillController controller, ClassSkillIconSet iconSet)
@@ -288,8 +293,14 @@ public class SkillPopupController : MonoBehaviour
             ApplyIcon(skillIconSlots[i], ResolveSlotIcon(controller, iconSet, i));
 
         Sprite selectedIcon = ResolveSlotIcon(controller, iconSet, selectedSkillIndex);
-        foreach (Button button in evolutionButtons)
-            ApplyIcon(button != null ? button.GetComponent<KY_PassiveSkillSlot>() : null, selectedIcon);
+        SkillDefinitionSO selectedDefinition = controller.GetSkillDefinition(selectedSkillIndex);
+        // 진화 선택 1~3은 선택된 스킬의 진화별 아이콘을 쓰고, 없는 칸은 그 스킬 아이콘을 따라간다.
+        for (int i = 0; i < evolutionButtons.Length; i++)
+        {
+            Button button = evolutionButtons[i];
+            Sprite icon = ResolveEvolutionIcon(selectedDefinition, (SkillEvolutionId)(i + 1)) ?? selectedIcon;
+            ApplyIcon(button != null ? button.GetComponent<KY_PassiveSkillSlot>() : null, icon);
+        }
 
         // 강화는 종류(위력/쿨타임/범위)가 클래스·스킬과 무관하므로 공용 아이콘을 쓴다.
         for (int i = 0; i < enhancementButtons.Length; i++)
@@ -299,6 +310,16 @@ public class SkillPopupController : MonoBehaviour
                 : selectedIcon;
             ApplyIcon(enhancementButtons[i] != null ? enhancementButtons[i].GetComponent<KY_PassiveSkillSlot>() : null, icon);
         }
+    }
+
+    /// <summary>진화 아이콘: 스킬 데이터의 진화별 아이콘 → 공용 evolutionIcons 순서. 둘 다 없으면 null.</summary>
+    private Sprite ResolveEvolutionIcon(SkillDefinitionSO definition, SkillEvolutionId evolution)
+    {
+        if (evolution == SkillEvolutionId.None)
+            return null;
+
+        Sprite icon = definition != null ? definition.GetEvolutionIcon(evolution) : null;
+        return icon != null ? icon : PickIcon(evolutionIcons, (int)evolution - 1);
     }
 
     private static Sprite ResolveSlotIcon(ISkillController controller, ClassSkillIconSet iconSet, int index)
