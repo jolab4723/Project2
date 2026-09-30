@@ -108,6 +108,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.ChainPresented += RpcPresentChainLightning;
         context.Effects.InfernoPresented += RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
+        context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
         context.Effects.StackChanged += SyncStack;
         if (context?.Equipment != null)
         {
@@ -131,6 +132,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.ChainPresented -= RpcPresentChainLightning;
         context.Effects.InfernoPresented -= RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
+        context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
         context.Effects.StackChanged -= SyncStack;
         base.OnStopServer();
     }
@@ -167,6 +169,10 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             case PhaseHarvesterWaveUniqueEffectSO wave:
                 cooldownSeconds = wave.cooldownSeconds;
                 key = PlayerItemEffectState.GetPhaseHarvesterCooldownKey(wave);
+                break;
+            case StarBreacherExplosionUniqueEffectSO explosion:
+                cooldownSeconds = explosion.cooldownSeconds;
+                key = PlayerItemEffectState.GetStarBreacherCooldownKey(explosion);
                 break;
             default:
                 return 0f;
@@ -218,6 +224,15 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         presentation ??= GetComponent<UniqueEffectPresentation>();
         presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
         presentation.PresentPhaseHarvesterWave(start, end, width);
+    }
+
+    /// <summary>SW 수정: 서버 확정 Shotgun 폭발의 피격점·반경을 신뢰 채널로 관찰자에게 표시하며 Host도 RPC 한 경로만 사용한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentStarBreacherExplosion(Vector3 position, float radius)
+    {
+        presentation ??= GetComponent<UniqueEffectPresentation>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
+        presentation.PresentStarBreacherExplosion(position, radius);
     }
 
     [ClientRpc]

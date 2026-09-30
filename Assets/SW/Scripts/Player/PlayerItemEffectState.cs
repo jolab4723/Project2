@@ -19,16 +19,18 @@ public sealed class PlayerItemEffectState
     private uint preparedAttackConsumeCount;
     private uint directAttackId, hitAttackId;
     private readonly HashSet<WBH_ICombat> directTargets = new();
-    // SW 수정: 실제 기본 공격의 정면과 장착 효과만 공격 범위 동안 보존한다.
-    private Vector3 directAttackForward;
+    // SW 수정: 실제 기본 공격의 정면·발사 원점과 장착 효과만 공격 범위 동안 보존한다.
+    private Vector3 directAttackForward, directAttackOrigin;
     private PhaseHarvesterWaveUniqueEffectSO directWaveEffect;
-    private uint lastPhaseHarvesterAttackId;
+    private StarBreacherExplosionUniqueEffectSO directExplosionEffect;
+    private uint lastPhaseHarvesterAttackId, lastStarBreacherAttackId;
     private readonly List<PlayerGrenadeEffect> grenadeEffects = new();
     private UniqueEffectSO hitEffect;
     private GunnerWeaponType hitWeapon;
     public event Action<Vector3, Vector3> ChainPresented;
     public event Action<Vector3> InfernoPresented;
     public event Action<Vector3, Vector3, float> PhaseHarvesterPresented;
+    public event Action<Vector3, float> StarBreacherPresented;
     public event Action<bool> PreparedChanged;
     public event Action<ItemInstance> StackChanged;
     public PlayerItemEffectState(PlayerContext context) => this.context = context;
@@ -45,15 +47,18 @@ public sealed class PlayerItemEffectState
     public bool CanExecute => context.GetComponent<Mirror.NetworkIdentity>() is { } identity
         ? identity.isServer : !Mirror.NetworkServer.active && !Mirror.NetworkClient.active;
 
-    /// <summary>SW 수정: 싱글·서버의 실제 기본 공격 범위에서 직접 대상·Fighter 정면·장착 파동 효과를 저장하고 종료 시 해제한다.</summary>
+    /// <summary>SW 수정: 싱글·서버의 실제 기본 공격 범위에서 직접 대상·Fighter 정면 또는 Shotgun 발사 원점·무기 효과를 저장하고 종료 시 해제한다.</summary>
     public void SetDirectTargets(uint attackId, IEnumerable<WBH_ICombat> targets,
-        Vector3? attackForward = null, bool fighterAttack = false)
+        Vector3? attackForward = null, bool fighterAttack = false,
+        Vector3? attackOrigin = null, bool shotgunAttack = false)
     {
         directAttackId = attackId;
         directTargets.Clear();
         if (targets != null) directTargets.UnionWith(targets);
         directWaveEffect = null;
+        directExplosionEffect = null;
         directAttackForward = Vector3.zero;
+        directAttackOrigin = Vector3.zero;
         if (attackId == 0 || inventory?.EquipmentSystem == null ||
             !inventory.EquipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance weapon) ||
             weapon?.definition == null)
@@ -69,6 +74,16 @@ public sealed class PlayerItemEffectState
                 directWaveEffect = weapon.definition.uniqueEffect as PhaseHarvesterWaveUniqueEffectSO;
             }
         }
+        if (shotgunAttack && attackOrigin.HasValue && weapon.definition.characterClass == CharacterClass.Gunner &&
+            weapon.definition.uniqueEffect is StarBreacherExplosionUniqueEffectSO explosion)
+        {
+            Vector3 origin = attackOrigin.Value;
+            if (float.IsFinite(origin.x) && float.IsFinite(origin.y) && float.IsFinite(origin.z))
+            {
+                directAttackOrigin = origin;
+                directExplosionEffect = explosion;
+            }
+        }
     }
 
     /// <summary>SW 수정: 싱글·서버의 피해 적용 전에 실제 Fighter Direct 대상의 파동 설정과 공격 정면을 값으로 확보한다.</summary>
@@ -80,6 +95,20 @@ public sealed class PlayerItemEffectState
         return CanExecute && request.DamageCause == DamageCause.Direct && request.AttackType == WBH_AttackType.Normal &&
             request.AttackId != 0 && request.AttackId == directAttackId &&
             effect != null && directTargets.Contains(request.Target);
+    }
+
+    /// <summary>SW 수정: 싱글·서버의 유효 Shotgun Direct 피해 전에 저장된 발사 원점과 실제 적중점의 3m 조건을 확인해 폭발 출처를 확보한다.</summary>
+    internal bool TryGetStarBreacherSource(in WBH_DamageRequest request,
+        out StarBreacherExplosionUniqueEffectSO effect, out Vector3 hitPosition)
+    {
+        effect = directExplosionEffect;
+        hitPosition = request.HitPosition ?? Vector3.zero;
+        return CanExecute && request.DamageCause == DamageCause.Direct && request.AttackType == WBH_AttackType.Normal &&
+            request.AttackId != 0 && request.AttackId == directAttackId && directTargets.Contains(request.Target) &&
+            effect != null && request.HitPosition.HasValue &&
+            float.IsFinite(hitPosition.x) && float.IsFinite(hitPosition.y) && float.IsFinite(hitPosition.z) &&
+            float.IsFinite(effect.triggerDistance) && effect.triggerDistance > 0f &&
+            (hitPosition - directAttackOrigin).sqrMagnitude <= effect.triggerDistance * effect.triggerDistance;
     }
 
     /// <summary>SW 수정: 실제 Fighter 기본 공격의 생존→사망 확정 뒤 싱글·서버에서 최초 처치 위치의 파동을 FIFO에 한 번 등록한다. 보상과 처치 이벤트는 재발행하지 않는다.</summary>
@@ -148,6 +177,66 @@ public sealed class PlayerItemEffectState
     /// <summary>SW 수정: 같은 소유자의 동일 효과는 장비 개체와 무관하게 공유하며 싱글·서버·HUD에서 같은 키로 조회한다.</summary>
     internal static string GetPhaseHarvesterCooldownKey(PhaseHarvesterWaveUniqueEffectSO effect)
         => effect.name + ":phase-harvester";
+
+    /// <summary>SW 수정: 싱글·서버의 최초 유효 근거리 Shotgun 명중 뒤 실제 피격점에서 Fire 비치명타 폭발을 FIFO에 한 번 등록한다. 시작 표적의 직접타 사망과 무관하며 추가 Burn은 예약하지 않는다.</summary>
+    internal void FireStarBreacherHit(uint attackId, Vector3 hitPosition, Vector3 sourceBodyPosition,
+        StarBreacherExplosionUniqueEffectSO effect)
+    {
+        if (!CanExecute || effect == null || attackId == 0 || lastStarBreacherAttackId == attackId)
+            return;
+        lastStarBreacherAttackId = attackId;
+        string key = GetStarBreacherCooldownKey(effect);
+        double now = Now;
+        if (cooldownEndTimes.TryGetValue(key, out double end) && now < end)
+            return;
+        if (!float.IsFinite(effect.radius) || effect.radius <= 0f ||
+            !float.IsFinite(effect.damageMultiplier) || effect.damageMultiplier <= 0f ||
+            !float.IsFinite(effect.cooldownSeconds) || effect.cooldownSeconds < 0f)
+            return;
+
+        cooldownEndTimes[key] = now + effect.cooldownSeconds;
+        var candidates = new Dictionary<WBH_ICombat, Vector3>();
+        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
+        foreach (Collider hit in Physics.OverlapSphere(hitPosition, effect.radius, 1 << 10, QueryTriggerInteraction.Collide))
+        {
+            WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
+            if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
+                target.Status == null || target.Status.IsDead)
+                continue;
+            Vector3 bodyPosition = component.GetComponentInParent<NetworkEnemyAuthority>()?.transform.position
+                ?? component.transform.position;
+            Vector3 point = hit.ClosestPoint(hitPosition);
+            float distanceSquared = (point - hitPosition).sqrMagnitude;
+            // SW 수정: 피격점의 높이와 발 위치를 혼동하지 않고 A1과 같은 본체 간 0.5m 단차 기준을 쓴다.
+            if (Mathf.Abs(bodyPosition.y - sourceBodyPosition.y) > 0.5f ||
+                distanceSquared > effect.radius * effect.radius ||
+                Physics.Linecast(hitPosition, point, obstacles, QueryTriggerInteraction.Ignore))
+                continue;
+            // SW 수정: 유효한 Collider만 모아 같은 본체의 가장 가까운 실제 표면을 한 번 선택한다.
+            if (!candidates.TryGetValue(target, out Vector3 previous) ||
+                distanceSquared < (previous - hitPosition).sqrMagnitude)
+                candidates[target] = point;
+        }
+        var targets = new List<WBH_ICombat>(candidates.Keys);
+        targets.Sort((left, right) =>
+        {
+            int byDistance = (candidates[left] - hitPosition).sqrMagnitude.CompareTo((candidates[right] - hitPosition).sqrMagnitude);
+            if (byDistance != 0) return byDistance;
+            Component a = (Component)left, b = (Component)right;
+            uint aId = a.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
+            uint bId = b.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
+            int byId = aId.CompareTo(bId);
+            return byId != 0 ? byId : a.GetInstanceID().CompareTo(b.GetInstanceID());
+        });
+        for (int index = 0; index < Mathf.Min(targets.Count, Mathf.Clamp(effect.maxTargets, 1, 16)); index++)
+            PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], ElementType.Fire,
+                effect.damageMultiplier, null, DamageCause.Effect, attackId, canCrit: false);
+        StarBreacherPresented?.Invoke(hitPosition, effect.radius);
+    }
+
+    /// <summary>SW 수정: 싱글·서버·HUD가 같은 소유자의 스타 브리처 효과 쿨다운을 장비 개체와 무관하게 공유한다.</summary>
+    internal static string GetStarBreacherCooldownKey(StarBreacherExplosionUniqueEffectSO effect)
+        => effect.name + ":star-breacher";
 
     public bool IsDirectTargetForAttack(uint attackId, WBH_ICombat target)
         => context.CombatAuthority != null ? context.CombatAuthority.IsDirectTargetForAttack(attackId, target)
@@ -241,6 +330,10 @@ public sealed class PlayerItemEffectState
                 cooldownSeconds = wave.cooldownSeconds;
                 key = GetPhaseHarvesterCooldownKey(wave);
                 break;
+            case StarBreacherExplosionUniqueEffectSO explosion:
+                cooldownSeconds = explosion.cooldownSeconds;
+                key = GetStarBreacherCooldownKey(explosion);
+                break;
             default:
                 return 0f;
         }
@@ -264,8 +357,11 @@ public sealed class PlayerItemEffectState
         }
         lastChainAttackIds.Clear();
         lastPhaseHarvesterAttackId = 0;
+        lastStarBreacherAttackId = 0;
         directWaveEffect = null;
+        directExplosionEffect = null;
         directAttackForward = Vector3.zero;
+        directAttackOrigin = Vector3.zero;
         directTargets.Clear();
         directAttackId = hitAttackId = 0;
         hitEffect = null;

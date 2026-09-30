@@ -109,7 +109,7 @@ namespace DataSystem
             return true;
         }
         /// <summary>
-        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동을 포함한 effectType별 실제 전투 수치를 함께 채운다.
+        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동·스타 브리처 폭발을 포함한 effectType별 실제 전투 수치를 함께 채운다.
         /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
@@ -129,6 +129,14 @@ namespace DataSystem
                     wave.damageMultiplier = asset.coefficients[2] / 100f;
                     wave.maxTargets = (int)asset.coefficients[3];
                     wave.cooldownSeconds = row.cooldownSeconds;
+                    break;
+                // SW 수정: 기존 계수 열은 근거리 거리·폭발 반경·피해%·최대 대상·쿨다운 순서로 재사용한다.
+                case StarBreacherExplosionUniqueEffectSO explosion:
+                    explosion.triggerDistance = asset.coefficients[0];
+                    explosion.radius = asset.coefficients[1];
+                    explosion.damageMultiplier = asset.coefficients[2] / 100f;
+                    explosion.maxTargets = (int)asset.coefficients[3];
+                    explosion.cooldownSeconds = row.cooldownSeconds;
                     break;
                 // SW 수정: 기존 설명 계수와 cooldown 열을 재사용하여 툴팁과 실제 피해 수치를 함께 갱신한다.
                 case ChainLightningUniqueEffectSO chain:
@@ -271,7 +279,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
+        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동·스타 브리처 폭발을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
         /// 등록되지 않은 이름은 일부 데이터만 생성하지 않도록 전체 변환을 실패시킨다.
         /// </summary>
         private static Type ResolveEffectType(string effectType, string id)
@@ -286,6 +294,7 @@ namespace DataSystem
             switch (name)
             {
                 case nameof(PhaseHarvesterWaveUniqueEffectSO): return typeof(PhaseHarvesterWaveUniqueEffectSO);
+                case nameof(StarBreacherExplosionUniqueEffectSO): return typeof(StarBreacherExplosionUniqueEffectSO);
                 case nameof(PassiveBuffUniqueEffectSO): return typeof(PassiveBuffUniqueEffectSO);
                 case nameof(TriggeredBuffUniqueEffectSO): return typeof(TriggeredBuffUniqueEffectSO);
                 case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
@@ -307,7 +316,7 @@ namespace DataSystem
             return null;
         }
 
-        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동 계수의 누락·비유한 값·오타를 차단한다.</summary>
+        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동·폭발 계수의 누락·비유한 값·오타를 차단한다.</summary>
         internal static bool ValidateRows(List<UniqueEffectTableRow> rows)
         {
             if (rows == null || rows.Count == 0)
@@ -328,8 +337,8 @@ namespace DataSystem
                 }
                 Type type = ResolveEffectType(row.effectType, id);
                 if (type == null) { valid = false; continue; }
-                // SW 수정: 처형 파동의 길이·전체 폭·피해·대상·쿨다운 5개 계수를 검증한다.
-                if (type == typeof(PhaseHarvesterWaveUniqueEffectSO))
+                // SW 수정: 두 즉시 공간 효과가 같은 5개 계수 검증을 공유하며 종류별 거리·폭/반경 의미는 유지한다.
+                if (type == typeof(PhaseHarvesterWaveUniqueEffectSO) || type == typeof(StarBreacherExplosionUniqueEffectSO))
                 {
                     string[] spatialParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
                     float[] spatialValues = new float[spatialParts.Length];
@@ -343,7 +352,8 @@ namespace DataSystem
                         Mathf.Approximately(spatialValues[4], row.cooldownSeconds);
                     if (!spatialValid)
                     {
-                        string dimensions = "길이;전체 폭";
+                        string dimensions = type == typeof(PhaseHarvesterWaveUniqueEffectSO)
+                            ? "길이;전체 폭" : "근거리 거리;폭발 반경";
                         Debug.LogError($"[UniqueEffect] '{id}'의 계수는 {dimensions};피해%;최대 대상(정수 1~16);쿨다운 순서이며 마지막 값은 cooldownSeconds와 같아야 합니다.");
                         valid = false;
                     }

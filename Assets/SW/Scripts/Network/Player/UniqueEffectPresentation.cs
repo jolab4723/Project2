@@ -29,6 +29,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         singleEffects.ChainPresented += PresentChainLightning;
         singleEffects.InfernoPresented += PresentInfernoHit;
         singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
+        singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
         singleEffects.PreparedChanged += SetPreparedAttack;
         SetPreparedAttack(singleEffects.PreparedAttackReady);
     }
@@ -169,6 +170,43 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         StartCoroutine(ReleaseBoltAfter(slash, 0.14f));
     }
 
+    /// <summary>SW 수정: 싱글 확정 또는 서버 Reliable RPC로 받은 실제 피격점의 Fire 폭발 반경을 즉시 표시하며 Collider·피해·이동 객체는 만들지 않는다.</summary>
+    public void PresentStarBreacherExplosion(Vector3 position, float radius)
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled ||
+            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
+            return;
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) return;
+        chainLightningMaterial ??= new Material(shader)
+        {
+            name = "Unique Effect Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+        // SW 수정: 기존 표시 자원·수명으로 원형 절단면을 제거하고 설정된 화염 임팩트도 재사용한다.
+        GameObject burst = new("Star Breacher Explosion Presentation") { hideFlags = HideFlags.DontSave };
+        burst.transform.SetParent(transform, true);
+        burst.transform.rotation = Quaternion.LookRotation(Vector3.up);
+        activeBolts.Add(burst);
+        LineRenderer line = burst.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.TransformZ;
+        line.loop = true;
+        line.positionCount = 32;
+        for (int index = 0; index < line.positionCount; index++)
+        {
+            float angle = index * Mathf.PI * 2f / line.positionCount;
+            line.SetPosition(index, position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius);
+        }
+        line.widthMultiplier = 0.25f;
+        line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        StartCoroutine(ReleaseBoltAfter(burst, 0.2f));
+        if (infernoHitPrefab != null) PresentInfernoHit(position);
+    }
+
     public void PresentInfernoHit(Vector3 position)
     {
         if (!Application.isPlaying || !isActiveAndEnabled ||
@@ -214,6 +252,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.ChainPresented -= PresentChainLightning;
             singleEffects.InfernoPresented -= PresentInfernoHit;
             singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
+            singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
             singleEffects.PreparedChanged -= SetPreparedAttack;
             singleEffects = null;
         }

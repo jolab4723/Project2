@@ -765,6 +765,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             currentType == weaponType && string.Equals(currentId, itemId ?? string.Empty, System.StringComparison.Ordinal);
     }
 
+    /// <summary>SW 수정: 서버에서 실제 Gunner 발사를 확정하고 Shotgun은 발사 원점 기준 유효 대상·적중점을 고정해 공통 효과 출처를 피해 범위 동안 유지한다.</summary>
     [Server]
     private void ResolveServerGunnerAttack(uint attackId)
     {
@@ -793,27 +794,55 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         if (pendingGunnerWeapon == GunnerWeaponType.Shotgun)
         {
+            // SW 수정: 사망·이동 콜백 전에 본체별 가장 가까운 유효 표면과 대상 전체를 고정한다.
+            var hitPositions = new Dictionary<WBH_ICombat, Vector3>();
             foreach (Collider hit in Physics.OverlapSphere(origin, pendingGunnerRange, enemyLayer, QueryTriggerInteraction.Collide))
             {
                 WBH_ICombat target = FindCombatTarget(hit);
                 if (target is not Component component || component.GetComponentInParent<NetworkEnemyAuthority>() == null ||
-                    target == null) continue;
-                Vector3 offset = hit.ClosestPoint(origin) - origin;
+                    target.Status == null || target.Status.IsDead) continue;
+                Vector3 hitPosition = hit.ClosestPoint(origin);
+                Vector3 offset = hitPosition - origin;
                 Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
                 if (Vector3.Angle(direction, flat) > 45f ||
-                    Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
-                Vector3 hitPosition = hit.ClosestPoint(transform.position);
-                var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
-                    pendingGunnerElement, 1f, GetStatusEffectForElement(pendingGunnerElement),
-                    GunnerCombatPresentation.GetHitEffectData(gameObject, pendingGunnerWeapon),
-                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
-                if (WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
+                    Physics.Linecast(origin, hitPosition, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
+                if (!hitPositions.TryGetValue(target, out Vector3 previous) || offset.sqrMagnitude < (previous - origin).sqrMagnitude)
+                    hitPositions[target] = hitPosition;
+            }
+            var targets = new List<WBH_ICombat>(hitPositions.Keys);
+            targets.Sort((left, right) =>
+            {
+                int byDistance = (hitPositions[left] - origin).sqrMagnitude.CompareTo((hitPositions[right] - origin).sqrMagnitude);
+                return byDistance != 0 ? byDistance : ((Component)left).GetComponentInParent<NetworkIdentity>().netId
+                    .CompareTo(((Component)right).GetComponentInParent<NetworkIdentity>().netId);
+            });
+            directAttackId = attackId;
+            directAttackTargets.Clear();
+            directAttackTargets.UnionWith(targets);
+            try
+            {
+                context.Effects.SetDirectTargets(attackId, targets, direction, attackOrigin: origin, shotgunAttack: true);
+                foreach (WBH_ICombat target in targets)
                 {
-                    ServerRecordGunnerHit(target, result);
-                    Vector3 impactDirection = (hit.transform.position - origin).normalized;
-                    impactDirection.y = 0f;
-                    RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.transform.position, -impactDirection);
+                    Vector3 hitPosition = hitPositions[target];
+                    var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
+                        pendingGunnerElement, 1f, GetStatusEffectForElement(pendingGunnerElement),
+                        GunnerCombatPresentation.GetHitEffectData(gameObject, pendingGunnerWeapon),
+                        hitPosition, origin - hitPosition, DamageCause.Direct, attackId);
+                    if (WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
+                    {
+                        ServerRecordGunnerHit(target, result);
+                        Vector3 impactDirection = (hitPosition - origin).normalized;
+                        impactDirection.y = 0f;
+                        RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hitPosition, -impactDirection);
+                    }
                 }
+            }
+            finally
+            {
+                context.Effects.SetDirectTargets(0, null);
+                directAttackId = 0;
+                directAttackTargets.Clear();
             }
             if (lastResult != MirrorCombatRequestResult.Hit) lastResult = MirrorCombatRequestResult.NoTarget;
             return;
