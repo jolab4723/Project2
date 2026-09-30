@@ -59,7 +59,7 @@ public class YJ_MinimapPing : MonoBehaviour
             inputHandler.PingCreated -= ShowPing;
     }
 
-    private void ShowPing(Vector3 position, float lifetime)
+    public void ShowPing(Vector3 position, float lifetime)
     {
         if (player == null || lifetime <= 0f)
             return;
