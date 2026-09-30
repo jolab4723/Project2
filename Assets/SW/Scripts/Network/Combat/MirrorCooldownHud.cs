@@ -21,14 +21,17 @@ public sealed class MirrorCooldownHud : MonoBehaviour
 
     private readonly struct UniqueEffectEntry
     {
-        public UniqueEffectEntry(ItemInstance item, TriggeredBuffUniqueEffectSO effect)
+        /// <summary>SW 수정: 로컬 HUD가 싱글·서버 복제 효과의 기존 아이콘과 쿨다운 지속시간을 같은 슬롯에 담는다.</summary>
+        public UniqueEffectEntry(ItemInstance item, UniqueEffectSO effect, float duration)
         {
             Item = item;
             Effect = effect;
+            Duration = duration;
         }
 
         public ItemInstance Item { get; }
-        public TriggeredBuffUniqueEffectSO Effect { get; }
+        public UniqueEffectSO Effect { get; }
+        public float Duration { get; }
     }
 
     [SerializeField] private GameObject uniqueEffectSlotPrefab;
@@ -92,6 +95,7 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         }
     }
 
+    /// <summary>SW 수정: 싱글은 실제 Effects 상태, 클라이언트는 서버 복제 상태로 로컬 플레이어의 파동·버프 쿨다운을 기존 슬롯에 표시한다.</summary>
     private void RefreshUniqueEffectCooldowns()
     {
         CollectUniqueEffectEntries();
@@ -115,12 +119,12 @@ public sealed class MirrorCooldownHud : MonoBehaviour
                 continue;
 
             UniqueEffectEntry entry = uniqueEffectEntries[index];
-            float remaining = itemTriggers.GetRemainingCooldown(entry.Item);
-            float duration = entry.Effect.cooldownSeconds;
+            float remaining = GetRemainingCooldown(entry.Item);
+            float duration = entry.Duration;
 
             if (view.icon != null)
             {
-                view.icon.sprite = entry.Effect.BuffIcon;
+                view.icon.sprite = entry.Effect.icon;
                 view.icon.enabled = view.icon.sprite != null;
                 view.icon.preserveAspect = true;
             }
@@ -138,10 +142,11 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         }
     }
 
+    /// <summary>SW 수정: 바인딩된 싱글·로컬 네트워크 플레이어의 장비와 유물에서 표시할 효과를 모은다.</summary>
     private void CollectUniqueEffectEntries()
     {
         uniqueEffectEntries.Clear();
-        if (inventory == null || itemTriggers == null)
+        if (inventory == null || BoundContext == null)
             return;
 
         if (inventory.EquipmentSystem != null)
@@ -161,14 +166,24 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         }
     }
 
+    /// <summary>SW 수정: 소유 플레이어의 버프·처형 파동이 쿨다운 중일 때만 기존 HUD 슬롯을 사용한다.</summary>
     private void TryCollectUniqueEffect(ItemInstance item)
     {
-        if (item?.definition?.uniqueEffect is TriggeredBuffUniqueEffectSO effect &&
-            itemTriggers.GetRemainingCooldown(item) > 0f)
+        UniqueEffectSO effect = item?.definition?.uniqueEffect;
+        float duration = effect switch
         {
-            uniqueEffectEntries.Add(new UniqueEffectEntry(item, effect));
-        }
+            TriggeredBuffUniqueEffectSO triggered => triggered.cooldownSeconds,
+            PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
+            _ => 0f,
+        };
+        if (duration > 0f && GetRemainingCooldown(item) > 0f)
+            uniqueEffectEntries.Add(new UniqueEffectEntry(item, effect, duration));
     }
+
+    /// <summary>SW 수정: 싱글의 실제 소유자 상태와 네트워크의 서버 복제 상태에서 남은 시간을 각각 조회한다.</summary>
+    private float GetRemainingCooldown(ItemInstance item)
+        => BoundContext != null && BoundContext.GetComponent<Mirror.NetworkIdentity>() == null
+            ? BoundContext.Effects.GetRemainingCooldown(item) : itemTriggers?.GetRemainingCooldown(item) ?? 0f;
 
     private UniqueEffectView CreateUniqueEffectView()
     {

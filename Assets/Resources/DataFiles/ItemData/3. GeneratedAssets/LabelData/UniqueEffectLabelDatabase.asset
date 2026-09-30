@@ -396,6 +396,13 @@ MonoBehaviour:
     name: "\uC2E0\uACBD \uACFC\uBD80\uD558"
     description: "\uC7A5\uCC29 \uC911 \uACF5\uACA9 \uC18D\uB3C4\uAC00 {0}% \uC99D\uAC00\uD558\uC9C0\uB9CC
       \uCD5C\uB300 \uCCB4\uB825\uC774 {1}% \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - uniqueEffectId: UE_PhaseHarvesterWave
+    name: "\uACF5\uD5C8 \uCC98\uD615 \uD30C\uB3D9"
+    description: "Fighter \uAE30\uBCF8 \uACF5\uACA9 \uCC98\uCE58 \uC2DC \uADF8 \uC704\uCE58\uC5D0\uC11C
+      \uC804\uBC29 {0}m, \uD3ED {1}m\uC758 \uCC98\uD615 \uD30C\uB3D9\uC744 \uBC29\uCD9C\uD569\uB2C8\uB2E4.
+      \uCD5C\uB300 {3}\uCCB4\uC5D0 \uCE58\uBA85\uD0C0 \uC5C6\uB294 \uBB34\uC18D\uC131
+      \uD53C\uD574 {2}%\uB97C \uD55C \uBC88 \uC90D\uB2C8\uB2E4. \uC7AC\uC0AC\uC6A9
+      \uB300\uAE30\uC2DC\uAC04 {4}\uCD08."
   engLabels:
   - uniqueEffectId: UE_QuantumShoes
     name: Quantum Boost
@@ -726,6 +733,12 @@ MonoBehaviour:
     name: Neural Overload
     description: While equipped, Attack Speed increases by {0}%, but max HP decreases
       by {1}%.
+  - uniqueEffectId: UE_PhaseHarvesterWave
+    name: Void Execution Wave
+    description: 'When a Fighter basic attack kills an enemy, an execution wave instantly
+      covers a {0}m-long, {1}m-wide corridor ahead of the kill position. It deals
+      {2}% non-elemental damage once to up to {3} living enemies, without critical
+      hits or repeated activation. Cooldown: {4}s.'
   jpnLabels:
   - uniqueEffectId: UE_QuantumShoes
     name: "\u30AF\u30A9\u30F3\u30BF\u30E0\u30D6\u30FC\u30B9\u30C8"
@@ -985,6 +998,9 @@ MonoBehaviour:
   - uniqueEffectId: UE_MilitaryNeuralStimulator
     name: "\u795E\u7D4C\u904E\u8CA0\u8377"
     description: "\u88C5\u5099\u4E2D\u3001\u653B\u6483\u901F\u5EA6\u304C{0}%\u4E0A\u6607\u3057\u307E\u3059\u304C\u3001\u6700\u5927HP\u304C{1}%\u4F4E\u4E0B\u3057\u307E\u3059\u3002"
+  - uniqueEffectId: UE_PhaseHarvesterWave
+    name: "\u865A\u7A7A\u306E\u51E6\u5211\u6CE2"
+    description: "\u30D5\u30A1\u30A4\u30BF\u30FC\u306E\u901A\u5E38\u653B\u6483\u3067\u6575\u3092\u5012\u3059\u3068\u3001\u305D\u306E\u4F4D\u7F6E\u304B\u3089\u524D\u65B9{0}m\u3001\u5E45{1}m\u306E\u51E6\u5211\u6CE2\u304C\u5373\u5EA7\u306B\u767A\u751F\u3057\u307E\u3059\u3002\u751F\u5B58\u3059\u308B\u6700\u5927{3}\u4F53\u306B\u7121\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8{2}%\u30921\u56DE\u4E0E\u3048\u307E\u3059\u3002\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u3084\u9023\u9396\u767A\u52D5\u306F\u767A\u751F\u3057\u307E\u305B\u3093\u3002\u30AF\u30FC\u30EB\u30C0\u30A6\u30F3\u306F{4}\u79D2\u3067\u3059\u3002"
   chnLabels:
   - uniqueEffectId: UE_QuantumShoes
     name: "\u91CF\u5B50\u63A8\u8FDB"
@@ -1244,3 +1260,6 @@ MonoBehaviour:
   - uniqueEffectId: UE_MilitaryNeuralStimulator
     name: "\u795E\u7ECF\u8FC7\u8F7D"
     description: "\u88C5\u5907\u65F6\uFF0C\u653B\u51FB\u901F\u5EA6\u63D0\u9AD8{0}%\uFF0C\u4F46\u6700\u5927\u751F\u547D\u503C\u964D\u4F4E{1}%\u3002"
+  - uniqueEffectId: UE_PhaseHarvesterWave
+    name: "\u865A\u7A7A\u5904\u51B3\u6CE2"
+    description: "\u6597\u58EB\u666E\u901A\u653B\u51FB\u51FB\u6740\u654C\u4EBA\u540E\uFF0C\u7ACB\u5373\u4ECE\u51FB\u6740\u4F4D\u7F6E\u5411\u524D\u5F62\u6210\u957F{0}\u7C73\u3001\u5BBD{1}\u7C73\u7684\u5904\u51B3\u901A\u9053\u3002\u5BF9\u6700\u591A{3}\u4E2A\u5B58\u6D3B\u654C\u4EBA\u5404\u9020\u6210\u4E00\u6B21{2}%\u65E0\u5C5E\u6027\u4F24\u5BB3\uFF0C\u4E0D\u4F1A\u66B4\u51FB\u6216\u8FDE\u9501\u89E6\u53D1\u3002\u51B7\u5374\u65F6\u95F4\u4E3A{4}\u79D2\u3002"

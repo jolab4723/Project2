@@ -118,7 +118,7 @@ public sealed class PlayerContext : MonoBehaviour
     }
 
     /// <summary>
-    /// 싱글 생성 지점에서 기존 씬 인벤토리를 전달한다. 상태를 복사하거나 옮기지 않으며,
+    /// SW 수정: 싱글 생성 지점에서 기존 씬 인벤토리와 확정 효과 표시를 연결한다. 상태를 복사하거나 옮기지 않으며,
     /// 다른 플레이어가 이미 쓰는 인벤토리와 네트워크 플레이어의 외부 참조는 거절한다.
     /// </summary>
     public bool BindSinglePlayerInventory(InventoryController source)
@@ -144,6 +144,9 @@ public sealed class PlayerContext : MonoBehaviour
         equipment = source.EquipmentSystem;
         wallet = source.PlayerWallet;
         usesSceneInventory = true;
+        // SW 수정: 실제 싱글 프리팹도 기존 Presenter 하나로 확정 효과 표시 사건을 구독한다.
+        if (IsComplete && GetComponent<UniqueEffectPresentation>() == null)
+            gameObject.AddComponent<UniqueEffectPresentation>();
         return IsComplete;
     }
 

@@ -109,7 +109,7 @@ namespace DataSystem
             return true;
         }
         /// <summary>
-        /// SW 수정: 공통 표시 정보와 effectType별 실제 전투 수치를 함께 채운다.
+        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동을 포함한 effectType별 실제 전투 수치를 함께 채운다.
         /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
@@ -122,6 +122,14 @@ namespace DataSystem
 
             switch (asset)
             {
+                // SW 수정: 기존 계수 열은 길이·전체 폭·피해%·최대 대상·쿨다운 순서로 재사용한다.
+                case PhaseHarvesterWaveUniqueEffectSO wave:
+                    wave.length = asset.coefficients[0];
+                    wave.width = asset.coefficients[1];
+                    wave.damageMultiplier = asset.coefficients[2] / 100f;
+                    wave.maxTargets = (int)asset.coefficients[3];
+                    wave.cooldownSeconds = row.cooldownSeconds;
+                    break;
                 // SW 수정: 기존 설명 계수와 cooldown 열을 재사용하여 툴팁과 실제 피해 수치를 함께 갱신한다.
                 case ChainLightningUniqueEffectSO chain:
                     chain.maxAdditionalTargets = (int)asset.coefficients[0];
@@ -263,7 +271,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// SW 수정: 표의 effectType 이름을 실제 UniqueEffectSO 타입으로 바꾼다.
+        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
         /// 등록되지 않은 이름은 일부 데이터만 생성하지 않도록 전체 변환을 실패시킨다.
         /// </summary>
         private static Type ResolveEffectType(string effectType, string id)
@@ -277,6 +285,7 @@ namespace DataSystem
 
             switch (name)
             {
+                case nameof(PhaseHarvesterWaveUniqueEffectSO): return typeof(PhaseHarvesterWaveUniqueEffectSO);
                 case nameof(PassiveBuffUniqueEffectSO): return typeof(PassiveBuffUniqueEffectSO);
                 case nameof(TriggeredBuffUniqueEffectSO): return typeof(TriggeredBuffUniqueEffectSO);
                 case nameof(StatThresholdBuffUniqueEffectSO): return typeof(StatThresholdBuffUniqueEffectSO);
@@ -298,7 +307,7 @@ namespace DataSystem
             return null;
         }
 
-        /// <summary>SW 수정: Excel과 직접 JSON 입력을 같은 기준으로 검사한다. 위치가 중요한 무기 계수는 누락·오타를 허용하지 않는다.</summary>
+        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동 계수의 누락·비유한 값·오타를 차단한다.</summary>
         internal static bool ValidateRows(List<UniqueEffectTableRow> rows)
         {
             if (rows == null || rows.Count == 0)
@@ -319,6 +328,27 @@ namespace DataSystem
                 }
                 Type type = ResolveEffectType(row.effectType, id);
                 if (type == null) { valid = false; continue; }
+                // SW 수정: 처형 파동의 길이·전체 폭·피해·대상·쿨다운 5개 계수를 검증한다.
+                if (type == typeof(PhaseHarvesterWaveUniqueEffectSO))
+                {
+                    string[] spatialParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] spatialValues = new float[spatialParts.Length];
+                    bool spatialValid = spatialParts.Length == 5;
+                    for (int i = 0; i < spatialParts.Length; i++)
+                        spatialValid &= float.TryParse(spatialParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out spatialValues[i]) &&
+                            float.IsFinite(spatialValues[i]);
+                    spatialValid = spatialValid && spatialValues[0] > 0f && spatialValues[1] > 0f && spatialValues[2] > 0f &&
+                        spatialValues[3] >= 1f && spatialValues[3] <= 16f && spatialValues[3] == Mathf.Floor(spatialValues[3]) &&
+                        spatialValues[4] >= 0f && float.IsFinite(row.cooldownSeconds) &&
+                        Mathf.Approximately(spatialValues[4], row.cooldownSeconds);
+                    if (!spatialValid)
+                    {
+                        string dimensions = "길이;전체 폭";
+                        Debug.LogError($"[UniqueEffect] '{id}'의 계수는 {dimensions};피해%;최대 대상(정수 1~16);쿨다운 순서이며 마지막 값은 cooldownSeconds와 같아야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
                 if (type == typeof(SolarGraceShieldUniqueEffectSO))
                 {
                     string[] shieldParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
