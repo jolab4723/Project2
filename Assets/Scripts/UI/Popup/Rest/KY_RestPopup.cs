@@ -18,6 +18,8 @@ public class KY_RestPopup : KY_PopupBase
     public event System.Action OnConfirmed;
 
     [Header("표시 텍스트")]
+    [Tooltip("\"체력 {0}% 회복\" 라벨. 회복 비율이 데이터/패시브로 바뀌므로 고정 문구(UILabelText)가 아니라 여기서 채운다.")]
+    [SerializeField] private TMP_Text healthRecoveryLabelText;
     [SerializeField] private TMP_Text healthRecoveryText;
     [SerializeField] private TMP_Text potionRecoveryText;
     [SerializeField] private TMP_Text costText;
@@ -37,6 +39,8 @@ public class KY_RestPopup : KY_PopupBase
     private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
 
     private int healthAmount;
+    // 표시용 회복 비율(최대 체력 대비 %). 주입 전에는 기본 휴식 비율과 같은 25를 쓴다.
+    private float healPercent = 25f;
     private int potionAmount;
     private int cost;
     private int currentCredits;
@@ -129,10 +133,23 @@ public class KY_RestPopup : KY_PopupBase
         RefreshView();
     }
 
+    /// <summary>회복 비율(최대 체력 대비 %)까지 함께 주입한다. 비율은 체력 회복 라벨 문구에 표시된다.</summary>
+    public void SetRecoveryPreview(int health, float recoveryPercent, int potions, int requiredCost, int credits)
+    {
+        healPercent = Mathf.Max(0f, recoveryPercent);
+        SetRecoveryPreview(health, potions, requiredCost, credits);
+    }
+
     private void RefreshView()
     {
-        // "체력 회복"/"포션 충전" 같은 고정 문구는 각 슬롯의 라벨 텍스트(UILabelText)가 담당하므로
+        // "포션 충전" 같은 고정 문구는 각 슬롯의 라벨 텍스트(UILabelText)가 담당하므로
         // 여기서는 값만 넣는다 - 예전엔 값 텍스트에 문구까지 같이 넣어서 라벨이 두 번 보였다.
+        // 체력 회복 라벨만 비율이 바뀌므로 여기서 문구를 채운다(정수면 "25", 아니면 소수 한 자리).
+        if (healthRecoveryLabelText != null)
+            healthRecoveryLabelText.text = string.Format(
+                L("rest_ui.health_recovery_format", "체력 {0}% 회복"),
+                healPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
+
         if (healthRecoveryText != null)
             healthRecoveryText.text = $"+{healthAmount}";
 
