@@ -18,6 +18,9 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private GameObject preparedAttackRing;
     private Material preparedAttackMaterial;
     private PlayerItemEffectState singleEffects;
+    private Coroutine wasteHeatFlash;
+    private readonly List<(Renderer renderer, int materialIndex, MaterialPropertyBlock original)> heatFlashBlocks = new();
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
     /// <summary>SW 수정: 네트워크 객체는 RPC만 사용하고 싱글 플레이어만 확정된 효과 표시 사건을 구독해 Host 중복 표시를 방지한다.</summary>
     private void OnEnable()
@@ -30,6 +33,8 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         singleEffects.InfernoPresented += PresentInfernoHit;
         singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
         singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
+        singleEffects.WasteHeatPresented += PresentWasteHeatDischarge;
+        singleEffects.WasteHeatReadyChanged += SetWasteHeatReady;
         singleEffects.PreparedChanged += SetPreparedAttack;
         SetPreparedAttack(singleEffects.PreparedAttackReady);
     }
@@ -207,6 +212,90 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (infernoHitPrefab != null) PresentInfernoHit(position);
     }
 
+    /// <summary>SW 수정: 싱글 또는 서버 Reliable RPC가 확정한 폐열 방출의 전체 각도와 길이를 클라이언트에 짧게 표시한다.</summary>
+    public void PresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled ||
+            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active)) return;
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) return;
+        chainLightningMaterial ??= new Material(shader)
+        {
+            name = "Unique Effect Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+        // SW 수정: 서버 확정 영역의 표시만 만들며 피해 판정이나 이동하는 공격 객체는 생성하지 않는다.
+        GameObject cone = new("Waste Heat Discharge Presentation") { hideFlags = HideFlags.DontSave };
+        cone.transform.SetParent(transform, true);
+        cone.transform.rotation = Quaternion.LookRotation(Vector3.up);
+        activeBolts.Add(cone);
+        LineRenderer line = cone.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.TransformZ;
+        line.positionCount = 34;
+        line.SetPosition(0, origin);
+        for (int index = 1; index <= 32; index++)
+        {
+            float angle = -angleDegrees * 0.5f + (index - 1) * angleDegrees / 31f;
+            line.SetPosition(index, origin + Quaternion.AngleAxis(angle, Vector3.up) * forward * length);
+        }
+        line.SetPosition(33, origin);
+        line.widthMultiplier = 0.16f;
+        line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        StartCoroutine(ReleaseBoltAfter(cone, 0.18f));
+    }
+
+    /// <summary>SW 수정: 싱글 또는 서버가 확정한 열 충전 완료 때 실제 장착 무기의 발광만 짧게 강조하고 해제 시 원래 PropertyBlock을 복원한다.</summary>
+    public void SetWasteHeatReady(bool ready)
+    {
+        RestoreWasteHeatFlash();
+        if (!ready || !Application.isPlaying || !isActiveAndEnabled ||
+            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active)) return;
+        GameObject visual = GetComponent<PlayerWeaponVisualPresenter>()?.CurrentVisual;
+        if (visual == null) return;
+        foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
+        {
+            Material[] materials = renderer.sharedMaterials;
+            for (int index = 0; index < materials.Length; index++)
+            {
+                Material material = materials[index];
+                if (material == null || !material.HasProperty(EmissionColorId) || !material.IsKeywordEnabled("_EMISSION")) continue;
+                var original = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(original, index);
+                var flash = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(flash, index);
+                Color emission = flash.HasColor(EmissionColorId) ? flash.GetColor(EmissionColorId) : material.GetColor(EmissionColorId);
+                Color highlighted = emission * 2f + new Color(2f, 0.4f, 0.03f, 0f);
+                highlighted.a = 1f;
+                flash.SetColor(EmissionColorId, highlighted);
+                heatFlashBlocks.Add((renderer, index, original));
+                renderer.SetPropertyBlock(flash, index);
+            }
+        }
+        if (heatFlashBlocks.Count > 0) wasteHeatFlash = StartCoroutine(ReleaseWasteHeatFlashAfter());
+    }
+
+    /// <summary>SW 수정: 충전 완료 발광의 짧은 표시가 끝나면 실제 무기의 기존 재질별 PropertyBlock을 복원한다.</summary>
+    private IEnumerator ReleaseWasteHeatFlashAfter()
+    {
+        yield return new WaitForSecondsRealtime(0.12f);
+        wasteHeatFlash = null;
+        RestoreWasteHeatFlash();
+    }
+
+    /// <summary>SW 수정: 열 해제·비활성화·표시 종료 시 공유 Material을 변경하지 않고 장착 무기의 임시 발광을 복원한다.</summary>
+    private void RestoreWasteHeatFlash()
+    {
+        if (wasteHeatFlash != null) StopCoroutine(wasteHeatFlash);
+        wasteHeatFlash = null;
+        foreach (var entry in heatFlashBlocks)
+            if (entry.renderer != null) entry.renderer.SetPropertyBlock(entry.original, entry.materialIndex);
+        heatFlashBlocks.Clear();
+    }
+
     public void PresentInfernoHit(Vector3 position)
     {
         if (!Application.isPlaying || !isActiveAndEnabled ||
@@ -253,6 +342,8 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.InfernoPresented -= PresentInfernoHit;
             singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
             singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
+            singleEffects.WasteHeatPresented -= PresentWasteHeatDischarge;
+            singleEffects.WasteHeatReadyChanged -= SetWasteHeatReady;
             singleEffects.PreparedChanged -= SetPreparedAttack;
             singleEffects = null;
         }
@@ -264,8 +355,10 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         ReleaseOwnedResources();
     }
 
+    /// <summary>SW 수정: 싱글·클라이언트 표시 자원과 실제 무기의 임시 폐열 발광을 비활성화·파괴 시 정리한다.</summary>
     private void ReleaseOwnedResources()
     {
+        RestoreWasteHeatFlash();
         StopAllCoroutines();
         foreach (GameObject bolt in activeBolts)
         {

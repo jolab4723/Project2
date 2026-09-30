@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 플레이어의 공통 상태를 연결한다. 싱글의 씬 인벤토리는 명시적으로 연결하고,
@@ -104,17 +105,30 @@ public sealed class PlayerContext : MonoBehaviour
             gameObject.AddComponent<PlayerArmorEffectRuntime>();
     }
 
+    /// <summary>SW 수정: 싱글 인벤토리를 다시 연결하고 DDOL 플레이어도 실제 활성 씬 전환 때 공격 수명을 정리하도록 구독한다.</summary>
     private void OnEnable()
     {
+        SceneManager.activeSceneChanged += HandleActiveSceneChanged;
         if (usesSceneInventory && inventory != null && !BindSinglePlayerInventory(inventory))
             Debug.LogError("[PlayerContext] 씬 인벤토리를 다시 연결하지 못했습니다.", this);
     }
 
+    /// <summary>SW 수정: 활성 플레이어의 싱글·서버 공통 효과 상태만 갱신해 무적중 만료를 실제 프레임 수명에 연결한다.</summary>
+    private void Update() => effects?.Tick();
+
+    /// <summary>SW 수정: 씬 전환 구독과 싱글 인벤토리 연결을 해제하고 비활성화된 플레이어의 열·공격 수명을 정리한다.</summary>
     private void OnDisable()
     {
+        SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
         effects?.ResetAttackLifetime();
         if (usesSceneInventory)
             inventory?.UnbindPlayer(this);
+    }
+
+    /// <summary>SW 수정: 활성 씬이 바뀌면 싱글·서버 소유 플레이어의 열·공격 기록만 초기화하고 같은 생애의 A1/A2 쿨다운은 보존한다.</summary>
+    private void HandleActiveSceneChanged(Scene previous, Scene next)
+    {
+        if (Application.isPlaying && effects?.CanExecute == true) effects.ResetAttackLifetime();
     }
 
     /// <summary>

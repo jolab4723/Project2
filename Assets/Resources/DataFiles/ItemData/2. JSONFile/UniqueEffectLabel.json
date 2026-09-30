@@ -439,6 +439,11 @@
       "uniqueEffectId": "UE_StarforgeBreachExplosion",
       "effectName": "스타 브리처 근접 폭발",
       "effectDescription": "거너 기본 산탄총 공격이 발사 원점에서 {0}m 이내의 적을 명중하면 그 피격 위치에 반경 {1}m 폭발을 일으킵니다. 최대 {3}체에 치명타 없는 화염 피해 {2}%를 한 번 줍니다. 재사용 대기시간 {4}초."
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatDischarge",
+      "effectName": "폐열 방출",
+      "effectDescription": "서로 다른 기본 공격이 적중할 때마다 열을 1씩 쌓아 최대 {0}까지 충전합니다. 충전 완료 후 다음 유효 기본 공격은 열을 모두 소비해 전방 {1}m·전체 각도 {2}° 범위의 적 최대 {4}체에게 공격력의 {3}%에 해당하는 치명타 없는 화염 피해를 추가로 줍니다. {5}초간 기본 공격이 적중하지 않으면 열이 사라집니다."
     }
   ],
   "engLabels": [
@@ -881,6 +886,11 @@
       "uniqueEffectId": "UE_StarforgeBreachExplosion",
       "effectName": "Star Breacher Close-Range Explosion",
       "effectDescription": "A Gunner basic shotgun hit within {0}m of the firing origin causes an explosion of radius {1}m at the impact point. It deals {2}% Fire damage once to up to {3} enemies, without critical hits. Cooldown: {4}s."
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatDischarge",
+      "effectName": "Waste Heat Discharge",
+      "effectDescription": "Each distinct basic attack that hits builds 1 Heat, up to {0}. Once fully charged, the next valid basic hit consumes all Heat and deals non-critical Fire damage equal to {3}% of Attack Power to up to {4} enemies in a {1}m frontal cone with a total angle of {2}°. Heat expires after {5}s without a basic hit."
     }
   ],
   "jpnLabels": [
@@ -1323,6 +1333,11 @@
       "uniqueEffectId": "UE_StarforgeBreachExplosion",
       "effectName": "スターブリーチャー近距離爆発",
       "effectDescription": "ガンナーの通常ショットガン攻撃が発射位置から{0}m以内の敵に命中すると、命中位置に半径{1}mの爆発を起こします。最大{3}体にクリティカルなしの火炎ダメージ{2}%を1回与えます。クールダウン：{4}秒。"
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatDischarge",
+      "effectName": "廃熱放出",
+      "effectDescription": "異なる通常攻撃が命中するたびに熱を1蓄積し、最大{0}までチャージします。チャージ完了後の次の有効な通常攻撃で熱をすべて消費し、前方{1}m・全角{2}°内の敵最大{4}体に攻撃力の{3}%のクリティカルなしの炎ダメージを追加で与えます。通常攻撃が{5}秒間命中しないと熱が消失します。"
     }
   ],
   "chnLabels": [
@@ -1765,6 +1780,11 @@
       "uniqueEffectId": "UE_StarforgeBreachExplosion",
       "effectName": "星辰破阵者近距离爆炸",
       "effectDescription": "枪手的普通霰弹枪攻击命中距发射位置{0}m以内的敌人时，在命中位置引发半径{1}m的爆炸。对最多{3}个敌人造成一次{2}%火焰伤害，不会暴击。冷却时间：{4}秒。"
+    },
+    {
+      "uniqueEffectId": "UE_WasteHeatDischarge",
+      "effectName": "废热释放",
+      "effectDescription": "每次不同的普通攻击命中时积累1点热量，最多{0}点。充满后，下次有效普通攻击消耗全部热量，对前方{1}米、总夹角{2}°内最多{4}个敌人额外造成攻击力{3}%的无法暴击的火焰伤害。{5}秒内没有普通攻击命中时，热量清空。"
     }
   ]
 }

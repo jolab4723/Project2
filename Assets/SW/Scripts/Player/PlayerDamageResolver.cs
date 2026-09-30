@@ -160,7 +160,7 @@ public static class PlayerDamageResolver
         return damageCause == DamageCause.Skill ? WBH_AttackType.Skill : WBH_AttackType.Normal;
     }
 
-    /// <summary>SW 수정: 싱글·서버 공통 경계에서 피해를 적용하고 Fighter 처치 파동 또는 Shotgun 명중 폭발을 피격 전에 보존한 출처·위치로 등록한다.</summary>
+    /// <summary>SW 수정: 싱글·서버 공통 경계에서 피해를 적용하고 Fighter 처치 파동·폐열 충전/방출 또는 Shotgun 명중 폭발을 피격 전에 보존한 출처·위치·생애로 등록한다.</summary>
     private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_DamageRequest request,
         WBH_CombatManager.DamageSourceSnapshot sourceSnapshot,
         out WBH_DamageResult result, bool canCrit = true)
@@ -185,6 +185,8 @@ public static class PlayerDamageResolver
             out Vector3 attackForward) && component != null;
         bool hasExplosionSource = attacker.Effects.TryGetStarBreacherSource(request, out StarBreacherExplosionUniqueEffectSO explosion,
             out Vector3 hitPosition) && component != null;
+        bool hasHeatSource = attacker.Effects.TryGetWasteHeatSource(request, out WasteHeatDischargeUniqueEffectSO heat,
+            out Vector3 heatOrigin, out Vector3 heatForward, out uint heatGeneration) && result.FinalDamage > 0f;
         Vector3 bodyPosition = hasWaveSource || hasExplosionSource
             ? (authority != null ? authority.transform.position : component.transform.position) : default;
         target.TakeDamage(result);
@@ -192,6 +194,8 @@ public static class PlayerDamageResolver
             attacker.Effects.FirePhaseHarvesterKill(request.AttackId, bodyPosition, attackForward, wave);
         if (hasExplosionSource)
             attacker.Effects.FireStarBreacherHit(request.AttackId, hitPosition, bodyPosition, explosion);
+        if (hasHeatSource)
+            attacker.Effects.FireWasteHeatHit(request.AttackId, heat, heatOrigin, heatForward, heatGeneration);
         // 네트워크 적은 TakeDamage 내부의 서버 이벤트가 같은 플레이어 효과를 발행한다.
         if (!handledByAuthority)
             attacker.Effects.FireDamageDealt(result, target);
