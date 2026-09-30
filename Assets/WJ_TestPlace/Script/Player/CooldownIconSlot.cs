@@ -31,6 +31,9 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     // SW 수정: 파동·폭발은 실제 소유자 상태에서 시간을 읽으며 버프 SO의 기존 계약은 유지한다.
     private UniqueEffectSO boundEffect;
     private PlayerItemEffectState ownerEffects;
+    private bool hasSuppliedCooldown;
+    private float suppliedRemainingCooldown;
+    private float suppliedCooldownDuration;
 
     // 고유효과 대신 거너 아크 레이저(진화1)의 발사 간격을 표시할 때 쓰는 바인딩.
     private GunnerSkillController boundArcLaser;
@@ -44,9 +47,13 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void Bind(ItemInstance item, TriggeredBuffUniqueEffectSO effect)
         => Bind(item, (UniqueEffectSO)effect, null);
 
-    /// <summary>SW 수정: 싱글의 진행 중인 버프·파동·폭발과 실제 소유자 상태를 연결해 기존 아이콘·테두리·쿨다운을 표시한다.</summary>
+    /// <summary>
+    /// SW 수정: 싱글의 진행 중인 버프·파동·폭발과 실제 소유자 상태를 연결해 기존 아이콘·테두리·쿨다운을 표시한다.
+    /// 숫자로 전달된 쿨다운 표시를 해제하고 기존 효과나 소유자 상태를 읽는 표시 방식으로 초기화한다.
+    /// </summary>
     public void Bind(ItemInstance item, UniqueEffectSO effect, PlayerItemEffectState effects)
     {
+        hasSuppliedCooldown = false;
         boundItem = item;
         boundEffect = effect;
         ownerEffects = effects;
@@ -66,11 +73,26 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
     /// <summary>
+    /// 원본 툴팁·아이콘은 유지하고 확정된 소유자 쿨다운 값으로 표시한다.
+    /// SW 수정: 전달받은 남은 시간과 전체 쿨다운을 0 이상으로 보정해 표시에 사용할 값으로 저장한다.
+    /// </summary>
+    public void Bind(ItemInstance item, UniqueEffectSO effect, float remaining, float duration)
+    {
+        Bind(item, effect, (PlayerItemEffectState)null);
+        hasSuppliedCooldown = true;
+        suppliedRemainingCooldown = Mathf.Max(0f, remaining);
+        suppliedCooldownDuration = Mathf.Max(0f, duration);
+        Refresh();
+    }
+
+    /// <summary>
     /// 이 슬롯에 거너 아크 레이저(진화1)의 발사 간격을 연결한다. 아이콘은 아크 버스터 스킬 아이콘,
     /// 툴팁은 호출 쪽에서 만든 이름/설명을 쓴다. 남은 시간은 매 프레임 컨트롤러에서 직접 읽는다.
+    /// SW 수정: 숫자로 전달된 쿨다운 표시를 해제하고 아크 레이저 컨트롤러에서 시간을 읽도록 초기화한다.
     /// </summary>
     public void BindArcLaser(GunnerSkillController controller, Sprite icon, string tooltipName, string tooltipDescription)
     {
+        hasSuppliedCooldown = false;
         boundItem = null;
         boundEffect = null;
         boundArcLaser = controller;
@@ -90,13 +112,21 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         Refresh();
     }
 
-    /// <summary>SW 수정: 싱글 버프는 기존 SO, 처형 파동·스타 브리처 폭발은 실제 소유자 상태에서 남은 시간을 읽으며 아크 레이저 표시도 유지한다.</summary>
+    /// <summary>
+    /// SW 수정: 싱글 버프는 기존 SO, 처형 파동·스타 브리처 폭발은 실제 소유자 상태에서 남은 시간을 읽으며 아크 레이저 표시도 유지한다.
+    /// 숫자로 전달받은 쿨다운이 있으면 해당 값을 우선 사용해 오버레이와 남은 시간을 갱신한다.
+    /// </summary>
     public void Refresh()
     {
         float remaining;
         float duration;
 
-        if (boundArcLaser != null)
+        if (hasSuppliedCooldown)
+        {
+            remaining = suppliedRemainingCooldown;
+            duration = suppliedCooldownDuration;
+        }
+        else if (boundArcLaser != null)
         {
             if (!boundArcLaser.TryGetArcLaserCooldown(out remaining, out duration, out _))
                 remaining = 0f;

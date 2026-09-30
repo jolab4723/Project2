@@ -24134,6 +24134,9 @@ GameObject:
   - component: {fileID: 3846049506183012237}
   - component: {fileID: 6184000000000000002}
   - component: {fileID: 2578508486721251748}
+  - component: {fileID: 6534573133196854118}
+  - component: {fileID: 1825531797331880987}
+  - component: {fileID: 7699048971305010193}
   m_Layer: 15
   m_Name: GunnerNetworkPlayer
   m_TagString: Player
@@ -24945,6 +24948,8 @@ MonoBehaviour:
   localOnlyBehaviours:
   - {fileID: 5198440570502304043}
   - {fileID: 4006901802914829666}
+  - {fileID: 7699048971305010193}
+  - {fileID: 6534573133196854118}
   nameplatePrefab: {fileID: 8383472571775063643, guid: 95aa36f943faa27419a6ff2146c7cd80, type: 3}
 --- !u!114 &415836466331156959
 MonoBehaviour:
@@ -24975,7 +24980,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c40d73abba60264ba728b063ac003f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerActionInputHandler
-  runtimeState: {fileID: 0}
+  runtimeState: {fileID: 6028610422977531239}
 --- !u!114 &8916734978997002729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25005,7 +25010,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4430178008348295829}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7dc1742cfbd34d047bce2915d6558d92, type: 3}
+  m_Script: {fileID: 11500000, guid: f113c7797d671734d9cbcb9aa5725518, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRelicEffectProvider
   inventory: {fileID: 417027276181376844}
@@ -25042,13 +25047,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  fighterEffectRoot: {fileID: 9203263277211680605}
-  gunnerEffectRoot: {fileID: 0}
-  Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
-  Eff_gunnerShotgunAtk: {fileID: 0}
-  fighterDash: {fileID: 0}
-  gunnerBackstepMove: {fileID: 7400000, guid: 9d40f183ed5c3f9428ff87ea520bd7a1, type: 2}
-  effectSpawner: {fileID: 0}
 --- !u!114 &5198440570502304043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25061,9 +25059,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2a0ad56487f2b3418326c70dbaa80ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerInputHandler
-  inputBlockLayer:
-    serializedVersion: 2
-    m_Bits: 196640
 --- !u!114 &5474923337583963065
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25312,6 +25307,66 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8192
   pingLifetime: 1
+  pingCooldown: 0.3
+  pingSurfaceOffset: 0.03
+--- !u!114 &6534573133196854118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b51575d9f779e8a44923ed519855247f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerActionInputHandler
+--- !u!114 &1825531797331880987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82d75942f690134498ffe7e543c3ee10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerAnimation
+  externalAuthority: 1
+  fighterEffectRoot: {fileID: 9203263277211680605}
+  gunnerEffectRoot: {fileID: 0}
+  Eff_fighterAtk: {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
+  Eff_gunnerShotgunAtk: {fileID: 0}
+  fighterDash: {fileID: 0}
+  gunnerBackstepMove: {fileID: 7400000, guid: 9d40f183ed5c3f9428ff87ea520bd7a1, type: 2}
+  effectSpawner: {fileID: 0}
+  referenceRunMoveSpeed: 5
+  minimumRunPlaybackSpeed: 0.5
+  maximumRunPlaybackSpeed: 2
+--- !u!114 &7699048971305010193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4430178008348295829}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 176e3eb7f084dee459c40f5315026aab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_PlayerInputHandler
+  inputBlockLayer:
+    serializedVersion: 2
+    m_Bits: 196640
+  worldItemLayer:
+    serializedVersion: 2
+    m_Bits: 65536
+  pingMarkerPrefab: {fileID: 0}
+  pingGroundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  pingLifetime: 3
   pingCooldown: 0.3
   pingSurfaceOffset: 0.03
 --- !u!1 &4563209726806013730

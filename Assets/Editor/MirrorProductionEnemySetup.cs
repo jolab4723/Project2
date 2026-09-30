@@ -67,14 +67,15 @@ public static class MirrorProductionEnemySetup
                     var originalView = root.GetComponent<WBH_EnemyView>();
                     if (originalView != null)
                     {
+                        Set(view, "productionView", originalView);
                         var sourceView = new SerializedObject(originalView);
-                        Set(view, "damageTextRoot", sourceView.FindProperty("damageTextRoot").objectReferenceValue);
-                        Set(view, "healthBarRoot", sourceView.FindProperty("hpBarRoot").objectReferenceValue);
-                        Set(view, "healthBarSlider", sourceView.FindProperty("hpBarSlider").objectReferenceValue);
+                        sourceView.FindProperty("externalPresentation").boolValue = true;
+                        sourceView.ApplyModifiedPropertiesWithoutUndo();
+                        originalView.enabled = true;
                     }
                     foreach (var driver in root.GetComponents<Behaviour>())
                         if (driver is WBH_EnemyController or WBH_EnemyPattern or WBH_EnemyCombat or
-                            WBH_EnemyAnimation or WBH_EnemyView or EnemyKillReward or WBHEnemyItemDropAdapter or WBHEnemyDestructionAdapter)
+                            WBH_EnemyAnimation or EnemyKillReward or WBHEnemyItemDropAdapter or WBHEnemyDestructionAdapter)
                             driver.enabled = false;
                     PrefabUtility.SaveAsPrefabAsset(root, path);
                 }

@@ -5,7 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Mirror가 생성한 테스트 플레이어의 로컬·서버 등록과 Scene 간 수명주기를 연결한다.
+/// Mirror가 생성한 플레이어의 로컬·서버 등록과 Scene 간 수명주기를 연결한다.
 /// <para>세션 이동과 재접속 예약 동안 런타임을 보존하고, 서버 스냅샷과 생존·참가 상태를 확인한 뒤 입력을 복구한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -54,7 +54,9 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         context.CombatAuthority != null && context.CombatAuthority.gameObject == gameObject &&
         GetComponent<PlayerInventorySync>() != null &&
         GetComponent<NetworkShopPlayerState>() != null &&
-        GetComponent<PlayerNetworkTransform>() != null;
+        GetComponent<PlayerNetworkTransform>() != null &&
+        GetComponent<WBH_PlayerInputHandler>() != null && GetComponent<PlayerActionInputHandler>() != null &&
+        GetComponent<WBH_PlayerAnimation>() != null && GetComponent<NetworkPlayerAnimation>() != null;
     public string ParticipantDisplayName => participantDisplayName;
     public int ParticipantSlot => participantSlot;
     /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
@@ -84,20 +86,6 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void Reset()
     {
         context = GetComponent<PlayerContext>();
-    }
-
-    [ContextMenu("Validate Mirror Player Configuration")]
-    private void ValidateMirrorPlayerConfiguration()
-    {
-        Debug.Assert(GetComponent<WBH_PlayerInputHandler>() == null, "원본 이동 입력기가 남아 있습니다.", this);
-        Debug.Assert(GetComponent<WBH_PlayerAnimation>() == null, "원본 애니메이션 이벤트 수신기가 남아 있습니다.", this);
-        Debug.Assert(GetComponent<PlayerActionInputHandler>() == null, "원본 액션 입력기가 남아 있습니다.", this);
-        Debug.Assert(isServer ||
-            (GetComponent<FighterSkillController>()?.enabled != true && GetComponent<GunnerSkillController>()?.enabled != true),
-            "클라이언트에서 원본 스킬 판정기가 켜져 있습니다.", this);
-        Debug.Assert(GetComponent<PotionUseManager>() == null, "원본 로컬 포션 관리자가 남아 있습니다.", this);
-        Debug.Assert(GetComponent<PlayerRelicEffectProvider>() == null, "원본 로컬 유물 적용기가 남아 있습니다.", this);
-        Debug.Assert(GetComponent<PlayerHudEventBridge>() == null, "원본 전역 HUD 발행기가 남아 있습니다.", this);
     }
 
     public override void OnStartLocalPlayer()
@@ -276,11 +264,14 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         if (localOnlyBehaviours == null)
             return;
 
-        foreach (Behaviour behaviour in localOnlyBehaviours)
+        bool enableInput = canControl && !textInputBlocked && !menuInputBlocked && !cutsceneInputBlocked &&
+            Time.frameCount > textInputReleaseFrame;
+        // 활성화는 권한 연결 후 입력, 비활성화는 입력 해제 후 권한 연결 해제 순서다.
+        for (int i = 0; i < localOnlyBehaviours.Length; i++)
         {
+            Behaviour behaviour = localOnlyBehaviours[enableInput ? i : localOnlyBehaviours.Length - 1 - i];
             if (behaviour != null)
-                behaviour.enabled = canControl && !textInputBlocked && !menuInputBlocked && !cutsceneInputBlocked &&
-                    Time.frameCount > textInputReleaseFrame;
+                behaviour.enabled = enableInput;
         }
     }
 
@@ -587,6 +578,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     {
         NetworkPlayerInputHandler movementInput = GetComponent<NetworkPlayerInputHandler>();
         NetworkPlayerActionInputHandler actionInput = GetComponent<NetworkPlayerActionInputHandler>();
-        localOnlyBehaviours = new Behaviour[] { movementInput, actionInput };
+        localOnlyBehaviours = new Behaviour[] { movementInput, actionInput,
+            GetComponent<WBH_PlayerInputHandler>(), GetComponent<PlayerActionInputHandler>() };
     }
 }

@@ -2563,6 +2563,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 7412498043944635100}
   m_SourcePrefab: {fileID: 100100000, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+--- !u!114 &565308069080267450 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3143535760237542453, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &911503350189162065 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2368395154606831838, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2629,6 +2640,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 083077ad81de7964599adbca1ad8069b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridHighlightUI
+--- !u!114 &3209525125815322290 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 68384912413753405, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8119392062378796961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!114 &3668938581958021430 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2203040443184682937, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2662,6 +2684,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!114 &5408495935678744940 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7455326321519120355, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
+  m_PrefabInstance: {fileID: 3204440533405714063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8119392062378796961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb273c70eb26d2240a359e5174ba4613, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShopRerollButton
 --- !u!114 &5959374066924262705 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9136544205830673342, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2690,8 +2723,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 541f5ce45ecf900439d9011ba834bf61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkUpgradeButton
-  upgradeController: {fileID: 0}
-  upgradeButton: {fileID: 0}
+  upgradeController: {fileID: 2823680765221590442}
+  upgradeButton: {fileID: 565308069080267450}
 --- !u!1 &7213731667655026969 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5216337237973839766, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}
@@ -2772,7 +2805,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23fd05a42ca641efb4799db58e255b73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkShopRerollButton
-  button: {fileID: 0}
+  button: {fileID: 3209525125815322290}
+  originalButton: {fileID: 5408495935678744940}
 --- !u!224 &8782941515347381908 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6168580643913271323, guid: 92b4c55cf3a60f147b15b5c8dd767a0f, type: 3}

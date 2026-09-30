@@ -10770,12 +10770,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9011109773374467229}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70a52c88ed000324aabaeee25ed49248, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
+  externalPresentation: 1
   damageTextRoot: {fileID: 7021188942170211975}
+  damageTextSpacingPixels: {x: 56, y: 28}
   creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 0}
   hpBarSlider: {fileID: 0}
@@ -11364,9 +11366,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
   authority: {fileID: 6462537652182967718}
-  movement: {fileID: 6056502638616324500}
-  status: {fileID: 2300895427140892728}
-  agent: {fileID: 5801397505357153703}
   firePoint: {fileID: 279016196059227232}
   grenadePoint: {fileID: 0}
 --- !u!114 &6462537652182967718
@@ -11435,11 +11434,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkEnemyCombatView
   authority: {fileID: 6462537652182967718}
-  damageTextRoot: {fileID: 7021188942170211975}
-  healthBarRoot: {fileID: 0}
-  healthBarSlider: {fileID: 0}
+  productionView: {fileID: 4036779367959561946}
   bossPhaseView: {fileID: 0}
-  damageTextSpacingPixels: {x: 56, y: 28}
 --- !u!1 &9017157100209275396
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,6 +4,32 @@ using UnityEngine;
 
 public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
 {
+    /// <summary>SW 수정: 서버 시뮬레이션과 클라이언트 표시가 공유하는 보스 전환 단계를 정의한다.</summary>
+    public enum PhaseState { One, TransitionMissiles, TransitionArmor, Two }
+    private Action<PhaseState> simulationPhaseChanged;
+
+    /// <summary>SW 수정: 전용 서버도 표시 여부와 무관하게 동일한 전환 시간을 사용한다.</summary>
+    public float TransitionDuration => Mathf.Max(0f, armorReleaseDuration);
+
+    /// <summary>SW 수정: 표시와 독립적으로 단계 변경을 전달할 서버 시뮬레이션 콜백을 연결한다.</summary>
+    public void BindPhaseSimulation(Action<PhaseState> phaseChanged) => simulationPhaseChanged = phaseChanged;
+
+    /// <summary>SW 수정: 미사일 발사로 시작하는 단계 전환을 서버 시뮬레이션에 알린다.</summary>
+    public void NotifyTransitionStarted() => simulationPhaseChanged?.Invoke(PhaseState.TransitionMissiles);
+
+    /// <summary>SW 수정: 2단계 진입이 완료되었음을 서버 시뮬레이션에 알린다.</summary>
+    public void NotifyTransitionCompleted() => simulationPhaseChanged?.Invoke(PhaseState.Two);
+
+    /// <summary>SW 수정: 진행 중인 전환을 멈추고 활성 갑옷 파편을 풀로 돌려놓는다.</summary>
+    public void CancelTransition()
+    {
+        if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
+        transitionCoroutine = null;
+        if (armorPieceSlots != null) ReturnAllPiece();
+    }
+
+    /// <summary>SW 수정: 비활성화되면 단계 전환과 갑옷 파편 표시를 정리한다.</summary>
+    private void OnDisable() => CancelTransition();
     // 기존 분리용 갑옷 파츠 분리를 위한 클래스
     private class ArmorPieceSlot
     {
@@ -110,8 +136,10 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
     }
 
     // 기존 렌더로 초기화
+    /// <summary>SW 수정: 기존 렌더로 복원하기 전에 1단계 초기화를 서버 시뮬레이션에도 알린다.</summary>
     public void SetPhaseOne()
     {
+        simulationPhaseChanged?.Invoke(PhaseState.One);
         if(transitionCoroutine !=null)
         {
             StopCoroutine(transitionCoroutine);
@@ -238,8 +266,10 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
         slot.remainingLifetime = 0f;
     }
 
+    /// <summary>SW 수정: 갑옷 분리 단계를 서버 시뮬레이션에 알리고 전환 완료 시간을 진행한다.</summary>
     public void PlayPhaseTwoTransition(Action onCompleted)
     {
+        simulationPhaseChanged?.Invoke(PhaseState.TransitionArmor);
         if(transitionCoroutine != null)
         {
             StopCoroutine(transitionCoroutine);
@@ -248,11 +278,13 @@ public class WBH_EnemyBossPhaseView_Act1 : MonoBehaviour
         transitionCoroutine = StartCoroutine(CoPhaseTwoTransition(onCompleted));
     }
 
+    /// <summary>SW 수정: 외부 단계 동기화가 연결되면 표시를 생략하고 공통 전환 시간이 지난 후 완료를 알린다.</summary>
     private IEnumerator CoPhaseTwoTransition(Action onCompleted)
     {
-        SetPhaseTwo();
+        // 네트워크는 복제된 Phase가 클라이언트 표시를 실행하며 서버는 시간만 진행한다.
+        if (simulationPhaseChanged == null) SetPhaseTwo();
 
-        yield return new WaitForSeconds(armorReleaseDuration);
+        yield return new WaitForSeconds(TransitionDuration);
 
         transitionCoroutine = null;
         onCompleted?.Invoke();

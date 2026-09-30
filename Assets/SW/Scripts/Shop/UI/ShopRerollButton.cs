@@ -29,6 +29,9 @@ public sealed class ShopRerollButton : MonoBehaviour
     private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
 
     private int usedFreeRerollCount;
+    private System.Action rerollRequest;
+    private System.Func<int> remainingFreeRerolls;
+    private System.Func<int> rerollCost;
 
     public int BaseFreeRerollCount => baseFreeRerollCount;
     public int PaidRerollCost => paidRerollCost;
@@ -52,8 +55,29 @@ public sealed class ShopRerollButton : MonoBehaviour
     }
 
     public int TotalFreeRerolls => Mathf.Max(0, baseFreeRerollCount + ExtraFreeRerollCount);
-    public int RemainingFreeRerolls => Mathf.Max(0, TotalFreeRerolls - usedFreeRerollCount);
+    public int RemainingFreeRerolls => remainingFreeRerolls != null
+        ? Mathf.Max(0, remainingFreeRerolls())
+        : Mathf.Max(0, TotalFreeRerolls - usedFreeRerollCount);
     public bool IsFree => RemainingFreeRerolls > 0;
+
+    public void BindRerollRequest(System.Action request, System.Func<int> remaining, System.Func<int> cost)
+    {
+        rerollRequest = request;
+        remainingFreeRerolls = remaining;
+        rerollCost = cost;
+        RefreshView();
+    }
+
+    public void UnbindRerollRequest(System.Action request)
+    {
+        if (rerollRequest != request)
+            return;
+
+        rerollRequest = null;
+        remainingFreeRerolls = null;
+        rerollCost = null;
+        RefreshView();
+    }
 
     private void Awake()
     {
@@ -99,13 +123,13 @@ public sealed class ShopRerollButton : MonoBehaviour
     ///    UILabelText는 언어가 바뀔 때마다 DB 문구로 텍스트를 통째로 덮어써서 런타임 값이 날아간다.
     ///    대신 포맷 문자열 하나를 받아 여기서 조립한다 - 언어별로 숫자와 문구의 어순도 바꿀 수 있다.
     /// </summary>
-    private void RefreshView()
+    public void RefreshView()
     {
         if (costText != null)
         {
             costText.text = IsFree
                 ? GetLabel("shop_ui.reroll_free", "무료 리롤")
-                : string.Format(GetLabel("shop_ui.reroll_cost_format", "<color=#FFEB04>{0}</color> 리롤"), paidRerollCost);
+                : string.Format(GetLabel("shop_ui.reroll_cost_format", "<color=#FFEB04>{0}</color> 리롤"), rerollCost != null ? rerollCost() : paidRerollCost);
         }
 
         if (countText != null)
@@ -123,6 +147,13 @@ public sealed class ShopRerollButton : MonoBehaviour
 
     private void HandleRerollClicked()
     {
+        // 외부 요청이 연결되어 있으면 로컬 재고나 골드를 변경하지 않는다.
+        if (rerollRequest != null)
+        {
+            rerollRequest();
+            return;
+        }
+
         if (stockInitializer == null)
         {
             stockInitializer = GetComponentInParent<ShopStockInitializer>();

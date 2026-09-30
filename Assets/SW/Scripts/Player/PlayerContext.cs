@@ -32,6 +32,7 @@ public sealed class PlayerContext : MonoBehaviour
     [SerializeField] private WBH_PlayerStateMachine stateMachine;
     private bool usesSceneInventory;
     private PlayerItemEffectState effects;
+    private CooldownIconUIContainer[] boundCooldownHuds = System.Array.Empty<CooldownIconUIContainer>();
 
     public PlayerItemEffectState Effects => effects ??= new PlayerItemEffectState(this);
 
@@ -121,6 +122,9 @@ public sealed class PlayerContext : MonoBehaviour
     {
         SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
         effects?.ResetAttackLifetime();
+        foreach (var hud in boundCooldownHuds)
+            if (hud != null && hud.BoundContext == this) hud.Unbind();
+        boundCooldownHuds = System.Array.Empty<CooldownIconUIContainer>();
         if (usesSceneInventory)
             inventory?.UnbindPlayer(this);
     }
@@ -161,6 +165,14 @@ public sealed class PlayerContext : MonoBehaviour
         // SW 수정: 실제 싱글 프리팹도 기존 Presenter 하나로 확정 효과 표시 사건을 구독한다.
         if (IsComplete && GetComponent<UniqueEffectPresentation>() == null)
             gameObject.AddComponent<UniqueEffectPresentation>();
+        // 씬 HUD도 생성 지점에서 실제 Context를 주입한다. UI가 전역 플레이어를 추측하지 않는다.
+        if (IsComplete)
+        {
+            boundCooldownHuds = System.Array.FindAll(
+                FindObjectsByType<CooldownIconUIContainer>(FindObjectsInactive.Include, FindObjectsSortMode.None),
+                hud => hud.gameObject.scene == gameObject.scene && hud.enabled);
+            foreach (var hud in boundCooldownHuds) hud.Bind(this);
+        }
         return IsComplete;
     }
 

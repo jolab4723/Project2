@@ -136,12 +136,6 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             ServerMissileSpawnCount++;
     }
 
-    /// <summary>SW 수정: 서버가 장판·지연 폭발 네트워크 객체를 제거할 때 소유자별 활성 목록도 함께 정리합니다.</summary>
-    public override void OnStopServer()
-    {
-        base.OnStopServer();
-    }
-
     [Server]
     public void InitializeServer(
         NetworkEnemyAuthority attackOwner,
@@ -177,18 +171,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         missileArcHeight = Mathf.Max(3f, horizontalDistance * 0.25f);
     }
 
-    /// <summary>적 투사체의 이동 경계를 재사용하는 Gunner 기본 공격 시험판. 피해 공식은 기존 SW resolver만 사용한다.</summary>
-    /// <param name="instanceId">투사체 귀속 정책에서 장착 세대 추적이 불필요해 사용되지 않음. 호환 목적으로 유지.</param>
-    /// <param name="equipGeneration">동일. 사용되지 않음.</param>
-    [Server]
-    public void InitializePlayerServer(PlayerContext attackOwner, GunnerWeaponType weaponType, string itemId,
-        ElementType element, Vector3 moveDirection, float moveSpeed, float maxDistance, Vector3 impactPoint,
-        float explosionRadius, uint attackId, string instanceId, uint equipGeneration, GlassRailExtraHitUniqueEffectSO effect)
-    {
-        InitializePlayerServer(attackOwner, weaponType, itemId, element, moveDirection, moveSpeed, maxDistance, impactPoint, explosionRadius, attackId, effect);
-    }
-
     /// <summary>
+    /// 적 투사체의 이동 경계를 재사용하는 Gunner 기본 공격 시험판. 피해 공식은 기존 SW resolver만 사용한다.
     /// SW 수정: 플레이어가 발사한 탄의 무기·아이템·속성과 발사 시 고유효과를 서버에 보관합니다.
     /// 장착을 바꿔도 이미 발사한 탄은 이 스냅샷으로 충돌 결과를 처리합니다.
     /// </summary>

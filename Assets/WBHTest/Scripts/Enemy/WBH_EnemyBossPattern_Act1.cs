@@ -154,6 +154,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     }
 
     // 페이즈 전환
+    /// <summary>SW 수정: 전환 공격이 시작된 경우에만 페이즈 외형에 전환 시작을 알린다.</summary>
     private void EnterPhaseTwo()
     {
         if (isPhaseTwo || isPhaseTransition)
@@ -172,6 +173,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
         {
             isPhaseTransition = false;
         }
+        else phaseView?.NotifyTransitionStarted();
     }
 
     private void FormChange()
@@ -185,10 +187,13 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     }
 
     // 페이즈 전환 완료
+    /// <summary>SW 수정: 보스가 사라졌거나 사망했으면 완료 처리를 중단하고, 살아 있으면 페이즈 상태 갱신 후 외형에 완료를 알린다.</summary>
     private void CompletePhaseTwoTransiton()
     {
+        if (owner == null || owner.Status.IsDead) return;
         isPhaseTwo = true;
         isPhaseTransition = false;
+        phaseView?.NotifyTransitionCompleted();
 
         dashTimer = 0f;
         jumpTimer = 0f;

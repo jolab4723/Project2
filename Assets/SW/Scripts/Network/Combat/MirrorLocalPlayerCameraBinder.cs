@@ -15,6 +15,8 @@ public sealed class MirrorLocalPlayerCameraBinder : MonoBehaviour
 
     private CameraOcclusionFader occlusionFader;
     private MirrorNetworkManager networkManager;
+    private PlayerContext boundContext;
+    private Camera inputCamera;
 
     private void Awake()
     {
@@ -31,6 +33,8 @@ public sealed class MirrorLocalPlayerCameraBinder : MonoBehaviour
     {
         if (networkManager == null)
             TryBindNetworkManager();
+
+        if (inputCamera != Camera.main) BindCamera(boundContext);
 
         if (occlusionFader == null && PrepareOcclusionFader())
             BindCamera(networkManager != null ? networkManager.LocalPlayerContext : null);
@@ -66,6 +70,12 @@ public sealed class MirrorLocalPlayerCameraBinder : MonoBehaviour
 
     private void BindCamera(PlayerContext context)
     {
+        if (boundContext != null && boundContext != context)
+            boundContext.GetComponent<WBH_PlayerInputHandler>()?.BindInputCamera(null);
+        boundContext = context;
+        inputCamera = Camera.main;
+        context?.GetComponent<WBH_PlayerInputHandler>()?.BindInputCamera(inputCamera);
+        context?.Controller?.BindInputCamera(inputCamera);
         Transform target = context != null ? context.transform : null;
 
         if (combatCamera != null)

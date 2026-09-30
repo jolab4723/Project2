@@ -2,8 +2,8 @@
 
 > 계획: [기존 싱글을 보존하는 Mirror 단계별 정식 통합](Mirror_Production_Integration_Plan.md)
 > 이 문서 하나에 단계별 조사·구현·검증을 누적한다. 회차별 인계 문서를 새로 만들지 않는다.
-> 현행 기준: **1~4단계 완료, 5단계 구현·검증 도중 중단, 6단계 결과 연결 일부 작성 후 중단**. 2026-09-23 사용자 요청으로 구현·검증을 멈추고 진행 상황만 기록했다. 재개 지점은 §9.1~9.5이며 5·6단계 완료를 의미하지 않는다. 과거 절의 상태·검증 범위는 당시 이력이다.
-> 2026-09-23 사용자 최종 범위: **Act2까지 전환·결과·복귀·새 런 및 최종 정리**. Act1 보스 이후 Act2로 진행하며 Act3는 후속 확장이다. 이전 절의 Act1 한정 범위는 당시 이력이다. 이후 조사·스크립트 수정·Unity 검증은 사용자 지시에 따라 주 에이전트가 직접 수행한다.
+> 현행 기준: **2026-10-01 정식 16씬 통합·잔재 정리와 Editor Host 1인 F/G 검증 완료**. 사용자 지정 범위에서 양 클래스 각각 23개 메뉴·회피·평타 검사를 통과했다. 최신 변경과 제한은 §9.9에 기록한다. 계정 저장·복귀, 전체 Act1~2 진행과 원격 검증까지 완료했다는 의미는 아니다. 이전 중단 및 검증 기록은 당시 이력으로 보존한다.
+> 2026-09-23 사용자 최종 범위: **Act2까지 전환·결과·복귀·새 런 및 최종 정리**. Act1 보스 이후 Act2로 진행하며 멀티 Act3는 후속 확장이다. 기존 싱글 Act3는 유지한다. 당시 주 에이전트 직접 수행 지시 이후, 2026-09-30에는 사용자가 **수정 스크립트 한 개당 워커 한 명을 배정하고 서로 다른 파일을 병렬 처리**하도록 지시했다. 구조 결정·자산 변경·최종 Unity 검증은 주 에이전트가 소유한다.
 
 ## 1. 갱신 규칙
 
@@ -28,8 +28,8 @@
 | 2 | 포션·장비·인벤토리·경제 | 완료 | 2026-09-23 싱글 실제 플레이어·Host+Client·전용 서버+4 Client 규칙/동시 구매/중복·버전 거절/재접속 보존 PASS; 실행 환경 제한은 §5 |
 | 3 | 기본 공격·스킬·상태이상 | 완료 | 2026-09-23 공통 피해·스킬 4슬롯·연출 동등성 정리. 싱글 128 / Host 128 / 전용4인 124조합. 무작위 산탄 폭격과 좁은 직선의 표적 경계 차이는 사용자 수용 후 추가 검증 종료. 제한·B04 후속은 §6.3 |
 | 4 | 현재 완료 고유효과 10종 공통화·B04 정상 부활 | 완료 | 2026-09-23 공통 실행·후속 큐·장판 수명, 실제 싱글/Host 공격과 정상 부활·재접속 검증. 초기 표시 조건과 제한은 §8 |
-| 5 | 기존 싱글 씬 공용화·초기 로딩·Act1·Act2 연결 | 사용자 요청으로 중단 | 공용 씬 18개 연결, Act2 Stage1 Host 진입 확인. 보스·이벤트 등 미검증 및 수정 후 재검증 남음; §9 |
-| 6 | 결과·복귀·정식 승격·MirrorTest 잔존 0건 | 일부 작성 후 사용자 요청으로 중단 | 서버 참가자별 결과·KY 화면 연결 코드 작성. 최신 컴파일·결과 실행 미확인, 정식 승격·시험 정리·최종 빌드 미착수; §9.4 |
+| 5 | 기존 싱글 씬 공용화·초기 로딩·Act1·Act2 연결 | 사용자 요청으로 중단 | 9월 28일 Editor 싱글·Host 완주 이력은 §9.7. 9월 30일 공통화 코드·일부 프리팹 반영 후 중단; 정식 16씬 HUD/NPC 통합 및 새 후보 실행 검증 대기; §9.8 |
+| 6 | 결과·복귀·정식 승격·MirrorTest 잔존 0건 | 사용자 요청으로 중단·최종 판정 보류 | 기존 결과·복귀 구현은 유지. 9월 30일 투사체 잔재 일부 정리, 동일 버전 실제 Client/4인/Dedicated·생명주기·정산 최종 검증과 잔여 참조 정리 미완료; §9.8 |
 | 7 | Act3 확대 | 대기 | Act2는 이번 5~6단계에 포함; Act3는 후속 |
 
 ## 3. 0단계 — 2026-09-20
@@ -552,6 +552,85 @@ Unity 6000.3.22f1의 실제 Fighter/Gunner·Normal_Melee 적 프리팹을 사용
 - `main` 체리픽/병합(`67913ea46`) 후 Editor에서 싱글 Act1→Act2 보스→Act3 맵, 멀티 Host Act1→Act2 보스→GAME CLEAR를 완주하며 16건을 수정했다. 핵심: 싱글 StageSelect 미표시(씬 NetworkIdentity 비활성), 고해상도 Canvas 고정, 멀티 전투 미시작(일반 자폭 드론 SO GUID가 Act2 보스 소환병으로 바뀐 main 커밋), 멀티 상점/상태창의 싱글 UI 바인딩, 전투 씬 멀티 UI 옛 사본 교체, 세션 종료 후 싱글 진입 불가.
 - 상세 원인·수정 파일·검증·미검증 항목은 [Mirror_Integration_Verification_2026-09-28.md](Mirror_Integration_Verification_2026-09-28.md)를 따른다. 새 Player/Server 빌드와 실제 원격 Client 검증은 아직 수행하지 않았다.
 
+### 9.8 9월 30일 마무리 계획 적용 — 부분 반영 후 사용자 요청으로 중단
+
+**기록 시점:** 2026-09-30 22:33 KST 작업 트리·CLI 확인 기준. **상태:** 구현 및 자산 연결 진행 중 중단, 통합 완료 판정 보류. 기준 문서는 [9월 30일 Mirror 통합 마무리 계획](Project2_Mirror_Integration_Finalization_Plan_2026-09-30.md)이다. 이 절은 이번 실행 기록이며 앞 절의 과거 PASS를 새 후보 검증으로 재사용하지 않는다.
+
+#### 범위·승인·협업
+
+- 브랜치 `unity-6000-3-22-test`, 작업 시작 HEAD `cdcbc8e57edaa1496fcee8209979671e065b6a4b`. Unity 6000.3.22f1의 연결된 Editor와 `unity-cli`를 사용했다. Commit/Push 및 새 Player/Server 빌드는 수행하지 않았다.
+- 사용자는 BH 원본 9개(`T_PlayerController`, `WBH_PlayerInputHandler`, `T_PlayerCombat`, `WBH_PlayerAnimation`, `WBH_EnemyView`, `WBH_EnemyCombat`, `WBH_EnemyBossPattern_Act1`, `WBH_HighEnemyHpbarView`, `WBH_EnemyBossPhaseView_Act1`), WJ 원본 4개(`PlayerActionInputHandler`, `CooldownIconSlot`, `CooldownIconUIContainer`, `EnemyKillReward`), KY 원본 2개(`KY_UIInputManager`, `KY_PausePopup`)의 수정 이유·대상 제시 후 명시적으로 승인했다. 같은 파일을 재개할 때 동일 승인 범위의 재승인은 필요하지 않다. 추가 타 담당자 스크립트는 별도 승인을 따른다.
+- 후반 작업부터 사용자의 지시대로 워커별 수정 파일을 한 개로 제한하고 서로 다른 파일을 병렬 처리했다. 중단 시점에 실행 중인 워커는 없다. 워커의 Diff/check 보고는 최종 Unity 채택 검증을 대신하지 않는다.
+- 시작부터 존재한 `Assets/AddressableAssetsData/link.xml` 및 `.meta` 삭제, 미추적 9월 30일 계획 문서는 보존했다. Unity 실행 중 패키지 설정 JSON 두 개가 `git status`에 수정으로 표시되지만 확인한 내용 Diff는 없었다. 무관한 변경을 되돌리거나 정리하지 않았다.
+
+#### 코드에 반영한 내용 — 실제 플레이 완료 주장 아님
+
+| 계획 항목 | 작업 트리에 반영한 내용 | 남은 연결·검증 |
+|---|---|---|
+| I-01 입력·회피 | `T_PlayerController`에 카메라 바인딩 및 방향을 받는 회피 성공 API를 추가하고, 허용 상태·쿨다운·방향·NavMesh 목적지 검사를 원본에 모았다. `NetworkPlayerInputHandler`의 private/backing-field 회피 Reflection과 별도 입력 처리를 제거했다. `T_PlayerCombat`은 추적 공격도 같은 요청 경계를 사용한다. | 거부 시 상태 불변·성공 시 쿨다운 1회, 높은 지형/카메라 교체, 잡기·승강기·사망·채팅 중 입력 경계의 실제 F/G 검사 |
+| I-02 액션·애니메이션 | BH 이동/공격/획득/핑 및 WJ 스킬/포션 입력을 원본에서 읽고 기존 Authority에 요청한다. `WBH_PlayerAnimation`에 공통 표시와 외부 게임 사건 권한을 구분하는 바인딩을 추가했다. Network 애니메이션은 얇은 권한 어댑터가 되며 AnimationEvent 수신을 원본 하나로 모았다. `MirrorSpawnedPlayerBinder` 구성 검사·local-only 순서와 카메라 바인더도 변경했다. | 원격 사건의 게임 상태 변경 0, Host 공격/스킬·VFX/SFX 1회, 원본 입력 소비자 1개, 장착·사망·부활·재바인딩 검증 |
+| I-03 UI·NPC·쿨다운 | KY 입력이 `KeyBindingService` 공유 액션과 채팅 소비·팝업 우선순위를 사용한다. UI/Lobby Binder의 독립 키 처리 및 NPC private UnityEvent Reflection을 제거했다. Pause는 직렬화 버튼·다국어 표시 API를 사용한다. 강화/리롤은 기존 원본 클릭에서 서버 요청 콜백을 호출하며 persistent listener를 런타임에 끄는 우회를 제거했다. 쿨다운 원본 Container/Slot은 Context·확정 숫자를 받고 `MirrorCooldownHud`는 연결만 맡는다. | 정식 씬의 신규 Pause/입력/HUD/쿨다운/리롤 참조 배선, Lobby 입력 연결, 채팅·IME·ESC 및 요청 대기/실패/전환 검사. 코드만 바뀌고 씬 배선이 끝나지 않은 현재 상태에서는 정상 UI를 보장하지 않는다. |
+| I-04 적 표시 | `WBH_EnemyView`와 `WBH_HighEnemyHpbarView`에 외부 표시 API를 추가했다. Network 뷰는 원본에 HP 변화와 개별 reliable 피해/화상 사건을 넘긴다. 피해 RPC에 공격자 netId·자기 공격 정보를 전달하고 값이 바뀔 때만 HP를 갱신한다. Act2 보스에 Act1 PhaseView를 요구하는 잘못된 조건도 수정했다. | 정식 씬 고등급 HP 뷰 한 개 배선, 연속/동일 프레임 피해 숫자, 거리 숨김, 언어·화상·Flash, 풀/카메라 및 Host 중복 검사 |
+| I-05 Act1 보스 | Network의 별도 patternID=101 타이머·코루틴을 제거하고 원본 `TickWithTarget`, 서버 대상 명부, 공통 Combat 이동/공격을 사용한다. 원본 PhaseView의 전환 시간·완료·취소를 서버 시뮬레이션과 연결했다. 탄막·미사일은 외부 서버 생성 경계로 전달한다. 원본 돌진의 skill 1을 실제 Animator `Dash` 상태에 연결했다. | 10초 타깃 교체, Phase2 추적, 변신 중 사망/씬 종료, 전용 서버의 카메라 없는 진행과 Client/Host 표시 검사 |
+| I-06 웨이브·보상·잔재 | 정식 웨이브 설정 누락을 시험 fallback 성공으로 처리하지 않도록 변경하고 구형 시험 생성·필드·ContextMenu를 제거했다. 경험치·크레딧은 공통 `EnemyKillReward.GrantReward`를 싱글/서버에서 사용한다. 투사체의 빈 `OnStopServer`와 무시하는 인자 overload만 제거했다. | 설정 누락 시 출발 거절, 정상/Act2 소환 진행, Direct/Skill/Effect/DoT 막타의 처치·보상·의뢰 1회. 복제 보상 컴포넌트 파일은 아직 삭제하지 않았다. |
+| I-07 씬·의뢰·프로토콜 | 의뢰의 Act1 캠프 고정 조건을 기존 현재 캠프 경로로 바꿨다. `MirrorSceneMode.OpenShop/OpenUpgrade` 및 모드별 기존 창 참조를 추가해 공용 NPC의 Inspector 이벤트 진입점을 준비했다. RPC 변경에 따라 호환 버전은 `2026093001`로 올렸다. | Act1/Act2 정식 16씬 HUD 중복과 두 캠프 NPC 중복 제거, Act2 게시판 실제 요청, 같은 후보/버전으로 실제 네트워크 실행 |
+
+오프라인 싱글을 StartHost로 전환하거나 새 전역 Manager를 추가하지 않았다. 기존 스킬 판정 프리팹과 원격 표시 프리팹은 별도 역할로 유지했고 멀티 범위를 Act3로 확장하지 않았다. `PlayerContext`의 싱글 인벤토리 연결에서 같은 씬 공통 쿨다운 Container를 바인딩/해제하는 연결도 작성했다.
+
+#### 자산 반영과 중단 지점
+
+- 문서 수정 전 `git diff --name-only` 기준 **C# 39개·Prefab 15개·Scene 0개**가 변경됐다. 이 숫자는 파일 Diff 범위이며 테스트 통과 수가 아니다. `.meta` GUID를 재생성하지 않았다.
+- Unity Editor API의 저장 성공을 확인한 변경 프리팹은 F/G 네트워크 플레이어 2개, 정식 네트워크 적 9개, 기존 Combat 적 3개, `InventoryCamp` 1개다. `InventoryRuntime`도 로드·배선·저장 호출이 성공했지만 내용 Diff는 없었다.
+- F/G 플레이어에는 공통 이동 입력·액션 입력·애니메이션 수신기 각 하나를 추가/복원하고 입력 마스크·기존 효과/클립 참조·외부 권한 및 local-only 목록을 연결했다. 적 12개에는 활성 공통 View·외부 표시 설정·Authority/PhaseView·원본 FirePoint/GrenadePoint 참조를 연결했다. 캠프 인벤토리는 원본 강화/리롤과 네트워크 어댑터를 연결했다. **저장 성공은 Missing Script/Broken Reference 전수검사나 실제 플레이 성공이 아니다.**
+- Act1 Camp의 HUD/NPC 참조 이전과 중복 제거를 시도한 외부 `run_script`는 **30,000ms 시간초과**를 반환했다. 이후 작업 트리에서 해당 `.unity` 파일 Diff는 없었다. 완료 응답과 저장 증거가 없어 적용 성공으로 기록하지 않는다. 후속 읽기 전용 Editor 상태 조회도 **Main thread operation timed out after 5000ms**를 반환했다. 마지막 `unity status`의 ready 표시는 Editor 주 스레드·Scene 상태 확인 완료를 뜻하지 않는다.
+- 열린 `Act1_Stage1`은 작업 중 마지막 성공 조회에서 Edit Mode·Dirty·Prefab Stage 없음이었다. 이 씬을 저장하지 않았다. 중단 시점 상태 재조회는 위 시간초과로 확인하지 못했으므로 다음 작업에서 먼저 현재 씬·Preview Scene·진행 중 작업/다이얼로그 상태를 확인한다. 타임아웃 작업이 저장됐다고 가정하거나 같은 이전을 즉시 재실행하지 않는다.
+- 기존 정식 씬들은 신규 직렬화 필드에 맞춘 배선이 아직 남아 있다. HUD/NPC 공용화·Pause 참조·쿨다운 Container·공용 HP 뷰·Lobby 입력을 완료하기 전에는 이번 후보를 정식 통합 완료로 취급하지 않는다.
+
+#### 확인한 검증과 미검증
+
+| 확인 | 이번 결과와 한계 |
+|---|---|
+| Unity 컴파일 | 중간 API 연결 오류를 수정했으며 마지막 `recompile_status` 조회는 `completed`, `failed=false`, `errors=[]`였다. 이후 Editor 상태 조회 시간초과가 있어 재개 시 최신 소스 컴파일·업데이트 상태와 Console을 다시 확인한다. |
+| 프리팹 저장 | 위 15개 변경 프리팹에 대한 Editor 저장 명령 성공. F/G 공통 컴포넌트 개수 검사 통과. 전수 Missing/직렬화/AnimationEvent 및 시각 검증은 남았다. |
+| 보스 Animator | 실제 SpiderX 네트워크 Controller의 `WaitDash`·`Dash` 등 상태 존재 확인. 돌진 준비→이동·원격 재생은 실행하지 않았다. |
+| 빌드 사전 검사 | 기존 `MirrorPrebuildChecks` 빌드 옵션 7개 확인을 재사용했다. 실제 새 빌드/Client 실행 성공을 뜻하지 않는다. |
+| Diff 확인 | 워커별 해당 코드 Diff/check 보고와 메인 검토를 진행했다. 중단 시점 전체 `git diff --check`는 Unity가 생성한 Prefab의 빈 `m_Name` 등 10줄 및 `WBH_EnemyCombat.cs` 변경 줄 1곳의 trailing whitespace를 보고해 통과하지 않았다. 사용자 중단 후 코드/YAML 정리를 추가 수행하지 않았다. |
+| Console | 기존 셰이더·도구 메시지와 수정된 중간 컴파일 오류 이력을 유지했다. 새 후보의 최종 Console 전수검사·오류 0을 주장하지 않는다. |
+| 실제 실행 게이트 | 이번 변경 이후 새 Edit/Play Mode 기능 검증, 정상 싱글 F/G·기존 Act3, Host+별도 Client, 4인 혼합, Dedicated/원격/Linux, A1~A3 및 경제·재접속·정산·승강기 회귀는 수행하지 않았다. |
+
+#### 재개 시 순서와 보존 자료
+
+1. 사용자 재개 지시 후 Editor 응답·열린 Dirty Scene/Prefab Stage·Preview Scene·타임아웃 작업 상태와 현재 git Diff를 확인한다. 저장 또는 재실행 전에 Act1 Camp의 실제 자산 상태를 다시 판정한다.
+2. 워커 최종 변경 Diff를 모두 검토하고 새 코드 컴파일/Console을 확인한다. 정식 씬의 신규 필수 참조가 비어 있는 상태를 먼저 해소한다.
+3. Act1 Camp 한 씬의 HUD/NPC 이전을 안전하게 완료·검사한 뒤 Act2 Camp와 14개 전투/보스 씬으로 적용한다. 기존 참조를 먼저 옮기고 공용 HP 뷰·쿨다운·Pause·입력·강화/리롤·의뢰 배선을 검사한다. Lobby에도 공용 UI 입력 참조를 연결한다.
+4. GUID·Inspector·AnimationEvent와 호출부를 확인한 뒤 남은 미사용 복제본/빈 래퍼만 제거한다. `EnemyKillExpReward`라는 오래된 EditorClassIdentifier 문자열만 보고 실제 WJ 원본 `EnemyKillReward`를 지우지 않는다. `Tools/Validation/CombatParityFinalChecks.cs`는 이번 조사에서 없었으므로 기존 검증 파일을 확인하고 필요한 검증만 보강한다.
+5. 이번 후보의 오프라인 F/G·기존 Act3, Host+별도 Client, 4인 혼합, Dedicated 및 생명주기·개별 피해/보상·A1~A3·경제/정산을 순서대로 검증한다. Player 전용/원격 검증에 필요한 코드가 바뀌었으므로 과거 빌드를 이번 후보로 간주하지 않는다. Linux 목표는 실제 Linux에서 확인한다.
+6. 검증 사실과 제한을 이 문서에 누적하고 대상 기능 검증을 마친 뒤 김성우 개인 구현 로그를 갱신한다. 이번에는 대상 실행 검증이 끝나지 않아 **개인 구현 완료 로그를 갱신하지 않았다.** Commit/Push는 별도 사용자 요청을 따른다.
+
+외부 Editor 작업 자료는 로컬 `RunValidation/MirrorSeptemberAssetMigration.cs`, `MirrorSeptemberApply.cs`, `MirrorSeptemberLegacy.json`에 남아 있다. 마지막 JSON은 이전 Network 애니메이션 필드의 효과/클립 GUID·local fileID·Transform 경로와 입력 마스크 백업이다. **`RunValidation`은 Git ignored이므로 다른 PC/클론에 자동 전달되지 않는다.** 재개 전 파일 존재를 확인하고, 현재 실패한 씬 이전 스크립트를 검증 없이 바로 실행하지 않는다. 런타임 시험 Runner/Message를 Assets에 추가하지 않았다.
+
+### 9.9. 10월 1일 재개 — 정식 씬 통합·잔재 정리와 Editor Host 1인 검증
+
+사용자 지시에 따라 9월 30일 작업을 재개했다. 최종 실행 범위는 **Editor Host 1인**으로 제한한다. 새 Player/Server 빌드, 별도 Client, 4인, Dedicated/Linux 검증 결과로 확대하지 않는다. 기존 §9.8의 팀원 스크립트 수정 승인 범위를 유지했으며, 워커당 한 스크립트를 맡기고 주 에이전트가 Diff와 Unity 결과를 검토했다. 적용한 간결화 기준은 `$ponytail full`이다.
+
+- Act1·Act2 정식 16씬의 HUD, KY 입력 관리자, 고등급 HP 뷰와 포털을 각각 한 개로 통합했다. 두 캠프의 NPC도 원본 한 벌을 사용한다. Shop/Upgrade의 기존 UnityEvent는 같은 씬 `MirrorSceneMode.OpenShop/OpenUpgrade`에 연결하고, 현재 모드의 인벤토리로 전달한다.
+- 원본 포털 위치를 유지하고, 로컬 SceneLoader와 서버 포털 Adapter를 모드별 Behaviour 목록으로 분리했다. 공유 객체는 모드 전용 루트 밖에 두었다. HUD 루트 이동으로 부모의 배율 적용이 사라지는 문제를 찾아 기존 UI Canvas의 1920×1080 CanvasScaler 설정을 옮겼다.
+- 공용 Pause 프리팹에 버튼·라벨 참조 5개를 연결하고 Lobby에 공통 입력 관리자를 연결했다. 두 플레이어 프리팹의 유물 실행기는 같은 component fileID와 inventory/buffs 참조를 보존하면서 공통 `PlayerRelicEffectRuntime`으로 이전했다.
+- GUID·코드·직렬화 참조가 없는 SW 시험 복제본 `EnemyKillExpReward`, `NetworkEnemyItemDropAdapter`와 이전이 끝난 빈 `NetworkPlayerRelicEffectProvider`를 `.meta`와 함께 제거했다. WJ의 실제 `EnemyKillReward`와 이름만 오래된 EditorClassIdentifier는 제거하지 않았다.
+- Portal/Elevator/Player 구성 ContextMenu 검사를 런타임에서 걷어내고 Assets 밖 `Tools/Validation/MirrorSeptemberReferenceChecks.cs`로 옮겼다. 실제 게임 규칙·서버 검증·생명주기와 동기화 상태는 유지했다.
+
+**정적 검증:** Unity 재컴파일 완료, `failed=false/errors=[]`. Portal/Elevator 규칙 20건 통과. 프리팹 15개 Missing Script 0, 공통 입력·유물 실행기·적 뷰·Pause 필수 연결 통과, 플레이어 AnimationEvent 59건은 같은 Animator 객체에서 수신자 각각 1개. 16씬의 공통 객체 수·모드 분리·두 캠프 이벤트 검사 통과, Missing Script 0.
+
+끊어진 참조 전체가 0인 것은 아니다. 프리팹 검사에 기존 머터리얼·물리 머터리얼·메시·Avatar 등 60건, 씬 검사에 Act1 Boss의 기존 DropEffect 12건과 Act2 Camp Fire_small의 Sprite 1건이 남는다. 관련 프리팹의 ParticleSystem/Renderer/MeshCollider/Animator 직렬화 블록 112개는 HEAD와 동일했다. 외부 원본과 이번에 손대지 않은 효과를 임의로 수정하지 않았으며, 검증기는 이 항목을 숨기지 않고 `success=false`와 경로를 반환한다.
+
+**Host 실행 결과:** 실제 Lobby Host 버튼 → 참가자 1명 승인·호환 확인 → 캐릭터 선택·Ready → StageSelect → 정상 노드 요청으로 Fighter는 Act1_Stage4, Gunner는 Act1_Stage3에 진입했다. 두 클래스 각각 23개 검사를 통과했다. 공통 입력 소비자/네트워크 어댑터 각 1개, 로컬 인벤토리 연결·닫기 애니메이션, Pause 열기/닫기 중 Host timeScale=1, 메뉴 종료 후 입력 복구, 회피 1회 승인·즉시 연속 요청 2회 거부·쿨다운 비초기화, 평타 서버 승인 정확히 1회·자연 AnimationEvent로 예약 종료·미확정 공격 증가 없음을 확인했다. 파이터 실제 적 전투와 공용 HUD 화면도 확인했다. 완료 후 조회 구간 Console 오류는 0건이었다(`since=168743`, `cursor=169089`).
+
+자연 피격 사망 후 결과 화면으로 전환됐다. 현재 계정 미로그인 상태로 `CanSaveToSessionAccount=false`이며 결과 저장·로비 복귀는 대기 상태로 차단됐다. 계정 조건이나 저장 권한을 시험 코드로 우회하지 않았다. 보스·캠프 거래·전체 Act1~2 완주·A1~A3 효과 전체·오프라인 싱글 Act3·별도 Client/4인/Dedicated/Linux 검증은 이번 결과에 포함하지 않는다.
+
+씬 이전 중 응답 시간초과는 저장 실패로 단정하지 않고 재조회했다. 16개 포털 저장을 다시 열어 확인했다. 미저장 Act1_Stage1은 사용자에게 폐기 승인을 받은 후 처리했다. 병행 VFX 작업과 기존 ProjectSettings/Addressables 변경은 정리 대상에서 제외했다. Play 종료 후 로컬 저장 JSON 100개를 실행 직전 백업으로 복원하고 SHA-256 불일치 0건을 확인했다. 캡처를 Assets 밖으로 이동하고 임시 캡처 폴더와 meta를 제거했다. Commit/Push는 수행하지 않았다.
+
+검증에는 Assets 밖 임시 `MirrorSeptemberReferenceChecks.cs`와 `MirrorSeptemberHostChecks.cs`를 사용했다. 검증·저장 복원 완료 후 사용자 요청으로 이번 `RunValidation/MirrorSeptember*`·`MirrorOctober*` 자료와 임시 검사 파일 2개를 삭제했다. 결과와 제한은 이 절에 보존하며, 위 §9.8의 임시 파일 보존 안내는 중단 당시 이력이다. 미완료인 다른 효과 검증 도구와 기존 테스트 씬·빌더·Build Settings는 유지했다. 이후 사용자가 이번 통합 변경의 커밋을 요청했으며 푸시는 요청하지 않았다. 과거 9월 28일 검증을 이번 후보의 결과로 재사용하지 않는다.
+
 ### 후속 단계 기록 형식
 
 각 단계에 다음 항목을 같은 문서의 새 절로 추가한다.
@@ -579,3 +658,5 @@ Unity 6000.3.22f1의 실제 Fighter/Gunner·Normal_Melee 적 프리팹을 사용
 | 2026-09-23 | 5·6 중단 기록 | 3·4단계 개별 커밋 후 Act2까지 범위 확정, 공용 씬·준비·이벤트·Act2 보스 연결 및 결과 코드 일부 작성 | StageSelect/Act2 Stage1 Host 진입 확인. 보스 생성기 오류 수정 후 재검증 전, 최신 결과 코드 컴파일 미확인. Play 정지·세이브9개 복원. 사용자 요청으로 중단 | 사용자 재개 지시 후 §9.5부터 확인 |
 | 2026-09-23 | 5·6 재개 후 인계 | 정식 경로/이름 이전·공통 구현 통합·시험 자산 제거·결과 정산/재접속·Firebase 체크포인트와 빌더 연결 | Unity 컴파일 성공. 사용자 요청으로 새 빌드와 최종 Play/Firebase 검증 생략, 완료 판정 보류. 변경은 기능별 커밋, Push 없음 | 집 PC에서 §9.6 순서로 같은 후보 빌드·최종 검증 |
 | 2026-09-28 | 병합 후 검증 | main 병합 이후 Editor 싱글·멀티 Host 완주, 16건 수정(§9.7) | 컴파일 성공·Console Error 0·빌드 씬 Missing 0·저장 105개 복원. 새 빌드·원격 Client 미검증 | 새 Player/Server 빌드 후 로그아웃 로그인 화면·2인 이상 확인 |
+| 2026-09-30 | 마무리 계획 부분 적용·중단 | 원본 입력/애니메이션·UI·적 표시·Act1 보스·웨이브/보상 공통화 코드와 Prefab 15개 반영; 사용자 중단 지시 | 마지막 컴파일 상태 조회 오류 없음. Act1 Camp 통합 명령 30초 및 후속 상태 조회 5초 시간초과, Scene Diff 0. 최종 참조/Console·실제 플레이·원격 미검증, 전체 Diff check의 trailing whitespace 잔존 | 사용자 재개 후 Editor/타임아웃 상태 확인 → §9.8의 씬 배선·참조·실행 검증 |
+| 2026-10-01 | 정식 씬 통합·Host 1인 검증 | 16씬 HUD/입력/HP/포털·두 캠프 NPC 통합, Lobby/Pause 배선, 유물 공통화·복제본 3개 제거 | 컴파일·규칙 20·Prefab 15·AnimationEvent 59·16씬 구조 통과, F/G Host 각 23건 통과. 기존 참조 60+13 잔존, 미로그인 저장/복귀 미검증 | 사용자 지정 Host 1인 범위 마무리. 전체 진행·원격 후속 검증은 §9.9 제한 참조 |

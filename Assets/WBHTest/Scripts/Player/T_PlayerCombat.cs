@@ -34,6 +34,7 @@ public class T_PlayerCombat : MonoBehaviour
     private bool hasChaseDestination;
     private float basicAttackMult = 1f;
     private uint nextAttackId;
+    private System.Func<Vector3, bool> externalAttackRequest;
 
     private const float ChaseRefreshDistance = 0.25f;
 
@@ -445,6 +446,7 @@ public class T_PlayerCombat : MonoBehaviour
         return nextAttackId;
     }
 
+    /// <summary>SW 수정: 추적 대상이 사거리에 들어오면 추적을 끝내고, 직접 조준과 같은 공격 요청 경로를 사용합니다.</summary>
     private void UpdateChase()
     {
         if (chaseTarget == null)
@@ -475,7 +477,7 @@ public class T_PlayerCombat : MonoBehaviour
             Vector3 attackPos = chaseTarget.transform.position;
 
             CancelChase();
-            TryAttack(attackPos);
+            RequestAttack(attackPos);
             return;
         }
 
@@ -531,6 +533,18 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
     // -- 입력 시스템 호출용 메서드
+    /// <summary>SW 수정: 추적 완료와 직접 조준의 공격 의도를 같은 서버 요청으로 연결한다.</summary>
+    public void BindAttackRequest(System.Func<Vector3, bool> attackRequest) => externalAttackRequest = attackRequest;
+
+    /// <summary>SW 수정: 연결된 권한에 공격을 요청한다. 싱글에서는 기존 공격 실행을 사용한다.</summary>
+    public void RequestAttack(Vector3 targetPosition)
+    {
+        if (externalAttackRequest != null)
+            externalAttackRequest(targetPosition);
+        else
+            TryAttack(targetPosition);
+    }
+
     public void TryAttack(Vector3 targetPos)
     {
         if (!CanAttack) 

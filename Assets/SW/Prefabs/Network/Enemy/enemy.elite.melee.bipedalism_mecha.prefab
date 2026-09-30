@@ -2027,6 +2027,7 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 6979028824434092731}
   grenadePoint: {fileID: 0}
+  act2TransitionEffect: {fileID: 0}
   enemyAnimation: {fileID: 0}
   isShowSkillRange: 0
 --- !u!114 &2251570876085871364
@@ -2097,12 +2098,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8343252582345304491}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70a52c88ed000324aabaeee25ed49248, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
+  externalPresentation: 1
   damageTextRoot: {fileID: 4691396479016513494}
+  damageTextSpacingPixels: {x: 56, y: 28}
   creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 0}
   hpBarSlider: {fileID: 0}
@@ -2580,9 +2583,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPattern
   authority: {fileID: 8427196431083808836}
-  movement: {fileID: 4754653558889477784}
-  status: {fileID: 6184120055319002979}
-  agent: {fileID: 7866099458396240894}
   firePoint: {fileID: 6979028824434092731}
   grenadePoint: {fileID: 0}
 --- !u!114 &8427196431083808836
@@ -2617,7 +2617,6 @@ MonoBehaviour:
     exp: 120
     credit: 80
     patternID: 11
-  attackImpactDelay: 0.45
   destroyDelay: 0.35
   useAnimatorOnlyDeathPresentation: 0
   playerLayer:
@@ -2652,11 +2651,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkEnemyCombatView
   authority: {fileID: 8427196431083808836}
-  damageTextRoot: {fileID: 4691396479016513494}
-  healthBarRoot: {fileID: 0}
-  healthBarSlider: {fileID: 0}
+  productionView: {fileID: 6333269721959182114}
   bossPhaseView: {fileID: 0}
-  damageTextSpacingPixels: {x: 56, y: 28}
 --- !u!1 &8449699787935935056
 GameObject:
   m_ObjectHideFlags: 0

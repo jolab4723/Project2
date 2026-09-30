@@ -13,7 +13,7 @@ public enum MirrorSessionPhase : byte
 }
 
 /// <summary>
-/// Act1과 비슷한 소규모 일반 적 웨이브를 서버에서만 생성하는 Mirror 테스트 Spawner다.
+/// 정식 씬의 공유 웨이브 설정으로 적을 서버에서만 생성한다.
 /// <para>원본 SpawnManager의 임의 플레이어 <c>Find</c>와 로컬 풀을 실행하지 않고,
 /// 생성·등록·제거를 <c>Instantiate → NetworkServer.Spawn → NetworkServer.Destroy</c>로 고정한다.</para>
 /// <para>6-A에서는 서버 시작과 동시에 적을 생성하지 않는다. 호환 확인과 Player 생성이 끝난 Client의
@@ -25,18 +25,8 @@ public enum MirrorSessionPhase : byte
 [RequireComponent(typeof(NetworkIdentity))]
 public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
 {
-    [SerializeField] private NetworkEnemyAuthority meleePrefab;
-    [SerializeField] private NetworkEnemyAuthority rangedPrefab;
-    [SerializeField] private NetworkEnemyAuthority bossPrefab;
     [SerializeField] private WBH_EnemyDataProvider enemyDataProvider;
-    [SerializeField, Min(1)] private int waveCount = 2;
-    [SerializeField, Min(1)] private int enemiesPerWave = 5;
     [SerializeField, Min(0f)] private float initialDelay = 1.5f;
-    [SerializeField, Min(0f)] private float spawnInterval = 0.35f;
-    [SerializeField, Min(0f)] private float nextWaveDelay = 2.5f;
-    [SerializeField, Min(1f)] private float spawnRadius = 8f;
-    [SerializeField] private Vector3[] authoredSpawnPositions;
-    [SerializeField] private Vector3 bossSpawnPosition;
     [SerializeField] private MirrorBossIntro bossIntro;
     [Header("정식 씬의 공유 웨이브")]
     [SerializeField] private YJ_StageManager stageManager;
@@ -56,7 +46,6 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     private Coroutine waveRoutine;
     private bool waveSpawnFinished;
     private int activeWaveCount;
-    private WBH_EnemyInfo[] activeEnemyInfos;
 
     public int CurrentWave => currentWave;
     public int AliveEnemyCount
@@ -81,7 +70,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
 
     private void Awake()
     {
-        RegisterBossPrefabForClient();
+        RegisterEnemyPrefabsForClient();
     }
 
     public override void OnStartServer()
@@ -89,14 +78,14 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         base.OnStartServer();
         sessionPhase = MirrorSessionPhase.Waiting;
         sessionStateRevision = 0;
-        activeWaveCount = waveCount;
+        activeWaveCount = 0;
         bossSession = false;
     }
 
     public override void OnStartClient()
     {
         base.OnStartClient();
-        RegisterBossPrefabForClient();
+        RegisterEnemyPrefabsForClient();
     }
 
     public override void OnStopServer()
@@ -120,7 +109,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         {
             completedWaveCount++;
             waveSpawnFinished = false;
-            waveRoutine = StartCoroutine(SpawnWaveAfter(nextWaveDelay));
+            waveRoutine = StartCoroutine(SpawnAuthoredWave());
             return;
         }
 
@@ -156,38 +145,16 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
 
         MirrorNetworkManager manager = NetworkManager.singleton as MirrorNetworkManager;
         if (manager == null || !manager.IsPartyGameplayReady) return false;
-        StageNodeSaveData pendingNode = null;
-        if (manager != null)
-            manager.TryGetPendingStageNode(out pendingNode);
-
-        bossSession = pendingNode?.type == StageNodeType.Boss;
-        if (stageManager != null)
-        {
-            if (!TryPrepareAuthoredWaves(manager, pendingNode)) return false;
-            if (bossSession && bossIntro != null && !bossIntro.ServerBegin(manager, initialDelay)) return false;
-            sessionPhase = MirrorSessionPhase.Playing;
-            sessionStateRevision++;
-            waveRoutine = StartCoroutine(SpawnAuthoredWave());
-            return true;
-        }
-        activeWaveCount = ResolveWaveCount(pendingNode, waveCount);
-        if (bossSession && bossPrefab == null)
-        {
-            Debug.LogError(
-                "[NetworkEnemyWaveSpawner] Boss 노드용 네트워크 Prefab이 비어 있습니다.",
-                this);
+        if (!manager.TryGetPendingStageNode(out var pendingNode) ||
+            !TryPrepareAuthoredWaves(manager, pendingNode))
             return false;
-        }
-
-        if (!TryPrepareEnemyInfos(manager, pendingNode))
+        bool startingBossSession = pendingNode.type == StageNodeType.Boss;
+        if (startingBossSession && bossIntro != null && !bossIntro.ServerBegin(manager, initialDelay))
             return false;
-
-        if (bossSession && bossIntro != null && !bossIntro.ServerBegin(manager, initialDelay))
-            return false;
-
+        bossSession = startingBossSession;
         sessionPhase = MirrorSessionPhase.Playing;
         sessionStateRevision++;
-        waveRoutine = StartCoroutine(SpawnWaveAfter(initialDelay));
+        waveRoutine = StartCoroutine(SpawnAuthoredWave());
         return true;
     }
 
@@ -207,85 +174,17 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     }
 
     [Server]
-    private bool TryPrepareEnemyInfos(MirrorNetworkManager manager, StageNodeSaveData pendingNode)
-    {
-        if (enemyDataProvider == null)
-        {
-            Debug.LogError("[NetworkEnemyWaveSpawner] EnemyDataProvider가 연결되지 않았습니다.", this);
-            return false;
-        }
-
-        // 현재 Mirror 세션은 normal 난이도이며, 재접속 예약을 포함한 출발 인원으로 배율을 고정한다.
-        var context = new WBH_EnemyStatContext(
-            Mathf.Max(1, pendingNode?.floor ?? 1), "normal",
-            Mathf.Max(1, manager?.ServerRoster.Members.Count ?? 1));
-        var prefabs = bossSession ? new[] { bossPrefab } : new[] { meleePrefab, rangedPrefab };
-        activeEnemyInfos = new WBH_EnemyInfo[prefabs.Length];
-        for (int index = 0; index < prefabs.Length; index++)
-        {
-            string enemyId = prefabs[index]?.EnemyInfo?.enemyId;
-            if (!enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out activeEnemyInfos[index]))
-            {
-                Debug.LogError($"[NetworkEnemyWaveSpawner] 적 데이터 생성 실패: {enemyId}", this);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    [Server]
-    private IEnumerator SpawnWaveAfter(float delay)
-    {
-        if (preparedWaves != null)
-        {
-            yield return SpawnAuthoredWave();
-            yield break;
-        }
-        if (bossSession && bossIntro != null)
-        {
-            while (!bossIntro.IsComplete)
-                yield return null;
-        }
-        else if (delay > 0f)
-            yield return new WaitForSeconds(delay);
-
-        currentWave++;
-        waveSpawnFinished = false;
-
-        int spawnCount = ResolveSpawnCount(bossSession, enemiesPerWave);
-        for (int index = 0; index < spawnCount; index++)
-        {
-            NetworkEnemyAuthority prefab = bossSession
-                ? bossPrefab
-                : index % 2 == 0 ? meleePrefab : rangedPrefab;
-            if (prefab == null)
-            {
-                Debug.LogError("[NetworkEnemyWaveSpawner] 전투 적 Prefab이 비어 있습니다.", this);
-                continue;
-            }
-
-            Vector3 position = ResolveSpawnPosition(index, spawnCount);
-            NetworkEnemyAuthority enemy = Instantiate(prefab, position, Quaternion.identity);
-            enemy.ServerSetEnemyInfo(activeEnemyInfos[index % activeEnemyInfos.Length]);
-            NetworkServer.Spawn(enemy.gameObject);
-            aliveEnemies.Add(enemy);
-            totalSpawnCount++;
-
-            if (spawnInterval > 0f && index < spawnCount - 1)
-                yield return new WaitForSeconds(spawnInterval);
-        }
-
-        waveSpawnFinished = true;
-        waveRoutine = null;
-    }
-
-    [Server]
     private bool TryPrepareAuthoredWaves(MirrorNetworkManager manager, StageNodeSaveData node)
     {
+        if (manager == null || stageManager == null || authoredWaves == null || authoredArea == null ||
+            enemyDataProvider == null || node == null)
+        {
+            Debug.LogError("[NetworkEnemyWaveSpawner] 정식 웨이브 설정이 누락되어 전투 출발을 거절합니다. " +
+                "StageManager, SpawnManager, SpawnArea, EnemyDataProvider와 선택 노드를 확인하세요.", this);
+            return false;
+        }
         if (preparedWaves != null) return true;
-        if (node == null || authoredWaves == null || authoredArea == null || enemyDataProvider == null ||
-            !manager.TryGetRunSnapshot(out StageMapSaveData snapshot) || !stageManager.TryPrepareSessionWaves(snapshot))
+        if (!manager.TryGetRunSnapshot(out StageMapSaveData snapshot) || !stageManager.TryPrepareSessionWaves(snapshot))
             return false;
         var byId = new Dictionary<string, NetworkEnemyAuthority>();
         foreach (var prefab in authoredEnemyPrefabs ?? System.Array.Empty<NetworkEnemyAuthority>())
@@ -293,7 +192,13 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
             if (prefab?.EnemyInfo == null || string.IsNullOrEmpty(prefab.EnemyInfo.enemyId) ||
                 !byId.TryAdd(prefab.EnemyInfo.enemyId, prefab)) return false;
         }
+        // 현재 Mirror 세션은 normal 난이도이며, 재접속 예약을 포함한 출발 인원으로 배율을 고정한다.
         var context = new WBH_EnemyStatContext(node.floor, "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
+        if (authoredWaves.WaveCount <= 0)
+        {
+            Debug.LogError("[NetworkEnemyWaveSpawner] 정식 웨이브가 비어 있어 전투 출발을 거절합니다.", this);
+            return false;
+        }
         var waves = new List<(NetworkEnemyAuthority, WBH_EnemyInfo)>[authoredWaves.WaveCount];
         for (int wave = 0; wave < waves.Length; wave++)
         {
@@ -321,7 +226,8 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     [Server]
     public bool ServerPrepareConfiguration(MirrorNetworkManager manager)
     {
-        return stageManager == null || (manager.TryGetPendingStageNode(out var node) && TryPrepareAuthoredWaves(manager, node));
+        return TryPrepareAuthoredWaves(manager,
+            manager != null && manager.TryGetPendingStageNode(out var node) ? node : null);
     }
 
     [Server]
@@ -378,18 +284,6 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         return true;
     }
 
-    private Vector3 ResolveSpawnPosition(int index, int spawnCount)
-    {
-        float angle = spawnCount > 0 ? 360f * index / spawnCount : 0f;
-        Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * spawnRadius;
-        Vector3 candidate = authoredSpawnPositions != null && authoredSpawnPositions.Length > 0
-            ? bossSession ? bossSpawnPosition : authoredSpawnPositions[index % authoredSpawnPositions.Length]
-            : transform.position + offset;
-        return NavMesh.SamplePosition(candidate, out NavMeshHit hit, 4f, NavMesh.AllAreas)
-            ? hit.position
-            : candidate;
-    }
-
     private void RemoveFinishedEnemies()
     {
         for (int index = aliveEnemies.Count - 1; index >= 0; index--)
@@ -407,30 +301,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         return phase == MirrorSessionPhase.Waiting && !hasRunningRoutine;
     }
 
-    private static int ResolveWaveCount(
-        StageNodeSaveData pendingNode,
-        int configuredMaximumWaveCount)
-    {
-        int maximumWaveCount = Mathf.Max(1, configuredMaximumWaveCount);
-        if (pendingNode == null)
-            return maximumWaveCount;
-        if (pendingNode.type == StageNodeType.Boss)
-            return 1;
-
-        int floor = Mathf.Max(1, pendingNode.floor);
-        int floorWaveCount = 1 + (floor - 1) / 3;
-        if (pendingNode.type == StageNodeType.Elite)
-            floorWaveCount++;
-
-        return Mathf.Clamp(floorWaveCount, 1, maximumWaveCount);
-    }
-
-    private static int ResolveSpawnCount(bool isBossSession, int configuredEnemyCount)
-    {
-        return isBossSession ? 1 : Mathf.Max(1, configuredEnemyCount);
-    }
-
-    private void RegisterBossPrefabForClient()
+    private void RegisterEnemyPrefabsForClient()
     {
         if (NetworkClient.active && authoredEnemyPrefabs != null)
             foreach (var prefab in authoredEnemyPrefabs)
@@ -439,46 +310,5 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
                 if (!NetworkClient.GetPrefab(registered.assetId, out _)) NetworkClient.RegisterPrefab(prefab.gameObject);
                 prefab.RegisterClientPrefabs();
             }
-        if (!NetworkClient.active || bossPrefab == null ||
-            !bossPrefab.TryGetComponent(out NetworkIdentity identity) ||
-            identity.assetId == 0)
-        {
-            return;
-        }
-
-        if (!NetworkClient.GetPrefab(identity.assetId, out _))
-            NetworkClient.RegisterPrefab(bossPrefab.gameObject);
-
-        bossPrefab.RegisterClientPrefabs();
     }
-
-#if UNITY_EDITOR
-    /// <summary>
-    /// 대기 상태의 첫 요청만 시작할 수 있고 Playing·Completed·Resetting 또는 이미 실행 중인
-    /// Coroutine에서는 중복 시작할 수 없는지 확인하는 최소 회귀 검사다.
-    /// </summary>
-    [ContextMenu("Mirror 테스트/세션 시작 규칙 검사")]
-    private void ValidateSessionStartRule()
-    {
-        Debug.Assert(CanStartSession(MirrorSessionPhase.Waiting, false));
-        Debug.Assert(!CanStartSession(MirrorSessionPhase.Waiting, true));
-        Debug.Assert(!CanStartSession(MirrorSessionPhase.Playing, false));
-        Debug.Assert(!CanStartSession(MirrorSessionPhase.Completed, false));
-        Debug.Assert(!CanStartSession(MirrorSessionPhase.Resetting, false));
-        Debug.Assert(ResolveWaveCount(
-            new StageNodeSaveData { floor = 11, type = StageNodeType.Boss }, 3) == 1);
-        Debug.Assert(ResolveSpawnCount(true, 8) == 1);
-        Debug.Assert(ResolveWaveCount(
-            new StageNodeSaveData { floor = 1, type = StageNodeType.Battle }, 3) == 1);
-        Debug.Assert(ResolveWaveCount(
-            new StageNodeSaveData { floor = 5, type = StageNodeType.Battle }, 3) == 2);
-        Debug.Assert(ResolveWaveCount(
-            new StageNodeSaveData { floor = 6, type = StageNodeType.Elite }, 3) == 3);
-        Debug.Assert(ResolveWaveCount(
-            new StageNodeSaveData { floor = 9, type = StageNodeType.Elite }, 3) == 3);
-        Debug.Assert(ResolveWaveCount(null, 3) == 3);
-        Debug.Assert(ResolveSpawnCount(false, 8) == 8);
-        Debug.Log("[NetworkEnemyWaveSpawner] 세션 시작 규칙 검사 통과");
-    }
-#endif
 }
