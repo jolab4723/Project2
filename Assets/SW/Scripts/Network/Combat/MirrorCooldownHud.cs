@@ -95,7 +95,7 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         }
     }
 
-    /// <summary>SW 수정: 싱글은 실제 Effects 상태, 클라이언트는 서버 복제 상태로 로컬 플레이어의 파동·버프 쿨다운을 기존 슬롯에 표시한다.</summary>
+    /// <summary>SW 수정: 싱글은 실제 Effects 상태, 클라이언트는 서버 복제 상태로 로컬 플레이어의 파동·폭발·버프 쿨다운을 기존 슬롯에 표시한다.</summary>
     private void RefreshUniqueEffectCooldowns()
     {
         CollectUniqueEffectEntries();
@@ -166,7 +166,7 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         }
     }
 
-    /// <summary>SW 수정: 소유 플레이어의 버프·처형 파동이 쿨다운 중일 때만 기존 HUD 슬롯을 사용한다.</summary>
+    /// <summary>SW 수정: 소유 플레이어의 버프·처형 파동·스타 브리처 폭발이 쿨다운 중일 때만 기존 HUD 슬롯을 사용한다.</summary>
     private void TryCollectUniqueEffect(ItemInstance item)
     {
         UniqueEffectSO effect = item?.definition?.uniqueEffect;
@@ -174,6 +174,7 @@ public sealed class MirrorCooldownHud : MonoBehaviour
         {
             TriggeredBuffUniqueEffectSO triggered => triggered.cooldownSeconds,
             PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
+            StarBreacherExplosionUniqueEffectSO explosion => explosion.cooldownSeconds,
             _ => 0f,
         };
         if (duration > 0f && GetRemainingCooldown(item) > 0f)

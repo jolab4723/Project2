@@ -204,7 +204,8 @@ public class T_PlayerCombat : MonoBehaviour
                                  impactVisualPrefab: impactVisual,
                                  attackOrigin: spawnPosition,
                                  attackForward: direction,
-                                 attackId: request.AttackId);
+                                 attackId: request.AttackId,
+                                 shotgunAttack: true);
                                  // SW 추가:
                                  // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
                                  // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
@@ -247,7 +248,7 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
 
-    /// <summary>SW 수정: 실제 싱글 기본 공격의 직접 대상과 Fighter 정면을 피해 처리 범위에 보존하고 종료 시 파동 출처를 해제한다.</summary>
+    /// <summary>SW 수정: 싱글의 실제 Fighter/Shotgun 기본 공격 대상·원점·적중점을 확정하고 해당 무기 효과 출처를 피해 처리 범위 안에서 유지한다. Shotgun은 서버와 같은 벽 검사를 적용한다.</summary>
     private void SectorAttack(float range,
                               float angle,
                               WBH_EffectData effectData = null,
@@ -259,7 +260,8 @@ public class T_PlayerCombat : MonoBehaviour
                               // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
                               Vector3? attackOrigin = null,
                               Vector3? attackForward = null,
-                              uint attackId = 0)
+                              uint attackId = 0,
+                              bool shotgunAttack = false)
     {
         if (attackId == 0)
             attackId = CreateAttackId();
@@ -279,12 +281,12 @@ public class T_PlayerCombat : MonoBehaviour
         ItemSystem.ElementType element = status.CurrentElement;
         WBH_StatusEffectData? elementStatusEffect = GetElementStatusEffect(element);
 
-        // SW 수정: 피해 적용 전에 직접 대상 전체를 확정해 연쇄 대상 제외와 Collider 중복 제거에 공유합니다.
-        var directTargets = new System.Collections.Generic.Dictionary<WBH_ICombat, Collider>();
+        // SW 수정: 피해 적용 전에 직접 대상과 실제 원점 기준 피격점을 확정해 연쇄 제외·중복 제거·근거리 조건에 공유합니다.
+        var directTargets = new System.Collections.Generic.Dictionary<WBH_ICombat, Vector3>();
         foreach (Collider target in targets)
         {
-            Vector3 dirToTarget = (target.transform.position - origin).normalized;
-
+            Vector3 hitPosition = target.ClosestPoint(origin);
+            Vector3 dirToTarget = (shotgunAttack ? hitPosition : target.transform.position) - origin;
             dirToTarget.y = 0;
             float targetAngle = Vector3.Angle(forward, dirToTarget);
 
@@ -292,37 +294,50 @@ public class T_PlayerCombat : MonoBehaviour
                 continue;
 
             WBH_ICombat combatTarget = PlayerCombatAuthority.FindCombatTarget(target);
-            if (combatTarget == null || directTargets.ContainsKey(combatTarget))
+            if (combatTarget == null || (shotgunAttack &&
+                (combatTarget.Status == null || combatTarget.Status.IsDead ||
+                 Physics.Linecast(origin, hitPosition, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore))))
                 continue;
-            directTargets.Add(combatTarget, target);
+            if (directTargets.TryGetValue(combatTarget, out Vector3 previous) &&
+                (!shotgunAttack || (previous - origin).sqrMagnitude <= (hitPosition - origin).sqrMagnitude))
+                continue;
+            directTargets[combatTarget] = hitPosition;
         }
 
+        var orderedTargets = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<WBH_ICombat, Vector3>>(directTargets);
+        if (shotgunAttack)
+            orderedTargets.Sort((left, right) =>
+            {
+                int byDistance = (left.Value - origin).sqrMagnitude.CompareTo((right.Value - origin).sqrMagnitude);
+                return byDistance != 0 ? byDistance : ((Component)left.Key).GetInstanceID().CompareTo(((Component)right.Key).GetInstanceID());
+            });
         PlayerContext context = GetComponent<PlayerContext>();
-        context?.Effects.SetDirectTargets(attackId, directTargets.Keys, forward, playerClass == PlayerClass.Fighter);
+        // SW 수정: 실제 클래스·발사 경로별 출처를 구분해 Gunner Shotgun이 Fighter 효과를 발동하지 않게 한다.
+        context?.Effects.SetDirectTargets(attackId, directTargets.Keys, forward, playerClass == PlayerClass.Fighter,
+            origin, shotgunAttack);
         try
         {
-            foreach (var pair in directTargets)
+            foreach (var pair in orderedTargets)
             {
                 WBH_ICombat combatTarget = pair.Key;
-                Collider target = pair.Value;
-                Vector3 dirToTarget = (target.transform.position - origin).normalized;
+                Vector3 hitPosition = pair.Value;
+                Vector3 dirToTarget = (hitPosition - origin).normalized;
                 dirToTarget.y = 0;
 
-                Vector3 hitPosition = target.ClosestPoint(transform.position);
-                Vector3 lookDirection = transform.position - hitPosition;
+                Vector3 lookDirection = origin - hitPosition;
 
                 if (lookDirection.sqrMagnitude <= 0.0001f)
-                    lookDirection = -transform.forward;
+                    lookDirection = -forward;
 
                 WBH_DamageRequest request = CreateDamageRequest(combatTarget,
-                                                                WBH_AttackType.Normal,
-                                                                element,
-                                                                basicAttackMult,
-                                                                statusEffect: elementStatusEffect,
-                                                                effectData: effectData,
-                                                                hitPosition: hitPosition,
-                                                                hitEffectDirection: lookDirection,
-                                                                attackId: attackId);
+                                                            WBH_AttackType.Normal,
+                                                            element,
+                                                            basicAttackMult,
+                                                            statusEffect: elementStatusEffect,
+                                                            effectData: effectData,
+                                                            hitPosition: hitPosition,
+                                                            hitEffectDirection: lookDirection,
+                                                            attackId: attackId);
 
                 WBH_CombatManager.ProcessDamage(request);
 
@@ -331,12 +346,13 @@ public class T_PlayerCombat : MonoBehaviour
                 // 재생해야 화면과 판정이 어긋나지 않습니다. -dirToTarget은 탄환이 날아온 반대쪽인 피격면 바깥 방향입니다.
                 GunnerVfxPlayback.SpawnTransient(
                     impactVisualPrefab,
-                    target.transform.position,
+                    hitPosition,
                     -dirToTarget);
             }
         }
         finally
         {
+            // SW 수정: 예외가 나도 끝난 공격의 정면·무기 효과를 다음 피해 요청에 남기지 않는다.
             context?.Effects.SetDirectTargets(0, null);
         }
     }

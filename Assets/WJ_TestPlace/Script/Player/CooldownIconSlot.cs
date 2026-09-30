@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// CooldownIconUIContainer가 쿨타임 진행 중인 아이템 수만큼 이 컴포넌트를 인스턴스화해서 값만 채운다.
 ///
 /// 마우스를 올렸을 때의 툴팁도 버프 아이콘과 같은 조립기(BuffTextComposer)와 같은 툴팁(BuffTooltipUI)을
-/// 쓴다 - 발동 버프의 이름/증감 스탯/설명 규칙을 보존한다. SW 수정: 파동은 효과 라벨 DB의 번역 설명을 쓴다.
+/// 쓴다 - 발동 버프의 이름/증감 스탯/설명 규칙을 보존한다. SW 수정: 파동·폭발은 효과 라벨 DB의 번역 설명을 쓴다.
 /// </summary>
 public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
@@ -28,7 +28,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     [SerializeField] private Color borderColor = new Color(0.12f, 0.14f, 0.16f);
 
     private ItemInstance boundItem;
-    // SW 수정: 파동은 실제 소유자 상태에서 시간을 읽으며 버프 SO의 기존 계약은 유지한다.
+    // SW 수정: 파동·폭발은 실제 소유자 상태에서 시간을 읽으며 버프 SO의 기존 계약은 유지한다.
     private UniqueEffectSO boundEffect;
     private PlayerItemEffectState ownerEffects;
 
@@ -44,7 +44,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void Bind(ItemInstance item, TriggeredBuffUniqueEffectSO effect)
         => Bind(item, (UniqueEffectSO)effect, null);
 
-    /// <summary>SW 수정: 싱글의 진행 중인 버프·파동과 실제 소유자 상태를 연결해 기존 아이콘·테두리·쿨다운을 표시한다.</summary>
+    /// <summary>SW 수정: 싱글의 진행 중인 버프·파동·폭발과 실제 소유자 상태를 연결해 기존 아이콘·테두리·쿨다운을 표시한다.</summary>
     public void Bind(ItemInstance item, UniqueEffectSO effect, PlayerItemEffectState effects)
     {
         boundItem = item;
@@ -90,7 +90,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         Refresh();
     }
 
-    /// <summary>SW 수정: 싱글 버프는 기존 SO, 처형 파동은 실제 소유자 상태에서 남은 시간을 읽으며 아크 레이저 표시도 유지한다.</summary>
+    /// <summary>SW 수정: 싱글 버프는 기존 SO, 처형 파동·스타 브리처 폭발은 실제 소유자 상태에서 남은 시간을 읽으며 아크 레이저 표시도 유지한다.</summary>
     public void Refresh()
     {
         float remaining;
@@ -112,6 +112,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
             {
                 TriggeredBuffUniqueEffectSO buff => buff.cooldownSeconds,
                 PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
+                StarBreacherExplosionUniqueEffectSO explosion => explosion.cooldownSeconds,
                 _ => 0f,
             };
         }
@@ -169,7 +170,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
             ShowTooltip();
     }
 
-    /// <summary>SW 수정: 싱글 버프는 기존 스택 1 툴팁을 사용하고 파동은 효과 DB의 현재 언어·계수 설명을 표시한다.</summary>
+    /// <summary>SW 수정: 싱글 버프는 기존 스택 1 툴팁을 사용하고 파동·폭발은 효과 DB의 현재 언어·계수 설명을 표시한다.</summary>
     private void ShowTooltip()
     {
         if (BuffTooltipUI.Instance == null)
