@@ -19,6 +19,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private Material preparedAttackMaterial;
     private PlayerItemEffectState singleEffects;
 
+    /// <summary>SW 수정: 네트워크 객체는 RPC만 사용하고 싱글 플레이어만 확정된 효과 표시 사건을 구독해 Host 중복 표시를 방지한다.</summary>
     private void OnEnable()
     {
         if (singleEffects != null) return;
@@ -27,6 +28,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (singleEffects == null) return;
         singleEffects.ChainPresented += PresentChainLightning;
         singleEffects.InfernoPresented += PresentInfernoHit;
+        singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
         singleEffects.PreparedChanged += SetPreparedAttack;
         SetPreparedAttack(singleEffects.PreparedAttackReady);
     }
@@ -134,6 +136,39 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             Destroy(boltObject);
     }
 
+    /// <summary>SW 수정: 싱글 확정 또는 서버의 신뢰 RPC로 받은 파동 통로를 클라이언트에서 즉시 표시하고 기존 표시 자원 수명으로 제거한다.</summary>
+    public void PresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled ||
+            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
+            return;
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) return;
+        chainLightningMaterial ??= new Material(shader)
+        {
+            name = "Unique Effect Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+        // SW 수정: 표시만 담당하는 즉시 절단면이며 Collider·피해·이동 파동 객체는 만들지 않는다.
+        GameObject slash = new("Phase Harvester Wave Presentation") { hideFlags = HideFlags.DontSave };
+        slash.transform.SetParent(transform, true);
+        slash.transform.rotation = Quaternion.LookRotation(Vector3.up, (end - start).normalized);
+        activeBolts.Add(slash);
+        LineRenderer line = slash.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.TransformZ;
+        line.positionCount = 2;
+        line.SetPosition(0, start);
+        line.SetPosition(1, end);
+        line.widthMultiplier = width;
+        line.startColor = new Color(0.65f, 0.2f, 1f, 0.65f);
+        line.endColor = new Color(0.35f, 0.1f, 0.85f, 0.1f);
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        StartCoroutine(ReleaseBoltAfter(slash, 0.14f));
+    }
+
     public void PresentInfernoHit(Vector3 position)
     {
         if (!Application.isPlaying || !isActiveAndEnabled ||
@@ -171,12 +206,14 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             DestroyOwnedObject(instance);
     }
 
+    /// <summary>SW 수정: 싱글 구독과 싱글·클라이언트 표시 자원을 해제해 비활성화 뒤 파동이나 잔여 연출을 남기지 않는다.</summary>
     private void OnDisable()
     {
         if (singleEffects != null)
         {
             singleEffects.ChainPresented -= PresentChainLightning;
             singleEffects.InfernoPresented -= PresentInfernoHit;
+            singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
             singleEffects.PreparedChanged -= SetPreparedAttack;
             singleEffects = null;
         }

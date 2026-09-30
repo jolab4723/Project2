@@ -160,6 +160,7 @@ public static class PlayerDamageResolver
         return damageCause == DamageCause.Skill ? WBH_AttackType.Skill : WBH_AttackType.Normal;
     }
 
+    /// <summary>SW 수정: 싱글·서버 공통 경계에서 피해를 적용하고 Fighter 처치 파동을 피격 전에 보존한 출처·위치로 등록한다.</summary>
     private static bool ExecuteDamageInternal(PlayerContext attacker, WBH_DamageRequest request,
         WBH_CombatManager.DamageSourceSnapshot sourceSnapshot,
         out WBH_DamageResult result, bool canCrit = true)
@@ -178,7 +179,15 @@ public static class PlayerDamageResolver
         WBH_StatusEffectData? statusEffect = result.StatusEffect;
         NetworkEnemyAuthority authority = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
         bool handledByAuthority = authority != null && authority.IsServerDamageHandlingActive;
+        // SW 수정: 적이 사망 처리 중 풀로 반환되어도 처치 원점·정면은 바뀌지 않는다.
+        Component component = target as Component;
+        bool hasWaveSource = attacker.Effects.TryGetPhaseHarvesterSource(request, out PhaseHarvesterWaveUniqueEffectSO wave,
+            out Vector3 attackForward) && component != null;
+        Vector3 bodyPosition = hasWaveSource
+            ? (authority != null ? authority.transform.position : component.transform.position) : default;
         target.TakeDamage(result);
+        if (hasWaveSource && targetStatus.IsDead)
+            attacker.Effects.FirePhaseHarvesterKill(request.AttackId, bodyPosition, attackForward, wave);
         // 네트워크 적은 TakeDamage 내부의 서버 이벤트가 같은 플레이어 효과를 발행한다.
         if (!handledByAuthority)
             attacker.Effects.FireDamageDealt(result, target);

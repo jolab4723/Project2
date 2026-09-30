@@ -247,6 +247,7 @@ public class T_PlayerCombat : MonoBehaviour
     }
 
 
+    /// <summary>SW 수정: 실제 싱글 기본 공격의 직접 대상과 Fighter 정면을 피해 처리 범위에 보존하고 종료 시 파동 출처를 해제한다.</summary>
     private void SectorAttack(float range,
                               float angle,
                               WBH_EffectData effectData = null,
@@ -297,39 +298,46 @@ public class T_PlayerCombat : MonoBehaviour
         }
 
         PlayerContext context = GetComponent<PlayerContext>();
-        context?.Effects.SetDirectTargets(attackId, directTargets.Keys);
-        foreach (var pair in directTargets)
+        context?.Effects.SetDirectTargets(attackId, directTargets.Keys, forward, playerClass == PlayerClass.Fighter);
+        try
         {
-            WBH_ICombat combatTarget = pair.Key;
-            Collider target = pair.Value;
-            Vector3 dirToTarget = (target.transform.position - origin).normalized;
-            dirToTarget.y = 0;
+            foreach (var pair in directTargets)
+            {
+                WBH_ICombat combatTarget = pair.Key;
+                Collider target = pair.Value;
+                Vector3 dirToTarget = (target.transform.position - origin).normalized;
+                dirToTarget.y = 0;
 
-            Vector3 hitPosition = target.ClosestPoint(transform.position);
-            Vector3 lookDirection = transform.position - hitPosition;
+                Vector3 hitPosition = target.ClosestPoint(transform.position);
+                Vector3 lookDirection = transform.position - hitPosition;
 
-            if (lookDirection.sqrMagnitude <= 0.0001f)
-                lookDirection = -transform.forward;
+                if (lookDirection.sqrMagnitude <= 0.0001f)
+                    lookDirection = -transform.forward;
 
-            WBH_DamageRequest request = CreateDamageRequest(combatTarget,
-                                                            WBH_AttackType.Normal,
-                                                            element,
-                                                            basicAttackMult,
-                                                            statusEffect: elementStatusEffect,
-                                                            effectData: effectData,
-                                                            hitPosition: hitPosition,
-                                                            hitEffectDirection: lookDirection,
-                                                            attackId: attackId);
+                WBH_DamageRequest request = CreateDamageRequest(combatTarget,
+                                                                WBH_AttackType.Normal,
+                                                                element,
+                                                                basicAttackMult,
+                                                                statusEffect: elementStatusEffect,
+                                                                effectData: effectData,
+                                                                hitPosition: hitPosition,
+                                                                hitEffectDirection: lookDirection,
+                                                                attackId: attackId);
 
-            WBH_CombatManager.ProcessDamage(request);
+                WBH_CombatManager.ProcessDamage(request);
 
-            // SW 추가:
-            // SectorAttack은 투사체 충돌보다 먼저 실제 피해를 처리합니다. 같은 프레임에 실제 피해 대상 위치에서 명중 VFX를
-            // 재생해야 화면과 판정이 어긋나지 않습니다. -dirToTarget은 탄환이 날아온 반대쪽인 피격면 바깥 방향입니다.
-            GunnerVfxPlayback.SpawnTransient(
-                impactVisualPrefab,
-                target.transform.position,
-                -dirToTarget);
+                // SW 추가:
+                // SectorAttack은 투사체 충돌보다 먼저 실제 피해를 처리합니다. 같은 프레임에 실제 피해 대상 위치에서 명중 VFX를
+                // 재생해야 화면과 판정이 어긋나지 않습니다. -dirToTarget은 탄환이 날아온 반대쪽인 피격면 바깥 방향입니다.
+                GunnerVfxPlayback.SpawnTransient(
+                    impactVisualPrefab,
+                    target.transform.position,
+                    -dirToTarget);
+            }
+        }
+        finally
+        {
+            context?.Effects.SetDirectTargets(0, null);
         }
     }
 

@@ -100,12 +100,14 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             stateMachine.OnEnterState -= HandleStateEntered;
     }
 
+    /// <summary>SW 수정: 서버 소유 플레이어의 확정 효과만 구독해 관찰자에게 한 번 표시하고 기존 장비 구독을 유지한다.</summary>
     public override void OnStartServer()
     {
         base.OnStartServer();
         context ??= GetComponent<PlayerContext>();
         context.Effects.ChainPresented += RpcPresentChainLightning;
         context.Effects.InfernoPresented += RpcPresentInfernoHit;
+        context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
         context.Effects.StackChanged += SyncStack;
         if (context?.Equipment != null)
         {
@@ -120,6 +122,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         SetPreparedAttackPresentation(preparedAttackReady);
     }
 
+    /// <summary>SW 수정: 서버 종료 시 소유 플레이어의 효과 표시·장비 구독을 해제하며 공격 수명 정리는 기존 경로를 따른다.</summary>
     public override void OnStopServer()
     {
         if (context?.Equipment != null)
@@ -127,6 +130,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         ClearPreparedAttack();
         context.Effects.ChainPresented -= RpcPresentChainLightning;
         context.Effects.InfernoPresented -= RpcPresentInfernoHit;
+        context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
         context.Effects.StackChanged -= SyncStack;
         base.OnStopServer();
     }
@@ -144,6 +148,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         PublishState();
     }
 
+    /// <summary>SW 수정: 클라이언트는 서버가 복제한 소유자별 쿨다운으로 장비 효과의 남은 시간을 조회한다.</summary>
     public float GetRemainingCooldown(ItemInstance item)
     {
         UniqueEffectSO effect = item?.definition?.uniqueEffect;
@@ -158,6 +163,10 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             case ChainLightningUniqueEffectSO chain:
                 cooldownSeconds = chain.cooldownSeconds;
                 key = GetChainCooldownKey(chain);
+                break;
+            case PhaseHarvesterWaveUniqueEffectSO wave:
+                cooldownSeconds = wave.cooldownSeconds;
+                key = PlayerItemEffectState.GetPhaseHarvesterCooldownKey(wave);
                 break;
             default:
                 return 0f;
@@ -200,6 +209,15 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             missingInfernoPresenterReported = true;
             Debug.LogWarning("[NetworkItemTriggerManager] 설정된 인페르노 Presenter가 없습니다.", this);
         }
+    }
+
+    /// <summary>SW 수정: 서버가 확정한 즉시 처형 파동을 신뢰 채널로 관찰자에게 표시하며 Host도 RPC 한 경로만 사용한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
+    {
+        presentation ??= GetComponent<UniqueEffectPresentation>();
+        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
+        presentation.PresentPhaseHarvesterWave(start, end, width);
     }
 
     [ClientRpc]
@@ -265,8 +283,6 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.PrepareDodgeAttack();
         PublishState();
     }
-
-
 
     private void HandleEquipmentChanged(EquippedItemInfo[] equipmentSnapshot)
     {

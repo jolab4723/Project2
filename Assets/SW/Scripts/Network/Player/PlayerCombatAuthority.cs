@@ -599,6 +599,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         impactConfirmationExpiresAt = 0d;
     }
 
+    /// <summary>SW 수정: 서버가 Fighter 기본 공격의 원점·정면과 직접 대상을 한 번 확정하고 피해 처리 동안에만 고유효과 출처를 유지한다.</summary>
     [Server]
     private void ResolveServerAttack(uint attackId)
     {
@@ -618,7 +619,12 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         lastDamage = 0f;
         lastHitCritical = false;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, status.FighterAttackRange, enemyLayer);
+        // SW 수정: 피격·사망 콜백 중 Transform이 바뀌어도 같은 공격은 같은 정면을 사용한다.
+        Vector3 origin = transform.position;
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+        forward.Normalize();
+        Collider[] hits = Physics.OverlapSphere(origin, status.FighterAttackRange, enemyLayer);
         var targets = new List<WBH_ICombat>();
         var targetColliders = new Dictionary<WBH_ICombat, Collider>();
         bool hitAny = false;
@@ -628,10 +634,10 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             if (hit == null)
                 continue;
 
-            Vector3 direction = hit.transform.position - transform.position;
+            Vector3 direction = hit.transform.position - origin;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.001f ||
-                Vector3.Angle(transform.forward, direction.normalized) > AttackAngle * 0.5f)
+                Vector3.Angle(forward, direction.normalized) > AttackAngle * 0.5f)
             {
                 continue;
             }
@@ -651,14 +657,16 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         try
         {
+            // SW 수정: 서버가 확정한 Fighter 정면과 파동 출처를 피격 콜백 이전 값으로 보존한다.
+            context.Effects.SetDirectTargets(attackId, targets, forward, fighterAttack: true);
             WBH_EffectData effectData = null;
             GetComponent<WBH_PlayerEffect>()?.TryGetEffectData(WBH_PlayerEffectCue.F_normal0_evo0_etc0, out effectData);
             foreach (WBH_ICombat target in targets)
             {
-                Vector3 hitPosition = targetColliders[target].ClosestPoint(transform.position);
+                Vector3 hitPosition = targetColliders[target].ClosestPoint(origin);
                 var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
                     status.CurrentElement, 1f, GetStatusEffectForElement(status.CurrentElement), effectData,
-                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
+                    hitPosition, origin - hitPosition, DamageCause.Direct, attackId);
                 if (!WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
                 {
                     continue;
@@ -677,6 +685,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         }
         finally
         {
+            context.Effects.SetDirectTargets(0, null);
             directAttackId = 0;
             directAttackTargets.Clear();
         }
