@@ -45,6 +45,7 @@ public sealed class EnemyKillReward : MonoBehaviour
         this.wallet = wallet;
     }
 
+    /// <summary>SW 수정: 처치 집계와 중복 지급 방지를 유지하고 공통 보상 지급을 호출한다.</summary>
     private void HandleDamaged(WBH_DamageResult result)
     {
         if (hasGrantedReward || status.CurrentHp > 0f)
@@ -61,16 +62,20 @@ public sealed class EnemyKillReward : MonoBehaviour
         hasGrantedReward = true;
         KY_RunStatsTracker.Instance?.RecordEnemyDefeated(); // 결과창 데이터 집계용으로 추가
 
-        GrantExp(enemyInfo.exp);
-        GrantCredit(enemyInfo.credit);
+        GrantReward(enemyInfo, PlayerStatManager.Instance, GrantCredit);
     }
 
-    private void GrantExp(int amount)
+    /// <summary>SW 수정: 싱글과 서버에서 전달한 적 정보로 플레이어 경험치와 크레딧을 지급한다.</summary>
+    public static void GrantReward(WBH_EnemyInfo enemyInfo, PlayerStatManager playerStats, Action<int> grantCredit)
     {
-        if (amount <= 0)
+        if (enemyInfo == null)
             return;
 
-        PlayerStatManager.Instance?.GainExp(controller.Info.exp);
+        if (enemyInfo.exp > 0)
+            playerStats?.GainExp(enemyInfo.exp);
+
+        if (enemyInfo.credit > 0)
+            grantCredit?.Invoke(enemyInfo.credit);
     }
 
     /// <summary>

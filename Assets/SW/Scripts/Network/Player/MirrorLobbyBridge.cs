@@ -20,6 +20,8 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     [SerializeField] private Button serverButton;
     [SerializeField] private Button reconnectButton;
     [SerializeField] private PassiveSkillPanelUI passivePopup;
+    [SerializeField] private KY_UIInputManager uiInputManager;
+    [SerializeField] private KY_PopupManager popupManager;
     private MirrorNetworkManager manager;
     private string displayedParticipantId;
     private bool? passiveChangesAllowed;
@@ -48,6 +50,10 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
 
     private void OnEnable()
     {
+        uiInputManager ??= MirrorSceneMode.FindInActiveMode<KY_UIInputManager>(gameObject.scene);
+        popupManager ??= MirrorSceneMode.FindInActiveMode<KY_PopupManager>(gameObject.scene);
+        pausePopup = MirrorSceneMode.FindInActiveMode<KY_PausePopup>(gameObject.scene);
+        BindLobbyInput();
         languageManager = YJ_LanguageManager.Instance;
         if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
         RefreshLanguage(default);
@@ -56,6 +62,8 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private void OnDisable()
     {
         if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
+        if (uiInputManager != null) uiInputManager.Unbind(IsChatInputConsumed);
+        if (pausePopup != null) pausePopup.UnbindExitPresentation();
     }
 
     private void RefreshLanguage(GameLanguage _)
@@ -85,26 +93,32 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         bool canConnect = manager != null && !NetworkClient.active && !NetworkServer.active;
         hostButton.interactable = joinButton.interactable = serverButton.interactable = reconnectButton.interactable = canConnect;
         addressInput.interactable = displayNameInput.interactable = canConnect;
-        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            KY_GameEvents.EscPressed();
-        }
     }
 
     private void Start()
     {
-        foreach (var popup in FindObjectsByType<KY_PausePopup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            if (popup.gameObject.scene == gameObject.scene) { pausePopup = popup; break; }
         manager = NetworkManager.singleton as MirrorNetworkManager;
         if (manager == null)
         {
             SetStatus("세션 연결 설정을 찾을 수 없습니다.");
             return;
         }
+        BindLobbyInput();
+        if (uiInputManager == null)
+            Debug.LogError("[MirrorLobbyBridge] 로비 메뉴 입력을 받을 KY_UIInputManager가 없습니다.", this);
         manager.LobbyStateChanged += RefreshLobby;
         manager.AdmissionStatusChanged += SetStatus;
         RefreshLobby();
     }
+
+    private void BindLobbyInput()
+    {
+        if (uiInputManager != null)
+            uiInputManager.Bind(null, null, null, popupManager, IsChatInputConsumed);
+    }
+
+    private bool IsChatInputConsumed() =>
+        manager != null && manager.Chat != null && manager.Chat.ConsumesInputThisFrame;
 
     private void OnDestroy()
     {

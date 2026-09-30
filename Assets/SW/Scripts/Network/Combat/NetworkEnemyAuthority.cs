@@ -249,7 +249,6 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         stateChangeNumber++;
 
         networkPattern.InitializeServer(this);
-        if (enemyInfo.patternID != 101)
         {
             GetComponent<WBH_EnemyEffect>().CueRequested += ForwardPatternCue;
             if (originalView != null) originalView.SelfDestructFlashRequested += ForwardPatternFlash;
@@ -686,6 +685,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     {
         string stateName = skillId switch
         {
+            1 => "Dash",
             2 => "Shoot",
             3 => "Burrage",
             4 => "Missile",
@@ -906,7 +906,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             spawnedIdentity == netIdentity)
         {
             RpcShowDamage(result.FinalDamage, result.IsCritical,
-                result.ElementType, transform.position);
+                result.ElementType, transform.position, GetNetId(attacker), ReferenceEquals(result.Attacker, controller));
             if (attacker != null && result.EffectData != null && result.EffectData.hitEffectPrefab != null)
             {
                 var effects = attacker.GetComponent<WBH_PlayerEffect>();
@@ -966,14 +966,14 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
     [ClientRpc(channel = Channels.Reliable)]
     private void RpcShowDamage(float damage, bool critical,
-        ElementType element, Vector3 enemyPosition)
+        ElementType element, Vector3 enemyPosition, uint attackerId, bool selfAttack)
     {
         if (combatView == null)
             combatView = GetComponent<NetworkEnemyCombatView>();
 
         if (combatView != null)
         {
-            combatView.ShowDamage(damage, critical, element, enemyPosition);
+            combatView.ShowDamage(damage, critical, element, enemyPosition, attackerId, selfAttack);
             return;
         }
 
@@ -1074,8 +1074,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (rewardRecipient != null)
         {
             rewardRecipient.ItemTriggers?.Fire(TriggerCondition.OnKill);
-            rewardRecipient.Stats?.GainExp(enemyInfo.exp);
-            rewardRecipient.GetComponent<NetworkShopPlayerState>()?.ServerAddGold(enemyInfo.credit);
+            EnemyKillReward.GrantReward(enemyInfo, rewardRecipient.Stats,
+                amount => rewardRecipient.GetComponent<NetworkShopPlayerState>()?.ServerAddGold(amount));
         }
 
         killRewardCount++;
@@ -1240,7 +1240,10 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (originalAnimation != null)
             originalAnimation.enabled = false;
         if (originalView != null)
-            originalView.enabled = false;
+        {
+            originalView.BindExternalPresentation(() => isClient);
+            originalView.enabled = true;
+        }
         if (TryGetComponent<WBHEnemyDestructionAdapter>(out var originalDestruction))
             originalDestruction.enabled = false;
 
@@ -1254,11 +1257,6 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             GetComponent<WBHEnemyItemDropAdapter>();
         if (originalItemDropAdapter != null)
             originalItemDropAdapter.enabled = false;
-
-        NetworkEnemyItemDropAdapter networkItemDropAdapter =
-            GetComponent<NetworkEnemyItemDropAdapter>();
-        if (networkItemDropAdapter != null)
-            networkItemDropAdapter.enabled = false;
     }
 
     /// <summary>

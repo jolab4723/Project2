@@ -4,10 +4,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// SW 수정: 쿨타임이 진행 중인 발동 버프와 실제 싱글 플레이어의 파동·폭발을 아이콘으로 나열해서
+/// SW 수정: 바인딩된 플레이어의 쿨타임이 진행 중인 발동 버프와 파동·폭발을 아이콘으로 나열해서
 /// 보여주는 HUD UI. BuffIconUIContainer의 파생이지만, 쿨타임은 PlayerBuffManager 같은 중앙 리스트가
-/// 없고 각 TriggeredBuffUniqueEffectSO 에셋이 개별적으로 쿨타임을 들고 있다(ItemTriggerManager.Fire()와
-/// 같은 구조). 파동·폭발은 소유 PlayerItemEffectState의 쿨타임을 읽는다. 그래서 변경 이벤트를 구독하는 대신, 장착 아이템 + 보유 유물을 매 프레임 직접 순회해서
+/// 없으므로 바인딩된 ItemTriggerManager에서 남은 시간을 읽는다. 이 참조가 없으면 기존
+/// TriggeredBuffUniqueEffectSO 또는 소유 PlayerItemEffectState의 쿨타임을 읽는다.
+/// 그래서 변경 이벤트를 구독하는 대신, 장착 아이템 + 보유 유물을 매 프레임 직접 순회해서
 /// 지금 쿨타임 중인 것만 골라낸다 - ItemTriggerManager.Fire()/FireRelics()와 같은 순회 범위를 쓴다.
 /// </summary>
 public class CooldownIconUIContainer : MonoBehaviour
@@ -15,9 +16,8 @@ public class CooldownIconUIContainer : MonoBehaviour
     private struct CooldownEntry
     {
         public ItemInstance item;
-        // SW 수정: 파동·폭발도 기존 슬롯을 사용하고 실제 소유자 상태를 주입한다.
+        /// <summary>SW 수정: 발동 버프와 파동·폭발의 쿨타임을 같은 슬롯에 표시할 고유효과다.</summary>
         public UniqueEffectSO effect;
-        public PlayerItemEffectState ownerEffects;
         // null이 아니면 고유효과 대신 거너 아크 레이저(진화1)의 발사 간격(4초) 항목이다.
         public GunnerSkillController arcLaser;
     }
@@ -35,13 +35,34 @@ public class CooldownIconUIContainer : MonoBehaviour
     private readonly List<CooldownIconSlot> pool = new List<CooldownIconSlot>();
     private readonly List<CooldownEntry> onCooldown = new List<CooldownEntry>();
 
+    /// <summary>SW 수정: 쿨타임 표시의 실제 소유자인 플레이어 Context다.</summary>
+    public PlayerContext BoundContext { get; private set; }
+
+    /// <summary>SW 수정: 현재 수집된 쿨타임 아이콘 수를 제공한다.</summary>
+    public int VisibleCooldownCount => onCooldown.Count;
+
+    /// <summary>SW 수정: 인벤토리와 쿨타임을 읽을 플레이어 Context를 연결한다.</summary>
+    public void Bind(PlayerContext context) => BoundContext = context;
+
+    /// <summary>SW 수정: 플레이어 연결을 해제하고 수집된 항목과 표시 슬롯을 비운다.</summary>
+    public void Unbind()
+    {
+        BoundContext = null;
+        onCooldown.Clear();
+        foreach (CooldownIconSlot slot in pool)
+        {
+            if (slot != null)
+                slot.gameObject.SetActive(false);
+        }
+    }
+
     private void Awake()
     {
         if (slotParent == null)
             slotParent = transform;
     }
 
-    /// <summary>SW 수정: 싱글의 진행 중인 버프·파동·폭발 쿨다운과 기존 아크 레이저를 같은 슬롯 풀에 표시한다.</summary>
+    /// <summary>SW 수정: 바인딩된 플레이어의 진행 중인 버프·파동·폭발 쿨타임과 기존 아크 레이저를 같은 슬롯 풀에 표시한다.</summary>
     private void Update()
     {
         if (iconSlotPrefab == null)
@@ -64,7 +85,11 @@ public class CooldownIconUIContainer : MonoBehaviour
             if (onCooldown[i].arcLaser != null)
                 BindArcLaser(pool[i], onCooldown[i].arcLaser);
             else
-                pool[i].Bind(onCooldown[i].item, onCooldown[i].effect, onCooldown[i].ownerEffects);
+            {
+                CooldownEntry cooldownEntry = onCooldown[i];
+                pool[i].Bind(cooldownEntry.item, cooldownEntry.effect,
+                    GetRemainingCooldown(cooldownEntry.item), GetCooldownDuration(cooldownEntry.effect));
+            }
         }
 
         // 새로 만든 슬롯은 GridLayoutGroup이 다음 레이아웃 갱신에서야 자리를 잡아준다. 그전까지는
@@ -75,6 +100,7 @@ public class CooldownIconUIContainer : MonoBehaviour
     }
 
     /// <summary>
+    /// SW 수정: 바인딩된 플레이어의 인벤토리에서 쿨타임 항목을 수집한다.
     /// 장착 아이템 + 보유 유물 중 발동형 고유효과를 가졌고 지금 쿨타임 진행 중인 것만 모은다.
     /// !! 유물은 장착 슬롯이 아니라 인벤토리 보유 개념이라 EquipmentSystem.GetEquippedItems()에
     ///    잡히지 않는다 - ItemTriggerManager.FireRelics()와 같은 이유로 PlayerGrid를 별도로 훑는다.
@@ -85,16 +111,17 @@ public class CooldownIconUIContainer : MonoBehaviour
 
         CollectArcLaserCooldown();
 
-        if (InventoryController.Instance == null)
+        InventoryController inventory = BoundContext?.Inventory;
+        if (inventory == null)
             return;
 
-        if (InventoryController.Instance.EquipmentSystem != null)
+        if (inventory.EquipmentSystem != null)
         {
-            foreach (var pair in InventoryController.Instance.EquipmentSystem.GetEquippedItems())
+            foreach (var pair in inventory.EquipmentSystem.GetEquippedItems())
                 TryCollect(pair.Value != null ? pair.Value.itemData : null);
         }
 
-        InventoryGrid playerGrid = InventoryController.Instance.PlayerGrid;
+        InventoryGrid playerGrid = inventory.PlayerGrid;
         if (playerGrid == null)
             return;
 
@@ -108,11 +135,11 @@ public class CooldownIconUIContainer : MonoBehaviour
 
     /// <summary>
     /// 로컬 플레이어가 거너이고 아크 레이저(진화1) 발사 간격이 진행 중이면 쿨타임 아이콘 항목으로 넣는다.
-    /// 로컬 플레이어는 기존 HUD처럼 PlayerStatManager.Instance(로컬 전용)에서 찾는다.
+    /// SW 수정: 로컬 플레이어는 HUD에 명시적으로 바인딩된 Context에서 찾는다.
     /// </summary>
     private void CollectArcLaserCooldown()
     {
-        PlayerStatManager stats = PlayerStatManager.Instance;
+        PlayerStatManager stats = BoundContext?.Stats;
         if (stats == null)
             return;
 
@@ -145,17 +172,32 @@ public class CooldownIconUIContainer : MonoBehaviour
         slot.BindArcLaser(gunner, definition != null ? definition.icon : null, name, description);
     }
 
-    /// <summary>SW 수정: 기존 싱글 버프 또는 바인딩된 실제 플레이어의 처형 파동·스타 브리처 폭발이 쿨다운 중인 아이템만 수집한다.</summary>
+    /// <summary>SW 수정: 바인딩된 플레이어의 발동 버프·처형 파동·스타 브리처 폭발이 쿨타임 중인 아이템만 수집한다.</summary>
     private void TryCollect(ItemInstance itemData)
     {
         var uniqueEffect = itemData?.definition != null ? itemData.definition.uniqueEffect : null;
-        if (uniqueEffect is TriggeredBuffUniqueEffectSO triggered && triggered.GetRemainingCooldown(itemData) > 0f)
-            onCooldown.Add(new CooldownEntry { item = itemData, effect = triggered });
-        else if (uniqueEffect is PhaseHarvesterWaveUniqueEffectSO or StarBreacherExplosionUniqueEffectSO)
-        {
-            PlayerItemEffectState owner = InventoryController.Instance?.BoundPlayer?.Effects;
-            if (owner != null && owner.GetRemainingCooldown(itemData) > 0f)
-                onCooldown.Add(new CooldownEntry { item = itemData, effect = uniqueEffect, ownerEffects = owner });
-        }
+        if (GetCooldownDuration(uniqueEffect) > 0f && GetRemainingCooldown(itemData) > 0f)
+            onCooldown.Add(new CooldownEntry { item = itemData, effect = uniqueEffect });
     }
+
+    /// <summary>SW 수정: 바인딩된 플레이어의 발동 상태를 우선 사용하고, 없으면 기존 고유효과 상태에서 남은 쿨타임을 읽는다.</summary>
+    private float GetRemainingCooldown(ItemInstance itemData)
+    {
+        if (BoundContext == null)
+            return 0f;
+        if (BoundContext.ItemTriggers != null)
+            return BoundContext.ItemTriggers.GetRemainingCooldown(itemData);
+        if (itemData?.definition?.uniqueEffect is TriggeredBuffUniqueEffectSO triggeredBuffEffect)
+            return triggeredBuffEffect.GetRemainingCooldown(itemData);
+        return BoundContext.Effects?.GetRemainingCooldown(itemData) ?? 0f;
+    }
+
+    /// <summary>SW 수정: 표시 대상 고유효과에 설정된 전체 쿨타임을 읽는다.</summary>
+    private static float GetCooldownDuration(UniqueEffectSO uniqueEffect) => uniqueEffect switch
+    {
+        TriggeredBuffUniqueEffectSO triggeredBuffEffect => triggeredBuffEffect.cooldownSeconds,
+        PhaseHarvesterWaveUniqueEffectSO waveEffect => waveEffect.cooldownSeconds,
+        StarBreacherExplosionUniqueEffectSO explosionEffect => explosionEffect.cooldownSeconds,
+        _ => 0f
+    };
 }

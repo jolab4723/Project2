@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
+using TMPro;
 using Core;
 
 /// <summary>일시정지 메뉴의 시간 정지, 설정, 포기 및 저장 후 종료 흐름을 관리한다.</summary>
@@ -14,22 +16,124 @@ public class KY_PausePopup : KY_PopupBase
     private KY_DialogData? externalGiveUp;
     private KY_DialogData? externalSaveAndExit;
 
+    /// <summary>SW 수정: Inspector에 연결한 종료 버튼과 문구를 사용해 이름 검색을 대신한다.</summary>
+    [Header("종료 버튼")]
+    [SerializeField] private Button giveUpButton;
+    [SerializeField] private Button saveAndExitButton;
     // 정산 버튼(ButtonGroup 아래 "Adjustment")은 조건을 만족할 때만 표시한다.
-    private const string SettleButtonName = "Adjustment";
-    private GameObject settleButton;
+    [SerializeField] private Button settleButton;
+    [SerializeField] private TMP_Text giveUpLabel;
+    [SerializeField] private TMP_Text saveAndExitLabel;
+
+    private bool externalPresentationBound;
+    private bool originalPauseGameTime;
+    private bool originalGiveUpVisible;
+    private bool originalSaveVisible;
+    private string originalGiveUpText;
+    private string originalSaveText;
+    private TMP_FontAsset originalGiveUpFont;
+    private TMP_FontAsset originalSaveFont;
+    private UILabelText giveUpFixedLabel;
+    private UILabelText saveFixedLabel;
+    private bool originalGiveUpLabelEnabled;
+    private bool originalSaveLabelEnabled;
+    private string externalGiveUpText;
+    private string externalSaveText;
+    private TMP_FontAsset externalExitFont;
 
     // 확인 팝업 문구 다국어 테이블. 비워두면 Resources의 공용 DB를 자동으로 찾아 쓴다.
     private const string UILabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
     [SerializeField] private UILabelDatabaseSO uiLabels;
 
-    /// <summary>세션 종료 확인과 실행을 외부에 맡긴다. null로 해제하면 기존 싱글 동작을 사용한다.</summary>
+    /// <summary>SW 수정: 세션 종료 확인과 실행을 외부에 맡긴다. null로 해제하면 기존 싱글 동작을 사용한다.</summary>
     public void BindExitActions(KY_DialogData? giveUp, KY_DialogData? saveAndExit)
     {
         externalGiveUp = giveUp;
         externalSaveAndExit = saveAndExit;
     }
 
-    /// <summary>싱글에서는 게임 시간을 멈춘다. 멀티플레이 메뉴는 false로 설정해 화면만 연다.</summary>
+    /// <summary>SW 수정: 세션 종료 버튼의 표시와 문구를 연결하고, 메뉴가 서버 시간을 멈추지 않게 한다.</summary>
+    public void BindExitPresentation(
+        bool giveUpVisible,
+        bool saveVisible,
+        string giveUpText,
+        string saveText,
+        TMP_FontAsset font)
+    {
+        if (!externalPresentationBound)
+        {
+            originalPauseGameTime = pauseGameTime;
+            originalGiveUpVisible = giveUpButton != null && giveUpButton.gameObject.activeSelf;
+            originalSaveVisible = saveAndExitButton != null && saveAndExitButton.gameObject.activeSelf;
+            if (giveUpLabel != null)
+            {
+                originalGiveUpText = giveUpLabel.text;
+                originalGiveUpFont = giveUpLabel.font;
+                giveUpLabel.TryGetComponent(out giveUpFixedLabel);
+                if (giveUpFixedLabel != null)
+                {
+                    originalGiveUpLabelEnabled = giveUpFixedLabel.enabled;
+                    giveUpFixedLabel.enabled = false;
+                }
+            }
+            if (saveAndExitLabel != null)
+            {
+                originalSaveText = saveAndExitLabel.text;
+                originalSaveFont = saveAndExitLabel.font;
+                saveAndExitLabel.TryGetComponent(out saveFixedLabel);
+                if (saveFixedLabel != null)
+                {
+                    originalSaveLabelEnabled = saveFixedLabel.enabled;
+                    saveFixedLabel.enabled = false;
+                }
+            }
+            externalPresentationBound = true;
+        }
+        else
+        {
+            CaptureFixedLabelChanges();
+        }
+
+        externalGiveUpText = giveUpText;
+        externalSaveText = saveText;
+        externalExitFont = font;
+        PauseGameTime = false;
+        if (giveUpButton != null) giveUpButton.gameObject.SetActive(giveUpVisible);
+        if (saveAndExitButton != null) saveAndExitButton.gameObject.SetActive(saveVisible);
+        RefreshSettleButton();
+        ApplyExitPresentation();
+    }
+
+    /// <summary>SW 수정: 종료 요청과 버튼 문구·표시·시간 정지 설정을 기존 싱글 상태로 되돌린다.</summary>
+    public void UnbindExitPresentation()
+    {
+        if (!externalPresentationBound)
+            return;
+
+        CaptureFixedLabelChanges();
+        externalPresentationBound = false;
+        BindExitActions(null, null);
+        PauseGameTime = originalPauseGameTime;
+        if (giveUpButton != null) giveUpButton.gameObject.SetActive(originalGiveUpVisible);
+        if (saveAndExitButton != null) saveAndExitButton.gameObject.SetActive(originalSaveVisible);
+        if (giveUpFixedLabel != null) giveUpFixedLabel.enabled = originalGiveUpLabelEnabled;
+        if (saveFixedLabel != null) saveFixedLabel.enabled = originalSaveLabelEnabled;
+        if (giveUpLabel != null)
+        {
+            giveUpLabel.text = originalGiveUpText;
+            giveUpLabel.font = originalGiveUpFont;
+        }
+        if (saveAndExitLabel != null)
+        {
+            saveAndExitLabel.text = originalSaveText;
+            saveAndExitLabel.font = originalSaveFont;
+        }
+        externalGiveUpText = externalSaveText = null;
+        externalExitFont = null;
+        RefreshSettleButton();
+    }
+
+    /// <summary>SW 수정: 싱글에서는 게임 시간을 멈춘다. 멀티플레이 메뉴는 false로 설정해 화면만 연다.</summary>
     public bool PauseGameTime
     {
         get => pauseGameTime;
@@ -40,19 +144,27 @@ public class KY_PausePopup : KY_PopupBase
         }
     }
 
-void Awake()
+    /// <summary>SW 수정: 슬라이드 애니메이터를 준비하고 버튼 연결은 팝업 활성화 시점에 처리한다.</summary>
+    void Awake()
     {
         slideAnimator = GetComponentInChildren<KY_SlideAnimator>(true);
         if (slideAnimator != null) slideAnimator.ignoreTimeScale = true;
-
-        // 씬에 저장된 UnityEvent가 비어 있어도 포기 버튼이 동작하도록 자동 연결한다.
-        WirePauseButtons();
     }
 
-private void OnEnable()
+    /// <summary>SW 수정: 팝업이 열릴 때 버튼을 연결하고 현재 세션의 종료 표시를 적용한다.</summary>
+    private void OnEnable()
     {
-        WirePauseButtons();
+        // 씬에 저장된 UnityEvent가 비어 있어도 포기 버튼이 동작하도록 자동 연결한다.
+        // Inspector의 기존 클릭 연결이 없는 버튼만 자동 연결한다.
+        BindPauseButton(giveUpButton, OnClickGiveUp, nameof(OnClickGiveUp));
+        BindPauseButton(saveAndExitButton, OnClickSaveAndExit, nameof(OnClickSaveAndExit));
+        BindPauseButton(settleButton, OnClickSettle, nameof(OnClickSettle));
         RefreshSettleButton();
+        if (externalPresentationBound)
+        {
+            CaptureFixedLabelChanges();
+            ApplyExitPresentation();
+        }
     }
 
     /// <summary>다국어 DB의 현재 언어 문구를 반환한다. DB를 찾지 못하면 기존 한국어 문구를 쓴다.</summary>
@@ -64,36 +176,69 @@ private void OnEnable()
         return uiLabels != null ? uiLabels.GetLabel(key) : fallback;
     }
 
-    private void WirePauseButtons()
+    /// <summary>SW 수정: Inspector에 같은 클릭 처리가 없을 때만 런타임 버튼 처리를 연결한다.</summary>
+    private void BindPauseButton(Button button, UnityAction listener, string methodName)
     {
-        foreach (Button button in GetComponentsInChildren<Button>(true))
-        {
-            if (button == null) continue;
+        if (button == null)
+            return;
 
-            if (button.gameObject.name == "Giveup")
-            {
-                button.onClick.RemoveListener(OnClickGiveUp);
-                button.onClick.AddListener(OnClickGiveUp);
-            }
-            else if (button.gameObject.name == "Save")
-            {
-                button.onClick.RemoveListener(OnClickSaveAndExit);
-                button.onClick.AddListener(OnClickSaveAndExit);
-            }
-            else if (button.gameObject.name == SettleButtonName)
-            {
-                button.onClick.RemoveListener(OnClickSettle);
-                button.onClick.AddListener(OnClickSettle);
-                settleButton = button.gameObject;
-            }
+        button.onClick.RemoveListener(listener);
+        for (int index = 0; index < button.onClick.GetPersistentEventCount(); index++)
+        {
+            if (button.onClick.GetPersistentTarget(index) == this &&
+                button.onClick.GetPersistentMethodName(index) == methodName)
+                return;
+        }
+        button.onClick.AddListener(listener);
+    }
+
+    /// <summary>SW 수정: 언어 변경 뒤에도 세션 종료 문구와 폰트를 유지한다.</summary>
+    private void LateUpdate()
+    {
+        if (!externalPresentationBound)
+            return;
+
+        // UILabelText는 비활성 상태에서도 이미 구독한 언어 이벤트를 받으므로 표시를 마지막에 맞춘다.
+        CaptureFixedLabelChanges();
+        ApplyExitPresentation();
+    }
+
+    /// <summary>SW 수정: 언어 변경으로 갱신된 싱글 문구와 폰트를 기록해 연결 해제 때 복원한다.</summary>
+    private void CaptureFixedLabelChanges()
+    {
+        // 언어가 바뀌어 고정 문구가 갱신되면 싱글로 돌아갈 때도 현재 언어의 문구와 폰트를 복원한다.
+        if (giveUpFixedLabel != null && giveUpLabel != null && giveUpLabel.text != externalGiveUpText)
+        {
+            originalGiveUpText = giveUpLabel.text;
+            originalGiveUpFont = giveUpLabel.font;
+        }
+        if (saveFixedLabel != null && saveAndExitLabel != null && saveAndExitLabel.text != externalSaveText)
+        {
+            originalSaveText = saveAndExitLabel.text;
+            originalSaveFont = saveAndExitLabel.font;
         }
     }
 
-    /// <summary>정산 버튼은 정산 가능한 상황(싱글·액트 1개 이상 클리어·비전투)에서만 보인다.</summary>
+    /// <summary>SW 수정: 연결된 세션의 종료 문구와 폰트를 버튼에 표시한다.</summary>
+    private void ApplyExitPresentation()
+    {
+        if (giveUpLabel != null)
+        {
+            if (giveUpLabel.text != externalGiveUpText) giveUpLabel.text = externalGiveUpText;
+            if (externalExitFont != null && giveUpLabel.font != externalExitFont) giveUpLabel.font = externalExitFont;
+        }
+        if (saveAndExitLabel != null)
+        {
+            if (saveAndExitLabel.text != externalSaveText) saveAndExitLabel.text = externalSaveText;
+            if (externalExitFont != null && saveAndExitLabel.font != externalExitFont) saveAndExitLabel.font = externalExitFont;
+        }
+    }
+
+    /// <summary>SW 수정: 정산 버튼은 정산 가능한 상황(싱글·액트 1개 이상 클리어·비전투)에서만 보인다.</summary>
     private void RefreshSettleButton()
     {
         if (settleButton != null)
-            settleButton.SetActive(CanSettle());
+            settleButton.gameObject.SetActive(CanSettle());
     }
 
     /// <summary>
@@ -145,7 +290,14 @@ private void OnEnable()
         else base.Close();
     }
 
-    private void OnDisable() => RestoreGameTime();
+    /// <summary>SW 수정: 팝업을 닫으면 게임 시간을 복원하고 런타임 버튼 연결을 해제한다.</summary>
+    private void OnDisable()
+    {
+        RestoreGameTime();
+        if (giveUpButton != null) giveUpButton.onClick.RemoveListener(OnClickGiveUp);
+        if (saveAndExitButton != null) saveAndExitButton.onClick.RemoveListener(OnClickSaveAndExit);
+        if (settleButton != null) settleButton.onClick.RemoveListener(OnClickSettle);
+    }
 
     /// <summary>이 팝업이 멈춘 시간만 원래 값으로 돌린다. 다른 곳에서 바꾼 배속은 덮어쓰지 않는다.</summary>
     private void RestoreGameTime()
@@ -204,7 +356,7 @@ private void OnEnable()
         KY_PopupManager.Instance.ShowConfirm(dialog);
     }
 
-public void OnClickSaveAndExit()
+    public void OnClickSaveAndExit()
     {
         if (KY_PopupManager.Instance == null) return;
 
@@ -273,7 +425,7 @@ public void OnClickSaveAndExit()
         loader.LoadScene(ResultSceneName);
     }
 
-private void SaveAndExitGame()
+    private void SaveAndExitGame()
     {
         RestoreGameTime();
         if (externalSaveAndExit.HasValue)

@@ -13,6 +13,8 @@ public sealed class MirrorSceneMode : MonoBehaviour
     [SerializeField] private GameObject[] multiplayerObjects;
     [SerializeField] private Behaviour[] singlePlayerBehaviours;
     [SerializeField] private Behaviour[] multiplayerBehaviours;
+    [SerializeField] private InventoryPartView singlePlayerInventory;
+    [SerializeField] private InventoryPartView multiplayerInventory;
     [SerializeField] private YJ_StageManager stage;
     [SerializeField] private CanvasGroup preparationScreen;
     [SerializeField] private TMP_Text preparationMessage;
@@ -20,6 +22,12 @@ public sealed class MirrorSceneMode : MonoBehaviour
     private YJ_LanguageManager languageManager;
     private UILabelDatabaseSO uiLabels;
     private string preparationStatus = "preparation_ui.waiting";
+
+    // 공유 NPC의 Inspector 이벤트가 현재 모드의 기존 창 진입점으로 연결된다.
+    public void OpenShop() => ActiveInventory?.OpenShop();
+    public void OpenUpgrade() => ActiveInventory?.OpenUpgrade();
+    private InventoryPartView ActiveInventory => MirrorNetworkManager.OwnsGameplay
+        ? multiplayerInventory : singlePlayerInventory;
 
     private void RefreshPreparationLanguage(GameLanguage _)
     {

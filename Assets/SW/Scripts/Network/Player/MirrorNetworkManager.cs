@@ -54,7 +54,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
 
     // 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026092801;
+    public const int CompatibilityVersion = 2026093001;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =

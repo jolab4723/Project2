@@ -2,14 +2,13 @@ using System.Collections.Generic;
 using Core;
 using ItemSystem;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
-/// 기존 강화 선택 화면을 그대로 사용하면서 강화 버튼만 서버 요청으로 바꾸는 Mirror 테스트 어댑터다.
-/// <para>원본과의 차이: <see cref="UpgradeController"/>는 아이템 선택과 미리보기 표시만 담당한다.
-/// 이 컴포넌트가 원본 버튼의 로컬 <c>TryUpgrade</c> 호출을 실행 중에 끄고,
-/// <see cref="PlayerInventorySync"/>의 서버 강화 요청을 대신 보낸다.</para>
+/// 기존 강화 화면의 공용 요청을 Mirror 서버 강화 요청에 연결한다.
+/// <para>원본 버튼의 <c>TryUpgrade</c> 연결은 유지하고,
+/// <see cref="UpgradeController"/>의 외부 요청을 통해
+/// <see cref="PlayerInventorySync"/>에 서버 강화를 요청한다.</para>
 /// <para>서버 응답이 올 때까지 버튼을 잠그고, 성공하면 서버 스냅샷으로 교체된 같은 instance를
 /// 다시 선택해 강화 수치와 비용을 갱신한다.</para>
 /// </summary>
@@ -31,20 +30,38 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         EnsureInitialized();
     }
 
-    private void OnDestroy()
+    private void OnEnable()
     {
-        Unbind();
-
-        if (upgradeButton != null)
-            upgradeButton.onClick.RemoveListener(HandleUpgradeClicked);
+        Bind(context);
     }
 
+    private void OnDisable()
+    {
+        ReleaseBindings();
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseBindings();
+        context = null;
+    }
+
+    /// <summary>강화 화면을 로컬 플레이어에 연결한다. null이면 서버 연결 대기 상태를 유지한다.</summary>
     public void Bind(PlayerContext playerContext)
     {
-        Unbind();
+        ReleaseBindings();
         EnsureInitialized();
 
         context = playerContext;
+        if (!isActiveAndEnabled)
+            return;
+
+        if (upgradeController != null)
+            upgradeController.BindUpgradeRequest(HandleUpgradeClicked);
+
+        if (!initialized)
+            return;
+
         inventorySync = context != null
             ? context.GetComponent<PlayerInventorySync>()
             : null;
@@ -53,13 +70,26 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
             inventorySync.RequestCompleted += HandleRequestCompleted;
     }
 
+    /// <summary>플레이어 연결과 대기 요청을 해제하고, 활성 화면은 서버 연결 대기 상태로 둔다.</summary>
     public void Unbind()
     {
+        ReleaseBindings();
+        context = null;
+
+        // 연결 대기 중에도 원본 TryUpgrade가 로컬 골드와 아이템을 변경하지 않게 한다.
+        if (isActiveAndEnabled && upgradeController != null)
+            upgradeController.BindUpgradeRequest(HandleUpgradeClicked);
+    }
+
+    private void ReleaseBindings()
+    {
+        if (upgradeController != null)
+            upgradeController.UnbindUpgradeRequest(HandleUpgradeClicked);
+
         if (inventorySync != null)
             inventorySync.RequestCompleted -= HandleRequestCompleted;
 
         inventorySync = null;
-        context = null;
         pendingRequestId = 0;
         pendingInstanceId = null;
 
@@ -84,9 +114,6 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         }
 
         idleInteractable = upgradeButton.interactable;
-        DisableOriginalUpgradeCall();
-        upgradeButton.onClick.RemoveListener(HandleUpgradeClicked);
-        upgradeButton.onClick.AddListener(HandleUpgradeClicked);
         initialized = true;
     }
 
@@ -111,20 +138,6 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         return null;
     }
 
-    private void DisableOriginalUpgradeCall()
-    {
-        int listenerCount = upgradeButton.onClick.GetPersistentEventCount();
-        for (int i = 0; i < listenerCount; i++)
-        {
-            if (upgradeButton.onClick.GetPersistentTarget(i) == upgradeController &&
-                upgradeButton.onClick.GetPersistentMethodName(i) == nameof(UpgradeController.TryUpgrade))
-            {
-                // 테스트 Variant의 고정 버튼 한 개만 가로챈다. 정식 전환 때는 원본 버튼 연결을 교체한다.
-                upgradeButton.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
-            }
-        }
-    }
-
     private void HandleUpgradeClicked()
     {
         if (pendingRequestId != 0)
@@ -138,7 +151,7 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
             return;
         }
 
-        if (inventorySync == null ||
+        if (!initialized || inventorySync == null ||
             !inventorySync.TryRequestUpgradeItem(selectedItem.instanceId, out uint requestId))
         {
             upgradeController.ShowLocalizedMessage("upgrade_ui.request_failed", "서버 강화 요청을 시작하지 못했습니다.");

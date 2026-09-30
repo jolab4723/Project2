@@ -1,32 +1,25 @@
 using EnemySystem;
 using ItemSystem;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// Mirror 테스트 적의 서버 확정 체력과 데미지를 기존 Act1 표시 자산으로 보여주는 클라이언트 전용 어댑터다.
-/// <para>BH 원본 <c>WBH_EnemyView</c>는 로컬 <c>WBH_EnemyStatus</c> 이벤트와 초기화된 풀을 전제로 하므로
-/// 네트워크 적에서는 끈 상태를 유지한다. 이 복제본은 <c>NetworkEnemyAuthority</c>의 복제 결과만 읽는다.</para>
-/// <para>체력바는 적 Prefab에 이미 있는 Slider를 재사용하고, 데미지 숫자는 씬에 하나인
-/// <c>WBH_DamageTextPoolManager</c>를 지연 탐색해 모든 클라이언트에서 같은 서버 판정값을 표시한다.</para>
+/// 서버 확정 체력과 피해를 공통 <c>WBH_EnemyView</c>에 전달하는 Mirror 클라이언트 표시 어댑터다.
+/// <para>체력바, 피격 점멸과 텍스트 풀·배치는 공통 View가 처리하고,
+/// 이 어댑터는 <c>NetworkEnemyAuthority</c>의 복제 결과와 보스 단계만 읽는다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkEnemyAuthority))]
 public sealed class NetworkEnemyCombatView : MonoBehaviour
 {
     [SerializeField] private NetworkEnemyAuthority authority;
-    [SerializeField] private Transform damageTextRoot;
-    [SerializeField] private GameObject healthBarRoot;
-    [SerializeField] private Slider healthBarSlider;
+    [SerializeField] private WBH_EnemyView productionView;
     [SerializeField] private WBH_EnemyBossPhaseView_Act1 bossPhaseView;
 
-    [SerializeField] private Vector2 damageTextSpacingPixels = new Vector2(56f, 28f);
-
-    private WBH_FloatTextPoolManager damageTextPool;
-    private Camera mainCamera;
-    private double damageTextBurstStartedAt = double.NegativeInfinity;
-    private int damageTextBurstIndex;
-    private bool missingPoolReported;
+    private bool missingReferencesReported;
+    private bool hasPresentedHealth;
+    private float presentedCurrentHealth;
+    private float presentedMaxHealth;
+    private bool presentedDead;
     private bool bossPhaseTwoApplied;
     private MirrorAct1BossPhase observedBossPhase;
 
@@ -37,14 +30,23 @@ public sealed class NetworkEnemyCombatView : MonoBehaviour
     private void Awake()
     {
         ResolveReferences();
-        if (healthBarRoot != null)
-            healthBarRoot.SetActive(false);
+        if (productionView != null)
+            productionView.BindExternalPresentation(() => Mirror.NetworkClient.active);
+        ReportMissingReferences();
     }
 
     private void Start()
     {
         if (Mirror.NetworkClient.active)
-            RefreshHealthBar();
+            RefreshPresentation();
+    }
+
+    private void OnDisable()
+    {
+        hasPresentedHealth = false;
+        // Host의 서버 전환 Coroutine은 Authority의 OnStopServer에서 정리한다.
+        if (!Mirror.NetworkServer.active && bossPhaseView != null)
+            bossPhaseView.CancelTransition();
     }
 
 #if UNITY_EDITOR
@@ -59,32 +61,31 @@ public sealed class NetworkEnemyCombatView : MonoBehaviour
         if (!Mirror.NetworkClient.active)
             return;
 
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-        RefreshHealthBar();
-
-        if (healthBarRoot != null && healthBarRoot.activeSelf && mainCamera != null)
-            healthBarRoot.transform.rotation = Quaternion.LookRotation(mainCamera.transform.forward);
+        RefreshPresentation();
     }
 
-    private void RefreshHealthBar()
+    private void RefreshPresentation()
     {
+        ReportMissingReferences();
         if (authority == null)
             return;
 
         RefreshBossPhaseView();
-        if (healthBarRoot == null || healthBarSlider == null)
+        if (productionView == null)
             return;
 
-        bool visible = !authority.IsDead && authority.MaxHealth > 0f;
-        if (healthBarRoot.activeSelf != visible)
-            healthBarRoot.SetActive(visible);
+        float current = authority.CurrentHealth;
+        float max = authority.MaxHealth;
+        bool dead = authority.IsDead;
+        if (hasPresentedHealth && current == presentedCurrentHealth &&
+            max == presentedMaxHealth && dead == presentedDead)
+            return;
 
-        healthBarSlider.minValue = 0f;
-        healthBarSlider.maxValue = 1f;
-        healthBarSlider.value = visible
-            ? Mathf.Clamp01(authority.CurrentHealth / authority.MaxHealth)
-            : 0f;
+        productionView.PresentHealth(current, max, dead);
+        presentedCurrentHealth = current;
+        presentedMaxHealth = max;
+        presentedDead = dead;
+        hasPresentedHealth = true;
     }
 
     private void RefreshBossPhaseView()
@@ -99,6 +100,13 @@ public sealed class NetworkEnemyCombatView : MonoBehaviour
             return;
 
         observedBossPhase = phase;
+        if (phase == MirrorAct1BossPhase.Dead)
+        {
+            if (!Mirror.NetworkServer.active)
+                bossPhaseView.CancelTransition();
+            return;
+        }
+
         if (phase == MirrorAct1BossPhase.PhaseOne)
         {
             bossPhaseTwoApplied = false;
@@ -106,123 +114,81 @@ public sealed class NetworkEnemyCombatView : MonoBehaviour
             return;
         }
 
-        if (phase == MirrorAct1BossPhase.TransitionArmor)
+        if ((phase == MirrorAct1BossPhase.TransitionArmor || phase == MirrorAct1BossPhase.PhaseTwo) &&
+            !bossPhaseTwoApplied)
         {
-            bossPhaseTwoApplied = true;
             Random.State previousState = Random.state;
-            Random.InitState(authority.BossPhaseVisualSeed);
-            bossPhaseView.PlayPhaseTwoTransition(null);
-            Random.state = previousState;
-            return;
-        }
-
-        if (phase == MirrorAct1BossPhase.PhaseTwo && !bossPhaseTwoApplied)
-        {
-            bossPhaseTwoApplied = true;
-            bossPhaseView.SetPhaseTwo();
+            try
+            {
+                Random.InitState(authority.BossPhaseVisualSeed);
+                // 표시만 적용해 Host의 서버 전환 완료 callback을 유지한다.
+                bossPhaseView.SetPhaseTwo();
+                bossPhaseTwoApplied = true;
+            }
+            finally
+            {
+                Random.state = previousState;
+            }
         }
     }
 
     public void ShowDamage(float damage, bool critical,
-        ElementType element, Vector3 enemyPosition)
+        ElementType element, Vector3 enemyPosition, uint attackerId = 0, bool selfAttack = false)
     {
-        if (!float.IsFinite(damage) || damage <= 0f)
+        if (!Mirror.NetworkClient.active || !isActiveAndEnabled ||
+            !float.IsFinite(damage) || damage <= 0f)
             return;
 
-        WBH_DamageText text = RentDamageText(enemyPosition);
-        if (text == null)
+        ReportMissingReferences();
+        if (productionView == null)
             return;
-        text.Show(text.transform.position, new WBH_DamageResult(null, damage, critical, element));
-        PresentedDamageTextCount++;
+
+        WBH_ICombat attacker = null;
+        if (attackerId != 0 && Mirror.NetworkClient.spawned.TryGetValue(attackerId, out var identity) &&
+            identity != null)
+        {
+            attacker = identity.GetComponent<T_PlayerController>();
+            if (attacker == null)
+                attacker = identity.GetComponent<WBH_EnemyController>();
+        }
+
+        var result = new WBH_DamageResult(attacker, damage, critical, element);
+        if (productionView.ShowDamage(result, enemyPosition, selfAttack))
+            PresentedDamageTextCount++;
     }
 
-    /// <summary>서버가 보낸 화상 반응을 숫자와 겹치지 않게 같은 풀에서 표시합니다.</summary>
+    /// <summary>서버가 보낸 화상 반응도 공통 View의 숫자·상태 문구 배치를 사용합니다.</summary>
     public void ShowBurnResponse(bool immune, Vector3 enemyPosition)
     {
-        WBH_DamageText text = RentDamageText(enemyPosition);
-        if (text == null)
-            return;
-        text.ShowBurnResponse(text.transform.position, immune);
-        PresentedBurnResponseCount++;
-    }
-
-    /// <summary>숫자와 상태 문구가 카메라·풀·앵커·연속 타격 배치를 공유합니다.</summary>
-    private WBH_DamageText RentDamageText(Vector3 enemyPosition)
-    {
         if (!Mirror.NetworkClient.active || !isActiveAndEnabled)
-            return null;
+            return;
 
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-        if (mainCamera == null)
-            return null;
-
-        if (damageTextPool == null)
-            damageTextPool = FindFirstObjectByType<WBH_FloatTextPoolManager>(FindObjectsInactive.Exclude);
-        if (damageTextPool == null)
-        {
-            if (!missingPoolReported)
-            {
-                missingPoolReported = true;
-                Debug.LogWarning("[NetworkEnemyCombatView] 씬의 데미지 텍스트 풀이 없습니다.", this);
-            }
-            return null;
-        }
-
-        Vector3 anchorOffset = damageTextRoot != null
-            ? damageTextRoot.position - transform.position
-            : Vector3.up * 1.5f;
-        Vector3 position = OffsetDamageText(enemyPosition + anchorOffset);
-        WBH_DamageText damageText = damageTextPool.GetDamageText();
-        if (damageText == null)
-            return null;
-
-        damageText.Initialize(damageTextPool);
-        damageText.transform.position = position;
-        return damageText;
-    }
-
-    private Vector3 OffsetDamageText(Vector3 position)
-    {
-        double now = Time.unscaledTimeAsDouble;
-        if (now < damageTextBurstStartedAt || now - damageTextBurstStartedAt >= 0.12d)
-        {
-            damageTextBurstStartedAt = now;
-            damageTextBurstIndex = 0;
-        }
-
-        int index = damageTextBurstIndex++;
-        Vector3 screen = mainCamera.WorldToScreenPoint(position);
-        if (screen.z <= 0f)
-            return position;
-
-        screen.x += ((index & 1) == 0 ? -0.5f : 0.5f) * damageTextSpacingPixels.x;
-        screen.y += (index / 2) * damageTextSpacingPixels.y;
-        return mainCamera.ScreenToWorldPoint(screen);
+        ReportMissingReferences();
+        if (productionView != null && productionView.ShowBurnResponse(immune, enemyPosition))
+            PresentedBurnResponseCount++;
     }
 
     private void ResolveReferences()
     {
-        authority ??= GetComponent<NetworkEnemyAuthority>();
-        bossPhaseView ??= GetComponent<WBH_EnemyBossPhaseView_Act1>();
+        if (authority == null)
+            authority = GetComponent<NetworkEnemyAuthority>();
+        if (productionView == null)
+            productionView = GetComponent<WBH_EnemyView>();
+        if (bossPhaseView == null)
+            bossPhaseView = GetComponent<WBH_EnemyBossPhaseView_Act1>();
+    }
 
-        if (damageTextRoot == null)
-        {
-            foreach (Transform child in GetComponentsInChildren<Transform>(true))
-            {
-                if (child.name != "DamageTextRoot")
-                    continue;
+    private void ReportMissingReferences()
+    {
+        if (missingReferencesReported)
+            return;
 
-                damageTextRoot = child;
-                break;
-            }
-        }
+        bool requiresBossPhaseView = authority != null &&
+            authority.EnemyInfo?.patternID == 101;
+        if (authority != null && productionView != null && (!requiresBossPhaseView || bossPhaseView != null))
+            return;
 
-        healthBarSlider ??= GetComponentInChildren<Slider>(true);
-        if (healthBarRoot == null && healthBarSlider != null)
-        {
-            Canvas canvas = healthBarSlider.GetComponentInParent<Canvas>(true);
-            healthBarRoot = canvas != null ? canvas.gameObject : healthBarSlider.gameObject;
-        }
+        missingReferencesReported = true;
+        Debug.LogWarning("[NetworkEnemyCombatView] Authority, 공통 EnemyView 또는 보스 PhaseView 필수 참조가 없습니다.", this);
     }
 }

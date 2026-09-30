@@ -1,3 +1,4 @@
+using System;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
@@ -26,6 +27,7 @@ public class UpgradeController : MonoBehaviour
 
     private ItemInstance selectedItem;
     private UpgradeService upgradeService;
+    private Action upgradeRequest;
     private YJ_LanguageManager languageManager;
     private UpgradeResult? displayedResult;
     private string displayedMessageKey;
@@ -98,6 +100,20 @@ public class UpgradeController : MonoBehaviour
         upgradeService = new UpgradeService(null);
     }
 
+    /// <summary>강화 입력을 외부 요청에 연결한다. 연결된 동안 로컬 비용과 강화 수치를 변경하지 않는다.</summary>
+    public void BindUpgradeRequest(Action request)
+    {
+        if (request != null)
+            upgradeRequest = request;
+    }
+
+    /// <summary>현재 연결된 요청이 지정한 요청과 같을 때만 해제한다.</summary>
+    public void UnbindUpgradeRequest(Action request)
+    {
+        if (upgradeRequest == request)
+            upgradeRequest = null;
+    }
+
     /// <summary>
     /// 강화 가능한 아이템을 현재 선택 항목으로 지정하고 표시를 갱신한다.
     /// </summary>
@@ -133,11 +149,18 @@ public class UpgradeController : MonoBehaviour
     }
 
     /// <summary>
-    /// 선택된 아이템의 비용 결제와 강화 수치 변경을 UpgradeService에 요청한다.
+    /// 외부 요청이 연결되어 있으면 그 요청을 전달한다.
+    /// 그 외에는 선택된 아이템의 비용 결제와 강화 수치 변경을 UpgradeService에 요청하고,
     /// 장착 중인 아이템이면 성공 후 장비 변경 이벤트도 알린다.
     /// </summary>
     public void TryUpgrade()
     {
+        if (upgradeRequest != null)
+        {
+            upgradeRequest();
+            return;
+        }
+
         if (selectedItem == null)
         {
             string selectionRequired = UpgradeMessageMapper.GetSelectionRequired(uiLabels);

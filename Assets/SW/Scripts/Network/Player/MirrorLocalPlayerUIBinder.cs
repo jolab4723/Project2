@@ -1,32 +1,28 @@
-using System.Reflection;
 using ItemSystem;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Mirror 테스트 씬의 클라이언트 전역 UI를 현재 로컬 <see cref="PlayerContext"/>에 연결한다.
 /// 필드 아이템 획득 시에도 이 컴포넌트를 <see cref="IItemReceiver"/>로 사용해
 /// 씬에 남아 있는 고정 InventoryController가 아니라 같은 로컬 Context의 Inventory로 전달한다.
-/// 운영용 KY 입력 Manager는 복제하거나 수정하지 않고, 테스트 씬에서만 I/O/U/ESC로
-/// 인벤토리·퀘스트·강화 창을 여는 로컬 단축키 경계도 함께 담당한다.
+/// 메뉴 단축키는 기존 KY 입력 Manager에 현재 Context와 메뉴 참조를 전달해 처리한다.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-100)]
 public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
 {
-    private static readonly FieldInfo NpcClickedEventField =
-        typeof(YJ_ClickNPC).GetField(
-            "onClicked",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
     [SerializeField] private MirrorNetworkManager networkManager;
     [SerializeField] private KY_PopupManager popupManager;
+    [SerializeField] private KY_UIInputManager uiInputManager;
     private MirrorSpawnedPlayerBinder boundPlayerBinder;
+    private WBH_PlayerInputHandler boundPlayerInput;
+    private PlayerActionInputHandler boundActionInput;
+    private KY_PausePopup pausePopup;
     [SerializeField] private InventoryView inventoryView;
     [SerializeField] private InventoryPartView inventoryPartView;
     [SerializeField] private WorldItemTooltipScanner worldItemScanner;
     [SerializeField] private NetworkUpgradeButton upgradeButton;
+    [SerializeField] private NetworkShopRerollButton shopRerollButton;
     [SerializeField] private PlayerHudEventBridge formalHudBridge;
     [SerializeField] private KY_StatusPopup statusPopup;
     [SerializeField] private SkillPopupController skillPopup;
@@ -42,10 +38,12 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     private void OnEnable()
     {
         popupManager ??= FindInBinderScene<KY_PopupManager>();
+        uiInputManager ??= FindInBinderScene<KY_UIInputManager>();
         skillPopup ??= FindInBinderScene<SkillPopupController>();
         if (networkManager == null)
             networkManager = FindFirstObjectByType<MirrorNetworkManager>();
-        ConfigurePauseMenu(FindInBinderScene<KY_PausePopup>(), networkManager);
+        pausePopup = FindInBinderScene<KY_PausePopup>();
+        ConfigurePauseMenu(pausePopup, networkManager);
         languageManager = YJ_LanguageManager.Instance;
         if (languageManager != null) languageManager.LanguageChanged += RefreshSessionLanguage;
 
@@ -57,9 +55,12 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             upgradeButton =
                 inventoryPartView.GetComponentInChildren<NetworkUpgradeButton>(true);
         }
+        if (shopRerollButton == null && inventoryPartView != null)
+            shopRerollButton = inventoryPartView.GetComponentInChildren<NetworkShopRerollButton>(true);
 
         formalHudBridge ??= FindInBinderScene<PlayerHudEventBridge>();
         statusPopup ??= FindInBinderScene<KY_StatusPopup>();
+        BindMenuInput();
 
 #if UNITY_EDITOR
         Canvas inventoryCanvas = inventoryView != null
@@ -83,21 +84,14 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         networkManager.RunSnapshotChanged += RefreshLocation;
         RefreshLocation(0);
         HandleLocalPlayerChanged(networkManager.LocalPlayerContext);
-        BindCampNpcWindows();
-    }
-
-    /// <summary>
-    /// MirrorSceneMode가 멀티 객체를 순서대로 켜므로 OnEnable 시점에는 멀티 NPC가 아직 꺼져 있을 수 있다.
-    /// 모든 활성화가 끝난 뒤 한 번 더 연결한다(리스너 추가는 중복 없이 멱등).
-    /// </summary>
-    private void Start()
-    {
-        BindCampNpcWindows();
     }
 
     private void OnDisable()
     {
         if (languageManager != null) languageManager.LanguageChanged -= RefreshSessionLanguage;
+        if (uiInputManager != null) uiInputManager.Unbind(IsChatInputConsumed);
+        UnbindPlayerInputConsumption();
+        if (pausePopup != null) pausePopup.UnbindExitPresentation();
         UnbindSkills();
         if (boundPlayerBinder != null) boundPlayerBinder.SetMenuInputBlocked(false);
         boundPlayerBinder = null;
@@ -120,6 +114,8 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             inventoryView.Unbind();
         if (upgradeButton != null)
             upgradeButton.Unbind();
+        if (shopRerollButton != null)
+            shopRerollButton.Unbind();
         if (formalHudBridge != null)
             formalHudBridge.Unbind();
         if (statusPopup != null)
@@ -138,10 +134,9 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         bool host = Mirror.NetworkServer.active;
         var labels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         string Text(string source) => SessionUIMessageLocalizer.GetMessage(labels, source);
-        popup.PauseGameTime = false;
 
         // 확인 팝업 문구는 공용 다국어 DB에서 읽는다. DB가 없으면 기존 한국어 문구를 쓴다.
-        // 문구는 이 시점(세션 UI 연결)에 정해지므로, 세션 도중 언어를 바꾸면 다음 연결부터 반영된다.
+        // 세션 UI를 연결하거나 언어가 바뀔 때 확인 문구와 버튼 표시를 함께 갱신한다.
         // 키가 DB에 없으면(GetLabel이 키를 그대로 반환) 세션 메시지 변환기로 원문을 현지화한다.
         string Label(string key, string fallback)
         {
@@ -164,29 +159,21 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
             warningText = Label("pause_ui.temp_leave_warning", "서버가 유지되는 동안 5분 안에 재접속할 수 있습니다. 파티의 게임은 계속됩니다."),
             onYes = () => { if (session != null && !Mirror.NetworkServer.active) session.StopClient(); }
         });
-        foreach (var button in popup.GetComponentsInChildren<UnityEngine.UI.Button>(true))
-        {
-            bool leave = button.name == "Giveup";
-            if (!leave && button.name != "Save") continue;
-            button.gameObject.SetActive(Mirror.NetworkClient.active && (leave || !host));
-            var label = button.GetComponentInChildren<TMPro.TMP_Text>(true);
-            if (label != null)
-            {
-                // 세션별 동적 문구를 싱글용 고정 라벨의 Awake가 덮어쓰지 않게 한다.
-                if (label.TryGetComponent<UILabelText>(out var fixedLabel)) Destroy(fixedLabel);
-                label.text = Text(leave ? (host ? "호스트 세션 종료" : "세션 떠나기") : "잠시 나가기");
-                var font = YJ_LanguageManager.Instance?.GetCurrentFont();
-                if (font != null) label.font = font;
-            }
-        }
+        popup.BindExitPresentation(
+            Mirror.NetworkClient.active,
+            Mirror.NetworkClient.active && !host,
+            Text(host ? "호스트 세션 종료" : "세션 떠나기"),
+            Text("잠시 나가기"),
+            YJ_LanguageManager.Instance?.GetCurrentFont());
     }
 
     private void RefreshSessionLanguage(GameLanguage _) =>
-        ConfigurePauseMenu(FindInBinderScene<KY_PausePopup>(), networkManager);
+        ConfigurePauseMenu(pausePopup, networkManager);
 
     private void HandleLocalPlayerChanged(PlayerContext context)
     {
         UnbindSkills();
+        UnbindPlayerInputConsumption();
         if (boundPlayerBinder != null) boundPlayerBinder.SetMenuInputBlocked(false);
         boundPlayerBinder = null;
         boundShopState?.UnbindLocalView(boundContext);
@@ -195,11 +182,13 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundInventorySync = null;
         inventoryView.Unbind();
         upgradeButton?.Unbind();
+        if (shopRerollButton != null) shopRerollButton.Unbind();
         formalHudBridge?.Unbind();
         statusPopup?.Unbind();
         statusPopup?.CloseImmediate();
         worldItemScanner?.BindPlayer(null);
         boundContext = null;
+        BindMenuInput();
 
         if (context == null)
             return;
@@ -219,12 +208,18 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundShopState = inventoryView.HasShop ? FindInBinderScene<NetworkShopState>() : null;
         boundShopState?.BindLocalView(context, inventoryView);
         upgradeButton?.Bind(context);
+        if (shopRerollButton != null) shopRerollButton.Bind(context);
         formalHudBridge?.Bind(context);
         statusPopup?.Bind(context.Stats);
         worldItemScanner?.BindPlayer(context.transform);
         boundSkills = context.GetComponent<FighterSkillAuthority>();
         if (boundSkills != null) boundSkills.SkillStateChanged += RefreshSkills;
         RefreshSkills();
+        BindMenuInput();
+        boundPlayerInput = context.GetComponent<WBH_PlayerInputHandler>();
+        boundActionInput = context.GetComponent<PlayerActionInputHandler>();
+        if (boundPlayerInput != null) boundPlayerInput.BindInputConsumption(IsChatInputConsumed);
+        if (boundActionInput != null) boundActionInput.BindInputConsumption(IsChatInputConsumed);
 
         Debug.Assert(
             worldItemScanner == null || worldItemScanner.BoundPlayer == context.transform,
@@ -236,59 +231,23 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     {
         EnsureSceneShopBinding();
         RefreshMenuInputBlock();
+    }
 
-        if (networkManager != null && networkManager.Chat.ConsumesInputThisFrame)
-            return;
+    private void BindMenuInput()
+    {
+        if (uiInputManager != null)
+            uiInputManager.Bind(boundContext, inventoryPartView, statusPopup, popupManager, IsChatInputConsumed);
+    }
 
-        if (boundContext == null || inventoryPartView == null || Keyboard.current == null)
-            return;
+    private bool IsChatInputConsumed() =>
+        networkManager != null && networkManager.Chat != null && networkManager.Chat.ConsumesInputThisFrame;
 
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            if (popupManager != null && popupManager.HasOpenModalPopup)
-                popupManager.Hide();
-            else if (statusPopup != null && statusPopup.IsOpen)
-                statusPopup.Close();
-            else if (inventoryPartView.HasOpenWindow)
-                inventoryPartView.CloseAll();
-            else if (QuestOfferUI.Instance != null && QuestOfferUI.Instance.IsShowing)
-                QuestOfferUI.Instance.Hide();
-            else if (popupManager != null)
-                popupManager.Show(PopupType.Pause);
-        }
-        else if (popupManager != null && popupManager.HasOpenModalPopup)
-            return;
-        else if (Keyboard.current.iKey.wasPressedThisFrame)
-        {
-            CloseStatusPopup();
-            inventoryPartView.ToggleInventory();
-        }
-        else if (Keyboard.current.oKey.wasPressedThisFrame)
-        {
-            inventoryPartView.CloseAll();
-            CloseStatusPopup();
-            if (popupManager != null) popupManager.Show(PopupType.Quest);
-        }
-        else if (Keyboard.current.uKey.wasPressedThisFrame)
-        {
-            CloseStatusPopup();
-            inventoryPartView.OpenUpgrade();
-        }
-        else if (Keyboard.current.lKey.wasPressedThisFrame)
-        {
-            inventoryPartView.CloseAll();
-            if (statusPopup != null)
-            {
-                if (statusPopup.IsOpen) statusPopup.Close(); else statusPopup.Open();
-            }
-        }
-        else if (Keyboard.current.kKey.wasPressedThisFrame && popupManager != null)
-        {
-            inventoryPartView.CloseAll();
-            CloseStatusPopup();
-            popupManager.Show(PopupType.Skill);
-        }
-        RefreshMenuInputBlock();
+    private void UnbindPlayerInputConsumption()
+    {
+        if (boundPlayerInput != null) boundPlayerInput.BindInputConsumption(null);
+        if (boundActionInput != null) boundActionInput.BindInputConsumption(null);
+        boundPlayerInput = null;
+        boundActionInput = null;
     }
 
     private void RefreshSkills()
@@ -319,8 +278,35 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         if (boundPlayerBinder == null) return;
         boundPlayerBinder.SetMenuInputBlocked(
             (popupManager != null && popupManager.HasOpenModalPopup) ||
+            HasOpenSidePopup() ||
             (inventoryPartView != null && inventoryPartView.HasOpenWindow) ||
-            (statusPopup != null && statusPopup.IsOpen));
+            (statusPopup != null && statusPopup.IsOpen) ||
+            (QuestOfferUI.Instance != null && QuestOfferUI.Instance.IsShowing));
+    }
+
+    private bool HasOpenSidePopup()
+    {
+        if (popupManager == null || popupManager.popupEntries == null)
+            return false;
+
+        // 비활성 모드의 팝업은 제외하고, 닫힘 연출 중 화면에 남은 사이드 팝업도 잠금에 포함한다.
+        foreach (KY_PopupManager.PopupEntry entry in popupManager.popupEntries)
+        {
+            if (entry == null || entry.popup == null || !entry.popup.gameObject.activeInHierarchy)
+                continue;
+
+            switch (entry.type)
+            {
+                case PopupType.Inventory:
+                case PopupType.Skill:
+                case PopupType.Status:
+                case PopupType.Quest:
+                case PopupType.Buff:
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -345,74 +331,6 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     }
 
     /// <summary>
-    /// production Camp를 복제한 Mirror Scene에서는 Shop/Upgrade NPC의 UnityEvent 대상이
-    /// 복제 과정에서 끊어질 수 있다. 원본 NPC 스크립트와 Scene은 건드리지 않고, 현재 Scene의
-    /// InventoryPartView를 런타임 Listener로 다시 연결한다.
-    /// </summary>
-    private void BindCampNpcWindows()
-    {
-        if (inventoryPartView == null)
-            return;
-
-        if (NpcClickedEventField == null)
-        {
-            Debug.LogError(
-                "[MirrorLocalPlayerUIBinder] YJ_ClickNPC.onClicked를 찾지 못해 상점/강화 NPC를 연결할 수 없습니다.",
-                this);
-            return;
-        }
-
-        YJ_ClickNPC[] npcs = FindObjectsByType<YJ_ClickNPC>(
-            FindObjectsInactive.Exclude,
-            FindObjectsSortMode.None);
-
-        foreach (YJ_ClickNPC npc in npcs)
-        {
-            if (npc == null ||
-                npc.gameObject.scene != gameObject.scene ||
-                NpcClickedEventField.GetValue(npc) is not UnityEvent clickedEvent)
-            {
-                continue;
-            }
-
-            switch (npc.name)
-            {
-                case "ShopNPC":
-                    AddNpcListenerIfMissing(
-                        clickedEvent,
-                        nameof(InventoryPartView.OpenShop),
-                        inventoryPartView.OpenShop);
-                    break;
-
-                case "UpgradeNPC":
-                    AddNpcListenerIfMissing(
-                        clickedEvent,
-                        nameof(InventoryPartView.OpenUpgrade),
-                        inventoryPartView.OpenUpgrade);
-                    break;
-            }
-        }
-    }
-
-    private void AddNpcListenerIfMissing(
-        UnityEvent clickedEvent,
-        string methodName,
-        UnityAction listener)
-    {
-        for (int index = 0; index < clickedEvent.GetPersistentEventCount(); index++)
-        {
-            if (clickedEvent.GetPersistentTarget(index) == inventoryPartView &&
-                clickedEvent.GetPersistentMethodName(index) == methodName)
-            {
-                return;
-            }
-        }
-
-        clickedEvent.RemoveListener(listener);
-        clickedEvent.AddListener(listener);
-    }
-
-    /// <summary>
     /// DontDestroyOnLoad와 이전 Scene의 종료 순서에 영향을 받지 않도록 이 Binder가 속한
     /// 현재 Scene의 컴포넌트만 반환한다.
     /// </summary>
@@ -420,16 +338,6 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     {
         // SW 수정: 공용 씬의 싱글·멀티 UI 중 현재 모드 쪽을 우선 선택한다.
         return MirrorSceneMode.FindInActiveMode<T>(gameObject.scene);
-    }
-
-    /// <summary>
-    /// Mirror 테스트에서는 인벤토리 계열 창과 MergeTest 스탯창이 동시에 열리지 않도록 한다.
-    /// 원본 KY 입력 Manager를 복제하지 않고 기존 로컬 UI 입력 경계에서만 창 우선순위를 정리한다.
-    /// </summary>
-    private void CloseStatusPopup()
-    {
-        if (statusPopup != null && statusPopup.IsOpen)
-            statusPopup.Close();
     }
 
     public bool AddItem(ItemInstance item)

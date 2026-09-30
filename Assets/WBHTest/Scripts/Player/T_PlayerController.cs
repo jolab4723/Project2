@@ -167,8 +167,13 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     }
 
     // 마우스 커서 방향 반환 메서드
+    /// <summary>SW 수정: 입력 카메라를 다시 연결하고, 레이가 충돌 지점을 찾지 못하면 플레이어 높이의 평면에서 조준 방향을 구합니다.</summary>
     private Vector3 GetMouseDirection()
     {
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+        if (mainCamera == null)
+            return transform.forward;
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
         if(Physics.Raycast(ray, out RaycastHit hit))
@@ -178,10 +183,15 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
             return dir.normalized;
         }
-        return Vector3.zero;
+        // 바닥 밖과 고층 맵에서도 플레이어 높이의 수평 평면을 조준한다.
+        Plane playerHeightPlane = new(Vector3.up, transform.position);
+        if (playerHeightPlane.Raycast(ray, out float rayDistance))
+            return Vector3.ProjectOnPlane(ray.GetPoint(rayDistance) - transform.position, Vector3.up).normalized;
+        return transform.forward;
     }
 
     // 회피 코루틴
+    /// <summary>SW 수정: 회피 모션은 공통 상태 전이에서 재생하고, 트레일 컴포넌트가 있을 때만 잔상을 실행합니다.</summary>
     private IEnumerator Dodge(Vector3 dir)
     {
         if(!CanUseAgent || !TryGetDodgeEnd(dir, out Vector3 endPos))
@@ -193,8 +203,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         agent.ResetPath();
         agent.isStopped = true;
         IsInvincible = true;
-        animator.SetTrigger("Dodge");
-        meshTrailTut.Trail(); // 2026.08.31 조용준 추가
+        // 회피 모션은 공통 PlayerAnimation이 상태 전이에서 한 번 재생한다.
+        meshTrailTut?.Trail(); // 2026.08.31 조용준 추가
 
         float elapsed = 0f;
 
@@ -241,19 +251,35 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     }
 
     // 회피
+    /// <summary>SW 수정: 기존 회피 명령을 입력 카메라 기반의 공통 회피 검사에 전달합니다.</summary>
     public void TryDodge()
     {
-        if (!IsControlEnabled || !CanDodge)
-            return;
+        TryDodgeFromInput();
+    }
 
-        dodgeDir = GetMouseDirection();
+    /// <summary>SW 수정: 같은 플레이어를 조준하는 카메라를 명시적으로 연결한다. 씬 교체로 파괴되면 다시 찾는다.</summary>
+    public void BindInputCamera(Camera camera) => mainCamera = camera;
 
-        if (dodgeDir == Vector3.zero)
-            return;
+    /// <summary>SW 수정: 현재 입력 카메라의 조준 방향으로 회피를 요청하고 수락 여부를 반환한다.</summary>
+    public bool TryDodgeFromInput() => TryDodge(GetMouseDirection());
 
+    /// <summary>SW 수정: 회피 방향과 도착 지점을 먼저 검사하고, 수락할 때만 쿨다운과 상태를 한 번 변경한다.</summary>
+    public bool TryDodge(Vector3 direction)
+    {
+        if (!isActiveAndEnabled || !CanUseAgent || !IsControlEnabled || !CanDodge || status == null ||
+            status.IsDead || stateMachine.IsAnyState(PlayerState.Dodge, PlayerState.Skill, PlayerState.Dead, PlayerState.Revive) ||
+            !float.IsFinite(direction.x) || !float.IsFinite(direction.y) || !float.IsFinite(direction.z))
+            return false;
+        direction.y = 0f;
+        if (!float.IsFinite(direction.sqrMagnitude) || direction.sqrMagnitude < 0.0001f)
+            return false;
+        direction.Normalize();
+        if (!TryGetDodgeEnd(direction, out _))
+            return false;
+        dodgeDir = direction;
         currentDodgeCooltime = status.DodgeCooltime;
-
         stateMachine.ChangeState(PlayerState.Dodge);
+        return true;
     }
 
     // 추적 명령

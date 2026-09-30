@@ -15,6 +15,9 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
     private T_PlayerController controller;
     private T_PlayerCombat combat;
+    private System.Action cancelAttackRequest;
+    private System.Func<Ray, bool> pickupRequest;
+    private System.Action<Ray> pingRequest;
 
     private WorldItemPickupInteractor pickupInteractor;
     private ItemDataStorage pendingItem; // 아이템 정보 임시저장. 추적해서 획득하면 초기화.
@@ -31,22 +34,30 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     [SerializeField, Min(0f)] private float pingSurfaceOffset = 0.03f;
     private float nextPingTime;
 
+    /// <summary>SW 수정: 입력 카메라를 이동·회피를 처리하는 컨트롤러에도 연결한다.</summary>
     private void Awake()
     {
         mainCamera = Camera.main;
 
         controller = GetComponent<T_PlayerController>();
         combat = GetComponent<T_PlayerCombat>();
+        BindInputCamera(mainCamera);
     }
 
+    /// <summary>SW 수정: 외부 획득 요청이 연결되지 않은 경우에만 로컬 획득 참조를 찾는다.</summary>
     private void Start()
     {
-        ResolvePickupInteractor(); // UI 실행 순서 보장을 위한 Start 에서 호출
+        if (pickupRequest == null)
+            ResolvePickupInteractor(); // UI 실행 순서 보장을 위한 Start 에서 호출
     }
 
+    /// <summary>SW 수정: 카메라 연결을 재시도하고 조작 불가 또는 UI 입력 소비 중에는 입력을 처리하지 않는다.</summary>
     private void Update()
     {
-        if (!controller.IsControlEnabled)
+        if (mainCamera == null)
+            BindInputCamera(Camera.main);
+        if (mainCamera == null || controller == null || combat == null || !controller.IsControlEnabled ||
+            (isInputConsumed != null && isInputConsumed()))
             return;
 
         HandleMoveInput();
@@ -59,7 +70,37 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         //HandleSkillInput(); // 스킬 연결 시, 활성화
     }
 
+    /// <summary>SW 수정: 입력과 회피에 같은 카메라를 연결한다.</summary>
+    public void BindInputCamera(Camera camera)
+    {
+        mainCamera = camera;
+        controller?.BindInputCamera(camera);
+    }
+
+    /// <summary>SW 수정: 입력 해석은 유지하고 공격·획득·핑의 확정만 외부 권한에 전달한다.</summary>
+    public void BindExternalActions(System.Func<Vector3, bool> attack, System.Action cancelAttack,
+        System.Func<Ray, bool> pickup, System.Action<Ray> ping)
+    {
+        combat.BindAttackRequest(attack);
+        cancelAttackRequest = cancelAttack;
+        pickupRequest = pickup;
+        pingRequest = ping;
+    }
+
+    private System.Func<bool> isInputConsumed;
+
+    /// <summary>SW 수정: UI에서 입력을 소비하는지 확인할 조건을 연결한다.</summary>
+    public void BindInputConsumption(System.Func<bool> inputConsumptionCheck) => isInputConsumed = inputConsumptionCheck;
+
+    /// <summary>SW 수정: 입력 처리가 비활성화되면 아이템과 적 추적 상태를 정리한다.</summary>
+    private void OnDisable()
+    {
+        CancelItemChase();
+        combat?.CancelChase();
+    }
+
     // 이동. 아이템 우클릭 시, collider 무시하고 아이템이 있던 위치로 이동.
+    /// <summary>SW 수정: 이동 명령을 내리기 전에 외부 공격 요청을 취소한다.</summary>
     private void HandleMoveInput()
     {
         if (!Input.GetMouseButton(1) || IsPointerOverUI() || !controller.IsControlEnabled)
@@ -75,6 +116,8 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         if (IsInLayerMask(hit.collider.gameObject.layer, inputBlockLayer))
             return;
 
+        cancelAttackRequest?.Invoke();
+
         // 이동 멈추지 않고 아이템과 적 추적 정보만 초기화.
         if (Input.GetMouseButtonDown(1))
         {
@@ -86,6 +129,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     }
 
     // 공격 및 아이템 획득
+    /// <summary>SW 수정: 빈 지점 공격도 외부 권한에 연결할 수 있는 공격 요청 경로로 전달한다.</summary>
     private void HandleAttackInput()
     {
         if ( ! Input.GetMouseButtonDown(0) || IsPointerOverUI())
@@ -134,22 +178,26 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         if(plane.Raycast(ray, out float distance))
         {
             CancelItemChase();
-            combat.TryAttack(ray.GetPoint(distance));
+            combat.RequestAttack(ray.GetPoint(distance));
         }
     }
 
     // 회피
+    /// <summary>SW 수정: 지정된 회피 입력을 사용하고 회피 성공 후 공격과 추적을 취소한다.</summary>
     private void HandleDodgeInput()
     {
-        if(Input.GetKeyDown(KeyCode.Space) && controller.CanDodge)
+        if(KeyBindingService.InputActions.Player.Dodge.triggered && controller.CanDodge)
         {
+            if (!controller.TryDodgeFromInput())
+                return;
+            cancelAttackRequest?.Invoke();
             CancelItemChase();
-            combat.CancelChase(); // 회피 쿨타임이어도 추적은 중지됨.
-            controller.TryDodge();
+            combat.CancelChase(); // 회피가 성공한 뒤 적 추적을 중지한다.
         }
     }
 
     // 아이템 위치 추적
+    /// <summary>SW 수정: 외부 획득 요청을 사용하고 해당 경로에서는 즉시 실패 경고를 생략한다.</summary>
     private void UpdateItemChase()
     {
         if(pendingItem == null || !pendingItem.gameObject.activeInHierarchy)
@@ -181,7 +229,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
 
         ItemDataStorage attemptedItem = pendingItem;
 
-        pickupInteractor.TryHandleClick(new Vector2(screenPos.x, screenPos.y));
+        RequestPickup(new Vector2(screenPos.x, screenPos.y));
 
         bool acquired = attemptedItem == null || !attemptedItem.gameObject.activeInHierarchy; // 아이템 획득 가능 여부 판단.
 
@@ -189,7 +237,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         pendingItem = null;
         hasItemDestination = false;
 
-        if(!acquired)
+        if (pickupRequest == null && !acquired)
         {
             Log.Print("아이템 위치까지 이동했지만 획득하지 못하였습니다.");
         }
@@ -218,22 +266,24 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     }
 
     // 좌클릭 시, 참조가 없다면 다시 탐색. 있다면 아이템 획득 메서드 호출
+    /// <summary>SW 수정: 외부 획득 요청이 있으면 로컬 참조 탐색을 생략하고 공격 취소 후 획득 또는 추적한다.</summary>
     private bool TryHandleWorldItemClick(Vector2 screenPos, ItemDataStorage clickedItem)
     {
         if(clickedItem == null || clickedItem.Item?.definition == null)
             return false;
 
-        if (!ResolvePickupInteractor())
+        if (pickupRequest == null && !ResolvePickupInteractor())
             return true;
 
         CancelItemChase();
+        cancelAttackRequest?.Invoke();
         combat.CancelChase();
 
         float pickupDistanceSqr = itemPickupDistance * itemPickupDistance;
 
         if(GetItemSqrDistance(clickedItem) <= pickupDistanceSqr)
         {
-            pickupInteractor.TryHandleClick(screenPos);
+            RequestPickup(screenPos);
 
             return true;
         }
@@ -244,6 +294,15 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         RefreshItemDestination();
 
         return true;
+    }
+
+    /// <summary>SW 수정: 획득 클릭을 외부 요청으로 전달하고 연결되지 않은 경우 기존 로컬 획득을 사용한다.</summary>
+    private void RequestPickup(Vector2 screenPosition)
+    {
+        if (pickupRequest != null)
+            pickupRequest(mainCamera.ScreenPointToRay(screenPosition));
+        else if (ResolvePickupInteractor())
+            pickupInteractor.TryHandleClick(screenPosition);
     }
 
     // 아이템이 이동할 경우 플레이어 이동경로 갱신
@@ -383,8 +442,14 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     //    }
     //}
 
+    /// <summary>SW 수정: 외부 핑 요청이 연결되어 있으면 클릭 광선을 전달하고 로컬 핑 생성을 생략한다.</summary>
     private void TrySpawnPing(Vector2 screenPosition)
     {
+        if (pingRequest != null)
+        {
+            pingRequest(mainCamera.ScreenPointToRay(screenPosition));
+            return;
+        }
         if (pingMarkerPrefab == null || mainCamera == null)
             return;
 

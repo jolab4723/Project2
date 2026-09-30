@@ -40,6 +40,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     private System.Func<bool> externalActionInProgress;
     private System.Action<Vector3, float> externalProjectile;
     private System.Action<int> externalSkill;
+    /// <summary>SW 수정: 착탄 위치·비행 시간·폭발 반경을 받아 외부 서버 권한으로 미사일을 생성하는 콜백이다.</summary>
+    private System.Action<Vector3, float, float> externalMissile;
     public System.Func<T_PlayerController, bool> ExternalBeginGrab { get; set; }
     public System.Action<T_PlayerController, Vector3> ExternalHoldGrab { get; set; }
     public System.Action<T_PlayerController, Vector3> ExternalEndGrab { get; set; }
@@ -53,6 +55,9 @@ public class WBH_EnemyCombat : MonoBehaviour
         externalProjectile = projectile;
         externalSkill = skill;
     }
+
+    /// <summary>SW 수정: 착탄 경고와 발사 시점은 원본에서 계산하고 생성만 외부 서버 권한에 전달한다.</summary>
+    public void BindExternalMissile(System.Action<Vector3, float, float> missile) => externalMissile = missile;
 
 
     private void Awake()
@@ -457,6 +462,7 @@ public class WBH_EnemyCombat : MonoBehaviour
     }    
 
     // 일제사격 탄막
+    /// <summary>SW 수정: 탄막의 발사 방향을 원본에서 계산하고, 외부 콜백이 있으면 각 투사체 생성을 서버 권한에 전달한다.</summary>
     public bool TryBarrage(int projectileCount, float spreadAngle, float maxDistance, float actionDuration)
     {
         if (IsActionInProgress || pattern.Target == null)
@@ -469,7 +475,18 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireMultipleProjectile(ProjectileType.NormalEnemy, 
+        if (externalProjectile != null)
+        {
+            int projectileTotal = Mathf.Max(1, projectileCount);
+            for (int projectileIndex = 0; projectileIndex < projectileTotal; projectileIndex++)
+            {
+                float spreadRotationDegrees = projectileTotal > 1
+                    ? -spreadAngle * 0.5f + spreadAngle * projectileIndex / (projectileTotal - 1)
+                    : 0f;
+                externalProjectile(Quaternion.Euler(0f, spreadRotationDegrees, 0f) * dir, maxDistance);
+            }
+        }
+        else projectileSpawner.FireMultipleProjectile(ProjectileType.NormalEnemy,
                                                  pattern.FirePoint.position, 
                                                  dir, 
                                                  request, 
@@ -541,9 +558,17 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 미사일 실제 발사 메서드
+    /// <summary>SW 수정: 예정된 발사 시점에 외부 콜백으로 미사일 생성을 전달하고, 콜백이 없으면 기존 투사체 생성기를 사용한다.</summary>
     private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius, WBH_EnemyEffectCue impactEffectCue)
     {
         yield return new WaitForSeconds(delay);
+
+        if (externalMissile != null)
+        {
+            float travelDistance = Mathf.Min(Vector3.Distance(spawnPos, impactPos), missileMaxDistance);
+            externalMissile(impactPos, Mathf.Max(minMissileFlightTime, travelDistance / Mathf.Max(0.01f, status.ProjectileSpeed)), explosionRadius);
+            yield break;
+        }
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 

@@ -104,13 +104,13 @@ public sealed partial class MirrorNetworkManager
     /// <summary>현재 캠프의 실제 의뢰 NPC를 연결한다. 요청의 거리 검증에도 같은 객체를 사용한다.</summary>
     public void BindQuestBoard(QuestBoardNPC board)
     {
-        if (board != null && board.gameObject.scene.path == SessionCampGameplayScene)
+        if (board != null && board.gameObject.scene.path == GetCurrentCampScene())
             serverQuestBoard = board;
     }
 
     private void BeginQuestVisit(string sceneName)
     {
-        if (sceneName != SessionCampGameplayScene) return;
+        if (sceneName != GetCurrentCampScene()) return;
         questVisit++;
         sharedQuestOffer = null;
         questRerolled = questAccepted = false;
@@ -121,7 +121,7 @@ public sealed partial class MirrorNetworkManager
     public bool RequestQuest(QuestBoardNPC.RequestKind kind)
     {
         if (!NetworkClient.ready || !clientCompatibilityConfirmed || LocalPlayerContext == null ||
-            SceneManager.GetActiveScene().path != SessionCampGameplayScene)
+            SceneManager.GetActiveScene().path != GetCurrentCampScene())
             return false;
         NetworkClient.Send(new MirrorQuestRequest
         {
@@ -138,7 +138,8 @@ public sealed partial class MirrorNetworkManager
         PlayerContext actor = member?.RuntimeContext;
         if (actor == null || actor.Controller == null || actor.Health == null || actor.Health.CurrentHealth <= 0 ||
             actor.GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent == true ||
-            serverQuestBoard == null || SceneManager.GetActiveScene().path != SessionCampGameplayScene ||
+            serverQuestBoard == null || SceneManager.GetActiveScene().path != GetCurrentCampScene() ||
+            serverQuestBoard.gameObject.scene.path != GetCurrentCampScene() ||
             (actor.transform.position - serverQuestBoard.transform.position).sqrMagnitude > 25f)
         {
             SendQuests(connection, false, "의뢰 NPC 가까이에서 다시 시도하세요.");

@@ -849,24 +849,4 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
                player.connectionToClient != null && player.TryGetComponent(out PlayerContext _);
     }
 
-#if UNITY_EDITOR
-    [ContextMenu("Mirror Test/Validate Elevator Rules")]
-    private void ValidateElevatorRules()
-    {
-        StageNodeSaveData later = new() { id = "A1_F02_N00", floor = 2, nodeIndex = 0, type = StageNodeType.Battle };
-        StageNodeSaveData first = new() { id = "A1_F01_N01", floor = 1, nodeIndex = 1, type = StageNodeType.Battle };
-        StageNodeSaveData elite = new() { id = "A1_F01_N00", floor = 1, nodeIndex = 0, type = StageNodeType.Elite };
-        Debug.Assert(FindDesignatedBattleNode(new List<StageNodeSaveData> { later, elite, first }) == first);
-        Debug.Assert(CanStartRide(true, false, 1, 1));
-        Debug.Assert(CanStartRide(true, false, 2, 2));
-        Debug.Assert(CanStartRide(true, false, 4, 4));
-        Debug.Assert(!CanStartRide(true, false, 4, 3));
-        Debug.Assert(!CanStartRide(true, false, 0, 0));
-        Debug.Assert(!CanStartRide(true, true, 4, 4));
-        Debug.Assert(!CanDescend(true, 0));
-        Debug.Assert(!CanDescend(false, 1));
-        Debug.Assert(CanDescend(false, 0));
-        Debug.Log("[MirrorFourPlayerElevator] 활성화, 탑승, 상층 점유 규칙 검사를 통과했습니다.", this);
-    }
-#endif
 }

@@ -1,11 +1,9 @@
 using EnemySystem;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// WBH 보스/엘리트 체력바 Prefab을 Mirror 서버가 확정한 체력 상태에 연결하는 클라이언트 전용 어댑터다.
-/// 원본 <see cref="WBH_HighEnemyHpbarView"/>는 로컬 WBH_EnemyStatus 이벤트를 전제로 하므로 비활성화한다.
+/// 표시는 연결된 <see cref="WBH_HighEnemyHpbarView"/>의 외부 입력 API로 전달한다.
 /// 보스 씬에서는 보스 체력바만, 엘리트 씬에서는 엘리트 체력바만 상호 배타적으로 노출하여 중첩을 원천 방지한다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -13,220 +11,144 @@ public sealed class NetworkBossHealthBar : MonoBehaviour
 {
     private const float SearchInterval = 0.25f;
 
-    [SerializeField] private GameObject viewRoot;
-    [SerializeField] private GameObject bossBarRoot;
-    [SerializeField] private GameObject eliteBarRoot;
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private TMP_Text bossNameText;
-    [SerializeField] private TMP_Text healthText;
-    [SerializeField] private Slider eliteHealthSlider;
-    [SerializeField] private TMP_Text eliteNameText;
-    [SerializeField] private TMP_Text eliteHealthText;
     [SerializeField] private WBH_HighEnemyHpbarView productionView;
     [SerializeField] private NetworkEnemyWaveSpawner waveSpawner;
 
     private NetworkEnemyAuthority boundEnemy;
+    private Transform boundPlayer;
+    private bool ownsExternalBinding;
     private float nextSearchAt;
     private float displayedHealth = float.NaN;
     private float displayedMaxHealth = float.NaN;
 
     public NetworkEnemyAuthority BoundBoss => (boundEnemy != null && IsBoss(boundEnemy)) ? boundEnemy : null;
     public NetworkEnemyAuthority BoundElite => (boundEnemy != null && IsElite(boundEnemy)) ? boundEnemy : null;
-    public bool IsVisible => (bossBarRoot != null && bossBarRoot.activeSelf) || (eliteBarRoot != null && eliteBarRoot.activeSelf);
+    public bool IsVisible => ownsExternalBinding && productionView != null && productionView.IsExternalVisible;
 
-    private void Awake()
-    {
-        // 1. 씬 내의 모든 WBH_HighEnemyHpbarView(Canvas_HUD 등 포함)를 비활성화하고,
-        // 하위의 EliteBar/BossBar 유령 체력바가 중복 노출되지 않도록 정리한다.
-        CleanupProductionHighEnemyHpBars();
-
-        // 2. 엘리트 UI 컴포넌트 자동 바인딩 (미할당 시)
-        ResolveEliteComponents();
-
-        // 3. 시작 시 모든 바 비활성화
-        if (bossBarRoot != null) bossBarRoot.SetActive(false);
-        if (eliteBarRoot != null) eliteBarRoot.SetActive(false);
-        if (viewRoot != null) viewRoot.SetActive(false);
-
-    }
-
-    private void ResolveEliteComponents()
-    {
-        if (eliteBarRoot == null) return;
-        if (eliteHealthSlider == null)
-            eliteHealthSlider = eliteBarRoot.GetComponentInChildren<Slider>(true);
-        if (eliteNameText == null || eliteHealthText == null)
-        {
-            var texts = eliteBarRoot.GetComponentsInChildren<TMP_Text>(true);
-            foreach (var t in texts)
-            {
-                if (eliteNameText == null && t.name.Contains("Name"))
-                    eliteNameText = t;
-                else if (eliteHealthText == null && (t.name.Contains("HP") || t.name.Contains("Label")))
-                    eliteHealthText = t;
-            }
-        }
-    }
-
-    private void CleanupProductionHighEnemyHpBars()
-    {
-        var views = FindObjectsByType<WBH_HighEnemyHpbarView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (var view in views)
-        {
-            if (view == null) continue;
-            view.enabled = false;
-            for (int i = 0; i < view.transform.childCount; i++)
-            {
-                var child = view.transform.GetChild(i);
-                if (child.name.Contains("Bar"))
-                    child.gameObject.SetActive(false);
-            }
-        }
-
-        var canvasHud = GameObject.Find("Canvas_HUD");
-        if (canvasHud != null)
-        {
-            var highBar = canvasHud.transform.Find("HUDManager/Top/HighEnemyHpBar");
-            if (highBar != null)
-            {
-                var eb = highBar.Find("EliteBar");
-                if (eb != null) eb.gameObject.SetActive(false);
-                var bb = highBar.Find("BossBar");
-                if (bb != null) bb.gameObject.SetActive(false);
-            }
-        }
-    }
+    private void OnDisable() => ClearEnemy();
 
     private void Update()
     {
-        if (!Mirror.NetworkClient.active)
+        if (!Mirror.NetworkClient.active || productionView == null || !productionView.isActiveAndEnabled ||
+            waveSpawner == null || !waveSpawner.isActiveAndEnabled)
         {
-            BindEnemy(null);
+            ClearEnemy();
             return;
         }
 
+        PlayerContext localContext = (Mirror.NetworkManager.singleton as MirrorNetworkManager)?.LocalPlayerContext;
+        if (localContext == null || !localContext.gameObject.activeInHierarchy)
+        {
+            ClearEnemy();
+            return;
+        }
 
-        if (boundEnemy == null || boundEnemy.IsDead)
+        Transform localPlayer = localContext.transform;
+        if (boundPlayer != localPlayer || !IsValidTarget(boundEnemy))
+            ClearEnemy();
+
+        if (boundEnemy == null)
         {
             if (Time.unscaledTime < nextSearchAt)
                 return;
 
             nextSearchAt = Time.unscaledTime + SearchInterval;
-            BindEnemy(FindTargetEnemy());
-        }
-
-        if (boundEnemy == null || boundEnemy.IsDead)
-        {
-            HideAllBars();
+            BindEnemy(FindTargetEnemy(localPlayer), localPlayer);
             return;
         }
 
         RefreshDisplay();
     }
 
-    private void BindEnemy(NetworkEnemyAuthority enemy)
+    private void BindEnemy(NetworkEnemyAuthority enemy, Transform localPlayer)
     {
-        if (boundEnemy == enemy)
+        if (boundEnemy == enemy && boundPlayer == localPlayer)
+            return;
+
+        ClearEnemy();
+        if (enemy == null)
             return;
 
         boundEnemy = enemy;
-        displayedHealth = float.NaN;
-        displayedMaxHealth = float.NaN;
-
-        if (boundEnemy == null)
-        {
-            HideAllBars();
-            return;
-        }
-
-        bool isBoss = IsBoss(boundEnemy);
-        if (isBoss)
-        {
-            if (eliteBarRoot != null) eliteBarRoot.SetActive(false);
-            if (bossBarRoot != null) bossBarRoot.SetActive(true);
-            if (viewRoot != null) viewRoot.SetActive(true);
-            if (bossNameText != null)
-                bossNameText.text = boundEnemy.EnemyInfo?.enemyName ?? string.Empty;
-        }
-        else
-        {
-            if (bossBarRoot != null) bossBarRoot.SetActive(false);
-            if (viewRoot != null) viewRoot.SetActive(false);
-            if (eliteBarRoot != null) eliteBarRoot.SetActive(true);
-            if (eliteNameText != null)
-                eliteNameText.text = boundEnemy.EnemyInfo?.enemyName ?? string.Empty;
-        }
-
+        boundPlayer = localPlayer;
         RefreshDisplay();
     }
 
-    private void HideAllBars()
+    private void ClearEnemy()
     {
-        if (bossBarRoot != null && bossBarRoot.activeSelf)
-            bossBarRoot.SetActive(false);
-        if (eliteBarRoot != null && eliteBarRoot.activeSelf)
-            eliteBarRoot.SetActive(false);
-        if (viewRoot != null && viewRoot.activeSelf)
-            viewRoot.SetActive(false);
+        // 네트워크에서 연결했던 View만 한 번 해제하여 싱글 체력바의 바인딩을 건드리지 않는다.
+        if (ownsExternalBinding && productionView != null)
+            productionView.ClearExternal();
+
+        ownsExternalBinding = false;
+        boundEnemy = null;
+        boundPlayer = null;
+        displayedHealth = float.NaN;
+        displayedMaxHealth = float.NaN;
     }
 
     private void RefreshDisplay()
     {
-        if (boundEnemy == null) return;
+        if (boundEnemy == null)
+            return;
 
         float currentHealth = boundEnemy.CurrentHealth;
         float maxHealth = boundEnemy.MaxHealth;
-        if (Mathf.Approximately(currentHealth, displayedHealth) &&
-            Mathf.Approximately(maxHealth, displayedMaxHealth))
+        if (currentHealth == displayedHealth && maxHealth == displayedMaxHealth)
         {
             return;
         }
 
         displayedHealth = currentHealth;
         displayedMaxHealth = maxHealth;
-        float ratio = maxHealth > 0f ? Mathf.Clamp01(currentHealth / maxHealth) : 0f;
-
         bool isBoss = IsBoss(boundEnemy);
-        if (isBoss)
+        if (!isBoss && !IsWithinEliteDistance(boundEnemy, boundPlayer))
+            return;
+
+        // 공통 View가 거리 이탈로 숨긴 뒤에는 같은 체력으로 다시 열지 않는다.
+        // 대상과 체력 캐시는 유지하고, 거리 내에서 체력이 실제로 바뀔 때만 재연결한다.
+        if (!ownsExternalBinding || !productionView.IsExternalVisible)
         {
-            if (healthSlider != null) healthSlider.value = ratio;
-            if (healthText != null)
-            {
-                healthText.SetText(
-                    "{0:0} / {1:0}",
-                    Mathf.CeilToInt(currentHealth),
-                    Mathf.CeilToInt(maxHealth));
-            }
+            productionView.BindExternal(
+                boundEnemy.transform, boundEnemy.EnemyInfo, currentHealth, maxHealth, isBoss, boundPlayer);
+            ownsExternalBinding = true;
+            return;
         }
-        else
-        {
-            if (eliteHealthSlider != null) eliteHealthSlider.value = ratio;
-            if (eliteHealthText != null)
-            {
-                eliteHealthText.SetText(
-                    "{0:0} / {1:0}",
-                    Mathf.CeilToInt(currentHealth),
-                    Mathf.CeilToInt(maxHealth));
-            }
-        }
+
+        productionView.UpdateExternalHealth(currentHealth, maxHealth, boundEnemy.IsDead);
     }
 
-    private NetworkEnemyAuthority FindTargetEnemy()
+    private bool IsValidTarget(NetworkEnemyAuthority enemy)
     {
-        waveSpawner ??= FindFirstObjectByType<NetworkEnemyWaveSpawner>();
-        bool isBossStage = waveSpawner != null ? waveSpawner.IsBossSession : UnityEngine.SceneManagement.SceneManager.GetActiveScene().name.Contains("Boss");
+        if (enemy == null || !enemy.isActiveAndEnabled || enemy.IsDead ||
+            enemy.CurrentHealth <= 0f || enemy.MaxHealth <= 0f)
+            return false;
 
+        return waveSpawner.IsBossSession
+            ? IsBoss(enemy)
+            : !IsBoss(enemy) && IsElite(enemy) && enemy.CurrentHealth < enemy.MaxHealth;
+    }
+
+    private bool IsWithinEliteDistance(NetworkEnemyAuthority enemy, Transform localPlayer)
+    {
+        return localPlayer != null &&
+               (localPlayer.position - enemy.transform.position).sqrMagnitude <=
+               productionView.HideDistance * productionView.HideDistance;
+    }
+
+    private NetworkEnemyAuthority FindTargetEnemy(Transform localPlayer)
+    {
         NetworkEnemyAuthority[] enemies =
             FindObjectsByType<NetworkEnemyAuthority>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
 
-        if (isBossStage)
+        if (waveSpawner.IsBossSession)
         {
             // 보스 씬: 오직 보스만 탐색 (엘리트는 절대 탐색/노출하지 않음)
             foreach (var enemy in enemies)
             {
-                if (enemy != null && !enemy.IsDead && IsBoss(enemy))
+                if (IsValidTarget(enemy))
                     return enemy;
             }
             return null;
@@ -236,7 +158,7 @@ public sealed class NetworkBossHealthBar : MonoBehaviour
             // 엘리트/일반 씬: 엘리트 몬스터만 탐색
             foreach (var enemy in enemies)
             {
-                if (enemy != null && !enemy.IsDead && IsElite(enemy))
+                if (IsValidTarget(enemy) && IsWithinEliteDistance(enemy, localPlayer))
                     return enemy;
             }
             return null;
