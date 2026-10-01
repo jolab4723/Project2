@@ -99,7 +99,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.SetTarget(target);
         enemy.gameObject.SetActive(true);
 
-        if (isShowSpawnEffect = false && effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
+        if (isShowSpawnEffect == false && effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
         {
             effectSpawner.SpawnEffect(spawnEffect, 
                                       enemy.transform.position + spawnEffectOffset,
