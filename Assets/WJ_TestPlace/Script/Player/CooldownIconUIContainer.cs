@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 쿨타임이 진행 중인 발동형 고유효과(TriggeredBuffUniqueEffectSO) 아이템만 아이콘으로 나열해서
+/// SW 수정: 쿨타임이 진행 중인 발동 버프와 실제 싱글 플레이어의 파동·폭발을 아이콘으로 나열해서
 /// 보여주는 HUD UI. BuffIconUIContainer의 파생이지만, 쿨타임은 PlayerBuffManager 같은 중앙 리스트가
 /// 없고 각 TriggeredBuffUniqueEffectSO 에셋이 개별적으로 쿨타임을 들고 있다(ItemTriggerManager.Fire()와
-/// 같은 구조). 그래서 변경 이벤트를 구독하는 대신, 장착 아이템 + 보유 유물을 매 프레임 직접 순회해서
+/// 같은 구조). 파동·폭발은 소유 PlayerItemEffectState의 쿨타임을 읽는다. 그래서 변경 이벤트를 구독하는 대신, 장착 아이템 + 보유 유물을 매 프레임 직접 순회해서
 /// 지금 쿨타임 중인 것만 골라낸다 - ItemTriggerManager.Fire()/FireRelics()와 같은 순회 범위를 쓴다.
 /// </summary>
 public class CooldownIconUIContainer : MonoBehaviour
@@ -15,7 +15,9 @@ public class CooldownIconUIContainer : MonoBehaviour
     private struct CooldownEntry
     {
         public ItemInstance item;
-        public TriggeredBuffUniqueEffectSO effect;
+        // SW 수정: 파동·폭발도 기존 슬롯을 사용하고 실제 소유자 상태를 주입한다.
+        public UniqueEffectSO effect;
+        public PlayerItemEffectState ownerEffects;
         // null이 아니면 고유효과 대신 거너 아크 레이저(진화1)의 발사 간격(4초) 항목이다.
         public GunnerSkillController arcLaser;
     }
@@ -39,6 +41,7 @@ public class CooldownIconUIContainer : MonoBehaviour
             slotParent = transform;
     }
 
+    /// <summary>SW 수정: 싱글의 진행 중인 버프·파동·폭발 쿨다운과 기존 아크 레이저를 같은 슬롯 풀에 표시한다.</summary>
     private void Update()
     {
         if (iconSlotPrefab == null)
@@ -61,7 +64,7 @@ public class CooldownIconUIContainer : MonoBehaviour
             if (onCooldown[i].arcLaser != null)
                 BindArcLaser(pool[i], onCooldown[i].arcLaser);
             else
-                pool[i].Bind(onCooldown[i].item, onCooldown[i].effect);
+                pool[i].Bind(onCooldown[i].item, onCooldown[i].effect, onCooldown[i].ownerEffects);
         }
 
         // 새로 만든 슬롯은 GridLayoutGroup이 다음 레이아웃 갱신에서야 자리를 잡아준다. 그전까지는
@@ -142,10 +145,17 @@ public class CooldownIconUIContainer : MonoBehaviour
         slot.BindArcLaser(gunner, definition != null ? definition.icon : null, name, description);
     }
 
+    /// <summary>SW 수정: 기존 싱글 버프 또는 바인딩된 실제 플레이어의 처형 파동·스타 브리처 폭발이 쿨다운 중인 아이템만 수집한다.</summary>
     private void TryCollect(ItemInstance itemData)
     {
         var uniqueEffect = itemData?.definition != null ? itemData.definition.uniqueEffect : null;
         if (uniqueEffect is TriggeredBuffUniqueEffectSO triggered && triggered.GetRemainingCooldown(itemData) > 0f)
             onCooldown.Add(new CooldownEntry { item = itemData, effect = triggered });
+        else if (uniqueEffect is PhaseHarvesterWaveUniqueEffectSO or StarBreacherExplosionUniqueEffectSO)
+        {
+            PlayerItemEffectState owner = InventoryController.Instance?.BoundPlayer?.Effects;
+            if (owner != null && owner.GetRemainingCooldown(itemData) > 0f)
+                onCooldown.Add(new CooldownEntry { item = itemData, effect = uniqueEffect, ownerEffects = owner });
+        }
     }
 }

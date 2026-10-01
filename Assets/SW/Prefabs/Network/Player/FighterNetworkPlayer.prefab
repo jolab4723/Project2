@@ -195,6 +195,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6184000000000000001}
+    - targetCorrespondingSourceObject: {fileID: 8874953783023553297, guid: ac0352209e99eb446babcad427ac4372, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2143954758580755470}
   m_SourcePrefab: {fileID: 100100000, guid: ac0352209e99eb446babcad427ac4372, type: 3}
 --- !u!114 &354411757978519734 stripped
 MonoBehaviour:
@@ -676,6 +679,28 @@ MonoBehaviour:
   health: {fileID: 354411757978519734}
   mana: {fileID: 1058511355708838084}
   buffs: {fileID: 1153837035469029928}
+--- !u!114 &2143954758580755470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2429587572153738188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62d42c1c08d0a614297f4ac2bb8071d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkPlayerPing
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  pingMarkerPrefab: {fileID: 1815412830321472, guid: 9af69c04bd54c9948a767f8bafea5970, type: 3}
+  pingGroundLayer:
+    serializedVersion: 2
+    m_Bits: 8192
+  pingLifetime: 1
+  pingCooldown: 0.3
+  pingSurfaceOffset: 0.03
 --- !u!4 &3097475621473565046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8098030532292546987, guid: ac0352209e99eb446babcad427ac4372, type: 3}

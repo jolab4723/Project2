@@ -325,6 +325,7 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         StateApplied?.Invoke();
     }
 
+    /// <summary>SW 수정: 서버 BuffSnapshot을 클라이언트의 기존 아이콘 상태로 복원하며 폐열만 실제 0스택을 유지하고 다른 버프의 최소 1 규칙은 보존한다.</summary>
     private void ApplyClientBuffs(BuffSnapshot[] snapshots)
     {
         if (context?.Buffs == null)
@@ -349,7 +350,7 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
                 if (!ReferenceEquals(active.source, source))
                     continue;
 
-                active.stackCount = Mathf.Max(1, snapshot.stackCount);
+                active.stackCount = Mathf.Max(source is WasteHeatDischargeUniqueEffectSO ? 0 : 1, snapshot.stackCount);
                 active.remainingTime = Mathf.Max(0f, snapshot.remainingTime);
                 break;
             }

@@ -56,7 +56,7 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
         Refresh();
     }
 
-    /// <summary>남은 지속시간/스택 수처럼 매 프레임 바뀌는 값만 갱신한다. 목록 재구성 없이 매 프레임 호출된다.</summary>
+    /// <summary>SW 수정: 남은 지속시간/스택 수를 기존 싱글·클라이언트 버프 상태에서 갱신하며 폐열은 0과 1도 표시한다. 목록 재구성 없이 매 프레임 호출된다.</summary>
     public void Refresh()
     {
         IBuffSource source = boundInstance?.source;
@@ -77,7 +77,7 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
         if (stackText != null)
         {
-            bool showStack = boundInstance.stackCount > 1;
+            bool showStack = source is WasteHeatDischargeUniqueEffectSO || boundInstance.stackCount > 1;
             stackText.gameObject.SetActive(showStack);
             if (showStack)
                 stackText.text = boundInstance.stackCount.ToString();

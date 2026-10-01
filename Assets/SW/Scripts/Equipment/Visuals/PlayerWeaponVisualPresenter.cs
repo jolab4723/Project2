@@ -36,6 +36,8 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     private string pendingItemId;
     private string pooledItemId;
     private GameObject currentVisual;
+    /// <summary>SW 수정: 싱글·클라이언트의 확정 효과 표시가 현재 장착 무기 Renderer만 읽도록 외형 경계를 제공한다.</summary>
+    internal GameObject CurrentVisual => currentVisual;
     private GameObject pooledVisual;
     private Transform currentLeftHandGrip;
     private int visualRequestVersion;

@@ -216,7 +216,7 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
         boundPlayerBinder = context.GetComponent<MirrorSpawnedPlayerBinder>();
         boundInventorySync = context.GetComponent<PlayerInventorySync>();
         boundInventorySync?.BindLocalInventoryView(inventoryView);
-        boundShopState = FindInBinderScene<NetworkShopState>();
+        boundShopState = inventoryView.HasShop ? FindInBinderScene<NetworkShopState>() : null;
         boundShopState?.BindLocalView(context, inventoryView);
         upgradeButton?.Bind(context);
         formalHudBridge?.Bind(context);
@@ -330,7 +330,8 @@ public sealed class MirrorLocalPlayerUIBinder : MonoBehaviour, IItemReceiver
     /// </summary>
     private void EnsureSceneShopBinding()
     {
-        if (boundContext == null || inventoryView == null)
+        // 전투 씬에는 상점이 없다. 캠프 UI가 연결된 경우에만 서버 Spawn을 기다린다.
+        if (boundContext == null || inventoryView == null || !inventoryView.HasShop)
             return;
 
         if (boundShopState != null && boundShopState.gameObject.scene == gameObject.scene)

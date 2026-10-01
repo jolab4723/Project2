@@ -87,6 +87,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
     private readonly Queue<uint> processedRequestOrder = new();
 
     private PlayerInventorySync inventorySync;
+    private NetworkShopState pendingShopState;
     private StatSet serverPassiveStats;
     private uint nextRequestId;
     private string pendingSettlementId;
@@ -158,12 +159,14 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         nextRequestId = 0;
         pendingRequestIds.Clear();
         waitingForState.Clear();
+        pendingShopState = null;
     }
 
     public override void OnStopLocalPlayer()
     {
         pendingRequestIds.Clear();
         waitingForState.Clear();
+        pendingShopState = null;
         base.OnStopLocalPlayer();
     }
 
@@ -265,20 +268,11 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         if (!isLocalPlayer || waitingForState.Count == 0)
             return;
 
-        NetworkShopState shop =
-            FindFirstObjectByType<NetworkShopState>();
-        if (shop == null || inventorySync == null)
-            return;
-
         List<uint> completedIds = null;
         foreach (KeyValuePair<uint, MirrorShopRequestCompleted> pair in waitingForState)
         {
             MirrorShopRequestCompleted completed = pair.Value;
-            bool shopReady = shop.StateRevision >= completed.AuthoritativeShopRevision;
-            bool inventoryReady = completed.Operation == MirrorShopOperation.Reroll ||
-                                  inventorySync.StateRevision >= completed.AuthoritativeInventoryRevision;
-
-            if (!shopReady || !inventoryReady)
+            if (!IsRequestStateReady(completed))
                 continue;
 
             completedIds ??= new List<uint>();
@@ -309,7 +303,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         if (string.IsNullOrWhiteSpace(instanceId) ||
             shop == null ||
             inventorySync == null ||
-            !TryBeginLocalRequest(out requestId))
+            !TryBeginLocalRequest(shop, out requestId))
         {
             return false;
         }
@@ -338,7 +332,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         if (string.IsNullOrWhiteSpace(instanceId) ||
             shop == null ||
             inventorySync == null ||
-            !TryBeginLocalRequest(out requestId))
+            !TryBeginLocalRequest(shop, out requestId))
         {
             return false;
         }
@@ -359,7 +353,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         requestId = 0;
         NetworkShopState shop = ResolveShopState();
 
-        if (shop == null || !TryBeginLocalRequest(out requestId))
+        if (shop == null || !TryBeginLocalRequest(shop, out requestId))
             return false;
 
         CmdReroll(requestId, shop.StateRevision);
@@ -516,13 +510,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
             authoritativeShopRevision,
             authoritativeInventoryRevision);
 
-        NetworkShopState shop = ResolveShopState();
-        bool shopReady = shop != null && shop.StateRevision >= authoritativeShopRevision;
-        bool inventoryReady = operation == MirrorShopOperation.Reroll ||
-                              (inventorySync != null &&
-                               inventorySync.StateRevision >= authoritativeInventoryRevision);
-
-        if (!shopReady || !inventoryReady)
+        if (!IsRequestStateReady(completed))
         {
             waitingForState[requestId] = completed;
             return;
@@ -531,7 +519,19 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
         CompleteLocalRequest(completed);
     }
 
-    private bool TryBeginLocalRequest(out uint requestId)
+    private bool IsRequestStateReady(MirrorShopRequestCompleted completed)
+    {
+        // 재고 상태 번호는 상점 인스턴스별 값이다. 캠프를 떠나 원본 상점이 파괴됐으면
+        // 다음 씬의 상점을 기다리지 않되, 구매·판매로 바뀐 플레이어 인벤토리는 끝까지 기다린다.
+        bool shopReady = pendingShopState == null ||
+                         pendingShopState.StateRevision >= completed.AuthoritativeShopRevision;
+        bool inventoryReady = completed.Operation == MirrorShopOperation.Reroll ||
+                              (inventorySync != null &&
+                               inventorySync.StateRevision >= completed.AuthoritativeInventoryRevision);
+        return shopReady && inventoryReady;
+    }
+
+    private bool TryBeginLocalRequest(NetworkShopState shop, out uint requestId)
     {
         requestId = 0;
 
@@ -549,6 +549,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
 
         requestId = nextRequestId;
         pendingRequestIds.Add(requestId);
+        pendingShopState = shop;
         return true;
     }
 
@@ -569,6 +570,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
     private void CompleteLocalRequest(MirrorShopRequestCompleted completed)
     {
         pendingRequestIds.Remove(completed.RequestId);
+        pendingShopState = null;
         if (completed.Result != MirrorShopRequestResult.Success)
             Debug.LogWarning($"[NetworkShopPlayerState] {completed.Operation}: {completed.Result}", this);
         RequestCompleted?.Invoke(completed);

@@ -265,6 +265,10 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     public bool IsServerDamageHandlingActive => netIdentity != null && netIdentity.isServer && serverDamageSubscribed;
     private bool serverDamageSubscribed;
 
+    private static readonly System.Reflection.FieldInfo ControllerInfoField =
+        typeof(WBH_EnemyController).GetField(
+            "info", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
     public override void OnStartClient()
     {
         base.OnStartClient();
@@ -277,6 +281,9 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
 
         if (enemyInfo != null)
         {
+            // 원격 Client는 controller.Initialize를 거치지 않아 Info가 비어 미니맵 등 표시 코드가 적을 건너뛴다.
+            // AI·전투 초기화 없이 표시용 Info만 BH 원본을 수정하지 않고 연결한다.
+            if (controller != null) ControllerInfoField?.SetValue(controller, enemyInfo);
             // 기존 효과가 읽는 표시용 스탯도 초기화한다. 피해·AI 권한은 서버에 유지한다.
             status?.Initialize(enemyInfo);
             OnEffectPlaybackSpeedChanged(effectPlaybackSpeed, effectPlaybackSpeed);
