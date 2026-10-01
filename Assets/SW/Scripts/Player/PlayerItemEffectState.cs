@@ -50,7 +50,7 @@ public sealed class PlayerItemEffectState
     public uint GlassRailResolvedHitCount => glassRailResolvedHitCount;
     public bool PreparedAttackReady => preparedAttackReady;
     public uint PreparedAttackConsumeCount => preparedAttackConsumeCount;
-    private double Now => context.GetComponent<Mirror.NetworkIdentity>() != null ? Mirror.NetworkTime.time : Time.timeAsDouble;
+    internal double Now => context.GetComponent<Mirror.NetworkIdentity>() != null ? Mirror.NetworkTime.time : Time.timeAsDouble;
     public bool CanExecute => context.GetComponent<Mirror.NetworkIdentity>() is { } identity
         ? identity.isServer : !Mirror.NetworkServer.active && !Mirror.NetworkClient.active;
 
@@ -150,9 +150,9 @@ public sealed class PlayerItemEffectState
         if (!CanExecute || effect == null || attackId == 0 || lastPhaseHarvesterAttackId == attackId)
             return;
         lastPhaseHarvesterAttackId = attackId;
-        string key = GetPhaseHarvesterCooldownKey(effect);
+        string key = GetCooldownKey(effect, null);
         double now = Now;
-        if (cooldownEndTimes.TryGetValue(key, out double end) && now < end)
+        if (IsCoolingDown(key, now))
             return;
         if (!float.IsFinite(effect.length) || effect.length <= 0f ||
             !float.IsFinite(effect.width) || effect.width <= 0f ||
@@ -163,32 +163,19 @@ public sealed class PlayerItemEffectState
         cooldownEndTimes[key] = now + effect.cooldownSeconds;
         Vector3 start = deathPosition + Vector3.up;
         Vector3 right = Vector3.Cross(Vector3.up, forward);
-        var targets = new List<WBH_ICombat>();
-        var seen = new HashSet<WBH_ICombat>();
-        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
-        foreach (Collider hit in Physics.OverlapBox(start + forward * (effect.length * 0.5f),
-                     new Vector3(effect.width * 0.5f, 1f, effect.length * 0.5f),
-                     Quaternion.LookRotation(forward), 1 << 10, QueryTriggerInteraction.Collide))
-        {
-            WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
-            if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
-                !seen.Add(target) || target.Status == null || target.Status.IsDead)
-                continue;
-            Vector3 position = component.GetComponentInParent<NetworkEnemyAuthority>()?.transform.position
-                ?? component.transform.position;
-            Vector3 offset = position - deathPosition;
-            float distance = Vector3.Dot(offset, forward);
-            // SW 수정: 본체 원점을 기준으로 통로를 제한하며 0.5m를 넘는 높이 차는 다른 층/단차로 제외한다.
-            if (distance < 0f || distance > effect.length ||
-                Mathf.Abs(Vector3.Dot(offset, right)) > effect.width * 0.5f || Mathf.Abs(offset.y) > 0.5f ||
-                Physics.Linecast(start, position + Vector3.up, obstacles, QueryTriggerInteraction.Ignore))
-                continue;
-            targets.Add(target);
-        }
+        List<WBH_ICombat> targets = CollectLivingBodies(Physics.OverlapBox(start + forward * (effect.length * 0.5f),
+                new Vector3(effect.width * 0.5f, 1f, effect.length * 0.5f),
+                Quaternion.LookRotation(forward), EnemyLayerMask, QueryTriggerInteraction.Collide), start,
+            position =>
+            {
+                Vector3 offset = position - deathPosition;
+                float distance = Vector3.Dot(offset, forward);
+                // SW 수정: 본체 원점을 기준으로 통로를 제한하며 0.5m를 넘는 높이 차는 다른 층/단차로 제외한다.
+                return distance >= 0f && distance <= effect.length &&
+                    Mathf.Abs(Vector3.Dot(offset, right)) <= effect.width * 0.5f && Mathf.Abs(offset.y) <= 0.5f;
+            });
         targets.Sort((left, rightTarget) => CompareBodyDistance(left, rightTarget, deathPosition));
-        for (int index = 0; index < Mathf.Min(targets.Count, Mathf.Clamp(effect.maxTargets, 1, 16)); index++)
-            PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], ElementType.None,
-                effect.damageMultiplier, null, DamageCause.Effect, attackId, canCrit: false);
+        EnqueueEffectTargets(targets, effect.maxTargets, ElementType.None, effect.damageMultiplier, attackId);
         PhaseHarvesterPresented?.Invoke(start, start + forward * effect.length, effect.width);
     }
 
@@ -212,69 +199,104 @@ public sealed class PlayerItemEffectState
         {
             count = 0;
             buffs.SetBuffStack(effect, 0);
-            if (generation != heatGeneration || heatEffect != effect || !context.isActiveAndEnabled || context.Controller.Status.IsDead) return;
+            if (!IsHeatLifetime(effect, generation)) return;
             WasteHeatReadyChanged?.Invoke(false);
         }
-        if (generation != heatGeneration || heatEffect != effect || !context.isActiveAndEnabled || context.Controller.Status.IsDead) return;
+        if (!IsHeatLifetime(effect, generation)) return;
         lastHeatAttackId = attackId;
         lastHeatHitTime = now;
         if (count < effect.requiredHeat)
         {
             buffs.SetBuffStack(effect, count + 1);
-            if (count + 1 == effect.requiredHeat && generation == heatGeneration && heatEffect == effect &&
-                context.isActiveAndEnabled && !context.Controller.Status.IsDead)
+            if (count + 1 == effect.requiredHeat && IsHeatLifetime(effect, generation))
                 WasteHeatReadyChanged?.Invoke(true);
             return;
         }
         // SW 수정: 소비한 공격 번호도 유지해 같은 광역 공격의 다음 직접 표적에서 열 1이 다시 쌓이지 않게 한다.
         buffs.SetBuffStack(effect, 0);
-        if (generation != heatGeneration || heatEffect != effect || !context.isActiveAndEnabled || context.Controller.Status.IsDead) return;
+        if (!IsHeatLifetime(effect, generation)) return;
         WasteHeatReadyChanged?.Invoke(false);
-        if (generation != heatGeneration || heatEffect != effect || !context.isActiveAndEnabled || context.Controller.Status.IsDead) return;
-        var targets = new List<WBH_ICombat>();
-        var seen = new HashSet<WBH_ICombat>();
+        if (!IsHeatLifetime(effect, generation)) return;
         float minimumDot = Mathf.Cos(effect.angleDegrees * 0.5f * Mathf.Deg2Rad);
         Vector3 start = origin + Vector3.up;
-        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
-        foreach (Collider hit in Physics.OverlapSphere(start, effect.length, 1 << 10, QueryTriggerInteraction.Collide))
-        {
-            WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
-            if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
-                !seen.Add(target) || target.Status == null || target.Status.IsDead) continue;
-            Vector3 position = component.GetComponentInParent<NetworkEnemyAuthority>()?.transform.position ?? component.transform.position;
-            Vector3 offset = position - origin;
-            if (Mathf.Abs(offset.y) > 0.5f) continue;
-            offset.y = 0f;
-            // SW 수정: A1과 같은 본체 원점 기준을 쓰며 큰 Collider의 표면만 부채꼴에 들어온 적은 제외한다.
-            if (offset.sqrMagnitude > effect.length * effect.length ||
-                (offset.sqrMagnitude > 0.0001f && Vector3.Dot(offset.normalized, forward) < minimumDot) ||
-                Physics.Linecast(start, position + Vector3.up, obstacles, QueryTriggerInteraction.Ignore)) continue;
-            targets.Add(target);
-        }
+        List<WBH_ICombat> targets = CollectLivingBodies(
+            Physics.OverlapSphere(start, effect.length, EnemyLayerMask, QueryTriggerInteraction.Collide), start,
+            position =>
+            {
+                Vector3 offset = position - origin;
+                if (Mathf.Abs(offset.y) > 0.5f) return false;
+                offset.y = 0f;
+                // SW 수정: A1과 같은 본체 원점 기준을 쓰며 큰 Collider의 표면만 부채꼴에 들어온 적은 제외한다.
+                return offset.sqrMagnitude <= effect.length * effect.length &&
+                    (offset.sqrMagnitude <= 0.0001f || Vector3.Dot(offset.normalized, forward) >= minimumDot);
+            });
         targets.Sort((left, rightTarget) => CompareBodyDistance(left, rightTarget, origin));
-        for (int index = 0; index < Mathf.Min(targets.Count, effect.maxTargets); index++)
-            PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], ElementType.Fire,
-                effect.damageMultiplier, null, DamageCause.Effect, attackId, canCrit: false);
+        EnqueueEffectTargets(targets, effect.maxTargets, ElementType.Fire, effect.damageMultiplier, attackId);
         WasteHeatPresented?.Invoke(start, forward, effect.length, effect.angleDegrees);
     }
 
     /// <summary>SW 수정: 싱글·서버의 본체 범위 효과를 거리·netId·InstanceId 순으로 정렬해 Collider 순서와 무관한 대상 상한을 적용한다.</summary>
     private static int CompareBodyDistance(WBH_ICombat left, WBH_ICombat right, Vector3 origin)
     {
-        Component a = (Component)left, b = (Component)right;
-        Transform aRoot = a.GetComponentInParent<NetworkEnemyAuthority>()?.transform ?? a.transform;
-        Transform bRoot = b.GetComponentInParent<NetworkEnemyAuthority>()?.transform ?? b.transform;
-        int byDistance = (aRoot.position - origin).sqrMagnitude.CompareTo((bRoot.position - origin).sqrMagnitude);
-        if (byDistance != 0) return byDistance;
-        uint aId = a.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
-        uint bId = b.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
-        int byId = aId.CompareTo(bId);
-        return byId != 0 ? byId : a.GetInstanceID().CompareTo(b.GetInstanceID());
+        int byDistance = (GetBodyPosition((Component)left) - origin).sqrMagnitude
+            .CompareTo((GetBodyPosition((Component)right) - origin).sqrMagnitude);
+        return byDistance != 0 ? byDistance : CompareStableIds(left, right);
     }
 
-    /// <summary>SW 수정: 같은 소유자의 동일 효과는 장비 개체와 무관하게 공유하며 싱글·서버·HUD에서 같은 키로 조회한다.</summary>
-    internal static string GetPhaseHarvesterCooldownKey(PhaseHarvesterWaveUniqueEffectSO effect)
-        => effect.name + ":phase-harvester";
+    /// <summary>SW 수정: 싱글·서버의 범위 효과·연쇄·직접 공격이 같은 거리에서 netId → InstanceId 순으로 같은 대상을 고르게 한다.</summary>
+    internal static int CompareStableIds(WBH_ICombat left, WBH_ICombat right)
+    {
+        Component a = left as Component, b = right as Component;
+        uint aId = a != null && a.GetComponentInParent<Mirror.NetworkIdentity>() is { } aIdentity ? aIdentity.netId : 0u;
+        uint bId = b != null && b.GetComponentInParent<Mirror.NetworkIdentity>() is { } bIdentity ? bIdentity.netId : 0u;
+        int byId = aId.CompareTo(bId);
+        return byId != 0 ? byId : (a != null ? a.GetInstanceID() : 0).CompareTo(b != null ? b.GetInstanceID() : 0);
+    }
+
+    /// <summary>SW 수정: 싱글 적은 자기 Transform, 네트워크 적은 NetworkEnemyAuthority 본체 원점을 범위 효과 기준으로 쓴다.</summary>
+    internal static Vector3 GetBodyPosition(Component component)
+    {
+        NetworkEnemyAuthority authority = component.GetComponentInParent<NetworkEnemyAuthority>();
+        return authority != null ? authority.transform.position : component.transform.position;
+    }
+
+    internal const int EnemyLayerMask = 1 << 10;
+    internal static int ObstacleLayerMask => LayerMask.GetMask("Wall", "Prop", "Ground");
+
+    /// <summary>SW 수정: A1·A3 공통으로 살아 있는 본체를 한 번씩 모으고, 본체 원점의 범위 판정과 시야가 모두 통과한 대상만 반환한다.</summary>
+    private static List<WBH_ICombat> CollectLivingBodies(Collider[] hits, Vector3 sightStart, Func<Vector3, bool> containsBody)
+    {
+        var targets = new List<WBH_ICombat>();
+        var seen = new HashSet<WBH_ICombat>();
+        int obstacles = ObstacleLayerMask;
+        foreach (Collider hit in hits)
+        {
+            WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
+            if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
+                !seen.Add(target) || target.Status == null || target.Status.IsDead)
+                continue;
+            Vector3 position = GetBodyPosition(component);
+            if (!containsBody(position) ||
+                Physics.Linecast(sightStart, position + Vector3.up, obstacles, QueryTriggerInteraction.Ignore))
+                continue;
+            targets.Add(target);
+        }
+        return targets;
+    }
+
+    /// <summary>SW 수정: 정렬된 범위 효과 대상 앞에서부터 상한(1~16)만큼 비치명 Effect 피해를 같은 FIFO에 등록한다.</summary>
+    private void EnqueueEffectTargets(List<WBH_ICombat> targets, int maxTargets, ElementType element,
+        float damageMultiplier, uint attackId)
+    {
+        for (int index = 0; index < Mathf.Min(targets.Count, Mathf.Clamp(maxTargets, 1, 16)); index++)
+            PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], element,
+                damageMultiplier, null, DamageCause.Effect, attackId, canCrit: false);
+    }
+
+    /// <summary>SW 수정: 폐열 콜백 뒤에도 같은 장착 생애이고 플레이어가 살아 있는지 확인한다.</summary>
+    private bool IsHeatLifetime(WasteHeatDischargeUniqueEffectSO effect, uint generation)
+        => generation == heatGeneration && heatEffect == effect && context.isActiveAndEnabled &&
+           !context.Controller.Status.IsDead;
 
     /// <summary>SW 수정: 싱글·서버의 최초 유효 근거리 Shotgun 명중 뒤 실제 피격점에서 Fire 비치명타 폭발을 FIFO에 한 번 등록한다. 시작 표적의 직접타 사망과 무관하며 추가 Burn은 예약하지 않는다.</summary>
     internal void FireStarBreacherHit(uint attackId, Vector3 hitPosition, Vector3 sourceBodyPosition,
@@ -283,9 +305,9 @@ public sealed class PlayerItemEffectState
         if (!CanExecute || effect == null || attackId == 0 || lastStarBreacherAttackId == attackId)
             return;
         lastStarBreacherAttackId = attackId;
-        string key = GetStarBreacherCooldownKey(effect);
+        string key = GetCooldownKey(effect, null);
         double now = Now;
-        if (cooldownEndTimes.TryGetValue(key, out double end) && now < end)
+        if (IsCoolingDown(key, now))
             return;
         if (!float.IsFinite(effect.radius) || effect.radius <= 0f ||
             !float.IsFinite(effect.damageMultiplier) || effect.damageMultiplier <= 0f ||
@@ -294,15 +316,14 @@ public sealed class PlayerItemEffectState
 
         cooldownEndTimes[key] = now + effect.cooldownSeconds;
         var candidates = new Dictionary<WBH_ICombat, Vector3>();
-        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
-        foreach (Collider hit in Physics.OverlapSphere(hitPosition, effect.radius, 1 << 10, QueryTriggerInteraction.Collide))
+        int obstacles = ObstacleLayerMask;
+        foreach (Collider hit in Physics.OverlapSphere(hitPosition, effect.radius, EnemyLayerMask, QueryTriggerInteraction.Collide))
         {
             WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
             if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
                 target.Status == null || target.Status.IsDead)
                 continue;
-            Vector3 bodyPosition = component.GetComponentInParent<NetworkEnemyAuthority>()?.transform.position
-                ?? component.transform.position;
+            Vector3 bodyPosition = GetBodyPosition(component);
             Vector3 point = hit.ClosestPoint(hitPosition);
             float distanceSquared = (point - hitPosition).sqrMagnitude;
             // SW 수정: 피격점의 높이와 발 위치를 혼동하지 않고 A1과 같은 본체 간 0.5m 단차 기준을 쓴다.
@@ -319,22 +340,11 @@ public sealed class PlayerItemEffectState
         targets.Sort((left, right) =>
         {
             int byDistance = (candidates[left] - hitPosition).sqrMagnitude.CompareTo((candidates[right] - hitPosition).sqrMagnitude);
-            if (byDistance != 0) return byDistance;
-            Component a = (Component)left, b = (Component)right;
-            uint aId = a.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
-            uint bId = b.GetComponentInParent<Mirror.NetworkIdentity>()?.netId ?? 0u;
-            int byId = aId.CompareTo(bId);
-            return byId != 0 ? byId : a.GetInstanceID().CompareTo(b.GetInstanceID());
+            return byDistance != 0 ? byDistance : CompareStableIds(left, right);
         });
-        for (int index = 0; index < Mathf.Min(targets.Count, Mathf.Clamp(effect.maxTargets, 1, 16)); index++)
-            PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], ElementType.Fire,
-                effect.damageMultiplier, null, DamageCause.Effect, attackId, canCrit: false);
+        EnqueueEffectTargets(targets, effect.maxTargets, ElementType.Fire, effect.damageMultiplier, attackId);
         StarBreacherPresented?.Invoke(hitPosition, effect.radius);
     }
-
-    /// <summary>SW 수정: 싱글·서버·HUD가 같은 소유자의 스타 브리처 효과 쿨다운을 장비 개체와 무관하게 공유한다.</summary>
-    internal static string GetStarBreacherCooldownKey(StarBreacherExplosionUniqueEffectSO effect)
-        => effect.name + ":star-breacher";
 
     public bool IsDirectTargetForAttack(uint attackId, WBH_ICombat target)
         => context.CombatAuthority != null ? context.CombatAuthority.IsDirectTargetForAttack(attackId, target)
@@ -409,40 +419,30 @@ public sealed class PlayerItemEffectState
     }
 
     /// <summary>SW 수정: 싱글·서버의 장비 효과별 남은 시간을 같은 소유자의 저장된 쿨다운에서 조회한다.</summary>
-    public float GetRemainingCooldown(ItemInstance item)
+    public float GetRemainingCooldown(ItemInstance item) => GetRemainingCooldown(cooldownEndTimes, item, Now);
+
+    /// <summary>SW 수정: 싱글 상태와 서버가 복제한 쿨다운 사전이 같은 키·전체 시간 규칙으로 남은 시간을 계산한다.</summary>
+    internal static float GetRemainingCooldown(IReadOnlyDictionary<string, double> endTimes, ItemInstance item, double now)
     {
         UniqueEffectSO effect = item?.definition?.uniqueEffect;
-        float cooldownSeconds;
-        string key;
-        switch (effect)
-        {
-            case TriggeredBuffUniqueEffectSO triggered:
-                cooldownSeconds = triggered.cooldownSeconds;
-                key = GetCooldownKey(triggered, item);
-                break;
-            case ChainLightningUniqueEffectSO chain:
-                cooldownSeconds = chain.cooldownSeconds;
-                key = GetChainCooldownKey(chain);
-                break;
-            case PhaseHarvesterWaveUniqueEffectSO wave:
-                cooldownSeconds = wave.cooldownSeconds;
-                key = GetPhaseHarvesterCooldownKey(wave);
-                break;
-            case StarBreacherExplosionUniqueEffectSO explosion:
-                cooldownSeconds = explosion.cooldownSeconds;
-                key = GetStarBreacherCooldownKey(explosion);
-                break;
-            default:
-                return 0f;
-        }
-
-        if (cooldownSeconds <= 0f)
-            return 0f;
-
-        return cooldownEndTimes.TryGetValue(key, out double cooldownEnd)
-            ? Mathf.Max(0f, (float)(cooldownEnd - Now))
+        string key = GetCooldownKey(effect, item);
+        return key != null && GetCooldownSeconds(effect) > 0f && endTimes.TryGetValue(key, out double cooldownEnd)
+            ? Mathf.Max(0f, (float)(cooldownEnd - now))
             : 0f;
     }
+
+    /// <summary>SW 수정: 쿨다운을 쓰는 고유효과의 전체 시간이다. 싱글·서버·HUD가 이 한 곳에서 읽는다.</summary>
+    internal static float GetCooldownSeconds(UniqueEffectSO effect) => effect switch
+    {
+        TriggeredBuffUniqueEffectSO triggered => triggered.cooldownSeconds,
+        ChainLightningUniqueEffectSO chain => chain.cooldownSeconds,
+        PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
+        StarBreacherExplosionUniqueEffectSO explosion => explosion.cooldownSeconds,
+        _ => 0f,
+    };
+
+    private bool IsCoolingDown(string key, double now)
+        => cooldownEndTimes.TryGetValue(key, out double cooldownEnd) && now < cooldownEnd;
 
     /// <summary>SW 수정: 싱글·서버에서 실제 장착 생애를 재조정하고 무적중 5초 등 설정된 시간이 지나면 폐열 스택과 준비 표시를 0으로 돌린다.</summary>
     internal void Tick()
@@ -455,7 +455,7 @@ public sealed class PlayerItemEffectState
         uint generation = heatGeneration;
         buffs.SetBuffStack(effect, 0);
         // SW 수정: 스탯 갱신 콜백이 새 장착 생애를 충전했다면 이전 만료의 표시로 덮지 않는다.
-        if (generation != heatGeneration || heatEffect != effect || !context.isActiveAndEnabled || context.Controller.Status.IsDead) return;
+        if (!IsHeatLifetime(effect, generation)) return;
         WasteHeatReadyChanged?.Invoke(false);
     }
 
@@ -538,9 +538,9 @@ public sealed class PlayerItemEffectState
         // 공격당 한 번만 평가한다. 추가 표적이 없는 공격은 쿨다운을 소비하지 않는다.
         lastChainAttackIds[effect] = result.AttackId;
 
-        string cooldownKey = GetChainCooldownKey(effect);
+        string cooldownKey = GetCooldownKey(effect, null);
         double now = Now;
-        if (cooldownEndTimes.TryGetValue(cooldownKey, out double cooldownEnd) && now < cooldownEnd)
+        if (IsCoolingDown(cooldownKey, now))
             return;
 
         int queuedCount = ChainLightningExecutor.Enqueue(
@@ -742,7 +742,7 @@ public sealed class PlayerItemEffectState
 
         string key = GetCooldownKey(effect, item);
         double now = Now;
-        if (cooldownEndTimes.TryGetValue(key, out double cooldownEnd) && now < cooldownEnd)
+        if (IsCoolingDown(key, now))
         {
             return;
         }
@@ -758,17 +758,20 @@ public sealed class PlayerItemEffectState
         else buffs.ApplyBuff(effect);
     }
 
-    private static string GetCooldownKey(TriggeredBuffUniqueEffectSO effect, ItemInstance item)
+    /// <summary>SW 수정: 같은 소유자의 동일 효과는 PerItem 발동 버프를 제외하고 장비 개체와 무관하게 공유하며, 싱글·서버·HUD가 같은 키로 조회한다.</summary>
+    private static string GetCooldownKey(UniqueEffectSO effect, ItemInstance item)
     {
-        string itemKey = effect.duplicatePolicy == DuplicateTriggerPolicy.PerItem
-            ? item?.instanceId
-            : null;
-
-        return effect.name + ":" + (itemKey ?? "shared");
-    }
-
-    private static string GetChainCooldownKey(ChainLightningUniqueEffectSO effect)
-    {
-        return effect.name + ":chain";
+        switch (effect)
+        {
+            case TriggeredBuffUniqueEffectSO triggered:
+                string itemKey = triggered.duplicatePolicy == DuplicateTriggerPolicy.PerItem
+                    ? item?.instanceId
+                    : null;
+                return triggered.name + ":" + (itemKey ?? "shared");
+            case ChainLightningUniqueEffectSO: return effect.name + ":chain";
+            case PhaseHarvesterWaveUniqueEffectSO: return effect.name + ":phase-harvester";
+            case StarBreacherExplosionUniqueEffectSO: return effect.name + ":star-breacher";
+            default: return null;
+        }
     }
 }

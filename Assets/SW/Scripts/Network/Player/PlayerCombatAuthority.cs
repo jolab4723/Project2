@@ -649,7 +649,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             targets.Add(target);
         }
 
-        targets.Sort(CompareTargetsDeterministically);
+        targets.Sort(PlayerItemEffectState.CompareStableIds);
         directAttackId = attackId;
         directAttackTargets.Clear();
         foreach (WBH_ICombat target in targets)
@@ -716,26 +716,6 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         }
 
         return null;
-    }
-
-    private static int CompareTargetsDeterministically(WBH_ICombat left, WBH_ICombat right)
-    {
-        uint leftNetId = GetTargetNetId(left);
-        uint rightNetId = GetTargetNetId(right);
-        int byNetId = leftNetId.CompareTo(rightNetId);
-        if (byNetId != 0)
-            return byNetId;
-
-        int leftInstanceId = left is Component leftComponent ? leftComponent.GetInstanceID() : 0;
-        int rightInstanceId = right is Component rightComponent ? rightComponent.GetInstanceID() : 0;
-        return leftInstanceId.CompareTo(rightInstanceId);
-    }
-
-    private static uint GetTargetNetId(WBH_ICombat target)
-    {
-        return target is Component component
-            ? component.GetComponentInParent<NetworkIdentity>()?.netId ?? 0u
-            : 0u;
     }
 
     private bool TryGetGunnerWeapon(out GunnerWeaponType weaponType, out string itemId)
@@ -813,8 +793,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             targets.Sort((left, right) =>
             {
                 int byDistance = (hitPositions[left] - origin).sqrMagnitude.CompareTo((hitPositions[right] - origin).sqrMagnitude);
-                return byDistance != 0 ? byDistance : ((Component)left).GetComponentInParent<NetworkIdentity>().netId
-                    .CompareTo(((Component)right).GetComponentInParent<NetworkIdentity>().netId);
+                return byDistance != 0 ? byDistance : PlayerItemEffectState.CompareStableIds(left, right);
             });
             directAttackId = attackId;
             directAttackTargets.Clear();

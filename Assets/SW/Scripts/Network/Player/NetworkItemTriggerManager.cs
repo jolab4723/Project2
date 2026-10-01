@@ -164,39 +164,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
 
     /// <summary>SW 수정: 클라이언트는 서버가 복제한 소유자별 쿨다운으로 장비 효과의 남은 시간을 조회한다.</summary>
     public float GetRemainingCooldown(ItemInstance item)
-    {
-        UniqueEffectSO effect = item?.definition?.uniqueEffect;
-        float cooldownSeconds;
-        string key;
-        switch (effect)
-        {
-            case TriggeredBuffUniqueEffectSO triggered:
-                cooldownSeconds = triggered.cooldownSeconds;
-                key = GetCooldownKey(triggered, item);
-                break;
-            case ChainLightningUniqueEffectSO chain:
-                cooldownSeconds = chain.cooldownSeconds;
-                key = GetChainCooldownKey(chain);
-                break;
-            case PhaseHarvesterWaveUniqueEffectSO wave:
-                cooldownSeconds = wave.cooldownSeconds;
-                key = PlayerItemEffectState.GetPhaseHarvesterCooldownKey(wave);
-                break;
-            case StarBreacherExplosionUniqueEffectSO explosion:
-                cooldownSeconds = explosion.cooldownSeconds;
-                key = PlayerItemEffectState.GetStarBreacherCooldownKey(explosion);
-                break;
-            default:
-                return 0f;
-        }
-
-        if (cooldownSeconds <= 0f)
-            return 0f;
-
-        return cooldownEndTimes.TryGetValue(key, out double cooldownEnd)
-            ? Mathf.Max(0f, (float)(cooldownEnd - NetworkTime.time))
-            : 0f;
-    }
+        => PlayerItemEffectState.GetRemainingCooldown(cooldownEndTimes, item, NetworkTime.time);
 
     public void ResetAttackLifetime()
     {
@@ -233,36 +201,28 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     [ClientRpc(channel = Channels.Reliable)]
     private void RpcPresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
     {
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.PresentPhaseHarvesterWave(start, end, width);
+        Presentation.PresentPhaseHarvesterWave(start, end, width);
     }
 
     /// <summary>SW 수정: 서버 확정 Shotgun 폭발의 피격점·반경을 신뢰 채널로 관찰자에게 표시하며 Host도 RPC 한 경로만 사용한다.</summary>
     [ClientRpc(channel = Channels.Reliable)]
     private void RpcPresentStarBreacherExplosion(Vector3 position, float radius)
     {
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.PresentStarBreacherExplosion(position, radius);
+        Presentation.PresentStarBreacherExplosion(position, radius);
     }
 
     /// <summary>SW 수정: 서버가 확정한 폐열 방출 영역을 Reliable RPC로 관찰자에게 한 번 표시하며 피해는 서버 FIFO에서만 처리한다.</summary>
     [ClientRpc(channel = Channels.Reliable)]
     private void RpcPresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
     {
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
+        Presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
     }
 
     [ClientRpc]
     private void RpcPresentChainLightning(Vector3 start, Vector3 end)
     {
         LocalChainLightningPresentationCount++;
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.PresentChainLightning(start, end);
+        Presentation.PresentChainLightning(start, end);
     }
 
     private void HandleHitTaken(float amount)
@@ -341,9 +301,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     private void SetPreparedAttackPresentation(bool ready)
     {
         if (!isClient) return;
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.SetPreparedAttack(ready);
+        Presentation.SetPreparedAttack(ready);
     }
 
     /// <summary>SW 수정: 서버 소유 열의 충전 완료 여부만 기존 관찰자 SyncVar 경로로 전달한다. 열 개수의 원본은 BuffInstance에 둔다.</summary>
@@ -356,23 +314,18 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     private void SetWasteHeatPresentation(bool ready)
     {
         if (!isClient) return;
-        presentation ??= GetComponent<UniqueEffectPresentation>();
-        presentation ??= gameObject.AddComponent<UniqueEffectPresentation>();
-        presentation.SetWasteHeatReady(ready);
+        Presentation.SetWasteHeatReady(ready);
     }
 
-    private static string GetCooldownKey(TriggeredBuffUniqueEffectSO effect, ItemInstance item)
+    /// <summary>SW 수정: 같은 플레이어의 표시 Presenter를 한 번 찾고, 없을 때만 런타임에 추가한다.</summary>
+    private UniqueEffectPresentation Presentation
     {
-        string itemKey = effect.duplicatePolicy == DuplicateTriggerPolicy.PerItem
-            ? item?.instanceId
-            : null;
-
-        return effect.name + ":" + (itemKey ?? "shared");
-    }
-
-    private static string GetChainCooldownKey(ChainLightningUniqueEffectSO effect)
-    {
-        return effect.name + ":chain";
+        get
+        {
+            if (presentation == null && !TryGetComponent(out presentation))
+                presentation = gameObject.AddComponent<UniqueEffectPresentation>();
+            return presentation;
+        }
     }
 
     private void SyncStack(ItemInstance item) => GetComponent<PlayerInventorySync>()?.ServerSyncPersistedStack(item);

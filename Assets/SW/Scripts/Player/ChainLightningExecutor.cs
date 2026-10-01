@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
 using ItemSystem;
-using Mirror;
 using UnityEngine;
 
 /// <summary>연쇄 번개의 표적 선택, 감쇠, 후속 피해 등록을 싱글·서버에서 함께 수행한다.</summary>
 internal static class ChainLightningExecutor
 {
-    private const int EnemyLayerMask = 1 << 10;
-    private static int ObstacleLayerMask => LayerMask.GetMask("Wall", "Prop", "Ground");
-
     public static int Enqueue(PlayerContext context, ChainLightningUniqueEffectSO effect,
         in WBH_DamageResult directResult, WBH_ICombat firstTarget,
         Action<Vector3, Vector3> onSegmentResolved)
@@ -64,26 +60,24 @@ internal static class ChainLightningExecutor
         target = null;
         targetPoint = default;
         float bestDistance = float.PositiveInfinity;
-        uint bestNetId = uint.MaxValue;
-        int bestInstanceId = int.MaxValue;
+        int obstacles = PlayerItemEffectState.ObstacleLayerMask;
 
-        foreach (Collider hit in Physics.OverlapSphere(sourcePoint, Mathf.Max(0.1f, radius), EnemyLayerMask,
+        foreach (Collider hit in Physics.OverlapSphere(sourcePoint, Mathf.Max(0.1f, radius), PlayerItemEffectState.EnemyLayerMask,
                      QueryTriggerInteraction.Collide))
         {
             WBH_ICombat candidate = PlayerCombatAuthority.FindCombatTarget(hit);
             if (candidate == null || excluded.Contains(candidate) || candidate.Status == null || candidate.Status.IsDead ||
                 context.Effects.IsDirectTargetForAttack(attackId, candidate) ||
                 !TryGetCombatPoint(candidate, out Vector3 candidatePoint) ||
-                Physics.Linecast(sourcePoint, candidatePoint, ObstacleLayerMask, QueryTriggerInteraction.Ignore))
+                Physics.Linecast(sourcePoint, candidatePoint, obstacles, QueryTriggerInteraction.Ignore))
             {
                 continue;
             }
 
             float distance = (candidatePoint - sourcePoint).sqrMagnitude;
-            GetStableIds(candidate, out uint netId, out int instanceId);
+            // SW 수정: 같은 거리면 범위 효과와 같은 netId → InstanceId 순서로 고른다.
             if (distance > bestDistance ||
-                (distance == bestDistance && (netId > bestNetId ||
-                                              (netId == bestNetId && instanceId >= bestInstanceId))))
+                (distance == bestDistance && PlayerItemEffectState.CompareStableIds(candidate, target) >= 0))
             {
                 continue;
             }
@@ -91,24 +85,9 @@ internal static class ChainLightningExecutor
             target = candidate;
             targetPoint = candidatePoint;
             bestDistance = distance;
-            bestNetId = netId;
-            bestInstanceId = instanceId;
         }
 
         return target != null;
-    }
-
-    private static void GetStableIds(WBH_ICombat target, out uint netId, out int instanceId)
-    {
-        if (target is Component component)
-        {
-            netId = component.GetComponentInParent<NetworkIdentity>()?.netId ?? 0u;
-            instanceId = component.GetInstanceID();
-            return;
-        }
-
-        netId = 0u;
-        instanceId = 0;
     }
 
     private static bool TryGetCombatPoint(WBH_ICombat target, out Vector3 point)
@@ -119,9 +98,7 @@ internal static class ChainLightningExecutor
             return false;
         }
 
-        Transform targetTransform = component.GetComponentInParent<NetworkEnemyAuthority>()?.transform
-                                    ?? component.transform;
-        point = targetTransform.position + Vector3.up;
+        point = PlayerItemEffectState.GetBodyPosition(component) + Vector3.up;
         return true;
     }
 }

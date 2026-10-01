@@ -6,7 +6,7 @@ public sealed class MirrorCooldownHud : MonoBehaviour
 {
     [SerializeField] private CooldownIconUIContainer container;
     public PlayerContext BoundContext => container != null ? container.BoundContext : null;
-    public int VisibleUniqueEffectCooldownCount => container != null ? container.VisibleCooldownCount : 0;
+    public int VisibleCooldownCount => container != null ? container.VisibleCooldownCount : 0;
     public void Bind(PlayerContext context) { if (container != null) container.Bind(context); }
     public void Unbind() { if (container != null) container.Unbind(); }
 }
