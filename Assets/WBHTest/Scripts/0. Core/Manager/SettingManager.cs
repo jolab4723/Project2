@@ -45,7 +45,9 @@ namespace Core
 
         public void Activate()
         {
-            savePath = Application.persistentDataPath + "/settings.json";
+            // SW 수정: --test-login 개발 계정은 같은 PC의 다른 인스턴스와 설정 파일을 공유하지 않는다.
+            string testAccount = FirebaseService.Default.IsLocalTestAccount ? "_" + FirebaseService.Default.LocalTestUserId : string.Empty;
+            savePath = Application.persistentDataPath + "/settings" + testAccount + ".json";
             Load();
             Debug.Log("[SettingManager] 활성화 완료.");
         }
@@ -56,13 +58,19 @@ namespace Core
         // 적용
         public void Apply(KY_SettingsData data)
         {
+            ApplyWithoutSave(data);
+            Save();
+        }
+
+        // SW 수정: 파일에서 읽은 값은 적용만 하고 다시 쓰지 않는다. 씬마다 Activate가 불려도 디스크 쓰기가 생기지 않는다.
+        private void ApplyWithoutSave(KY_SettingsData data)
+        {
             currentData = data;
             ApplyDisplay();
             ApplyBrightness();
             ApplyAudio();
             ApplyGameplay();
             ApplyLanguage();
-            Save();
         }
 
         void ApplyDisplay()
@@ -161,17 +169,23 @@ namespace Core
         void Save()
         {
             string json = JsonUtility.ToJson(currentData, true);
-            File.WriteAllText(savePath, json);
+            // SW 수정: 다른 프로세스가 파일을 쓰는 중이면 이번 저장만 건너뛰고 호출한 화면 초기화는 계속한다.
+            try { File.WriteAllText(savePath, json); }
+            catch (IOException exception) { Debug.LogWarning($"[SettingManager] 설정 저장 실패: {exception.Message}"); }
         }
 
         void Load()
         {
-            if (File.Exists(savePath))
+            bool exists = File.Exists(savePath);
+            if (exists)
             {
-                string json = File.ReadAllText(savePath);
-                currentData = JsonUtility.FromJson<KY_SettingsData>(json);
+                // SW 수정: 읽기 충돌이면 현재 값으로 진행한다.
+                try { currentData = JsonUtility.FromJson<KY_SettingsData>(File.ReadAllText(savePath)); }
+                catch (IOException exception) { Debug.LogWarning($"[SettingManager] 설정 읽기 실패: {exception.Message}"); }
             }
-            Apply(currentData);
+            ApplyWithoutSave(currentData);
+            // 처음 실행하면 기존처럼 기본값 파일을 한 번 만든다.
+            if (!exists) Save();
         }
     }
 }

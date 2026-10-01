@@ -107,6 +107,9 @@ namespace Core
                     false,
                     "Firestore 상태를 확인하지 못해 로컬 캐시에만 저장했습니다.");
             }
+            // SW 수정: 로컬 테스트 계정은 Firestore 없이 로컬 캐시에만 저장한다.
+            if (firebaseService.Firestore == null)
+                return SaveDataOperationResult.Success(false, "로컬 테스트 계정이라 로컬 캐시에만 저장했습니다.");
 
             SaveDataOperationResult cloudSaveResult = await new FirestoreSaveDataStore(firebaseService.Firestore).SaveAsync(
                 userId,
@@ -170,6 +173,10 @@ namespace Core
                     : SaveDataReadResult.Failure(SaveDataFailureReason.FirebaseUnavailable, initialization.Message);
             if (userId != firebaseService.CurrentUserId)
                 return SaveDataReadResult.Failure(SaveDataFailureReason.AuthenticationRequired, "저장 계정이 변경되었습니다.");
+            // SW 수정: 로컬 테스트 계정은 로컬 캐시 결과(없으면 NotFound)를 그대로 써서 새 프로필 생성 흐름을 탄다.
+            if (firebaseService.Firestore == null)
+                return localResult.IsSuccess ? SaveDataReadResult.Success(localResult.Envelope, false, "로컬 테스트 계정의 로컬 캐시를 불러왔습니다.")
+                    : localResult;
             FirestoreSaveDataStore cloudStore =
                 new FirestoreSaveDataStore(firebaseService.Firestore);
             if (localResult.IsSuccess && localResult.Envelope.pendingCloudUpload)
