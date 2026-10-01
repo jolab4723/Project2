@@ -222,16 +222,7 @@ public class WBH_BossTimeLineController : MonoBehaviour
             return false;
         }
 
-        bindPlayerTrack = null;
-
-        foreach(TrackAsset outputTrack in timelineAsset.GetOutputTracks())
-        {
-            if(outputTrack is AnimationTrack animationTrack && outputTrack.name == PlayerTrackName)
-            {
-                bindPlayerTrack = animationTrack;
-                break;
-            }
-        }
+        bindPlayerTrack = FindPlayerTrack(timelineAsset);
 
         Animator playerAnimator = player.GetComponent<Animator>();
         
@@ -251,6 +242,23 @@ public class WBH_BossTimeLineController : MonoBehaviour
         director.SetGenericBinding(bindPlayerTrack, playerAnimator);
 
         return true;
+    }
+
+    /// <summary>
+    /// SW 수정: 보스 인트로 타임라인의 플레이어 트랙 규격(트랙 이름)을 한 곳에 둔다.
+    /// 멀티(MirrorBossIntro)도 이 함수로 찾으므로 Act마다 Inspector에 트랙을 꽂지 않아도 된다.
+    /// </summary>
+    public static AnimationTrack FindPlayerTrack(TimelineAsset timelineAsset)
+    {
+        if (timelineAsset == null)
+            return null;
+
+        foreach (TrackAsset outputTrack in timelineAsset.GetOutputTracks())
+        {
+            if (outputTrack is AnimationTrack animationTrack && outputTrack.name == PlayerTrackName)
+                return animationTrack;
+        }
+        return null;
     }
 
     private void ReleasePlayerTrack()
