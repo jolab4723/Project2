@@ -95,6 +95,15 @@ public class KY_StatusPopup : KY_PopupBase
     {
         critChanceRow?.SetValueSuffix("%");
         cooldownReductionRow?.SetValueSuffix("%");
+
+        // WJ 이우진 수정(2026-10-01): 크리티컬 피해·스킬 범위·일반/스킬 공격 피해 증가도 % 표기.
+        // 크리티컬 피해 스탯은 "추가 배율 %"라(21 → 피해 ×1.21, WBH_PlayerStatus.CritMult) 100을 더해
+        // 실제 배율인 121%로 보여준다. 스탯 값·전투 계산은 그대로이고 표시만 바뀐다.
+        critMultiplierRow?.SetValueSuffix("%");
+        critMultiplierRow?.SetValueOffset(100f);
+        skillRangeRow?.SetValueSuffix("%");
+        normalDamageRow?.SetValueSuffix("%");
+        skillDamageRow?.SetValueSuffix("%");
     }
 
     void OnValidate()

@@ -162,9 +162,10 @@ public class BuffIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             return;
 
         // 스택 수를 함께 넘겨야 이름의 "(현재 / 최대)"와 스탯 합계가 실제 적용값과 맞는다.
+        // WJ 이우진 수정(2026-10-01): HUD 아이콘은 증감 스탯량만 보여준다(상세 효과 문장은 P 버프 팝업 담당).
         int stacks = boundInstance.stackCount;
         shownStackCount = stacks;
         BuffTooltipUI.Instance.Show(BuffTextComposer.BuildName(source, stacks),
-                                    BuffTextComposer.BuildDescription(source, stacks));
+                                    BuffTextComposer.BuildStatDescription(source, stacks));
     }
 }

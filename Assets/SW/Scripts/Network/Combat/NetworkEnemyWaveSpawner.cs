@@ -185,6 +185,20 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         sessionStateRevision++;
     }
 
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-01): 노드의 층 번호는 액트마다 1부터라, Run Snapshot의 액트와 함께
+    /// FloorStatScaleTable.ToContextFloor로 층 배율 표의 누적 번호로 바꾼다(싱글 YJ_StageManager와 같은 규칙).
+    /// 이전에는 node.floor를 그대로 넘겨 Act2·3에서도 Act1 구간 배율을 받았다. 스냅샷이 없으면 Act1로 본다.
+    /// </summary>
+    private static int ResolveContextFloor(MirrorNetworkManager manager, StageNodeSaveData node)
+    {
+        int floor = Mathf.Max(1, node?.floor ?? 1);
+        int act = manager != null && manager.TryGetRunSnapshot(out StageMapSaveData snapshot) && snapshot != null
+            ? (int)snapshot.act
+            : 1;
+        return EnemySystem.FloorStatScaleTable.ToContextFloor(Mathf.Max(1, act), floor);
+    }
+
     [Server]
     private bool TryPrepareAuthoredWaves(MirrorNetworkManager manager, StageNodeSaveData node)
     {
@@ -205,7 +219,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
                 !byId.TryAdd(prefab.EnemyInfo.enemyId, prefab)) return false;
         }
         // 현재 Mirror 세션은 normal 난이도이며, 재접속 예약을 포함한 출발 인원으로 배율을 고정한다.
-        var context = new WBH_EnemyStatContext(node.floor, "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
+        var context = new WBH_EnemyStatContext(ResolveContextFloor(manager, node), "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
         if (authoredWaves.WaveCount <= 0)
         {
             Debug.LogError("[NetworkEnemyWaveSpawner] 정식 웨이브가 비어 있어 전투 출발을 거절합니다.", this);
@@ -290,7 +304,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
             string family = enemyId.Substring(0, enemyId.LastIndexOf('.') + 1);
             prefab = System.Array.Find(authoredEnemyPrefabs, p => p != null && p.EnemyInfo?.enemyId != null && p.EnemyInfo.enemyId.StartsWith(family));
         }
-        var context = new WBH_EnemyStatContext(node.floor, "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
+        var context = new WBH_EnemyStatContext(ResolveContextFloor(manager, node), "normal", Mathf.Max(1, manager.ServerRoster.Members.Count));
         if (prefab == null || !enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out var info)) return false;
         var enemy = Instantiate(prefab, position, rotation);
         enemy.ServerSetEnemyInfo(info);

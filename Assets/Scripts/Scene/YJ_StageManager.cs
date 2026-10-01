@@ -204,6 +204,7 @@ public class YJ_StageManager : MonoBehaviour
             Log.Error("적 웨이브 구성에 실패하여 스테이지 시작을 중단합니다.");
             return;
         }
+        ApplyEnemyStatContext(); // 첫 웨이브 생성(AdvanceStage) 전에 층 배율 컨텍스트를 맞춘다.
         PlayStageBgm(currentNodeType);
         AdvanceStage();
     }
@@ -399,6 +400,29 @@ public class YJ_StageManager : MonoBehaviour
         Log.Print($"노드 웨이브 결정: {pendingNode.id} / {pendingNode.type} / " + $"{waveCount}웨이브 / 전체 {totalEnemyCount}마리");
 
         return true;
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-01): 저장된 현재 노드의 액트·층으로 적 능력치 컨텍스트(층 배율)를 맞춘다.
+    /// 이전에는 아무도 SetStatContext를 부르지 않아 싱글의 모든 적이 1층 배율(1배)로 생성됐다.
+    /// 층 번호는 액트마다 1부터라 FloorStatScaleTable.ToContextFloor로 표의 누적 번호로 바꿔서 넘긴다.
+    /// 보스 스테이지도 같은 경로를 탄다. 저장이 없는 직접 실행/노드 직접 지정 테스트는 기본값(Act1 1층)을 그대로 쓴다.
+    /// 싱글은 난이도 normal, 인원 1 고정(멀티는 NetworkEnemyWaveSpawner가 따로 넘긴다).
+    /// </summary>
+    private void ApplyEnemyStatContext()
+    {
+        if (enemySpawnManager == null || useDirectSceneNodeType || !TryGetStageSaveService() || !stageSaveService.HasSaveFile)
+            return;
+
+        if (!stageSaveService.TryLoadSaveData(out StageMapSaveData saveData) || saveData == null)
+            return;
+
+        StageNodeSaveData pendingNode = saveData.nodes?.Find(node => node != null && node.id == saveData.pendingNodeId);
+        if (pendingNode == null)
+            return;
+
+        int contextFloor = EnemySystem.FloorStatScaleTable.ToContextFloor((int)saveData.act, pendingNode.floor);
+        enemySpawnManager.SetStatContext(new WBH_EnemyStatContext(contextFloor, "normal", 1));
     }
 
     // YJ_StageSaveService 가 전투 씬에서 누락되어 있다면 YJ_StageManager 가 연결된 오브젝트에 YJ_StageSaveService 컴포넌트 추가
