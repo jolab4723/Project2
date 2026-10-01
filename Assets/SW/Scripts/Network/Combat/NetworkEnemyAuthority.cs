@@ -195,7 +195,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private void Awake()
     {
         ResolveReferences();
-        DisableOriginalRuntimeDrivers();
+        ConfigureOriginalDriversForNetwork();
     }
 
 #if UNITY_EDITOR
@@ -210,7 +210,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     {
         base.OnStartServer();
         ResolveReferences();
-        DisableOriginalRuntimeDrivers();
+        ConfigureOriginalDriversForNetwork();
 
         if (enemyInfo == null || controller == null || status == null || movement == null || networkPattern == null)
         {
@@ -289,7 +289,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             GetComponent<WBH_EnemyGradeVisual>()?.ApplyGrade(enemyInfo.enemyGrade);
         }
 
-        DisableOriginalRuntimeDrivers();
+        ConfigureOriginalDriversForNetwork();
         if (agent != null)
             agent.enabled = false;
         if (networkPattern != null)
@@ -1229,7 +1229,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             targetCollider.enabled = enabled;
     }
 
-    private void DisableOriginalRuntimeDrivers()
+    /// <summary>SW 수정: 원본 AI·전투·패턴·애니메이션 드라이버는 끄고, 공통 View만 외부 표시 모드로 켜 둔다.</summary>
+    private void ConfigureOriginalDriversForNetwork()
     {
         if (controller != null)
             controller.enabled = false;

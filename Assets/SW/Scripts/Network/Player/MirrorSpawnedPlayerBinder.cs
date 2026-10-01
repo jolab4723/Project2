@@ -65,7 +65,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public bool IsSceneStartConfirmed => confirmedSceneHandle == SceneManager.GetActiveScene().handle;
     private bool CanRestoreGameplay => IsConfigured && !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
         !context.RuntimeState.IsDead && !context.RuntimeState.IsReviving && (!isLocalPlayer || !RequiresNavMesh || IsSceneStartConfirmed);
-    private bool RequiresNavMesh => GetTestNetworkManager()?.CurrentSessionRoute is
+    private bool RequiresNavMesh => GetNetworkManager()?.CurrentSessionRoute is
         MirrorSessionRoute.Combat or MirrorSessionRoute.Camp;
 
     private void Awake()
@@ -159,18 +159,18 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             return;
         }
         PreserveAcrossNetworkSceneChange();
-        GetTestNetworkManager()?.RegisterServerPlayer(context);
+        GetNetworkManager()?.RegisterServerPlayer(context);
     }
 
     public override void OnStopServer()
     {
-        GetTestNetworkManager()?.UnregisterServerPlayer(context);
+        GetNetworkManager()?.UnregisterServerPlayer(context);
         base.OnStopServer();
     }
 
     private void RegisterLocalContext()
     {
-        MirrorNetworkManager manager = GetTestNetworkManager();
+        MirrorNetworkManager manager = GetNetworkManager();
         if (manager == null)
         {
             Debug.LogError(
@@ -184,10 +184,10 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     private void UnregisterLocalContext()
     {
-        GetTestNetworkManager()?.UnregisterLocalPlayer(context);
+        GetNetworkManager()?.UnregisterLocalPlayer(context);
     }
 
-    private static MirrorNetworkManager GetTestNetworkManager()
+    private static MirrorNetworkManager GetNetworkManager()
     {
         return NetworkManager.singleton as MirrorNetworkManager;
     }
@@ -253,7 +253,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private void RefreshLocalInput()
     {
         bool canControl = isLocalPlayer && gameplayInputEnabled && CanRestoreGameplay && RequiresNavMesh &&
-            GetTestNetworkManager()?.IsLocalGameplayReady == true;
+            GetNetworkManager()?.IsLocalGameplayReady == true;
         // 생존 스냅샷/OnStartLocalPlayer가 먼저 와도 최종 위치 확정 전에 실제 입력을 열지 않는다.
         // 서버의 원격 캐릭터 Controller 상태는 이 로컬 입력 경계에서 바꾸지 않는다.
         if (isLocalPlayer && !canControl && context?.Controller != null)
@@ -532,7 +532,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         }
         bool placed = controller != null && controller.agent != null &&
             controller.agent.enabled && controller.agent.isOnNavMesh;
-        controller?.SetControlEnable(placed && GetTestNetworkManager()?.IsLocalGameplayReady == true);
+        controller?.SetControlEnable(placed && GetNetworkManager()?.IsLocalGameplayReady == true);
         SetLocalOnlyBehaviours(CanRestoreGameplay && placed);
         localSceneRestoreRoutine = null;
         if (!placed)

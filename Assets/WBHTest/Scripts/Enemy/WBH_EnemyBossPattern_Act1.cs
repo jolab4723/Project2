@@ -167,13 +167,16 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
         Vector3[] impactPoints = CreatePhaseMissilePoints();
 
         bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, WBH_EnemyEffectCue.Boss_Act1_MissileExplosion ,FormChange);
-        owner.enemyAnimation.PlaySkill(5);
 
         if(!started) // 특이 오류로 페이즈 전환 실패 시 재시도.
         {
+            // SW 수정: 전환 공격이 시작되지 않은 프레임에는 전환 연출(네트워크 표시 포함)을 요청하지 않는다.
             isPhaseTransition = false;
+            return;
         }
-        else phaseView?.NotifyTransitionStarted();
+
+        owner.enemyAnimation.PlaySkill(WBH_EnemyAnimation.TransitionPhaseSkillId);
+        phaseView?.NotifyTransitionStarted();
     }
 
     private void FormChange()

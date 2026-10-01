@@ -53,8 +53,21 @@ public sealed class NetworkBossHealthBar : MonoBehaviour
                 return;
 
             nextSearchAt = Time.unscaledTime + SearchInterval;
-            BindEnemy(FindTargetEnemy(localPlayer), localPlayer);
+            BindEnemy(FindTargetEnemy(localPlayer, null), localPlayer);
             return;
+        }
+
+        // SW 수정: 거리 이탈 등으로 숨겨진 엘리트는 같은 체력 재표시 억제용 캐시만 유지하고,
+        // 범위 안의 다른 유효 엘리트가 있으면 그 대상으로 바꾼다.
+        if (!waveSpawner.IsBossSession && !IsVisible && Time.unscaledTime >= nextSearchAt)
+        {
+            nextSearchAt = Time.unscaledTime + SearchInterval;
+            NetworkEnemyAuthority other = FindTargetEnemy(localPlayer, boundEnemy);
+            if (other != null)
+            {
+                BindEnemy(other, localPlayer);
+                return;
+            }
         }
 
         RefreshDisplay();
@@ -136,7 +149,7 @@ public sealed class NetworkBossHealthBar : MonoBehaviour
                productionView.HideDistance * productionView.HideDistance;
     }
 
-    private NetworkEnemyAuthority FindTargetEnemy(Transform localPlayer)
+    private NetworkEnemyAuthority FindTargetEnemy(Transform localPlayer, NetworkEnemyAuthority excluded)
     {
         NetworkEnemyAuthority[] enemies =
             FindObjectsByType<NetworkEnemyAuthority>(
@@ -158,7 +171,7 @@ public sealed class NetworkBossHealthBar : MonoBehaviour
             // 엘리트/일반 씬: 엘리트 몬스터만 탐색
             foreach (var enemy in enemies)
             {
-                if (IsValidTarget(enemy) && IsWithinEliteDistance(enemy, localPlayer))
+                if (enemy != excluded && IsValidTarget(enemy) && IsWithinEliteDistance(enemy, localPlayer))
                     return enemy;
             }
             return null;
