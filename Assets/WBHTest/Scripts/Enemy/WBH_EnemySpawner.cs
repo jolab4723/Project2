@@ -15,6 +15,7 @@ public class WBH_EnemySpawner : MonoBehaviour
     private YJ_SfxPlayer sfxPlayer;
 
     private float spawnNavSearchRadius = 2f;
+    public bool isShowSpawnEffect = true;
 
     public event System.Action<WBH_EnemyController> BossSpawn;
 
@@ -98,7 +99,7 @@ public class WBH_EnemySpawner : MonoBehaviour
         enemy.SetTarget(target);
         enemy.gameObject.SetActive(true);
 
-        if (effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
+        if (isShowSpawnEffect == false && effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
         {
             effectSpawner.SpawnEffect(spawnEffect, 
                                       enemy.transform.position + spawnEffectOffset,
