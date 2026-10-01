@@ -6,8 +6,8 @@ using UnityEngine.UI;
 /// <summary>
 /// SW 수정: 바인딩된 플레이어의 쿨타임이 진행 중인 발동 버프와 파동·폭발을 아이콘으로 나열해서
 /// 보여주는 HUD UI. BuffIconUIContainer의 파생이지만, 쿨타임은 PlayerBuffManager 같은 중앙 리스트가
-/// 없으므로 바인딩된 ItemTriggerManager에서 남은 시간을 읽는다. 이 참조가 없으면 기존
-/// TriggeredBuffUniqueEffectSO 또는 소유 PlayerItemEffectState의 쿨타임을 읽는다.
+/// 없으므로 바인딩된 ItemTriggerManager에서 남은 시간을 읽는다. 이 참조가 없으면(싱글)
+/// 실제 발동을 확정하는 소유 PlayerItemEffectState의 쿨타임을 읽는다.
 /// 그래서 변경 이벤트를 구독하는 대신, 장착 아이템 + 보유 유물을 매 프레임 직접 순회해서
 /// 지금 쿨타임 중인 것만 골라낸다 - ItemTriggerManager.Fire()/FireRelics()와 같은 순회 범위를 쓴다.
 /// </summary>
@@ -180,24 +180,20 @@ public class CooldownIconUIContainer : MonoBehaviour
             onCooldown.Add(new CooldownEntry { item = itemData, effect = uniqueEffect });
     }
 
-    /// <summary>SW 수정: 바인딩된 플레이어의 발동 상태를 우선 사용하고, 없으면 기존 고유효과 상태에서 남은 쿨타임을 읽는다.</summary>
+    /// <summary>
+    /// SW 수정: 네트워크는 서버가 복제한 발동 상태, 싱글은 실제 발동을 확정하는 PlayerItemEffectState에서 남은 쿨타임을 읽는다.
+    /// TriggeredBuffUniqueEffectSO의 SO 공유 타이머는 실제 발동 경로가 갱신하지 않으므로 읽지 않는다.
+    /// </summary>
     private float GetRemainingCooldown(ItemInstance itemData)
     {
         if (BoundContext == null)
             return 0f;
         if (BoundContext.ItemTriggers != null)
             return BoundContext.ItemTriggers.GetRemainingCooldown(itemData);
-        if (itemData?.definition?.uniqueEffect is TriggeredBuffUniqueEffectSO triggeredBuffEffect)
-            return triggeredBuffEffect.GetRemainingCooldown(itemData);
-        return BoundContext.Effects?.GetRemainingCooldown(itemData) ?? 0f;
+        return BoundContext.Effects.GetRemainingCooldown(itemData);
     }
 
-    /// <summary>SW 수정: 표시 대상 고유효과에 설정된 전체 쿨타임을 읽는다.</summary>
-    private static float GetCooldownDuration(UniqueEffectSO uniqueEffect) => uniqueEffect switch
-    {
-        TriggeredBuffUniqueEffectSO triggeredBuffEffect => triggeredBuffEffect.cooldownSeconds,
-        PhaseHarvesterWaveUniqueEffectSO waveEffect => waveEffect.cooldownSeconds,
-        StarBreacherExplosionUniqueEffectSO explosionEffect => explosionEffect.cooldownSeconds,
-        _ => 0f
-    };
+    /// <summary>SW 수정: 공통 효과 상태의 전체 쿨타임을 읽는다. 연쇄 번개는 기존처럼 HUD에 표시하지 않는다.</summary>
+    private static float GetCooldownDuration(UniqueEffectSO uniqueEffect)
+        => uniqueEffect is ChainLightningUniqueEffectSO ? 0f : PlayerItemEffectState.GetCooldownSeconds(uniqueEffect);
 }

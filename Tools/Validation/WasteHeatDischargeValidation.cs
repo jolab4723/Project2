@@ -210,11 +210,24 @@ public static class WasteHeatDischargeValidation
             Require(emission.All(e => { var block = new MaterialPropertyBlock(); e.renderer.GetPropertyBlock(block, e.index); return (block.HasColor(property) ? block.GetColor(property) : e.renderer.sharedMaterials[e.index].GetColor(property)) == e.color; }), "Flash did not restore actual material block");
             Source(context, 934005, new[] { first, second }); Hit(context, first, 934005); Hit(context, second, 934005);
             Require(Heat(context) == 0, "Actual fifth hit lifetime mismatch");
-            var lines = context.GetComponentsInChildren<LineRenderer>().Where(l => l.name == "Waste Heat Discharge Presentation").ToArray();
-            Require(lines.Length == 1 && lines[0].positionCount == 34 && lines[0].GetComponent<Collider>() == null, "Single presentation geometry missing or duplicated");
-            await Task.Delay(240);
-            Require(context.GetComponentsInChildren<LineRenderer>().All(l => l.name != "Waste Heat Discharge Presentation"), "Presentation lifetime leak");
-            return JsonConvert.SerializeObject(new { emissionMaterials = emission.Count, tests = "actual Fighter TryAttack animation multi-target heat1, actual blade emission flash and exact restoration, translated HUD 0/1/4, one34point cone, lifetime cleanup" });
+            // SW 수정: 전용 VFX 프리팹이 있으면 월드에 독립 생성(DontSave라 FindObjectsOfTypeAll로 조회)되고, 없을 때만 플레이어 아래 34점 대체 선을 만든다.
+            bool hasVfx = Resources.Load<GameObject>("UniqueEffectVFX/UEVFX_WasteHeatDischarge") != null;
+            const string vfxName = "UEVFX_WasteHeatDischarge(Clone)";
+            if (hasVfx)
+            {
+                var spawned = Resources.FindObjectsOfTypeAll<Transform>().Where(t => t.gameObject.scene.IsValid() && t.parent == null && t.name == vfxName).ToArray();
+                Require(spawned.Length == 1 && spawned[0].GetComponentInChildren<Collider>(true) == null, "Single presentation VFX missing or duplicated");
+                await Task.Delay(1450);
+                Require(Resources.FindObjectsOfTypeAll<Transform>().All(t => !t.gameObject.scene.IsValid() || t.name != vfxName), "Presentation lifetime leak");
+            }
+            else
+            {
+                var lines = context.GetComponentsInChildren<LineRenderer>().Where(l => l.name == "Waste Heat Discharge Presentation").ToArray();
+                Require(lines.Length == 1 && lines[0].positionCount == 34 && lines[0].GetComponent<Collider>() == null, "Single presentation geometry missing or duplicated");
+                await Task.Delay(240);
+                Require(context.GetComponentsInChildren<LineRenderer>().All(l => l.name != "Waste Heat Discharge Presentation"), "Presentation lifetime leak");
+            }
+            return JsonConvert.SerializeObject(new { emissionMaterials = emission.Count, presentation = hasVfx ? "vfx" : "line34", tests = "actual Fighter TryAttack animation multi-target heat1, actual blade emission flash and exact restoration, translated HUD 0/1/4, one cone presentation, lifetime cleanup" });
         }
         finally { context.Effects.SetDirectTargets(0, null); Return(owned); Reset(context); }
     }

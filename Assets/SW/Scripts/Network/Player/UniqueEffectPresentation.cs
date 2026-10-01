@@ -129,25 +129,9 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             return;
         }
 
-        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null)
+        LineRenderer line = CreateFallbackLine("Chain Lightning Presentation", Quaternion.identity, 0.14f);
+        if (line == null)
             return;
-
-        chainLightningMaterial ??= new Material(shader)
-        {
-            name = "Chain Lightning Runtime Material",
-            hideFlags = HideFlags.HideAndDontSave,
-        };
-
-        GameObject boltObject = new("Chain Lightning Presentation")
-        {
-            hideFlags = HideFlags.DontSave,
-        };
-        boltObject.transform.SetParent(transform, true);
-        activeBolts.Add(boltObject);
-
-        LineRenderer line = boltObject.AddComponent<LineRenderer>();
-        line.useWorldSpace = true;
         line.alignment = LineAlignment.View;
         line.textureMode = LineTextureMode.Stretch;
         line.positionCount = 7;
@@ -155,9 +139,6 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         line.numCapVertices = 2;
         line.startColor = new Color(0.25f, 0.95f, 1f, 0.95f);
         line.endColor = new Color(0.25f, 0.55f, 1f, 0.2f);
-        line.sharedMaterial = chainLightningMaterial;
-        line.shadowCastingMode = ShadowCastingMode.Off;
-        line.receiveShadows = false;
 
         Vector3 direction = end - start;
         Vector3 sideways = Vector3.Cross(direction.normalized, Vector3.up);
@@ -170,9 +151,41 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             float offset = i == 0 || i == line.positionCount - 1 ? 0f : (i % 2 == 0 ? -amplitude : amplitude);
             line.SetPosition(i, Vector3.Lerp(start, end, t) + sideways * offset);
         }
-
-        StartCoroutine(ReleaseBoltAfter(boltObject, 0.14f));
     }
+
+    /// <summary>
+    /// SW 수정: 전용 VFX가 없을 때 연쇄·파동·폭발·폐열이 함께 쓰는 표시 전용 월드 선이다.
+    /// 공용 런타임 머터리얼과 기존 표시 목록·수명 정리를 그대로 사용하며 Collider나 피해 판정은 만들지 않는다.
+    /// </summary>
+    private LineRenderer CreateFallbackLine(string objectName, Quaternion rotation, float lifetime)
+    {
+        if (chainLightningMaterial == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) return null;
+            chainLightningMaterial = new Material(shader)
+            {
+                name = "Unique Effect Runtime Material",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+        }
+        GameObject lineObject = new(objectName) { hideFlags = HideFlags.DontSave };
+        lineObject.transform.SetParent(transform, true);
+        lineObject.transform.rotation = rotation;
+        activeBolts.Add(lineObject);
+        LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.TransformZ;
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        StartCoroutine(ReleaseBoltAfter(lineObject, lifetime));
+        return line;
+    }
+
+    /// <summary>SW 수정: 싱글·클라이언트만 표시하고 전용 서버에서는 표시 자원을 만들지 않는다.</summary>
+    private bool CanPresent => Application.isPlaying && isActiveAndEnabled &&
+        !(Mirror.NetworkServer.active && !Mirror.NetworkClient.active);
 
     private IEnumerator ReleaseBoltAfter(GameObject boltObject, float seconds)
     {
@@ -185,8 +198,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     /// <summary>SW 수정: 싱글 확정 또는 서버의 신뢰 RPC로 받은 파동 통로를 클라이언트에서 즉시 표시하고 기존 표시 자원 수명으로 제거한다.</summary>
     public void PresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
     {
-        if (!Application.isPlaying || !isActiveAndEnabled ||
-            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
+        if (!CanPresent)
             return;
         Vector3 waveDirection = Vector3.ProjectOnPlane(end - start, Vector3.up);
         if (TryGetVfx("UEVFX_PhaseHarvesterWave", out GameObject wavePrefab) && waveDirection.sqrMagnitude > 0.0001f)
@@ -196,59 +208,31 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
                 new Vector3(width / AuthoredWaveWidth, 1f, waveDirection.magnitude / AuthoredWaveLength), 1.3f);
             return;
         }
-        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null) return;
-        chainLightningMaterial ??= new Material(shader)
-        {
-            name = "Unique Effect Runtime Material",
-            hideFlags = HideFlags.HideAndDontSave,
-        };
         // SW 수정: 표시만 담당하는 즉시 절단면이며 Collider·피해·이동 파동 객체는 만들지 않는다.
-        GameObject slash = new("Phase Harvester Wave Presentation") { hideFlags = HideFlags.DontSave };
-        slash.transform.SetParent(transform, true);
-        slash.transform.rotation = Quaternion.LookRotation(Vector3.up, (end - start).normalized);
-        activeBolts.Add(slash);
-        LineRenderer line = slash.AddComponent<LineRenderer>();
-        line.useWorldSpace = true;
-        line.alignment = LineAlignment.TransformZ;
+        LineRenderer line = CreateFallbackLine("Phase Harvester Wave Presentation",
+            Quaternion.LookRotation(Vector3.up, (end - start).normalized), 0.14f);
+        if (line == null) return;
         line.positionCount = 2;
         line.SetPosition(0, start);
         line.SetPosition(1, end);
         line.widthMultiplier = width;
         line.startColor = new Color(0.65f, 0.2f, 1f, 0.65f);
         line.endColor = new Color(0.35f, 0.1f, 0.85f, 0.1f);
-        line.sharedMaterial = chainLightningMaterial;
-        line.shadowCastingMode = ShadowCastingMode.Off;
-        line.receiveShadows = false;
-        StartCoroutine(ReleaseBoltAfter(slash, 0.14f));
     }
 
     /// <summary>SW 수정: 싱글 확정 또는 서버 Reliable RPC로 받은 실제 피격점에서 폭발 반경에 맞춘 별빛 제련로 폭발 VFX를 재생하며 Collider·피해·이동 객체는 만들지 않는다.</summary>
     public void PresentStarBreacherExplosion(Vector3 position, float radius)
     {
-        if (!Application.isPlaying || !isActiveAndEnabled ||
-            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
+        if (!CanPresent)
             return;
         if (TryGetVfx("UEVFX_StarBreacherBurst", out GameObject burstPrefab))
         {
             SpawnVfx(burstPrefab, position, Quaternion.identity, Vector3.one * (Mathf.Max(0.1f, radius) / AuthoredBurstRadius), 1.4f);
             return;
         }
-        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null) return;
-        chainLightningMaterial ??= new Material(shader)
-        {
-            name = "Unique Effect Runtime Material",
-            hideFlags = HideFlags.HideAndDontSave,
-        };
         // SW 수정: 기존 표시 자원·수명으로 원형 절단면을 제거하고 설정된 화염 임팩트도 재사용한다.
-        GameObject burst = new("Star Breacher Explosion Presentation") { hideFlags = HideFlags.DontSave };
-        burst.transform.SetParent(transform, true);
-        burst.transform.rotation = Quaternion.LookRotation(Vector3.up);
-        activeBolts.Add(burst);
-        LineRenderer line = burst.AddComponent<LineRenderer>();
-        line.useWorldSpace = true;
-        line.alignment = LineAlignment.TransformZ;
+        LineRenderer line = CreateFallbackLine("Star Breacher Explosion Presentation", Quaternion.LookRotation(Vector3.up), 0.2f);
+        if (line == null) return;
         line.loop = true;
         line.positionCount = 32;
         for (int index = 0; index < line.positionCount; index++)
@@ -258,18 +242,13 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         }
         line.widthMultiplier = 0.25f;
         line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
-        line.sharedMaterial = chainLightningMaterial;
-        line.shadowCastingMode = ShadowCastingMode.Off;
-        line.receiveShadows = false;
-        StartCoroutine(ReleaseBoltAfter(burst, 0.2f));
         if (infernoHitPrefab != null) PresentInfernoHit(position);
     }
 
     /// <summary>SW 수정: 싱글 또는 서버 Reliable RPC가 확정한 폐열 방출의 전체 각도와 길이에 맞춘 전방 열파 VFX를 클라이언트에 짧게 재생한다.</summary>
     public void PresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
     {
-        if (!Application.isPlaying || !isActiveAndEnabled ||
-            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active)) return;
+        if (!CanPresent) return;
         Vector3 heatForward = Vector3.ProjectOnPlane(forward, Vector3.up);
         if (TryGetVfx("UEVFX_WasteHeatDischarge", out GameObject heatPrefab) && heatForward.sqrMagnitude > 0.0001f)
         {
@@ -281,21 +260,9 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
                 new Vector3(scale * widthRatio, scale, scale), 1.3f);
             return;
         }
-        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null) return;
-        chainLightningMaterial ??= new Material(shader)
-        {
-            name = "Unique Effect Runtime Material",
-            hideFlags = HideFlags.HideAndDontSave,
-        };
         // SW 수정: 서버 확정 영역의 표시만 만들며 피해 판정이나 이동하는 공격 객체는 생성하지 않는다.
-        GameObject cone = new("Waste Heat Discharge Presentation") { hideFlags = HideFlags.DontSave };
-        cone.transform.SetParent(transform, true);
-        cone.transform.rotation = Quaternion.LookRotation(Vector3.up);
-        activeBolts.Add(cone);
-        LineRenderer line = cone.AddComponent<LineRenderer>();
-        line.useWorldSpace = true;
-        line.alignment = LineAlignment.TransformZ;
+        LineRenderer line = CreateFallbackLine("Waste Heat Discharge Presentation", Quaternion.LookRotation(Vector3.up), 0.18f);
+        if (line == null) return;
         line.positionCount = 34;
         line.SetPosition(0, origin);
         for (int index = 1; index <= 32; index++)
@@ -306,10 +273,6 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         line.SetPosition(33, origin);
         line.widthMultiplier = 0.16f;
         line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
-        line.sharedMaterial = chainLightningMaterial;
-        line.shadowCastingMode = ShadowCastingMode.Off;
-        line.receiveShadows = false;
-        StartCoroutine(ReleaseBoltAfter(cone, 0.18f));
     }
 
     /// <summary>SW 수정: 싱글 또는 서버가 확정한 열 충전 완료 때 실제 장착 무기의 발광을 짧게 강조하고 준비 유지 중 발밑 열기 VFX를 붙이며, 해제 시 원래 PropertyBlock 복원과 VFX 제거를 함께 한다.</summary>
@@ -317,8 +280,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     {
         RestoreWasteHeatFlash();
         ClearWasteHeatAura();
-        if (!ready || !Application.isPlaying || !isActiveAndEnabled ||
-            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active)) return;
+        if (!ready || !CanPresent) return;
         // SW 수정: 준비가 유지되는 동안 발밑 열기·불티를 플레이어에 붙여 다음 타격이 방출된다는 것을 보인다.
         if (TryGetVfx("UEVFX_WasteHeatReady", out GameObject auraPrefab))
         {
@@ -326,7 +288,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             wasteHeatReadyAura.transform.localPosition = Vector3.up;
             wasteHeatReadyAura.hideFlags = HideFlags.DontSave;
         }
-        GameObject visual = GetComponent<PlayerWeaponVisualPresenter>()?.CurrentVisual;
+        GameObject visual = TryGetComponent(out PlayerWeaponVisualPresenter weaponVisual) ? weaponVisual.CurrentVisual : null;
         if (visual == null) return;
         foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
         {
@@ -367,7 +329,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     }
 
     /// <summary>SW 수정: Resources의 고유효과 VFX 프리팹을 이름으로 한 번만 찾아 두며, 없는 이름도 기억해 매 발동마다 다시 찾지 않는다.</summary>
-    private static bool TryGetVfx(string prefabName, out GameObject prefab)
+    internal static bool TryGetVfx(string prefabName, out GameObject prefab)
     {
         if (!vfxPrefabs.TryGetValue(prefabName, out prefab))
         {
@@ -400,8 +362,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
 
     public void PresentInfernoHit(Vector3 position)
     {
-        if (!Application.isPlaying || !isActiveAndEnabled ||
-            (Mirror.NetworkServer.active && !Mirror.NetworkClient.active))
+        if (!CanPresent)
             return;
 
         if (infernoHitPrefab == null)

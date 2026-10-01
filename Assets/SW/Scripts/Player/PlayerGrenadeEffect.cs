@@ -18,7 +18,8 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     private readonly HashSet<WBH_ICombat> targets = new();
     public bool IsGravity => gravity;
     public bool IsFinished => ended;
-    private double Now => owner.GetComponent<Mirror.NetworkIdentity>() == null ? Time.timeAsDouble : Mirror.NetworkTime.time;
+    // SW 수정: 소유자 효과 상태와 같은 싱글/네트워크 시계를 쓴다.
+    private double Now => owner.Effects.Now;
 
     public void Initialize(PlayerContext player, UniqueEffectSO effect, uint sourceAttackId, ElementType sourceElement,
         Action onDetonated, Action onReleased)
@@ -122,8 +123,8 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             "SingularityDelayedExplosionVisual" => "UEVFX_SingularityCharge",
             _ => null,
         };
-        GameObject prefab = vfxName != null ? Resources.Load<GameObject>("UniqueEffectVFX/" + vfxName) : null;
-        if (prefab != null)
+        // SW 수정: 다른 고유효과 표시와 같은 Resources 캐시를 사용한다.
+        if (vfxName != null && UniqueEffectPresentation.TryGetVfx(vfxName, out GameObject prefab))
         {
             GameObject effect = Instantiate(prefab, parent, false);
             effect.name = name;

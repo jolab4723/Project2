@@ -28,9 +28,8 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     [SerializeField] private Color borderColor = new Color(0.12f, 0.14f, 0.16f);
 
     private ItemInstance boundItem;
-    // SW 수정: 파동·폭발은 실제 소유자 상태에서 시간을 읽으며 버프 SO의 기존 계약은 유지한다.
+    // SW 수정: 남은 시간·전체 쿨다운은 컨테이너가 실제 소유자 상태에서 읽어 숫자로 전달한다.
     private UniqueEffectSO boundEffect;
-    private PlayerItemEffectState ownerEffects;
     private bool hasSuppliedCooldown;
     private float suppliedRemainingCooldown;
     private float suppliedCooldownDuration;
@@ -43,20 +42,19 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     /// <summary>지금 이 슬롯 위에 마우스가 올라와 있는지(언어 변경 시 툴팁을 다시 그릴지 판단용).</summary>
     private bool hovered;
 
-    /// <summary>SW 수정: 기존 싱글 버프 슬롯의 두 인자 바인딩 계약을 유지한다.</summary>
-    public void Bind(ItemInstance item, TriggeredBuffUniqueEffectSO effect)
-        => Bind(item, (UniqueEffectSO)effect, null);
-
     /// <summary>
-    /// SW 수정: 싱글의 진행 중인 버프·파동·폭발과 실제 소유자 상태를 연결해 기존 아이콘·테두리·쿨다운을 표시한다.
-    /// 숫자로 전달된 쿨다운 표시를 해제하고 기존 효과나 소유자 상태를 읽는 표시 방식으로 초기화한다.
+    /// 원본 툴팁·아이콘은 유지하고 확정된 소유자 쿨다운 값으로 표시한다.
+    /// SW 수정: 전달받은 남은 시간과 전체 쿨다운을 0 이상으로 보정해 표시에 사용할 값으로 저장한다.
+    /// 슬롯 재사용으로 표시 대상이 바뀌었고 마우스가 올라와 있으면 툴팁도 새 대상으로 갱신한다.
     /// </summary>
-    public void Bind(ItemInstance item, UniqueEffectSO effect, PlayerItemEffectState effects)
+    public void Bind(ItemInstance item, UniqueEffectSO effect, float remaining, float duration)
     {
-        hasSuppliedCooldown = false;
+        bool targetChanged = boundArcLaser != null || boundItem != item || boundEffect != effect;
+        hasSuppliedCooldown = true;
+        suppliedRemainingCooldown = Mathf.Max(0f, remaining);
+        suppliedCooldownDuration = Mathf.Max(0f, duration);
         boundItem = item;
         boundEffect = effect;
-        ownerEffects = effects;
         boundArcLaser = null;
 
         if (iconImage != null)
@@ -70,19 +68,8 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
             borderImage.color = borderColor;
 
         Refresh();
-    }
-
-    /// <summary>
-    /// 원본 툴팁·아이콘은 유지하고 확정된 소유자 쿨다운 값으로 표시한다.
-    /// SW 수정: 전달받은 남은 시간과 전체 쿨다운을 0 이상으로 보정해 표시에 사용할 값으로 저장한다.
-    /// </summary>
-    public void Bind(ItemInstance item, UniqueEffectSO effect, float remaining, float duration)
-    {
-        Bind(item, effect, (PlayerItemEffectState)null);
-        hasSuppliedCooldown = true;
-        suppliedRemainingCooldown = Mathf.Max(0f, remaining);
-        suppliedCooldownDuration = Mathf.Max(0f, duration);
-        Refresh();
+        if (targetChanged && hovered)
+            ShowTooltip();
     }
 
     /// <summary>
@@ -92,6 +79,8 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
     /// </summary>
     public void BindArcLaser(GunnerSkillController controller, Sprite icon, string tooltipName, string tooltipDescription)
     {
+        bool targetChanged = boundArcLaser != controller || arcLaserTooltipName != tooltipName ||
+            arcLaserTooltipDescription != tooltipDescription;
         hasSuppliedCooldown = false;
         boundItem = null;
         boundEffect = null;
@@ -110,11 +99,13 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
             borderImage.color = borderColor;
 
         Refresh();
+        if (targetChanged && hovered)
+            ShowTooltip();
     }
 
     /// <summary>
-    /// SW 수정: 싱글 버프는 기존 SO, 처형 파동·스타 브리처 폭발은 실제 소유자 상태에서 남은 시간을 읽으며 아크 레이저 표시도 유지한다.
-    /// 숫자로 전달받은 쿨다운이 있으면 해당 값을 우선 사용해 오버레이와 남은 시간을 갱신한다.
+    /// SW 수정: 컨테이너가 숫자로 전달한 고유효과 쿨다운 또는 아크 레이저 컨트롤러의 남은 시간으로
+    /// 오버레이와 남은 시간을 갱신한다.
     /// </summary>
     public void Refresh()
     {
@@ -133,18 +124,7 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         }
         else
         {
-            if (boundEffect == null)
-                return;
-
-            remaining = boundEffect is TriggeredBuffUniqueEffectSO triggered
-                ? triggered.GetRemainingCooldown(boundItem) : ownerEffects?.GetRemainingCooldown(boundItem) ?? 0f;
-            duration = boundEffect switch
-            {
-                TriggeredBuffUniqueEffectSO buff => buff.cooldownSeconds,
-                PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
-                StarBreacherExplosionUniqueEffectSO explosion => explosion.cooldownSeconds,
-                _ => 0f,
-            };
+            return;
         }
 
         if (cooldownFillImage != null)
@@ -187,11 +167,14 @@ public class CooldownIconSlot : MonoBehaviour, IPointerEnterHandler, IPointerExi
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
 
+        bool wasHovered = hovered;
         hovered = false;
 
         // 쿨타임이 끝나 슬롯이 꺼질 때 마우스가 그 위에 있었다면 OnPointerExit이 오지 않고 사라질 수
         // 있어서, 툴팁이 화면에 남는 것을 막기 위해 여기서도 닫는다(BuffIconSlot과 같은 이유).
-        BuffTooltipUI.Instance?.Hide();
+        // SW 수정: 다른 슬롯이 띄운 툴팁은 닫지 않도록 이 슬롯이 hover 중이었을 때만 닫는다.
+        if (wasHovered)
+            BuffTooltipUI.Instance?.Hide();
     }
 
     private void OnLanguageChanged(GameLanguage _)
