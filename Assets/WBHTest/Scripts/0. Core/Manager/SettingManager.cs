@@ -34,6 +34,7 @@ namespace Core
         private const float MaxBrightnessOverlayAlpha = 0.85f;
 
         private readonly int[] frameRates = { 30, 60, -1 }; // -1은 무제한
+        private static readonly string[] GraphicsQualityLevels = { "Low", "Medium", "High" };
 
         private readonly (int width, int height)[] resolutions =
         {
@@ -77,7 +78,12 @@ namespace Core
         {
             var res = resolutions[currentData.resolutionIndex];
             Screen.SetResolution(res.width, res.height, currentData.isFullscreen);
-            QualitySettings.SetQualityLevel(currentData.graphicsQuality);
+            // SW 수정: 설정의 0/1/2(낮음/중간/높음)를 이름이 같은 품질 단계에 연결한다. 각 단계는 그림자·렌더 스케일이 다른
+            // URP 에셋(URP_Low/Medium/High)을 쓴다. 이전에는 0/1/2번 단계(Very Low/Low/Medium)에 연결돼 차이가 거의 없었다.
+            int qualityIndex = System.Array.IndexOf(QualitySettings.names, GraphicsQualityLevels[Mathf.Clamp(currentData.graphicsQuality, 0, GraphicsQualityLevels.Length - 1)]);
+            QualitySettings.SetQualityLevel(qualityIndex >= 0 ? qualityIndex : currentData.graphicsQuality, true);
+            // SW 수정: 일부 품질 단계의 VSync가 켜져 있으면 FPS 옵션이 무시되므로 프레임 제한은 targetFrameRate만 쓴다.
+            QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = frameRates[currentData.targetFrameRate];
         }
 
