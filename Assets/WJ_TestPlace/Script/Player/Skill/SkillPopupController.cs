@@ -52,6 +52,9 @@ public class SkillPopupController : MonoBehaviour
     [Tooltip("Bottom/SkillExtraText - 선택된 진화/강화 설명 표시(둘 다 없으면 빈칸)")]
     [SerializeField] private TextMeshProUGUI skillExtraText;
 
+    [Tooltip("Bottom/DescriptionScroll - 기본 설명 + 진화/강화 설명을 담는 세로 스크롤. 언어·조합에 따라 길어진 문구가 패널을 넘지 않게 한다. 비워두면 스크롤 없이 동작한다.")]
+    [SerializeField] private ScrollRect descriptionScroll;
+
     /// <summary>스킬 슬롯 아이콘 위에 "지금 이 스킬에 뭐가 적용돼 있는지"를 보여주는 작은 배지 한 쌍.</summary>
     [System.Serializable]
     private class SkillOptionBadges
@@ -217,6 +220,10 @@ public class SkillPopupController : MonoBehaviour
     ///    높이를 줄인다. 한 번의 레이아웃 패스에서는 부모가 자식 위치를 먼저 정하고 자식이 나중에 높이를
     ///    바꾸므로, 처음 열 때(또는 언어를 바꿔 문구 길이가 달라질 때) 이전 높이 기준 위치에 텍스트가 겹쳐
     ///    보였다. 텍스트 메시를 먼저 갱신한 뒤 설명 텍스트 → Bottom 순서로 다시 계산한다.
+    ///
+    /// 설명 두 칸은 이제 DescriptionScroll/Content(자식 높이를 직접 제어하는 레이아웃) 안에 있어 위 겹침
+    /// 구조 자체는 없어졌지만, 처음 열 때 폰트가 늦게 확정되는 경우를 대비해 재계산은 그대로 둔다.
+    /// 내용이 바뀌었으므로 스크롤은 맨 위로 되돌린다(이전 스킬에서 내린 위치가 남으면 첫 줄이 가려진다).
     /// </summary>
     private void RebuildDescriptionLayout()
     {
@@ -230,8 +237,16 @@ public class SkillPopupController : MonoBehaviour
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(skillDescriptionText.rectTransform);
-        if (skillDescriptionText.transform.parent is RectTransform bottom)
-            LayoutRebuilder.ForceRebuildLayoutImmediate(bottom);
+        if (skillDescriptionText.transform.parent is RectTransform container)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(container);
+
+        if (descriptionScroll != null)
+        {
+            if (descriptionScroll.transform is RectTransform scrollRect)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(scrollRect);
+            descriptionScroll.StopMovement();
+            descriptionScroll.verticalNormalizedPosition = 1f;
+        }
     }
 
     /// <summary>
@@ -400,7 +415,7 @@ public class SkillPopupController : MonoBehaviour
         }
 
         if (skillCostText != null)
-            skillCostText.text = BuildCostSummary(controller, def);
+            skillCostText.text = BuildCostSummary(controller, def, currentEvo, currentEnh);
 
         if (skillDescriptionText != null)
             skillDescriptionText.text = labelDatabase.GetSkillDescription(def.skillId);
@@ -424,15 +439,37 @@ public class SkillPopupController : MonoBehaviour
             skillExtraText.text = evoLine + "\n" + "\n" + enhLine;
     }
 
-    private string BuildCostSummary(ISkillController controller, SkillDefinitionSO def)
+    /// <summary>
+    /// 피해 배율·쿨타임·마나 소모를 한 줄로 만든다. 마나는 실제 시전과 같은 GetManaCost(현재 진화)를 쓰고,
+    /// 0이면 표시하지 않는다. 아크 레이저(ArcProjectile 진화1)는 소모 스택 1개당 마나라 "스택당"으로 표시한다.
+    /// 구분 기호가 언어마다 달라서(· / ・) 조각을 이어 붙이지 않고 문장 전체를 키로 둔다.
+    /// 피해 배율은 진화별 계수와 강화1(위력)을 반영한 값(SkillDefinitionSO.GetDamageMultiplierRange)이고,
+    /// 차징·스택처럼 범위가 있으면 "120~160"처럼 표시한다.
+    /// </summary>
+    private string BuildCostSummary(ISkillController controller, SkillDefinitionSO def, SkillEvolutionId evolution, SkillEnhancementId enhancement)
     {
         float cooldown = controller.GetEffectiveCooldown(selectedSkillIndex);
+        float manaCost = def.GetManaCost(evolution);
+        string cooldownText = $"{cooldown:0.#}";
+        string manaText = $"{manaCost:0.#}";
 
-        if (def.shapeType == SkillShapeType.Dash)
-            return string.Format(GetUILabel("skill_ui.cooldown_only", "쿨타임 {0}초"), $"{cooldown:0.#}");
+        if (!def.GetDamageMultiplierRange(evolution, enhancement, out float minDamage, out float maxDamage))
+        {
+            return manaCost > 0f
+                ? string.Format(GetUILabel("skill_ui.cooldown_mana", "쿨타임 {0}초 · MP {1}"), cooldownText, manaText)
+                : string.Format(GetUILabel("skill_ui.cooldown_only", "쿨타임 {0}초"), cooldownText);
+        }
 
-        return string.Format(GetUILabel("skill_ui.damage_and_cooldown", "피해 배율 {0}% · 쿨타임 {1}초"),
-            $"{def.damageMultiplier * 100f:0}", $"{cooldown:0.#}");
+        string minText = $"{minDamage * 100f:0}";
+        string maxText = $"{maxDamage * 100f:0}";
+        string damageText = minText == maxText ? minText : minText + "~" + maxText;
+        if (manaCost <= 0f)
+            return string.Format(GetUILabel("skill_ui.damage_and_cooldown", "피해 배율 {0}% · 쿨타임 {1}초"), damageText, cooldownText);
+
+        bool perStack = def.shapeType == SkillShapeType.ArcProjectile && evolution == SkillEvolutionId.Evolution1;
+        return perStack
+            ? string.Format(GetUILabel("skill_ui.damage_cooldown_mana_per_stack", "피해 배율 {0}% · 쿨타임 {1}초 · 스택당 MP {2}"), damageText, cooldownText, manaText)
+            : string.Format(GetUILabel("skill_ui.damage_cooldown_mana", "피해 배율 {0}% · 쿨타임 {1}초 · MP {2}"), damageText, cooldownText, manaText);
     }
 
     private string GetUILabel(string key, string fallback) =>
