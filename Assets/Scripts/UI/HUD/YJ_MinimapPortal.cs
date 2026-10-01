@@ -11,6 +11,7 @@ public class YJ_MinimapPortal : MonoBehaviour
 
     [Header("추적 대상")]
     [SerializeField] private Transform player;
+    private bool usesExternalPlayer; // SW 수정
 
     [Header("포탈 아이콘")]
     [SerializeField] private Sprite portalIconSprite;
@@ -97,11 +98,18 @@ public class YJ_MinimapPortal : MonoBehaviour
         }
     }
 
+    /// <summary>SW 수정: 멀티에서는 원격 플레이어가 아닌 로컬 플레이어를 미니맵 중심으로 연결한다.</summary>
+    public void BindPlayer(Transform owner)
+    {
+        usesExternalPlayer = true;
+        player = owner;
+    }
+
     private void FindPlayer()
     {
         playerSearchTimer = 1f;
 
-        if (player != null)
+        if (player != null || usesExternalPlayer)
             return;
 
         T_PlayerController playerController = FindFirstObjectByType<T_PlayerController>();

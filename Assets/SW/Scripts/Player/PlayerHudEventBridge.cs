@@ -9,6 +9,7 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
     private PlayerStatManager stats;
     private MirrorCooldownHud cooldownHud;
     private BuffIconUIContainer buffHud;
+    private YJ_MinimapPing[] minimapPings = System.Array.Empty<YJ_MinimapPing>();
 
     public PlayerContext BoundContext { get; private set; }
 
@@ -83,9 +84,25 @@ public sealed class PlayerHudEventBridge : MonoBehaviour
         foreach (var view in GetComponentsInChildren<YJ_HUDInformationView>(true)) view.BindPlayer(status);
         foreach (var view in GetComponentsInChildren<YJ_MinimapPlayer>(true))
             view.BindPlayer(context != null ? context.transform : null);
+        // 적·포탈 미니맵도 첫 번째 T_PlayerController(원격일 수 있음)가 아닌 로컬 플레이어를 중심으로 한다.
+        foreach (var view in GetComponentsInChildren<YJ_MinimapEnemy>(true))
+            view.BindPlayer(context != null ? context.transform : null);
+        foreach (var view in GetComponentsInChildren<YJ_MinimapPortal>(true))
+            view.BindPlayer(context != null ? context.transform : null);
+        // 멀티 핑은 원본 입력기 이벤트 대신 파티 공유 NetworkPlayerPing에서 받는다.
+        minimapPings = GetComponentsInChildren<YJ_MinimapPing>(true);
+        foreach (var view in minimapPings) view.BindPlayer(context != null ? context.transform : null, null);
+        NetworkPlayerPing.Shown -= ShowMinimapPing;
+        if (context != null) NetworkPlayerPing.Shown += ShowMinimapPing;
         // 스킬·회피·포션 슬롯은 싱글과 같은 뷰를 로컬 플레이어에 연결해 사용한다.
         foreach (var view in GetComponentsInChildren<KY_SkillView>(true)) view.Bind(context);
         foreach (var view in GetComponentsInChildren<PotionSlotView>(true)) view.Bind(context != null ? context.Potions : null);
+    }
+
+    private void ShowMinimapPing(Vector3 position, float lifetime)
+    {
+        foreach (var view in minimapPings)
+            if (view != null && view.isActiveAndEnabled) view.ShowPing(position, lifetime);
     }
 
     private void OnDestroy()

@@ -27,6 +27,7 @@ public sealed class NetworkPlayerInputHandler : MonoBehaviour
     private PlayerInventorySync inventorySync;
     private WBH_PlayerStateMachine stateMachine;
     private WBH_PlayerStatus status;
+    private NetworkPlayerPing ping;
 
     private static readonly FieldInfo ControllerCameraField =
         typeof(T_PlayerController).GetField("mainCamera", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -49,6 +50,7 @@ public sealed class NetworkPlayerInputHandler : MonoBehaviour
         inventorySync = GetComponent<PlayerInventorySync>();
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         status = GetComponent<WBH_PlayerStatus>();
+        ping = GetComponent<NetworkPlayerPing>();
 
         SyncControllerCamera();
         EnsureControllerMeshTrail();
@@ -105,6 +107,14 @@ public sealed class NetworkPlayerInputHandler : MonoBehaviour
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        // 원본과 같이 Alt+좌클릭은 핑 전용이며 공격·획득으로 이어지지 않는다.
+        if (Input.GetKey(KeyCode.LeftAlt))
+        {
+            ping?.TryRequest(ray);
+            return;
+        }
+
         if (inventorySync != null && inventorySync.TryRequestPickup(ray))
             return;
 

@@ -599,6 +599,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         impactConfirmationExpiresAt = 0d;
     }
 
+    /// <summary>SW 수정: 서버가 Fighter 기본 공격의 원점·정면과 직접 대상을 한 번 확정하고 피해 처리 동안에만 고유효과 출처를 유지한다.</summary>
     [Server]
     private void ResolveServerAttack(uint attackId)
     {
@@ -618,7 +619,12 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         lastDamage = 0f;
         lastHitCritical = false;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, status.FighterAttackRange, enemyLayer);
+        // SW 수정: 피격·사망 콜백 중 Transform이 바뀌어도 같은 공격은 같은 정면을 사용한다.
+        Vector3 origin = transform.position;
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+        forward.Normalize();
+        Collider[] hits = Physics.OverlapSphere(origin, status.FighterAttackRange, enemyLayer);
         var targets = new List<WBH_ICombat>();
         var targetColliders = new Dictionary<WBH_ICombat, Collider>();
         bool hitAny = false;
@@ -628,10 +634,10 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             if (hit == null)
                 continue;
 
-            Vector3 direction = hit.transform.position - transform.position;
+            Vector3 direction = hit.transform.position - origin;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.001f ||
-                Vector3.Angle(transform.forward, direction.normalized) > AttackAngle * 0.5f)
+                Vector3.Angle(forward, direction.normalized) > AttackAngle * 0.5f)
             {
                 continue;
             }
@@ -651,14 +657,16 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         try
         {
+            // SW 수정: 서버가 확정한 근접 원점을 폐열 방출에서도 피격 콜백 이전 값으로 보존한다.
+            context.Effects.SetDirectTargets(attackId, targets, forward, fighterAttack: true, attackOrigin: origin);
             WBH_EffectData effectData = null;
             GetComponent<WBH_PlayerEffect>()?.TryGetEffectData(WBH_PlayerEffectCue.F_normal0_evo0_etc0, out effectData);
             foreach (WBH_ICombat target in targets)
             {
-                Vector3 hitPosition = targetColliders[target].ClosestPoint(transform.position);
+                Vector3 hitPosition = targetColliders[target].ClosestPoint(origin);
                 var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
                     status.CurrentElement, 1f, GetStatusEffectForElement(status.CurrentElement), effectData,
-                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
+                    hitPosition, origin - hitPosition, DamageCause.Direct, attackId);
                 if (!WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
                 {
                     continue;
@@ -677,6 +685,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         }
         finally
         {
+            context.Effects.SetDirectTargets(0, null);
             directAttackId = 0;
             directAttackTargets.Clear();
         }
@@ -756,6 +765,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             currentType == weaponType && string.Equals(currentId, itemId ?? string.Empty, System.StringComparison.Ordinal);
     }
 
+    /// <summary>SW 수정: 서버에서 실제 Gunner 발사를 확정하고 Shotgun은 발사 원점 기준 유효 대상·적중점을 고정해 공통 효과 출처를 피해 범위 동안 유지한다.</summary>
     [Server]
     private void ResolveServerGunnerAttack(uint attackId)
     {
@@ -784,27 +794,55 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         if (pendingGunnerWeapon == GunnerWeaponType.Shotgun)
         {
+            // SW 수정: 사망·이동 콜백 전에 본체별 가장 가까운 유효 표면과 대상 전체를 고정한다.
+            var hitPositions = new Dictionary<WBH_ICombat, Vector3>();
             foreach (Collider hit in Physics.OverlapSphere(origin, pendingGunnerRange, enemyLayer, QueryTriggerInteraction.Collide))
             {
                 WBH_ICombat target = FindCombatTarget(hit);
                 if (target is not Component component || component.GetComponentInParent<NetworkEnemyAuthority>() == null ||
-                    target == null) continue;
-                Vector3 offset = hit.ClosestPoint(origin) - origin;
+                    target.Status == null || target.Status.IsDead) continue;
+                Vector3 hitPosition = hit.ClosestPoint(origin);
+                Vector3 offset = hitPosition - origin;
                 Vector3 flat = Vector3.ProjectOnPlane(offset, Vector3.up);
                 if (Vector3.Angle(direction, flat) > 45f ||
-                    Physics.Linecast(origin, origin + offset, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
-                Vector3 hitPosition = hit.ClosestPoint(transform.position);
-                var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
-                    pendingGunnerElement, 1f, GetStatusEffectForElement(pendingGunnerElement),
-                    GunnerCombatPresentation.GetHitEffectData(gameObject, pendingGunnerWeapon),
-                    hitPosition, transform.position - hitPosition, DamageCause.Direct, attackId);
-                if (WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
+                    Physics.Linecast(origin, hitPosition, LayerMask.GetMask("Wall", "Prop", "Ground"), QueryTriggerInteraction.Ignore)) continue;
+                if (!hitPositions.TryGetValue(target, out Vector3 previous) || offset.sqrMagnitude < (previous - origin).sqrMagnitude)
+                    hitPositions[target] = hitPosition;
+            }
+            var targets = new List<WBH_ICombat>(hitPositions.Keys);
+            targets.Sort((left, right) =>
+            {
+                int byDistance = (hitPositions[left] - origin).sqrMagnitude.CompareTo((hitPositions[right] - origin).sqrMagnitude);
+                return byDistance != 0 ? byDistance : ((Component)left).GetComponentInParent<NetworkIdentity>().netId
+                    .CompareTo(((Component)right).GetComponentInParent<NetworkIdentity>().netId);
+            });
+            directAttackId = attackId;
+            directAttackTargets.Clear();
+            directAttackTargets.UnionWith(targets);
+            try
+            {
+                context.Effects.SetDirectTargets(attackId, targets, direction, attackOrigin: origin, shotgunAttack: true);
+                foreach (WBH_ICombat target in targets)
                 {
-                    ServerRecordGunnerHit(target, result);
-                    Vector3 impactDirection = (hit.transform.position - origin).normalized;
-                    impactDirection.y = 0f;
-                    RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hit.transform.position, -impactDirection);
+                    Vector3 hitPosition = hitPositions[target];
+                    var request = new WBH_DamageRequest(context.Controller, target, WBH_AttackType.Normal,
+                        pendingGunnerElement, 1f, GetStatusEffectForElement(pendingGunnerElement),
+                        GunnerCombatPresentation.GetHitEffectData(gameObject, pendingGunnerWeapon),
+                        hitPosition, origin - hitPosition, DamageCause.Direct, attackId);
+                    if (WBH_CombatResolver.TryProcessPlayerDamage(context, request, out WBH_DamageResult result))
+                    {
+                        ServerRecordGunnerHit(target, result);
+                        Vector3 impactDirection = (hitPosition - origin).normalized;
+                        impactDirection.y = 0f;
+                        RpcPresentGunnerImpact(pendingGunnerItemId, pendingGunnerWeapon, hitPosition, -impactDirection);
+                    }
                 }
+            }
+            finally
+            {
+                context.Effects.SetDirectTargets(0, null);
+                directAttackId = 0;
+                directAttackTargets.Clear();
             }
             if (lastResult != MirrorCombatRequestResult.Hit) lastResult = MirrorCombatRequestResult.NoTarget;
             return;

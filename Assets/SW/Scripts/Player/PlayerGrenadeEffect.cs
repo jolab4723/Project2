@@ -110,8 +110,30 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
         Finish();
     }
 
+    /// <summary>
+    /// SW 수정: 중력 우물·특이점 장판 표시의 싱글/멀티 공통 진입점이다. 전용 VFX(Resources/UniqueEffectVFX)가 있으면
+    /// 반경에 맞춘 소용돌이·수축 코어 연출을 부모 아래에 만들고, 없을 때만 기존 원형 선을 그린다. 표시 전용이며 판정에는 관여하지 않는다.
+    /// </summary>
     public static GameObject CreateRing(Transform parent, string name, float radius, Color color)
     {
+        string vfxName = name switch
+        {
+            "GravityWellFieldVisual" => "UEVFX_GravityWellField",
+            "SingularityDelayedExplosionVisual" => "UEVFX_SingularityCharge",
+            _ => null,
+        };
+        GameObject prefab = vfxName != null ? Resources.Load<GameObject>("UniqueEffectVFX/" + vfxName) : null;
+        if (prefab != null)
+        {
+            GameObject effect = Instantiate(prefab, parent, false);
+            effect.name = name;
+            effect.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            // 반경 1m 기준 프리팹이므로 부모 투사체의 스케일을 상쇄해 실제 월드 반경과 맞춘다.
+            float parentScale = parent != null ? Mathf.Abs(parent.lossyScale.x) : 1f;
+            effect.transform.localScale = Vector3.one * (radius / Mathf.Max(0.0001f, parentScale));
+            return effect;
+        }
+
         var visual = new GameObject(name);
         visual.transform.SetParent(parent, false);
         var ring = visual.AddComponent<AreaRingVisual>();
