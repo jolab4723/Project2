@@ -22,6 +22,10 @@ public class KY_StatRow : MonoBehaviour
     // 총합 뒤에 붙일 단위(예: 크리티컬 확률·쿨타임 감소의 "%"). 세부 분해값에는 붙이지 않는다.
     private string valueSuffix = string.Empty;
 
+    // WJ 이우진 추가(2026-10-01): 표시용 기준값. 총합과 캐릭터(흰색) 칸에 함께 더해 세부 합이 총합과 맞게 한다
+    // (예: 크리티컬 피해 21 → 121%). 실제 스탯 값은 바꾸지 않는다.
+    private float valueOffset;
+
     private Color baseColor;
     private Color equipColor;
     private Color passiveColor;
@@ -56,6 +60,12 @@ public class KY_StatRow : MonoBehaviour
     public void SetValueSuffix(string suffix)
     {
         valueSuffix = suffix ?? string.Empty;
+    }
+
+    /// <summary>WJ 이우진 추가(2026-10-01): 표시할 때만 더할 기준값을 설정한다(예: 크리티컬 피해 100). 다음 UpdateMode부터 반영된다.</summary>
+    public void SetValueOffset(float offset)
+    {
+        valueOffset = offset;
     }
 
     /// <summary>
@@ -97,8 +107,8 @@ public class KY_StatRow : MonoBehaviour
     {
         Debug.Log("[Row] UpdateMode 호출됨, isDetailed = " + isDetailed);
 
-        float total = data.Total;
-        float baseValue = data.baseValue;
+        float total = data.Total + valueOffset;
+        float baseValue = data.baseValue + valueOffset;
         float equipValue = data.equipValue;
         float passiveValue = data.passiveValue;
         float buffValue = data.buffValue;

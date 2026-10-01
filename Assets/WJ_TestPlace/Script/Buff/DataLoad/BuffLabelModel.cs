@@ -18,5 +18,7 @@ namespace DataSystem
     {
         public string buffId;
         public string buffName;
+        /// <summary>버프 팝업에 표시할 상세 효과 문장(2026-10-01 추가). 비어 있으면 팝업이 스탯 줄로 대신 표시한다.</summary>
+        public string description;
     }
 }

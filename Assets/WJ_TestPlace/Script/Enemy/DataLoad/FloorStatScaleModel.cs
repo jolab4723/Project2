@@ -10,18 +10,25 @@ namespace DataSystem
     /// (적 하나당 SO를 만드는 EnemyData와 달리, 층 배율은 단순 조회 테이블이라 SO화할 필요가 없음).
     ///
     /// 난이도(difficulty)는 더 이상 이 시트가 아니라 별도 difficultyStatScale 시트/DifficultyStatScaleRow로
-    /// 분리됐다(2026-09-04 엑셀 개편) - 이 시트는 순수하게 층(floor) 하나만 키로 쓴다.
+    /// 분리됐다(2026-09-04 엑셀 개편) - 이 시트는 층만 키로 쓴다.
     ///
-    /// floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
+    /// 2026-10-01: 맵의 층 번호는 액트마다 1부터 다시 시작하고 층 수도 액트마다 달라서(11/12/13),
+    /// 키를 (act, floor)로 바꿨다. act 열이 없는 예전 시트는 전부 Act1로 읽는다.
+    ///
+    /// act/floor를 뺀 나머지 배율 컬럼(hpMultiplier 등)은 고정된 필드가 아니라 컬럼 이름 그대로
     /// multipliers 딕셔너리에 담긴다 - 엑셀에 새 배율 컬럼을 추가하고 파이프라인만 다시 돌리면 코드
     /// 수정 없이 자동으로 반영된다(FloorStatScaleExcelToJson 참고).
     /// </summary>
     [Serializable]
     public class FloorStatScaleRow
     {
+        /// <summary>액트 번호(1~3). 예전 JSON처럼 값이 없으면 1.</summary>
+        public int act = 1;
+
+        /// <summary>그 액트 안의 층 번호(1부터). 맵 노드의 floor와 같은 기준이다.</summary>
         public int floor;
 
-        /// <summary>floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
+        /// <summary>act/floor를 뺀 나머지 모든 배율 컬럼. 키는 엑셀 헤더 이름 그대로(예: "hpMultiplier").</summary>
         public Dictionary<string, float> multipliers = new Dictionary<string, float>();
 
         /// <summary>컬럼 이름으로 배율을 조회한다. 없으면 배율 없음(1배)으로 취급한다.</summary>

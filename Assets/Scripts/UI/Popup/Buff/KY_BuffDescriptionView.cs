@@ -13,10 +13,11 @@ public class KY_BuffDescriptionView : MonoBehaviour
         // 이름/설명 모두 HUD 버프 아이콘 툴팁과 같은 조립기를 쓴다. SO에 적힌 원문(BuffDisplayName,
         // description)은 한국어 고정이라 언어를 따라가지 않는다.
         //
-        // !! 설명은 번역된 문장을 찾아오는 게 아니라 StatEffects(증감 스탯과 수치)로 조립된다.
-        //    BuffLabelDatabase가 이름만 담고 있는 이유이고, 밸런싱으로 수치를 바꿔도 문구가 따라온다.
+        // WJ 이우진 수정(2026-10-01): 증감 스탯량은 HUD 아이콘 툴팁이 보여주고, 팝업은 상세 효과 문장만 보여준다.
+        //    문장은 고유효과면 UniqueEffectLabelDatabase, 그 외는 BuffLabelDatabase의 description(다국어)에서 온다.
+        //    상세 문장이 없는 버프만 스탯 줄로 대신한다.
         nameText.text = BuffTextComposer.BuildBaseName(data.source);
-        descriptionText.text = BuffTextComposer.BuildDescription(data.source, data.stackCount);
+        descriptionText.text = BuffTextComposer.BuildDetailDescription(data.source, data.stackCount);
     }
 
     public void Clear()
