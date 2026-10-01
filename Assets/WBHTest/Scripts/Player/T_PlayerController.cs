@@ -41,7 +41,12 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
     public Vector3 lookDir { get; private set; }
     public float currentDodgeCooltime { get; private set; }
-    public bool IsInvincible { get; private set; } = false; // 무적여부
+    // SW 수정: 회피 무적과 시간제(부활·스킬) 무적을 따로 두어 한쪽 종료가 다른 쪽 무적을 끄지 않게 한다.
+    public bool IsInvincible => isDodgeInvincible || isTimedInvincible; // 무적여부
+    private bool isDodgeInvincible;
+    private bool isTimedInvincible;
+    // SW 수정: 비활성화·상태 이탈 때 진행 중인 회피 이동을 중지하기 위한 핸들
+    private Coroutine dodgeRoutine;
 
     public WBH_ICombatStatus Status => status;
     public bool IsGrabbed => isGrabbed;
@@ -97,6 +102,14 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         stateMachine.OnExitState -= HandleExitState;
         status.OnDead -= Die;
 
+        // SW 수정: 컴포넌트 비활성화만으로는 코루틴이 멈추지 않으므로 회피를 직접 중지하고 회피 상태에 갇히지 않게 한다.
+        if (dodgeRoutine != null)
+        {
+            CancelDodge();
+            if (stateMachine.Is(PlayerState.Dodge))
+                stateMachine.ChangeState(PlayerState.Idle);
+        }
+
         bool wasGrabbed = isGrabbed;
         isGrabbed = false;
 
@@ -122,7 +135,8 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
         {
             transform.forward = dodgeDir;
             lookDir = dodgeDir;
-            StartCoroutine(Dodge(dodgeDir));
+            CancelDodge();
+            dodgeRoutine = StartCoroutine(Dodge(dodgeDir));
         }
         switch (state)
         {
@@ -196,13 +210,14 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     {
         if(!CanUseAgent || !TryGetDodgeEnd(dir, out Vector3 endPos))
         {
+            dodgeRoutine = null;
             stateMachine.ChangeState(PlayerState.Idle);
             yield break;
         }
 
         agent.ResetPath();
         agent.isStopped = true;
-        IsInvincible = true;
+        isDodgeInvincible = true;
         // 회피 모션은 공통 PlayerAnimation이 상태 전이에서 한 번 재생한다.
         meshTrailTut?.Trail(); // 2026.08.31 조용준 추가
 
@@ -217,12 +232,30 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
 
             agent.Move(step);
             yield return null;
+
+            // SW 수정: Agent 해제나 다른 상태 전이(사망·잡기 등)가 생기면 이전 목적지로 이동·Warp·Idle 덮어쓰기를 하지 않는다.
+            if (!CanUseAgent || !stateMachine.Is(PlayerState.Dodge))
+            {
+                dodgeRoutine = null;
+                isDodgeInvincible = false;
+                yield break;
+            }
         }
 
+        dodgeRoutine = null;
         agent.Warp(endPos);
         agent.isStopped = false;
-        IsInvincible = false;
+        isDodgeInvincible = false;
         stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+    /// <summary>SW 수정: 진행 중인 회피 이동을 멈추고 회피 무적만 해제한다. 시작 때 소비한 쿨다운은 환불하지 않으며 여러 번 호출해도 안전하다.</summary>
+    private void CancelDodge()
+    {
+        if (dodgeRoutine != null)
+            StopCoroutine(dodgeRoutine);
+        dodgeRoutine = null;
+        isDodgeInvincible = false;
     }
 
     // 이동명령
@@ -503,9 +536,9 @@ public class T_PlayerController : MonoBehaviour, WBH_ICombat
     // 무적 코루틴. duration 동안 IsInvincible 이며 TakeDamage 의 영향을 받지 않음.
     private IEnumerator BeInvincible(float duration)
     {
-        IsInvincible = true;
+        isTimedInvincible = true;
         yield return new WaitForSeconds(duration);
-        IsInvincible = false;
+        isTimedInvincible = false;
         invincibilityRoutine = null;
     }
 

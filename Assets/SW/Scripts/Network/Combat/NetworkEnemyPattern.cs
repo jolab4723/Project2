@@ -116,11 +116,15 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
         if (authority.EnemyInfo.patternID != 101) { authority.ServerPlayPatternSkill(skill); return; }
         switch (skill)
         {
-            case 2: authority.ServerRecordBossBurst(); break;
-            case 3: authority.ServerRecordBossBarrage(); break;
-            case 4: case 5: authority.ServerRecordBossMissileVolley(); break;
-            case 6: authority.ServerRecordBossJump(); authority.ServerPlayBossJumpAnimation(); return;
-            case 7: authority.ServerRecordBossDash(); break;
+            case WBH_EnemyAnimation.ShootBurstSkillId: authority.ServerRecordBossBurst(); break;
+            case WBH_EnemyAnimation.BarrageSkillId: authority.ServerRecordBossBarrage(); break;
+            case WBH_EnemyAnimation.MissileSkillId:
+            case WBH_EnemyAnimation.TransitionPhaseSkillId: authority.ServerRecordBossMissileVolley(); break;
+            case WBH_EnemyAnimation.JumpAtkSkillId:
+                authority.ServerRecordBossJump();
+                authority.ServerPlayBossJumpAnimation();
+                return;
+            case WBH_EnemyAnimation.DashWaitSkillId: authority.ServerRecordBossDash(); break;
         }
         authority.ServerPlayBossSkill(skill);
     }

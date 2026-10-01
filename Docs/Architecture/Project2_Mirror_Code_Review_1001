@@ -1,0 +1,455 @@
+# Project2 — Mirror 통합 종합 코드 검토
+
+> **판정: 구조 개선 방향은 타당하다. 그러나 공통화 과정에서 드러나는 상태 수명·요청 계약·HUD 대상 선택 문제를 수정하고 회귀검증하기 전에는 기능적 최종 승인을 보류한다.**
+>
+> 큰 구조를 다시 만들기보다 아래 지적을 기존 클래스 안에서 좁게 수정하는 것이 적절하다. 이 문서는 **코드 수정본이나 실행 검증 인증서가 아닌, 커밋을 고정한 정적 검토 보고서**다.
+
+## 1. 검토 기준과 증거 범위
+
+| 항목 | 기준 |
+|---|---|
+| 저장소 | `jolab4723/Project2` |
+| 실제 브랜치 | `unity-6000-3-22-test` — 요청의 “6000.3.22 브랜치”에 해당 |
+| 검토 커밋 | `b0a9a25651e4bb876b1ff695108c2676c7801c38` |
+| 커밋 제목 | `미러 통합: 공통 실행 경로와 정식 씬 통합 및 호스트 검증` |
+| 커밋 시각 | 2026-10-01 00:40:55 KST / 2026-09-30 15:40:55 UTC |
+| 비교 기준 | 직전 부모 `44e018a74424a3c3bd4526e7a6483745e3f5dc37` |
+| 검토일 | 2026-10-01, 한국 시간 기준 |
+| 직접 읽은 코드 | 현재 커밋의 런타임 C# 33개 파일 전체 또는 관련 메서드 범위. 부모 커밋의 5개 파일도 표본 대조 |
+| 계획·이력 | `Docs/Architecture`의 마무리 계획, 단계별 통합 계획, 누적 실행 기록 및 `AGENTS.md` 관련 기준 |
+| 저장소 변경 | 없음. 커밋·푸시·코드·씬·프리팹 수정 없이 보고서만 작성 |
+
+**경로 정정:** 이 커밋에서 확인한 통합 계획의 실제 위치는 `Docs/Architecture`다. `Docs/Mirror`라는 경로를 전제로 다른 문서를 추정하지 않았다. 최신 마무리 계획의 §1~9에 적힌 최초 지적을 현재 미해결 사항으로 그대로 복사하지 않고, **§11 및 실행 기록 §9.9의 재개 결과**를 현재 코드와 대조했다. [D01] [D02] [D03]
+
+**직접 검증하지 않은 것:** Unity 컴파일/Weaver, PlayMode, 실제 장비 발동, 별도 Client, 4인, Dedicated/Linux, Inspector 전수검사, 16개 씬과 프리팹 전체 YAML 참조 검증, 성능 계측. 연결된 원격 컴퓨터가 오프라인이어서 이번 검토에서는 Unity를 실행하지 않았다. GitHub의 소스와 커밋/문서를 읽은 결과만 보고한다.
+
+**기존 로그의 의미:** §9.9에는 F/G 각각 Editor Host 1인 23개 검사, 규칙 20건, 프리팹 15개, AnimationEvent 59개의 단일 수신자, 16개 씬 구조 검사 통과가 기록돼 있다. 이는 **기존 작업자의 실행 기록**이며 이번 검토자가 재실행한 결과가 아니다. 같은 절은 기존 끊어진 참조 60+13건, 계정 미로그인에 따른 결과 저장·복귀 미검증, 전체 진행·보스·경제·A1~A3·오프라인 Act3·원격/4인/Dedicated/Linux 미검증을 명시한다. 사용자가 당시 Host 1인으로 범위를 제한했으므로 그 제한 자체를 구현자의 지시 위반으로 평가하지 않는다. 다만 그 증거만으로 멀티플레이 전체 완료를 판정할 수는 없다. [D02]
+
+## 2. 질문에 대한 종합 답변
+
+### 2.1 코드가 잘 짜였는가?
+
+**이전의 중복 구현을 줄이는 방향은 좋고, 실제로 줄인 흔적도 확인된다.** `NetworkPlayerInputHandler`, `NetworkPlayerActionInputHandler`, `MirrorCooldownHud`는 공통 원본으로 요청·Context를 전달하는 작은 연결부가 됐다. 원본 UI를 끄고 별도 UI를 다시 그리는 방식도 HP/쿨다운에서 줄었다. 서버 확정과 클라이언트 표시의 경계, 요청 번호·revision, 소유자별 Context, 이벤트 해제처럼 반드시 필요한 복잡성까지 무조건 삭제하지 않은 점이 좋다. [S01] [S02] [S15] [S22] [S24] [S29]
+
+그러나 **“동작 원본이 하나가 됐다”와 “그 원본이 모든 네트워크 수명에 안전하다”는 서로 다르다.** 회피 코루틴, 무적 상태의 공동 사용, 보스 전환의 실패 처리, 아이템 선택과 실제 획득 요청의 불일치, 숨겨진 엘리트 HUD 대상 캐시는 별도의 검토가 필요하다. 이 부분은 코드 길이나 이름을 다듬는 작업보다 먼저 수정하는 편이 좋다.
+
+### 2.2 팀원과 본인의 변수명·문법을 잘 따랐는가?
+
+**큰 틀에서는 따랐다.** BH의 `controller / combat / movement / pattern`, WJ의 `Bind / Unbind`, SW의 `PlayerContext`, `TryRequest...`, `pendingRequestId`, `...Authority` 같은 기존 용어와 역할이 유지된다. 한글 설명과 `SW 수정` 주석도 추가돼 있다. 부모 코드와 대조하면 `var`, `new()`, `?.`, 식 본문, 단일 문장 조건문의 중괄호 생략은 이미 섞여 있으므로, 그것만으로 “팀 문법을 어겼다”고 볼 수 없다. [S01] [S04] [S12] [S16] [B01] [B02] [B03]
+
+다만 다음 문제는 남는다.
+
+- 기존 이름 있는 상수가 있는데 새 연결 코드가 숫자 `2~7`을 직접 쓰는 부분.
+- 실제 범위가 바뀌었는데 `Test`, `Boss`, `UniqueEffect`가 붙은 이름이 그대로 남는 부분.
+- 여러 상태 변경과 해제를 한 줄에 몰아, 원본의 절차를 읽기 어렵게 만든 부분.
+- 원본 설명을 보존하는 데 그쳐 이제 사실과 맞지 않는 주석도 보존한 부분.
+
+이는 “새로운 코딩 표준을 만들어 전면 개명”할 문제가 아니다. **변경한 경계와 의미가 틀어진 이름만 좁게 고치는 것이 적절하다.**
+
+### 2.3 불필요한 구현은 없는가?
+
+일부 남는다. 빈 디버그 호출, 표시 바인딩 중 중복 `Refresh`, 잔존 리플렉션, 진단용 상태의 상시 동기화 후보는 정리 가치가 있다. 반면 `pendingRequestId`, `waitingForRevision`, 스킬 눌림 배열, 이벤트 해제, 일부 빈 AnimationEvent 수신자는 이유가 있으므로 지우면 안 된다. **아래에서는 삭제해도 되는 것으로 확정한 것과 추가 참조 조사가 필요한 후보를 구분한다.**
+
+## 3. 계획과 실제 구현 대조
+
+| 계획의 핵심 | 확인한 실제 구현 | 평가 |
+|---|---|---|
+| I01~I02: 입력·회피·애니메이션 원본 재사용 | 네트워크 입력 두 개가 원본 콜백을 연결. `TryDodge` 성공 시에만 후속 취소. 공통 애니메이션에 로컬/서버/표시 권한 주입 | 방향 타당. 회피 수명과 무적의 원인 분리는 남음. R01·R02 |
+| I03: 공용 UI 입력·기존 버튼 재사용 | KY 입력이 공유 InputActions 사용. 강화는 기존 `TryUpgrade` 진입점, 리롤은 원본 클릭/표시 + 외부 요청 연결 | 양호. 실제 경제/끊김 회귀는 로그상 범위 밖. 신규 상점 UI 재작성 불필요 |
+| I03: 로컬 Context·쿨다운 공통화 | 공통 컨테이너가 소유 Context의 장비/유물 쿨다운 수집. Mirror HUD는 전달 역할 | 양호. 슬롯 재바인딩과 툴팁 수명은 R06 |
+| I04: 체력 상태와 개별 피해 사건 분리 | SyncVar 체력과 `RpcShowDamage`가 분리돼 공통 `WBH_EnemyView`에 전달 | 양호. 마지막 피해 한 값만 폴링해 타격 숫자를 복구하는 구조가 아님 |
+| I04: 고등급 HP 원본 뷰 사용 | `NetworkBossHealthBar`가 `WBH_HighEnemyHpbarView`의 외부 API 사용 | 원본 재사용은 개선. 어댑터 대상 캐시와 뷰 해제의 불일치가 R05 |
+| I05: 원본 Act1 보스 패턴 재사용 | 서버 대상 공급과 공격·미사일 생성 콜백만 네트워크 경계에 유지. 페이즈 완료는 시간 콜백 | 원본 중복 제거는 타당. 실패한 전환의 연출 반복은 R03 |
+| I06: 정식 웨이브·보상 공통화 | 필수 Stage/Spawn 설정이 없으면 시작 거부. 경험치·크레딧 지급은 공통 메서드. 네트워크에서 로컬 보상 구독자 비활성화 | 핵심 경계는 확인. 생성 시점 실패에서의 세션 복구는 R07 |
+| I07: 공유 씬·NPC·모드 분리 | `MirrorSceneMode`가 모드별 객체/Behaviour 전환, 공용 NPC의 Shop/Upgrade 진입점 제공 | 코드 진입점은 확인. 16씬 실제 배선은 실행 기록을 인용한 것이며 이번 전수 재검증은 아님 |
+| I08: 잔재 정리·명명·재현 가능 검증 | 3개 복제 스크립트 제거와 검사 도구 정리는 커밋/실행 기록에 명시. 현재 코드에 오래된 테스트 이름·일부 리플렉션/디버그 흔적은 존재 | 부분 달성. 필요 계약과 잔재를 구별해 C 항목만 정리. 과거 시험 자산을 임의로 추가 삭제하지 않음 |
+
+근거: [D01] [D02] [S01] [S02] [S03] [S07] [S10] [S11] [S12] [S13] [S14] [S16] [S19] [S21] [S22] [S24] [S26] [S29] [S30] [S32] [S33]
+
+## 4. 우선순위와 판정 방식
+
+**P0:** 권한 붕괴·중복 자원 확정·복구 불가능한 손실 등 즉시 중단급. 이번에 읽은 범위에서 P0를 확정하지 못했지만, 프로젝트 전체에 없다는 보증은 아니다.
+
+**P1:** 전투 상태·무적·보스 진행에 직접 영향을 줄 수 있어 다음 기능 확장 전에 처리할 항목.
+
+**P2:** 입력/표시 불일치나 특정 실패 조건에서의 진행·복구 문제. 해당 조건의 회귀검증이 필요하다.
+
+**P3:** 의미·문법·주석·진단/성능 후보 정리. 위험 없는 변경부터 별도 커밋으로 처리한다.
+
+아래의 **“정적 확인”은 조건을 만족하면 해당 코드 경로가 생긴다는 뜻**이다. 실제 게임에서 재현했다는 뜻이 아니다. “조건부 위험”은 런타임에서 그 조건이 성립하는지 추가 확인해야 한다.
+
+| ID | 우선순위 | 핵심 | 증거/도입 구분 |
+|---|---|---|---|
+| R01 | P1 | 회피 코루틴과 조작/컴포넌트 수명의 분리 | 취소·정리 누락 정적 확인. 원본에 이미 있던 위험 |
+| R02 | P1 | 회피가 다른 원인의 무적을 해제 | 같은 bool에 대한 경쟁 정적 확인. 기존 원본 위험 |
+| R03 | P1 | 보스 전환 공격이 실패해도 연출 요청 반복 | 실패 경로 정적 확인. 기존 원본 문제를 네트워크 재사용 경로가 상속 |
+| R04 | P2 | 아이템 우선 선택 후 다른 Raycast로 요청 거절 | 요청 계약 불일치 정적 확인. 현재 공통화 연결 경계의 문제 |
+| R05 | P2 | 숨긴 엘리트 대상이 다음 대상 선택을 막음 | 캐시/해제 불일치 정적 확인. 새 공통 뷰 연결에서 확인 |
+| R06 | P2 | 쿨다운 슬롯 재사용 시 툴팁이 이전 대상을 유지 | 바인딩·툴팁 이벤트 불일치 정적 확인. 원본 UI 재사용 경로에도 영향 |
+| R07 | P2 | 웨이브 생성 직전 검증 실패 후 Playing 상태 잔류 | 실패 분기 정적 확인. 발생 조건은 런타임 검증 필요 |
+
+## 5. 기능 지적 상세
+
+### R01. 회피 코루틴이 조작 차단·비활성화와 함께 취소되지 않는다 — P1
+
+**위치:** `T_PlayerController.Dodge`, `OnDisable`, 조작 차단 경로. 관련 연결은 `MirrorSpawnedPlayerBinder.RefreshLocalInput`, `ApplyTemporaryAbsence`. [S05] [S09] [B01]
+
+`Dodge`는 진입 때만 Agent와 목적지를 검사한 뒤 매 프레임 `agent.Move`를 실행한다. 종료 때는 시작 당시 `endPos`로 `Warp`하고 `isStopped = false`, 무적 해제, `Idle` 전이를 수행한다. 그런데 `OnDisable`에는 이 회피 작업을 추적해 중지·정리하는 코드가 없고, 진행 중 루프/종료 지점에도 조작 차단·Agent 해제·다른 상태 전이에 대한 재검사가 없다.
+
+Unity는 **MonoBehaviour의 `enabled = false`만으로 코루틴을 중지하지 않는다.** 게임 오브젝트 비활성화/파괴와 컴포넌트 비활성화는 다르다. 따라서 현재 코루틴이 진행 중인 객체에서 Controller만 끄거나 Agent를 해제하면, 입력을 막았어도 이전 이동 작업이 계속될 수 있다. 끝의 무조건적인 복구도 새로운 상태의 정지를 덮어쓸 수 있다. [U01]
+
+부모 커밋에도 같은 종료 구조가 있다. 이번 커밋이 새로 만든 루프라고 비난할 항목은 아니지만, 재접속·씬 전환·부재처럼 수명이 길어진 공유 플레이어에서 함께 다뤄야 할 기존 위험이다. 메뉴를 열면 반드시 회피가 중지돼야 한다고 단정하는 지적은 아니다.
+
+**최소 수정:** 회피 전용 `Coroutine` 핸들과 멱등적인 취소/정리를 원본 Controller에 둔다. 정상 종료·`OnDisable`·실제 행동 취소 경계가 같은 정리 함수를 사용하게 한다. Agent 접근 전에 유효성을 확인하고, 현재도 회피 상태이며 조작 허용 조건을 만족할 때만 `Idle`/이동 재개를 적용한다. 시작 때 소비한 회피 쿨다운을 취소 시 무조건 환불하지 않는다. 다른 무적을 끄지 않도록 R02와 함께 수정한다.
+
+**최소 재현:** 정상 NavMesh에서 회피를 시작하고 한 프레임 뒤 Controller 비활성화/Agent 해제/컷씬 조작 차단을 각각 적용한다. 이전 목적지 이동, NavMesh 관련 오류, 차단 중 `Idle` 덮어쓰기, 재활성화 후 무적 잔류를 확인한다. Host·원격 소유자·오프라인 각각에서 실제 씬 이동/부재 경로와 연결해 재검증한다.
+
+### R02. 회피 무적과 부활·스킬 무적이 같은 bool을 덮어쓴다 — P1
+
+**위치:** `T_PlayerController.Dodge`, `ApplyInvincibility`, `BeInvincible`, `BeginRevive`, `CompleteRevive`. [S05] [B01]
+
+회피는 시작/끝에 `IsInvincible`을 직접 true/false로 바꾼다. 별도의 `BeInvincible(duration)`도 같은 값에 true를 쓰고 시간이 지나면 false를 쓴다. 어느 원인의 무적인지 구별하지 않는다.
+
+예를 들어 장시간 무적을 적용한 뒤 회피가 끝나면, 장시간 무적의 남은 시간과 관계없이 회피가 bool을 false로 덮어쓴다. 반대로 기존 무적 타이머가 회피 도중 끝나도 회피 무적을 조기에 해제할 수 있다. 정상 패시브 부활은 `BeginRevive(..., 10f)`를 사용하므로, 부활 상태가 끝난 뒤 남은 무적과 회피가 겹치는 경우를 특히 확인해야 한다.
+
+**확실한 범위:** 원본 Controller 안의 상태 경쟁은 확인했다. 네트워크 서버의 모든 피해 경로가 반드시 이 bool 하나만 사용한다고 단정하지는 않는다. 서버 측 추가 보호가 있는 경로와 오프라인 원본 경로는 따로 확인해야 한다.
+
+**최소 수정:** 기존 외부 계약을 유지하면서 내부에서 회피 무적과 시간제 무적을 분리하고, 유효 무적은 두 조건의 OR로 계산한다. 또는 원인별 종료 시각을 사용한다. 단순히 “회피 종료 때 예전 bool 값을 복구”하면 도중에 새로 적용된 무적과 다시 충돌하므로 피한다. 범용 무적 Manager를 새로 만들 필요는 없다.
+
+**최소 재현:** 5초 무적 → 1초 뒤 회피 → 회피 종료 후 5초가 되기 전 피격. 반대로 회피 도중 시간제 무적이 만료되는 경우도 검사한다. 무적이 부여된 이유 하나가 끝나도 다른 이유가 남아 있으면 보호가 유지돼야 한다.
+
+### R03. 보스 전환이 시작되지 않았는데 전환 연출을 매 프레임 요청한다 — P1
+
+**위치:** `WBH_EnemyBossPattern_Act1.Tick / EnterPhaseTwo`, `WBH_EnemyCombat.TryMissile`, `WBH_EnemyAnimation.PlaySkill`, `NetworkEnemyPattern.PlayPatternSkill`. [S17] [S18] [S20] [S16] [B02]
+
+실행 순서는 다음과 같다.
+
+```text
+HP가 2페이즈 기준 이하
+→ Tick이 일반 IsActionInProgress 조기 반환보다 먼저 EnterPhaseTwo 호출
+→ 다른 행동 중이면 TryMissile이 false
+→ 그럼에도 PlaySkill(5) 실행
+→ isPhaseTransition을 false로 복구
+→ 다음 Tick에서 같은 실패와 연출 요청 반복
+```
+
+네트워크에서는 `PlaySkill`의 외부 요청이 `PlayPatternSkill`로 전달되고, ID 5는 보스 미사일 발사 묶음 진단 기록 및 보스 스킬 표시 경로로 들어간다. 실제 전환 공격이 시작되지 않아도 표시 요청/진단 값이 반복된다. 이전 공격의 Animator 전이를 방해할 가능성도 있으나, 실제 보스가 영구 정지한다고까지 확정하지는 않는다.
+
+**도입 구분:** 원본의 `TryMissile` 실패 후 `PlaySkill(5)` 위치는 부모 커밋에도 있다. 이번 공통화에서 새로 재사용하는 원본의 오류를 네트워크 연결이 확대할 수 있는 사례다.
+
+**최소 수정:** `started == false`면 상태만 복원하고 반환한다. 성공 분기에서만 `PlaySkill`과 `NotifyTransitionStarted`를 호출한다. 이미 있는 `WBH_EnemyAnimation.TransitionPhaseSkillId`를 쓰면 새 enum 없이 숫자의 의미도 해결된다.
+
+```csharp
+// 기존 TryMissile 호출과 인자는 유지한다.
+if (!started)
+{
+    isPhaseTransition = false;
+    return;
+}
+
+owner.enemyAnimation.PlaySkill(WBH_EnemyAnimation.TransitionPhaseSkillId);
+phaseView?.NotifyTransitionStarted();
+```
+
+위 코드는 위치 변경의 요지를 설명하는 예이며 저장소에 적용·컴파일한 패치가 아니다.
+
+**최소 재현:** 미사일/탄막 등 다른 행동 중 보스 HP를 전환 기준 아래로 내린다. `TryMissile == false`인 프레임에는 ID 5 요청이 0회여야 하고, 실제 전환 시작 시에만 1회여야 한다. Host와 관찰자에서 준비/기존 공격 애니메이션이 불필요하게 재시작하지 않는지도 확인한다.
+
+### R04. 아이템 우선 선택을 네트워크 요청에서 다시 뒤집는다 — P2
+
+**위치:** `WBH_PlayerInputHandler.HandleAttackInput / TryHandleWorldItemClick / UpdateItemChase / RequestPickup`, `NetworkPlayerInputHandler.RequestPickup`, `PlayerInventorySync.TryRequestPickup(Ray)`. [S03] [S01] [S15]
+
+공통 입력은 “장판 등의 Collider가 획득 클릭을 가리지 않도록” `worldItemLayer`로 아이템을 먼저 고른다. 그런데 네트워크 연결은 선택한 아이템이 아니라 Ray를 전달하고, 하위 요청은 `~0` 전체 레이어로 다시 검사한다. 두 번째 검사에서 앞쪽 장판·다른 Collider가 먼저 맞으면 `NetworkWorldItem`을 찾지 못해 false를 반환한다.
+
+그 false도 공통 `RequestPickup`의 void 경계에서 버려진다. 추적 도착 경로는 요청을 시작했는지와 무관하게 `pendingItem`을 지우며, 외부 요청이 연결됐으면 로컬 실패 안내도 생략한다. 사용자는 아이템을 선택해 근처까지 갔는데 아무 일도 일어나지 않는 상황을 볼 수 있다. 비동기 서버 거절과 달리 **Command 자체가 시작되지 않는 실패**일 수 있다.
+
+**최소 수정:** 이미 선택된 `ItemDataStorage`/아이템 식별을 연결부까지 보존해 같은 대상을 요청한다. 공통 원본이 Mirror 타입을 직접 알도록 만들 필요는 없다. 하위 요청에서 재탐색이 꼭 필요하다면 원본 선택 정책과 동일해야 한다. `Try...`의 요청 시작 성공 여부를 상위까지 전달하고, 미시작 실패와 서버 응답 대기를 구별한다. 서버의 거리·소유·중복 claim·revision 검증은 유지한다.
+
+**최소 재현:** 아이템 앞에 아이템 레이어가 아닌 Collider를 겹치고 가까운 클릭/먼 거리 추적 획득을 각각 실행한다. 기본 입력은 해당 아이템을 선택해야 하고, 네트워크 요청도 같은 아이템 ID로 정확히 한 번 진행돼야 한다. 요청 미시작 시에는 재시도 가능한 상태 또는 적절한 안내가 있어야 한다.
+
+### R05. 엘리트 HUD가 숨은 이전 대상에 묶여 다른 적을 표시하지 못한다 — P2
+
+**위치:** `NetworkBossHealthBar.Update / IsValidTarget / RefreshDisplay`, `WBH_HighEnemyHpbarView.UpdateExternalVisibility / ClearExternal`. [S24] [S25] [B04]
+
+공통 뷰는 거리 이탈 시 `ClearExternal`로 연결과 표시를 지운다. 반면 네트워크 어댑터는 `boundEnemy`를 유지하고, `IsValidTarget`에 거리 조건을 넣지 않는다. `FindTargetEnemy`는 `boundEnemy == null`일 때만 실행된다.
+
+따라서 피해를 입은 엘리트 A를 표시한 뒤 A에서 멀어져 UI를 숨기고, 근처의 엘리트 B를 공격해도 A가 살아 있는 한 대상 재탐색이 막힐 수 있다. `RefreshDisplay`는 A의 HP가 같으면 바로 반환하고, 달라져도 A가 멀면 표시를 하지 않는다. **“같은 체력으로 A를 재표시하지 않기” 위한 캐시가 “다른 B를 선택하지 못하기”로 확장된 것**이다.
+
+**도입 구분:** 부모 구현에도 기존 대상을 오래 유지하는 선택 방식이 있었다. 다만 이번 공통 뷰의 거리 이탈 해제와 결합된 어댑터/뷰 수명 불일치는 현재 코드에서 명확하다. 이번 커밋에서 모든 대상 선택 문제가 처음 생겼다고 주장하지 않는다.
+
+**최소 수정:** 숨긴 이전 대상에 대한 재표시 억제와 현재 유효 후보 선택을 분리한다. 거리 밖의 대상을 계속 활성 `boundEnemy`로 잡아 새 후보를 막지 않는다. 같은 A에 단순 재접근했을 때 HP 변화 없이 다시 표시하지 않는 기존 정책도 함께 보존한다. 공통 뷰를 다시 끄거나 독립 HP UI를 재구현하는 해결책은 필요 없다.
+
+**최소 재현:** A를 타격해 HUD 표시 → A와 `HideDistance` 밖으로 이동 → B를 타격. B의 이름·HP가 표시돼야 한다. A로 단순 복귀하는 경우와 B 사망/씬 이동/로컬 플레이어 교체도 추가 확인한다.
+
+### R06. 재사용 쿨다운 슬롯의 툴팁 수명이 아이템 바인딩과 분리돼 있다 — P2
+
+**위치:** `CooldownIconUIContainer.Update`, `CooldownIconSlot.Bind / BindArcLaser / OnPointerEnter / OnDisable`. [S30] [S31]
+
+컨테이너는 매 프레임 현재 쿨다운 목록을 만들고 슬롯을 인덱스 순서로 재사용한다. 목록 앞의 항목이 끝나면 같은 슬롯이 다른 아이템/효과로 바뀐다. 그러나 `Bind`는 아이콘·값·참조만 갱신하고, 이미 마우스를 올려 띄운 툴팁을 갱신하지 않는다. 툴팁은 포인터 진입이나 언어 변경 때만 다시 만들어진다.
+
+또한 `OnDisable`은 해당 슬롯이 툴팁의 주인인지와 무관하게 공용 `BuffTooltipUI`를 숨긴다. 다른 슬롯의 쿨다운 종료로 현재 보고 있던 툴팁까지 닫힐 수 있다.
+
+**최소 수정:** 바인딩 대상이 바뀌었고 현재 hover 중이면 툴팁도 갱신한다. 해제할 때는 이 슬롯이 표시하던 툴팁만 닫도록 한다. 최소한 `hovered`를 false로 만들기 전의 값을 확인한다. 기존 슬롯 풀과 툴팁을 유지하고 별도 네트워크 툴팁 구현은 만들지 않는다.
+
+**최소 재현:** A·B 쿨다운을 동시에 표시하고 A 슬롯에 마우스를 고정한 상태에서 A만 만료시킨다. 같은 위치로 들어온 B의 이름/설명이 맞아야 한다. 다른 슬롯 만료만으로 B의 툴팁이 닫히지 않아야 한다.
+
+### R07. 웨이브 준비와 실제 생성 사이 실패에 대한 복구 경로가 부족하다 — P2 / 조건부 위험
+
+**위치:** `NetworkEnemyWaveSpawner.ServerTryStartSession / SpawnAuthoredWave / Update`. [S32]
+
+시작 승인에서 `sessionPhase = Playing`으로 바꾼 뒤 생성 코루틴을 실행한다. 코루틴은 보스 인트로를 기다린 후 생성 지점/NavMesh를 다시 검사한다. 이 검사에 실패하면 로그를 남기고 `waveRoutine = null` 뒤 종료하지만, `Playing`을 복구하거나 명시적인 준비 실패를 상위에 전달하지 않는다. `waveSpawnFinished`가 false인 상태라면 `Update`도 조기 반환한다.
+
+앞선 사전 검증이 성공했고 씬/NavMesh가 안정적이면 보통 지나가는 경로다. 따라서 **현재 정식 씬이 정상 플레이 중 반드시 멈춘다는 지적은 아니다.** 준비 후 지점/컴포넌트가 사라지는 조건에서 이 컴포넌트 자체가 진행·재시도 경로를 잃는다는 정적 위험이다.
+
+**최소 수정:** 기존 준비 실패/세션 오류 경로에 이유를 전달하거나, 아직 아무 적도 생성하지 않은 실패를 안전하게 대기 상태로 복구한다. 부분 생성 뒤의 실패까지 단순 자동 재실행해 중복 스폰하지 않도록 구분한다. 검사 자체를 삭제해서 실패를 숨겨서는 안 된다.
+
+**최소 재현:** 준비 성공 후 보스 인트로 대기 중 생성 지점 또는 유효 NavMesh 조건을 제거한다. 실패 원인이 사용자/운영 로그에 남고, 명시적인 이탈/복구가 가능해야 한다. `Playing`인데 적도 생성 작업도 없는 상태만 남지 않아야 한다.
+
+## 6. 명명·문법·불필요한 코드 정리
+
+### C01. 기존 상수와 의미 있는 이름을 먼저 사용한다
+
+| 현재 표현 | 판단 | 권장 방향 |
+|---|---|---|
+| `PlayPatternSkill`의 `case 2/3/4/5/6/7` | **기존 상수가 있는데 중복 숫자 사용**. `WBH_EnemyAnimation`에 이미 `ShootBurstSkillId`, `BarrageSkillId`, `MissileSkillId`, `TransitionPhaseSkillId`, `JumpAtkSkillId`, `DashWaitSkillId`가 있다 | 이 상수를 직접 사용. 새 범용 enum/매핑 Manager는 불필요 |
+| `MirrorSpawnedPlayerBinder.GetTestNetworkManager()` | 정식 `MirrorNetworkManager`를 반환한다. “Test”가 실제 역할과 불일치 | `GetNetworkManager()` 등으로 관련 호출부만 정리 |
+| `MirrorCooldownHud.VisibleUniqueEffectCooldownCount` | `VisibleCooldownCount`를 그대로 반환하지만 컨테이너는 아크 레이저 스킬도 포함 | 모든 쿨다운을 의미하는 이름으로 바꾸거나 고유효과 개수만 집계. 이름과 집계 범위를 일치시킴 |
+| `NetworkEnemyAuthority.DisableOriginalRuntimeDrivers()` | 실제로 `originalView.enabled = true`도 수행 | “원본 네트워크 실행 구성”을 나타내는 이름으로 수정. 무조건 모두 끄는 메서드로 오해하지 않게 함 |
+| `ServerLaunchBossProjectile`, `bossBulletLaunchCount` | 공통 Combat의 추적 사격/회전 탄막 콜백도 이 경로로 연결 가능 | 사용 범위와 진단 의미를 확인해 일반 패턴 투사체 이름 또는 보스 전용 계수 조건으로 좁힘 |
+| `RequestAttack`, `RequestPickup`의 void 경계 | 하위 `Func<..., bool>` 결과가 소실돼 “요청 시작 실패”를 표현 못 함 | 필요 호출부에서 성공 여부를 쓰도록 `TryRequest...` 계약을 일관되게 전달. 이름만 바꾸지 않음 |
+| `pattern / combat / movement / target`, `context`, `pendingRequestId` | 좁은 클래스 문맥에서 역할이 명확하고 원본 용어와 맞음 | 불필요하게 긴 추상 이름으로 바꿀 필요 없음 |
+| `transitionOuterRaidus`, `missileExplsionRadius`, `CompletePhaseTwoTransiton` | 기존 원본 오탈자. 부모 대조 없이 최신 AI가 새로 만들었다고 볼 수 없음 | 별도 작은 정리 작업에서 참조 확인 후 수정. 현재 기능 수정과 대량 이름 변경을 섞지 않음 |
+
+근거: [S16] [S17] [S20] [S21] [S29] [S30] [S03] [S06] [S09] [B02]
+
+### C02. 짧은 문법과 여러 작업을 한 줄에 쓰는 것은 다르다
+
+`BindPlayer(...) => player = ...`처럼 한 가지 동작만 하는 식 본문은 기존 코드와 잘 맞는다. 반면 `StopServer`의 해제, 네트워크 패턴의 여러 조기 반환/상태 갱신, SceneMode의 중첩 반복문을 한 줄로 묶으면 **중단 시 어느 단계까지 수행됐는지** 읽기 어려워진다. [S16] [S33]
+
+예를 들어 다음처럼 여러 동작이 있는 블록만 원본 스타일의 여러 줄로 펴면 충분하다.
+
+```csharp
+if (pattern != null)
+{
+    pattern.Die();
+    pattern.BindExternalTargets(null);
+}
+```
+
+`var`를 전부 없애거나 모든 필드 접두사를 통일하는 작업은 권장하지 않는다. 팀원 파일의 기존 형식과 용어를 유지하고, 변경한 복합 제어 흐름만 읽기 쉽게 만든다. 직렬화 필드명 변경에는 기존 데이터 이전이 필요할 수 있으므로 스타일만을 위한 일괄 개명은 피한다.
+
+### C03. 주석은 많지만 현행 설명으로 정리할 부분이 있다
+
+`PlayerActionInputHandler`의 “스킬 시스템 자체는 아직 없다”는 설명은 현재 코드/프로젝트 상태와 맞지 않는다. 이동/공격/회피를 일괄 레거시 입력이라고 설명하는 부분도 현재 Dodge의 InputActions 사용과 구분해야 한다. `EnemyKillReward` 상단은 OnDead 설명과 나중의 OnDamaged 정정이 함께 있어 현재 계약을 한눈에 파악하기 어렵다. `NetworkEnemyAuthority`/`PlayerInventorySync`의 테스트 단계 설명도 현행 역할 설명과 과거 이력이 섞인다. [S04] [S26] [S21] [S15]
+
+`CooldownIconUIContainer`와 `CooldownIconSlot`은 상단에서 다른 UI의 “파생”이라고 설명하지만 클래스 선언은 직접 `MonoBehaviour`를 상속한다. 디자인/구현을 참고했다는 뜻이라면 “같은 시각 구조를 재사용한다”로 쓰는 편이 정확하다. [S30] [S31]
+
+**권장:** 현재 동작·권한·실패 조건을 먼저 쓰고 과거 변경 사유는 필요한 한두 문장만 남긴다. `SW 수정`이라는 작성자 표시가 있다는 것만으로 내용이 정확한 것은 아니다. 기존 팀원 설명을 무조건 삭제하는 대신, 현재와 충돌하는 문장만 정정한다.
+
+### C04. 리플렉션과 탐색 fallback은 남아 있다 — 삭제가 아니라 좁은 대체 검토
+
+`NetworkEnemyAuthority.OnStartClient`는 `ControllerInfoField`로 원본 Controller의 private `info`를 수정한다. 회피/NPC 리플렉션이 제거됐다고 해서 프로젝트 전체 리플렉션이 제거된 것은 아니다. 필드명이 바뀌면 `?.SetValue`가 조용히 생략돼 표시용 Info가 비는 취약한 연결이다. 다만 이는 **계획에서 특정한 회피/NPC 제거 실패와는 별개**다. [S21]
+
+원본 전체 `Initialize`를 원격 Client에서 호출하면 AI·전투 초기화까지 실행할 수 있으므로 대안이 아니다. 기존 공개 표시용 API가 있는지 먼저 확인하고, 없다면 표시용 Info만 설정하는 작은 명시적 진입점으로 대체하는 편이 낫다. private 필드를 통째로 public으로 바꾸거나 새 적 Manager를 만들 이유는 없다.
+
+`MirrorSceneMode.FindInActiveMode`는 활성 부모 후보가 없으면 같은 씬의 첫 후보를 반환한다. 양쪽 모드의 팝업 부모가 아직 비활성인 순간에는 잘못된 모드 후보를 반환할 가능성이 있다. 현재 16씬에서 실제 발생했다고 확인한 결함은 아니지만, 이름만 보고 엄격한 모드 필터로 믿으면 안 된다. 중요한 바인딩은 직렬화 참조 또는 확인된 현재 모드 루트로 좁히고, 설정이 없을 때는 기다리거나 오류를 알리는 편이 안전하다. [S33]
+
+### C05. Unity 객체의 null 문법은 수명에 맞춰 쓴다
+
+`MirrorLocalPlayerUIBinder.OnDisable`은 Unity 객체 파괴 후를 고려해 `!= null`을 사용하는데, 같은 클래스의 다른 재바인딩/참조 복구에는 `?.`/`??=`가 섞인다. Unity 객체는 네이티브 부분이 파괴돼도 관리 참조가 남을 수 있어, null 조건 연산자와 Unity의 `== null` 판정이 같지 않다. [S10] [U02]
+
+**모든 `?.`가 버그라는 뜻은 아니다.** 동일 수명에서 유효함이 보장되는 참조, 일반 C# 객체, delegate에는 적절할 수 있다. 씬 전환·재접속으로 먼저 파괴될 수 있는 `UnityEngine.Object`를 재사용하는 경계만 집중 검사한다. 동일 객체를 반복 `Find`하는 대형 방어 계층으로 대체할 필요도 없다.
+
+### C06. 삭제 후보와 삭제하면 안 되는 항목
+
+| 항목 | 처리 판단 |
+|---|---|
+| `T_PlayerCombat.Update → TestMultiple()`의 비어 있는 실행 본문 | 보이는 현재 호출은 아무 게임 작업도 하지 않음. 공개 메서드/Inspector 참조 확인 후 호출과 빈 디버그 메서드를 함께 정리하는 후보 |
+| 같은 파일의 `lastChaseDestination = destination; ;` | 불필요한 빈 문장. 기능 수정과 무관한 작은 정리 후보 |
+| `WBH_EnemyStatus`의 비어 있는 `Update` | 확인한 본문은 주석뿐. 메시지 콜백이 필요한지 확인 후 제거 후보 |
+| `WBH_EnemyStatus.TakeDamage(float)` | 현재 화상은 이 경로가 아니라 DamageResult 오버로드를 사용. float 오버로드는 OnDamaged/OnDead 전달이 없어 위험한 잔존 API 후보. 전체 호출·이벤트 참조를 확인한 뒤 제거하거나 정상 피해 계약으로 위임 |
+| `NetworkEnemyAuthority.AnimEventShoot/Reload...`의 빈 본문 | **빈 메서드라는 이유만으로 삭제 금지.** 원본 클립의 수신 계약을 보존하려고 의도적으로 둔 것. 클립 이벤트/수신자 전수 확인 필요 |
+| `pendingRequestId`, `waitingForRevision` | 삭제 금지. 중복 요청 식별과 스냅샷 적용 후 UI 완료의 순서를 보장 |
+| 스킬 눌림 상태 배열·`ReleaseHeldSkills` | 삭제 금지. 메뉴/비활성화 중 해제 이벤트가 빠지는 문제를 방지. 반복 호출은 눌림 플래그로 멱등 처리 |
+| 데미지 표시용 RPC와 체력 SyncVar | 하나로 합치지 않음. 지속 상태와 개별 사건의 목적이 다름 |
+| 아직 사용처를 조사하지 않은 진단 SyncVar/공개 프로퍼티 | 즉시 삭제 확정하지 않음. 테스트 도구·뷰·로그 사용처를 구분한 뒤 결정 |
+
+근거: [S06] [S27] [S28] [S21] [S15] [S04] [S22]
+
+### C07. 성능은 측정 전 단정하지 않되, 불필요한 작업은 줄인다
+
+`CooldownIconSlot.Bind(item, effect, remaining, duration)`은 다른 Bind를 호출해 한 번 `Refresh`한 뒤 숫자를 넣고 다시 `Refresh`한다. 컨테이너가 매 프레임 이 함수를 호출하므로 바인딩/값 갱신을 분리하거나 중간 Refresh를 생략하면 된다. 같은 프레임에 덮어써지는 작업이므로 실제 화면 깜빡임을 재현했다고 주장하지 않는다. [S30] [S31]
+
+`WBH_EnemyStatus.TakeDamage(WBH_DamageResult)`는 매 피해마다 문자열을 만들고 `Debug.Log`를 호출한다. 적·DoT·4인 공격이 늘면 진단 로그 비용도 증가하므로, 필요한 진단 모드에서만 출력하도록 좁히는 편이 좋다. [S27]
+
+`NetworkBossHealthBar`는 대상이 없을 때 주기적으로 전역 적 탐색을 수행한다. 사망 보상 경로에도 씬 매니저 탐색과 데이터 조회가 있다. 그러나 이 사실만으로 병목이라고 단정하지 않는다. 우선 불필요한 이중 Refresh와 상시 피해 로그를 정리한 뒤 실제 2/4인 전투의 CPU/GC/네트워크 송신량을 측정한다. 모든 곳에 풀·캐시·새 서비스를 미리 추가하는 방식은 권장하지 않는다. [S24] [S21]
+
+## 7. 재검토 결과 지적에서 제외한 사항 / 유지해야 할 장점
+
+### 7.1 강화 버튼의 즉시 완료 누락은 현재 근거로 결함 처리하지 않음
+
+`NetworkUpgradeButton`만 보면 요청 후 `pendingRequestId`를 넣어 동기 완료가 먼저 오면 놓칠 것처럼 보인다. 그러나 `PlayerInventorySync.TargetCompleteInventoryRequest`는 바로 UI 완료 이벤트를 발행하지 않고 `waitingForRevision`에 저장한다. 따라서 리롤의 즉시 응답 대응 코드와 모양이 다르다는 이유만으로 버그라고 확정하면 안 된다. **하위 완료 전달 계약까지 추적한 뒤 이 의심은 확정 지적에서 제외했다.** [S14] [S15] [S12]
+
+### 7.2 현재 화상 처치를 구형 float 오버로드 탓으로 단정하지 않음
+
+현재 `ApplyDotDamage`는 공격자와 `DamageCause.DoT`, `AttackId`를 넣은 `WBH_DamageResult`를 `status.TakeDamage`에 전달한다. 네트워크 Authority는 이 결과의 출처를 확인하고 사망 처리에서 공통 보상 메서드를 호출한다. 원본 로컬 보상 컴포넌트는 네트워크에서 비활성화한다. `TakeDamage(float)`가 위험해 보인다는 사실과 실제 화상이 그것을 호출한다는 주장은 다르다. [S28] [S27] [S21] [S26]
+
+실제 동시 타격·점화자 이탈·보상 횟수는 여전히 런타임 회귀 항목이다. 여기서 “모든 보상이 이미 검증 완료”라고 확장하지 않는다.
+
+### 7.3 피해 숫자 중복/누락을 이름만으로 확정하지 않음
+
+`LastDamage`가 남아 있지만 현재 피해 숫자는 별도 `RpcShowDamage`에서 공통 뷰로 전달된다. HP 상태 변경과 개별 피해 사건을 구분하고, 외부 표시 모드에서는 원본 로컬 이벤트 구독을 끊는 구조가 확인된다. 옛 마지막 피해 덮어쓰기 문제를 최신 코드에 그대로 다시 등록하지 않는다. [S21] [S22] [S23]
+
+### 7.4 원본 재사용에 성공한 부분은 유지
+
+공유 InputActions를 UI/원본 스킬 입력이 임의로 Dispose하지 않는 점, 네트워크 요청 대기 중 원본 리롤/강화의 로컬 실행을 막는 연결, 보스 전환 완료를 렌더러 표시 여부가 아니라 시간 콜백으로 진행하는 점, 공통 쿨다운 슬롯과 HP 뷰를 사용하는 점은 유지할 가치가 있다. 이 구조를 다시 별도 네트워크 UI/보스 패턴 복제본으로 되돌리는 해결책은 권장하지 않는다. [S04] [S11] [S13] [S14] [S19] [S29] [S30] [S24]
+
+## 8. 최소 회귀검증 순서
+
+다음은 **수행할 검사 목록**이다. 이 보고서가 수행 결과를 PASS로 제공하는 것이 아니다. 환경/클래스/소유자/관찰자/서버 로그를 함께 남겨 Host 특수 경로에 가려지는 문제를 구분한다.
+
+| 순서 | 검사 | 최소 합격 기준 |
+|---|---|---|
+| G00 | 고정 커밋 + 수정 후보 Unity 컴파일·Weaver·필수 참조 | 후보 SHA 기록, 새 오류 없음. 기존 60+13 참조와 신규 결함 분리 |
+| G01 | 오프라인 F/G 회피 정상·거부·쿨다운 | 성공 1회만 상태/쿨다운 변경. 실패 요청이 쿨다운 재설정하지 않음 |
+| G02 | R01 회피 중 Controller/Agent 비활성화·조작 차단 | 기존 이동 작업 취소, 이전 목적지 Warp/상태 덮어쓰기 없음, 재활성화 정상 |
+| G03 | R02 시간제 무적 ↔ 회피 중첩, 정상 패시브 부활 후 회피 | 각 원인의 유효 시간 보존. 피해 허용 시점 정확 |
+| G04 | R03 보스 다른 행동 중 HP 전환 기준 통과 | 실패한 전환의 연출 0회, 성공 전환 1회, 정상 2페이즈 진입 |
+| G05 | R04 아이템 앞 Collider·장판, 가까운 클릭/추적 도착 | 선택한 동일 아이템을 요청. 미시작 실패가 조용히 사라지지 않음 |
+| G06 | R05 엘리트 A 거리 이탈 후 B 타격 | 새 B HUD 정상. A 재접근만으로 자동 표시하지 않는 기존 정책도 확인 |
+| G07 | R06 슬롯 hover 유지 중 앞 항목 만료·장비/유물 변경 | 아이콘과 툴팁 대상 일치, 다른 슬롯 해제로 현재 툴팁 소실 없음 |
+| G08 | R07 준비 후 생성 지점/NavMesh 실패 주입 | 명시적인 실패/복구 경로. 적 없는 Playing 상태에 방치되지 않음 |
+| G09 | Host + 별도 Client, F/G 역할 교차 | 실제 원격 입력·공격·회피·피해/연출 각 1회, 소유자 HUD만 연결 |
+| G10 | 스킬 홀드 중 채팅/메뉴/비활성화, ESC·IME·리바인딩 | 누름/해제 짝 유지, 같은 ESC 이중 소비 없음, 공유 액션 수명 유지 |
+| G11 | 강화·리롤 성공/거절·동시 요청·응답 전 창 닫기/재열기 | 골드/아이템 서버 확정 1회, UI 잠금 해제와 재선택 정상 |
+| G12 | 직접 공격·스킬·화상 처치·동시 마지막 타격 | 사망·보상·드롭 소유 규칙 일치, 적당 처리 1회, 점화자 이탈 정책 확인 |
+| G13 | 같은 프레임 다중 피해 + Host/원격 관찰자 | 개별 피해 숫자 누락/중복 없음, HP 최종값 일치 |
+| G14 | Camp↔Combat 반복·같은 씬 재방문·부재/재접속 | 이전 카메라/UI/Context/콜백 잔류 없음, 무적·이동·슬롯 상태 정상 |
+| G15 | 오프라인 Act3 + 멀티 종료 후 싱글 시작 | 새 네트워크 필수 조건이 기존 싱글을 막지 않음 |
+| G16 | 4인 혼합 클래스·여러 적·동시 발동 | 타 플레이어 자원/UI 오염 없음. 로그/프레임/GC/송신량 계측 |
+| G17 | Dedicated, 이후 목표 Linux에서 같은 후보 실행 | 렌더러 표시 없이 보스 전환/피해/보상 진행. Windows 결과로 Linux 통과 대체 금지 |
+| G18 | 로그인 계정의 Act1→Act2→결과→로비→새 런 | 기존 계정 권한을 우회하지 않고 저장·복귀·신규 런 확인 |
+
+**실행 우선순위:** G00~G08의 좁은 재현부터 해결하고 G09로 실제 네트워크 차이를 확인한다. 그 뒤 생명주기·경제·4인·서버 게이트를 진행한다. 4인 테스트를 했다는 이유만으로 실패 주입 검사를 생략하거나, Editor Host 1인 결과를 Dedicated 결과로 대신하지 않는다.
+
+## 9. 권장 수정 묶음
+
+| 묶음 | 내용 | 섞지 말아야 할 작업 |
+|---|---|---|
+| 1 — 전투 상태 | R01·R02 회피 수명/무적, R03 실패한 보스 전환 | 전면 명명 변경, 씬/프리팹 대량 재저장 |
+| 2 — 입력·표시 계약 | R04 선택 아이템 전달, R05 대상 수명, R06 툴팁 | 새 네트워크 UI 구현, 새 범용 Context/Manager |
+| 3 — 실패 복구 | R07, 현재 모드 바인딩/씬 교체 조건 검사 | 검증문 제거, 무조건 성공 처리, 자동 무한 재시도 |
+| 4 — 좁은 정리 | 기존 상수 사용, 의미가 틀린 이름/주석, 이중 Refresh·빈 디버그 호출 | 서버 소유/중복/revision/이벤트 해제 삭제 |
+| 5 — 최종 증거 | 같은 후보 SHA의 실행 로그와 미검증 범위 갱신 | 과거 커밋의 PASS를 새 코드의 PASS로 재사용 |
+
+각 묶음은 기존 BH/WJ/SW 클래스 안에서 해결 가능한 범위가 대부분이다. 새로운 추상 계층을 추가하는 대규모 재설계보다 이 순서가 현재 프로젝트의 방향과 더 잘 맞는다.
+
+## 10. 최종 판단
+
+**“기존 코드를 무시하고 이름만 통합한 구현”은 아니다.** 실제 원본 입력·표시·보상·패턴 경로를 재사용했고, 몇몇 기존 우회 구현도 줄였다. 팀의 기존 용어와 구현 방식을 상당 부분 존중한다.
+
+동시에 **“코드가 짧아졌고 Host 1인 검사가 통과했으니 기능적으로 안전하다”는 결론도 아직 이르다.** 특히 이번에는 공통화의 접합부에서 문제가 보인다. 회피/무적은 기존 단일 플레이어 원본의 상태 수명을, 보스는 실패한 실행과 연출 요청의 순서를, 획득은 선택과 요청의 동일성을, HUD는 캐시와 실제 연결의 수명을 맞춰야 한다.
+
+**권고 결론:** 구조 방향은 유지한다. R01~R03을 먼저 수정하고 R04~R07을 좁은 재현으로 확인한다. 그 다음 이름/주석/잔재를 정리한다. 큰 새 Manager·인터페이스·네트워크 전용 복제본을 만드는 방식은 필요하지 않다. 최종 기능 승인은 수정 후보의 실행 증거가 나온 뒤 판단한다.
+
+---
+
+## 부록 A. 직접 검토한 코드 범위와 한계
+
+현재 커밋의 아래 33개 런타임 파일을 전체 또는 관련 범위로 직접 읽었다. **목록에 있다고 모든 줄·모든 호출자·모든 직렬화 연결을 전수 검증했다는 뜻은 아니다.** 큰 파일은 입력/종료/피해/보상/응답 등 해당 경로를 연결하는 범위를 중심으로 확인했다.
+
+- **S01** `Assets/SW/Scripts/Network/Player/NetworkPlayerInputHandler.cs` — 공통 이동·공격·획득 입력의 네트워크 연결.
+- **S02** `Assets/SW/Scripts/Network/Player/NetworkPlayerActionInputHandler.cs` — 포션·스킬 입력의 네트워크 연결.
+- **S03** `Assets/WBHTest/Scripts/Player/WBH_PlayerInputHandler.cs` — 입력·아이템 우선 선택·추적·획득 요청.
+- **S04** `Assets/WJ_TestPlace/Script/Player/PlayerActionInputHandler.cs` — 공유 InputActions·스킬 눌림/해제 관리.
+- **S05** `Assets/WBHTest/Scripts/Player/T_PlayerController.cs` — 회피·조작 차단·무적·부활 수명.
+- **S06** `Assets/WBHTest/Scripts/Player/T_PlayerCombat.cs` — 공통 공격 요청·추적·기존 실행 코드.
+- **S07** `Assets/SW/Scripts/Network/Player/NetworkPlayerAnimation.cs` — 소유자/서버/관찰자의 AnimationEvent 역할 분리.
+- **S08** `Assets/WBHTest/Scripts/Player/WBH_PlayerAnimation.cs` — 공통 애니메이션·권한 콜백.
+- **S09** `Assets/SW/Scripts/Network/Player/MirrorSpawnedPlayerBinder.cs` — 입력 활성화·조작 차단·부재·씬 이동 경계.
+- **S10** `Assets/SW/Scripts/Network/Player/MirrorLocalPlayerUIBinder.cs` — 로컬 Context·UI·입력 소비 조건의 바인딩.
+- **S11** `Assets/Scripts/UI/Test/KY_UIInputManager.cs` — 공유 UI 입력·ESC·모달/사이드 창 우선순위.
+- **S12** `Assets/SW/Scripts/Network/Player/NetworkShopRerollButton.cs` — 리롤 요청·완료·잠금·동기 응답 대비.
+- **S13** `Assets/SW/Scripts/Shop/UI/ShopRerollButton.cs` — 공통 리롤 버튼·비용·요청 경계.
+- **S14** `Assets/SW/Scripts/Network/Player/NetworkUpgradeButton.cs` — 강화 요청·선택 아이템·UI 복구.
+- **S15** `Assets/SW/Scripts/Network/Player/PlayerInventorySync.cs` — 획득/강화 요청, 소유 검증, revision 대기 완료 경로.
+- **S16** `Assets/SW/Scripts/Network/Combat/NetworkEnemyPattern.cs` — 원본 적 패턴 재사용·타깃 공급·외부 전투 콜백.
+- **S17** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyBossPattern_Act1.cs` — 보스 패턴·전환 시도·스킬 연출 요청.
+- **S18** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyCombat.cs` — 공통 패턴 실행·TryMissile·투사체 콜백.
+- **S19** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyBossPhaseView_Act1.cs` — 전환 시간과 렌더 표시·전환 취소.
+- **S20** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyAnimation.cs` — 기존 스킬 ID 상수와 외부 스킬 요청 계약.
+- **S21** `Assets/SW/Scripts/Network/Combat/NetworkEnemyAuthority.cs` — 서버 피해·사망·보상·RPC·원본 드라이버 구성.
+- **S22** `Assets/SW/Scripts/Network/Combat/NetworkEnemyCombatView.cs` — 복제된 체력과 개별 피해의 공통 표시 연결.
+- **S23** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyView.cs` — 공통 HP·피해 텍스트·로컬 이벤트/외부 표시 전환.
+- **S24** `Assets/SW/Scripts/Network/Combat/NetworkBossHealthBar.cs` — 네트워크 보스/엘리트 HUD의 대상 선택과 캐시.
+- **S25** `Assets/WBHTest/Scripts/WBH_HighEnemyHpbarView.cs` — 공통 고등급 HP 뷰·거리 이탈·외부 연결 해제.
+- **S26** `Assets/WJ_TestPlace/Script/Enemy/EnemyKillReward.cs` — 싱글/서버 공통 경험치·크레딧 지급.
+- **S27** `Assets/WBHTest/Scripts/Enemy/WBH_EnemyStatus.cs` — 피해 이벤트·사망 이벤트·구형 float 오버로드.
+- **S28** `Assets/WBHTest/Scripts/StatusEffect/WBH_EnemyStatusEffectController.cs` — 현재 화상 피해 출처·DamageResult 전달.
+- **S29** `Assets/SW/Scripts/Network/Combat/MirrorCooldownHud.cs` — 공통 쿨다운 컨테이너의 얇은 Context 어댑터.
+- **S30** `Assets/WJ_TestPlace/Script/Player/CooldownIconUIContainer.cs` — 소유자 기준 쿨다운 수집·슬롯 재사용.
+- **S31** `Assets/WJ_TestPlace/Script/Player/CooldownIconSlot.cs` — 슬롯 바인딩·숫자 갱신·툴팁 수명.
+- **S32** `Assets/SW/Scripts/Network/Combat/NetworkEnemyWaveSpawner.cs` — 공유 웨이브 검증·서버 세션 시작·생성 실패 경로.
+- **S33** `Assets/SW/Scripts/Network/Player/MirrorSceneMode.cs` — 공유 씬 모드 전환·NPC 진입점·활성 모드 탐색.
+
+### 부모 커밋과 실제 대조한 표본
+
+`T_PlayerController` 회피, `WBH_EnemyBossPattern_Act1` 전환, `NetworkBossHealthBar` 대상/표시, `MirrorCooldownHud` 이전 독립 UI, `PlayerActionInputHandler` 원본 입력을 대조했다. 신규 코드라고 명시하지 않은 다른 항목은 전체 도입 이력을 추적했다는 뜻이 아니다.
+
+### 이번에 전수 확인하지 않은 범위
+
+전체 `MirrorNetworkManager`/로비/퀘스트/이벤트/저장/인증 내부, 모든 스킬 Authority와 고유효과, 포탈·승강기 전체 로직, 빌더/검증 도구, 16씬과 프리팹 YAML 전체, 남은 모든 변경 파일과 외부 라이브러리 소스는 전수 감사하지 않았다. 계획·커밋에 적힌 배선/삭제/버전 변경의 실행 결과는 기존 기록과 구분했다. 특히 이 검토를 계정 저장 안전성·전체 서버 권한·모든 무기 효과에 대한 보증으로 사용하면 안 된다.
+
+## 부록 B. 고정 커밋 소스 링크
+
+본문의 `[Sxx]`, `[Dxx]`, `[Bxx]`, `[Uxx]`는 아래 고정 링크를 가리킨다. 소스의 동작 위치는 본문의 **클래스/메서드명**으로 명시했다. 부분 조회를 바탕으로 임의의 정확한 결함 줄 번호를 만들지 않았다.
+
+[D01]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Docs/Architecture/Project2_Mirror_Integration_Finalization_Plan_2026-09-30.md "마무리 계획: 최초 계획과 최신 §11을 구분"
+[D02]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Docs/Architecture/Mirror_Production_Integration_Execution.md "누적 실행 기록: 특히 §9.8·§9.9 및 실행 이력"
+[D03]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Docs/Architecture/Mirror_Production_Integration_Plan.md "단계별 정식 통합의 목적·범위·기존 완료 이력"
+[D04]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/AGENTS.md "작업 규칙과 기존 구현 재사용·책임 경계 기준"
+[S01]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/NetworkPlayerInputHandler.cs "공통 이동·공격·획득 입력의 네트워크 연결"
+[S02]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/NetworkPlayerActionInputHandler.cs "포션·스킬 입력의 네트워크 연결"
+[S03]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Player/WBH_PlayerInputHandler.cs "입력·아이템 우선 선택·추적·획득 요청"
+[S04]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WJ_TestPlace/Script/Player/PlayerActionInputHandler.cs "공유 InputActions·스킬 눌림/해제 관리"
+[S05]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Player/T_PlayerController.cs "회피·조작 차단·무적·부활 수명"
+[S06]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Player/T_PlayerCombat.cs "공통 공격 요청·추적·기존 실행 코드"
+[S07]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/NetworkPlayerAnimation.cs "소유자/서버/관찰자의 AnimationEvent 역할 분리"
+[S08]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Player/WBH_PlayerAnimation.cs "공통 애니메이션·권한 콜백"
+[S09]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/MirrorSpawnedPlayerBinder.cs "입력 활성화·조작 차단·부재·씬 이동 경계"
+[S10]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/MirrorLocalPlayerUIBinder.cs "로컬 Context·UI·입력 소비 조건의 바인딩"
+[S11]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/Scripts/UI/Test/KY_UIInputManager.cs "공유 UI 입력·ESC·모달/사이드 창 우선순위"
+[S12]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/NetworkShopRerollButton.cs "리롤 요청·완료·잠금·동기 응답 대비"
+[S13]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Shop/UI/ShopRerollButton.cs "공통 리롤 버튼·비용·요청 경계"
+[S14]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/NetworkUpgradeButton.cs "강화 요청·선택 아이템·UI 복구"
+[S15]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/PlayerInventorySync.cs "획득/강화 요청, 소유 검증, revision 대기 완료 경로"
+[S16]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/NetworkEnemyPattern.cs "원본 적 패턴 재사용·타깃 공급·외부 전투 콜백"
+[S17]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyBossPattern_Act1.cs "보스 패턴·전환 시도·스킬 연출 요청"
+[S18]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyCombat.cs "공통 패턴 실행·TryMissile·투사체 콜백"
+[S19]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyBossPhaseView_Act1.cs "전환 시간과 렌더 표시·전환 취소"
+[S20]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyAnimation.cs "기존 스킬 ID 상수와 외부 스킬 요청 계약"
+[S21]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/NetworkEnemyAuthority.cs "서버 피해·사망·보상·RPC·원본 드라이버 구성"
+[S22]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/NetworkEnemyCombatView.cs "복제된 체력과 개별 피해의 공통 표시 연결"
+[S23]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyView.cs "공통 HP·피해 텍스트·로컬 이벤트/외부 표시 전환"
+[S24]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/NetworkBossHealthBar.cs "네트워크 보스/엘리트 HUD의 대상 선택과 캐시"
+[S25]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/WBH_HighEnemyHpbarView.cs "공통 고등급 HP 뷰·거리 이탈·외부 연결 해제"
+[S26]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WJ_TestPlace/Script/Enemy/EnemyKillReward.cs "싱글/서버 공통 경험치·크레딧 지급"
+[S27]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/Enemy/WBH_EnemyStatus.cs "피해 이벤트·사망 이벤트·구형 float 오버로드"
+[S28]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WBHTest/Scripts/StatusEffect/WBH_EnemyStatusEffectController.cs "현재 화상 피해 출처·DamageResult 전달"
+[S29]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/MirrorCooldownHud.cs "공통 쿨다운 컨테이너의 얇은 Context 어댑터"
+[S30]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WJ_TestPlace/Script/Player/CooldownIconUIContainer.cs "소유자 기준 쿨다운 수집·슬롯 재사용"
+[S31]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/WJ_TestPlace/Script/Player/CooldownIconSlot.cs "슬롯 바인딩·숫자 갱신·툴팁 수명"
+[S32]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Combat/NetworkEnemyWaveSpawner.cs "공유 웨이브 검증·서버 세션 시작·생성 실패 경로"
+[S33]: https://github.com/jolab4723/Project2/blob/b0a9a25651e4bb876b1ff695108c2676c7801c38/Assets/SW/Scripts/Network/Player/MirrorSceneMode.cs "공유 씬 모드 전환·NPC 진입점·활성 모드 탐색"
+[B01]: https://github.com/jolab4723/Project2/blob/44e018a74424a3c3bd4526e7a6483745e3f5dc37/Assets/WBHTest/Scripts/Player/T_PlayerController.cs "부모 커밋 표본"
+[B02]: https://github.com/jolab4723/Project2/blob/44e018a74424a3c3bd4526e7a6483745e3f5dc37/Assets/WBHTest/Scripts/Enemy/WBH_EnemyBossPattern_Act1.cs "부모 커밋 표본"
+[B03]: https://github.com/jolab4723/Project2/blob/44e018a74424a3c3bd4526e7a6483745e3f5dc37/Assets/WJ_TestPlace/Script/Player/PlayerActionInputHandler.cs "부모 커밋 표본"
+[B04]: https://github.com/jolab4723/Project2/blob/44e018a74424a3c3bd4526e7a6483745e3f5dc37/Assets/SW/Scripts/Network/Combat/NetworkBossHealthBar.cs "부모 커밋 표본"
+[B05]: https://github.com/jolab4723/Project2/blob/44e018a74424a3c3bd4526e7a6483745e3f5dc37/Assets/SW/Scripts/Network/Combat/MirrorCooldownHud.cs "부모 커밋 표본"
+[U01]: https://docs.unity.com/en-us/engine/6000.3/script-reference/unityengine/monobehaviour/stopcoroutine "Unity 6000.3 StopCoroutine: Behaviour 비활성화만으로 코루틴이 중지되지 않음"
+[U02]: https://docs.unity.com/en-us/engine/6000.5/script-reference/unityengine/object "Unity Object: 파괴된 객체와 null 조건 연산자의 차이. 최신 문서 설명이며 프로젝트 버전이 6000.5라는 뜻은 아님"
+
+- [검토 대상 커밋](https://github.com/jolab4723/Project2/commit/b0a9a25651e4bb876b1ff695108c2676c7801c38)
+- [부모와 대상 커밋 비교](https://github.com/jolab4723/Project2/compare/44e018a74424a3c3bd4526e7a6483745e3f5dc37...b0a9a25651e4bb876b1ff695108c2676c7801c38)
+
+**작성 방식:** GitHub 읽기 전용 소스·문서 대조 + Unity 공식 문서의 관련 수명 규칙 확인. 실행 결과와 정적 추론을 구분했으며 저장소에는 변경을 적용하지 않았다.

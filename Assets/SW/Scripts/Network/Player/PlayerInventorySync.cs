@@ -458,14 +458,21 @@ public sealed class PlayerInventorySync : NetworkBehaviour
 
     public bool TryRequestPickup(Ray ray)
     {
-        if (!isLocalPlayer ||
-            !Physics.Raycast(ray, out RaycastHit hit, 500f, ~0, QueryTriggerInteraction.Collide))
-        {
+        if (!isLocalPlayer)
             return false;
-        }
 
-        NetworkWorldItem pickup =
-            hit.collider.GetComponentInParent<NetworkWorldItem>();
+        // SW 수정: 공통 입력은 아이템 레이어로 대상을 먼저 고른다. 같은 Ray 앞쪽의 장판·다른 Collider가
+        // 첫 충돌이 되어도 선택한 아이템을 놓치지 않도록, 가장 가까운 네트워크 아이템을 요청한다.
+        NetworkWorldItem pickup = null;
+        float nearest = float.PositiveInfinity;
+        foreach (RaycastHit hit in Physics.RaycastAll(ray, 500f, ~0, QueryTriggerInteraction.Collide))
+        {
+            if (hit.distance >= nearest) continue;
+            NetworkWorldItem candidate = hit.collider.GetComponentInParent<NetworkWorldItem>();
+            if (candidate == null) continue;
+            pickup = candidate;
+            nearest = hit.distance;
+        }
 
         if (pickup == null ||
             pickup.netId == 0 ||

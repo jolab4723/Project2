@@ -45,6 +45,9 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     private readonly List<NetworkEnemyAuthority> aliveEnemies = new();
     private Coroutine waveRoutine;
     private bool waveSpawnFinished;
+    // SW 수정: 생성 직전 검사에 실패한 웨이브를 다시 시도할 시각. 0이면 대기 중인 재시도가 없다.
+    private double spawnRetryAt;
+    private const float SpawnRetrySeconds = 1f;
     private int activeWaveCount;
 
     public int CurrentWave => currentWave;
@@ -92,12 +95,21 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     {
         if (waveRoutine != null)
             StopCoroutine(waveRoutine);
+        spawnRetryAt = 0d;
         aliveEnemies.Clear();
         base.OnStopServer();
     }
 
     private void Update()
     {
+        if (isServer && spawnRetryAt > 0d && waveRoutine == null && sessionPhase == MirrorSessionPhase.Playing &&
+            Time.timeAsDouble >= spawnRetryAt)
+        {
+            spawnRetryAt = 0d;
+            waveRoutine = StartCoroutine(SpawnAuthoredWave());
+            return;
+        }
+
         if (!isServer || !waveSpawnFinished || waveRoutine != null)
             return;
 
@@ -239,7 +251,11 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         if (!authoredArea.TryGetSpawnPoint(currentWave, out Transform point) ||
             !NavMesh.SamplePosition(point.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
         {
-            Debug.LogError("정식 웨이브 생성 지점의 NavMesh가 없어 시작을 보류합니다.", this);
+            // SW 수정: 이 웨이브의 적은 아직 하나도 만들지 않았으므로 같은 웨이브만 일정 간격으로 다시 시도한다.
+            // 웨이브 번호·완료 수를 올리지 않아 중복 생성이나 건너뛰기가 없다.
+            // ponytail: 생성 지점이 끝내 복구되지 않으면 Playing에서 계속 재시도한다. 운영 이탈 처리가 필요해지면 실패 횟수 상한을 둔다.
+            Debug.LogError($"정식 웨이브 {currentWave + 1} 생성 지점의 NavMesh가 없어 {SpawnRetrySeconds}초 뒤 다시 시도합니다.", this);
+            spawnRetryAt = Time.timeAsDouble + SpawnRetrySeconds;
             waveRoutine = null;
             yield break;
         }

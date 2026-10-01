@@ -117,7 +117,8 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
 
         OnHpChanged?.Invoke(currentHp, MaxHealth);
         OnDamaged?.Invoke(result);
-        Debug.Log($"남은 체력 {currentHp}");
+        // SW 수정: 피격마다 문자열·로그를 만들지 않도록 진단 출력은 주석으로 둔다.
+        //Debug.Log($"남은 체력 {currentHp}");
         if (currentHp == 0)
         {
             OnDead?.Invoke();
@@ -125,17 +126,9 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
     }
 
     // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드(현재는 화상만 있기에 result 매개변수로 Fire만 사용)
+    // SW 수정: 체력 하한·OnDamaged·OnDead가 빠지지 않도록 정상 피해 계약으로 위임한다.
     public void TakeDamage(float damage)
-    {
-        if (IsDead)
-            return;
-
-        currentHp -= damage;
-
-        WBH_DamageResult result = new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire);
-
-        OnHpChanged?.Invoke(currentHp, MaxHealth);
-    }
+        => TakeDamage(new WBH_DamageResult(null, damage, false, ItemSystem.ElementType.Fire));
 
     // 자폭병 등 특수한 사망 처리.
     //public void Kill()
@@ -150,10 +143,11 @@ public class WBH_EnemyStatus : MonoBehaviour, WBH_ICombatStatus, IStatBuffTarget
     //    OnDead?.Invoke();
     //}
 
-    void Update()
-    {
-        //Debug.Log(currentHp);
-    }
+    // SW 수정: 본문이 진단 주석뿐인 빈 Update는 적마다 매 프레임 호출되므로 비활성화한다.
+    //void Update()
+    //{
+    //    //Debug.Log(currentHp);
+    //}
 
     public void Heal (float amount)
     {

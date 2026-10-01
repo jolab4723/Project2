@@ -65,7 +65,8 @@ public class T_PlayerCombat : MonoBehaviour
         }
 
         UpdateChase();
-        TestMultiple();
+        // SW 수정: TestMultiple 본문은 모두 주석이라 매 프레임 호출하지 않는다. 테스트 코드는 메서드에 보존한다.
+        //TestMultiple();
     }
 
     public void Initialize(WBH_ProjectileSpawner projectileSpawner)
@@ -498,7 +499,7 @@ public class T_PlayerCombat : MonoBehaviour
             return;
         }
 
-        lastChaseDestination = destination; ;
+        lastChaseDestination = destination;
         hasChaseDestination = true;
     }
 
