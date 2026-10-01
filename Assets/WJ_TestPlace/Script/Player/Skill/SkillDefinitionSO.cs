@@ -69,6 +69,84 @@ public class SkillDefinitionSO : ScriptableObject
         return evoCost > 0f ? evoCost : manaCost;
     }
 
+    /// <summary>
+    /// 스킬 창 표시용 피해 계수(1 = 100%). 진화별 계수와 강화1(위력)의 보너스를 반영한다.
+    /// 차징(반원 베기 진화3)·스택(아크 레이저)처럼 시전 상황에 따라 달라지면 min~max로 돌려준다.
+    /// 피해가 없는 스킬(대시)은 false.
+    ///
+    /// !! 실제 피해는 FighterSkillController/GunnerSkillController의 Execute*에서 계산한다. 이 메서드는 그
+    ///    분기(어떤 진화가 어떤 계수 필드를 쓰는지)를 그대로 따라 한 표시 전용 사본이라, 컨트롤러에서 계수
+    ///    선택을 바꾸면 여기도 같이 맞춰야 한다.
+    ///    폭탄 진화1의 2차 폭발, 융단폭격의 웨이브 수처럼 "추가로 몇 번 더 맞는지"는 계수에 넣지 않는다(1회 기준).
+    /// </summary>
+    public bool GetDamageMultiplierRange(SkillEvolutionId evolution, SkillEnhancementId enhancement, out float min, out float max)
+    {
+        min = max = damageMultiplier;
+
+        switch (shapeType)
+        {
+            case SkillShapeType.Dash:
+                min = max = 0f;
+                return false;
+
+            case SkillShapeType.SectorSlash:
+                if (evolution == SkillEvolutionId.Evolution3) // 원형 차징: 차징 비율에 따라 선형 증가
+                {
+                    min = evoChargeMinDamageMultiplier;
+                    max = evoChargeMaxDamageMultiplier;
+                }
+                break;
+
+            case SkillShapeType.LineSlam:
+                if (evolution == SkillEvolutionId.Evolution3)
+                    min = max = evoNarrowDamageMultiplier;
+                break;
+
+            case SkillShapeType.AwakeningBurst:
+                if (evolution == SkillEvolutionId.Evolution3) // 과부하 각성
+                    min = max = evoOverloadDamageMultiplier;
+                break;
+
+            case SkillShapeType.ArcProjectile:
+                if (evolution == SkillEvolutionId.Evolution1) // 아크 레이저: 소모 스택(최소 1)마다 곱연산 증가
+                {
+                    int maxStacks = Mathf.Max(1, evoLaserMaxBonusStacks);
+                    min = damageMultiplier * (1f + evoLaserDamagePerStackPercent / 100f);
+                    max = damageMultiplier * (1f + evoLaserDamagePerStackPercent / 100f * maxStacks);
+                }
+                else if (evolution == SkillEvolutionId.Evolution2) // 아크 불릿: 발당 계수
+                    min = max = evoArcBulletDamageMultiplier;
+                else if (evolution == SkillEvolutionId.Evolution3) // 아크 캐논
+                    min = max = evoCannonDamageMultiplier;
+                break;
+
+            case SkillShapeType.BackstepShot:
+                if (evolution == SkillEvolutionId.Evolution1) // 디코이 폭발
+                    min = max = evoDecoyDamageMultiplier;
+                break;
+
+            case SkillShapeType.CarpetBombing:
+                // 융단폭격은 damageMultiplier를 쓰지 않고 웨이브(포탄)당 계수를 쓴다.
+                min = max = evolution switch
+                {
+                    SkillEvolutionId.Evolution1 => evoLaserStrikeDamage,
+                    SkillEvolutionId.Evolution2 => evoMarkerDamagePerWave,
+                    SkillEvolutionId.Evolution3 => evoBarrageDamagePerShell,
+                    _ => carpetDamagePerWave,
+                };
+                break;
+        }
+
+        if (enhancement == SkillEnhancementId.Enhance1)
+        {
+            float bonus = 1f + enhanceDamageMultiplierBonusPercent / 100f;
+            min *= bonus;
+            max *= bonus;
+        }
+
+        return true;
+    }
+
     /// <summary>진화 전용 아이콘. 진화 없음이거나 해당 칸이 비어 있으면 null(호출 쪽에서 기본 icon으로 대체).</summary>
     public Sprite GetEvolutionIcon(SkillEvolutionId evolution)
     {
