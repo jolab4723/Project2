@@ -39,7 +39,6 @@ public class KY_SinglePlayerLobbyController : MonoBehaviour
         detailsSlideAnimator?.ReplayIn();
     }
 
-
     private void RequestStartGame(KY_CharacterId characterId)
     {
         if (isStarting) return;
