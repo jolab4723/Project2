@@ -150,6 +150,14 @@ MonoBehaviour:
     label: "\uCFE8\uD0C0\uC784 {0}\uCD08"
   - key: skill_ui.damage_and_cooldown
     label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08 \xB7
+      MP {2}"
+  - key: skill_ui.cooldown_mana
+    label: "\uCFE8\uD0C0\uC784 {0}\uCD08 \xB7 MP {1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08 \xB7
+      \uC2A4\uD0DD\uB2F9 MP {2}"
   - key: skill_ui.arc_laser_name
     label: "\uC544\uD06C \uB808\uC774\uC800"
   - key: status_ui.header
@@ -853,6 +861,12 @@ MonoBehaviour:
     label: Cooldown {0}s
   - key: skill_ui.damage_and_cooldown
     label: "Damage {0}% \xB7 Cooldown {1}s"
+  - key: skill_ui.damage_cooldown_mana
+    label: "Damage {0}% \xB7 Cooldown {1}s \xB7 MP {2}"
+  - key: skill_ui.cooldown_mana
+    label: "Cooldown {0}s \xB7 MP {1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "Damage {0}% \xB7 Cooldown {1}s \xB7 MP {2}/stack"
   - key: skill_ui.arc_laser_name
     label: Arc Laser
   - key: status_ui.header
@@ -1477,6 +1491,12 @@ MonoBehaviour:
     label: "\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{0}\u79D2"
   - key: skill_ui.damage_and_cooldown
     label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2\u30FBMP{2}"
+  - key: skill_ui.cooldown_mana
+    label: "\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{0}\u79D2\u30FBMP{1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2\u30FB1\u30B9\u30BF\u30C3\u30AF\u306B\u3064\u304DMP{2}"
   - key: skill_ui.arc_laser_name
     label: "\u30A2\u30FC\u30AF\u30EC\u30FC\u30B6\u30FC"
   - key: status_ui.header
@@ -2088,6 +2108,12 @@ MonoBehaviour:
     label: "\u51B7\u5374\u65F6\u95F4{0}\u79D2"
   - key: skill_ui.damage_and_cooldown
     label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2\xB7MP{2}"
+  - key: skill_ui.cooldown_mana
+    label: "\u51B7\u5374\u65F6\u95F4{0}\u79D2\xB7MP{1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2\xB7\u6BCF\u5C42MP{2}"
   - key: skill_ui.arc_laser_name
     label: "\u7535\u5F27\u6FC0\u5149"
   - key: status_ui.header
