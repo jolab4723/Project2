@@ -18,6 +18,7 @@ public class WBH_EnemyPoolManager : MonoBehaviour
     private Dictionary<string, Queue<WBH_EnemyController>> pools;
     private Dictionary<string, EnemyPool> poolDatas;
     private Dictionary<WBH_EnemyController, string> poolKeys; // 풀에서 생성된 적이 어느 풀 소속인지 기억.
+    private bool poolsCreated;
 
     private void Awake()
     {
@@ -25,7 +26,13 @@ public class WBH_EnemyPoolManager : MonoBehaviour
         poolDatas = new Dictionary<string, EnemyPool>(StringComparer.Ordinal);
         poolKeys = new Dictionary<WBH_EnemyController, string>();
 
-        CreatePools();
+        // SW 수정: 공유 멀티 씬은 원본 데이터만 사용하고 로컬 적 풀을 쓰지 않으므로 미리 만들지 않는다
+        // (불필요한 Agent 초기화 방지). 싱글은 기존처럼 전투 전에 미리 만들어 첫 생성 끊김을 막는다.
+        if (!MirrorNetworkManager.OwnsGameplay)
+        {
+            CreatePools();
+            poolsCreated = true;
+        }
     }
 
     private void CreatePools()
@@ -82,6 +89,12 @@ public class WBH_EnemyPoolManager : MonoBehaviour
         {
             Log.Error("EnemyPool.Get()에 빈 enemyId가 전달됐습니다.");
             return null;
+        }
+
+        if (!poolsCreated)
+        {
+            CreatePools();
+            poolsCreated = true;
         }
 
         if (!pools.TryGetValue(enemyId, out Queue<WBH_EnemyController> pool))

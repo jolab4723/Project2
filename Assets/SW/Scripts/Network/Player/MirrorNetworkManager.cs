@@ -226,7 +226,8 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     public override void OnStartServer()
     {
         base.OnStartServer();
-        Chat.StartServer(connection => compatibleConnectionIds.Contains(connection.connectionId));
+        Chat.StartServer(connection => compatibleConnectionIds.Contains(connection.connectionId),
+            connection => ServerRoster.FindByConnection(connection.connectionId)?.DisplayName);
         StartServerMembership();
         StartServerQuests();
         StartGameplayReadinessServer();
@@ -1245,6 +1246,9 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         }
 
         clientSceneRestoreRoutine = null;
+        // SW 수정: 첫 StageSelect처럼 아직 플레이어가 생성되지 않은 선택 씬은 다시 연결할 대상이 없으므로 오류가 아니다.
+        if (NetworkClient.localPlayer == null && SceneManager.GetActiveScene().path == SessionCampScene)
+            yield break;
         Debug.LogError(
             "[MirrorNetworkManager] Scene 전환 뒤 로컬 PlayerContext를 다시 연결하지 못했습니다.");
     }
