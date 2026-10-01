@@ -97,11 +97,40 @@ namespace Core
         public FirebaseApp App { get; private set; }
         public FirebaseAuth Auth { get; private set; }
         public FirebaseFirestore Firestore { get; private set; }
-        public string CurrentUserId => Auth?.CurrentUser?.UserId ?? string.Empty;
+        public string CurrentUserId => LocalTestUserId ?? Auth?.CurrentUser?.UserId ?? string.Empty;
         public bool IsSignedIn => !string.IsNullOrEmpty(CurrentUserId);
+
+        /// <summary>
+        /// SW 수정: 한 PC에서 여러 개발 Player를 띄우는 멀티 테스트용 로컬 계정이다.
+        /// 개발 빌드·Editor에서 실행 인자 <c>--test-login 이름</c>을 주면 Firebase SDK를 초기화하지 않고
+        /// <c>local-test-이름</c> 계정으로 로그인한 것처럼 동작하며, 저장은 그 계정의 로컬 캐시에만 남는다.
+        /// 정식 빌드에는 컴파일되지 않아 항상 null이다.
+        /// </summary>
+        public string LocalTestUserId { get; }
+        public bool IsLocalTestAccount => LocalTestUserId != null;
 
         private FirebaseService()
         {
+            LocalTestUserId = ReadLocalTestUserId();
+        }
+
+        /// <summary>SW 수정: 개발 빌드·Editor의 --test-login 인자에서 영문·숫자·-·_ 1~32자 이름만 받아 로컬 테스트 계정 ID를 만든다.</summary>
+        private static string ReadLocalTestUserId()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string[] arguments = Environment.GetCommandLineArgs();
+            for (int index = 0; index + 1 < arguments.Length; index++)
+            {
+                if (arguments[index] != "--test-login") continue;
+                string name = arguments[index + 1];
+                if (name.Length is < 1 or > 32) break;
+                foreach (char character in name)
+                    if (!char.IsLetterOrDigit(character) && character != '-' && character != '_') return null;
+                Debug.LogWarning($"[FirebaseService] 로컬 테스트 계정 local-test-{name}: Firebase 없이 로컬 캐시에만 저장합니다.");
+                return "local-test-" + name;
+            }
+#endif
+            return null;
         }
 
         /// <summary>
@@ -109,6 +138,14 @@ namespace Core
         /// </summary>
         public Task<FirebaseInitializationResult> InitializeAsync()
         {
+            // SW 수정: 로컬 테스트 계정은 같은 PC의 다른 프로세스와 Firebase 로그인·Firestore 저장소를 공유하지 않도록 SDK를 건드리지 않는다.
+            // Firestore가 null인 준비 완료로 반환하며 SaveDataService는 이 경우 로컬 캐시만 사용한다.
+            if (IsLocalTestAccount)
+            {
+                State = FirebaseServiceState.Ready;
+                return Task.FromResult(FirebaseInitializationResult.Success());
+            }
+
             lock (initializationLock)
             {
                 if (initializationTask == null ||
