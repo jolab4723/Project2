@@ -18,6 +18,7 @@ public class KY_BuffPopup : KY_PopupBase
     private PlayerBuffManager observedBuffManager;
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect descriptionCurtain;
+    private int lastTimeRefreshSecond = int.MinValue;
 
     void Awake()
     {
@@ -42,7 +43,12 @@ public class KY_BuffPopup : KY_PopupBase
         if (observedBuffManager != PlayerBuffManager.Instance)
             BindBuffManager();
 
-        // 팝업이 열려있는 동안, 목록 재구성 없이 남은 시간만 매 프레임 갱신
+        // 시간은 초 단위로 표시하므로, 같은 초에는 텍스트를 다시 대입하지 않는다.
+        int currentTimeSecond = Mathf.FloorToInt(Time.time);
+        if (lastTimeRefreshSecond == currentTimeSecond)
+            return;
+
+        lastTimeRefreshSecond = currentTimeSecond;
         for (int i = 0; i < currentBuffs.Count && i < spawnedSlots.Count; i++)
             spawnedSlots[i].RefreshTimeOnly();
     }

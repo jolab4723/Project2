@@ -17,6 +17,11 @@ public class KY_SkillSlot : MonoBehaviour
     [Tooltip("대시 진화2(2스택)처럼 스택으로 관리되는 스킬의 현재 보유 스택 수. 스택 모드가 아닌 스킬에서는 비활성화된다.")]
     public TextMeshProUGUI stackText;
 
+    private int lastCooldownDisplayKey = int.MinValue;
+    private bool hasCachedStackState;
+    private bool lastStackVisible;
+    private int lastStackValue;
+
     public void SetIcon(Sprite sprite)
     {
         icon.sprite = sprite;
@@ -43,7 +48,14 @@ public class KY_SkillSlot : MonoBehaviour
             cooldownFillImage.fillAmount = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
 
         if (cooldownText != null)
+        {
+            int displayKey = GetCooldownDisplayKey(remaining);
+            if (lastCooldownDisplayKey == displayKey)
+                return;
+
+            lastCooldownDisplayKey = displayKey;
             cooldownText.text = CooldownTextFormat.Format(remaining);
+        }
     }
 
     /// <summary>스택 모드 스킬의 현재 보유 스택 수를 표시한다. stacks가 null이면(스택 모드 아님) 숨긴다.</summary>
@@ -53,8 +65,27 @@ public class KY_SkillSlot : MonoBehaviour
             return;
 
         bool show = stacks.HasValue;
+        int value = stacks.GetValueOrDefault();
+        if (hasCachedStackState && lastStackVisible == show && (!show || lastStackValue == value))
+            return;
+
+        hasCachedStackState = true;
+        lastStackVisible = show;
+        lastStackValue = value;
         stackText.gameObject.SetActive(show);
         if (show)
-            stackText.text = stacks.Value.ToString();
+            stackText.text = value.ToString();
+    }
+
+    // CooldownTextFormat의 표시 단위(정수 초 / 0.1초 / 빈 문자열)와 같은 기준으로 캐시 키를 만든다.
+    private static int GetCooldownDisplayKey(float remaining)
+    {
+        if (remaining <= 0f)
+            return -1;
+
+        if (remaining >= 1f)
+            return -2 - Mathf.CeilToInt(remaining);
+
+        return 1 + Mathf.FloorToInt(remaining * 10f);
     }
 }

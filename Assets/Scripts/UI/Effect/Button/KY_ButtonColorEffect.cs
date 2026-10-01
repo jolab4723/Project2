@@ -30,6 +30,7 @@ public class KY_ButtonColorEffect : MonoBehaviour, IPointerEnterHandler, IPointe
     [SerializeField] private Button button;
 
     private bool isHovering = false;
+    private Tween clickResetTween;
 
     /// <summary>각 타겟의 초기(기본) 색상을 순서대로 캡처하고, button이 비어있으면 같은 GameObject에서 찾는다.</summary>
     void Awake()
@@ -74,21 +75,35 @@ public class KY_ButtonColorEffect : MonoBehaviour, IPointerEnterHandler, IPointe
             t.graphic.DOColor(t.clickColor, clickDuration).SetUpdate(true);
         }
 
-        DOVirtual.DelayedCall(clickDuration, () =>
+        clickResetTween?.Kill();
+        clickResetTween = DOVirtual.DelayedCall(clickDuration, RestoreColorAfterClick)
+            .SetUpdate(true)
+            .SetLink(gameObject);
+    }
+
+    private void OnDisable()
+    {
+        clickResetTween?.Kill();
+        clickResetTween = null;
+    }
+
+    /// <summary>마지막 클릭 연출이 끝난 뒤 현재 포인터 상태에 맞는 색으로 복귀한다.</summary>
+    private void RestoreColorAfterClick()
+    {
+        if (isHovering)
         {
-            if (isHovering)
+            foreach (var t in targets)
             {
-                foreach (var t in targets)
-                {
-                    t.graphic.DOKill();
-                    t.graphic.DOColor(t.hoverColor, hoverDuration).SetUpdate(true);
-                }
+                t.graphic.DOKill();
+                t.graphic.DOColor(t.hoverColor, hoverDuration).SetUpdate(true);
             }
-            else
-            {
-                RestoreOriginalColors(hoverDuration);
-            }
-        }).SetUpdate(true);
+        }
+        else
+        {
+            RestoreOriginalColors(hoverDuration);
+        }
+
+        clickResetTween = null;
     }
 
     /// <summary>모든 타겟을 각자 캡처해둔 원래 색으로 동시에 복귀시킨다.</summary>

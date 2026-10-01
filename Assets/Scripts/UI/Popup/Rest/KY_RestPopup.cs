@@ -111,6 +111,7 @@ public class KY_RestPopup : KY_PopupBase
     /// </summary>
     public override void Close()
     {
+        GetComponentInChildren<KY_CurtainEffect>(true)?.Close();
         base.Close();
     }
 
