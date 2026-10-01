@@ -54,7 +54,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
 
     // 현재는 수동 호환 버전 하나면 충분하다. 네트워크 DTO·SyncVar 순서가 바뀔 때만
     // 이 값을 올리며, 빌드가 잦아 수동 갱신 누락이 실제로 반복될 때 Git 해시 자동 생성을 검토한다.
-    public const int CompatibilityVersion = 2026093001;
+    public const int CompatibilityVersion = 2026100102;
     internal const int InitialRunSeed = 382597156;
 
     public const string SessionCampScene =
@@ -91,6 +91,11 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     public bool ClientCompatibilityConfirmed => clientCompatibilityConfirmed;
     public bool ClientIsSessionLeader => clientIsSessionLeader;
     public int ServerSessionLeaderConnectionId => sessionLeaderConnectionId;
+    /// <summary>SW 수정: 미지 씬에서 이 Client가 선택지에 투표할 수 있는지다(방장 여부와 무관).</summary>
+    public bool CanLocalClientVoteUnknown => NetworkClient.active && NetworkClient.ready &&
+        clientCompatibilityConfirmed && NetworkClient.localPlayer != null &&
+        !string.IsNullOrEmpty(LocalParticipantId) && CurrentSessionRoute == MirrorSessionRoute.Event;
+
     public bool CanLocalClientControlSession =>
         NetworkClient.active &&
         NetworkClient.ready &&
@@ -438,12 +443,12 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     }
 
     /// <summary>
-    /// 미지 Scene에서 방장이 고른 선택지 번호만 서버에 전달한다.
+    /// SW 수정: 미지 Scene에서 이 참가자가 투표한 선택지 번호만 서버에 전달한다(다수결로 확정).
     /// 이벤트 ID와 실제 선택지 범위, pending 완료 여부는 서버 Snapshot과 데이터베이스로 판정한다.
     /// </summary>
     public bool RequestUnknownStageChoice(int choiceIndex)
     {
-        if (!CanLocalClientControlSession ||
+        if (!CanLocalClientVoteUnknown ||
             CurrentSessionRoute != MirrorSessionRoute.Event ||
             choiceIndex < 0 ||
             choiceIndex > 2)
@@ -1029,7 +1034,9 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         NetworkConnectionToClient connection,
         MirrorUnknownStageChoiceRequestMessage request)
     {
-        if (!CanConnectionControlSession(connection, "미지 선택지 확정") ||
+        // SW 수정: 방장 단독 확정 대신 참가자 다수결로 정한다. 선택지가 이미 확정됐으면 표를 받지 않는다.
+        if (!IsEligibleVoter(connection) ||
+            !string.IsNullOrEmpty(serverUnknownChoice.NodeId) ||
             sessionSceneChangeRequested ||
             NetworkServer.isLoadingScene ||
             SceneManager.GetActiveScene().path != SessionUnknownScene)
@@ -1070,11 +1077,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
             return;
         }
 
-        Debug.Log(
-            $"[MirrorNetworkManager] 미지 선택지 서버 확정: " +
-            $"node={pendingNode.id}, event={pendingNode.unknownStageId}, " +
-            $"choice={request.ChoiceIndex + 1}, connectionId={connection.connectionId}");
-        BeginUnknownChoice(snapshot, pendingNode, request.ChoiceIndex);
+        RecordUnknownVote(connection, request.ChoiceIndex);
     }
 
     private void HandleServerSessionRouteRequest(

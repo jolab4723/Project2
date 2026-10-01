@@ -36,7 +36,11 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
     private void OnDisable()
     {
-        if (session != null) session.UnknownChoiceChanged -= HandleSessionChoiceChanged;
+        if (session != null)
+        {
+            session.UnknownChoiceChanged -= HandleSessionChoiceChanged;
+            session.StageVotesChanged -= RefreshVoteTitles;
+        }
         CancelDiscardSelection();
         UnbindLanguageManager();
     }
@@ -59,6 +63,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
         if (session != null)
         {
             session.UnknownChoiceChanged += HandleSessionChoiceChanged;
+            // SW 수정: 멀티 미지 선택지는 참가자 다수결이며 버튼 제목에 현재 득표를 표시한다.
+            session.StageVotesChanged += RefreshVoteTitles;
             HandleSessionChoiceChanged();
         }
     }
@@ -66,7 +72,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
     private void Update()
     {
         if (session == null || choiceButtonBox == null) return;
-        choiceButtonBox.SetButtonsInteractable(session.IsLocalGameplayReady && session.CanLocalClientControlSession &&
+        // SW 수정: 방장만이 아니라 참가자 모두 투표하며, 확정 전까지는 표를 바꿀 수 있다.
+        choiceButtonBox.SetButtonsInteractable(session.IsLocalGameplayReady && session.CanLocalClientVoteUnknown &&
             !isProcessingChoice && string.IsNullOrEmpty(session.UnknownChoice.NodeId));
         if (!sessionDiscardSubmitted && discardPanel == null && session.IsLocalGameplayReady &&
             !string.IsNullOrEmpty(session.UnknownChoice.NodeId)) HandleSessionChoiceChanged();
@@ -281,6 +288,7 @@ public class YJ_UnknownStageManager : MonoBehaviour
         }
 
         choiceButtonBox.ButtonTextSet(titles, descriptions);
+        if (session != null) RefreshVoteTitles();
         choiceButtonBox.HideButtons();
         unknownStageContents.PlayTextReveal(
             label.stageName,
@@ -302,8 +310,8 @@ public class YJ_UnknownStageManager : MonoBehaviour
                 isProcessingChoice = sessionDiscardSubmitted;
             }
             else if (isActiveAndEnabled && selectedStage != null && stageId == selectedStage.StageId &&
-                     session.IsLocalGameplayReady && session.CanLocalClientControlSession)
-                isProcessingChoice = session.RequestUnknownStageChoice(choiceIndex);
+                     session.IsLocalGameplayReady && session.CanLocalClientVoteUnknown)
+                session.RequestUnknownStageChoice(choiceIndex);
             return;
         }
         if (!isActiveAndEnabled || isProcessingChoice || selectedStage == null ||
@@ -498,6 +506,27 @@ public class YJ_UnknownStageManager : MonoBehaviour
 
         error = "현재 이벤트와 일치하는 pending 노드가 없습니다. 보상을 적용하지 않습니다.";
         return false;
+    }
+
+    /// <summary>SW 수정: 서버가 보낸 미지 득표를 선택지 제목 뒤에 붙인다. 내 표는 표시로 구분한다.</summary>
+    private void RefreshVoteTitles()
+    {
+        if (session == null || selectedStage == null || labelDatabase == null || choiceButtonBox == null) return;
+        YJ_UnknownStageLabel label = labelDatabase.GetLabel(selectedStage.StageId);
+        if (label == null) return;
+        BuildChoiceTexts(label, Mathf.Clamp(selectedStage.ChoiceNumber, 1, 3), out List<string> titles, out List<string> descriptions);
+        var votes = session.ClientStageVotes;
+        for (int i = 0; i < titles.Count; i++)
+        {
+            string key = i.ToString();
+            int count = 0;
+            if (votes.NodeIds != null)
+                for (int j = 0; j < votes.NodeIds.Length && j < votes.Counts.Length; j++)
+                    if (votes.NodeIds[j] == key) count = votes.Counts[j];
+            if (count > 0 || votes.OwnNodeId == key)
+                titles[i] += $" ({count}/{votes.EligibleCount}{(votes.OwnNodeId == key ? " · 내 표" : string.Empty)})";
+        }
+        choiceButtonBox.ButtonTextSet(titles, descriptions);
     }
 
     private static void BuildChoiceTexts(

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public struct MirrorStageVoteState : NetworkMessage
 {
@@ -51,14 +52,18 @@ public sealed partial class MirrorNetworkManager
             return changed;
         }
 
-        public bool TryVote(string participant, uint revision, string nodeId, StageMapSaveData snapshot, double now)
+        public bool TryVote(string participant, uint revision, string nodeId, StageMapSaveData snapshot, double now) =>
+            snapshot != null && string.IsNullOrEmpty(snapshot.pendingNodeId) &&
+            TryFindSelectableStageNode(snapshot, nodeId, out _, out _) &&
+            TryRecord(participant, revision, nodeId, now);
+
+        /// <summary>SW 수정: 대상 검증을 마친 표를 기록한다. 스테이지 노드와 미지 선택지 투표가 같은 규칙을 쓴다.</summary>
+        public bool TryRecord(string participant, uint revision, string key, double now)
         {
-            if (revision != Revision || !eligible.ContainsKey(participant) ||
-                (Deadline > 0 && now >= Deadline) || snapshot == null ||
-                !string.IsNullOrEmpty(snapshot.pendingNodeId) ||
-                !TryFindSelectableStageNode(snapshot, nodeId, out _, out _) ||
-                (Votes.TryGetValue(participant, out string previous) && previous == nodeId)) return false;
-            Votes[participant] = nodeId;
+            if (revision != Revision || !eligible.ContainsKey(participant) || string.IsNullOrEmpty(key) ||
+                (Deadline > 0 && now >= Deadline) ||
+                (Votes.TryGetValue(participant, out string previous) && previous == key)) return false;
+            Votes[participant] = key;
             if (Deadline == 0) Deadline = now + Duration;
             return true;
         }
@@ -88,6 +93,8 @@ public sealed partial class MirrorNetworkManager
     }
 
     private readonly StageVoteRound stageVotes = new();
+    // SW 수정: 미지 선택지도 같은 다수결 규칙으로 정한다. 표의 키는 선택지 번호 문자열이다.
+    private readonly StageVoteRound unknownVotes = new();
     private readonly System.Random stageVoteRandom = new();
     public MirrorStageVoteState ClientStageVotes { get; private set; }
     public event Action StageVotesChanged;
@@ -113,7 +120,9 @@ public sealed partial class MirrorNetworkManager
     private bool IsEligibleVoter(NetworkConnectionToClient connection) =>
         IsConnectedRunVoter(connection) && connection.isReady && connection.identity != null;
 
-    private bool SynchronizeStageVoters()
+    private bool SynchronizeStageVoters() => SynchronizeVoters(stageVotes);
+
+    private bool SynchronizeVoters(StageVoteRound round)
     {
         var connected = new Dictionary<string, int>();
         foreach (var member in ServerRoster.ConnectedMembers)
@@ -121,13 +130,14 @@ public sealed partial class MirrorNetworkManager
             // 제출은 IsEligibleVoter가 Mirror Ready와 플레이어 연결까지 따로 검사한다.
             if (NetworkServer.connections.TryGetValue(member.ConnectionId, out var connection) && IsConnectedRunVoter(connection))
                 connected.Add(member.ParticipantId, member.ConnectionId);
-        return stageVotes.Synchronize(connected);
+        return round.Synchronize(connected);
     }
 
     public override void LateUpdate()
     {
         base.LateUpdate();
         if (!NetworkServer.active) return;
+        UpdateUnknownVotes();
         if (!IsSessionSelectionActive || sessionSceneChangeRequested || NetworkServer.isLoadingScene)
         {
             if (stageVotes.EligibleCount > 0 || stageVotes.Deadline > 0) ResetStageVotes();
@@ -152,10 +162,13 @@ public sealed partial class MirrorNetworkManager
         StageVotesChanged?.Invoke();
     }
 
-    private void BroadcastStageVotes()
+    private void BroadcastStageVotes() => BroadcastVotes(stageVotes);
+
+    /// <summary>SW 수정: 스테이지와 미지 투표 모두 같은 득표 메시지로 보낸다. 두 투표는 서로 다른 씬에서만 열린다.</summary>
+    private void BroadcastVotes(StageVoteRound round)
     {
         if (!NetworkServer.active) return;
-        var counts = stageVotes.CountVotes();
+        var counts = round.CountVotes();
         var nodes = new List<string>(counts.Keys);
         var values = new int[nodes.Count];
         for (int i = 0; i < nodes.Count; i++) values[i] = counts[nodes[i]];
@@ -163,12 +176,12 @@ public sealed partial class MirrorNetworkManager
         {
             if (!NetworkServer.connections.TryGetValue(member.ConnectionId, out var connection) ||
                 !connection.isAuthenticated || !compatibleConnectionIds.Contains(member.ConnectionId)) continue;
-            stageVotes.Votes.TryGetValue(member.ParticipantId, out string own);
+            round.Votes.TryGetValue(member.ParticipantId, out string own);
             connection.Send(new MirrorStageVoteState
             {
                 Revision = runSnapshotRevision, NodeIds = nodes.ToArray(), Counts = values,
-                OwnNodeId = own, EligibleCount = stageVotes.EligibleCount,
-                VotedCount = stageVotes.Votes.Count, Deadline = stageVotes.Deadline
+                OwnNodeId = own, EligibleCount = round.EligibleCount,
+                VotedCount = round.Votes.Count, Deadline = round.Deadline
             });
         }
     }
@@ -200,5 +213,54 @@ public sealed partial class MirrorNetworkManager
         sessionSceneChangeRequested = true;
         Debug.Log($"[MirrorStageVote] 확정 node={winner}, revision={runSnapshotRevision}");
         ServerChangeScene(GetSceneForRoute(targetRoute));
+    }
+
+    /// <summary>
+    /// SW 수정: 미지 씬에서 선택지가 아직 확정되지 않았으면 투표자 명단을 맞추고 마감된 투표를 확정한다.
+    /// 선택지가 확정되거나 다른 씬이면 이전 표를 비운다.
+    /// </summary>
+    private void UpdateUnknownVotes()
+    {
+        bool voting = SceneManager.GetActiveScene().path == SessionUnknownScene &&
+            string.IsNullOrEmpty(serverUnknownChoice.NodeId) && !sessionSceneChangeRequested && !NetworkServer.isLoadingScene;
+        if (!voting)
+        {
+            if (unknownVotes.EligibleCount > 0 || unknownVotes.Deadline > 0) unknownVotes.Reset(runSnapshotRevision);
+            return;
+        }
+        bool changed = false;
+        if (unknownVotes.Revision != runSnapshotRevision)
+        {
+            unknownVotes.Reset(runSnapshotRevision);
+            changed = true;
+        }
+        if (SynchronizeVoters(unknownVotes) || changed) BroadcastVotes(unknownVotes);
+        ResolveUnknownVoteIfDue();
+    }
+
+    /// <summary>SW 수정: 검증을 마친 미지 선택지 표를 기록하고 득표를 보낸다.</summary>
+    private void RecordUnknownVote(NetworkConnectionToClient connection, int choiceIndex)
+    {
+        if (unknownVotes.Revision != runSnapshotRevision) unknownVotes.Reset(runSnapshotRevision);
+        bool changed = SynchronizeVoters(unknownVotes);
+        var member = ServerRoster.FindByConnection(connection.connectionId);
+        if (member != null && unknownVotes.TryRecord(member.ParticipantId, runSnapshotRevision,
+                choiceIndex.ToString(), NetworkTime.time)) changed = true;
+        if (changed) BroadcastVotes(unknownVotes);
+        ResolveUnknownVoteIfDue();
+    }
+
+    private void ResolveUnknownVoteIfDue()
+    {
+        if (!unknownVotes.IsDue(NetworkTime.time) || sessionSceneChangeRequested ||
+            !string.IsNullOrEmpty(serverUnknownChoice.NodeId) ||
+            !TryGetRunSnapshot(out var snapshot) || string.IsNullOrEmpty(snapshot.pendingNodeId) ||
+            !int.TryParse(unknownVotes.ChooseWinner(stageVoteRandom), out int choice)) return;
+        var node = snapshot.nodes.Find(n => n != null && n.id == snapshot.pendingNodeId);
+        if (node == null) return;
+        unknownVotes.Reset(runSnapshotRevision);
+        BroadcastVotes(unknownVotes);
+        Debug.Log($"[MirrorUnknownVote] 확정 node={node.id}, choice={choice + 1}");
+        BeginUnknownChoice(snapshot, node, choice);
     }
 }
