@@ -113,6 +113,7 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+        SceneManager.activeSceneChanged += ClearPortalArrival;
         PreserveAcrossNetworkSceneChange();
         ApplyTemporaryAbsence();
         if (nameplatePrefab != null && nameplate == null)
@@ -125,9 +126,49 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
     public override void OnStopClient()
     {
+        SceneManager.activeSceneChanged -= ClearPortalArrival;
         if (nameplate != null) Destroy(nameplate.gameObject);
         nameplate = null;
         base.OnStopClient();
+    }
+
+    private Renderer[] portalHiddenRenderers;
+
+    /// <summary>
+    /// SW 수정: 서버가 확정한 포탈 도착을 모든 화면에 싱글과 같은 포탈 연출로 보인다.
+    /// 도착한 본인은 다음 씬까지 입력을 막고, 전원 도착 대기 인원은 채팅 알림으로 표시한다.
+    /// </summary>
+    [ClientRpc]
+    public void RpcPlayPortalArrival(int arrivedCount, int totalCount)
+    {
+        if (portalHiddenRenderers != null) return;
+        var hidden = new System.Collections.Generic.List<Renderer>();
+        foreach (Renderer item in GetComponentsInChildren<Renderer>(true))
+            if (item.enabled) hidden.Add(item);
+        portalHiddenRenderers = hidden.ToArray();
+        if (nameplate != null) nameplate.gameObject.SetActive(false);
+        if (isLocalPlayer) SetCutsceneInputBlocked(true);
+
+        YJ_PortalEffect effect = FindFirstObjectByType<YJ_PortalEffect>();
+        if (effect != null) StartCoroutine(effect.PlayOnce(gameObject));
+        else foreach (Renderer item in portalHiddenRenderers) item.enabled = false;
+
+        if (NetworkManager.singleton is MirrorNetworkManager manager)
+            manager.Chat.Append(ChatKind.Connection,
+                $"{(string.IsNullOrEmpty(participantDisplayName) ? name : participantDisplayName)} 포탈 도착 ({arrivedCount}/{totalCount})");
+    }
+
+    /// <summary>SW 수정: 다음 씬으로 넘어가면 포탈 대기 중 숨긴 표시와 입력 차단을 되돌린다(플레이어는 씬 사이에 유지된다).</summary>
+    private void ClearPortalArrival(Scene previous, Scene next)
+    {
+        if (portalHiddenRenderers == null) return;
+        foreach (Renderer item in portalHiddenRenderers)
+            if (item != null) item.enabled = true;
+        portalHiddenRenderers = null;
+        if (nameplate != null) nameplate.gameObject.SetActive(true);
+        if (isLocalPlayer) SetCutsceneInputBlocked(false);
+        // 부재 중에는 기존 부재 표시 규칙이 다시 숨긴다.
+        if (temporarilyAbsent) ApplyTemporaryAbsence();
     }
 
     /// <summary>인증된 명부의 표시 정보만 플레이어 복제본에 전달한다.</summary>

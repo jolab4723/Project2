@@ -11,7 +11,8 @@ public class YJ_PortalEffect : MonoBehaviour
     [SerializeField] private Vector3 effectPositionOffset;
     [SerializeField, Min(0f)] private float fallbackDuration = 1f;
 
-    private bool isPlaying;
+    // SW 수정: 멀티는 여러 플레이어가 같은 포탈에 들어가므로 재생 중 여부를 플레이어마다 기록한다.
+    private readonly System.Collections.Generic.HashSet<GameObject> playingPlayers = new();
 
     /// <summary>
     /// 플레이어를 숨기고 텔레포트 이펙트를 한 번 재생합니다.
@@ -19,16 +20,15 @@ public class YJ_PortalEffect : MonoBehaviour
     /// </summary>
     public IEnumerator PlayOnce(GameObject player)
     {
-        if (isPlaying || player == null)
+        if (player == null || !playingPlayers.Add(player))
             yield break;
 
-        isPlaying = true;
         HidePlayer(player);
 
         GameObject effectPrefab = ResolveEffectPrefab();
         if (effectPrefab == null)
         {
-            isPlaying = false;
+            playingPlayers.Remove(player);
             yield break;
         }
 
@@ -54,7 +54,7 @@ public class YJ_PortalEffect : MonoBehaviour
         if (effectInstance != null)
             Destroy(effectInstance);
 
-        isPlaying = false;
+        playingPlayers.Remove(player);
     }
 
     private GameObject ResolveEffectPrefab()
