@@ -32,8 +32,8 @@ public class WBH_BossTimeLineController : MonoBehaviour
 
     // 타임라인의 플레이어 트랙은 원점 기준(ApplyTransformOffsets)이라 런타임 플레이어를
     // 현재 위치의 임시 앵커 아래에 두고 바인딩한다. (멀티의 MirrorBossIntro와 같은 방식)
-    private const string PlayerTrackName = "PlayerDodge";
-    private AnimationTrack playerTrack;
+    private const string PlayerTrackName = "Player_AnimationTrack";
+    private AnimationTrack bindPlayerTrack;
     private Transform playerAnchor;
     private Transform playerOriginalParent;
 
@@ -112,6 +112,9 @@ public class WBH_BossTimeLineController : MonoBehaviour
             return;
         }
 
+        if (!TryBindPlayerTrack())
+            return;
+
         isCutscenePlaying = true;
 
         SetPlayerInputBlocked(true);
@@ -123,7 +126,6 @@ public class WBH_BossTimeLineController : MonoBehaviour
         boss.SetCutSceneDamageBlock(true);
 
         HideRuntimeBoss();
-        BindPlayerTrack();
 
         director.time = 0d;
         director.Play();
@@ -212,21 +214,29 @@ public class WBH_BossTimeLineController : MonoBehaviour
         previousInputStates = null;
     }
 
-    private void BindPlayerTrack()
+    private bool TryBindPlayerTrack()
     {
-        playerTrack = null;
-        foreach (TrackAsset track in ((TimelineAsset)director.playableAsset).GetOutputTracks())
+        if(director.playableAsset is not TimelineAsset timelineAsset)
         {
-            if (track is AnimationTrack animationTrack && track.name == PlayerTrackName)
+            Log.Error("PlayableDirector 에 타임라인이 연결되어 있지 않습니다.");
+            return false;
+        }
+
+        bindPlayerTrack = null;
+
+        foreach(TrackAsset outputTrack in timelineAsset.GetOutputTracks())
+        {
+            if(outputTrack is AnimationTrack animationTrack && outputTrack.name == PlayerTrackName)
             {
-                playerTrack = animationTrack;
+                bindPlayerTrack = animationTrack;
                 break;
             }
         }
 
         Animator playerAnimator = player.GetComponent<Animator>();
-        if (playerTrack == null || playerAnimator == null)
-            return;
+        
+        if (bindPlayerTrack == null || playerAnimator == null)
+            return false;
 
         Transform playerTransform = player.transform;
         playerAnchor = new GameObject("BossIntro Player Anchor").transform;
@@ -238,14 +248,16 @@ public class WBH_BossTimeLineController : MonoBehaviour
         if (player.agent != null)
             player.agent.updatePosition = false;
 
-        director.SetGenericBinding(playerTrack, playerAnimator);
+        director.SetGenericBinding(bindPlayerTrack, playerAnimator);
+
+        return true;
     }
 
     private void ReleasePlayerTrack()
     {
-        if (playerTrack != null && director != null)
-            director.ClearGenericBinding(playerTrack);
-        playerTrack = null;
+        if (bindPlayerTrack != null && director != null)
+            director.ClearGenericBinding(bindPlayerTrack);
+        bindPlayerTrack = null;
 
         if (playerAnchor == null)
             return;
@@ -337,7 +349,7 @@ public class WBH_BossTimeLineController : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            if (bossRenderers[i].enabled != null)
+            if (bossRenderers[i] != null)
             {
                 bossRenderers[i].enabled = previousBossRendererStates[i];
             }
