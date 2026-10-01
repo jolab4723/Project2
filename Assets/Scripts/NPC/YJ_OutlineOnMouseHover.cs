@@ -25,6 +25,7 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void Awake()
     {
         FindHighlightEffect();
+        ResolveActiveNameTag();
 
         if (worldCamera == null)
             worldCamera = Camera.main;
@@ -80,6 +81,26 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
         if (nameTag != null)
             nameTag.Active(false);
+    }
+
+    /// <summary>
+    /// SW 수정: 공유 씬에는 싱글·멀티 UI가 한 벌씩 있다. 연결한 이름표가 꺼진 모드 쪽 UI에 있으면
+    /// 같은 씬에서 이름이 같고 현재 켜진 UI 아래의 이름표를 대신 쓴다. MirrorSceneMode가 먼저 모드를 정한다.
+    /// </summary>
+    private void ResolveActiveNameTag()
+    {
+        if (nameTag == null || nameTag.transform.parent == null || nameTag.transform.parent.gameObject.activeInHierarchy)
+            return;
+
+        foreach (YJ_NameTag candidate in FindObjectsByType<YJ_NameTag>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (candidate != nameTag && candidate.name == nameTag.name && candidate.gameObject.scene == gameObject.scene &&
+                candidate.transform.parent != null && candidate.transform.parent.gameObject.activeInHierarchy)
+            {
+                nameTag = candidate;
+                return;
+            }
+        }
     }
 
     private void FindHighlightEffect()

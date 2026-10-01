@@ -22,6 +22,8 @@ public struct ChatDelivery : NetworkMessage
 {
     public uint RequestId;
     public int PlayerNumber;
+    // SW 수정: 서버 참가 명부의 닉네임. 비어 있으면 기존처럼 번호로 표시한다.
+    public string SenderName;
     public string Text;
     public bool IsOwn;
     public bool Rejected;
@@ -38,6 +40,7 @@ public sealed class ChatSession
     private readonly HashSet<ulong> completedRequests = new();
     private readonly Queue<ulong> completedOrder = new();
     private Func<NetworkConnectionToClient, bool> isApproved;
+    private Func<NetworkConnectionToClient, string> resolveSenderName;
     private PlayerInventorySync inventory;
     private InventoryController localInventory;
     private NetworkShopPlayerState shop;
@@ -58,9 +61,12 @@ public sealed class ChatSession
     public bool CanSend => IsConnected && NetworkClient.isConnected && !IsSending;
     public event Action Changed;
 
-    public void StartServer(Func<NetworkConnectionToClient, bool> approved)
+    /// <summary>SW 수정: 승인 조건과 함께 보낸 사람의 서버 확정 닉네임을 찾는 함수를 받는다.</summary>
+    public void StartServer(Func<NetworkConnectionToClient, bool> approved,
+        Func<NetworkConnectionToClient, string> senderName = null)
     {
         isApproved = approved;
+        resolveSenderName = senderName;
         sendWindows.Clear();
         playerNumbers.Clear();
         nextPlayerNumber = 0;
@@ -164,12 +170,13 @@ public sealed class ChatSession
         { Reject(sender, request.RequestId, reason); return; }
         if (!playerNumbers.TryGetValue(sender.connectionId, out int number))
             playerNumbers.Add(sender.connectionId, number = ++nextPlayerNumber);
+        string senderName = resolveSenderName?.Invoke(sender);
         foreach (NetworkConnectionToClient receiver in NetworkServer.connections.Values)
         {
             if (!receiver.isAuthenticated || isApproved?.Invoke(receiver) != true) continue;
             receiver.Send(new ChatDelivery
             {
-                RequestId = request.RequestId, PlayerNumber = number, Text = text,
+                RequestId = request.RequestId, PlayerNumber = number, SenderName = senderName, Text = text,
                 IsOwn = receiver == sender,
             });
         }
@@ -188,7 +195,8 @@ public sealed class ChatSession
             if (!message.Rejected && Draft == pendingDraft) Draft = string.Empty;
         }
         Append(message.Rejected ? ChatKind.Warning : ChatKind.Chat,
-            message.Rejected ? message.Text : $"플레이어 {message.PlayerNumber}: {message.Text}");
+            message.Rejected ? message.Text
+                : $"{(string.IsNullOrEmpty(message.SenderName) ? $"플레이어 {message.PlayerNumber}" : message.SenderName)}: {message.Text}");
     }
 
     public void BindLocalPlayer(PlayerContext context)
