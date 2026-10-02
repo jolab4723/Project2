@@ -1,4 +1,3 @@
-using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -936,6 +935,186 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         return dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
     }
+    #endregion
+
+    #region Act3 보스 패턴
+
+    [SerializeField] private float act3HitHeight = 4f;
+
+    private int act3ActionVersion;
+    private bool act3ActionInProgress;
+
+    private bool IsNetworkSession => Mirror.NetworkServer.active || Mirror.NetworkClient.active;
+
+    private bool CanStartAct3Action()
+    {
+        if(!isActiveAndEnabled || status == null || status.IsDead || pattern == null || movement == null || !movement.CanControl || IsActionInProgress)
+            return false;
+
+        if (!IsNetworkSession)
+            return true;
+
+        return Mirror.NetworkServer.active && TryGetComponent<Mirror.NetworkIdentity>(out var identity) && identity.isServer;
+    }
+
+    // 패턴 y축 이동 없애는 메서드
+    private static Vector3 Act3FlatDirection(Vector3 direction)
+    {
+        direction.y = 0f;
+        return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+    }
+
+    // 플레이어 생존여부 판단 메서드
+    private static bool IsAct3LivingPlayer(T_PlayerController player)
+    {
+        return player != null && player.gameObject.activeInHierarchy && player.Status != null && !player.Status.IsDead;
+    }
+
+    private IEnumerable<T_PlayerController> FindAct3Players(Collider[] hits, System.Func<T_PlayerController, bool> contains = null)
+    {
+        var found = new HashSet<T_PlayerController>();
+
+        foreach(Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponentInParent<T_PlayerController>();
+
+            if (!IsAct3LivingPlayer(player) || !found.Add(player) || (contains != null && !contains(player)))
+                continue;
+
+            yield return player;
+        }
+    }
+
+    private IEnumerable<T_PlayerController> FindAct3SectorPlayers(Vector3 origin, Vector3 forward, float radius, float angle)
+    {
+        forward = Act3FlatDirection(forward);
+
+        Collider[] hits = Physics.OverlapSphere(origin, radius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
+
+        return FindAct3Players(hits, player =>
+        {
+            Vector3 offset = player.transform.position - origin;
+            offset.y = 0f;
+
+            if (offset.sqrMagnitude > radius * radius)
+                return false;
+
+            return angle >= 360f || offset.sqrMagnitude < 0.0001f || Vector3.Angle(forward, offset) <= angle * 0.5f;
+        });
+    }
+
+    // 컬라이더에 걸린 플레이어에게 데미지 적용
+    private void DamageAct3Players(IEnumerable<T_PlayerController> players, float damageMultiplier)
+    {
+        if (damageMultiplier <= 0f)
+            return;
+
+        foreach(T_PlayerController player in players)
+        {
+            if (status.IsDead)
+                break;
+
+            if (!IsAct3LivingPlayer(player))
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMultiplier));
+        }
+    }
+
+    private void ApplyAct3RectDamage(Vector3 origin, Vector3 forward, float width, float length, float damageMultiplier)
+    {
+        forward = Act3FlatDirection(forward);
+
+        Quaternion rotation = Quaternion.LookRotation(forward);
+        Quaternion inverseRotation = Quaternion.Inverse(rotation);
+
+        Vector3 center = origin + forward * (length * 0.5f) + Vector3.up * (act3HitHeight * 0.5f);
+
+        Collider[] hits = Physics.OverlapBox(center, new Vector3(width * 0.5f, act3HitHeight * 0.5f, length * 0.5f), rotation, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
+
+        DamageAct3Players(FindAct3Players(hits, player =>
+        {
+            Vector3 local = inverseRotation * (player.transform.position - origin);
+
+            return Mathf.Abs(local.x) < width * 0.5f && local.z >= 0f && local.z <= length; // 구획 경계에서 컬라이더 크기로 옆 구획까지 맞는 것 방지
+        }), 
+        damageMultiplier);
+    }
+
+    private bool StartAct3Action(IEnumerator routine, System.Action onCompleted = null)
+    {
+        BeginAction();
+        act3ActionInProgress = true;
+
+        int version = ++act3ActionVersion;
+        StartCoroutine(CoAct3Action(routine, version, onCompleted));
+        return true;
+    }
+
+    private IEnumerator CoAct3Action(IEnumerator routine, int version, System.Action onCompleted)
+    {
+        yield return null;
+
+        bool completed = false;
+
+        try
+        {
+            while(version == act3ActionVersion && status != null && !status.IsDead)
+            {
+                if(!routine.MoveNext())
+                {
+                    completed = true;
+                    break;
+                }
+                yield return routine.Current;
+            }
+        }
+        finally
+        {
+            (routine as System.IDisposable)?.Dispose();
+
+            if(version == act3ActionVersion)
+            {
+                ReleaseGrabbedPlayers();
+                movement.Stop();
+                act3ActionInProgress = false;
+                EndAction();
+            }
+        }
+
+        if(completed && version == act3ActionVersion && status != null && !status.IsDead)
+        {
+            onCompleted?.Invoke();
+        }
+    }
+    private bool TryAct3WarnedHit(WBH_IndicatorSpawner indicatorSpawner, float warningDuration, float recoveryDuration, System.Func<WBH_Effect> showWarning, System.Action hit, System.Action onCompleted = null)
+    {
+        if(!CanStartAct3Action() || indicatorSpawner == null || warningDuration <= 0f || recoveryDuration < 0f)
+            return false;
+
+        movement.Stop();
+
+        WBH_Effect warning = showWarning();
+
+        if (!IsNetworkSession && warning == null || !warning.IsPlaying)
+            return false;
+
+        return StartAct3Action(CoAct3WarnedHit(Time.time + warningDuration, recoveryDuration, hit), onCompleted);
+    }
+
+    private IEnumerator CoAct3WarnedHit(float hitAt, float recoveryDuration, System.Action hit)
+    {
+        yield return new WaitForSeconds(Mathf.Max(0f, hitAt - Time.time));
+
+        hit();
+
+        if(recoveryDuration > 0f)
+            yield return new WaitForSeconds(recoveryDuration);
+    }
+
+
+
+
     #endregion
 
     // 이펙트 및 디버그용 스킬 범위 표시 메서드.
