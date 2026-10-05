@@ -17,6 +17,9 @@ public class KY_QuestData
     public KY_QuestConditionData[] conditions;
     public string reward;
     public KY_QuestRewardData[] rewardItems; // SW 수정
+    // SW 수정 : 표시 상태는 실제 퀘스트의 목표 완료와 보상 지급 결과를 따른다.
+    public bool isCompleted;
+    public bool rewardPending;
 }
 
 /// <summary>보상 슬롯이 표시할 아이콘과 총수량, 미수령 수량이다. 실제 지급은 게임 상태 소유자가 처리한다.</summary>

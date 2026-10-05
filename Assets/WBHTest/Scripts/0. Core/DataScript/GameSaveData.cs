@@ -17,6 +17,8 @@ namespace Core
         public SkillTreeSaveData skillTree = new SkillTreeSaveData(); // 3-2 (자리만 잡아둠)
         public StageSaveData stage = new StageSaveData();             // 3-4 (자리만 잡아둠)
         public ActiveSkillSaveData activeSkill = new ActiveSkillSaveData(); // 3-5
+        // SW 수정 : 보상 지급 결과와 인벤토리·크레딧을 같은 파일 교체로 확정한다. null은 구형 저장이다.
+        public QuestSaveData quests;
         public bool needsPlayerInitialization; // 플레이어 초기화(새 게임시 사용)
         public CharacterClass selectedCharacter = CharacterClass.Fighter; // 이번 게임에서 사용할 클래스
         public List<UnknownStageChoiceRecord> unknownStageChoices = new();
