@@ -29,6 +29,7 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private UILabelDatabaseSO uiLabels;
     private YJ_LanguageManager languageManager;
     private string statusMessage = string.Empty;
+    private bool synchronizingProfile;
 
     private void Awake()
     {
@@ -90,7 +91,7 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
 
     private void Update()
     {
-        bool canConnect = manager != null && !NetworkClient.active && !NetworkServer.active;
+        bool canConnect = manager != null && !synchronizingProfile && !NetworkClient.active && !NetworkServer.active;
         hostButton.interactable = joinButton.interactable = serverButton.interactable = reconnectButton.interactable = canConnect;
         addressInput.interactable = displayNameInput.interactable = canConnect;
     }
@@ -157,8 +158,8 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         return true;
     }
 
-    private void StartHost() { if (PrepareConnection()) manager.StartHost(); }
-    private void StartClient() { if (PrepareConnection()) manager.StartClient(); }
+    private void StartHost() => ConnectAuthenticated(true, false);
+    private void StartClient() => ConnectAuthenticated(false, false);
     private void StartServer()
     {
         if (!PrepareConnection()) return;
@@ -166,18 +167,43 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         SetStatus("전용 서버 실행 중 · 참가자 대기");
     }
 
-    private void Reconnect()
+    private void Reconnect() => ConnectAuthenticated(false, true);
+
+    /// <summary>로비 직접 진입과 재접속도 인증·로컬 진행도 동기화를 마친 계정만 연결합니다.</summary>
+    private async void ConnectAuthenticated(bool host, bool reconnect)
     {
-        if (!PrepareConnection()) return;
-        MirrorReconnectProfile profile = MirrorReconnectProfile.Load(out string reason);
-        if (profile == null)
+        if (synchronizingProfile || !PrepareConnection()) return;
+        if (!Core.FirebaseService.Default.IsSignedIn)
         {
-            SetStatus(reason ?? "이 프로필에 저장된 최근 세션이 없습니다.");
+            SetStatus("멀티플레이는 로그인이 필요합니다. 메인 화면에서 멀티플레이를 선택해 주세요.");
             return;
         }
-        manager.RequestedReconnectProfile = profile;
-        manager.networkAddress = profile.ServerAddress;
-        manager.StartClient();
+        synchronizingProfile = true;
+        SetStatus("로컬 진행도를 동기화하는 중…");
+        try
+        {
+            var result = await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+            if (this == null || manager == null) return;
+            if (!result.IsSuccess || (!result.IsCloudSynchronized && !Core.FirebaseService.Default.IsLocalTestAccount))
+            {
+                SetStatus(result.Message);
+                return;
+            }
+            if (reconnect)
+            {
+                var profile = MirrorReconnectProfile.Load(out string reason);
+                if (profile == null) { SetStatus(reason ?? "이 프로필에 저장된 최근 세션이 없습니다."); return; }
+                manager.RequestedReconnectProfile = profile;
+                manager.networkAddress = profile.ServerAddress;
+            }
+            if (host) manager.StartHost();
+            else manager.StartClient();
+        }
+        catch (System.Exception exception)
+        {
+            if (this != null) SetStatus($"연결 준비 실패: {exception.Message}");
+        }
+        finally { if (this != null) synchronizingProfile = false; }
     }
 
     private void ChangeReady(bool ready)
