@@ -23,6 +23,23 @@ public sealed class PlayerNetworkTransform : NetworkTransformReliable
         serverSnapshots.Clear();
     }
 
+    /// <summary>잡기 연출 전후의 보간만 비우고 압축된 위치의 송수신 기준은 보존합니다.</summary>
+    internal void ClearClientInterpolation()
+    {
+        clientSnapshots.Clear();
+    }
+
+    protected override void UpdateClient()
+    {
+        if (skills == null) skills = GetComponent<FighterSkillAuthority>();
+        if (skills != null && skills.IsGrabLocked)
+        {
+            ClearClientInterpolation();
+            return;
+        }
+        base.UpdateClient();
+    }
+
     protected override void UpdateServer()
     {
         if (skills == null) skills = GetComponent<FighterSkillAuthority>();

@@ -143,6 +143,8 @@ public sealed class MirrorBossIntro : NetworkBehaviour
             actor.transform.localScale = template.transform.localScale;
             actor.name = $"Intro Player Slot {slot}";
             actor.gameObject.SetActive(true);
+            // SW 수정: 카메라 밖에서 시작한 대역도 수동 Timeline 평가로 다음 화면의 자세를 준비한다.
+            actor.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             actors.Add(actor.gameObject);
             if (primaryActor == null) primaryActor = actor;
         }
@@ -239,12 +241,16 @@ public sealed class MirrorBossIntro : NetworkBehaviour
     {
         if (!presenting) return;
         presenting = false;
-        director.Stop();
-        director.ClearGenericBinding(playerTrack);
-        foreach (var pair in reboundTracks) director.SetGenericBinding(pair.Key, pair.Value);
+        // 씬 이탈로 Director가 먼저 파괴돼도 실제 플레이어의 표시·입력 복원은 끝까지 수행한다.
+        if (director != null)
+        {
+            director.Stop();
+            if (playerTrack != null) director.ClearGenericBinding(playerTrack);
+            foreach (var pair in reboundTracks) director.SetGenericBinding(pair.Key, pair.Value);
+            director.timeUpdateMode = previousUpdateMode;
+            director.extrapolationMode = previousWrapMode;
+        }
         reboundTracks.Clear();
-        director.timeUpdateMode = previousUpdateMode;
-        director.extrapolationMode = previousWrapMode;
         foreach (var anchor in actorAnchors)
         {
             if (anchor != null)

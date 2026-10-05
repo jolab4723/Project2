@@ -48,9 +48,10 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
     // SW 수정: 생성 직전 검사에 실패한 웨이브를 다시 시도할 시각. 0이면 대기 중인 재시도가 없다.
     private double spawnRetryAt;
     private const float SpawnRetrySeconds = 1f;
-    private int activeWaveCount;
+    [SyncVar] private int activeWaveCount;
 
     public int CurrentWave => currentWave;
+    public int TotalWaveCount => activeWaveCount;
     public int AliveEnemyCount
     {
         get
@@ -331,7 +332,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
         return phase == MirrorSessionPhase.Waiting && !hasRunningRoutine;
     }
 
-    private void RegisterEnemyPrefabsForClient()
+    internal void RegisterEnemyPrefabsForClient()
     {
         if (NetworkClient.active && authoredEnemyPrefabs != null)
             foreach (var prefab in authoredEnemyPrefabs)
