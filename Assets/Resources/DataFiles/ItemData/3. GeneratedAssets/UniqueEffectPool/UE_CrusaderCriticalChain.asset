@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 991831e53639beb4d8aaf13c8c04b088, type: 3}
+  m_Name: UE_CrusaderCriticalChain
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.ChainLightningUniqueEffectSO
+  effectName: "\uC131\uC2A4\uB7EC\uC6B4 \uC77C\uACA9"
+  icon: {fileID: 21300000, guid: 2ad00882c7a56c24ba6706b6e777ab78, type: 3}
+  effectDescription: "\uAE30\uBCF8 \uACF5\uACA9 \uCE58\uBA85\uD0C0 \uC2DC {1}m \uB0B4
+    \uB2E4\uB978 \uC801 \uCD5C\uB300 {0}\uBA85\uC5D0\uAC8C \uACF5\uACA9\uB825\uC758
+    {2}% \uC804\uAE30 \uD53C\uD574\uB97C \uC5F0\uC1C4\uB85C \uC90D\uB2C8\uB2E4. \uB2E4\uC74C
+    \uB300\uC0C1\uB9C8\uB2E4 \uD53C\uD574\uAC00 {3}%\uB85C \uC904\uC5B4\uB4ED\uB2C8\uB2E4.
+    (\uCFE8\uD0C0\uC784 {4}\uCD08)"
+  coefficients:
+  - 2
+  - 4
+  - 50
+  - 70
+  - 1.5
+  requiresCritical: 1
+  firstDamageMultiplier: 0.5
+  subsequentDamageMultiplier: 0.7
+  jumpRadius: 4
+  maxAdditionalTargets: 2
+  cooldownSeconds: 1.5

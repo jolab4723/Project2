@@ -66,7 +66,7 @@ namespace DataSystem
             Debug.Log("[UniqueEffect] ===== 통합 실행 완료 =====");
         }
 
-        /// <summary>SW 수정: 모든 행과 기존 타입을 먼저 검사하여 잘못된 표가 SO 일부만 덮어쓰지 않게 한다.</summary>
+        /// <summary>SW 수정: 모든 행과 기존 타입을 먼저 검사하고 이번 SO의 생성·저장 실패 시 후속 행을 중단한다.</summary>
         public static bool GenerateAllFromJson(string jsonPath, string outputFolder)
         {
             List<UniqueEffectTableRow> rows = LoadJson(jsonPath);
@@ -84,33 +84,50 @@ namespace DataSystem
                 }
             }
 
-            EnsureAssetFolder(outputFolder);
-
             int created = 0, updated = 0;
-            foreach (UniqueEffectTableRow row in rows)
+            try
             {
-                string id = row.uniqueEffectId.Trim();
-                string assetPath = CombineAssetPath(outputFolder, id + ".asset");
-                UniqueEffectSO asset = AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(assetPath);
-                if (asset == null)
+                EnsureAssetFolder(outputFolder);
+                foreach (UniqueEffectTableRow row in rows)
                 {
-                    asset = (UniqueEffectSO)ScriptableObject.CreateInstance(ResolveEffectType(row.effectType, id));
-                    AssetDatabase.CreateAsset(asset, assetPath);
-                    created++;
-                }
-                else updated++;
+                    string id = row.uniqueEffectId.Trim();
+                    string assetPath = CombineAssetPath(outputFolder, id + ".asset");
+                    UniqueEffectSO asset = AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(assetPath);
+                    if (asset == null)
+                    {
+                        asset = (UniqueEffectSO)ScriptableObject.CreateInstance(ResolveEffectType(row.effectType, id));
+                        AssetDatabase.CreateAsset(asset, assetPath);
+                        created++;
+                    }
+                    else updated++;
 
-                ApplyRow(asset, row);
-                EditorUtility.SetDirty(asset);
-                // SW 수정: 이 가져오기에서 바꾼 SO만 저장하고 다른 작업의 Dirty 에셋은 저장하지 않는다.
-                AssetDatabase.SaveAssetIfDirty(asset);
+                    if (AssetDatabase.GetAssetPath(asset) != assetPath)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 SO 생성에 실패해 중단했습니다: {assetPath}");
+                        return false;
+                    }
+                    ApplyRow(asset, row);
+                    EditorUtility.SetDirty(asset);
+                    // SW 수정: 이 가져오기에서 바꾼 SO만 저장하고 다른 작업의 Dirty 에셋은 저장하지 않는다.
+                    AssetDatabase.SaveAssetIfDirty(asset);
+                    if (EditorUtility.IsDirty(asset) || !File.Exists(AssetPathToAbsolutePath(assetPath)))
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 SO 저장에 실패해 중단했습니다: {assetPath}");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[UniqueEffect] SO 생성/저장 도중 실패해 중단했습니다: {exception.Message}");
+                return false;
             }
             Debug.Log($"[UniqueEffect] SO 생성/갱신 완료. 신규 {created}개, 갱신 {updated}개");
             return true;
         }
         /// <summary>
-        /// SW 수정: Editor에서 검증된 행의 공통 표시 정보와 처형 파동·스타 브리처 폭발·폐열 방출을 포함한 effectType별 실제 전투 수치를 함께 채운다.
-        /// 중력 우물과 특이점 박격포는 표의 공간·시간·효과량·동시 개수를 런타임 설정으로 변환한다.
+        /// SW 수정: Editor에서 검증된 공통 표시 정보와 기존·신규 고유효과의 전투 수치를 정해진 계수 순서로 채운다.
+        /// 피해·비율의 백분율을 런타임 배율로 바꾸고 공간·시간·동시 개수는 원래 단위를 유지한다.
         /// !! asset.icon은 여기서 건드리지 않는다 - 고유 효과 아이콘은 그 효과가 붙은 아이템의 아이콘을
         ///    쓰기로 했고, ItemDataTableSOImporter의 아이콘 연결 단계가 대신 채워준다.
         /// </summary>
@@ -154,6 +171,7 @@ namespace DataSystem
                     chain.firstDamageMultiplier = asset.coefficients[2] / 100f;
                     chain.subsequentDamageMultiplier = asset.coefficients[3] / 100f;
                     chain.cooldownSeconds = row.cooldownSeconds;
+                    chain.requiresCritical = ParseEnumOrDefault(row.triggerCondition, TriggerCondition.None, row.uniqueEffectId) == TriggerCondition.OnCrit;
                     break;
                 case InfernoExtraHitUniqueEffectSO inferno:
                     inferno.damageMultiplier = asset.coefficients[0] / 100f;
@@ -182,6 +200,69 @@ namespace DataSystem
                     singularity.explosionRadius = asset.coefficients[1];
                     singularity.damageMultiplier = asset.coefficients[2] / 100f;
                     singularity.maxPendingExplosions = (int)asset.coefficients[3];
+                    break;
+                // SW 수정: B/C 단계의 신규 효과도 설명 계수와 실제 동작을 같은 표에서 재생성한다.
+                case SunfallBurnFieldUniqueEffectSO sunfall:
+                    sunfall.radius = asset.coefficients[0];
+                    sunfall.durationSeconds = asset.coefficients[1];
+                    sunfall.burnRefreshSeconds = asset.coefficients[2];
+                    sunfall.maxConcurrentFields = (int)asset.coefficients[3];
+                    break;
+                case GuardiansJusticeShieldUniqueEffectSO guardian:
+                    guardian.lossToEnergyFraction = asset.coefficients[0] / 100f;
+                    guardian.maximumHealthFraction = asset.coefficients[1] / 100f;
+                    guardian.energyDurationSeconds = asset.coefficients[2];
+                    guardian.shieldDurationSeconds = asset.coefficients[3];
+                    guardian.cooldownSeconds = asset.coefficients[4];
+                    break;
+                case NinjaDodgeAttackUniqueEffectSO ninja:
+                    ninja.bonusFraction = asset.coefficients[0] / 100f;
+                    ninja.preparationSeconds = asset.coefficients[1];
+                    ninja.cooldownSeconds = asset.coefficients[2];
+                    break;
+                case AntimatterPiercingShotUniqueEffectSO piercing:
+                    piercing.maxTargets = (int)asset.coefficients[0];
+                    piercing.secondDamageMultiplier = asset.coefficients[1] / 100f;
+                    piercing.thirdDamageMultiplier = asset.coefficients[2] / 100f;
+                    break;
+                case EchoVaultReplayUniqueEffectSO echo:
+                    echo.delaySeconds = asset.coefficients[0];
+                    echo.damageMultiplier = asset.coefficients[1] / 100f;
+                    echo.maxTargets = (int)asset.coefficients[2];
+                    echo.cooldownSeconds = asset.coefficients[3];
+                    echo.maxPendingReplays = (int)asset.coefficients[4];
+                    break;
+                case WorldEnderChargedBlastUniqueEffectSO worldEnder:
+                    worldEnder.rechargeSeconds = asset.coefficients[0];
+                    worldEnder.radius = asset.coefficients[1];
+                    worldEnder.damageMultiplier = asset.coefficients[2] / 100f;
+                    worldEnder.maxTargets = (int)asset.coefficients[3];
+                    break;
+                case CoreBreakerExposeUniqueEffectSO expose:
+                    expose.requiredHits = (int)asset.coefficients[0];
+                    expose.hitWindowSeconds = asset.coefficients[1];
+                    expose.exposeDurationSeconds = asset.coefficients[2];
+                    expose.defenseReduction = asset.coefficients[3] / 100f;
+                    expose.bossDefenseReduction = asset.coefficients[4] / 100f;
+                    break;
+                case SuperRefrigerantFreezeUniqueEffectSO cooling:
+                    cooling.requiredHits = (int)asset.coefficients[0];
+                    cooling.hitWindowSeconds = asset.coefficients[1];
+                    cooling.slowDurationSeconds = asset.coefficients[2];
+                    cooling.slowMultiplier = asset.coefficients[3] / 100f;
+                    cooling.freezeDurationSeconds = asset.coefficients[4];
+                    cooling.freezeRecoverySeconds = asset.coefficients[5];
+                    break;
+                case WildfireSpreadUniqueEffectSO wildfire:
+                    wildfire.radius = asset.coefficients[0];
+                    wildfire.maxTargets = (int)asset.coefficients[1];
+                    wildfire.cooldownSeconds = asset.coefficients[2];
+                    break;
+                case SmileSignalMarkUniqueEffectSO mark:
+                    mark.durationSeconds = asset.coefficients[0];
+                    mark.damageMultiplier = asset.coefficients[1] / 100f;
+                    mark.maxTargets = (int)asset.coefficients[2];
+                    mark.targetRecoverySeconds = asset.coefficients[3];
                     break;
                 case PassiveBuffUniqueEffectSO passive:
                     passive.buffSpec = BuildBuffSpec(row, BuffStackBehavior.Ignore);
@@ -288,7 +369,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// SW 수정: Editor에서 표의 effectType 이름을 처형 파동·스타 브리처 폭발·폐열 방출을 포함한 실제 UniqueEffectSO 타입으로 바꾼다.
+        /// SW 수정: Editor에서 표의 effectType 클래스명을 기존·신규 UniqueEffectSO의 실제 타입으로 바꾼다.
         /// 등록되지 않은 이름은 일부 데이터만 생성하지 않도록 전체 변환을 실패시킨다.
         /// </summary>
         private static Type ResolveEffectType(string effectType, string id)
@@ -319,6 +400,16 @@ namespace DataSystem
                 case nameof(SolarGraceShieldUniqueEffectSO): return typeof(SolarGraceShieldUniqueEffectSO);
                 case nameof(GravityWellFieldUniqueEffectSO): return typeof(GravityWellFieldUniqueEffectSO);
                 case nameof(SingularityDelayedExplosionUniqueEffectSO): return typeof(SingularityDelayedExplosionUniqueEffectSO);
+                case nameof(SunfallBurnFieldUniqueEffectSO): return typeof(SunfallBurnFieldUniqueEffectSO);
+                case nameof(GuardiansJusticeShieldUniqueEffectSO): return typeof(GuardiansJusticeShieldUniqueEffectSO);
+                case nameof(NinjaDodgeAttackUniqueEffectSO): return typeof(NinjaDodgeAttackUniqueEffectSO);
+                case nameof(AntimatterPiercingShotUniqueEffectSO): return typeof(AntimatterPiercingShotUniqueEffectSO);
+                case nameof(EchoVaultReplayUniqueEffectSO): return typeof(EchoVaultReplayUniqueEffectSO);
+                case nameof(WorldEnderChargedBlastUniqueEffectSO): return typeof(WorldEnderChargedBlastUniqueEffectSO);
+                case nameof(CoreBreakerExposeUniqueEffectSO): return typeof(CoreBreakerExposeUniqueEffectSO);
+                case nameof(SuperRefrigerantFreezeUniqueEffectSO): return typeof(SuperRefrigerantFreezeUniqueEffectSO);
+                case nameof(WildfireSpreadUniqueEffectSO): return typeof(WildfireSpreadUniqueEffectSO);
+                case nameof(SmileSignalMarkUniqueEffectSO): return typeof(SmileSignalMarkUniqueEffectSO);
             }
 
             Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
@@ -326,7 +417,7 @@ namespace DataSystem
             return null;
         }
 
-        /// <summary>SW 수정: Editor의 Excel·JSON 입력을 같은 기준으로 검사하며 파동·폭발·폐열 방출 계수의 누락·비유한 값·오타를 차단한다.</summary>
+        /// <summary>SW 수정: Editor의 Excel·JSON 입력에서 기존·신규 계수의 개수·비유한 값·단위·상한과 연쇄 치명 조건을 함께 검사한다.</summary>
         internal static bool ValidateRows(List<UniqueEffectTableRow> rows)
         {
             if (rows == null || rows.Count == 0)
@@ -347,6 +438,106 @@ namespace DataSystem
                 }
                 Type type = ResolveEffectType(row.effectType, id);
                 if (type == null) { valid = false; continue; }
+                if (type == typeof(ChainLightningUniqueEffectSO) && !string.IsNullOrWhiteSpace(row.triggerCondition) &&
+                    (!Enum.TryParse(row.triggerCondition.Trim(), true, out TriggerCondition chainTrigger) ||
+                     !Enum.IsDefined(typeof(TriggerCondition), chainTrigger)))
+                {
+                    Debug.LogError($"[UniqueEffect] '{id}'의 triggerCondition을 확인해주세요. OnCrit는 치명 전용 연쇄를 설정하며 유효한 TriggerCondition 이름이 필요합니다.");
+                    valid = false;
+                }
+                // SW 수정: 신규 타입은 정확한 개수의 세미콜론 계수만 허용하여 누락·빈 칸·비유한 값이 다른 필드로 밀리지 않게 한다.
+                int coefficientCount = type.Name switch
+                {
+                    nameof(SunfallBurnFieldUniqueEffectSO) => 4,
+                    nameof(GuardiansJusticeShieldUniqueEffectSO) => 5,
+                    nameof(NinjaDodgeAttackUniqueEffectSO) => 3,
+                    nameof(AntimatterPiercingShotUniqueEffectSO) => 3,
+                    nameof(EchoVaultReplayUniqueEffectSO) => 5,
+                    nameof(WorldEnderChargedBlastUniqueEffectSO) => 4,
+                    nameof(CoreBreakerExposeUniqueEffectSO) => 5,
+                    nameof(SuperRefrigerantFreezeUniqueEffectSO) => 6,
+                    nameof(WildfireSpreadUniqueEffectSO) => 3,
+                    nameof(SmileSignalMarkUniqueEffectSO) => 4,
+                    _ => 0,
+                };
+                if (coefficientCount > 0)
+                {
+                    string[] effectParts = (row.coefficients ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.None);
+                    float[] effectValues = new float[effectParts.Length];
+                    bool effectValid = effectParts.Length == coefficientCount;
+                    for (int i = 0; i < effectParts.Length; i++)
+                        effectValid &= float.TryParse(effectParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out effectValues[i]) &&
+                            float.IsFinite(effectValues[i]);
+                    if (!effectValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'({type.Name})의 coefficients에는 유한한 숫자 {coefficientCount}개가 세미콜론 순서대로 필요합니다.");
+                        valid = false;
+                        continue;
+                    }
+                    effectValid = float.IsFinite(row.cooldownSeconds) && row.cooldownSeconds >= 0f;
+                    string coefficientOrder;
+                    switch (type.Name)
+                    {
+                        case nameof(SunfallBurnFieldUniqueEffectSO):
+                            coefficientOrder = "반경;지속 초;화상 갱신 초;동시 장판 수(정수 1~8)";
+                            effectValid &= effectValues[0] > 0f && effectValues[1] > 0f && effectValues[2] > 0f &&
+                                effectValues[2] <= effectValues[1] && IsIntegerCoefficient(effectValues[3], 8);
+                            break;
+                        case nameof(GuardiansJusticeShieldUniqueEffectSO):
+                            coefficientOrder = "HP 손실 전환%;최대 HP 보호막%;에너지 유지 초;보호막 유지 초;쿨다운";
+                            effectValid &= IsPercentCoefficient(effectValues[0]) && IsPercentCoefficient(effectValues[1]) &&
+                                effectValues[2] > 0f && effectValues[3] > 0f && effectValues[4] >= 0f &&
+                                Mathf.Approximately(effectValues[4], row.cooldownSeconds);
+                            break;
+                        case nameof(NinjaDodgeAttackUniqueEffectSO):
+                            coefficientOrder = "추가 피해 보너스%;준비 유지 초;쿨다운";
+                            effectValid &= IsPercentCoefficient(effectValues[0]) && effectValues[1] > 0f && effectValues[2] >= 0f &&
+                                Mathf.Approximately(effectValues[2], row.cooldownSeconds);
+                            break;
+                        case nameof(AntimatterPiercingShotUniqueEffectSO):
+                            coefficientOrder = "관통 대상 수(정수 1~3);두 번째 피해%;세 번째 피해%";
+                            effectValid &= IsIntegerCoefficient(effectValues[0], 3) && effectValues[1] > 0f && effectValues[2] > 0f;
+                            break;
+                        case nameof(EchoVaultReplayUniqueEffectSO):
+                            coefficientOrder = "지연 초;재생 피해%;최대 대상(정수 1~16);쿨다운;동시 예약 수(정수 1~8)";
+                            effectValid &= effectValues[0] > 0f && effectValues[1] > 0f && IsIntegerCoefficient(effectValues[2], 16) &&
+                                effectValues[3] >= 0f && Mathf.Approximately(effectValues[3], row.cooldownSeconds) &&
+                                IsIntegerCoefficient(effectValues[4], 8);
+                            break;
+                        case nameof(WorldEnderChargedBlastUniqueEffectSO):
+                            coefficientOrder = "재충전 초;폭발 반경;추가 피해%;최대 대상(정수 1~16)";
+                            effectValid &= effectValues[0] > 0f && effectValues[1] > 0f && effectValues[2] > 0f &&
+                                IsIntegerCoefficient(effectValues[3], 16);
+                            break;
+                        case nameof(CoreBreakerExposeUniqueEffectSO):
+                            coefficientOrder = "필요 적중(양의 정수);적중 창 초;노출 유지 초;방어 약화%;보스 방어 약화%";
+                            effectValid &= IsIntegerCoefficient(effectValues[0], int.MaxValue) && effectValues[1] > 0f && effectValues[2] > 0f &&
+                                IsPercentCoefficient(effectValues[3]) && IsPercentCoefficient(effectValues[4]);
+                            break;
+                        case nameof(SuperRefrigerantFreezeUniqueEffectSO):
+                            coefficientOrder = "필요 적중(양의 정수);적중 창 초;둔화 유지 초;이동 배율%;빙결 유지 초;재빙결 제한 초";
+                            effectValid &= IsIntegerCoefficient(effectValues[0], int.MaxValue) && effectValues[1] > 0f && effectValues[2] > 0f &&
+                                IsPercentCoefficient(effectValues[3]) && effectValues[4] > 0f && effectValues[5] > 0f;
+                            break;
+                        case nameof(WildfireSpreadUniqueEffectSO):
+                            coefficientOrder = "전파 반경;최대 대상(정수 1~16);쿨다운";
+                            effectValid &= effectValues[0] > 0f && IsIntegerCoefficient(effectValues[1], 16) && effectValues[2] >= 0f &&
+                                Mathf.Approximately(effectValues[2], row.cooldownSeconds);
+                            break;
+                        default: // SmileSignalMarkUniqueEffectSO
+                            coefficientOrder = "표식 유지 초;후속 피해%;최대 대상(정수 1~16);대상 재준비 초(0 이상)";
+                            effectValid &= effectValues[0] > 0f && effectValues[1] > 0f && IsIntegerCoefficient(effectValues[2], 16) &&
+                                effectValues[3] >= 0f;
+                            break;
+                    }
+                    if (!effectValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'({type.Name})의 계수는 {coefficientOrder} 순서입니다. " +
+                            "거리·유지시간·피해 계수는 양수, 비율%는 0~100이어야 합니다. 별도 쿨다운 계수는 0 이상으로 cooldownSeconds와 같아야 합니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
                 // SW 수정: 두 즉시 공간 효과가 같은 5개 계수 검증을 공유하며 종류별 거리·폭/반경 의미는 유지한다.
                 if (type == typeof(PhaseHarvesterWaveUniqueEffectSO) || type == typeof(StarBreacherExplosionUniqueEffectSO))
                 {
@@ -467,6 +658,14 @@ namespace DataSystem
             }
             return valid;
         }
+
+        /// <summary>SW 수정: 계수의 소수·0·대상 상한 초과와 int 변환 오버플로를 저장 전에 차단한다.</summary>
+        private static bool IsIntegerCoefficient(float value, int maximum)
+            => value >= 1f && value <= maximum && value < int.MaxValue && value == Mathf.Floor(value);
+
+        /// <summary>SW 수정: 피해량과 구분되는 전환율·보너스·방어 약화·이동 배율은 표의 0~100% 단위를 검사한다.</summary>
+        private static bool IsPercentCoefficient(float value)
+            => value >= 0f && value <= 100f;
 
         private static TEnum ParseEnumOrDefault<TEnum>(string value, TEnum fallback, string id) where TEnum : struct
         {
