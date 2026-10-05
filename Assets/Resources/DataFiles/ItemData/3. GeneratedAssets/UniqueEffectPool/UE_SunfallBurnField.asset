@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be1f68791ffb8254389b04d81e860604, type: 3}
+  m_Name: UE_SunfallBurnField
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.SunfallBurnFieldUniqueEffectSO
+  effectName: "\uC77C\uC2DD \uC810\uD654"
+  icon: {fileID: 21300000, guid: 5bc7025a14e285044a281ad999ebf9c6, type: 3}
+  effectDescription: "\uC720\uD0C4 \uCDA9\uB3CC \uC2DC \uBC18\uACBD {0}m\uC5D0 {1}\uCD08\uAC04
+    \uD654\uC0C1 \uC9C0\uB300\uB97C \uB0A8\uAE41\uB2C8\uB2E4. {2}\uCD08\uB9C8\uB2E4
+    \uD654\uC0C1\uC744 \uAC31\uC2E0\uD558\uBA70 \uCD5C\uB300 {3}\uAC1C\uAE4C\uC9C0
+    \uC720\uC9C0\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 3
+  - 4
+  - 0.5
+  - 2
+  radius: 3
+  durationSeconds: 4
+  burnRefreshSeconds: 0.5
+  maxConcurrentFields: 2
+  fieldColor: {r: 0.85, g: 0.25, b: 0.04, a: 0.55}
