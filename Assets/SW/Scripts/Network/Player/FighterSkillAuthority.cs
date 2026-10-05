@@ -683,7 +683,8 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
         localGrabRevision = revision;
         localGrabbed = true;
         SetOwnerInputBlocked(true);
-        if (!isServer && networkTransform != null) networkTransform.enabled = false;
+        // 컴포넌트를 끄면 클라이언트만 델타 압축 기준이 초기화되므로 보간 대기열만 비운다.
+        if (!isServer) networkTransform?.ClearClientInterpolation();
     }
 
     [ClientRpc(channel = Channels.Unreliable)]
@@ -700,7 +701,7 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
         ApplyOwnerPose(position, transform.rotation);
         localGrabbed = false;
         SetOwnerInputBlocked(false);
-        if (!isServer && networkTransform != null) networkTransform.enabled = true;
+        if (!isServer) networkTransform?.ClearClientInterpolation();
         if (isLocalPlayer) CmdAcknowledgeGrabRelease(revision);
     }
 
