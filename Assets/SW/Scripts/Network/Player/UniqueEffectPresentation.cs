@@ -22,6 +22,12 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private readonly List<(Renderer renderer, int materialIndex, MaterialPropertyBlock original)> heatFlashBlocks = new();
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
     private GameObject wasteHeatReadyAura;
+    private GameObject chargedWarheadVisual;
+    private GunnerWeaponVfxBinding chargedWarheadWeapon;
+    private Transform chargedWarheadMuzzle;
+    private bool worldEnderReady;
+    private float nextWorldEnderBindAt;
+    private const float WorldEnderBindInterval = 0.2f;
 
     // SW 수정: 고유효과 전용 VFX 프리팹(Assets/SW/Resources/UniqueEffectVFX). 런타임 AddComponent된 Presenter도
     // 같은 자원을 쓰도록 직렬화 참조 대신 Resources에서 한 번만 찾고, 없으면 기존 선 표시로 돌아간다.
@@ -44,11 +50,31 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
         singleEffects.WasteHeatPresented += PresentWasteHeatDischarge;
         singleEffects.WasteHeatReadyChanged += SetWasteHeatReady;
+        singleEffects.EchoReplayPresented += PresentEchoReplay;
+        singleEffects.WorldEnderBlastPresented += PresentWorldEnderBlast;
+        singleEffects.WorldEnderReadyChanged += SetWorldEnderReady;
+        singleEffects.WildfirePresented += PresentWildfire;
+        singleEffects.SupportMarkConsumed += PresentSupportLink;
+        SetWorldEnderReady(singleEffects.WorldEnderReady);
         singleEffects.PreparedChanged += SetPreparedAttack;
         SetPreparedAttack(singleEffects.PreparedAttackReady);
     }
 
     private void Start() => OnEnable();
+
+    /// <summary>SW 수정: 준비 표시가 늦게 로드되거나 외형 교체로 사라지면 싱글·클라이언트에서 제한된 간격으로 실제 총구에 다시 연결한다.</summary>
+    private void LateUpdate()
+    {
+        if (!worldEnderReady) return;
+        if (!CanPresent)
+        {
+            SetWorldEnderReady(false);
+            return;
+        }
+        if (Time.unscaledTime < nextWorldEnderBindAt) return;
+        nextWorldEnderBindAt = Time.unscaledTime + WorldEnderBindInterval;
+        TryBindWorldEnderReady();
+    }
 
     /// <summary>SW 수정: 밤의 칼날 준비 상태를 발밑을 도는 초승달 칼날 VFX로 표시하고, 전용 프리팹이 없을 때만 기존 보라 링을 만든다.</summary>
     public void SetPreparedAttack(bool ready)
@@ -159,16 +185,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     /// </summary>
     private LineRenderer CreateFallbackLine(string objectName, Quaternion rotation, float lifetime)
     {
-        if (chainLightningMaterial == null)
-        {
-            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null) return null;
-            chainLightningMaterial = new Material(shader)
-            {
-                name = "Unique Effect Runtime Material",
-                hideFlags = HideFlags.HideAndDontSave,
-            };
-        }
+        if (!EnsureFallbackMaterial()) return null;
         GameObject lineObject = new(objectName) { hideFlags = HideFlags.DontSave };
         lineObject.transform.SetParent(transform, true);
         lineObject.transform.rotation = rotation;
@@ -183,9 +200,114 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         return line;
     }
 
+    /// <summary>SW 수정: 대체 선과 월드 엔더 총구 입자가 표시용 런타임 머터리얼 하나를 재사용하며 임시 선을 만들지 않는다.</summary>
+    private bool EnsureFallbackMaterial()
+    {
+        if (chainLightningMaterial != null) return true;
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) return false;
+        chainLightningMaterial = new Material(shader)
+        {
+            name = "Unique Effect Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+        return true;
+    }
+
     /// <summary>SW 수정: 싱글·클라이언트만 표시하고 전용 서버에서는 표시 자원을 만들지 않는다.</summary>
     private bool CanPresent => Application.isPlaying && isActiveAndEnabled &&
         !(Mirror.NetworkServer.active && !Mirror.NetworkClient.active);
+
+    public void PresentEchoReplay(Vector3 origin, Vector3 forward, float range, float angle)
+    {
+        if (!CanPresent) return;
+        SkillRangeVisual.ShowSector(origin, forward, range, angle, new Color(0.1f, 0.65f, 1f, 0.55f), 0.3f);
+        var line = CreateFallbackLine("Echo Muzzle Afterimage", Quaternion.identity, 0.3f);
+        if (line == null) return;
+        line.alignment = LineAlignment.View;
+        line.positionCount = 2;
+        line.SetPosition(0, origin); line.SetPosition(1, origin + forward * 0.65f);
+        line.widthMultiplier = 0.2f;
+        line.startColor = line.endColor = Color.cyan;
+    }
+
+    public void PresentWildfire(Vector3 start, Vector3 end) => PresentColoredLink(start, end, new Color(1f, 0.3f, 0.05f), "Wildfire Ember");
+    public void PresentSupportLink(Vector3 start, Vector3 end) => PresentColoredLink(start, end, new Color(1f, 0.95f, 0.3f), "Support Signal");
+    private void PresentColoredLink(Vector3 start, Vector3 end, Color color, string effectName)
+    {
+        if (!CanPresent) return;
+        var line = CreateFallbackLine(effectName, Quaternion.identity, 0.2f);
+        if (line == null) return;
+        line.alignment = LineAlignment.View; line.positionCount = 3;
+        line.SetPosition(0, start); line.SetPosition(1, (start + end) * 0.5f + Vector3.up * 0.3f); line.SetPosition(2, end);
+        line.widthMultiplier = 0.08f; line.startColor = line.endColor = color;
+    }
+
+    public void PresentWorldEnderBlast(Vector3 position, float radius)
+    {
+        if (!CanPresent) return;
+        SkillRangeVisual.ShowSector(position, Vector3.forward, radius, 360f,
+            new Color(1f, 0.65f, 0.15f, 0.65f), 0.4f);
+        PresentInfernoHit(position);
+    }
+
+    /// <summary>SW 수정: 확정된 월드 엔더 준비 표시 상태를 유지하고 실제 총구가 늦게 나타나면 재시도하며 해제 때 자원을 제거한다.</summary>
+    public void SetWorldEnderReady(bool ready)
+    {
+        worldEnderReady = ready && CanPresent;
+        if (!worldEnderReady)
+        {
+            ClearWorldEnderReadyVisual();
+            nextWorldEnderBindAt = 0f;
+            return;
+        }
+        nextWorldEnderBindAt = Time.unscaledTime + WorldEnderBindInterval;
+        TryBindWorldEnderReady();
+    }
+
+    /// <summary>SW 수정: 기존 활성 총구 연결은 재사용하고 파괴·교체·늦은 외형 생성 후에는 실제 Muzzle 아래에만 준비 발광을 만든다.</summary>
+    private void TryBindWorldEnderReady()
+    {
+        if (chargedWarheadVisual != null && chargedWarheadWeapon != null && chargedWarheadWeapon.isActiveAndEnabled &&
+            chargedWarheadMuzzle != null && chargedWarheadMuzzle.gameObject.activeInHierarchy &&
+            chargedWarheadMuzzle.IsChildOf(chargedWarheadWeapon.transform) &&
+            chargedWarheadVisual.transform.parent == chargedWarheadMuzzle &&
+            (chargedWarheadWeapon.Muzzle == null || chargedWarheadWeapon.Muzzle == chargedWarheadMuzzle))
+            return;
+        ClearWorldEnderReadyVisual();
+        var weapon = GetComponentInChildren<GunnerWeaponVfxBinding>();
+        if (weapon == null || !weapon.isActiveAndEnabled) return;
+        Transform muzzle = weapon.Muzzle;
+        if (muzzle == null)
+            foreach (Transform child in weapon.GetComponentsInChildren<Transform>())
+                if (child.name == "Muzzle") { muzzle = child; break; }
+        if (muzzle == null || !muzzle.gameObject.activeInHierarchy || !muzzle.IsChildOf(weapon.transform) ||
+            !EnsureFallbackMaterial()) return;
+        chargedWarheadVisual = new GameObject("Charged Warhead Glow") { hideFlags = HideFlags.DontSave };
+        chargedWarheadVisual.transform.SetParent(muzzle, false);
+        chargedWarheadWeapon = weapon;
+        chargedWarheadMuzzle = muzzle;
+        var particles = chargedWarheadVisual.AddComponent<ParticleSystem>();
+        var main = particles.main;
+        main.startColor = new Color(1f, 0.7f, 0.1f, 0.85f); main.startSize = 0.12f;
+        main.startLifetime = 0.3f; main.startSpeed = 0.05f; main.maxParticles = 16;
+        var emission = particles.emission; emission.rateOverTime = 18f;
+        var shape = particles.shape; shape.shapeType = ParticleSystemShapeType.Sphere; shape.radius = 0.08f;
+        particles.GetComponent<ParticleSystemRenderer>().sharedMaterial = chainLightningMaterial;
+    }
+
+    /// <summary>SW 수정: 준비 해제·외형 교체·표시 비활성화 때 총구 발광을 즉시 숨기고 소유한 객체와 연결 참조를 정리한다.</summary>
+    private void ClearWorldEnderReadyVisual()
+    {
+        if (chargedWarheadVisual != null)
+        {
+            chargedWarheadVisual.SetActive(false);
+            DestroyOwnedObject(chargedWarheadVisual);
+        }
+        chargedWarheadVisual = null;
+        chargedWarheadWeapon = null;
+        chargedWarheadMuzzle = null;
+    }
 
     private IEnumerator ReleaseBoltAfter(GameObject boltObject, float seconds)
     {
@@ -407,6 +529,11 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
             singleEffects.WasteHeatPresented -= PresentWasteHeatDischarge;
             singleEffects.WasteHeatReadyChanged -= SetWasteHeatReady;
+            singleEffects.EchoReplayPresented -= PresentEchoReplay;
+            singleEffects.WorldEnderBlastPresented -= PresentWorldEnderBlast;
+            singleEffects.WorldEnderReadyChanged -= SetWorldEnderReady;
+            singleEffects.WildfirePresented -= PresentWildfire;
+            singleEffects.SupportMarkConsumed -= PresentSupportLink;
             singleEffects.PreparedChanged -= SetPreparedAttack;
             singleEffects = null;
         }
@@ -418,11 +545,12 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         ReleaseOwnedResources();
     }
 
-    /// <summary>SW 수정: 싱글·클라이언트 표시 자원(고유효과 VFX 포함)과 실제 무기의 임시 폐열 발광을 비활성화·파괴 시 정리한다.</summary>
+    /// <summary>SW 수정: 싱글·클라이언트 표시 자원(고유효과 VFX 포함), 월드 엔더 준비 표시 상태와 실제 무기의 임시 폐열 발광을 비활성화·파괴 시 정리한다.</summary>
     private void ReleaseOwnedResources()
     {
         RestoreWasteHeatFlash();
         ClearWasteHeatAura();
+        SetWorldEnderReady(false);
         StopAllCoroutines();
         foreach (GameObject bolt in activeBolts)
         {

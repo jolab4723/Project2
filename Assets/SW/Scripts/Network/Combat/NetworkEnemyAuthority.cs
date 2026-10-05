@@ -75,6 +75,10 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     [SyncVar] private float currentHealth;
     [SyncVar] private float maxHealth;
     [SyncVar] private bool isDead;
+    [SyncVar] private double coolingIndicatorEndsAt;
+    [SyncVar(hook = nameof(OnCoolingIndicatorChanged))] private int coolingIndicatorCount;
+    [SyncVar] private double supportMarkEndsAt;
+    [SyncVar(hook = nameof(OnSupportMarkChanged))] private bool supportMarkActive;
     [SyncVar(hook = nameof(OnStatusVisualMaskChanged))] private uint statusVisualMask;
     [SyncVar(hook = nameof(OnEffectPlaybackSpeedChanged))] private float effectPlaybackSpeed = 1f;
     [SyncVar] private uint targetNetId;
@@ -271,6 +275,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+        RefreshItemIndicators();
         ResolveReferences();
         //InitializeLocalEffectSpawner(); @!@
         ResolveSharedSpawners(); // @!@
@@ -302,6 +307,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (originalView != null && !originalView.enabled) originalView.TickExternalFlash(Time.deltaTime);
         if (isClient && !isServer) UpdateRemoteAct2TransitionEffect();
         if (!isServer) return;
+        if (coolingIndicatorCount > 0 && (isDead || NetworkTime.time >= coolingIndicatorEndsAt)) coolingIndicatorCount = 0;
+        if (supportMarkActive && (isDead || NetworkTime.time >= supportMarkEndsAt)) supportMarkActive = false;
         if (status != null) effectPlaybackSpeed = status.AttackSpeed;
         statusEffects ??= GetComponent<WBH_EnemyStatusEffectController>();
         uint mask = 0;
@@ -315,6 +322,32 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private void OnStatusVisualMaskChanged(uint _, uint value)
     {
         if (isClient && !isServer) ApplyStatusVisualMask(value);
+    }
+
+    [Server]
+    public void ServerSetSupportMark(bool active, float seconds)
+    {
+        supportMarkEndsAt = NetworkTime.time + seconds;
+        supportMarkActive = active;
+        if (isClient) RefreshItemIndicators();
+    }
+
+    [Server]
+    public void ServerSetCoolingIndicator(int count, float seconds)
+    {
+        coolingIndicatorEndsAt = NetworkTime.time + seconds;
+        coolingIndicatorCount = count;
+        if (isClient) RefreshItemIndicators();
+    }
+
+    private void OnCoolingIndicatorChanged(int previous, int current) => RefreshItemIndicators();
+    private void OnSupportMarkChanged(bool previous, bool current) => RefreshItemIndicators();
+    private void RefreshItemIndicators()
+    {
+        if (!isClient) return;
+        var indicator = GetComponent<EnemyEffectIndicator>() ?? gameObject.AddComponent<EnemyEffectIndicator>();
+        indicator.SetCooling(coolingIndicatorCount, Mathf.Max(0f, (float)(coolingIndicatorEndsAt - NetworkTime.time)));
+        indicator.SetSupportMark(supportMarkActive, Mathf.Max(0f, (float)(supportMarkEndsAt - NetworkTime.time)));
     }
 
     private void ApplyStatusVisualMask(uint mask)

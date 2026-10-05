@@ -6,6 +6,11 @@ public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 
 public class T_PlayerCombat : MonoBehaviour
 {
+    // SW 수정 : 같은 조건에서 세 총기의 발사 누락이 없음을 확인한 뒤 라이플만 낮은 발당 피해·고연사로 조정한다.
+    public const float RifleAttackSpeedMultiplier = 1.5f;
+    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon)
+        => weapon == GunnerWeaponType.Rifle ? 0.8f : 1f;
+
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] public GunnerWeaponType currentWeapon;
@@ -173,7 +178,7 @@ public class T_PlayerCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal,
                                                         element,
-                                                        basicAttackMult,
+                                                        basicAttackMult * GunnerBasicDamageMultiplier(resolvedWeapon),
                                                         GetElementStatusEffect(element),
                                                         effectData: effectData);
 
@@ -197,6 +202,9 @@ public class T_PlayerCombat : MonoBehaviour
                 break;
             case GunnerWeaponType.Shotgun:
                 {
+                    // SW 수정: 실제 산탄 실행 공간을 피해 대상 검색 전에 기록해 빗나간 사격도 잔향으로 재생한다.
+                    GetComponent<PlayerContext>()?.Effects.ReserveEchoReplay(request.AttackId, spawnPosition,
+                        direction, status.GunnerAttackRange, 90f);
                     // SW 추가:
                     // WBH 샷건은 여러 물리 탄환이 아니라 90도 부채꼴 안의 대상에게 즉시 피해를 줍니다.
                     // 따라서 명중 VFX도 중앙 투사체가 나중에 충돌할 때가 아니라 실제 피해를 받은 각 대상 위치에서 바로 재생합니다.

@@ -13,18 +13,41 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     private int sceneHandle;
     private double endsAt, nextApplyAt;
     private float radius, multiplier, refreshSeconds;
-    private bool gravity, ended;
+    private bool gravity, burnField, ended;
     private Action detonated, released;
+    private EchoVaultReplayUniqueEffectSO echo;
+    private Vector3 echoForward;
+    private float echoRange, echoAngle;
     private readonly HashSet<WBH_ICombat> targets = new();
     public bool IsGravity => gravity;
     public bool IsFinished => ended;
+    // SW 수정 : 중력·화상·예약 폭발은 같은 소유자 안에서도 실제 SO 종류별로 상한을 계산한다.
+    internal Type EffectType { get; private set; }
     // SW 수정: 소유자 효과 상태와 같은 싱글/네트워크 시계를 쓴다.
     private double Now => owner.Effects.Now;
 
+    public void InitializeEchoReplay(PlayerContext player, EchoVaultReplayUniqueEffectSO effect, uint sourceAttackId,
+        Vector3 forward, float range, float angle, Action onReleased)
+    {
+        owner = player;
+        echo = effect;
+        EffectType = effect.GetType();
+        attackId = sourceAttackId;
+        sceneHandle = SceneManager.GetActiveScene().handle;
+        echoForward = forward;
+        echoRange = range;
+        echoAngle = angle;
+        released = onReleased;
+        endsAt = Now + effect.delaySeconds;
+        owner.Effects.RegisterGrenadeEffect(this, Mathf.Max(1, effect.maxPendingReplays));
+    }
+
+    /// <summary>SW 수정 : 싱글·서버가 발사 출처를 보존한 장판·예약 폭발을 초기화하고 효과 종류별 상한에 등록한다.</summary>
     public void Initialize(PlayerContext player, UniqueEffectSO effect, uint sourceAttackId, ElementType sourceElement,
         Action onDetonated, Action onReleased)
     {
         owner = player;
+        EffectType = effect?.GetType();
         attackId = sourceAttackId;
         element = sourceElement;
         sceneHandle = SceneManager.GetActiveScene().handle;
@@ -40,6 +63,14 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             endsAt = Now + field.durationSeconds;
             maximum = field.maxConcurrentFields;
         }
+        else if (effect is SunfallBurnFieldUniqueEffectSO burn)
+        {
+            burnField = true;
+            radius = burn.radius;
+            refreshSeconds = Mathf.Max(0.05f, burn.burnRefreshSeconds);
+            endsAt = Now + burn.durationSeconds;
+            maximum = burn.maxConcurrentFields;
+        }
         else if (effect is SingularityDelayedExplosionUniqueEffectSO explosion)
         {
             radius = explosion.explosionRadius;
@@ -51,6 +82,7 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
         owner.Effects.RegisterGrenadeEffect(this, Mathf.Max(1, maximum));
     }
 
+    /// <summary>SW 수정 : 살아 있는 소유자의 장판은 상태를 갱신하고 예약 폭발은 한 번만 기폭하며 수명 종료 시 정리한다.</summary>
     private void Update()
     {
         if (ended) return;
@@ -60,8 +92,16 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             owner.Health.CurrentHealth <= 0f || SceneManager.GetActiveScene().handle != sceneHandle)
         { Finish(); return; }
         double now = Now;
-        if (gravity && now >= endsAt) { Finish(); return; }
-        if (gravity ? now < nextApplyAt : now < endsAt) return;
+        if (echo != null)
+        {
+            if (now < endsAt) return;
+            try { owner.Effects.ExecuteEchoReplay(echo, attackId, transform.position, echoForward, echoRange, echoAngle); }
+            finally { Finish(); }
+            return;
+        }
+        bool periodic = gravity || burnField;
+        if (periodic && now >= endsAt) { Finish(); return; }
+        if (periodic ? now < nextApplyAt : now < endsAt) return;
         nextApplyAt = now + refreshSeconds;
         targets.Clear();
         try
@@ -70,14 +110,18 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             {
                 WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
                 if (target == null || target.Status == null || target.Status.IsDead || !targets.Add(target)) continue;
-                if (gravity)
+                if (periodic)
                 {
-                    // 짧게 갱신하므로 범위를 벗어나면 원래 속도로 돌아온다.
-                    var slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow, refreshSeconds + 0.1f, multiplier)
-                    { Attacker = owner.Controller, AttackId = attackId };
+                    // 짧게 갱신하므로 둔화는 범위를 벗어나면 원래 속도로 돌아온다.
+                    // SW 수정 : Burn1은 구조체 복사로 강도·수명을 유지하고 기존 Refresh가 틱 시계를 보존한다.
+                    WBH_StatusEffectData status = burnField
+                        ? WBH_StatusEffectPresets.Burn1
+                        : new WBH_StatusEffectData(WBH_StatusEffectType.Slow, refreshSeconds + 0.1f, multiplier);
+                    status.Attacker = owner.Controller;
+                    status.AttackId = attackId;
                     var network = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
-                    if (network != null && network.IsServerDamageHandlingActive) network.ServerTryApplyStatusEffect(slow);
-                    else target.AddStatusEffect(slow);
+                    if (network != null && network.IsServerDamageHandlingActive) network.ServerTryApplyStatusEffect(status);
+                    else target.AddStatusEffect(status);
                 }
                 else
                 {
@@ -89,9 +133,9 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
                         owner.CombatAuthority?.ServerRecordGunnerHit(target, result);
                 }
             }
-            if (!gravity) detonated?.Invoke();
+            if (!periodic) detonated?.Invoke();
         }
-        finally { if (!gravity) Finish(); }
+        finally { if (!periodic) Finish(); }
     }
 
     /// <summary>상한을 넘으면 가장 오래된 효과부터 취소하며 여러 번 정리해도 재실행하지 않는다.</summary>
@@ -112,11 +156,12 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     }
 
     /// <summary>
-    /// SW 수정: 중력 우물·특이점 장판 표시의 싱글/멀티 공통 진입점이다. 전용 VFX(Resources/UniqueEffectVFX)가 있으면
+    /// SW 수정: 중력 우물·특이점·일식 장판 표시의 싱글/멀티 공통 진입점이다. 전용 VFX(Resources/UniqueEffectVFX)가 있으면
     /// 반경에 맞춘 소용돌이·수축 코어 연출을 부모 아래에 만들고, 없을 때만 기존 원형 선을 그린다. 표시 전용이며 판정에는 관여하지 않는다.
     /// </summary>
     public static GameObject CreateRing(Transform parent, string name, float radius, Color color)
     {
+        float parentScale = parent != null ? Mathf.Abs(parent.lossyScale.x) : 1f;
         string vfxName = name switch
         {
             "GravityWellFieldVisual" => "UEVFX_GravityWellField",
@@ -130,16 +175,18 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             effect.name = name;
             effect.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             // 반경 1m 기준 프리팹이므로 부모 투사체의 스케일을 상쇄해 실제 월드 반경과 맞춘다.
-            float parentScale = parent != null ? Mathf.Abs(parent.lossyScale.x) : 1f;
             effect.transform.localScale = Vector3.one * (radius / Mathf.Max(0.0001f, parentScale));
             return effect;
         }
 
         var visual = new GameObject(name);
         visual.transform.SetParent(parent, false);
+        // SW 수정 : 기본 링도 기존 VFX와 같이 투사체 스케일을 상쇄해 판정의 월드 반경과 맞춘다.
+        visual.transform.localScale = Vector3.one / Mathf.Max(0.0001f, parentScale);
         var ring = visual.AddComponent<AreaRingVisual>();
         ring.SetColor(color);
         ring.SetRadius(radius);
+        visual.AddComponent<GrenadeFieldVisual>().Initialize(name == "SunfallBurnFieldVisual", color);
         return visual;
     }
 }
