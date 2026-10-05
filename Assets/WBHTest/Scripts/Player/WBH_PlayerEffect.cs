@@ -241,35 +241,61 @@ public class WBH_PlayerEffect : MonoBehaviour
     {
         ready = false;
         error = null;
-        if (pool == null || skills == null) { error = "효과 풀 또는 스킬 연결이 없습니다."; return false; }
+        if (pool == null || skills == null)
+        {
+            error = "효과 풀 또는 스킬 연결이 없습니다.";
+            return false;
+        }
+
         bool loading = false;
         foreach (EffectBinding binding in bindingMap.Values)
         {
-            int code = (int)binding.cue;
-            if (code != (int)WBH_PlayerEffectCue.Dodge)
+            // SW 수정 : 큐 값은 천의 자리 직업, 백의 자리 스킬 번호, 십의 자리 진화, 일의 자리 파트로 구성된다.
+            int cueValue = (int)binding.cue;
+            if (cueValue != (int)WBH_PlayerEffectCue.Dodge)
             {
-                if (code / 1000 != (fighter ? 1 : 2)) continue;
-                int slot = code % 1000 / 100 - 1;
-                if (slot >= 0)
+                if (cueValue / 1000 != (fighter ? 1 : 2))
+                    continue;
+
+                int skillIndex = cueValue % 1000 / 100 - 1;
+                if (skillIndex >= 0)
                 {
-                    if (slot >= skills.SkillCount) continue;
-                    int selected = (int)(fighter
-                        ? PlayerEffectCueUtility.CreateFighterSkillCue(slot + 1, skills.GetEvolution(slot), SkillEffectPart.Main)
-                        : PlayerEffectCueUtility.CreateGunnerSkillCue(slot + 1, skills.GetEvolution(slot), SkillEffectPart.Main));
-                    if (code / 10 != selected / 10) continue;
+                    if (skillIndex >= skills.SkillCount)
+                        continue;
+
+                    int selectedSkillCueValue = (int)(fighter
+                        ? PlayerEffectCueUtility.CreateFighterSkillCue(skillIndex + 1, skills.GetEvolution(skillIndex), SkillEffectPart.Main)
+                        : PlayerEffectCueUtility.CreateGunnerSkillCue(skillIndex + 1, skills.GetEvolution(skillIndex), SkillEffectPart.Main));
+                    // SW 수정 : /10으로 파트 자리만 제외해 같은 직업·스킬·진화의 모든 파트를 준비한다.
+                    if (cueValue / 10 != selectedSkillCueValue / 10)
+                        continue;
                 }
             }
+
             if (binding.data != null && !pool.PrepareEffect(binding.data))
-            { error = $"효과 준비 실패: {binding.cue}"; return false; }
-            if (binding.sounds == null) continue;
+            {
+                error = $"효과 준비 실패: {binding.cue}";
+                return false;
+            }
+            if (binding.sounds == null)
+                continue;
+
             foreach (SfxEntry sound in binding.sounds)
             {
                 AudioClip clip = sound?.clip;
-                if (clip == null) continue;
+                if (clip == null)
+                    continue;
+
                 if (clip.loadState == AudioDataLoadState.Unloaded && !clip.LoadAudioData())
-                { error = $"소리 준비 실패: {clip.name}"; return false; }
+                {
+                    error = $"소리 준비 실패: {clip.name}";
+                    return false;
+                }
                 if (clip.loadState == AudioDataLoadState.Failed)
-                { error = $"소리 준비 실패: {clip.name}"; return false; }
+                {
+                    error = $"소리 준비 실패: {clip.name}";
+                    return false;
+                }
                 loading |= clip.loadState != AudioDataLoadState.Loaded;
             }
         }
@@ -277,7 +303,10 @@ public class WBH_PlayerEffect : MonoBehaviour
         {
             if ((chargeEffect != null && !pool.PrepareEffect(chargeEffect)) ||
                 (chargeRangeEffect != null && !pool.PrepareEffect(chargeRangeEffect)))
-            { error = "차징 효과 준비 실패"; return false; }
+            {
+                error = "차징 효과 준비 실패";
+                return false;
+            }
         }
         ready = !loading;
         return true;

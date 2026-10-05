@@ -89,8 +89,12 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     private PlayerStatManager StatManager
     {
-        // SW 수정
-        get { ResolveManagers(); return statManager; }
+        // SW 수정 : Awake 전 조회에서도 실제 플레이어의 상태 컴포넌트를 한 번 준비한다.
+        get
+        {
+            ResolveManagers();
+            return statManager;
+        }
     }
 
     private void ResolveManagers()

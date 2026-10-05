@@ -85,7 +85,7 @@ public class QuestManager : Singleton<QuestManager>
         if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
             return;
         // InventoryController가 비활성 인벤토리 팝업 안에 있어서 시작 시점엔 Instance가 null일 수 있다
-        // (158번에서 확인한 구조적 한계) - 매 프레임 가볍게 확인하다가 준비되는 순간 한 번만 구독한다.
+        // (158번에서 확인한 구조적 한계) - SW 수정 : 준비되거나 다른 인벤토리로 바뀔 때 구독을 갱신한다.
         if (subscribedInventory != InventoryController.Instance)
         {
             if (subscribedInventory != null)

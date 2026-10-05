@@ -517,7 +517,12 @@ public sealed partial class PlayerItemEffectState
     {
         if (!CanExecute || cause != DamageCause.Direct || attackId == 0)
             return 1f;
-        float ninjaBonus = attackId == directAttackId ? directNinjaBonus : attackId == hitAttackId ? hitNinjaBonus : 0f;
+        float ninjaBonus = 0f;
+        if (attackId == directAttackId)
+            ninjaBonus = directNinjaBonus;
+        else if (attackId == hitAttackId)
+            ninjaBonus = hitNinjaBonus;
+
         if (!TryGetPreparedAttackEffect(out ItemInstance weapon, out DodgePreparedAttackUniqueEffectSO effect) ||
             (!string.IsNullOrEmpty(preparedAttackSourceInstanceId) &&
              preparedAttackSourceInstanceId != weapon.instanceId))

@@ -13,7 +13,7 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
     private MirrorNetworkManager session;
     private QuestLabelDatabaseSO questLabels;
     private bool hasNetworkBaseline;
-    private readonly Dictionary<string, bool> completed = new();
+    private readonly Dictionary<string, bool> completedByQuestId = new();
     private readonly Queue<string> messages = new();
     private float nextNoticeTime;
 
@@ -64,12 +64,15 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
 
     private void UnbindSource()
     {
-        if (session != null) session.QuestStateChanged -= HandleNetworkStateChanged;
-        if (quests != null) quests.OnQuestCompleted -= HandleLocalCompleted;
+        if (session != null)
+            session.QuestStateChanged -= HandleNetworkStateChanged;
+        if (quests != null)
+            quests.OnQuestCompleted -= HandleLocalCompleted;
+
         session = null;
         quests = null;
         hasNetworkBaseline = false;
-        completed.Clear();
+        completedByQuestId.Clear();
         messages.Clear();
         nextNoticeTime = 0f;
     }
@@ -81,7 +84,7 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
         // 로컬 이벤트 자체가 최초 목표 완료 전이다. 저장 복원은 이 이벤트를 발행하지 않는다.
         QuestDefinitionSO definition = quests.GetDefinition(active.questId);
         if (definition != null)
-            Enqueue(definition);
+            EnqueueCompletionNotice(definition);
     }
 
     private void HandleNetworkStateChanged()
@@ -91,7 +94,7 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
         if (entries == null)
         {
             // 세션 종료/재접속 후 첫 스냅샷도 새 기준 상태로 처리한다.
-            completed.Clear();
+            completedByQuestId.Clear();
             messages.Clear();
             hasNetworkBaseline = false;
             nextNoticeTime = 0f;
@@ -101,21 +104,21 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
         {
             if (string.IsNullOrEmpty(entry.QuestId))
                 continue;
-            bool transitioned = hasNetworkBaseline && completed.TryGetValue(entry.QuestId, out bool previous) &&
+            bool transitioned = hasNetworkBaseline && completedByQuestId.TryGetValue(entry.QuestId, out bool previous) &&
                                 !previous && entry.Completed;
-            completed[entry.QuestId] = entry.Completed;
+            completedByQuestId[entry.QuestId] = entry.Completed;
             if (transitioned)
             {
                 QuestDefinitionSO definition = session.QuestDatabase != null ? session.QuestDatabase.FindById(entry.QuestId) : null;
                 if (definition != null)
-                    Enqueue(definition);
+                    EnqueueCompletionNotice(definition);
             }
         }
         hasNetworkBaseline = true;
     }
 
     /// <summary>목표 달성을 알린다. 변할 수 있는 보상 지급 상태는 실제 원본을 따르는 목록에서 확인한다.</summary>
-    private void Enqueue(QuestDefinitionSO definition)
+    private void EnqueueCompletionNotice(QuestDefinitionSO definition)
     {
         string name = questLabels != null ? questLabels.GetQuestName(definition.questId) : null;
         if (string.IsNullOrEmpty(name) || name == definition.questId + ".name")

@@ -192,18 +192,30 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
             if (reconnect)
             {
                 var profile = MirrorReconnectProfile.Load(out string reason);
-                if (profile == null) { SetStatus(reason ?? "이 프로필에 저장된 최근 세션이 없습니다."); return; }
+                if (profile == null)
+                {
+                    SetStatus(reason ?? "이 프로필에 저장된 최근 세션이 없습니다.");
+                    return;
+                }
+
                 manager.RequestedReconnectProfile = profile;
                 manager.networkAddress = profile.ServerAddress;
             }
-            if (host) manager.StartHost();
-            else manager.StartClient();
+            if (host)
+                manager.StartHost();
+            else
+                manager.StartClient();
         }
         catch (System.Exception exception)
         {
-            if (this != null) SetStatus($"연결 준비 실패: {exception.Message}");
+            if (this != null)
+                SetStatus($"연결 준비 실패: {exception.Message}");
         }
-        finally { if (this != null) synchronizingProfile = false; }
+        finally
+        {
+            if (this != null)
+                synchronizingProfile = false;
+        }
     }
 
     private void ChangeReady(bool ready)
@@ -216,7 +228,11 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
     private void ChangeCharacter(KY_CharacterId character) => manager?.RequestLobbyChange(
         MirrorLobbyOperation.Character,
         character == KY_CharacterId.Gunner ? CharacterClass.Gunner : CharacterClass.Fighter);
-    private void StartRun() { SetStatus(string.Empty); manager?.RequestStartSession(); }
+    private void StartRun()
+    {
+        SetStatus(string.Empty);
+        manager?.RequestStartSession();
+    }
     private void Leave() => manager?.RequestLeaveSession();
 
     /// <summary>연결을 종료한 로비에서 세션 소유자를 정리하고 기존 타이틀로 돌아갑니다.</summary>

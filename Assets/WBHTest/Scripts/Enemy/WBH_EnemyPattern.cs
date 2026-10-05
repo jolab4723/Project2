@@ -372,7 +372,11 @@ public class WBH_EnemyPattern : MonoBehaviour
 
         if (externalTargets != null)
         {
-            foreach (var candidate in externalTargets()) if (candidate == target) return true;
+            foreach (var candidate in externalTargets())
+            {
+                if (candidate == target)
+                    return true;
+            }
             return false;
         }
         return target.TryGetComponent<T_PlayerController>(out T_PlayerController player) && player.isActiveAndEnabled;

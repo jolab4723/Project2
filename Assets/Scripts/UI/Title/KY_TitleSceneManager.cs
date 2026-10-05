@@ -51,12 +51,18 @@ public class KY_TitleSceneManager : MonoBehaviour
     // SW 수정 : 씬을 나갈 때 이 컴포넌트가 등록한 버튼 연결만 제거한다.
     void OnDestroy()
     {
-        if (singlePlayButton != null) singlePlayButton.onClick.RemoveListener(OnSinglePlayClicked);
-        if (multiPlayButton != null) multiPlayButton.onClick.RemoveListener(OnMultiPlayClicked);
-        if (passiveSkillButton != null) passiveSkillButton.onClick.RemoveListener(OnPassiveSkillClicked);
-        if (settingsButton != null) settingsButton.onClick.RemoveListener(OnSettingsClicked);
-        if (quitButton != null) quitButton.onClick.RemoveListener(OnQuitClicked);
-        if (logoutButton != null) logoutButton.onClick.RemoveListener(OnLogoutClicked);
+        if (singlePlayButton != null)
+            singlePlayButton.onClick.RemoveListener(OnSinglePlayClicked);
+        if (multiPlayButton != null)
+            multiPlayButton.onClick.RemoveListener(OnMultiPlayClicked);
+        if (passiveSkillButton != null)
+            passiveSkillButton.onClick.RemoveListener(OnPassiveSkillClicked);
+        if (settingsButton != null)
+            settingsButton.onClick.RemoveListener(OnSettingsClicked);
+        if (quitButton != null)
+            quitButton.onClick.RemoveListener(OnQuitClicked);
+        if (logoutButton != null)
+            logoutButton.onClick.RemoveListener(OnLogoutClicked);
     }
 
     /// <summary>유효한 중단 저장 여부에 맞춰 이어하기 버튼의 입력 가능 상태를 갱신한다.</summary>
@@ -105,6 +111,7 @@ public class KY_TitleSceneManager : MonoBehaviour
             string displayName = string.IsNullOrWhiteSpace(playerName) ? "Player" : playerName;
             userInfoText.text = displayName;
         }
+
         if (logoutButton != null)
         {
             logoutButton.gameObject.SetActive(isSignedIn);
@@ -229,12 +236,18 @@ public class KY_TitleSceneManager : MonoBehaviour
     private void SetMultiplayerEntryInProgress(bool inProgress)
     {
         isMultiplayerEntryInProgress = inProgress;
-        if (singlePlayButton != null) singlePlayButton.interactable = !inProgress;
-        if (multiPlayButton != null) multiPlayButton.interactable = !inProgress;
-        if (passiveSkillButton != null) passiveSkillButton.interactable = !inProgress;
-        if (settingsButton != null) settingsButton.interactable = !inProgress;
-        if (quitButton != null) quitButton.interactable = !inProgress;
-        if (logoutButton != null) logoutButton.interactable = !inProgress;
+        if (singlePlayButton != null)
+            singlePlayButton.interactable = !inProgress;
+        if (multiPlayButton != null)
+            multiPlayButton.interactable = !inProgress;
+        if (passiveSkillButton != null)
+            passiveSkillButton.interactable = !inProgress;
+        if (settingsButton != null)
+            settingsButton.interactable = !inProgress;
+        if (quitButton != null)
+            quitButton.interactable = !inProgress;
+        if (logoutButton != null)
+            logoutButton.interactable = !inProgress;
     }
 
     private void ShowAccountStatus(string message)

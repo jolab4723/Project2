@@ -64,8 +64,10 @@ public class WBH_ProjectileSpawner : MonoBehaviour
         // SW 추가:
         // 앞의 값들은 기존 유탄의 포물선 이동과 폭발 효과에 그대로 쓰입니다. 새 비행/명중 프리팹은 맨 뒤에만 덧붙여서
         // 기존 폭발 EffectData, 광역 피해, 풀 반환 순서를 WBH_Projectile 안에서 계속 재사용합니다.
-        projectile.InitializeGrenade(request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3, effectSpawner, explosionEffect,
-                                     projectileVisualPrefab, impactVisualPrefab, enemyEffect: enemyEffect,impactEffectCue: impactEffectCue);
+        projectile.InitializeGrenade(
+            request, speed, maxDistance, targetLayer, targetPosition, explosionRadius, 3,
+            effectSpawner, explosionEffect, projectileVisualPrefab, impactVisualPrefab,
+            enemyEffect: enemyEffect, impactEffectCue: impactEffectCue);
     }
 
     public void FireMultipleProjectile(ProjectileType projectileType,

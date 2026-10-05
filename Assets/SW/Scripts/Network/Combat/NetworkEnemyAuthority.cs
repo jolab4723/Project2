@@ -75,6 +75,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     [SyncVar] private float currentHealth;
     [SyncVar] private float maxHealth;
     [SyncVar] private bool isDead;
+    // SW 수정 : 냉각 누적과 지원 표식의 남은 수명을 복제해 재접속한 관찰자도 현재 표시를 복원한다.
     [SyncVar] private double coolingIndicatorEndsAt;
     [SyncVar(hook = nameof(OnCoolingIndicatorChanged))] private int coolingIndicatorCount;
     [SyncVar] private double supportMarkEndsAt;
@@ -324,6 +325,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
         if (isClient && !isServer) ApplyStatusVisualMask(value);
     }
 
+    /// <summary>SW 수정 : 서버의 표식 상태를 복제하고 Host 표시는 같은 프레임에 갱신한다.</summary>
     [Server]
     public void ServerSetSupportMark(bool active, float seconds)
     {

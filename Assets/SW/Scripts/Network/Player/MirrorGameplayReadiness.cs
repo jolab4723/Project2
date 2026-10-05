@@ -153,29 +153,51 @@ public partial class MirrorNetworkManager
                     context.Controller.agent != null && context.Controller.agent.enabled && context.Controller.agent.isOnNavMesh);
                 bool ready = true;
                 if (needsPlacement && !context.TryPreparePresentation(out ready, out string error))
-                { GameplayPreparationError = error; break; }
+                {
+                    GameplayPreparationError = error;
+                    break;
+                }
                 if (needsPlacement && ready)
                 {
                     foreach (var identity in NetworkClient.spawned.Values)
                     {
-                        if (identity == null || !identity.TryGetComponent<PlayerContext>(out var participant)) continue;
-                        if (!participant.IsComplete || participant.RuntimeState?.HasSnapshot != true) { ready = false; break; }
+                        if (identity == null || !identity.TryGetComponent<PlayerContext>(out var participant))
+                            continue;
+                        if (!participant.IsComplete || participant.RuntimeState?.HasSnapshot != true)
+                        {
+                            ready = false;
+                            break;
+                        }
                         if (!participant.TryPreparePresentation(out bool participantReady, out string participantError))
-                        { GameplayPreparationError = participantError; ready = false; break; }
-                        if (!participantReady) { ready = false; break; }
+                        {
+                            GameplayPreparationError = participantError;
+                            ready = false;
+                            break;
+                        }
+                        if (!participantReady)
+                        {
+                            ready = false;
+                            break;
+                        }
                     }
-                    if (GameplayPreparationError != null) break;
+                    if (GameplayPreparationError != null)
+                        break;
                 }
                 if (placed && ready)
                 {
                     NetworkClient.Send(message);
                     while (!IsLocalGameplayReady && Time.realtimeSinceStartupAsDouble < deadline)
                         yield return null;
-                    if (IsLocalGameplayReady) { gameplayPreparation = null; yield break; }
+                    if (IsLocalGameplayReady)
+                    {
+                        gameplayPreparation = null;
+                        yield break;
+                    }
                     break;
                 }
             }
-            if (Time.realtimeSinceStartupAsDouble >= deadline) break;
+            if (Time.realtimeSinceStartupAsDouble >= deadline)
+                break;
             yield return null;
         }
         gameplayPreparation = null;

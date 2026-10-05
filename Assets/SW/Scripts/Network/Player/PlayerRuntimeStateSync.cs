@@ -5,12 +5,12 @@ using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// Mirror 테스트 플레이어의 실제 Stat·Buff·HP·MP·포션 상태를 서버 원본으로 유지하고
+/// SW 수정 : 네트워크 플레이어의 실제 Stat·Buff·HP·MP·포션 상태를 서버 원본으로 유지하고
 /// 모든 관전자에게 같은 최종값을 복제한다. 팀 원본 Manager에는 네트워크 책임을 추가하지 않는다.
 /// <para>서버에서는 같은 <see cref="PlayerContext"/>의 Manager만 읽고, 클라이언트에서는
 /// 서버 스냅샷을 그 Context의 기존 Manager에 투영해 HUD와 전투 어댑터가 같은 값을 읽게 한다.</para>
 /// <para>정식 계정 서버에서는 클라이언트가 보고한 패시브 StatSet 대신 인증된 프로필을 서버가 불러와야 한다.</para>
-/// <para>4-B 차이: 체력 0과 별도로 사망 여부를 스냅샷에 저장하고, 서버가 입력·Controller·타깃 제외 기준을 확정한다.
+/// <para>SW 수정 : 체력 0과 별도로 사망 여부를 스냅샷에 저장하고, 서버가 입력·Controller·타깃 제외 기준을 확정한다.
 /// 정상 패시브 부활은 서버가 횟수와 HP 비율을 확정하며, 상황판의 테스트 부활과 분리한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -303,7 +303,7 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
             ApplyClientBuffs(snapshot.buffs);
             context.Stats.SetPassiveStats(snapshot.passiveStats);
             ApplyFinalStats(snapshot, context.Stats.Stat);
-            InvokeStatChanged(context.Stats.Stat);
+            context.Stats.Stat.NotifyValuesChanged();
 
             context.Health.RefreshMaxHealth();
             context.Health.SetCurrentHealth(snapshot.currentHealth);
@@ -376,11 +376,6 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         target.fireBonus = source.fireBonus;
         target.iceBonus = source.iceBonus;
         target.electricBonus = source.electricBonus;
-    }
-
-    private static void InvokeStatChanged(PlayerStat stat)
-    {
-        stat.NotifyValuesChanged();
     }
 
     private static IBuffSource ResolveBuffSource(BuffSnapshot snapshot)

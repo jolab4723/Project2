@@ -142,7 +142,12 @@ public sealed partial class MirrorNetworkManager
 
     private void HandleSessionFeedback(MirrorSessionFeedback message)
     {
-        if (!message.LeaveAccepted) { SetAdmissionStatus(message.Reason); return; }
+        if (!message.LeaveAccepted)
+        {
+            SetAdmissionStatus(message.Reason);
+            return;
+        }
+
         // 거절되거나 응답 전에 연결이 끊기면 재접속 자격을 보존합니다.
         if (!MirrorReconnectProfile.Clear(out string reason)) Debug.LogWarning(reason);
         RequestedReconnectProfile = null;
@@ -238,7 +243,7 @@ public sealed partial class MirrorNetworkManager
 
     /// <summary>
     /// 결과 화면에서 방장이 파티의 로비 복귀를 요청한다.
-    /// 서버는 마지막 보스 완료·리더·씬 전환 상태를 다시 검사한다.
+    /// SW 수정 : 서버는 패배를 포함한 결과 확정·리더·씬 전환 상태를 다시 검사한다.
     /// </summary>
     public bool RequestReturnToLobby()
     {

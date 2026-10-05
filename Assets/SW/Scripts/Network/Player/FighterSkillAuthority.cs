@@ -274,8 +274,16 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
             !CanBeginSkillState() || index < 0 || index >= SkillCount || skills[index] == null ||
             context?.RuntimeState?.HasSnapshot != true || !TryValidateAim(ref aimDirection, targetPosition)) return false;
         // 충전 타이머가 남아 있어도 잔여 스택으로 사용할 수 있다. 최종 연사 제한은 원본 서버가 검사한다.
-        if (TryGetStackInfo(index, out int stacks, out _)) { if (stacks <= 0) return false; }
-        else if (GetRemainingCooldown(index) > 0f) return false;
+        if (TryGetStackInfo(index, out int stacks, out _))
+        {
+            if (stacks <= 0)
+                return false;
+        }
+        else if (GetRemainingCooldown(index) > 0f)
+        {
+            return false;
+        }
+
         localRequestPending = true;
         if (nextLocalRequestId <= lastServerRequestId)
             nextLocalRequestId = lastServerRequestId;
@@ -298,14 +306,38 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
     [Command]
     private void CmdRequestSkill(uint requestId, byte index, Vector3 aimDirection, Vector3 targetPosition)
     {
-        if (requestId == 0 || requestId <= lastServerRequestId) { Reject(requestId, MirrorSkillRequestResult.DuplicateRequest); return; }
+        if (requestId == 0 || requestId <= lastServerRequestId)
+        {
+            Reject(requestId, MirrorSkillRequestResult.DuplicateRequest);
+            return;
+        }
+
         lastServerRequestId = requestId;
-        if (Original == null) { Reject(requestId, MirrorSkillRequestResult.UnsupportedCharacter); return; }
-        if (IsUnavailable) { Reject(requestId, MirrorSkillRequestResult.Dead); return; }
-        if (index >= SkillCount || skills[index] == null) { Reject(requestId, MirrorSkillRequestResult.InvalidSlot); return; }
-        if (!TryValidateAim(ref aimDirection, targetPosition)) { Reject(requestId, MirrorSkillRequestResult.InvalidAim); return; }
+        if (Original == null)
+        {
+            Reject(requestId, MirrorSkillRequestResult.UnsupportedCharacter);
+            return;
+        }
+        if (IsUnavailable)
+        {
+            Reject(requestId, MirrorSkillRequestResult.Dead);
+            return;
+        }
+        if (index >= SkillCount || skills[index] == null)
+        {
+            Reject(requestId, MirrorSkillRequestResult.InvalidSlot);
+            return;
+        }
+        if (!TryValidateAim(ref aimDirection, targetPosition))
+        {
+            Reject(requestId, MirrorSkillRequestResult.InvalidAim);
+            return;
+        }
         if (pendingServerRequestId != 0 || serverMotionLocked || context.CombatAuthority?.ServerAttackPending == true || !CanBeginSkillState())
-        { Reject(requestId, MirrorSkillRequestResult.SkillAlreadyPending); return; }
+        {
+            Reject(requestId, MirrorSkillRequestResult.SkillAlreadyPending);
+            return;
+        }
 
         pendingServerRequestId = requestId;
         pendingServerSlot = index;
@@ -321,10 +353,18 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
             Original.GetEvolution(index) == SkillEvolutionId.Evolution3;
         serverExpiresAt = Time.time + 10f + 8f / Mathf.Max(0.1f, status.AttackSpeed) +
             (serverCharging ? Mathf.Max(0f, skills[index].evoChargeMaxSeconds) : 0f);
-        bool accepted = fighterSkills != null
-            ? serverCharging ? fighterSkills.TryStartCharge(index, aimDirection, context.Stats)
-                : fighterSkills.TryUseSkill(index, aimDirection, context.Stats)
-            : gunnerSkills.TryUseSkill(index, aimDirection, targetPosition, context.Stats);
+        bool accepted;
+        if (fighterSkills != null)
+        {
+            accepted = serverCharging
+                ? fighterSkills.TryStartCharge(index, aimDirection, context.Stats)
+                : fighterSkills.TryUseSkill(index, aimDirection, context.Stats);
+        }
+        else
+        {
+            accepted = gunnerSkills.TryUseSkill(index, aimDirection, targetPosition, context.Stats);
+        }
+
         if (!accepted)
         {
             pendingServerRequestId = 0;
@@ -683,8 +723,9 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
         localGrabRevision = revision;
         localGrabbed = true;
         SetOwnerInputBlocked(true);
-        // 컴포넌트를 끄면 클라이언트만 델타 압축 기준이 초기화되므로 보간 대기열만 비운다.
-        if (!isServer) networkTransform?.ClearClientInterpolation();
+        // SW 수정 : 컴포넌트를 끄면 클라이언트만 델타 압축 기준이 초기화되므로 보간 대기열만 비운다.
+        if (!isServer)
+            networkTransform?.ClearClientInterpolation();
     }
 
     [ClientRpc(channel = Channels.Unreliable)]

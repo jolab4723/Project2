@@ -4,7 +4,7 @@ using Mirror;
 using UnityEngine;
 
 /// <summary>
-/// SW 원본 <c>WorldItemCube.prefab</c>의 Mirror C단계 테스트 Variant에만 붙는 네트워크 픽업이다.
+/// SW 수정 : <c>WorldItemCube.prefab</c> 기반의 네트워크 월드 아이템을 서버 권한으로 관리한다.
 /// 서버가 만든 기존 ItemSaveData JSON을 SyncVar로 전달하고, 각 Client의 ItemDataStorage를
 /// 같은 instanceId와 옵션으로 복원한다. 획득 선점과 파괴 권한은 서버에만 있다.
 /// </summary>

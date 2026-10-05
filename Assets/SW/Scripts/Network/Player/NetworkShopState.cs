@@ -16,7 +16,7 @@ internal sealed class MirrorShopItemSnapshot
 }
 
 /// <summary>
-/// 3-5 Mirror 테스트에서 모든 플레이어가 함께 보는 상점 재고의 서버 원본이다.
+/// SW 수정 : 모든 네트워크 플레이어가 함께 보는 상점 재고의 서버 원본이다.
 /// <para>원본 상점과의 차이: 원본 <see cref="ShopController"/>와 <see cref="ShopStockInitializer"/>는
 /// 클라이언트 한 명의 Grid만 다룬다. 이 컴포넌트는 아이템 instance, 출처, 위치를 서버의
 /// <see cref="SyncList{T}"/>에 보관하고 각 클라이언트 상점 화면을 같은 목록으로 다시 그린다.</para>
@@ -24,8 +24,8 @@ internal sealed class MirrorShopItemSnapshot
 /// 한 번에 하나씩 처리되므로 첫 요청이 상태 번호를 올린 뒤 도착한 요청은 돈과 아이템을 변경하기 전에
 /// 거절된다. 별도의 전역 잠금 Manager는 만들지 않는다.</para>
 /// <para>기존 상점의 명시적인 재고 연결 API와 추첨 설정을 재사용한다.</para>
-/// <para>6-C 실제 StageSelect 복제 Scene에는 상점 Grid가 없으므로 그 Scene에서는 빈 서버 상태로 대기한다.
-/// 상점 UI가 있는 Camp Scene의 인스턴스만 실제 공유 재고를 초기화한다.</para>
+/// <para>SW 수정 : 상점 Grid가 없는 StageSelect Scene에서는 빈 서버 상태로 대기한다.
+/// 상점 UI가 있는 공용 Camp Scene의 인스턴스만 실제 공유 재고를 초기화한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkIdentity))]

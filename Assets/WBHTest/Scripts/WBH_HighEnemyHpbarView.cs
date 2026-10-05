@@ -111,13 +111,11 @@ public class WBH_HighEnemyHpbarView : MonoBehaviour
         return enemyLabels != null ? enemyLabels.GetName(info.enemyId) : info.enemyName;
     }
 
+    /// <summary>SW 수정 : 공용 HUD의 거리 판정에 사용할 로컬 플레이어를 연결한다.</summary>
     public void Initialize(Transform localPlayer)
     {
         player = localPlayer;
     }
-
-    /// <summary>SW 수정: 공용 HUD의 거리 판정에 사용할 로컬 플레이어를 연결한다.</summary>
-    public void BindPlayer(Transform localPlayer) => player = localPlayer;
 
     /// <summary>SW 수정: 논리 표시 상태를 함께 갱신하여 다시 표시할 때만 등장 애니메이션을 재생한다.</summary>
     private static void ShowBar(GameObject barRoot, KY_HUDAnimator animator, ref bool isVisible)

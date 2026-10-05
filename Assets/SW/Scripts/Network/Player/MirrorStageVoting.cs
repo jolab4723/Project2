@@ -85,8 +85,13 @@ public sealed partial class MirrorNetworkManager
             var tied = new List<string>();
             foreach (var entry in CountVotes())
             {
-                if (entry.Value > maximum) { maximum = entry.Value; tied.Clear(); }
-                if (entry.Value == maximum) tied.Add(entry.Key);
+                if (entry.Value > maximum)
+                {
+                    maximum = entry.Value;
+                    tied.Clear();
+                }
+                if (entry.Value == maximum)
+                    tied.Add(entry.Key);
             }
             return tied.Count == 0 ? null : tied[random.Next(tied.Count)];
         }
@@ -205,7 +210,7 @@ public sealed partial class MirrorNetworkManager
             !TryGetRunSnapshot(out var snapshot)) return;
         string winner = stageVotes.ChooseWinner(stageVoteRandom);
         if (!TryBeginStageNode(snapshot, winner, out var selectedNode, out _)) return;
-        if (!TryReserveAct1Scene(snapshot, selectedNode)) return;
+        if (!TryReserveStageScene(snapshot, selectedNode)) return;
         MirrorSessionRoute targetRoute = GetRouteForStageNodeType(selectedNode.type);
         if (!CanChangeSessionRoute(MirrorSessionRoute.StageSelect, targetRoute) ||
             !ServerPublishRunSnapshot(snapshot)) return;
@@ -261,6 +266,6 @@ public sealed partial class MirrorNetworkManager
         unknownVotes.Reset(runSnapshotRevision);
         BroadcastVotes(unknownVotes);
         Debug.Log($"[MirrorUnknownVote] 확정 node={node.id}, choice={choice + 1}");
-        BeginUnknownChoice(snapshot, node, choice);
+        BeginUnknownChoice(node, choice);
     }
 }

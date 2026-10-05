@@ -339,32 +339,39 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         foreach (RaycastHit hit in Physics.SphereCastAll(origin, collisionRadius, direction, distance,
             playerShotCollisionMask, QueryTriggerInteraction.Collide))
             piercingHits.Add((hit.collider, hit.distance));
-        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
+        int obstacleLayerMask = LayerMask.GetMask("Wall", "Prop", "Ground");
         piercingHits.Sort((left, right) =>
         {
-            int order = left.distance.CompareTo(right.distance);
-            if (order != 0) return order;
-            return ((obstacles & (1 << right.collider.gameObject.layer)) != 0).CompareTo(
-                (obstacles & (1 << left.collider.gameObject.layer)) != 0);
+            int distanceComparison = left.distance.CompareTo(right.distance);
+            if (distanceComparison != 0)
+                return distanceComparison;
+
+            return ((obstacleLayerMask & (1 << right.collider.gameObject.layer)) != 0).CompareTo(
+                (obstacleLayerMask & (1 << left.collider.gameObject.layer)) != 0);
         });
         foreach (var hit in piercingHits)
         {
-            if (consumed) return;
+            if (consumed)
+                return;
             if (!IsPlayerShotAvailable)
             {
                 ServerDestroy();
                 return;
             }
-            if (hit.collider == null || hit.collider == projectileCollider || hit.collider.transform.IsChildOf(transform)) continue;
+            if (hit.collider == null || hit.collider == projectileCollider || hit.collider.transform.IsChildOf(transform))
+                continue;
+
             transform.position = origin + direction * hit.distance;
             Vector3 point = hit.collider.ClosestPoint(transform.position);
-            if ((obstacles & (1 << hit.collider.gameObject.layer)) != 0)
+            if ((obstacleLayerMask & (1 << hit.collider.gameObject.layer)) != 0)
             {
                 playerOwner.CombatAuthority.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, -direction);
                 ServerDestroy();
                 return;
             }
-            if (!TryProcessPiercingPlayerHit(hit.collider, point)) continue;
+            if (!TryProcessPiercingPlayerHit(hit.collider, point))
+                continue;
+
             playerOwner.CombatAuthority.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, -direction);
             var effect = (AntimatterPiercingShotUniqueEffectSO)shotUniqueEffect;
             if (playerShotTargets.Count >= Mathf.Clamp(effect.maxTargets, 1, 3))

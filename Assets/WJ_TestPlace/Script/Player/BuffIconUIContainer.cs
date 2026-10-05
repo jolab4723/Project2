@@ -73,11 +73,20 @@ public class BuffIconUIContainer : MonoBehaviour
     /// <summary>SW 수정: 공통 버프 아이콘을 지정한 플레이어의 버프에 연결합니다.</summary>
     public void Bind(PlayerBuffManager owner)
     {
-        if (buffManager != null) buffManager.OnBuffsChanged -= Rebuild;
+        if (buffManager != null)
+            buffManager.OnBuffsChanged -= Rebuild;
+
         explicitOwner = true;
         buffManager = owner;
         TrySubscribe();
-        if (owner == null) foreach (var slot in pool) if (slot != null) slot.gameObject.SetActive(false);
+        if (owner == null)
+        {
+            foreach (var slot in pool)
+            {
+                if (slot != null)
+                    slot.gameObject.SetActive(false);
+            }
+        }
     }
 
     /// <summary>SW 수정: 플레이어 교체·씬 종료 때 이전 소유자의 아이콘과 구독을 해제합니다.</summary>

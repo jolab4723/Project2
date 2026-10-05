@@ -5,6 +5,7 @@ using UnityEngine;
 /// 싱글·서버에서 장착된 투구와 상의의 동일한 고유효과를 관리합니다.
 /// 마나 조건과 버프 적용은 StatThresholdRunner에 맡깁니다.
 /// 장비 해제, 컴포넌트 비활성화, 서버 종료 때 기존 실행 객체를 정리합니다.
+/// SW 수정 : 무기의 피격 에너지도 보호막으로 전환하며 상의 보호막과 같은 흡수·수명 경계를 사용합니다.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(PlayerContext))]
@@ -169,9 +170,13 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         equipment.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance next);
         var effect = next?.definition?.characterClass == CharacterClass.Fighter
             ? next.definition.uniqueEffect as GuardiansJusticeShieldUniqueEffectSO : null;
-        if (ReferenceEquals(guardianItem, next) && guardianEffect == effect) return;
+        if (ReferenceEquals(guardianItem, next) && guardianEffect == effect)
+            return;
+
         ClearGuardian();
-        if (effect == null) return;
+        if (effect == null)
+            return;
+
         guardianItem = next;
         guardianEffect = effect;
         guardianScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
@@ -184,7 +189,7 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         guardianEffect = null;
         guardianEnergy = 0f;
         guardianEnergyExpiresAt = 0d;
-        // 장착을 바꿔도 마지막 발동의 대기 시간은 유지한다.
+        // SW 수정 : 장착을 바꿔도 마지막 발동의 대기 시간은 유지한다.
     }
 
     private void RecordGuardianHealthLoss(WBH_ICombat attacker, float loss)
@@ -192,41 +197,48 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         if (!CanExecute || guardianEffect == null || attacker == null || attacker == owner.Controller ||
             attacker is T_PlayerController || health.CurrentHealth <= 0f || loss <= 0f || owner.Effects.GetRemainingCooldown(guardianItem) > 0f)
             return;
+
         double now = owner.Effects.Now;
-        if (now >= guardianEnergyExpiresAt) guardianEnergy = 0f;
-        if (guardianEnergy <= 0f) guardianEnergyExpiresAt = now + guardianEffect.energyDurationSeconds;
+        if (now >= guardianEnergyExpiresAt)
+            guardianEnergy = 0f;
+        if (guardianEnergy <= 0f)
+            guardianEnergyExpiresAt = now + guardianEffect.energyDurationSeconds;
+
         guardianEnergy = Mathf.Min(health.MaxHealth * guardianEffect.maximumHealthFraction,
             guardianEnergy + loss * guardianEffect.lossToEnergyFraction);
     }
 
-    /// <summary>유효한 기본 직접 적중에서 저장 에너지와 발동 기회를 먼저 소비한다.</summary>
+    /// <summary>SW 수정 : 유효한 기본 직접 적중에서 저장 에너지와 발동 기회를 먼저 소비한다.</summary>
     public void ResolveGuardianHit(in WBH_DamageResult result)
     {
         if (!CanExecute || result.DamageCause != DamageCause.Direct || result.FinalDamage <= 0f ||
             guardianEffect == null || health.CurrentHealth <= 0f || guardianEnergy <= 0f ||
             owner.Effects.Now >= guardianEnergyExpiresAt || owner.Effects.GetRemainingCooldown(guardianItem) > 0f)
             return;
+
         float amount = Mathf.Min(guardianEnergy, health.MaxHealth * guardianEffect.maximumHealthFraction);
         guardianEnergy = 0f;
         owner.Effects.BeginGuardianCooldown(guardianEffect);
-        TryGrantShield(guardianItem, amount, guardianEffect.shieldDurationSeconds, guardianEffect.maximumHealthFraction);
+        GrantShield(guardianItem, amount, guardianEffect.shieldDurationSeconds, guardianEffect.maximumHealthFraction);
     }
 
-    private bool TryGrantShield(ItemInstance source, float amount, float duration, float capFraction)
+    private void GrantShield(ItemInstance source, float amount, float duration, float capFraction)
     {
         if (source == null || !float.IsFinite(amount) || amount <= shieldAmount || amount <= 0f || duration <= 0f)
-            return false;
+            return;
+
         activeShieldSource = source.instanceId;
         activeShieldCapFraction = capFraction;
         shieldAmount = amount;
         shieldExpiresAt = Time.time + duration;
         UpdateShieldVisual();
-        return true;
     }
 
     private void ClearShieldFrom(string instanceId)
     {
-        if (string.IsNullOrEmpty(instanceId) || activeShieldSource != instanceId) return;
+        if (string.IsNullOrEmpty(instanceId) || activeShieldSource != instanceId)
+            return;
+
         shieldAmount = 0f;
         activeShieldSource = null;
         UpdateShieldVisual();
@@ -234,41 +246,56 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (!CanExecute || health == null) return;
+        if (!CanExecute || health == null)
+            return;
+
         if (guardianEffect != null && (owner.Effects.Now >= guardianEnergyExpiresAt ||
-            guardianScene != UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle)) guardianEnergy = 0f;
-        if (guardianEffect != null) guardianEnergy = Mathf.Min(guardianEnergy, health.MaxHealth * guardianEffect.maximumHealthFraction);
+            guardianScene != UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle))
+            guardianEnergy = 0f;
+        if (guardianEffect != null)
+            guardianEnergy = Mathf.Min(guardianEnergy, health.MaxHealth * guardianEffect.maximumHealthFraction);
+
         if (guardianScene != UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle)
         {
             ClearShieldFrom(guardianItem?.instanceId);
             guardianScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
         }
+
         if (health.CurrentHealth <= 0f)
         {
             waitingForRevive = true;
-            if (shieldAmount > 0f) shieldAmount = 0f;
+            if (shieldAmount > 0f)
+                shieldAmount = 0f;
+
             return;
         }
         if (waitingForRevive)
         {
             waitingForRevive = false;
-            if (shieldEffect != null) nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
+            if (shieldEffect != null)
+                nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
         }
+
         float cap = Mathf.Max(0f, health.MaxHealth * activeShieldCapFraction);
-        if (shieldAmount > cap) shieldAmount = cap;
+        if (shieldAmount > cap)
+            shieldAmount = cap;
         if (shieldAmount > 0f && Time.time >= shieldExpiresAt)
         {
             shieldAmount = 0f;
             activeShieldSource = null;
-            if (shieldEffect != null) nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
+            if (shieldEffect != null)
+                nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
         }
-        if (shieldEffect == null) return;
+
+        if (shieldEffect == null)
+            return;
+
         if (Time.time < nextShieldChargeAt ||
             health.MaxHealth <= 0f ||
             health.CurrentHealth / health.MaxHealth < shieldEffect.minimumHealthFraction)
             return;
 
-        TryGrantShield(shieldItem, health.MaxHealth * shieldEffect.shieldFraction,
+        GrantShield(shieldItem, health.MaxHealth * shieldEffect.shieldFraction,
             shieldEffect.shieldDurationSeconds, shieldEffect.shieldFraction);
         nextShieldChargeAt = float.PositiveInfinity;
         UpdateShieldVisual();

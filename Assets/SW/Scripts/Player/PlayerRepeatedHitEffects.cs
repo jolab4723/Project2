@@ -1,4 +1,3 @@
-using System;
 using ItemSystem;
 using UnityEngine;
 
@@ -20,15 +19,13 @@ public sealed partial class PlayerItemEffectState
     private int repeatedHitCount;
     private double repeatedHitWindowEndsAt;
 
-    /// <summary>SW 수정 : 냉각 누적은 1·2, 성공한 빙결은 3, 취소·초기화는 0으로 알린다. 실제 상태 판정은 바꾸지 않는다.</summary>
-    public event Action<WBH_ICombat, int> CoolingPresented;
-
+    /// <summary>SW 수정 : 냉각 누적과 빙결 성공·취소 상태를 기존 적 표시 경로로 전달하며 실제 상태 판정은 바꾸지 않는다.</summary>
     private void PresentCooling(WBH_ICombat target, int count)
     {
         var component = target as Component;
         var recovery = component != null ? component.GetComponentInParent<EnemyFreezeRecovery>() : null;
-        if (recovery != null) recovery.PresentCooling(context, count, Now, count >= 3 ? 0.6f : 3f);
-        CoolingPresented?.Invoke(target, count);
+        if (recovery != null)
+            recovery.PresentCooling(context, count, Now, count >= 3 ? 0.6f : 3f);
     }
 
     /// <summary>SW 수정 : 싱글·서버의 살아 있는 실제 Fighter 기본 적중만 대상으로 같은 적·다른 공격 번호를 누적한다.</summary>
@@ -80,7 +77,10 @@ public sealed partial class PlayerItemEffectState
         {
             var slow = new WBH_StatusEffectData(WBH_StatusEffectType.Slow,
                 cooling.slowDurationSeconds, Mathf.Clamp01(cooling.slowMultiplier))
-            { Attacker = context.Controller, AttackId = result.AttackId };
+            {
+                Attacker = context.Controller,
+                AttackId = result.AttackId
+            };
             bool slowed = TryApplyRepeatedHitStatus(enemy, slow);
             if (!slowed || boss || !recovery.CanPrepareFreeze(now))
             {
@@ -104,10 +104,12 @@ public sealed partial class PlayerItemEffectState
         repeatedHitCount++;
         if (repeatedHitCount < requiredHits)
         {
-            if (cooling != null) PresentCooling(enemy, repeatedHitCount);
+            if (cooling != null)
+                PresentCooling(enemy, repeatedHitCount);
+
             return;
         }
-        // SW 수정 : 세 번째 시도는 성공·면역 여부와 무관하게 누적만 비우고 같은 공격 번호는 다시 세지 않는다.
+        // SW 수정 : 설정된 필수 적중 수에 도달하면 성공·면역 여부와 무관하게 누적만 비우고 같은 공격 번호는 다시 세지 않는다.
         repeatedHitCount = 0;
         repeatedHitWindowEndsAt = 0d;
         if (expose != null)
@@ -115,13 +117,19 @@ public sealed partial class PlayerItemEffectState
             float reduction = boss ? expose.bossDefenseReduction : expose.defenseReduction;
             var weakened = new WBH_StatusEffectData(WBH_StatusEffectType.DefenseDown,
                 expose.exposeDurationSeconds, 1f - Mathf.Clamp01(reduction))
-            { Attacker = context.Controller, AttackId = result.AttackId };
+            {
+                Attacker = context.Controller,
+                AttackId = result.AttackId
+            };
             TryApplyRepeatedHitStatus(enemy, weakened);
             return;
         }
 
         var freeze = new WBH_StatusEffectData(WBH_StatusEffectType.Freeze, cooling.freezeDurationSeconds, 0f)
-        { Attacker = context.Controller, AttackId = result.AttackId };
+        {
+            Attacker = context.Controller,
+            AttackId = result.AttackId
+        };
         bool frozen = recovery.CanPrepareFreeze(now) && TryApplyRepeatedHitStatus(enemy, freeze);
         if (frozen)
             recovery.BeginRecovery(now, cooling.freezeRecoverySeconds);

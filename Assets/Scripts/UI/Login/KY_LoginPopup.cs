@@ -65,7 +65,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
             // 씬에 남아 있는 직접 이동 연결은 입력 검증을 우회하고,
             // 부트 씬의 싱글톤이 유지될 때 파괴된 중복 로더를 참조할 수 있다.
-            // 우회 옵션을 꺼도 이 연결이 인증 전에 실행되지 않게 한다.
+            // SW 수정 : 인증 전에 씬이 바뀌지 않도록 이 연결을 비활성화한다.
             for (int i = 0; i < loginButton.onClick.GetPersistentEventCount(); i++)
             {
                 var target = loginButton.onClick.GetPersistentTarget(i);
@@ -196,7 +196,6 @@ public sealed class KY_LoginPopup : MonoBehaviour
         if (isLoginInProgress || !isActiveAndEnabled)
             return;
 
-        // SW 수정 : 기존 임시 우회 옵션으로 멀티플레이 인증을 건너뛰지 않는다.
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
 

@@ -213,14 +213,19 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
         PublishAuras();
     }
 
-    /// <summary>서버가 판정 중인 범위만 관찰자 표시 목록에 반영합니다.</summary>
+    /// <summary>SW 수정 : 서버가 판정 중인 범위만 관찰자 표시 목록에 반영합니다.</summary>
     private void PublishAuras()
     {
         var network = GetComponent<NetworkItemTriggerManager>();
-        if (network == null || !network.isServer) return;
+        if (network == null || !network.isServer)
+            return;
+
         var auras = new List<FieldAuraUniqueEffectSO>();
         foreach (var item in runtimeObjects.Keys)
-            if (item.definition.uniqueEffect is FieldAuraUniqueEffectSO aura) auras.Add(aura);
+        {
+            if (item.definition.uniqueEffect is FieldAuraUniqueEffectSO aura)
+                auras.Add(aura);
+        }
         network.SetActiveAuras(auras);
     }
 
@@ -233,9 +238,10 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
 
     private void CreateAura(ItemInstance ownerItem, FieldAuraUniqueEffectSO aura)
     {
-        // 네트워크 표시 목록은 서버에서 받아야 타인의 인벤토리를 공개하지 않고도 범위를 볼 수 있다.
+        // SW 수정 : 네트워크 표시 목록은 서버에서 받아야 타인의 인벤토리를 공개하지 않고도 범위를 볼 수 있다.
         bool networked = GetComponent<NetworkIdentity>() != null;
-        if (networked && !wasServer) return;
+        if (networked && !wasServer)
+            return;
         if (HasRuntimeForEffect(aura))
             return;
 
@@ -267,7 +273,7 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
             zone.IncludeOwner(buffs);
         }
 
-        // 전용 서버에는 렌더링용 링을 만들지 않는다. Host와 일반 Client에서만 표시한다.
+        // SW 수정 : 오프라인에서는 여기서 표시를 만들고, 멀티플레이는 서버가 보낸 오라 목록으로 표시한다.
         if (aura.showAreaVisual && !networked)
         {
             zoneObject.AddComponent<PlayerAuraVisual>().Bind(transform, aura, true);

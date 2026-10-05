@@ -130,7 +130,10 @@ public class KY_UIInputManager : MonoBehaviour
             if (networkInputBound && statusPopup != null)
             {
                 popups?.HideSidePopup();
-                if (statusPopup.IsOpen) statusPopup.Close(); else statusPopup.Open();
+                if (statusPopup.IsOpen)
+                    statusPopup.Close();
+                else
+                    statusPopup.Open();
             }
             else
             {

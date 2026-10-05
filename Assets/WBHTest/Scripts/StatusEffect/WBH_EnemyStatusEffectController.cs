@@ -293,7 +293,8 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
 
         WBH_EffectData data = GetEffectData(type);
 
-        if (data == null || effectSpawner == null) // SW 수정
+        // SW 수정 : 효과 데이터나 생성기가 없으면 상태 판정은 유지하고 시각 연출 생성만 생략한다.
+        if (data == null || effectSpawner == null)
             return;
 
         WBH_Effect effect = effectSpawner.SpawnPersistentEffect(data, statusEffectRoot);
