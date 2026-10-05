@@ -33,6 +33,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnPreparedAttackChanged))] private bool preparedAttackReady;
     [SyncVar] private uint preparedAttackConsumeCount;
     [SyncVar(hook = nameof(OnWasteHeatReadyChanged))] private bool wasteHeatReady;
+    [SyncVar(hook = nameof(OnWorldEnderReadyChanged))] private bool worldEnderReady;
 
     public static uint LocalChainLightningPresentationCount { get; private set; }
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
@@ -90,6 +91,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         {
             SetPreparedAttackPresentation(preparedAttackReady);
             SetWasteHeatPresentation(wasteHeatReady);
+            Presentation.SetWorldEnderReady(worldEnderReady);
         }
     }
 
@@ -116,6 +118,11 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
         context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
+        context.Effects.EchoReplayPresented += RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented += RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged += SetWorldEnderReady;
+        context.Effects.WildfirePresented += RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed += RpcPresentSupportLink;
         context.Effects.StackChanged += SyncStack;
         if (context?.Equipment != null)
         {
@@ -130,6 +137,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         base.OnStartClient();
         SetPreparedAttackPresentation(preparedAttackReady);
         SetWasteHeatPresentation(wasteHeatReady);
+        Presentation.SetWorldEnderReady(worldEnderReady);
     }
 
     /// <summary>SW 수정: 서버 종료 시 소유 플레이어의 효과 표시·장비 구독을 해제하며 공격 수명 정리는 기존 경로를 따른다.</summary>
@@ -144,6 +152,11 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
         context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
+        context.Effects.EchoReplayPresented -= RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented -= RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged -= SetWorldEnderReady;
+        context.Effects.WildfirePresented -= RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed -= RpcPresentSupportLink;
         wasteHeatReady = false;
         context.Effects.StackChanged -= SyncStack;
         base.OnStopServer();
@@ -217,6 +230,22 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     {
         Presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
     }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentEchoReplay(Vector3 origin, Vector3 forward, float range, float angle)
+        => Presentation.PresentEchoReplay(origin, forward, range, angle);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWorldEnderBlast(Vector3 position, float radius)
+        => Presentation.PresentWorldEnderBlast(position, radius);
+
+    private void SetWorldEnderReady(bool ready) => worldEnderReady = ready;
+    private void OnWorldEnderReadyChanged(bool previous, bool current) => Presentation.SetWorldEnderReady(current);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWildfire(Vector3 start, Vector3 end) => Presentation.PresentWildfire(start, end);
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentSupportLink(Vector3 start, Vector3 end) => Presentation.PresentSupportLink(start, end);
 
     [ClientRpc]
     private void RpcPresentChainLightning(Vector3 start, Vector3 end)

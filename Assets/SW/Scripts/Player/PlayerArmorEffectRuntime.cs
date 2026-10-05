@@ -29,6 +29,13 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
     private GameObject shieldVisual;
     private Material shieldMaterial;
     private MirrorSpawnedPlayerBinder binder;
+    private string activeShieldSource;
+    private float activeShieldCapFraction;
+    private ItemInstance guardianItem;
+    private GuardiansJusticeShieldUniqueEffectSO guardianEffect;
+    private float guardianEnergy;
+    private double guardianEnergyExpiresAt;
+    private int guardianScene;
 
     public float ShieldAmount => shieldAmount;
     private bool CanExecute => owner != null && owner.Effects.CanExecute;
@@ -66,6 +73,15 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
             equipment.OnEquipmentChanged -= HandleEquipmentChanged;
             equipment.OnEquipmentChanged += HandleEquipmentChanged;
         }
+        if (health != null)
+        {
+            health.OnBeforeDamageApplied -= ReduceDamageWithShield;
+            health.OnBeforeDamageApplied += ReduceDamageWithShield;
+            health.OnDeath -= HandleShieldOwnerDeath;
+            health.OnDeath += HandleShieldOwnerDeath;
+            health.OnCombatHealthLost -= RecordGuardianHealthLoss;
+            health.OnCombatHealthLost += RecordGuardianHealthLoss;
+        }
         ReconcileEquipment();
     }
 
@@ -82,6 +98,13 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
     {
         if (equipment != null)
             equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        if (health != null)
+        {
+            health.OnBeforeDamageApplied -= ReduceDamageWithShield;
+            health.OnDeath -= HandleShieldOwnerDeath;
+            health.OnCombatHealthLost -= RecordGuardianHealthLoss;
+        }
+        ClearGuardian();
         StopRuntime();
         StopShield();
         DestroyShieldVisual();
@@ -104,6 +127,7 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
 
         ReconcileHelmet();
         ReconcileShield();
+        ReconcileGuardian();
     }
 
     private void ReconcileHelmet()
@@ -130,19 +154,95 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         var nextEffect = next?.definition?.uniqueEffect as SolarGraceShieldUniqueEffectSO;
         if (ReferenceEquals(shieldItem, next) && shieldEffect == nextEffect) return;
 
-        StopShield();
+        ClearShieldFrom(shieldItem?.instanceId);
+        shieldItem = null;
+        shieldEffect = null;
         if (next == null || nextEffect == null) return;
         shieldItem = next;
         shieldEffect = nextEffect;
         nextShieldChargeAt = Time.time + nextEffect.undamagedSeconds;
         waitingForRevive = health.CurrentHealth <= 0f;
-        health.OnBeforeDamageApplied += ReduceDamageWithShield;
-        health.OnDeath += HandleShieldOwnerDeath;
+    }
+
+    private void ReconcileGuardian()
+    {
+        equipment.TryGetEquippedItemInstance(EquipSlotType.Weapon, out ItemInstance next);
+        var effect = next?.definition?.characterClass == CharacterClass.Fighter
+            ? next.definition.uniqueEffect as GuardiansJusticeShieldUniqueEffectSO : null;
+        if (ReferenceEquals(guardianItem, next) && guardianEffect == effect) return;
+        ClearGuardian();
+        if (effect == null) return;
+        guardianItem = next;
+        guardianEffect = effect;
+        guardianScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+    }
+
+    private void ClearGuardian()
+    {
+        ClearShieldFrom(guardianItem?.instanceId);
+        guardianItem = null;
+        guardianEffect = null;
+        guardianEnergy = 0f;
+        guardianEnergyExpiresAt = 0d;
+        // 장착을 바꿔도 마지막 발동의 대기 시간은 유지한다.
+    }
+
+    private void RecordGuardianHealthLoss(WBH_ICombat attacker, float loss)
+    {
+        if (!CanExecute || guardianEffect == null || attacker == null || attacker == owner.Controller ||
+            attacker is T_PlayerController || health.CurrentHealth <= 0f || loss <= 0f || owner.Effects.GetRemainingCooldown(guardianItem) > 0f)
+            return;
+        double now = owner.Effects.Now;
+        if (now >= guardianEnergyExpiresAt) guardianEnergy = 0f;
+        if (guardianEnergy <= 0f) guardianEnergyExpiresAt = now + guardianEffect.energyDurationSeconds;
+        guardianEnergy = Mathf.Min(health.MaxHealth * guardianEffect.maximumHealthFraction,
+            guardianEnergy + loss * guardianEffect.lossToEnergyFraction);
+    }
+
+    /// <summary>유효한 기본 직접 적중에서 저장 에너지와 발동 기회를 먼저 소비한다.</summary>
+    public void ResolveGuardianHit(in WBH_DamageResult result)
+    {
+        if (!CanExecute || result.DamageCause != DamageCause.Direct || result.FinalDamage <= 0f ||
+            guardianEffect == null || health.CurrentHealth <= 0f || guardianEnergy <= 0f ||
+            owner.Effects.Now >= guardianEnergyExpiresAt || owner.Effects.GetRemainingCooldown(guardianItem) > 0f)
+            return;
+        float amount = Mathf.Min(guardianEnergy, health.MaxHealth * guardianEffect.maximumHealthFraction);
+        guardianEnergy = 0f;
+        owner.Effects.BeginGuardianCooldown(guardianEffect);
+        TryGrantShield(guardianItem, amount, guardianEffect.shieldDurationSeconds, guardianEffect.maximumHealthFraction);
+    }
+
+    private bool TryGrantShield(ItemInstance source, float amount, float duration, float capFraction)
+    {
+        if (source == null || !float.IsFinite(amount) || amount <= shieldAmount || amount <= 0f || duration <= 0f)
+            return false;
+        activeShieldSource = source.instanceId;
+        activeShieldCapFraction = capFraction;
+        shieldAmount = amount;
+        shieldExpiresAt = Time.time + duration;
+        UpdateShieldVisual();
+        return true;
+    }
+
+    private void ClearShieldFrom(string instanceId)
+    {
+        if (string.IsNullOrEmpty(instanceId) || activeShieldSource != instanceId) return;
+        shieldAmount = 0f;
+        activeShieldSource = null;
+        UpdateShieldVisual();
     }
 
     private void Update()
     {
-        if (!CanExecute || shieldEffect == null || health == null) return;
+        if (!CanExecute || health == null) return;
+        if (guardianEffect != null && (owner.Effects.Now >= guardianEnergyExpiresAt ||
+            guardianScene != UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle)) guardianEnergy = 0f;
+        if (guardianEffect != null) guardianEnergy = Mathf.Min(guardianEnergy, health.MaxHealth * guardianEffect.maximumHealthFraction);
+        if (guardianScene != UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle)
+        {
+            ClearShieldFrom(guardianItem?.instanceId);
+            guardianScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+        }
         if (health.CurrentHealth <= 0f)
         {
             waitingForRevive = true;
@@ -152,22 +252,24 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
         if (waitingForRevive)
         {
             waitingForRevive = false;
-            nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
+            if (shieldEffect != null) nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
         }
-        float cap = Mathf.Max(0f, health.MaxHealth * shieldEffect.shieldFraction);
+        float cap = Mathf.Max(0f, health.MaxHealth * activeShieldCapFraction);
         if (shieldAmount > cap) shieldAmount = cap;
         if (shieldAmount > 0f && Time.time >= shieldExpiresAt)
         {
             shieldAmount = 0f;
-            nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
+            activeShieldSource = null;
+            if (shieldEffect != null) nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
         }
+        if (shieldEffect == null) return;
         if (Time.time < nextShieldChargeAt ||
             health.MaxHealth <= 0f ||
             health.CurrentHealth / health.MaxHealth < shieldEffect.minimumHealthFraction)
             return;
 
-        shieldAmount = cap;
-        shieldExpiresAt = Time.time + shieldEffect.shieldDurationSeconds;
+        TryGrantShield(shieldItem, health.MaxHealth * shieldEffect.shieldFraction,
+            shieldEffect.shieldDurationSeconds, shieldEffect.shieldFraction);
         nextShieldChargeAt = float.PositiveInfinity;
         UpdateShieldVisual();
     }
@@ -186,8 +288,8 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
     /// </summary>
     private float ReduceDamageWithShield(float damage)
     {
-        if (shieldEffect == null || damage <= 0f) return damage;
-        nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
+        if (!CanExecute || damage <= 0f) return damage;
+        if (shieldEffect != null) nextShieldChargeAt = Time.time + shieldEffect.undamagedSeconds;
         if (shieldAmount <= 0f) return damage;
         float blockedDamage = Mathf.Min(shieldAmount, damage);
         shieldAmount -= blockedDamage;
@@ -199,20 +301,17 @@ public sealed class PlayerArmorEffectRuntime : MonoBehaviour
     private void HandleShieldOwnerDeath()
     {
         shieldAmount = 0f;
+        guardianEnergy = 0f;
         waitingForRevive = true;
         UpdateShieldVisual();
     }
 
     private void StopShield()
     {
-        if (health != null)
-        {
-            health.OnBeforeDamageApplied -= ReduceDamageWithShield;
-            health.OnDeath -= HandleShieldOwnerDeath;
-        }
         shieldItem = null;
         shieldEffect = null;
         shieldAmount = 0f;
+        activeShieldSource = null;
         waitingForRevive = false;
         UpdateShieldVisual();
     }

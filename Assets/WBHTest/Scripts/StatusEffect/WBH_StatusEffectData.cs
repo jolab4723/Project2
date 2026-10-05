@@ -17,6 +17,10 @@ public struct WBH_StatusEffectData
     /// <summary>SW 수정: 화상을 마지막으로 적용한 공격자와 공격 번호를 틱 피해까지 보존합니다.</summary>
     public WBH_ICombat Attacker;
     public uint AttackId;
+    // SW 수정: 실제 유지 중인 화상의 무기·효과·전파 세대를 틱과 처치까지 보존한다.
+    public string SourceItemInstanceId;
+    public string SourceEffectId;
+    public byte PropagationGeneration;
     
     public WBH_StatusEffectData(WBH_StatusEffectType type, float duration, float value = 0, float interval = 0, Vector3 direction = default, float force = 0f, float height = 0f)
     {
@@ -33,5 +37,8 @@ public struct WBH_StatusEffectData
         Height = height;
         Attacker = null;
         AttackId = 0;
+        SourceItemInstanceId = null;
+        SourceEffectId = null;
+        PropagationGeneration = 0;
     }
 }

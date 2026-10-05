@@ -64,6 +64,16 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
         return effects.ContainsKey(type);
     }
 
+    /// <summary>SW 수정: 마지막 프레임의 보유 여부가 아닌 현재 살아 있는 Burn 인스턴스의 실제 출처를 읽는다.</summary>
+    public bool TryGetBurnSource(out WBH_StatusEffectData source)
+    {
+        source = default;
+        if (!effects.TryGetValue(WBH_StatusEffectType.Burn, out var effect) ||
+            effect is not WBH_BurnEffect burn || burn.IsFinished) return false;
+        source = burn.Source;
+        return true;
+    }
+
     // 남은 시간
     public float GetRemainingTime(WBH_StatusEffectType type)
     {

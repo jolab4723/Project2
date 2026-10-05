@@ -43,6 +43,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     [SyncVar] private uint playerOwnerNetId;
     [SyncVar] private string shotItemId;
     [SyncVar] private GunnerWeaponType shotWeaponType;
+    [SyncVar] private bool chargedWarhead;
+    private GameObject chargedVisual;
     [SyncVar] private float gravityWellRadius;
     [SyncVar] private Color gravityWellColor;
     // SW 수정: 반경과 색을 먼저 역직렬화한 뒤 활성 Hook이 링을 만들도록 선언 순서를 유지합니다.
@@ -52,6 +54,10 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     [SyncVar] private double singularityDetonatesAt;
     // SW 수정: 반경·색·기폭 시각을 먼저 복제한 뒤 활성 Hook이 경고 링을 만들도록 선언 순서를 유지합니다.
     [SyncVar(hook = nameof(OnSingularityActiveChanged))] private bool singularityActive;
+    [SyncVar] private float sunfallBurnFieldRadius;
+    [SyncVar] private Color sunfallBurnFieldColor;
+    // SW 수정 : 반경과 색이 복제된 뒤 활성 Hook으로 일식 장판을 표시한다.
+    [SyncVar(hook = nameof(OnSunfallBurnFieldActiveChanged))] private bool sunfallBurnFieldActive;
 
     private NetworkEnemyAuthority owner;
     private Vector3 direction;
@@ -67,12 +73,15 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     [SyncVar] private float missileExplosionRadius;
     private readonly HashSet<PlayerContext> missileTargets = new();
     private readonly HashSet<WBH_ICombat> playerShotTargets = new();
+    // SW 수정: 반물질 기본 라이플의 한 이동 구간 충돌만 거리순으로 처리한다.
+    private readonly List<(Collider collider, float distance)> piercingHits = new();
     private PlayerContext playerOwner;
     private ElementType shotElement;
     private uint shotAttackId;
     private int shotSceneHandle;
     private double shotExpiresAt;
     private UniqueEffectSO shotUniqueEffect;
+    private float shotNinjaBonus;
     private WBH_EffectData shotHitEffectData;
     private int playerShotCollisionMask;
     private GameObject playerProjectileVisual;
@@ -80,12 +89,15 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     private float visualBindUntil;
     private GameObject gravityWellVisual;
     private GameObject singularityVisual;
+    private GameObject sunfallBurnFieldVisual;
 
     public bool IsMissile => missile;
     public bool IsPlayerShot => playerShot;
     public uint PlayerOwnerNetId => playerOwnerNetId;
     private bool IsPlayerShotAvailable => playerOwner != null && playerOwner.CombatAuthority?.CanContinueGunnerProjectile == true &&
         SceneManager.GetActiveScene().handle == shotSceneHandle && NetworkTime.time < shotExpiresAt;
+    private bool IsPiercingPlayerShot => playerShot && !missile && shotWeaponType == GunnerWeaponType.Rifle &&
+        shotUniqueEffect is AntimatterPiercingShotUniqueEffectSO;
 
     /// <summary>SW 수정: Play Mode를 새로 시작할 때 장판·지연 폭발 포함 투사체 진단값과 활성 목록을 초기화합니다.</summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -115,6 +127,7 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             ClientPlayerObservedCount++;
             visualBindUntil = Time.unscaledTime + 0.5f;
             TryBindPlayerVisual();
+            if (chargedWarhead && chargedVisual == null) chargedVisual = ChargedShotVisual.Create(transform);
         }
         else ClientObservedCount++;
         if (missile && !playerShot)
@@ -125,6 +138,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             ShowGravityWellVisual();
         if (singularityActive)
             ShowSingularityVisual();
+        if (sunfallBurnFieldActive)
+            ShowSunfallBurnFieldVisual();
     }
 
     public override void OnStartServer()
@@ -189,6 +204,9 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         shotElement = element;
         shotAttackId = attackId;
         shotUniqueEffect = uniqueEffect;
+        playerShotTargets.Clear();
+        piercingHits.Clear();
+        shotNinjaBonus = attackOwner.Effects.ReserveNinjaDodgeBonus(attackId);
         shotHitEffectData = GunnerCombatPresentation.GetHitEffectData(attackOwner.gameObject, weaponType);
         shotSceneHandle = SceneManager.GetActiveScene().handle;
         shotExpiresAt = NetworkTime.time + 20d;
@@ -196,6 +214,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         InitializeServer(null, moveDirection, moveSpeed, maxDistance);
         if (weaponType == GunnerWeaponType.GrenadeLauncher)
         {
+            chargedWarhead = uniqueEffect is WorldEnderChargedBlastUniqueEffectSO charged &&
+                attackOwner.Effects.ReserveWorldEnderShot(attackId, charged);
             Vector3 offset = Vector3.ClampMagnitude(impactPoint - transform.position, remainingDistance);
             InitializeMissileServer(null, transform.position + offset,
                 Mathf.Max(1f, offset.magnitude / speed), explosionRadius);
@@ -210,7 +230,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     /// </summary>
     private void Update()
     {
-        if (isClient && playerShot && !gravityWellActive && !singularityActive && playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
+        if (isClient && playerShot && !gravityWellActive && !singularityActive && !sunfallBurnFieldActive &&
+            playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
             TryBindPlayerVisual();
         if (!isServer)
             return;
@@ -221,6 +242,11 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         }
 
         if (singularityActive)
+        {
+            return;
+        }
+
+        if (sunfallBurnFieldActive)
         {
             return;
         }
@@ -244,6 +270,11 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         if (distance <= 0f)
         {
             ServerDestroy();
+            return;
+        }
+        if (IsPiercingPlayerShot)
+        {
+            MovePiercingPlayerShot(distance);
             return;
         }
 
@@ -275,8 +306,11 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             ServerDestroy();
     }
 
+    /// <summary>SW 수정: 원본 Trigger 충돌을 유지하고 반물질 라이플은 서버 이동 구간 검사만 피해·종료를 확정한다.</summary>
     private void OnTriggerEnter(Collider other)
     {
+        if (IsPiercingPlayerShot)
+            return;
         if (isServer && !consumed && playerShot)
         {
             if ((playerShotCollisionMask & (1 << other.gameObject.layer)) != 0)
@@ -292,6 +326,87 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             owner?.ServerDamagePlayer(target);
 
         ServerDestroy();
+    }
+
+    /// <summary>SW 수정: 서버가 시작 겹침과 이동 충돌을 거리순으로 검사하고 벽·사거리·세 번째 유효 적에서 관통을 종료한다.</summary>
+    [Server]
+    private void MovePiercingPlayerShot(float distance)
+    {
+        Vector3 origin = transform.position;
+        piercingHits.Clear();
+        foreach (Collider overlap in Physics.OverlapSphere(origin, collisionRadius, playerShotCollisionMask, QueryTriggerInteraction.Collide))
+            piercingHits.Add((overlap, 0f));
+        foreach (RaycastHit hit in Physics.SphereCastAll(origin, collisionRadius, direction, distance,
+            playerShotCollisionMask, QueryTriggerInteraction.Collide))
+            piercingHits.Add((hit.collider, hit.distance));
+        int obstacles = LayerMask.GetMask("Wall", "Prop", "Ground");
+        piercingHits.Sort((left, right) =>
+        {
+            int order = left.distance.CompareTo(right.distance);
+            if (order != 0) return order;
+            return ((obstacles & (1 << right.collider.gameObject.layer)) != 0).CompareTo(
+                (obstacles & (1 << left.collider.gameObject.layer)) != 0);
+        });
+        foreach (var hit in piercingHits)
+        {
+            if (consumed) return;
+            if (!IsPlayerShotAvailable)
+            {
+                ServerDestroy();
+                return;
+            }
+            if (hit.collider == null || hit.collider == projectileCollider || hit.collider.transform.IsChildOf(transform)) continue;
+            transform.position = origin + direction * hit.distance;
+            Vector3 point = hit.collider.ClosestPoint(transform.position);
+            if ((obstacles & (1 << hit.collider.gameObject.layer)) != 0)
+            {
+                playerOwner.CombatAuthority.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, -direction);
+                ServerDestroy();
+                return;
+            }
+            if (!TryProcessPiercingPlayerHit(hit.collider, point)) continue;
+            playerOwner.CombatAuthority.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, -direction);
+            var effect = (AntimatterPiercingShotUniqueEffectSO)shotUniqueEffect;
+            if (playerShotTargets.Count >= Mathf.Clamp(effect.maxTargets, 1, 3))
+            {
+                ServerDestroy();
+                return;
+            }
+        }
+        transform.position = origin + direction * distance;
+        remainingDistance -= distance;
+        if (remainingDistance <= 0f)
+            ServerDestroy();
+    }
+
+    /// <summary>SW 수정: 서버의 첫 유효 적은 기존 직접 피해, 후속은 원본 공격·속성·계수를 보존한 비치명 Effect로 적마다 현재 스탯을 읽는다.</summary>
+    [Server]
+    private bool TryProcessPiercingPlayerHit(Collider hit, Vector3 point)
+    {
+        WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
+        if (target is not Component component || component == null || !component.gameObject.activeInHierarchy ||
+            component.GetComponentInParent<NetworkEnemyAuthority>() == null || target.Status == null || target.Status.IsDead ||
+            playerShotTargets.Contains(target) || !IsPlayerShotAvailable ||
+            !playerOwner.CombatAuthority.TryBeginGunnerHitScope(shotAttackId, shotWeaponType, shotUniqueEffect, out System.IDisposable scope))
+            return false;
+        bool firstHit = playerShotTargets.Count == 0;
+        var effect = (AntimatterPiercingShotUniqueEffectSO)shotUniqueEffect;
+        var request = new WBH_DamageRequest(playerOwner.Controller, target, WBH_AttackType.Normal, shotElement,
+            T_PlayerCombat.GunnerBasicDamageMultiplier(shotWeaponType) * effect.GetDamageMultiplier(playerShotTargets.Count),
+            PlayerCombatAuthority.GetStatusEffectForElement(shotElement),
+            shotHitEffectData, point, -direction, firstHit ? DamageCause.Direct : DamageCause.Effect, shotAttackId);
+        using (scope)
+        using (playerOwner.Effects.BeginGunnerHitScope(shotAttackId, shotWeaponType, shotUniqueEffect, shotNinjaBonus))
+        {
+            WBH_DamageResult result;
+            bool processed = firstHit
+                ? WBH_CombatResolver.TryProcessPlayerDamage(playerOwner, request, out result)
+                : PlayerDamageResolver.TryProcessPlayerDamage(playerOwner, request, out result, canCrit: false);
+            if (!processed) return false;
+            playerShotTargets.Add(target);
+            playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
+            return true;
+        }
     }
 
     [Server]
@@ -353,7 +468,7 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
 
     /// <summary>
     /// SW 수정: 서버가 플레이어 탄의 직접 피해와 충돌 연출을 확정합니다.
-    /// 중력 우물은 고정 둔화 장판으로, 특이점 박격포는 고정 지연 폭발 예약체로 전환합니다.
+    /// 중력 우물·일식 기관은 고정 상태 장판으로, 특이점 박격포는 고정 지연 폭발 예약체로 전환합니다.
     /// </summary>
     [Server]
     private void FinishPlayerImpact(Vector3 point, Vector3 hitDirection, Collider directHit)
@@ -364,6 +479,9 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         try
         {
             if (!IsPlayerShotAvailable) return;
+            var chargedEffect = chargedWarhead ? shotUniqueEffect as WorldEnderChargedBlastUniqueEffectSO : null;
+            var chargedImpact = chargedEffect != null ? playerOwner.Effects.PrepareWorldEnderImpact(point, chargedEffect) : default;
+            chargedWarhead = false;
             playerShotTargets.Clear();
             if (missile)
             {
@@ -371,6 +489,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
                     ApplyPlayerDamage(hit);
             }
             else if (directHit != null) ApplyPlayerDamage(directHit);
+            if (chargedEffect != null)
+                playerOwner.Effects.ResolveWorldEnderImpact(chargedImpact, point, shotAttackId, chargedEffect);
             playerOwner?.CombatAuthority?.ServerPresentGunnerImpact(shotItemId, shotWeaponType, point, hitDirection);
             if (missile && shotUniqueEffect is GravityWellFieldUniqueEffectSO gravityWell)
             {
@@ -380,6 +500,11 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             else if (missile && shotUniqueEffect is SingularityDelayedExplosionUniqueEffectSO singularity)
             {
                 ActivateSingularityExplosion(point, singularity);
+                keepAfterImpact = true;
+            }
+            else if (missile && shotUniqueEffect is SunfallBurnFieldUniqueEffectSO sunfall)
+            {
+                ActivateSunfallBurnField(point, sunfall);
                 keepAfterImpact = true;
             }
         }
@@ -436,6 +561,28 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             ShowGravityWellVisual();
     }
 
+    /// <summary>
+    /// SW 수정 : 충돌한 기본 유탄을 서버 권한의 일식 화상 장판으로 전환한다.
+    /// 기존 공통 수명·종류별 상한을 사용하고 클라이언트에는 위치·반경·색상·활성 상태만 전달한다.
+    /// </summary>
+    [Server]
+    private void ActivateSunfallBurnField(Vector3 point, SunfallBurnFieldUniqueEffectSO effect)
+    {
+        transform.SetPositionAndRotation(point, Quaternion.identity);
+        missile = false;
+        speed = 0f;
+        sunfallBurnFieldRadius = effect.radius;
+        sunfallBurnFieldColor = effect.fieldColor;
+        sunfallBurnFieldActive = true;
+        if (projectileCollider != null)
+            projectileCollider.enabled = false;
+
+        gameObject.AddComponent<PlayerGrenadeEffect>().Initialize(playerOwner, effect, shotAttackId, shotElement,
+            null, () => NetworkServer.Destroy(gameObject));
+        if (isClient)
+            ShowSunfallBurnFieldVisual();
+    }
+
     [Server]
     private void ApplyPlayerDamage(Collider hit)
     {
@@ -449,12 +596,13 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             return;
 
         using (hitScope)
+        using (playerOwner.Effects.BeginGunnerHitScope(shotAttackId, shotWeaponType, shotUniqueEffect, shotNinjaBonus))
         {
             Vector3 hitPosition = hit.ClosestPoint(transform.position);
             Vector3 hitDirection = missile ? transform.position - hitPosition : -direction;
             if (hitDirection.sqrMagnitude <= 0.0001f) hitDirection = transform.position - hit.bounds.center;
             var request = new WBH_DamageRequest(playerOwner.Controller, target, WBH_AttackType.Normal,
-                shotElement, 1f, PlayerCombatAuthority.GetStatusEffectForElement(shotElement),
+                shotElement, T_PlayerCombat.GunnerBasicDamageMultiplier(shotWeaponType), PlayerCombatAuthority.GetStatusEffectForElement(shotElement),
                 shotHitEffectData, hitPosition, hitDirection, DamageCause.Direct, shotAttackId);
             if (WBH_CombatResolver.TryProcessPlayerDamage(playerOwner, request, out WBH_DamageResult result))
                 playerOwner.CombatAuthority.ServerRecordGunnerHit(target, result);
@@ -469,7 +617,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         // 발사 후 장착 외형이 바뀌어도 이 탄은 처음 확보한 VFX 참조를 유지한다.
         playerImpactVisualPrefab = binding.ImpactVisualPrefab;
         if (binding.ProjectileVisualPrefab == null || playerProjectileVisual != null) return;
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+            if (chargedVisual == null || !renderer.transform.IsChildOf(chargedVisual.transform)) renderer.enabled = false;
         playerProjectileVisual = Instantiate(binding.ProjectileVisualPrefab, transform, false);
         playerProjectileVisual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         GunnerVfxPlayback.Restart(playerProjectileVisual);
@@ -517,6 +666,28 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             renderer.enabled = false;
 
         singularityVisual = PlayerGrenadeEffect.CreateRing(transform, "SingularityDelayedExplosionVisual", singularityExplosionRadius, singularityWarningColor);
+    }
+
+    /// <summary>SW 수정 : 일식 장판의 지속 상태를 받은 클라이언트가 같은 바닥 링을 표시하거나 정리한다.</summary>
+    private void OnSunfallBurnFieldActiveChanged(bool _, bool active)
+    {
+        if (active)
+            ShowSunfallBurnFieldVisual();
+        else if (sunfallBurnFieldVisual != null)
+            Destroy(sunfallBurnFieldVisual);
+    }
+
+    /// <summary>SW 수정 : 비행 외형을 숨기고 서버에서 복제한 일식 장판 반경과 색으로 기존 원형 표시를 만든다.</summary>
+    private void ShowSunfallBurnFieldVisual()
+    {
+        if (!isClient || sunfallBurnFieldVisual != null)
+            return;
+        if (playerProjectileVisual != null)
+            playerProjectileVisual.SetActive(false);
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+            renderer.enabled = false;
+
+        sunfallBurnFieldVisual = PlayerGrenadeEffect.CreateRing(transform, "SunfallBurnFieldVisual", sunfallBurnFieldRadius, sunfallBurnFieldColor);
     }
 
     [ClientRpc]
