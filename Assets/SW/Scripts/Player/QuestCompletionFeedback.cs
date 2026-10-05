@@ -12,6 +12,7 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
     private QuestManager quests;
     private MirrorNetworkManager session;
     private QuestLabelDatabaseSO questLabels;
+    private TMPro.TMP_Text noticeText;
     private bool hasNetworkBaseline;
     private readonly Dictionary<string, bool> completedByQuestId = new();
     private readonly Queue<string> messages = new();
@@ -20,6 +21,9 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
     private void Awake()
     {
         questLabels = Resources.Load<QuestLabelDatabaseSO>("DataFiles/QuestData/3. GeneratedAssets/QuestLabelDatabase");
+        // SW 수정 : 웨이브 표시와 같은 HUD 띠를 알림 문구 뒤에 깔아 전투 화면 위에서도 읽히게 한다.
+        noticeText = screenNotice != null ? screenNotice.GetComponentInChildren<TMPro.TMP_Text>(true) : null;
+        HudTextBackplate.Attach(noticeText, new Vector2(64f, 12f));
     }
 
     private void OnEnable() => BindSource();
@@ -30,6 +34,10 @@ public sealed class QuestCompletionFeedback : MonoBehaviour
         BindSource();
         if (screenNotice == null || messages.Count == 0 || Time.unscaledTime < nextNoticeTime)
             return;
+        // 다른 HUD 문구와 같이 현재 언어 폰트를 쓴다(일본어·중국어 대체 폰트에만 기대지 않는다).
+        TMPro.TMP_FontAsset font = YJ_LanguageManager.Instance != null ? YJ_LanguageManager.Instance.GetCurrentFont() : null;
+        if (noticeText != null && font != null)
+            noticeText.font = font;
         screenNotice.Show(messages.Dequeue());
         nextNoticeTime = Time.unscaledTime + 3f;
     }
