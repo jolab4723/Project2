@@ -28,6 +28,13 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private bool worldEnderReady;
     private float nextWorldEnderBindAt;
     private const float WorldEnderBindInterval = 0.2f;
+    // SW 수정: 범위형 아군 버프(헬로 월드 등)를 실제로 받은 이 플레이어 주위에 오라를 표시한다.
+    // 버프 목록은 싱글에서는 로컬 판정, 멀티에서는 서버 스냅샷이 원본이므로 판정 범위를 표시 쪽에서 다시 계산하지 않는다.
+    private PlayerBuffManager auraBuffs;
+    private bool buffAurasDirty;
+    private readonly Dictionary<ItemSystem.FieldAuraUniqueEffectSO, GameObject> buffAuras = new();
+    private readonly HashSet<ItemSystem.FieldAuraUniqueEffectSO> activeAuraBuffs = new();
+    private readonly List<ItemSystem.FieldAuraUniqueEffectSO> expiredAuraBuffs = new();
 
     // SW 수정: 고유효과 전용 VFX 프리팹(Assets/SW/Resources/UniqueEffectVFX). 런타임 AddComponent된 Presenter도
     // 같은 자원을 쓰도록 직렬화 참조 대신 Resources에서 한 번만 찾고, 없으면 기존 선 표시로 돌아간다.
@@ -40,6 +47,11 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     /// <summary>SW 수정: 네트워크 객체는 RPC만 사용하고 싱글 플레이어만 확정된 효과 표시 사건을 구독해 Host 중복 표시를 방지한다.</summary>
     private void OnEnable()
     {
+        if (auraBuffs == null && TryGetComponent(out auraBuffs))
+        {
+            auraBuffs.OnBuffsChanged += MarkBuffAurasDirty;
+            buffAurasDirty = true;
+        }
         if (singleEffects != null) return;
         if (GetComponent<Mirror.NetworkIdentity>() != null) return;
         singleEffects = GetComponent<PlayerContext>()?.Effects;
@@ -65,6 +77,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     /// <summary>SW 수정: 준비 표시가 늦게 로드되거나 외형 교체로 사라지면 싱글·클라이언트에서 제한된 간격으로 실제 총구에 다시 연결한다.</summary>
     private void LateUpdate()
     {
+        if (buffAurasDirty || buffAuras.Count > 0) RefreshBuffAuras();
         if (!worldEnderReady) return;
         if (!CanPresent)
         {
@@ -470,6 +483,55 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         wasteHeatReadyAura = null;
     }
 
+    // 클라이언트 스냅샷은 버프를 비운 뒤 다시 채우므로, 변경 알림마다 바로 지우지 않고 프레임 끝에 한 번 맞춘다.
+    private void MarkBuffAurasDirty() => buffAurasDirty = true;
+
+    /// <summary>SW 수정: 이 플레이어가 실제 보유한 아군 범위 버프마다 UEVFX_{효과ID}Buff 오라를 붙이고, 버프가 사라지면 제거한다.</summary>
+    private void RefreshBuffAuras()
+    {
+        buffAurasDirty = false;
+        activeAuraBuffs.Clear();
+        if (CanPresent && auraBuffs != null)
+            foreach (ItemSystem.BuffInstance buff in auraBuffs.ActiveBuffs)
+                if (buff?.source is ItemSystem.FieldAuraUniqueEffectSO aura && aura.showAreaVisual && !aura.targetEnemies)
+                    activeAuraBuffs.Add(aura);
+
+        // 오라가 유지되는 동안 매 프레임 호출되므로 제거 대상 목록은 재사용해 할당을 만들지 않는다.
+        expiredAuraBuffs.Clear();
+        foreach (var aura in buffAuras.Keys)
+            if (!activeAuraBuffs.Contains(aura)) expiredAuraBuffs.Add(aura);
+        foreach (var aura in expiredAuraBuffs)
+        {
+            if (buffAuras[aura] != null) DestroyOwnedObject(buffAuras[aura]);
+            buffAuras.Remove(aura);
+        }
+
+        foreach (var aura in activeAuraBuffs)
+        {
+            if (buffAuras.ContainsKey(aura)) continue;
+            string id = aura.name.StartsWith("UE_") ? aura.name.Substring(3) : aura.name;
+            if (!TryGetVfx("UEVFX_" + id + "Buff", out GameObject prefab)) continue;
+            GameObject instance = Instantiate(prefab, transform, false);
+            instance.name = prefab.name;
+            instance.hideFlags = HideFlags.DontSave;
+            buffAuras.Add(aura, instance);
+        }
+
+        // 본인의 버프 표시는 항상 보이고, 다른 플레이어의 버프 표시는 기기별 아군 버프 범위 설정만 따른다.
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        bool visible = identity == null || identity.isLocalPlayer || Core.SettingManager.Instance == null ||
+                       Core.SettingManager.Instance.GetData().showAlliedBuffRanges;
+        foreach (GameObject instance in buffAuras.Values)
+            if (instance != null && instance.activeSelf != visible) instance.SetActive(visible);
+    }
+
+    private void ClearBuffAuras()
+    {
+        foreach (GameObject instance in buffAuras.Values)
+            if (instance != null) DestroyOwnedObject(instance);
+        buffAuras.Clear();
+    }
+
     /// <summary>SW 수정: Resources의 고유효과 VFX 프리팹을 이름으로 한 번만 찾아 두며, 없는 이름도 기억해 매 발동마다 다시 찾지 않는다.</summary>
     internal static bool TryGetVfx(string prefabName, out GameObject prefab)
     {
@@ -557,6 +619,11 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.PreparedChanged -= SetPreparedAttack;
             singleEffects = null;
         }
+        if (auraBuffs != null)
+        {
+            auraBuffs.OnBuffsChanged -= MarkBuffAurasDirty;
+            auraBuffs = null;
+        }
         ReleaseOwnedResources();
     }
 
@@ -570,6 +637,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     {
         RestoreWasteHeatFlash();
         ClearWasteHeatAura();
+        ClearBuffAuras();
         SetWorldEnderReady(false);
         StopAllCoroutines();
         foreach (GameObject bolt in activeBolts)
