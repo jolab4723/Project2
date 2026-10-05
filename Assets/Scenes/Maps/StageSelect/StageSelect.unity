@@ -1995,6 +1995,8 @@ MonoBehaviour:
   singlePlayerBehaviours: []
   multiplayerBehaviours:
   - {fileID: 463139089}
+  singlePlayerInventory: {fileID: 0}
+  multiplayerInventory: {fileID: 0}
   stage: {fileID: 0}
   preparationScreen: {fileID: 1978876526}
   preparationMessage: {fileID: 343742315}
@@ -3017,6 +3019,14 @@ PrefabInstance:
     - target: {fileID: 503126728884509494, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4461978785561044229, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4461978785561044229, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      propertyPath: m_OverrideSorting
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7039001446181280916, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       propertyPath: m_Name
