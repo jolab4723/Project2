@@ -26,6 +26,10 @@ public class KY_TitleSceneManager : MonoBehaviour
     [SerializeField] KY_PopupManager popupManager;
 
     private bool isMultiplayerEntryInProgress;
+    private UILabelDatabaseSO accountLabels;
+    private string lastAccountMessage = string.Empty;
+
+    private void HandleLanguageChanged(GameLanguage _) => ShowAccountStatus(lastAccountMessage);
 
     void Start()
     {
@@ -43,6 +47,9 @@ public class KY_TitleSceneManager : MonoBehaviour
 
         RefreshUserInfo();
         ShowAccountStatus(string.Empty);
+        // SW 수정 : 타이틀 설정창에서 언어를 바꾸면 계정 안내도 바로 같은 언어로 다시 표시한다.
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
         versionText.text = "Version " + Application.version;
 
         YJ_BgmPlayer.Instance.Play(YJ_BgmPlayer.YJ_BgmType.TitleBgm);
@@ -63,6 +70,8 @@ public class KY_TitleSceneManager : MonoBehaviour
             quitButton.onClick.RemoveListener(OnQuitClicked);
         if (logoutButton != null)
             logoutButton.onClick.RemoveListener(OnLogoutClicked);
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
     }
 
     /// <summary>유효한 중단 저장 여부에 맞춰 이어하기 버튼의 입력 가능 상태를 갱신한다.</summary>
@@ -254,9 +263,17 @@ public class KY_TitleSceneManager : MonoBehaviour
     {
         if (accountStatusText == null)
             return;
-        accountStatusText.text = string.IsNullOrEmpty(message)
+        lastAccountMessage = message;
+        string status = string.IsNullOrEmpty(message)
             ? (Core.FirebaseService.Default.IsSignedIn ? "로그인 중" : "로그인 안 됨")
             : message;
+        // SW 수정 : 계정 안내 원문은 유지하고 로그인 화면과 같은 세션 메시지 번역기로 현재 언어 문구·폰트를 적용한다.
+        if (accountLabels == null)
+            accountLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
+        accountStatusText.text = SessionUIMessageLocalizer.GetMessage(accountLabels, status);
+        TMP_FontAsset font = YJ_LanguageManager.Instance != null ? YJ_LanguageManager.Instance.GetCurrentFont() : null;
+        if (font != null)
+            accountStatusText.font = font;
         accountStatusText.gameObject.SetActive(true);
     }
 

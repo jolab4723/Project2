@@ -82,6 +82,27 @@ public static class SessionUIMessageLocalizer
         "preparation_ui.timeout_retry",
         "preparation_ui.combat_failed",
         "preparation_ui.disconnected",
+        // SW 수정 : 싱글/멀티 로그인 분리 때 추가된 인증·동기화·로그아웃 안내 문구.
+        "login_ui.cached_session_failed",
+        "login_ui.multiplayer_login_required",
+        "login_ui.account_changed",
+        "connection_ui.login_required",
+        "connection_ui.syncing_progress",
+        "connection_ui.prepare_failed",
+        "connection_ui.sync_retry",
+        "connection_ui.sync_incomplete",
+        "connection_ui.account_changed",
+        "title_ui.signed_in",
+        "title_ui.signed_out",
+        "title_ui.checking_account",
+        "title_ui.syncing",
+        "title_ui.account_changed_retry",
+        "title_ui.local_progress_kept",
+        "title_ui.scene_missing",
+        "title_ui.multiplayer_error",
+        "title_ui.logout_disconnect_first",
+        "title_ui.logout_test_account",
+        "title_ui.logout_failed",
     };
 
     public static string GetMessage(UILabelDatabaseSO labels, string message)

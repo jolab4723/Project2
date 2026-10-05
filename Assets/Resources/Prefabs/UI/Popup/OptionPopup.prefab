@@ -5725,6 +5725,7 @@ GameObject:
   - component: {fileID: 5805600625681860718}
   - component: {fileID: 5701512731044352110}
   - component: {fileID: 2706722576541620211}
+  - component: {fileID: 6162572636143040466}
   m_Layer: 0
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -5779,7 +5780,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC544\uAD70 \uBC84\uD504 \uBC94\uC704 \uD45C\uC2DC"
+  m_text: "\uC544\uAD70 \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
   m_sharedMaterial: {fileID: -4062070630887492077, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
@@ -5851,6 +5852,20 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &6162572636143040466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2037135790680418865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: settings_ui.label_allied_buff_effects
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &2082290438295881208
 GameObject:
   m_ObjectHideFlags: 0
@@ -24830,10 +24845,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49d60791ee48d184c87359ac263e469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KY_SettingItem
-  description: "\uB2E4\uB978 \uD50C\uB808\uC774\uC5B4\uC758 \uD65C\uC131 \uBC84\uD504
-    \uBC94\uC704\uB97C \uD45C\uC2DC\uD569\uB2C8\uB2E4. \uBC84\uD504 \uD6A8\uACFC\uC5D0\uB294
-    \uC601\uD5A5\uC744 \uC8FC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
-  descriptionKey: 
+  description: "\uB2E4\uB978 \uD50C\uB808\uC774\uC5B4\uC758 \uBC84\uD504 \uBC94\uC704\uC640
+    \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC \uC5EC\uBD80\uB97C \uC124\uC815\uD560
+    \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  descriptionKey: settings_ui.desc_allied_buff_effects
   labelDatabase: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &8441577252117317281
 GameObject:
