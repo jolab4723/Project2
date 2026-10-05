@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
@@ -148,6 +149,14 @@ public class WBH_EnemyCombat : MonoBehaviour
     // 패턴 취소
     public void CancelCurrentAction()
     {
+        act3ActionVersion++;
+
+        if (act3ActionInProgress)
+        {
+            act3ActionInProgress = false;
+            enemyAnimation.ResetSkillAniState();
+        }
+
         StopAllCoroutines();
 
         movement.CancelForcedMovement();
@@ -1021,6 +1030,11 @@ public class WBH_EnemyCombat : MonoBehaviour
         }
     }
 
+    private void ApplyAct3SectorDamage(Vector3 origin, Vector3 forward, float radius, float angle, float damageMultiplier)
+    {
+        DamageAct3Players(FindAct3SectorPlayers(origin, forward, radius, angle), damageMultiplier);
+    }
+
     private void ApplyAct3RectDamage(Vector3 origin, Vector3 forward, float width, float length, float damageMultiplier)
     {
         forward = Act3FlatDirection(forward);
@@ -1112,7 +1126,384 @@ public class WBH_EnemyCombat : MonoBehaviour
             yield return new WaitForSeconds(recoveryDuration);
     }
 
+    // 1. 예고가 있는 부채꼴 공격
+    public bool TryWarnedSectorAttack(float range, float angle, float damageMultiplier, float warningDuration, float recoveryDuration,WBH_IndicatorSpawner indicator)
+    {
+        if (!CanStartAct3Action() || pattern.Target == null ||range <= 0f || angle <= 0f || angle > 360f || damageMultiplier < 0f || indicator == null)
+            return false;
 
+        FaceTarget(pattern.Target);
+
+        Vector3 origin = transform.position;
+        Vector3 forward = Act3FlatDirection(transform.forward);
+
+        return TryAct3WarnedHit(indicator, warningDuration, recoveryDuration,
+                                () => indicator.ShowCone(origin, forward, range, angle, warningDuration, growOverTime: true),
+                                () => ApplyAct3SectorDamage(origin, forward, range, angle, damageMultiplier));
+    }
+
+    // 2. 원형 공격
+    public bool TryCircleAttack(Vector3 center, float radius, float damageMultiplier, float warningDuration, float recoveryDuration, WBH_IndicatorSpawner indicator)
+    {
+        if (radius <= 0f || damageMultiplier < 0f || indicator == null)
+            return false;
+
+        return TryAct3WarnedHit(indicator, warningDuration, recoveryDuration,
+                                () => indicator.ShowCircle(center, radius, warningDuration, growOverTime: true),
+                                () => ApplyAct3SectorDamage(center, Vector3.forward, radius, 360f, damageMultiplier));
+    }
+
+    private bool TrySampleAct3Teleport(Vector3 desiredPosition, out Vector3 position)
+    {
+        position = default;
+
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+
+        if (agent == null ||!agent.isActiveAndEnabled ||!agent.isOnNavMesh)
+            return false;
+
+        var filter = new NavMeshQueryFilter
+        {
+            agentTypeID = agent.agentTypeID,
+            areaMask = agent.areaMask
+        };
+
+        if (!NavMesh.SamplePosition(desiredPosition, out NavMeshHit hit, 0.75f, filter))
+            return false;
+
+        position = hit.position;
+        return true;
+    }
+
+    private bool WarpAct3To(Vector3 position)
+    {
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+
+        if (agent == null ||!agent.isActiveAndEnabled ||!agent.isOnNavMesh)
+            return false;
+
+        movement.Stop();
+        return agent.Warp(position);
+    }
+
+    // 3. 타겟 인근 순간이동
+    public bool TryTeleportNearTarget(Transform target, float distance,Transform mapCenter, Vector2 mapSize)
+    {
+        if (!CanStartAct3Action() ||
+            target == null || !target.gameObject.activeInHierarchy ||
+            mapCenter == null || distance <= 0f ||
+            mapSize.x <= 0f || mapSize.y <= 0f)
+            return false;
+
+        float startAngle = Random.Range(0f, 360f);
+        Quaternion inverseMapRotation = Quaternion.Inverse(mapCenter.rotation);
+
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 direction = Quaternion.Euler(0f, startAngle + i * 45f, 0f) * Vector3.forward;
+
+            Vector3 desired = target.position + direction * distance;
+
+            if (!TrySampleAct3Teleport(desired, out Vector3 position))
+                continue;
+
+            Vector3 local = inverseMapRotation * (position - mapCenter.position);
+
+            if (Mathf.Abs(local.x) > mapSize.x * 0.5f - 0.25f ||
+                Mathf.Abs(local.z) > mapSize.y * 0.5f - 0.25f)
+                continue;
+
+            Vector3 offset = position - target.position;
+            offset.y = 0f;
+
+            if (offset.sqrMagnitude < distance * distance * 0.25f)
+                continue;
+
+            if (!WarpAct3To(position))
+                continue;
+
+            FaceTarget(target);
+            return StartAct3Action(CoEndAction(0.35f));
+        }
+
+        return false;
+    }
+
+    // 4. 제한 시간 동안 추격하고 최대 횟수만큼 부채꼴 공격
+    public bool TryChaseSectorAttack(float range, float angle, int maxAttackCount, float maxDuration, float damageMultiplier, float warningDuration, WBH_IndicatorSpawner indicator,
+                                     float recoveryDuration = 0.35f)
+    {
+        if (!CanStartAct3Action() ||
+            pattern.Target == null || indicator == null ||
+            range <= 0f || angle <= 0f || angle > 360f ||
+            maxAttackCount <= 0 || warningDuration <= 0f ||
+            recoveryDuration < 0f ||
+            maxDuration < warningDuration + recoveryDuration ||
+            damageMultiplier < 0f)
+            return false;
+
+        return StartAct3Action(CoAct3ChaseSector(range, angle, maxAttackCount, maxDuration,damageMultiplier, warningDuration, recoveryDuration, indicator));
+    }
+
+    private IEnumerator CoAct3ChaseSector(float range, float angle, int maxAttackCount, float maxDuration, float damageMultiplier, float warningDuration, float recoveryDuration, 
+                                          WBH_IndicatorSpawner indicator)
+    {
+        float deadline = Time.time + maxDuration;
+        int attackCount = 0;
+
+        while (Time.time < deadline && attackCount < maxAttackCount)
+        {
+            Transform target = pattern.Target;
+
+            if (target == null || !target.gameObject.activeInHierarchy || !movement.CanControl)
+                yield break;
+
+            Vector3 offset = target.position - transform.position;
+            offset.y = 0f;
+
+            if (offset.sqrMagnitude > range * range)
+            {
+                movement.Move(target.position);
+                yield return null;
+                continue;
+            }
+
+            // 시작한 공격이 제한 시간을 넘기지 않게 한다.
+            if (Time.time + warningDuration + recoveryDuration > deadline)
+                yield break;
+
+            movement.Stop();
+            FaceTarget(target);
+
+            Vector3 origin = transform.position;
+            Vector3 forward = Act3FlatDirection(transform.forward);
+
+            WBH_Effect warning = indicator.ShowCone(origin, forward, range, angle, warningDuration, growOverTime: true);
+
+            if (!IsNetworkSession && (warning == null || !warning.IsPlaying))
+                yield break;
+
+            yield return new WaitForSeconds(warningDuration);
+
+            ApplyAct3SectorDamage(origin, forward, range, angle, damageMultiplier);
+
+            attackCount++;
+
+            if (recoveryDuration > 0f)
+                yield return new WaitForSeconds(recoveryDuration);
+        }
+    }
+
+    // 5. 관문에서 무작위 각도로 발사하는 탄막
+    public bool TryGateBarrage(WBH_ProjectileSpawner spawner, Vector3 origin, Vector3 forward, int bulletCount, float spreadAngle, float range, float warningDuration, WBH_IndicatorSpawner indicator)
+    {
+        if (spawner == null || indicator == null ||
+            bulletCount <= 0 || spreadAngle <= 0f ||
+            spreadAngle > 360f || range <= 0f ||
+            status == null || status.ProjectileSpeed <= 0f)
+            return false;
+
+        // 기존 외부 발사 콜백은 발사 위치를 받지 않으므로 관문 발사의 멀티플레이 연결은 별도로 진행필요. !@
+        if (IsNetworkSession || externalProjectile != null)
+            return false;
+
+        forward = Act3FlatDirection(forward);
+        Vector3 fireDirection = forward;
+
+        return TryAct3WarnedHit(indicator, warningDuration, 0.5f,
+                                () => indicator.ShowCone(origin, fireDirection, range, spreadAngle, warningDuration, growOverTime: true),
+                                () =>   {
+                                            WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
+
+                                            for (int i = 0; i < bulletCount; i++)
+                                            {
+                                                float angle = Random.Range(-spreadAngle * 0.5f, spreadAngle * 0.5f);
+
+                                                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * fireDirection;
+
+                                                spawner.FireProjectile(ProjectileType.NormalEnemy, origin + Vector3.up, direction, request, status.ProjectileSpeed, range, pattern.PlayerLayer);
+                                            }
+                                        });
+    }
+
+    // 6. 관문별 자폭병 소환
+    public bool TrySummonAtGates(WBH_BossMinionSpawner spawner,Transform[] gates, int count, Transform initialTarget)
+    {
+        if (!CanStartAct3Action() ||
+            spawner == null || count <= 0 ||
+            gates == null || gates.Length == 0)
+            return false;
+
+        foreach (Transform gate in gates)
+        {
+            if (gate == null)
+                return false;
+        }
+
+        return StartAct3Action(CoAct3SummonAtGates(spawner, (Transform[])gates.Clone(), count, initialTarget));
+    }
+
+    private IEnumerator CoAct3SummonAtGates(WBH_BossMinionSpawner spawner, Transform[] gates, int count, Transform initialTarget)
+    {
+        movement.Stop();
+        yield return new WaitForSeconds(0.8f);
+
+        int spawned = spawner.SpawnAtGates(gates, count, initialTarget);
+
+        if (spawned != count)
+            Log.Warning($"Act3 자폭병 소환: 요청 {count}, 실제 {spawned}");
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    // 7. 타겟 뒤 순간이동 → 부채꼴 잡기 → 잡힌 인원 비례 폭발
+    public bool TryTeleportGrabAndBurst(Transform target, float grabRange, float grabAngle, float holdDuration, float burstRadius, float damagePerCapturedPlayer, WBH_IndicatorSpawner indicator,
+                                        System.Action onMiss)
+    {
+        if (!CanStartAct3Action() ||
+            target == null || !target.gameObject.activeInHierarchy ||
+            indicator == null ||
+            grabRange <= 0f || grabAngle <= 0f || grabAngle > 360f ||
+            holdDuration <= 0f || burstRadius <= 0f ||
+            damagePerCapturedPlayer < 0f)
+            return false;
+
+        Vector3 behind = target.position - Act3FlatDirection(target.forward) * Mathf.Min(2.5f, grabRange * 0.75f);
+
+        if (!TrySampleAct3Teleport(behind, out Vector3 position) ||!WarpAct3To(position))
+            return false;
+
+        FaceTarget(target);
+
+        Vector3 origin = transform.position;
+        Vector3 forward = Act3FlatDirection(transform.forward);
+        const float grabWarningDuration = 0.6f;
+
+        WBH_Effect warning = indicator.ShowCone(origin, forward, grabRange, grabAngle,grabWarningDuration, growOverTime: true);
+
+        if (!IsNetworkSession && (warning == null || !warning.IsPlaying))
+            return false;
+
+        bool missed = false;
+
+        return StartAct3Action(CoAct3GrabAndBurst(origin, forward, grabRange, grabAngle,Time.time + grabWarningDuration, holdDuration, burstRadius, damagePerCapturedPlayer, indicator,
+                                                  () => missed = true),
+                                () => {
+                                          if (missed)
+                                              onMiss?.Invoke();
+                                      });
+    }
+
+    private IEnumerator CoAct3GrabAndBurst(Vector3 origin, Vector3 forward, float grabRange, float grabAngle, float grabAt, float holdDuration, float burstRadius, float damagePerCapturedPlayer,
+                                           WBH_IndicatorSpawner indicator, System.Action markMiss)
+    {
+        movement.Stop();
+
+        yield return new WaitForSeconds(Mathf.Max(0f, grabAt - Time.time));
+
+        foreach (T_PlayerController player in FindAct3SectorPlayers(origin, forward, grabRange, grabAngle))
+        {
+            bool captured = ExternalBeginGrab != null ? ExternalBeginGrab(player) : player.TryBeginGrab();
+
+            if (captured)
+            {
+                grabbedPlayers.Add(player);
+            }
+        }
+
+        int capturedCount = grabbedPlayers.Count;
+
+        if (capturedCount == 0)
+        {
+            markMiss();
+            yield break;
+        }
+
+        Vector3 burstCenter = transform.position;
+
+        WBH_Effect warning = indicator.ShowCircle(burstCenter, burstRadius, holdDuration, growOverTime: true);
+
+        if (!IsNetworkSession && (warning == null || !warning.IsPlaying))
+            yield break;
+
+        float burstAt = Time.time + holdDuration;
+
+        while (Time.time < burstAt)
+        {
+            HoldGrabbedPlayers();
+            yield return null;
+        }
+
+        HoldGrabbedPlayers();
+
+        // 포획된 플레이어와 주변 플레이어 모두 동일한 범위 피해를 받는다.
+        // 포획 대상에 별도 피해를 더하지 않아 중복 피해를 방지.
+        ApplyAct3SectorDamage(burstCenter, Vector3.forward, burstRadius, 360f, damagePerCapturedPlayer * capturedCount);
+
+        ReleaseGrabbedPlayers();
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    // 8. 중앙 순간이동 → 3개 구획에 시간차 피해
+    public bool TryCenterTeleportAndStrips(Vector3 center, Vector3[] origins, Vector3 forward, float width, float length, float warningDuration, float hitInterval, float damageMultiplier, 
+                                           WBH_IndicatorSpawner indicator)
+    {
+        if (!CanStartAct3Action() ||
+            origins == null || origins.Length != 3 ||
+            indicator == null ||
+            width <= 0f || length <= 0f ||
+            warningDuration <= 0f || hitInterval < 0f ||
+            damageMultiplier < 0f)
+            return false;
+
+        if (!TrySampleAct3Teleport(center, out Vector3 position) || !WarpAct3To(position))
+            return false;
+
+        Vector3[] snapshot = (Vector3[])origins.Clone();
+        Vector3 direction = Act3FlatDirection(forward);
+
+        for (int i = 0; i < snapshot.Length; i++)
+        {
+            WBH_Effect warning = indicator.ShowRect(snapshot[i], direction, width, length, warningDuration + hitInterval * i, growOverTime: true);
+
+            if (!IsNetworkSession && (warning == null || !warning.IsPlaying))
+                return false;
+        }
+
+        return StartAct3Action(CoAct3Strips(snapshot, direction, width, length, Time.time + warningDuration, hitInterval, damageMultiplier));
+    }
+
+    private IEnumerator CoAct3Strips(Vector3[] origins, Vector3 forward, float width, float length, float firstHitAt, float hitInterval, float damageMultiplier)
+    {
+        for (int i = 0; i < origins.Length; i++)
+        {
+            float hitAt = firstHitAt + hitInterval * i;
+
+            yield return new WaitForSeconds(Mathf.Max(0f, hitAt - Time.time));
+
+            ApplyAct3RectDamage(origins[i], forward, width, length, damageMultiplier);
+        }
+
+        yield return new WaitForSeconds(0.5f);
+    }
+
+    // 9. 페이즈 전환의 맵 전체 공격
+    public bool TryArenaAttack(Vector3 center, Vector2 mapSize, Quaternion rotation, float damageMultiplier, float warningDuration, WBH_IndicatorSpawner indicator,
+                               System.Action onCompleted = null)
+    {
+        if (mapSize.x <= 0f || mapSize.y <= 0f || damageMultiplier < 0f || indicator == null)
+            return false;
+
+        Vector3 forward = Act3FlatDirection(rotation * Vector3.forward);
+
+        Vector3 origin = center - forward * (mapSize.y * 0.5f);
+
+        return TryAct3WarnedHit(indicator, warningDuration, 0f,
+                                () => indicator.ShowRect(origin, forward, mapSize.x, mapSize.y, warningDuration, growOverTime: true),
+                                () => ApplyAct3RectDamage(origin, forward, mapSize.x, mapSize.y, damageMultiplier),
+                                onCompleted);
+    }
 
 
     #endregion

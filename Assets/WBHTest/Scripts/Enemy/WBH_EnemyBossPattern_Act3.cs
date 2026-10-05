@@ -131,22 +131,22 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
         this.owner = owner;
         minionSpawner = owner.GetComponent<WBH_BossMinionSpawner>();
 
-        configured =
-            settings != null &&
-            settings.mapCenter != null &&
-            settings.mapSize.x > 0f &&
-            settings.mapSize.y > 0f &&
-            settings.gate12 != null &&
-            settings.gate3 != null &&
-            settings.gate9 != null &&
-            settings.cloneEnemy != null &&
-            minionSpawner != null &&
-            projectileSpawner != null &&
-            getParticipantCount != null;
+        configured = settings != null &&
+                     settings.mapCenter != null &&
+                     settings.mapSize.x > 0f &&
+                     settings.mapSize.y > 0f &&
+                     settings.gate12 != null &&
+                     settings.gate3 != null &&
+                     settings.gate9 != null &&
+                     settings.cloneEnemy != null &&
+                     minionSpawner != null &&
+                     projectileSpawner != null &&
+                     getParticipantCount != null;
 
         if(!configured)
         {
             Log.Error("Act3 보스의 맵, 관문, 소환, 인원 참조가 부족합니다.");
+            return;
         }
 
         gates = new[]
@@ -295,8 +295,8 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
     {
         SpecialPattern selected = (SpecialPattern)UnityEngine.Random.Range(0, 3);
 
-        bool started;
-        int skillId;
+        bool started = false;
+        int skillId = 0;
 
         switch (selected)
         {
@@ -333,7 +333,7 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
 
         int count = Mathf.Max(1, getParticipantCount());
 
-        if(TrySpawnClones(count))
+        if(!TrySpawnClones(count))
         {
             AbortTransition();
             yield break;
@@ -474,7 +474,7 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
         {
             width = settings.mapSize.y / 3f;
             length = settings.mapSize.x;
-            forward = gateIndex == 1 ? right : -right;
+            forward = gateIndex == 1 ? -right : right;
 
             for(int i = 0; i < 3; i++)
             {
@@ -491,7 +491,7 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
 
             if(!clone.Defeated && clone.Enemy != null && clone.Enemy.gameObject.activeInHierarchy)
             {
-                clone.Enemy.Despawn();
+                minionSpawner.DespawnTracked(clone.Enemy);
             }
         }
         clones.Clear();
@@ -506,6 +506,7 @@ public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern
         transitionRoutine = null;
         ClearClones();
 
+        owner.SetPatternDamageBlock(false);
         owner.Combat.CancelCurrentAction();
         //!@ 광폭화 해제로 버프 미적용
         owner.enemyAnimation.SetPhaseTransition(false);
