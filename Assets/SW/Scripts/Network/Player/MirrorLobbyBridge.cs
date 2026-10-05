@@ -109,6 +109,10 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
             Debug.LogError("[MirrorLobbyBridge] 로비 메뉴 입력을 받을 KY_UIInputManager가 없습니다.", this);
         manager.LobbyStateChanged += RefreshLobby;
         manager.AdmissionStatusChanged += SetStatus;
+        // SW 수정 : 타이틀에서 정한 프로필 닉네임을 접속 닉네임 칸에 미리 채운다.
+        string savedNickname = PlayerNicknameProfile.Load();
+        if (displayNameInput != null && PlayerNicknameProfile.IsValid(savedNickname))
+            displayNameInput.SetTextWithoutNotify(savedNickname);
         RefreshLobby();
     }
 
@@ -139,9 +143,9 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
         if (manager == null || NetworkClient.active || NetworkServer.active) return false;
         string nickname = displayNameInput.text.Trim();
         string address = addressInput.text.Trim();
-        if (nickname.Length == 0 || nickname.Length > 24 || nickname.IndexOfAny(new[] { '<', '>', '\n', '\r', '\t' }) >= 0)
+        if (!PlayerNicknameProfile.IsValid(nickname))
         {
-            SetStatus("닉네임을 1~24자로 입력해 주세요. 태그와 줄바꿈은 사용할 수 없습니다.");
+            SetStatus("닉네임은 1~24자로 입력해 주세요.");
             displayNameInput.Select();
             return false;
         }
@@ -152,6 +156,8 @@ public sealed class MirrorLobbyBridge : MonoBehaviour
             return false;
         }
         manager.ClientDisplayName = nickname;
+        // SW 수정 : 로비에서 바꾼 닉네임도 프로필에 저장해 타이틀 이름과 다음 접속에 그대로 쓴다.
+        PlayerNicknameProfile.TrySave(nickname);
         manager.networkAddress = address;
         manager.RequestedReconnectProfile = null;
         SetStatus("연결 중…");
