@@ -86,7 +86,7 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
             }
             if (entry.Completed)
             {
-                if (!entry.RewardPending) reward += " (지급 완료)";
+                if (!entry.RewardPending) reward += "\n" + Label("quest_ui.reward_received", "수령 완료");
                 else
                 {
                     var remaining = new List<string>();
@@ -97,7 +97,7 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
                         string name = itemLabels != null ? itemLabels.GetName(definition.rewardItem.itemId) : definition.rewardItem.itemName;
                         remaining.Add($"{name} x{entry.PendingItemCount}");
                     }
-                    reward += "\n미수령 보상: " + string.Join(", ", remaining);
+                    reward += "\n" + Label("quest_ui.reward_pending", "보상 대기") + ": " + string.Join(", ", remaining);
                 }
             }
             var data = new KY_QuestData
@@ -105,6 +105,7 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
                 questName = questLabels != null ? questLabels.GetQuestName(definition.questId) : definition.questName,
                 description = questLabels != null ? questLabels.GetQuestDescription(definition.questId) : definition.description,
                 conditions = conditions.ToArray(), reward = reward,
+                isCompleted = entry.Completed, rewardPending = entry.RewardPending, // SW 수정
                 rewardItems = CreateRewardItems(definition, entry)
             };
             if (displayedQuests.TryGetValue(entry.QuestId, out var previous))
@@ -121,7 +122,12 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
         questPopup.SetQuestData(list);
     }
 
-    private string Label(string key, string fallback) => questLabels != null ? questLabels.GetLabel(key) : fallback;
+    /// <summary>누락된 라벨은 키 문자열 대신 한국어 원문으로 표시한다.</summary>
+    private string Label(string key, string fallback)
+    {
+        string value = questLabels != null ? questLabels.GetLabel(key) : null;
+        return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+    }
 
     private KY_QuestRewardData[] CreateRewardItems(QuestDefinitionSO definition, MirrorQuestEntry entry)
     {

@@ -20,6 +20,9 @@ namespace Core
     public class DataManager : Singleton<DataManager>, IManagerModule
     {
         public string ModuleName => "DataManager";
+        private int loadedGameplayScene = -1;
+        public bool IsRestoringGameplay { get; private set; }
+        public bool IsGameplayReady => loadedGameplayScene == UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
 
         private const string GameplaySaveFileName = "gamesave.json";
         private const string InventorySaveFileName = "inventory.json";
@@ -42,20 +45,36 @@ namespace Core
 
         private static string MultiplayerSlotFileName(int slotIndex) => "profile_multiplayer_" + slotIndex + ".json";
 
+        // SW 수정 : 로그인 상태와 로컬 저장의 소유자를 분리해 로그아웃·오프라인에서도 같은 진행도를 사용한다.
+        private static string LocalProfileUserId
+        {
+            get
+            {
+                if (FirebaseService.Default.IsLocalTestAccount) return FirebaseService.Default.LocalTestUserId;
+                string path = Path.Combine(Application.persistentDataPath, SinglePlayerProfileOwnerFileName);
+                return File.Exists(path)
+                    ? ReadJson<SinglePlayerProfileOwnerData>(path)?.firebaseUserId ?? string.Empty
+                    : string.Empty;
+            }
+        }
+
         private static string GetSavePath(string fileName)
         {
             // SW 수정: 계정의 런/퀘스트 작업 파일을 분리하고 기기 옵션은 기존 위치를 유지합니다.
-            string uid = FirebaseService.Default.CurrentUserId;
-            if (!string.IsNullOrEmpty(uid) && (fileName is SinglePlayerSlotFileName or GameplaySaveFileName or QuestSaveFileName or
-                InventorySaveFileName or PlayerStatusSaveFileName or SkillTreeSaveFileName or StageSaveFileName or ActiveSkillSaveFileName))
-            {
-                if (uid.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || uid is "." or "..")
-                    throw new System.InvalidOperationException("유효하지 않은 저장 계정입니다.");
-                string directory = Path.Combine(Application.persistentDataPath, "PlayerSaves", uid);
-                Directory.CreateDirectory(directory);
-                return Path.Combine(directory, fileName);
-            }
+            if (fileName is SinglePlayerSlotFileName or GameplaySaveFileName or QuestSaveFileName or
+                InventorySaveFileName or PlayerStatusSaveFileName or SkillTreeSaveFileName or StageSaveFileName or ActiveSkillSaveFileName)
+                return GetAccountSavePath(fileName, LocalProfileUserId);
             return Path.Combine(Application.persistentDataPath, fileName);
+        }
+
+        private static string GetAccountSavePath(string fileName, string uid)
+        {
+            if (string.IsNullOrEmpty(uid)) return Path.Combine(Application.persistentDataPath, fileName);
+            if (uid.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || uid is "." or "..")
+                throw new System.InvalidOperationException("유효하지 않은 저장 계정입니다.");
+            string directory = Path.Combine(Application.persistentDataPath, "PlayerSaves", uid);
+            Directory.CreateDirectory(directory);
+            return Path.Combine(directory, fileName);
         }
 
         public void Activate()
@@ -105,8 +124,11 @@ namespace Core
             {
                 var result = await SynchronizePlayerAccountCoreAsync();
                 // 로그인 전(로그아웃 상태)에 불러온 전역 프로필이 메모리에 남지 않도록 이 계정의 프로필로 교체한다.
-                if (result.IsSuccess || result.FailureReason == SaveDataFailureReason.NotFound)
+                if (result.IsSuccess)
+                {
                     Instance?.LoadPassiveData();
+                    Instance?.LoadQuestData();
+                }
                 return result;
             }
             catch (System.Exception exception)
@@ -124,12 +146,15 @@ namespace Core
             bool canMigrate = !string.IsNullOrEmpty(uid) && owner?.firebaseUserId == uid;
             var profile = await SynchronizeProfileCoreAsync();
             if (!profile.IsSuccess) return profile;
+            if (!profile.IsCloudSynchronized && !FirebaseService.Default.IsLocalTestAccount)
+                return SaveDataOperationResult.Failure(SaveDataFailureReason.CloudAccessFailed,
+                    "로컬 진행도는 보존했습니다. 인터넷 연결을 확인하고 멀티플레이 동기화를 다시 시도해 주세요.");
             if (uid != FirebaseService.Default.CurrentUserId)
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
             if (string.IsNullOrEmpty(owner?.firebaseUserId))
             {
                 var legacy = ReadJson<SinglePlayerSlotData>(Path.Combine(Application.persistentDataPath, SinglePlayerSlotFileName));
-                var adopted = ReadJson<SinglePlayerSlotData>(GetSavePath(SinglePlayerSlotFileName));
+                var adopted = ReadJson<SinglePlayerSlotData>(GetAccountSavePath(SinglePlayerSlotFileName, uid));
                 canMigrate = !string.IsNullOrEmpty(legacy?.profile?.playerId) && legacy.profile.playerId == adopted?.profile?.playerId;
             }
             if (canMigrate)
@@ -137,7 +162,7 @@ namespace Core
                     StageSaveFileName, ActiveSkillSaveFileName })
                 {
                     string legacyPath = Path.Combine(Application.persistentDataPath, fileName);
-                    string target = GetSavePath(fileName);
+                    string target = GetAccountSavePath(fileName, uid);
                     if (!File.Exists(target) && File.Exists(legacyPath)) File.Copy(legacyPath, target);
                 }
             foreach (var category in new[] { SaveDataCategory.Gameplay, SaveDataCategory.Quest })
@@ -146,7 +171,15 @@ namespace Core
                     return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
                 var result = await SynchronizePlayerDataAsync(category, uid, canMigrate);
                 if (!result.IsSuccess) return result;
+                if (!result.IsCloudSynchronized && !FirebaseService.Default.IsLocalTestAccount)
+                    return SaveDataOperationResult.Failure(SaveDataFailureReason.CloudAccessFailed,
+                        "로컬 진행도는 보존했습니다. 멀티플레이 동기화가 끝나지 않아 진입하지 않았습니다.");
             }
+            // 모든 종류의 동기화가 끝난 뒤에만 로컬 프로필을 전환한다. 다른 계정의 파일은 그대로 보존한다.
+            if (uid != FirebaseService.Default.CurrentUserId)
+                return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
+            if (!FirebaseService.Default.IsLocalTestAccount)
+                WriteSinglePlayerProfileOwner(GetSavePath(SinglePlayerProfileOwnerFileName), uid);
             return profile;
         }
 
@@ -161,7 +194,7 @@ namespace Core
                     "로그인한 Firebase 사용자가 없습니다.");
             }
 
-            string localPath = GetSavePath(SinglePlayerSlotFileName);
+            string localPath = GetAccountSavePath(SinglePlayerSlotFileName, firebaseUserId);
             string ownerPath = GetSavePath(SinglePlayerProfileOwnerFileName);
             SinglePlayerSlotData localSlot;
             SinglePlayerProfileOwnerData ownerData;
@@ -215,7 +248,6 @@ namespace Core
                     localSlot ??= new SinglePlayerSlotData();
                     localSlot.profile = cloudProfile;
                     WriteJson(localPath, localSlot);
-                    WriteSinglePlayerProfileOwner(ownerPath, firebaseUserId);
                 }
                 catch (System.Exception exception)
                 {
@@ -265,7 +297,6 @@ namespace Core
                 if (uploadResult.IsSuccess)
                 {
                     WriteJson(localPath, localSlot);
-                    WriteSinglePlayerProfileOwner(ownerPath, firebaseUserId);
                 }
 
                 return uploadResult;
@@ -292,7 +323,7 @@ namespace Core
         /// </summary>
         private static void QueueProfileSave(PlayerProfileData profile)
         {
-            if (profile == null || !FirebaseService.Default.IsSignedIn)
+            if (profile == null)
                 return;
 
             QueuePlayerDataSave(SaveDataCategory.PlayerProfile, JsonUtility.ToJson(profile, true));
@@ -353,7 +384,7 @@ namespace Core
 
         private bool IsPassiveProfileFromOtherAccount =>
             PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.CurrentProfile != null &&
-            passiveProfileUserId != (string.IsNullOrEmpty(FirebaseService.Default.CurrentUserId) ? null : FirebaseService.Default.CurrentUserId);
+            passiveProfileUserId != (string.IsNullOrEmpty(LocalProfileUserId) ? null : LocalProfileUserId);
 
         [ContextMenu("패시브 데이터 저장")]
         public void SavePassiveData()
@@ -387,7 +418,7 @@ namespace Core
                 return false;
             }
 
-            string uid = FirebaseService.Default.CurrentUserId;
+            string uid = LocalProfileUserId;
             passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
             var slot = LoadSinglePlayerSlot();
             if (slot != null && slot.profile != null)
@@ -586,6 +617,7 @@ namespace Core
                 data.status = BuildPlayerStatusData();
                 data.inventory = BuildInventorySaveData();
                 data.activeSkill = BuildActiveSkillSaveData();
+                data.quests = QuestManager.Instance.GetSaveData();
                 data.needsPlayerInitialization = false;
                 if (!string.IsNullOrEmpty(completedUnknownBattleKey))
                 {
@@ -1214,6 +1246,19 @@ namespace Core
         // 플레이어와 관련 시스템의 Start 초기화가 끝난 뒤 호출합니다.
         public bool TryLoadGameplayData(string unknownBattleKey = null)
         {
+            IsRestoringGameplay = true;
+            loadedGameplayScene = -1;
+            try
+            {
+                bool loaded = RestoreGameplayData(unknownBattleKey);
+                if (loaded) loadedGameplayScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+                return loaded;
+            }
+            finally { IsRestoringGameplay = false; }
+        }
+
+        private bool RestoreGameplayData(string unknownBattleKey)
+        {
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out var mana))
             {
                 Debug.LogWarning("[DataManager] 활성 플레이어가 없어 로드를 보류합니다.");
@@ -1258,7 +1303,8 @@ namespace Core
                 data = new GameSaveData
                 {
                     selectedCharacter = character,
-                    needsPlayerInitialization = true
+                    needsPlayerInitialization = true,
+                    quests = new QuestSaveData()
                 };
 
                 data.status.playerLevel = 1;
@@ -1266,6 +1312,8 @@ namespace Core
             }
 
             // 1. 레벨과 경험치 적용
+            // SW 수정 : 장비 복원 이벤트가 퀘스트 진행으로 집계되기 전에 같은 저장의 상태를 복원한다.
+            QuestManager.Instance.ApplySaveData(data.quests ?? ReadJson<QuestSaveData>(GetSavePath(QuestSaveFileName)) ?? new QuestSaveData());
             var stat = stats.EnsureInitialized();
             stat.currentLevel = data.status.playerLevel;
             stat.currentExp = data.status.playerExp;
@@ -1350,13 +1398,15 @@ namespace Core
                 return false;
             }
 
-            var data = new GameSaveData{selectedCharacter = character, needsPlayerInitialization = true};
+            var data = new GameSaveData{selectedCharacter = character, needsPlayerInitialization = true, quests = new QuestSaveData()};
             data.status.playerLevel = 1;
             data.status.playerExp = 0f;
 
             try
             {
                 WriteJson(GetSavePath(GameplaySaveFileName), data);
+                loadedGameplayScene = -1;
+                QuestManager.Instance.ApplySaveData(data.quests);
                 return true;
             }
             catch (System.Exception exception)
@@ -1843,7 +1893,17 @@ namespace Core
                 return;
             }
 
-            WriteJson(GetSavePath(QuestSaveFileName), QuestManager.Instance.GetSaveData());
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || IsRestoringGameplay) return;
+            // SW 수정 : 실제 플레이어가 준비되면 보상과 지급 기록을 하나의 저장으로 남긴다.
+            if (IsGameplayReady) { TrySaveGameplayData(); return; }
+            string path = GetSavePath(GameplaySaveFileName);
+            var gameplay = ReadJson<GameSaveData>(path);
+            if (gameplay != null)
+            {
+                gameplay.quests = QuestManager.Instance.GetSaveData();
+                WriteGameplayDataAtomic(path, gameplay);
+            }
+            else WriteJson(GetSavePath(QuestSaveFileName), QuestManager.Instance.GetSaveData());
         }
 
         [ContextMenu("퀘스트 불러오기")]
@@ -1855,9 +1915,10 @@ namespace Core
                 return;
             }
 
-            var data = ReadJson<QuestSaveData>(GetSavePath(QuestSaveFileName));
-            if (data != null)
-                QuestManager.Instance.ApplySaveData(data);
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active) return;
+            var gameplay = ReadJson<GameSaveData>(GetSavePath(GameplaySaveFileName));
+            var data = gameplay?.quests ?? ReadJson<QuestSaveData>(GetSavePath(QuestSaveFileName));
+            QuestManager.Instance.ApplySaveData(data ?? new QuestSaveData());
         }
 
         #endregion
@@ -1907,7 +1968,7 @@ namespace Core
 
             if (PassiveSkillManager.Instance != null)
             {
-                string uid = FirebaseService.Default.CurrentUserId;
+                string uid = LocalProfileUserId;
                 passiveProfileUserId = string.IsNullOrEmpty(uid) ? null : uid;
                 PassiveSkillManager.Instance.SetActiveProfile(profile);
             }
@@ -1982,15 +2043,18 @@ namespace Core
         /// <summary>SW 수정: 싱글의 확정 저장만 계정 캐시에 전달하며 멀티의 전역 복제 상태는 저장하지 않습니다.</summary>
         private static void QueuePlayerDataSave(SaveDataCategory category, string json)
         {
-            if (!FirebaseService.Default.IsSignedIn || (category != SaveDataCategory.PlayerProfile &&
-                (Mirror.NetworkClient.active || Mirror.NetworkServer.active))) return;
-            string uid = FirebaseService.Default.CurrentUserId;
+            if (category != SaveDataCategory.PlayerProfile &&
+                (Mirror.NetworkClient.active || Mirror.NetworkServer.active)) return;
+            string uid = LocalProfileUserId;
+            if (string.IsNullOrEmpty(uid)) return;
             string pendingPath = PendingPlayerSavePath(category, uid);
             string temporary = pendingPath + ".tmp";
             File.WriteAllText(temporary, json);
             if (File.Exists(pendingPath)) File.Replace(temporary, pendingPath, pendingPath + ".bak");
             else File.Move(temporary, pendingPath);
-            _ = UploadPendingPlayerSaveAsync(category, uid, json);
+            // SW 수정 : 싱글은 업로드 대기 파일만 로컬에 남긴다. 인증·클라우드 접근은 멀티 진입/플레이 때만 수행한다.
+            if (Mirror.NetworkClient.active && uid == FirebaseService.Default.CurrentUserId)
+                _ = UploadPendingPlayerSaveAsync(category, uid, json);
         }
 
         /// <summary>작업 파일 저장 직전 남긴 계정별 기록을 업로드하고, 더 새 기록이 없을 때만 지웁니다.</summary>
@@ -2039,7 +2103,7 @@ namespace Core
             if (uid != FirebaseService.Default.CurrentUserId)
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
             string fileName = category == SaveDataCategory.Gameplay ? GameplaySaveFileName : QuestSaveFileName;
-            string path = GetSavePath(fileName);
+            string path = GetAccountSavePath(fileName, uid);
             if (loaded.IsSuccess)
             {
                 // 업로드 큐를 다시 호출하지 않고 로그인 시 확정된 DTO만 작업 파일에 복원합니다.
@@ -2056,7 +2120,7 @@ namespace Core
             if (loaded.FailureReason != SaveDataFailureReason.NotFound) return loaded;
             string legacy = Path.Combine(Application.persistentDataPath, fileName);
             string source = File.Exists(path) ? path : canMigrate && File.Exists(legacy) ? legacy : null;
-            if (source == null) return SaveDataOperationResult.Success(false);
+            if (source == null) return SaveDataOperationResult.Success(true);
             string payload = File.ReadAllText(source);
             var saved = await SaveDataService.Default.SaveAsync(category, payload, uid);
             if (uid != FirebaseService.Default.CurrentUserId)
