@@ -63,7 +63,8 @@ namespace Core
         private void RequestLoadScene(string sceneName, float? initialFadeOutDuration)
         {
             // SW 수정: 기존 타이틀의 멀티 로비 요청을 정식 네트워크 로비에 연결합니다.
-            if (sceneName == "MultiplayerLobbyScene") sceneName = MirrorNetworkManager.SessionLobbyScene;
+            if (sceneName == "MultiplayerLobbyScene")
+                sceneName = MirrorNetworkManager.SessionLobbyScene;
             if (MirrorNetworkManager.OwnsGameplay && sceneName != MirrorNetworkManager.SessionLobbyScene)
             {
                 if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
@@ -189,7 +190,7 @@ namespace Core
             CurrentSceneName = sceneName;
             OnSceneLoaded?.Invoke(sceneName);
 
-            // SW 수정: 씬 활성화와 플레이 준비는 다릅니다. 실패 시 암전과 입력 잠금을 유지합니다.
+            // SW 수정 : 씬 활성화와 플레이 준비는 다릅니다. 실패 시 입력 차단을 유지하고 암전을 걷어 준비 오류를 표시합니다.
             YJ_StageManager stage = FindFirstObjectByType<YJ_StageManager>();
             if (stage != null && !MirrorNetworkManager.OwnsGameplay)
             {

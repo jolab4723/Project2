@@ -394,7 +394,7 @@ public sealed class NetworkShopPlayerState : NetworkBehaviour
     }
 
     /// <summary>
-    /// 클라이언트에서 먼저 실행한 시험용 거래가 실패했을 때 화면 지갑을
+    /// SW 수정 : 로컬 화면 지갑을 복구할 때
     /// 서버가 확정한 금액으로 되돌린다. 서버 지갑은 변경하지 않는다.
     /// </summary>
     public void RestoreLocalGold()

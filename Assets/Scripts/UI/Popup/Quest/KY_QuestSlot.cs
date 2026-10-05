@@ -56,14 +56,29 @@ public class KY_QuestSlot : MonoBehaviour
             return;
         }
 
+        // SW 수정 : 목표 완료 여부와 보상 수령 상태를 구분해 표시한다.
         if (titleText != null)
-            titleText.text = (data.questName ?? string.Empty) + (data.isCompleted
-                ? " · " + Label("quest_ui.objective_completed", "목표 달성") : string.Empty);
+        {
+            titleText.text = data.questName ?? string.Empty;
+            if (data.isCompleted)
+                titleText.text += " · " + Label("quest_ui.objective_completed", "목표 달성");
+        }
 
         if (subText != null)
-            subText.text = data.isCompleted
-                ? data.rewardPending ? Label("quest_ui.reward_pending", "보상 대기") : Label("quest_ui.reward_received", "수령 완료")
-                : string.IsNullOrWhiteSpace(data.objectiveTypeLabel) ? data.description ?? string.Empty : data.objectiveTypeLabel;
+        {
+            if (data.isCompleted)
+            {
+                subText.text = data.rewardPending
+                    ? Label("quest_ui.reward_pending", "보상 대기")
+                    : Label("quest_ui.reward_received", "수령 완료");
+            }
+            else
+            {
+                subText.text = string.IsNullOrWhiteSpace(data.objectiveTypeLabel)
+                    ? data.description ?? string.Empty
+                    : data.objectiveTypeLabel;
+            }
+        }
 
         if (button != null)
             button.interactable = true;

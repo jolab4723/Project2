@@ -1362,7 +1362,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     /// </summary>
     private static MirrorSessionRoute GetRouteForScene(string scenePath)
     {
-        if (IsAct1CombatScene(scenePath))
+        if (IsCombatScene(scenePath))
             return MirrorSessionRoute.Combat;
         return scenePath switch
         {

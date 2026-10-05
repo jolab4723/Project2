@@ -19,7 +19,7 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     private Vector3 echoForward;
     private float echoRange, echoAngle;
     private readonly HashSet<WBH_ICombat> targets = new();
-    public bool IsGravity => gravity;
+
     public bool IsFinished => ended;
     // SW 수정 : 중력·화상·예약 폭발은 같은 소유자 안에서도 실제 SO 종류별로 상한을 계산한다.
     internal Type EffectType { get; private set; }
@@ -78,30 +78,60 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             endsAt = Now + explosion.delaySeconds;
             maximum = explosion.maxPendingExplosions;
         }
-        else { Finish(); return; }
+        else
+        {
+            Finish();
+            return;
+        }
+
         owner.Effects.RegisterGrenadeEffect(this, Mathf.Max(1, maximum));
     }
 
     /// <summary>SW 수정 : 살아 있는 소유자의 장판은 상태를 갱신하고 예약 폭발은 한 번만 기폭하며 수명 종료 시 정리한다.</summary>
     private void Update()
     {
-        if (ended) return;
-        if (owner == null) { Finish(); return; }
+        if (ended)
+            return;
+        if (owner == null)
+        {
+            Finish();
+            return;
+        }
+
         // 무기 교체는 취소 조건이 아니다. 소유자 사망·비활성화·씬 전환은 즉시 취소한다.
         if (!owner.Effects.CanExecute || !owner.isActiveAndEnabled || owner.Health == null ||
             owner.Health.CurrentHealth <= 0f || SceneManager.GetActiveScene().handle != sceneHandle)
-        { Finish(); return; }
+        {
+            Finish();
+            return;
+        }
+
         double now = Now;
         if (echo != null)
         {
-            if (now < endsAt) return;
-            try { owner.Effects.ExecuteEchoReplay(echo, attackId, transform.position, echoForward, echoRange, echoAngle); }
-            finally { Finish(); }
+            if (now < endsAt)
+                return;
+
+            try
+            {
+                owner.Effects.ExecuteEchoReplay(echo, attackId, transform.position, echoForward, echoRange, echoAngle);
+            }
+            finally
+            {
+                Finish();
+            }
             return;
         }
+
         bool periodic = gravity || burnField;
-        if (periodic && now >= endsAt) { Finish(); return; }
-        if (periodic ? now < nextApplyAt : now < endsAt) return;
+        if (periodic && now >= endsAt)
+        {
+            Finish();
+            return;
+        }
+        if (periodic ? now < nextApplyAt : now < endsAt)
+            return;
+
         nextApplyAt = now + refreshSeconds;
         targets.Clear();
         try
@@ -109,7 +139,9 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             foreach (Collider hit in Physics.OverlapSphere(transform.position, radius, 1 << 10, QueryTriggerInteraction.Collide))
             {
                 WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
-                if (target == null || target.Status == null || target.Status.IsDead || !targets.Add(target)) continue;
+                if (target == null || target.Status == null || target.Status.IsDead || !targets.Add(target))
+                    continue;
+
                 if (periodic)
                 {
                     // 짧게 갱신하므로 둔화는 범위를 벗어나면 원래 속도로 돌아온다.
@@ -120,34 +152,46 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
                     status.Attacker = owner.Controller;
                     status.AttackId = attackId;
                     var network = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
-                    if (network != null && network.IsServerDamageHandlingActive) network.ServerTryApplyStatusEffect(status);
-                    else target.AddStatusEffect(status);
+                    if (network != null && network.IsServerDamageHandlingActive)
+                        network.ServerTryApplyStatusEffect(status);
+                    else
+                        target.AddStatusEffect(status);
                 }
                 else
                 {
                     // 다음 프레임 효과는 기폭 시점 스탯을 읽고 직접 공격 트리거를 재발동하지 않는다.
                     uint effectId = attackId ^ 0x80000000u;
-                    if (effectId == 0) effectId = uint.MaxValue;
+                    if (effectId == 0)
+                        effectId = uint.MaxValue;
+
                     if (PlayerDamageResolver.TryProcessPlayerDamage(owner, target, element, multiplier, null,
                             out var result, DamageCause.Effect, effectId))
                         owner.CombatAuthority?.ServerRecordGunnerHit(target, result);
                 }
             }
-            if (!periodic) detonated?.Invoke();
+            if (!periodic)
+                detonated?.Invoke();
         }
-        finally { if (!periodic) Finish(); }
+        finally
+        {
+            if (!periodic)
+                Finish();
+        }
     }
 
     /// <summary>상한을 넘으면 가장 오래된 효과부터 취소하며 여러 번 정리해도 재실행하지 않는다.</summary>
     public void Finish()
     {
-        if (ended) return;
+        if (ended)
+            return;
+
         ended = true;
         owner?.Effects.UnregisterGrenadeEffect(this);
         Action callback = released;
         released = detonated = null;
         callback?.Invoke();
     }
+
     private void OnDisable()
     {
         // 객체 자체가 이미 제거되는 중에는 어댑터의 제거 콜백을 재호출하지 않는다.

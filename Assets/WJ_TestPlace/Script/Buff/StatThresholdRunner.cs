@@ -37,23 +37,33 @@ namespace ItemSystem
         {
             Unbind();
             explicitOwner = true;
-            this.stats = stats; this.health = health; this.mana = mana; this.buffs = buffs;
-            if (effect != null) Begin(effect.referenceStat, effect.comparisonOperator, effect.thresholdValue, effect);
+            this.stats = stats;
+            this.health = health;
+            this.mana = mana;
+            this.buffs = buffs;
+            if (effect != null)
+                Begin(effect.referenceStat, effect.comparisonOperator, effect.thresholdValue, effect);
         }
 
         /// <summary>SW 수정: 실제 구독한 인스턴스와 이 실행기의 버프만 해제합니다.</summary>
         public void Unbind()
         {
-            if (health != null) health.OnHealthChanged -= CheckCondition;
-            if (mana != null) mana.OnManaChanged -= CheckCondition;
+            if (health != null)
+                health.OnHealthChanged -= CheckCondition;
+            if (mana != null)
+                mana.OnManaChanged -= CheckCondition;
             if (subscribedStat != null)
             {
                 subscribedStat.OnStatChanged -= CheckCondition;
                 subscribedStat.OnStatChanged -= HandleManaStatChanged;
             }
-            bool remove = isActive;
-            isActive = false; subscribed = false; subscribedStat = null;
-            if (remove && buffs != null && buffSource != null) buffs.RemoveBuff(buffSource);
+            bool wasBuffActive = isActive;
+            isActive = false;
+            subscribed = false;
+            subscribedStat = null;
+            if (wasBuffActive && buffs != null && buffSource != null)
+                buffs.RemoveBuff(buffSource);
+
             buffSource = null;
         }
 
@@ -97,13 +107,19 @@ namespace ItemSystem
 
         private void TrySubscribe()
         {
-            if (!isActiveAndEnabled || subscribed || buffSource == null) return;
+            if (!isActiveAndEnabled || subscribed || buffSource == null)
+                return;
+
             if (!explicitOwner)
             {
-                stats = PlayerStatManager.Instance; health = PlayerHealthManager.Instance;
-                mana = PlayerManaManager.Instance; buffs = PlayerBuffManager.Instance;
+                stats = PlayerStatManager.Instance;
+                health = PlayerHealthManager.Instance;
+                mana = PlayerManaManager.Instance;
+                buffs = PlayerBuffManager.Instance;
             }
-            if (health == null || buffs == null || stats?.Stat == null || mana == null) return;
+            if (health == null || buffs == null || stats?.Stat == null || mana == null)
+                return;
+
             health.OnHealthChanged += CheckCondition;
             subscribedStat = stats.Stat;
             if (referenceStat == StatReference.CurrentManaPercent)

@@ -62,7 +62,11 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
         combat?.CancelCurrentAction();
         phase?.CancelTransition();
         phase?.BindPhaseSimulation(null);
-        if (pattern != null) { pattern.Die(); pattern.BindExternalTargets(null); }
+        if (pattern != null)
+        {
+            pattern.Die();
+            pattern.BindExternalTargets(null);
+        }
         if (combat != null)
         {
             combat.ExternalBeginGrab = null;
@@ -94,7 +98,11 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
             }
         }
         authority.ServerSetTarget(target);
-        if (target == null) { movement.Stop(); return; }
+        if (target == null)
+        {
+            movement.Stop();
+            return;
+        }
         pattern.TickWithTarget(target.transform, Time.deltaTime);
         target = pattern.Target != null ? pattern.Target.GetComponent<PlayerContext>() : null;
         authority.ServerSetTarget(target);
@@ -104,27 +112,44 @@ public sealed class NetworkEnemyPattern : MonoBehaviour
     {
         serverTargets.Clear();
         if (NetworkManager.singleton is MirrorNetworkManager manager)
+        {
             foreach (PlayerContext context in manager.ServerPlayerContexts)
+            {
                 if (context != null && context.gameObject.activeInHierarchy && context.RuntimeState?.IsDead != true &&
                     context.GetComponent<MirrorSpawnedPlayerBinder>()?.IsTemporarilyAbsent != true)
                     serverTargets.Add(context.transform);
+            }
+        }
         return serverTargets;
     }
 
     private void PlayPatternSkill(int skill)
     {
-        if (authority.EnemyInfo.patternID != 101) { authority.ServerPlayPatternSkill(skill); return; }
+        if (authority.EnemyInfo.patternID != 101)
+        {
+            authority.ServerPlayPatternSkill(skill);
+            return;
+        }
+
         switch (skill)
         {
-            case WBH_EnemyAnimation.ShootBurstSkillId: authority.ServerRecordBossBurst(); break;
-            case WBH_EnemyAnimation.BarrageSkillId: authority.ServerRecordBossBarrage(); break;
+            case WBH_EnemyAnimation.ShootBurstSkillId:
+                authority.ServerRecordBossBurst();
+                break;
+            case WBH_EnemyAnimation.BarrageSkillId:
+                authority.ServerRecordBossBarrage();
+                break;
             case WBH_EnemyAnimation.MissileSkillId:
-            case WBH_EnemyAnimation.TransitionPhaseSkillId: authority.ServerRecordBossMissileVolley(); break;
+            case WBH_EnemyAnimation.TransitionPhaseSkillId:
+                authority.ServerRecordBossMissileVolley();
+                break;
             case WBH_EnemyAnimation.JumpAtkSkillId:
                 authority.ServerRecordBossJump();
                 authority.ServerPlayBossJumpAnimation();
                 return;
-            case WBH_EnemyAnimation.DashWaitSkillId: authority.ServerRecordBossDash(); break;
+            case WBH_EnemyAnimation.DashWaitSkillId:
+                authority.ServerRecordBossDash();
+                break;
         }
         authority.ServerPlayBossSkill(skill);
     }

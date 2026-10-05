@@ -24,7 +24,7 @@ public class QuestPopupBridge : MonoBehaviour
     [Header("다국어(비워두면 QuestDefinitionSO 원본 문구로 폴백)")]
     [SerializeField] private QuestLabelDatabaseSO questLabels;
     [SerializeField] private ItemLabelDatabaseSO itemLabels;
-    [SerializeField] private Sprite creditIcon; // SW 수정
+    [SerializeField] private Sprite creditIcon; // SW 수정 : 상세 보상 슬롯에 사용할 크레딧 아이콘.
 
     private KY_QuestPopup popup;
     private readonly Dictionary<string, KY_QuestData> displayedQuests = new();
@@ -200,20 +200,29 @@ public class QuestPopupBridge : MonoBehaviour
         if (def.rewardGold > 0)
             rewards.Add(new KY_QuestRewardData
             {
-                icon = creditIcon, name = GetUILabel("quest_ui.credit_name", "크레딧"), amount = def.rewardGold,
+                icon = creditIcon,
+                name = GetUILabel("quest_ui.credit_name", "크레딧"),
+                amount = def.rewardGold,
                 remainingAmount = !active.isCompleted || (active.rewardInitialized && !active.goldPaid) ? def.rewardGold : 0,
                 questCompleted = active.isCompleted
             });
         if (def.rewardItem != null && def.rewardItemCount > 0)
+        {
+            int remainingItems = 0;
+            if (!active.isCompleted)
+                remainingItems = def.rewardItemCount;
+            else if (active.rewardInitialized)
+                remainingItems = Mathf.Max(0, def.rewardItemCount - active.itemsGranted);
+
             rewards.Add(new KY_QuestRewardData
             {
                 icon = def.rewardItem.icon,
                 name = itemLabels != null ? itemLabels.GetName(def.rewardItem.itemId) : def.rewardItem.itemName,
                 amount = def.rewardItemCount,
-                remainingAmount = !active.isCompleted ? def.rewardItemCount : active.rewardInitialized
-                    ? Mathf.Max(0, def.rewardItemCount - active.itemsGranted) : 0,
+                remainingAmount = remainingItems,
                 questCompleted = active.isCompleted
             });
+        }
         return rewards.ToArray();
     }
 }

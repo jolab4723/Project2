@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// 플레이어 드래그 드랍과 적 보상 드랍이 함께 사용하는 Mirror 테스트용 생성 경계다.
+/// SW 수정 : 플레이어 드래그 드랍과 적 보상 드랍이 함께 사용하는 서버 월드 아이템 생성 경계다.
 /// <para>아이템 내용은 기존 JSON 스냅샷을 그대로 사용하고, 서버만 생성·등록·파괴를 수행한다.</para>
 /// </summary>
 public static class NetworkWorldItemSpawnService

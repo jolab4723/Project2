@@ -226,7 +226,8 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (line == null) return;
         line.alignment = LineAlignment.View;
         line.positionCount = 2;
-        line.SetPosition(0, origin); line.SetPosition(1, origin + forward * 0.65f);
+        line.SetPosition(0, origin);
+        line.SetPosition(1, origin + forward * 0.65f);
         line.widthMultiplier = 0.2f;
         line.startColor = line.endColor = Color.cyan;
     }
@@ -238,9 +239,13 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (!CanPresent) return;
         var line = CreateFallbackLine(effectName, Quaternion.identity, 0.2f);
         if (line == null) return;
-        line.alignment = LineAlignment.View; line.positionCount = 3;
-        line.SetPosition(0, start); line.SetPosition(1, (start + end) * 0.5f + Vector3.up * 0.3f); line.SetPosition(2, end);
-        line.widthMultiplier = 0.08f; line.startColor = line.endColor = color;
+        line.alignment = LineAlignment.View;
+        line.positionCount = 3;
+        line.SetPosition(0, start);
+        line.SetPosition(1, (start + end) * 0.5f + Vector3.up * 0.3f);
+        line.SetPosition(2, end);
+        line.widthMultiplier = 0.08f;
+        line.startColor = line.endColor = color;
     }
 
     public void PresentWorldEnderBlast(Vector3 position, float radius)
@@ -279,8 +284,17 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (weapon == null || !weapon.isActiveAndEnabled) return;
         Transform muzzle = weapon.Muzzle;
         if (muzzle == null)
+        {
             foreach (Transform child in weapon.GetComponentsInChildren<Transform>())
-                if (child.name == "Muzzle") { muzzle = child; break; }
+            {
+                if (child.name == "Muzzle")
+                {
+                    muzzle = child;
+                    break;
+                }
+            }
+        }
+
         if (muzzle == null || !muzzle.gameObject.activeInHierarchy || !muzzle.IsChildOf(weapon.transform) ||
             !EnsureFallbackMaterial()) return;
         chargedWarheadVisual = new GameObject("Charged Warhead Glow") { hideFlags = HideFlags.DontSave };
@@ -289,10 +303,16 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         chargedWarheadMuzzle = muzzle;
         var particles = chargedWarheadVisual.AddComponent<ParticleSystem>();
         var main = particles.main;
-        main.startColor = new Color(1f, 0.7f, 0.1f, 0.85f); main.startSize = 0.12f;
-        main.startLifetime = 0.3f; main.startSpeed = 0.05f; main.maxParticles = 16;
-        var emission = particles.emission; emission.rateOverTime = 18f;
-        var shape = particles.shape; shape.shapeType = ParticleSystemShapeType.Sphere; shape.radius = 0.08f;
+        main.startColor = new Color(1f, 0.7f, 0.1f, 0.85f);
+        main.startSize = 0.12f;
+        main.startLifetime = 0.3f;
+        main.startSpeed = 0.05f;
+        main.maxParticles = 16;
+        var emission = particles.emission;
+        emission.rateOverTime = 18f;
+        var shape = particles.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.08f;
         particles.GetComponent<ParticleSystemRenderer>().sharedMaterial = chainLightningMaterial;
     }
 

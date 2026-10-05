@@ -99,8 +99,15 @@ public sealed class MirrorReconnectProfile
         }
         finally
         {
-            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
-            catch (Exception exception) when (IsFileFailure(exception)) { }
+            try
+            {
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
+            catch (Exception exception) when (IsFileFailure(exception))
+            {
+                // SW 수정 : 임시 파일 정리 실패로 저장 결과와 기존 재접속 자격을 덮어쓰지 않는다.
+            }
         }
     }
 
@@ -156,8 +163,14 @@ public sealed class MirrorReconnectProfile
             !Guid.TryParseExact(profile.SessionId, "N", out _) || !Guid.TryParseExact(profile.ParticipantId, "N", out _) ||
             profile.SavedAtUtcTicks <= 0 || profile.SavedAtUtcTicks > DateTime.MaxValue.Ticks ||
             profile.ReconnectToken == null || profile.ReconnectToken.Length != 44) return false;
-        try { return Convert.FromBase64String(profile.ReconnectToken).Length == 32; }
-        catch (FormatException) { return false; }
+        try
+        {
+            return Convert.FromBase64String(profile.ReconnectToken).Length == 32;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private static bool IsFileFailure(Exception exception) => exception is IOException ||

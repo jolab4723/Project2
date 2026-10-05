@@ -445,7 +445,7 @@ namespace DataSystem
                     Debug.LogError($"[UniqueEffect] '{id}'의 triggerCondition을 확인해주세요. OnCrit는 치명 전용 연쇄를 설정하며 유효한 TriggerCondition 이름이 필요합니다.");
                     valid = false;
                 }
-                // SW 수정: 신규 타입은 정확한 개수의 세미콜론 계수만 허용하여 누락·빈 칸·비유한 값이 다른 필드로 밀리지 않게 한다.
+                // SW 수정 : 신규 타입은 계수 개수와 유한값을 검사해 누락·빈 칸이 다른 필드로 밀리지 않게 한다.
                 int coefficientCount = type.Name switch
                 {
                     nameof(SunfallBurnFieldUniqueEffectSO) => 4,
@@ -466,8 +466,11 @@ namespace DataSystem
                     float[] effectValues = new float[effectParts.Length];
                     bool effectValid = effectParts.Length == coefficientCount;
                     for (int i = 0; i < effectParts.Length; i++)
+                    {
                         effectValid &= float.TryParse(effectParts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out effectValues[i]) &&
                             float.IsFinite(effectValues[i]);
+                    }
+
                     if (!effectValid)
                     {
                         Debug.LogError($"[UniqueEffect] '{id}'({type.Name})의 coefficients에는 유한한 숫자 {coefficientCount}개가 세미콜론 순서대로 필요합니다.");

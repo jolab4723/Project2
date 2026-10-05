@@ -11,7 +11,7 @@ public sealed partial class MirrorNetworkManager
     public const string SessionBossScene = "Assets/Scenes/Maps/Act1_Maps/Act1_BossStage/Act1_BossStage.unity";
 
     // 서버 스냅샷의 맵 이름만 이 허용 목록으로 해석한다. 클라이언트의 임의 경로는 받지 않는다.
-    private static string ResolveAct1CombatScene(string sceneName)
+    private static string ResolveCombatScene(string sceneName)
     {
         for (int act = 1; act <= 2; act++)
         {
@@ -25,14 +25,14 @@ public sealed partial class MirrorNetworkManager
         return string.Empty;
     }
 
-    private static bool IsAct1CombatScene(string scenePath)
+    private static bool IsCombatScene(string scenePath)
     {
         string name = System.IO.Path.GetFileNameWithoutExtension(scenePath);
-        return !string.IsNullOrEmpty(scenePath) && ResolveAct1CombatScene(name) == scenePath;
+        return !string.IsNullOrEmpty(scenePath) && ResolveCombatScene(name) == scenePath;
     }
 
     /// <summary>선택이 확정된 노드에만 맵을 배정하고 같은 런 스냅샷에 보존한다.</summary>
-    private static bool TryReserveAct1Scene(StageMapSaveData snapshot, StageNodeSaveData node)
+    private static bool TryReserveStageScene(StageMapSaveData snapshot, StageNodeSaveData node)
     {
         if (snapshot == null || (snapshot.act != StageActType.Act1 && snapshot.act != StageActType.Act2) || node == null)
             return false;
@@ -59,7 +59,7 @@ public sealed partial class MirrorNetworkManager
         snapshot.usedStageSceneNames ??= new List<string>();
         if (!string.IsNullOrWhiteSpace(node.sceneName))
         {
-            if (!node.sceneName.StartsWith(act + "_Stage", StringComparison.Ordinal) || string.IsNullOrEmpty(ResolveAct1CombatScene(node.sceneName)))
+            if (!node.sceneName.StartsWith(act + "_Stage", StringComparison.Ordinal) || string.IsNullOrEmpty(ResolveCombatScene(node.sceneName)))
                 return false;
         }
         else
@@ -86,7 +86,7 @@ public sealed partial class MirrorNetworkManager
     private string GetPendingCombatScene()
     {
         return TryGetPendingStageNode(out StageNodeSaveData node)
-            ? ResolveAct1CombatScene(node.sceneName)
+            ? ResolveCombatScene(node.sceneName)
             : string.Empty;
     }
 

@@ -65,9 +65,9 @@ public readonly struct MirrorInventoryRequestCompleted
 /// 플레이어 인벤토리를 서버 권한으로 유지하고 재접속 시 동일한 소유 상태를 복구한다.
 /// 서버의 <see cref="InventoryController"/>를 원본으로 사용하고 기존 <see cref="ItemSaveData"/>를
 /// JSON 문자열로 바꿔 <see cref="SyncList{T}"/>에 복제한다. 필드 드랍·획득도 서버가 판정한다.
-/// HP, MP, Stat 동기화는 이 테스트 범위에 포함하지 않는다.
-/// <para>3-1 차이: 원본 플레이어 시스템을 수정하지 않고 요청 ID, 서버 상태 revision,
-/// Owner 전용 동기화와 TargetRpc 결과 반환을 이 테스트 컴포넌트 안에서만 검증한다.</para>
+/// SW 수정 : HP, MP, Stat 동기화는 같은 플레이어의 PlayerRuntimeStateSync가 담당한다.
+/// <para>SW 수정 : 요청 ID, 서버 상태 revision, Owner 전용 동기화와 TargetRpc 결과 반환으로
+/// 서버가 확정한 인벤토리 소유 상태와 요청 결과를 소유 클라이언트에 전달한다.</para>
 /// <para>3-2 차이: 실제 드래그가 보낸 item instanceId를 검증해 그 아이템만 서버에서 드랍하고,
 /// 기존 요청 완료 이벤트로 비동기 성공·실패를 로컬 UI에 돌려준다.</para>
 /// </summary>
@@ -146,7 +146,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
 
     /// <summary>
     /// 상점 서버 거래가 이미 플레이어 모델에 추가한 아이템을 Owner 소유 기록에 확정한다.
-    /// 팀 원본 인벤토리에는 네트워크 책임을 추가하지 않고 3-5 테스트 거래에서만 호출한다.
+    /// SW 수정 : 팀 원본 인벤토리에는 네트워크 책임을 추가하지 않고 서버 상점 거래에서 호출한다.
     /// </summary>
     [Server]
     internal bool ServerCommitShopItemAdded(InventoryItem item, uint expectedRevision)
@@ -1286,7 +1286,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
         waitingForRevision[requestId] = completed;
     }
 
-    private void HandleStateRevisionChanged(uint _, uint newRevision)
+    private void CompletePendingRequestsForCurrentRevision()
     {
         if (waitingForRevision.Count == 0)
             return;
@@ -1294,7 +1294,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
         List<uint> readyRequestIds = null;
         foreach (KeyValuePair<uint, MirrorInventoryRequestCompleted> pair in waitingForRevision)
         {
-            if (pair.Value.AuthoritativeRevision > newRevision)
+            if (pair.Value.AuthoritativeRevision > stateRevision)
                 continue;
 
             readyRequestIds ??= new List<uint>();
@@ -1334,7 +1334,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
             localStateRefreshQueued = false;
             RefreshLocalItemViews();
         }
-        HandleStateRevisionChanged(stateRevision, stateRevision);
+        CompletePendingRequestsForCurrentRevision();
     }
 
     private void RefreshLocalItemViews()
@@ -1364,7 +1364,7 @@ public sealed class PlayerInventorySync : NetworkBehaviour
         {
             ItemSaveData saved = FromSnapshotJson(newSnapshot);
             InventoryItem item = saved != null ? FindOwnedItem(saved.instanceId) : null;
-            // 누적 스택만 바뀔 때 소유권과 UI를 다시 만들지 않고 기존 인스턴스에 반영한다.
+            // SW 수정 : 누적 스택을 기존 인스턴스에 먼저 반영하고, 프레임 끝의 소유 상태 적용·화면 갱신은 그대로 진행한다.
             if (item?.itemData != null) item.itemData.persistedStackCount = saved.persistedStackCount;
         }
         // 교환 중간의 OP_SET 하나만 적용하면 아직 이동하지 않은 상대 아이템과 충돌한다.
