@@ -7,6 +7,7 @@ using TMPro;
 /// <summary>화면·사운드·언어·키 바인딩 설정을 표시하고 적용하는 설정 팝업이다.</summary>
 public class KY_SettingsPopup : KY_PopupBase
 {
+    [SerializeField] private UnityEngine.UI.Toggle alliedBuffRangesToggle;
     [Header("화면")]
     public TMP_Dropdown resolutionDropdown;
     public Toggle fullscreenToggle;
@@ -163,6 +164,9 @@ public class KY_SettingsPopup : KY_PopupBase
     void LoadCurrentSettings()
     {
         tempData = SettingManager.Instance.GetData();
+        // SW 수정 : 실제 버프 판정과 독립된 기기별 표시 설정이다.
+        if (alliedBuffRangesToggle != null)
+            alliedBuffRangesToggle.SetIsOnWithoutNotify(tempData.showAlliedBuffRanges);
 
         // 해상도
         resolutionDropdown.value = tempData.resolutionIndex;
@@ -249,6 +253,8 @@ public class KY_SettingsPopup : KY_PopupBase
 
     void ApplySettings()
     {
+        if (alliedBuffRangesToggle != null)
+            tempData.showAlliedBuffRanges = alliedBuffRangesToggle.isOn;
         tempData.resolutionIndex = resolutionDropdown.value;
         // 창모드 토글이 켜져 있으면 전체 화면 데이터는 false여야 한다.
         tempData.isFullscreen = !fullscreenToggle.isOn;
