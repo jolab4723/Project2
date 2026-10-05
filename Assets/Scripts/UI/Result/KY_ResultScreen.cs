@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -68,10 +67,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private bool hasResult;
     private bool leaving;
     private bool initialRevealCompleted;
-    private Sequence resultRevealSequence;
-    private Tween creditsHighlightTween;
-    private Sequence buttonRevealSequence;
-    private Color creditsBaseColor;
+    private KY_ResultRevealAnimator revealAnimator;
     private MirrorNetworkManager session;
     private YJ_LanguageManager languageManager;
     private UILabelDatabaseSO uiLabels;
@@ -90,8 +86,20 @@ public sealed class KY_ResultScreen : MonoBehaviour
     // 정식 버튼의 클릭 이벤트를 등록한다.
     private void Awake()
     {
-        if (creditsHighlightGraphic != null)
-            creditsBaseColor = creditsHighlightGraphic.color;
+        revealAnimator = new KY_ResultRevealAnimator(
+            gameObject,
+            scoreRows,
+            creditsText,
+            creditsHighlightGraphic,
+            retryButtonGroup,
+            titleButtonGroup,
+            rowInterval,
+            rowRevealDuration,
+            rowStartOffset,
+            creditsCountDuration,
+            creditsHighlightDuration,
+            buttonRevealDuration,
+            buttonRevealInterval);
 
         // 씬을 수정하지 않도록 라벨 참조가 비어 있으면 같은 행(CreditsRow)에서 찾는다.
         if (creditsLabelText == null && creditsText != null && creditsText.transform.parent != null)
@@ -132,7 +140,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     {
         SetText(subtitleText, SessionUIMessageLocalizer.GetMessage(uiLabels,
             !string.IsNullOrEmpty(feedbackMessage) ? feedbackMessage : hasResult
-                ? GetSubtitle(CurrentResultType)
+                ? KY_ResultPresentation.Create(CurrentResultType).SubtitleKey
                 : "result_ui.data_waiting"));
         ApplyResultTypeLabels();
         SetActionButtonLabels(CurrentResultType);
@@ -145,15 +153,13 @@ public sealed class KY_ResultScreen : MonoBehaviour
     /// </summary>
     private void ApplyResultTypeLabels()
     {
-        bool actClear = hasResult && CurrentResultType == KY_ResultType.ActClear;
-        SetText(stageLabelText, actClear
-            ? GetLabel("result_ui.current_stage", "현재 도달 스테이지")
-            : GetLabel("result_ui.stage", "최종 도달 스테이지"));
+        KY_ResultPresentation presentation = KY_ResultPresentation.Create(CurrentResultType);
+        SetText(stageLabelText, GetLabel(presentation.StageLabelKey, presentation.StageLabelFallback));
 
         if (creditsLabelText != null)
-            SetText(creditsLabelText, actClear
-                ? GetLabel("result_ui.farming_value", "파밍 가치 현황")
-                : GetLabel("result_ui.credits", defaultCreditsLabel ?? "획득 크레딧"));
+            SetText(creditsLabelText, GetLabel(
+                presentation.CreditsLabelKey,
+                presentation.DisplaysFarmingValue ? presentation.CreditsLabelFallback : defaultCreditsLabel ?? presentation.CreditsLabelFallback));
     }
 
     /// <summary>다국어 DB의 현재 언어 문구. DB가 없거나 키가 없으면 한국어 폴백을 쓴다.</summary>
@@ -200,7 +206,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
                 SetText(defeatedText, "—");
                 SetText(playTimeText, "—");
                 SetText(creditsText, "—");
-                SetActionButtonsVisible(true);
+                revealAnimator.SetActionButtonsVisible(true);
                 if (retryButton != null) retryButton.interactable = false;
                 if (titleButton != null) titleButton.interactable = true;
             }
@@ -209,7 +215,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         if (hasResult)
         {
-            SetActionButtonsVisible(false);
+            revealAnimator.SetActionButtonsVisible(false);
             SetButtons(false);
         }
 
@@ -218,7 +224,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         initialRevealCompleted = true;
         if (hasResult)
-            yield return RevealScoreRows();
+            yield return PlayReveal();
     }
 
     // 게임 종료 시 전달받은 데이터를 화면에 반영한다.
@@ -226,7 +232,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     {
         hasResult = true;
         CurrentData = data;
-        CurrentResultType = ResolveResultType(data);
+        CurrentResultType = KY_ResultPresentation.ResolveType(data);
         Sprite logo = GetLogo(CurrentResultType);
         if (titleLogo)
         {
@@ -235,7 +241,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
         }
 
         if (titleText) titleText.gameObject.SetActive(logo == null);
-        SetText(titleText, GetTitle(CurrentResultType));
+        SetText(titleText, KY_ResultPresentation.Create(CurrentResultType).Title);
         if (backgroundImage)
             backgroundImage.sprite = CurrentResultType == KY_ResultType.GameOver ? gameOverBackground : clearBackground;
         SetText(stageText, string.IsNullOrWhiteSpace(data.stageName) ? "—" : data.stageName);
@@ -249,103 +255,19 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
         // 씬 실행 뒤 미리보기나 외부 호출로 결과를 받았을 때도 연출을 다시 재생한다.
         if (initialRevealCompleted && isActiveAndEnabled)
-            StartCoroutine(RevealScoreRows());
+            StartCoroutine(PlayReveal());
     }
 
-    // 위에서 아래 순서로 결과 행을 나타내고, 마지막 크레디트는 숫자를 세어 표시한다.
-    private IEnumerator RevealScoreRows()
+    // 결과 데이터는 화면에서 유지하고, 행·크레딧·버튼의 등장 순서만 전용 연출 객체에 맡긴다.
+    private IEnumerator PlayReveal()
     {
-        resultRevealSequence?.Kill();
-        buttonRevealSequence?.Kill();
-        SetActionButtonsVisible(false);
-        resultRevealSequence = DOTween.Sequence().SetLink(gameObject);
+        if (revealAnimator == null)
+            yield break;
 
-        if (scoreRows != null)
-        {
-            foreach (CanvasGroup row in scoreRows)
-            {
-                if (row == null) continue;
-
-                RectTransform rect = row.transform as RectTransform;
-                if (rect == null) continue;
-
-                Vector2 targetPosition = rect.anchoredPosition;
-                row.alpha = 0f;
-                rect.anchoredPosition = targetPosition - Vector2.up * rowStartOffset;
-                resultRevealSequence.Append(row.DOFade(1f, rowRevealDuration).SetEase(Ease.OutCubic));
-                resultRevealSequence.Join(rect.DOAnchorPos(targetPosition, rowRevealDuration).SetEase(Ease.OutCubic));
-                resultRevealSequence.AppendInterval(rowInterval);
-            }
-        }
-
-        yield return resultRevealSequence.WaitForCompletion();
-
-        if (creditsText != null)
-        {
-            // 진행률(0→1)로 카운트업한다. 액트 중간 정산은 보유 크레딧과 장비 가치를 함께 올린다.
-            creditsText.text = FormatCredits(0f);
-            yield return DOVirtual.Float(0f, 1f, creditsCountDuration,
-                    progress => creditsText.text = FormatCredits(progress))
-                .SetLink(gameObject)
-                .SetEase(Ease.OutCubic)
-                .WaitForCompletion();
-            creditsText.text = FormatCredits(1f);
-        }
-
-        yield return PulseCredits();
-        yield return RevealActionButtons();
-    }
-
-    // 크레디트 카운트업이 끝나는 순간 행 배경을 결과 색으로 짧게 강조한다.
-    private IEnumerator PulseCredits()
-    {
-        if (creditsHighlightGraphic == null) yield break;
-
-        creditsHighlightTween?.Kill();
-        Color highlight = GetAccentColor(CurrentResultType);
-        highlight.a = Mathf.Max(creditsBaseColor.a, 0.65f);
-        creditsHighlightTween = DOTween.Sequence()
-            .Append(creditsHighlightGraphic.DOColor(highlight, creditsHighlightDuration).SetEase(Ease.OutCubic))
-            .Append(creditsHighlightGraphic.DOColor(creditsBaseColor, creditsHighlightDuration).SetEase(Ease.InCubic))
-            .SetLink(gameObject);
-        yield return creditsHighlightTween.WaitForCompletion();
-    }
-
-    // 보상 확인이 끝난 뒤 다시 시작과 타이틀 버튼을 차례로 보여준다.
-    private IEnumerator RevealActionButtons()
-    {
-        buttonRevealSequence?.Kill();
-        buttonRevealSequence = DOTween.Sequence().SetLink(gameObject);
-        AppendButtonReveal(retryButtonGroup);
-        buttonRevealSequence.AppendInterval(buttonRevealInterval);
-        AppendButtonReveal(titleButtonGroup);
-        yield return buttonRevealSequence.WaitForCompletion();
-        SetButtons(!leaving);
-    }
-
-    // 버튼 하나를 보이게 하는 페이드 단계를 추가한다.
-    private void AppendButtonReveal(CanvasGroup buttonGroup)
-    {
-        if (buttonGroup == null) return;
-        buttonGroup.alpha = 0f;
-        buttonGroup.blocksRaycasts = false;
-        buttonRevealSequence.Append(buttonGroup.DOFade(1f, buttonRevealDuration).SetEase(Ease.OutCubic));
-        buttonRevealSequence.AppendCallback(() => buttonGroup.blocksRaycasts = true);
-    }
-
-    // 버튼을 연출 시작 전에는 숨기고 완료 후에는 입력 가능 상태로 되돌린다.
-    private void SetActionButtonsVisible(bool visible)
-    {
-        SetButtonVisible(retryButtonGroup, visible);
-        SetButtonVisible(titleButtonGroup, visible);
-    }
-
-    // CanvasGroup이 연결된 버튼의 표시와 입력 차단을 함께 설정한다.
-    private static void SetButtonVisible(CanvasGroup buttonGroup, bool visible)
-    {
-        if (buttonGroup == null) return;
-        buttonGroup.alpha = visible ? 1f : 0f;
-        buttonGroup.blocksRaycasts = visible;
+        yield return revealAnimator.Play(
+            GetAccentColor(CurrentResultType),
+            progress => SetText(creditsText, FormatCredits(progress)),
+            () => SetButtons(!leaving));
     }
 
     // 결과 종류에 맞춰 등록된 UI 강조색을 바꾼다.
@@ -522,14 +444,6 @@ public sealed class KY_ResultScreen : MonoBehaviour
         ApplyResult(data);
     }
 
-    private static KY_ResultType ResolveResultType(KY_ResultData data)
-    {
-        // 기존 호출부는 cleared bool만 전달하므로, 새 enum을 지정하지 않은 과거 데이터도 유지한다.
-        return data.resultType == KY_ResultType.GameOver && data.cleared
-            ? KY_ResultType.GameClear
-            : data.resultType;
-    }
-
     private Sprite GetLogo(KY_ResultType resultType)
     {
         return resultType switch
@@ -542,29 +456,6 @@ public sealed class KY_ResultScreen : MonoBehaviour
         };
     }
 
-    private static string GetTitle(KY_ResultType resultType)
-    {
-        return resultType switch
-        {
-            KY_ResultType.ActClear => "GAME RESULT",
-            KY_ResultType.Settle => "GAME RESULT",
-            KY_ResultType.GameClear => "GAME CLEAR",
-            _ => "GAME OVER"
-        };
-    }
-
-    /// <summary>결과 종류별 부제의 다국어 키. SessionUIMessageLocalizer.GetMessage가 현재 언어 문구로 바꾼다.</summary>
-    private static string GetSubtitle(KY_ResultType resultType)
-    {
-        return resultType switch
-        {
-            KY_ResultType.ActClear => "result_ui.act_clear_description",
-            KY_ResultType.Settle => "result_ui.settle_description",
-            KY_ResultType.GameClear => "result_ui.clear_description",
-            _ => "result_ui.defeat_description"
-        };
-    }
-
     private Color GetAccentColor(KY_ResultType resultType)
     {
         return resultType == KY_ResultType.GameOver ? gameOverAccentColor : clearAccentColor;
@@ -572,10 +463,11 @@ public sealed class KY_ResultScreen : MonoBehaviour
 
     private void SetActionButtonLabels(KY_ResultType resultType)
     {
+        KY_ResultPresentation presentation = KY_ResultPresentation.Create(resultType);
         if (retryButton != null)
             SetText(retryButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
                 ? uiLabels?.GetLabel("result_ui.return_lobby") ?? "로비로 돌아가기"
-                : resultType == KY_ResultType.ActClear ? GetLabel("result_ui.continue", "계속하기") : uiLabels?.GetLabel("result_ui.retry") ?? "다시 시작");
+                : GetLabel(presentation.PrimaryActionLabelKey, presentation.PrimaryActionFallback));
         if (titleButton != null)
             SetText(titleButton.GetComponentInChildren<TMP_Text>(true), multiplayerResult
                 ? uiLabels?.GetLabel("result_ui.leave_session") ?? "세션 나가기"
@@ -586,7 +478,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     private string FormatCredits(float progress)
     {
         int credits = Mathf.RoundToInt(Mathf.Max(0, CurrentData.earnedCredits) * progress);
-        if (CurrentResultType != KY_ResultType.ActClear)
+        if (!KY_ResultPresentation.Create(CurrentResultType).DisplaysFarmingValue)
             return credits.ToString("N0");
 
         int itemValue = Mathf.RoundToInt(Mathf.Max(0, CurrentData.itemValueCredits) * progress);
@@ -616,9 +508,7 @@ public sealed class KY_ResultScreen : MonoBehaviour
     {
         if (session != null) session.AdmissionStatusChanged -= ShowSessionFeedback;
         if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
-        resultRevealSequence?.Kill();
-        creditsHighlightTween?.Kill();
-        buttonRevealSequence?.Kill();
+        revealAnimator?.Stop();
         StopAllCoroutines();
         leaving = false;
     }

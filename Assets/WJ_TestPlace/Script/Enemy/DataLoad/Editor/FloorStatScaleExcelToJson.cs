@@ -91,9 +91,10 @@ namespace DataSystem
 
         /// <summary>
         /// ExcelSheetReader.MapRows(리플렉션으로 고정된 필드 이름만 매핑)를 안 쓰고 직접 매핑한다.
-        /// floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
+        /// act/floor만 이름 있는 필드로 뽑고, 나머지 컬럼(hpMultiplier 등)은 전부 컬럼 이름
         /// 그대로 FloorStatScaleRow.multipliers에 담는다 - 새 배율 컬럼을 엑셀에 추가해도
         /// FloorStatScaleRow에 필드를 새로 안 만들어도 자동으로 JSON에 실린다.
+        /// act 열이 없는 예전 시트는 act=1로 읽는다.
         /// </summary>
         private static List<FloorStatScaleRow> MapRows(List<Dictionary<string, string>> rawRows)
         {
@@ -107,11 +108,14 @@ namespace DataSystem
                     continue;
                 }
 
-                var row = new FloorStatScaleRow { floor = ParseInt(floorText) };
+                int act = rawRow.TryGetValue("act", out string actText) && !string.IsNullOrWhiteSpace(actText)
+                    ? ParseInt(actText)
+                    : 1;
+                var row = new FloorStatScaleRow { act = act, floor = ParseInt(floorText) };
 
                 foreach (KeyValuePair<string, string> cell in rawRow)
                 {
-                    if (cell.Key == "floor")
+                    if (cell.Key == "floor" || cell.Key == "act")
                         continue;
 
                     row.multipliers[cell.Key] = ParseFloat(cell.Value);

@@ -15,6 +15,10 @@ namespace ItemSystem
     ///   - 고유효과(UniqueEffectSO): UniqueEffectLabelDatabase에 이름·설명이 이미 번역돼 있어 그대로 쓴다.
     ///     장판·조건부 발동처럼 수치만으로 설명이 안 되는 효과가 있어서, 스탯 줄 아래에 원래 설명도 덧붙인다.
     ///   - 그 외(BuffDefinitionSO): BuffLabelDatabase에서 buffId로 번역 이름을 찾고, 없으면 원본 이름으로 폴백.
+    ///
+    /// 2026-10-01: 화면별로 나눴다. HUD 버프 아이콘 툴팁은 BuildStatDescription(스탯 줄만),
+    /// P 버프 팝업은 BuildDetailDescription(상세 효과 문장만, BuffLabelDatabase의 description 사용).
+    /// 둘을 합친 BuildDescription은 쿨타임 아이콘 툴팁처럼 기존 표시를 유지할 곳에서 쓴다.
     /// </summary>
     public static class BuffTextComposer
     {
@@ -90,19 +94,9 @@ namespace ItemSystem
                 return string.Empty;
 
             var lines = new List<string>();
-            int stacks = Mathf.Max(1, stackCount);
-
-            FixedStatValue[] effects = source.StatEffects;
-            if (effects != null)
-            {
-                foreach (FixedStatValue effect in effects)
-                {
-                    if (effect == null || Mathf.Approximately(effect.value, 0f))
-                        continue;
-
-                    lines.Add(FormatStatLine(effect, stacks));
-                }
-            }
+            string stats = BuildStatDescription(source, stackCount);
+            if (!string.IsNullOrEmpty(stats))
+                lines.Add(stats);
 
             // 장판 범위·발동 조건처럼 스탯 수치만으로는 설명되지 않는 내용이 있어 고유효과는 원문을 함께 보여준다.
             string extra = BuildUniqueEffectDescription(source);
@@ -110,6 +104,61 @@ namespace ItemSystem
                 lines.Add(extra);
 
             return string.Join("\n", lines);
+        }
+
+        /// <summary>
+        /// WJ 이우진 추가(2026-10-01): 증감 스탯 줄만("이름 +수치"). 스킬 HUD 위 버프/디버프 아이콘 툴팁용.
+        /// 스택형은 BuildDescription과 같이 스택을 곱한 합계다.
+        /// </summary>
+        public static string BuildStatDescription(IBuffSource source, int stackCount)
+        {
+            FixedStatValue[] effects = source?.StatEffects;
+            if (effects == null)
+                return string.Empty;
+
+            var lines = new List<string>();
+            int stacks = Mathf.Max(1, stackCount);
+            foreach (FixedStatValue effect in effects)
+            {
+                if (effect == null || Mathf.Approximately(effect.value, 0f))
+                    continue;
+
+                lines.Add(FormatStatLine(effect, stacks));
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        /// <summary>
+        /// WJ 이우진 추가(2026-10-01): 상세 효과 문장만. P 버프 팝업 설명 영역용.
+        ///   - 고유효과: UniqueEffectLabelDatabase의 번역 설명(계수 대입).
+        ///   - 그 외: BuffLabelDatabase의 description(현재 언어 → KOR), 없으면 SO에 적힌 원문(한국어).
+        /// 상세 문장이 하나도 없는 버프는 팝업이 비지 않도록 스탯 줄로 대신한다.
+        /// </summary>
+        public static string BuildDetailDescription(IBuffSource source, int stackCount)
+        {
+            if (source == null)
+                return string.Empty;
+
+            string detail = source is UniqueEffectSO
+                ? BuildUniqueEffectDescription(source)
+                : BuildBuffDefinitionDescription(source);
+
+            return string.IsNullOrWhiteSpace(detail)
+                ? BuildStatDescription(source, stackCount)
+                : detail;
+        }
+
+        private static string BuildBuffDefinitionDescription(IBuffSource source)
+        {
+            if (source is BuffDefinitionSO buffDefinition
+                && BuffLabels != null
+                && BuffLabels.TryGetDescription(buffDefinition.buffId, out string localized))
+            {
+                return localized;
+            }
+
+            return source.BuffDescription;
         }
 
         private static string FormatStatLine(FixedStatValue effect, int stacks)

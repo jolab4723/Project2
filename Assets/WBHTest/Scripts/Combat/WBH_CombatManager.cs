@@ -192,10 +192,27 @@ public class WBH_CombatManager
         return Random.value <= attackerStat.CritRate;
     }
 
-    /// <summary>SW 수정: 현재 대상 방어력과 공격 시점 관통력으로 방어를 계산합니다.</summary>
+    // WJ 이우진 수정(2026-10-01): 비율 방어 상수. 유효 방어력이 이 값과 같으면 받는 피해가 절반이 된다.
+    private const float DefenseConstant = 60f;
+
+    /// <summary>
+    /// SW 수정: 현재 대상 방어력과 공격 시점 관통력으로 방어를 계산합니다.
+    ///
+    /// WJ 이우진 수정(2026-10-01): 뺄셈 방어 → 비율 방어(K=60). 유효 방어력 = 방어력 − 관통력.
+    ///   - 0 이상: 받는 피해 = 피해 × K / (K + 유효 방어력)  (방어력 39면 61%, 90이면 40%)
+    ///   - 0 미만(관통력이 더 높음): 초과 관통력만큼 추가 피해 = 피해 × (K + 초과) / K  (초과 30이면 +50%)
+    ///   두 식은 0에서 정확히 1배로 이어진다. 뺄셈 방식은 적 공격력이 플레이어 방어력보다 낮으면
+    ///   피해가 최소값 1로 떨어지는 절벽이 있어(일반 적 대부분) 바꿨다. 최소 피해 1 보장은 호출부 그대로.
+    /// </summary>
     private static float CalculateDefense(float damage, WBH_ICombatStatus targetStat, DamageSourceSnapshot attackerStat)
     {
-        return damage - (targetStat.DefensePower - attackerStat.Pen);
+        // 이전 공식(뺄셈 방어):
+        // return damage - (targetStat.DefensePower - attackerStat.Pen);
+
+        float effectiveDefense = targetStat.DefensePower - attackerStat.Pen;
+        return effectiveDefense >= 0f
+            ? damage * DefenseConstant / (DefenseConstant + effectiveDefense)
+            : damage * (DefenseConstant - effectiveDefense) / DefenseConstant;
     }
 
     private static void ApplyStatusEffect(WBH_DamageRequest request)

@@ -86,6 +86,7 @@ namespace DataSystem
                 SerializedProperty element = labelsProp.GetArrayElementAtIndex(index);
                 element.FindPropertyRelative("buffId").stringValue = row.buffId;
                 element.FindPropertyRelative("buffName").stringValue = row.buffName;
+                element.FindPropertyRelative("description").stringValue = row.description ?? string.Empty;
                 index++;
             }
 
