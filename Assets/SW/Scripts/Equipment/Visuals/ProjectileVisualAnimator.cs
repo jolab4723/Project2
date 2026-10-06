@@ -164,10 +164,10 @@ public sealed class ProjectileVisualAnimator : MonoBehaviour
 
         foreach (ParticleSystem particleSystem in particles)
         {
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            particleSystem.Clear(true);
+            particleSystem.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleSystem.Clear(false);
             if (play)
-                particleSystem.Play(true);
+                particleSystem.Play(false);
         }
     }
 }

@@ -36,6 +36,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     private Quaternion serverSceneStartRotation;
     private int confirmedSceneHandle = -1;
     [SyncVar(hook = nameof(OnTemporarilyAbsentChanged))] private bool temporarilyAbsent;
+    // 포탈 도착 대기는 서버가 소유하는 지속 상태다. 최초 관찰·재접속 클라이언트도 이 값으로 숨김·입력 차단을 복원한다.
+    [SyncVar(hook = nameof(OnPortalArrivedChanged))] private bool portalArrived;
     private Renderer[] absentRenderers;
     private bool[] rendererStates;
     private Collider[] absentColliders;
@@ -61,6 +63,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     public int ParticipantSlot => participantSlot;
     /// <summary>재접속 예약으로 시각·충돌·조작이 정지된 참가자인지 반환한다.</summary>
     public bool IsTemporarilyAbsent => temporarilyAbsent;
+    /// <summary>현재 씬의 포탈에 도착해 다음 씬 이동을 기다리는 중인지 반환한다.</summary>
+    public bool IsPortalArrived => portalArrived;
     /// <summary>같은 이름의 Scene 재방문도 구분하여 소유자의 시작 위치 최종 확정을 확인한다.</summary>
     public bool IsSceneStartConfirmed => confirmedSceneHandle == SceneManager.GetActiveScene().handle;
     private bool CanRestoreGameplay => IsConfigured && !temporarilyAbsent && context?.RuntimeState?.HasSnapshot == true &&
@@ -101,6 +105,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
 
         textInputBlocked = false;
         menuInputBlocked = false;
+        // 포탈 대기 중 재접속한 본인은 서버 도착 상태에 맞춰 입력 차단을 복원한다.
+        if (portalArrived) ApplyPortalArrivalState();
         SetLocalOnlyBehaviours(CanRestoreGameplay);
         RestoreLocalGameplayAfterScene();
     }
@@ -122,6 +128,8 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             DontDestroyOnLoad(nameplate.gameObject);
             nameplate.Bind(this);
         }
+        // 초기 역직렬화 Hook은 이름표 생성 전에 실행될 수 있으므로 생성 뒤 도착 상태를 다시 적용한다.
+        if (portalArrived) ApplyPortalArrivalState();
     }
 
     public override void OnStopClient()
@@ -138,29 +146,68 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
     /// SW 수정: 서버가 확정한 포탈 도착을 모든 화면에 싱글과 같은 포탈 연출로 보인다.
     /// 도착한 본인은 다음 씬까지 입력을 막고, 전원 도착 대기 인원은 채팅 알림으로 표시한다.
     /// </summary>
+    /// <remarks>이 RPC는 포탈 연출과 채팅 알림만 담당한다. 현재 대기 여부는 <see cref="portalArrived"/>가 기준이다.</remarks>
     [ClientRpc]
     public void RpcPlayPortalArrival(int arrivedCount, int totalCount)
     {
-        if (portalHiddenRenderers != null) return;
-        var hidden = new System.Collections.Generic.List<Renderer>();
-        foreach (Renderer item in GetComponentsInChildren<Renderer>(true))
-            if (item.enabled) hidden.Add(item);
-        portalHiddenRenderers = hidden.ToArray();
-        if (nameplate != null) nameplate.gameObject.SetActive(false);
-        if (isLocalPlayer) SetCutsceneInputBlocked(true);
-
+        // Host·클라이언트에서 SyncVar Hook이 먼저 숨겼어도 서버가 도착마다 한 번 보내는 연출은 재생한다.
+        ApplyPortalArrivalState();
         YJ_PortalEffect effect = FindFirstObjectByType<YJ_PortalEffect>();
         if (effect != null)
             StartCoroutine(effect.PlayOnce(gameObject));
-        else
-        {
-            foreach (Renderer item in portalHiddenRenderers)
-                item.enabled = false;
-        }
 
         if (NetworkManager.singleton is MirrorNetworkManager manager)
             manager.Chat.Append(ChatKind.Connection,
                 $"{(string.IsNullOrEmpty(participantDisplayName) ? name : participantDisplayName)} 포탈 도착 ({arrivedCount}/{totalCount})");
+    }
+
+    /// <summary>서버가 포탈 도착을 확정하거나 다음 씬 이동 시 해제한다.</summary>
+    [Server]
+    public void ServerSetPortalArrived(bool arrived)
+    {
+        portalArrived = arrived;
+    }
+
+    /// <summary>
+    /// 도착 상태가 복제되면 숨김·이름표·본인 입력 차단을 적용한다.
+    /// 해제는 실제 씬 전환(ClearPortalArrival)에서만 수행해 로딩 중 이전 씬에 다시 보이지 않게 한다.
+    /// </summary>
+    private void OnPortalArrivedChanged(bool _, bool arrived)
+    {
+        if (arrived) ApplyPortalArrivalState();
+    }
+
+    private const float PortalHideRefreshSeconds = 0.25f;
+    private float nextPortalHideRefreshAt;
+
+    /// <summary>
+    /// 포탈 대기 중에만 늦게 생긴 렌더러를 주기적으로 숨긴다. 씬 전환으로 표시를 해제한 뒤에는
+    /// 서버의 해제 값이 늦게 도착해도 새 씬에서 다시 숨기지 않도록 현재 씬에 적용된 동안만 갱신한다.
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (!portalArrived || portalHiddenRenderers == null || !isClient || Time.unscaledTime < nextPortalHideRefreshAt)
+            return;
+        nextPortalHideRefreshAt = Time.unscaledTime + PortalHideRefreshSeconds;
+        ApplyPortalArrivalState();
+    }
+
+    /// <summary>
+    /// 포탈 대기 표시를 여러 경로(Hook·OnStartClient·RPC·대기 중 주기 갱신)에서 적용한다.
+    /// 재접속 직후처럼 무기 외형·버프 오라가 나중에 생겨도 켜진 렌더러를 숨김 목록에 합쳐 다시 숨긴다.
+    /// </summary>
+    private void ApplyPortalArrivalState()
+    {
+        var hidden = portalHiddenRenderers == null
+            ? new System.Collections.Generic.List<Renderer>()
+            : new System.Collections.Generic.List<Renderer>(portalHiddenRenderers);
+        foreach (Renderer item in GetComponentsInChildren<Renderer>(true))
+            if (item.enabled && !hidden.Contains(item)) hidden.Add(item);
+        portalHiddenRenderers = hidden.ToArray();
+        foreach (Renderer item in portalHiddenRenderers)
+            if (item != null) item.enabled = false;
+        if (nameplate != null) nameplate.gameObject.SetActive(false);
+        if (isLocalPlayer) SetCutsceneInputBlocked(true);
     }
 
     /// <summary>SW 수정: 다음 씬으로 넘어가면 포탈 대기 중 숨긴 표시와 입력 차단을 되돌린다(플레이어는 씬 사이에 유지된다).</summary>

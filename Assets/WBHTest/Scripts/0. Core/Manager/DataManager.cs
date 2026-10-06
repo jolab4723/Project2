@@ -42,6 +42,8 @@ namespace Core
         private sealed class SinglePlayerProfileOwnerData
         {
             public string firebaseUserId;
+            // SW 수정 : 타이틀 계정 표시용. Firebase를 초기화하지 않은 타이틀에서도 현재 저장의 계정을 보여 준다.
+            public string email;
         }
 
         private static string MultiplayerSlotFileName(int slotIndex) => "profile_multiplayer_" + slotIndex + ".json";
@@ -111,8 +113,11 @@ namespace Core
                 throw new System.InvalidOperationException("다른 계정에서 불러온 프로필은 저장할 수 없습니다.");
 
             data.profile.lastPlayedUtc = System.DateTime.UtcNow.ToString("O");
-            QueueProfileSave(data.profile);
-            WriteJson(GetSavePath(SinglePlayerSlotFileName), data);
+            // SW 수정 : 프로필 업로드 대기 기록과 슬롯 파일 교체를 하나의 성공/실패로 묶는다.
+            // 슬롯 교체가 실패하면 대기 기록도 이전 상태로 되돌려 호출자의 롤백과 일치시킨다.
+            ReplaceLocalFileWithPending(
+                GetSavePath(SinglePlayerSlotFileName), JsonUtility.ToJson(data, true),
+                SaveDataCategory.PlayerProfile, JsonUtility.ToJson(data.profile, true));
         }
 
         public SinglePlayerSlotData LoadSinglePlayerSlot()
@@ -120,14 +125,104 @@ namespace Core
             return ReadJson<SinglePlayerSlotData>(GetSavePath(SinglePlayerSlotFileName));
         }
 
+        // SW 수정 : 게스트 저장(로그아웃 상태의 전역 경로)에 속하는 작업 파일. 가져오기 뒤 백업 폴더로 옮긴다.
+        private static readonly string[] GuestSaveFileNames =
+        {
+            SinglePlayerSlotFileName, GameplaySaveFileName, QuestSaveFileName, InventorySaveFileName,
+            PlayerStatusSaveFileName, SkillTreeSaveFileName, StageSaveFileName, ActiveSkillSaveFileName
+        };
+
+        /// <summary>SW 수정 : 계정 동기화 중 게스트 저장을 가져왔는지 기록합니다.</summary>
+        private sealed class GuestImportState
+        {
+            public bool Imported;
+        }
+
+        /// <summary>SW 수정 : 현재 싱글 저장이 계정이 아닌 게스트(로그아웃 상태) 저장인지 반환합니다.</summary>
+        public static bool IsGuestProfile => string.IsNullOrEmpty(LocalProfileUserId);
+
+        /// <summary>
+        /// SW 수정 : 타이틀 표시용 현재 저장 소유 계정의 이메일입니다. 게스트이거나 기록된 이메일이 없으면 null입니다.
+        /// 개발 테스트 계정은 계정 이름을 돌려줍니다.
+        /// </summary>
+        public static string LocalProfileOwnerEmail
+        {
+            get
+            {
+                if (FirebaseService.Default.IsLocalTestAccount)
+                    return FirebaseService.Default.LocalTestUserId;
+                string path = GetSavePath(SinglePlayerProfileOwnerFileName);
+                var owner = File.Exists(path) ? ReadJson<SinglePlayerProfileOwnerData>(path) : null;
+                if (string.IsNullOrEmpty(owner?.firebaseUserId))
+                    return null;
+                if (!string.IsNullOrEmpty(owner.email))
+                    return owner.email;
+                return FirebaseService.Default.CurrentUserId == owner.firebaseUserId
+                    ? FirebaseService.Default.Auth?.CurrentUser?.Email : null;
+            }
+        }
+
+        /// <summary>
+        /// SW 수정 : 로그아웃 시 싱글 저장을 게스트(전역 경로)로 전환합니다. 계정 폴더와 업로드 대기 기록은 그대로 보존하고,
+        /// 메모리의 프로필·퀘스트도 게스트 저장으로 다시 불러와 이후 플레이가 직전 계정에 쌓이지 않게 합니다.
+        /// </summary>
+        public static void SwitchToGuestProfile()
+        {
+            if (FirebaseService.Default.IsLocalTestAccount)
+                return;
+            WriteSinglePlayerProfileOwner(GetSavePath(SinglePlayerProfileOwnerFileName), null, null);
+            Instance?.LoadPassiveData();
+            Instance?.LoadQuestData();
+        }
+
+        /// <summary>SW 수정 : 게스트 저장에 실제 진행도가 있을 때만 프로필을 돌려줍니다. 첫 실행 기본값뿐이면 가져오기 대상이 아닙니다.</summary>
+        private static SinglePlayerSlotData ReadGuestSlotWithProgress()
+        {
+            string guestPath = Path.Combine(Application.persistentDataPath, SinglePlayerSlotFileName);
+            var guest = File.Exists(guestPath) ? ReadJson<SinglePlayerSlotData>(guestPath) : null;
+            if (guest?.profile == null)
+                return null;
+            var defaults = new PlayerProfileData();
+            bool hasRun = File.Exists(Path.Combine(Application.persistentDataPath, GameplaySaveFileName));
+            bool progressed = hasRun || guest.profile.playTimeSeconds > 0f || guest.profile.credit != defaults.credit ||
+                              !string.IsNullOrEmpty(guest.profile.lastRunSettlementId);
+            return progressed ? guest : null;
+        }
+
+        /// <summary>SW 수정 : 계정으로 가져온 게스트 저장을 백업 폴더로 옮겨 같은 진행도를 다른 계정이 다시 가져가지 못하게 합니다(삭제하지 않음).</summary>
+        private static void ArchiveGuestSaveFiles()
+        {
+            string backup = Path.Combine(Application.persistentDataPath, "GuestImportBackups",
+                System.DateTime.UtcNow.ToString("yyyyMMdd_HHmmss"));
+            foreach (string fileName in GuestSaveFileNames)
+            {
+                string path = Path.Combine(Application.persistentDataPath, fileName);
+                foreach (string source in new[] { path, path + ".bak" })
+                {
+                    if (!File.Exists(source)) continue;
+                    try
+                    {
+                        Directory.CreateDirectory(backup);
+                        File.Move(source, Path.Combine(backup, Path.GetFileName(source)));
+                    }
+                    catch (System.Exception exception)
+                    {
+                        Debug.LogError($"[DataManager] 가져온 게스트 저장을 백업하지 못했습니다({fileName}): {exception.Message}");
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// 로그인한 사용자의 revision으로 확정된 프로필·게임·퀘스트를 계정별 작업 파일에 반영합니다.
         /// </summary>
-        public static async Task<SaveDataOperationResult> SynchronizeSinglePlayerProfileWithFirebaseAsync()
+        /// <param name="confirmGuestImport">SW 수정 : 클라우드가 빈 새 계정에 게스트 진행도를 가져올지 묻는 UI. null이면 가져오지 않는다.</param>
+        public static async Task<SaveDataOperationResult> SynchronizeSinglePlayerProfileWithFirebaseAsync(
+            System.Func<Task<bool>> confirmGuestImport = null)
         {
             try
             {
-                var result = await SynchronizePlayerAccountCoreAsync();
+                var result = await SynchronizePlayerAccountCoreAsync(confirmGuestImport);
                 // 로그인 전(로그아웃 상태)에 불러온 전역 프로필이 메모리에 남지 않도록 이 계정의 프로필로 교체한다.
                 if (result.IsSuccess)
                 {
@@ -144,12 +239,11 @@ namespace Core
         }
 
         /// <summary>SW 수정 : 프로필·게임·퀘스트 동기화가 모두 끝난 뒤 로컬 저장의 소유 계정을 전환합니다.</summary>
-        private static async Task<SaveDataOperationResult> SynchronizePlayerAccountCoreAsync()
+        private static async Task<SaveDataOperationResult> SynchronizePlayerAccountCoreAsync(System.Func<Task<bool>> confirmGuestImport)
         {
             string uid = FirebaseService.Default.CurrentUserId;
-            var owner = ReadJson<SinglePlayerProfileOwnerData>(GetSavePath(SinglePlayerProfileOwnerFileName));
-            bool canMigrate = !string.IsNullOrEmpty(uid) && owner?.firebaseUserId == uid;
-            var profile = await SynchronizeProfileCoreAsync();
+            var guestImport = new GuestImportState();
+            var profile = await SynchronizeProfileCoreAsync(confirmGuestImport, guestImport);
             if (!profile.IsSuccess)
                 return profile;
             if (!profile.IsCloudSynchronized && !FirebaseService.Default.IsLocalTestAccount)
@@ -157,12 +251,8 @@ namespace Core
                     "로컬 진행도는 보존했습니다. 인터넷 연결을 확인하고 멀티플레이 동기화를 다시 시도해 주세요.");
             if (uid != FirebaseService.Default.CurrentUserId)
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
-            if (string.IsNullOrEmpty(owner?.firebaseUserId))
-            {
-                var legacy = ReadJson<SinglePlayerSlotData>(Path.Combine(Application.persistentDataPath, SinglePlayerSlotFileName));
-                var adopted = ReadJson<SinglePlayerSlotData>(GetAccountSavePath(SinglePlayerSlotFileName, uid));
-                canMigrate = !string.IsNullOrEmpty(legacy?.profile?.playerId) && legacy.profile.playerId == adopted?.profile?.playerId;
-            }
+            // SW 수정 : 전역 경로는 게스트 저장이므로 사용자가 가져오기에 동의한 경우에만 계정으로 복사·업로드한다.
+            bool canMigrate = guestImport.Imported;
             if (canMigrate)
             {
                 foreach (string fileName in new[]
@@ -193,12 +283,16 @@ namespace Core
             if (uid != FirebaseService.Default.CurrentUserId)
                 return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
             if (!FirebaseService.Default.IsLocalTestAccount)
-                WriteSinglePlayerProfileOwner(GetSavePath(SinglePlayerProfileOwnerFileName), uid);
+                WriteSinglePlayerProfileOwner(GetSavePath(SinglePlayerProfileOwnerFileName), uid,
+                    FirebaseService.Default.Auth?.CurrentUser?.Email);
+            if (guestImport.Imported)
+                ArchiveGuestSaveFiles();
             return profile;
         }
 
         /// <summary>SW 수정: 기존 프로필 이관을 수행하며 게임·퀘스트 연결은 상위 로그인 경계에서 기다립니다.</summary>
-        private static async Task<SaveDataOperationResult> SynchronizeProfileCoreAsync()
+        private static async Task<SaveDataOperationResult> SynchronizeProfileCoreAsync(
+            System.Func<Task<bool>> confirmGuestImport, GuestImportState guestImport)
         {
             string firebaseUserId = FirebaseService.Default.CurrentUserId;
             if (string.IsNullOrWhiteSpace(firebaseUserId))
@@ -211,16 +305,16 @@ namespace Core
             string localPath = GetAccountSavePath(SinglePlayerSlotFileName, firebaseUserId);
             string ownerPath = GetSavePath(SinglePlayerProfileOwnerFileName);
             SinglePlayerSlotData localSlot;
+            SinglePlayerSlotData guestSlot = null;
             SinglePlayerProfileOwnerData ownerData;
             try
             {
-                ownerData = ReadJson<SinglePlayerProfileOwnerData>(ownerPath);
-                bool belongsToAnotherUser =
-                    !string.IsNullOrWhiteSpace(ownerData?.firebaseUserId) &&
-                    ownerData.firebaseUserId != firebaseUserId;
-                localSlot = ReadJson<SinglePlayerSlotData>(localPath);
-                if (localSlot == null && !belongsToAnotherUser)
-                    localSlot = ReadJson<SinglePlayerSlotData>(Path.Combine(Application.persistentDataPath, SinglePlayerSlotFileName));
+                ownerData = File.Exists(ownerPath) ? ReadJson<SinglePlayerProfileOwnerData>(ownerPath) : null;
+                localSlot = File.Exists(localPath) ? ReadJson<SinglePlayerSlotData>(localPath) : null;
+                // SW 수정 : 게스트 저장은 자동으로 계정에 흡수하지 않는다. 게스트 상태에서 로그인했고,
+                // 클라우드가 빈 새 계정일 때 사용자가 동의한 경우에만 아래에서 가져온다.
+                if (string.IsNullOrWhiteSpace(ownerData?.firebaseUserId))
+                    guestSlot = ReadGuestSlotWithProgress();
             }
             catch (System.Exception exception)
             {
@@ -278,14 +372,24 @@ namespace Core
             if (localSlot?.profile == null &&
                 cloudResult.FailureReason == SaveDataFailureReason.NotFound)
             {
-                localSlot = new SinglePlayerSlotData
+                if (guestSlot != null && confirmGuestImport != null && await confirmGuestImport())
                 {
-                    profile = new PlayerProfileData
+                    if (firebaseUserId != FirebaseService.Default.CurrentUserId)
+                        return SaveDataOperationResult.Failure(SaveDataFailureReason.AuthenticationRequired, "로그인 계정이 변경되었습니다.");
+                    localSlot = guestSlot;
+                    guestImport.Imported = true;
+                }
+                else
+                {
+                    localSlot = new SinglePlayerSlotData
                     {
-                        playerId = GenerateNewPlayerId(),
-                        lastPlayedUtc = System.DateTime.UtcNow.ToString("O")
-                    }
-                };
+                        profile = new PlayerProfileData
+                        {
+                            playerId = GenerateNewPlayerId(),
+                            lastPlayedUtc = System.DateTime.UtcNow.ToString("O")
+                        }
+                    };
+                }
 
                 try
                 {
@@ -319,29 +423,21 @@ namespace Core
             return cloudResult;
         }
 
-        /// <summary>현재 싱글플레이 작업 파일을 소유한 Firebase 사용자 ID를 기록합니다.</summary>
+        /// <summary>현재 싱글플레이 작업 파일을 소유한 Firebase 사용자 ID를 기록합니다. SW 수정 : null이면 게스트 저장입니다.</summary>
         private static void WriteSinglePlayerProfileOwner(
             string ownerPath,
-            string firebaseUserId)
+            string firebaseUserId,
+            string email)
         {
             WriteJson(
                 ownerPath,
                 new SinglePlayerProfileOwnerData
                 {
-                    firebaseUserId = firebaseUserId
+                    firebaseUserId = firebaseUserId,
+                    email = email
                 });
         }
 
-        /// <summary>
-        /// 기존 동기식 로컬 저장을 유지하면서 프로필을 Firestore에 비동기로 저장하도록 요청합니다.
-        /// </summary>
-        private static void QueueProfileSave(PlayerProfileData profile)
-        {
-            if (profile == null)
-                return;
-
-            QueuePlayerDataSave(SaveDataCategory.PlayerProfile, JsonUtility.ToJson(profile, true));
-        }
 
         /// <summary>
         /// 기존 프로필 DTO를 JSON으로 변환해 공통 Firebase 저장 서비스에 전달합니다.
@@ -1231,24 +1327,9 @@ namespace Core
 
         private static void WriteGameplayDataAtomic(string path, GameSaveData data)
         {
-            QueuePlayerDataSave(SaveDataCategory.Gameplay, JsonUtility.ToJson(data, true));
-            string temporaryPath = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
-            try
-            {
-                File.WriteAllText(temporaryPath, JsonUtility.ToJson(data, true));
-                if (File.Exists(path))
-                    File.Replace(temporaryPath, path, path + ".bak");
-                else
-                    File.Move(temporaryPath, path);
-            }
-            finally
-            {
-                if (File.Exists(temporaryPath))
-                {
-                    try { File.Delete(temporaryPath); }
-                    catch (System.Exception exception) { Debug.LogWarning($"[DataManager] 임시 파일 정리 실패: {exception.Message}"); }
-                }
-            }
+            // SW 수정 : 업로드 대기 기록과 파일 교체는 공통 경계에서 함께 확정·롤백한다.
+            string json = JsonUtility.ToJson(data, true);
+            ReplaceLocalFileWithPending(path, json, SaveDataCategory.Gameplay, json);
         }
 
         [ContextMenu("게임플레이 데이터 전체 로드")]
@@ -2064,46 +2145,123 @@ namespace Core
         private static void WriteJson<T>(string path, T data)
         {
             string json = JsonUtility.ToJson(data, true);
-            if (data is GameSaveData) QueuePlayerDataSave(SaveDataCategory.Gameplay, json);
-            else if (data is QuestSaveData) QueuePlayerDataSave(SaveDataCategory.Quest, json);
-            // SW 수정: 정산 ID와 잔액이 같은 파일 교체로 확정되도록 기존 파일을 백업합니다.
-            string temporary = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+            SaveDataCategory? category = data switch
+            {
+                GameSaveData => SaveDataCategory.Gameplay,
+                QuestSaveData => SaveDataCategory.Quest,
+                _ => null
+            };
+            ReplaceLocalFileWithPending(path, json, category, json);
+        }
+
+        /// <summary>
+        /// SW 수정 : 기존 동기식 로컬 저장을 유지하면서 계정별 업로드 대기 기록을 함께 남기고,
+        /// 두 기록이 같은 성공/실패 정책을 따르도록 묶는다.
+        /// 확정 정책 : 대기 기록은 강제 종료 시 복구할 '확정 의도'이며, 파일 교체 실패가 호출자에게
+        /// 보고되는 경우에는 대기 기록을 저장 전 상태로 되돌린 뒤 같은 예외를 다시 던진다.
+        /// 클라우드 업로드는 로컬 교체가 성공한 뒤에만 시작한다.
+        /// </summary>
+        private static void ReplaceLocalFileWithPending(
+            string path, string fileJson, SaveDataCategory? category, string pendingJson)
+        {
+            PendingPlayerSave pending = category.HasValue ? StagePendingPlayerSave(category.Value, pendingJson) : null;
             try
             {
-                File.WriteAllText(temporary, json);
-                if (File.Exists(path)) File.Replace(temporary, path, path + ".bak");
-                else File.Move(temporary, path);
+                // SW 수정: 정산 ID와 잔액이 같은 파일 교체로 확정되도록 기존 파일을 백업합니다.
+                string temporary = path + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    File.WriteAllText(temporary, fileJson);
+                    if (File.Exists(path)) File.Replace(temporary, path, path + ".bak");
+                    else File.Move(temporary, path);
+                }
+                finally
+                {
+                    if (File.Exists(temporary))
+                    {
+                        try { File.Delete(temporary); }
+                        catch (System.Exception exception) { Debug.LogWarning($"[DataManager] 임시 파일 정리 실패: {exception.Message}"); }
+                    }
+                }
             }
-            finally
+            catch
             {
-                if (File.Exists(temporary))
-                    File.Delete(temporary);
+                pending?.Rollback();
+                throw;
             }
+
+            pending?.Commit();
             Debug.Log("[DataManager] 저장 완료: " + path);
         }
 
+        /// <summary>파일 교체 전에 쓴 업로드 대기 기록과, 실패 시 되돌릴 이전 내용입니다.</summary>
+        private sealed class PendingPlayerSave
+        {
+            public SaveDataCategory Category;
+            public string Uid;
+            public string FilePath;
+            public string Json;
+            /// <summary>저장 전 대기 기록이 없었으면 null입니다.</summary>
+            public string PreviousJson;
+
+            /// <summary>로컬 교체가 성공한 뒤 멀티 접속 중이면 업로드를 시작합니다.</summary>
+            public void Commit()
+            {
+                // SW 수정 : 싱글은 업로드 대기 파일만 로컬에 남긴다. 인증·클라우드 접근은 멀티 진입/플레이 때만 수행한다.
+                if (Mirror.NetworkClient.active && Uid == FirebaseService.Default.CurrentUserId)
+                    _ = UploadPendingPlayerSaveAsync(Category, Uid, Json);
+            }
+
+            /// <summary>로컬 교체가 실패하면 실패한 값이 다음 로그인에서 재생되지 않도록 이전 기록으로 되돌립니다.</summary>
+            public void Rollback()
+            {
+                try
+                {
+                    if (PreviousJson == null)
+                    {
+                        if (File.Exists(FilePath)) File.Delete(FilePath);
+                    }
+                    else
+                    {
+                        ReplacePendingFile(FilePath, PreviousJson);
+                    }
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogError($"[DataManager] {Category} 업로드 대기 기록 복구 실패: {exception.Message}");
+                }
+            }
+        }
+
         /// <summary>SW 수정: 싱글의 확정 저장만 계정 캐시에 전달하며 멀티의 전역 복제 상태는 저장하지 않습니다.</summary>
-        private static void QueuePlayerDataSave(SaveDataCategory category, string json)
+        private static PendingPlayerSave StagePendingPlayerSave(SaveDataCategory category, string json)
         {
             if (category != SaveDataCategory.PlayerProfile &&
                 (Mirror.NetworkClient.active || Mirror.NetworkServer.active))
-                return;
+                return null;
 
             string uid = LocalProfileUserId;
             if (string.IsNullOrEmpty(uid))
-                return;
+                return null;
 
             string pendingPath = PendingPlayerSavePath(category, uid);
+            var pending = new PendingPlayerSave
+            {
+                Category = category, Uid = uid, FilePath = pendingPath, Json = json,
+                PreviousJson = File.Exists(pendingPath) ? File.ReadAllText(pendingPath) : null
+            };
+            ReplacePendingFile(pendingPath, json);
+            return pending;
+        }
+
+        private static void ReplacePendingFile(string pendingPath, string json)
+        {
             string temporary = pendingPath + ".tmp";
             File.WriteAllText(temporary, json);
             if (File.Exists(pendingPath))
                 File.Replace(temporary, pendingPath, pendingPath + ".bak");
             else
                 File.Move(temporary, pendingPath);
-
-            // SW 수정 : 싱글은 업로드 대기 파일만 로컬에 남긴다. 인증·클라우드 접근은 멀티 진입/플레이 때만 수행한다.
-            if (Mirror.NetworkClient.active && uid == FirebaseService.Default.CurrentUserId)
-                _ = UploadPendingPlayerSaveAsync(category, uid, json);
         }
 
         /// <summary>작업 파일 저장 직전 남긴 계정별 기록을 업로드하고, 더 새 기록이 없을 때만 지웁니다.</summary>

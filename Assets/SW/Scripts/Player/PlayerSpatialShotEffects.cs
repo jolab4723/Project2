@@ -40,7 +40,7 @@ public sealed partial class PlayerItemEffectState
         if (forward.sqrMagnitude < 0.0001f || range <= 0f)
             return;
 
-        cooldownEndTimes[key] = Now + effect.cooldownSeconds;
+        SetCooldownEnd(key, Now + effect.cooldownSeconds);
         var runner = new GameObject("Echo Vault Replay");
         runner.transform.position = origin;
         runner.AddComponent<PlayerGrenadeEffect>().InitializeEchoReplay(context, effect, attackId,
@@ -73,7 +73,7 @@ public sealed partial class PlayerItemEffectState
         {
             string key = GetCooldownKey(effect, null);
             if (!cooldownEndTimes.ContainsKey(key))
-                cooldownEndTimes[key] = Now + effect.rechargeSeconds;
+                SetCooldownEnd(key, Now + effect.rechargeSeconds);
 
             ready = !IsCoolingDown(key, Now);
         }
@@ -101,7 +101,7 @@ public sealed partial class PlayerItemEffectState
         if (!worldEnderReady)
             return false;
 
-        cooldownEndTimes[GetCooldownKey(effect, null)] = Now + effect.rechargeSeconds;
+        SetCooldownEnd(GetCooldownKey(effect, null), Now + effect.rechargeSeconds);
         SetWorldEnderReady(false);
         return true;
     }

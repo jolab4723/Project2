@@ -1714,33 +1714,54 @@ public sealed class PlayerInventorySync : NetworkBehaviour
 
     private bool HasOneSnapshotPerOwnedItem()
     {
-        IReadOnlyList<InventoryItem> gridItems = context.Inventory.GetAllInventoryItems();
-        int ownedItemCount = gridItems.Count;
-        foreach (KeyValuePair<EquipSlotType, InventoryItem> _ in context.Equipment.GetEquippedItems())
-            ownedItemCount++;
+        return TryIndexOwnedSnapshots(out _, out _, out _);
+    }
 
-        if (ownedItemCount != itemSnapshots.Count)
+    private bool TryIndexOwnedSnapshots(
+        out IReadOnlyList<InventoryItem> gridItems,
+        out List<KeyValuePair<EquipSlotType, InventoryItem>> equippedItems,
+        out Dictionary<string, (int Index, ItemSaveData Saved)> snapshotsById)
+    {
+        gridItems = context.Inventory.GetAllInventoryItems();
+        equippedItems = new(context.Equipment.GetEquippedItems());
+        snapshotsById = null;
+
+        if (gridItems.Count + equippedItems.Count != itemSnapshots.Count)
             return false;
+
+        snapshotsById = new(itemSnapshots.Count, StringComparer.Ordinal);
+        for (int i = 0; i < itemSnapshots.Count; i++)
+        {
+            ItemSaveData saved = FromSnapshotJson(itemSnapshots[i]);
+            if (saved == null ||
+                string.IsNullOrWhiteSpace(saved.instanceId) ||
+                !snapshotsById.TryAdd(saved.instanceId, (i, saved)))
+            {
+                return false;
+            }
+        }
 
         HashSet<int> matchedIndexes = new();
         foreach (InventoryItem item in gridItems)
         {
-            int index = item?.itemData != null
-                ? FindSnapshotIndex(item.itemData.instanceId)
-                : -1;
-
-            if (index < 0 || !matchedIndexes.Add(index))
+            string instanceId = item?.itemData?.instanceId;
+            if (instanceId == null ||
+                !snapshotsById.TryGetValue(instanceId, out var snapshot) ||
+                !matchedIndexes.Add(snapshot.Index))
+            {
                 return false;
+            }
         }
 
-        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
+        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in equippedItems)
         {
-            int index = pair.Value?.itemData != null
-                ? FindSnapshotIndex(pair.Value.itemData.instanceId)
-                : -1;
-
-            if (index < 0 || !matchedIndexes.Add(index))
+            string instanceId = pair.Value?.itemData?.instanceId;
+            if (instanceId == null ||
+                !snapshotsById.TryGetValue(instanceId, out var snapshot) ||
+                !matchedIndexes.Add(snapshot.Index))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -1748,55 +1769,73 @@ public sealed class PlayerInventorySync : NetworkBehaviour
 
     private bool IsOwnedStateEqualToSnapshots()
     {
-        if (!HasOneSnapshotPerOwnedItem())
+        if (!TryIndexOwnedSnapshots(
+                out IReadOnlyList<InventoryItem> gridItems,
+                out List<KeyValuePair<EquipSlotType, InventoryItem>> equippedItems,
+                out Dictionary<string, (int Index, ItemSaveData Saved)> snapshotsById))
+        {
             return false;
+        }
 
-        foreach (string snapshot in itemSnapshots)
-            if (!DoesOwnedStateMatchSnapshot(snapshot)) return false;
+        foreach (InventoryItem item in gridItems)
+        {
+            ItemSaveData saved = snapshotsById[item.itemData.instanceId].Saved;
+            if (saved.isEquipped ||
+                item.itemData.upgradeLevel != saved.upgradeLevel ||
+                item.itemData.persistedStackCount != saved.persistedStackCount ||
+                item.x != saved.gridX ||
+                item.y != saved.gridY ||
+                item.isRotated != saved.isRotated)
+            {
+                return false;
+            }
+        }
+
+        foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in equippedItems)
+        {
+            ItemSaveData saved = snapshotsById[pair.Value.itemData.instanceId].Saved;
+            if (!saved.isEquipped ||
+                pair.Key != saved.equippedSlotType ||
+                pair.Value.itemData.upgradeLevel != saved.upgradeLevel ||
+                pair.Value.itemData.persistedStackCount != saved.persistedStackCount)
+            {
+                return false;
+            }
+        }
 
         return true;
     }
 
     private bool TrySynchronizeOwnedSnapshots()
     {
-        if (!HasOneSnapshotPerOwnedItem())
+        if (!TryIndexOwnedSnapshots(
+                out IReadOnlyList<InventoryItem> gridItems,
+                out List<KeyValuePair<EquipSlotType, InventoryItem>> equippedItems,
+                out Dictionary<string, (int Index, ItemSaveData Saved)> snapshotsById))
+        {
             return false;
+        }
 
         List<int> indexes = new(itemSnapshots.Count);
         List<string> snapshots = new(itemSnapshots.Count);
-        HashSet<int> matchedIndexes = new();
 
         try
         {
             // 그리드 항목을 먼저 갱신하면 장비 교환으로 돌아온 아이템 위치가 먼저 확정된다.
-            foreach (InventoryItem item in context.Inventory.GetAllInventoryItems())
+            foreach (InventoryItem item in gridItems)
             {
-                int index = item?.itemData != null
-                    ? FindSnapshotIndex(item.itemData.instanceId)
-                    : -1;
-
-                if (index < 0 || !matchedIndexes.Add(index))
-                    return false;
-
-                indexes.Add(index);
+                indexes.Add(snapshotsById[item.itemData.instanceId].Index);
                 snapshots.Add(ToSnapshotJson(item, false, EquipSlotType.None));
             }
 
-            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in context.Equipment.GetEquippedItems())
+            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in equippedItems)
             {
-                int index = pair.Value?.itemData != null
-                    ? FindSnapshotIndex(pair.Value.itemData.instanceId)
-                    : -1;
-
-                if (index < 0 || !matchedIndexes.Add(index))
-                    return false;
-
-                indexes.Add(index);
+                indexes.Add(snapshotsById[pair.Value.itemData.instanceId].Index);
                 snapshots.Add(ToSnapshotJson(pair.Value, true, pair.Key));
             }
 
             // 테스트 소유 아이템이 적으므로 전체 항목을 확인해 장비 교환 동기화를 단순하게 유지한다.
-            // 실제 대규모 인벤토리로 승격할 때만 instanceId 인덱스 캐시로 교체한다.
+            // 스냅샷은 작업마다 한 번 해석한 instanceId 인덱스로 조회한다.
             for (int i = 0; i < indexes.Count; i++)
             {
                 if (!string.Equals(itemSnapshots[indexes[i]], snapshots[i], StringComparison.Ordinal))

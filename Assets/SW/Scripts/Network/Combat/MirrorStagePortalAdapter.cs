@@ -79,7 +79,11 @@ public sealed class MirrorStagePortalAdapter : MonoBehaviour
         if (arrivedPlayers.Add(playerIdentity))
         {
             int connectedCount = CountConnectedServerPlayers(manager);
-            playerIdentity.GetComponent<MirrorSpawnedPlayerBinder>()?.RpcPlayPortalArrival(
+            var binder = playerIdentity.GetComponent<MirrorSpawnedPlayerBinder>();
+            // 도착을 서버 지속 상태로 먼저 기록해 재접속·최초 관찰 클라이언트도 대기 표시를 복원한다.
+            // RPC는 포탈 연출과 도착 인원 알림만 담당한다.
+            binder?.ServerSetPortalArrived(true);
+            binder?.RpcPlayPortalArrival(
                 Mathf.Min(arrivedPlayers.Count, connectedCount), connectedCount);
         }
         if (!HaveAllServerPlayersArrived(manager))

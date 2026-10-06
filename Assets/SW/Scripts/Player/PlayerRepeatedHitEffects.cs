@@ -163,7 +163,11 @@ public sealed partial class PlayerItemEffectState
         if (network != null && network.IsServerDamageHandlingActive)
             return network.ServerTryApplyStatusEffect(data);
         enemy.AddStatusEffect(data);
-        return statusEffects.HasStatusEffect(data.Type);
+        bool applied = statusEffects.HasStatusEffect(data.Type);
+        // 오프라인 방어 감소는 공용 상태이상 연출 슬롯이 없으므로 적 표시기가 실제 상태 목록을 따라 표시한다.
+        if (applied && data.Type == WBH_StatusEffectType.DefenseDown && !Mirror.NetworkServer.active && !Mirror.NetworkClient.active)
+            (enemy.GetComponent<EnemyEffectIndicator>() ?? enemy.gameObject.AddComponent<EnemyEffectIndicator>()).TrackOfflineStatus(statusEffects);
+        return applied;
     }
 
     /// <summary>SW 수정 : 장착 인스턴스·소유자·같은 적의 풀 생애가 모두 유지될 때만 이전 누적을 이어간다.</summary>

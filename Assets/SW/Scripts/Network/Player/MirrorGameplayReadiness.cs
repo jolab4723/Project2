@@ -28,6 +28,29 @@ public partial class MirrorNetworkManager
             ? manager.IsPlayerGameplayReady(player) : manager.IsLocalGameplayReady);
     }
 
+    // 현재 씬의 보스 인트로. 서버가 복제한 진행 상태를 신규 행동 승인에 사용한다.
+    private MirrorBossIntro currentBossIntro;
+
+    /// <summary>현재 씬의 보스 인트로가 예약·재생 중인지 반환한다(서버 시각 기준 SyncVar).</summary>
+    public bool IsBossIntroInProgress => currentBossIntro != null && currentBossIntro.IsInProgress;
+
+    /// <summary>씬에 놓인 보스 인트로가 활성·비활성될 때 현재 씬의 인트로로 등록하거나 해제한다.</summary>
+    internal void SetCurrentBossIntro(MirrorBossIntro intro, bool active)
+    {
+        if (active) currentBossIntro = intro;
+        else if (currentBossIntro == intro) currentBossIntro = null;
+    }
+
+    /// <summary>
+    /// 준비 완료(CanPlay)와 별개로 신규 공격·스킬·회피 효과 요청을 승인할 수 있는지 판정한다.
+    /// 보스 인트로가 진행 중이거나 포탈에 도착해 대기 중이면 서버가 신규 요청을 거절한다.
+    /// 클라이언트의 입력 차단 보고는 쓰지 않고 서버가 소유한 상태만 사용한다.
+    /// 이미 확정된 공격·진행 중 스킬과 소비한 쿨다운은 취소·환불하지 않는다.
+    /// </summary>
+    public static bool CanStartNewAction(NetworkIdentity player) =>
+        CanPlay(player) && singleton is MirrorNetworkManager manager && !manager.IsBossIntroInProgress &&
+        player.GetComponent<MirrorSpawnedPlayerBinder>()?.IsPortalArrived != true;
+
     public bool IsPlayerGameplayReady(NetworkIdentity player) => player != null &&
         player.connectionToClient != null && !sessionSceneChangeRequested &&
         preparedPlayers.TryGetValue(player.connectionToClient.connectionId, out uint id) && id == player.netId;
@@ -52,6 +75,10 @@ public partial class MirrorNetworkManager
     {
         gameplayEpoch++;
         preparedPlayers.Clear();
+        // 포탈 도착 대기는 현재 씬에만 유효하다. 다음 씬으로 이어지지 않게 서버 상태를 해제한다.
+        foreach (PlayerContext player in ServerPlayerContexts)
+            if (player != null && player.TryGetComponent(out MirrorSpawnedPlayerBinder binder))
+                binder.ServerSetPortalArrived(false);
         base.ServerChangeScene(newSceneName);
     }
 
