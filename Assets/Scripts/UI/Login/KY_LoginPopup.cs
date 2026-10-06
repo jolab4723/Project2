@@ -29,10 +29,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
     [Header("버튼")]
     [SerializeField] private Button loginButton;
     [SerializeField] private Button createAccountButton;
-
-    [Header("임시 로그인 우회")]
-    [Tooltip("로그인 구현 전 테스트용입니다. 입력 없이 TitleScene으로 이동합니다. 정식 로그인 연결 시 끄세요.")]
-    [SerializeField] private bool bypassLoginTemporarily;
+    // SW 수정 : 멀티플레이 로그인을 취소하면 로컬 플레이를 선택할 수 있는 타이틀로 돌아간다.
+    [SerializeField] private UnityEngine.UI.Button backButton;
 
     [Header("선택 표시")]
     [SerializeField] private TMP_Text feedbackText;
@@ -67,7 +65,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
             // 씬에 남아 있는 직접 이동 연결은 입력 검증을 우회하고,
             // 부트 씬의 싱글톤이 유지될 때 파괴된 중복 로더를 참조할 수 있다.
-            // 우회 옵션을 꺼도 이 연결이 인증 전에 실행되지 않게 한다.
+            // SW 수정 : 인증 전에 씬이 바뀌지 않도록 이 연결을 비활성화한다.
             for (int i = 0; i < loginButton.onClick.GetPersistentEventCount(); i++)
             {
                 var target = loginButton.onClick.GetPersistentTarget(i);
@@ -80,6 +78,9 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (createAccountButton != null)
             createAccountButton.onClick.AddListener(RequestCreateAccount);
+
+        if (backButton != null)
+            backButton.onClick.AddListener(BackToTitle);
 
         if (accountIdInput != null)
             accountIdInput.onSubmit.AddListener(FocusPasswordInput);
@@ -146,6 +147,9 @@ public sealed class KY_LoginPopup : MonoBehaviour
         if (createAccountButton != null)
             createAccountButton.onClick.RemoveListener(RequestCreateAccount);
 
+        if (backButton != null)
+            backButton.onClick.RemoveListener(BackToTitle);
+
         if (accountIdInput != null)
             accountIdInput.onSubmit.RemoveListener(FocusPasswordInput);
 
@@ -189,14 +193,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
     /// <summary>입력값을 확인하고 중복 요청 없이 Firebase 로그인 처리를 시작한다.</summary>
     public void SubmitLogin()
     {
-        if (isLoginInProgress)
+        if (isLoginInProgress || !isActiveAndEnabled)
             return;
-
-        if (bypassLoginTemporarily)
-        {
-            TryLoadTitleScene();
-            return;
-        }
 
         string accountId = accountIdInput != null ? accountIdInput.text.Trim() : string.Empty;
         string password = passwordInput != null ? passwordInput.text : string.Empty;
@@ -214,7 +212,7 @@ public sealed class KY_LoginPopup : MonoBehaviour
         _ = SubmitFirebaseLoginAsync(accountId, password);
     }
 
-    /// <summary>Firebase 이메일 인증과 프로필 동기화를 순서대로 처리한 뒤 타이틀 씬으로 이동한다.</summary>
+    /// <summary>SW 수정 : Firebase 이메일 인증과 프로필 동기화를 순서대로 처리한 뒤 멀티플레이 로비로 이동한다.</summary>
     private async Task SubmitFirebaseLoginAsync(string email, string password)
     {
         isLoginInProgress = true;
@@ -225,6 +223,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
         {
             Core.FirebaseLoginResult loginResult = await Core.FirebaseService.Default
                 .SignInWithEmailAndPasswordAsync(email, password);
+            if (this == null || !isActiveAndEnabled)
+                return;
             if (!loginResult.IsSuccess)
             {
                 ShowError(loginResult.Message);
@@ -238,21 +238,25 @@ public sealed class KY_LoginPopup : MonoBehaviour
         catch (Exception exception)
         {
             Debug.LogError($"[KY_LoginPopup] Firebase 로그인 처리 실패: {exception}");
-            ShowError("로그인 처리 중 오류가 발생했습니다.");
+            if (this != null && isActiveAndEnabled)
+                ShowError("로그인 처리 중 오류가 발생했습니다.");
         }
         finally
         {
-            isLoginInProgress = false;
-            SetSubmitting(false);
+            if (this != null)
+            {
+                isLoginInProgress = false;
+                SetSubmitting(false);
+            }
         }
     }
 
     /// <summary>
-    /// Firebase가 기기에 보존한 이전 로그인 세션이 있으면 사용자별 로컬 캐시를 불러와 자동으로 진행합니다.
+    /// SW 수정 : 멀티 진입 시 Firebase가 보존한 이전 로그인 세션의 로컬 진행도를 동기화해 자동으로 진행합니다.
     /// </summary>
     private async Task TryResumeCachedSessionAsync()
     {
-        if (isLoginInProgress || bypassLoginTemporarily)
+        if (isLoginInProgress || !isActiveAndEnabled)
             return;
 
         isLoginInProgress = true;
@@ -261,7 +265,14 @@ public sealed class KY_LoginPopup : MonoBehaviour
         {
             Core.FirebaseInitializationResult initialization =
                 await Core.FirebaseService.Default.InitializeAsync();
-            if (!initialization.IsSuccess || !Core.FirebaseService.Default.IsSignedIn)
+            if (this == null || !isActiveAndEnabled)
+                return;
+            if (!initialization.IsSuccess)
+            {
+                ShowError(initialization.Message);
+                return;
+            }
+            if (!Core.FirebaseService.Default.IsSignedIn)
                 return;
 
             ClearFeedback();
@@ -270,33 +281,50 @@ public sealed class KY_LoginPopup : MonoBehaviour
         catch (Exception exception)
         {
             Debug.LogWarning($"[KY_LoginPopup] 저장된 Firebase 세션 복구 실패: {exception.Message}");
+            if (this != null && isActiveAndEnabled)
+                ShowError("저장된 로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.");
         }
         finally
         {
-            isLoginInProgress = false;
-            SetSubmitting(false);
+            if (this != null)
+            {
+                isLoginInProgress = false;
+                SetSubmitting(false);
+            }
         }
     }
 
     /// <summary>
-    /// 인증된 사용자의 프로필을 Firestore 또는 로컬 캐시에서 동기화한 뒤 타이틀 씬으로 이동합니다.
+    /// SW 수정 : 인증된 사용자의 로컬 진행도가 Firestore에 동기화된 뒤 멀티플레이 로비로 이동합니다.
     /// </summary>
     private async Task CompleteAuthenticatedLoginAsync(string email, string password)
     {
+        string userId = Core.FirebaseService.Default.CurrentUserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            ShowError("멀티플레이에 진입하려면 로그인해 주세요.");
+            return;
+        }
         Core.SaveDataOperationResult synchronizationResult =
             await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
-        if (!synchronizationResult.IsSuccess &&
-            synchronizationResult.FailureReason != Core.SaveDataFailureReason.NotFound)
+        if (this == null || !isActiveAndEnabled)
+            return;
+        if (userId != Core.FirebaseService.Default.CurrentUserId)
+        {
+            ShowError("로그인 계정이 변경되었습니다. 다시 로그인해 주세요.");
+            return;
+        }
+        if (!synchronizationResult.IsSuccess)
         {
             ShowError(synchronizationResult.Message);
             return;
         }
 
-        if (synchronizationResult.IsSuccess &&
-            !synchronizationResult.IsCloudSynchronized)
+        if (!synchronizationResult.IsCloudSynchronized &&
+            !Core.FirebaseService.Default.IsLocalTestAccount)
         {
-            Debug.LogWarning(
-                $"[KY_LoginPopup] Firestore 대신 사용자별 로컬 캐시를 불러왔습니다: {synchronizationResult.Message}");
+            ShowError("로컬 진행도는 보존했습니다. 인터넷 연결을 확인하고 동기화를 다시 시도해 주세요.");
+            return;
         }
 
         if (passwordInput != null)
@@ -304,11 +332,12 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (!string.IsNullOrEmpty(email))
             loginRequested?.Invoke(email, password);
-        TryLoadTitleScene();
+        if (this != null && isActiveAndEnabled)
+            TryLoadScene("MultiplayerLobbyScene");
     }
 
-    /// <summary>필요한 씬과 로더 상태를 확인한 뒤 타이틀 씬 이동을 시작한다.</summary>
-    private bool TryLoadTitleScene()
+    /// <summary>SW 수정 : 로그인 취소 또는 인증 완료에 필요한 씬과 로더 상태를 확인한 뒤 이동한다.</summary>
+    private bool TryLoadScene(string destinationScene)
     {
         var loader = Core.SceneLoader.Instance;
         if (loader == null || !loader.isActiveAndEnabled)
@@ -320,21 +349,31 @@ public sealed class KY_LoginPopup : MonoBehaviour
         if (loader.IsLoading)
             return false;
 
-        if (!Application.CanStreamedLevelBeLoaded("TitleScene") ||
+        if (!Application.CanStreamedLevelBeLoaded(destinationScene) ||
             !Application.CanStreamedLevelBeLoaded("LoadingScene"))
         {
-            ShowError("TitleScene과 LoadingScene의 빌드 등록을 확인해 주세요.");
+            ShowError(destinationScene + "과 LoadingScene의 빌드 등록을 확인해 주세요.");
             return false;
         }
 
         ClearFeedback();
-        loader.LoadScene("TitleScene");
+        loader.LoadScene(destinationScene);
         return true;
+    }
+
+    private void BackToTitle()
+    {
+        if (isLoginInProgress || !isActiveAndEnabled)
+            return;
+        ClearSensitiveInputs();
+        TryLoadScene("TitleScene");
     }
 
     /// <summary>계정 생성 팝업 전환을 요청한다.</summary>
     public void RequestCreateAccount()
     {
+        if (isLoginInProgress)
+            return;
         createAccountRequested?.Invoke();
         CreateAccountPopupRequested?.Invoke();
     }
@@ -399,6 +438,10 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
         if (createAccountButton != null)
             createAccountButton.interactable = !isSubmitting;
+
+        // SW 수정 : SDK 인증·동기화 응답 중 취소로 씬을 떠나지 않도록 한다.
+        if (backButton != null)
+            backButton.interactable = !isSubmitting;
 
         if (accountIdInput != null)
             accountIdInput.interactable = !isSubmitting;

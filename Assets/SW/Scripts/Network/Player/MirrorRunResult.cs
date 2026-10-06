@@ -58,7 +58,11 @@ public partial class MirrorNetworkManager
     private void CheckPartyDefeat()
     {
         if (serverResultFinalized || sessionSceneChangeRequested || CurrentSessionRoute != MirrorSessionRoute.Combat)
-        { partyDefeatedAt = 0; return; }
+        {
+            partyDefeatedAt = 0;
+            return;
+        }
+
         bool any = false;
         foreach (var member in ServerRoster.Members)
         {
@@ -67,7 +71,10 @@ public partial class MirrorNetworkManager
             var player = member.RuntimeContext;
             if (player == null || player.Health == null || player.Health.CurrentHealth > 0 ||
                 player.GetComponent<WBH_PlayerStateMachine>()?.Is(PlayerState.Revive) == true)
-            { partyDefeatedAt = 0; return; }
+            {
+                partyDefeatedAt = 0;
+                return;
+            }
         }
         if (!any) return;
         if (partyDefeatedAt == 0) partyDefeatedAt = NetworkTime.time;

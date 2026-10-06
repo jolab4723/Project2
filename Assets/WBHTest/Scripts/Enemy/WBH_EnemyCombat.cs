@@ -35,7 +35,11 @@ public class WBH_EnemyCombat : MonoBehaviour
     private readonly HashSet<T_PlayerController> grabbedPlayers = new();
 
     private bool actionInProgress;
-    public bool IsActionInProgress { get => actionInProgress || externalActionInProgress?.Invoke() == true; private set => actionInProgress = value; }
+    public bool IsActionInProgress
+    {
+        get => actionInProgress || externalActionInProgress?.Invoke() == true;
+        private set => actionInProgress = value;
+    }
     private System.Func<bool> externalAttack;
     private System.Func<bool> externalActionInProgress;
     private System.Action<Vector3, float> externalProjectile;
@@ -462,7 +466,11 @@ public class WBH_EnemyCombat : MonoBehaviour
     private void FireProjectile()
     {
         Vector3 dir = GetFlatFireDirection();
-        if (externalProjectile != null) { externalProjectile(dir, 12f); return; }
+        if (externalProjectile != null)
+        {
+            externalProjectile(dir, 12f);
+            return;
+        }
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1);
 
@@ -574,7 +582,8 @@ public class WBH_EnemyCombat : MonoBehaviour
         if (externalMissile != null)
         {
             float travelDistance = Mathf.Min(Vector3.Distance(spawnPos, impactPos), missileMaxDistance);
-            externalMissile(impactPos, Mathf.Max(minMissileFlightTime, travelDistance / Mathf.Max(0.01f, status.ProjectileSpeed)), explosionRadius);
+            float flightTime = Mathf.Max(minMissileFlightTime, travelDistance / Mathf.Max(0.01f, status.ProjectileSpeed));
+            externalMissile(impactPos, flightTime, explosionRadius);
             yield break;
         }
 

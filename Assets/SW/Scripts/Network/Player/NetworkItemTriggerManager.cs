@@ -23,6 +23,8 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     private double nextDodgeTriggerAt;
 
     private readonly SyncDictionary<string, double> cooldownEndTimes = new();
+    private readonly SyncList<string> activeAuraIds = new();
+    private readonly Dictionary<string, PlayerAuraVisual> auraVisuals = new();
 
     [SyncVar] private uint chainLightningTriggerCount;
     [SyncVar] private uint chainLightningResolvedHitCount;
@@ -33,6 +35,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnPreparedAttackChanged))] private bool preparedAttackReady;
     [SyncVar] private uint preparedAttackConsumeCount;
     [SyncVar(hook = nameof(OnWasteHeatReadyChanged))] private bool wasteHeatReady;
+    [SyncVar(hook = nameof(OnWorldEnderReadyChanged))] private bool worldEnderReady;
 
     public static uint LocalChainLightningPresentationCount { get; private set; }
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
@@ -90,6 +93,8 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         {
             SetPreparedAttackPresentation(preparedAttackReady);
             SetWasteHeatPresentation(wasteHeatReady);
+            Presentation.SetWorldEnderReady(worldEnderReady);
+            RefreshAuraVisuals();
         }
     }
 
@@ -103,6 +108,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
 
         if (stateMachine != null)
             stateMachine.OnEnterState -= HandleStateEntered;
+        ClearAuraVisuals();
     }
 
     /// <summary>SW 수정: 서버 소유 플레이어의 확정 효과만 구독해 관찰자에게 한 번 표시하고 기존 장비 구독을 유지한다.</summary>
@@ -116,6 +122,11 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
         context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
+        context.Effects.EchoReplayPresented += RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented += RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged += SetWorldEnderReady;
+        context.Effects.WildfirePresented += RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed += RpcPresentSupportLink;
         context.Effects.StackChanged += SyncStack;
         if (context?.Equipment != null)
         {
@@ -128,8 +139,63 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
+        activeAuraIds.Callback += HandleAuraChanged;
+        RefreshAuraVisuals();
         SetPreparedAttackPresentation(preparedAttackReady);
         SetWasteHeatPresentation(wasteHeatReady);
+        Presentation.SetWorldEnderReady(worldEnderReady);
+    }
+
+    /// <summary>소지자의 활성 오라 ID만 관찰자에게 보내며 위치와 반경은 기존 Transform·SO를 재사용합니다.</summary>
+    [Server]
+    public void SetActiveAuras(IEnumerable<FieldAuraUniqueEffectSO> auras)
+    {
+        var ids = new HashSet<string>();
+        foreach (var aura in auras)
+            if (aura != null && aura.showAreaVisual) ids.Add(aura.name);
+        for (int index = activeAuraIds.Count - 1; index >= 0; index--)
+            if (!ids.Contains(activeAuraIds[index])) activeAuraIds.RemoveAt(index);
+        foreach (string id in ids)
+            if (!activeAuraIds.Contains(id)) activeAuraIds.Add(id);
+    }
+
+    private void HandleAuraChanged(SyncList<string>.Operation operation, int index, string oldId, string newId)
+        => RefreshAuraVisuals();
+
+    private void RefreshAuraVisuals()
+    {
+        if (!isClient || !isActiveAndEnabled) return;
+        foreach (string id in new List<string>(auraVisuals.Keys))
+            if (!activeAuraIds.Contains(id))
+            {
+                if (auraVisuals[id] != null) Destroy(auraVisuals[id].gameObject);
+                auraVisuals.Remove(id);
+            }
+        foreach (string id in activeAuraIds)
+        {
+            if (auraVisuals.ContainsKey(id)) continue;
+            var aura = Resources.Load<FieldAuraUniqueEffectSO>("DataFiles/ItemData/3. GeneratedAssets/UniqueEffectPool/" + id);
+            if (aura == null || !aura.showAreaVisual) continue;
+            var visual = new GameObject("Aura " + id).AddComponent<PlayerAuraVisual>();
+            // SW 수정 : 지속 플레이어의 오라도 씬 이동을 유지하고, 소유자 비활성/접속 종료 때 위 정리 경로로 제거한다.
+            DontDestroyOnLoad(visual.gameObject);
+            visual.Bind(transform, aura, isLocalPlayer);
+            auraVisuals.Add(id, visual);
+        }
+    }
+
+    private void ClearAuraVisuals()
+    {
+        foreach (var visual in auraVisuals.Values)
+            if (visual != null) Destroy(visual.gameObject);
+        auraVisuals.Clear();
+    }
+
+    public override void OnStopClient()
+    {
+        activeAuraIds.Callback -= HandleAuraChanged;
+        ClearAuraVisuals();
+        base.OnStopClient();
     }
 
     /// <summary>SW 수정: 서버 종료 시 소유 플레이어의 효과 표시·장비 구독을 해제하며 공격 수명 정리는 기존 경로를 따른다.</summary>
@@ -144,6 +210,11 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
         context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
+        context.Effects.EchoReplayPresented -= RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented -= RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged -= SetWorldEnderReady;
+        context.Effects.WildfirePresented -= RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed -= RpcPresentSupportLink;
         wasteHeatReady = false;
         context.Effects.StackChanged -= SyncStack;
         base.OnStopServer();
@@ -217,6 +288,22 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     {
         Presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
     }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentEchoReplay(Vector3 origin, Vector3 forward, float range, float angle)
+        => Presentation.PresentEchoReplay(origin, forward, range, angle);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWorldEnderBlast(Vector3 position, float radius)
+        => Presentation.PresentWorldEnderBlast(position, radius);
+
+    private void SetWorldEnderReady(bool ready) => worldEnderReady = ready;
+    private void OnWorldEnderReadyChanged(bool previous, bool current) => Presentation.SetWorldEnderReady(current);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWildfire(Vector3 start, Vector3 end) => Presentation.PresentWildfire(start, end);
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentSupportLink(Vector3 start, Vector3 end) => Presentation.PresentSupportLink(start, end);
 
     [ClientRpc]
     private void RpcPresentChainLightning(Vector3 start, Vector3 end)

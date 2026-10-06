@@ -292,13 +292,21 @@ public class WBH_PlayerAnimation : MonoBehaviour
     /// <summary>SW 수정: 공격 실행 이벤트를 외부 권한에 위임하거나 기존 로컬 전투 흐름으로 실행합니다.</summary>
     public void AniEvent_ExecuteAttack()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.Attack, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.Attack, null);
+            return;
+        }
         combat.ExecuteAttack();
     }
     /// <summary>SW 수정: 현재 공격 상태일 때만 공격 종료 이벤트를 적용합니다. 외부 권한이 연결되면 종료 판단을 위임합니다.</summary>
     public void AniEvent_EndAttack()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.EndAttack, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.EndAttack, null);
+            return;
+        }
         // SW 수정: 전이 중 남은 클립 이벤트가 사망·부활 상태를 덮어쓰지 않게 합니다.
         if (stateMachine.Is(PlayerState.Attack))
             stateMachine.ChangeState(PlayerState.Idle);
@@ -306,40 +314,64 @@ public class WBH_PlayerAnimation : MonoBehaviour
     /// <summary>SW 수정: 현재 피격 상태일 때만 피격 종료 이벤트를 적용합니다. 외부 권한이 연결되면 종료 판단을 위임합니다.</summary>
     public void AniEvent_HitEnd()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.EndHit, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.EndHit, null);
+            return;
+        }
         if (stateMachine.Is(PlayerState.Hit))
             stateMachine.ChangeState(PlayerState.Idle);
     }
     /// <summary>SW 수정: 스킬 실행 클립 이벤트를 외부 권한에 전달하거나 기존 대기 중인 로컬 스킬을 실행합니다.</summary>
     public void AniEvent_ExecuteSkill(AnimationEvent animationEvent)
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.Skill, animationEvent); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.Skill, animationEvent);
+            return;
+        }
         fighterSkillController?.ExecutePendingSkill();
         gunnerSkillController?.ExecutePendingSkill();
     }
     /// <summary>SW 수정: 백스텝 클립 이벤트를 외부 권한에 전달하거나 기존 거너의 대기 중인 이동을 실행합니다.</summary>
     public void AniEvent_ExecuteBackstepMove(AnimationEvent animationEvent) // 거너 스킬 중 사격 후 백스텝의 동작 분리를 위해 예외적으로 별도 메서드 작성.
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.Backstep, animationEvent); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.Backstep, animationEvent);
+            return;
+        }
         gunnerSkillController?.ExecutePendingBackstepMove();
     }
     /// <summary>SW 수정: 스킬 종료를 외부 권한에 위임하거나 기존 로컬 스킬 애니메이션을 종료합니다.</summary>
     public void AniEvent_EndSkill()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.EndSkill, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.EndSkill, null);
+            return;
+        }
         fighterSkillController?.EndPendingSkillAni();
         gunnerSkillController?.EndPendingSkillAni();
     }
     /// <summary>SW 수정: 사망 애니메이션 종료 후의 부활 판단을 외부 권한 또는 기존 로컬 컨트롤러에 전달합니다.</summary>
     public void AniEvent_EndDead()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.EndDead, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.EndDead, null);
+            return;
+        }
         controller?.TryRevive();
     }
     /// <summary>SW 수정: 부활 애니메이션 종료를 외부 권한에 위임하거나 기존 로컬 컨트롤러에 반영합니다.</summary>
     public void AniEvent_EndRevive()
     {
-        if (externalAuthority) { requestGameplay?.Invoke(GameplayEvent.EndRevive, null); return; }
+        if (externalAuthority)
+        {
+            requestGameplay?.Invoke(GameplayEvent.EndRevive, null);
+            return;
+        }
         controller?.CompleteRevive();
     }
 
@@ -362,7 +394,11 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_PlaySkillEffect(int partValue)
     {
         if (!CanPresent || !EnsureEffectSpawner()) return;
-        if (externalAuthority) { requestSkillEffect?.Invoke(partValue); return; }
+        if (externalAuthority)
+        {
+            requestSkillEffect?.Invoke(partValue);
+            return;
+        }
         fighterSkillController?.PlayPendingSkillEffect(partValue);
         gunnerSkillController?.PlayPendingSkillEffect(partValue);
     }
@@ -399,7 +435,11 @@ public class WBH_PlayerAnimation : MonoBehaviour
     public void AniEvent_PlaySkillSfx(AnimationEvent animationEvent)
     {
         if (!CanPresent) return;
-        if (externalAuthority) { requestSkillSfx?.Invoke(animationEvent, animator); return; }
+        if (externalAuthority)
+        {
+            requestSkillSfx?.Invoke(animationEvent, animator);
+            return;
+        }
         fighterSkillController?.PlayPendingSkillSfx(animationEvent, animator);
         gunnerSkillController?.PlayPendingSkillSfx(animationEvent, animator);
     }

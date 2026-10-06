@@ -229,15 +229,20 @@ public sealed class NetworkUpgradeButton : MonoBehaviour
         switch (result)
         {
             case MirrorInventoryRequestResult.NotEnoughGold:
-                upgradeController.ShowUpgradeMessage(UpgradeResult.NotEnoughGold); break;
+                upgradeController.ShowUpgradeMessage(UpgradeResult.NotEnoughGold);
+                break;
             case MirrorInventoryRequestResult.UpgradeUnavailable:
-                upgradeController.ShowUpgradeMessage(UpgradeResult.InvalidItem); break;
+                upgradeController.ShowUpgradeMessage(UpgradeResult.InvalidItem);
+                break;
             case MirrorInventoryRequestResult.StaleRevision:
-                upgradeController.ShowLocalizedMessage("upgrade_ui.state_changed", "아이템 상태가 먼저 바뀌어 강화를 취소했습니다. 다시 선택해 주세요."); break;
+                upgradeController.ShowLocalizedMessage("upgrade_ui.state_changed", "아이템 상태가 먼저 바뀌어 강화를 취소했습니다. 다시 선택해 주세요.");
+                break;
             case MirrorInventoryRequestResult.ItemUnavailable:
-                upgradeController.ShowLocalizedMessage("upgrade_ui.item_missing", "인벤토리에서 해당 아이템을 찾지 못했습니다."); break;
+                upgradeController.ShowLocalizedMessage("upgrade_ui.item_missing", "인벤토리에서 해당 아이템을 찾지 못했습니다.");
+                break;
             default:
-                upgradeController.ShowLocalizedMessage("upgrade_ui.result_failed", "강화에 실패했습니다."); break;
+                upgradeController.ShowLocalizedMessage("upgrade_ui.result_failed", "강화에 실패했습니다.");
+                break;
         }
     }
 }

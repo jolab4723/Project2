@@ -3,6 +3,7 @@ using UnityEngine;
 public class WBH_BurnEffect : WBH_StatusEffectBase
 {
     private float tickTimer;
+    public WBH_StatusEffectData Source => data;
 
     public WBH_BurnEffect(WBH_StatusEffectController controller, WBH_StatusEffectData data) : base(controller, data) { }
 
@@ -31,7 +32,19 @@ public class WBH_BurnEffect : WBH_StatusEffectBase
         {
             tickTimer = Mathf.Max(0f, tickTimer - data.Interval);
             float damage = controller.GetMaxHealth() * data.Value;
+            // SW 수정: 사망 시 상태 목록이 지워져도 이번 틱의 실제 Burn 출처와 사망 전 위치를 보존한다.
+            WBH_StatusEffectData source = data;
+            var enemy = controller.GetComponent<WBH_EnemyController>();
+            var status = enemy != null ? enemy.Status : null;
+            bool wasAlive = status != null && !status.IsDead;
+            Vector3 position = controller.transform.position;
             controller.ApplyDotDamage(damage, data);
+            if (wasAlive && status.IsDead)
+            {
+                var player = (source.Attacker as T_PlayerController)?.GetComponent<PlayerContext>();
+                player?.Effects.FireWildfireKill(source, position, source.AttackId);
+                break;
+            }
         }
     }
 

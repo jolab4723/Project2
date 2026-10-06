@@ -101,10 +101,13 @@ public class WBH_Effect : MonoBehaviour
 
         foreach(ParticleSystem particle in particles)
         {
-            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (particle != null)
+                particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        poolManager.ReturnEffect(this);
+        // SW 수정 : 원격 표시용 복제본이나 씬 전환으로 원래 풀이 사라진 효과는 반환 대신 수명을 끝낸다.
+        if (poolManager != null) poolManager.ReturnEffect(this);
+        else Destroy(gameObject);
         billboardCamera = null;
         effectData = null;
     }

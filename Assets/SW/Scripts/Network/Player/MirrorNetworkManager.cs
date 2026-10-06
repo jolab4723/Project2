@@ -285,6 +285,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     {
         clientCompatibilityConfirmed = true;
         Chat.ConfirmConnection();
+        RegisterLoadedEnemyPrefabs();
         base.OnClientConnect();
     }
 
@@ -1220,11 +1221,21 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     /// </summary>
     public override void OnClientSceneChanged()
     {
+        RegisterLoadedEnemyPrefabs();
         base.OnClientSceneChanged();
 
         CancelClientSceneRestore();
         if (SceneManager.GetActiveScene().path is SessionLobbyScene or SessionResultScene) return;
         clientSceneRestoreRoutine = StartCoroutine(RestoreClientSceneState());
+    }
+
+    // SW 수정 : 재접속으로 프리팹 등록이 비워져도 Ready 이전에 현재 씬의 적을 다시 등록한다.
+    // 씬 객체 OnStartClient 순서에 의존하면 이미 살아 있는 보스의 Spawn을 먼저 받을 수 있다.
+    private static void RegisterLoadedEnemyPrefabs()
+    {
+        foreach (var spawner in FindObjectsByType<NetworkEnemyWaveSpawner>(
+                     FindObjectsInactive.Include, FindObjectsSortMode.None))
+            spawner.RegisterEnemyPrefabsForClient();
     }
 
     private IEnumerator RestoreClientSceneState()
@@ -1351,7 +1362,7 @@ public sealed partial class MirrorNetworkManager : NetworkManager
     /// </summary>
     private static MirrorSessionRoute GetRouteForScene(string scenePath)
     {
-        if (IsAct1CombatScene(scenePath))
+        if (IsCombatScene(scenePath))
             return MirrorSessionRoute.Combat;
         return scenePath switch
         {

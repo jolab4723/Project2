@@ -18,13 +18,20 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
     private readonly Dictionary<string, KY_QuestData> displayedQuests = new();
 
     private void OnEnable() => Bind();
-    private void Start() { if (session == null) Bind(); }
+    private void Start()
+    {
+        if (session == null)
+            Bind();
+    }
 
     private void Bind()
     {
         session = NetworkManager.singleton as MirrorNetworkManager;
-        if (session == null) return;
-        if (offerPopup != null) offerPopup.gameObject.SetActive(true);
+        if (session == null)
+            return;
+        if (offerPopup != null)
+            offerPopup.gameObject.SetActive(true);
+
         session.QuestStateChanged += Refresh;
         if (questBoard != null)
         {
@@ -32,15 +39,21 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
             session.BindQuestBoard(questBoard);
         }
         language = YJ_LanguageManager.Instance;
-        if (language != null) language.LanguageChanged += HandleLanguageChanged;
+        if (language != null)
+            language.LanguageChanged += HandleLanguageChanged;
+
         Refresh();
     }
 
     private void OnDisable()
     {
-        if (session != null) session.QuestStateChanged -= Refresh;
-        if (questBoard != null) questBoard.BindExternalRequests(null);
-        if (language != null) language.LanguageChanged -= HandleLanguageChanged;
+        if (session != null)
+            session.QuestStateChanged -= Refresh;
+        if (questBoard != null)
+            questBoard.BindExternalRequests(null);
+        if (language != null)
+            language.LanguageChanged -= HandleLanguageChanged;
+
         session = null;
         language = null;
         displayedQuests.Clear();
@@ -50,7 +63,9 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
 
     private void Refresh()
     {
-        if (session == null) return;
+        if (session == null)
+            return;
+
         MirrorQuestSnapshot snapshot = session.ClientQuests;
         QuestDatabaseSO database = session.QuestDatabase;
         if (questBoard != null)
@@ -59,17 +74,23 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
                 ? database.FindById(snapshot.OfferId) : null;
             QuestOfferUI offerUI = QuestOfferUI.Instance;
             bool showing = offerUI != null && offerUI.IsShowing;
-            if (offer == null && showing) offerUI.Hide();
+            if (offer == null && showing)
+                offerUI.Hide();
+
             questBoard.ApplyExternalOffer(offer, snapshot.HasRerolled, snapshot.HasAccepted,
                 offer != null && (session.ConsumeQuestOfferRequest() || showing));
         }
-        if (questPopup == null) return;
+        if (questPopup == null)
+            return;
+
         var list = new List<KY_QuestData>();
         var removed = new HashSet<string>(displayedQuests.Keys);
         foreach (MirrorQuestEntry entry in snapshot.Quests ?? System.Array.Empty<MirrorQuestEntry>())
         {
             QuestDefinitionSO definition = database != null ? database.FindById(entry.QuestId) : null;
-            if (definition == null) continue;
+            if (definition == null)
+                continue;
+
             var conditions = new List<KY_QuestConditionData>();
             for (int i = 0; i < definition.conditions.Length; i++)
                 conditions.Add(new KY_QuestConditionData
@@ -86,7 +107,8 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
             }
             if (entry.Completed)
             {
-                if (!entry.RewardPending) reward += " (지급 완료)";
+                if (!entry.RewardPending)
+                    reward += "\n" + Label("quest_ui.reward_received", "수령 완료");
                 else
                 {
                     var remaining = new List<string>();
@@ -97,14 +119,18 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
                         string name = itemLabels != null ? itemLabels.GetName(definition.rewardItem.itemId) : definition.rewardItem.itemName;
                         remaining.Add($"{name} x{entry.PendingItemCount}");
                     }
-                    reward += "\n미수령 보상: " + string.Join(", ", remaining);
+                    reward += "\n" + Label("quest_ui.reward_pending", "보상 대기") + ": " + string.Join(", ", remaining);
                 }
             }
             var data = new KY_QuestData
             {
                 questName = questLabels != null ? questLabels.GetQuestName(definition.questId) : definition.questName,
                 description = questLabels != null ? questLabels.GetQuestDescription(definition.questId) : definition.description,
-                conditions = conditions.ToArray(), reward = reward,
+                conditions = conditions.ToArray(),
+                reward = reward,
+                // SW 수정 : 완료와 보상 대기는 서버가 보낸 참가자별 상태를 그대로 표시한다.
+                isCompleted = entry.Completed,
+                rewardPending = entry.RewardPending,
                 rewardItems = CreateRewardItems(definition, entry)
             };
             if (displayedQuests.TryGetValue(entry.QuestId, out var previous))
@@ -121,7 +147,12 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
         questPopup.SetQuestData(list);
     }
 
-    private string Label(string key, string fallback) => questLabels != null ? questLabels.GetLabel(key) : fallback;
+    /// <summary>누락된 라벨은 키 문자열 대신 한국어 원문으로 표시한다.</summary>
+    private string Label(string key, string fallback)
+    {
+        string value = questLabels != null ? questLabels.GetLabel(key) : null;
+        return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+    }
 
     private KY_QuestRewardData[] CreateRewardItems(QuestDefinitionSO definition, MirrorQuestEntry entry)
     {
@@ -129,7 +160,9 @@ public sealed class MirrorQuestUIBinder : MonoBehaviour
         if (definition.rewardGold > 0)
             rewards.Add(new KY_QuestRewardData
             {
-                icon = creditIcon, name = "크레딧", amount = definition.rewardGold,
+                icon = creditIcon,
+                name = "크레딧",
+                amount = definition.rewardGold,
                 remainingAmount = entry.Completed ? entry.PendingGold : definition.rewardGold,
                 questCompleted = entry.Completed
             });

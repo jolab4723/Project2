@@ -176,8 +176,14 @@ namespace Core
         {
             string json = JsonUtility.ToJson(currentData, true);
             // SW 수정: 다른 프로세스가 파일을 쓰는 중이면 이번 저장만 건너뛰고 호출한 화면 초기화는 계속한다.
-            try { File.WriteAllText(savePath, json); }
-            catch (IOException exception) { Debug.LogWarning($"[SettingManager] 설정 저장 실패: {exception.Message}"); }
+            try
+            {
+                File.WriteAllText(savePath, json);
+            }
+            catch (IOException exception)
+            {
+                Debug.LogWarning($"[SettingManager] 설정 저장 실패: {exception.Message}");
+            }
         }
 
         void Load()
@@ -186,8 +192,14 @@ namespace Core
             if (exists)
             {
                 // SW 수정: 읽기 충돌이면 현재 값으로 진행한다.
-                try { currentData = JsonUtility.FromJson<KY_SettingsData>(File.ReadAllText(savePath)); }
-                catch (IOException exception) { Debug.LogWarning($"[SettingManager] 설정 읽기 실패: {exception.Message}"); }
+                try
+                {
+                    currentData = JsonUtility.FromJson<KY_SettingsData>(File.ReadAllText(savePath));
+                }
+                catch (IOException exception)
+                {
+                    Debug.LogWarning($"[SettingManager] 설정 읽기 실패: {exception.Message}");
+                }
             }
             ApplyWithoutSave(currentData);
             // 처음 실행하면 기존처럼 기본값 파일을 한 번 만든다.

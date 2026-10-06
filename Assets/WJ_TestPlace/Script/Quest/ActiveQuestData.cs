@@ -14,4 +14,10 @@ public class ActiveQuestData
     public List<int> conditionProgress = new List<int>();
 
     public bool isCompleted;
+
+    // SW 수정 : 목표 완료와 실제 지급을 분리하고, 실패한 보상만 다음 시도에 남긴다.
+    /// <summary>새 지급 기록인지 구분한다. 구형 완료 저장은 보상을 다시 지급하지 않는다.</summary>
+    public bool rewardInitialized;
+    public bool goldPaid;
+    public int itemsGranted;
 }

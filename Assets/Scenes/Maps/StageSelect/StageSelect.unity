@@ -439,6 +439,7 @@ GameObject:
   - component: {fileID: 213046884}
   - component: {fileID: 213046886}
   - component: {fileID: 213046885}
+  - component: {fileID: 213046887}
   m_Layer: 5
   m_Name: Info
   m_TagString: Untagged
@@ -565,6 +566,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 213046883}
   m_CullTransparentMesh: 1
+--- !u!114 &213046887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213046883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: stage_select_ui.normal_enemy
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &229977596
 GameObject:
   m_ObjectHideFlags: 0
@@ -1995,6 +2010,8 @@ MonoBehaviour:
   singlePlayerBehaviours: []
   multiplayerBehaviours:
   - {fileID: 463139089}
+  singlePlayerInventory: {fileID: 0}
+  multiplayerInventory: {fileID: 0}
   stage: {fileID: 0}
   preparationScreen: {fileID: 1978876526}
   preparationMessage: {fileID: 343742315}
@@ -2026,6 +2043,7 @@ GameObject:
   - component: {fileID: 795612005}
   - component: {fileID: 795612007}
   - component: {fileID: 795612006}
+  - component: {fileID: 795612008}
   m_Layer: 5
   m_Name: Info
   m_TagString: Untagged
@@ -2152,6 +2170,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 795612004}
   m_CullTransparentMesh: 1
+--- !u!114 &795612008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795612004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: stage_select_ui.unknown
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &801200204
 GameObject:
   m_ObjectHideFlags: 0
@@ -3018,6 +3050,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4461978785561044229, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4461978785561044229, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
+      propertyPath: m_OverrideSorting
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7039001446181280916, guid: 9d927ff048faa984da6651b908aa3e8c, type: 3}
       propertyPath: m_Name
       value: Canvas_Popup
@@ -3495,6 +3535,7 @@ GameObject:
   - component: {fileID: 1708637026}
   - component: {fileID: 1708637028}
   - component: {fileID: 1708637027}
+  - component: {fileID: 1708637029}
   m_Layer: 5
   m_Name: Info
   m_TagString: Untagged
@@ -3621,6 +3662,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1708637025}
   m_CullTransparentMesh: 1
+--- !u!114 &1708637029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1708637025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: stage_select_ui.elite_enemy
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &1789074612
 GameObject:
   m_ObjectHideFlags: 0
@@ -4639,6 +4694,7 @@ GameObject:
   - component: {fileID: 2113781684}
   - component: {fileID: 2113781686}
   - component: {fileID: 2113781685}
+  - component: {fileID: 2113781687}
   m_Layer: 5
   m_Name: Info
   m_TagString: Untagged
@@ -4765,6 +4821,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2113781683}
   m_CullTransparentMesh: 1
+--- !u!114 &2113781687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2113781683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5678155ed0c32424382457f9f6de48a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelText
+  key: stage_select_ui.camp
+  database: {fileID: 11400000, guid: acaff487384e61e419d1873bc67499a5, type: 2}
 --- !u!1 &2120871939
 GameObject:
   m_ObjectHideFlags: 0

@@ -16,7 +16,7 @@ public static class PlayerDamageResolver
     private sealed class DamageResolutionState
     {
         public readonly Queue<PendingFollowUpDamage> PendingQueue = new();
-        public readonly HashSet<(uint AttackId, DamageCause Cause, WBH_ICombat Target)> FollowUpTargets = new();
+        public readonly HashSet<(uint AttackId, DamageCause Cause, WBH_ICombat Target, string Effect)> FollowUpTargets = new();
         public WBH_CombatManager.DamageSourceSnapshot SourceSnapshot;
         public bool IsResolving;
     }
@@ -26,14 +26,16 @@ public static class PlayerDamageResolver
     /// <summary>플레이어별로 분리된 동기적 피해 처리 진입점이다.</summary>
     public static bool TryProcessPlayerDamage(PlayerContext attacker, WBH_ICombat target,
         ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
-        out WBH_DamageResult result, DamageCause damageCause = DamageCause.Direct, uint attackId = 0)
+        out WBH_DamageResult result, DamageCause damageCause = DamageCause.Direct, uint attackId = 0,
+        bool canCrit = true, WBH_CombatManager.DamageSourceSnapshot? sourceSnapshot = null)
         => TryProcessPlayerDamage(attacker, new WBH_DamageRequest(attacker?.Controller, target,
             ToAttackType(damageCause), elementType, damageMultiplier, statusEffect, null, null, null,
-            damageCause, attackId), out result);
+            damageCause, attackId), out result, canCrit, sourceSnapshot);
 
     /// <summary>기존 요청의 공격 유형·출처·피격 연출을 보존하면서 서버 권한 경계를 통과한다.</summary>
     public static bool TryProcessPlayerDamage(PlayerContext attacker, WBH_DamageRequest request,
-        out WBH_DamageResult result)
+        out WBH_DamageResult result, bool canCrit = true,
+        WBH_CombatManager.DamageSourceSnapshot? sourceSnapshot = null)
     {
         result = default;
         WBH_ICombat target = request.Target;
@@ -66,12 +68,12 @@ public static class PlayerDamageResolver
             resolutionStates.Add(attacker, state);
         }
 
-        state.SourceSnapshot = new WBH_CombatManager.DamageSourceSnapshot(attackerStatus);
+        state.SourceSnapshot = sourceSnapshot ?? new WBH_CombatManager.DamageSourceSnapshot(attackerStatus);
         state.IsResolving = true;
         bool success;
         try
         {
-            success = ExecuteDamageInternal(attacker, request, state.SourceSnapshot, out result);
+            success = ExecuteDamageInternal(attacker, request, state.SourceSnapshot, out result, canCrit);
             DrainPendingQueue(state);
         }
         catch (System.Exception)
@@ -91,7 +93,7 @@ public static class PlayerDamageResolver
     public static bool EnqueueFollowUpDamage(PlayerContext attacker, WBH_ICombat target,
         ElementType elementType, float damageMultiplier, WBH_StatusEffectData? statusEffect,
         DamageCause damageCause, uint attackId, System.Action<WBH_DamageResult> onResolved = null,
-        bool canCrit = true)
+        bool canCrit = true, string effectKey = null)
     {
         if (attacker == null || !resolutionStates.TryGetValue(attacker, out DamageResolutionState state) ||
             !state.IsResolving)
@@ -103,7 +105,7 @@ public static class PlayerDamageResolver
             !float.IsFinite(damageMultiplier) || damageMultiplier <= 0f)
             return false;
 
-        if (attackId != 0 && !state.FollowUpTargets.Add((attackId, damageCause, target)))
+        if (attackId != 0 && !state.FollowUpTargets.Add((attackId, damageCause, target, effectKey)))
             return false;
 
         state.PendingQueue.Enqueue(new PendingFollowUpDamage
@@ -177,10 +179,23 @@ public static class PlayerDamageResolver
 
         result = WBH_CombatManager.CalculateDamage(request, sourceSnapshot, canCrit);
         WBH_StatusEffectData? statusEffect = result.StatusEffect;
+        if (statusEffect?.Type == WBH_StatusEffectType.Freeze && attacker.Effects.UsesRepeatedCooling(request))
+            statusEffect = null;
+        if (statusEffect.HasValue) statusEffect = attacker.Effects.StampWildfireBurn(statusEffect.Value, request);
         NetworkEnemyAuthority authority = (target as Component)?.GetComponentInParent<NetworkEnemyAuthority>();
         bool handledByAuthority = authority != null && authority.IsServerDamageHandlingActive;
         // SW 수정: 적이 사망 처리 중 풀로 반환되어도 처치 원점·정면과 Shotgun 피격점은 바뀌지 않는다.
         Component component = target as Component;
+        WBH_StatusEffectData existingBurn = default;
+        bool hasWildfireSource = request.AttackType == WBH_AttackType.Normal && request.DamageCause == DamageCause.Direct &&
+            component != null && component.GetComponentInParent<WBH_StatusEffectController>() is { } statuses &&
+            statuses.TryGetBurnSource(out existingBurn);
+        Vector3 wildfireOrigin = hasWildfireSource ? PlayerItemEffectState.GetBodyPosition(component) : default;
+        float supportMultiplier = 0f;
+        bool consumedSupport = request.AttackType == WBH_AttackType.Normal && request.DamageCause == DamageCause.Direct &&
+            component != null && component.GetComponentInParent<EnemySupportMark>() is { } support &&
+            support.TryConsume(attacker, request.AttackId, out supportMultiplier);
+        Vector3 supportPosition = consumedSupport ? PlayerItemEffectState.GetBodyPosition(component) : default;
         bool hasWaveSource = attacker.Effects.TryGetPhaseHarvesterSource(request, out PhaseHarvesterWaveUniqueEffectSO wave,
             out Vector3 attackForward) && component != null;
         bool hasExplosionSource = attacker.Effects.TryGetStarBreacherSource(request, out StarBreacherExplosionUniqueEffectSO explosion,
@@ -190,6 +205,18 @@ public static class PlayerDamageResolver
         Vector3 bodyPosition = hasWaveSource || hasExplosionSource
             ? (authority != null ? authority.transform.position : component.transform.position) : default;
         target.TakeDamage(result);
+        if (hasWildfireSource && targetStatus.IsDead)
+            attacker.Effects.FireWildfireKill(existingBurn, wildfireOrigin, request.AttackId);
+        if (consumedSupport)
+        {
+            if (!targetStatus.IsDead)
+                EnqueueFollowUpDamage(attacker, target, ElementType.None, supportMultiplier, null,
+                    DamageCause.Effect, request.AttackId, canCrit: false, effectKey: "smile-signal");
+            attacker.Effects.PresentSupportConsumption(supportPosition);
+        }
+        else if (!targetStatus.IsDead) attacker.Effects.TryCreateSupportMark(request);
+        if (request.AttackType == WBH_AttackType.Normal && request.DamageCause == DamageCause.Direct)
+            attacker.GetComponent<PlayerArmorEffectRuntime>()?.ResolveGuardianHit(result);
         if (hasWaveSource && targetStatus.IsDead)
             attacker.Effects.FirePhaseHarvesterKill(request.AttackId, bodyPosition, attackForward, wave);
         if (hasExplosionSource)

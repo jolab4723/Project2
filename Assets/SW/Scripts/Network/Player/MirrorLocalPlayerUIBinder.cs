@@ -2,7 +2,7 @@ using ItemSystem;
 using UnityEngine;
 
 /// <summary>
-/// Mirror 테스트 씬의 클라이언트 전역 UI를 현재 로컬 <see cref="PlayerContext"/>에 연결한다.
+/// SW 수정 : 공용 플레이 씬의 클라이언트 전역 UI를 현재 로컬 <see cref="PlayerContext"/>에 연결한다.
 /// 필드 아이템 획득 시에도 이 컴포넌트를 <see cref="IItemReceiver"/>로 사용해
 /// 씬에 남아 있는 고정 InventoryController가 아니라 같은 로컬 Context의 Inventory로 전달한다.
 /// 메뉴 단축키는 기존 KY 입력 Manager에 현재 Context와 메뉴 참조를 전달해 처리한다.

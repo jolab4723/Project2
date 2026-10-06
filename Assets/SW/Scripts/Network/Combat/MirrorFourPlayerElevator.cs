@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Mirror 세션 테스트용 Stage 5 엘리베이터다.
+/// SW 수정 : 네트워크 Stage 5의 서버가 최대 네 플레이어의 엘리베이터 승강을 진행한다.
 /// 서버가 승강 중 플레이어 위치를 책임지고, 서버와 소유 클라이언트가 모두 2층 착지를
 /// 확인한 뒤에만 이동과 스킬 입력을 다시 허용한다.
 /// </summary>

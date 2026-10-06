@@ -6,6 +6,11 @@ public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 
 public class T_PlayerCombat : MonoBehaviour
 {
+    // SW 수정 : 같은 조건에서 세 총기의 발사 누락이 없음을 확인한 뒤 라이플만 낮은 발당 피해·고연사로 조정한다.
+    public const float RifleAttackSpeedMultiplier = 1.5f;
+    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon)
+        => weapon == GunnerWeaponType.Rifle ? 0.8f : 1f;
+
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] public GunnerWeaponType currentWeapon;
@@ -173,17 +178,18 @@ public class T_PlayerCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal,
                                                         element,
-                                                        basicAttackMult,
+                                                        basicAttackMult * GunnerBasicDamageMultiplier(resolvedWeapon),
                                                         GetElementStatusEffect(element),
                                                         effectData: effectData);
 
         // SW 추가:
-        // 아래 switch의 피해 방식은 팀원 기존 구현을 그대로 사용합니다. 달라지는 것은 발사 위치와 전달되는 시각 프리팹뿐입니다.
+        // 기존 무기별 발사 경로에 실제 총구 위치와 장착 외형을 전달합니다.
+        // SW 수정 : 라이플 피해 배율은 위 요청에, 반물질 랜스의 관통은 투사체 적중 경로에 적용합니다.
         switch(resolvedWeapon)
         {
             case GunnerWeaponType.Rifle:
                 // SW 추가:
-                // 라이플은 기존 Normal 풀 투사체의 이동, Trigger 충돌, 단일 대상 피해를 그대로 사용합니다.
+                // 일반 라이플은 기존 Normal 풀 투사체를 사용하며, 반물질 랜스는 이동 구간의 관통 대상을 별도로 판정합니다.
                 // 마지막 두 인수는 해당 장착 무기의 비행/명중 외형이며 실제 전투 수치에는 관여하지 않습니다.
                 projectileSpawner.FireProjectile(ProjectileType.Normal,
                                                  spawnPosition,
@@ -197,6 +203,9 @@ public class T_PlayerCombat : MonoBehaviour
                 break;
             case GunnerWeaponType.Shotgun:
                 {
+                    // SW 수정: 실제 산탄 실행 공간을 피해 대상 검색 전에 기록해 빗나간 사격도 잔향으로 재생한다.
+                    GetComponent<PlayerContext>()?.Effects.ReserveEchoReplay(request.AttackId, spawnPosition,
+                        direction, status.GunnerAttackRange, 90f);
                     // SW 추가:
                     // WBH 샷건은 여러 물리 탄환이 아니라 90도 부채꼴 안의 대상에게 즉시 피해를 줍니다.
                     // 따라서 명중 VFX도 중앙 투사체가 나중에 충돌할 때가 아니라 실제 피해를 받은 각 대상 위치에서 바로 재생합니다.
@@ -208,11 +217,11 @@ public class T_PlayerCombat : MonoBehaviour
                                  attackForward: direction,
                                  attackId: request.AttackId,
                                  shotgunAttack: true);
-                                 // SW 추가:
-                                 // 산탄총은 총구에서 10m·90도 부채꼴 VFX가 바로 펼쳐지고, 실제 피해 대상 위치에서 명중 VFX가 재생됩니다.
-                                 // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
-                                 // 데미지는 바로 위 SectorAttack이 이미 처리했기 때문에 이 변경은 공격 범위와 피해량에 영향을 주지 않습니다.
-                                 //effect.ShotGunEffect();
+                    // SW 추가:
+                    // 산탄총은 현재 사거리의 90도 부채꼴을 공격하고 실제 피해 대상 위치에서 명중 VFX를 재생합니다.
+                    // 중앙으로 탄환 한 발을 추가로 날리면 부채꼴 공격인데도 라이플처럼 보여 어색하므로 투사체 풀은 호출하지 않습니다.
+                    // 데미지는 바로 위 SectorAttack이 이미 처리했기 때문에 이 변경은 공격 범위와 피해량에 영향을 주지 않습니다.
+                    //effect.ShotGunEffect();
                 }
                 break;
             case GunnerWeaponType.GrenadeLauncher:
@@ -251,15 +260,12 @@ public class T_PlayerCombat : MonoBehaviour
 
 
     /// <summary>SW 수정: 싱글의 실제 Fighter/Shotgun 기본 공격 대상·원점·적중점을 확정하고 해당 무기 효과 출처를 피해 처리 범위 안에서 유지한다. Shotgun은 서버와 같은 벽 검사를 적용한다.</summary>
+    // SW 추가 : 거너 샷건은 전용 명중 외형, 공통 FirePoint와 플레이어 정면을 전달합니다.
+    // Fighter는 선택 인수를 넘기지 않으므로 기존 외형과 캐릭터 중심·정면 판정을 유지합니다.
     private void SectorAttack(float range,
                               float angle,
                               WBH_EffectData effectData = null,
-                              // SW 추가:
-                              // 거너 샷건만 사용하는 선택 값입니다. Fighter 호출은 값을 넘기지 않으므로 기존 동작이 그대로 유지됩니다.
                               GameObject impactVisualPrefab = null,
-                              // SW 추가:
-                              // 거너 샷건은 모든 총이 공유하는 FirePoint 위치와 플레이어 정면을 전달합니다.
-                              // Fighter는 두 값을 넘기지 않으므로 기존 캐릭터 중심·정면 판정이 그대로 유지됩니다.
                               Vector3? attackOrigin = null,
                               Vector3? attackForward = null,
                               uint attackId = 0,

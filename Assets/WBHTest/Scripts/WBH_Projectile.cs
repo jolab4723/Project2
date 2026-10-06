@@ -13,7 +13,17 @@ public class WBH_Projectile : MonoBehaviour
     private WBH_DamageRequest request;
     private PlayerContext playerOwner;
     private ItemSystem.UniqueEffectSO launchEffect;
+    private float launchNinjaBonus;
+    private bool chargedWarhead;
+    private GameObject chargedVisual;
     private readonly System.Collections.Generic.HashSet<WBH_ICombat> hitTargets = new();
+    // SW 수정: 발사된 반물질 라이플만 이동 구간을 거리순으로 검사하며 일반 탄의 Trigger 경로는 유지한다.
+    private ItemSystem.AntimatterPiercingShotUniqueEffectSO piercingEffect;
+    private Collider projectileCollider;
+    private readonly System.Collections.Generic.List<(Collider collider, float distance)> piercingHits = new();
+    private bool IsPiercingShotAvailable => playerOwner != null && playerOwner.Effects.CanExecute &&
+        playerOwner.Health != null && playerOwner.Health.CurrentHealth > 0f && playerOwner.isActiveAndEnabled &&
+        playerOwner.gameObject.scene == gameObject.scene;
     private float speed;
     private float maxDistance;
 
@@ -55,9 +65,11 @@ public class WBH_Projectile : MonoBehaviour
 
     private static int ObstacleLayerMask; // 장애물 레이어(투사체 충돌 시 반환 및 폭발)
 
+    /// <summary>SW 수정: 원본 렌더러와 충돌 크기를 보존해 풀 외형 복구와 관통 이동 검사를 준비한다.</summary>
     private void Awake()
     {
         ObstacleLayerMask = LayerMask.GetMask("Prop", "Ground", "Wall");
+        projectileCollider = GetComponent<Collider>();
 
     // SW 추가:
         // Awake는 런타임 커스텀 자식을 만들기 전에 한 번 호출되므로 이 시점의 Renderer 목록은 팀원 원본 프리팹만 포함합니다.
@@ -69,11 +81,11 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // 투사체에 각 변수 할당
+    /// <summary>SW 수정: 기본 직선탄의 발사 출처·관통 자격을 보존하고 기존 이동·외형·소유자 수명을 시작한다.</summary>
+    // SW 추가 : 기존 spawner/data 뒤의 선택 인수는 null/null/true가 기본값입니다.
+    // 기존 호출은 원본 Renderer와 피해 처리를 사용하고, 새 VFX가 연결된 무기만 전용 외형을 사용합니다.
     public void Initialize(WBH_DamageRequest request, float speed, float maxDistance, Vector3 direction, LayerMask targetLayer,
                            WBH_EffectSpawner spawner = null, WBH_EffectData data = null,
-    // SW 추가:
-                           // 기존 spawner/data 뒤에 기본값이 있는 선택 인수만 추가했습니다. null/null/true가 기본값이므로
-                           // 예전 호출은 원본 Renderer와 피해 처리를 그대로 사용하고, 새 VFX가 연결된 무기만 전용 외형을 사용합니다.
                            GameObject projectileVisualPrefab = null,
                            GameObject impactVisualPrefab = null,
                            bool dealsDamage = true,
@@ -99,6 +111,8 @@ public class WBH_Projectile : MonoBehaviour
         // PrepareVisuals는 이동을 시작하기 전에 비주얼을 재생하고 이 발사의 피해 허용 여부를 저장합니다.
         // 라이플은 true, 산탄의 보조 시각 투사체는 false를 받아 기존 SectorAttack과 피해가 중복되지 않습니다.
         PrepareVisuals(projectileVisualPrefab, impactVisualPrefab, dealsDamage);
+        if (!dealsDamage)
+            piercingEffect = null;
 
         isExplosion = false;
         isInitialized = true;
@@ -106,12 +120,12 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // 유탄용 변수 할당
-    public void InitializeGrenade(WBH_DamageRequest request, float speed, float maxDistance, 
+    /// <summary>SW 수정: 유탄의 기존 포물선·폭발 출처를 설정하고 라이플 전용 관통 자격은 적용하지 않는다.</summary>
+    // SW 추가 : 기존 EffectSpawner/EffectData 뒤의 선택 인수가 비어 있으면 원본 외형을 사용합니다.
+    // 새 VFX 호출만 전용 비행/명중 프리팹을 전달합니다.
+    public void InitializeGrenade(WBH_DamageRequest request, float speed, float maxDistance,
                                   LayerMask targetLayer, Vector3 targetPosition, float explosionRadius, float arcHeight = 3f,
                                    WBH_EffectSpawner spawner = null, WBH_EffectData data = null,
-    // SW 추가:
-                                   // 유탄도 기존 EffectSpawner/EffectData 뒤에 기본값이 있는 선택 인수를 추가했습니다.
-                                   // 예전 호출은 값이 비어 있어 원본 외형을 쓰고, 새 VFX 호출만 전용 비행/명중 프리팹을 받습니다.
                                    GameObject projectileVisualPrefab = null,
                                    GameObject impactVisualPrefab = null,
                                    WBH_EnemyEffect enemyEffect = null,
@@ -119,6 +133,10 @@ public class WBH_Projectile : MonoBehaviour
     {
         this.request = request;
         CapturePlayerSource(request);
+        chargedWarhead = launchEffect is ItemSystem.WorldEnderChargedBlastUniqueEffectSO charged &&
+            request.AttackType == WBH_AttackType.Normal && request.DamageCause == DamageCause.Direct &&
+            playerOwner != null && playerOwner.Effects.ReserveWorldEnderShot(request.AttackId, charged);
+        piercingEffect = null;
         this.speed = speed;
         this.maxDistance = maxDistance;
         this.targetLayer = targetLayer;
@@ -151,6 +169,7 @@ public class WBH_Projectile : MonoBehaviour
         // 유탄은 산탄처럼 별도 SectorAttack이 없으므로 shouldDealDamage를 항상 true로 전달합니다.
         // 포물선 높이와 비행 시간을 계산한 직후 새 외형을 켜므로, 유탄이 나타나는 첫 화면부터 전용 외형이 보입니다.
         PrepareVisuals(projectileVisualPrefab, impactVisualPrefab, true);
+        if (chargedWarhead) chargedVisual = ChargedShotVisual.Create(transform);
 
         isExplosion = true;
         isInitialized = true;
@@ -169,6 +188,7 @@ public class WBH_Projectile : MonoBehaviour
         SetLegacyRenderersVisible(true);
     }
 
+    /// <summary>SW 수정: 기존 소유자 생애를 확인하고 이동 중 관통으로 반환된 탄은 다시 거리 반환하지 않는다.</summary>
     private void Update()
     {
         if (!isInitialized)
@@ -181,9 +201,11 @@ public class WBH_Projectile : MonoBehaviour
         }
 
         Move();
-        CheckDistance();
+        if (isInitialized)
+            CheckDistance();
     }
 
+    /// <summary>SW 수정: 유탄과 일반 탄의 이동을 유지하며 반물질 기본 라이플에만 거리순 관통 검사를 수행한다.</summary>
     private void Move()
     {
         if(isExplosion)
@@ -191,7 +213,111 @@ public class WBH_Projectile : MonoBehaviour
             MoveArc();
             return;
         }
+        if (piercingEffect != null)
+        {
+            MovePiercingShot();
+            return;
+        }
         transform.position += movedirection * speed * Time.deltaTime;
+    }
+
+    /// <summary>SW 수정: 실제 Collider 반경으로 이동 구간과 시작 겹침을 검사해 벽 이전의 서로 다른 살아 있는 적만 관통한다.</summary>
+    private void MovePiercingShot()
+    {
+        if (!IsPiercingShotAvailable)
+        {
+            ReturnToPool();
+            return;
+        }
+        Vector3 origin = transform.position;
+        float distance = Mathf.Min(speed * Time.deltaTime, Mathf.Max(0f, maxDistance - Vector3.Distance(startPosition, origin)));
+        if (distance <= 0f)
+        {
+            ReturnToPool();
+            return;
+        }
+        float radius = GetPiercingRadius();
+        Vector3 center = projectileCollider != null ? projectileCollider.bounds.center : origin;
+        int mask = targetLayer.value | ObstacleLayerMask;
+        piercingHits.Clear();
+        foreach (Collider overlap in Physics.OverlapSphere(center, radius, mask, QueryTriggerInteraction.Collide))
+            piercingHits.Add((overlap, 0f));
+        foreach (RaycastHit hit in Physics.SphereCastAll(center, radius, movedirection, distance, mask, QueryTriggerInteraction.Collide))
+            piercingHits.Add((hit.collider, hit.distance));
+        piercingHits.Sort((left, right) =>
+        {
+            int distanceComparison = left.distance.CompareTo(right.distance);
+            if (distanceComparison != 0)
+                return distanceComparison;
+            // SW 수정: 같은 거리의 겹침에서는 지형을 먼저 처리해 벽 안쪽 적으로 피해가 새지 않게 한다.
+            return ContainLayer(ObstacleLayerMask, right.collider.gameObject.layer).CompareTo(
+                ContainLayer(ObstacleLayerMask, left.collider.gameObject.layer));
+        });
+        foreach (var hit in piercingHits)
+        {
+            if (!isInitialized)
+                return;
+            if (!IsPiercingShotAvailable)
+            {
+                ReturnToPool();
+                return;
+            }
+            if (hit.collider == null || hit.collider == projectileCollider || hit.collider.transform.IsChildOf(transform))
+                continue;
+            transform.position = origin + movedirection * hit.distance;
+            Vector3 point = hit.collider.ClosestPoint(center + movedirection * hit.distance);
+            if (ContainLayer(ObstacleLayerMask, hit.collider.gameObject.layer))
+            {
+                SpawnImpactVisual(point, -movedirection);
+                ReturnToPool();
+                return;
+            }
+            if (!TryProcessPiercingHit(hit.collider, point))
+                continue;
+            if (!isInitialized)
+                return;
+            SpawnImpactVisual(point, -movedirection);
+            if (hitTargets.Count >= Mathf.Clamp(piercingEffect.maxTargets, 1, 3))
+            {
+                ReturnToPool();
+                return;
+            }
+        }
+        transform.position = origin + movedirection * distance;
+    }
+
+    /// <summary>SW 수정: 원본 SphereCollider의 월드 반경을 사용하고 다른 Collider는 실제 월드 경계로 감싼다.</summary>
+    private float GetPiercingRadius()
+    {
+        if (projectileCollider is SphereCollider sphere)
+        {
+            Vector3 scale = sphere.transform.lossyScale;
+            return Mathf.Max(0.001f, sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+        }
+        return projectileCollider != null ? Mathf.Max(0.001f, projectileCollider.bounds.extents.magnitude) : 0.001f;
+    }
+
+    /// <summary>SW 수정: 싱글의 첫 관통은 기존 Direct, 후속은 원본 공격 ID·계수·연출을 보존한 비치명 Effect로 현재 스탯을 계산한다.</summary>
+    private bool TryProcessPiercingHit(Collider hit, Vector3 point)
+    {
+        WBH_ICombat target = PlayerCombatAuthority.FindCombatTarget(hit);
+        if (target is not WBH_EnemyController enemy || enemy == null || !enemy.gameObject.activeInHierarchy ||
+            target.Status == null || target.Status.IsDead || hitTargets.Contains(target))
+            return false;
+        bool firstHit = hitTargets.Count == 0;
+        var hitRequest = new WBH_DamageRequest(request.Attacker, target, request.AttackType, request.ElementType,
+            request.DamageMultiplier * piercingEffect.GetDamageMultiplier(hitTargets.Count), request.StatusEffect,
+            request.EffectData, point, -movedirection, firstHit ? DamageCause.Direct : DamageCause.Effect, request.AttackId);
+        bool processed;
+        using (playerOwner.Effects.BeginGunnerHitScope(request.AttackId, GunnerWeaponType.Rifle, launchEffect, launchNinjaBonus))
+        {
+            processed = firstHit && playerOwner.CombatAuthority != null
+                ? WBH_CombatResolver.TryProcessPlayerDamage(playerOwner, hitRequest, out _)
+                : PlayerDamageResolver.TryProcessPlayerDamage(playerOwner, hitRequest, out _, canCrit: firstHit);
+        }
+        if (processed && isInitialized)
+            hitTargets.Add(target);
+        return processed;
     }
 
     private void MoveArc()
@@ -244,12 +370,15 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // 컬라이더 충돌 
+    /// <summary>SW 수정: 일반 탄의 Trigger 처리를 유지하고 관통탄은 이동 구간의 거리순 검사에서만 피해와 종료를 결정한다.</summary>
     private void OnTriggerEnter(Collider other)
     {
     // SW 추가:
         // Explode/ReturnToPool은 isInitialized를 false로 바꿉니다. 같은 FixedUpdate에 여러 Collider가 겹쳐 OnTriggerEnter가
         // 연속 호출되어도 이 가드가 두 번째 피해, Impact 생성, 풀 중복 반환을 막습니다.
         if (!isInitialized)
+            return;
+        if (piercingEffect != null)
             return;
 
         int otherLayer = other.gameObject.layer;
@@ -298,6 +427,10 @@ public class WBH_Projectile : MonoBehaviour
 
         isInitialized = false;
         Vector3 explosionPos = transform.position;
+        var chargedEffect = chargedWarhead ? launchEffect as ItemSystem.WorldEnderChargedBlastUniqueEffectSO : null;
+        var chargedImpact = chargedEffect != null && playerOwner != null
+            ? playerOwner.Effects.PrepareWorldEnderImpact(explosionPos, chargedEffect) : default;
+        chargedWarhead = false;
 
         if (showExplosionRange)
         {
@@ -335,6 +468,8 @@ public class WBH_Projectile : MonoBehaviour
             {
                 effectSpawner.SpawnEffect(hitEffectData, explosionPos);
             }
+            if (chargedEffect != null && playerOwner != null)
+                playerOwner.Effects.ResolveWorldEnderImpact(chargedImpact, explosionPos, request.AttackId, chargedEffect);
 
             PlayImpactEffectCue(explosionPos);
 
@@ -363,6 +498,7 @@ public class WBH_Projectile : MonoBehaviour
         if (!dealsDamage || !hitTargets.Add(target))
             return;
 
+        // SW 추가 : 원본 요청의 EffectData도 복제해 WBH_EnemyController의 명중 효과 연결을 유지합니다.
         WBH_DamageRequest hitRequest = new WBH_DamageRequest(request.Attacker,
                                                                  target,
                                                                  request.AttackType,
@@ -374,30 +510,40 @@ public class WBH_Projectile : MonoBehaviour
                                                                  hitEffectDirection,
                                                                  request.DamageCause,
                                                                  request.AttackId);
-                                                                 // SW 추가:
-                                                                 // 메인 머지에서 WBH_DamageRequest에 EffectData가 추가됐습니다.
-                                                                 // 원본 요청을 명중 대상용 요청으로 복제할 때 이 값도 넘겨야
-                                                                 // WBH_EnemyController의 새 명중 효과 흐름이 소실되지 않습니다.
         // SW 수정: 발사 당시 효과 자격은 장비 교체 이후에도 유지하고, 실제 적중 경계 안에서만 읽습니다.
         using (playerOwner?.Effects.BeginGunnerHitScope(request.AttackId,
-                   isExplosion ? GunnerWeaponType.GrenadeLauncher : GunnerWeaponType.Rifle, launchEffect))
+                   isExplosion ? GunnerWeaponType.GrenadeLauncher : GunnerWeaponType.Rifle, launchEffect, launchNinjaBonus))
             WBH_CombatManager.ProcessDamage(hitRequest);
     }
 
+    /// <summary>SW 수정: 발사 당시 장비 효과와 기본 라이플 관통 자격을 보존하며 풀의 이전 적중 기록을 비운다.</summary>
     private void CapturePlayerSource(WBH_DamageRequest source)
     {
         playerOwner = (source.Attacker as T_PlayerController)?.GetComponent<PlayerContext>();
+        launchNinjaBonus = source.AttackType == WBH_AttackType.Normal && source.DamageCause == DamageCause.Direct
+            ? playerOwner?.Effects.ReserveNinjaDodgeBonus(source.AttackId) ?? 0f : 0f;
         launchEffect = null;
+        piercingEffect = null;
+        chargedWarhead = false;
         hitTargets.Clear();
+        piercingHits.Clear();
         if (playerOwner?.Equipment != null &&
             playerOwner.Equipment.TryGetEquippedItemInstance(ItemSystem.EquipSlotType.Weapon, out var weapon))
+        {
             launchEffect = weapon?.definition?.uniqueEffect;
+            if (source.AttackType == WBH_AttackType.Normal && source.DamageCause == DamageCause.Direct &&
+                weapon?.definition?.characterClass == ItemSystem.CharacterClass.Gunner &&
+                weapon.definition.weaponType == ItemSystem.WeaponType.Rifle)
+                piercingEffect = launchEffect as ItemSystem.AntimatterPiercingShotUniqueEffectSO;
+        }
     }
 
+    /// <summary>SW 수정 : 싱글의 기본 유탄 충돌 뒤 발사 당시 효과를 독립 장판·예약 폭발로 남기고 기존 표시를 연결한다.</summary>
     private void CreateGrenadeEffect(Vector3 position)
     {
         if (playerOwner == null || !playerOwner.Effects.CanExecute || request.DamageCause != DamageCause.Direct ||
             (launchEffect is not ItemSystem.GravityWellFieldUniqueEffectSO &&
+             launchEffect is not ItemSystem.SunfallBurnFieldUniqueEffectSO &&
              launchEffect is not ItemSystem.SingularityDelayedExplosionUniqueEffectSO))
             return;
         // SW 수정: 원본 투사체는 즉시 풀로 돌리고 고정 효과만 독립 수명으로 유지합니다.
@@ -410,16 +556,24 @@ public class WBH_Projectile : MonoBehaviour
             () => Destroy(effectObject));
         if (launchEffect is ItemSystem.GravityWellFieldUniqueEffectSO field)
             PlayerGrenadeEffect.CreateRing(effectObject.transform, "GravityWellFieldVisual", field.radius, field.fieldColor);
+        else if (launchEffect is ItemSystem.SunfallBurnFieldUniqueEffectSO burn)
+            PlayerGrenadeEffect.CreateRing(effectObject.transform, "SunfallBurnFieldVisual", burn.radius, burn.fieldColor);
         else if (launchEffect is ItemSystem.SingularityDelayedExplosionUniqueEffectSO explosion)
             PlayerGrenadeEffect.CreateRing(effectObject.transform, "SingularityDelayedExplosionVisual", explosion.explosionRadius, explosion.warningColor);
     }
 
+    /// <summary>SW 수정: 원본 풀 반환과 외형 복구를 유지하고 발사 출처·관통 대상·충돌 기록을 함께 정리한다.</summary>
     private void ReturnToPool()
     {
+        if (chargedVisual != null) Destroy(chargedVisual);
+        chargedVisual = null;
+        chargedWarhead = false;
         UnbindDeathOwner();
         playerOwner = null;
         launchEffect = null;
+        piercingEffect = null;
         hitTargets.Clear();
+        piercingHits.Clear();
 
         isInitialized = false;
 
@@ -435,7 +589,7 @@ public class WBH_Projectile : MonoBehaviour
     }
 
     // SW 추가:
-    // 이 메서드는 '선택된 외형 준비'만 담당하며 이동·충돌·피해에는 손대지 않습니다.
+    // 선택된 외형과 이번 발사의 피해 허용 여부를 준비합니다. 이동과 적중 판정은 각 처리 경로에서 수행합니다.
     // 같은 무기를 연속 발사하면 projectileVisualInstance를 재시작하므로 매 발사 Instantiate가 발생하지 않습니다.
     // 장비 교체로 prefab 참조가 달라질 때만 이전 시각 자식을 제거하고 새 자식을 한 번 생성합니다.
     private void PrepareVisuals(GameObject projectileVisualPrefab,

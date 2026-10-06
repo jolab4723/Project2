@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Serialization;
 
@@ -12,12 +11,15 @@ public class KY_QuestSlot : MonoBehaviour
     [SerializeField] private TextMeshProUGUI subText;
 
     private KY_QuestData questData;
-    private Button button;
+    private UnityEngine.UI.Button button;
+    private QuestLabelDatabaseSO questLabels;
 
     /// <summary>버튼 클릭 이벤트를 연결한다.</summary>
     private void Awake()
     {
-        button = GetComponent<Button>();
+        button = GetComponent<UnityEngine.UI.Button>();
+        // SW 수정 : 공용 라벨을 재사용하고 신규 상태 문구가 없으면 한국어로 표시한다.
+        questLabels = Resources.Load<QuestLabelDatabaseSO>("DataFiles/QuestData/3. GeneratedAssets/QuestLabelDatabase");
 
         if (button == null)
         {
@@ -54,16 +56,39 @@ public class KY_QuestSlot : MonoBehaviour
             return;
         }
 
+        // SW 수정 : 목표 완료 여부와 보상 수령 상태를 구분해 표시한다.
         if (titleText != null)
+        {
             titleText.text = data.questName ?? string.Empty;
+            if (data.isCompleted)
+                titleText.text += " · " + Label("quest_ui.objective_completed", "목표 달성");
+        }
 
         if (subText != null)
-            subText.text = string.IsNullOrWhiteSpace(data.objectiveTypeLabel)
-                ? data.description ?? string.Empty
-                : data.objectiveTypeLabel;
+        {
+            if (data.isCompleted)
+            {
+                subText.text = data.rewardPending
+                    ? Label("quest_ui.reward_pending", "보상 대기")
+                    : Label("quest_ui.reward_received", "수령 완료");
+            }
+            else
+            {
+                subText.text = string.IsNullOrWhiteSpace(data.objectiveTypeLabel)
+                    ? data.description ?? string.Empty
+                    : data.objectiveTypeLabel;
+            }
+        }
 
         if (button != null)
             button.interactable = true;
+    }
+
+    /// <summary>누락된 상태 라벨의 키 문자열이 화면에 노출되지 않게 한다.</summary>
+    private string Label(string key, string fallback)
+    {
+        string value = questLabels != null ? questLabels.GetLabel(key) : null;
+        return string.IsNullOrEmpty(value) || value == key ? fallback : value;
     }
 
     /// <summary>현재 슬롯의 퀘스트 상세 팝업을 연다.</summary>

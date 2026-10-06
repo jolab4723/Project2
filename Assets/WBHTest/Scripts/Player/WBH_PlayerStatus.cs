@@ -63,7 +63,10 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         StatManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
             ? weaponInfo.elementType
             : ItemSystem.ElementType.None;
-    public float AttackSpeed => StatManager.Stat.attackSpeed;
+    // SW 수정 : 애니메이션·싱글·서버 공격 예약이 장착된 라이플의 동일한 최종 속도를 사용한다.
+    public float AttackSpeed => StatManager.Stat.attackSpeed *
+        (StatManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon) &&
+         weapon.weaponType == ItemSystem.WeaponType.Rifle ? T_PlayerCombat.RifleAttackSpeedMultiplier : 1f);
     public float MoveSpeed => StatManager.Stat.moveSpeed;
     // 아직 statManager 에 구현되지 않은 능력치 차후 구현되면 위처럼 스탯매니저에서 값을 받아오는 형식의 코드로 변경
     public float DodgeDistance => dodgeDistance;
@@ -86,8 +89,12 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     private PlayerStatManager StatManager
     {
-        // SW 수정
-        get { ResolveManagers(); return statManager; }
+        // SW 수정 : Awake 전 조회에서도 실제 플레이어의 상태 컴포넌트를 한 번 준비한다.
+        get
+        {
+            ResolveManagers();
+            return statManager;
+        }
     }
 
     private void ResolveManagers()
@@ -182,7 +189,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         if (IsDead)
             return;
 
-        healthManager.TakeDamage(result.FinalDamage);
+        // SW 수정 : 실제 적 피격의 공격자와 체력 손실을 방벽 효과에 전달한다.
+        healthManager.TakeDamage(result.FinalDamage, result.Attacker);
     }
 
     // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드

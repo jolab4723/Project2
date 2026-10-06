@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// JYJ 원본 StageSelect의 노드 선택 이벤트를 Mirror 테스트 Scene 이동 요청으로 연결합니다.
+/// SW 수정 : JYJ 원본 StageSelect의 노드 선택 이벤트를 네트워크 참가자 투표와 서버 Scene 이동으로 연결합니다.
 /// 원본과 달리 각 Client가 SceneManager를 직접 호출하지 않으며, 선택 결과를 서버의 참가자 투표로 전달합니다.
 /// 서버가 승인한 뒤 ServerChangeScene을 실행하므로 Host와 모든 Client가 같은 Scene으로 이동합니다.
 /// 또한 서버가 생성한 맵 스냅샷을 공유하고, 각 Client가 같은 Seed로 노드 지도를 다시 생성합니다.
@@ -109,7 +109,7 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
 
     /// <summary>
     /// 최초 진입에서는 새 Seed로 전체 런 스냅샷을 만들고, 재진입에서는 서버가 보관한
-    /// 동일 스냅샷을 복원합니다. 7-3부터 노드 진행도도 서버가 같은 스냅샷에 갱신합니다.
+    /// SW 수정 : 동일 스냅샷을 복원하며 노드 진행도도 서버가 같은 스냅샷에 갱신합니다.
     /// </summary>
     public override void OnStartServer()
     {
@@ -143,7 +143,9 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
         if (nodeData == null)
             return;
 
-        if (routeRequestRoutine != null) StopCoroutine(routeRequestRoutine);
+        if (routeRequestRoutine != null)
+            StopCoroutine(routeRequestRoutine);
+
         routeRequestRoutine = StartCoroutine(
             RequestNodeAfterReticle(nodeData.id, runSnapshotSource != null ? runSnapshotSource.RunSnapshotRevision : 0));
     }
@@ -154,7 +156,11 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
     /// </summary>
     private IEnumerator RequestNodeAfterReticle(string nodeId, uint revision)
     {
-        if (stageSelectManager == null) { routeRequestRoutine = null; yield break; }
+        if (stageSelectManager == null)
+        {
+            routeRequestRoutine = null;
+            yield break;
+        }
         if (voteNodes.TryGetValue(nodeId, out var selected) && selected != null)
         {
             selected.SetSelected(true);
@@ -338,7 +344,13 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
         canvas = canvas.rootCanvas;
         var source = canvas.GetComponentInChildren<TextMeshProUGUI>(true);
         foreach (var label in canvas.GetComponentsInChildren<TextMeshProUGUI>(true))
-            if (label.name == "Info") { source = label; break; }
+        {
+            if (label.name == "Info")
+            {
+                source = label;
+                break;
+            }
+        }
         foreach (var node in voteNodes.Values)
         {
             if (node.NodeData.floor != stageSelectManager.CurrentSelectableFloor) continue;
@@ -361,7 +373,13 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
             voteHint.rectTransform.sizeDelta = new Vector2(0, 144);
         }
         foreach (var reticle in canvas.GetComponentsInChildren<YJ_StageNodeReticle>(true))
-            if (reticle.gameObject.scene == gameObject.scene) { voteReticle = reticle; break; }
+        {
+            if (reticle.gameObject.scene == gameObject.scene)
+            {
+                voteReticle = reticle;
+                break;
+            }
+        }
     }
 
     private static TextMeshProUGUI CreateVoteText(string objectName, Transform parent, TextMeshProUGUI source, float size)
@@ -392,20 +410,32 @@ public sealed class MirrorStageSelectRouteAdapter : NetworkBehaviour
             if (entry.Value == null) continue;
             int count = 0;
             if (votes.Revision == lastAppliedRunRevision && votes.NodeIds != null && votes.Counts != null)
+            {
                 for (int i = 0; i < votes.NodeIds.Length && i < votes.Counts.Length; i++)
-                    if (votes.NodeIds[i] == entry.Key) { count = votes.Counts[i]; break; }
+                {
+                    if (votes.NodeIds[i] == entry.Key)
+                    {
+                        count = votes.Counts[i];
+                        break;
+                    }
+                }
+            }
             entry.Value.text = entry.Key == own ? $"{count}표 · 내 선택" : $"{count}표";
         }
         // pending 확정은 원본 RestoreMap이 표시하며 투표 표시는 확정 전까지만 적용한다.
         if (!runSnapshotSource.TryGetPendingStageNode(out _))
         {
             foreach (var entry in voteNodes)
-                if (entry.Value != null) entry.Value.SetSelected(entry.Key == own);
+            {
+                if (entry.Value != null)
+                    entry.Value.SetSelected(entry.Key == own);
+            }
             if (voteReticle != null)
             {
                 if (own != null && voteNodes.TryGetValue(own, out var selected) && selected != null)
                     voteReticle.ShowAt(selected.NodeData);
-                else voteReticle.Hide();
+                else
+                    voteReticle.Hide();
             }
         }
         lastTimerSecond = -1;

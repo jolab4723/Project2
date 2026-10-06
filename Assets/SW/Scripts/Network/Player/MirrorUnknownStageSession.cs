@@ -46,9 +46,11 @@ public sealed partial class MirrorNetworkManager
         return true;
     }
 
-    private void BeginUnknownChoice(StageMapSaveData map, StageNodeSaveData node, int choice)
+    private void BeginUnknownChoice(StageNodeSaveData node, int choice)
     {
-        if (!string.IsNullOrEmpty(serverUnknownChoice.NodeId)) return;
+        if (!string.IsNullOrEmpty(serverUnknownChoice.NodeId))
+            return;
+
         unknownDiscards.Clear();
         serverUnknownChoice = new MirrorUnknownChoiceState { NodeId = node.id, Choice = choice };
         NetworkServer.SendToAll(serverUnknownChoice);
@@ -71,13 +73,19 @@ public sealed partial class MirrorNetworkManager
                !string.IsNullOrEmpty(serverUnknownChoice.NodeId))
         {
             if (sessionSceneChangeRequested || NetworkServer.isLoadingScene)
-            { yield return null; continue; }
+            {
+                yield return null;
+                continue;
+            }
             if (TryGetRunSnapshot(out var map))
             {
                 var node = map.nodes.Find(n => n != null && n.id == serverUnknownChoice.NodeId);
                 var stage = Resources.Load<YJ_UnknownStageDatabaseSO>(UnknownStageDatabaseResourcePath)?.GetById(node?.unknownStageId);
                 if (stage == null || !stage.TryGetChoice(serverUnknownChoice.Choice, out var choice, out string error))
-                { RejectUnknownChoice("선택지 데이터를 확인할 수 없습니다."); break; }
+                {
+                    RejectUnknownChoice("선택지 데이터를 확인할 수 없습니다.");
+                    break;
+                }
                 bool requiresDiscard = choice.Effects.Any(e => e.Type == YJ_UnknownEffectType.DiscardSelectedItems);
                 var members = ServerRoster.Members.Where(m => m.OriginalParticipant && !m.HasForfeited).ToArray();
                 if (requiresDiscard)
@@ -85,11 +93,17 @@ public sealed partial class MirrorNetworkManager
                     int required = choice.Effects.Where(e => e.Type == YJ_UnknownEffectType.DiscardSelectedItems).Sum(e => e.Amount);
                     var invalid = members.FirstOrDefault(m => m.RuntimeContext == null ||
                         m.RuntimeContext.GetComponent<PlayerInventorySync>().CaptureEventInventory().items.Count(i => !i.isEquipped) < required);
-                    if (invalid != null) { RejectUnknownChoice(invalid.DisplayName + "의 폐기할 가방 아이템이 부족합니다."); break; }
+                    if (invalid != null)
+                    {
+                        RejectUnknownChoice(invalid.DisplayName + "의 폐기할 가방 아이템이 부족합니다.");
+                        break;
+                    }
                 }
                 if (members.Length > 0 && (!requiresDiscard || members.All(m => unknownDiscards.ContainsKey(m.ParticipantId))))
                 {
-                    if (!ApplyUnknownChoice(map, node, stage, choice, members, out error)) RejectUnknownChoice(error);
+                    if (!ApplyUnknownChoice(map, node, stage, choice, members, out error))
+                        RejectUnknownChoice(error);
+
                     break;
                 }
             }
@@ -117,14 +131,18 @@ public sealed partial class MirrorNetworkManager
         data.needsPlayerInitialization = false;
         data.status = new PlayerStatusData
         {
-            playerLevel = context.Stats.Stat.currentLevel, playerExp = context.Stats.Stat.currentExp,
-            currentHealth = context.Health.CurrentHealth, currentMana = context.Mana.CurrentMana, gold = context.Wallet.Gold
+            playerLevel = context.Stats.Stat.currentLevel,
+            playerExp = context.Stats.Stat.currentExp,
+            currentHealth = context.Health.CurrentHealth,
+            currentMana = context.Mana.CurrentMana,
+            gold = context.Wallet.Gold
         };
         data.inventory = context.GetComponent<PlayerInventorySync>().CaptureEventInventory();
         var skills = context.GetComponent<FighterSkillAuthority>();
         if (skills != null)
         {
-            data.activeSkill = new ActiveSkillSaveData {
+            data.activeSkill = new ActiveSkillSaveData
+            {
                 evolutions = new SkillEvolutionId[skills.SkillCount],
                 enhancements = new SkillEnhancementId[skills.SkillCount]
             };
@@ -143,38 +161,65 @@ public sealed partial class MirrorNetworkManager
         error = null;
         string key = UnknownNodeKey(map, node);
         var destination = YJ_UnknownStageDestination.StageSelect;
-        foreach (var effect in choice.Effects) if (effect.Type == YJ_UnknownEffectType.MoveToStage) destination = effect.Destination;
+        foreach (var effect in choice.Effects)
+        {
+            if (effect.Type == YJ_UnknownEffectType.MoveToStage)
+                destination = effect.Destination;
+        }
+
         string sceneName = null;
         StageNodeType nodeType = StageNodeType.Event;
         if (destination != YJ_UnknownStageDestination.StageSelect &&
-            !YJ_StageSaveService.TryResolveUnknownDestinationData(map, key, stage.StageId, destination, out sceneName, out nodeType, out error)) return false;
+            !YJ_StageSaveService.TryResolveUnknownDestinationData(map, key, stage.StageId, destination, out sceneName, out nodeType, out error))
+            return false;
+
         string path = destination == YJ_UnknownStageDestination.StageSelect ? SessionCampScene :
-            nodeType == StageNodeType.Camp ? GetCurrentCampScene() : ResolveAct1CombatScene(sceneName);
+            nodeType == StageNodeType.Camp ? GetCurrentCampScene() : ResolveCombatScene(sceneName);
         if (string.IsNullOrEmpty(path) || !Application.CanStreamedLevelBeLoaded(path))
-        { error = "이벤트 목적 씬이 준비되지 않았습니다."; return false; }
+        {
+            error = "이벤트 목적 씬이 준비되지 않았습니다.";
+            return false;
+        }
+
         var database = Resources.Load<ItemDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/DropTableConfig/AllItems");
-        if (database == null) { error = "이벤트 아이템 데이터가 없습니다."; return false; }
+        if (database == null)
+        {
+            error = "이벤트 아이템 데이터가 없습니다.";
+            return false;
+        }
+
         var before = new List<GameSaveData>();
         var after = new List<GameSaveData>();
         foreach (var member in members)
         {
             if (member.RuntimeContext == null || !member.RuntimeContext.IsComplete || member.PassiveProfile == null)
-            { error = member.DisplayName + "의 플레이어 상태가 준비되지 않았습니다."; return false; }
+            {
+                error = member.DisplayName + "의 플레이어 상태가 준비되지 않았습니다.";
+                return false;
+            }
+
             var data = CaptureUnknownPlayer(member);
             before.Add(JsonUtility.FromJson<GameSaveData>(JsonUtility.ToJson(data)));
             unknownDiscards.TryGetValue(member.ParticipantId, out var ids);
             if (!DataManager.TryApplyUnknownChoiceToData(data, key, stage, serverUnknownChoice.Choice, out _, out error,
                 ids, database, member.PassiveProfile.Stats, member.ParticipantId))
-            { error = member.DisplayName + ": " + error; return false; }
+            {
+                error = member.DisplayName + ": " + error;
+                return false;
+            }
             after.Add(data);
         }
         // 전원 계산 성공 후 적용합니다. 적용 실패 시 앞선 참가자의 인벤토리도 복원합니다.
         for (int i = 0; i < members.Length; i++)
         {
-            if (members[i].RuntimeContext.GetComponent<PlayerInventorySync>().ServerApplyEventInventory(after[i].inventory)) continue;
+            if (members[i].RuntimeContext.GetComponent<PlayerInventorySync>().ServerApplyEventInventory(after[i].inventory))
+                continue;
+
             for (int j = 0; j <= i; j++)
+            {
                 if (!members[j].RuntimeContext.GetComponent<PlayerInventorySync>().ServerApplyEventInventory(before[j].inventory))
                     Debug.LogError("이벤트 인벤토리 원복 실패: " + members[j].ParticipantId);
+            }
             error = "이벤트 아이템을 반영하지 못했습니다. 상태를 확인한 뒤 다시 선택하세요.";
             return false;
         }
@@ -190,12 +235,20 @@ public sealed partial class MirrorNetworkManager
         serverUnknownChoice = default;
         unknownDiscards.Clear();
         NetworkServer.SendToAll(serverUnknownChoice);
-        if (destination == YJ_UnknownStageDestination.StageSelect) return ServerTryCompletePendingStageAndReturnToSelection();
+        if (destination == YJ_UnknownStageDestination.StageSelect)
+            return ServerTryCompletePendingStageAndReturnToSelection();
+
         node.type = nodeType;
         node.sceneName = sceneName;
         map.usedStageSceneNames ??= new List<string>();
-        if (nodeType is StageNodeType.Battle or StageNodeType.Elite && !map.usedStageSceneNames.Contains(sceneName)) map.usedStageSceneNames.Add(sceneName);
-        if (!ServerPublishRunSnapshot(map)) { error = "이벤트 이동 상태를 갱신하지 못했습니다."; return false; }
+        if (nodeType is StageNodeType.Battle or StageNodeType.Elite && !map.usedStageSceneNames.Contains(sceneName))
+            map.usedStageSceneNames.Add(sceneName);
+        if (!ServerPublishRunSnapshot(map))
+        {
+            error = "이벤트 이동 상태를 갱신하지 못했습니다.";
+            return false;
+        }
+
         sessionSceneChangeRequested = true;
         pendingSessionRoute = GetRouteForStageNodeType(node.type);
         ServerChangeScene(path);
@@ -204,7 +257,9 @@ public sealed partial class MirrorNetworkManager
 
     private void ResetUnknownSession()
     {
-        if (unknownChoiceWait != null) StopCoroutine(unknownChoiceWait);
+        if (unknownChoiceWait != null)
+            StopCoroutine(unknownChoiceWait);
+
         unknownChoiceWait = null;
         unknownPlayerData.Clear();
         unknownDiscards.Clear();

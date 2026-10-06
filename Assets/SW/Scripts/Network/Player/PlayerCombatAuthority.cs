@@ -774,6 +774,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         if (pendingGunnerWeapon == GunnerWeaponType.Shotgun)
         {
+            context.Effects.ReserveEchoReplay(attackId, origin, direction, pendingGunnerRange, 90f);
             // SW 수정: 사망·이동 콜백 전에 본체별 가장 가까운 유효 표면과 대상 전체를 고정한다.
             var hitPositions = new Dictionary<WBH_ICombat, Vector3>();
             foreach (Collider hit in Physics.OverlapSphere(origin, pendingGunnerRange, enemyLayer, QueryTriggerInteraction.Collide))

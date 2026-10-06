@@ -212,8 +212,16 @@ public sealed class MirrorSessionRoster
 
     private void EnsureLeader()
     {
-        foreach (Member member in ConnectedMembers) if (member.IsLeader) return;
-        foreach (Member member in ConnectedMembers) { member.IsLeader = true; return; }
+        foreach (Member member in ConnectedMembers)
+        {
+            if (member.IsLeader)
+                return;
+        }
+        foreach (Member member in ConnectedMembers)
+        {
+            member.IsLeader = true;
+            return;
+        }
     }
 
     private static void Forfeit(Member member)
@@ -227,7 +235,12 @@ public sealed class MirrorSessionRoster
     }
 
     private static bool ValidTime(double now) => !double.IsNaN(now) && !double.IsInfinity(now) && now >= 0;
-    private static bool Reject(string message, out string reason) { reason = message; return false; }
+    private static bool Reject(string message, out string reason)
+    {
+        reason = message;
+        return false;
+    }
+
     private static bool TokensEqual(string left, string right)
     {
         if (left == null || right == null || left.Length != right.Length) return false;

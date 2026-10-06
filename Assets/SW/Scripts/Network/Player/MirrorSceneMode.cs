@@ -55,7 +55,8 @@ public sealed class MirrorSceneMode : MonoBehaviour
         SetBehaviours(singlePlayerBehaviours, !multiplayer);
         SetObjects(multiplayerObjects, multiplayer);
         SetBehaviours(multiplayerBehaviours, multiplayer);
-        if (!multiplayer) ActivateSharedSceneIdentities();
+        if (!multiplayer)
+            ActivateSharedSceneIdentities();
     }
 
     /// <summary>
@@ -67,9 +68,13 @@ public sealed class MirrorSceneMode : MonoBehaviour
     private void ActivateSharedSceneIdentities()
     {
         foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+        {
             foreach (NetworkIdentity identity in root.GetComponentsInChildren<NetworkIdentity>(true))
+            {
                 if (identity.sceneId != 0 && !IsUnderAny(identity.transform, multiplayerObjects))
                     identity.gameObject.SetActive(true);
+            }
+        }
     }
 
     /// <summary>
@@ -93,24 +98,35 @@ public sealed class MirrorSceneMode : MonoBehaviour
 
     private static bool IsUnderAny(Transform target, GameObject[] roots)
     {
-        if (roots == null) return false;
+        if (roots == null)
+            return false;
+
         for (Transform current = target; current != null; current = current.parent)
+        {
             foreach (var root in roots)
-                if (root != null && current == root.transform) return true;
+            {
+                if (root != null && current == root.transform)
+                    return true;
+            }
+        }
         return false;
     }
 
     private IEnumerator Start()
     {
-        if (!MirrorNetworkManager.OwnsGameplay) ActivateSharedSceneIdentities();
-        if (preparationScreen == null) yield break;
+        if (!MirrorNetworkManager.OwnsGameplay)
+            ActivateSharedSceneIdentities();
+        if (preparationScreen == null)
+            yield break;
 #if UNITY_SERVER
         preparationScreen.gameObject.SetActive(false);
         yield break;
 #else
         uiLabels = Resources.Load<UILabelDatabaseSO>(SessionUIMessageLocalizer.DatabasePath);
         languageManager = YJ_LanguageManager.Instance;
-        if (languageManager != null) languageManager.LanguageChanged += RefreshPreparationLanguage;
+        if (languageManager != null)
+            languageManager.LanguageChanged += RefreshPreparationLanguage;
+
         RefreshPreparationLanguage(default);
         preparationExit.onClick.AddListener(ReturnFromPreparationFailure);
         var session = MirrorNetworkManager.singleton as MirrorNetworkManager;
@@ -123,7 +139,11 @@ public sealed class MirrorSceneMode : MonoBehaviour
             string error = multiplayer ? (session != null ? session.GameplayPreparationError : "연결이 종료되었습니다.")
                 : stage != null ? stage.GameplayPreparationError : null;
             bool ready = multiplayer ? session != null && session.IsLocalGameplayReady : stage == null || stage.IsGameplayReady;
-            if (ready) { preparationScreen.gameObject.SetActive(false); yield break; }
+            if (ready)
+            {
+                preparationScreen.gameObject.SetActive(false);
+                yield break;
+            }
             if (error != null || Time.realtimeSinceStartupAsDouble >= deadline)
             {
                 string status = error ?? "플레이 준비 시간이 초과되었습니다.";
@@ -142,19 +162,38 @@ public sealed class MirrorSceneMode : MonoBehaviour
     private void ReturnFromPreparationFailure()
     {
         var session = MirrorNetworkManager.singleton as MirrorNetworkManager;
-        if (session != null) { session.RequestLeaveSession(); return; }
+        if (session != null)
+        {
+            session.RequestLeaveSession();
+            return;
+        }
+
         var loader = FindFirstObjectByType<Core.SceneLoader>();
-        if (loader != null) loader.ReturnFromPreparationFailure();
+        if (loader != null)
+            loader.ReturnFromPreparationFailure();
     }
 
     private static void SetObjects(GameObject[] objects, bool active)
     {
-        if (objects == null) return;
-        foreach (var item in objects) if (item != null) item.SetActive(active);
+        if (objects == null)
+            return;
+
+        foreach (var item in objects)
+        {
+            if (item != null)
+                item.SetActive(active);
+        }
     }
+
     private static void SetBehaviours(Behaviour[] behaviours, bool active)
     {
-        if (behaviours == null) return;
-        foreach (var item in behaviours) if (item != null) item.enabled = active;
+        if (behaviours == null)
+            return;
+
+        foreach (var item in behaviours)
+        {
+            if (item != null)
+                item.enabled = active;
+        }
     }
 }

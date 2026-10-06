@@ -105,7 +105,13 @@ public sealed partial class MirrorNetworkManager
             if (!result.IsSuccess || !result.IsCloudSynchronized)
                 Debug.LogWarning($"[Mirror checkpoint] {result.Message}");
         }
-        catch (Exception exception) { Debug.LogError($"[Mirror checkpoint] 저장 실패: {exception.Message}"); }
-        finally { checkpointSaveGate.Release(); }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[Mirror checkpoint] 저장 실패: {exception.Message}");
+        }
+        finally
+        {
+            checkpointSaveGate.Release();
+        }
     }
 }

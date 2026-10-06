@@ -4,7 +4,7 @@ using ItemSystem;
 using UnityEngine;
 
 /// <summary>같은 플레이어의 싱글·서버가 공유하는 발동 조건, 아이템별 쿨타임과 공격 준비 상태다.</summary>
-public sealed class PlayerItemEffectState
+public sealed partial class PlayerItemEffectState
 {
     private readonly PlayerContext context;
     private InventoryController inventory => context.Inventory;
@@ -60,6 +60,7 @@ public sealed class PlayerItemEffectState
         Vector3? attackOrigin = null, bool shotgunAttack = false)
     {
         directAttackId = attackId;
+        directNinjaBonus = attackId != 0 ? ReserveNinjaDodgeBonus(attackId) : 0f;
         directTargets.Clear();
         if (targets != null) directTargets.UnionWith(targets);
         directWaveEffect = null;
@@ -350,10 +351,11 @@ public sealed class PlayerItemEffectState
         => context.CombatAuthority != null ? context.CombatAuthority.IsDirectTargetForAttack(attackId, target)
             : attackId != 0 && directAttackId == attackId && directTargets.Contains(target);
 
-    public IDisposable BeginGunnerHitScope(uint attackId, GunnerWeaponType weapon, UniqueEffectSO effect)
+    public IDisposable BeginGunnerHitScope(uint attackId, GunnerWeaponType weapon, UniqueEffectSO effect, float ninjaBonus = 0f)
     {
         if (attackId == 0 || hitAttackId != 0) return null;
         hitAttackId = attackId; hitWeapon = weapon; hitEffect = effect;
+        hitNinjaBonus = ninjaBonus;
         return new HitScope(this);
     }
 
@@ -393,6 +395,7 @@ public sealed class PlayerItemEffectState
             TryFireChainLightning(result, firstTarget);
             TryFireInfernoExtraHit(result, firstTarget);
             TryFireGlassRailExtraHit(result, firstTarget);
+            ResolveRepeatedHitEffects(result, firstTarget);
         }
     }
 
@@ -438,6 +441,11 @@ public sealed class PlayerItemEffectState
         ChainLightningUniqueEffectSO chain => chain.cooldownSeconds,
         PhaseHarvesterWaveUniqueEffectSO wave => wave.cooldownSeconds,
         StarBreacherExplosionUniqueEffectSO explosion => explosion.cooldownSeconds,
+        EchoVaultReplayUniqueEffectSO echo => echo.cooldownSeconds,
+        WorldEnderChargedBlastUniqueEffectSO blast => blast.rechargeSeconds,
+        NinjaDodgeAttackUniqueEffectSO ninja => ninja.cooldownSeconds,
+        WildfireSpreadUniqueEffectSO wildfire => wildfire.cooldownSeconds,
+        GuardiansJusticeShieldUniqueEffectSO guardian => guardian.cooldownSeconds,
         _ => 0f,
     };
 
@@ -449,6 +457,7 @@ public sealed class PlayerItemEffectState
     {
         if (!CanExecute) return;
         ReconcileEquipment();
+        ReconcileWorldEnder();
         BuffInstance heat = FindWasteHeatBuff();
         if (heat == null || heat.stackCount == 0 || Now - lastHeatHitTime < heatEffect.idleResetSeconds) return;
         WasteHeatDischargeUniqueEffectSO effect = heatEffect;
@@ -462,6 +471,7 @@ public sealed class PlayerItemEffectState
     /// <summary>SW 수정: 싱글·서버의 플레이어 수명 경계에서 공격별 중복·출처와 폐열을 초기화하며 장비 교체·사망으로 쿨다운을 우회하지 않는다.</summary>
     public void ResetAttackLifetime()
     {
+        ClearRepeatedHitEffects(force: true);
         while (grenadeEffects.Count > 0)
         {
             PlayerGrenadeEffect effect = grenadeEffects[0];
@@ -481,11 +491,16 @@ public sealed class PlayerItemEffectState
         hitEffect = null;
         ClearWasteHeat();
         ClearPreparedAttack();
+        ClearNinja();
+        ClearSupportMarks();
+        lastEchoAttackId = lastWorldEnderAttackId = 0;
+        SetWorldEnderReady(false);
     }
 
+    /// <summary>SW 수정 : 같은 소유자의 같은 SO 종류만 상한에 포함해 오래된 장판 또는 예약 폭발부터 취소한다.</summary>
     public void RegisterGrenadeEffect(PlayerGrenadeEffect effect, int maximum)
     {
-        var sameKind = grenadeEffects.FindAll(active => active != null && !active.IsFinished && active.IsGravity == effect.IsGravity);
+        var sameKind = grenadeEffects.FindAll(active => active != null && !active.IsFinished && active.EffectType == effect.EffectType);
         while (sameKind.Count >= maximum)
         {
             PlayerGrenadeEffect oldest = sameKind[0];
@@ -502,27 +517,34 @@ public sealed class PlayerItemEffectState
     {
         if (!CanExecute || cause != DamageCause.Direct || attackId == 0)
             return 1f;
+        float ninjaBonus = 0f;
+        if (attackId == directAttackId)
+            ninjaBonus = directNinjaBonus;
+        else if (attackId == hitAttackId)
+            ninjaBonus = hitNinjaBonus;
+
         if (!TryGetPreparedAttackEffect(out ItemInstance weapon, out DodgePreparedAttackUniqueEffectSO effect) ||
             (!string.IsNullOrEmpty(preparedAttackSourceInstanceId) &&
              preparedAttackSourceInstanceId != weapon.instanceId))
         {
             ClearPreparedAttack();
-            return 1f;
+            return 1f + ninjaBonus;
         }
         if (empoweredAttackId == attackId)
-            return ValidDamageMultiplier(effect);
+            return ValidDamageMultiplier(effect) + ninjaBonus;
 
         empoweredAttackId = 0;
         if (!preparedAttackReady)
-            return 1f;
+            return 1f + ninjaBonus;
 
         empoweredAttackId = attackId;
         preparedAttackReady = false;
         PreparedChanged?.Invoke(false);
         preparedAttackConsumeCount++;
-        return ValidDamageMultiplier(effect);
+        return ValidDamageMultiplier(effect) + ninjaBonus;
     }
 
+    /// <summary>SW 수정 : 싱글·서버의 직접 기본 적중에서 설정된 치명 조건을 먼저 확인하고 공격당 한 번만 전기 연쇄를 등록한다.</summary>
     private void TryFireChainLightning(in WBH_DamageResult result, WBH_ICombat firstTarget)
     {
         if (result.AttackId == 0 || inventory?.EquipmentSystem == null || firstTarget == null ||
@@ -531,6 +553,10 @@ public sealed class PlayerItemEffectState
         {
             return;
         }
+
+        // SW 수정 : 같은 공격의 첫 비치명 표적 때문에 이후 치명 표적의 발동 기회까지 소비하지 않는다.
+        if (effect.requiresCritical && !result.IsCritical)
+            return;
 
         if (lastChainAttackIds.TryGetValue(effect, out uint lastAttackId) && lastAttackId == result.AttackId)
             return;
@@ -627,6 +653,7 @@ public sealed class PlayerItemEffectState
 
     public void PrepareDodgeAttack()
     {
+        PrepareNinjaDodge();
         if (!CanExecute || !TryGetPreparedAttackEffect(out ItemInstance weapon, out _))
             return;
         preparedAttackSourceInstanceId = weapon.instanceId;
@@ -650,6 +677,8 @@ public sealed class PlayerItemEffectState
     /// <summary>SW 수정: 싱글·서버에서 장착 인스턴스가 바뀌거나 플레이어가 죽으면 폐열·준비를 정리하고, 유효한 폐열 무기의 기존 버프 아이콘을 0스택으로 연결한다.</summary>
     public void ReconcileEquipment()
     {
+        ClearRepeatedHitEffects();
+        ReconcileNinja();
         if (CanExecute)
         {
             ItemInstance heatWeapon = null;
@@ -771,7 +800,15 @@ public sealed class PlayerItemEffectState
             case ChainLightningUniqueEffectSO: return effect.name + ":chain";
             case PhaseHarvesterWaveUniqueEffectSO: return effect.name + ":phase-harvester";
             case StarBreacherExplosionUniqueEffectSO: return effect.name + ":star-breacher";
+            case EchoVaultReplayUniqueEffectSO: return effect.name + ":echo";
+            case WorldEnderChargedBlastUniqueEffectSO: return effect.name + ":world-ender";
+            case NinjaDodgeAttackUniqueEffectSO: return effect.name + ":ninja";
+            case WildfireSpreadUniqueEffectSO: return effect.name + ":wildfire";
+            case GuardiansJusticeShieldUniqueEffectSO: return effect.name + ":guardian";
             default: return null;
         }
     }
+
+    internal void BeginGuardianCooldown(GuardiansJusticeShieldUniqueEffectSO effect)
+        => cooldownEndTimes[GetCooldownKey(effect, null)] = Now + effect.cooldownSeconds;
 }

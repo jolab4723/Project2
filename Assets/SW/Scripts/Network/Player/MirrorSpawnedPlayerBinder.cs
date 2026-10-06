@@ -150,8 +150,13 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
         if (isLocalPlayer) SetCutsceneInputBlocked(true);
 
         YJ_PortalEffect effect = FindFirstObjectByType<YJ_PortalEffect>();
-        if (effect != null) StartCoroutine(effect.PlayOnce(gameObject));
-        else foreach (Renderer item in portalHiddenRenderers) item.enabled = false;
+        if (effect != null)
+            StartCoroutine(effect.PlayOnce(gameObject));
+        else
+        {
+            foreach (Renderer item in portalHiddenRenderers)
+                item.enabled = false;
+        }
 
         if (NetworkManager.singleton is MirrorNetworkManager manager)
             manager.Chat.Append(ChatKind.Connection,
@@ -377,10 +382,14 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             {
                 absentRenderers = GetComponentsInChildren<Renderer>(true);
                 rendererStates = new bool[absentRenderers.Length];
-                for (int i = 0; i < absentRenderers.Length; i++) rendererStates[i] = absentRenderers[i].enabled;
+                for (int i = 0; i < absentRenderers.Length; i++)
+                    rendererStates[i] = absentRenderers[i].enabled;
+
                 absentColliders = GetComponentsInChildren<Collider>(true);
                 colliderStates = new bool[absentColliders.Length];
-                for (int i = 0; i < absentColliders.Length; i++) colliderStates[i] = absentColliders[i].enabled;
+                for (int i = 0; i < absentColliders.Length; i++)
+                    colliderStates[i] = absentColliders[i].enabled;
+
                 controllerWasEnabled = controller != null && controller.enabled;
                 controllerHadControl = controller != null && controller.IsControlEnabled;
                 absentAgent = GetComponent<NavMeshAgent>();
@@ -390,17 +399,40 @@ public sealed class MirrorSpawnedPlayerBinder : NetworkBehaviour
             }
             StopLocalSceneRestore();
             SetLocalOnlyBehaviours(false);
-            foreach (Renderer item in absentRenderers) if (item != null) item.enabled = false;
-            foreach (Collider item in absentColliders) if (item != null) item.enabled = false;
+            foreach (Renderer item in absentRenderers)
+            {
+                if (item != null)
+                    item.enabled = false;
+            }
+            foreach (Collider item in absentColliders)
+            {
+                if (item != null)
+                    item.enabled = false;
+            }
+
             controller?.SetControlEnable(false);
-            if (controller != null) controller.enabled = false;
-            if (absentAgent != null) absentAgent.enabled = false;
+            if (controller != null)
+                controller.enabled = false;
+            if (absentAgent != null)
+                absentAgent.enabled = false;
+
             return;
         }
-        if (!absenceApplied) return;
+        if (!absenceApplied)
+            return;
+
         absenceApplied = false;
-        for (int i = 0; i < absentRenderers.Length; i++) if (absentRenderers[i] != null) absentRenderers[i].enabled = rendererStates[i];
-        for (int i = 0; i < absentColliders.Length; i++) if (absentColliders[i] != null) absentColliders[i].enabled = colliderStates[i];
+        for (int i = 0; i < absentRenderers.Length; i++)
+        {
+            if (absentRenderers[i] != null)
+                absentRenderers[i].enabled = rendererStates[i];
+        }
+        for (int i = 0; i < absentColliders.Length; i++)
+        {
+            if (absentColliders[i] != null)
+                absentColliders[i].enabled = colliderStates[i];
+        }
+
         bool alive = context?.RuntimeState?.IsDead == false && !context.RuntimeState.IsReviving;
         if (absentAgent != null)
         {

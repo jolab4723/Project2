@@ -241,14 +241,27 @@ public class KY_StatusPopup : KY_PopupBase
         UnsubscribeStats();
         explicitOwner = true;
         statManager = owner;
-        if (isActiveAndEnabled) { SubscribeStats(); RequestData(); }
+        if (isActiveAndEnabled)
+        {
+            SubscribeStats();
+            RequestData();
+        }
     }
 
     /// <summary>SW 수정: 씬 전환 때 기존 플레이어 구독과 참조를 해제합니다.</summary>
-    public void Unbind() { UnsubscribeStats(); explicitOwner = true; statManager = null; }
+    public void Unbind()
+    {
+        UnsubscribeStats();
+        explicitOwner = true;
+        statManager = null;
+    }
 
     /// <summary>SW 수정: 씬 전환 중 남은 UI 연출을 종료합니다.</summary>
-    public void CloseImmediate() { transitionSequence?.Kill(); gameObject.SetActive(false); }
+    public void CloseImmediate()
+    {
+        transitionSequence?.Kill();
+        gameObject.SetActive(false);
+    }
 
     private void SubscribeStats()
     {
