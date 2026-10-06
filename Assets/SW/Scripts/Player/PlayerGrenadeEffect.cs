@@ -25,6 +25,8 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     internal Type EffectType { get; private set; }
     // SW 수정: 소유자 효과 상태와 같은 싱글/네트워크 시계를 쓴다.
     private double Now => owner.Effects.Now;
+    /// <summary>장판·예약 폭발이 끝나기까지 남은 시간(초). 표시 쪽 종료 연출 시점에만 쓴다.</summary>
+    internal float RemainingSeconds => owner == null ? -1f : (float)(endsAt - Now);
 
     public void InitializeEchoReplay(PlayerContext player, EchoVaultReplayUniqueEffectSO effect, uint sourceAttackId,
         Vector3 forward, float range, float angle, Action onReleased)
@@ -203,13 +205,15 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
     /// SW 수정: 중력 우물·특이점·일식 장판 표시의 싱글/멀티 공통 진입점이다. 전용 VFX(Resources/UniqueEffectVFX)가 있으면
     /// 반경에 맞춘 소용돌이·수축 코어 연출을 부모 아래에 만들고, 없을 때만 기존 원형 선을 그린다. 표시 전용이며 판정에는 관여하지 않는다.
     /// </summary>
-    public static GameObject CreateRing(Transform parent, string name, float radius, Color color)
+    /// <param name="remainingSeconds">장판이 끝나기까지 남은 시간. 음수면 같은 오브젝트의 <see cref="PlayerGrenadeEffect"/>에서 읽는다.</param>
+    public static GameObject CreateRing(Transform parent, string name, float radius, Color color, float remainingSeconds = -1f)
     {
         float parentScale = parent != null ? Mathf.Abs(parent.lossyScale.x) : 1f;
         string vfxName = name switch
         {
             "GravityWellFieldVisual" => "UEVFX_GravityWellField",
             "SingularityDelayedExplosionVisual" => "UEVFX_SingularityCharge",
+            "SunfallBurnFieldVisual" => "UEVFX_SunfallBurnField",
             _ => null,
         };
         // SW 수정: 다른 고유효과 표시와 같은 Resources 캐시를 사용한다.
@@ -219,7 +223,16 @@ public sealed class PlayerGrenadeEffect : MonoBehaviour
             effect.name = name;
             effect.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             // 반경 1m 기준 프리팹이므로 부모 투사체의 스케일을 상쇄해 실제 월드 반경과 맞춘다.
-            effect.transform.localScale = Vector3.one * (radius / Mathf.Max(0.0001f, parentScale));
+            // 경계 벽 높이·둘레 무늬를 따로 맞추는 프리팹은 공용 반경 맞춤을 쓴다.
+            if (effect.TryGetComponent(out UniqueEffectRadiusFit fit)) fit.Fit(radius, parentScale);
+            else effect.transform.localScale = Vector3.one * (radius / Mathf.Max(0.0001f, parentScale));
+            // 등장·종료 연출이 있는 장판은 남은 시간에 맞춰 끝나기 직전에 흐려지게 한다.
+            if (effect.TryGetComponent(out UniqueEffectFieldTimeline timeline))
+            {
+                if (remainingSeconds < 0f && parent != null && parent.TryGetComponent(out PlayerGrenadeEffect owner))
+                    remainingSeconds = owner.RemainingSeconds;
+                timeline.ScheduleEnd(remainingSeconds);
+            }
             return effect;
         }
 
