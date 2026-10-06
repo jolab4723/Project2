@@ -40,6 +40,8 @@ public sealed class MirrorBossIntro : NetworkBehaviour
     private DirectorWrapMode previousWrapMode;
 
     public bool IsComplete => complete;
+    /// <summary>서버가 인트로를 예약한 뒤 완료하기 전까지 true다. 신규 행동 승인 판정에 사용한다.</summary>
+    public bool IsInProgress => startsAt > 0d && !complete;
     public bool IsPresenting => presenting;
     public double StartsAt => startsAt;
     public double EndsAt => endsAt;
@@ -276,5 +278,11 @@ public sealed class MirrorBossIntro : NetworkBehaviour
         base.OnStopClient();
     }
 
-    private void OnDisable() => ReleasePresentation();
+    private void OnEnable() => (NetworkManager.singleton as MirrorNetworkManager)?.SetCurrentBossIntro(this, true);
+
+    private void OnDisable()
+    {
+        (NetworkManager.singleton as MirrorNetworkManager)?.SetCurrentBossIntro(this, false);
+        ReleasePresentation();
+    }
 }

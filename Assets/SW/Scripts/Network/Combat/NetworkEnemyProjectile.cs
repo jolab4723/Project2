@@ -56,6 +56,8 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     [SyncVar(hook = nameof(OnSingularityActiveChanged))] private bool singularityActive;
     [SyncVar] private float sunfallBurnFieldRadius;
     [SyncVar] private Color sunfallBurnFieldColor;
+    // 클라이언트가 장판 종료 직전에 흐려지는 연출을 맞추도록 서버 시각 기준 종료 시각을 함께 복제한다.
+    [SyncVar] private double sunfallBurnFieldEndsAt;
     // SW 수정 : 반경과 색이 복제된 뒤 활성 Hook으로 일식 장판을 표시한다.
     [SyncVar(hook = nameof(OnSunfallBurnFieldActiveChanged))] private bool sunfallBurnFieldActive;
 
@@ -126,8 +128,9 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         {
             ClientPlayerObservedCount++;
             visualBindUntil = Time.unscaledTime + 0.5f;
+            // 초기 역직렬화 Hook이 장판을 먼저 만들었을 수 있으므로, 비행 외형은 장판이 아닐 때만 만든다.
             TryBindPlayerVisual();
-            if (chargedWarhead && chargedVisual == null) chargedVisual = ChargedShotVisual.Create(transform);
+            if (chargedWarhead && chargedVisual == null && !IsPersistentFieldActive) chargedVisual = ChargedShotVisual.Create(transform);
         }
         else ClientObservedCount++;
         if (missile && !playerShot)
@@ -230,7 +233,7 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     /// </summary>
     private void Update()
     {
-        if (isClient && playerShot && !gravityWellActive && !singularityActive && !sunfallBurnFieldActive &&
+        if (isClient && playerShot && !IsPersistentFieldActive &&
             playerProjectileVisual == null && Time.unscaledTime <= visualBindUntil)
             TryBindPlayerVisual();
         if (!isServer)
@@ -580,6 +583,7 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         speed = 0f;
         sunfallBurnFieldRadius = effect.radius;
         sunfallBurnFieldColor = effect.fieldColor;
+        sunfallBurnFieldEndsAt = NetworkTime.time + effect.durationSeconds;
         sunfallBurnFieldActive = true;
         if (projectileCollider != null)
             projectileCollider.enabled = false;
@@ -623,9 +627,12 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         if (binding == null) return;
         // 발사 후 장착 외형이 바뀌어도 이 탄은 처음 확보한 VFX 참조를 유지한다.
         playerImpactVisualPrefab = binding.ImpactVisualPrefab;
-        if (binding.ProjectileVisualPrefab == null || playerProjectileVisual != null) return;
+        // 충돌 후 지속 장판 상태에서는 비행 외형을 새로 만들지 않는다.
+        // 최초 관찰 시 SyncVar Hook이 만든 장판 Renderer를 끄지 않도록 OnStartClient 경로도 같은 조건을 따른다.
+        if (binding.ProjectileVisualPrefab == null || playerProjectileVisual != null || IsPersistentFieldActive) return;
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
-            if (chargedVisual == null || !renderer.transform.IsChildOf(chargedVisual.transform)) renderer.enabled = false;
+            if ((chargedVisual == null || !renderer.transform.IsChildOf(chargedVisual.transform)) && !IsFieldVisualRenderer(renderer))
+                renderer.enabled = false;
         playerProjectileVisual = Instantiate(binding.ProjectileVisualPrefab, transform, false);
         playerProjectileVisual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         GunnerVfxPlayback.Restart(playerProjectileVisual);
@@ -643,12 +650,15 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     /// <summary>SW 수정: 기존 투사체 외형을 숨기고 네트워크로 받은 위치·반경·색상으로 장판 링을 만듭니다.</summary>
     private void ShowGravityWellVisual()
     {
-        if (!isClient || gravityWellVisual != null)
+        if (!isClient)
             return;
-        if (playerProjectileVisual != null)
-            playerProjectileVisual.SetActive(false);
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
-            renderer.enabled = false;
+        HideFlightVisual();
+        // 이미 만든 장판은 재생성하지 않고 표시 상태만 보장한다.
+        if (gravityWellVisual != null)
+        {
+            if (!gravityWellVisual.activeSelf) gravityWellVisual.SetActive(true);
+            return;
+        }
 
         gravityWellVisual = PlayerGrenadeEffect.CreateRing(transform, "GravityWellFieldVisual", gravityWellRadius, gravityWellColor);
     }
@@ -665,12 +675,15 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     /// <summary>SW 수정: 충돌 위치와 폭발 반경을 보라색 바닥 링으로 표시해 기폭 전 위험 범위를 알립니다.</summary>
     private void ShowSingularityVisual()
     {
-        if (!isClient || singularityVisual != null)
+        if (!isClient)
             return;
-        if (playerProjectileVisual != null)
-            playerProjectileVisual.SetActive(false);
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
-            renderer.enabled = false;
+        HideFlightVisual();
+        // 이미 만든 장판은 재생성하지 않고 표시 상태만 보장한다.
+        if (singularityVisual != null)
+        {
+            if (!singularityVisual.activeSelf) singularityVisual.SetActive(true);
+            return;
+        }
 
         singularityVisual = PlayerGrenadeEffect.CreateRing(transform, "SingularityDelayedExplosionVisual", singularityExplosionRadius, singularityWarningColor);
     }
@@ -684,17 +697,45 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
             Destroy(sunfallBurnFieldVisual);
     }
 
-    /// <summary>SW 수정 : 비행 외형을 숨기고 서버에서 복제한 일식 장판 반경과 색으로 기존 원형 표시를 만든다.</summary>
+    /// <summary>SW 수정 : 비행 외형을 숨기고 서버에서 복제한 일식 장판 반경으로 공용 장판 표시(전용 일식 VFX, 없으면 원형 선)를 만든다.</summary>
     private void ShowSunfallBurnFieldVisual()
     {
-        if (!isClient || sunfallBurnFieldVisual != null)
+        if (!isClient)
             return;
+        HideFlightVisual();
+        // 이미 만든 장판은 재생성하지 않고 표시 상태만 보장한다.
+        if (sunfallBurnFieldVisual != null)
+        {
+            if (!sunfallBurnFieldVisual.activeSelf) sunfallBurnFieldVisual.SetActive(true);
+            return;
+        }
+
+        sunfallBurnFieldVisual = PlayerGrenadeEffect.CreateRing(transform, "SunfallBurnFieldVisual", sunfallBurnFieldRadius, sunfallBurnFieldColor,
+            (float)(sunfallBurnFieldEndsAt - NetworkTime.time));
+    }
+
+    /// <summary>충돌 후 장판·지연 폭발처럼 투사체 외형 대신 바닥 표시를 쓰는 상태인지 반환합니다.</summary>
+    private bool IsPersistentFieldActive => gravityWellActive || singularityActive || sunfallBurnFieldActive;
+
+    /// <summary>장판 표시 객체 아래의 Renderer인지 확인해 비행 외형 정리 범위와 구분합니다.</summary>
+    private bool IsFieldVisualRenderer(Renderer renderer)
+    {
+        Transform t = renderer.transform;
+        return gravityWellVisual != null && t.IsChildOf(gravityWellVisual.transform) ||
+               singularityVisual != null && t.IsChildOf(singularityVisual.transform) ||
+               sunfallBurnFieldVisual != null && t.IsChildOf(sunfallBurnFieldVisual.transform);
+    }
+
+    /// <summary>원래 투사체·비행 외형 Renderer만 숨기고 장판 표시 Renderer는 건드리지 않습니다.</summary>
+    private void HideFlightVisual()
+    {
         if (playerProjectileVisual != null)
             playerProjectileVisual.SetActive(false);
+        if (chargedVisual != null)
+            chargedVisual.SetActive(false);
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
-            renderer.enabled = false;
-
-        sunfallBurnFieldVisual = PlayerGrenadeEffect.CreateRing(transform, "SunfallBurnFieldVisual", sunfallBurnFieldRadius, sunfallBurnFieldColor);
+            if (!IsFieldVisualRenderer(renderer))
+                renderer.enabled = false;
     }
 
     [ClientRpc]
