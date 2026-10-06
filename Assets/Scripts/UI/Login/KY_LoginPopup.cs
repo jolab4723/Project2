@@ -34,6 +34,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
 
     [Header("선택 표시")]
     [SerializeField] private TMP_Text feedbackText;
+    // SW 수정 : 클라우드가 빈 새 계정에 처음 로그인할 때 게스트 진행도를 가져올지 묻는 확인 창.
+    [SerializeField] private KY_ConfirmDialog guestImportDialog;
 
     [Header("외부 연결")]
     [SerializeField] private LoginRequestEvent loginRequested = new();
@@ -306,7 +308,8 @@ public sealed class KY_LoginPopup : MonoBehaviour
             return;
         }
         Core.SaveDataOperationResult synchronizationResult =
-            await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+            await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync(
+                () => GuestProgressImportPrompt.AskAsync(guestImportDialog));
         if (this == null || !isActiveAndEnabled)
             return;
         if (userId != Core.FirebaseService.Default.CurrentUserId)
