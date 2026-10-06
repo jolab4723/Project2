@@ -37,6 +37,17 @@ public class KY_SettingsPopup : KY_PopupBase
     public KY_RebindSlot potionSlot;
     public KY_RebindSlot dodgeSlot;
 
+    // WJ 이우진 추가(2026-10-06): 메뉴 단축키도 설정 목록에서 바꿀 수 있게 한다.
+    [Header("조작 - 메뉴 단축키")]
+    public KY_RebindSlot openSkillSlot;
+    public KY_RebindSlot openInventorySlot;
+    public KY_RebindSlot openStatusSlot;
+    public KY_RebindSlot openQuestSlot;
+    public KY_RebindSlot openBuffSlot;
+
+    // ESC는 일시정지(Pause) 전용이라 어떤 키에도 지정할 수 없다. 리바인드 중 누르면 취소된다.
+    private const string ReservedEscapePath = "<Keyboard>/escape";
+
     [Header("리바인드 오버레이 (예전 KY_RebindManager에서 이관)")]
     public GameObject rebindOverlay;
     public TextMeshProUGUI rebindText;
@@ -114,6 +125,56 @@ public class KY_SettingsPopup : KY_PopupBase
         skill4Slot.Init(actions.Player.Skill4, this);
         potionSlot.Init(actions.Player.Potion, this);
         dodgeSlot.Init(actions.Player.Dodge, this);
+
+        // 메뉴 슬롯은 프리팹에 줄이 없는 예전 배치에서도 동작하도록 연결된 것만 초기화한다.
+        openSkillSlot?.Init(actions.Player.OpenSkill, this);
+        openInventorySlot?.Init(actions.Player.OpenInventory, this);
+        openStatusSlot?.Init(actions.Player.OpenStatus, this);
+        openQuestSlot?.Init(actions.Player.OpenQuest, this);
+        openBuffSlot?.Init(actions.Player.OpenBuff, this);
+    }
+
+    /// <summary>WJ 이우진 추가(2026-10-06): 키 교환 대상이 되는, 설정 화면에 보이는 모든 키 슬롯.</summary>
+    private System.Collections.Generic.IEnumerable<KY_RebindSlot> AllRebindSlots()
+    {
+        KY_RebindSlot[] slots =
+        {
+            skill1Slot, skill2Slot, skill3Slot, skill4Slot, potionSlot, dodgeSlot,
+            openSkillSlot, openInventorySlot, openStatusSlot, openQuestSlot, openBuffSlot
+        };
+        foreach (KY_RebindSlot slot in slots)
+        {
+            if (slot != null && slot.Action != null)
+                yield return slot;
+        }
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 새 키가 목록의 다른 동작에 이미 쓰이고 있으면, 그 동작에 바꾸기 전 키를 넣어 서로 교환한다.
+    /// 목록 밖의 키(예: 캠프 강화 단축키 U)와 겹치는 경우는 교환 대상이 없으므로 그대로 둔다.
+    /// </summary>
+    private void SwapConflictingBinding(KY_RebindSlot changedSlot, string newPath, string previousPath)
+    {
+        if (string.IsNullOrEmpty(newPath) || string.IsNullOrEmpty(previousPath) ||
+            string.Equals(newPath, previousPath, System.StringComparison.OrdinalIgnoreCase))
+            return;
+
+        foreach (KY_RebindSlot other in AllRebindSlots())
+        {
+            if (other == changedSlot || other.Action == changedSlot.Action)
+                continue;
+
+            InputAction otherAction = other.Action;
+            for (int i = 0; i < otherAction.bindings.Count; i++)
+            {
+                if (!string.Equals(otherAction.bindings[i].effectivePath, newPath, System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                otherAction.ApplyBindingOverride(i, previousPath);
+                other.RefreshKeyText();
+                return;
+            }
+        }
     }
 
     /// <summary>키 하나를 새로 리바인드한다(예전 KY_RebindManager.StartRebind 이관). 오버레이를 띄우고
@@ -121,18 +182,27 @@ public class KY_SettingsPopup : KY_PopupBase
     public void StartRebind(InputAction action, KY_RebindSlot slot)
     {
         rebindOperation?.Cancel();
+        // WJ 이우진 수정(2026-10-06): TitleScene처럼 오버레이가 이 팝업의 형제 오브젝트이면, PopupManager.Show가
+        // 팝업을 맨 앞으로 올린 뒤 오버레이가 팝업 뒤에 가려졌다. 켜기 직전에 같은 부모 안에서 맨 앞으로 올린다
+        // (팝업 안의 자식 오버레이는 팝업 안에서 맨 앞이 될 뿐이라 기존 표시와 같다).
+        rebindOverlay.transform.SetAsLastSibling();
         rebindOverlay.SetActive(true);
         rebindText.text = GetUILabel("settings_ui.rebind_prompt", "변경할 키를 입력해주세요");
+
+        // WJ 이우진 추가(2026-10-06): 교환할 때 상대 동작에 넣어 줄, 바꾸기 전 키.
+        string previousPath = action.bindings.Count > 0 ? action.bindings[0].effectivePath : null;
 
         action.Disable();
 
         rebindOperation = action.PerformInteractiveRebinding()
             .WithControlsExcluding("Mouse")
-            .WithCancelingThrough("<Keyboard>/escape")
+            .WithControlsExcluding(ReservedEscapePath)
+            .WithCancelingThrough(ReservedEscapePath)
             .OnComplete(operation =>
             {
                 action.Enable();
                 rebindOverlay.SetActive(false);
+                SwapConflictingBinding(slot, action.bindings.Count > 0 ? action.bindings[0].effectivePath : null, previousPath);
                 slot.RefreshKeyText();
                 KeyBindingService.Save();
                 KY_GameEvents.KeyBindingChanged();
@@ -248,6 +318,13 @@ public class KY_SettingsPopup : KY_PopupBase
     private void ResetSettingsConfirmed()
     {
         SettingManager.Instance.Apply(new KY_SettingsData());
+
+        // WJ 이우진 추가(2026-10-06): 키 입력값도 기본값으로 되돌린다. 진행 중인 키 변경은 먼저 취소하고,
+        // HUD 키 안내·스킬 슬롯 키 표시가 바로 바뀌도록 변경 이벤트를 보낸다(설정 화면 슬롯은 아래 LoadCurrentSettings가 갱신).
+        rebindOperation?.Cancel();
+        KeyBindingService.ResetToDefaults();
+        KY_GameEvents.KeyBindingChanged();
+
         LoadCurrentSettings();
     }
 
