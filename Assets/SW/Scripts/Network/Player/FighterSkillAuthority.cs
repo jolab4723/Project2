@@ -8,6 +8,8 @@ public enum MirrorSkillRequestResult : byte
     None, Accepted, Hit, NoTarget, Dead, InvalidSlot, InvalidAim, DuplicateRequest,
     SkillOnCooldown, SkillAlreadyPending, AnimationImpactMissing, UnsupportedCharacter,
     InsufficientMana, Interrupted, InvalidSelection,
+    // 보스 인트로·포탈 도착 대기 중이라 신규 스킬을 승인하지 않음.
+    ActionHeld,
 }
 
 /// <summary>
@@ -270,7 +272,8 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
 
     public bool TryUseLocalSkill(int index, Vector3 aimDirection, Vector3 targetPosition)
     {
-        if (!CanSendLocalRequest() || localRequestPending || ownerInputBlocked || SkillPopupController.IsOpen ||
+        if (!CanSendLocalRequest() || !MirrorNetworkManager.CanStartNewAction(netIdentity) ||
+            localRequestPending || ownerInputBlocked || SkillPopupController.IsOpen ||
             !CanBeginSkillState() || index < 0 || index >= SkillCount || skills[index] == null ||
             context?.RuntimeState?.HasSnapshot != true || !TryValidateAim(ref aimDirection, targetPosition)) return false;
         // 충전 타이머가 남아 있어도 잔여 스택으로 사용할 수 있다. 최종 연사 제한은 원본 서버가 검사한다.
@@ -321,6 +324,12 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
         if (IsUnavailable)
         {
             Reject(requestId, MirrorSkillRequestResult.Dead);
+            return;
+        }
+        // 보스 인트로·포탈 대기 중의 신규 스킬은 서버에서 거절한다. 진행 중인 스킬과 쿨다운은 그대로 둔다.
+        if (!MirrorNetworkManager.CanStartNewAction(netIdentity))
+        {
+            Reject(requestId, MirrorSkillRequestResult.ActionHeld);
             return;
         }
         if (index >= SkillCount || skills[index] == null)

@@ -19,6 +19,8 @@ public enum MirrorCombatRequestResult : byte
     UnsupportedCharacter = 11,
     WeaponChanged = 12,
     ProjectileUnavailable = 13,
+    /// <summary>보스 인트로·포탈 도착 대기 중이라 신규 공격을 승인하지 않음.</summary>
+    ActionHeld = 14,
 }
 
 /// <summary>
@@ -292,7 +294,8 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         if (!isLocalPlayer ||
             !NetworkClient.active ||
             !NetworkClient.ready ||
-            IsUnavailable || context?.RuntimeState?.HasSnapshot != true ||
+            IsUnavailable || !MirrorNetworkManager.CanStartNewAction(netIdentity) ||
+            context?.RuntimeState?.HasSnapshot != true ||
             status == null ||
             !IsFinite(aimPoint))
         {
@@ -415,6 +418,13 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         if (IsUnavailable)
         {
             Reject(MirrorCombatRequestResult.Dead);
+            return;
+        }
+
+        // 보스 인트로·포탈 대기 중의 신규 공격은 서버에서 거절한다. 진행 중인 공격은 기존 정책을 따른다.
+        if (!MirrorNetworkManager.CanStartNewAction(netIdentity))
+        {
+            Reject(MirrorCombatRequestResult.ActionHeld);
             return;
         }
 

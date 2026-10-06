@@ -342,7 +342,9 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     /// <summary>회피 이동은 기존 소유자 경로를 유지하고, 장비 발동은 서버의 생존·조작·대기 시간으로 제한합니다.</summary>
     private void ConfirmDodgeTrigger()
     {
+        // 보스 인트로·포탈 대기 중의 회피는 닌자 보너스 등 신규 장비 발동을 만들지 않는다.
         if (!isServer || health == null || health.CurrentHealth <= 0f ||
+            !MirrorNetworkManager.CanStartNewAction(netIdentity) ||
             context?.Controller == null || !context.Controller.IsControlEnabled ||
             NetworkTime.time < nextDodgeTriggerAt)
             return;
