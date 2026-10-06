@@ -13,6 +13,9 @@ public class KY_RebindSlot : MonoBehaviour
     private InputAction action;
     private KY_SettingsPopup owner;
 
+    /// <summary>WJ 이우진 추가(2026-10-06): 이 슬롯이 표시하는 입력 동작. 설정 팝업이 키 교환 대상을 찾을 때 읽는다.</summary>
+    public InputAction Action => action;
+
     void Awake()
     {
         rebindButton.onClick.AddListener(OnClickRebind);
