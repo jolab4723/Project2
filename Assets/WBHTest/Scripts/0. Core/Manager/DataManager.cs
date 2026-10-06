@@ -33,6 +33,8 @@ namespace Core
         private const string ActiveSkillSaveFileName = "activeskill.json";
         private const string QuestSaveFileName = "quest.json";
         private const string OptionsSaveFileName = "options.json";
+        // WJ 이우진 추가(2026-10-06): YJ_StageSaveService가 예전에 루트에 따로 쓰던 맵 파일. 지금은 gamesave.json의 stage에 들어간다.
+        private const string LegacyStageMapFileName = "stage_map_save.json";
 
         private const string SinglePlayerSlotFileName = "profile_singleplayer.json";
         private const string SinglePlayerProfileOwnerFileName = "profile_singleplayer_owner.json";
@@ -126,10 +128,12 @@ namespace Core
         }
 
         // SW 수정 : 게스트 저장(로그아웃 상태의 전역 경로)에 속하는 작업 파일. 가져오기 뒤 백업 폴더로 옮긴다.
+        // WJ 이우진 수정(2026-10-06): 게임 저장으로 옮기기 전의 예전 맵 파일도 남아 있으면 함께 백업 폴더로 옮긴다.
         private static readonly string[] GuestSaveFileNames =
         {
             SinglePlayerSlotFileName, GameplaySaveFileName, QuestSaveFileName, InventorySaveFileName,
-            PlayerStatusSaveFileName, SkillTreeSaveFileName, StageSaveFileName, ActiveSkillSaveFileName
+            PlayerStatusSaveFileName, SkillTreeSaveFileName, StageSaveFileName, ActiveSkillSaveFileName,
+            LegacyStageMapFileName
         };
 
         /// <summary>SW 수정 : 계정 동기화 중 게스트 저장을 가져왔는지 기록합니다.</summary>
@@ -729,6 +733,7 @@ namespace Core
                 data.activeSkill = BuildActiveSkillSaveData();
                 data.quests = QuestManager.Instance.GetSaveData();
                 data.needsPlayerInitialization = false;
+                CaptureRunStats(data); // WJ 이우진 추가(2026-10-06): 이어하기용 결과 화면 기록
                 if (!string.IsNullOrEmpty(completedUnknownBattleKey))
                 {
                     if (!YJ_UnknownRunBuffSource.TryValidateRecords(data.unknownStageBuffs, out string error))
@@ -1500,14 +1505,7 @@ namespace Core
                 return false;
             }
 
-            var data = new GameSaveData
-            {
-                selectedCharacter = character,
-                needsPlayerInitialization = true,
-                quests = new QuestSaveData()
-            };
-            data.status.playerLevel = 1;
-            data.status.playerExp = 0f;
+            var data = CreateNewRunSaveData(character);
 
             try
             {
@@ -1521,6 +1519,24 @@ namespace Core
                 Debug.LogError($"[DataManager] 새 게임 저장 실패: {exception.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 새 런의 게임 저장 기본값(1레벨, 초기화 필요, 빈 퀘스트). WJ 이우진 수정(2026-10-06): 스테이지 맵 저장이
+        /// 게임 저장보다 먼저 일어나는 경우(에디터 직접 실행)도 같은 기본값을 쓰도록 BeginNewGame에서 분리했다.
+        /// 새 게임은 맵이 없는 상태(stage.hasMap = false)로 시작해 스테이지 선택이 Act1 새 맵을 만든다.
+        /// </summary>
+        private static GameSaveData CreateNewRunSaveData(CharacterClass character)
+        {
+            var data = new GameSaveData
+            {
+                selectedCharacter = character,
+                needsPlayerInitialization = true,
+                quests = new QuestSaveData()
+            };
+            data.status.playerLevel = 1;
+            data.status.playerExp = 0f;
+            return data;
         }
 
         public bool TryGetSavedCharacter(out CharacterClass character)
@@ -1915,6 +1931,176 @@ namespace Core
         public void LoadStageData()
         {
             Debug.Log("[DataManager] LoadStageData - 스테이지 시스템이 아직 없어서 실제로 복원할 데이터가 없습니다.");
+        }
+
+        // ---------------------------------------------------------------------------------
+        // WJ 이우진 추가(2026-10-06): 스테이지 선택 맵을 gamesave.json의 stage에 저장한다(예전 stage_map_save.json 통합).
+        // YJ_StageSaveService의 디스크 모드만 이 경로를 쓴다. 정식 흐름의 메모리 모드(IsSessionOnly)와 멀티(서버 스냅샷)는
+        // 이 함수들을 부르지 않는다. 쓰기는 WriteGameplayDataAtomic을 거쳐 저장 주인(계정/게스트)·업로드 대기·실패 시
+        // 되돌리기 정책을 캐릭터 저장과 똑같이 따른다.
+        // ---------------------------------------------------------------------------------
+
+        /// <summary>현재 저장 주인의 gamesave.json 경로. 맵 저장 위치 표시(에디터 도구)용.</summary>
+        public static string GameplaySavePath => GetSavePath(GameplaySaveFileName);
+
+        /// <summary>싱글 디스크 런에 맵이 저장돼 있는지. 게스트 저장에 예전 맵 파일만 있으면 이 시점에 한 번 옮긴다.</summary>
+        public bool HasStageMap => TryReadStageMap(out _, out _);
+
+        /// <summary>저장된 맵의 독립 복사본을 돌려준다. 맵이 없거나 읽지 못하면 false.</summary>
+        public bool TryLoadStageMap(out StageMapSaveData map)
+        {
+            if (TryReadStageMap(out map, out string error))
+                return true;
+            if (!string.IsNullOrEmpty(error))
+                Debug.LogError("[DataManager] " + error);
+            return false;
+        }
+
+        /// <summary>맵을 게임 저장에 기록한다. 게임 저장이 아직 없으면(에디터에서 스테이지 선택 직접 실행) 새 게임과 같은 최소 저장을 만든다.</summary>
+        public bool TrySaveStageMap(StageMapSaveData map) => map != null && WriteStageMap(map);
+
+        /// <summary>게임 저장 안의 맵만 비운다(일시정지의 포기·정산 등). 게임 저장 자체는 지우지 않는다.</summary>
+        public bool TryClearStageMap() => WriteStageMap(null);
+
+        private bool TryReadStageMap(out StageMapSaveData map, out string error)
+        {
+            map = null;
+            error = null;
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
+                return false;
+
+            string path = GetSavePath(GameplaySaveFileName);
+            try
+            {
+                GameSaveData data = File.Exists(path) ? ReadJson<GameSaveData>(path) : null;
+                if (data?.stage != null && data.stage.hasMap && data.stage.map != null)
+                {
+                    map = CloneStageMap(data.stage.map);
+                    return true;
+                }
+
+                return TryMigrateLegacyStageMap(path, data, out map);
+            }
+            catch (System.Exception exception)
+            {
+                error = $"스테이지 맵을 읽지 못했습니다: {exception.Message}";
+                map = null;
+                return false;
+            }
+        }
+
+        private bool WriteStageMap(StageMapSaveData map)
+        {
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
+                return false;
+
+            string path = GetSavePath(GameplaySaveFileName);
+            try
+            {
+                GameSaveData data = File.Exists(path) ? ReadJson<GameSaveData>(path) : null;
+                if (data == null)
+                {
+                    if (map == null)
+                        return true; // 지울 맵도, 게임 저장도 없다.
+                    data = CreateNewRunSaveData(CharacterClass.Fighter);
+                }
+
+                data.stage ??= new StageSaveData();
+                data.stage.hasMap = map != null;
+                data.stage.map = map != null ? CloneStageMap(map) : new StageMapSaveData();
+                CaptureRunStats(data); // 노드 선택 시점의 경과 시간도 이어하기에 남긴다.
+                WriteGameplayDataAtomic(path, data);
+                return true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[DataManager] 스테이지 맵 저장 실패: {exception.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 예전 루트의 stage_map_save.json을 한 번 게임 저장 안으로 옮긴다. 그 파일은 계정·게스트가 함께 쓰던 전역 경로라,
+        /// 게임 저장도 같은 루트에 있는 게스트 저장일 때만 가져온다(계정 저장이면 게스트의 맵일 수 있어 건드리지 않는다).
+        /// 원본은 지우지 않고 .migrated로 이름만 바꿔 남긴다.
+        /// </summary>
+        private bool TryMigrateLegacyStageMap(string gameplayPath, GameSaveData data, out StageMapSaveData map)
+        {
+            map = null;
+            string legacyPath = Path.Combine(Application.persistentDataPath, LegacyStageMapFileName);
+            if (!IsGuestProfile || !File.Exists(legacyPath))
+                return false;
+
+            StageMapSaveData legacy = JsonUtility.FromJson<StageMapSaveData>(File.ReadAllText(legacyPath));
+            if (legacy == null)
+                return false;
+
+            data ??= CreateNewRunSaveData(CharacterClass.Fighter);
+            data.stage ??= new StageSaveData();
+            data.stage.hasMap = true;
+            data.stage.map = legacy;
+            WriteGameplayDataAtomic(gameplayPath, data);
+
+            string migratedPath = legacyPath + ".migrated";
+            if (File.Exists(migratedPath))
+                migratedPath = legacyPath + "." + System.DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + ".migrated";
+            File.Move(legacyPath, migratedPath);
+            Debug.Log($"[DataManager] 예전 스테이지 맵 파일을 게임 저장으로 옮겼습니다: {legacyPath} → {gameplayPath}");
+
+            map = CloneStageMap(legacy);
+            return true;
+        }
+
+        private static StageMapSaveData CloneStageMap(StageMapSaveData source) =>
+            JsonUtility.FromJson<StageMapSaveData>(JsonUtility.ToJson(source));
+
+        // ---------------------------------------------------------------------------------
+        // WJ 이우진 추가(2026-10-06): 이어하기. 맵이 저장된 싱글 런이 있으면 타이틀의 이어하기로 스테이지 선택에서 재개한다.
+        // ---------------------------------------------------------------------------------
+
+        /// <summary>
+        /// 이어할 싱글 런이 있는지. 게임 저장에 맵이 있어야 한다(노드를 한 번 이상 고른 뒤 ~ 런 종료 전).
+        /// 런 종료(클리어·사망·정산·포기)는 ResetGameplayData가 새 게임으로 덮어써 맵이 비므로 false가 된다.
+        /// </summary>
+        public bool HasContinuableRun()
+        {
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active)
+                return false;
+
+            string path = GetSavePath(GameplaySaveFileName);
+            try
+            {
+                GameSaveData data = File.Exists(path) ? ReadJson<GameSaveData>(path) : null;
+                return data?.stage != null && data.stage.hasMap && data.status != null && data.status.playerLevel >= 1;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[DataManager] 이어하기 저장을 확인하지 못했습니다: {exception.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>이어하기 때 결과 화면 기록을 이어서 집계하기 위한 저장값. 없거나 읽지 못하면 null.</summary>
+        public KY_RunStats LoadSavedRunStats()
+        {
+            string path = GetSavePath(GameplaySaveFileName);
+            try
+            {
+                return File.Exists(path) ? ReadJson<GameSaveData>(path)?.runStats : null;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[DataManager] 저장된 런 기록을 읽지 못했습니다: {exception.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>진행 중인 원정의 결과 화면 기록을 저장 데이터에 담는다. 원정이 끝났거나 기록기가 없으면 기존 값을 둔다.</summary>
+        private static void CaptureRunStats(GameSaveData data)
+        {
+            KY_RunStats stats = KY_RunStatsTracker.Instance != null ? KY_RunStatsTracker.Instance.CaptureForSave() : null;
+            if (stats != null)
+                data.runStats = stats;
         }
 
         #endregion

@@ -14,7 +14,9 @@ public class YJ_StartBootstrap : MonoBehaviour
     {
         // 임시: 이전 StageSelect 저장 불러오기를 막고 Act1 첫 층에서 시작한다.
         // 기존 디스크 저장/불러오기를 복구하려면 아래 호출을 주석 처리한다.
-        YJ_StageSaveService.BeginTemporaryRun();
+        // WJ 이우진 수정(2026-10-06): 이어하기 구현으로 디스크 저장을 복구했다. 맵은 gamesave.json(stage)에 저장되고,
+        // 새 게임(BeginNewGame)이 맵을 비우므로 새 게임은 그대로 Act1 첫 층에서 시작한다.
+        // YJ_StageSaveService.BeginTemporaryRun();
 
         float startupTime = Time.realtimeSinceStartup;
         GameManager gameManager = GameManager.Instance;
