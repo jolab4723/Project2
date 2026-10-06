@@ -25,6 +25,8 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
     [SerializeField] private Button loginButton;    // 로그인창으로 버튼
 
     [Header("선택 표시")]
+    // SW 수정 : 새 계정의 기본 프로필을 만들 때 게스트 진행도를 가져올지 묻는 확인 창.
+    [SerializeField] private KY_ConfirmDialog guestImportDialog;
     [SerializeField] private TMP_Text feedbackText; // 로그용 
 
     [Header("외부 연결")]
@@ -182,8 +184,11 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
             }
 
             Core.SaveDataOperationResult profileResult =
-                await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync();
+                await Core.DataManager.SynchronizeSinglePlayerProfileWithFirebaseAsync(
+                    () => GuestProgressImportPrompt.AskAsync(guestImportDialog));
             Core.FirebaseService.Default.SignOut();
+            // SW 수정 : 계정 생성 뒤 세션을 닫았으므로 로그인 전까지 싱글은 게스트 저장을 쓴다.
+            Core.DataManager.SwitchToGuestProfile();
 
             if (!profileResult.IsSuccess)
             {
@@ -210,6 +215,7 @@ public sealed class KY_CreateAccountPopup : MonoBehaviour
         catch (Exception exception)
         {
             Core.FirebaseService.Default.SignOut();
+            Core.DataManager.SwitchToGuestProfile(); // SW 수정 : 실패한 생성 세션이 로컬 저장 소유자로 남지 않게 한다.
             Debug.LogError($"[KY_CreateAccountPopup] Firebase 계정 생성 처리 실패: {exception}");
             ShowError("계정 생성 처리 중 오류가 발생했습니다.");
         }
