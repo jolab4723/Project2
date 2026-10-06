@@ -161,6 +161,20 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         return true;
     }
 
+    /// <summary>SW 수정: 클리어 부활 상태를 체크포인트·Scene 이동 전에 즉시 발행합니다.</summary>
+    [Server]
+    public void ServerReviveForStageClear()
+    {
+        if (!IsDead || context?.Controller == null)
+            return;
+        context.Controller.ReviveForStageClear();
+        // SW 수정: 스테이지 클리어 부활도 기존 EndRevive 완료 이벤트를 공유한다.
+        passiveReviving = true;
+        reviveSequence++;
+        ApplyDeadState(false, true);
+        PublishServerSnapshot();
+    }
+
     [Server]
     public void ServerCompletePassiveRevive()
     {
