@@ -69,7 +69,7 @@ public sealed partial class PlayerItemEffectState
                 continue;
 
             count++;
-            cooldownEndTimes[key] = Now + effect.cooldownSeconds;
+            SetCooldownEnd(key, Now + effect.cooldownSeconds);
             WildfirePresented?.Invoke(position + Vector3.up, GetBodyPosition(component) + Vector3.up);
         }
     }

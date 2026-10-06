@@ -23,7 +23,7 @@ public sealed partial class PlayerItemEffectState
         if (!CanExecute || !TryGetNinja(out ItemInstance boots, out var effect)) return;
         string key = effect.name + ":ninja";
         if (IsCoolingDown(key, Now)) return;
-        cooldownEndTimes[key] = Now + effect.cooldownSeconds;
+        SetCooldownEnd(key, Now + effect.cooldownSeconds);
         ninjaSource = boots.instanceId;
         ninjaExpiresAt = Now + effect.preparationSeconds;
     }

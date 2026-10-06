@@ -317,12 +317,7 @@ public sealed class NetworkEnemyWaveSpawner : NetworkBehaviour
 
     private void RemoveFinishedEnemies()
     {
-        for (int index = aliveEnemies.Count - 1; index >= 0; index--)
-        {
-            NetworkEnemyAuthority enemy = aliveEnemies[index];
-            if (enemy == null || enemy.IsDead)
-                aliveEnemies.RemoveAt(index);
-        }
+        aliveEnemies.RemoveAll(enemy => enemy == null || enemy.IsDead);
     }
 
     private static bool CanStartSession(
