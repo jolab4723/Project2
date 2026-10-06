@@ -129,6 +129,8 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
     private NetworkEnemyCombatView combatView;
     private bool missingCombatViewReported;
     private WBH_EnemyStatusEffectController statusEffects;
+    private EnemyBuffManager enemyBuffs;
+    private bool hostAuraSlowShown;
 
     private bool ResolveSharedSpawners()
     {
@@ -317,7 +319,46 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
             foreach (WBH_StatusEffectType type in StatusTypes)
                 if (type != WBH_StatusEffectType.None && statusEffects.HasStatusEffect(type))
                     mask |= 1u << (int)type;
+        // 적 대상 오라(중력장 생성 코어 등)의 둔화는 상태이상이 아닌 적 버프이므로 공용 둔화 연출 비트만 함께 켠다. 판정은 바꾸지 않는다.
+        bool auraSlow = !isDead && HasHostileAuraSlow();
+        if (auraSlow) mask |= 1u << (int)WBH_StatusEffectType.Slow;
         statusVisualMask = mask;
+        if (isClient) ApplyHostVisuals(mask, auraSlow);
+    }
+
+    /// <summary>적 버프 목록에 적 대상 범위 오라가 들어 있는지 확인한다(서버 원본 상태).</summary>
+    private bool HasHostileAuraSlow()
+    {
+        enemyBuffs ??= GetComponent<EnemyBuffManager>();
+        if (enemyBuffs == null) return false;
+        foreach (var buff in enemyBuffs.ActiveBuffs)
+            if (buff?.source is ItemSystem.FieldAuraUniqueEffectSO aura && aura.targetEnemies) return true;
+        return false;
+    }
+
+    /// <summary>Host는 마스크 Hook을 받지 않으므로 오라 둔화 연출과 방어 감소 표시를 같은 프레임에 직접 맞춘다.</summary>
+    private void ApplyHostVisuals(uint mask, bool auraSlow)
+    {
+        if (statusEffects != null && enemyInfo != null)
+        {
+            // 실제 둔화 상태가 먼저 끝나 원본이 연출을 멈춰도 오라 안에서는 다시 켠다(이미 재생 중이면 원본이 무시한다).
+            if (auraSlow) statusEffects.PlayStatusEffect(WBH_StatusEffectType.Slow, enemyInfo.enemyGrade);
+            else if (hostAuraSlowShown && !statusEffects.HasStatusEffect(WBH_StatusEffectType.Slow))
+                statusEffects.StopStatusEffect(WBH_StatusEffectType.Slow);
+            hostAuraSlowShown = auraSlow;
+        }
+        SetDefenseDownIndicator((mask & (1u << (int)WBH_StatusEffectType.DefenseDown)) != 0);
+    }
+
+    private void SetDefenseDownIndicator(bool active)
+    {
+        var indicator = GetComponent<EnemyEffectIndicator>();
+        if (indicator == null)
+        {
+            if (!active) return;
+            indicator = gameObject.AddComponent<EnemyEffectIndicator>();
+        }
+        indicator.SetDefenseDown(active);
     }
 
     private void OnStatusVisualMaskChanged(uint _, uint value)
@@ -363,6 +404,7 @@ public sealed class NetworkEnemyAuthority : NetworkBehaviour
                 statusEffects.PlayStatusEffect(type, enemyInfo.enemyGrade);
             else statusEffects.StopStatusEffect(type);
         }
+        SetDefenseDownIndicator((mask & (1u << (int)WBH_StatusEffectType.DefenseDown)) != 0);
     }
 
     public override void OnStopClient()
