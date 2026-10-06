@@ -104,6 +104,7 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
             // 총구용 복사본과 반대로, 여기에는 멀리 뻗는 파티클만 남깁니다.
             shotgunAttackVisualInstance = Instantiate(muzzleVisualPrefab);
             shotgunAttackVisualInstance.name = $"{muzzleVisualPrefab.name}_AttackRuntime";
+            appliedShotgunDistanceScale = 1f;
             KeepOnlyShotgunParticleGroup(shotgunAttackVisualInstance, keepAttackGroup: true);
         }
 
@@ -113,10 +114,13 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
         float targetDistanceScale = Mathf.Max(
             0.01f,
             attackRange / AuthoredShotgunAttackRange * ShotgunVisibleRangeRatio);
-        ApplyShotgunTravelDistanceScale(
-            shotgunAttackVisualInstance,
-            targetDistanceScale / appliedShotgunDistanceScale);
-        appliedShotgunDistanceScale = targetDistanceScale;
+        if (targetDistanceScale != appliedShotgunDistanceScale)
+        {
+            ApplyShotgunTravelDistanceScale(
+                shotgunAttackVisualInstance,
+                targetDistanceScale / appliedShotgunDistanceScale);
+            appliedShotgunDistanceScale = targetDistanceScale;
+        }
 
         // 짧은 총구 섬광과 마찬가지로 실제 산탄 판정과 같은 공통 시작점·수평 정면을 사용합니다.
         shotgunAttackVisualInstance.transform.SetPositionAndRotation(
@@ -318,9 +322,10 @@ internal static class GunnerVfxPlayback
             if (!particleSystem.gameObject.activeInHierarchy)
                 continue;
 
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            particleSystem.Clear(true);
-            particleSystem.Play(true);
+            // 자식까지 이미 열거했으므로 각 시스템을 한 번씩만 처리한다.
+            particleSystem.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleSystem.Clear(false);
+            particleSystem.Play(false);
         }
     }
 
@@ -347,8 +352,8 @@ internal static class GunnerVfxPlayback
             if (!particleSystem.gameObject.activeInHierarchy)
                 continue;
 
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            particleSystem.Clear(true);
+            particleSystem.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleSystem.Clear(false);
         }
 
         instance.SetActive(false);

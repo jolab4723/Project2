@@ -128,6 +128,10 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.WildfirePresented += RpcPresentWildfire;
         context.Effects.SupportMarkConsumed += RpcPresentSupportLink;
         context.Effects.StackChanged += SyncStack;
+        context.Effects.CooldownChanged += PublishCooldown;
+        // 서버 생애 시작에는 기존 상태도 전달한다. 이후에는 변경된 키만 복제한다.
+        foreach (var pair in context.Effects.Cooldowns)
+            PublishCooldown(pair.Key, pair.Value);
         if (context?.Equipment != null)
         {
             context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
@@ -217,6 +221,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.SupportMarkConsumed -= RpcPresentSupportLink;
         wasteHeatReady = false;
         context.Effects.StackChanged -= SyncStack;
+        context.Effects.CooldownChanged -= PublishCooldown;
         base.OnStopServer();
     }
 
@@ -431,8 +436,11 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         glassRailResolvedHitCount = effects.GlassRailResolvedHitCount;
         preparedAttackReady = effects.PreparedAttackReady;
         preparedAttackConsumeCount = effects.PreparedAttackConsumeCount;
-        foreach (var pair in effects.Cooldowns)
-            if (!cooldownEndTimes.TryGetValue(pair.Key, out double end) || end != pair.Value)
-                cooldownEndTimes[pair.Key] = pair.Value;
+    }
+
+    private void PublishCooldown(string key, double value)
+    {
+        if (isServer && (!cooldownEndTimes.TryGetValue(key, out double end) || end != value))
+            cooldownEndTimes[key] = value;
     }
 }
