@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_UE_HelloWorld_Band_Add
+  m_Name: M_UE_BuffAura_Ring_Add_BeforePolish
   m_Shader: {fileID: 4800000, guid: c7fd4f833ad79124b96d3d4a9a3e3874, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -24,11 +24,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 3d4fde47ad392e7428ad03a6986577e7, type: 3}
+        m_Texture: {fileID: 2800000, guid: d85ea3494d553df429ca550df9164c55, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseMap:
-        m_Texture: {fileID: 2800000, guid: 4b9368afaf4457d4bbf8e59c24ebf9d1, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RampMap:
@@ -42,13 +42,13 @@ Material:
     - _DstBlend: 1
     - _Erode: 0
     - _ErosionSoftness: 0.15
-    - _NoiseStrength: 0.08
+    - _NoiseStrength: 0
     - _RampBias: 0
     - _SrcBlend: 1
     - _UseRamp: 0
     m_Colors:
-    - _MainScroll: {r: 0.04375, g: 0, b: 0, a: 0}
-    - _NoiseScroll: {r: 0, g: 0.35, b: 0, a: 0}
-    - _TintColor: {r: 1, g: 2.3, b: 3, a: 1}
+    - _MainScroll: {r: 0, g: 0, b: 0, a: 0}
+    - _NoiseScroll: {r: 0, g: 0, b: 0, a: 0}
+    - _TintColor: {r: 2.4, g: 2.4, b: 2.4, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
