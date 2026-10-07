@@ -408,10 +408,14 @@ public class YJ_StageManager : MonoBehaviour
     /// 층 번호는 액트마다 1부터라 FloorStatScaleTable.ToContextFloor로 표의 누적 번호로 바꿔서 넘긴다.
     /// 보스 스테이지도 같은 경로를 탄다. 저장이 없는 직접 실행/노드 직접 지정 테스트는 기본값(Act1 1층)을 그대로 쓴다.
     /// 싱글은 난이도 normal, 인원 1 고정(멀티는 NetworkEnemyWaveSpawner가 따로 넘긴다).
+    ///
+    /// WJ 이우진 수정(2026-10-06): Act1·Act2 보스 씬은 노드 직접 지정(useDirectSceneNodeType)이 켜져 있어
+    /// 맵을 거쳐 정상 진입해도 층 배율을 건너뛰었다(Act3 보스·멀티와 불일치). 직접 지정이어도 저장의 현재 노드가
+    /// 바로 이 씬의 노드면 그 액트·층을 쓴다. 다른 노드의 저장을 가진 채 씬을 직접 실행한 테스트는 기존처럼 기본값.
     /// </summary>
     private void ApplyEnemyStatContext()
     {
-        if (enemySpawnManager == null || useDirectSceneNodeType || !TryGetStageSaveService() || !stageSaveService.HasSaveFile)
+        if (enemySpawnManager == null || !TryGetStageSaveService() || !stageSaveService.HasSaveFile)
             return;
 
         if (!stageSaveService.TryLoadSaveData(out StageMapSaveData saveData) || saveData == null)
@@ -419,6 +423,9 @@ public class YJ_StageManager : MonoBehaviour
 
         StageNodeSaveData pendingNode = saveData.nodes?.Find(node => node != null && node.id == saveData.pendingNodeId);
         if (pendingNode == null)
+            return;
+
+        if (useDirectSceneNodeType && pendingNode.sceneName != gameObject.scene.name)
             return;
 
         int contextFloor = EnemySystem.FloorStatScaleTable.ToContextFloor((int)saveData.act, pendingNode.floor);
