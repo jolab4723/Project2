@@ -195,68 +195,110 @@ public class ShopController : MonoBehaviour
         return false;
     }
 
-    public bool TryClearGeneratedStock()
+    /// <summary>
+    /// Generated 재고 전체를 새 상품 묶음으로 교체한다. 새 상품을 모두 넣지 못하면 넣었던 상품을 빼고
+    /// 기존 재고를 원래 위치로 되돌린다. 리롤이 실패로 끝났는데 재고 일부만 바뀌어
+    /// 무료 횟수나 환불된 골드로 상품을 바꿀 수 있던 문제를 막는다.
+    /// </summary>
+    public bool TryReplaceGeneratedStock(IReadOnlyList<InventoryItem> newItems)
     {
-        if (shopGrid == null || stockService == null)
+        if (shopGrid == null || stockService == null || newItems == null)
         {
             Debug.LogError(
-                "[ShopController] Generated 재고를 제거할 준비가 되지 않았습니다.");
+                "[ShopController] Generated 재고를 교체할 준비가 되지 않았습니다.");
             return false;
         }
 
         var generatedEntries =
             stockService.GetEntriesBySource(ShopItemSource.Generated);
+        var oldStock = new List<(ShopStockEntry Entry, ItemUI UI, InventoryPlacementSnapshot Placement)>();
 
         // 변경 전에 Grid와 UI가 모두 같은 아이템을 가리키는지 확인한다.
         foreach (ShopStockEntry entry in generatedEntries)
         {
             InventoryItem item = entry?.Item;
+            ItemUI itemUI = item?.itemData != null && shopGrid.ContainsItem(item)
+                ? ItemUIFinder.FindInGrid(shopGrid, item)
+                : null;
 
-            if (item?.itemData == null ||
-                !shopGrid.ContainsItem(item) ||
-                ItemUIFinder.FindInGrid(shopGrid, item) == null)
+            if (itemUI == null)
             {
                 Debug.LogError(
                     "[ShopController] Generated 재고의 Grid 또는 UI 상태가 일치하지 않습니다.");
                 return false;
             }
+
+            oldStock.Add((entry, itemUI, InventoryPlacementSnapshot.Capture(shopGrid, item)));
         }
 
-        foreach (ShopStockEntry entry in generatedEntries)
+        // 기존 UI는 성공이 확정될 때까지 남겨 두고 Grid와 재고에서만 뺀다.
+        int removedCount = 0;
+        foreach (var old in oldStock)
         {
-            InventoryItem item = entry.Item;
-            ItemUI itemUI = ItemUIFinder.FindInGrid(shopGrid, item);
-            InventoryPlacementSnapshot placement =
-                InventoryPlacementSnapshot.Capture(shopGrid, item);
+            if (!shopGrid.TryRemoveItem(old.Entry.Item))
+                break;
 
-            if (!shopGrid.TryRemoveItem(item))
+            if (!stockService.RemoveStock(old.Entry.InstanceId))
             {
-                Debug.LogError(
-                    "[ShopController] 리롤 중 Generated 아이템을 Grid에서 제거하지 못했습니다.");
-                return false;
+                RestoreGeneratedStock(old.Entry.Item, old.Placement, registerStock: false);
+                break;
             }
 
-            if (!stockService.RemoveStock(entry.InstanceId))
-            {
-                item.isRotated = placement.IsRotated;
-
-                if (!shopGrid.TryPlaceItem(
-                        item,
-                        placement.Rect.X,
-                        placement.Rect.Y))
-                {
-                    Debug.LogError(
-                        "[ShopController] 재고 제거 실패 후 Grid 복구에도 실패했습니다.");
-                }
-
-                return false;
-            }
-
-            itemUI.gameObject.SetActive(false);
-            Destroy(itemUI.gameObject);
+            removedCount++;
         }
 
-        return true;
+        if (removedCount < oldStock.Count)
+        {
+            Debug.LogError(
+                "[ShopController] 리롤 중 기존 Generated 재고를 제거하지 못해 원래 재고로 되돌립니다.");
+            for (int i = 0; i < removedCount; i++)
+                RestoreGeneratedStock(oldStock[i].Entry.Item, oldStock[i].Placement, registerStock: true);
+            return false;
+        }
+
+        var addedItems = new List<InventoryItem>();
+        foreach (InventoryItem item in newItems)
+        {
+            if (!TryAddGeneratedStock(item))
+                break;
+
+            addedItems.Add(item);
+        }
+
+        if (addedItems.Count == newItems.Count)
+        {
+            foreach (var old in oldStock)
+                Destroy(old.UI.gameObject);
+            return true;
+        }
+
+        // 일부만 들어갔다면 새 상품을 모두 빼고 기존 재고를 같은 위치·회전으로 복구한다.
+        foreach (InventoryItem item in addedItems)
+        {
+            ItemUI addedUI = ItemUIFinder.FindInGrid(shopGrid, item);
+            shopGrid.TryRemoveItem(item);
+            stockService.RemoveStock(item.itemData.instanceId);
+            if (addedUI != null)
+                Destroy(addedUI.gameObject);
+        }
+
+        foreach (var old in oldStock)
+            RestoreGeneratedStock(old.Entry.Item, old.Placement, registerStock: true);
+
+        return false;
+    }
+
+    private void RestoreGeneratedStock(InventoryItem item, InventoryPlacementSnapshot placement, bool registerStock)
+    {
+        item.isRotated = placement.IsRotated;
+
+        bool restored = shopGrid.TryPlaceItem(item, placement.Rect.X, placement.Rect.Y) &&
+                        (!registerStock || stockService.RegisterGeneratedItem(item));
+        if (!restored)
+        {
+            Debug.LogError(
+                "[ShopController] 리롤 실패 후 기존 Generated 재고 복구에 실패했습니다.");
+        }
     }
 
     /// <summary>
