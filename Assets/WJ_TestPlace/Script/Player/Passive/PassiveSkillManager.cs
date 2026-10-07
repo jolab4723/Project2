@@ -128,7 +128,7 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
     /// </summary>
     public bool IsAvailable(PassiveSkillId id) => IsAvailable(GetDefinition(id));
 
-    private static bool IsAvailable(PassiveSkillDefinition definition)
+    public static bool IsAvailable(PassiveSkillDefinition definition)
     {
         if (definition == null || definition.maxLevel <= 0)
             return false;
