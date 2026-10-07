@@ -45,11 +45,13 @@ public class WBH_EnemyPattern : MonoBehaviour
 
     [SerializeField] private SelfDestructSettings explodeSettings = new SelfDestructSettings();
     [SerializeField] private HiddenSettings hiddenSettings = new HiddenSettings();
+    [SerializeField] private WBH_EnemyBossPattern_Act3.Settings act3Settings = new WBH_EnemyBossPattern_Act3.Settings();
 
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private Transform firePoint;
     [SerializeField] private Transform grenadePoint; // 미사일, 유탄 등 판정 범위가 넓어 별도의 투사체 생성포인트가 필요할 때 사용. ex) act 01 보스
     [SerializeField] public WBH_EffectData act2TransitionEffect;
+    [SerializeField] private int act3ParticipantCount = 1; // act3 보스전에 참가한 플레이어 수
 
     public WBH_EnemyAnimation enemyAnimation; // pattern 에서의 참조를 위해 public
     private WBH_EnemyController controller;
@@ -193,6 +195,9 @@ public class WBH_EnemyPattern : MonoBehaviour
                     break;
                 case 102: // 액트2 보스
                     currentPattern = new WBH_EnemyBossPattern_Act2();
+                    break;
+                case 103: // 액트3 보스
+                    currentPattern = new WBH_EnemyBossPattern_Act3(act3Settings, projectileSpawner,() => act3ParticipantCount);
                     break;
             }
         }
@@ -535,7 +540,10 @@ public class WBH_EnemyPattern : MonoBehaviour
         {
             act2.Cleanup();
         }
-
+        if (pattern is WBH_EnemyBossPattern_Act3 act3)
+        {
+            act3.Cleanup();
+        }
     }
 
     // WBH_EnemyController.cs 의 DeSpawn 메서드를 WBH_IEnemyPattern 상속자들에게 전달
@@ -547,5 +555,10 @@ public class WBH_EnemyPattern : MonoBehaviour
     public void SetPatternDamageBlock(bool blocked)
     {
         controller.SetPatternDamageBlock(blocked);
+    }
+
+    public void SetAct3ParticipantCount(int count)
+    {
+        act3ParticipantCount = Mathf.Max(1, count);
     }
 }

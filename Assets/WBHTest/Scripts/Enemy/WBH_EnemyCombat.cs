@@ -1119,7 +1119,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_Effect warning = showWarning();
 
-        if (!IsNetworkSession && warning == null || !warning.IsPlaying)
+        if (!IsNetworkSession && (warning == null || !warning.IsPlaying))
             return false;
 
         return StartAct3Action(CoAct3WarnedHit(Time.time + warningDuration, recoveryDuration, hit), onCompleted);

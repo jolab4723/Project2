@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using EnemySystem;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 
 public class WBH_EnemyBossPattern_Act3 : WBH_IEnemyPattern

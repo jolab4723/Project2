@@ -5,6 +5,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
     [SerializeField] private WBH_EffectData circleIndicator;
     [SerializeField] private WBH_EffectData rectIndicator;
     [SerializeField] private WBH_EffectData cone60Indicator;
+    [SerializeField] private WBH_EffectData cone120Indicator;
     [SerializeField] private WBH_EffectData cone150Indicator;
     [SerializeField] private WBH_EffectData cone180Indicator;
 
@@ -100,6 +101,7 @@ public class WBH_IndicatorSpawner : MonoBehaviour
     private WBH_EffectData SelectCone(float angle)
     {
         if (Mathf.Approximately(angle, 60f)) return cone60Indicator;
+        if (Mathf.Approximately(angle, 120f)) return cone120Indicator;
         if (Mathf.Approximately(angle, 150f)) return cone150Indicator;
         if (Mathf.Approximately(angle, 180f)) return cone180Indicator;
         return null;
