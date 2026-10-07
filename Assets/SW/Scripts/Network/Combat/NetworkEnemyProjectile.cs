@@ -32,11 +32,6 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
 
     [SerializeField, Min(0.01f)] private float collisionRadius = 0.2f;
     [SerializeField] private LayerMask playerLayer = 1 << 15;
-    [Header("원본 거너 유탄의 폭발 연출")]
-    [SerializeField] private WBH_EffectData playerGrenadeExplosionEffect;
-    [SerializeField] private bool showPlayerGrenadeRange;
-    [SerializeField] private Color playerGrenadeRangeColor;
-    [SerializeField] private float playerGrenadeRangeDuration;
 
     [SyncVar] private bool missile;
     [SyncVar] private bool playerShot;
@@ -87,7 +82,6 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
     private WBH_EffectData shotHitEffectData;
     private int playerShotCollisionMask;
     private GameObject playerProjectileVisual;
-    private GameObject playerImpactVisualPrefab;
     private float visualBindUntil;
     private GameObject gravityWellVisual;
     private GameObject singularityVisual;
@@ -626,7 +620,6 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         GunnerWeaponVfxBinding binding = GunnerCombatPresentation.FindBinding(identity.gameObject, shotItemId, shotWeaponType);
         if (binding == null) return;
         // 발사 후 장착 외형이 바뀌어도 이 탄은 처음 확보한 VFX 참조를 유지한다.
-        playerImpactVisualPrefab = binding.ImpactVisualPrefab;
         // 충돌 후 지속 장판 상태에서는 비행 외형을 새로 만들지 않는다.
         // 최초 관찰 시 SyncVar Hook이 만든 장판 Renderer를 끄지 않도록 OnStartClient 경로도 같은 조건을 따른다.
         if (binding.ProjectileVisualPrefab == null || playerProjectileVisual != null || IsPersistentFieldActive) return;
@@ -736,22 +729,6 @@ public sealed class NetworkEnemyProjectile : NetworkBehaviour
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
             if (!IsFieldVisualRenderer(renderer))
                 renderer.enabled = false;
-    }
-
-    [ClientRpc]
-    private void RpcPlayerImpact(Vector3 point, Vector3 hitDirection)
-    {
-        if (missile)
-        {
-            if (showPlayerGrenadeRange)
-                SkillRangeVisual.ShowSector(point, Vector3.forward, missileExplosionRadius, 360f,
-                    playerGrenadeRangeColor, playerGrenadeRangeDuration);
-            var spawner = FindFirstObjectByType<WBH_EffectPoolManager>()?.GetComponent<WBH_EffectSpawner>();
-            if (spawner != null && playerGrenadeExplosionEffect != null)
-                spawner.SpawnEffect(playerGrenadeExplosionEffect, point);
-        }
-        if (playerImpactVisualPrefab != null)
-            GunnerVfxPlayback.SpawnTransient(playerImpactVisualPrefab, point, hitDirection);
     }
 
     [Server]

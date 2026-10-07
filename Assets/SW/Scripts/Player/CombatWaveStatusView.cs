@@ -56,7 +56,7 @@ public sealed class CombatWaveStatusView : MonoBehaviour
         if (hasWaves)
         {
             if (completed)
-                message = Label("hud_ui.wave_cleared", "전원 처치! · 포털로 이동하세요");
+                message = Label("hud_ui.wave_cleared", "전원 처치! 포탈로 이동하세요");
             else if (currentWave <= 0)
                 message = Label("hud_ui.wave_ready", "전투 준비");
             else if (totalWaves > 0)
