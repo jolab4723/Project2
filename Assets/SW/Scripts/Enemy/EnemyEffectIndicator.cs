@@ -19,6 +19,7 @@ public sealed class EnemyEffectIndicator : MonoBehaviour
     private bool defenseDown;
     private float coolingUntil, markUntil;
     private GameObject markVisual, coolingVisual, armorVisual;
+    private Transform markHead, armorHead;
     private GameObject[] coolingPips;
     private bool boundsMeasured;
     private float headHeight = 2.2f, bodyHeight = 1.1f, bodyRadius = 0.6f;
@@ -61,6 +62,7 @@ public sealed class EnemyEffectIndicator : MonoBehaviour
         needLabel |= !Toggle(ref coolingVisual, CoolingVfx, cooling > 0);
         needLabel |= !Toggle(ref armorVisual, ArmorBreakVfx, defenseDown);
         if (coolingVisual != null && coolingVisual.activeSelf) ApplyCoolingPips();
+        RefreshHeadLayout();
         RefreshFallbackLabel(needLabel);
     }
 
@@ -168,6 +170,21 @@ public sealed class EnemyEffectIndicator : MonoBehaviour
         return null;
     }
 
+    // SW 수정: 동시 표식은 카메라의 좌우로 분리한다. 월드 높이만 늘리면 탑뷰에서
+    // 레티클과 방패가 겹치거나 보스 HUD 뒤로 올라가므로 현재 머리 높이를 유지한다.
+    private void RefreshHeadLayout()
+    {
+        if (markHead == null && markVisual != null) markHead = markVisual.transform.Find("Head");
+        if (armorHead == null && armorVisual != null) armorHead = armorVisual.transform.Find("Head");
+        Vector3 anchor = transform.TransformPoint(Vector3.up * headHeight);
+        Camera camera = marked && defenseDown ? Camera.main : null;
+        Vector3 right = camera != null ? camera.transform.right : Vector3.zero;
+        if (markHead != null)
+            markHead.position = anchor - right * (0.62f * Mathf.Abs(markHead.lossyScale.x));
+        if (armorHead != null)
+            armorHead.position = anchor + right * (0.62f * Mathf.Abs(armorHead.lossyScale.x));
+    }
+
     private void RefreshFallbackLabel(bool needLabel)
     {
         bool show = needLabel && (cooling > 0 || marked || defenseDown);
@@ -211,6 +228,8 @@ public sealed class EnemyEffectIndicator : MonoBehaviour
 
         if (changed)
             Refresh();
+        else if (marked || defenseDown)
+            RefreshHeadLayout();
         if (label != null && label.gameObject.activeSelf && Camera.main != null)
             label.transform.rotation = Camera.main.transform.rotation;
     }

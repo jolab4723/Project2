@@ -35,7 +35,10 @@ public class KY_TitleSceneManager : MonoBehaviour
     {
         // 중단 저장 기능이 아직 없으므로 타이틀 진입 시에는 항상 비활성으로 시작한다.
         // 저장 검사 기능이 추가되면 SetContinueAvailable 결과만 넘겨 활성화하면 된다.
+        // WJ 이우진 수정(2026-10-06): 이어하기 구현. 실제 활성 여부는 아래 RefreshUserInfo → RefreshContinueButton이 정한다.
         SetContinueAvailable(false);
+        if (continueButton != null)
+            continueButton.onClick.AddListener(OnContinueClicked);
 
         singlePlayButton.onClick.AddListener(OnSinglePlayClicked);
         multiPlayButton.onClick.AddListener(OnMultiPlayClicked);
@@ -60,6 +63,8 @@ public class KY_TitleSceneManager : MonoBehaviour
     {
         if (singlePlayButton != null)
             singlePlayButton.onClick.RemoveListener(OnSinglePlayClicked);
+        if (continueButton != null)
+            continueButton.onClick.RemoveListener(OnContinueClicked);
         if (multiPlayButton != null)
             multiPlayButton.onClick.RemoveListener(OnMultiPlayClicked);
         if (passiveSkillButton != null)
@@ -80,14 +85,30 @@ public class KY_TitleSceneManager : MonoBehaviour
         if (continueButton == null)
             return;
 
+        // WJ 이우진 수정(2026-10-07): TitleScene에 Continue 오브젝트가 꺼진 채 저장돼 있어 이어하기가 보이지 않았다.
+        // 버튼은 항상 보이게 켜고, 이어할 런이 없으면 아래의 입력 불가(회색) 상태로만 구분한다.
+        if (!continueButton.gameObject.activeSelf)
+        {
+            continueButton.gameObject.SetActive(true);
+            // 꺼진 채 저장돼 있던 버튼이라 호버 장식(Sidebar)이 보이는 상태로 깨어난다.
+            // 다른 버튼과 같은 숨김 상태로 맞추고, 호버하면 KY_ButtonSideDecorEffect가 다시 나타나게 한다.
+            foreach (KY_FadeEffect decorFade in continueButton.GetComponentsInChildren<KY_FadeEffect>(true))
+                decorFade.SetAlphaImmediate(0f);
+        }
+
         continueButton.interactable = isAvailable;
 
         if (continueButton.TryGetComponent(out CanvasGroup canvasGroup))
         {
             canvasGroup.interactable = isAvailable;
             canvasGroup.blocksRaycasts = isAvailable;
+            // WJ 이우진 추가(2026-10-07): 버튼의 색 전환(Transition)이 None이라 비활성이어도 모양이 같아, 흐리게 표시해 구분한다.
+            canvasGroup.alpha = isAvailable ? 1f : DisabledContinueAlpha;
         }
     }
+
+    // WJ 이우진 추가(2026-10-07): 이어할 런이 없을 때 이어하기 버튼의 투명도.
+    private const float DisabledContinueAlpha = 0.4f;
 
     void OnSettingsClicked()
     {
@@ -129,12 +150,62 @@ public class KY_TitleSceneManager : MonoBehaviour
         }
         if (string.IsNullOrEmpty(lastAccountMessage))
             ShowAccountStatus(string.Empty);
+
+        // WJ 이우진 추가(2026-10-06): 로그아웃 등으로 저장 주인이 바뀌면 이어할 런도 달라지므로 함께 갱신한다.
+        RefreshContinueButton();
+    }
+
+    // WJ 이우진 추가(2026-10-06): 이어하기는 항상 스테이지 선택 화면에서 재개한다(진행 중 노드는 선택된 채로 복원).
+    private const string ContinueSceneName = "StageSelect";
+
+    /// <summary>WJ 이우진 추가(2026-10-06): 저장 주인의 게임 저장에 맵이 있는 싱글 런이 있으면 이어하기를 켠다.</summary>
+    private void RefreshContinueButton()
+    {
+        SetContinueAvailable(!isMultiplayerEntryInProgress && HasContinuableRun());
+    }
+
+    private static bool HasContinuableRun() => DataManager.Instance != null && DataManager.Instance.HasContinuableRun();
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 저장된 결과 화면 기록으로 원정을 이어서 집계하고 스테이지 선택으로 이동한다.
+    /// 플레이어 상태는 스테이지·캠프에 들어갈 때 YJ_StageManager가 게임 저장에서 복원한다.
+    /// </summary>
+    void OnContinueClicked()
+    {
+        Core.SceneLoader loader = Core.SceneLoader.Instance;
+        if (isMultiplayerEntryInProgress || loader == null || loader.IsLoading || !HasContinuableRun())
+            return;
+
+        KY_RunStatsTracker.Instance?.ResumeRun(DataManager.Instance.LoadSavedRunStats());
+        loader.LoadScene(ContinueSceneName);
+        YJ_BgmPlayer.Instance.Stop();
     }
 
     void OnSinglePlayClicked()
     {
         Core.SceneLoader loader = Core.SceneLoader.Instance;
 
+        if (isMultiplayerEntryInProgress || loader == null || loader.IsLoading)
+            return;
+
+        // WJ 이우진 추가(2026-10-06): 이어할 원정이 있으면 새 게임이 덮어쓰므로 먼저 확인한다(실제 덮어쓰기는 캐릭터 선택의 BeginNewGame).
+        if (popupManager != null && HasContinuableRun())
+        {
+            popupManager.ShowConfirm(new KY_DialogData
+            {
+                message = GetAccountLabel("title_ui.new_game_confirm", "새 게임을 시작하시겠습니까?"),
+                warningText = GetAccountLabel("title_ui.new_game_warning", "진행 중인 원정이 사라지고 처음부터 시작합니다."),
+                onYes = LoadSinglePlayerLobby,
+            });
+            return;
+        }
+
+        LoadSinglePlayerLobby();
+    }
+
+    private void LoadSinglePlayerLobby()
+    {
+        Core.SceneLoader loader = Core.SceneLoader.Instance;
         if (isMultiplayerEntryInProgress || loader == null || loader.IsLoading)
             return;
 
@@ -304,6 +375,7 @@ public class KY_TitleSceneManager : MonoBehaviour
             quitButton.interactable = !inProgress;
         if (logoutButton != null)
             logoutButton.interactable = !inProgress;
+        RefreshContinueButton(); // WJ 이우진 추가(2026-10-06): 연결 중에는 이어하기도 막는다.
     }
 
     private void ShowAccountStatus(string message)

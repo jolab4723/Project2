@@ -6,7 +6,7 @@ using UnityEngine;
 /// 정식 스테이지 포탈 프리팹을 Mirror 정식 전투·캠프 흐름에 연결한다.
 /// 전투에서는 이미 동기화된 웨이브 완료 상태를 읽고, 캠프에서는 입장 즉시 포탈을 연다.
 /// 포탈 탑승 판정과 pending 노드 완료·Scene 이동은 서버에서만 수행한다.
-/// SW 수정: 전투·캠프 모두 접속 중인 참가자 전원이 포탈에 도착해야 이동한다(파밍 중 강제 이동 방지).
+/// SW 수정: 전투·캠프 모두 접속 중인 생존자 전원이 포탈에 도착해야 이동한다(파밍 중 강제 이동 방지).
 /// 도착한 참가자는 싱글과 같은 포탈 연출로 숨겨진 채 대기한다.
 /// </summary>
 [DisallowMultipleComponent]
@@ -30,12 +30,15 @@ public sealed class MirrorStagePortalAdapter : MonoBehaviour
     {
         if (portalOpenRequested)
         {
-            // SW 수정: 대기 중 다른 참가자가 접속을 끊어 남은 전원이 도착 상태가 되면 바로 이동한다.
-            if (NetworkServer.active && !transitionRequested && arrivedPlayers.Count > 0 &&
-                NetworkManager.singleton is MirrorNetworkManager waitingManager &&
-                HaveAllServerPlayersArrived(waitingManager) &&
-                waitingManager.ServerTryCompletePendingStageAndReturnToSelection())
-                transitionRequested = true;
+            // SW 수정: 대기 중 다른 참가자가 사망하거나 접속을 끊어 남은 생존자가 모두 도착하면 바로 이동한다.
+            if (NetworkServer.active && !transitionRequested &&
+                NetworkManager.singleton is MirrorNetworkManager waitingManager)
+            {
+                int aliveCount = CountAliveServerPlayers(waitingManager, out int arrivedCount);
+                if (aliveCount > 0 && arrivedCount == aliveCount &&
+                    waitingManager.ServerTryCompletePendingStageAndReturnToSelection())
+                    transitionRequested = true;
+            }
             return;
         }
 
@@ -76,17 +79,17 @@ public sealed class MirrorStagePortalAdapter : MonoBehaviour
             return;
         }
 
-        if (arrivedPlayers.Add(playerIdentity))
+        bool newlyArrived = arrivedPlayers.Add(playerIdentity);
+        int aliveCount = CountAliveServerPlayers(manager, out int arrivedCount);
+        if (newlyArrived)
         {
-            int connectedCount = CountConnectedServerPlayers(manager);
             var binder = playerIdentity.GetComponent<MirrorSpawnedPlayerBinder>();
             // 도착을 서버 지속 상태로 먼저 기록해 재접속·최초 관찰 클라이언트도 대기 표시를 복원한다.
             // RPC는 포탈 연출과 도착 인원 알림만 담당한다.
             binder?.ServerSetPortalArrived(true);
-            binder?.RpcPlayPortalArrival(
-                Mathf.Min(arrivedPlayers.Count, connectedCount), connectedCount);
+            binder?.RpcPlayPortalArrival(arrivedCount, aliveCount);
         }
-        if (!HaveAllServerPlayersArrived(manager))
+        if (aliveCount <= 0 || arrivedCount != aliveCount)
             return;
 
         if (!manager.ServerTryCompletePendingStageAndReturnToSelection())
@@ -105,7 +108,10 @@ public sealed class MirrorStagePortalAdapter : MonoBehaviour
 
     private static NetworkIdentity ResolveServerPlayer(Collider other)
     {
-        if (other == null || other.GetComponentInParent<PlayerContext>() == null)
+        if (other == null)
+            return null;
+        PlayerContext context = other.GetComponentInParent<PlayerContext>();
+        if (context?.RuntimeState == null || context.RuntimeState.IsDead)
             return null;
 
         NetworkIdentity identity = other.GetComponentInParent<NetworkIdentity>();
@@ -123,32 +129,24 @@ public sealed class MirrorStagePortalAdapter : MonoBehaviour
         return serverActive && portalOpen && !alreadyRequested && hasServerPlayer;
     }
 
-    private bool HaveAllServerPlayersArrived(MirrorNetworkManager manager)
+    // SW 수정: 연결된 생존자만 대기 인원과 도착 인원에 포함한다.
+    private int CountAliveServerPlayers(MirrorNetworkManager manager, out int arrivedCount)
     {
         int playerCount = 0;
+        arrivedCount = 0;
         foreach (PlayerContext context in manager.ServerPlayerContexts)
         {
-            NetworkIdentity identity = context != null
-                ? context.GetComponent<NetworkIdentity>()
-                : null;
-            if (identity == null || identity.connectionToClient == null)
+            if (context?.RuntimeState == null || context.RuntimeState.IsDead)
+                continue;
+            if (!context.TryGetComponent(out NetworkIdentity identity) ||
+                identity.connectionToClient == null)
                 continue;
 
             playerCount++;
-            if (!arrivedPlayers.Contains(identity))
-                return false;
+            if (arrivedPlayers.Contains(identity))
+                arrivedCount++;
         }
-
-        return playerCount > 0;
-    }
-
-    private static int CountConnectedServerPlayers(MirrorNetworkManager manager)
-    {
-        int count = 0;
-        foreach (PlayerContext context in manager.ServerPlayerContexts)
-            if (context != null && context.TryGetComponent(out NetworkIdentity identity) && identity.connectionToClient != null)
-                count++;
-        return count;
+        return playerCount;
     }
 
     private static bool CanOpenPortal(

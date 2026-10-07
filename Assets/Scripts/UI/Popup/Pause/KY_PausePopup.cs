@@ -241,6 +241,42 @@ public class KY_PausePopup : KY_PopupBase
             settleButton.gameObject.SetActive(CanSettle());
     }
 
+    /// <summary>WJ 이우진 추가(2026-10-06): 전투 스테이지 안에서는 "저장 후 종료"를 비활성으로 보여 준다.</summary>
+    private void RefreshSaveAndExitButton()
+    {
+        if (saveAndExitButton != null)
+            saveAndExitButton.interactable = CanSaveAndExit();
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 싱글 "저장 후 종료" 허용 여부. 전투·엘리트·보스 스테이지 안에서는 막는다 -
+    /// 그 순간 상태(체력·전투 중 얻은 아이템)를 저장하고 이어하기로 웨이브를 처음부터 다시 하는 반복을 막기 위해서다.
+    /// 스테이지 선택 화면(진행 중 노드가 전투여도 아직 입장 전)·캠프·시작·미지 이벤트는 허용. 멀티(외부 종료 동작)는 기존과 같다.
+    /// 강제 종료되면 이어하기는 스테이지 입장 전 상태(노드 선택 시점 저장)로 스테이지 선택에서 재개된다.
+    /// </summary>
+    private bool CanSaveAndExit()
+    {
+        if (externalSaveAndExit.HasValue ||
+            MirrorNetworkManager.OwnsGameplay || Mirror.NetworkClient.active || Mirror.NetworkServer.active)
+            return true;
+
+        if (FindFirstObjectByType<YJ_StageSelectManager>() != null)
+            return true;
+
+        YJ_StageSaveService saveService = FindFirstObjectByType<YJ_StageSaveService>();
+        if (saveService == null)
+            saveService = gameObject.AddComponent<YJ_StageSaveService>();
+
+        // 맵 저장이 없는 직접 실행·테스트는 기존처럼 허용한다.
+        if (!saveService.HasSaveFile || !saveService.TryLoadSaveData(out StageMapSaveData map) || map == null ||
+            string.IsNullOrEmpty(map.pendingNodeId))
+            return true;
+
+        StageNodeSaveData pending = map.nodes?.Find(node => node != null && node.id == map.pendingNodeId);
+        return pending == null ||
+               (pending.type != StageNodeType.Battle && pending.type != StageNodeType.Elite && pending.type != StageNodeType.Boss);
+    }
+
     /// <summary>
     /// 정산 가능 여부. 싱글 전용이며, 액트를 하나 이상 클리어해 Act2 이상에 있고,
     /// 진행 중인 노드가 없거나(맵 선택 화면) 캠프·시작 노드일 때만 허용한다.
@@ -274,6 +310,7 @@ public class KY_PausePopup : KY_PopupBase
     {
         base.Open();
         RefreshSettleButton();
+        RefreshSaveAndExitButton();
         slideAnimator?.SlideIn();
         if (pauseGameTime && !ownsTimePause)
         {
@@ -358,7 +395,7 @@ public class KY_PausePopup : KY_PopupBase
 
     public void OnClickSaveAndExit()
     {
-        if (KY_PopupManager.Instance == null) return;
+        if (KY_PopupManager.Instance == null || !CanSaveAndExit()) return;
 
         KY_DialogData dialog = externalSaveAndExit ?? new KY_DialogData
         {

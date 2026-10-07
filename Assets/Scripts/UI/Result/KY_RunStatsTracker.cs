@@ -50,6 +50,45 @@ public sealed class KY_RunStatsTracker : MonoBehaviour
         runActive = true;
     }
 
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 이어하기용 저장 복사본. 경과 시간은 지금까지의 값으로 갱신해 담는다.
+    /// 진행 중인 원정이 없으면 null(저장하지 않음).
+    /// </summary>
+    public KY_RunStats CaptureForSave()
+    {
+        if (stats == null || !runActive)
+            return null;
+
+        return new KY_RunStats
+        {
+            stageName = stats.stageName,
+            defeatedEnemies = stats.defeatedEnemies,
+            elapsedSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - runStartRealtime)
+        };
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 이어하기 때 저장된 기록으로 원정을 다시 이어서 집계한다.
+    /// 저장된 경과 시간만큼 시작 시각을 앞당겨, 이후 경과 시간이 끊김 없이 더해지게 한다. 저장이 없으면 새 원정으로 시작한다.
+    /// </summary>
+    public void ResumeRun(KY_RunStats saved)
+    {
+        if (saved == null)
+        {
+            BeginRun();
+            return;
+        }
+
+        stats = new KY_RunStats
+        {
+            stageName = saved.stageName ?? string.Empty,
+            defeatedEnemies = Mathf.Max(0, saved.defeatedEnemies),
+            elapsedSeconds = Mathf.Max(0f, saved.elapsedSeconds)
+        };
+        runStartRealtime = Time.realtimeSinceStartup - stats.elapsedSeconds;
+        runActive = true;
+    }
+
     /// <summary>현재 도달한 스테이지 이름을 기록한다.</summary>
     public void SetStage(string stageName)
     {
