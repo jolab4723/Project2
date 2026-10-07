@@ -10,6 +10,9 @@ using UnityEngine.UI;
 public class TooltipUI : MonoBehaviour
 {
     private const float FadeDuration = 0.1f;
+
+    // 상점·강화·확인창(1~2)과 드래그 중 아이템(ItemDragVisual 1000)보다 위에 그린다.
+    private const int TooltipSortingOrder = 1001;
     private const string ItemLabelResourcePath =
         "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
     private const string UniqueEffectLabelResourcePath =
@@ -197,6 +200,7 @@ public class TooltipUI : MonoBehaviour
         StopFade();
         SetFadeAlpha(0f);
         gameObject.SetActive(true);
+        ApplyTopSorting();
 
         ItemDefinitionSO definition =
             itemData.definition;
@@ -282,6 +286,20 @@ public class TooltipUI : MonoBehaviour
 
         EnsureInitialized();
         FadeTo(0f, () => gameObject.SetActive(false));
+    }
+
+    /// <summary>
+    /// 툴팁 Canvas를 다른 게임 UI보다 위로 고정한다.
+    /// 씬 인스턴스가 프리팹의 정렬값을 덮어써도 상점 NPC Canvas 등과 같은 순서가 되어 뒤로 가려지지 않게 한다.
+    /// 비활성 Canvas는 루트로 취급되어 overrideSorting 설정이 무시되므로 활성화한 뒤 호출한다.
+    /// </summary>
+    private void ApplyTopSorting()
+    {
+        if (!TryGetComponent(out Canvas canvas))
+            return;
+
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = TooltipSortingOrder;
     }
 
     /// <summary>
