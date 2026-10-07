@@ -13,7 +13,13 @@ public class KY_SettingsTab : MonoBehaviour
     public Color activeBgColor = Color.white;
     public Color inactiveBgColor = Color.gray;
 
+    // WJ 이우진 추가(2026-10-06): 탭마다 줄 수가 달라(조작 탭은 메뉴 단축키까지 11줄) 스크롤 내용 높이를
+    // 열린 탭의 마지막 줄에 맞춘다. 예전처럼 300 고정이면 화면 아래로 넘친 줄을 스크롤로도 볼 수 없다.
+    [Tooltip("탭 내용의 마지막 줄 아래에 둘 여백")]
+    [SerializeField] private float contentBottomPadding = 50f;
+
     private Toggle toggle;
+    private readonly Vector3[] cornerBuffer = new Vector3[4];
 
     void Awake()
     {
@@ -28,6 +34,36 @@ public class KY_SettingsTab : MonoBehaviour
 
         label.color = isOn ? activeTextColor : inactiveTextColor;
         label.fontStyle = isOn ? FontStyles.Bold : FontStyles.Normal;
+
+        if (isOn)
+            FitScrollContent();
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 패널의 부모(스크롤 Content) 높이를 패널 안 가장 아래 UI까지로 맞추고 맨 위로 되돌린다.
+    /// 화면 안에 다 들어가는 탭은 스크롤이 생기지 않아 기존 표시와 같다.
+    /// </summary>
+    private void FitScrollContent()
+    {
+        if (panel == null || !(panel.transform.parent is RectTransform content))
+            return;
+
+        float lowest = 0f;
+        foreach (RectTransform rect in panel.GetComponentsInChildren<RectTransform>(false))
+        {
+            rect.GetWorldCorners(cornerBuffer);
+            for (int i = 0; i < cornerBuffer.Length; i++)
+                lowest = Mathf.Min(lowest, content.InverseTransformPoint(cornerBuffer[i]).y);
+        }
+
+        // Content의 기준점이 위쪽(pivot y = 1)이라 맨 위가 0, 아래로 갈수록 음수다.
+        float topOffset = content.rect.height * (1f - content.pivot.y);
+        float height = topOffset - lowest + contentBottomPadding;
+        content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+
+        ScrollRect scroll = content.GetComponentInParent<ScrollRect>();
+        if (scroll != null)
+            scroll.verticalNormalizedPosition = 1f;
     }
 
     public void RefreshVisual()
@@ -42,5 +78,8 @@ public class KY_SettingsTab : MonoBehaviour
 
     label.color = isOn ? activeTextColor : inactiveTextColor;
     label.fontStyle = isOn ? FontStyles.Bold : FontStyles.Normal;
+
+    if (isOn)
+        FitScrollContent();
 }
 }

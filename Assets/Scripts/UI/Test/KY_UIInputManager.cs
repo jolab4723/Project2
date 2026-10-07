@@ -158,17 +158,8 @@ public class KY_UIInputManager : MonoBehaviour
             return;
         }
 
-        // 기존 강화 단축키 U는 공용 InputActions에 없으므로 현재 키 입력을 그대로 사용한다.
-        if (Keyboard.current != null && Keyboard.current.uKey.wasPressedThisFrame)
-        {
-            InventoryPartView inventoryView = GetCampInventoryView();
-            if (inventoryView == null)
-                return;
-
-            popups?.HideSidePopup();
-            CloseStatusPopupIfOpen();
-            inventoryView.OpenUpgrade();
-        }
+        // WJ 이우진 수정(2026-10-06): 강화 단축키 U(공용 InputActions 밖에서 키를 직접 읽던 입력)를 제거했다.
+        // 강화 팝업은 기존 UI 경로로만 연다.
     }
 
     /// <summary>

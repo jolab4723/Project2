@@ -17,6 +17,9 @@ public class KY_ButtonColorEffect : MonoBehaviour, IPointerEnterHandler, IPointe
         public Color hoverColor;
         public Color clickColor;
         [HideInInspector] public Color originalColor;
+        // WJ 이우진 추가(2026-10-06): SetStateColors로 바꾼 뒤 ResetStateColors가 되돌릴 처음(에디터에서 정한) 색.
+        [System.NonSerialized] public Color authoredOriginalColor;
+        [System.NonSerialized] public Color authoredHoverColor;
     }
 
     [Header("Targets")]
@@ -31,6 +34,7 @@ public class KY_ButtonColorEffect : MonoBehaviour, IPointerEnterHandler, IPointe
 
     private bool isHovering = false;
     private Tween clickResetTween;
+    private bool colorsCaptured;
 
     /// <summary>각 타겟의 초기(기본) 색상을 순서대로 캡처하고, button이 비어있으면 같은 GameObject에서 찾는다.</summary>
     void Awake()
@@ -38,8 +42,58 @@ public class KY_ButtonColorEffect : MonoBehaviour, IPointerEnterHandler, IPointe
         if (button == null)
             button = GetComponent<Button>();
 
+        CaptureColors();
+    }
+
+    // WJ 이우진 수정(2026-10-06): 초기 색 캡처를 한 곳으로 모아, Awake 전에 SetStateColors가 불려도 같은 기준을 쓴다.
+    private void CaptureColors()
+    {
+        if (colorsCaptured)
+            return;
+
         foreach (var t in targets)
+        {
             t.originalColor = t.graphic.color;
+            t.authoredOriginalColor = t.originalColor;
+            t.authoredHoverColor = t.hoverColor;
+        }
+        colorsCaptured = true;
+    }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 모든 타겟의 기본색과 호버색을 상태에 맞게 바꾼다(예: 보상까지 받은 퀘스트 슬롯은 회색).
+    /// 호버 종료·클릭 복귀도 이 색을 기준으로 한다. 클릭 색은 그대로 둔다.
+    /// </summary>
+    public void SetStateColors(Color baseColor, Color hoverColor)
+    {
+        CaptureColors();
+        foreach (var t in targets)
+        {
+            t.originalColor = baseColor;
+            t.hoverColor = hoverColor;
+        }
+        ApplyCurrentColors();
+    }
+
+    /// <summary>WJ 이우진 추가(2026-10-06): SetStateColors로 바꾼 색을 에디터에서 정한 처음 색으로 되돌린다.</summary>
+    public void ResetStateColors()
+    {
+        CaptureColors();
+        foreach (var t in targets)
+        {
+            t.originalColor = t.authoredOriginalColor;
+            t.hoverColor = t.authoredHoverColor;
+        }
+        ApplyCurrentColors();
+    }
+
+    private void ApplyCurrentColors()
+    {
+        foreach (var t in targets)
+        {
+            t.graphic.DOKill();
+            t.graphic.color = isHovering ? t.hoverColor : t.originalColor;
+        }
     }
 
     /// <summary>호버 진입 시 모든 타겟을 각자의 hoverColor로 전환한다. 버튼이 비활성 상태면 무시한다.</summary>

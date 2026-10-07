@@ -77,4 +77,14 @@ public static class KeyBindingService
         PlayerPrefs.SetString(storageKey, json);
         PlayerPrefs.Save();
     }
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-06): 모든 키를 기본값으로 되돌리고 그 상태를 현재 프로필에 저장한다.
+    /// 설정 팝업의 "초기 설정으로"에서 호출한다. 표시 갱신 이벤트(KY_GameEvents.KeyBindingChanged)는 호출하는 쪽이 발행한다.
+    /// </summary>
+    public static void ResetToDefaults()
+    {
+        InputActions.RemoveAllBindingOverrides();
+        Save();
+    }
 }
