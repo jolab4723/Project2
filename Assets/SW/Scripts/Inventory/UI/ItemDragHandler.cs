@@ -107,6 +107,11 @@ public class ItemDragHandler : MonoBehaviour,
         }
 
         dragState = DragState.Detached;
+
+        // 싱글 드래그는 모델을 Grid에서 실제로 뺀다. 배치가 끝날 때까지 저장과 원래 칸 예약에 알린다.
+        if (!externalDrag)
+            dropHandler.MarkDetachedFromPlayerGrid();
+
         YJ_CursorManager.Instance?.BeginDragCursor();
 
         // 분리 메서드 안에서 UI가 비활성화되더라도 모델이 빠진 채 남지 않게 한다.

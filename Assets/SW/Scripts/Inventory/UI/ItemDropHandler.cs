@@ -54,6 +54,20 @@ public class ItemDropHandler : MonoBehaviour
     {
         restorePending = false;
         recoveryFailureLogged = false;
+        inventoryController?.ClearDetachedDragItem(itemUI?.Item);
+    }
+
+    /// <summary>
+    /// 싱글 드래그가 플레이어 Grid에서 모델을 분리한 직후 호출한다. 배치가 끝날 때까지
+    /// 저장 수집이 원래 위치로 이 아이템을 포함하고, 원래 칸을 보상·획득 추가로부터 예약한다.
+    /// </summary>
+    public void MarkDetachedFromPlayerGrid()
+    {
+        if (inventoryController == null || itemUI == null ||
+            itemUI.OriginalWasEquipped || itemUI.OriginalGrid != inventoryController.PlayerGrid)
+            return;
+
+        inventoryController.SetDetachedDragItem(itemUI.Item, itemUI.OriginalPlacement);
     }
 
     /// <summary>
@@ -544,6 +558,7 @@ public class ItemDropHandler : MonoBehaviour
     {
         restorePending = false;
         recoveryFailureLogged = false;
+        inventoryController?.ClearDetachedDragItem(itemUI?.Item);
     }
 
     private void LogRecoveryFailureOnce()

@@ -1608,6 +1608,17 @@ namespace Core
                 data.gridHeight = InventoryController.Instance.PlayerGrid.GridHeight;
                 foreach (var item in InventoryController.Instance.PlayerGrid.GetAllItems())
                     data.items.Add(ToItemSaveData(item, false, default(EquipSlotType)));
+
+                // SW 수정 : 싱글 드래그는 아이템을 Grid에서 잠시 빼므로, 드래그 중 저장(퀘스트 보상 등)에서
+                // 손에 든 아이템이 빠져 재로드 시 사라질 수 있었다. 원래 좌표·회전으로 함께 저장한다.
+                if (InventoryController.Instance.TryGetDetachedDragItem(out InventoryItem dragged, out InventoryPlacementSnapshot original))
+                {
+                    ItemSaveData saved = ToItemSaveData(dragged, false, default(EquipSlotType));
+                    saved.gridX = original.Rect.X;
+                    saved.gridY = original.Rect.Y;
+                    saved.isRotated = original.IsRotated;
+                    data.items.Add(saved);
+                }
             }
 
             if (InventoryController.Instance.EquipmentSystem != null)
