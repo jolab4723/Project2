@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_EnemyPoolManager))]
+[RequireComponent(typeof(WBH_EnemyDataProvider))]
 public class WBH_EnemySpawnManager : MonoBehaviour
 {
     [System.Serializable]
@@ -10,44 +13,54 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         [Min(0)] public int count;
     }
 
-    [System.Serializable]
-    public class WaveData
-    {
-        public GradeCount[] enemies;
-    }
 
-    [SerializeField] private WBH_EnemySpawnArea[] spawnAreas; 
+    [SerializeField] private WBH_WaveSetSO defaultWaveSet;
+
+    [SerializeField] private WBH_EnemySpawnArea spawnArea; 
     [SerializeField] private Transform player;
 
-    [SerializeField] private WaveData[] waves;
+    [SerializeField] private WBH_EnemyDataProvider enemyDataProvider;
+    [SerializeField] private WBH_EnemyStatContext statContext = new WBH_EnemyStatContext(1, "normal", 1);
 
-    [SerializeField] private WBH_HighEnemyHpbarView eliteView;
+    [SerializeField] private WBH_HighEnemyHpbarView highEnemyView;
+    [SerializeField] private WBH_EffectSpawner effectSpawner;
+    [SerializeField] private WBH_ProjectileSpawner projectileSpawner;
 
     private WBH_EnemyPoolManager enemyPool;
-    private WBH_EffectPoolManager effectPool;
-    private WBH_ProjectilePoolManager projectilePool;
     private WBH_FloatTextPoolManager damagePool;
-    
-    private YJ_PortalActive portalActive;
     private PlayerWallet wallet;
+    private YJ_SfxPlayer sfxPlayer;
+    private WBH_WaveSetSO activeWaveSet;
+    private WBH_WaveData[] activeWaves;
+    private readonly Queue<EnemyGrade> pendingSpawns = new();
 
     private int currentWave = -1;
     private int aliveEnemyCount;
-    private bool stageClear;
+    private bool waveInProgress;
+    private bool isSpawningWave;
+    private bool spawnAreaInitialized;
+
+    public event Action WaveCompleted;
+
+    public WBH_WaveSetSO ActiveWaveSet => activeWaveSet;
+    public int CurrentWaveIndex => currentWave;
+    public bool HasUsableWaveSet => activeWaves != null && activeWaves.Length > 0;
+    public int WaveCount => activeWaves?.Length ?? 0;
+    /// <summary>SW 수정: 같은 씬에서 확정한 웨이브를 서버 스포너에도 읽기 전용으로 제공합니다.</summary>
+    public WBH_WaveData GetConfiguredWave(int index) =>
+        activeWaves != null && index >= 0 && index < activeWaves.Length ? activeWaves[index] : null;
+    public bool HasNextWave => currentWave + 1 < WaveCount;
+    public bool AllwavesCompleted => HasUsableWaveSet && currentWave == WaveCount - 1 && !waveInProgress && !isSpawningWave && pendingSpawns.Count == 0 && aliveEnemyCount == 0;
+
 
     private void Awake()
     {
         enemyPool = GetComponent<WBH_EnemyPoolManager>();
-
-        effectPool = FindFirstObjectByType<WBH_EffectPoolManager>();
-        projectilePool = FindFirstObjectByType<WBH_ProjectilePoolManager>();
+        enemyDataProvider = GetComponent<WBH_EnemyDataProvider>();
+        spawnArea = FindFirstObjectByType<WBH_EnemySpawnArea>();
         damagePool = FindFirstObjectByType<WBH_FloatTextPoolManager>();
 
-        spawnAreas = FindObjectsByType<WBH_EnemySpawnArea>(FindObjectsSortMode.None);
-        player = FindAnyObjectByType<T_PlayerController>().transform;
-
-        portalActive = FindAnyObjectByType<YJ_PortalActive>();
-        wallet = FindFirstObjectByType < PlayerWallet>();
+        highEnemyView = FindFirstObjectByType<WBH_HighEnemyHpbarView>();
     }
 
     private void OnEnable()
@@ -59,77 +72,234 @@ public class WBH_EnemySpawnManager : MonoBehaviour
         WBH_EnemyController.OnEnemyDead -= EnemyDead;
     }
 
-    private void Start()
+    public bool TrySetPlayer(T_PlayerController controller)
     {
-        InitializeSpawnAreas();
-        SpawnNextWave();
-    }
-
-    private void InitializeSpawnAreas() //!@ 차후 어그로 시스템 제작 시 player 빼기, eliteview UI쪽과 통합 시 eliteView 빼기
-    {
-        foreach (WBH_EnemySpawnArea area in spawnAreas)
+        if (controller == null || !controller.isActiveAndEnabled)
         {
-            area.Initialize(enemyPool, effectPool, projectilePool, player, FindClosePlayer, damagePool, eliteView, wallet);
+            Log.Error("적 스폰 초기화 실패: 활성 플레이어가 필요합니다.");
+            return false;
         }
+        if (spawnAreaInitialized || waveInProgress || isSpawningWave)
+        {
+            Log.Error("적 스폰 초기화 이후에는 플레이어 참조를 교체할 수 없습니다.");
+            return false;
+        }
+
+        player = controller.transform;
+        // 현재 지갑은 캐릭터가 아니라 씬에 배치되어 있습니다.
+        // 씬에 PlayerWallet이 여러 개라 Find는 저장되지 않는 지갑을 고를 수 있으므로,
+        // 스포너가 BindSinglePlayerInventory로 연결한 전달받은 플레이어의 지갑을 사용합니다.
+        PlayerContext context = controller.GetComponent<PlayerContext>();
+        wallet = context != null ? context.Wallet : null;
+        // 스포너 없이 플레이어를 직접 배치한 테스트 씬은 보상만 건너뛰고 스폰은 계속합니다.
+        if (wallet == null)
+            Log.Warning("플레이어 지갑이 연결되지 않아 처치 크레딧이 지급되지 않습니다. PlayerSpawner 연결을 확인하세요.");
+        return true;
     }
 
-    private void SpawnNextWave()
+    private bool TryInitializeSpawnArea() 
     {
-        currentWave++;
-        
-        if(currentWave >= waves.Length)
+        if (spawnAreaInitialized)
+            return true;
+
+        // 스포너가 없는 기존 테스트 씬도 지원하되, 실제 생성 시점에 찾습니다.
+        T_PlayerController controller = player != null && player.gameObject.activeInHierarchy
+            ? player.GetComponent<T_PlayerController>()
+            : FindFirstObjectByType<T_PlayerController>();
+        if (!TrySetPlayer(controller))
+            return false;
+
+        if(sfxPlayer == null)
         {
-            stageClear = true;
-            portalActive.Active(true);
-            Log.Print("Stage Clear");
+            sfxPlayer = YJ_SfxPlayer.Instance;
+        }
+
+        if(spawnArea == null || !spawnArea.isActiveAndEnabled || enemyPool == null || enemyDataProvider == null || player == null || highEnemyView == null)
+        {
+            Log.Error($"{name} 데이터 참조를 확인하세요.");
+            return false;
+        }
+
+        spawnArea.Initialize(this, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, player, FindClosePlayer, damagePool, highEnemyView, wallet, sfxPlayer);
+
+        spawnAreaInitialized = true;
+        return true;
+    }
+
+    public bool TrySetWaves(IReadOnlyList<WBH_WaveData> waves)
+    {
+        if (waveInProgress || isSpawningWave)
+        {
+            Log.Error("웨이브 진행 중에는 데이터를 교체할 수 없습니다.");
+            return false;
+        }
+        if (waves == null || waves.Count == 0 ||
+            spawnArea == null || !spawnArea.isActiveAndEnabled)
+        {
+            Log.Error("웨이브 데이터와 SpawnArea 참조를 확인하세요.");
+            return false;
+        }
+        if (!spawnArea.ValidateSpawnPoints(waves.Count, out string error))
+        {
+            Log.Error(error);
+            return false;
+        }
+
+        var copiedWaves = new WBH_WaveData[waves.Count];
+        for(int i=0; i<waves.Count; i ++)
+        {
+            WBH_WaveGradeCount[] entries = waves[i]?.enemies;
+            if(entries == null || entries.Length == 0)
+            {
+                Log.Error($"{i + 1}웨이브의 적 구성이 없습니다.");
+                return false;
+            }
+
+            var copiedEntries = new WBH_WaveGradeCount[entries.Length];
+            long total = 0;
+            for(int j = 0; j < entries.Length; j++)
+            {
+                WBH_WaveGradeCount entry = entries[j];
+                if(entry == null || entry.count < 0 || (entry.count > 0 && !spawnArea.CanSpawn(entry.grade)))
+                {
+                    Log.Error($"{i + 1}웨이브의 등급별 수량과 SpawnData 를 확인하세요.");
+                    return false;
+                }
+
+                total += entry.count;
+                copiedEntries[j] = new WBH_WaveGradeCount
+                {
+                    grade = entry.grade,
+                    count = entry.count,
+                };
+            }
+            if(total <= 0 || total > int.MaxValue)
+            {
+                Log.Error($"{i + 1}웨이브의 전체 수량이 잘못됐습니다.");
+                return false;
+            }
+            copiedWaves[i] = new WBH_WaveData { enemies = copiedEntries };
+        }
+
+        activeWaves = copiedWaves;
+        activeWaveSet = null;
+        currentWave = -1;
+        aliveEnemyCount = 0;
+        waveInProgress = false;
+        isSpawningWave = false;
+
+
+        return true;
+    }
+
+
+    public bool TrySetWaveSet(WBH_WaveSetSO waveSet)
+    {
+        if (waveSet == null)
+            return false;
+        if (!TrySetWaves(waveSet.Waves))
+            return false;
+        activeWaveSet = waveSet;
+        return true;
+    }
+
+    public bool TryUseDefaultWaveSet()
+    {
+        return TrySetWaveSet(defaultWaveSet);
+    }
+
+    public void SetStatContext(WBH_EnemyStatContext context)
+    {
+        if(!context.IsValid)
+        {
+            Log.Error($"잘못된 적 능력치 컨텍스트입니다. 층 = {context.floor}, 난이도 = {context.difficultyName}, 플레이어 수 = {context.playerCount}");
             return;
         }
+        statContext = context;
+    }
 
+    public bool TrySpawnNextWave()
+    {
+        if (!isActiveAndEnabled || !HasUsableWaveSet || waveInProgress || !HasNextWave || !TryInitializeSpawnArea())
+            return false;
+
+        currentWave++;
         aliveEnemyCount = 0;
+        waveInProgress = true;
+        pendingSpawns.Clear();
 
-        foreach(GradeCount entry in waves[currentWave].enemies)
+        foreach(WBH_WaveGradeCount entry in activeWaves[currentWave].enemies)
         {
-            aliveEnemyCount += Spawn(entry.grade, entry.count);
+            for (int i = 0; i < entry.count; i++)
+                pendingSpawns.Enqueue(entry.grade);
         }
 
-        if (aliveEnemyCount == 0)
+        return TrySpawnPendingEnemies();
+    }
+
+    public bool TrySpawnPendingEnemies()
+    {
+        if (!isActiveAndEnabled || !waveInProgress || isSpawningWave)
+            return false;
+        if(!TryInitializeSpawnArea() || spawnArea == null || !spawnArea.isActiveAndEnabled || !spawnArea.TryGetSpawnPoint(currentWave, out _))
         {
-            SpawnNextWave();
+            Log.Error($"{currentWave + 1} 웨이브의 스폰포인트를 사용할 수 없습니다.");
+            return false;
         }
-    }
 
-    private int Spawn(EnemyGrade grade, int count)
-    {
-        if (count <= 0 || spawnAreas.Length == 0)
-            return 0;
+        bool succeeded = true;
+        isSpawningWave = true;
 
-        int spawnedCount = 0;
-
-        for(int i = 0; i < count; i ++)
+        try
         {
-            WBH_EnemySpawnArea area = GetRandomArea();
-            spawnedCount += area.Spawn(grade, 1);
+            while (pendingSpawns.Count > 0)
+            {
+                EnemyGrade grade = pendingSpawns.Peek();
+                // 같은 SpawnArea 안에서 웨이브 인덱스로 포인트를 선택.
+                int spawned = spawnArea.Spawn(grade, 1, statContext, currentWave);
+                if (spawned != 1)
+                {
+                    Log.Error($"{currentWave + 1}웨이브 생성 실패: {grade}, " +
+                        $"미생성 {pendingSpawns.Count}마리. 데이터·풀·NavMesh를 확인하세요.");
+                    succeeded = false;
+                    break;
+                }
+                pendingSpawns.Dequeue();
+                aliveEnemyCount++;
+            }
         }
-        return spawnedCount;
+        finally
+        {
+            isSpawningWave = false;
+        }
+        TryCompleteCurrentWave();
+        return succeeded;
     }
 
-    private WBH_EnemySpawnArea GetRandomArea()
+    [ContextMenu("남은 웨이브 적 생성 재시도")]
+    private void RetryPendingSpawns()
     {
-        int index = Random.Range(0, spawnAreas.Length);
-        return spawnAreas[index];
+        if (Application.isPlaying)
+            TrySpawnPendingEnemies();
     }
 
-    public void EnemyDead() //!@ 차후 게임 매니저 생기면 거기서 웨이브 감지 바꾸는 것 고려
+    private void EnemyDead()
     {
-        if (stageClear)
+        if (!waveInProgress || aliveEnemyCount <= 0)
             return;
 
         aliveEnemyCount--;
 
-        if(aliveEnemyCount <= 0)
-        {
-            SpawnNextWave();
-        }
+        TryCompleteCurrentWave();
+    }
+
+    private void TryCompleteCurrentWave()
+    {
+        if (!waveInProgress || isSpawningWave || pendingSpawns.Count > 0 || aliveEnemyCount > 0)
+            return;
+
+        waveInProgress = false;
+        WaveCompleted?.Invoke();
     }
 
     // 가까운 플레이어 찾기
@@ -154,5 +324,14 @@ public class WBH_EnemySpawnManager : MonoBehaviour
             closePlayer = player.transform;
         }
         return closePlayer;
+    }
+
+    // 적 패턴 등으로 적을 추가 소환할 경우 aliveEnemyCount 를 증가
+    public void RegisterAdditionalEnemies(int count)
+    {
+        if (!waveInProgress || count <= 0)
+            return;
+
+        aliveEnemyCount += count;
     }
 }

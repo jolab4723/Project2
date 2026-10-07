@@ -17,6 +17,10 @@ public sealed class ShopStockInitializer : MonoBehaviour
     private ShopStockRollService rollService;
     private bool initialized;
 
+    internal ItemDatabaseSO ItemDatabase => itemDatabase;
+    internal int InitialStockCount => initialStockCount;
+    internal ShopRarityChance[] RarityChances => rarityChances;
+
     private void Awake()
     {
         if (shopController == null)
@@ -48,28 +52,33 @@ public sealed class ShopStockInitializer : MonoBehaviour
     [ContextMenu("TEST/Reroll Shop Stock")]
     public void RerollStock()
     {
+        TryRerollStock();
+    }
+
+    public bool TryRerollStock()
+    {
         if (!ValidateConfiguration())
-            return;
+            return false;
 
         if (!initialized)
         {
             initialized = true;
-            GenerateStock();
-            return;
+            return GenerateStock() == initialStockCount;
         }
 
         if (!shopController.TryClearGeneratedStock())
         {
             Debug.LogError(
                 "[ShopStockInitializer] 기존 Generated 재고를 제거하지 못해 리롤을 중단했습니다.");
-            return;
+            return false;
         }
 
-        GenerateStock();
+        return GenerateStock() == initialStockCount;
     }
 
-    private void GenerateStock()
+    private int GenerateStock()
     {
+        int generatedCount = 0;
 
         for (int i = 0; i < initialStockCount; i++)
         {
@@ -98,7 +107,10 @@ public sealed class ShopStockInitializer : MonoBehaviour
                 new InventoryItem(itemData);
 
             if (shopController.TryAddGeneratedStock(item))
+            {
+                generatedCount++;
                 continue;
+            }
 
             Debug.LogWarning(
                 $"[ShopStockInitializer] " +
@@ -107,6 +119,8 @@ public sealed class ShopStockInitializer : MonoBehaviour
             // 상점 Grid 공간 부족 등 다음 상품도 실패할 가능성이 높다.
             break;
         }
+
+        return generatedCount;
     }
 
     private bool ValidateConfiguration()

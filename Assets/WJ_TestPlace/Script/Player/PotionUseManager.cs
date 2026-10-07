@@ -19,16 +19,39 @@ public class PotionUseManager : MonoBehaviour
     [Tooltip("플레이어가 기본으로 가지는 포션 충전 최대치. 포션 종류와 무관하게 고정값이다.")]
     [SerializeField] private int basePotionCharges = 3;
 
+    [Tooltip("포션 사용 후 다시 쓸 수 있을 때까지의 대기 시간(초). 쿨타임 감소 스탯의 영향을 받지 않는 고정값이다.")]
+    [SerializeField, Min(0f)] private float useCooldownSeconds = 1f;
+
     // 장착된 포션이 어떤 효과(회복/능력치 증가)인지 알아야 해서 여전히 참조가 필요하다.
     // InventoryController.Instance를 그때그때 찾는 대신 PlayerStatManager와 같은 방식(직렬화 참조)을 쓴다 -
     // 런타임에 찾으면 스크립트 실행 순서 문제로 초기화 시점에 아직 준비 안 됐을 수 있다.
     [SerializeField] private EquipmentSystem equipmentSystem;
 
     /// <summary>플레이어가 지금 가진 남은 충전량(공유 풀). UI 등에서 표시용으로 읽으면 된다.</summary>
-    public int CurrentCharges { get; private set; }
+    public int CurrentCharges => useState.CurrentCharges; // SW 수정: 공통 규칙이 충전량을 소유합니다.
 
     /// <summary>플레이어의 최대 충전량. 포션 종류와 무관한 고정값이다.</summary>
     public int MaxCharges => basePotionCharges;
+
+    /// <summary>포션 사용 쿨타임 전체 길이(초). 쿨타임 감소와 무관한 고정값이다.</summary>
+    public float UseCooldownSeconds => useCooldownSeconds;
+
+    /// <summary>남은 쿨타임(초). 사용 가능하면 0.</summary>
+    public float RemainingCooldown =>
+        useState.RemainingCooldown;
+
+    /// <summary>지금 쿨타임이 끝나서 쓸 수 있는 상태인지.</summary>
+    public bool IsCooldownReady => useState.IsCooldownReady;
+
+    /// <summary>
+    /// SW 수정: 미러와 같은 규칙을 사용하되 충전과 쿨타임은 이 플레이어만 소유합니다.
+    ///
+    /// !! 일부러 PlayerStat의 쿨타임 감소(cdr)를 타지 않는다. 스킬 쿨타임과 달리 포션 연타를 막는
+    ///    최소 간격이라, 쿨감이 높아진다고 줄어들면 의미가 없어진다.
+    /// </summary>
+    private readonly PotionUseState useState = new PotionUseState();
+    private PlayerHealthManager health;
+    private PlayerBuffManager buffs;
 
     private void Awake()
     {
@@ -45,9 +68,10 @@ public class PotionUseManager : MonoBehaviour
         Instance = this;
     }
 
+    /// <summary>SW 수정: 게임 시작 시 기존처럼 포션 충전을 최대치로 채웁니다.</summary>
     private void Start()
     {
-        CurrentCharges = MaxCharges; // 게임 시작 시 항상 최대치로 시작
+        RechargeAllPotions(); // 게임 시작 시 항상 최대치로 시작
     }
 
     private void OnDestroy()
@@ -85,57 +109,54 @@ public class PotionUseManager : MonoBehaviour
         Instance = this;
     }
 
-    /// <summary>현재 장착된 포션을 사용한다. 장착된 포션이 없거나 공유 풀 충전이 없으면 조용히 실패한다.</summary>
+    /// <summary>
+    /// 현재 장착된 포션을 사용한다. 장착된 포션이 없거나, 공유 풀 충전이 없거나,
+    /// 아직 사용 쿨타임이 안 끝났으면 조용히 실패한다.
+    /// SW 수정: 해당 플레이어의 포션을 공통 규칙으로 사용합니다.
+    /// 기존 충전·고정 쿨타임을 유지하고 사망 상태나 효과 대상이 없으면 충전을 소비하지 않습니다.
+    /// </summary>
     public bool TryUsePotion()
     {
         if (!TryGetEquippedPotion(out ItemInstance potion))
             return false;
 
-        if (CurrentCharges <= 0)
-            return false;
-
-        ApplyPotionEffect(potion.definition);
-        CurrentCharges--;
-        return true;
+        health ??= GetComponent<PlayerHealthManager>();
+        buffs ??= GetComponent<PlayerBuffManager>();
+        return useState.TryUse(potion.definition, health, buffs, useCooldownSeconds);
     }
 
-    /// <summary>포션 하나의 효과를 실제로 적용한다 - 회복 또는 능력치 증가.</summary>
-    private static void ApplyPotionEffect(ItemDefinitionSO def)
-    {
-        switch (def.potionEffectType)
-        {
-            case PotionEffectType.Heal:
-                PlayerHealthManager.Instance?.Heal(def.potionEffectValue);
-                break;
-
-            case PotionEffectType.StatBoost:
-                if (def.potionBuff != null)
-                    PlayerBuffManager.Instance?.ApplyBuff(def.potionBuff);
-                break;
-        }
-    }
-
-    /// <summary>공유 충전 풀을 최대치까지 채운다. 캠프 스테이지에서 호출할 용도.</summary>
+    /// <summary>
+    /// 공유 충전 풀을 최대치까지 채운다. 캠프 스테이지에서 호출할 용도.
+    /// SW 수정: 공통 규칙으로 충전을 채우며 남은 쿨타임은 유지합니다.
+    /// </summary>
     public void RechargeAllPotions()
     {
-        CurrentCharges = MaxCharges;
+        useState.Recharge(MaxCharges);
     }
 
-    /// <summary>현재 장착된 포션 인스턴스를 가져온다. 장착된 게 없거나 포션이 아니면 false.</summary>
+    /// <summary>
+    /// 공유 충전 풀에 amount만큼 더한다(최대치를 넘지 않음). 캠프 휴식처럼 일부만 채울 때 쓴다.
+    /// 공통 규칙(PotionUseState.ApplyCharges)으로 범위를 맞추며 남은 쿨타임은 유지한다.
+    /// </summary>
+    public void RechargePotions(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        useState.ApplyCharges(CurrentCharges + amount, MaxCharges);
+    }
+
+    /// <summary>
+    /// 현재 장착된 포션 인스턴스를 가져온다. 장착된 게 없거나 포션이 아니면 false.
+    /// SW 수정: 기존 장비 연결을 유지하고 공통 규칙으로 장착 포션을 찾습니다.
+    /// </summary>
     public bool TryGetEquippedPotion(out ItemInstance potion)
     {
         potion = null;
 
         if (equipmentSystem == null)
-            return false;
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
 
-        if (!equipmentSystem.TryGetEquippedItemInstance(EquipSlotType.Potion, out ItemInstance equipped))
-            return false;
-
-        if (equipped?.definition == null || equipped.definition.category != ItemCategory.Potion)
-            return false;
-
-        potion = equipped;
-        return true;
+        return PotionUseState.TryGetEquippedPotion(equipmentSystem, out potion);
     }
 }

@@ -128,6 +128,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 128449172}
+  - component: {fileID: 128449173}
   m_Layer: 5
   m_Name: LoadingImage
   m_TagString: Untagged
@@ -156,9 +157,27 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -300, y: -50}
+  m_AnchoredPosition: {x: -300, y: -125}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &128449173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 128449171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26e5bd782487a544cba1bdcbd3e256ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_LoadingImageEdgeFade
+  targetImage: {fileID: 1812752738}
+  topFade: {fileID: 2107764689}
+  bottomFade: {fileID: 1010760858}
+  leftFade: {fileID: 597736805}
+  rightFade: {fileID: 1678972308}
+  fadeRatio: 0.2
 --- !u!1 &491244948
 GameObject:
   m_ObjectHideFlags: 0
@@ -466,12 +485,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -557,8 +576,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -345, y: 0}
-  m_SizeDelta: {x: 960, y: 270}
+  m_AnchoredPosition: {x: -367.11038, y: 0}
+  m_SizeDelta: {x: 540, y: 183.55519}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &597736806
 MonoBehaviour:
@@ -669,8 +688,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -136}
-  m_SizeDelta: {x: 960, y: 270}
+  m_AnchoredPosition: {x: 0, y: -216}
+  m_SizeDelta: {x: 917.77594, y: 108}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1010760859
 MonoBehaviour:
@@ -746,7 +765,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 300, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1259762202
 MonoBehaviour:
@@ -907,6 +926,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1443341927}
   - component: {fileID: 1443341926}
+  - component: {fileID: 1443341928}
   m_Layer: 0
   m_Name: LoadingSceneManager
   m_TagString: Untagged
@@ -927,6 +947,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_LoadingSceneProgress
   progressText: {fileID: 504687361}
+  progressLabel: Progress
 --- !u!4 &1443341927
 Transform:
   m_ObjectHideFlags: 0
@@ -942,6 +963,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1443341928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443341925}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd3287a93561ab94ebc36a60129a8a47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KY_LoadingPresentation
+  loadingImage: {fileID: 1812752738}
+  titleText: {fileID: 1259762202}
+  detailText: {fileID: 1797464764}
+  chooseRandomEntry: 1
+  previewEntryIndex: 0
 --- !u!1 &1456434089
 GameObject:
   m_ObjectHideFlags: 0
@@ -1228,8 +1266,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 345, y: 0}
-  m_SizeDelta: {x: 960, y: 270}
+  m_AnchoredPosition: {x: 367.11038, y: 0}
+  m_SizeDelta: {x: 540, y: 183.55519}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1678972309
 MonoBehaviour:
@@ -1465,10 +1503,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\uC774\uACF3\uC740 \uC624\uC5FC\uC73C\uB85C \uC778\uD574 \uC778\uAC04\uC774
-    \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,\r\n\uC218\uBC31
-    \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774 \uC2A4\uC2A4\uB85C\uB97C
-    \uBCF5\uAD6C\uD558\uACE0 \uAC1C\uC870\uD558\uAE30 \n\uC2DC\uC791\uD558\uBA74\uC11C
-    \uAE30\uAD34\uD55C \uBA54\uCE74 \uC0DD\uD0DC\uACC4\uAC00 \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4.\r\n"
+    \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,
+    \uC218\uBC31 \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774
+    \uC2A4\uC2A4\uB85C\uB97C \uBCF5\uAD6C\uD558\uBA70 \uAE30\uAD34\uD55C \uBA54\uCE74
+    \uC0DD\uD0DC\uACC4\uAC00 \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
   m_sharedMaterial: {fileID: -4062070630887492077, guid: eaf3bf4eb30c7d54fb5092c8f8f65221, type: 2}
@@ -1619,7 +1657,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: f49ed6d784147754c9d02baffbe8f86f, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -1744,8 +1782,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 136}
-  m_SizeDelta: {x: 960, y: 270}
+  m_AnchoredPosition: {x: 0, y: 216}
+  m_SizeDelta: {x: 917.77594, y: 108}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2107764690
 MonoBehaviour:

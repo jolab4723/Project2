@@ -13,8 +13,8 @@ namespace DataSystem
     /// </summary>
     public static class SkillLabelSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/SkillData/JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Skill/SkillLabelDatabase.asset";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/CharData/SkillData/3. GeneratedAssets/SkillLabelDatabase.asset";
 
         [MenuItem("DataLoader/Skill Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -30,11 +30,20 @@ namespace DataSystem
         [MenuItem("DataLoader/Skill Label/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            string excelAbsolutePath = AssetPathToAbsolutePath("Assets/Resources/DataFiles/SkillData/ExcelFile/SkillDataLabel.xlsx");
-            string jsonAbsolutePath = AssetPathToAbsolutePath("Assets/Resources/DataFiles/SkillData/JSONFile/SkillDataLabel.json");
+            string jsonPath = SkillLabelExcelToJson.ConvertWithDefaultPaths();
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                Debug.LogError("[SkillLabel] 엑셀을 찾지 못해 중단했습니다.");
+                return;
+            }
 
-            SkillLabelExcelToJson.Convert(excelAbsolutePath, jsonAbsolutePath);
-            Import(jsonAbsolutePath, DefaultOutputAssetPath);
+            ImportWithDefaultPaths(jsonPath);
+        }
+
+        /// <summary>대화상자 없이 기본 경로만으로 가져온다. 통합 실행(0. Run All Steps)에서 쓴다.</summary>
+        public static void ImportWithDefaultPaths(string jsonPath)
+        {
+            Import(jsonPath, DefaultOutputAssetPath);
         }
 
         public static void Import(string jsonPath, string outputAssetPath)
@@ -89,6 +98,7 @@ namespace DataSystem
                 labelsProp.InsertArrayElementAtIndex(index);
                 SerializedProperty element = labelsProp.GetArrayElementAtIndex(index);
                 element.FindPropertyRelative("skillId").stringValue = row.skillId;
+                element.FindPropertyRelative("skillName").stringValue = row.skillName;
                 element.FindPropertyRelative("skillDescription").stringValue = row.skillDescription;
                 element.FindPropertyRelative("evolution1Description").stringValue = row.evolution1Description;
                 element.FindPropertyRelative("evolution2Description").stringValue = row.evolution2Description;

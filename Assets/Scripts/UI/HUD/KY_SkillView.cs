@@ -1,11 +1,12 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // 스킬 입력 키 안내.
 // 옵션에서 설정한 스킬 키가 반영된다.
 public class KY_SkillView : MonoBehaviour
 {
-    public KY_SkillSlot[] slots;
+    [SerializeField] private KY_SkillSlot[] skillSlots; // Slot1~4
+    [SerializeField] private KY_SkillSlot dodgeSlot;
+    [SerializeField] private KY_SkillSlot itemSlot;
 
     // ISkillController를 구현한 컴포넌트(FighterSkillController/GunnerSkillController 등)에서 Slot1~3
     // (인덱스 0~2)의 실시간 쿨타임을 읽어와 라디얼 필로 표시한다. slots는 Skill1~4+Dodge까지 5개가 있지만,
@@ -15,15 +16,42 @@ public class KY_SkillView : MonoBehaviour
     // 했고, 안 바꾸면 비활성 캐릭터의 컨트롤러를 계속 보다가 초기화 안 된 값 - 예: 스택 -1 - 을 그대로
     // 표시하는 문제가 있었다), 지금은 ActiveSkillControllerLocator로 지금 활성 캐릭터의 컨트롤러를
     // 그때그때 찾아서 쓴다(SkillEvolutionSelectUI와 같은 방식, 116/124번).
-    private ISkillController SkillController => ActiveSkillControllerLocator.Find();
+    // 멀티에서는 PlayerHudEventBridge가 로컬 플레이어를 Bind하며, 바인딩된 대상이 전역 검색보다 우선한다.
+    private ISkillController boundController;
+    private ISkillController SkillController =>
+        boundController ?? (MirrorNetworkManager.OwnsGameplay ? null : ActiveSkillControllerLocator.Find());
+
+    /// <summary>아이콘을 이미 채워 넣은 컨트롤러. 캐릭터(클래스)가 바뀐 프레임에만 아이콘을 다시 채우려고 들고 있는다.</summary>
+    private ISkillController iconSyncedController;
 
     private GameInputActions inputActions;
+    private T_PlayerController playerController;
+    private WBH_PlayerStatus playerStatus;
+
+    /// <summary>멀티 로컬 플레이어를 명시한다. 같은 객체의 원본 스킬 컨트롤러가 아니라 동기화된 Authority를 읽는다.</summary>
+    public void Bind(PlayerContext player)
+    {
+        FighterSkillAuthority authority = player != null ? player.GetComponent<FighterSkillAuthority>() : null;
+        boundController = authority != null ? authority : null; // Unity 가짜 null이 ??를 통과하지 않게 한다.
+        playerController = player != null ? player.GetComponent<T_PlayerController>() : null;
+        playerStatus = player != null ? player.GetComponent<WBH_PlayerStatus>() : null;
+        iconSyncedController = null;
+    }
 
     void Start()
     {
-        inputActions = KY_RebindManager.Instance.GetInputActions();
+        if (!MirrorNetworkManager.OwnsGameplay)
+        {
+            playerController ??= FindFirstObjectByType<T_PlayerController>();
+            playerStatus ??= FindFirstObjectByType<WBH_PlayerStatus>();
+        }
+
+        inputActions = KeyBindingService.InputActions;
         Debug.Log("inputActions 인스턴스: " + inputActions.GetHashCode());
         RefreshAllKeyTexts();
+
+        // 회피는 스택형이 아니라서 스택 숫자를 쓰지 않는다. 프리팹 기본값("0")이 켜진 채로 남지 않게 끈다.
+        dodgeSlot.SetStacks(null);
     }
 
     void OnEnable()
@@ -43,31 +71,73 @@ public class KY_SkillView : MonoBehaviour
 
     void Update()
     {
-        if (SkillController == null)
+        ISkillController controller = SkillController;
+        if (controller == null)
             return;
 
-        int cooldownSlotCount = Mathf.Min(SkillController.SkillCount, slots.Length);
+        // 파이터↔거너처럼 활성 캐릭터가 바뀌면 그 클래스의 스킬 아이콘으로 교체한다.
+        if (!ReferenceEquals(controller, iconSyncedController))
+        {
+            RefreshSkillIcons(controller);
+            iconSyncedController = controller;
+        }
+
+        int cooldownSlotCount = Mathf.Min(controller.SkillCount, skillSlots.Length);
         for (int i = 0; i < cooldownSlotCount; i++)
         {
-            float remaining = SkillController.GetRemainingCooldown(i);
-            float total = SkillController.GetEffectiveCooldown(i);
-            slots[i].SetCooldown(remaining, total);
+            float skillRemaining = controller.GetRemainingCooldown(i);
+            float skillTotal = controller.GetEffectiveCooldown(i);
+            skillSlots[i].SetCooldown(skillRemaining, skillTotal);
 
-            if (SkillController.TryGetStackInfo(i, out int stacks, out int maxStacks))
-                slots[i].SetStacks(stacks);
+            if (controller.TryGetStackInfo(i, out int stacks, out int maxStacks))
+                skillSlots[i].SetStacks(stacks);
             else
-                slots[i].SetStacks(null);
+                skillSlots[i].SetStacks(null);
+        }
+
+        if (playerController == null || playerStatus == null)
+            return;
+
+        float dodgeRemaining = playerController.currentDodgeCooltime;
+        float dodgeTotal = playerStatus.DodgeCooltime;
+        dodgeSlot.SetCooldown(dodgeRemaining, dodgeTotal);
+    }
+
+    /// <summary>
+    /// 활성 캐릭터의 스킬 데이터(SkillDefinitionSO.icon)를 슬롯 아이콘에 채운다.
+    /// 아이콘이 비어 있는 스킬은 씬에 배치된 기존 이미지를 그대로 둔다 - 아직 아이콘이 준비되지 않은
+    /// 슬롯(예: Skill4 궁극기)을 빈칸으로 만들지 않기 위함이다.
+    /// </summary>
+    private void RefreshSkillIcons(ISkillController controller)
+    {
+        // 스킬 데이터에 아이콘이 없는 슬롯(예: 아직 구현 전인 Skill4 궁극기)은 캐릭터에 붙은
+        // ClassSkillIconSet에 지정해둔 클래스별 아이콘으로 메운다.
+        MonoBehaviour controllerBehaviour = controller as MonoBehaviour;
+        ClassSkillIconSet iconSet = controllerBehaviour != null
+            ? controllerBehaviour.GetComponent<ClassSkillIconSet>()
+            : null;
+
+        for (int i = 0; i < skillSlots.Length; i++)
+        {
+            SkillDefinitionSO definition = controller.GetSkillDefinition(i);
+            Sprite icon = definition != null ? definition.icon : null;
+
+            if (icon == null && iconSet != null)
+                icon = iconSet.GetSlotIcon(i);
+
+            if (icon != null)
+                skillSlots[i].SetIcon(icon);
         }
     }
 
     void OnSkillEquipped(int index, Sprite icon)
     {
-        slots[index].SetIcon(icon);
+        skillSlots[index].SetIcon(icon);
     }
 
     void OnSkillUnequipped(int index)
     {
-        slots[index].ClearIcon();
+        skillSlots[index].ClearIcon();
     }
 
     void RefreshAllKeyTexts()
@@ -75,11 +145,12 @@ public class KY_SkillView : MonoBehaviour
         Debug.Log("RefreshAllKeyTexts 호출됨");
         string skill1Key = KY_KeyTextUtil.GetKeyText(inputActions, "Skill1");
         Debug.Log("Skill1 키: " + skill1Key);
-        slots[0].SetKeyText(skill1Key);
-        slots[0].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill1"));
-        slots[1].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill2"));
-        slots[2].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill3"));
-        slots[3].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill4"));
-        slots[4].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Dodge"));
+        skillSlots[0].SetKeyText(skill1Key);
+        skillSlots[0].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill1"));
+        skillSlots[1].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill2"));
+        skillSlots[2].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill3"));
+        skillSlots[3].SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Skill4"));
+        dodgeSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Dodge"));
+        itemSlot.SetKeyText(KY_KeyTextUtil.GetKeyText(inputActions, "Potion"));
     }
 }

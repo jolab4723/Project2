@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,6 +26,9 @@ using UnityEngine.AI;
 /// </summary>
 public class GunnerSkillController : MonoBehaviour, ISkillController
 {
+    /// <summary>SW 수정: 기존 범위 표시의 위치·방향·반경·각도·색·수명을 알립니다.</summary>
+    public event Action<Vector3, Vector3, float, float, Color, float> SkillRangePresented;
+
     [SerializeField] private PlayerActionInputHandler inputHandler;
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private T_PlayerController controller;
@@ -46,11 +50,15 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     [SerializeField] private SkillEnhancementId[] activeEnhancements = new SkillEnhancementId[3];
 
     [Header("범위 표시(피드백용, 판정과 무관)")]
+    [SerializeField] private bool visibleSkillArea = false; 
     [SerializeField] private Color sectorVisualColor = new Color(0.2f, 0.6f, 1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(0.2f, 0.9f, 1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
+    [SerializeField] private Color shellImpactVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
 
-    private readonly float[] cooldownRemaining = new float[3];
+    // 슬롯 수(skills.Length)에 맞춰 Awake에서 다시 잡는다 - 궁극기(Skill4)처럼 슬롯이 늘어나도
+    // 쿨타임 배열만 3칸으로 남아 IndexOutOfRange가 나지 않도록 하기 위함.
+    private float[] cooldownRemaining = new float[3];
 
     // 아크 버스터(ArcProjectile) 전용 스택 상태. -1 = 아직 초기화 안 됨(Start에서 maxStacks로 채움).
     // FighterSkillController의 대시 2스택(진화 전용)과 달리, 이건 기본 스킬 자체가 스택형이라
@@ -58,8 +66,60 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private int arcBusterStacks = -1;
     private float arcBusterStackTimer;
 
+    // 아크 버스터 연속 발사 최소 간격(초). 스택 충전 시간과 별개인 고정값이다.
+    private const float ArcBusterFireInterval = 1f;
+    // 아크 레이저(진화1)의 연속 발사 최소 간격(초). 스택을 몰아 쓰는 진화라 기본 발사보다 길게 고정한다.
+    private const float ArcLaserFireInterval = 4f;
+
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
-        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
+        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
+
+    // ------ 9.1 WBH 추가. 애니메이션 연결 및 타격과 투사체 생성시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
+    public event Action<int, int, float> OnSkillAniRequested;
+
+    /// <summary>초기화가 끝난 스킬 생성물과 원본 프리팹을 알려 외부에서 시각 표현을 연결할 수 있게 한다.</summary>
+    public event Action<GameObject, GameObject> SkillObjectSpawned;
+
+    private WBH_PlayerEffect playerEffect;
+
+    private int pendingSkillIndex = -1;
+    private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
+    private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
+
+    private int pendingArcBusterStacks;
+    private Vector3 pendingAimDirection;
+    private PlayerStatManager skillOwnerStats;
+
+    // SW 수정
+    /// <summary>호출자가 검증한 조준·목표 위치·소유자 스탯으로 스킬을 준비한다. 권한과 사거리 검증은 호출자가 담당한다.</summary>
+    public bool TryUseSkill(int index, Vector3 aimDirection, Vector3 targetPosition, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null)
+            return false;
+        return TryUseSkillInternal(index, aimDirection, targetPosition, ownerStats, true);
+    }
+
+    // 로컬 입력은 이동·공격 입력과 같은 조작 차단(포탈 이동·컷씬·상태이상·잡기)을 따른다.
+    // 외부 입력(멀티 권한 경로)은 호출자가 소유자 입력 차단을 따로 검증한다.
+    private bool CanUseSkillFrom(bool externalInput) => stateMachine != null &&
+        !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack, PlayerState.Skill,
+            PlayerState.Dodge, PlayerState.Dead) &&
+        (externalInput || (!SkillPopupController.IsOpen && (controller == null || controller.IsControlEnabled)));
+
+    private static bool IsFinite(Vector3 value) =>
+        float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+    private Vector3 pendingCursorPos; // 중복 실행 방지 변수
+
+
+    //-------
+
+    private void Awake()
+    {
+        playerEffect = GetComponent<WBH_PlayerEffect>();
+
+        if (cooldownRemaining.Length != skills.Length)
+            cooldownRemaining = new float[skills.Length];
+    }
 
     private void OnEnable()
     {
@@ -71,6 +131,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     {
         if (inputHandler != null)
             inputHandler.OnSkillKeyPressed -= HandleSkillKeyPressed;
+
+        ClearPendingSkill();
     }
 
     private void Start()
@@ -126,7 +188,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         arcBusterStacks = Mathf.Min(arcBusterStacks + 1, def.maxStacks);
         if (arcBusterStacks < def.maxStacks)
-            arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+            arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
     }
 
     private void HandleSkillKeyPressed(int index) => TryUseSkill(index);
@@ -138,66 +200,623 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     public int SkillCount => skills.Length;
 
     /// <summary>인덱스(0~2 = Skill1~3)에 해당하는 스킬을 사용한다. 쿨타임 중이거나 행동 불가 상태면 조용히 실패.</summary>
+    //public bool TryUseSkill(int index)
+    //{
+    //    if (index < 0 || index >= skills.Length)
+    //        return false;
+
+    //    SkillDefinitionSO def = skills[index];
+    //    if (def == null || !CanUseSkill || !IsSkillReady(index))
+    //        return false;
+
+    //    SkillEvolutionId evo = GetEvolution(index);
+
+    //    // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
+    //    // 쿨타임/스택은 전혀 건드리지 않는다(138번 후속 - manaCost 수치 자체는 137/138번에서 이미 반영됨).
+    //    // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
+    //    if (status != null && !status.TryUseMana(def.GetManaCost(evo)))
+    //        return false;
+
+    //    // 아크 레이저(진화1)가 "현재 스택을 모두" 소모하므로, ConsumeSkillUse가 스택을 지우기 전에
+    //    // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
+    //    int arcBusterStacksBeforeConsume = arcBusterStacks;
+
+    //    ConsumeSkillUse(index, def);
+    //    FaceCursor();
+    //    combat.CancelChase();
+    //    stateMachine.ChangeState(PlayerState.Skill);
+
+    //    switch (def.shapeType)
+    //    {
+    //        case SkillShapeType.SectorSlash:
+    //            ExecuteSectorShot(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.3f));
+    //            break;
+
+    //        case SkillShapeType.LineSlam:
+    //            ExecuteLineShot(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.3f));
+    //            break;
+
+    //        case SkillShapeType.Dash:
+    //            StartCoroutine(ExecuteDash(def, index));
+    //            break;
+
+    //        case SkillShapeType.ArcProjectile:
+    //            if (evo == SkillEvolutionId.Evolution1)
+    //                ExecuteArcLaser(def, index, arcBusterStacksBeforeConsume);
+    //            else if (evo == SkillEvolutionId.Evolution2)
+    //                StartCoroutine(ExecuteArcBullet(def, index));
+    //            else if (evo == SkillEvolutionId.Evolution3)
+    //                ExecuteArcCannon(def, index);
+    //            else
+    //                ExecuteArcBuster(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.2f));
+    //            break;
+
+    //        case SkillShapeType.BombThrow:
+    //            ExecuteBombThrow(def, index);
+    //            StartCoroutine(ReturnToIdleAfter(0.3f));
+    //            break;
+
+    //        case SkillShapeType.BackstepShot:
+    //            StartCoroutine(ExecuteBackstepShot(def, index));
+    //            break;
+    //    }
+
+    //    return true;
+    //}
+
+    // 9.1 WBH 추가. 기존 TryUseSkill 에서 투사체, 데미지 부분 제외하고 PreparePendingSkill 에 일시적인 스킬 정보 전달.
     public bool TryUseSkill(int index)
+    {
+        if (Camera.main == null)
+            return false;
+        return TryUseSkillInternal(index, GetCursorDirection(), GetCursorGroundPosition(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool TryUseSkillInternal(int index, Vector3 aimDir, Vector3 cursorPos,
+        PlayerStatManager ownerStats, bool externalInput)
     {
         if (index < 0 || index >= skills.Length)
             return false;
 
-        SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (!IsFinite(aimDir) || !IsFinite(cursorPos) || !float.IsFinite((cursorPos - transform.position).sqrMagnitude))
             return false;
+        aimDir.y = 0f;
+        if (aimDir.sqrMagnitude < 0.0001f || !float.IsFinite(aimDir.sqrMagnitude))
+            return false;
+        aimDir.Normalize();
 
-        // 아크 레이저(진화1)가 "현재 스택을 모두" 소모하므로, ConsumeSkillUse가 스택을 지우기 전에
-        // 몇 스택을 들고 있었는지 먼저 캡처해서 데미지 계산(소모 스택당 보너스)에 넘겨준다.
-        int arcBusterStacksBeforeConsume = arcBusterStacks;
-
-        ConsumeSkillUse(index, def);
-        FaceCursor();
-        combat.CancelChase();
-        stateMachine.ChangeState(PlayerState.Skill);
+        SkillDefinitionSO def = skills[index];
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) || combat == null ||
+            (externalInput && (status == null || status.IsDead)))
+            return false;
 
         SkillEvolutionId evo = GetEvolution(index);
 
-        switch (def.shapeType)
+        // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
+        // 쿨타임/스택은 전혀 건드리지 않는다(138번 후속 - manaCost 수치 자체는 137/138번에서 이미 반영됨).
+        // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
+        float manaCost = def.GetManaCost(evo);
+
+        // 아크 레이저(진화1)는 소모하는 스택 1개당 manaCost를 쓴다. 마나가 모자라면
+        // "소모 스택 × manaCost ≤ 현재 마나"를 만족하는 만큼만 스택을 소모한다(1스택도 안 되면 시전 실패).
+        int arcLaserStacks = -1;
+        if (IsArcBusterSlot(index) && evo == SkillEvolutionId.Evolution1)
         {
-            case SkillShapeType.SectorSlash:
-                ExecuteSectorShot(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.3f));
-                break;
-
-            case SkillShapeType.LineSlam:
-                ExecuteLineShot(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.3f));
-                break;
-
-            case SkillShapeType.Dash:
-                StartCoroutine(ExecuteDash(def, index));
-                break;
-
-            case SkillShapeType.ArcProjectile:
-                if (evo == SkillEvolutionId.Evolution1)
-                    ExecuteArcLaser(def, index, arcBusterStacksBeforeConsume);
-                else if (evo == SkillEvolutionId.Evolution2)
-                    StartCoroutine(ExecuteArcBullet(def, index));
-                else if (evo == SkillEvolutionId.Evolution3)
-                    ExecuteArcCannon(def, index);
-                else
-                    ExecuteArcBuster(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.2f));
-                break;
-
-            case SkillShapeType.BombThrow:
-                ExecuteBombThrow(def, index);
-                StartCoroutine(ReturnToIdleAfter(0.3f));
-                break;
-
-            case SkillShapeType.BackstepShot:
-                StartCoroutine(ExecuteBackstepShot(def, index));
-                break;
+            arcLaserStacks = arcBusterStacks;
+            if (status != null && manaCost > 0f)
+                arcLaserStacks = Mathf.Min(arcLaserStacks, Mathf.FloorToInt((status.CurrentMp + 0.001f) / manaCost));
+            if (arcLaserStacks <= 0)
+                return false;
+            manaCost *= arcLaserStacks;
         }
+
+        if (status != null && !status.TryUseMana(manaCost))
+            return false;
+
+        // 아크 레이저는 소모한 스택 수로 데미지(소모 스택당 보너스)를 계산하므로, ConsumeSkillUse가
+        // 스택을 깎기 전에 소모 스택 수를 캡처해서 넘겨준다. 다른 진화는 기존처럼 현재 스택을 넘긴다.
+        int arcBusterStacksBeforeConsume = arcLaserStacks >= 0 ? arcLaserStacks : arcBusterStacks;
+
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
+        skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def, arcLaserStacks);
+        combat.CancelChase();
+
+        PreparePendingSkill(index, evo, arcBusterStacksBeforeConsume, aimDir, cursorPos);
+
+        if(pendingAimDirection.sqrMagnitude > 0.001f)
+        {
+            transform.forward = pendingAimDirection;
+        }
+
+        stateMachine.ChangeState(PlayerState.Skill);
+        RequestSkillAni(index);
 
         return true;
     }
+
+    // 스킬당 일시 정보 저장
+    private void PreparePendingSkill(int index, SkillEvolutionId evo, int arcBursterStack, Vector3 aimDirection, Vector3 cursorPos)
+    {
+        pendingSkillIndex = index;
+        pendingEvo = evo;
+        pendingEnhance = GetEnhancement(index);
+
+        pendingArcBusterStacks = arcBursterStack;
+        pendingAimDirection = aimDirection;
+        pendingCursorPos = cursorPos;
+    }
+
+    // 애니메이션 파라미터 변경
+    private void RequestSkillAni(int index)
+    {
+        SkillDefinitionSO def = skills[index];
+
+        float backstepDuration = def != null && def.shapeType == SkillShapeType.BackstepShot ? Mathf.Max(0.01f, def.backstepDuration) : 0f;
+
+        OnSkillAniRequested?.Invoke(index+1, (int)pendingEvo, backstepDuration);
+    }
+
+    // 애니메이션 이벤트에서 실제 스킬 실행
+    public void ExecutePendingSkill()
+    {
+        if (pendingSkillIndex < 0 || !stateMachine.Is(PlayerState.Skill))
+            return;
+
+        int index = pendingSkillIndex;
+        SkillDefinitionSO def = skills[index];
+
+        transform.forward = pendingAimDirection;
+
+        if(def == null)
+        {
+            ClearPendingSkill();
+            return;
+        }
+
+        switch(def.shapeType)
+        {
+            case SkillShapeType.SectorSlash:
+                ExecuteSectorShot(def, index);
+                break;
+            case SkillShapeType.LineSlam:
+                ExecuteLineShot(def, index);
+                break;
+            case SkillShapeType.Dash:
+                StartCoroutine(ExecuteDash(def,index, pendingAimDirection));
+                break;
+            case SkillShapeType.ArcProjectile:
+                ExecutePendingArcSkill(def, index);
+                break;
+            case SkillShapeType.BombThrow:
+                ExecuteBombThrow(def, index, pendingEvo,pendingCursorPos);
+                break;
+            case SkillShapeType.BackstepShot:
+                ExecuteBackstepAction(def, index, pendingEvo);
+                break;
+            case SkillShapeType.CarpetBombing:
+                StartCoroutine(ExecuteCarpetBombing(def, index, pendingCursorPos));
+                break;
+
+        }
+    }
+
+    /// <summary>
+    /// 궁극기(융단폭격). 커서로 지정한 지점을 중심으로 한 원형 영역 **전체**를 일정 간격으로 여러 번 타격한다.
+    ///
+    /// 피해와 연출을 분리했다.
+    ///   - 피해: 타격마다 영역 안의 적을 한 번에 전부 때린다(Physics.OverlapSphere). 폭탄이 어디에
+    ///     떨어지느냐와 무관하게 영역 안이면 맞으므로 "운 좋게 빗나가는" 일이 없다.
+    ///   - 연출: 같은 타이밍에 폭탄을 하늘에서 떨어뜨린다. 폭발 반경 0으로 넘겨 판정을 갖지 않게 하고,
+    ///     비행·폭발 이펙트만 GunnerBomb이 그대로 처리하게 둔다.
+    ///
+    /// 낙하 지점은 영역 안 무작위이고, 폭탄은 지면이 아니라 영역 위 하늘에서 생성해 수직으로 내려꽂힌다.
+    /// 범위 표시는 전체 폭격 영역 하나만 폭격이 끝날 때까지 유지한다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
+    /// </summary>
+    private IEnumerator ExecuteCarpetBombing(SkillDefinitionSO def, int index, Vector3 cursorPos)
+    {
+        // 지정 지점은 폭탄 투척과 같은 방식으로 최대 사거리까지만 허용한다.
+        Vector3 toCursor = cursorPos - transform.position;
+        toCursor.y = 0f;
+        float designateRange = ApplySkillRangeBonus(def, index, def.bombThrowRange);
+        Vector3 center = toCursor.sqrMagnitude > designateRange * designateRange
+            ? transform.position + toCursor.normalized * designateRange
+            : transform.position + toCursor;
+        center.y = transform.position.y;
+
+        // 모든 진화의 메인 이펙트를 폭격 중심에 1회 출력.
+        if (playerEffect != null)
+        {
+            WBH_PlayerEffectCue cue =
+                PlayerEffectCueUtility.CreateGunnerSkillCue(
+                    index + 1,
+                    pendingEvo,
+                    SkillEffectPart.Main);
+
+            playerEffect.PlayWorldEffect(
+                cue,
+                center,
+                Quaternion.identity,
+                GetPendingSkillEffectScale((int)SkillEffectPart.Main));
+        }
+
+        // 진화3(산탄 폭격)은 "영역 전체를 때린다"는 기본 구조 자체가 달라서 별도 코루틴으로 뺀다.
+        if (pendingEvo == SkillEvolutionId.Evolution3)
+        {
+            yield return ExecuteBarrageBombing(def, index, center);
+            yield break;
+        }
+
+        // 진화1(레이저 폭격) : 1회만, 지연이 더 길다.
+        // 진화2(마커 폭격)   : 횟수를 늘리고 맞은 적에게 마커를 건다.
+        int waveCount = def.carpetWaveCount;
+        float damagePerWave = def.carpetDamagePerWave;
+        float impactDelay = def.carpetImpactDelay;
+        float waveInterval = def.carpetWaveInterval;
+
+        if (pendingEvo == SkillEvolutionId.Evolution1)
+        {
+            waveCount = 1;
+            damagePerWave = def.evoLaserStrikeDamage;
+            impactDelay = def.evoLaserStrikeDelay;
+        }
+        else if (pendingEvo == SkillEvolutionId.Evolution2)
+        {
+            waveCount = def.evoMarkerWaveCount;
+            damagePerWave = def.evoMarkerDamagePerWave;
+            waveInterval = def.evoMarkerWaveInterval;
+        }
+
+        float areaRadius = def.carpetAreaRadius;
+        float totalDuration = waveCount * waveInterval;
+
+        if (visibleSkillArea)
+            ShowSkillRange(center, Vector3.forward, areaRadius, 360f, sectorVisualColor,
+                                    totalDuration + impactDelay + 0.3f);
+
+        float damageMultiplier = damagePerWave;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        // 진화2만 마커를 건다. 0이면 ApplyCarpetWaveDamage가 상태이상을 붙이지 않는다.
+        float markDuration = pendingEvo == SkillEvolutionId.Evolution2 ? def.evoMarkerDuration : 0f;
+
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+
+        for (int wave = 0; wave < waveCount; wave++)
+        {
+            // 폭탄이 떨어지는 시간만큼 기다렸다가 영역 전체에 피해를 준다.
+            yield return new WaitForSeconds(impactDelay);
+            ApplyCarpetWaveDamage(def, index, center, areaRadius, damageMultiplier, effectData, markDuration);
+
+            float rest = waveInterval - impactDelay;
+            if (rest > 0f)
+                yield return new WaitForSeconds(rest);
+        }
+    }
+
+    /// <summary>
+    /// 진화3 - 산탄 폭격. 영역 전체를 때리는 기본 융단폭격과 달리, 폭격 범위 안의 <b>랜덤한 지점</b>에
+    /// 작은 반경의 포탄을 연속으로 떨어뜨린다. 한 발의 피해는 크지만 범위가 좁아 명중이 운에 달린다.
+    ///
+    /// !! 한 대상이 맞을 확률은 (포탄 반경 / 산포 반경)^2 정도다. 기본값(반경 2 / 산포 8)이면 한 발당
+    ///    약 6%고 9발이면 기대 명중이 1발도 되지 않는다. 좁은 곳에 몰린 적이나 큰 적에게 쓰는 용도이고,
+    ///    체감이 너무 약하면 evoBarrageScatterRadius를 줄여 포탄을 모으는 쪽으로 조정한다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
+    /// </summary>
+    private IEnumerator ExecuteBarrageBombing(SkillDefinitionSO def, int index, Vector3 center)
+    {
+        float scatterRadius = def.evoBarrageScatterRadius;
+        // 포탄 반경만 스킬 범위 증가의 영향을 받는다. 산포 반경까지 넓히면 오히려 명중률이 떨어져서
+        // "범위 증가"가 하향으로 작동한다.
+        float shellRadius = ApplySkillRangeBonus(def, index, def.evoBarrageShellRadius);
+        float totalDuration = def.evoBarrageShellCount * def.evoBarrageInterval;
+
+        if (visibleSkillArea)
+            ShowSkillRange(center, Vector3.forward, scatterRadius, 360f, sectorVisualColor,
+                                    totalDuration + def.carpetImpactDelay + 0.3f);
+
+        float damageMultiplier = def.evoBarrageDamagePerShell;
+        if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
+            damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
+
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_PlayerEffectCue explosionCue =
+            PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, pendingEvo, SkillEffectPart.ProjectileExplosion1);
+
+        for (int shell = 0; shell < def.evoBarrageShellCount; shell++)
+        {
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * scatterRadius;
+            Vector3 impactPos = center + new Vector3(offset.x, 0f, offset.y);
+
+            if (visibleSkillArea)
+                SkillRangeVisual.ShowSector(impactPos, Vector3.forward, shellRadius, 360f, shellImpactVisualColor, Mathf.Max(0.05f, def.carpetImpactDelay));
+
+            SpawnBarrageProjectile(def, impactPos, explosionCue);
+
+            yield return new WaitForSeconds(def.carpetImpactDelay);
+            ApplyCarpetWaveDamage(def, index, impactPos, shellRadius, damageMultiplier, effectData, 0f);
+
+            float rest = def.evoBarrageInterval - def.carpetImpactDelay;
+            if (rest > 0f)
+                yield return new WaitForSeconds(rest);
+        }
+    }
+
+    private void SpawnBarrageProjectile(SkillDefinitionSO def, Vector3 impactPos, WBH_PlayerEffectCue explosionCue)
+    {
+        GameObject prefab = def.evoBarrageBombPrefab;
+        if(prefab == null)
+        {
+            Debug.LogWarning("[GunnerSkillController] 진화 3 폭격 투사체 프리팹이 없습니다.");
+            return;
+        }
+
+        Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+        GameObject projectileGO = Instantiate(prefab, skyPos, prefab.transform.rotation);
+
+        if(!projectileGO.TryGetComponent(out GunnerBomb projectile))
+        {
+            Destroy(projectileGO);
+            return;
+        }
+
+        float fallSpeed = def.carpetImpactDelay > 0f ? def.carpetDropHeight / def.carpetImpactDelay : def.bombThrowSpeed;
+
+        projectile.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+
+        projectile.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+
+        SkillObjectSpawned?.Invoke(projectileGO, prefab);
+    }
+
+    /// <summary>폭격 연출용 폭탄을 하늘에서 떨어뜨린다. 폭발 반경 0이라 판정은 없고 낙하·폭발 이펙트만 남는다.</summary>
+    private void SpawnFallingBombs(SkillDefinitionSO def, Vector3 center, float areaRadius, WBH_PlayerEffectCue explosionCue)
+    {
+        if (def.bombPrefab == null)
+            return;
+
+        for (int i = 0; i < def.carpetVisualBombsPerWave; i++)
+        {
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * areaRadius;
+            SpawnFallingBombAt(def, center + new Vector3(offset.x, 0f, offset.y), explosionCue);
+        }
+    }
+
+    /// <summary>연출용 폭탄 한 발을 지정한 착탄 지점에 떨어뜨린다(진화3처럼 착탄점이 정해진 경우).</summary>
+    private void SpawnFallingBombAt(SkillDefinitionSO def, Vector3 impactPos, WBH_PlayerEffectCue explosionCue)
+    {
+        if (def.bombPrefab == null)
+            return;
+
+        Vector3 skyPos = impactPos + Vector3.up * def.carpetDropHeight;
+
+        GameObject bombGO = Instantiate(def.bombPrefab, skyPos, Quaternion.identity);
+        GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
+        if (bomb == null)
+        {
+            Destroy(bombGO);
+            return;
+        }
+
+        // 낙하 시간이 carpetImpactDelay와 얼추 맞도록 속도를 높이에서 역산한다.
+        float fallSpeed = def.carpetImpactDelay > 0f
+            ? def.carpetDropHeight / def.carpetImpactDelay
+            : def.bombThrowSpeed;
+
+        bomb.Initialize(impactPos, fallSpeed, 0f, 0f, 0f, enemyLayer, default(WBH_DamageRequest));
+        bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
+    }
+
+    /// <summary>폭격 한 번 분량의 피해를 영역 안 모든 적에게 적용한다.</summary>
+    /// <summary>
+    /// 지정한 지점 주변 범위의 적을 때린다. markDuration이 0보다 크면 맞은 적에게 Marked를 건다
+    /// (진화2 - 마커 폭격). 마커 자체는 글리터 폭탄(폭탄 투척 진화3)이 쓰는 것과 같은 상태이상이다.
+    /// </summary>
+    private void ApplyCarpetWaveDamage(SkillDefinitionSO def, int index, Vector3 center, float areaRadius,
+                                       float damageMultiplier, WBH_EffectData effectData, float markDuration)
+    {
+        Collider[] targets = Physics.OverlapSphere(center, areaRadius, enemyLayer);
+        foreach (Collider target in targets)
+        {
+            if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
+                continue;
+
+            Vector3 hitPosition = target.ClosestPoint(center);
+            WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                                   WBH_AttackType.Skill,
+                                                                   status.CurrentElement,
+                                                                   damageMultiplier,
+                                                                   effectData: effectData,
+                                                                   hitPosition: hitPosition);
+            WBH_CombatManager.ProcessDamage(request);
+
+            if (markDuration > 0f && !combatTarget.Status.IsDead)
+            {
+                // 마커는 갱신이 아니라 누적이다. WBH_StatusEffectBase.Refresh가 남은 시간을 새 값으로
+                // 덮어쓰므로, 남은 시간을 미리 읽어 더한 총량을 넘긴다(상태이상 시스템은 손대지 않는다).
+                var effectController = target.GetComponentInParent<WBH_StatusEffectController>();
+                float remaining = effectController != null
+                    ? effectController.GetRemainingTime(WBH_StatusEffectType.Marked)
+                    : 0f;
+
+                combatTarget.AddStatusEffect(new WBH_StatusEffectData(WBH_StatusEffectType.Marked,
+                                                                      duration: remaining + markDuration,
+                                                                      value: def.evoMarkerDamageMultiplier));
+            }
+        }
+    }
+
+    public void EndPendingSkillAni()
+    {
+        if (pendingSkillIndex < 0)
+            return;
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def != null && (def.shapeType == SkillShapeType.Dash || def.shapeType == SkillShapeType.BackstepShot))
+            return;
+
+        ClearPendingSkill();
+
+        if(stateMachine.Is(PlayerState.Skill))
+        {
+            stateMachine.ChangeState(PlayerState.Idle);
+        }
+    }
+
+    /// <summary>진행 중인 연사와 이동을 취소하며 이미 소모한 마나·쿨타임·스택은 유지한다.</summary>
+    public void CancelActiveSkill()
+    {
+        StopAllCoroutines();
+        ClearPendingSkill();
+        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+            stateMachine.ChangeState(PlayerState.Idle);
+    }
+
+    private void ClearPendingSkill()
+    {
+        playerEffect?.CancelPendingSfx();
+        pendingSkillIndex = -1;
+        pendingEvo = SkillEvolutionId.None;
+        pendingEnhance = SkillEnhancementId.None;
+
+        pendingArcBusterStacks = 0;
+        pendingAimDirection = Vector3.zero;
+        pendingCursorPos = Vector3.zero;
+    }
+
+    // 아크버스터의 경우 분기가 많아 별도 메서드 생성.
+    private void ExecutePendingArcSkill(SkillDefinitionSO def, int index)
+    {
+        switch(pendingEvo)
+        {
+            case SkillEvolutionId.Evolution1:
+                ExecuteArcLaser(def, index, pendingArcBusterStacks);
+                break;
+            case SkillEvolutionId.Evolution2:
+                StartCoroutine(ExecuteArcBullet(def,index));
+                break;
+            case SkillEvolutionId.Evolution3:
+                ExecuteArcCannon(def, index);
+                break;
+            default: ExecuteArcBuster(def, index);
+                break;
+        }
+    }
+
+    // 이펙트 스케일 조정, 재생 메서드 호출
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            Log.Warning($"알수 없는 스킬 이펙트 부가정보 : {partValue}");
+            return;
+        }
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def == null || playerEffect == null)
+            return;
+
+        SkillEffectPart part = (SkillEffectPart)partValue;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue((pendingSkillIndex + 1), pendingEvo, part);
+
+        Vector3 scaleMultiPlier = GetPendingSkillEffectScale(partValue);
+
+        playerEffect.PlayEffect(cue, scaleMultiPlier);
+    }
+
+    /// <summary>시전 중인 원본 이펙트 배율을 반환해 외부 표시에서도 같은 계산을 사용한다.</summary>
+    public Vector3 GetPendingSkillEffectScale(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length ||
+            !System.Enum.IsDefined(typeof(SkillEffectPart), partValue)) return Vector3.one;
+        return CalculatePendingEffectScale(skills[pendingSkillIndex], (SkillEffectPart)partValue);
+    }
+
+    // 기본 스킬 범위와 스킬범위 보너스 스탯이 적용된 스킬범위 비교해서 이펙트 크기 결정
+    private Vector3 CalculatePendingEffectScale(SkillDefinitionSO def, SkillEffectPart part)
+    {
+        if (def == null)
+            return Vector3.one;
+
+        if (part != SkillEffectPart.Main && part != SkillEffectPart.Ground)
+            return Vector3.one;
+
+        float baseRange = GetPendingEffectBaseRange(def);
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float appliedRange = ApplyPendingSkillRangeBonus(def, baseRange);
+
+        float rangeScale = appliedRange / baseRange;
+
+        return Vector3.one * rangeScale;
+    }
+
+    // 기본 스킬 범위 가져오는 메서드
+    private float GetPendingEffectBaseRange(SkillDefinitionSO def)
+    {
+        return def.shapeType switch
+        {
+            SkillShapeType.SectorSlash => def.sectorRange,
+            SkillShapeType.LineSlam => def.lineLength,
+            SkillShapeType.Dash => def.dashDistance,
+
+            // 아크레이저 진화 1의 직선 범위 이펙트 확대
+            SkillShapeType.ArcProjectile when pendingEvo == SkillEvolutionId.Evolution1 => def.evoLaserLength,
+
+            // 백스텝의 공격 범위 이펙트 확대
+            SkillShapeType.BackstepShot => def.backstepConeRange,
+
+            // 폭탄 투척은 최대 사거리만 늘어나기에 이펙트 확대X
+            SkillShapeType.BombThrow => 0f,
+
+            _ => 0f,
+        };
+    }
+
+    // 스킬 범위 보너스 적용 메서드
+    private float ApplyPendingSkillRangeBonus(SkillDefinitionSO def, float baseRange)
+    {
+        float flatBonus = 0f;
+        float percentBonus = 0f;
+
+        if(skillOwnerStats != null)
+        {
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        }
+
+        if(pendingEnhance == SkillEnhancementId.Enhance3)
+        {
+            percentBonus += def.enhanceRangeBonusPercent;
+        }
+
+        return (baseRange + flatBonus) * (1f + percentBonus / 100f);
+    }
+
+    // arkbuster 사격 시, 폭발이펙트 재생을 위해 이펙트데이터와 크기, 기초 설정을 세팅하는 메서드
+    private void ConfigureArcProjectileEffect(GunnerArcProjectile projectile, SkillDefinitionSO def)
+    {
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue((pendingSkillIndex + 1), pendingEvo, SkillEffectPart.ProjectileExplosion1);
+        Vector3 scaleMultiplier = CalculatePendingEffectScale(def, SkillEffectPart.ProjectileExplosion1);
+        projectile.ConfigureExplosionEffect(playerEffect, cue, scaleMultiplier);
+    }
+
+    // -------
 
     public SkillEvolutionId GetEvolution(int index) =>
         index >= 0 && index < activeEvolutions.Length ? activeEvolutions[index] : SkillEvolutionId.None;
@@ -250,7 +869,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsArcBusterSlot(index) ? def.stackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>아크 버스터(ArcProjectile)면 현재/최대 스택을 낸다. 그 외 스킬은 스택 개념이 없어서 false.</summary>
@@ -268,6 +887,29 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return true;
     }
 
+    /// <summary>
+    /// HUD 쿨타임 아이콘(CooldownIconUIContainer)용. 아크 레이저(진화1)의 발사 간격(4초)이 진행 중이면
+    /// 남은 시간·전체 시간·스킬 정의를 돌려준다. 진화1이 아니거나 간격이 끝났으면 false.
+    /// </summary>
+    public bool TryGetArcLaserCooldown(out float remaining, out float duration, out SkillDefinitionSO definition)
+    {
+        remaining = 0f;
+        duration = ArcLaserFireInterval;
+        definition = null;
+
+        for (int i = 0; i < skills.Length && i < cooldownRemaining.Length; i++)
+        {
+            if (!IsArcBusterSlot(i) || GetEvolution(i) != SkillEvolutionId.Evolution1)
+                continue;
+
+            remaining = cooldownRemaining[i];
+            definition = skills[i];
+            return remaining > 0f;
+        }
+
+        return false;
+    }
+
     private bool IsSkillReady(int index)
     {
         if (IsArcBusterSlot(index))
@@ -279,26 +921,55 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return cooldownRemaining[index] <= 0f;
     }
 
-    private void ConsumeSkillUse(int index, SkillDefinitionSO def)
+    /// <param name="arcLaserStacks">아크 레이저(진화1)가 소모할 스택 수. 음수면 현재 스택을 모두 소모한다.</param>
+    private void ConsumeSkillUse(int index, SkillDefinitionSO def, int arcLaserStacks = -1)
     {
         if (IsArcBusterSlot(index))
         {
             SkillEvolutionId evo = GetEvolution(index);
             if (evo == SkillEvolutionId.Evolution1)
-                arcBusterStacks = 0; // 아크 레이저 - "현재의 모든 스택을 소모"
+                // 아크 레이저 - 마나가 충분하면 현재의 모든 스택, 모자라면 마나로 감당 가능한 스택만 소모
+                arcBusterStacks = arcLaserStacks < 0 ? 0 : Mathf.Max(0, arcBusterStacks - arcLaserStacks);
             else if (evo == SkillEvolutionId.Evolution3)
                 arcBusterStacks -= def.evoCannonStackCost; // 아크 캐논 - 스택 2개 소모
             else
                 arcBusterStacks--;
 
-            cooldownRemaining[index] = def.cooldownSeconds; // 연사 제한(1초) - 강화(쿨타임감소)와는 별개 개념이라 안 줄임
+            // 연사 제한(기본 1초, 아크 레이저 4초 고정) - 강화·쿨감과는 별개 개념이라 안 줄인다.
+            // 시트의 cooldownSeconds는 아크 버스터에서 스택 충전 시간(stackRechargeSeconds)으로 쓰인다(SkillDataSOImporter).
+            cooldownRemaining[index] = evo == SkillEvolutionId.Evolution1 ? ArcLaserFireInterval : ArcBusterFireInterval;
             if (arcBusterStackTimer <= 0f)
-                arcBusterStackTimer = ApplyCooldownEnhancement(def, index, def.stackRechargeSeconds);
+                arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
+
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// FighterSkillController와 같은 공식이다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프의 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>쿨감 스탯을 배율로. PlayerStat에서 이미 0~70 클램프지만 여기서도 한 번 더 막는다.</summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임을 줄인다. FighterSkillController와 동일한 공식.</summary>
     private float ApplyCooldownEnhancement(SkillDefinitionSO def, int index, float baseCooldown)
@@ -315,8 +986,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     {
         float flatBonus = 0f;
         float percentBonus = 0f;
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        if (skillOwnerStats != null)
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
 
         if (GetEnhancement(index) == SkillEnhancementId.Enhance3)
             percentBonus += def.enhanceRangeBonusPercent;
@@ -350,11 +1021,16 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         return new List<Collider>(candidates);
     }
 
-    /// <summary>확산 사격 - 정면 부채꼴 범위를 즉시 명중시킨다(투사체 없음, 위 클래스 주석 참고).</summary>
+    /// <summary>
+    /// 확산 사격 - 정면 부채꼴 범위를 즉시 명중시킨다(투사체 없음, 위 클래스 주석 참고).
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorShot(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if(visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -364,7 +1040,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineShot(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -391,7 +1069,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject projectileGO = Instantiate(def.arcProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
         GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -403,6 +1085,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.explosionRadius, enemyLayer, request);
+        ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
+        SkillObjectSpawned?.Invoke(projectileGO, def.arcProjectilePrefab);
     }
 
     /// <summary>
@@ -429,7 +1113,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, 
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject projectileGO = Instantiate(prefab, spawnPos, Quaternion.LookRotation(dir));
         GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -446,6 +1134,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             ? def.evoCannonExplosionRadius / def.explosionRadius
             : 1f;
         projectile.Initialize(dir, def.projectileSpeed, maxDistance, def.evoCannonExplosionRadius, enemyLayer, request, visualScale: visualScale);
+        ConfigureArcProjectileEffect(projectile, def); // 폭발 이펙트 재생을 위한 세팅
+        SkillObjectSpawned?.Invoke(projectileGO, prefab);
     }
 
     /// <summary>
@@ -457,7 +1147,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     private void ExecuteArcLaser(SkillDefinitionSO def, int index, int consumedStacks)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoLaserLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoLaserWidth, lineVisualColor);
+
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoLaserWidth, lineVisualColor);
 
         int bonusStacks = Mathf.Min(consumedStacks, def.evoLaserMaxBonusStacks);
         float damageMultiplier = def.damageMultiplier * (1f + def.evoLaserDamagePerStackPercent / 100f * bonusStacks);
@@ -492,7 +1184,11 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
             Vector3 dir = transform.forward;
 
-            WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+            WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+            WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                                   status.CurrentElement,
+                                                                   damageMultiplier,
+                                                                   effectData: effectData);
 
             GameObject projectileGO = Instantiate(def.arcProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
             GunnerArcProjectile projectile = projectileGO.GetComponent<GunnerArcProjectile>();
@@ -504,6 +1200,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             }
 
             projectile.Initialize(dir, def.projectileSpeed, maxDistance, 0f, enemyLayer, request, explodeOnHit: false);
+            SkillObjectSpawned?.Invoke(projectileGO, def.arcProjectilePrefab);
 
             if (shot < 2)
                 yield return new WaitForSeconds(def.evoArcBulletInterval);
@@ -520,7 +1217,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// 슬로우 영역을, 진화3(글리터 폭탄)은 마커(받는 데미지 증가) 부여를 GunnerBomb에 추가 파라미터로
     /// 넘겨서 처리한다(118번).
     /// </summary>
-    private void ExecuteBombThrow(SkillDefinitionSO def, int index)
+    /// // 9.1 WBH 입력 당시 진화와 위치정보 매개변수를 추가로 전달받기 위해 매개변수 추가.
+    /// <summary>SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.</summary>
+    private void ExecuteBombThrow(SkillDefinitionSO def, int index, SkillEvolutionId evo, Vector3 cursorPos)
     {
         if (def.bombPrefab == null)
         {
@@ -530,7 +1229,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
 
-        Vector3 toCursor = GetCursorGroundPosition() - transform.position;
+        Vector3 toCursor = cursorPos - transform.position;
         toCursor.y = 0f;
 
         float throwRange = ApplySkillRangeBonus(def, index, def.bombThrowRange);
@@ -539,25 +1238,30 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             : transform.position + toCursor;
         targetPos.y = transform.position.y;
 
-        SkillEvolutionId evo = GetEvolution(index);
         float explosionRadius = evo == SkillEvolutionId.Evolution2 ? def.evoEnergyBurstRadius : def.bombExplosionRadius;
 
         // 폭발 반경 표시 - 원형이라 angle=360으로 ShowSector 재사용, forward는 원이라 무의미.
         // 표시 시간은 폭탄이 실제로 위협인 구간(비행 시간 + 퓨즈)만큼 - GunnerBomb.Initialize의 travelTime 계산과 동일.
         float showDuration = Mathf.Max(0.2f, Vector3.Distance(spawnPos, targetPos) / def.bombThrowSpeed) + def.bombFuseSeconds;
-        SkillRangeVisual.ShowSector(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
+
+        if(visibleSkillArea)
+            ShowSkillRange(targetPos, Vector3.forward, explosionRadius, 360f, sectorVisualColor, showDuration);
 
         // 진화1(집속 폭탄) - 2차 폭발 범위도 같은 자리에 겹쳐서 표시한다. 1차 원이 사라지는 시점(showDuration)에
         // 맞춰 2차 원이 evoClusterDelaySeconds만큼 더 유지되다 사라지게 해서, "작은 원이 먼저 없어지고 큰 원이
         // 그 다음에 없어짐"으로 두 번 터진다는 걸 시각적으로 알 수 있게 했다.
-        if (evo == SkillEvolutionId.Evolution1)
-            SkillRangeVisual.ShowSector(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
+        if (evo == SkillEvolutionId.Evolution1 && visibleSkillArea)
+            ShowSkillRange(targetPos, Vector3.forward, def.evoClusterRadius, 360f, sectorVisualColor, showDuration + def.evoClusterDelaySeconds);
 
         float damageMultiplier = def.damageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject bombGO = Instantiate(def.bombPrefab, spawnPos, Quaternion.identity);
         GunnerBomb bomb = bombGO.GetComponent<GunnerBomb>();
@@ -567,6 +1271,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             Destroy(bombGO);
             return;
         }
+
+        
 
         if (evo == SkillEvolutionId.Evolution1) // 집속 폭탄
         {
@@ -597,6 +1303,13 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             bomb.Initialize(targetPos, def.bombThrowSpeed, def.bombArcHeight, def.bombFuseSeconds,
                 explosionRadius, enemyLayer, request);
         }
+
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue((index + 1), evo, SkillEffectPart.ProjectileExplosion1); // 1차 폭발 이펙트
+        WBH_PlayerEffectCue secondExplosionCue = evo == SkillEvolutionId.Evolution1 ?
+            PlayerEffectCueUtility.CreateGunnerSkillCue((index + 1), evo, SkillEffectPart.ProjectileExplosion2) : WBH_PlayerEffectCue.None; // 2차 폭발 이펙트
+
+        bomb.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one, secondExplosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(bombGO, def.bombPrefab);
     }
 
     /// <summary>강화(Enhance1: 위력 강화)가 선택돼 있으면 데미지 계수에 곱해지는 보너스를 곱한다.</summary>
@@ -608,7 +1321,21 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = -transform.forward;
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                               WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData,
+                                                               hitPosition: hitPosition,
+                                                               hitEffectDirection: lookDirection);
         WBH_CombatManager.ProcessDamage(request);
     }
 
@@ -633,11 +1360,14 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// 무적/스택/피해버프 같은 진화 전용 효과가 아직 없다는 점만 다르다.
     /// 강화(Enhance1: 위력 강화)는 거너도 자체 피해가 없는 이동기라 대신 이동 시간을 줄여 더 빠르게 만든다.
     /// </summary>
-    private IEnumerator ExecuteDash(SkillDefinitionSO def, int index)
+    /// // 9.1 WBH 추가. 방향 정보 전달받기 위해 매개변수 추가
+    private IEnumerator ExecuteDash(SkillDefinitionSO def, int index, Vector3 direction)
     {
-        Vector3 dir = GetCursorDirection();
+        Vector3 dir = direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+        
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
@@ -663,6 +1393,8 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         agent.Warp(targetPos);
 
+        ClearPendingSkill();
+
         if (stateMachine.Is(PlayerState.Skill))
             stateMachine.ChangeState(PlayerState.Idle);
     }
@@ -679,6 +1411,7 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// evoDecoyFuseSeconds 후 evoDecoyExplosionRadius 범위로 자동 폭발(GunnerDecoy 내부 처리). "적을
     /// 도발"하는 부분은 구현하지 않았다(사용자 선택 - 120번 로그 참고, BH님 소유 적 AI 타겟팅을
     /// 안 건드리기로 함).
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
     /// </summary>
     private void ExecuteDecoyDeploy(SkillDefinitionSO def, int index, Vector3 spawnPosition)
     {
@@ -688,13 +1421,23 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return;
         }
 
-        SkillRangeVisual.ShowSector(spawnPosition, Vector3.forward, def.evoDecoyExplosionRadius, 360f, sectorVisualColor, def.evoDecoyFuseSeconds);
+        if(visibleSkillArea)
+            ShowSkillRange(spawnPosition,
+                                        Vector3.forward,
+                                        def.evoDecoyExplosionRadius,
+                                        360f,
+                                        sectorVisualColor,
+                                        def.evoDecoyFuseSeconds);
 
         float damageMultiplier = def.evoDecoyDamageMultiplier;
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_EffectData effectData = GetSkillEffectData(index, pendingEvo, SkillEffectPart.Main);
+        WBH_DamageRequest request = combat.CreateDamageRequest(WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData);
 
         GameObject decoyGO = Instantiate(def.evoDecoyPrefab, spawnPosition, Quaternion.identity);
         GunnerDecoy decoy = decoyGO.GetComponent<GunnerDecoy>();
@@ -706,34 +1449,120 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
         }
 
         decoy.Initialize(def.evoDecoyFuseSeconds, def.evoDecoyExplosionRadius, enemyLayer, request);
+
+        WBH_PlayerEffectCue explosionCue = PlayerEffectCueUtility.CreateGunnerSkillCue((index + 1),
+                                                                                       SkillEvolutionId.Evolution1,
+                                                                                       SkillEffectPart.ProjectileExplosion1);
+        decoy.ConfigureExplosionEffect(playerEffect, explosionCue, Vector3.one);
+        SkillObjectSpawned?.Invoke(decoyGO, def.evoDecoyPrefab);
     }
 
-    private IEnumerator ExecuteBackstepShot(SkillDefinitionSO def, int index)
+    // 9.1 WBH 추가. 매개변수로 진화를 전달받게끔 변경. 공격부분과 이동부분 분리를 위해 주석 처리
+    //private IEnumerator ExecuteBackstepShot(SkillDefinitionSO def, int index, SkillEvolutionId evolution)
+    //{
+    //    SkillEvolutionId evo = evolution;
+
+    //    if (evo == SkillEvolutionId.Evolution1)
+    //        ExecuteDecoyDeploy(def, index, transform.position); // 처음 위치(백스탭 이동 전) - 원뿔 공격 대신
+    //    else
+    //    {
+    //        float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
+    //        SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+
+    //        foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
+    //        {
+    //            ApplyHit(target, def, def.damageMultiplier, index);
+
+    //            if (evo == SkillEvolutionId.Evolution3) // 제압 사격 - 넉백 추가
+    //                ApplyBackstepKnockback(target, def);
+    //        }
+    //    }
+
+    //    if (evo == SkillEvolutionId.Evolution2) // 긴급 회피 - 백스탭 이동 중 무적
+    //        controller.ApplyInvincibility(def.evoBackstepInvincibleDuration);
+
+    //    Vector3 dir = -transform.forward; // FaceCursor 적용 후라 -forward = 커서 반대 방향(후방)
+    //    float distance = ApplySkillRangeBonus(def, index, def.backstepDistance);
+    //    SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+
+    //    NavMeshAgent agent = controller.agent;
+
+    //    Vector3 targetPos = transform.position + dir * distance;
+    //    if (NavMesh.Raycast(transform.position, targetPos, out NavMeshHit hit, NavMesh.AllAreas))
+    //        targetPos = hit.position;
+
+    //    Vector3 start = transform.position;
+    //    float elapsed = 0f;
+
+    //    while (elapsed < def.backstepDuration)
+    //    {
+    //        elapsed += Time.deltaTime;
+    //        float t = Mathf.Clamp01(elapsed / def.backstepDuration);
+    //        Vector3 next = Vector3.Lerp(start, targetPos, t);
+    //        agent.Move(next - transform.position);
+    //        yield return null;
+    //    }
+
+    //    agent.Warp(targetPos);
+
+    //    ClearPendingSkill();
+
+    //    if (stateMachine.Is(PlayerState.Skill))
+    //        stateMachine.ChangeState(PlayerState.Idle);
+    //}
+
+    // 스킬 3 (D 스킬) 공격부분
+    /// <summary>SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.</summary>
+    private void ExecuteBackstepAction(SkillDefinitionSO def, int index, SkillEvolutionId evo)
     {
-        SkillEvolutionId evo = GetEvolution(index);
-
-        if (evo == SkillEvolutionId.Evolution1)
-            ExecuteDecoyDeploy(def, index, transform.position); // 처음 위치(백스탭 이동 전) - 원뿔 공격 대신
-        else
+        if(evo == SkillEvolutionId.Evolution1)
         {
-            float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
-            SkillRangeVisual.ShowSector(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
-
-            foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
-            {
-                ApplyHit(target, def, def.damageMultiplier, index);
-
-                if (evo == SkillEvolutionId.Evolution3) // 제압 사격 - 넉백 추가
-                    ApplyBackstepKnockback(target, def);
-            }
+            ExecuteDecoyDeploy(def, index, transform.position);
+            return;
         }
 
+        float coneRange = ApplySkillRangeBonus(def, index, def.backstepConeRange);
+
+        if(visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, coneRange, def.backstepConeAngle, sectorVisualColor);
+
+        foreach (Collider target in GetSectorTargets(coneRange, def.backstepConeAngle))
+        {
+            ApplyHit(target, def, def.damageMultiplier, index);
+            
+            if(evo == SkillEvolutionId.Evolution3)
+            {
+                ApplyBackstepKnockback(target, def);
+            }
+        }
+    }
+
+    // 스킬 3 (D 스킬) 이동부분
+    public void ExecutePendingBackstepMove()
+    {
+        if (pendingSkillIndex < 0 || !stateMachine.Is(PlayerState.Skill))
+            return;
+
+        int index = pendingSkillIndex;
+
+        SkillDefinitionSO def = skills[index];
+
+        if (def == null || def.shapeType != SkillShapeType.BackstepShot)
+            return;
+
+        StartCoroutine(CoExecutePendingBackstepMove(def, index, pendingEvo, pendingAimDirection));
+    }
+
+    private IEnumerator CoExecutePendingBackstepMove(SkillDefinitionSO def, int index, SkillEvolutionId evo, Vector3 aimDir)
+    {
         if (evo == SkillEvolutionId.Evolution2) // 긴급 회피 - 백스탭 이동 중 무적
             controller.ApplyInvincibility(def.evoBackstepInvincibleDuration);
 
-        Vector3 dir = -transform.forward; // FaceCursor 적용 후라 -forward = 커서 반대 방향(후방)
+        Vector3 dir = -aimDir; // 커서 반대 방향(후방)으로 움직임.
         float distance = ApplySkillRangeBonus(def, index, def.backstepDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+        
+        if(visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
@@ -755,9 +1584,12 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
 
         agent.Warp(targetPos);
 
+        ClearPendingSkill();
+
         if (stateMachine.Is(PlayerState.Skill))
             stateMachine.ChangeState(PlayerState.Idle);
     }
+    // ----
 
     private IEnumerator ReturnToIdleAfter(float seconds)
     {
@@ -800,5 +1632,43 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             return ray.GetPoint(distance);
 
         return transform.position + transform.forward;
+    }
+    private WBH_EffectData GetSkillEffectData(int index,
+                                              SkillEvolutionId evolution,
+                                              SkillEffectPart part)
+    {
+        if (playerEffect == null)
+            return null;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue(index + 1, evolution, part);
+        playerEffect.TryGetEffectData(cue, out WBH_EffectData data);
+        return data;
+    }
+
+    public void PlayPendingSkillSfx(AnimationEvent animationEvent, Animator animator)
+    {
+        int partValue = animationEvent.intParameter;
+
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+            return;
+
+        if (skills[pendingSkillIndex] == null || playerEffect == null)
+            return;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateGunnerSkillCue((pendingSkillIndex + 1),
+                                                                              pendingEvo,
+                                                                              (SkillEffectPart)partValue);
+
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    /// <summary>SW 수정: 싱글이 실제로 표시한 범위와 같은 정보를 원격 표시 경로에 전달합니다.</summary>
+    private void ShowSkillRange(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 0.25f)
+    {
+        SkillRangeVisual.ShowSector(position, direction, radius, angle, color, duration);
+        SkillRangePresented?.Invoke(position, direction, radius, angle, color, duration);
     }
 }

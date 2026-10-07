@@ -62,6 +62,28 @@ public class WBH_EffectPoolManager : MonoBehaviour
         return effect;
     }
 
+    /// <summary>SW 수정: 재생·소리·피해 호출 없이 첫 사용에 필요한 인스턴스를 풀에 준비합니다.</summary>
+    public bool PrepareEffect(WBH_EffectData data)
+    {
+        if (!IsValid(data) || effectPools == null) return false;
+        if (!effectPools.TryGetValue(data, out Queue<WBH_Effect> pool)) pool = CreateEmptyPool(data);
+        if (pool.Count > 0) return true;
+        // 비활성 부모 아래 생성해 프리팹의 OnEnable/자동 파티클 재생도 노출하지 않습니다.
+        GameObject staging = new GameObject("Effect preparation");
+        staging.SetActive(false);
+        staging.transform.SetParent(transform, false);
+        try
+        {
+            WBH_Effect effect = Instantiate(data.attackEffectPrefab, staging.transform);
+            effect.gameObject.SetActive(false);
+            effect.Initialize(this);
+            effect.transform.SetParent(transform, false);
+            pool.Enqueue(effect);
+            return true;
+        }
+        finally { Destroy(staging); }
+    }
+
     public void ReturnEffect(WBH_Effect effect)
     {
         if (effect == null)
@@ -95,7 +117,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
 
     private WBH_Effect CreateEffect(WBH_EffectData data)
     {
-        WBH_Effect effect = Instantiate(data.effectPrefab, transform);
+        WBH_Effect effect = Instantiate(data.attackEffectPrefab, transform);
 
         effect.Initialize(this);
 
@@ -112,7 +134,7 @@ public class WBH_EffectPoolManager : MonoBehaviour
             return false;
         }
 
-        if(data.effectPrefab == null)
+        if(data.attackEffectPrefab == null)
         {
             Log.Warning($"{data.name} 에 이펙트 프리팹이 없습니다.");
             return false;

@@ -100,6 +100,8 @@ public class WBH_EnemySelfDestructPattern : WBH_IEnemyPattern
 
         owner.Movement.Stop();
 
+        owner.EnemyEffect.PlayCue(WBH_EnemyEffectCue.Normal_SelfDestruct_FuseStart);
+
         fuseIndicator = owner.IndicatorSpawner?.ShowCircle(explosionPos, settings.explosionRadius, settings.fuseDuration, growOverTime: true);
     }
 
@@ -127,6 +129,8 @@ public class WBH_EnemySelfDestructPattern : WBH_IEnemyPattern
         StopFuseIndicator();
 
         owner.EnemyView?.SetSelfDestructFlash(false);
+
+        owner.EnemyEffect.PlayWorldCue(WBH_EnemyEffectCue.Normal_SelfDestruct_Explosion,owner.transform.position,owner.transform.rotation);
 
         owner.Combat.ApplyAreaDamage(explosionPos, settings.explosionRadius, settings.damageMultiplier);
 

@@ -29,7 +29,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     [SerializeField] private float dodgeDuration = 0.5f;
     [SerializeField] private float dodgeCooltime = 6f;
 
-    [SerializeField] private float fighterAttackRange = 2f;
+    [SerializeField] private float fighterAttackRange = 3f;
+    [SerializeField] private const float fighterAttackAngle = 230f;
     [SerializeField] private float gunnerAttackRange = 10f;
     [SerializeField] private float gunnerBulletSpeed = 10f;
     //---
@@ -38,35 +39,42 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     public float MaxMana => manaManager.MaxMana;
     public float CurrentHp => healthManager.CurrentHealth;
     public float CurrentMp => manaManager.CurrentMana;
-    public float AttackPower => statManager.Stat.attackPower;
-    public float DefensePower => statManager.Stat.defensePower;
-    public float Pen => statManager.Stat.pen;
-    public float CritRate => PercentToFraction(statManager.Stat.critRate);
-    public float CritMult => PercentToMultiplier(statManager.Stat.critMult);
-    public float FireBonus => PercentToFraction(statManager.Stat.fireBonus);
-    public float IceBonus => PercentToFraction(statManager.Stat.iceBonus);
-    public float ElectricBonus => PercentToFraction(statManager.Stat.electricBonus);
+    public float AttackPower => StatManager.Stat.attackPower;
+    public float DefensePower => StatManager.Stat.defensePower;
+    public float Pen => StatManager.Stat.pen;
+    public float CritRate => PercentToFraction(StatManager.Stat.critRate);
+    public float CritMult => PercentToMultiplier(StatManager.Stat.critMult);
+    public float FireBonus => PercentToFraction(StatManager.Stat.fireBonus);
+    public float IceBonus => PercentToFraction(StatManager.Stat.iceBonus);
+    public float ElectricBonus => PercentToFraction(StatManager.Stat.electricBonus);
     // 플레이어를 대상으로 한 Marked(받는 데미지 증가) 디버프는 아직 안 쓰여서 항상 1(영향 없음).
     public float DamageTakenModifier => 1f;
-    public float CurrentLevel => statManager.CurrentLevel;
-    public float CurrentExp => statManager.CurrentExp;
-    public float MaxExp => statManager.ExpToNextLevel;
+    public float NormalDamageModifier => PercentToMultiplier(StatManager.Stat.normalDamagePercent);
+    public float SkillDamageModifier => PercentToMultiplier(StatManager.Stat.skillDamagePercent);
+    public float CurrentLevel => StatManager.CurrentLevel;
+    public float CurrentExp => StatManager.CurrentExp;
+    public float MaxExp => StatManager.ExpToNextLevel;
 
     /// <summary>
     /// 현재 장착 무기에 인챈트된 속성. 모든 공격은 이 속성의 공격으로 간주되어 동일 속성 피해 보너스를 받는다.
     /// 무기 정보를 못 가져오면 무속성(None)으로 취급한다.
     /// </summary>
     public ItemSystem.ElementType CurrentElement =>
-        statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
+        StatManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weaponInfo)
             ? weaponInfo.elementType
             : ItemSystem.ElementType.None;
-    public float AttackSpeed => statManager.Stat.attackSpeed;
-    public float MoveSpeed => statManager.Stat.moveSpeed;
+    // SW 수정 : 애니메이션·싱글·서버 공격 예약이 장착된 라이플의 동일한 최종 속도를 사용한다.
+    public float AttackSpeed => StatManager.Stat.attackSpeed *
+        (StatManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon) &&
+         weapon.weaponType == ItemSystem.WeaponType.Rifle ? T_PlayerCombat.RifleAttackSpeedMultiplier : 1f);
+    public float MoveSpeed => StatManager.Stat.moveSpeed;
     // 아직 statManager 에 구현되지 않은 능력치 차후 구현되면 위처럼 스탯매니저에서 값을 받아오는 형식의 코드로 변경
     public float DodgeDistance => dodgeDistance;
     public float DodgeDuration => dodgeDuration;
     public float DodgeCooltime => dodgeCooltime;
     public float FighterAttackRange => fighterAttackRange;
+    public float FighterAttackAngle => fighterAttackAngle;
+
     public float GunnerAttackRange => gunnerAttackRange;
     public float GunnerBulletSpeed => gunnerBulletSpeed;
     public bool IsDead => healthManager.CurrentHealth <= 0f;
@@ -79,6 +87,26 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     private PlayerManaManager manaManager;
     private bool managersResolved;
 
+    private PlayerStatManager StatManager
+    {
+        // SW 수정 : Awake 전 조회에서도 실제 플레이어의 상태 컴포넌트를 한 번 준비한다.
+        get
+        {
+            ResolveManagers();
+            return statManager;
+        }
+    }
+
+    private void ResolveManagers()
+    {
+        if (managersResolved) return;
+        statManager = GetComponent<PlayerStatManager>();
+        healthManager = GetComponent<PlayerHealthManager>();
+        manaManager = GetComponent<PlayerManaManager>();
+        statManager?.EnsureInitialized();
+        managersResolved = true;
+    }
+
     /// <summary>OnStatChanged를 구독 중인 PlayerStat. 중복 구독/해제 누락을 막기 위해 들고 있는다.</summary>
     private PlayerStat subscribedStat;
 
@@ -87,13 +115,18 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
     private void Awake()
     {
-        statManager = GetComponent<PlayerStatManager>();
-        healthManager = GetComponent<PlayerHealthManager>();
-        manaManager = GetComponent<PlayerManaManager>();
+        ResolveManagers();
     }
 
     private void OnEnable()
     {
+        ResolveManagers();
+        Subscribe();
+    }
+
+    private void Subscribe()
+    {
+        Unsubscribe();
         if(healthManager != null)
         {
             healthManager.OnDeath += HandleDeath;
@@ -101,25 +134,31 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
 
         if(statManager?.Stat != null)
         {
-            statManager.Stat.OnStatChanged += HandleStatChanged;
+            subscribedStat = statManager.Stat;
+            subscribedStat.OnStatChanged += HandleStatChanged;
         }
     }
     private void OnDisable()
+    {
+        Unsubscribe();
+    }
+
+    private void Unsubscribe()
     {
         if (healthManager != null)
         {
             healthManager.OnDeath -= HandleDeath;
         }
 
-        if (statManager?.Stat != null)
-        {
-            statManager.Stat.OnStatChanged -= HandleStatChanged;
-        }
+        if (subscribedStat != null) subscribedStat.OnStatChanged -= HandleStatChanged;
+        subscribedStat = null;
     }
 
     public void Initialize(T_PlayerController playerController)
     {
+        ResolveManagers();
         this.playerController = playerController;
+        if (isActiveAndEnabled) Subscribe();
 
         ApplyMoveSpeed();
         ApplyAtkSpeed();
@@ -150,7 +189,8 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
         if (IsDead)
             return;
 
-        healthManager.TakeDamage(result.FinalDamage);
+        // SW 수정 : 실제 적 피격의 공격자와 체력 손실을 방벽 효과에 전달한다.
+        healthManager.TakeDamage(result.FinalDamage, result.Attacker);
     }
 
     // 상태이상으로 인한 데미지를 받을 때를 위한 오버로드
@@ -172,30 +212,5 @@ public class WBH_PlayerStatus : MonoBehaviour, WBH_ICombatStatus
     {
             healthManager.Heal(amount);
             return;
-    }
-
-    public void MultiplyMoveSpeed(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyMoveSpeed)))
-        //    return;
-
-        //currentMoveSpeed = moveSpeed * modifier;
-        //Debug.Log($"CurrentMoveSpeed : {currentMoveSpeed}");
-        //playerController.SetMoveSpeed(currentMoveSpeed);
-    }
-    public void MultiplyAttackSpeed(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttackSpeed)))
-        //    return;
-
-        //currentAttackSpeed = attackSpeed * modifier;
-        //OnAtkSpeedChanged?.Invoke(currentAttackSpeed);
-    }
-    public void MultiplyAttack(float modifier)
-    {
-        //if (WarnIfStatManagerOwnsStats(nameof(MultiplyAttack)))
-        //    return;
-
-        //currentAttackPower = attackPower * modifier;
     }
 }

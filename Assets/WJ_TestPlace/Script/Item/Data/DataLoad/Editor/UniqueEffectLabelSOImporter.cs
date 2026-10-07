@@ -45,6 +45,7 @@ namespace DataSystem
             Import(jsonPath, DefaultOutputAssetPath);
         }
 
+        /// <summary>SW 수정: Editor에서 네 언어의 고유효과 라벨을 갱신하고 이 라벨 DB만 저장해 다른 Dirty 에셋을 보존한다.</summary>
         public static void Import(string jsonPath, string outputAssetPath)
         {
             string absoluteJsonPath = jsonPath.StartsWith("Assets/") ? AssetPathToAbsolutePath(jsonPath) : jsonPath;
@@ -74,8 +75,7 @@ namespace DataSystem
             serialized.ApplyModifiedProperties();
 
             EditorUtility.SetDirty(so);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            AssetDatabase.SaveAssetIfDirty(so);
 
             Debug.Log($"[UniqueEffectLabel] SO 갱신 완료: {outputAssetPath}\n" +
                       $"KOR: {korCount}, ENG: {engCount}, JPN: {jpnCount}, CHN: {chnCount}");

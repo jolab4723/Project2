@@ -22,5 +22,7 @@ public class KY_SettingsData
     public int enemyHpDisplay = 0;      // 적 체력 표시 (0=항상, 1=피격시, 2=표시안함)(기본값 1)
     public bool showDamage = true;      // 데미지 표시
     public bool screenShake = true;     // 화면 흔들림
+    public bool showAlliedBuffRanges = true; // SW 수정 : 타인 버프 범위의 로컬 표시만 제어한다.
     public int tutorialDisplay = 0;     // 튜토리얼 (0=항상, 1=한번만, 2=표시안함)(기본값 1)
+    public int language = 0;            // 언어 (GameLanguage 순서: 0=KOR, 1=ENG, 2=JPN, 3=CHN)
 }

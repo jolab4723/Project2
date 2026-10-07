@@ -1,0 +1,168 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2052591d4079d814e8dc0c07a88b6b9e, type: 3}
+  m_Name: PassiveSkillLabelDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::PassiveSkillLabelDatabaseSO
+  korLabels:
+  - passiveId: MaxHealth
+    name: "\uCD5C\uB300 \uCCB4\uB825 \uC99D\uAC00"
+    description: "\uCD5C\uB300 \uCCB4\uB825\uC774 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: AttackPower
+    name: "\uACF5\uACA9\uB825 \uC99D\uAC00"
+    description: "\uAE30\uCD08 \uACF5\uACA9\uB825\uC774 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: DefensePower
+    name: "\uBC29\uC5B4\uB825 \uC99D\uAC00"
+    description: "\uAE30\uCD08 \uBC29\uC5B4\uB825\uC774 \uC99D\uAC00\uD569\uB2C8\uB2E4"
+  - passiveId: AllSpeed
+    name: "\uBAA8\uB4E0 \uC18D\uB3C4 \uC99D\uAC00"
+    description: "\uC774\uB3D9 \uC18D\uB3C4\uC640 \uACF5\uACA9 \uC18D\uB3C4\uAC00
+      \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: CritRate
+    name: "\uD06C\uB9AC\uD2F0\uCEEC \uD655\uB960 \uC99D\uAC00"
+    description: "\uCE58\uBA85\uD0C0 \uD655\uB960\uC774 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: CritDamage
+    name: "\uD06C\uB9AC\uD2F0\uCEEC \uD53C\uD574 \uC99D\uAC00"
+    description: "\uCE58\uBA85\uD0C0 \uD53C\uD574\uB7C9\uC774 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: CooldownReduction
+    name: "\uC2A4\uD0AC \uCFE8\uD0C0\uC784 \uAC10\uC18C"
+    description: "\uBAA8\uB4E0 \uC2A4\uD0AC\uC758 \uCFE8\uD0C0\uC784\uC774 \uAC10\uC18C\uD569\uB2C8\uB2E4."
+  - passiveId: AllElementalBonus
+    name: "\uBAA8\uB4E0 \uC18D\uC131 \uBCF4\uB108\uC2A4 \uC99D\uAC00"
+    description: "\uD654\uC5FC\xB7\uB0C9\uAE30\xB7\uC804\uAE30 \uC18D\uC131 \uD53C\uD574
+      \uBCF4\uB108\uC2A4\uAC00 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  - passiveId: Revive
+    name: "\uBD80\uD65C 1\uD68C \uD65C\uC131\uD654"
+    description: "\uC804\uD22C \uC911 \uC4F0\uB7EC\uC84C\uC744 \uB54C \uCD5C\uB300
+      \uCCB4\uB825\uC758 \uC77C\uBD80%\uC73C\uB85C 1\uD68C \uBD80\uD65C\uD55C\uB2E4."
+  - passiveId: CampHealBonus
+    name: "\uCEA0\uD504 \uD68C\uBCF5\uB7C9 \uC99D\uAC00"
+    description: "\uCEA0\uD504\uC5D0\uC11C \uD734\uC2DD\uD560 \uB54C \uD68C\uBCF5\uD558\uB294
+      \uCCB4\uB825\uB7C9\uC744 \uB298\uB9B0\uB2E4."
+  - passiveId: ShopEnhance
+    name: "\uC0C1\uC810 \uAC15\uD654"
+    description: "\uB9AC\uB864 \uD69F\uC218\uAC00 1\uD68C \uCD94\uAC00\uB41C\uB2E4.
+      \uB610\uD55C, \uC0C1\uC810 \uAC00\uACA9\uC774 \uD558\uB77D\uD55C\uB2E4."
+  - passiveId: Undecided
+    name: "\uBBF8\uC815"
+    description: "\uC544\uC9C1 \uD6A8\uACFC\uAC00 \uC815\uD574\uC9C0\uC9C0 \uC54A\uC740
+      \uD328\uC2DC\uBE0C."
+  engLabels:
+  - passiveId: MaxHealth
+    name: Max Health Up
+    description: Increases maximum health.
+  - passiveId: AttackPower
+    name: Attack Power Up
+    description: Increases base attack power.
+  - passiveId: DefensePower
+    name: Defense Power Up
+    description: Increases base defense.
+  - passiveId: AllSpeed
+    name: All Speed Up
+    description: Increases movement speed and attack speed.
+  - passiveId: CritRate
+    name: Crit Rate Up
+    description: Increases critical hit chance.
+  - passiveId: CritDamage
+    name: Crit Damage Up
+    description: Increases critical hit damage.
+  - passiveId: CooldownReduction
+    name: Cooldown Reduction
+    description: Reduces the cooldown of all skills.
+  - passiveId: AllElementalBonus
+    name: All Elemental Bonus Up
+    description: Increases fire, ice, and electric elemental damage bonuses.
+  - passiveId: Revive
+    name: Revive Once
+    description: Revive once with a percentage of max health when downed in battle.
+  - passiveId: CampHealBonus
+    name: Camp Heal Bonus
+    description: Increases the amount of health restored when resting at camp.
+  - passiveId: ShopEnhance
+    name: Shop Enhancement
+    description: Adds one extra reroll. Also lowers shop prices.
+  - passiveId: Undecided
+    name: Undecided
+    description: A passive whose effect has not been decided yet.
+  jpnLabels:
+  - passiveId: MaxHealth
+    name: "\u6700\u5927\u4F53\u529B\u30A2\u30C3\u30D7"
+    description: "\u6700\u5927\u4F53\u529B\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: AttackPower
+    name: "\u653B\u6483\u529B\u30A2\u30C3\u30D7"
+    description: "\u57FA\u790E\u653B\u6483\u529B\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: DefensePower
+    name: "\u9632\u5FA1\u529B\u30A2\u30C3\u30D7"
+    description: "\u57FA\u790E\u9632\u5FA1\u529B\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: AllSpeed
+    name: "\u5168\u901F\u5EA6\u30A2\u30C3\u30D7"
+    description: "\u79FB\u52D5\u901F\u5EA6\u3068\u653B\u6483\u901F\u5EA6\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: CritRate
+    name: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u30A2\u30C3\u30D7"
+    description: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: CritDamage
+    name: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30C0\u30E1\u30FC\u30B8\u30A2\u30C3\u30D7"
+    description: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30C0\u30E1\u30FC\u30B8\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: CooldownReduction
+    name: "\u30B9\u30AD\u30EB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0\u6E1B\u5C11"
+    description: "\u3059\u3079\u3066\u306E\u30B9\u30AD\u30EB\u306E\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0\u304C\u6E1B\u5C11\u3059\u308B\u3002"
+  - passiveId: AllElementalBonus
+    name: "\u5168\u5C5E\u6027\u30DC\u30FC\u30CA\u30B9\u30A2\u30C3\u30D7"
+    description: "\u708E\u30FB\u6C37\u30FB\u96FB\u6C17\u5C5E\u6027\u306E\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9\u304C\u5897\u52A0\u3059\u308B\u3002"
+  - passiveId: Revive
+    name: "\u5FA9\u6D3B1\u56DE\u6709\u52B9\u5316"
+    description: "\u6226\u95D8\u4E2D\u306B\u5012\u308C\u305F\u969B\u3001\u6700\u5927\u4F53\u529B\u306E\u4E00\u5B9A\u5272\u5408\u30671\u56DE\u5FA9\u6D3B\u3059\u308B\u3002"
+  - passiveId: CampHealBonus
+    name: "\u30AD\u30E3\u30F3\u30D7\u56DE\u5FA9\u91CF\u30A2\u30C3\u30D7"
+    description: "\u30AD\u30E3\u30F3\u30D7\u3067\u4F11\u606F\u3057\u305F\u6642\u306B\u56DE\u5FA9\u3059\u308B\u4F53\u529B\u91CF\u3092\u5897\u52A0\u3055\u305B\u308B\u3002"
+  - passiveId: ShopEnhance
+    name: "\u30B7\u30E7\u30C3\u30D7\u5F37\u5316"
+    description: "\u30EA\u30ED\u30FC\u30EB\u56DE\u6570\u304C1\u56DE\u8FFD\u52A0\u3055\u308C\u308B\u3002\u307E\u305F\u3001\u30B7\u30E7\u30C3\u30D7\u4FA1\u683C\u304C\u4E0B\u304C\u308B\u3002"
+  - passiveId: Undecided
+    name: "\u672A\u5B9A"
+    description: "\u307E\u3060\u52B9\u679C\u304C\u6C7A\u307E\u3063\u3066\u3044\u306A\u3044\u30D1\u30C3\u30B7\u30D6\u3002"
+  chnLabels:
+  - passiveId: MaxHealth
+    name: "\u6700\u5927\u751F\u547D\u503C\u63D0\u5347"
+    description: "\u63D0\u5347\u6700\u5927\u751F\u547D\u503C\u3002"
+  - passiveId: AttackPower
+    name: "\u653B\u51FB\u529B\u63D0\u5347"
+    description: "\u63D0\u5347\u57FA\u7840\u653B\u51FB\u529B\u3002"
+  - passiveId: DefensePower
+    name: "\u9632\u5FA1\u529B\u63D0\u5347"
+    description: "\u63D0\u5347\u57FA\u7840\u9632\u5FA1\u529B\u3002"
+  - passiveId: AllSpeed
+    name: "\u5168\u901F\u5EA6\u63D0\u5347"
+    description: "\u63D0\u5347\u79FB\u52A8\u901F\u5EA6\u548C\u653B\u51FB\u901F\u5EA6\u3002"
+  - passiveId: CritRate
+    name: "\u66B4\u51FB\u7387\u63D0\u5347"
+    description: "\u63D0\u5347\u66B4\u51FB\u7387\u3002"
+  - passiveId: CritDamage
+    name: "\u66B4\u51FB\u4F24\u5BB3\u63D0\u5347"
+    description: "\u63D0\u5347\u66B4\u51FB\u4F24\u5BB3\u3002"
+  - passiveId: CooldownReduction
+    name: "\u6280\u80FD\u51B7\u5374\u7F29\u51CF"
+    description: "\u7F29\u51CF\u6240\u6709\u6280\u80FD\u7684\u51B7\u5374\u65F6\u95F4\u3002"
+  - passiveId: AllElementalBonus
+    name: "\u5168\u5C5E\u6027\u52A0\u6210\u63D0\u5347"
+    description: "\u63D0\u5347\u706B\u3001\u51B0\u3001\u7535\u5C5E\u6027\u7684\u4F24\u5BB3\u52A0\u6210\u3002"
+  - passiveId: Revive
+    name: "\u590D\u6D3B\u4E00\u6B21"
+    description: "\u5728\u6218\u6597\u4E2D\u5012\u4E0B\u65F6\uFF0C\u4EE5\u4E00\u5B9A\u767E\u5206\u6BD4\u7684\u6700\u5927\u751F\u547D\u503C\u590D\u6D3B\u4E00\u6B21\u3002"
+  - passiveId: CampHealBonus
+    name: "\u8425\u5730\u6CBB\u7597\u91CF\u63D0\u5347"
+    description: "\u63D0\u5347\u5728\u8425\u5730\u4F11\u606F\u65F6\u6062\u590D\u7684\u751F\u547D\u503C\u3002"
+  - passiveId: ShopEnhance
+    name: "\u5546\u5E97\u5F3A\u5316"
+    description: "\u91CD\u968F\u6B21\u6570\u589E\u52A01\u6B21\u3002\u6B64\u5916\uFF0C\u5546\u5E97\u4EF7\u683C\u964D\u4F4E\u3002"
+  - passiveId: Undecided
+    name: "\u672A\u5B9A"
+    description: "\u6548\u679C\u5C1A\u672A\u786E\u5B9A\u7684\u88AB\u52A8\u3002"

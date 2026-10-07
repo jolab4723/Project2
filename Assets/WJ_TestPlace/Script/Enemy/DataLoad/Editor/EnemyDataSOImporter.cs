@@ -17,9 +17,10 @@ namespace DataSystem
     /// </summary>
     public static class EnemyDataSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/JSONFile";
-        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/EnemyData/GeneratedAssets/Enemies";
-        private const string EnemyDatabasePath = "Assets/Resources/DataFiles/EnemyData/GeneratedAssets/AllEnemies.asset";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
+        private const string DefaultOutputRoot = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/Enemies";
+        private const string EnemyDatabasePath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/AllEnemies.asset";
+        private const string EnemyLabelDatabasePath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase.asset";
 
         [MenuItem("DataLoader/Enemy Data/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -32,6 +33,34 @@ namespace DataSystem
             GenerateAllFromJson(jsonPath, DefaultOutputRoot);
         }
 
+        [MenuItem("DataLoader/Enemy Data/0. Run All Steps")]
+        public static void RunAllSteps()
+        {
+            Debug.Log("[EnemyData] ===== 통합 실행 시작 =====");
+
+            // 이름(enemyName)을 EnemyDataLabel에서 조회해오므로, 적 스탯보다 라벨을 먼저 최신화한다.
+            string labelJsonPath = EnemyLabelExcelToJson.ConvertWithDefaultPaths();
+            if (!string.IsNullOrEmpty(labelJsonPath))
+                EnemyLabelSOImporter.ImportWithDefaultPaths(labelJsonPath);
+            else
+                Debug.LogWarning("[EnemyData] 적 이름(Label) 갱신을 건너뛰었습니다 - 기존 EnemyLabelDatabase를 그대로 씁니다.");
+
+            string jsonPath = EnemyDataExcelToJson.ConvertWithDefaultPaths();
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                Debug.LogError("[EnemyData] 엑셀을 찾지 못해 중단했습니다.");
+                return;
+            }
+
+            GenerateAllFromJson(jsonPath, DefaultOutputRoot);
+
+            FloorStatScaleExcelToJson.ConvertWithDefaultPaths();
+            DifficultyStatScaleExcelToJson.ConvertWithDefaultPaths();
+            PlayerCountStatScaleExcelToJson.ConvertWithDefaultPaths();
+
+            Debug.Log("[EnemyData] ===== 통합 실행 완료 =====");
+        }
+
         public static void GenerateAllFromJson(string jsonPath, string outputRoot)
         {
             List<EnemyDataRow> rows = LoadJson(jsonPath);
@@ -41,13 +70,14 @@ namespace DataSystem
             EnsureAssetFolder(outputRoot);
 
             EnemyDatabaseSO database = GetOrCreateDatabase();
+            EnemyLabelDatabaseSO labelDatabase = LoadLabelDatabase();
 
             int count = 0;
             int registeredCount = 0;
 
             foreach (EnemyDataRow row in rows)
             {
-                EnemyDefinitionSO asset = CreateOrUpdate(outputRoot, row);
+                EnemyDefinitionSO asset = CreateOrUpdate(outputRoot, row, labelDatabase);
                 if (asset == null)
                     continue;
 
@@ -64,19 +94,24 @@ namespace DataSystem
             Debug.Log($"[EnemyData] SO 생성/갱신 완료. Enemy {count}개 (EnemyDatabaseSO에 {registeredCount}개 새로 등록됨)");
         }
 
-        private static EnemyDefinitionSO CreateOrUpdate(string outputFolder, EnemyDataRow row)
+        private static EnemyDefinitionSO CreateOrUpdate(string outputFolder, EnemyDataRow row, EnemyLabelDatabaseSO labelDatabase)
         {
             string idText = (row.enemyId ?? string.Empty).Trim();
 
             if (string.IsNullOrEmpty(idText) || idText.Contains(" "))
-                Debug.LogWarning($"[EnemyData] enemyId가 비어있거나 공백을 포함합니다: '{idText}' ({row.enemyName}). 'enemy.grade.attackType.name' 형식을 확인해주세요.");
+                Debug.LogWarning($"[EnemyData] enemyId가 비어있거나 공백을 포함합니다: '{idText}'. 'enemy.grade.attackType.name' 형식을 확인해주세요.");
 
-            EnemyDefinitionSO asset = GetOrCreateAsset<EnemyDefinitionSO>(outputFolder, idText, row.enemyName);
+            // 표시 이름은 EnemyData 시트가 아니라 EnemyDataLabel.xlsx(EnemyLabelDatabaseSO)에서 가져온다.
+            // Import 시점의 KOR 이름을 스냅샷으로 SO에 박아두는 것 - 언어별 실시간 표시가 필요한 곳은
+            // 이 필드가 아니라 EnemyLabelDatabaseSO.GetName(enemyId)를 직접 불러야 한다.
+            string displayName = labelDatabase != null ? labelDatabase.GetName(idText, GameLanguage.KOR) : idText;
+
+            EnemyDefinitionSO asset = GetOrCreateAsset<EnemyDefinitionSO>(outputFolder, idText, displayName);
             if (asset == null)
                 return null;
 
             asset.enemyId = idText;
-            asset.enemyName = row.enemyName;
+            asset.enemyName = displayName;
             asset.enemyGrade = ParseEnumOrDefault(row.enemyGrade, EnemyGrade.Normal);
             asset.attackType = ParseEnumOrDefault(row.attackType, EnemyAttackType.Melee);
             asset.baseHealth = row.baseHp;
@@ -86,8 +121,11 @@ namespace DataSystem
             asset.baseAttackSpeed = row.baseAS;
             asset.attackRange = row.attackRange;
             asset.attackCooldown = row.attackCDR;
+            asset.penetration = row.pen;
+            asset.projectileSpeed = row.projectileSpeed;
             asset.patternId = row.patternId;
             asset.expReward = row.expReward;
+            asset.creditReward = row.creditReward;
 
             return asset;
         }
@@ -101,6 +139,16 @@ namespace DataSystem
                 database.allEnemies.Add(asset);
                 registeredCount++;
             }
+        }
+
+        /// <summary>없으면 null만 반환하고 경고 로그를 남긴다 - 라벨 없이도 enemyId를 이름 대신 써서 파이프라인 자체는 계속 진행되게 한다.</summary>
+        private static EnemyLabelDatabaseSO LoadLabelDatabase()
+        {
+            EnemyLabelDatabaseSO labelDatabase = AssetDatabase.LoadAssetAtPath<EnemyLabelDatabaseSO>(EnemyLabelDatabasePath);
+            if (labelDatabase == null)
+                Debug.LogWarning($"[EnemyData] EnemyLabelDatabaseSO를 찾을 수 없습니다: {EnemyLabelDatabasePath}. 표시 이름 대신 enemyId를 그대로 씁니다.");
+
+            return labelDatabase;
         }
 
         private static EnemyDatabaseSO GetOrCreateDatabase()

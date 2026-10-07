@@ -14,13 +14,17 @@ public class WBH_EnemyMovement : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3 lastDestination;
     private bool canControl = true;
+    private bool isStatusEffectControlBlocked; // 상태이상으로 인한 움직임 불가처리
+    private bool isCutSceneControlBlocked;
     private float jumpHeight = 3f;
     private float landingNavSearchRadius = 2f;
     
     private Coroutine jumpCoroutine;
+    private Coroutine dashCoroutine;
     public event Action OnDashUpdate;
 
-    public bool CanControl => canControl;
+    public bool CanControl => canControl && !isStatusEffectControlBlocked && ! isCutSceneControlBlocked;
+    private bool CanUseAgent => agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
     public int AreaMask => agent.areaMask;
 
 
@@ -30,14 +34,20 @@ public class WBH_EnemyMovement : MonoBehaviour
         status = GetComponent<WBH_EnemyStatus>();
     }
 
+    private void OnEnable()
+    {
+        RefreshControlState();
+    }
+
     // NavMeshAgent 초기화
     public void Initialize(WBH_EnemyInfo info)
     {
         agent ??= GetComponent<NavMeshAgent>();
 
         canControl = true;
+        isStatusEffectControlBlocked = false;
+
         agent.speed = info.moveSpeed;
-        agent.isStopped = false;
 
         lastDestination = Vector3.zero;
     }
@@ -45,7 +55,12 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 목적지 이동
     public void Move(Vector3 destination)
     {
-        if ((destination - lastDestination).sqrMagnitude < 0.01f)
+        if (!CanControl)
+            return;
+
+        bool isSameDestination = (destination - lastDestination).sqrMagnitude < 0.01f;
+
+        if (isSameDestination && !agent.isStopped && agent.hasPath)
             return;
 
         lastDestination = destination;
@@ -56,6 +71,9 @@ public class WBH_EnemyMovement : MonoBehaviour
     // 정지
     public void Stop()
     {
+        if (!CanUseAgent)
+            return;
+
         agent.ResetPath();
         agent.isStopped = true;
         agent.velocity = Vector3.zero;
@@ -77,17 +95,35 @@ public class WBH_EnemyMovement : MonoBehaviour
     public void SetControlEnable(bool enable)
     {
         canControl = enable;
+        RefreshControlState();
+    }
 
-        if (!enable)
+    // 상태이상으로 인한 움직임 불가
+    public void SetStatusEffectControlBlock(bool block)
+    {
+        isStatusEffectControlBlocked = block;
+        RefreshControlState();
+    }
+
+    private void RefreshControlState()
+    {
+        if (!CanUseAgent)
+            return;
+
+        if(!CanControl)
+        {
             Stop();
-        else
-            agent.isStopped = false;
+            return;
+        }
+        agent.isStopped = false;
     }
 
     // 돌진 (데미지 X)
     public void Dash(Vector3 direction, float distance, float duration, Action onCompleted = null)
     {
-        StartCoroutine(CoDash(direction, distance, duration, onCompleted));
+        CancelForcedMovement();
+
+        dashCoroutine = StartCoroutine(CoDash(direction, distance, duration, onCompleted));
     }
 
     private IEnumerator CoDash(Vector3 direction, float distance, float duration, Action onCompleted)
@@ -111,6 +147,7 @@ public class WBH_EnemyMovement : MonoBehaviour
         }
 
         Warp(transform.position);
+        dashCoroutine = null;
 
         SetControlEnable(true);
 
@@ -175,6 +212,33 @@ public class WBH_EnemyMovement : MonoBehaviour
         onCompleted?.Invoke();
     }
 
+    // 돌진, 점프 코루틴 중단 (적 사망, 적 기절과 같이 패턴 중단 시에 사용)
+    public void CancelForcedMovement()
+    {
+        if(dashCoroutine != null)
+        {
+            StopCoroutine(dashCoroutine);
+            dashCoroutine = null;
+        }
+        if(jumpCoroutine != null)
+        {
+            StopCoroutine (jumpCoroutine);
+            jumpCoroutine = null;
+        }
+
+        if (agent == null)
+            return;
+
+        agent.updatePosition = true;
+
+        if(agent.isActiveAndEnabled && agent.isOnNavMesh)
+        {
+            agent.Warp(transform.position);
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+        }
+    }
+
     // destination 까지 navMesh 경로가 있는지 체크
     public bool TryCalculatePath(Vector3 destination, NavMeshPath path)
     {
@@ -185,5 +249,12 @@ public class WBH_EnemyMovement : MonoBehaviour
             return false;
 
         return path.status == NavMeshPathStatus.PathComplete;
+    }
+
+    // 컷씬 동안 행동불가
+    public void SetCutSceneControlBlock(bool block)
+    {
+        isCutSceneControlBlocked = block;
+        RefreshControlState();
     }
 }

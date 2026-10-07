@@ -10,6 +10,7 @@ public class ItemDropHandler : MonoBehaviour
     private InventoryController inventoryController;
     private EquipSlotUI[] equipmentSlots;
     private bool restorePending;
+    private bool restoreModel = true;
     private bool recoveryFailureLogged;
 
     public bool HasPendingRestore => restorePending;
@@ -42,8 +43,9 @@ public class ItemDropHandler : MonoBehaviour
             TryRestoreOriginalPlacement();
     }
 
-    public void PrepareRestore()
+    public void PrepareRestore(bool allowModelRestore = true)
     {
+        restoreModel = allowModelRestore;
         restorePending = true;
         recoveryFailureLogged = false;
     }
@@ -92,6 +94,13 @@ public class ItemDropHandler : MonoBehaviour
 
         if (TryFinalizeStablePlacement())
             return true;
+
+        // 표시용 드래그 중 서버가 소유권을 바꿨다면 옛 아이템을 Grid에 되살리지 않는다.
+        if (!restoreModel)
+        {
+            CancelRestore();
+            return false;
+        }
 
         // 모델이 장비에 남아 있는데 시각 슬롯을 찾지 못한 경우 Grid 복구로 중복 소유시키지 않는다.
         if (IsItemOwnedByEquipmentModel())
@@ -223,7 +232,10 @@ public class ItemDropHandler : MonoBehaviour
             case InventoryMoveResult.Success:
             case InventoryMoveResult.ReturnedToOriginal:
             case InventoryMoveResult.MovedToEmptySpace:
-                itemUI.SetGridPosition(itemUI.CurrentGrid, result.MovedX, result.MovedY);
+                itemUI.SetGridPositionAnimated(
+                    itemUI.CurrentGrid,
+                    result.MovedX,
+                    result.MovedY);
                 break;
 
             case InventoryMoveResult.Swapped:
@@ -302,6 +314,9 @@ public class ItemDropHandler : MonoBehaviour
 
         if (TryRestoreOriginalPlacement())
         {
+            inventoryController?.ReportSinglePlayerMessage(
+                ChatKind.Warning,
+                "아이템을 필드에 놓지 못해 인벤토리로 되돌렸습니다.");
             Debug.LogWarning(
                 $"[ItemDropHandler] 월드 드롭에 실패하여 원래 위치로 복구했습니다. result={result}");
         }
@@ -328,7 +343,11 @@ public class ItemDropHandler : MonoBehaviour
         string message = InventoryRemoveMessageMapper.GetMessage(result, itemName);
 
         if (inventoryController != null)
+        {
             inventoryController.PrintLog(message);
+            if (result != InventoryRemoveResult.Success)
+                inventoryController.ReportSinglePlayerMessage(ChatKind.Warning, message);
+        }
         else
             Debug.LogWarning(message);
 

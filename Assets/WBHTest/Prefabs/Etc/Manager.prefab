@@ -95,6 +95,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
   poolManager: {fileID: 7902732325712632462}
+  billboardCamera: {fileID: 0}
 --- !u!114 &7902732325712632462
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,7 +108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64ea23032d6732f4f9790f4ded5a348d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectPoolManager
-  effectDatas:
+  preloadEffectDatas:
   - {fileID: 11400000, guid: 33048dcb32a9f524eb942334ae1c92c1, type: 2}
   - {fileID: 11400000, guid: 0749a5a78135aa34db0f417ddb3c8a92, type: 2}
   - {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
@@ -128,6 +129,7 @@ GameObject:
   - component: {fileID: 8028295587728885316}
   - component: {fileID: 2974581208318116251}
   - component: {fileID: 7740657695786710182}
+  - component: {fileID: 8478993714791160529}
   m_Layer: 0
   m_Name: EnemyManager
   m_TagString: Untagged
@@ -163,12 +165,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyPoolManager
   enemyPools:
-  - enemyID: 1
+  - enemyDef: {fileID: 11400000, guid: f2d3bd42c6995914c924176004487e8b, type: 2}
     prefab: {fileID: -5431423992665652879, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
-    poolSize: 10
-  - enemyID: 2
+    poolSize: 25
+  - enemyDef: {fileID: 11400000, guid: bc974d4dc30678440a3c953d292edcf9, type: 2}
     prefab: {fileID: 5791879278000763495, guid: f5a233bee20b12644b215f8e0e6a8f2d, type: 3}
-    poolSize: 10
+    poolSize: 25
+  - enemyDef: {fileID: 11400000, guid: f4a6f4e0ae572a8428598ca0370bdb4e, type: 2}
+    prefab: {fileID: 3834549105520735570, guid: 75575f158d1b28e42b645ec3ffdcb687, type: 3}
+    poolSize: 25
+  - enemyDef: {fileID: 11400000, guid: eaf1a2b9ff538414eaccb4a315ae078a, type: 2}
+    prefab: {fileID: -5431423992665652879, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
+    poolSize: 5
+  - enemyDef: {fileID: 11400000, guid: 616e7a48be1848a46bd73bfcb406cc61, type: 2}
+    prefab: {fileID: 5791879278000763495, guid: f5a233bee20b12644b215f8e0e6a8f2d, type: 3}
+    poolSize: 5
+  - enemyDef: {fileID: 11400000, guid: a0eb42d5a36aa6749aca8ea8200b89af, type: 2}
+    prefab: {fileID: 3834549105520735570, guid: 75575f158d1b28e42b645ec3ffdcb687, type: 3}
+    poolSize: 5
+  - enemyDef: {fileID: 11400000, guid: e873fc942b10cd34bac25a4674d59f85, type: 2}
+    prefab: {fileID: 8848537230844720948, guid: c0aa07196406e494687529bb8de8473e, type: 3}
+    poolSize: 3
+  - enemyDef: {fileID: 11400000, guid: fcfb756750349b447a93eb0332cfad00, type: 2}
+    prefab: {fileID: 7056045415955417540, guid: 47a688f705235ea4783595b0dfa94f33, type: 3}
+    poolSize: 2
+  - enemyDef: {fileID: 11400000, guid: 101b67b2f5ac4b240bb664af1d8da129, type: 2}
+    prefab: {fileID: 7390368169253506753, guid: 37ec74448642db34fbc910d3a6b7d21f, type: 3}
+    poolSize: 2
+  - enemyDef: {fileID: 11400000, guid: 2496a1d744cdd2e4b8720e9868a0a660, type: 2}
+    prefab: {fileID: 8563215236915382762, guid: 51770f3e1bf7e7b49871b9bc069c6b31, type: 3}
+    poolSize: 2
+  - enemyDef: {fileID: 11400000, guid: ba925796fe1581f419a9338df831b06f, type: 2}
+    prefab: {fileID: 3834549105520735570, guid: e9aeea2bf5672124e8cd2aa432454555, type: 3}
+    poolSize: 12
 --- !u!114 &7740657695786710182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,12 +210,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2065ab864b28ad498e0887c526498a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemySpawnManager
-  spawnAreas: []
+  defaultWaveSet: {fileID: 0}
+  spawnArea: {fileID: 0}
   player: {fileID: 0}
-  waves:
-  - enemies: []
-  - enemies: []
-  eliteView: {fileID: 0}
+  enemyDataProvider: {fileID: 8478993714791160529}
+  statContext:
+    floor: 1
+    difficultyName: normal
+    playerCount: 1
+  highEnemyView: {fileID: 0}
+  effectSpawner: {fileID: 8756550498913179854}
+  projectileSpawner: {fileID: 5045398631486137927}
+--- !u!114 &8478993714791160529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5830887876625424474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df3913d1ea7406d45991b4fa7c6430a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyDataProvider
+  infoSource: 0
+  enemyDatabase: {fileID: 11400000, guid: 39272725bb15a434b99ddd55f9fdabed, type: 2}
+  testInfos:
+  - testDef: {fileID: 0}
+    info:
+      enemyId: 
+      enemyName: 
+      enemyGrade: 0
+      enemyAttackType: 0
+      maxHP: 0
+      attack: 0
+      defense: 0
+      moveSpeed: 0
+      pen: 0
+      attackRange: 0
+      attackCoolTime: 0
+      attackSpeed: 0
+      projectileSpeed: 0
+      exp: 0
+      credit: 0
+      patternID: 0
 --- !u!1 &7523798715022432636
 GameObject:
   m_ObjectHideFlags: 0
@@ -242,6 +309,9 @@ MonoBehaviour:
   - projectileType: 3
     poolSize: 30
     projectilePrefab: {fileID: 6822293629243769860, guid: a98dcf4ff3dcd04478705b6c26b9400b, type: 3}
+  - projectileType: 2
+    poolSize: 20
+    projectilePrefab: {fileID: 3710108442046792887, guid: c79652807c4cefe4494bf3353e73e252, type: 3}
 --- !u!114 &5045398631486137927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -256,7 +326,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
   poolManager: {fileID: 7943419587965501061}
   effectSpawner: {fileID: 8756550498913179854}
-  effectData: {fileID: 11400000, guid: c4749fe5d8fbeb547af9bc6f159faf82, type: 2}
 --- !u!1 &8782526777149981499
 GameObject:
   m_ObjectHideFlags: 0

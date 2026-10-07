@@ -26,6 +26,7 @@ public sealed class InventoryView : MonoBehaviour
 
     public InventoryController Owner => owner;
     public EquipSlotUI[] EquipmentSlots => equipmentSlots;
+    public bool HasShop => shopController != null;
 
     private void OnEnable()
     {
@@ -71,7 +72,7 @@ public sealed class InventoryView : MonoBehaviour
 
     public bool Bind(PlayerContext context)
     {
-        if (context == null || !Bind(context.Inventory))
+        if (context == null || !context.IsComplete || !Bind(context.Inventory))
             return false;
 
         if (tooltipManager != null)

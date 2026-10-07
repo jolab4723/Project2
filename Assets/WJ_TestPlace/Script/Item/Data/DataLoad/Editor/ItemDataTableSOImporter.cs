@@ -42,7 +42,7 @@ namespace DataSystem
             GenerateAllFromJson(jsonPath, DefaultOutputRoot);
         }
 
-        /// <summary>4개 카테고리를 전부 순서대로 생성/갱신한다.</summary>
+        /// <summary>SW 수정: Editor에서 네 카테고리를 생성·갱신하며 이번 가져오기가 변경한 아이템·포션 버프·DB만 저장한다.</summary>
         public static void GenerateAllFromJson(string jsonPath, string outputRoot)
         {
             ItemDataTableJsonData data = LoadJson(jsonPath);
@@ -74,10 +74,10 @@ namespace DataSystem
             int relicCount = CreateOrUpdateRelicDefinitions(data, outputRoot, database, ref registeredCount);
 
             if (database != null && registeredCount > 0)
+            {
                 EditorUtility.SetDirty(database);
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+                AssetDatabase.SaveAssetIfDirty(database);
+            }
 
             Debug.Log($"[ItemDataTable] 1단계 완료. Armor {armorCount}, Weapon {weaponCount}, Potion {potionCount}, Relic {relicCount} " +
                       $"(ItemDatabaseSO에 {registeredCount}개 새로 등록됨)");
@@ -167,6 +167,7 @@ namespace DataSystem
         /// StatBoost일 때는 실제로 PlayerBuffManager.ApplyBuff에 넘길 BuffDefinitionSO를
         /// 포션 하나당 하나씩 자동 생성/갱신해서 연결한다 (IBuffSource.cs 문서 주석 기준:
         /// 아이템 고유 효과가 아닌 포션/스킬/디버프는 BuffDefinitionSO를 쓰는 게 기존 설계).
+        /// SW 수정: Editor에서 현재 포션의 버프만 저장해 무관한 Dirty 에셋을 보존한다.
         /// </summary>
         private static void ApplyPotionEffectFields(ItemDefinitionSO asset, PotionDefinitionRow row)
         {
@@ -195,6 +196,8 @@ namespace DataSystem
             buff.maxStack = 0;
             buff.statEffects = new[] { new FixedStatValue { statType = asset.potionStatType, value = asset.potionEffectValue } };
             EditorUtility.SetDirty(buff);
+            // SW 수정: 전체 저장 없이 현재 포션의 생성 버프만 저장한다.
+            AssetDatabase.SaveAssetIfDirty(buff);
 
             asset.potionBuff = buff;
         }
@@ -266,6 +269,7 @@ namespace DataSystem
             return asset;
         }
 
+        /// <summary>SW 수정: Editor에서 현재 아이템만 저장하고 필요할 때 기존 DB에 등록한다.</summary>
         private static void FinalizeAsset(ItemDefinitionSO asset, ItemDatabaseSO database, ref int registeredCount)
         {
             EditorUtility.SetDirty(asset);
@@ -275,6 +279,7 @@ namespace DataSystem
                 database.allItems.Add(asset);
                 registeredCount++;
             }
+            AssetDatabase.SaveAssetIfDirty(asset);
         }
 
         private static void AddMainOption(List<FixedStatValue> list, string statTypeText, float value)
@@ -292,7 +297,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// itemId와 파일명(확장자 제외)이 정확히 일치하는 스프라이트를 아이콘으로 연결한다.
+        /// SW 수정: Editor에서 itemId와 파일명이 정확히 일치하는 아이콘을 연결하고 현재 아이템·효과·포션 버프만 저장한다.
         /// (느슨한 이름 검색이 아니라 경로 정확 매칭이라 오검색 위험이 없음.)
         /// </summary>
         [MenuItem("DataLoader/Item Data Table/3. Insert Icons")]
@@ -337,6 +342,7 @@ namespace DataSystem
 
                     asset.uniqueEffect.icon = icon;
                     EditorUtility.SetDirty(asset.uniqueEffect);
+                    AssetDatabase.SaveAssetIfDirty(asset.uniqueEffect);
                     effectIconsCopied++;
                 }
 
@@ -345,10 +351,11 @@ namespace DataSystem
                 {
                     asset.potionBuff.icon = icon;
                     EditorUtility.SetDirty(asset.potionBuff);
+                    AssetDatabase.SaveAssetIfDirty(asset.potionBuff);
                 }
+                AssetDatabase.SaveAssetIfDirty(asset);
             }
 
-            AssetDatabase.SaveAssets();
             Debug.Log($"[ItemDataTable] 아이콘 연결 완료. 성공 {matched}, 실패 {missing} " +
                       $"(고유 효과에 복사 {effectIconsCopied}건)");
         }
@@ -378,7 +385,7 @@ namespace DataSystem
         }
 
         /// <summary>
-        /// 고유 효과 엑셀을 먼저 SO로 변환한 뒤, ItemDefinitionSO.uniqueEffectId 기준으로
+        /// SW 수정: Editor에서 효과 생성·전체 연결 검증이 성공한 뒤, ItemDefinitionSO.uniqueEffectId 기준으로
         /// 같은 이름(확장자 제외)의 UniqueEffectSO를 찾아 연결한다.
         ///
         /// !! 변환을 먼저 하는 이유: 연결만 하면 엑셀에서 새로 추가·수정한 고유 효과가 아직 SO로
@@ -387,24 +394,37 @@ namespace DataSystem
         /// </summary>
         [MenuItem("DataLoader/Item Data Table/4. Insert Unique Effects")]
         public static void InsertUniqueEffects()
+            => TryInsertUniqueEffects();
+
+        /// <summary>SW 수정: Editor에서 효과 생성·전체 참조 검증 실패를 호출부에 전달하고 기존 연결을 유지한다. 성공 시 신규 효과의 아이콘도 연결한다.</summary>
+        private static bool TryInsertUniqueEffects()
         {
             Debug.Log("[ItemDataTable] 고유효과 엑셀 -> SO 변환 먼저 수행합니다.");
             if (!UniqueEffectTableSOImporter.RunExcelToSoWithDefaultPaths())
             {
-                Debug.LogWarning("[ItemDataTable] 고유효과 변환을 건너뛰었습니다. " +
-                                 "이미 만들어져 있는 SO만으로 연결을 시도합니다.");
+                Debug.LogError("[ItemDataTable] 고유효과 생성 실패로 연결을 중단합니다. 기존 효과 연결은 유지됩니다.");
+                return false;
             }
 
             ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(ItemDatabasePath);
             if (database == null)
             {
                 Debug.LogWarning($"[ItemDataTable] ItemDatabaseSO를 찾을 수 없습니다: {ItemDatabasePath}");
-                return;
+                return false;
             }
 
             int matched = 0;
-            int missing = 0;
             int skipped = 0;
+
+            // SW 수정: 연결 대상 전체를 먼저 검증해 일부 아이템만 새 효과로 바뀌는 상태를 막는다.
+            foreach (ItemDefinitionSO asset in database.allItems)
+            {
+                if (asset == null || string.IsNullOrWhiteSpace(asset.uniqueEffectId)) continue;
+                string path = CombineAssetPath(UniqueEffectFolder, asset.uniqueEffectId.Trim() + ".asset");
+                if (AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(path) != null) continue;
+                Debug.LogError($"[ItemDataTable] 고유효과가 없어 전체 연결을 중단합니다: {path} ({asset.itemName})");
+                return false;
+            }
 
             foreach (ItemDefinitionSO asset in database.allItems)
             {
@@ -417,27 +437,28 @@ namespace DataSystem
                     continue;
                 }
 
-                string effectPath = CombineAssetPath(UniqueEffectFolder, asset.uniqueEffectId + ".asset");
+                string effectPath = CombineAssetPath(UniqueEffectFolder, asset.uniqueEffectId.Trim() + ".asset");
                 UniqueEffectSO effect = AssetDatabase.LoadAssetAtPath<UniqueEffectSO>(effectPath);
-
-                if (effect == null)
-                {
-                    Debug.LogWarning($"[ItemDataTable] 고유효과를 못 찾았습니다: {effectPath} ({asset.itemName})");
-                    missing++;
-                    continue;
-                }
 
                 asset.uniqueEffect = effect;
                 EditorUtility.SetDirty(asset);
+                AssetDatabase.SaveAssetIfDirty(asset);
+                // SW 수정: 아이콘 단계 이후 새 SO가 연결되어도 같은 무기 아이콘을 유지한다.
+                if (asset.icon != null && effect.icon != asset.icon)
+                {
+                    effect.icon = asset.icon;
+                    EditorUtility.SetDirty(effect);
+                    AssetDatabase.SaveAssetIfDirty(effect);
+                }
                 matched++;
             }
 
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[ItemDataTable] 고유효과 연결 완료. 성공 {matched}, 실패 {missing}, 대상 없음(스킵) {skipped}");
+            Debug.Log($"[ItemDataTable] 고유효과 연결 완료. 성공 {matched}, 대상 없음(스킵) {skipped}");
+            return true;
         }
 
         /// <summary>
-        /// 1~4단계를 한 번에 실행한다. 엑셀·JSON 모두 사전 설정된 기본 경로를 우선 사용하며,
+        /// SW 수정: Editor에서 1~4단계를 실행하며 효과 생성·연결 실패 시 중단한다. 엑셀·JSON 모두 사전 설정된 기본 경로를 우선 사용하며,
         /// 기본 엑셀이 없을 때만 파일 선택 대화상자로 넘어간다(개별 단계 메뉴와 동일한 방침).
         /// </summary>
         [MenuItem("DataLoader/Item Data Table/0. Run All Steps")]
@@ -461,7 +482,8 @@ namespace DataSystem
 
             // 이 단계가 내부에서 고유효과 엑셀 -> SO 변환을 먼저 수행한 뒤 연결한다.
             Debug.Log("[ItemDataTable] 4/4: 고유효과 변환 및 연결 중...");
-            InsertUniqueEffects();
+            if (!TryInsertUniqueEffects())
+                return;
 
             Debug.Log("[ItemDataTable] ===== 통합 실행 완료 =====");
         }

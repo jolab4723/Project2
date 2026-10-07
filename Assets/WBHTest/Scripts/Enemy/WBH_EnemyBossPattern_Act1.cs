@@ -14,7 +14,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
     private float dashTargetRange = 30f;    // 2페) 돌진 타겟 설정 사거리
     private float dashDistance = 30f;       // 2페) 최대 돌진 거리
-    private float dashDuration = 0.8f;      // 2페) 돌진 시간
+    private float dashDuration = 0.2f;      // 2페) 돌진 시간
     private float dashReadyDuration = 1f;  // 2페) 돌진 대기 시간
     private float jumpTargetRange = 20f;    // 2페) 낙하공격 타겟 설정 최대 거리(최대 낙하공격 사거리)
 
@@ -99,7 +99,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
         if (missileTimer <= 0f)
         {
             Vector3[] impactPoints = CreateMissilePoints();
-            if(owner.Combat.TryMissile(impactPoints, missileExplsionRadius,missileWarningDuration, missileRecoveryDuration, owner.IndicatorSpawner))
+            if(owner.Combat.TryMissile(impactPoints, missileExplsionRadius,missileWarningDuration, missileRecoveryDuration, owner.IndicatorSpawner, WBH_EnemyEffectCue.Boss_Act1_MissileExplosion))
             {
                 owner.enemyAnimation.PlaySkill(4);
                 missileTimer = missileCooldown;
@@ -114,7 +114,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
             return;
         }
 
-        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5))
+        if(burstTimer <= 0f && owner.Combat.TryShootBurst(5, WBH_EnemyEffectCue.Boss_Act1_Shoot))
         {
             burstTimer = burstCooldown;
         }
@@ -154,6 +154,7 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     }
 
     // 페이즈 전환
+    /// <summary>SW 수정: 전환 공격이 시작된 경우에만 페이즈 외형에 전환 시작을 알린다.</summary>
     private void EnterPhaseTwo()
     {
         if (isPhaseTwo || isPhaseTransition)
@@ -165,13 +166,17 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
 
         Vector3[] impactPoints = CreatePhaseMissilePoints();
 
-        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, FormChange);
-        owner.enemyAnimation.PlaySkill(5);
+        bool started = owner.Combat.TryMissile(impactPoints, transitionExplosionRadius, transitionWarningDuration, transitionRecoveryDuration, owner.IndicatorSpawner, WBH_EnemyEffectCue.Boss_Act1_MissileExplosion ,FormChange);
 
         if(!started) // 특이 오류로 페이즈 전환 실패 시 재시도.
         {
+            // SW 수정: 전환 공격이 시작되지 않은 프레임에는 전환 연출(네트워크 표시 포함)을 요청하지 않는다.
             isPhaseTransition = false;
+            return;
         }
+
+        owner.enemyAnimation.PlaySkill(WBH_EnemyAnimation.TransitionPhaseSkillId);
+        phaseView?.NotifyTransitionStarted();
     }
 
     private void FormChange()
@@ -185,10 +190,13 @@ public class WBH_EnemyBossPattern_Act1 : WBH_IEnemyPattern
     }
 
     // 페이즈 전환 완료
+    /// <summary>SW 수정: 보스가 사라졌거나 사망했으면 완료 처리를 중단하고, 살아 있으면 페이즈 상태 갱신 후 외형에 완료를 알린다.</summary>
     private void CompletePhaseTwoTransiton()
     {
+        if (owner == null || owner.Status.IsDead) return;
         isPhaseTwo = true;
         isPhaseTransition = false;
+        phaseView?.NotifyTransitionCompleted();
 
         dashTimer = 0f;
         jumpTimer = 0f;

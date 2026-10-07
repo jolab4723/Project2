@@ -716,7 +716,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1372792099896474771}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
+  m_LocalRotation: {x: -0.7069834, y: 0, z: 0, w: 0.7072302}
   m_LocalPosition: {x: 1.04039, y: -1.08432, z: -1.8576}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
@@ -1186,7 +1186,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.520195, y: 0.83, z: 0.9288}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 689870388133230297}
   - {fileID: 3612891926958882026}
@@ -2380,7 +2380,7 @@ Transform:
   m_GameObject: {fileID: 3895472018608072994}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.87, z: 1.345}
+  m_LocalPosition: {x: 0, y: 1.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2750,7 +2750,7 @@ Transform:
   m_GameObject: {fileID: 4445623979006266443}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.7, z: 1.34}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3208,6 +3208,37 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.000000029802322, y: 1.0916277, z: 0.010198057}
     m_Extent: {x: 0.39559606, y: 0.11284804, z: 0.270138}
   m_DirtyAABB: 0
+--- !u!1 &5185137459638852076
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3266729944174951839}
+  m_Layer: 0
+  m_Name: EffectPoint(Muzzle)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3266729944174951839
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5185137459638852076}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8440374778960160327}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5274640136026078084
 GameObject:
   m_ObjectHideFlags: 0
@@ -3367,7 +3398,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1072797204313020006}
   m_Layer: 0
-  m_Name: EffectPoint
+  m_Name: EffectPoint(Body)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3382,7 +3413,7 @@ Transform:
   m_GameObject: {fileID: 6173305681937534433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.567, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4040,7 +4071,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7485591976047717803}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.9616736, y: 0.0003738079, z: -0.0025145058, w: -0.27418488}
+  m_LocalRotation: {x: 0.9616737, y: 0.00037380794, z: -0.002514506, w: -0.2741849}
   m_LocalPosition: {x: -0.0000005067559, y: 0.59969455, z: -0.0000016689298}
   m_LocalScale: {x: 0.9999998, y: 0.99999976, z: 0.99999964}
   m_ConstrainProportionsScale: 0
@@ -5347,16 +5378,14 @@ GameObject:
   - component: {fileID: 8440374778960160327}
   - component: {fileID: 2576640563854703677}
   - component: {fileID: 5124921754753295756}
+  - component: {fileID: 6327803660096634659}
   - component: {fileID: 4879835452226055087}
   - component: {fileID: 8674113310717361948}
   - component: {fileID: 4915129754286342274}
   - component: {fileID: 2886216172706041619}
-  - component: {fileID: 4863905477784235105}
-  - component: {fileID: 6277946766306180021}
   - component: {fileID: 3439901779823102211}
   - component: {fileID: 3087450008224212433}
   - component: {fileID: 7056045415955417540}
-  - component: {fileID: 6327803660096634659}
   - component: {fileID: 5021685256685420365}
   - component: {fileID: 8473196466248690649}
   - component: {fileID: 5297122012163549294}
@@ -5366,6 +5395,7 @@ GameObject:
   - component: {fileID: -6500549865544642902}
   - component: {fileID: 5074370236784360905}
   - component: {fileID: 3708411348323145265}
+  - component: {fileID: 4905454548051003754}
   m_Layer: 10
   m_Name: Boss_Act_01
   m_TagString: Untagged
@@ -5390,6 +5420,7 @@ Transform:
   - {fileID: 287411858876415683}
   - {fileID: 5945891765140044628}
   - {fileID: 1072797204313020006}
+  - {fileID: 3266729944174951839}
   - {fileID: 7534506397720038980}
   - {fileID: 8022356021190811761}
   m_Father: {fileID: 0}
@@ -5428,7 +5459,7 @@ NavMeshAgent:
   m_Radius: 0.5
   m_Speed: 3.5
   m_Acceleration: 8
-  avoidancePriority: 50
+  avoidancePriority: 0
   m_AngularSpeed: 120
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
@@ -5438,6 +5469,29 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!136 &6327803660096634659
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9109071794180357373}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1.07
+  m_Height: 1.3
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.65, z: 0}
 --- !u!114 &4879835452226055087
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5491,34 +5545,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
---- !u!114 &4863905477784235105
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9109071794180357373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
-  poolManager: {fileID: 0}
---- !u!114 &6277946766306180021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9109071794180357373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27e17d330003664b8f6ad78081eaf2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
-  poolManager: {fileID: 0}
-  effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &3439901779823102211
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5557,9 +5585,8 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 5945891765140044628}
   grenadePoint: {fileID: 287411858876415683}
-  meleeEffectPoint: {fileID: 1072797204313020006}
-  normalMeleeEffect: {fileID: 0}
   enemyAnimation: {fileID: 0}
+  isShowSkillRange: 0
 --- !u!114 &3087450008224212433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5573,7 +5600,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 1072797204313020006}
-  effectSpawner: {fileID: 0}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -5581,6 +5607,8 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+  markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &7056045415955417540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5593,29 +5621,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 591aa1c30ce9cff429423ae31e8addf7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyController
---- !u!136 &6327803660096634659
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9109071794180357373}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1.07
-  m_Height: 1.3
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.65, z: 0}
 --- !u!114 &5021685256685420365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5629,7 +5634,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 7534506397720038980}
-  creditTextRoot: {fileID: 0}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 0}
   hpBarSlider: {fileID: 0}
   hpBarVisibleTime: 2
@@ -5648,9 +5653,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b7e15b96c6b62842981894d8f4cf160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_IndicatorSpawner
-  effectSpawner: {fileID: 4863905477784235105}
-  circleIndicator: {fileID: 11400000, guid: eb80ea38af7a15e448cc14ff16cce565, type: 2}
-  rectIndicator: {fileID: 11400000, guid: dc3d852e09565a34c98adec24e471cc8, type: 2}
+  circleIndicator: {fileID: 11400000, guid: 03b7f8c678f2ceb46a7160b3d37c9f43, type: 2}
+  rectIndicator: {fileID: 11400000, guid: a8b278bb35d9b6544bca9736895380d1, type: 2}
+  cone60Indicator: {fileID: 0}
+  cone150Indicator: {fileID: 0}
+  cone180Indicator: {fileID: 0}
 --- !u!114 &5297122012163549294
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5846,6 +5853,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &3708411348323145265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5864,7 +5873,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 8022356021190811761}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -6117,3 +6126,173 @@ MonoBehaviour:
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &4905454548051003754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9109071794180357373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings:
+  - cue: 55000
+    data: {fileID: 11400000, guid: 48698b60a1f6b894ca050a5150667919, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: 4f2aecfc30657174fb2c4d1b9a75e162, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 4a578695dfac4422d81299af3481ea10, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 55001
+    data: {fileID: 11400000, guid: d49283a18a7c98b4ab81b1440588588b, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: 4f2aecfc30657174fb2c4d1b9a75e162, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 22b2851601b4cf04986e0e12146d0640, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 4a578695dfac4422d81299af3481ea10, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 55002
+    data: {fileID: 11400000, guid: f1b1d08830c9d8f42be71918f1b5a08c, type: 2}
+    anchor: {fileID: 3266729944174951839}
+    sounds:
+    - clip: {fileID: 8300000, guid: e3a46507263c1f04d9cee05cf2ebc532, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 55003
+    data: {fileID: 11400000, guid: e8458451b668ccb469f606297a2d165f, type: 2}
+    anchor: {fileID: 3266729944174951839}
+    sounds:
+    - clip: {fileID: 8300000, guid: 81e6296da04a0f1418183c9eaca76029, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 55004
+    data: {fileID: 11400000, guid: 11326cbab968e914bbdb3f34fce2b032, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: cfa6f984048701e4594dedf120f548c5, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 8581f806dddef8046b4942de05b897be, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 55005
+    data: {fileID: 11400000, guid: 0c09652d50ef03a44a3e395c7ba661b7, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: cfa6f984048701e4594dedf120f548c5, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.1
+    - clip: {fileID: 8300000, guid: 8581f806dddef8046b4942de05b897be, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.1
+    - clip: {fileID: 8300000, guid: 8b3f676fe7b41044495a2964396b8ba3, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: -0.1
+    - clip: {fileID: 8300000, guid: cfa6f984048701e4594dedf120f548c5, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.6
+    - clip: {fileID: 8300000, guid: 8581f806dddef8046b4942de05b897be, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.6
+    - clip: {fileID: 8300000, guid: 8b3f676fe7b41044495a2964396b8ba3, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0.6
+  - cue: 55006
+    data: {fileID: 11400000, guid: 6f0c8931b1e4d9b48a1a444209fbeffc, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: f0bba60dd1813bd40af826dbaa99b983, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+  - cue: 55007
+    data: {fileID: 11400000, guid: 3817a3e2897e8a446aaba6da296faa25, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55008
+    data: {fileID: 11400000, guid: 9b90486a40233e0489ab2cc8d15abd53, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: 6c641842185384646b603322cc7e7559, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: 8334e10be38a319489f503c45f1c1822, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+    - clip: {fileID: 8300000, guid: cede7597e6cf55a48959c16de639f373, type: 3}
+      volume: 1
+      baseTime: 0.2
+      offset: 0
+  - cue: 55009
+    data: {fileID: 11400000, guid: 85f50c57c7baedc4f8c4c6fd5765cd44, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds: []
+  - cue: 55010
+    data: {fileID: 11400000, guid: 365f82f369b96c844a9e169736c53d39, type: 2}
+    anchor: {fileID: 1072797204313020006}
+    sounds:
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0.3
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0.5
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 0.7
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 1
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 1.2
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 1.3
+    - clip: {fileID: 8300000, guid: 746e8b584521ae04eb1a96a21fd4c581, type: 3}
+      volume: 1
+      baseTime: 0
+      offset: 1.5

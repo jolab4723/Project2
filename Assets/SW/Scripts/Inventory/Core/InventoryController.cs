@@ -9,12 +9,30 @@ using UnityEngine;
 public class InventoryController : MonoBehaviour, IItemReceiver
 {
     public static InventoryController Instance { get; private set; }
+    internal ChatSession SinglePlayerMessages { get; } = new();
+
+    internal void ReportSinglePlayerMessage(ChatKind kind, string text)
+    {
+        if (Instance != this || Mirror.NetworkClient.active || Mirror.NetworkServer.active ||
+            GetComponentInParent<Mirror.NetworkIdentity>() != null) return;
+        SinglePlayerMessages.Append(kind, text);
+    }
 
     public event System.Action<InventoryItem> OnItemAdded;
     public event System.Action<InventoryItem> OnItemRemoved;
     public event System.Action<InventoryItem> OnItemOwnershipGained;
     public event System.Action<InventoryItem> OnItemOwnershipLost;
     public event System.Action<string> OnLogMessage;
+    // 서버 요청 전에 끝나는 실제 장비 UI 거절만 전달한다. 복제/복원 로그와 분리한다.
+    public event System.Action<EquipResult> EquipmentRejected;
+
+    public void ReportEquipmentRejection(EquipResult result)
+    {
+        if (result == EquipResult.Success || result == EquipResult.Swapped) return;
+        PrintLog(EquipMessageMapper.GetMessage(result));
+        ReportSinglePlayerMessage(ChatKind.Warning, EquipMessageMapper.GetMessage(result));
+        EquipmentRejected?.Invoke(result);
+    }
 
     private static readonly List<InventoryController> all = new List<InventoryController>();
 
@@ -30,8 +48,40 @@ public class InventoryController : MonoBehaviour, IItemReceiver
     public EquipmentSystem EquipmentSystem => equipmentSystem;
     public InventoryGrid PlayerGrid => playerGrid;
     public PlayerWallet PlayerWallet => playerWallet;
+    public PlayerContext BoundPlayer { get; private set; }
 
-    // ponytail: 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
+    /// <summary>씬 인벤토리를 한 싱글 플레이어에게만 연결한다. 아이템과 지갑은 그대로 유지한다.</summary>
+    internal bool TryBindPlayer(PlayerContext player)
+    {
+        if (player == null || (BoundPlayer != null && BoundPlayer != player))
+            return false;
+        BoundPlayer = player;
+        return true;
+    }
+
+    internal void UnbindPlayer(PlayerContext player)
+    {
+        if (BoundPlayer == player)
+            BoundPlayer = null;
+    }
+
+    public static EquipmentSystem GetLocalEquipmentSystem(Component owner)
+    {
+        if (owner == null)
+            return null;
+
+        var identity = owner.GetComponentInParent<Mirror.NetworkIdentity>();
+        if (identity != null && !identity.isLocalPlayer)
+            return null;
+
+        PlayerContext context = owner.GetComponentInParent<PlayerContext>();
+        if (context != null)
+            return context.HasInventoryRuntime ? context.Equipment : null;
+
+        return Instance?.EquipmentSystem;
+    }
+
+    // 구형 싱글플레이 Prefab/Scene의 직렬화 참조를 보존한다.
     // 해당 자산들이 InventoryView로 전환된 뒤 함께 제거한다.
     public TextMeshProUGUI logText;
     [SerializeField] public EquipSlotUI[] allEquipSlots = System.Array.Empty<EquipSlotUI>();
@@ -202,11 +252,48 @@ public class InventoryController : MonoBehaviour, IItemReceiver
 
         return InventoryRemoveResult.Success;
     }
-    public bool AddItem(ItemInstance itemData)
+    public bool AddItem(ItemInstance itemData) => AddItem(itemData, false);
+
+    public bool AddWorldItem(ItemInstance itemData) => AddItem(itemData, true);
+
+    private static ItemLabelDatabaseSO itemLabelsCache;
+    private static UILabelDatabaseSO uiLabelsCache;
+
+    private static ItemLabelDatabaseSO ItemLabels =>
+        itemLabelsCache ??= Resources.Load<ItemLabelDatabaseSO>("DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase");
+
+    private static UILabelDatabaseSO UILabels =>
+        uiLabelsCache ??= Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
+    /// <summary>
+    /// 채팅 로그에 쓸 아이템 이름을 현재 언어로 가져온다. 예전엔 definition.itemName(한국어 원본)을
+    /// 그대로 써서, 같은 아이템이 툴팁에서는 번역되고 획득 알림에서는 한국어로 나왔다.
+    /// 조회 규칙과 폴백은 아이템 툴팁(TooltipUI.GetItemName)과 동일하게 맞춘다 - 라벨 DB에 itemId가
+    /// 없으면 definition.itemName으로, 아이템 자체가 없으면 라벨 DB의 대체 문구로 폴백한다.
+    /// </summary>
+    private static string GetDisplayItemName(ItemInstance itemData)
+    {
+        ItemDefinitionSO definition = itemData?.definition;
+        if (definition == null)
+        {
+            string fallbackName = UILabels != null ? UILabels.GetLabel("chat_ui.item_fallback_name") : null;
+            return string.IsNullOrEmpty(fallbackName) ? "아이템" : fallbackName;
+        }
+
+        if (ItemLabels != null && ItemLabels.TryGetName(definition.itemId, out string localized)
+            && !string.IsNullOrWhiteSpace(localized))
+        {
+            return localized;
+        }
+
+        return definition.itemName;
+    }
+
+    private bool AddItem(ItemInstance itemData, bool fromWorld)
     {
         InventoryAddResultData result = TryAddItemData(itemData);
 
-        string itemName = itemData?.definition?.itemName ?? "아이템";
+        string itemName = GetDisplayItemName(itemData);
 
         PrintLog(
             InventoryMessageMapper.GetMessage(
@@ -215,6 +302,13 @@ public class InventoryController : MonoBehaviour, IItemReceiver
                 result.X,
                 result.Y));
 
+        if (fromWorld)
+        {
+            bool acquired = result.Result == InventoryAddResult.Success;
+            ReportSinglePlayerMessage(acquired ? ChatKind.Acquisition : ChatKind.Warning,
+                acquired ? InventoryMessageMapper.GetColoredAcquisitionMessage(itemName, itemData.definition.rarity) :
+                InventoryMessageMapper.GetMessage(result.Result, itemName, result.X, result.Y));
+        }
         return result.Result == InventoryAddResult.Success;
     }
 

@@ -293,8 +293,6 @@ GameObject:
   - component: {fileID: 2101430495209445057}
   - component: {fileID: 5273951878719875630}
   - component: {fileID: 6223934606858360920}
-  - component: {fileID: 6685743131160677657}
-  - component: {fileID: 2340785647109584683}
   - component: {fileID: 5126077215333453353}
   - component: {fileID: 3940889281802786302}
   - component: {fileID: 5791879278000763495}
@@ -308,6 +306,7 @@ GameObject:
   - component: {fileID: -3279198979391463984}
   - component: {fileID: 8251811494787279914}
   - component: {fileID: -1604658709540516310}
+  - component: {fileID: -5926656623891585187}
   m_Layer: 10
   m_Name: Normal_Range_01
   m_TagString: Untagged
@@ -432,34 +431,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
---- !u!114 &6685743131160677657
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7354258622308962069}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
-  poolManager: {fileID: 0}
---- !u!114 &2340785647109584683
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7354258622308962069}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27e17d330003664b8f6ad78081eaf2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
-  poolManager: {fileID: 0}
-  effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &5126077215333453353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -498,8 +471,6 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 7296589998092933746}
   grenadePoint: {fileID: 0}
-  meleeEffectPoint: {fileID: 0}
-  normalMeleeEffect: {fileID: 0}
   enemyAnimation: {fileID: 0}
 --- !u!114 &3940889281802786302
 MonoBehaviour:
@@ -514,7 +485,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 4678223037892282004}
-  effectSpawner: {fileID: 6685743131160677657}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -522,6 +492,8 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+  markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &5791879278000763495
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -570,6 +542,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyView
   damageTextRoot: {fileID: 6949887319893321166}
+  creditTextOffset: {x: 1, y: -0.25}
   hpBarRoot: {fileID: 1459917115417315786}
   hpBarSlider: {fileID: 6356590335102948815}
   hpBarVisibleTime: 2
@@ -632,6 +605,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &8936296402507302616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -650,7 +625,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 6262370317833176431}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -896,7 +871,7 @@ MonoBehaviour:
   seeThroughTextureUVSpace: 0
   seeThroughTextureScale: 1
   seeThroughChildrenSortingMode: 0
-  rmsCount: 8
+  rmsCount: 1
   hitFxInitialIntensity: 0
   hitFxMode: 0
   hitFXTriggerMode: 0
@@ -939,15 +914,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4bc77c9357b1a4e429f8020b72582e5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyGradeVisual
-  scaleTarget: {fileID: 1079042634644656969, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
+  scaleTarget: {fileID: 6209048400642532527}
   targetRenderers:
-  - {fileID: 2304661118237759057, guid: ae42c1f94b6360d4ab4a3755ca2723c1, type: 3}
+  - {fileID: 1351654058100173822}
   advancedScaleMul: 1.4
   advancedTint: {r: 1, g: 0, b: 0, a: 1}
   tintStrength: 0.5
   metallicBoost: 0.15
   smoothnessBoost: 0.1
   advancedEffect: {fileID: 7843845256471315080}
+--- !u!114 &-5926656623891585187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7354258622308962069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings:
+  - cue: 11000
+    data: {fileID: 11400000, guid: 921e8e4b8a3f4d845ac56016342f1ba3, type: 2}
+    anchor: {fileID: 4678223037892282004}
+    sounds:
+    - clip: {fileID: 8300000, guid: 09a5a83bc48d6984a965ea2bc02446ab, type: 3}
+      volume: 0.15
+      baseTime: 0.2
+      offset: -0.2
 --- !u!1 &7418149949931920296
 GameObject:
   m_ObjectHideFlags: 0
@@ -973,7 +970,7 @@ Transform:
   m_GameObject: {fileID: 7418149949931920296}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.113, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1114,13 +1111,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4678223037892282004}
     m_Modifications:
+    - target: {fileID: 561656922471711041, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288592451674669027, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2465863458732106770, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.76
+      value: -0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1157,6 +1166,22 @@ PrefabInstance:
     - target: {fileID: 4006912020030558002, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_Name
       value: AdvancedEffect
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421436821039632714, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7255142433668415463, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7893394686427857043, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9056965578431297753, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: item.weapon.grenadelauncher.gravitywell
   itemName: "\uC911\uB825 \uC6B0\uBB3C"
   category: 0
-  rarity: 3
+  rarity: 4
   description: "\uC911\uB825 \uCF54\uC5B4\uB97C \uC548\uC815\uD654\uD55C \uC720\uD0C4\uBC1C\uC0AC\uAE30\uC785\uB2C8\uB2E4."
   characterClass: 1
   weaponType: 3
@@ -27,13 +27,15 @@ MonoBehaviour:
   mainOptions:
   - statType: 2
     value: 48
+  - statType: 9
+    value: -45
   upgradeBonusPerLevel: 0.1
   elementalBonusConfig: {fileID: 11400000, guid: 3a0f6b7c8d8a403418e336d9d1b60d27, type: 2}
   weaponEnchantElement: 0
   combatPool: {fileID: 11400000, guid: 3b6ad5c2f7574944ea8aac22488bbf09, type: 2}
   utilityPool: {fileID: 11400000, guid: 70842a6110f90a348822406a5722983e, type: 2}
-  uniqueEffect: {fileID: 0}
-  uniqueEffectId: 
+  uniqueEffect: {fileID: 11400000, guid: d27e41d0c7d799e43be916d22d2fea81, type: 2}
+  uniqueEffectId: UE_GravityWellField
   potionEffectType: 0
   potionStatType: 0
   potionEffectValue: 0

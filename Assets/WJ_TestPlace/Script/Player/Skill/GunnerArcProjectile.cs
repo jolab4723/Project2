@@ -11,6 +11,15 @@ using UnityEngine;
 /// </summary>
 public class GunnerArcProjectile : MonoBehaviour
 {
+    [Header("폭발 범위 표시")]
+    [SerializeField] private bool showExplosionRange = true;
+    [SerializeField] private Color explosionRangeColor = new Color(1f, 0.45f, 0.1f, 0.35f);
+    [SerializeField] private float explosionRangeDuration = 0.25f;
+
+    /// <summary>SW 수정: 실제 폭발 범위 표시의 위치·반경·색·수명을 외부 시각 경로에 전달합니다.</summary>
+    public event System.Action<Vector3, float, Color, float> ExplosionRangePresented;
+
+
     private Vector3 direction;
     private float speed;
     private float maxDistance;
@@ -22,12 +31,32 @@ public class GunnerArcProjectile : MonoBehaviour
     private Vector3 startPosition;
     private bool initialized;
 
+    private WBH_PlayerEffect effectOwner;
+    private WBH_EffectData explosionEffectData;
+    private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 explosionEffectScale = Vector3.one;
+    private int wallLayerMask;
+    private int propLayerMask;
+
     /// <summary>explodeOnHit=false면 폭발 반경 판정 없이 실제로 맞은 대상 하나에게만 데미지를 준다
     /// (아크 버스터 진화2 "아크 불릿"이 폭발 속성을 빼기 위해 사용 - 118번).
     /// visualScale은 프리팹 원본 크기에 곱하는 배율(기본 1 = 그대로) - 아크 캐논(진화3)처럼 폭발 반경이
     /// 커진 진화가 실제 판정 크기에 맞게 더 커 보이도록 쓴다(133번 후속).</summary>
-    public void Initialize(Vector3 direction, float speed, float maxDistance, float explosionRadius,
-        LayerMask targetLayer, WBH_DamageRequest damageRequest, bool explodeOnHit = true, float visualScale = 1f)
+    /// 
+    private void Awake()
+    {
+        wallLayerMask = LayerMask.GetMask("Wall");
+        propLayerMask = LayerMask.GetMask("Prop");
+    }
+
+    public void Initialize(Vector3 direction,
+                           float speed,
+                           float maxDistance,
+                           float explosionRadius,
+                           LayerMask targetLayer,
+                           WBH_DamageRequest damageRequest,
+                           bool explodeOnHit = true,
+                           float visualScale = 1f)
     {
         this.direction = direction.normalized;
         this.speed = speed;
@@ -60,21 +89,46 @@ public class GunnerArcProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
-            return; // 대상 레이어가 아니면 무시(적이 아니면 관통)
+        int otherLayer = other.gameObject.layer;
+        bool isTarget = (targetLayer.value & (1 << otherLayer)) != 0;
+        bool isWall = (wallLayerMask & (1 << otherLayer)) != 0;
+        bool isProp = (propLayerMask & (1 << otherLayer)) != 0;
 
+        if (!isTarget && !isWall && !isProp)
+            return;
+
+        // 폭발형 탄환은 Enemy와 Wall 모두 충돌 즉시 폭발
         if (explodeOnHit)
+        {
             Explode();
-        else
+            return;
+        }
+
+        // 비폭발형 탄환은 Enemy에만 피해 적용
+        if (isTarget)
             HitSingleTarget(other);
+        else
+        {
+            initialized = false;
+            Destroy(gameObject);
+        }
     }
 
+    /// <summary>SW 수정: 기존 폭발 판정과 표시를 유지하며 범위 표시 요청을 함께 알립니다.</summary>
     private void Explode()
     {
+        if(showExplosionRange)
+        {
+            SkillRangeVisual.ShowSector(transform.position, Vector3.forward, explosionRadius, 360, explosionRangeColor, explosionRangeDuration);
+            ExplosionRangePresented?.Invoke(transform.position, explosionRadius, explosionRangeColor, explosionRangeDuration);
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, targetLayer);
 
         foreach (Collider hit in hits)
             DealDamage(hit);
+
+        PlayExplosionEffect();
 
         initialized = false;
         Destroy(gameObject);
@@ -89,13 +143,52 @@ public class GunnerArcProjectile : MonoBehaviour
         Destroy(gameObject);
     }
 
+    /// <summary>
+    /// SW 수정: 아크 투사체의 명중 요청을 재구성할 때 원본 피해 원인과 공격 식별자를 보존합니다.
+    /// </summary>
     private void DealDamage(Collider target)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
 
-        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-            damageRequest.AttackType, damageRequest.ElementType, damageRequest.DamageMultiplier, damageRequest.StatusEffect);
+        WBH_EffectData hitEffectData = explosionEffectData ?? damageRequest.EffectData;
+
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = transform.position - target.bounds.center;
+
+        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                             combatTarget,
+                                                             damageRequest.AttackType,
+                                                             damageRequest.ElementType,
+                                                             damageRequest.DamageMultiplier,
+                                                             damageRequest.StatusEffect,
+                                                             hitEffectData,
+                                                             hitPosition,
+                                                             lookDirection,
+                                                             damageRequest.DamageCause,
+                                                             damageRequest.AttackId);
         WBH_CombatManager.ProcessDamage(hitRequest);
+    }
+
+    // 이펙트 재생을 위한 준비 메서드
+    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
+    {
+        this.effectOwner = effectOwner;
+        explosionEffectCue = cue;
+        explosionEffectScale = scaleMultiplier;
+
+        explosionEffectData = null;
+        effectOwner?.TryGetEffectData(cue, out explosionEffectData);
+    }
+
+    private void PlayExplosionEffect()
+    {
+        if (effectOwner == null || explosionEffectCue == WBH_PlayerEffectCue.None)
+            return;
+
+        effectOwner.PlayWorldEffect(explosionEffectCue, transform.position, Quaternion.identity, explosionEffectScale);
     }
 }

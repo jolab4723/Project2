@@ -31,6 +31,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5920750190248701345}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1942965626924342871
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4279269585455943451}
+  m_Layer: 0
+  m_Name: RightHandGrip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4279269585455943451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942965626924342871}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.6239197, y: 0.40253597, z: 0.5039134, w: 0.44131652}
+  m_LocalPosition: {x: 0, y: 0.006, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5920750190248701345}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2972932530831649801
 GameObject:
   m_ObjectHideFlags: 0
@@ -55,8 +86,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2972932530831649801}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.015121021, z: 0.285}
+  m_LocalRotation: {x: 0.6830127, y: -0.18301271, z: -0.18301271, w: 0.6830127}
+  m_LocalPosition: {x: -0.013826605, y: 0.0656734, z: 0.29020002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -71,6 +102,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5920750190248701345}
+  - component: {fileID: 322967200637947376}
   m_Layer: 0
   m_Name: item.weapon.rifle.arcvector_WeaponVisual
   m_TagString: Untagged
@@ -86,16 +118,34 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6746365108184659213}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.03129, y: -0.012951, z: 0.053416}
+  m_LocalRotation: {x: -0.6239197, y: -0.40253597, z: -0.5039134, w: 0.44131652}
+  m_LocalPosition: {x: -0.026782425, y: -0.020281546, z: 0.0047700335}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 168349895286556931}
   - {fileID: 1183070088677516722}
   - {fileID: 6007719305448632}
+  - {fileID: 4279269585455943451}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &322967200637947376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6746365108184659213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 0
+  muzzle: {fileID: 6007719305448632}
+  muzzleVisualPrefab: {fileID: 1543855471809153725, guid: 487ff8f0d6e65214b887fcfdf5af667d, type: 3}
+  projectileVisualPrefab: {fileID: 3049025836245845379, guid: a5bd324d6ebe4c1459bc44177d7e3b73, type: 3}
+  impactVisualPrefab: {fileID: 876239912138402499, guid: 58c8ca089cc632f4bb2d37737acd2ef5, type: 3}
 --- !u!1001 &422388571680993000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -156,6 +206,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 573caa9b7eda93d4788b7445a5eb3b49, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 573caa9b7eda93d4788b7445a5eb3b49, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e27369b10e2ca1746a61e9c9458b96e5, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 573caa9b7eda93d4788b7445a5eb3b49, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1c39d8ae8536ffd44b9a5fc7f5ffbd77, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 573caa9b7eda93d4788b7445a5eb3b49, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: ed507017d9deb224e8a18f9a1e407327, type: 2}
     - target: {fileID: 919132149155446097, guid: 573caa9b7eda93d4788b7445a5eb3b49, type: 3}
       propertyPath: m_Name
       value: Model

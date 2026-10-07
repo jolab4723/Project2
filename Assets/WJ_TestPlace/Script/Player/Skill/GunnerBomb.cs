@@ -49,6 +49,26 @@ public class GunnerBomb : MonoBehaviour
 
     private bool landed;
     private bool initialized;
+    private YJ_BombLanding landingSound;
+
+    // 폭발 이펙트 재생을 위한 변수들
+    private WBH_PlayerEffect effectOwner;
+    private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 explosionEffectScale = Vector3.one;
+    private WBH_EffectData explosionEffectData;
+
+    private WBH_PlayerEffectCue secondExplosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 secondExplosionEffectScale = Vector3.one;
+    private WBH_EffectData secondExplosionEffectData;
+    private int wallLayerMask;
+    private int propLayerMask;
+
+    private void Awake()
+    {
+        landingSound = GetComponentInChildren<YJ_BombLanding>(true);
+        wallLayerMask = LayerMask.GetMask("Wall");
+        propLayerMask = LayerMask.GetMask("Prop");
+    }
 
     public void Initialize(Vector3 targetPosition, float throwSpeed, float arcHeight, float fuseSeconds,
         float explosionRadius, LayerMask targetLayer, WBH_DamageRequest damageRequest,
@@ -103,6 +123,10 @@ public class GunnerBomb : MonoBehaviour
         position.y += arcHeight * 4f * t * (1f - t);
         transform.position = position;
 
+        // 설정된 선행 시간에 재생한다. 중복 호출은 YJ_BombLanding에서 막는다.
+        if (landingSound != null && travelTime - currentTime <= landingSound.LandingSfxLeadTime)
+            landingSound.PlayLanding();
+
         if (t >= 1f)
         {
             landed = true;
@@ -122,8 +146,13 @@ public class GunnerBomb : MonoBehaviour
         if (!initialized)
             return;
 
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
-            return; // 대상 레이어가 아니면 무시
+        int otherLayer = other.gameObject.layer;
+        bool isTarget = (targetLayer.value & (1 << otherLayer)) != 0;
+        bool isWall = (wallLayerMask & (1 << otherLayer)) != 0;
+        bool isProp = (propLayerMask & (1 << otherLayer)) != 0;
+
+        if (!isTarget && !isWall &&!isProp)
+            return;
 
         Explode();
     }
@@ -132,7 +161,9 @@ public class GunnerBomb : MonoBehaviour
     {
         foreach (Collider hit in Physics.OverlapSphere(transform.position, explosionRadius, targetLayer))
         {
-            DealDamage(hit, damageRequest.DamageMultiplier);
+            DealDamage(hit,
+                       damageRequest.DamageMultiplier,
+                       explosionEffectData ?? damageRequest.EffectData);
 
             if (!hit.TryGetComponent<WBH_ICombat>(out var effectTarget))
                 continue;
@@ -151,6 +182,8 @@ public class GunnerBomb : MonoBehaviour
             zoneGO.AddComponent<GunnerSlowZone>().Initialize(slowZoneRadius, slowZoneDuration, slowSpeedMultiplier, targetLayer);
         }
 
+        PlayExplosionEffect(explosionEffectCue, explosionEffectScale);
+
         initialized = false;
 
         if (secondExplosionDelay > 0f)
@@ -165,18 +198,77 @@ public class GunnerBomb : MonoBehaviour
         yield return new WaitForSeconds(secondExplosionDelay);
 
         foreach (Collider hit in Physics.OverlapSphere(transform.position, secondExplosionRadius, targetLayer))
-            DealDamage(hit, damageRequest.DamageMultiplier * secondExplosionDamageMultiplier);
+            DealDamage(hit,
+                       damageRequest.DamageMultiplier * secondExplosionDamageMultiplier, 
+                       secondExplosionEffectData ?? damageRequest.EffectData);
+
+        PlayExplosionEffect(secondExplosionEffectCue, secondExplosionEffectScale);
 
         Destroy(gameObject);
     }
 
-    private void DealDamage(Collider target, float damageMultiplier)
+    /// <summary>
+    /// SW 수정: 폭탄의 각 폭발 명중 요청에 원본 피해 원인과 공격 식별자를 전달합니다.
+    /// </summary>
+    private void DealDamage(Collider target, float damageMultiplier, WBH_EffectData effectData)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
 
-        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-            damageRequest.AttackType, damageRequest.ElementType, damageMultiplier, damageRequest.StatusEffect);
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = transform.position - target.bounds.center;
+
+        WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                             combatTarget,
+                                                             damageRequest.AttackType, 
+                                                             damageRequest.ElementType, 
+                                                             damageMultiplier,
+                                                             damageRequest.StatusEffect,
+                                                             effectData,
+                                                             hitPosition,
+                                                             lookDirection,
+                                                             damageRequest.DamageCause,
+                                                             damageRequest.AttackId);
         WBH_CombatManager.ProcessDamage(hitRequest);
+    }
+
+    // 이펙트 재생을 위한 준비 메서드
+    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, 
+                                         WBH_PlayerEffectCue cue,
+                                         Vector3 scaleMultiplier,
+                                         WBH_PlayerEffectCue secondExplosionCue = WBH_PlayerEffectCue.None,
+                                         Vector3? secondExplosionScale = null)
+    {
+        this.effectOwner = effectOwner;
+
+        explosionEffectCue = cue;
+        explosionEffectScale = scaleMultiplier;
+
+        secondExplosionEffectCue = secondExplosionCue;
+        secondExplosionEffectScale = secondExplosionScale ?? Vector3.one;
+
+        explosionEffectData = null;
+        secondExplosionEffectData = null;
+
+        if (effectOwner == null)
+            return;
+
+        effectOwner.TryGetEffectData(explosionEffectCue, out explosionEffectData);
+
+        if(secondExplosionEffectCue != WBH_PlayerEffectCue.None)
+        {
+            effectOwner.TryGetEffectData(secondExplosionEffectCue, out secondExplosionEffectData);
+        }
+    }
+
+    private void PlayExplosionEffect(WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
+    {
+        if (effectOwner == null || cue == WBH_PlayerEffectCue.None)
+            return;
+
+        effectOwner.PlayWorldEffect(cue, transform.position, Quaternion.identity, scaleMultiplier);
     }
 }

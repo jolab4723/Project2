@@ -7,7 +7,7 @@ using UnityEngine;
 /// Recalculate()를 호출해주면 3단 공식으로 최종값을 갱신하고 OnStatChanged를 발행한다.
 ///
 /// !! maxHealth/attackPower/defensePower/maxMana/pen은 원래 int였는데 float로 전환함.
-///    (골드/레벨 제외 전부 float로 통일) 계산 결과 자체는 Mathf.Ceil로 올림 처리해서
+///    (크레딧/레벨 제외 전부 float로 통일) 계산 결과 자체는 Mathf.Ceil로 올림 처리해서
 ///    항상 정수 값을 갖지만, 타입은 float라 나중에 소수 보너스가 들어와도 안전함.
 /// </summary>
 [Serializable]
@@ -30,6 +30,10 @@ public class PlayerStat
     public float maxMana;
     public float pen;
     public float skillRange;
+    /// <summary>일반공격 피해 증감 %(0이면 영향 없음). 기준값이 없어 레이어 %를 그대로 더한다.</summary>
+    public float normalDamagePercent;
+    /// <summary>스킬 피해 증감 %(0이면 영향 없음). 기준값이 없어 레이어 %를 그대로 더한다.</summary>
+    public float skillDamagePercent;
     public float fireBonus;
     public float iceBonus;
     public float electricBonus;
@@ -41,6 +45,15 @@ public class PlayerStat
 
     /// <summary>스탯이 갱신될 때마다 발행. UI 등에서 구독해서 갱신.</summary>
     public event Action OnStatChanged;
+
+    /// <summary>
+    /// 외부 상태 소유자가 최종 수치를 일괄 반영한 뒤 변경을 한 번 알린다.
+    /// 수치를 다시 계산하거나 경험치·패시브를 변경하지 않는다.
+    /// </summary>
+    public void NotifyValuesChanged()
+    {
+        OnStatChanged?.Invoke();
+    }
 
     public PlayerStat(int startLevel = 1, float startExp = 0f)
     {
@@ -103,6 +116,12 @@ public class PlayerStat
             character.skillRangeFlat, equipment.skillRangeFlat, equipment.skillRangePercent,
             buff.skillRangePercent, buff.skillRangeFlat, passive.skillRangePercent, passive.skillRangeFlat));
 
+        // 피해 증감 %는 CalcFinal을 쓰지 않는다. CalcFinal은 "캐릭터 기본값에 장비/버프 %를 곱하는"
+        // 3단 공식인데, 이 둘은 기준이 되는 기본값 자체가 없는 순수 증감이라 레이어 %를 그대로 더한다.
+        // (캐릭터 레이어는 Flat만 채우므로 대상이 아니다 - ToCharacterStatSet 참고)
+        normalDamagePercent = equipment.normalDamagePercent + buff.normalDamagePercent + passive.normalDamagePercent;
+        skillDamagePercent = equipment.skillDamagePercent + buff.skillDamagePercent + passive.skillDamagePercent;
+
         fireBonus = Mathf.Max(0f, CalcFinal(
             character.fireBonusFlat, equipment.fireBonusFlat, equipment.fireBonusPercent,
             buff.fireBonusPercent, buff.fireBonusFlat, passive.fireBonusPercent, passive.fireBonusFlat));
@@ -119,21 +138,42 @@ public class PlayerStat
     }
 
     /// <summary>
-    /// 4단 공식: (캐릭터 + 장비고정) × (1+장비%) × (1+버프%) × (1+패시브%) + 버프고정 + 패시브고정
+    /// 스탯 최종값. 두 단계로 나눠서 계산한다.
+    ///
+    ///   기본 스펙 = (캐릭터 + 장비고정) × (1+장비%) × (1+패시브%) + 패시브고정
+    ///   최종      = 기본 스펙 × (1+버프%) + 버프고정
+    ///
+    /// "레벨 + 장비 + 패시브 = 내 기본 스펙, 버프는 그 위에 얹히는 일시 효과"라는 개념을 그대로 옮긴 것이다.
+    /// 예전엔 버프%와 패시브%를 같은 자리에서 연달아 곱했는데, 곱셈은 순서를 바꿔도 결과가 같아서
+    /// **퍼센트만 있는 스탯(공격력/체력/방어력/속도 등)은 수치가 한 자리도 바뀌지 않는다.**
+    /// 달라지는 건 패시브 **고정값**뿐이다 - 예전엔 맨 끝에 더해져 버프 %가 안 곱해졌는데,
+    /// 이제 기본 스펙에 포함되므로 버프 %의 영향을 받는다(치명타 배율·속성 보너스가 해당).
+    ///
     /// !! equipPercent/buffPercent/passivePercent는 "3"이 오면 3%를 의미하는 퍼센트 숫자 그대로다
     /// (0.03 같은 소수 분수가 아님 - 아이템 서브옵션/툴팁 표시와 동일한 스케일). 그래서 여기서 100으로 나눈다.
     /// </summary>
     private static float CalcFinal(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
     {
-        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + buffPercent / 100f) * (1f + passivePercent / 100f) + buffFlat + passiveFlat;
+        float baseSpec = CalcBaseSpec(characterFlat, equipFlat, equipPercent, passivePercent, passiveFlat);
+        return baseSpec * (1f + buffPercent / 100f) + buffFlat;
+    }
+
+    /// <summary>버프를 뺀 "내 기본 스펙"(레벨 + 장비 + 패시브). 스탯 UI의 기본값 칸도 이 값을 쓴다.</summary>
+    private static float CalcBaseSpec(float characterFlat, float equipFlat, float equipPercent, float passivePercent, float passiveFlat)
+    {
+        return (characterFlat + equipFlat) * (1f + equipPercent / 100f) * (1f + passivePercent / 100f) + passiveFlat;
     }
 
     /// <summary>
     /// UI에서 스탯 한 줄을 "캐릭터/장비/버프" 3단으로 나눠 보여줄 때 쓰는 분해 계산.
-    /// 4단 공식은 장비%/버프%/패시브%가 서로 곱연산으로 얽혀있어 레이어별 기여분을 딱 나눌 수 없으므로,
+    /// 장비%/패시브%/버프%가 곱연산으로 얽혀 있어 레이어별 기여분을 딱 나눌 수 없으므로,
     /// 레이어를 하나씩 순서대로 켜가며 그 차이를 해당 레이어의 몫으로 본다(텔레스코핑 방식).
-    /// UI가 캐릭터/장비/버프 3단만 구분하므로 패시브는 버프 몫에 합쳐서 반환한다
-    /// (패시브 스킬트리가 아직 스텁이라 지금은 실질적으로 0).
+    ///
+    /// !! 패시브는 **버프가 아니라 캐릭터(기본값) 몫에 포함**한다. 패시브 스킬트리는 세이브 프로필에
+    ///    붙은 영구 스펙이라 "레벨 + 장비 + 패시브 = 내 기본 스펙"으로 보는 게 맞다.
+    ///    예전엔 UI가 3단뿐이라는 이유로 패시브를 버프 몫에 합쳐 넣었는데, 패시브 스킬트리가
+    ///    실제 값을 내기 시작하면서 **아이템을 다 벗어도 "버프로 공격력 증가"가 뜨는** 문제가 됐다.
+    ///
     /// base+equip+buff를 더하면 항상 CalcFinal(전체)와 정확히 같다.
     /// </summary>
     public static void CalcBreakdown(
@@ -141,11 +181,30 @@ public class PlayerStat
         float buffPercent, float buffFlat, float passivePercent, float passiveFlat,
         out float baseValue, out float equipValue, out float buffValue)
     {
-        baseValue = CalcFinal(characterFlat, 0f, 0f, 0f, 0f, 0f, 0f);
-        float withEquip = CalcFinal(characterFlat, equipFlat, equipPercent, 0f, 0f, 0f, 0f);
+        CalcBreakdown(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat,
+            out baseValue, out equipValue, out float passiveValue, out buffValue);
+
+        // 3단만 쓰는 화면(미러 테스트 등)에서는 패시브를 캐릭터 몫에 합쳐 보여준다.
+        baseValue += passiveValue;
+    }
+
+    /// <summary>
+    /// 캐릭터/장비/패시브/버프 4단 분해. 스탯 상세 화면이 네 갈래를 각각 다른 색으로 보여줄 때 쓴다.
+    /// 텔레스코핑 순서는 실제 계산 순서(캐릭터 → 패시브 → 장비 → 버프)를 따르며,
+    /// base+equip+passive+buff를 더하면 항상 CalcFinal(전체)와 정확히 같다.
+    /// </summary>
+    public static void CalcBreakdown(
+        float characterFlat, float equipFlat, float equipPercent,
+        float buffPercent, float buffFlat, float passivePercent, float passiveFlat,
+        out float baseValue, out float equipValue, out float passiveValue, out float buffValue)
+    {
+        baseValue = characterFlat;
+        float withPassive = CalcBaseSpec(characterFlat, 0f, 0f, passivePercent, passiveFlat);
+        float withEquip = CalcBaseSpec(characterFlat, equipFlat, equipPercent, passivePercent, passiveFlat);
         float final = CalcFinal(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat);
 
-        equipValue = withEquip - baseValue;
+        passiveValue = withPassive - baseValue;
+        equipValue = withEquip - withPassive;
         buffValue = final - withEquip;
     }
 
@@ -159,11 +218,25 @@ public class PlayerStat
         float min, float max,
         out float baseValue, out float equipValue, out float buffValue)
     {
-        baseValue = Mathf.Clamp(characterFlat, min, max);
-        float withEquip = Mathf.Clamp(characterFlat + equipFlat, min, max);
-        float final = Mathf.Clamp(characterFlat + equipFlat + buffFlat + passiveFlat, min, max);
+        CalcBreakdownClampedFlat(characterFlat, equipFlat, buffFlat, passiveFlat, min, max,
+            out baseValue, out equipValue, out float passiveValue, out buffValue);
 
-        equipValue = withEquip - baseValue;
+        baseValue += passiveValue;
+    }
+
+    /// <summary>critRate/cdr처럼 Flat만 합산·클램프하는 스탯의 4단 분해.</summary>
+    public static void CalcBreakdownClampedFlat(
+        float characterFlat, float equipFlat, float buffFlat, float passiveFlat,
+        float min, float max,
+        out float baseValue, out float equipValue, out float passiveValue, out float buffValue)
+    {
+        baseValue = Mathf.Clamp(characterFlat, min, max);
+        float withPassive = Mathf.Clamp(characterFlat + passiveFlat, min, max);
+        float withEquip = Mathf.Clamp(characterFlat + passiveFlat + equipFlat, min, max);
+        float final = Mathf.Clamp(characterFlat + passiveFlat + equipFlat + buffFlat, min, max);
+
+        passiveValue = withPassive - baseValue;
+        equipValue = withEquip - withPassive;
         buffValue = final - withEquip;
     }
 

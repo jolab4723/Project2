@@ -1,0 +1,446 @@
+using System.Collections.Generic;
+using ItemSystem;
+using Mirror;
+using UnityEngine;
+
+/// <summary>
+/// 공통 PlayerItemEffectState의 서버 권한·관찰자 동기화 어댑터다.
+/// <para>원본: <c>Assets/WJ_TestPlace/Script/Player/ItemTriggerManager.cs</c></para>
+/// <para><c>Instance</c>와 로컬 NetworkIdentity 판정을 제거하고, 같은 플레이어의 Inventory·Health·Buff·StateMachine을 직접 참조한다.</para>
+/// <para>피격·회피·처치 호출은 이 컴포넌트가 소유한 플레이어의 장비와 유물만 검사한다.</para>
+/// <para>고유 효과 SO에 있던 공유 쿨타임 대신 플레이어 컴포넌트의 딕셔너리에 아이템별 실행 시간을 보관한다.</para>
+/// </summary>
+[DisallowMultipleComponent]
+public sealed class NetworkItemTriggerManager : NetworkBehaviour
+{
+    [SerializeField] private PlayerContext context;
+    [SerializeField] private InventoryController inventory;
+    [SerializeField] private PlayerHealthManager health;
+    [SerializeField] private PlayerBuffManager buffs;
+    [SerializeField] private WBH_PlayerStateMachine stateMachine;
+    private UniqueEffectPresentation presentation;
+    private bool missingInfernoPresenterReported;
+    private double nextDodgeTriggerAt;
+
+    private readonly SyncDictionary<string, double> cooldownEndTimes = new();
+    private readonly SyncList<string> activeAuraIds = new();
+    private readonly Dictionary<string, PlayerAuraVisual> auraVisuals = new();
+
+    [SyncVar] private uint chainLightningTriggerCount;
+    [SyncVar] private uint chainLightningResolvedHitCount;
+    [SyncVar] private uint infernoTriggerCount;
+    [SyncVar] private uint infernoResolvedHitCount;
+    [SyncVar] private uint glassRailTriggerCount;
+    [SyncVar] private uint glassRailResolvedHitCount;
+    [SyncVar(hook = nameof(OnPreparedAttackChanged))] private bool preparedAttackReady;
+    [SyncVar] private uint preparedAttackConsumeCount;
+    [SyncVar(hook = nameof(OnWasteHeatReadyChanged))] private bool wasteHeatReady;
+    [SyncVar(hook = nameof(OnWorldEnderReadyChanged))] private bool worldEnderReady;
+
+    public static uint LocalChainLightningPresentationCount { get; private set; }
+    public uint ChainLightningTriggerCount => chainLightningTriggerCount;
+    public uint ChainLightningResolvedHitCount => chainLightningResolvedHitCount;
+    public uint InfernoTriggerCount => infernoTriggerCount;
+    public uint InfernoResolvedHitCount => infernoResolvedHitCount;
+    public uint GlassRailTriggerCount => glassRailTriggerCount;
+    public uint GlassRailResolvedHitCount => glassRailResolvedHitCount;
+    public bool PreparedAttackReady => preparedAttackReady;
+    public uint PreparedAttackConsumeCount => preparedAttackConsumeCount;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetDiagnostics()
+    {
+        LocalChainLightningPresentationCount = 0;
+    }
+
+    public int ActiveCooldownCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (KeyValuePair<string, double> pair in cooldownEndTimes)
+            {
+                if (pair.Value > NetworkTime.time)
+                    count++;
+            }
+
+            return count;
+        }
+    }
+
+    private void Awake()
+    {
+        context ??= GetComponent<PlayerContext>();
+        inventory ??= GetComponentInChildren<InventoryController>(true);
+        health ??= GetComponent<PlayerHealthManager>();
+        buffs ??= GetComponent<PlayerBuffManager>();
+        stateMachine ??= GetComponent<WBH_PlayerStateMachine>();
+    }
+
+    /// <summary>SW 수정: 실제 체력·상태 구독을 연결하고 클라이언트의 기존 준비 상태와 폐열 충전 완료 표시를 복원한다.</summary>
+    private void OnEnable()
+    {
+        if (health != null)
+        {
+            health.OnDamageTaken += HandleHitTaken;
+            health.OnDeath += HandleDeath;
+        }
+
+        if (stateMachine != null)
+            stateMachine.OnEnterState += HandleStateEntered;
+
+        if (isClient)
+        {
+            SetPreparedAttackPresentation(preparedAttackReady);
+            SetWasteHeatPresentation(wasteHeatReady);
+            Presentation.SetWorldEnderReady(worldEnderReady);
+            RefreshAuraVisuals();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (health != null)
+        {
+            health.OnDamageTaken -= HandleHitTaken;
+            health.OnDeath -= HandleDeath;
+        }
+
+        if (stateMachine != null)
+            stateMachine.OnEnterState -= HandleStateEntered;
+        ClearAuraVisuals();
+    }
+
+    /// <summary>SW 수정: 서버 소유 플레이어의 확정 효과만 구독해 관찰자에게 한 번 표시하고 기존 장비 구독을 유지한다.</summary>
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        context ??= GetComponent<PlayerContext>();
+        context.Effects.ChainPresented += RpcPresentChainLightning;
+        context.Effects.InfernoPresented += RpcPresentInfernoHit;
+        context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
+        context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
+        context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
+        context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
+        context.Effects.EchoReplayPresented += RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented += RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged += SetWorldEnderReady;
+        context.Effects.WildfirePresented += RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed += RpcPresentSupportLink;
+        context.Effects.StackChanged += SyncStack;
+        context.Effects.CooldownChanged += PublishCooldown;
+        // 서버 생애 시작에는 기존 상태도 전달한다. 이후에는 변경된 키만 복제한다.
+        foreach (var pair in context.Effects.Cooldowns)
+            PublishCooldown(pair.Key, pair.Value);
+        if (context?.Equipment != null)
+        {
+            context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+            context.Equipment.OnEquipmentChanged += HandleEquipmentChanged;
+        }
+    }
+
+    /// <summary>SW 수정: 늦게 참여한 관찰자도 서버가 복제한 준비 상태와 폐열 충전 완료 표시를 적용한다.</summary>
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        activeAuraIds.Callback += HandleAuraChanged;
+        RefreshAuraVisuals();
+        SetPreparedAttackPresentation(preparedAttackReady);
+        SetWasteHeatPresentation(wasteHeatReady);
+        Presentation.SetWorldEnderReady(worldEnderReady);
+    }
+
+    /// <summary>소지자의 활성 오라 ID만 관찰자에게 보내며 위치와 반경은 기존 Transform·SO를 재사용합니다.</summary>
+    [Server]
+    public void SetActiveAuras(IEnumerable<FieldAuraUniqueEffectSO> auras)
+    {
+        var ids = new HashSet<string>();
+        foreach (var aura in auras)
+            if (aura != null && aura.showAreaVisual) ids.Add(aura.name);
+        for (int index = activeAuraIds.Count - 1; index >= 0; index--)
+            if (!ids.Contains(activeAuraIds[index])) activeAuraIds.RemoveAt(index);
+        foreach (string id in ids)
+            if (!activeAuraIds.Contains(id)) activeAuraIds.Add(id);
+    }
+
+    private void HandleAuraChanged(SyncList<string>.Operation operation, int index, string oldId, string newId)
+        => RefreshAuraVisuals();
+
+    private void RefreshAuraVisuals()
+    {
+        if (!isClient || !isActiveAndEnabled) return;
+        foreach (string id in new List<string>(auraVisuals.Keys))
+            if (!activeAuraIds.Contains(id))
+            {
+                if (auraVisuals[id] != null) Destroy(auraVisuals[id].gameObject);
+                auraVisuals.Remove(id);
+            }
+        foreach (string id in activeAuraIds)
+        {
+            if (auraVisuals.ContainsKey(id)) continue;
+            var aura = Resources.Load<FieldAuraUniqueEffectSO>("DataFiles/ItemData/3. GeneratedAssets/UniqueEffectPool/" + id);
+            if (aura == null || !aura.showAreaVisual) continue;
+            var visual = new GameObject("Aura " + id).AddComponent<PlayerAuraVisual>();
+            // SW 수정 : 지속 플레이어의 오라도 씬 이동을 유지하고, 소유자 비활성/접속 종료 때 위 정리 경로로 제거한다.
+            DontDestroyOnLoad(visual.gameObject);
+            visual.Bind(transform, aura, isLocalPlayer);
+            auraVisuals.Add(id, visual);
+        }
+    }
+
+    private void ClearAuraVisuals()
+    {
+        foreach (var visual in auraVisuals.Values)
+            if (visual != null) Destroy(visual.gameObject);
+        auraVisuals.Clear();
+    }
+
+    public override void OnStopClient()
+    {
+        activeAuraIds.Callback -= HandleAuraChanged;
+        ClearAuraVisuals();
+        base.OnStopClient();
+    }
+
+    /// <summary>SW 수정: 서버 종료 시 소유 플레이어의 효과 표시·장비 구독을 해제하며 공격 수명 정리는 기존 경로를 따른다.</summary>
+    public override void OnStopServer()
+    {
+        if (context?.Equipment != null)
+            context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        ClearPreparedAttack();
+        context.Effects.ChainPresented -= RpcPresentChainLightning;
+        context.Effects.InfernoPresented -= RpcPresentInfernoHit;
+        context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
+        context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
+        context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
+        context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
+        context.Effects.EchoReplayPresented -= RpcPresentEchoReplay;
+        context.Effects.WorldEnderBlastPresented -= RpcPresentWorldEnderBlast;
+        context.Effects.WorldEnderReadyChanged -= SetWorldEnderReady;
+        context.Effects.WildfirePresented -= RpcPresentWildfire;
+        context.Effects.SupportMarkConsumed -= RpcPresentSupportLink;
+        wasteHeatReady = false;
+        context.Effects.StackChanged -= SyncStack;
+        context.Effects.CooldownChanged -= PublishCooldown;
+        base.OnStopServer();
+    }
+
+    /// <summary>공격 적중 피해의 Direct 전용 고유효과 진입점이다.</summary>
+    public void FireDamageDealt(in WBH_DamageResult result, WBH_ICombat firstTarget = null)
+    {
+        if (isServer) context.Effects.FireDamageDealt(result, firstTarget);
+        PublishState();
+    }
+
+    public void Fire(TriggerCondition condition)
+    {
+        if (isServer) context.Effects.Fire(condition);
+        PublishState();
+    }
+
+    /// <summary>SW 수정: 클라이언트는 서버가 복제한 소유자별 쿨다운으로 장비 효과의 남은 시간을 조회한다.</summary>
+    public float GetRemainingCooldown(ItemInstance item)
+        => PlayerItemEffectState.GetRemainingCooldown(cooldownEndTimes, item, NetworkTime.time);
+
+    public void ResetAttackLifetime()
+    {
+        context.Effects.ResetAttackLifetime();
+        PublishState();
+    }
+
+    public float ConsumePreparedAttackMultiplier(DamageCause cause, uint attackId)
+    {
+        float multiplier = context.Effects.ConsumePreparedAttackMultiplier(cause, attackId);
+        PublishState();
+        return multiplier;
+    }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentInfernoHit(Vector3 position)
+    {
+        if (presentation == null)
+            presentation = GetComponent<UniqueEffectPresentation>();
+        if (presentation != null)
+        {
+            presentation.PresentInfernoHit(position);
+            return;
+        }
+
+        if (!missingInfernoPresenterReported)
+        {
+            missingInfernoPresenterReported = true;
+            Debug.LogWarning("[NetworkItemTriggerManager] 설정된 인페르노 Presenter가 없습니다.", this);
+        }
+    }
+
+    /// <summary>SW 수정: 서버가 확정한 즉시 처형 파동을 신뢰 채널로 관찰자에게 표시하며 Host도 RPC 한 경로만 사용한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
+    {
+        Presentation.PresentPhaseHarvesterWave(start, end, width);
+    }
+
+    /// <summary>SW 수정: 서버 확정 Shotgun 폭발의 피격점·반경을 신뢰 채널로 관찰자에게 표시하며 Host도 RPC 한 경로만 사용한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentStarBreacherExplosion(Vector3 position, float radius)
+    {
+        Presentation.PresentStarBreacherExplosion(position, radius);
+    }
+
+    /// <summary>SW 수정: 서버가 확정한 폐열 방출 영역을 Reliable RPC로 관찰자에게 한 번 표시하며 피해는 서버 FIFO에서만 처리한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
+    {
+        Presentation.PresentWasteHeatDischarge(origin, forward, length, angleDegrees);
+    }
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentEchoReplay(Vector3 origin, Vector3 forward, float range, float angle)
+        => Presentation.PresentEchoReplay(origin, forward, range, angle);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWorldEnderBlast(Vector3 position, float radius)
+        => Presentation.PresentWorldEnderBlast(position, radius);
+
+    private void SetWorldEnderReady(bool ready) => worldEnderReady = ready;
+    private void OnWorldEnderReadyChanged(bool previous, bool current) => Presentation.SetWorldEnderReady(current);
+
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentWildfire(Vector3 start, Vector3 end) => Presentation.PresentWildfire(start, end);
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentSupportLink(Vector3 start, Vector3 end) => Presentation.PresentSupportLink(start, end);
+
+    [ClientRpc]
+    private void RpcPresentChainLightning(Vector3 start, Vector3 end)
+    {
+        LocalChainLightningPresentationCount++;
+        Presentation.PresentChainLightning(start, end);
+    }
+
+    private void HandleHitTaken(float amount)
+    {
+        Fire(TriggerCondition.OnHitTaken);
+    }
+
+    private void HandleStateEntered(PlayerState state)
+    {
+        if (state == PlayerState.Dead)
+        {
+            if (isServer) ClearPreparedAttack();
+            return;
+        }
+        if (state != PlayerState.Dodge)
+            return;
+        if (isServer)
+            ConfirmDodgeTrigger();
+        else if (isLocalPlayer)
+            CmdNotifyDodge();
+    }
+
+    /// <summary>원격 소유자가 실제 회피 상태에 들어갔을 때 서버에 알립니다.</summary>
+    [Command]
+    private void CmdNotifyDodge()
+    {
+        ConfirmDodgeTrigger();
+    }
+
+    /// <summary>회피 이동은 기존 소유자 경로를 유지하고, 장비 발동은 서버의 생존·조작·대기 시간으로 제한합니다.</summary>
+    private void ConfirmDodgeTrigger()
+    {
+        // 보스 인트로·포탈 대기 중의 회피는 닌자 보너스 등 신규 장비 발동을 만들지 않는다.
+        if (!isServer || health == null || health.CurrentHealth <= 0f ||
+            !MirrorNetworkManager.CanStartNewAction(netIdentity) ||
+            context?.Controller == null || !context.Controller.IsControlEnabled ||
+            NetworkTime.time < nextDodgeTriggerAt)
+            return;
+        var status = GetComponent<WBH_PlayerStatus>();
+        if (status == null)
+            return;
+        nextDodgeTriggerAt = NetworkTime.time + Mathf.Max(0f, status.DodgeCooltime);
+        Fire(TriggerCondition.OnDodge);
+        PrepareDodgeAttack();
+    }
+
+    private void HandleDeath()
+    {
+        if (isServer)
+            ResetAttackLifetime();
+    }
+
+    [Server]
+    private void PrepareDodgeAttack()
+    {
+        context.Effects.PrepareDodgeAttack();
+        PublishState();
+    }
+
+
+
+    private void HandleEquipmentChanged(EquippedItemInfo[] equipmentSnapshot)
+    {
+        if (isServer) context.Effects.ReconcileEquipment();
+        PublishState();
+    }
+
+    [Server]
+    private void ClearPreparedAttack()
+    {
+        context.Effects.ClearPreparedAttack();
+        PublishState();
+    }
+
+    private void OnPreparedAttackChanged(bool _, bool ready)
+        => SetPreparedAttackPresentation(ready);
+
+    private void SetPreparedAttackPresentation(bool ready)
+    {
+        if (!isClient) return;
+        Presentation.SetPreparedAttack(ready);
+    }
+
+    /// <summary>SW 수정: 서버 소유 열의 충전 완료 여부만 기존 관찰자 SyncVar 경로로 전달한다. 열 개수의 원본은 BuffInstance에 둔다.</summary>
+    private void SetWasteHeatReady(bool ready) => wasteHeatReady = ready;
+
+    /// <summary>SW 수정: 서버가 복제한 폐열 충전 완료 상태를 클라이언트 실제 장착 무기의 짧은 발광으로 표시한다.</summary>
+    private void OnWasteHeatReadyChanged(bool _, bool ready) => SetWasteHeatPresentation(ready);
+
+    /// <summary>SW 수정: 클라이언트만 폐열 충전 완료 표시를 적용해 Host에서 서버 표시가 중복되지 않도록 한다.</summary>
+    private void SetWasteHeatPresentation(bool ready)
+    {
+        if (!isClient) return;
+        Presentation.SetWasteHeatReady(ready);
+    }
+
+    /// <summary>SW 수정: 같은 플레이어의 표시 Presenter를 한 번 찾고, 없을 때만 런타임에 추가한다.</summary>
+    private UniqueEffectPresentation Presentation
+    {
+        get
+        {
+            if (presentation == null && !TryGetComponent(out presentation))
+                presentation = gameObject.AddComponent<UniqueEffectPresentation>();
+            return presentation;
+        }
+    }
+
+    private void SyncStack(ItemInstance item) => GetComponent<PlayerInventorySync>()?.ServerSyncPersistedStack(item);
+    private void LateUpdate() => PublishState();
+    private void PublishState()
+    {
+        if (!isServer || context == null) return;
+        var effects = context.Effects;
+        chainLightningTriggerCount = effects.ChainLightningTriggerCount;
+        chainLightningResolvedHitCount = effects.ChainLightningResolvedHitCount;
+        infernoTriggerCount = effects.InfernoTriggerCount;
+        infernoResolvedHitCount = effects.InfernoResolvedHitCount;
+        glassRailTriggerCount = effects.GlassRailTriggerCount;
+        glassRailResolvedHitCount = effects.GlassRailResolvedHitCount;
+        preparedAttackReady = effects.PreparedAttackReady;
+        preparedAttackConsumeCount = effects.PreparedAttackConsumeCount;
+    }
+
+    private void PublishCooldown(string key, double value)
+    {
+        if (isServer && (!cooldownEndTimes.TryGetValue(key, out double end) || end != value))
+            cooldownEndTimes[key] = value;
+    }
+}

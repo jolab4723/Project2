@@ -32,12 +32,18 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     [SerializeField, Min(0f)] private float leftHandIkBlendSpeed = 12f;
 
     private string currentItemId;
+    public string CurrentVisualItemId => currentItemId;
     private string pendingItemId;
     private string pooledItemId;
     private GameObject currentVisual;
+    /// <summary>SW 수정: 싱글·클라이언트의 확정 효과 표시가 현재 장착 무기 Renderer만 읽도록 외형 경계를 제공한다.</summary>
+    internal GameObject CurrentVisual => currentVisual;
     private GameObject pooledVisual;
     private Transform currentLeftHandGrip;
     private int visualRequestVersion;
+    /// <summary>현재 장비 요청의 완료 여부입니다. 실패한 기본 외형 대체는 준비 성공으로 취급하지 않습니다.</summary>
+    public bool IsVisualReady => pendingItemId == null && VisualLoadError == null;
+    public string VisualLoadError { get; private set; }
 
     private void Update()
     {
@@ -56,15 +62,22 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private void OnEnable()
     {
-#if UNITY_SERVER
+#if UNITY_SERVER && !UNITY_EDITOR
         // 전용 서버는 장비 상태만 처리하며 렌더링용 Addressables 무기 외형을 생성하지 않습니다.
         enabled = false;
 #else
+        if (equipmentSystem == null)
+            equipmentSystem = InventoryController.GetLocalEquipmentSystem(this);
+
         if (equipmentSystem == null)
         {
             ShowDefaultVisual();
             return;
         }
+
+        // 이 캐릭터가 활성화될 때마다 공용 EquipmentSystem에 "지금은 나(Fighter/Gunner)다"를 알려준다 -
+        // 장비 장착 검증(캐릭터 전용 무기 체크)이 이 값을 기준으로 동작한다.
+        equipmentSystem.SetActiveCharacterClass(characterClass);
 
         equipmentSystem.OnEquipmentChanged += HandleEquipmentChanged;
         RefreshFromEquipment();
@@ -92,7 +105,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     /// </summary>
     public void ApplyAuthoritativeWeaponItemId(string itemId)
     {
-#if !UNITY_SERVER
+#if !UNITY_SERVER || UNITY_EDITOR
         ApplyVisual(itemId);
 #endif
     }
@@ -114,6 +127,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
     {
         if (string.IsNullOrEmpty(itemId))
         {
+            VisualLoadError = null;
             CancelPendingVisualRequest();
             ShowDefaultVisual();
             return;
@@ -134,6 +148,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
             return;
 
         int requestVersion = ++visualRequestVersion;
+        VisualLoadError = null;
         pendingItemId = itemId;
 
         if (weaponMount == null ||
@@ -146,6 +161,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
                 $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}'에 연결된 무기 외형을 찾지 못했습니다.",
                 this);
             pendingItemId = null;
+            VisualLoadError = $"무기 외형 참조 누락: {itemId}";
             if (currentVisual == null)
                 ShowDefaultVisual();
             return;
@@ -173,6 +189,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
                 isActiveAndEnabled)
             {
                 pendingItemId = null;
+                VisualLoadError = $"무기 외형 로드 실패: {itemId}";
                 Debug.LogWarning(
                     $"[{nameof(PlayerWeaponVisualPresenter)}] '{itemId}' 무기 외형 로드에 실패했습니다.",
                     this);
@@ -209,7 +226,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (characterClass == CharacterClass.Fighter)
             CalibrateDefaultVisualToRightHand();
         defaultVisual.SetActive(true);
-        currentLeftHandGrip = defaultVisual.transform.Find(LeftHandGripName);
+        currentLeftHandGrip = FindDescendant(defaultVisual.transform, LeftHandGripName);
         ApplyLeftHandIk(currentLeftHandGrip);
     }
 
@@ -258,6 +275,10 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
     private static Transform FindDescendant(Transform root, string objectName)
     {
+        Transform directChild = root.Find(objectName);
+        if (directChild != null)
+            return directChild;
+
         foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
         {
             if (candidate.name == objectName)
@@ -300,7 +321,7 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
         if (defaultVisual != null)
             defaultVisual.SetActive(false);
 
-        currentLeftHandGrip = currentVisual.transform.Find(LeftHandGripName);
+        currentLeftHandGrip = FindDescendant(currentVisual.transform, LeftHandGripName);
         ApplyLeftHandIk(currentLeftHandGrip);
     }
 
@@ -401,10 +422,43 @@ public sealed class PlayerWeaponVisualPresenter : MonoBehaviour
 
         float targetWeight =
             hasActiveLeftHandGrip && IsGunnerHoldingWeapon() ? 1f : 0f;
+
+        // Recovery can lower the weapon beyond the support arm's reach. Release
+        // the authored hand pose gradually instead of pinning a straight elbow.
+        var arm = leftHandIkConstraint.data;
+        if (targetWeight > 0f && arm.root != null && arm.mid != null &&
+            arm.tip != null && arm.target != null)
+        {
+            float armLength = Vector3.Distance(arm.root.position, arm.mid.position) +
+                              Vector3.Distance(arm.mid.position, arm.tip.position);
+            float reach = Vector3.Distance(arm.root.position, arm.target.position);
+            if (armLength > 0.0001f && reach > armLength)
+                targetWeight *= 1f - Mathf.InverseLerp(armLength, armLength * 1.08f, reach);
+        }
+
+        // The shot is authored from the first attack event, so do not leave the
+        // support hand in the blend-in window while the weapon fires.
+        if (targetWeight >= 1f && IsGunnerAttackState())
+        {
+            leftHandIkConstraint.weight = 1f;
+            return;
+        }
+
         leftHandIkConstraint.weight = Mathf.MoveTowards(
             leftHandIkConstraint.weight,
             targetWeight,
             leftHandIkBlendSpeed * Time.deltaTime);
+    }
+
+    private bool IsGunnerAttackState()
+    {
+        if (characterAnimator == null || !characterAnimator.isActiveAndEnabled)
+            return false;
+
+        AnimatorStateInfo state = characterAnimator.IsInTransition(0)
+            ? characterAnimator.GetNextAnimatorStateInfo(0)
+            : characterAnimator.GetCurrentAnimatorStateInfo(0);
+        return state.shortNameHash == AttackStateHash;
     }
 
     private bool IsGunnerHoldingWeapon()

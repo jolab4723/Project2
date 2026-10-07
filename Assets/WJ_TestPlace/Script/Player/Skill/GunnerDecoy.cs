@@ -21,6 +21,11 @@ public class GunnerDecoy : MonoBehaviour
     private float elapsed;
     private bool initialized;
 
+    private WBH_PlayerEffect effectOwner;
+    private WBH_PlayerEffectCue explosionEffectCue = WBH_PlayerEffectCue.None;
+    private Vector3 explosionEffectScale = Vector3.one;
+    private WBH_EffectData explosionEffectData;
+
     public void Initialize(float fuseSeconds, float explosionRadius, LayerMask targetLayer, WBH_DamageRequest damageRequest)
     {
         this.fuseSeconds = fuseSeconds;
@@ -42,6 +47,9 @@ public class GunnerDecoy : MonoBehaviour
             Explode();
     }
 
+    /// <summary>
+    /// SW 수정: 디코이 폭발의 명중 요청에 원본 피해 원인과 공격 식별자를 전달합니다.
+    /// </summary>
     private void Explode()
     {
         initialized = false;
@@ -51,11 +59,53 @@ public class GunnerDecoy : MonoBehaviour
             if (!hit.TryGetComponent<WBH_ICombat>(out var combatTarget))
                 continue;
 
-            WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker, combatTarget,
-                damageRequest.AttackType, damageRequest.ElementType, damageRequest.DamageMultiplier, damageRequest.StatusEffect);
+            WBH_EffectData hitEffectData = explosionEffectData ?? damageRequest.EffectData;
+
+            Vector3 hitPosition = hit.ClosestPoint(transform.position);
+            Vector3 lookDirection = transform.position - hitPosition;
+
+            if (lookDirection.sqrMagnitude <= 0.0001f)
+                lookDirection = transform.position - hit.bounds.center;
+
+            WBH_DamageRequest hitRequest = new WBH_DamageRequest(damageRequest.Attacker,
+                                                                 combatTarget,
+                                                                 damageRequest.AttackType,
+                                                                 damageRequest.ElementType, 
+                                                                 damageRequest.DamageMultiplier, 
+                                                                 damageRequest.StatusEffect,
+                                                                 hitEffectData,
+                                                                 hitPosition,
+                                                                 lookDirection,
+                                                                 damageRequest.DamageCause,
+                                                                 damageRequest.AttackId);
             WBH_CombatManager.ProcessDamage(hitRequest);
         }
 
+        PlayExplosionEffect();
         Destroy(gameObject);
     }
+
+    private void PlayExplosionEffect()
+    {
+        if (effectOwner == null || explosionEffectCue == WBH_PlayerEffectCue.None)
+            return;
+
+        effectOwner.PlayWorldEffect(explosionEffectCue, transform.position, Quaternion.identity, explosionEffectScale);
+    }
+
+    public void ConfigureExplosionEffect(WBH_PlayerEffect effectOwner, WBH_PlayerEffectCue cue, Vector3 scaleMultiplier)
+    {
+        this.effectOwner = effectOwner;
+        explosionEffectCue = cue;
+        explosionEffectScale = scaleMultiplier;
+
+        explosionEffectData = null;
+
+        if(effectOwner != null)
+        {
+            effectOwner.TryGetEffectData(cue, out explosionEffectData);
+        }
+    }
+
+
 }

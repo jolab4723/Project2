@@ -43,7 +43,10 @@ public class BuffFieldZone : MonoBehaviour
     [SerializeField] private bool targetEnemies = false;
 
     /// <summary>지금 이 존 안에 있는 대상들. 나갈 때 정확히 그 대상에게서만 제거하려고 들고 있는다.</summary>
-    private readonly HashSet<IBuffTarget> inside = new HashSet<IBuffTarget>();
+    // SW 수정: 여러 콜라이더와 겹치는 같은 오라를 첫 진입/마지막 이탈로 합산합니다.
+    private static readonly Dictionary<IBuffTarget, Dictionary<IBuffSource, int>> ActiveZoneCounts = new();
+    private readonly Dictionary<IBuffTarget, int> insideColliderCounts = new();
+    private readonly HashSet<IBuffTarget> appliedTargets = new();
 
     /// <summary>
     /// 코드로 존을 생성할 때(예: 아이템 소유 시 자동 생성되는 오라) 인스펙터의 buff 필드 대신 쓸 소스.
@@ -85,51 +88,87 @@ public class BuffFieldZone : MonoBehaviour
     }
 #endif
 
+
+
+
+
+
+
     private void OnTriggerEnter(Collider other)
     {
         IBuffTarget target = Resolve(other);
-        IBuffSource activeBuff = ActiveBuff;
-        if (target == null || activeBuff == null)
+        if (!TargetExists(target) || ActiveBuff == null)
             return;
 
-        // 콜라이더가 여러 개인 캐릭터면 Enter가 여러 번 올 수 있어 중복 적용을 막는다.
-        if (!inside.Add(target))
-            return;
+        insideColliderCounts.TryGetValue(target, out int colliderCount);
+        insideColliderCounts[target] = colliderCount + 1;
+        RefreshTarget(target);
+    }
 
-        target.ApplyBuff(activeBuff);
+    /// <summary>자기 자신은 Collider 진입 여부와 관계없이 아군 오라를 받습니다.</summary>
+    public void IncludeOwner(PlayerBuffManager owner)
+    {
+        if (targetEnemies || owner == null || ActiveBuff == null)
+            return;
+        insideColliderCounts.TryGetValue(owner, out int count);
+        insideColliderCounts[owner] = count + 1;
+        RefreshTarget(owner);
+    }
+
+    /// <summary>영역 안에서 사망하거나 부활해도 현재 생존 상태에 맞춰 효과를 갱신합니다.</summary>
+    private void FixedUpdate()
+    {
+        foreach (IBuffTarget target in insideColliderCounts.Keys)
+            RefreshTarget(target);
+    }
+
+    private void RefreshTarget(IBuffTarget target)
+    {
+        bool alive = TargetExists(target);
+        if (alive && target is PlayerBuffManager player)
+        {
+            PlayerHealthManager health = player.GetComponent<PlayerHealthManager>();
+            alive = player.isActiveAndEnabled && health != null && health.CurrentHealth > 0f;
+        }
+        if (alive && appliedTargets.Add(target))
+            RegisterZone(target, ActiveBuff);
+        else if (!alive && appliedTargets.Remove(target))
+            UnregisterZone(target, ActiveBuff);
     }
 
     private void OnTriggerExit(Collider other)
     {
         IBuffTarget target = Resolve(other);
-        if (target == null)
+        if (target == null || !insideColliderCounts.TryGetValue(target, out int colliderCount))
             return;
 
-        if (!inside.Remove(target))
+        if (colliderCount > 1)
+        {
+            insideColliderCounts[target] = colliderCount - 1;
             return;
+        }
 
-        IBuffSource activeBuff = ActiveBuff;
-        if (removeOnExit && activeBuff != null)
-            target.RemoveBuff(activeBuff);
+        insideColliderCounts.Remove(target);
+        if (removeOnExit && ActiveBuff != null && appliedTargets.Remove(target))
+            UnregisterZone(target, ActiveBuff);
     }
 
     private void OnDisable()
     {
-        IBuffSource activeBuff = ActiveBuff;
-        if (!removeWhenZoneDisabled || activeBuff == null)
+        if (!removeWhenZoneDisabled || ActiveBuff == null)
         {
-            inside.Clear();
+            insideColliderCounts.Clear();
+            appliedTargets.Clear();
             return;
         }
 
-        foreach (IBuffTarget target in inside)
-        {
-            if (target != null)
-                target.RemoveBuff(activeBuff);
-        }
+        foreach (IBuffTarget target in appliedTargets)
+            UnregisterZone(target, ActiveBuff);
 
-        inside.Clear();
+        insideColliderCounts.Clear();
+        appliedTargets.Clear();
     }
+
 
     /// <summary>
     /// 콜라이더에서 캐릭터의 버프 대상(PlayerBuffManager 또는 EnemyBuffManager)을 찾는다.
@@ -162,4 +201,50 @@ public class BuffFieldZone : MonoBehaviour
             Gizmos.DrawSphere(sphere.center, sphere.radius);
     }
 #endif
+    private static void RegisterZone(IBuffTarget target, IBuffSource source)
+    {
+        if (!ActiveZoneCounts.TryGetValue(target, out Dictionary<IBuffSource, int> sourceCounts))
+        {
+            sourceCounts = new Dictionary<IBuffSource, int>();
+            ActiveZoneCounts.Add(target, sourceCounts);
+        }
+
+        sourceCounts.TryGetValue(source, out int zoneCount);
+        sourceCounts[source] = zoneCount + 1;
+        if (zoneCount == 0)
+            target.ApplyBuff(source);
+    }
+
+    private static void UnregisterZone(IBuffTarget target, IBuffSource source)
+    {
+        if (!ActiveZoneCounts.TryGetValue(target, out Dictionary<IBuffSource, int> sourceCounts) ||
+            !sourceCounts.TryGetValue(source, out int zoneCount))
+        {
+            return;
+        }
+
+        if (zoneCount > 1)
+        {
+            sourceCounts[source] = zoneCount - 1;
+            return;
+        }
+
+        sourceCounts.Remove(source);
+        if (sourceCounts.Count == 0)
+            ActiveZoneCounts.Remove(target);
+
+        if (TargetExists(target))
+            target.RemoveBuff(source);
+    }
+
+    private static bool TargetExists(IBuffTarget target)
+    {
+        return target != null && (!(target is Object unityObject) || unityObject != null);
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        ActiveZoneCounts.Clear();
+    }
 }

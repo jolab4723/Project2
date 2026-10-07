@@ -1,94 +1,117 @@
+using PLAYERTWO.ARPGProject;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class WBH_EnemySpawner : MonoBehaviour
 {
-    [SerializeField] private WBH_EnemyInfo[] testInfos;
-
+    private WBH_EnemySpawnManager spawnManager;
     private WBH_EnemyPoolManager enemyPool;
-    private WBH_EffectPoolManager effectPool;
-    private WBH_ProjectilePoolManager projectilePool;
+    private WBH_EnemyDataProvider enemyDataProvider;
+    private WBH_EffectSpawner effectSpawner;
+    private WBH_ProjectileSpawner projectileSpawner;
     private WBH_FloatTextPoolManager floatTextPool;
     private WBH_HighEnemyHpbarView eliteView;
     private PlayerWallet wallet;
+    private YJ_SfxPlayer sfxPlayer;
 
     private float spawnNavSearchRadius = 2f;
+    public bool isShowSpawnEffect = true;
 
+    public event System.Action<WBH_EnemyController> BossSpawn;
 
-    //!@ 데이터 매니저 연결
+    [Header("스폰 이펙트")]
+    [SerializeField] private WBH_EffectData spawnEffect;
+    [SerializeField] private Vector3 spawnEffectOffset;
 
-    public void Initialize(WBH_EnemyPoolManager poolManager, 
-                           WBH_EffectPoolManager effectPool, 
-                           WBH_ProjectilePoolManager projectilePool, 
+    public void Initialize(WBH_EnemySpawnManager spawnManager,
+                           WBH_EnemyPoolManager poolManager,
+                           WBH_EnemyDataProvider enemyDataProvider,
+                           WBH_EffectSpawner effectSpawner, 
+                           WBH_ProjectileSpawner projectileSpawner, 
                            Transform localPlayer, // eliteView 에만 사용
                            WBH_FloatTextPoolManager floatTextPool,
                            WBH_HighEnemyHpbarView eliteView,
-                           PlayerWallet wallet)
+                           PlayerWallet wallet,
+                           YJ_SfxPlayer sfxPlayer)
     {
+        this.spawnManager = spawnManager;
         this.enemyPool = poolManager;
-        this.effectPool = effectPool;
-        this.projectilePool = projectilePool;
+        this.enemyDataProvider = enemyDataProvider;
+        this.effectSpawner = effectSpawner;
+        this.projectileSpawner = projectileSpawner;
         this.floatTextPool = floatTextPool;
         this.eliteView = eliteView;
         this.eliteView.Initialize(localPlayer);
         this.wallet = wallet;
+        this.sfxPlayer = sfxPlayer;
     }
 
-    public WBH_EnemyController Spawn(int enemyID, Transform spawnPoint, Transform target)
+    public WBH_EnemyController Spawn(string enemyId, Transform spawnPoint, Transform target, WBH_EnemyStatContext context)
     {
-        if(enemyPool == null)
+        if (spawnPoint == null)
+            return null;
+
+        return Spawn(enemyId, spawnPoint.position, spawnPoint.rotation, target, context);
+    }
+
+    public WBH_EnemyController Spawn(string enemyId, Vector3 spawnPosition, Quaternion spawnRotation, Transform target, WBH_EnemyStatContext context)
+    {
+        if (enemyPool == null)
         {
             Log.Error("EnemyPoolManager가 초기화 되지 않았습니다.");
             return null;
         }
-
-        WBH_EnemyInfo info = GetEnemyInfo(enemyID);
-        // info = 데이터 매니저에서 enemyID 를 통해 info(스탯 등) 주입 !@
-
-        if (info == null)
+        if (enemyDataProvider == null)
         {
-            Log.Error($"EnemyInfo(ID : {enemyID}를 찾을 수 없습니다.)");
-        }
-
-        if(!NavMesh.SamplePosition(spawnPoint.position, out NavMeshHit hit, spawnNavSearchRadius, NavMesh.AllAreas))
-        {
-            Log.Error($"{spawnPoint.name} 주변에서 NavMesh 를 찾지 못했습니다.");
+            Log.Error("EnemyDataProvider 초기화 되지 않았습니다.");
             return null;
         }
 
-        WBH_EnemyController enemy = enemyPool.Get(enemyID);
+        if (!enemyDataProvider.TryCreateEnemyInfo(enemyId, context, out WBH_EnemyInfo info))
+        {
+            Log.Error($"적 정보 생성에 실패했습니다. enemyId = {enemyId}");
+            return null;
+        }
+
+        if (!NavMesh.SamplePosition(spawnPosition, out NavMeshHit hit, spawnNavSearchRadius, NavMesh.AllAreas))
+        {
+            Log.Error("소환위치 주변에서 NavMesh 를 찾지 못했습니다.");
+            return null;
+        }
+
+        WBH_EnemyController enemy = enemyPool.Get(enemyId);
 
         if (enemy == null)
             return null;
 
-        enemy.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
-        enemy.gameObject.SetActive(true);
+        enemy.transform.SetPositionAndRotation(hit.position, spawnRotation);
 
-        enemy.GetComponent<WBH_EffectSpawner>().Initialize(effectPool);
-        enemy.GetComponent<WBH_ProjectileSpawner>().Initialize(projectilePool);
         enemy.GetComponent<EnemyKillReward>()?.Initialize(wallet);
-        enemy.GetComponent<WBH_EnemyView>().Initialize(floatTextPool, eliteView);
+        enemy.GetComponent<WBH_EnemyView>()?.Initialize(floatTextPool, eliteView);
 
-        enemy.Initialize(info, enemyPool);
+        enemy.Initialize(info, enemyPool, effectSpawner, projectileSpawner, sfxPlayer);
+
+        if(enemy.TryGetComponent(out WBH_BossMinionSpawner bossMinionSpawner))
+        {
+            bossMinionSpawner.Initialize(spawnManager, this, context);
+        }
 
         enemy.SetTarget(target);
+        enemy.gameObject.SetActive(true);
 
+        if (isShowSpawnEffect == false && effectSpawner != null && spawnEffect != null && spawnEffect.attackEffectPrefab != null)
+        {
+            effectSpawner.SpawnEffect(spawnEffect, 
+                                      enemy.transform.position + spawnEffectOffset,
+                                      spawnEffect.attackEffectPrefab.transform.localRotation);
+        }
 
-        if(info.enemyGrade == EnemyGrade.Boss)
+        if (info.enemyGrade == EnemyGrade.Boss)
         {
             eliteView?.BindBoss(enemy);
+            BossSpawn?.Invoke(enemy);
         }
 
         return enemy;
-    }
-
-    private WBH_EnemyInfo GetEnemyInfo(int enemyID)
-    {
-        foreach (var info in testInfos)
-        {
-            if (info.id == enemyID)
-                return info;
-        }
-        return null;
     }
 }

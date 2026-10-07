@@ -25,14 +25,15 @@ public class KY_CurtainEffect : MonoBehaviour
 
     void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
-        originalScale = rectTransform.localScale; // 원본 크기 기억
-        rectTransform.localScale = GetCompressedScale();
+        EnsureInitialized();
     }
 
     // 패널이 열릴 때 호출
     public Tween Open()
     {
+        if (!EnsureInitialized())
+            return DOTween.Sequence();
+
         curtainTween?.Kill();
 
         Vector3 compressed = GetCompressedScale();
@@ -46,9 +47,23 @@ public class KY_CurtainEffect : MonoBehaviour
         return curtainTween;
     }
 
+    // 이미 보이는 프레임 없이 열기 연출을 시작해야 할 때, 대상만 즉시 접어 둔다.
+    // 호출자가 다음 프레임에 Open()을 호출하면 압축 상태에서 바로 펼쳐진다.
+    public void PrepareOpen()
+    {
+        if (!EnsureInitialized())
+            return;
+
+        curtainTween?.Kill();
+        rectTransform.localScale = GetCompressedScale();
+    }
+
     // 패널이 닫힐 때 호출
     public Tween Close()
     {
+        if (!EnsureInitialized())
+            return DOTween.Sequence();
+
         curtainTween?.Kill();
 
         Vector3 compressed = GetCompressedScale();
@@ -59,6 +74,23 @@ public class KY_CurtainEffect : MonoBehaviour
             .SetLink(gameObject);
 
         return curtainTween;
+    }
+
+    private bool EnsureInitialized()
+    {
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+
+        if (rectTransform == null)
+        {
+            Debug.LogWarning("[KY_CurtainEffect] RectTransform이 없어 커튼 연출을 실행할 수 없습니다.", this);
+            return false;
+        }
+
+        if (originalScale == Vector3.zero)
+            originalScale = rectTransform.localScale;
+
+        return true;
     }
 
     // 축에 따라 압축된 스케일 값을 계산

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61ecc594507992f43b7c6707e4e3de53, type: 3}
+  m_Name: UE_StarforgeBreachExplosion
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.StarBreacherExplosionUniqueEffectSO
+  effectName: "\uC2A4\uD0C0 \uBE0C\uB9AC\uCC98 \uADFC\uC811 \uD3ED\uBC1C"
+  icon: {fileID: 21300000, guid: 166452c286a45f546b719a0e914503b8, type: 3}
+  effectDescription: "{0}m \uC774\uB0B4 \uC0B0\uD0C4 \uC801\uC911 \uC2DC \uBC18\uACBD
+    {1}m\uC5D0 \uD3ED\uBC1C\uC744 \uC77C\uC73C\uD0B5\uB2C8\uB2E4. \uCD5C\uB300 {3}\uBA85\uC5D0\uAC8C
+    \uACF5\uACA9\uB825\uC758 {2}% \uD654\uC5FC \uD53C\uD574\uB97C \uC8FC\uBA70 \uCE58\uBA85\uD0C0\uB294
+    \uC5C6\uC2B5\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784 {4}\uCD08)"
+  coefficients:
+  - 3
+  - 2.5
+  - 35
+  - 5
+  - 1.2
+  triggerDistance: 3
+  radius: 2.5
+  damageMultiplier: 0.35
+  maxTargets: 5
+  cooldownSeconds: 1.2

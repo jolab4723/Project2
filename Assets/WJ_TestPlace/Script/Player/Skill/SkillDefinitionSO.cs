@@ -17,6 +17,10 @@ public enum SkillShapeType
     BombThrow,
     /// <summary>전방(커서 방향) 원뿔 범위를 즉시 명중시킨 뒤, 커서 반대 방향(후방)으로 백스탭 이동.</summary>
     BackstepShot,
+    /// <summary>시전 즉시 자기 주변 원형 범위를 때리고, 일정 시간 자신에게 강화 버프를 건다(파이터 궁극기).</summary>
+    AwakeningBurst,
+    /// <summary>커서로 지정한 넓은 원형 영역에 폭탄을 여러 발 시간차로 떨어뜨린다(거너 궁극기, 융단폭격).</summary>
+    CarpetBombing,
 }
 
 /// <summary>
@@ -36,10 +40,124 @@ public class SkillDefinitionSO : ScriptableObject
     public ActiveSkillId skillId;
     public string skillName;
     public Sprite icon;
+    [Tooltip("진화1/2/3 전용 아이콘(스킬 창 진화 선택 버튼·슬롯 배지). 비어 있는 칸은 기본 icon으로 대신 표시한다. 스킬 데이터 파이프라인은 이 값을 덮어쓰지 않는다.")]
+    public Sprite[] evolutionIcons = new Sprite[3];
 
     [Header("공통")]
     public float cooldownSeconds = 5f;
     public float damageMultiplier = 1.5f;
+    [Tooltip("스킬 사용 시 소모하는 마나(진화 없음일 때 기준). 0이면 마나 소모 없음.")]
+    public float manaCost = 0f;
+    [Tooltip("진화1 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다 - 진화별로 다른 코스트가 필요할 때만 0 초과 값을 넣는다.")]
+    public float evolution1ManaCost = 0f;
+    [Tooltip("진화2 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다.")]
+    public float evolution2ManaCost = 0f;
+    [Tooltip("진화3 선택 시 소모하는 마나. 0이면 위 manaCost(기본값)를 그대로 쓴다.")]
+    public float evolution3ManaCost = 0f;
+
+    /// <summary>지금 선택된 진화 기준 실제 마나 코스트. 해당 진화 전용 코스트가 0(미설정)이면 기본 manaCost로 대체한다.</summary>
+    public float GetManaCost(SkillEvolutionId evolution)
+    {
+        float evoCost = evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evolution1ManaCost,
+            SkillEvolutionId.Evolution2 => evolution2ManaCost,
+            SkillEvolutionId.Evolution3 => evolution3ManaCost,
+            _ => 0f,
+        };
+
+        return evoCost > 0f ? evoCost : manaCost;
+    }
+
+    /// <summary>
+    /// 스킬 창 표시용 피해 계수(1 = 100%). 진화별 계수와 강화1(위력)의 보너스를 반영한다.
+    /// 차징(반원 베기 진화3)·스택(아크 레이저)처럼 시전 상황에 따라 달라지면 min~max로 돌려준다.
+    /// 피해가 없는 스킬(대시)은 false.
+    ///
+    /// !! 실제 피해는 FighterSkillController/GunnerSkillController의 Execute*에서 계산한다. 이 메서드는 그
+    ///    분기(어떤 진화가 어떤 계수 필드를 쓰는지)를 그대로 따라 한 표시 전용 사본이라, 컨트롤러에서 계수
+    ///    선택을 바꾸면 여기도 같이 맞춰야 한다.
+    ///    폭탄 진화1의 2차 폭발, 융단폭격의 웨이브 수처럼 "추가로 몇 번 더 맞는지"는 계수에 넣지 않는다(1회 기준).
+    /// </summary>
+    public bool GetDamageMultiplierRange(SkillEvolutionId evolution, SkillEnhancementId enhancement, out float min, out float max)
+    {
+        min = max = damageMultiplier;
+
+        switch (shapeType)
+        {
+            case SkillShapeType.Dash:
+                min = max = 0f;
+                return false;
+
+            case SkillShapeType.SectorSlash:
+                if (evolution == SkillEvolutionId.Evolution3) // 원형 차징: 차징 비율에 따라 선형 증가
+                {
+                    min = evoChargeMinDamageMultiplier;
+                    max = evoChargeMaxDamageMultiplier;
+                }
+                break;
+
+            case SkillShapeType.LineSlam:
+                if (evolution == SkillEvolutionId.Evolution3)
+                    min = max = evoNarrowDamageMultiplier;
+                break;
+
+            case SkillShapeType.AwakeningBurst:
+                if (evolution == SkillEvolutionId.Evolution3) // 과부하 각성
+                    min = max = evoOverloadDamageMultiplier;
+                break;
+
+            case SkillShapeType.ArcProjectile:
+                if (evolution == SkillEvolutionId.Evolution1) // 아크 레이저: 소모 스택(최소 1)마다 곱연산 증가
+                {
+                    int maxStacks = Mathf.Max(1, evoLaserMaxBonusStacks);
+                    min = damageMultiplier * (1f + evoLaserDamagePerStackPercent / 100f);
+                    max = damageMultiplier * (1f + evoLaserDamagePerStackPercent / 100f * maxStacks);
+                }
+                else if (evolution == SkillEvolutionId.Evolution2) // 아크 불릿: 발당 계수
+                    min = max = evoArcBulletDamageMultiplier;
+                else if (evolution == SkillEvolutionId.Evolution3) // 아크 캐논
+                    min = max = evoCannonDamageMultiplier;
+                break;
+
+            case SkillShapeType.BackstepShot:
+                if (evolution == SkillEvolutionId.Evolution1) // 디코이 폭발
+                    min = max = evoDecoyDamageMultiplier;
+                break;
+
+            case SkillShapeType.CarpetBombing:
+                // 융단폭격은 damageMultiplier를 쓰지 않고 웨이브(포탄)당 계수를 쓴다.
+                min = max = evolution switch
+                {
+                    SkillEvolutionId.Evolution1 => evoLaserStrikeDamage,
+                    SkillEvolutionId.Evolution2 => evoMarkerDamagePerWave,
+                    SkillEvolutionId.Evolution3 => evoBarrageDamagePerShell,
+                    _ => carpetDamagePerWave,
+                };
+                break;
+        }
+
+        if (enhancement == SkillEnhancementId.Enhance1)
+        {
+            float bonus = 1f + enhanceDamageMultiplierBonusPercent / 100f;
+            min *= bonus;
+            max *= bonus;
+        }
+
+        return true;
+    }
+
+    /// <summary>진화 전용 아이콘. 진화 없음이거나 해당 칸이 비어 있으면 null(호출 쪽에서 기본 icon으로 대체).</summary>
+    public Sprite GetEvolutionIcon(SkillEvolutionId evolution)
+    {
+        int index = (int)evolution - 1;
+        if (evolutionIcons == null || index < 0 || index >= evolutionIcons.Length)
+            return null;
+
+        // 직렬화된 배열의 빈 칸은 Unity의 "가짜 null"이라 ?? 폴백이 안 걸린다 - == 비교로 진짜 null을 돌려준다.
+        Sprite sprite = evolutionIcons[index];
+        return sprite != null ? sprite : null;
+    }
     public SkillShapeType shapeType;
 
     [Header("SectorSlash일 때만 사용 (부채꼴 범위)")]
@@ -61,22 +179,22 @@ public class SkillDefinitionSO : ScriptableObject
     public float projectileSpeed = 15f;
     [Tooltip("적에게 닿는 순간 이 반경 안의 적 전부에게 데미지(관통 없이 첫 접촉 즉시 폭발).")]
     public float explosionRadius = 1f;
-    [Tooltip("최대 스택 수. 스택이 있어야 사용 가능하고, cooldownSeconds는 스택과 별개로 연사 속도를 제한한다.")]
+    [Tooltip("최대 스택 수. 스택이 있어야 사용 가능하고, 연사 간격은 GunnerSkillController의 고정값(1초)이 제한한다.")]
     public int maxStacks = 6;
-    [Tooltip("스택 1개가 다시 차는 데 걸리는 시간(초).")]
+    [Tooltip("스택 1개가 다시 차는 데 걸리는 시간(초). SkillData 시트의 cooldownSeconds 값이 파이프라인으로 들어온다.")]
     public float stackRechargeSeconds = 4f;
     [Tooltip("직선으로 날아가다 적에게 닿으면 폭발하는 투사체 프리팹(GunnerArcProjectile 컴포넌트 포함).")]
     public GameObject arcProjectilePrefab;
 
     [Header("ArcProjectile 진화1 전용 (아크 레이저 - 스택 전부 소모, 직선 판정 즉시 명중)")]
     [Tooltip("레이저 직선 판정 길이.")]
-    public float evoLaserLength = 8f;
+    public float evoLaserLength = 12f;
     [Tooltip("레이저 직선 판정 폭.")]
-    public float evoLaserWidth = 1f;
+    public float evoLaserWidth = 2f;
     [Tooltip("소모한 스택 1개당 피해 배율에 곱연산으로 반영되는 증가율(%). 50 = 0.5 증가.")]
     public float evoLaserDamagePerStackPercent = 50f;
     [Tooltip("피해 증가 계산에 반영되는 소모 스택 수의 최대치. 이보다 많이 소모해도 이 값까지만 계산에 들어간다.")]
-    public int evoLaserMaxBonusStacks = 3;
+    public int evoLaserMaxBonusStacks = 6;
 
     [Header("ArcProjectile 진화2 전용 (아크 불릿 - 같은 스택 1개로 약한 투사체 3발 연사)")]
     [Tooltip("발당 피해 배율. 기본 damageMultiplier 대신 이 값을 그대로 쓴다.")]
@@ -206,6 +324,91 @@ public class SkillDefinitionSO : ScriptableObject
 
     [Header("Dash 진화3 전용 (대시 후 피해 증가 버프)")]
     public BuffDefinitionSO evoDashDamageBuff;
+
+    [Header("CarpetBombing 전용 (거너 궁극기 - 융단폭격)")]
+    [Tooltip("폭격 영역의 반경. 커서 지점을 중심으로 이 범위 전체가 타격 대상이다. 시트의 rangeWidthOrAngle 컬럼과 연결된다.")]
+    public float carpetAreaRadius = 8f;
+    [Tooltip("영역 전체를 때리는 횟수.")]
+    public int carpetWaveCount = 3;
+    [Tooltip("타격과 타격 사이 간격(초).")]
+    public float carpetWaveInterval = 0.5f;
+    [Tooltip("한 번의 타격이 주는 피해 계수. 영역 안 모든 적에게 동일하게 들어간다.")]
+    public float carpetDamagePerWave = 1.2f;
+
+    [Header("CarpetBombing 연출 - 하늘에서 떨어지는 폭탄")]
+    [Tooltip("타격 한 번에 하늘에서 떨어지는 폭탄 개수. 피해는 영역 전체에 들어가므로 이건 순수 연출용이다.")]
+    public int carpetVisualBombsPerWave = 6;
+    [Tooltip("폭탄이 생성되는 높이(영역 지면 기준).")]
+    public float carpetDropHeight = 14f;
+    [Tooltip("폭탄이 떨어지기 시작한 뒤 실제 피해가 들어가기까지의 시간(초). 낙하 연출과 타격 타이밍을 맞추는 값이다.")]
+    public float carpetImpactDelay = 0.35f;
+
+    [Header("CarpetBombing 진화1 전용 (레이저 폭격 - 지연 후 단일 타격)")]
+    [Tooltip("시전 후 타격까지의 지연(초). 기본 융단폭격의 carpetImpactDelay 대신 쓴다.")]
+    public float evoLaserStrikeDelay = 0.5f;
+    [Tooltip("한 번에 들어가는 피해 계수. 여러 번 나눠 때리지 않고 이 값이 전부다.")]
+    public float evoLaserStrikeDamage = 4.5f;
+
+    [Header("CarpetBombing 진화2 전용 (마커 폭격 - 횟수 증가 + 마커 부여)")]
+    [Tooltip("타격 횟수.")]
+    public int evoMarkerWaveCount = 4;
+    [Tooltip("타격과 타격 사이 간격(초). 기본 융단폭격의 carpetWaveInterval 대신 쓴다.")]
+    public float evoMarkerWaveInterval = 1f;
+    [Tooltip("회당 피해 계수.")]
+    public float evoMarkerDamagePerWave = 1f;
+    [Tooltip("맞은 적에게 거는 마커(Marked) 지속시간(초). 0이면 마커 없음. " +
+             "이미 걸려 있으면 남은 시간에 이 값을 더한다(갱신이 아니라 누적).")]
+    public float evoMarkerDuration = 5f;
+    [Tooltip("마커가 걸린 적이 받는 모든 피해의 배율.")]
+    public float evoMarkerDamageMultiplier = 1.25f;
+
+    [Header("CarpetBombing 진화3 전용 (산탄 폭격 - 랜덤 위치 소범위 연속 포격)")]
+    [Tooltip("산탄 폭격 전용 낙하 투사체.")]
+    public GameObject evoBarrageBombPrefab;
+    [Tooltip("포탄 발수.")]
+    public int evoBarrageShellCount = 9;
+    [Tooltip("포탄과 포탄 사이 간격(초).")]
+    public float evoBarrageInterval = 0.3f;
+    [Tooltip("포탄 한 발의 폭발 반경. 영역 전체가 아니라 이 범위만 맞는다. 스킬 범위 증가의 영향을 받는다.")]
+    public float evoBarrageShellRadius = 3f;
+    [Tooltip("포탄 한 발의 피해 계수.")]
+    public float evoBarrageDamagePerShell = 0.6f;
+    [Tooltip("포탄이 떨어질 수 있는 범위(폭격 중심 기준). 좁을수록 한 대상에게 여러 발이 겹친다. " +
+             "한 대상의 발당 명중률은 대략 (포탄반경/산포반경)^2다 - 기본 융단폭격 반경인 8로 두면 " +
+             "발당 6%라 9발을 쏴도 기대 명중이 1발이 안 된다. 4면 발당 25%로 기대 2.25발이다.")]
+    public float evoBarrageScatterRadius = 4f;
+
+    [Header("AwakeningBurst 전용 (파이터 궁극기)")]
+    [Tooltip("시전과 동시에 자신에게 거는 강화 버프. 지속시간·스탯 수치는 이 버프 에셋이 들고 있다. " +
+             "엑셀에서는 오브젝트 참조를 표현할 수 없어 인스펙터/에디터에서 직접 연결한다(evoDashDamageBuff와 같은 방식).")]
+    public BuffDefinitionSO awakeningBuff;
+
+    [Header("AwakeningBurst 진화 전용 - 진화별로 거는 버프가 달라진다")]
+    [Tooltip("진화1(가속 각성): 공격속도와 일반공격 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff1;
+    [Tooltip("진화2(연산 각성): 스킬 쿨타임 감소와 스킬 피해 특화. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff2;
+    [Tooltip("진화3(과부하 각성): 지속시간이 짧은 대신 시전 폭발에 투자. 비우면 기본 버프를 쓴다.")]
+    public BuffDefinitionSO evoAwakeningBuff3;
+
+    [Tooltip("진화3 전용: 시전 폭발의 데미지 계수. 기본 계수(damageMultiplier) 대신 이 값을 쓴다.")]
+    public float evoOverloadDamageMultiplier = 4f;
+    [Tooltip("진화3 전용: 시전 폭발 반경 배율. 1.7이면 기본 반경의 1.7배.")]
+    public float evoOverloadRangeMultiplier = 1.7f;
+
+    /// <summary>진화에 맞는 각성 버프. 진화용 버프가 비어 있으면 기본 버프로 떨어진다.</summary>
+    public BuffDefinitionSO GetAwakeningBuff(SkillEvolutionId evolution)
+    {
+        BuffDefinitionSO evoBuff = evolution switch
+        {
+            SkillEvolutionId.Evolution1 => evoAwakeningBuff1,
+            SkillEvolutionId.Evolution2 => evoAwakeningBuff2,
+            SkillEvolutionId.Evolution3 => evoAwakeningBuff3,
+            _ => null,
+        };
+
+        return evoBuff != null ? evoBuff : awakeningBuff;
+    }
 
     [Header("강화 - 위력(Enhance1), 전 스킬 공통이지만 shapeType별로 의미가 다름")]
     [Tooltip("SectorSlash/LineSlam 전용: 데미지 계수(damageMultiplier)에 곱해지는 보너스(%).")]

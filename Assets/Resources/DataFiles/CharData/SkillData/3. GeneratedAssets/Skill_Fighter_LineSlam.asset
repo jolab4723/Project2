@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7fcae4d88ad6b74fa888f8b92664d7b, type: 3}
+  m_Name: Skill_Fighter_LineSlam
+  m_EditorClassIdentifier: Assembly-CSharp::SkillDefinitionSO
+  skillId: 1
+  skillName: "\uC9C1\uC120 \uB0B4\uB824\uCC0D\uAE30"
+  icon: {fileID: 21300000, guid: 73edbefca3672324080cc6dc7084140e, type: 3}
+  evolutionIcons:
+  - {fileID: 21300000, guid: 0f43dc27d1fbf0c4789ba15bbf3d3e62, type: 3}
+  - {fileID: 21300000, guid: b20f0cb1233dd9d4190a8db59e8dedee, type: 3}
+  - {fileID: 21300000, guid: 92e4e5cb7e70ce8489f2b17bf9738224, type: 3}
+  cooldownSeconds: 8
+  damageMultiplier: 2
+  manaCost: 80
+  evolution1ManaCost: 0
+  evolution2ManaCost: 0
+  evolution3ManaCost: 0
+  shapeType: 1
+  sectorRange: 4
+  sectorAngle: 180
+  lineLength: 4
+  lineWidth: 2
+  dashDistance: 4
+  dashDuration: 0.15
+  projectileMaxDistance: 12
+  projectileSpeed: 15
+  explosionRadius: 1
+  maxStacks: 6
+  stackRechargeSeconds: 4
+  arcProjectilePrefab: {fileID: 0}
+  evoLaserLength: 8
+  evoLaserWidth: 1
+  evoLaserDamagePerStackPercent: 50
+  evoLaserMaxBonusStacks: 3
+  evoArcBulletDamageMultiplier: 0.5
+  evoArcBulletInterval: 0.1
+  evoCannonExplosionRadius: 3
+  evoCannonDamageMultiplier: 2.5
+  evoCannonStackCost: 2
+  evoCannonProjectilePrefab: {fileID: 0}
+  bombThrowRange: 6
+  bombThrowSpeed: 10
+  bombArcHeight: 2
+  bombFuseSeconds: 2
+  bombExplosionRadius: 3
+  bombPrefab: {fileID: 0}
+  evoClusterDelaySeconds: 0.5
+  evoClusterRadius: 4
+  evoClusterDamageMultiplier: 0.5
+  evoEnergyBurstRadius: 4
+  evoEnergyBurstStunDuration: 1
+  evoEnergyBurstSlowZoneDuration: 5
+  evoEnergyBurstSlowMultiplier: 0.6
+  evoGlitterMarkDuration: 7
+  evoGlitterMarkedDamageMultiplier: 1.25
+  backstepDistance: 2
+  backstepDuration: 0.15
+  backstepConeRange: 5
+  backstepConeAngle: 90
+  evoDecoyFuseSeconds: 3
+  evoDecoyExplosionRadius: 3
+  evoDecoyDamageMultiplier: 1
+  evoDecoyPrefab: {fileID: 0}
+  evoBackstepInvincibleDuration: 0.3
+  evoSuppressKnockbackForce: 3
+  evoSuppressKnockbackDuration: 0.3
+  evoKnockbackForce: 5
+  evoKnockbackDuration: 0.3
+  evoChargeMaxSeconds: 3
+  evoChargeMinDamageMultiplier: 1.2
+  evoChargeMaxDamageMultiplier: 3.5
+  evoDefenseDownMultiplier: 0.7
+  evoDefenseDownDuration: 4
+  evoWideLineLength: 6
+  evoWideLineWidth: 3
+  evoAirborneHeight: 3
+  evoAirborneDuration: 1.5
+  evoNarrowLineLength: 2
+  evoNarrowLineWidth: 1
+  evoNarrowDamageMultiplier: 3.5
+  evoInvincibleDuration: 0.5
+  evoDashMaxStacks: 2
+  evoDashStackRechargeSeconds: 4
+  evoDashDamageBuff: {fileID: 0}
+  carpetAreaRadius: 8
+  carpetWaveCount: 3
+  carpetWaveInterval: 0.5
+  carpetDamagePerWave: 0.8
+  carpetVisualBombsPerWave: 6
+  carpetDropHeight: 14
+  carpetImpactDelay: 0.35
+  evoLaserStrikeDelay: 0.5
+  evoLaserStrikeDamage: 4.5
+  evoMarkerWaveCount: 4
+  evoMarkerWaveInterval: 1
+  evoMarkerDamagePerWave: 1
+  evoMarkerDuration: 5
+  evoMarkerDamageMultiplier: 1.25
+  evoBarrageBombPrefab: {fileID: 0}
+  evoBarrageShellCount: 9
+  evoBarrageInterval: 0.3
+  evoBarrageShellRadius: 3
+  evoBarrageDamagePerShell: 0.6
+  evoBarrageScatterRadius: 4
+  awakeningBuff: {fileID: 0}
+  evoAwakeningBuff1: {fileID: 0}
+  evoAwakeningBuff2: {fileID: 0}
+  evoAwakeningBuff3: {fileID: 0}
+  evoOverloadDamageMultiplier: 4
+  evoOverloadRangeMultiplier: 1.7
+  enhanceDamageMultiplierBonusPercent: 55
+  enhanceDashSpeedBonusPercent: 55
+  enhanceCooldownReductionPercent: 35
+  enhanceRangeBonusPercent: 30

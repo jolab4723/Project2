@@ -301,7 +301,7 @@ Transform:
   m_GameObject: {fileID: 1037096812461857211}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1029,8 +1029,6 @@ GameObject:
   - component: {fileID: 5827602817927617593}
   - component: {fileID: -1532668858091577115}
   - component: {fileID: -971529780127043745}
-  - component: {fileID: -2777707044376071587}
-  - component: {fileID: -2997808910522100489}
   - component: {fileID: -4878034140046804760}
   - component: {fileID: -5431423992665652879}
   - component: {fileID: 1932562817314288795}
@@ -1044,6 +1042,7 @@ GameObject:
   - component: {fileID: 3782006741066805893}
   - component: {fileID: 8921874906585930509}
   - component: {fileID: 8455667395802180815}
+  - component: {fileID: -2467015901774684575}
   m_Layer: 10
   m_Name: Normal_Melee_01
   m_TagString: Untagged
@@ -1060,9 +1059,9 @@ Transform:
   m_GameObject: {fileID: 5577328161507397385}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 20.74, y: -0, z: 21.78}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5495708441738218598}
   - {fileID: 5760751288365932448}
@@ -1151,34 +1150,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c7288b37c9bd47a3e41fd7937f91c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyCombat
---- !u!114 &-2777707044376071587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5577328161507397385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a039ac33990fec041907dc2ab436bc13, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_EffectSpawner
-  poolManager: {fileID: 0}
---- !u!114 &-2997808910522100489
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5577328161507397385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a27e17d330003664b8f6ad78081eaf2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WBH_ProjectileSpawner
-  poolManager: {fileID: 0}
-  effectSpawner: {fileID: 0}
-  effectData: {fileID: 0}
+  missileEffect: {fileID: 0}
+  grabPoint: {fileID: 0}
 --- !u!114 &-4878034140046804760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1217,8 +1190,6 @@ MonoBehaviour:
     m_Bits: 32768
   firePoint: {fileID: 0}
   grenadePoint: {fileID: 0}
-  meleeEffectPoint: {fileID: 3207281568816389647}
-  normalMeleeEffect: {fileID: 11400000, guid: 08a9d8ae06c3471458c9581cc26eb5ef, type: 2}
   enemyAnimation: {fileID: 0}
 --- !u!114 &-5431423992665652879
 MonoBehaviour:
@@ -1305,7 +1276,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyStatusEffectController
   statusEffectRoot: {fileID: 3207281568816389647}
-  effectSpawner: {fileID: -2777707044376071587}
   burnEffect: {fileID: 11400000, guid: aee63d8bb946f0e49ba00893c4f5bf1e, type: 2}
   freezeEffect: {fileID: 11400000, guid: 41514c9d046a3d84ca576759c4316041, type: 2}
   electricEffect: {fileID: 11400000, guid: 1bb69c56563b88a45a958f23b499af5f, type: 2}
@@ -1313,6 +1283,8 @@ MonoBehaviour:
   knockbackEffect: {fileID: 0}
   airborneEffect: {fileID: 0}
   stunEffect: {fileID: 11400000, guid: d4486a92baa6aff42b3268cada5be3bb, type: 2}
+  markedEffect: {fileID: 11400000, guid: 918757adbcc331748b1966893e027b00, type: 2}
+  bossBurnDamageMultiplier: 1
 --- !u!114 &3732678896662894666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1402,6 +1374,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 3, z: 0}
   objectName: 
+  nameKey: 
+  uiLabels: {fileID: 0}
 --- !u!114 &8455667395802180815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1420,7 +1394,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   effectGroup: 0
-  effectTarget: {fileID: 0}
+  effectTarget: {fileID: 5760751288365932448}
   effectGroupLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1582,7 +1556,7 @@ MonoBehaviour:
   targetFXCornerLength: 0.25
   targetFXFrameMinOpacity: 0
   targetFXGroundMinAltitude: -1000
-  targetFXTexture: {fileID: 0}
+  targetFXTexture: {fileID: 2800000, guid: 1de3c566a6c8c405b9f6f453137273ec, type: 3}
   targetFXColor: {r: 1, g: 1, b: 1, a: 1}
   targetFXCenter: {fileID: 0}
   targetFXRotationSpeed: 50
@@ -1666,13 +1640,35 @@ MonoBehaviour:
   seeThroughTextureUVSpace: 0
   seeThroughTextureScale: 1
   seeThroughChildrenSortingMode: 0
-  rmsCount: 8
+  rmsCount: 1
   hitFxInitialIntensity: 0
   hitFxMode: 0
   hitFXTriggerMode: 0
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &-2467015901774684575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5577328161507397385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4160c1eb86fc3454595c1023294cc682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WBH_EnemyEffect
+  sfxPlayer: {fileID: 0}
+  effectBindings:
+  - cue: 10000
+    data: {fileID: 11400000, guid: 44acf3923b177f144ac85f165c584ed5, type: 2}
+    anchor: {fileID: 3207281568816389647}
+    sounds:
+    - clip: {fileID: 8300000, guid: 901973b38114ef143a95543da04572a0, type: 3}
+      volume: 0.15
+      baseTime: 0.2
+      offset: 0.05
 --- !u!1 &6451300661949442791
 GameObject:
   m_ObjectHideFlags: 0
@@ -2204,13 +2200,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3207281568816389647}
     m_Modifications:
+    - target: {fileID: 561656922471711041, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288592451674669027, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2465863458732106770, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 2916363716354127945, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2247,6 +2255,22 @@ PrefabInstance:
     - target: {fileID: 4006912020030558002, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
       propertyPath: m_Name
       value: AdvancedEffect
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421436821039632714, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7255142433668415463, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7893394686427857043, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9056965578431297753, guid: 68745f4bbf75cea4f8e386cc2e766d1b, type: 3}
+      propertyPath: playOnAwake
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

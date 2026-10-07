@@ -1,0 +1,794 @@
+{
+  "korLabels": [
+    {
+      "key": "quest.sample.collect01.name",
+      "label": "물약 배달"
+    },
+    {
+      "key": "quest.sample.collect01.description",
+      "label": "빨간 물약 3개를 모아서 가져다주세요."
+    },
+    {
+      "key": "quest.sample.collect01.condition.0",
+      "label": "빨간 물약 3개 수집"
+    },
+    {
+      "key": "quest.sample.collect02.name",
+      "label": "재료 수집"
+    },
+    {
+      "key": "quest.sample.collect02.description",
+      "label": "화염 물약과 냉기 물약을 각각 하나씩 모아주세요."
+    },
+    {
+      "key": "quest.sample.collect02.condition.0",
+      "label": "화염 물약 1개 수집"
+    },
+    {
+      "key": "quest.sample.collect02.condition.1",
+      "label": "냉기 물약 1개 수집"
+    },
+    {
+      "key": "quest.sample.collect03.name",
+      "label": "정비 부품 조달"
+    },
+    {
+      "key": "quest.sample.collect03.description",
+      "label": "전격 물약 2개를 모아 정비반에 전달해 주세요."
+    },
+    {
+      "key": "quest.sample.collect03.condition.0",
+      "label": "전격 물약 2개 수집"
+    },
+    {
+      "key": "quest.sample.combo01.name",
+      "label": "구조와 정리"
+    },
+    {
+      "key": "quest.sample.combo01.description",
+      "label": "적을 처치하면서 흘린 물약도 함께 회수해 주세요."
+    },
+    {
+      "key": "quest.sample.combo01.condition.0",
+      "label": "적 5마리 처치"
+    },
+    {
+      "key": "quest.sample.combo01.condition.1",
+      "label": "파란 물약 2개 수집"
+    },
+    {
+      "key": "quest.sample.combo02.name",
+      "label": "3중 임무"
+    },
+    {
+      "key": "quest.sample.combo02.description",
+      "label": "적을 처치하고, 빨간 물약과 화염 물약을 각각 모아주세요."
+    },
+    {
+      "key": "quest.sample.combo02.condition.0",
+      "label": "적 3마리 처치"
+    },
+    {
+      "key": "quest.sample.combo02.condition.1",
+      "label": "빨간 물약 1개 수집"
+    },
+    {
+      "key": "quest.sample.combo02.condition.2",
+      "label": "화염 물약 1개 수집"
+    },
+    {
+      "key": "quest.sample.hunt02.name",
+      "label": "정예 소탕"
+    },
+    {
+      "key": "quest.sample.hunt02.description",
+      "label": "이 구역의 적 10마리를 처치해 주세요."
+    },
+    {
+      "key": "quest.sample.hunt02.condition.0",
+      "label": "적 10마리 처치"
+    },
+    {
+      "key": "quest.sample.hunt03.name",
+      "label": "긴급 소탕"
+    },
+    {
+      "key": "quest.sample.hunt03.description",
+      "label": "위험 등급이 상승했습니다. 적 15마리를 처치해 주세요."
+    },
+    {
+      "key": "quest.sample.hunt03.condition.0",
+      "label": "적 15마리 처치"
+    },
+    {
+      "key": "quest.sample.cleanup01.name",
+      "label": "구역 정리 의뢰"
+    },
+    {
+      "key": "quest.sample.cleanup01.description",
+      "label": "이 구역에 출몰하는 적들을 처리해 주세요."
+    },
+    {
+      "key": "quest.sample.cleanup01.condition.0",
+      "label": "적 5마리 처치"
+    },
+    {
+      "key": "quest_ui.header",
+      "label": "의뢰 요청"
+    },
+    {
+      "key": "quest_ui.section_content",
+      "label": "퀘스트 내용"
+    },
+    {
+      "key": "quest_ui.section_condition",
+      "label": "퀘스트 달성 조건"
+    },
+    {
+      "key": "quest_ui.section_reward",
+      "label": "퀘스트 보상"
+    },
+    {
+      "key": "quest_ui.reroll",
+      "label": "리롤"
+    },
+    {
+      "key": "quest_ui.reroll_used",
+      "label": "리롤(사용함)"
+    },
+    {
+      "key": "quest_ui.accept",
+      "label": "수락"
+    },
+    {
+      "key": "quest_ui.deny",
+      "label": "거절"
+    },
+    {
+      "key": "quest_ui.condition_goal",
+      "label": "(목표 {0})"
+    },
+    {
+      "key": "quest_ui.reward_credit",
+      "label": "보상: 크레딧 {0}"
+    },
+    {
+      "key": "quest_ui.reward_item_suffix",
+      "label": ", {0} x{1}"
+    },
+    {
+      "key": "quest_ui.completed_message",
+      "label": "'{0}' 의뢰를 완료했습니다! 보상: {1}"
+    },
+    {
+      "key": "quest_ui.already_accepted_message",
+      "label": "이번 캠프에서는 의뢰를 이미 수락했습니다. 다시 캠프에 들어오면 새로 수락할 수 있습니다."
+    },
+    {
+      "key": "quest_ui.reward_credit_plain",
+      "label": "크레딧 {0}"
+    },
+    {
+      "key": "quest_ui.objective_kill",
+      "label": "적 처치"
+    },
+    {
+      "key": "quest_ui.objective_collect",
+      "label": "물건 수집"
+    },
+    {
+      "key": "quest_ui.objective_completed",
+      "label": "목표 달성"
+    },
+    {
+      "key": "quest_ui.reward_pending",
+      "label": "보상 대기"
+    },
+    {
+      "key": "quest_ui.reward_received",
+      "label": "수령 완료"
+    },
+    {
+      "key": "quest_ui.credit_name",
+      "label": "크레딧"
+    },
+    {
+      "key": "quest_ui.reward_received_message",
+      "label": "'{0}' 의뢰 보상을 수령했습니다: {1}"
+    }
+  ],
+  "engLabels": [
+    {
+      "key": "quest.sample.collect01.name",
+      "label": "Potion Delivery"
+    },
+    {
+      "key": "quest.sample.collect01.description",
+      "label": "Please gather 3 red potions and bring them to me."
+    },
+    {
+      "key": "quest.sample.collect01.condition.0",
+      "label": "Collect 3 Red Potions"
+    },
+    {
+      "key": "quest.sample.collect02.name",
+      "label": "Material Collection"
+    },
+    {
+      "key": "quest.sample.collect02.description",
+      "label": "Please gather one Fire Potion and one Ice Potion each."
+    },
+    {
+      "key": "quest.sample.collect02.condition.0",
+      "label": "Collect 1 Fire Potion"
+    },
+    {
+      "key": "quest.sample.collect02.condition.1",
+      "label": "Collect 1 Ice Potion"
+    },
+    {
+      "key": "quest.sample.collect03.name",
+      "label": "Maintenance Parts Procurement"
+    },
+    {
+      "key": "quest.sample.collect03.description",
+      "label": "Please gather 2 Lightning Potions and deliver them to the maintenance team."
+    },
+    {
+      "key": "quest.sample.collect03.condition.0",
+      "label": "Collect 2 Lightning Potions"
+    },
+    {
+      "key": "quest.sample.combo01.name",
+      "label": "Rescue and Cleanup"
+    },
+    {
+      "key": "quest.sample.combo01.description",
+      "label": "Defeat enemies and recover the potions they drop."
+    },
+    {
+      "key": "quest.sample.combo01.condition.0",
+      "label": "Defeat 5 Enemies"
+    },
+    {
+      "key": "quest.sample.combo01.condition.1",
+      "label": "Collect 2 Blue Potions"
+    },
+    {
+      "key": "quest.sample.combo02.name",
+      "label": "Triple Mission"
+    },
+    {
+      "key": "quest.sample.combo02.description",
+      "label": "Defeat enemies and gather one Red Potion and one Fire Potion each."
+    },
+    {
+      "key": "quest.sample.combo02.condition.0",
+      "label": "Defeat 3 Enemies"
+    },
+    {
+      "key": "quest.sample.combo02.condition.1",
+      "label": "Collect 1 Red Potion"
+    },
+    {
+      "key": "quest.sample.combo02.condition.2",
+      "label": "Collect 1 Fire Potion"
+    },
+    {
+      "key": "quest.sample.hunt02.name",
+      "label": "Elite Sweep"
+    },
+    {
+      "key": "quest.sample.hunt02.description",
+      "label": "Defeat 10 enemies in this area."
+    },
+    {
+      "key": "quest.sample.hunt02.condition.0",
+      "label": "Defeat 10 Enemies"
+    },
+    {
+      "key": "quest.sample.hunt03.name",
+      "label": "Emergency Sweep"
+    },
+    {
+      "key": "quest.sample.hunt03.description",
+      "label": "The danger level has risen. Defeat 15 enemies."
+    },
+    {
+      "key": "quest.sample.hunt03.condition.0",
+      "label": "Defeat 15 Enemies"
+    },
+    {
+      "key": "quest.sample.cleanup01.name",
+      "label": "Area Cleanup Request"
+    },
+    {
+      "key": "quest.sample.cleanup01.description",
+      "label": "Please deal with the enemies appearing in this area."
+    },
+    {
+      "key": "quest.sample.cleanup01.condition.0",
+      "label": "Defeat 5 Enemies"
+    },
+    {
+      "key": "quest_ui.header",
+      "label": "Quest Request"
+    },
+    {
+      "key": "quest_ui.section_content",
+      "label": "Quest Details"
+    },
+    {
+      "key": "quest_ui.section_condition",
+      "label": "Completion Conditions"
+    },
+    {
+      "key": "quest_ui.section_reward",
+      "label": "Quest Reward"
+    },
+    {
+      "key": "quest_ui.reroll",
+      "label": "Reroll"
+    },
+    {
+      "key": "quest_ui.reroll_used",
+      "label": "Reroll (Used)"
+    },
+    {
+      "key": "quest_ui.accept",
+      "label": "Accept"
+    },
+    {
+      "key": "quest_ui.deny",
+      "label": "Decline"
+    },
+    {
+      "key": "quest_ui.condition_goal",
+      "label": "(Goal {0})"
+    },
+    {
+      "key": "quest_ui.reward_credit",
+      "label": "Reward: {0} Credits"
+    },
+    {
+      "key": "quest_ui.reward_item_suffix",
+      "label": ", {0} x{1}"
+    },
+    {
+      "key": "quest_ui.completed_message",
+      "label": "Completed the '{0}' request! Reward: {1}"
+    },
+    {
+      "key": "quest_ui.already_accepted_message",
+      "label": "You have already accepted a request during this camp visit. You can accept a new one the next time you enter the camp."
+    },
+    {
+      "key": "quest_ui.reward_credit_plain",
+      "label": "{0} Credits"
+    },
+    {
+      "key": "quest_ui.objective_kill",
+      "label": "Defeat Enemies"
+    },
+    {
+      "key": "quest_ui.objective_collect",
+      "label": "Collect Items"
+    },
+    {
+      "key": "quest_ui.objective_completed",
+      "label": "Objective Complete"
+    },
+    {
+      "key": "quest_ui.reward_pending",
+      "label": "Reward Pending"
+    },
+    {
+      "key": "quest_ui.reward_received",
+      "label": "Reward Received"
+    },
+    {
+      "key": "quest_ui.credit_name",
+      "label": "Credits"
+    },
+    {
+      "key": "quest_ui.reward_received_message",
+      "label": "Received the reward for the '{0}' request: {1}"
+    }
+  ],
+  "jpnLabels": [
+    {
+      "key": "quest.sample.collect01.name",
+      "label": "ポーション配達"
+    },
+    {
+      "key": "quest.sample.collect01.description",
+      "label": "赤いポーションを3個集めて持ってきてください。"
+    },
+    {
+      "key": "quest.sample.collect01.condition.0",
+      "label": "赤いポーションを3個収集"
+    },
+    {
+      "key": "quest.sample.collect02.name",
+      "label": "素材収集"
+    },
+    {
+      "key": "quest.sample.collect02.description",
+      "label": "火炎ポーションと氷結ポーションをそれぞれ1個集めてください。"
+    },
+    {
+      "key": "quest.sample.collect02.condition.0",
+      "label": "火炎ポーションを1個収集"
+    },
+    {
+      "key": "quest.sample.collect02.condition.1",
+      "label": "氷結ポーションを1個収集"
+    },
+    {
+      "key": "quest.sample.collect03.name",
+      "label": "整備部品の調達"
+    },
+    {
+      "key": "quest.sample.collect03.description",
+      "label": "電撃ポーションを2個集めて整備班に届けてください。"
+    },
+    {
+      "key": "quest.sample.collect03.condition.0",
+      "label": "電撃ポーションを2個収集"
+    },
+    {
+      "key": "quest.sample.combo01.name",
+      "label": "救助と整理"
+    },
+    {
+      "key": "quest.sample.combo01.description",
+      "label": "敵を倒しながら、落とされたポーションも回収してください。"
+    },
+    {
+      "key": "quest.sample.combo01.condition.0",
+      "label": "敵を5体撃破"
+    },
+    {
+      "key": "quest.sample.combo01.condition.1",
+      "label": "青いポーションを2個収集"
+    },
+    {
+      "key": "quest.sample.combo02.name",
+      "label": "三重任務"
+    },
+    {
+      "key": "quest.sample.combo02.description",
+      "label": "敵を倒し、赤いポーションと火炎ポーションをそれぞれ集めてください。"
+    },
+    {
+      "key": "quest.sample.combo02.condition.0",
+      "label": "敵を3体撃破"
+    },
+    {
+      "key": "quest.sample.combo02.condition.1",
+      "label": "赤いポーションを1個収集"
+    },
+    {
+      "key": "quest.sample.combo02.condition.2",
+      "label": "火炎ポーションを1個収集"
+    },
+    {
+      "key": "quest.sample.hunt02.name",
+      "label": "精鋭掃討"
+    },
+    {
+      "key": "quest.sample.hunt02.description",
+      "label": "このエリアの敵を10体倒してください。"
+    },
+    {
+      "key": "quest.sample.hunt02.condition.0",
+      "label": "敵を10体撃破"
+    },
+    {
+      "key": "quest.sample.hunt03.name",
+      "label": "緊急掃討"
+    },
+    {
+      "key": "quest.sample.hunt03.description",
+      "label": "危険度が上昇しました。敵を15体倒してください。"
+    },
+    {
+      "key": "quest.sample.hunt03.condition.0",
+      "label": "敵を15体撃破"
+    },
+    {
+      "key": "quest.sample.cleanup01.name",
+      "label": "区域整理依頼"
+    },
+    {
+      "key": "quest.sample.cleanup01.description",
+      "label": "このエリアに出没する敵を処理してください。"
+    },
+    {
+      "key": "quest.sample.cleanup01.condition.0",
+      "label": "敵を5体撃破"
+    },
+    {
+      "key": "quest_ui.header",
+      "label": "依頼リクエスト"
+    },
+    {
+      "key": "quest_ui.section_content",
+      "label": "クエスト内容"
+    },
+    {
+      "key": "quest_ui.section_condition",
+      "label": "クエスト達成条件"
+    },
+    {
+      "key": "quest_ui.section_reward",
+      "label": "クエスト報酬"
+    },
+    {
+      "key": "quest_ui.reroll",
+      "label": "リロール"
+    },
+    {
+      "key": "quest_ui.reroll_used",
+      "label": "リロール（使用済み）"
+    },
+    {
+      "key": "quest_ui.accept",
+      "label": "承諾"
+    },
+    {
+      "key": "quest_ui.deny",
+      "label": "拒否"
+    },
+    {
+      "key": "quest_ui.condition_goal",
+      "label": "（目標 {0}）"
+    },
+    {
+      "key": "quest_ui.reward_credit",
+      "label": "報酬: クレジット {0}"
+    },
+    {
+      "key": "quest_ui.reward_item_suffix",
+      "label": "、{0} x{1}"
+    },
+    {
+      "key": "quest_ui.completed_message",
+      "label": "「{0}」依頼を完了しました！報酬: {1}"
+    },
+    {
+      "key": "quest_ui.already_accepted_message",
+      "label": "今回のキャンプ滞在では既に依頼を受注しています。次にキャンプに入ると新しく受注できます。"
+    },
+    {
+      "key": "quest_ui.reward_credit_plain",
+      "label": "クレジット {0}"
+    },
+    {
+      "key": "quest_ui.objective_kill",
+      "label": "敵撃破"
+    },
+    {
+      "key": "quest_ui.objective_collect",
+      "label": "アイテム収集"
+    },
+    {
+      "key": "quest_ui.objective_completed",
+      "label": "目標達成"
+    },
+    {
+      "key": "quest_ui.reward_pending",
+      "label": "報酬待ち"
+    },
+    {
+      "key": "quest_ui.reward_received",
+      "label": "受取済み"
+    },
+    {
+      "key": "quest_ui.credit_name",
+      "label": "クレジット"
+    },
+    {
+      "key": "quest_ui.reward_received_message",
+      "label": "「{0}」依頼の報酬を受け取りました: {1}"
+    }
+  ],
+  "chnLabels": [
+    {
+      "key": "quest.sample.collect01.name",
+      "label": "药水配送"
+    },
+    {
+      "key": "quest.sample.collect01.description",
+      "label": "请收集3瓶红色药水并送来。"
+    },
+    {
+      "key": "quest.sample.collect01.condition.0",
+      "label": "收集3瓶红色药水"
+    },
+    {
+      "key": "quest.sample.collect02.name",
+      "label": "收集材料"
+    },
+    {
+      "key": "quest.sample.collect02.description",
+      "label": "请分别收集1瓶火焰药水和1瓶冰霜药水。"
+    },
+    {
+      "key": "quest.sample.collect02.condition.0",
+      "label": "收集1瓶火焰药水"
+    },
+    {
+      "key": "quest.sample.collect02.condition.1",
+      "label": "收集1瓶冰霜药水"
+    },
+    {
+      "key": "quest.sample.collect03.name",
+      "label": "维修零件采购"
+    },
+    {
+      "key": "quest.sample.collect03.description",
+      "label": "请收集2瓶电击药水并交给维修队。"
+    },
+    {
+      "key": "quest.sample.collect03.condition.0",
+      "label": "收集2瓶电击药水"
+    },
+    {
+      "key": "quest.sample.combo01.name",
+      "label": "救援与清理"
+    },
+    {
+      "key": "quest.sample.combo01.description",
+      "label": "击败敌人的同时，请一并回收掉落的药水。"
+    },
+    {
+      "key": "quest.sample.combo01.condition.0",
+      "label": "击败5个敌人"
+    },
+    {
+      "key": "quest.sample.combo01.condition.1",
+      "label": "收集2瓶蓝色药水"
+    },
+    {
+      "key": "quest.sample.combo02.name",
+      "label": "三重任务"
+    },
+    {
+      "key": "quest.sample.combo02.description",
+      "label": "击败敌人，并分别收集红色药水和火焰药水。"
+    },
+    {
+      "key": "quest.sample.combo02.condition.0",
+      "label": "击败3个敌人"
+    },
+    {
+      "key": "quest.sample.combo02.condition.1",
+      "label": "收集1瓶红色药水"
+    },
+    {
+      "key": "quest.sample.combo02.condition.2",
+      "label": "收集1瓶火焰药水"
+    },
+    {
+      "key": "quest.sample.hunt02.name",
+      "label": "精英扫荡"
+    },
+    {
+      "key": "quest.sample.hunt02.description",
+      "label": "请击败该区域的10个敌人。"
+    },
+    {
+      "key": "quest.sample.hunt02.condition.0",
+      "label": "击败10个敌人"
+    },
+    {
+      "key": "quest.sample.hunt03.name",
+      "label": "紧急扫荡"
+    },
+    {
+      "key": "quest.sample.hunt03.description",
+      "label": "危险等级已上升。请击败15个敌人。"
+    },
+    {
+      "key": "quest.sample.hunt03.condition.0",
+      "label": "击败15个敌人"
+    },
+    {
+      "key": "quest.sample.cleanup01.name",
+      "label": "区域清理委托"
+    },
+    {
+      "key": "quest.sample.cleanup01.description",
+      "label": "请处理该区域出没的敌人。"
+    },
+    {
+      "key": "quest.sample.cleanup01.condition.0",
+      "label": "击败5个敌人"
+    },
+    {
+      "key": "quest_ui.header",
+      "label": "委托请求"
+    },
+    {
+      "key": "quest_ui.section_content",
+      "label": "任务内容"
+    },
+    {
+      "key": "quest_ui.section_condition",
+      "label": "任务达成条件"
+    },
+    {
+      "key": "quest_ui.section_reward",
+      "label": "任务奖励"
+    },
+    {
+      "key": "quest_ui.reroll",
+      "label": "重掷"
+    },
+    {
+      "key": "quest_ui.reroll_used",
+      "label": "重掷（已使用）"
+    },
+    {
+      "key": "quest_ui.accept",
+      "label": "接受"
+    },
+    {
+      "key": "quest_ui.deny",
+      "label": "拒绝"
+    },
+    {
+      "key": "quest_ui.condition_goal",
+      "label": "（目标 {0}）"
+    },
+    {
+      "key": "quest_ui.reward_credit",
+      "label": "奖励：信用点 {0}"
+    },
+    {
+      "key": "quest_ui.reward_item_suffix",
+      "label": "，{0} x{1}"
+    },
+    {
+      "key": "quest_ui.completed_message",
+      "label": "已完成「{0}」委托！奖励：{1}"
+    },
+    {
+      "key": "quest_ui.already_accepted_message",
+      "label": "本次营地停留期间已经接取过委托。下次进入营地后可以重新接取。"
+    },
+    {
+      "key": "quest_ui.reward_credit_plain",
+      "label": "信用点 {0}"
+    },
+    {
+      "key": "quest_ui.objective_kill",
+      "label": "击败敌人"
+    },
+    {
+      "key": "quest_ui.objective_collect",
+      "label": "收集物品"
+    },
+    {
+      "key": "quest_ui.objective_completed",
+      "label": "目标达成"
+    },
+    {
+      "key": "quest_ui.reward_pending",
+      "label": "待领取奖励"
+    },
+    {
+      "key": "quest_ui.reward_received",
+      "label": "已领取"
+    },
+    {
+      "key": "quest_ui.credit_name",
+      "label": "信用点"
+    },
+    {
+      "key": "quest_ui.reward_received_message",
+      "label": "已领取「{0}」委托的奖励：{1}"
+    }
+  ]
+}

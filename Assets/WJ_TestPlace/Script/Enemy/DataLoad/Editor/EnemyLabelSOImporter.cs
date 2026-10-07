@@ -13,8 +13,8 @@ namespace DataSystem
     /// </summary>
     public static class EnemyLabelSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/JSONFile";
-        private const string DefaultOutputAssetPath = "Assets/WJ_TestPlace/Data/Enemy/EnemyLabelDatabase.asset";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/EnemyData/2. JSONFile";
+        private const string DefaultOutputAssetPath = "Assets/Resources/DataFiles/EnemyData/3. GeneratedAssets/LabelData/EnemyLabelDatabase.asset";
 
         [MenuItem("DataLoader/Enemy Label/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -24,6 +24,28 @@ namespace DataSystem
             if (string.IsNullOrEmpty(jsonPath))
                 return;
 
+            Import(jsonPath, DefaultOutputAssetPath);
+        }
+
+        [MenuItem("DataLoader/Enemy Label/0. Run All Steps")]
+        public static void RunAllSteps()
+        {
+            Debug.Log("[EnemyLabel] ===== 통합 실행 시작 =====");
+
+            string jsonPath = EnemyLabelExcelToJson.ConvertWithDefaultPaths();
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                Debug.LogError("[EnemyLabel] 엑셀을 찾지 못해 중단했습니다.");
+                return;
+            }
+
+            Import(jsonPath, DefaultOutputAssetPath);
+            Debug.Log("[EnemyLabel] ===== 통합 실행 완료 =====");
+        }
+
+        /// <summary>대화상자 없이 기본 JSON 경로 + 기본 출력 경로로 갱신한다. Enemy Data의 통합 실행에서도 쓴다.</summary>
+        public static void ImportWithDefaultPaths(string jsonPath)
+        {
             Import(jsonPath, DefaultOutputAssetPath);
         }
 

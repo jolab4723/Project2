@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe296e9506b4ee643822025f25a39dbf, type: 3}
+  m_Name: UE_PhaseOrchid
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.PassiveBuffUniqueEffectSO
+  effectName: "\uD5C8\uACF5 \uAC1C\uD654"
+  icon: {fileID: 21300000, guid: 1314de8030081e345a500e73fe6b31bc, type: 3}
+  effectDescription: "\uC7A5\uCC29 \uC911 \uCE58\uBA85\uD0C0 \uD655\uB960\uC774 {0},
+    \uC2A4\uD0AC \uBC94\uC704\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  coefficients:
+  - 8
+  - 10
+  buffSpec:
+    statEffects:
+    - statType: 10
+      value: 8
+    - statType: 21
+      value: 10
+    duration: 0
+    stackBehavior: 2
+    maxStack: 1
+    displayKind: 0

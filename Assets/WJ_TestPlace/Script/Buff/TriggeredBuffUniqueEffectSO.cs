@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace ItemSystem
@@ -67,6 +67,9 @@ namespace ItemSystem
         /// <summary>PerItem일 때 아이템 인스턴스별 마지막 발동 시각. 키는 ItemInstance.instanceId.</summary>
         private Dictionary<string, float> lastTriggerTimeByItem;
 
+        /// <summary>소유자 장부가 어느 캐릭터의 버프 매니저 기준인지. PassiveBuffUniqueEffectSO와 같은 이유.</summary>
+        [System.NonSerialized] private PlayerBuffManager appliedManager;
+
         /// <summary>이 소유 아이템 기준으로 지금 발동 가능한지(쿨타임이 끝났는지).</summary>
         public bool IsReadyFor(ItemInstance ownerItem) =>
             cooldownSeconds <= 0f || Time.time >= GetLastTriggerTime(ownerItem) + cooldownSeconds;
@@ -107,13 +110,23 @@ namespace ItemSystem
         /// </summary>
         public override void OnEquip(ItemInstance ownerItem)
         {
+            // 이 효과를 켜는 건 OnTrigger이고 OnEquip은 스택 복원만 한다. 그래도 **소유자 등록은
+            // 항상** 해야 OnUnequip이 "마지막 하나인지"를 판단할 수 있다.
+            //
+            // !! 매니저가 없으면 등록도 하지 않는다(PassiveBuffUniqueEffectSO와 동일). 등록만 해두면
+            //    appliedManager가 낡은 채로 남아서, 다음 OnUnequip이 살아있는 매니저를 만났을 때
+            //    "다른 캐릭터"로 판단해 장부를 통째로 비워버린다.
+            PlayerBuffManager manager = PlayerBuffManager.Instance;
+            if (manager == null)
+                return;
+
+            SyncManager(manager);
+            UniqueEffectOwners.AddOwner(this, ownerItem);
+
             if (!persistStackOnItem || ownerItem == null || ownerItem.persistedStackCount <= 0)
                 return;
 
-            if (PlayerBuffManager.Instance == null)
-                return;
-
-            PlayerBuffManager.Instance.SetBuffStack(this, ownerItem.persistedStackCount);
+            manager.SetBuffStack(this, ownerItem.persistedStackCount);
         }
 
         /// <summary>
@@ -124,7 +137,32 @@ namespace ItemSystem
         /// </summary>
         public override void OnUnequip(ItemInstance ownerItem)
         {
-            PlayerBuffManager.Instance?.RemoveBuff(this);
+            PlayerBuffManager manager = PlayerBuffManager.Instance;
+            if (manager == null || appliedManager != manager)
+            {
+                // 적용 대상이 사라졌거나 다른 캐릭터로 바뀐 뒤라 이 매니저에서 지울 버프가 없다.
+                UniqueEffectOwners.Clear(this);
+                appliedManager = manager;
+                return;
+            }
+
+            // 같은 유물을 2개 들고 하나만 잃었을 때 쌓아둔 스택이 통째로 날아가던 문제 때문에,
+            // 마지막 소유자가 빠질 때만 제거한다.
+            if (UniqueEffectOwners.RemoveOwner(this, ownerItem))
+                manager.RemoveBuff(this);
+        }
+
+        /// <summary>
+        /// 장부가 어느 캐릭터의 버프 매니저 기준인지 맞춘다. 씬 이동·캐릭터 교체로 매니저가 새로
+        /// 생기면 이전 기록은 의미가 없다(새 매니저엔 버프가 없다).
+        /// </summary>
+        private void SyncManager(PlayerBuffManager manager)
+        {
+            if (appliedManager == manager)
+                return;
+
+            UniqueEffectOwners.Clear(this);
+            appliedManager = manager;
         }
 
         /// <summary>
@@ -203,5 +241,6 @@ namespace ItemSystem
         public BuffStackBehavior StackBehavior => buffSpec != null ? buffSpec.stackBehavior : BuffStackBehavior.RefreshDuration;
         public int MaxStack => buffSpec != null ? buffSpec.maxStack : 0;
         public bool IsPermanent => buffSpec == null || buffSpec.IsPermanent;
+        public BuffDisplayKind DisplayKind => buffSpec != null ? buffSpec.displayKind : BuffDisplayKind.Auto;
     }
 }

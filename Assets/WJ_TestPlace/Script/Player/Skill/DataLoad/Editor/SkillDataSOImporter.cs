@@ -16,8 +16,8 @@ namespace DataSystem
     /// </summary>
     public static class SkillDataSOImporter
     {
-        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/SkillData/JSONFile";
-        private const string OutputFolder = "Assets/WJ_TestPlace/Data/Skill";
+        private const string DefaultJsonFolder = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile";
+        private const string OutputFolder = "Assets/Resources/DataFiles/CharData/SkillData/3. GeneratedAssets";
 
         [MenuItem("DataLoader/Skill Data/2. Generate SO From JSON")]
         public static void GenerateSoFromJsonFromMenu()
@@ -33,8 +33,8 @@ namespace DataSystem
         [MenuItem("DataLoader/Skill Data/0. Run All Steps")]
         public static void RunAllSteps()
         {
-            const string excelPath = "Assets/Resources/DataFiles/SkillData/ExcelFile/SkillData.xlsx";
-            const string jsonPath = "Assets/Resources/DataFiles/SkillData/JSONFile/SkillData.json";
+            const string excelPath = "Assets/Resources/DataFiles/CharData/SkillData/1. ExcelFile/SkillData.xlsx";
+            const string jsonPath = "Assets/Resources/DataFiles/CharData/SkillData/2. JSONFile/SkillData.json";
 
             string excelAbsolute = AssetPathToAbsolutePath(excelPath);
             string jsonAbsolute = AssetPathToAbsolutePath(jsonPath);
@@ -107,12 +107,30 @@ namespace DataSystem
             asset.skillName = row.skillName;
             asset.damageMultiplier = row.damageMultiplier;
             asset.cooldownSeconds = row.cooldownSeconds;
+            asset.manaCost = row.manaCost;
+            asset.evolution1ManaCost = row.evolution1ManaCost;
+            asset.evolution2ManaCost = row.evolution2ManaCost;
+            asset.evolution3ManaCost = row.evolution3ManaCost;
 
             switch (asset.shapeType)
             {
                 case SkillShapeType.SectorSlash:
                     asset.sectorRange = row.range;
                     asset.sectorAngle = row.rangeWidthOrAngle;
+                    break;
+
+                case SkillShapeType.AwakeningBurst:
+                    // 시전 타격은 자기 주변 원형이라 각도는 코드에서 360으로 고정한다(시트의 각도 칸은 안 쓴다).
+                    // 강화 버프(awakeningBuff)는 오브젝트 참조라 시트로 표현할 수 없어 에디터에서 직접 연결한다.
+                    asset.sectorRange = row.range;
+                    break;
+
+                case SkillShapeType.CarpetBombing:
+                    // range = 커서 지정 최대 사거리, rangeWidthOrAngle = 폭격 영역 반경.
+                    // 발수/간격/개별 폭발 반경/발당 계수는 범용 컬럼 2개로 담기엔 항목이 많아 SO 기본값을 쓰고,
+                    // 폭탄 프리팹은 BombThrow와 마찬가지로 에디터에서 직접 연결한다.
+                    asset.bombThrowRange = row.range;
+                    asset.carpetAreaRadius = row.rangeWidthOrAngle;
                     break;
 
                 case SkillShapeType.LineSlam:
@@ -126,9 +144,12 @@ namespace DataSystem
 
                 case SkillShapeType.ArcProjectile:
                     asset.projectileMaxDistance = row.range;
-                    // maxStacks/stackRechargeSeconds/projectileSpeed/explosionRadius/arcProjectilePrefab은
+                    // 아크 버스터는 쿨타임 대신 스택으로 관리하므로, 시트의 cooldownSeconds를 스택 1개 충전 시간으로 쓴다.
+                    // 연속 발사 간격은 GunnerSkillController의 고정값(1초)이다.
+                    asset.stackRechargeSeconds = row.cooldownSeconds;
+                    // maxStacks/projectileSpeed/explosionRadius/arcProjectilePrefab은
                     // 이 시트의 2개 범용 컬럼(range/rangeWidthOrAngle)으로 표현하기엔 항목이 너무 많아서
-                    // SkillDefinitionSO의 C# 기본값(6스택/4초/15/1유닛)을 그대로 쓰고, 프리팹은 코드에서 직접 연결한다.
+                    // SkillDefinitionSO의 C# 기본값(6스택/15/1유닛)을 그대로 쓰고, 프리팹은 코드에서 직접 연결한다.
                     break;
 
                 case SkillShapeType.BombThrow:

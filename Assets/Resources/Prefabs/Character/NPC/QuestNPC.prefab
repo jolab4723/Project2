@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6587018176971876396}
   - component: {fileID: 7959849854730269897}
   - component: {fileID: 399004241991431915}
+  - component: {fileID: 668388571246775323}
   m_Layer: 17
   m_Name: QuestNPC
   m_TagString: Untagged
@@ -137,6 +138,8 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   nameTagWorldOffset: {x: 0, y: 2.5, z: 0}
   objectName: "\uC758\uB8B0"
+  nameKey: npc_ui.quest
+  uiLabels: {fileID: 0}
 --- !u!114 &6587018176971876396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,7 +154,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickNPC
   onClicked:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 668388571246775323}
+        m_TargetAssemblyTypeName: QuestBoardNPC, Assembly-CSharp
+        m_MethodName: Interact
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &7959849854730269897
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -435,6 +450,18 @@ MonoBehaviour:
   hitFxFadeOutDuration: 0.25
   hitFxColor: {r: 1, g: 1, b: 1, a: 1}
   hitFxRadius: 0.5
+--- !u!114 &668388571246775323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1149654885680088136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7840eb90f07702f48848c33b51d4ceda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestBoardNPC
 --- !u!1 &2596203458110600006
 GameObject:
   m_ObjectHideFlags: 0

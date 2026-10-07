@@ -1,0 +1,80 @@
+{
+  "asset_set": "Project2 world drop visual markers",
+  "purpose": "Subtle in-world category recognition without reusing equippable assets",
+  "required_assets": [
+    "WorldDrop_FighterGreatsword",
+    "WorldDrop_FighterBlunt",
+    "WorldDrop_FighterAxe",
+    "WorldDrop_GunnerRifle",
+    "WorldDrop_GunnerShotgun",
+    "WorldDrop_GunnerGrenadeLauncher",
+    "WorldDrop_ArmorHelmet",
+    "WorldDrop_Armor",
+    "WorldDrop_ArmorBoots",
+    "WorldDrop_Potion",
+    "WorldDrop_Relic"
+  ],
+  "style": [
+    "industrial sci-fi miniature",
+    "clean silhouette",
+    "restrained detail",
+    "white tint-ready non-emissive material",
+    "shallow manufactured bevels"
+  ],
+  "finish": {
+    "profile": "polished_smooth",
+    "low_poly_explicitly_requested": false,
+    "intended_view": "Act1 top-down game camera",
+    "surface_targets": [
+      "readable category silhouette",
+      "no razor-sharp manufactured edges",
+      "no visible blockout residue",
+      "no floating decorative parts",
+      "white base preserves runtime rarity tint"
+    ]
+  },
+  "hard_gates": {
+    "triangle_range": [500, 1500],
+    "triangle_hard_max": 2000,
+    "typical_max_extent_m": [0.45, 0.75],
+    "absolute_max_extent_m": 0.9,
+    "maximum_horizontal_radius_m": 0.5,
+    "mesh_objects": 1,
+    "material_slots": 1,
+    "required_local_scale": [1.0, 1.0, 1.0],
+    "forbidden_contents": [
+      "armature",
+      "collider",
+      "camera",
+      "light",
+      "Grip",
+      "Muzzle"
+    ]
+  },
+  "stages": [
+    "contract_and_references",
+    "graybox_and_proportion",
+    "primary_and_secondary_forms",
+    "structural_refinement",
+    "materials",
+    "surface_polish",
+    "export_and_fresh_import_validation"
+  ],
+  "approval_gates": [],
+  "deliverables": [
+    "deterministic Python source",
+    "one blend per asset",
+    "one glb per asset",
+    "one Unity fbx per asset",
+    "authored and fresh-import metrics",
+    "hero and multiview evidence"
+  ],
+  "review_questions": [
+    "Does the revised axe read immediately as an axe rather than a hammer or slab?",
+    "Does the blunt weapon read as a simple T-shaped hammer and remain distinct from the axe?",
+    "Do helmet, chest, and boots remain distinct at the game camera distance?",
+    "Does the potion preserve the icon's round flask, short cork, neck hardware, and hanging medal?",
+    "Does the set feel coherent and understated beside the existing rarity beam?",
+    "Are bevels and circular forms smooth enough without spending detail on hidden surfaces?"
+  ]
+}

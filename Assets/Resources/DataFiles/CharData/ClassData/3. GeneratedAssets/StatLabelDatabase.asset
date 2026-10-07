@@ -1,0 +1,162 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c75f4f03c80877443a5c9f5e4e5c0be3, type: 3}
+  m_Name: StatLabelDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::StatLabelDatabaseSO
+  korLabels:
+  - statKey: level
+    label: LV
+  - statKey: maxHealth
+    label: "\uCD5C\uB300 HP"
+  - statKey: maxMana
+    label: "\uCD5C\uB300 MP"
+  - statKey: attackPower
+    label: "\uACF5\uACA9\uB825"
+  - statKey: defensePower
+    label: "\uBC29\uC5B4\uB825"
+  - statKey: critRate
+    label: "\uD06C\uB9AC\uD2F0\uCEEC \uD655\uB960"
+  - statKey: critMult
+    label: "\uD06C\uB9AC\uD2F0\uCEEC \uD53C\uD574"
+  - statKey: moveSpeed
+    label: "\uC774\uB3D9\uC18D\uB3C4"
+  - statKey: attackSpeed
+    label: "\uACF5\uACA9\uC18D\uB3C4"
+  - statKey: cdr
+    label: "\uC2A4\uD0AC \uCFE8\uD0C0\uC784 \uAC10\uC18C"
+  - statKey: mpRegen
+    label: "\uB9C8\uB098 \uC7AC\uC0DD\uB825"
+  - statKey: pen
+    label: "\uAD00\uD1B5\uB825"
+  - statKey: skillRange
+    label: "\uC2A4\uD0AC \uBC94\uC704 \uC99D\uAC00"
+  - statKey: fireBonus
+    label: "\uBD88 \uC18D\uC131 \uD53C\uD574 \uBCF4\uB108\uC2A4"
+  - statKey: iceBonus
+    label: "\uC5BC\uC74C \uC18D\uC131 \uD53C\uD574 \uBCF4\uB108\uC2A4"
+  - statKey: electricBonus
+    label: "\uC804\uAE30 \uC18D\uC131 \uD53C\uD574 \uBCF4\uB108\uC2A4"
+  - statKey: normalDamage
+    label: "\uC77C\uBC18\uACF5\uACA9 \uD53C\uD574 \uC99D\uAC00"
+  - statKey: skillDamage
+    label: "\uC2A4\uD0AC \uD53C\uD574 \uC99D\uAC00"
+  engLabels:
+  - statKey: level
+    label: LV
+  - statKey: maxHealth
+    label: MAX HP
+  - statKey: maxMana
+    label: MAX MP
+  - statKey: attackPower
+    label: ATK
+  - statKey: defensePower
+    label: DEF
+  - statKey: critRate
+    label: Crit Rate
+  - statKey: critMult
+    label: Crit DMG
+  - statKey: moveSpeed
+    label: MoveSpeed
+  - statKey: attackSpeed
+    label: AttackSpeed
+  - statKey: cdr
+    label: Skill Cooldown
+  - statKey: mpRegen
+    label: MP Regen
+  - statKey: pen
+    label: Penetration
+  - statKey: skillRange
+    label: Skill Range
+  - statKey: fireBonus
+    label: Fire Element Bonus
+  - statKey: iceBonus
+    label: Ice Element Bonus
+  - statKey: electricBonus
+    label: Electric Element Bonus
+  - statKey: normalDamage
+    label: Normal Attack Damage
+  - statKey: skillDamage
+    label: Skill Damage
+  jpnLabels:
+  - statKey: level
+    label: LV
+  - statKey: maxHealth
+    label: "\u6700\u5927HP"
+  - statKey: maxMana
+    label: "\u6700\u5927MP"
+  - statKey: attackPower
+    label: "\u653B\u6483\u529B"
+  - statKey: defensePower
+    label: "\u9632\u5FA1\u529B"
+  - statKey: critRate
+    label: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u7387"
+  - statKey: critMult
+    label: "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30C0\u30E1\u30FC\u30B8"
+  - statKey: moveSpeed
+    label: "\u79FB\u52D5\u901F\u5EA6"
+  - statKey: attackSpeed
+    label: "\u653B\u6483\u901F\u5EA6"
+  - statKey: cdr
+    label: "\u30B9\u30AD\u30EB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0\u6E1B\u5C11"
+  - statKey: mpRegen
+    label: "\u30DE\u30CA\u56DE\u5FA9\u529B"
+  - statKey: pen
+    label: "\u8CAB\u901A\u529B"
+  - statKey: skillRange
+    label: "\u30B9\u30AD\u30EB\u7BC4\u56F2\u5897\u52A0"
+  - statKey: fireBonus
+    label: "\u706B\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9"
+  - statKey: iceBonus
+    label: "\u6C37\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9"
+  - statKey: electricBonus
+    label: "\u96FB\u6C17\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u30DC\u30FC\u30CA\u30B9"
+  - statKey: normalDamage
+    label: "\u901A\u5E38\u653B\u6483\u30C0\u30E1\u30FC\u30B8\u5897\u52A0"
+  - statKey: skillDamage
+    label: "\u30B9\u30AD\u30EB\u30C0\u30E1\u30FC\u30B8\u5897\u52A0"
+  chnLabels:
+  - statKey: level
+    label: LV
+  - statKey: maxHealth
+    label: "\u6700\u5927HP"
+  - statKey: maxMana
+    label: "\u6700\u5927MP"
+  - statKey: attackPower
+    label: "\u653B\u51FB\u529B"
+  - statKey: defensePower
+    label: "\u9632\u5FA1\u529B"
+  - statKey: critRate
+    label: "\u66B4\u51FB\u7387"
+  - statKey: critMult
+    label: "\u66B4\u51FB\u4F24\u5BB3"
+  - statKey: moveSpeed
+    label: "\u79FB\u52A8\u901F\u5EA6"
+  - statKey: attackSpeed
+    label: "\u653B\u51FB\u901F\u5EA6"
+  - statKey: cdr
+    label: "\u6280\u80FD\u51B7\u5374\u7F29\u51CF"
+  - statKey: mpRegen
+    label: "\u9B54\u529B\u56DE\u590D"
+  - statKey: pen
+    label: "\u7A7F\u900F\u529B"
+  - statKey: skillRange
+    label: "\u6280\u80FD\u8303\u56F4\u63D0\u5347"
+  - statKey: fireBonus
+    label: "\u706B\u5C5E\u6027\u4F24\u5BB3\u52A0\u6210"
+  - statKey: iceBonus
+    label: "\u51B0\u5C5E\u6027\u4F24\u5BB3\u52A0\u6210"
+  - statKey: electricBonus
+    label: "\u7535\u5C5E\u6027\u4F24\u5BB3\u52A0\u6210"
+  - statKey: normalDamage
+    label: "\u666E\u901A\u653B\u51FB\u4F24\u5BB3\u63D0\u5347"
+  - statKey: skillDamage
+    label: "\u6280\u80FD\u4F24\u5BB3\u63D0\u5347"

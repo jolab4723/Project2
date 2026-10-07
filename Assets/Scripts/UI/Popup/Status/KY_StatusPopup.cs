@@ -1,4 +1,5 @@
 using DG.Tweening;
+using ItemSystem;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,7 +21,9 @@ public class KY_StatusPopup : KY_PopupBase
     public KY_StatRow cooldownReductionRow;
     public KY_StatRow mpRegenRow;
     public KY_StatRow penetrationRow;
-    public KY_StatRow skillRangeRow;     
+    public KY_StatRow skillRangeRow;
+    public KY_StatRow normalDamageRow;
+    public KY_StatRow skillDamageRow;
 
     [Header("속성 행")]
     public KY_ElementRow fireRow;
@@ -34,21 +37,78 @@ public class KY_StatusPopup : KY_PopupBase
     [Tooltip("비워두면 각 행의 이름 텍스트를 건드리지 않는다(기존 하드코딩된 텍스트 유지).")]
     public StatLabelDatabaseSO statLabels;
 
+    [Header("스탯 아이콘")]
+    [Tooltip("각 행의 자식 오브젝트를 열지 않고 이곳에서 아이콘을 지정한다.")]
+    public Sprite hpIcon;
+    public Sprite mpIcon;
+    public Sprite attackIcon;
+    public Sprite defenseIcon;
+    public Sprite moveSpeedIcon;
+    public Sprite attackSpeedIcon;
+    public Sprite critChanceIcon;
+    public Sprite critMultiplierIcon;
+    public Sprite cooldownReductionIcon;
+    public Sprite mpRegenIcon;
+    public Sprite penetrationIcon;
+    public Sprite skillRangeIcon;
+    [Tooltip("전용 아이콘이 없어 기존 것을 임시로 쓴다. 디자인 나오면 교체.")]
+    public Sprite normalDamageIcon;
+    public Sprite skillDamageIcon;
+
     private KY_StatData currentData;
     private bool isDetailed = false;
 
     private KY_SlideAnimator slideAnimator;
     private KY_CurtainEffect curtainEffect;
+    private KY_UIAnimationManager animationManager;
+    private Sequence transitionSequence;
 
     private PlayerStatManager statManager;
+    private PlayerStat subscribedStat;
+    private bool explicitOwner;
+    public bool IsOpen => gameObject.activeSelf;
+    public PlayerStatManager BoundStats => statManager;
+    private KY_StatRow[] statRows;
 
     void Awake()
     {
         slideAnimator = GetComponent<KY_SlideAnimator>();
         curtainEffect = GetComponentInChildren<KY_CurtainEffect>();
+        animationManager = GetComponent<KY_UIAnimationManager>();
+        statRows = GetComponentsInChildren<KY_StatRow>(true);
         detailToggle.onValueChanged.AddListener(OnDetailToggleChanged);
 
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (statLabels == null)
+            statLabels = Resources.Load<StatLabelDatabaseSO>("DataFiles/CharData/ClassData/3. GeneratedAssets/StatLabelDatabase");
+
         ApplyLabels();
+        ApplyIcons();
+        ApplyValueSuffixes();
+    }
+
+    /// <summary>
+    /// 값 자체가 %p인 행(크리티컬 확률 0~100, 쿨타임 감소 0~70)은 총합 뒤에 %를 붙인다.
+    /// 아이템 툴팁 등의 표기(ItemDisplayNames.StatUnit)와 맞춘다.
+    /// </summary>
+    void ApplyValueSuffixes()
+    {
+        critChanceRow?.SetValueSuffix("%");
+        cooldownReductionRow?.SetValueSuffix("%");
+
+        // WJ 이우진 수정(2026-10-01): 크리티컬 피해·스킬 범위·일반/스킬 공격 피해 증가도 % 표기.
+        // 크리티컬 피해 스탯은 "추가 배율 %"라(21 → 피해 ×1.21, WBH_PlayerStatus.CritMult) 100을 더해
+        // 실제 배율인 121%로 보여준다. 스탯 값·전투 계산은 그대로이고 표시만 바뀐다.
+        critMultiplierRow?.SetValueSuffix("%");
+        critMultiplierRow?.SetValueOffset(100f);
+        skillRangeRow?.SetValueSuffix("%");
+        normalDamageRow?.SetValueSuffix("%");
+        skillDamageRow?.SetValueSuffix("%");
+    }
+
+    void OnValidate()
+    {
+        ApplyIcons();
     }
 
     /// <summary>
@@ -72,14 +132,34 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.SetLabel(statLabels.GetLabel("cdr"));
         mpRegenRow.SetLabel(statLabels.GetLabel("mpRegen"));
         penetrationRow.SetLabel(statLabels.GetLabel("pen"));
-        skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));   
+        skillRangeRow.SetLabel(statLabels.GetLabel("skillRange"));
+        normalDamageRow?.SetLabel(statLabels.GetLabel("normalDamage"));
+        skillDamageRow?.SetLabel(statLabels.GetLabel("skillDamage"));
+    }
+
+    /// <summary>루트 인스펙터에 지정한 아이콘을 각 스탯 행에 반영한다.</summary>
+    void ApplyIcons()
+    {
+        hpRow?.SetIcon(hpIcon);
+        mpRow?.SetIcon(mpIcon);
+        attackRow?.SetIcon(attackIcon);
+        defenseRow?.SetIcon(defenseIcon);
+        moveSpeedRow?.SetIcon(moveSpeedIcon);
+        attackSpeedRow?.SetIcon(attackSpeedIcon);
+        critChanceRow?.SetIcon(critChanceIcon);
+        critMultiplierRow?.SetIcon(critMultiplierIcon);
+        cooldownReductionRow?.SetIcon(cooldownReductionIcon);
+        mpRegenRow?.SetIcon(mpRegenIcon);
+        penetrationRow?.SetIcon(penetrationIcon);
+        skillRangeRow?.SetIcon(skillRangeIcon);
+        normalDamageRow?.SetIcon(normalDamageIcon);
+        skillDamageRow?.SetIcon(skillDamageIcon);
     }
 
     void OnEnable()
     {
-        statManager = PlayerStatManager.Instance;
-        if (statManager != null)
-            statManager.Stat.OnStatChanged += HandleStatChanged;
+        if (!explicitOwner && !MirrorNetworkManager.OwnsGameplay) statManager = PlayerStatManager.Instance;
+        SubscribeStats();
 
         // 팝업이 떠 있는 동안 언어가 바뀌면 즉시 반영되도록 구독한다.
         if (YJ_LanguageManager.Instance != null)
@@ -88,8 +168,7 @@ public class KY_StatusPopup : KY_PopupBase
 
     void OnDisable()
     {
-        if (statManager != null)
-            statManager.Stat.OnStatChanged -= HandleStatChanged;
+        UnsubscribeStats();
 
         if (YJ_LanguageManager.Instance != null)
             YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
@@ -107,27 +186,99 @@ public class KY_StatusPopup : KY_PopupBase
 
     public override void Open()
     {
+        transitionSequence?.Kill();
+        // 슬라이드 중에 정상 크기 콘텐츠가 한 프레임 보였다가 다시 접히지 않도록,
+        // 비활성 상태에서 먼저 접어 둔 뒤 슬라이드와 함께 펼친다.
+        curtainEffect ??= GetComponentInChildren<KY_CurtainEffect>(true);
+        curtainEffect?.PrepareOpen();
         gameObject.SetActive(true);
 
         // 닫혀 있는 동안 언어가 바뀌었을 수 있으므로 열 때마다 다시 채운다.
         ApplyLabels();
         RequestData();
 
-        Sequence seq = DOTween.Sequence();
-        seq.Append(slideAnimator.SlideIn());
-        seq.AppendCallback(() => curtainEffect.Open());
+        // SW 수정: 씬마다 저장된 스크롤 위치가 달라 상단 행(속성·HP·MP·공격력)이 가려지지 않도록 항상 맨 위부터 연다.
+        var scrollRect = GetComponentInChildren<UnityEngine.UI.ScrollRect>(true);
+        if (scrollRect != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        animationManager?.PlayPanelOpen();
+
+        // 팝업이 화면 안으로 들어온 뒤에 내용을 전개한다.
+        transitionSequence = DOTween.Sequence();
+        float slideDuration = slideAnimator != null ? slideAnimator.duration : 0f;
+        transitionSequence.AppendInterval(slideDuration);
+        transitionSequence.AppendCallback(() => curtainEffect?.Open());
     }
 
     public override void Close()
     {
-        Sequence seq = DOTween.Sequence();
-        seq.Append(curtainEffect.Close());
-        seq.AppendCallback(() => slideAnimator.SlideOut(() => gameObject.SetActive(false)));
+        transitionSequence?.Kill();
+        transitionSequence = DOTween.Sequence();
+        if (curtainEffect != null)
+            transitionSequence.Append(curtainEffect.Close());
+        transitionSequence.AppendCallback(() =>
+        {
+            if (slideAnimator != null)
+                slideAnimator.SlideOut(() => gameObject.SetActive(false));
+            else
+                gameObject.SetActive(false);
+        });
+    }
+
+    void OnDestroy()
+    {
+        UnsubscribeStats();
+        transitionSequence?.Kill();
+    }
+
+    /// <summary>SW 수정: 싱글 표시 기능을 유지하며 멀티에서는 지정한 로컬 플레이어만 구독합니다.</summary>
+    public void Bind(PlayerStatManager owner)
+    {
+        UnsubscribeStats();
+        explicitOwner = true;
+        statManager = owner;
+        if (isActiveAndEnabled)
+        {
+            SubscribeStats();
+            RequestData();
+        }
+    }
+
+    /// <summary>SW 수정: 씬 전환 때 기존 플레이어 구독과 참조를 해제합니다.</summary>
+    public void Unbind()
+    {
+        UnsubscribeStats();
+        explicitOwner = true;
+        statManager = null;
+    }
+
+    /// <summary>SW 수정: 씬 전환 중 남은 UI 연출을 종료합니다.</summary>
+    public void CloseImmediate()
+    {
+        transitionSequence?.Kill();
+        gameObject.SetActive(false);
+    }
+
+    private void SubscribeStats()
+    {
+        UnsubscribeStats();
+        subscribedStat = statManager != null ? statManager.Stat : null;
+        if (subscribedStat != null) subscribedStat.OnStatChanged += HandleStatChanged;
+    }
+
+    private void UnsubscribeStats()
+    {
+        if (subscribedStat != null) subscribedStat.OnStatChanged -= HandleStatChanged;
+        subscribedStat = null;
     }
 
     void RequestData()
     {
-        if (statManager == null)
+        if (statManager == null && !explicitOwner && !MirrorNetworkManager.OwnsGameplay)
             statManager = PlayerStatManager.Instance;
 
         if (statManager == null || statManager.Stat == null)
@@ -140,8 +291,8 @@ public class KY_StatusPopup : KY_PopupBase
     }
 
     /// <summary>
-    /// PlayerStatManager의 캐릭터/장비/버프/패시브 레이어를 KY_StatData(캐릭터/장비/버프 3단)로 변환한다.
-    /// 패시브 스킬트리는 아직 UI가 구분하는 3단에 없어서 버프 몫에 합쳐 넣는다(현재는 패시브가 스텁이라 실질적으로 0).
+    /// PlayerStatManager의 캐릭터/장비/패시브/버프 레이어를 KY_StatData(4단)로 변환한다.
+    /// 화면에서는 캐릭터(흰색) → 장비(노랑) → 패시브(파랑) → 버프(초록) 순으로 보여준다.
     /// </summary>
     private static KY_StatData BuildDataFromPlayerStat(PlayerStatManager statManager)
     {
@@ -161,6 +312,10 @@ public class KY_StatusPopup : KY_PopupBase
             mpRegen = Build(c.mpRegenFlat, eq.mpRegenFlat, eq.mpRegenPercent, bu.mpRegenPercent, bu.mpRegenFlat, pa.mpRegenPercent, pa.mpRegenFlat),
             penetration = Build(c.penFlat, eq.penFlat, eq.penPercent, bu.penPercent, bu.penFlat, pa.penPercent, pa.penFlat),
             skillRange = Build(c.skillRangeFlat, eq.skillRangeFlat, eq.skillRangePercent, bu.skillRangePercent, bu.skillRangeFlat, pa.skillRangePercent, pa.skillRangeFlat),
+            // 피해 증감 %는 기준이 되는 캐릭터 기본값이 없다. mp와 같은 flat 합산 패턴으로 기본값 0에
+            // 각 레이어의 %를 그대로 더한다(BuildClamped는 0 밑으로 잘려서 디버프를 표현 못 한다).
+            normalDamage = Build(0f, eq.normalDamagePercent, 0f, 0f, bu.normalDamagePercent, 0f, pa.normalDamagePercent),
+            skillDamage = Build(0f, eq.skillDamagePercent, 0f, 0f, bu.skillDamagePercent, 0f, pa.skillDamagePercent),
             fireDamage = Build(c.fireBonusFlat, eq.fireBonusFlat, eq.fireBonusPercent, bu.fireBonusPercent, bu.fireBonusFlat, pa.fireBonusPercent, pa.fireBonusFlat),
             iceDamage = Build(c.iceBonusFlat, eq.iceBonusFlat, eq.iceBonusPercent, bu.iceBonusPercent, bu.iceBonusFlat, pa.iceBonusPercent, pa.iceBonusFlat),
             lightningDamage = Build(c.electricBonusFlat, eq.electricBonusFlat, eq.electricBonusPercent, bu.electricBonusPercent, bu.electricBonusFlat, pa.electricBonusPercent, pa.electricBonusFlat),
@@ -170,15 +325,15 @@ public class KY_StatusPopup : KY_PopupBase
     private static KY_StatTypeData Build(float characterFlat, float equipFlat, float equipPercent, float buffPercent, float buffFlat, float passivePercent, float passiveFlat)
     {
         PlayerStat.CalcBreakdown(characterFlat, equipFlat, equipPercent, buffPercent, buffFlat, passivePercent, passiveFlat,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     private static KY_StatTypeData BuildClamped(float characterFlat, float equipFlat, float buffFlat, float passiveFlat, float min, float max)
     {
         PlayerStat.CalcBreakdownClampedFlat(characterFlat, equipFlat, buffFlat, passiveFlat, min, max,
-            out float baseValue, out float equipValue, out float buffValue);
-        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, buffValue = buffValue };
+            out float baseValue, out float equipValue, out float passiveValue, out float buffValue);
+        return new KY_StatTypeData { baseValue = baseValue, equipValue = equipValue, passiveValue = passiveValue, buffValue = buffValue };
     }
 
     void SetData(KY_StatData data)
@@ -196,10 +351,33 @@ public class KY_StatusPopup : KY_PopupBase
         cooldownReductionRow.UpdateMode(data.cooldownReduction, isDetailed);
         mpRegenRow.UpdateMode(data.mpRegen, isDetailed);
         penetrationRow.UpdateMode(data.penetration, isDetailed);
-        skillRangeRow.UpdateMode(data.skillRange, isDetailed);      
+        skillRangeRow.UpdateMode(data.skillRange, isDetailed);
+        normalDamageRow?.UpdateMode(data.normalDamage, isDetailed);
+        skillDamageRow?.UpdateMode(data.skillDamage, isDetailed);
         fireRow.SetData(data.fireDamage);
         iceRow.SetData(data.iceDamage);
         lightningRow.SetData(data.lightningDamage);
+
+        ApplyEnchantState();
+    }
+
+    /// <summary>
+    /// 장착 무기의 속성(인챈트)에 해당하는 칸만 강조 표시한다.
+    /// 무기가 없거나 무속성이면 세 칸 모두 해제된다.
+    ///
+    /// !! 인챈트는 "현재 장착 무기의 속성"이다. 속성별 피해 보너스 수치와는 별개라서
+    ///    보너스가 0이어도 인챈트 표시는 켜질 수 있다.
+    /// </summary>
+    void ApplyEnchantState()
+    {
+        ElementType enchanted = ElementType.None;
+
+        if (statManager != null && statManager.TryGetEquippedWeaponInfo(out EquippedWeaponInfo weapon))
+            enchanted = weapon.elementType;
+
+        fireRow.SetEnchanted(enchanted == ElementType.Fire);
+        iceRow.SetEnchanted(enchanted == ElementType.Ice);
+        lightningRow.SetEnchanted(enchanted == ElementType.Electric);
     }
 
     void OnDetailToggleChanged(bool isOn)
@@ -209,6 +387,12 @@ public class KY_StatusPopup : KY_PopupBase
 
         isDetailed = isOn;
         SetData(currentData);
+
+        if (statRows == null || statRows.Length == 0)
+            statRows = GetComponentsInChildren<KY_StatRow>(true);
+
+        for (int i = 0; i < statRows.Length; i++)
+            statRows[i].PlayDetailTransition(isDetailed, i * 0.04f);
 
         StartCoroutine(RebuildLayout());
     }

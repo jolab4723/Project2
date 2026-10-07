@@ -21,6 +21,12 @@ namespace ItemSystem
 
         public override void OnEquip(ItemInstance ownerItem)
         {
+            // 러너가 없다는 건 이 효과가 꺼져 있다는 뜻이므로 장부도 비어 있어야 한다.
+            if (runnerObject == null)
+                UniqueEffectOwners.Clear(this);
+
+            UniqueEffectOwners.AddOwner(this, ownerItem);
+
             if (runnerObject != null)
                 return; // 이미 실행 중이면 중복 생성 방지
 
@@ -33,6 +39,11 @@ namespace ItemSystem
 
         public override void OnUnequip(ItemInstance ownerItem)
         {
+            // 같은 효과를 2개 보유하다 하나만 잃어도 러너가 파괴되던 문제 때문에,
+            // 마지막 소유자가 빠질 때만 정리한다.
+            if (!UniqueEffectOwners.RemoveOwner(this, ownerItem))
+                return;
+
             if (runnerObject == null)
                 return;
 

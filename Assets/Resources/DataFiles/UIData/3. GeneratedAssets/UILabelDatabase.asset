@@ -1,0 +1,3407 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f591b5698277fe642b498455f1cdba1f, type: 3}
+  m_Name: UILabelDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::UILabelDatabaseSO
+  korLabels:
+  - key: settings_ui.tab_display
+    label: "\uD654\uBA74"
+  - key: settings_ui.tab_sound
+    label: "\uC18C\uB9AC"
+  - key: settings_ui.tab_control
+    label: "\uC870\uC791"
+  - key: settings_ui.tab_gameplay
+    label: "\uAC8C\uC784 \uD50C\uB808\uC774"
+  - key: settings_ui.section_screen_size
+    label: "\uD654\uBA74 \uD06C\uAE30"
+  - key: settings_ui.label_resolution
+    label: "\uD574\uC0C1\uB3C4"
+  - key: settings_ui.label_fullscreen
+    label: "\uCC3D\uBAA8\uB4DC"
+  - key: settings_ui.label_quality
+    label: "\uD488\uC9C8"
+  - key: settings_ui.label_brightness
+    label: "\uBC1D\uAE30"
+  - key: settings_ui.option_low
+    label: "\uB0AE\uC74C"
+  - key: settings_ui.option_medium
+    label: "\uC911\uAC04"
+  - key: settings_ui.option_high
+    label: "\uB192\uC74C"
+  - key: settings_ui.label_max_fps
+    label: "\uCD5C\uB300 FPS"
+  - key: settings_ui.option_unlimited
+    label: "\uBB34\uC81C\uD55C"
+  - key: settings_ui.label_master_volume
+    label: "\uC804\uCCB4\uC74C\uB7C9"
+  - key: settings_ui.label_bgm_volume
+    label: "\uBC30\uACBD\uC74C"
+  - key: settings_ui.label_sfx_volume
+    label: "\uD6A8\uACFC\uC74C"
+  - key: settings_ui.label_mute
+    label: "\uC74C\uC18C\uAC70"
+  - key: settings_ui.section_key_binding
+    label: "\uD0A4 \uC124\uC815"
+  - key: settings_ui.skill_slot_1
+    label: "\uC2A4\uD0AC1"
+  - key: settings_ui.skill_slot_2
+    label: "\uC2A4\uD0AC2"
+  - key: settings_ui.skill_slot_3
+    label: "\uC2A4\uD0AC3"
+  - key: settings_ui.skill_slot_4
+    label: "\uC2A4\uD0AC4"
+  - key: settings_ui.skill_slot_potion
+    label: "\uC18C\uBAA8\uD488"
+  - key: settings_ui.skill_slot_dodge
+    label: "\uD68C\uD53C"
+  - key: settings_ui.label_enemy_health_display
+    label: "\uC801 \uCCB4\uB825 \uD45C\uC2DC"
+  - key: settings_ui.option_always
+    label: "\uD56D\uC0C1"
+  - key: settings_ui.option_on_hit
+    label: "\uD53C\uACA9\uC2DC"
+  - key: settings_ui.option_none
+    label: "\uD45C\uC2DC \uC548 \uD568"
+  - key: settings_ui.label_damage_display
+    label: "\uB370\uBBF8\uC9C0 \uD45C\uC2DC"
+  - key: settings_ui.label_screen_shake
+    label: "\uD654\uBA74 \uD754\uB4E4\uB9BC"
+  - key: settings_ui.label_tutorial
+    label: "\uD29C\uD1A0\uB9AC\uC5BC"
+  - key: settings_ui.option_once
+    label: "\uD55C\uBC88\uB9CC"
+  - key: settings_ui.label_language
+    label: "\uC5B8\uC5B4"
+  - key: settings_ui.button_reset
+    label: "\uCD08\uAE30 \uC124\uC815\uC73C\uB85C"
+  - key: settings_ui.button_apply
+    label: "\uC801\uC6A9"
+  - key: settings_ui.button_confirm
+    label: "\uD655\uC778"
+  - key: settings_ui.rebind_prompt
+    label: "\uBCC0\uACBD\uD560 \uD0A4\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
+  - key: settings_ui.desc_resolution
+    label: "\uD654\uBA74\uC758 \uD574\uC0C1\uB3C4\uB97C \uBCC0\uACBD\uD560 \uC218
+      \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_fullscreen
+    label: "\uCC3D\uBAA8\uB4DC\uC758 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218
+      \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_brightness
+    label: "\uBC1D\uAE30\uB97C \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_quality
+    label: "\uD488\uC9C8\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_max_fps
+    label: "\uCD5C\uB300 FPS\uC5D0 \uB300\uD55C \uC124\uC815\uC744 \uBCC0\uACBD\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_master_volume
+    label: "\uC804\uCCB4\uC74C\uB7C9\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_bgm_volume
+    label: "\uBC30\uACBD\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_sfx_volume
+    label: "\uD6A8\uACFC\uC74C\uC744 \uC870\uC808\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_mute
+    label: "\uC74C\uC18C\uAC70 \uC5EC\uBD80\uB97C \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_skill_keybind
+    label: "\uAC8C\uC784\uC758 \uC2A4\uD0AC \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_potion_keybind
+    label: "\uAC8C\uC784\uC758 \uC18C\uBAA8\uD488 \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_dodge_keybind
+    label: "\uAC8C\uC784\uC758 \uD68C\uD53C \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.key_open_skill
+    label: "\uC2A4\uD0AC \uCC3D"
+  - key: settings_ui.key_open_inventory
+    label: "\uC778\uBCA4\uD1A0\uB9AC"
+  - key: settings_ui.key_open_status
+    label: "\uC2A4\uD0EF \uCC3D"
+  - key: settings_ui.key_open_quest
+    label: "\uD018\uC2A4\uD2B8 \uCC3D"
+  - key: settings_ui.key_open_buff
+    label: "\uBC84\uD504 \uCC3D"
+  - key: settings_ui.desc_menu_keybind
+    label: "\uAC8C\uC784\uC758 \uBA54\uB274 \uB2E8\uCD95\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_enemy_health_display
+    label: "\uC801 \uCCB4\uB825 \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
+      \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_damage_display
+    label: "\uB370\uBBF8\uC9C0 \uD45C\uC2DC\uC5D0 \uC5EC\uBD80\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_screen_shake
+    label: "\uAC8C\uC784 \uC911 \uD654\uBA74 \uD754\uB4E4\uB9BC \uC5EC\uBD80\uC5D0
+      \uB300\uD574 \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_tutorial
+    label: "\uD29C\uD1A0\uB9AC\uC5BC \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
+      \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.desc_language
+    label: "\uC5B8\uC5B4 \uC124\uC815\uC744 \uBCC0\uACBD\uD569\uB2C8\uB2E4"
+  - key: pause_ui.resume
+    label: "\uACC4\uC18D\uD558\uAE30"
+  - key: pause_ui.settings
+    label: "\uD658\uACBD\uC124\uC815"
+  - key: pause_ui.giveup
+    label: "\uD3EC\uAE30\uD55C\uB2E4"
+  - key: pause_ui.save_and_quit
+    label: "\uC800\uC7A5 \uD6C4 \uC885\uB8CC"
+  - key: skill_ui.evolution_format
+    label: "\uC9C4\uD654 : {0}"
+  - key: skill_ui.enhancement_format
+    label: "\uAC15\uD654 : {0}"
+  - key: skill_ui.cooldown_only
+    label: "\uCFE8\uD0C0\uC784 {0}\uCD08"
+  - key: skill_ui.damage_and_cooldown
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08 \xB7
+      MP {2}"
+  - key: skill_ui.cooldown_mana
+    label: "\uCFE8\uD0C0\uC784 {0}\uCD08 \xB7 MP {1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\uD53C\uD574 \uBC30\uC728 {0}% \xB7 \uCFE8\uD0C0\uC784 {1}\uCD08 \xB7
+      \uC2A4\uD0DD\uB2F9 MP {2}"
+  - key: skill_ui.arc_laser_name
+    label: "\uC544\uD06C \uB808\uC774\uC800"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\uC138\uBD80 \uC2A4\uD0EF \uBCF4\uAE30"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\uC0C1\uC810"
+  - key: inventory_ui.header
+    label: "\uC778\uBCA4\uD1A0\uB9AC"
+  - key: upgrade_ui.header
+    label: "\uAC15\uD654"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\uBD80\uAC00 \uC635\uC158"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\uACE0\uC720 \uD6A8\uACFC"
+  - key: upgrade_ui.current_stat
+    label: "\uD604\uC7AC \uC2A4\uD0EF : {0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\uAC15\uD654 \uD6C4 \uC2A4\uD0EF : {0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\uAC15\uD654\uBE44\uC6A9 : {0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\uAC15\uD654\uBE44\uC6A9 : -"
+  - key: upgrade_ui.unknown_item
+    label: "\uC544\uC774\uD15C"
+  - key: upgrade_ui.selection_required
+    label: "\uAC15\uD654\uD560 \uC544\uC774\uD15C\uC744 \uC120\uD0DD\uD558\uC138\uC694."
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \uAC15\uD654 \uC131\uACF5"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\uD06C\uB808\uB527\uC774 \uBD80\uC871\uD569\uB2C8\uB2E4."
+  - key: upgrade_ui.result_invalid_item
+    label: "\uAC15\uD654\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: upgrade_ui.result_invalid_cost
+    label: "\uAC15\uD654 \uBE44\uC6A9 \uC124\uC815\uC774 \uC62C\uBC14\uB974\uC9C0
+      \uC54A\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\uAC15\uD654 \uCC98\uB9AC \uC911 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.result_failed
+    label: "\uAC15\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: npc_ui.quest
+    label: "\uC758\uB8B0"
+  - key: npc_ui.rest
+    label: "\uD734\uC2DD"
+  - key: chat_ui.equip_success
+    label: "\uC7A5\uBE44 \uCC98\uB9AC\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_swapped
+    label: "\uC7A5\uBE44\uB97C \uAD50\uCCB4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_invalid_item
+    label: "\uC7A5\uCC29\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.equip_invalid_slot
+    label: "\uD574\uB2F9 \uC2AC\uB86F\uC5D0 \uC7A5\uCC29\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_slot_occupied
+    label: "\uC774\uBBF8 \uC7A5\uBE44\uAC00 \uC7A5\uCC29\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_not_equipped
+    label: "\uD574\uC81C\uD560 \uC7A5\uBE44\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_no_return_space
+    label: "\uAE30\uC874 \uC7A5\uBE44\uB97C \uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uB0B4\uB824\uB193\uC744
+      \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_failed
+    label: "\uC7A5\uBE44 \uCC98\uB9AC\uAC00 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.equip_wrong_class
+    label: "\uC774 \uCE90\uB9AD\uD130\uAC00 \uC7A5\uCC29\uD560 \uC218 \uC5C6\uB294
+      \uBB34\uAE30\uC785\uB2C8\uB2E4."
+  - key: chat_ui.equip_unknown
+    label: "\uC54C \uC218 \uC5C6\uB294 \uC7A5\uBE44 \uCC98\uB9AC \uACB0\uACFC\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_acquisition
+    label: "{0} \uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_acquisition_colored
+    label: "{0} \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_success_position
+    label: "{0} \uC704\uCE58 : {1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_no_space
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uAC00 \uAF49 \uCC3C\uC2B5\uB2C8\uB2E4!"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_placement_failed
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uC544\uC774\uD15C\uC744 \uBC30\uCE58\uD558\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_add_failed
+    label: "\uC544\uC774\uD15C \uD68D\uB4DD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_success
+    label: "{0}\uC744(\uB97C) \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uB97C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_not_player
+    label: "\uB0B4 \uC778\uBCA4\uD1A0\uB9AC\uC758 \uC544\uC774\uD15C\uB9CC \uC0AD\uC81C\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\uC7A5\uCC29 \uC911\uC778 \uC544\uC774\uD15C\uC740 \uBC14\uB85C \uC0AD\uC81C\uD560
+      \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_failed
+    label: "\uC544\uC774\uD15C \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\uC544\uC774\uD15C\uC744 \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_buy_success
+    label: "{0}\uC744 \uAD6C\uB9E4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_sell_success
+    label: "{0}\uC744 \uD310\uB9E4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_not_enough_gold
+    label: "\uD06C\uB808\uB527\uC774 \uBD80\uC871\uD574 {0} \uAD6C\uB9E4\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_no_space_buy
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uC5D0 \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_no_space_sell
+    label: "\uC0C1\uC810\uC5D0 \uD310\uB9E4 \uC544\uC774\uD15C\uC744 \uB193\uC744
+      \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_invalid_item
+    label: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.shop_transfer_failed
+    label: "{0} \uC774\uB3D9 \uC911 \uAC70\uB798\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0} \uC7AC\uACE0 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.shop_failed
+    label: "\uAC70\uB798 \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.pickup_default
+    label: "\uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.out_of_range
+    label: "\uC544\uC774\uD15C\uC5D0 \uB354 \uAC00\uAE4C\uC774 \uC774\uB3D9\uD574
+      \uC8FC\uC138\uC694."
+  - key: chat_ui.already_claimed
+    label: "\uC774\uBBF8 \uD68D\uB4DD\uB41C \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.pickup_unavailable
+    label: "\uB354 \uC774\uC0C1 \uD68D\uB4DD\uD560 \uC218 \uC5C6\uB294 \uC544\uC774\uD15C\uC785\uB2C8\uB2E4."
+  - key: chat_ui.item_unavailable
+    label: "\uB300\uC0C1 \uC544\uC774\uD15C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.stale_revision
+    label: "\uC544\uC774\uD15C \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.recovery_failed
+    label: "\uC544\uC774\uD15C \uB4DC\uB78D\uACFC \uC778\uBCA4\uD1A0\uB9AC \uBCF5\uAD6C\uC5D0
+      \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC778\uBCA4\uD1A0\uB9AC \uC0C1\uD0DC\uB97C
+      \uD655\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.upgrade_process_failed
+    label: "\uAC15\uD654\uB97C \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.drop_failed
+    label: "\uC544\uC774\uD15C\uC744 \uD544\uB4DC\uC5D0 \uB193\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.acquisition_failed
+    label: "\uC544\uC774\uD15C\uC744 \uD68D\uB4DD\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.shop_state_changed
+    label: "\uC0C1\uC810 \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.inventory_state_changed
+    label: "\uC778\uBCA4\uD1A0\uB9AC \uC0C1\uD0DC\uAC00 \uBC14\uB00C\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: chat_ui.trade_failed
+    label: "\uAC70\uB798\uB97C \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: loading_ui.tooltip_title
+    label: "\uB370\uBE0C\uB9AC\uC2A4-9"
+  - key: loading_ui.tooltip_content
+    label: "\uC774\uACF3\uC740 \uC624\uC5FC\uC73C\uB85C \uC778\uD574 \uC778\uAC04\uC774
+      \uC0B4 \uC218 \uC5C6\uB294 \uBC84\uB824\uC9C4 \uB545\uC774\uC5C8\uC9C0\uB9CC,
+      \uC218\uBC31 \uB144\uAC04 \uC313\uC778 \uB85C\uBD07 \uC794\uD574\uB4E4\uC774
+      \uC2A4\uC2A4\uB85C\uB97C \uBCF5\uAD6C\uD558\uACE0 \uAC1C\uC870\uD558\uAE30 \uC2DC\uC791\uD558\uBA74\uC11C
+      \uAE30\uAD34\uD55C \uBA54\uCE74 \uC0DD\uD0DC\uACC4\uAC00 \uB9CC\uB4E4\uC5B4\uC84C\uC2B5\uB2C8\uB2E4."
+  - key: common_ui.yes
+    label: "\uC608"
+  - key: common_ui.confirm
+    label: "\uD655\uC778"
+  - key: chat_ui.panel_title
+    label: "\uCC44\uD305"
+  - key: chat_ui.input_placeholder
+    label: "\uBA54\uC2DC\uC9C0 \uC785\uB825\u2026"
+  - key: chat_ui.connect_hint
+    label: "\uC811\uC18D \uD6C4 \uB300\uD654\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
+  - key: chat_ui.unread_indicator
+    label: "\uC0C8 \uBA54\uC2DC\uC9C0 \u2193"
+  - key: skill_evolution_ui.title
+    label: "\uC2A4\uD0AC \uC9C4\uD654\xB7\uAC15\uD654 \uC124\uC815"
+  - key: skill_evolution_ui.hint
+    label: "K\uB85C \uC5F4\uAE30/\uB2EB\uAE30 - \uC67C\uCABD \uBC84\uD2BC: \uC9C4\uD654(\uC5C6\uC74C\u2192\uC9C4\uD6541\u21922\u21923),
+      \uC624\uB978\uCABD \uBC84\uD2BC: \uAC15\uD654(\uC5C6\uC74C\u2192\uAC15\uD6541\u21922\u21923)"
+  - key: skill_evolution_ui.none
+    label: "\uC5C6\uC74C"
+  - key: passive_skill_ui.title
+    label: "\uD328\uC2DC\uBE0C \uC5C5\uADF8\uB808\uC774\uB4DC"
+  - key: passive_skill_ui.skill_clear
+    label: "\uCD08\uAE30\uD654"
+  - key: passive_skill_ui.skill_points
+    label: "\uC2A4\uD0AC \uD3EC\uC778\uD2B8 -"
+  - key: passive_skill_ui.credit_format
+    label: "\uD06C\uB808\uB527 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\uD06C\uB808\uB527 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\uD504\uB85C\uD544 \uC900\uBE44 \uC911"
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: "\uD604\uC7AC \uB808\uBCA8: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\uD604\uC7AC \uD6A8\uACFC: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\uB2E4\uC74C \uB808\uBCA8: {0}"
+  - key: common_ui.cancel
+    label: "\uCDE8\uC18C"
+  - key: rest_ui.header
+    label: "\uD734\uC2DD"
+  - key: rest_ui.description
+    label: "\uD06C\uB808\uB527\uC744 \uC9C0\uBD88\uD558\uC5EC\n\uD734\uC2DD\uC744
+      \uCDE8\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: rest_ui.health_recovery
+    label: "\uCCB4\uB825 25% \uD68C\uBCF5"
+  - key: rest_ui.health_recovery_format
+    label: "\uCCB4\uB825 {0}% \uD68C\uBCF5"
+  - key: rest_ui.potion_recharge
+    label: "\uD3EC\uC158 \uCDA9\uC804"
+  - key: rest_ui.cost_format
+    label: "\uD544\uC694 \uD06C\uB808\uB527 : {0}"
+  - key: rest_ui.complete_message
+    label: "{0} \uD06C\uB808\uB527\uC744 \uC18C\uBE44\uD558\uC5EC \uCCB4\uB825 {1},
+      \uD3EC\uC158 {2}\uAC1C\uB97C \uCC44\uC6E0\uC2B5\uB2C8\uB2E4."
+  - key: chat_ui.prefix_chat
+    label: "[\uCC44\uD305]"
+  - key: chat_ui.prefix_acquisition
+    label: "[\uD68D\uB4DD]"
+  - key: chat_ui.prefix_warning
+    label: "[\uC548\uB0B4]"
+  - key: chat_ui.prefix_connection
+    label: "[\uC5F0\uACB0]"
+  - key: chat_ui.item_fallback_name
+    label: "\uC544\uC774\uD15C"
+  - key: shop_ui.reroll_cost_format
+    label: "<color=#FFEB04>{0}</color> \uB9AC\uB864"
+  - key: shop_ui.reroll_free
+    label: "\uBB34\uB8CC \uB9AC\uB864"
+  - key: shop_ui.reroll_count_format
+    label: '[ {0} ]'
+  - key: settings_ui.reset_confirm
+    label: "\uC124\uC815\uC744 \uAE30\uBCF8\uAC12\uC73C\uB85C \uCD08\uAE30\uD654\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: settings_ui.reset_warning
+    label: "\uD604\uC7AC \uC124\uC815\uC774 \uBAA8\uB450 \uAE30\uBCF8\uAC12\uC73C\uB85C
+      \uBCC0\uACBD\uB429\uB2C8\uB2E4."
+  - key: pause_ui.giveup_confirm
+    label: "\uAC8C\uC784\uC744 \uD3EC\uAE30\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.giveup_warning
+    label: "\uACBD\uACE0: \uD604\uC7AC \uAC8C\uC784 \uB370\uC774\uD130\uAC00 \uC0AC\uB77C\uC9D1\uB2C8\uB2E4."
+  - key: pause_ui.giveup_reconfirm
+    label: "\uC815\uB9D0 \uD3EC\uAE30\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.giveup_reconfirm_warning
+    label: "\uC9C4\uD589 \uC911\uC778 \uC6D0\uC815\uC774 \uCD08\uAE30\uD654\uB418\uBA70
+      \uD06C\uB808\uB527\uC744 \uBC1B\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: pause_ui.save_and_quit_confirm
+    label: "\uAC8C\uC784\uC744 \uC800\uC7A5\uD558\uACE0 \uC885\uB8CC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.host_end_confirm
+    label: "\uD638\uC2A4\uD2B8 \uC138\uC158\uC744 \uC885\uB8CC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.host_end_warning
+    label: "\uBAA8\uB4E0 \uCC38\uAC00\uC790\uC758 \uC5F0\uACB0\uACFC \uD604\uC7AC
+      \uB7F0\uC774 \uC885\uB8CC\uB429\uB2C8\uB2E4."
+  - key: pause_ui.leave_confirm
+    label: "\uC774 \uC138\uC158\uC5D0\uC11C \uB5A0\uB098\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.leave_warning
+    label: "\uD604\uC7AC \uCC38\uAC00 \uC790\uACA9\uC744 \uD3EC\uAE30\uD558\uBA70
+      \uC774 \uB7F0\uC5D0 \uC7AC\uC811\uC18D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: pause_ui.temp_leave_confirm
+    label: "\uC7A0\uC2DC \uC138\uC158\uC5D0\uC11C \uB098\uAC00\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.temp_leave_warning
+    label: "\uC11C\uBC84\uAC00 \uC720\uC9C0\uB418\uB294 \uB3D9\uC548 5\uBD84 \uC548\uC5D0
+      \uC7AC\uC811\uC18D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uD30C\uD2F0\uC758
+      \uAC8C\uC784\uC740 \uACC4\uC18D\uB429\uB2C8\uB2E4."
+  - key: pause_ui.adjustment
+    label: "\uC815\uC0B0 \uD6C4 \uC561\uD2B8 \uC885\uB8CC"
+  - key: pause_ui.settle_confirm
+    label: "\uC815\uC0B0 \uD6C4 \uAC8C\uC784\uC744 \uC885\uB8CC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: pause_ui.settle_warning
+    label: "\uBCF4\uC720 \uD06C\uB808\uB527\uACFC \uC544\uC774\uD15C \uC6D0\uAC00\uC758
+      50%\uB97C \uACC4\uC815 \uD06C\uB808\uB527\uC73C\uB85C \uBC1B\uACE0, \uD604\uC7AC
+      \uC6D0\uC815\uC740 \uCD08\uAE30\uD654\uB429\uB2C8\uB2E4."
+  - key: login_ui.title
+    label: "\uC0AC\uC6A9\uC790 \uC778\uC99D"
+  - key: login_ui.subtitle
+    label: "\uC0AC\uC6A9\uC790 \uC778\uC99D \uD130\uBBF8\uB110"
+  - key: login_ui.account
+    label: "\uACC4\uC815 ID"
+  - key: login_ui.email_placeholder
+    label: "\uC774\uBA54\uC77C"
+  - key: login_ui.password
+    label: "\uBE44\uBC00\uBC88\uD638"
+  - key: login_ui.confirm_password
+    label: "\uBE44\uBC00\uBC88\uD638 \uD655\uC778"
+  - key: login_ui.submit
+    label: "\uC811\uC18D"
+  - key: login_ui.no_account
+    label: "\uACC4\uC815\uC774 \uC5C6\uB294 \uC0C1\uD0DC\uC778\uAC00\uC694?"
+  - key: login_ui.create_account
+    label: "\uACC4\uC815 \uC0DD\uC131"
+  - key: login_ui.create
+    label: "\uC0DD\uC131"
+  - key: login_ui.has_account
+    label: "\uACC4\uC815\uC774 \uC788\uC73C\uC2E0\uAC00\uC694?"
+  - key: login_ui.login
+    label: "\uB85C\uADF8\uC778"
+  - key: login_ui.footer
+    label: "\uBCF4\uC548 \uC811\uC18D \uD130\uBBF8\uB110"
+  - key: login_ui.submitting
+    label: "\uB85C\uADF8\uC778 \uC911..."
+  - key: login_ui.creating
+    label: "\uACC4\uC815 \uC0DD\uC131 \uC911..."
+  - key: login_ui.required
+    label: "\uC774\uBA54\uC77C\uACFC \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.account_required
+    label: "\uACC4\uC815 ID\uC640 \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD558\uC2ED\uC2DC\uC624."
+  - key: login_ui.confirm_required
+    label: "\uBE44\uBC00\uBC88\uD638 \uD655\uC778\uC744 \uC785\uB825\uD558\uC2ED\uC2DC\uC624."
+  - key: login_ui.password_mismatch
+    label: "\uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.login_error
+    label: "\uB85C\uADF8\uC778 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.profile_incomplete
+    label: "\uACC4\uC815\uC740 \uC0DD\uC131\uB418\uC5C8\uC9C0\uB9CC \uAE30\uBCF8 \uD504\uB85C\uD544\uC744
+      \uC900\uBE44\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778
+      \uD654\uBA74\uC5D0\uC11C \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.created
+    label: "\uACC4\uC815 \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB85C\uADF8\uC778 \uD654\uBA74\uC5D0\uC11C \uC0C8 \uACC4\uC815\uC73C\uB85C
+      \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.create_error
+    label: "\uACC4\uC815 \uC0DD\uC131 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.loader_missing
+    label: "\uC52C \uB85C\uB354\uAC00 \uC900\uBE44\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.
+      Start \uC52C\uBD80\uD130 \uC2E4\uD589\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.scenes_missing
+    label: "TitleScene\uACFC LoadingScene\uC758 \uBE4C\uB4DC \uB4F1\uB85D\uC744 \uD655\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.user_missing
+    label: "\uB85C\uADF8\uC778 \uACB0\uACFC\uC5D0\uC11C \uC0AC\uC6A9\uC790 \uC815\uBCF4\uB97C
+      \uD655\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.auth_failed
+    label: "\uB85C\uADF8\uC778\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.\n\uC774\uBA54\uC77C,
+      \uBE44\uBC00\uBC88\uD638\uC640 Firebase \uC778\uC99D \uC124\uC815\uC744 \uD655\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.firebase_login_error
+    label: "Firebase \uB85C\uADF8\uC778 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.created_user_missing
+    label: "\uACC4\uC815 \uC0DD\uC131 \uACB0\uACFC\uC5D0\uC11C \uC0AC\uC6A9\uC790
+      \uC815\uBCF4\uB97C \uD655\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.firebase_create_error
+    label: "Firebase \uACC4\uC815 \uC0DD\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."
+  - key: login_ui.email_in_use
+    label: "\uC774\uBBF8 \uC0AC\uC6A9 \uC911\uC778 \uC774\uBA54\uC77C\uC785\uB2C8\uB2E4."
+  - key: login_ui.invalid_email
+    label: "\uC62C\uBC14\uB978 \uC774\uBA54\uC77C \uC8FC\uC18C\uB97C \uC785\uB825\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.password_policy
+    label: "Firebase \uBE44\uBC00\uBC88\uD638 \uC815\uCC45\uC744 \uB9CC\uC871\uD558\uB294
+      \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.auth_disabled
+    label: "Firebase Console\uC5D0\uC11C \uC774\uBA54\uC77C/\uBE44\uBC00\uBC88\uD638
+      \uB85C\uADF8\uC778\uC744 \uD65C\uC131\uD654\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.network_error
+    label: "\uB124\uD2B8\uC6CC\uD06C \uC5F0\uACB0\uC744 \uD655\uC778\uD55C \uB4A4
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.too_many_requests
+    label: "\uC694\uCCAD\uC774 \uB108\uBB34 \uB9CE\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC
+      \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.create_failed
+    label: "\uACC4\uC815\uC744 \uC0DD\uC131\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uC785\uB825\uAC12\uACFC Firebase \uC778\uC99D \uC124\uC815\uC744 \uD655\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.config_missing
+    label: "Firebase \uC124\uC815 \uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. google-services.json
+      \uB610\uB294 GoogleService-Info.plist\uB97C Assets \uD3F4\uB354\uC5D0 \uCD94\uAC00\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.dependencies
+    label: "Firebase \uC758\uC874\uC131\uC744 \uC900\uBE44\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4:
+      {0}"
+  - key: login_ui.init_failed
+    label: "Firebase \uCD08\uAE30\uD654\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.
+      \uC124\uC815 \uD30C\uC77C\uACFC \uD504\uB85C\uC81D\uD2B8 \uC5F0\uACB0 \uC0C1\uD0DC\uB97C
+      \uD655\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.title
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uC811\uC18D"
+  - key: connection_ui.subtitle
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uC811\uC18D \uD130\uBBF8\uB110"
+  - key: connection_ui.address
+    label: "\uC11C\uBC84 \uC8FC\uC18C"
+  - key: connection_ui.address_placeholder
+    label: "\uC11C\uBC84 IP \uB610\uB294 \uD638\uC2A4\uD2B8\uBA85"
+  - key: connection_ui.nickname
+    label: "\uB2C9\uB124\uC784"
+  - key: connection_ui.host
+    label: "\uB85C\uCEEC \uD14C\uC2A4\uD2B8 \xB7 Host"
+  - key: connection_ui.join
+    label: "\uC11C\uBC84 \uC811\uC18D"
+  - key: connection_ui.server
+    label: "\uB85C\uCEEC \uD14C\uC2A4\uD2B8 \xB7 \uC11C\uBC84"
+  - key: connection_ui.reconnect
+    label: "\uCD5C\uADFC \uC138\uC158\uC73C\uB85C \uBCF5\uADC0"
+  - key: connection_ui.return_title
+    label: "\uD0C0\uC774\uD2C0\uB85C \uB3CC\uC544\uAC00\uAE30"
+  - key: connection_ui.settings_missing
+    label: "\uC138\uC158 \uC5F0\uACB0 \uC124\uC815\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.invalid_nickname
+    label: "\uB2C9\uB124\uC784\uC740 1~24\uC790\uB85C \uC785\uB825\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.invalid_nickname
+    label: "\uB2C9\uB124\uC784\uC740 1~24\uC790\uB85C \uC785\uB825\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.invalid_address
+    label: "\uC11C\uBC84 IP \uB610\uB294 \uD638\uC2A4\uD2B8\uBA85\uC744 \uC785\uB825\uD574
+      \uC8FC\uC138\uC694. \uD3EC\uD2B8 \uBC88\uD638\uB294 \uBD99\uC774\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.connecting
+    label: "\uC5F0\uACB0 \uC911\u2026"
+  - key: connection_ui.server_running
+    label: "\uC804\uC6A9 \uC11C\uBC84 \uC2E4\uD589 \uC911 \xB7 \uCC38\uAC00\uC790
+      \uB300\uAE30"
+  - key: connection_ui.no_session
+    label: "\uC774 \uD504\uB85C\uD544\uC5D0 \uC800\uC7A5\uB41C \uCD5C\uADFC \uC138\uC158\uC774
+      \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.profile_large
+    label: "\uC7AC\uC811\uC18D \uD504\uB85C\uD544 \uC790\uB8CC\uAC00 \uB108\uBB34
+      \uD07D\uB2C8\uB2E4."
+  - key: connection_ui.profile_invalid
+    label: "\uC7AC\uC811\uC18D \uD504\uB85C\uD544 \uC790\uB8CC\uAC00 \uC62C\uBC14\uB974\uC9C0
+      \uC54A\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.profile_read
+    label: "\uC7AC\uC811\uC18D \uD504\uB85C\uD544\uC744 \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.
+      \uD30C\uC77C \uD615\uC2DD \uB610\uB294 \uC800\uC7A5\uC18C \uC811\uADFC \uAD8C\uD55C\uC744
+      \uD655\uC778\uD558\uC138\uC694."
+  - key: connection_ui.profile_path
+    label: "\uC7AC\uC811\uC18D \uD504\uB85C\uD544 \uC800\uC7A5 \uC704\uCE58\uB97C
+      \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.run_started
+    label: "\uC774\uBBF8 \uCD9C\uBC1C\uD55C \uC138\uC158\uC5D0\uB294 \uC0C8\uB85C
+      \uCC38\uAC00\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.connection_invalid
+    label: "\uC774\uBBF8 \uB4F1\uB85D\uB418\uC5C8\uAC70\uB098 \uC720\uD6A8\uD558\uC9C0
+      \uC54A\uC740 \uC5F0\uACB0\uC785\uB2C8\uB2E4."
+  - key: connection_ui.full
+    label: "\uC138\uC158 \uC815\uC6D0\uC774 \uCC3C\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.reconnect_denied
+    label: "\uC7AC\uC811\uC18D \uC790\uACA9\uC744 \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.reconnect_expired
+    label: "\uC7AC\uC811\uC18D \uC608\uC57D\uC774 \uC5C6\uAC70\uB098 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.version_mismatch
+    label: "\uC11C\uBC84\uC640 \uD074\uB77C\uC774\uC5B8\uD2B8\uC758 \uBE4C\uB4DC \uBC84\uC804\uC774
+      \uB2E4\uB985\uB2C8\uB2E4."
+  - key: connection_ui.passive_profile
+    label: "\uC800\uC7A5\uB41C \uD328\uC2DC\uBE0C \uD504\uB85C\uD544\uC744 \uC77D\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.timeout
+    label: "\uC11C\uBC84 \uCC38\uAC00 \uC2B9\uC778 \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.admitted
+    label: "\uCC38\uAC00 \uC2B9\uC778 \uC644\uB8CC"
+  - key: connection_ui.before_connect
+    label: "\uC11C\uBC84 \uC5F0\uACB0 \uC804"
+  - key: connection_ui.waiting
+    label: "\uC11C\uBC84 \uC5F0\uACB0 \uB300\uAE30 \uC911"
+  - key: connection_ui.disconnected
+    label: "\uC11C\uBC84\uC640 \uC5F0\uACB0\uC774 \uB04A\uC5B4\uC84C\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.request_failed
+    label: "\uC11C\uBC84 \uAC15\uD654 \uC694\uCCAD\uC744 \uC2DC\uC791\uD558\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.request_pending
+    label: "\uC11C\uBC84\uAC00 \uAC15\uD654 \uAC00\uB2A5 \uC5EC\uBD80\uC640 \uACE8\uB4DC\uB97C
+      \uD655\uC778\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: upgrade_ui.state_changed
+    label: "\uC544\uC774\uD15C \uC0C1\uD0DC\uAC00 \uBA3C\uC800 \uBC14\uB00C\uC5B4
+      \uAC15\uD654\uB97C \uCDE8\uC18C\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD574
+      \uC8FC\uC138\uC694."
+  - key: upgrade_ui.item_missing
+    label: "\uC778\uBCA4\uD1A0\uB9AC\uC5D0\uC11C \uD574\uB2F9 \uC544\uC774\uD15C\uC744
+      \uCC3E\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."
+  - key: result_ui.stage
+    label: "\uCD5C\uC885 \uB3C4\uB2EC \uC2A4\uD14C\uC774\uC9C0"
+  - key: result_ui.defeated
+    label: "\uCC98\uCE58\uD55C \uC801"
+  - key: result_ui.play_time
+    label: "\uD50C\uB808\uC774 \uC2DC\uAC04"
+  - key: result_ui.credits
+    label: "\uD68D\uB4DD \uD06C\uB808\uB527"
+  - key: result_ui.retry
+    label: "\uB2E4\uC2DC \uC2DC\uC791"
+  - key: result_ui.return_lobby
+    label: "\uB85C\uBE44\uB85C \uB3CC\uC544\uAC00\uAE30"
+  - key: result_ui.leave_session
+    label: "\uC138\uC158 \uB098\uAC00\uAE30"
+  - key: result_ui.clear_description
+    label: "\uBAA8\uB4E0 \uC2A4\uD14C\uC774\uC9C0\uB97C \uD074\uB9AC\uC5B4\uD588\uC2B5\uB2C8\uB2E4!"
+  - key: result_ui.defeat_description
+    label: "\uC774\uBC88 \uC6D0\uC815\uC774 \uC885\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: result_ui.data_waiting
+    label: "\uC11C\uBC84\uC5D0\uC11C \uACB0\uACFC\uB97C \uBC1B\uB294 \uC911\uC785\uB2C8\uB2E4\u2026"
+  - key: result_ui.data_missing
+    label: "\uACB0\uACFC\uB97C \uC544\uC9C1 \uBC1B\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.
+      \uACC4\uC18D \uAE30\uB2E4\uB9AC\uAC70\uB098 \uB098\uAC08 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: result_ui.request_pending
+    label: "\uC11C\uBC84 \uC751\uB2F5\uC744 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4\u2026"
+  - key: result_ui.act_clear_description
+    label: "\uC561\uD2B8\uB97C \uD074\uB9AC\uC5B4\uD588\uC2B5\uB2C8\uB2E4."
+  - key: result_ui.settle_description
+    label: "\uC815\uC0B0\uC744 \uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4."
+  - key: result_ui.current_stage
+    label: "\uD604\uC7AC \uB3C4\uB2EC \uC2A4\uD14C\uC774\uC9C0"
+  - key: result_ui.farming_value
+    label: "\uD30C\uBC0D \uAC00\uCE58 \uD604\uD669"
+  - key: result_ui.continue
+    label: "\uACC4\uC18D\uD558\uAE30"
+  - key: session_ui.end_host
+    label: "\uD638\uC2A4\uD2B8 \uC138\uC158 \uC885\uB8CC"
+  - key: session_ui.leave
+    label: "\uC138\uC158 \uB5A0\uB098\uAE30"
+  - key: session_ui.leave_temporarily
+    label: "\uC7A0\uC2DC \uB098\uAC00\uAE30"
+  - key: session_ui.confirm_end_host
+    label: "\uD638\uC2A4\uD2B8 \uC138\uC158\uC744 \uC885\uB8CC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: session_ui.warn_end_host
+    label: "\uBAA8\uB4E0 \uCC38\uAC00\uC790\uC758 \uC5F0\uACB0\uACFC \uD604\uC7AC
+      \uB7F0\uC774 \uC885\uB8CC\uB429\uB2C8\uB2E4."
+  - key: session_ui.confirm_leave
+    label: "\uC774 \uC138\uC158\uC5D0\uC11C \uB5A0\uB098\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: session_ui.warn_leave
+    label: "\uD604\uC7AC \uCC38\uAC00 \uC790\uACA9\uC744 \uD3EC\uAE30\uD558\uBA70
+      \uC774 \uB7F0\uC5D0 \uC7AC\uC811\uC18D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.confirm_temporary_leave
+    label: "\uC7A0\uC2DC \uC138\uC158\uC5D0\uC11C \uB098\uAC00\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: session_ui.warn_temporary_leave
+    label: "\uC11C\uBC84\uAC00 \uC720\uC9C0\uB418\uB294 \uB3D9\uC548 5\uBD84 \uC548\uC5D0
+      \uC7AC\uC811\uC18D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uD30C\uD2F0\uC758
+      \uAC8C\uC784\uC740 \uACC4\uC18D\uB429\uB2C8\uB2E4."
+  - key: session_ui.passive_locked
+    label: "\uC900\uBE44\uB97C \uCDE8\uC18C\uD55C \uB4A4 \uD328\uC2DC\uBE0C\uB97C
+      \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.settlement_wait
+    label: "\uACB0\uACFC \uC800\uC7A5\uC744 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4.
+      \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: session_ui.settlement_wait_host
+    label: "\uCC38\uAC00\uC790\uC758 \uACB0\uACFC \uC800\uC7A5\uC744 \uAE30\uB2E4\uB9AC\uACE0
+      \uC788\uC2B5\uB2C8\uB2E4. \uC800\uC7A5 \uD6C4 \uC138\uC158\uC744 \uC885\uB8CC\uD574
+      \uC8FC\uC138\uC694."
+  - key: session_ui.settlement_wait_player
+    label: "{0}\uC758 \uACB0\uACFC \uC800\uC7A5\uC744 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC2B5\uB2C8\uB2E4.
+      \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: session_ui.lobby_loading
+    label: "\uB85C\uBE44 \uC774\uB3D9\uC774 \uB05D\uB09C \uB4A4 \uCD9C\uBC1C\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.player_prefabs_missing
+    label: "\uB450 \uD074\uB798\uC2A4\uC758 \uB124\uD2B8\uC6CC\uD06C \uD504\uB9AC\uD339
+      \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uC138\uC694."
+  - key: session_ui.session_missing
+    label: "\uCC38\uC5EC \uC911\uC778 \uC138\uC158\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.unsupported_request
+    label: "\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uB85C\uBE44 \uC694\uCCAD\uC785\uB2C8\uB2E4."
+  - key: session_ui.return_lobby_denied
+    label: "\uC11C\uBC84\uAC00 \uACB0\uACFC\uB97C \uD655\uC815\uD55C \uB4A4 \uBC29\uC7A5\uB9CC
+      \uD30C\uD2F0\uB97C \uB85C\uBE44\uB85C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.passive_invalid
+    label: "\uD328\uC2DC\uBE0C \uD504\uB85C\uD544\uC744 \uD655\uC778\uD560 \uC218
+      \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: session_ui.party_not_ready
+    label: "\uBAA8\uB4E0 \uCC38\uAC00\uC790\uAC00 \uCE90\uB9AD\uD130 \uC120\uD0DD\uACFC
+      \uC900\uBE44\uB97C \uC644\uB8CC\uD574\uC57C \uD569\uB2C8\uB2E4."
+  - key: preparation_ui.waiting
+    label: "\uD50C\uB808\uC774\uB97C \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4\u2026"
+  - key: preparation_ui.timeout
+    label: "\uD50C\uB808\uC774 \uC900\uBE44 \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: preparation_ui.timeout_retry
+    label: "\uD50C\uB808\uC774 \uC900\uBE44 \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uC5F0\uACB0\uC744 \uC885\uB8CC\uD558\uACE0 \uB2E4\uC2DC \uC2DC\uB3C4\uD558\uC138\uC694."
+  - key: preparation_ui.combat_failed
+    label: "\uC804\uD22C \uC6E8\uC774\uBE0C \uB610\uB294 \uC0DD\uC131 \uC9C0\uC810
+      \uC900\uBE44\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+  - key: preparation_ui.disconnected
+    label: "\uC5F0\uACB0\uC774 \uC885\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: preparation_ui.exit
+    label: "\uB098\uAC00\uAE30"
+  - key: settings_ui.label_allied_buff_effects
+    label: "\uC544\uAD70 \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\uB2E4\uB978 \uD50C\uB808\uC774\uC5B4\uC758 \uBC84\uD504 \uBC94\uC704\uC640
+      \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC \uC5EC\uBD80\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: hud_ui.wave_ready
+    label: "\uC804\uD22C \uC900\uBE44"
+  - key: hud_ui.wave_progress
+    label: "\uC6E8\uC774\uBE0C {0}/{1}"
+  - key: hud_ui.wave_cleared
+    label: "\uC804\uC6D0 \uCC98\uCE58! \xB7 \uD3EC\uD138\uB85C \uC774\uB3D9\uD558\uC138\uC694"
+  - key: title_ui.logout
+    label: "\uB85C\uADF8\uC544\uC6C3"
+  - key: title_ui.signed_in
+    label: "\uB85C\uADF8\uC778 \uC911"
+  - key: title_ui.signed_out
+    label: "\uB85C\uADF8\uC778 \uC548 \uB428"
+  - key: title_ui.checking_account
+    label: "\uACC4\uC815 \uD655\uC778 \uC911..."
+  - key: title_ui.syncing
+    label: "\uB3D9\uAE30\uD654 \uC911..."
+  - key: title_ui.account_changed_retry
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uBA40\uD2F0\uD50C\uB808\uC774\uB97C \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.local_progress_kept
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uB3D9\uAE30\uD654\uB97C
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.scene_missing
+    label: "{0}\uACFC LoadingScene\uC758 \uBE4C\uB4DC \uB4F1\uB85D\uC744 \uD655\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: title_ui.multiplayer_error
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uACC4\uC815 \uC900\uBE44 \uC911 \uC624\uB958\uAC00
+      \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.logout_disconnect_first
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uC5F0\uACB0\uC744 \uC885\uB8CC\uD55C \uB4A4
+      \uB85C\uADF8\uC544\uC6C3\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.logout_test_account
+    label: "\uAC1C\uBC1C \uD14C\uC2A4\uD2B8 \uACC4\uC815\uC740 \uC2E4\uD589 \uC911
+      \uB85C\uADF8\uC544\uC6C3\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: title_ui.logout_failed
+    label: "\uB85C\uADF8\uC544\uC6C3\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC
+      \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.back
+    label: "\uB4A4\uB85C \uAC00\uAE30"
+  - key: login_ui.cached_session_failed
+    label: "\uC800\uC7A5\uB41C \uB85C\uADF8\uC778 \uC0C1\uD0DC\uB97C \uD655\uC778\uD558\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.multiplayer_login_required
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774\uC5D0 \uC9C4\uC785\uD558\uB824\uBA74 \uB85C\uADF8\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.account_changed
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.login_required
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774\uB294 \uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.
+      \uBA54\uC778 \uD654\uBA74\uC5D0\uC11C \uBA40\uD2F0\uD50C\uB808\uC774\uB97C \uC120\uD0DD\uD574
+      \uC8FC\uC138\uC694."
+  - key: connection_ui.syncing_progress
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB97C \uB3D9\uAE30\uD654\uD558\uB294 \uC911\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\uC5F0\uACB0 \uC900\uBE44 \uC2E4\uD328: {0}"
+  - key: connection_ui.sync_retry
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uBA40\uD2F0\uD50C\uB808\uC774
+      \uB3D9\uAE30\uD654\uB97C \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.sync_incomplete
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uBA40\uD2F0\uD50C\uB808\uC774 \uB3D9\uAE30\uD654\uAC00 \uB05D\uB098\uC9C0 \uC54A\uC544
+      \uC9C4\uC785\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.account_changed
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: stage_select_ui.normal_enemy
+    label: "\uC77C\uBC18 \uC801"
+  - key: stage_select_ui.elite_enemy
+    label: "\uC5D8\uB9AC\uD2B8 \uC801"
+  - key: stage_select_ui.camp
+    label: "\uCEA0\uD504"
+  - key: stage_select_ui.unknown
+    label: "\uBBF8\uC9C0"
+  - key: title_ui.single_play
+    label: "\uC2F1\uAE00 \uD50C\uB808\uC774"
+  - key: title_ui.multi_play
+    label: "\uBA40\uD2F0 \uD50C\uB808\uC774"
+  - key: title_ui.continue
+    label: "\uC774\uC5B4\uD558\uAE30"
+  - key: title_ui.passive_skill
+    label: "\uD328\uC2DC\uBE0C \uC2A4\uD0AC"
+  - key: title_ui.settings
+    label: "\uD658\uACBD \uC124\uC815"
+  - key: title_ui.quit
+    label: "\uAC8C\uC784 \uC885\uB8CC"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\uB85C\uADF8\uC544\uC6C3\uD560\uAE4C\uC694?"
+  - key: title_ui.logout_guest_notice
+    label: "\uB85C\uADF8\uC544\uC6C3\uD558\uBA74 \uC2F1\uAE00 \uD50C\uB808\uC774\uB294
+      \uAC8C\uC2A4\uD2B8 \uC800\uC7A5\uC73C\uB85C \uC804\uD658\uB429\uB2C8\uB2E4.
+      \uACC4\uC815 \uC9C4\uD589\uB3C4\uB294 \uB2E4\uC74C \uB85C\uADF8\uC778 \uB54C
+      \uADF8\uB300\uB85C \uC774\uC5B4\uC9D1\uB2C8\uB2E4."
+  - key: title_ui.new_game_confirm
+    label: "\uC0C8 \uAC8C\uC784\uC744 \uC2DC\uC791\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: title_ui.new_game_warning
+    label: "\uC9C4\uD589 \uC911\uC778 \uC6D0\uC815\uC774 \uC0AC\uB77C\uC9C0\uACE0
+      \uCC98\uC74C\uBD80\uD130 \uC2DC\uC791\uD569\uB2C8\uB2E4."
+  - key: login_ui.guest_import_question
+    label: "\uC774 \uACC4\uC815\uC5D0\uB294 \uC544\uC9C1 \uC9C4\uD589\uB3C4\uAC00
+      \uC5C6\uC2B5\uB2C8\uB2E4. \uAC8C\uC2A4\uD2B8\uB85C \uD50C\uB808\uC774\uD55C
+      \uC9C4\uD589\uB3C4\uB97C \uC774 \uACC4\uC815\uC73C\uB85C \uAC00\uC838\uC62C\uAE4C\uC694?"
+  - key: login_ui.guest_import_notice
+    label: "\uAC00\uC838\uC624\uC9C0 \uC54A\uC73C\uBA74 \uC0C8 \uC9C4\uD589\uB3C4\uB85C
+      \uC2DC\uC791\uD558\uACE0, \uAC8C\uC2A4\uD2B8 \uC9C4\uD589\uB3C4\uB294 \uC774
+      \uAE30\uAE30\uC5D0 \uADF8\uB300\uB85C \uB0A8\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.label_allied_buff_effects
+    label: "\uC544\uAD70 \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\uB2E4\uB978 \uD50C\uB808\uC774\uC5B4\uC758 \uBC84\uD504 \uBC94\uC704\uC640
+      \uBC84\uD504 \uD6A8\uACFC \uD45C\uC2DC \uC5EC\uBD80\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: hud_ui.wave_ready
+    label: "\uC804\uD22C \uC900\uBE44"
+  - key: hud_ui.wave_progress
+    label: "\uC6E8\uC774\uBE0C {0}/{1}"
+  - key: hud_ui.wave_cleared
+    label: "\uC804\uC6D0 \uCC98\uCE58! \xB7 \uD3EC\uD138\uB85C \uC774\uB3D9\uD558\uC138\uC694"
+  - key: title_ui.logout
+    label: "\uB85C\uADF8\uC544\uC6C3"
+  - key: title_ui.signed_in
+    label: "\uB85C\uADF8\uC778 \uC911"
+  - key: title_ui.signed_out
+    label: "\uB85C\uADF8\uC778 \uC548 \uB428"
+  - key: title_ui.checking_account
+    label: "\uACC4\uC815 \uD655\uC778 \uC911..."
+  - key: title_ui.syncing
+    label: "\uB3D9\uAE30\uD654 \uC911..."
+  - key: title_ui.account_changed_retry
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uBA40\uD2F0\uD50C\uB808\uC774\uB97C \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.local_progress_kept
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uB3D9\uAE30\uD654\uB97C
+      \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.scene_missing
+    label: "{0}\uACFC LoadingScene\uC758 \uBE4C\uB4DC \uB4F1\uB85D\uC744 \uD655\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: title_ui.multiplayer_error
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uACC4\uC815 \uC900\uBE44 \uC911 \uC624\uB958\uAC00
+      \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.logout_disconnect_first
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774 \uC5F0\uACB0\uC744 \uC885\uB8CC\uD55C \uB4A4
+      \uB85C\uADF8\uC544\uC6C3\uD574 \uC8FC\uC138\uC694."
+  - key: title_ui.logout_test_account
+    label: "\uAC1C\uBC1C \uD14C\uC2A4\uD2B8 \uACC4\uC815\uC740 \uC2E4\uD589 \uC911
+      \uB85C\uADF8\uC544\uC6C3\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  - key: title_ui.logout_failed
+    label: "\uB85C\uADF8\uC544\uC6C3\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC
+      \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.back
+    label: "\uB4A4\uB85C \uAC00\uAE30"
+  - key: login_ui.cached_session_failed
+    label: "\uC800\uC7A5\uB41C \uB85C\uADF8\uC778 \uC0C1\uD0DC\uB97C \uD655\uC778\uD558\uC9C0
+      \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: login_ui.multiplayer_login_required
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774\uC5D0 \uC9C4\uC785\uD558\uB824\uBA74 \uB85C\uADF8\uC778\uD574
+      \uC8FC\uC138\uC694."
+  - key: login_ui.account_changed
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+      \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.login_required
+    label: "\uBA40\uD2F0\uD50C\uB808\uC774\uB294 \uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.
+      \uBA54\uC778 \uD654\uBA74\uC5D0\uC11C \uBA40\uD2F0\uD50C\uB808\uC774\uB97C \uC120\uD0DD\uD574
+      \uC8FC\uC138\uC694."
+  - key: connection_ui.syncing_progress
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB97C \uB3D9\uAE30\uD654\uD558\uB294 \uC911\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\uC5F0\uACB0 \uC900\uBE44 \uC2E4\uD328: {0}"
+  - key: connection_ui.sync_retry
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uBA40\uD2F0\uD50C\uB808\uC774
+      \uB3D9\uAE30\uD654\uB97C \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."
+  - key: connection_ui.sync_incomplete
+    label: "\uB85C\uCEEC \uC9C4\uD589\uB3C4\uB294 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.
+      \uBA40\uD2F0\uD50C\uB808\uC774 \uB3D9\uAE30\uD654\uAC00 \uB05D\uB098\uC9C0 \uC54A\uC544
+      \uC9C4\uC785\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
+  - key: connection_ui.account_changed
+    label: "\uB85C\uADF8\uC778 \uACC4\uC815\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  - key: stage_select_ui.normal_enemy
+    label: "\uC77C\uBC18 \uC801"
+  - key: stage_select_ui.elite_enemy
+    label: "\uC5D8\uB9AC\uD2B8 \uC801"
+  - key: stage_select_ui.camp
+    label: "\uCEA0\uD504"
+  - key: stage_select_ui.unknown
+    label: "\uBBF8\uC9C0"
+  - key: title_ui.single_play
+    label: "\uC2F1\uAE00 \uD50C\uB808\uC774"
+  - key: title_ui.multi_play
+    label: "\uBA40\uD2F0 \uD50C\uB808\uC774"
+  - key: title_ui.continue
+    label: "\uC774\uC5B4\uD558\uAE30"
+  - key: title_ui.passive_skill
+    label: "\uD328\uC2DC\uBE0C \uC2A4\uD0AC"
+  - key: title_ui.settings
+    label: "\uD658\uACBD \uC124\uC815"
+  - key: title_ui.quit
+    label: "\uAC8C\uC784 \uC885\uB8CC"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\uB85C\uADF8\uC544\uC6C3\uD560\uAE4C\uC694?"
+  - key: title_ui.logout_guest_notice
+    label: "\uB85C\uADF8\uC544\uC6C3\uD558\uBA74 \uC2F1\uAE00 \uD50C\uB808\uC774\uB294
+      \uAC8C\uC2A4\uD2B8 \uC800\uC7A5\uC73C\uB85C \uC804\uD658\uB429\uB2C8\uB2E4.
+      \uACC4\uC815 \uC9C4\uD589\uB3C4\uB294 \uB2E4\uC74C \uB85C\uADF8\uC778 \uB54C
+      \uADF8\uB300\uB85C \uC774\uC5B4\uC9D1\uB2C8\uB2E4."
+  - key: login_ui.guest_import_question
+    label: "\uC774 \uACC4\uC815\uC5D0\uB294 \uC544\uC9C1 \uC9C4\uD589\uB3C4\uAC00
+      \uC5C6\uC2B5\uB2C8\uB2E4. \uAC8C\uC2A4\uD2B8\uB85C \uD50C\uB808\uC774\uD55C
+      \uC9C4\uD589\uB3C4\uB97C \uC774 \uACC4\uC815\uC73C\uB85C \uAC00\uC838\uC62C\uAE4C\uC694?"
+  - key: login_ui.guest_import_notice
+    label: "\uAC00\uC838\uC624\uC9C0 \uC54A\uC73C\uBA74 \uC0C8 \uC9C4\uD589\uB3C4\uB85C
+      \uC2DC\uC791\uD558\uACE0, \uAC8C\uC2A4\uD2B8 \uC9C4\uD589\uB3C4\uB294 \uC774
+      \uAE30\uAE30\uC5D0 \uADF8\uB300\uB85C \uB0A8\uC2B5\uB2C8\uB2E4."
+  engLabels:
+  - key: settings_ui.tab_display
+    label: Display
+  - key: settings_ui.tab_sound
+    label: Sound
+  - key: settings_ui.tab_control
+    label: Controls
+  - key: settings_ui.tab_gameplay
+    label: Gameplay
+  - key: settings_ui.section_screen_size
+    label: Screen Size
+  - key: settings_ui.label_resolution
+    label: Resolution
+  - key: settings_ui.label_fullscreen
+    label: Fullscreen
+  - key: settings_ui.label_quality
+    label: Quality
+  - key: settings_ui.label_brightness
+    label: Brightness
+  - key: settings_ui.option_low
+    label: Low
+  - key: settings_ui.option_medium
+    label: Medium
+  - key: settings_ui.option_high
+    label: High
+  - key: settings_ui.label_max_fps
+    label: Max FPS
+  - key: settings_ui.option_unlimited
+    label: Unlimited
+  - key: settings_ui.label_master_volume
+    label: Master Volume
+  - key: settings_ui.label_bgm_volume
+    label: Background Music
+  - key: settings_ui.label_sfx_volume
+    label: Sound Effects
+  - key: settings_ui.label_mute
+    label: Mute
+  - key: settings_ui.section_key_binding
+    label: Key Bindings
+  - key: settings_ui.skill_slot_1
+    label: Skill 1
+  - key: settings_ui.skill_slot_2
+    label: Skill 2
+  - key: settings_ui.skill_slot_3
+    label: Skill 3
+  - key: settings_ui.skill_slot_4
+    label: Skill 4
+  - key: settings_ui.skill_slot_potion
+    label: Consumable
+  - key: settings_ui.skill_slot_dodge
+    label: Dodge
+  - key: settings_ui.label_enemy_health_display
+    label: Enemy Health Display
+  - key: settings_ui.option_always
+    label: Always
+  - key: settings_ui.option_on_hit
+    label: On Hit
+  - key: settings_ui.option_none
+    label: Off
+  - key: settings_ui.label_damage_display
+    label: Damage Display
+  - key: settings_ui.label_screen_shake
+    label: Screen Shake
+  - key: settings_ui.label_tutorial
+    label: Tutorial
+  - key: settings_ui.option_once
+    label: Once
+  - key: settings_ui.label_language
+    label: Language
+  - key: settings_ui.button_reset
+    label: Reset to Default
+  - key: settings_ui.button_apply
+    label: Apply
+  - key: settings_ui.button_confirm
+    label: Confirm
+  - key: settings_ui.rebind_prompt
+    label: Please press the new key
+  - key: settings_ui.desc_resolution
+    label: You can change the screen resolution.
+  - key: settings_ui.desc_fullscreen
+    label: You can toggle fullscreen mode.
+  - key: settings_ui.desc_brightness
+    label: You can adjust the brightness.
+  - key: settings_ui.desc_quality
+    label: You can change the quality settings.
+  - key: settings_ui.desc_max_fps
+    label: You can change the maximum FPS setting.
+  - key: settings_ui.desc_master_volume
+    label: You can adjust the master volume.
+  - key: settings_ui.desc_bgm_volume
+    label: You can adjust the background music volume.
+  - key: settings_ui.desc_sfx_volume
+    label: You can adjust the sound effects volume.
+  - key: settings_ui.desc_mute
+    label: You can toggle mute.
+  - key: settings_ui.desc_skill_keybind
+    label: You can set the skill input key.
+  - key: settings_ui.desc_potion_keybind
+    label: You can set the consumable item input key.
+  - key: settings_ui.desc_dodge_keybind
+    label: You can set the dodge input key.
+  - key: settings_ui.key_open_skill
+    label: Skill Window
+  - key: settings_ui.key_open_inventory
+    label: Inventory
+  - key: settings_ui.key_open_status
+    label: Status Window
+  - key: settings_ui.key_open_quest
+    label: Quest Window
+  - key: settings_ui.key_open_buff
+    label: Buff Window
+  - key: settings_ui.desc_menu_keybind
+    label: You can set the menu shortcut key.
+  - key: settings_ui.desc_enemy_health_display
+    label: You can change the enemy health display setting.
+  - key: settings_ui.desc_damage_display
+    label: You can set whether damage numbers are displayed.
+  - key: settings_ui.desc_screen_shake
+    label: You can set whether the screen shakes during gameplay.
+  - key: settings_ui.desc_tutorial
+    label: You can change the tutorial display setting.
+  - key: settings_ui.desc_language
+    label: Change the language setting.
+  - key: pause_ui.resume
+    label: Resume
+  - key: pause_ui.settings
+    label: Settings
+  - key: pause_ui.giveup
+    label: Give Up
+  - key: pause_ui.save_and_quit
+    label: Save & Quit
+  - key: skill_ui.evolution_format
+    label: 'Evolution: {0}'
+  - key: skill_ui.enhancement_format
+    label: 'Enhancement: {0}'
+  - key: skill_ui.cooldown_only
+    label: Cooldown {0}s
+  - key: skill_ui.damage_and_cooldown
+    label: "Damage {0}% \xB7 Cooldown {1}s"
+  - key: skill_ui.damage_cooldown_mana
+    label: "Damage {0}% \xB7 Cooldown {1}s \xB7 MP {2}"
+  - key: skill_ui.cooldown_mana
+    label: "Cooldown {0}s \xB7 MP {1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "Damage {0}% \xB7 Cooldown {1}s \xB7 MP {2}/stack"
+  - key: skill_ui.arc_laser_name
+    label: Arc Laser
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: Show Detailed Stats
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: Shop
+  - key: inventory_ui.header
+    label: Inventory
+  - key: upgrade_ui.header
+    label: Upgrade
+  - key: item_tooltip_ui.sub_option_label
+    label: Additional Options
+  - key: item_tooltip_ui.unique_effect_label
+    label: Unique Effect
+  - key: upgrade_ui.current_stat
+    label: 'Current Stat: {0} + {1}'
+  - key: upgrade_ui.next_stat
+    label: 'After Upgrade: {0} + {1}'
+  - key: upgrade_ui.cost
+    label: 'Upgrade Cost: {0}'
+  - key: upgrade_ui.cost_unavailable
+    label: 'Upgrade Cost: -'
+  - key: upgrade_ui.unknown_item
+    label: Item
+  - key: upgrade_ui.selection_required
+    label: Please select an item to upgrade.
+  - key: upgrade_ui.result_success
+    label: '{0} +{1} Upgrade Success'
+  - key: upgrade_ui.result_not_enough_gold
+    label: Not enough credits.
+  - key: upgrade_ui.result_invalid_item
+    label: This item cannot be upgraded.
+  - key: upgrade_ui.result_invalid_cost
+    label: The upgrade cost setting is invalid.
+  - key: upgrade_ui.result_wallet_unavailable
+    label: A problem occurred while processing the upgrade.
+  - key: upgrade_ui.result_failed
+    label: Upgrade failed.
+  - key: npc_ui.quest
+    label: Quest
+  - key: npc_ui.rest
+    label: Rest
+  - key: chat_ui.equip_success
+    label: Equipment updated successfully.
+  - key: chat_ui.equip_swapped
+    label: Equipment swapped.
+  - key: chat_ui.equip_invalid_item
+    label: This item cannot be equipped.
+  - key: chat_ui.equip_invalid_slot
+    label: Cannot equip to that slot.
+  - key: chat_ui.equip_slot_occupied
+    label: Equipment is already equipped there.
+  - key: chat_ui.equip_not_equipped
+    label: There is no equipment to unequip.
+  - key: chat_ui.equip_no_return_space
+    label: No inventory space to store the previous equipment.
+  - key: chat_ui.equip_failed
+    label: Failed to process equipment.
+  - key: chat_ui.equip_wrong_class
+    label: This character cannot equip this weapon.
+  - key: chat_ui.equip_unknown
+    label: Unknown equipment processing result.
+  - key: chat_ui.inventory_acquisition
+    label: 'Obtained item: {0}.'
+  - key: chat_ui.inventory_acquisition_colored
+    label: Obtained {0}.
+  - key: chat_ui.inventory_success_position
+    label: '{0} Position: {1}, {2}'
+  - key: chat_ui.inventory_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.inventory_no_space
+    label: Inventory is full!
+  - key: chat_ui.inventory_grid_unavailable
+    label: Inventory is unavailable.
+  - key: chat_ui.inventory_placement_failed
+    label: Failed to place the item in the inventory.
+  - key: chat_ui.inventory_add_failed
+    label: Failed to obtain the item.
+  - key: chat_ui.inventory_remove_success
+    label: Deleted {0}.
+  - key: chat_ui.inventory_remove_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.inventory_remove_unavailable
+    label: Inventory is unavailable.
+  - key: chat_ui.inventory_remove_not_player
+    label: You can only delete items from your own inventory.
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: Equipped items cannot be deleted directly.
+  - key: chat_ui.inventory_remove_failed
+    label: Failed to delete the item.
+  - key: chat_ui.inventory_remove_default_failed
+    label: Could not delete the item.
+  - key: chat_ui.shop_buy_success
+    label: Purchased {0}.
+  - key: chat_ui.shop_sell_success
+    label: Sold {0}.
+  - key: chat_ui.shop_not_enough_gold
+    label: Not enough credits to purchase {0}.
+  - key: chat_ui.shop_no_space_buy
+    label: No space in your inventory.
+  - key: chat_ui.shop_no_space_sell
+    label: No space in the shop to place the item for sale.
+  - key: chat_ui.shop_invalid_item
+    label: This item is not valid.
+  - key: chat_ui.shop_transfer_failed
+    label: The trade failed while moving {0}.
+  - key: chat_ui.shop_stock_update_failed
+    label: Failed to update stock for {0}.
+  - key: chat_ui.shop_failed
+    label: Failed to process the trade.
+  - key: chat_ui.pickup_default
+    label: Obtained the item.
+  - key: chat_ui.out_of_range
+    label: Please move closer to the item.
+  - key: chat_ui.already_claimed
+    label: This item has already been claimed.
+  - key: chat_ui.pickup_unavailable
+    label: This item can no longer be obtained.
+  - key: chat_ui.item_unavailable
+    label: The target item could not be found.
+  - key: chat_ui.stale_revision
+    label: The item's state has changed. Please try again.
+  - key: chat_ui.recovery_failed
+    label: Failed to drop the item and restore the inventory. Please check your inventory.
+  - key: chat_ui.upgrade_process_failed
+    label: Failed to process the upgrade. Please try again.
+  - key: chat_ui.drop_failed
+    label: Failed to drop the item on the field. Please try again.
+  - key: chat_ui.acquisition_failed
+    label: Failed to obtain the item. Please try again.
+  - key: chat_ui.shop_state_changed
+    label: The shop's state has changed. Please select again.
+  - key: chat_ui.inventory_state_changed
+    label: The inventory's state has changed. Please try again.
+  - key: chat_ui.trade_failed
+    label: Failed to process the trade. Please try again.
+  - key: loading_ui.tooltip_title
+    label: Debris-9
+  - key: loading_ui.tooltip_content
+    label: This place was once an abandoned land, uninhabitable due to contamination,
+      but as centuries of accumulated robot wreckage began to repair and modify itself,
+      a bizarre mechanical ecosystem was born.
+  - key: common_ui.yes
+    label: Yes
+  - key: common_ui.confirm
+    label: OK
+  - key: chat_ui.panel_title
+    label: Chat
+  - key: chat_ui.input_placeholder
+    label: "Enter message\u2026"
+  - key: chat_ui.connect_hint
+    label: You can chat after connecting
+  - key: chat_ui.unread_indicator
+    label: "New message \u2193"
+  - key: skill_evolution_ui.title
+    label: Skill Evolution & Enhancement Settings
+  - key: skill_evolution_ui.hint
+    label: "Press K to open/close - Left button: Evolution (None\u2192Evo1\u21922\u21923),
+      Right button: Enhancement (None\u2192Enh1\u21922\u21923)"
+  - key: skill_evolution_ui.none
+    label: None
+  - key: passive_skill_ui.title
+    label: Passive Upgrade
+  - key: passive_skill_ui.skill_clear
+    label: Reset
+  - key: passive_skill_ui.skill_points
+    label: Skill Points -
+  - key: passive_skill_ui.credit_format
+    label: Credit | {0}
+  - key: passive_skill_ui.credit_none
+    label: Credit | -
+  - key: passive_skill_ui.profile_loading
+    label: Loading Profile
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: 'Current Lv: {0} / {1}'
+  - key: passive_skill_ui.detail_current_effect
+    label: 'Current Effect: {0}'
+  - key: passive_skill_ui.detail_next_level
+    label: 'Next Lv: {0}'
+  - key: common_ui.cancel
+    label: Cancel
+  - key: rest_ui.header
+    label: Rest
+  - key: rest_ui.description
+    label: 'Spend credits to
+
+      take a rest?'
+  - key: rest_ui.health_recovery
+    label: Restore 25% HP
+  - key: rest_ui.health_recovery_format
+    label: Restore {0}% HP
+  - key: rest_ui.potion_recharge
+    label: Potion Charges
+  - key: rest_ui.cost_format
+    label: 'Required Credits : {0}'
+  - key: rest_ui.complete_message
+    label: Spent {0} credits to restore {1} HP and {2} potion charge(s).
+  - key: chat_ui.prefix_chat
+    label: '[Chat]'
+  - key: chat_ui.prefix_acquisition
+    label: '[Item]'
+  - key: chat_ui.prefix_warning
+    label: '[Notice]'
+  - key: chat_ui.prefix_connection
+    label: '[Network]'
+  - key: chat_ui.item_fallback_name
+    label: item
+  - key: shop_ui.reroll_cost_format
+    label: Reroll <color=#FFEB04>{0}</color>
+  - key: shop_ui.reroll_free
+    label: Free Reroll
+  - key: shop_ui.reroll_count_format
+    label: '[ {0} ]'
+  - key: settings_ui.reset_confirm
+    label: Reset all settings to their defaults?
+  - key: settings_ui.reset_warning
+    label: All current settings will be restored to their defaults.
+  - key: pause_ui.giveup_confirm
+    label: Give up this game?
+  - key: pause_ui.giveup_warning
+    label: 'Warning: Your current game data will be lost.'
+  - key: pause_ui.giveup_reconfirm
+    label: Are you sure you want to give up?
+  - key: pause_ui.giveup_reconfirm_warning
+    label: The current run will be reset and no credits will be earned.
+  - key: pause_ui.save_and_quit_confirm
+    label: Save and quit the game?
+  - key: pause_ui.host_end_confirm
+    label: End the host session?
+  - key: pause_ui.host_end_warning
+    label: All participants will be disconnected and the current run will end.
+  - key: pause_ui.leave_confirm
+    label: Leave this session?
+  - key: pause_ui.leave_warning
+    label: You will give up your spot and cannot rejoin this run.
+  - key: pause_ui.temp_leave_confirm
+    label: Step out of the session for now?
+  - key: pause_ui.temp_leave_warning
+    label: You can rejoin within 5 minutes while the server is running. The party's
+      game will continue.
+  - key: pause_ui.adjustment
+    label: Settle & End Run
+  - key: pause_ui.settle_confirm
+    label: Settle and end the game?
+  - key: pause_ui.settle_warning
+    label: You will receive your credits plus 50% of your items' base value as account
+      credits, and the current run will be reset.
+  - key: login_ui.title
+    label: User Authentication
+  - key: login_ui.subtitle
+    label: OPERATOR AUTHENTICATION
+  - key: login_ui.account
+    label: Account ID
+  - key: login_ui.email_placeholder
+    label: Email
+  - key: login_ui.password
+    label: Password
+  - key: login_ui.confirm_password
+    label: Confirm Password
+  - key: login_ui.submit
+    label: Log In
+  - key: login_ui.no_account
+    label: Don't have an account?
+  - key: login_ui.create_account
+    label: Create Account
+  - key: login_ui.create
+    label: Create
+  - key: login_ui.has_account
+    label: Already have an account?
+  - key: login_ui.login
+    label: Log In
+  - key: login_ui.footer
+    label: SECURE ACCESS TERMINAL
+  - key: login_ui.submitting
+    label: Logging in...
+  - key: login_ui.creating
+    label: Creating account...
+  - key: login_ui.required
+    label: Enter your email and password.
+  - key: login_ui.account_required
+    label: Enter your account ID and password.
+  - key: login_ui.confirm_required
+    label: Confirm your password.
+  - key: login_ui.password_mismatch
+    label: Passwords do not match.
+  - key: login_ui.login_error
+    label: An error occurred while logging in.
+  - key: login_ui.profile_incomplete
+    label: Account created, but profile setup failed. Please log in again.
+  - key: login_ui.created
+    label: Account created. Log in with your new account.
+  - key: login_ui.create_error
+    label: An error occurred while creating your account.
+  - key: login_ui.loader_missing
+    label: Scene loader is unavailable. Launch from the Start scene.
+  - key: login_ui.scenes_missing
+    label: Check that TitleScene and LoadingScene are included in the build.
+  - key: login_ui.user_missing
+    label: User information was missing from the login response.
+  - key: login_ui.auth_failed
+    label: 'Login failed.
+
+      Check your email, password and Firebase authentication settings.'
+  - key: login_ui.firebase_login_error
+    label: A Firebase login error occurred.
+  - key: login_ui.created_user_missing
+    label: User information was missing from the account creation response.
+  - key: login_ui.firebase_create_error
+    label: A Firebase account creation error occurred.
+  - key: login_ui.email_in_use
+    label: This email is already in use.
+  - key: login_ui.invalid_email
+    label: Enter a valid email address.
+  - key: login_ui.password_policy
+    label: Choose a password that meets the password policy.
+  - key: login_ui.auth_disabled
+    label: Enable email/password sign-in in Firebase Console.
+  - key: login_ui.network_error
+    label: Check your network connection and try again.
+  - key: login_ui.too_many_requests
+    label: Too many requests. Please try again later.
+  - key: login_ui.create_failed
+    label: Account creation failed. Check your input and Firebase authentication settings.
+  - key: login_ui.config_missing
+    label: Firebase configuration is missing. Add google-services.json or GoogleService-Info.plist
+      to Assets.
+  - key: login_ui.dependencies
+    label: 'Could not initialize Firebase dependencies: {0}'
+  - key: login_ui.init_failed
+    label: Firebase initialization failed. Check configuration and project connection.
+  - key: connection_ui.title
+    label: Multiplayer Connection
+  - key: connection_ui.subtitle
+    label: MULTIPLAYER CONNECTION
+  - key: connection_ui.address
+    label: Server Address
+  - key: connection_ui.address_placeholder
+    label: Server IP or hostname
+  - key: connection_ui.nickname
+    label: Nickname
+  - key: connection_ui.host
+    label: "Local Test \xB7 Host"
+  - key: connection_ui.join
+    label: Connect to Server
+  - key: connection_ui.server
+    label: "Local Test \xB7 Server"
+  - key: connection_ui.reconnect
+    label: Rejoin Last Session
+  - key: connection_ui.return_title
+    label: Return to Title
+  - key: connection_ui.settings_missing
+    label: Session connection settings are unavailable.
+  - key: connection_ui.invalid_nickname
+    label: "Enter a nickname of 1\u201324 characters."
+  - key: connection_ui.invalid_nickname
+    label: "Enter a nickname of 1\u201324 characters."
+  - key: connection_ui.invalid_address
+    label: Enter a server IP or hostname without a port number.
+  - key: connection_ui.connecting
+    label: "Connecting\u2026"
+  - key: connection_ui.server_running
+    label: "Dedicated server running \xB7 Waiting for players"
+  - key: connection_ui.no_session
+    label: No recent session is saved for this profile.
+  - key: connection_ui.profile_large
+    label: The reconnect profile is too large.
+  - key: connection_ui.profile_invalid
+    label: The reconnect profile is invalid.
+  - key: connection_ui.profile_read
+    label: Cannot read the reconnect profile. Check its format and storage permissions.
+  - key: connection_ui.profile_path
+    label: The reconnect profile storage location is unavailable.
+  - key: connection_ui.run_started
+    label: You cannot join a session that has already started.
+  - key: connection_ui.connection_invalid
+    label: This connection is already registered or invalid.
+  - key: connection_ui.full
+    label: The session is full.
+  - key: connection_ui.reconnect_denied
+    label: Reconnect eligibility could not be verified.
+  - key: connection_ui.reconnect_expired
+    label: The reconnect reservation is missing or expired.
+  - key: connection_ui.version_mismatch
+    label: Server and client build versions do not match.
+  - key: connection_ui.passive_profile
+    label: Could not load the saved passive skill profile.
+  - key: connection_ui.timeout
+    label: Server admission timed out.
+  - key: connection_ui.admitted
+    label: Admission approved
+  - key: connection_ui.before_connect
+    label: Not connected
+  - key: connection_ui.waiting
+    label: Waiting for server connection
+  - key: connection_ui.disconnected
+    label: Disconnected from the server.
+  - key: upgrade_ui.request_failed
+    label: Could not send the upgrade request.
+  - key: upgrade_ui.request_pending
+    label: "Checking the item and available gold\u2026"
+  - key: upgrade_ui.state_changed
+    label: The item changed. Select it again to upgrade.
+  - key: upgrade_ui.item_missing
+    label: The item is no longer in your inventory.
+  - key: result_ui.stage
+    label: Stage Reached
+  - key: result_ui.defeated
+    label: Enemies Defeated
+  - key: result_ui.play_time
+    label: Play Time
+  - key: result_ui.credits
+    label: Credits Earned
+  - key: result_ui.retry
+    label: Play Again
+  - key: result_ui.return_lobby
+    label: Return to Lobby
+  - key: result_ui.leave_session
+    label: Leave Session
+  - key: result_ui.clear_description
+    label: All stages cleared!
+  - key: result_ui.defeat_description
+    label: This expedition has ended.
+  - key: result_ui.data_waiting
+    label: "Receiving results from the server\u2026"
+  - key: result_ui.data_missing
+    label: Results have not arrived yet. You can wait or leave.
+  - key: result_ui.request_pending
+    label: "Waiting for the server\u2026"
+  - key: result_ui.act_clear_description
+    label: Act cleared!
+  - key: result_ui.settle_description
+    label: Settlement complete.
+  - key: result_ui.current_stage
+    label: Current Stage
+  - key: result_ui.farming_value
+    label: Loot Value
+  - key: result_ui.continue
+    label: Continue
+  - key: session_ui.end_host
+    label: End Host Session
+  - key: session_ui.leave
+    label: Leave Session
+  - key: session_ui.leave_temporarily
+    label: Disconnect Temporarily
+  - key: session_ui.confirm_end_host
+    label: End this host session?
+  - key: session_ui.warn_end_host
+    label: All players will disconnect and the current run will end.
+  - key: session_ui.confirm_leave
+    label: Leave this session?
+  - key: session_ui.warn_leave
+    label: You will forfeit your place and cannot rejoin this run.
+  - key: session_ui.confirm_temporary_leave
+    label: Disconnect from this session temporarily?
+  - key: session_ui.warn_temporary_leave
+    label: You can reconnect within 5 minutes while the server stays online. The party
+      will keep playing.
+  - key: session_ui.passive_locked
+    label: Cancel Ready before changing passives.
+  - key: session_ui.settlement_wait
+    label: Results are still being saved. Please try again shortly.
+  - key: session_ui.settlement_wait_host
+    label: Waiting for player results to save. End the session after saving finishes.
+  - key: session_ui.settlement_wait_player
+    label: Waiting for {0}'s results to save. Please try again shortly.
+  - key: session_ui.lobby_loading
+    label: Wait for the lobby to finish loading before starting.
+  - key: session_ui.player_prefabs_missing
+    label: Player setup is incomplete. Please reconnect.
+  - key: session_ui.session_missing
+    label: The current session could not be found.
+  - key: session_ui.unsupported_request
+    label: This lobby action is unavailable.
+  - key: session_ui.return_lobby_denied
+    label: Only the leader can return the party to the lobby after results are confirmed.
+  - key: session_ui.passive_invalid
+    label: Your passive profile could not be verified.
+  - key: session_ui.party_not_ready
+    label: All players must choose a character and be ready.
+  - key: preparation_ui.waiting
+    label: "Preparing the game\u2026"
+  - key: preparation_ui.timeout
+    label: Game preparation timed out.
+  - key: preparation_ui.timeout_retry
+    label: Game preparation timed out. Disconnect and try again.
+  - key: preparation_ui.combat_failed
+    label: The battle could not be prepared. Please reconnect.
+  - key: preparation_ui.disconnected
+    label: The connection has ended.
+  - key: preparation_ui.exit
+    label: Leave
+  - key: settings_ui.label_allied_buff_effects
+    label: Ally Buff Effects
+  - key: settings_ui.desc_allied_buff_effects
+    label: You can set whether other players' buff ranges and buff effects are shown.
+  - key: hud_ui.wave_ready
+    label: Get Ready
+  - key: hud_ui.wave_progress
+    label: Wave {0}/{1}
+  - key: hud_ui.wave_cleared
+    label: "All enemies defeated! \xB7 Head to the portal"
+  - key: title_ui.logout
+    label: Log Out
+  - key: title_ui.signed_in
+    label: Signed In
+  - key: title_ui.signed_out
+    label: Not Signed In
+  - key: title_ui.checking_account
+    label: Checking account...
+  - key: title_ui.syncing
+    label: Syncing...
+  - key: title_ui.account_changed_retry
+    label: The signed-in account has changed. Please select Multiplayer again.
+  - key: title_ui.local_progress_kept
+    label: Your local progress has been kept. Check your internet connection and try
+      syncing again.
+  - key: title_ui.scene_missing
+    label: Check that {0} and LoadingScene are registered in the build.
+  - key: title_ui.multiplayer_error
+    label: An error occurred while preparing your multiplayer account. Please try
+      again.
+  - key: title_ui.logout_disconnect_first
+    label: Please end the multiplayer connection before logging out.
+  - key: title_ui.logout_test_account
+    label: The development test account cannot log out while running.
+  - key: title_ui.logout_failed
+    label: Could not log out. Please try again.
+  - key: login_ui.back
+    label: Back
+  - key: login_ui.cached_session_failed
+    label: Could not verify the saved sign-in. Please sign in again.
+  - key: login_ui.multiplayer_login_required
+    label: Please sign in to enter multiplayer.
+  - key: login_ui.account_changed
+    label: The signed-in account has changed. Please sign in again.
+  - key: connection_ui.login_required
+    label: Multiplayer requires signing in. Please select Multiplayer from the main
+      screen.
+  - key: connection_ui.syncing_progress
+    label: "Syncing local progress\u2026"
+  - key: connection_ui.prepare_failed
+    label: 'Connection setup failed: {0}'
+  - key: connection_ui.sync_retry
+    label: Your local progress has been kept. Check your internet connection and retry
+      multiplayer sync.
+  - key: connection_ui.sync_incomplete
+    label: Your local progress has been kept. Multiplayer sync did not finish, so
+      you did not enter.
+  - key: connection_ui.account_changed
+    label: The signed-in account has changed.
+  - key: stage_select_ui.normal_enemy
+    label: Normal Enemy
+  - key: stage_select_ui.elite_enemy
+    label: Elite Enemy
+  - key: stage_select_ui.camp
+    label: Camp
+  - key: stage_select_ui.unknown
+    label: Unknown
+  - key: title_ui.single_play
+    label: Single Play
+  - key: title_ui.multi_play
+    label: Multiplayer
+  - key: title_ui.continue
+    label: Continue
+  - key: title_ui.passive_skill
+    label: Passive Skills
+  - key: title_ui.settings
+    label: Settings
+  - key: title_ui.quit
+    label: Quit Game
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: Log out?
+  - key: title_ui.logout_guest_notice
+    label: After logging out, Single Play switches to the guest save. Your account
+      progress continues the next time you log in.
+  - key: title_ui.new_game_confirm
+    label: Start a new game?
+  - key: title_ui.new_game_warning
+    label: Your current expedition will be lost and you will start from the beginning.
+  - key: login_ui.guest_import_question
+    label: This account has no progress yet. Bring your guest progress into this account?
+  - key: login_ui.guest_import_notice
+    label: If you skip this, the account starts fresh and your guest progress stays
+      on this device.
+  - key: settings_ui.label_allied_buff_effects
+    label: Ally Buff Effects
+  - key: settings_ui.desc_allied_buff_effects
+    label: You can set whether other players' buff ranges and buff effects are shown.
+  - key: hud_ui.wave_ready
+    label: Get Ready
+  - key: hud_ui.wave_progress
+    label: Wave {0}/{1}
+  - key: hud_ui.wave_cleared
+    label: "All enemies defeated! \xB7 Head to the portal"
+  - key: title_ui.logout
+    label: Log Out
+  - key: title_ui.signed_in
+    label: Signed In
+  - key: title_ui.signed_out
+    label: Not Signed In
+  - key: title_ui.checking_account
+    label: Checking account...
+  - key: title_ui.syncing
+    label: Syncing...
+  - key: title_ui.account_changed_retry
+    label: The signed-in account has changed. Please select Multiplayer again.
+  - key: title_ui.local_progress_kept
+    label: Your local progress has been kept. Check your internet connection and try
+      syncing again.
+  - key: title_ui.scene_missing
+    label: Check that {0} and LoadingScene are registered in the build.
+  - key: title_ui.multiplayer_error
+    label: An error occurred while preparing your multiplayer account. Please try
+      again.
+  - key: title_ui.logout_disconnect_first
+    label: Please end the multiplayer connection before logging out.
+  - key: title_ui.logout_test_account
+    label: The development test account cannot log out while running.
+  - key: title_ui.logout_failed
+    label: Could not log out. Please try again.
+  - key: login_ui.back
+    label: Back
+  - key: login_ui.cached_session_failed
+    label: Could not verify the saved sign-in. Please sign in again.
+  - key: login_ui.multiplayer_login_required
+    label: Please sign in to enter multiplayer.
+  - key: login_ui.account_changed
+    label: The signed-in account has changed. Please sign in again.
+  - key: connection_ui.login_required
+    label: Multiplayer requires signing in. Please select Multiplayer from the main
+      screen.
+  - key: connection_ui.syncing_progress
+    label: "Syncing local progress\u2026"
+  - key: connection_ui.prepare_failed
+    label: 'Connection setup failed: {0}'
+  - key: connection_ui.sync_retry
+    label: Your local progress has been kept. Check your internet connection and retry
+      multiplayer sync.
+  - key: connection_ui.sync_incomplete
+    label: Your local progress has been kept. Multiplayer sync did not finish, so
+      you did not enter.
+  - key: connection_ui.account_changed
+    label: The signed-in account has changed.
+  - key: stage_select_ui.normal_enemy
+    label: Normal Enemy
+  - key: stage_select_ui.elite_enemy
+    label: Elite Enemy
+  - key: stage_select_ui.camp
+    label: Camp
+  - key: stage_select_ui.unknown
+    label: Unknown
+  - key: title_ui.single_play
+    label: Single Play
+  - key: title_ui.multi_play
+    label: Multiplayer
+  - key: title_ui.continue
+    label: Continue
+  - key: title_ui.passive_skill
+    label: Passive Skills
+  - key: title_ui.settings
+    label: Settings
+  - key: title_ui.quit
+    label: Quit Game
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: Log out?
+  - key: title_ui.logout_guest_notice
+    label: After logging out, Single Play switches to the guest save. Your account
+      progress continues the next time you log in.
+  - key: login_ui.guest_import_question
+    label: This account has no progress yet. Bring your guest progress into this account?
+  - key: login_ui.guest_import_notice
+    label: If you skip this, the account starts fresh and your guest progress stays
+      on this device.
+  jpnLabels:
+  - key: settings_ui.tab_display
+    label: "\u753B\u9762"
+  - key: settings_ui.tab_sound
+    label: "\u30B5\u30A6\u30F3\u30C9"
+  - key: settings_ui.tab_control
+    label: "\u64CD\u4F5C"
+  - key: settings_ui.tab_gameplay
+    label: "\u30B2\u30FC\u30E0\u30D7\u30EC\u30A4"
+  - key: settings_ui.section_screen_size
+    label: "\u753B\u9762\u30B5\u30A4\u30BA"
+  - key: settings_ui.label_resolution
+    label: "\u89E3\u50CF\u5EA6"
+  - key: settings_ui.label_fullscreen
+    label: "\u30D5\u30EB\u30B9\u30AF\u30EA\u30FC\u30F3"
+  - key: settings_ui.label_quality
+    label: "\u753B\u8CEA"
+  - key: settings_ui.label_brightness
+    label: "\u660E\u308B\u3055"
+  - key: settings_ui.option_low
+    label: "\u4F4E"
+  - key: settings_ui.option_medium
+    label: "\u4E2D"
+  - key: settings_ui.option_high
+    label: "\u9AD8"
+  - key: settings_ui.label_max_fps
+    label: "\u6700\u5927FPS"
+  - key: settings_ui.option_unlimited
+    label: "\u7121\u5236\u9650"
+  - key: settings_ui.label_master_volume
+    label: "\u5168\u4F53\u97F3\u91CF"
+  - key: settings_ui.label_bgm_volume
+    label: "BGM\u97F3\u91CF"
+  - key: settings_ui.label_sfx_volume
+    label: "\u52B9\u679C\u97F3"
+  - key: settings_ui.label_mute
+    label: "\u30DF\u30E5\u30FC\u30C8"
+  - key: settings_ui.section_key_binding
+    label: "\u30AD\u30FC\u8A2D\u5B9A"
+  - key: settings_ui.skill_slot_1
+    label: "\u30B9\u30AD\u30EB1"
+  - key: settings_ui.skill_slot_2
+    label: "\u30B9\u30AD\u30EB2"
+  - key: settings_ui.skill_slot_3
+    label: "\u30B9\u30AD\u30EB3"
+  - key: settings_ui.skill_slot_4
+    label: "\u30B9\u30AD\u30EB4"
+  - key: settings_ui.skill_slot_potion
+    label: "\u6D88\u8017\u54C1"
+  - key: settings_ui.skill_slot_dodge
+    label: "\u56DE\u907F"
+  - key: settings_ui.label_enemy_health_display
+    label: "\u6575\u4F53\u529B\u8868\u793A"
+  - key: settings_ui.option_always
+    label: "\u5E38\u306B"
+  - key: settings_ui.option_on_hit
+    label: "\u88AB\u5F3E\u6642"
+  - key: settings_ui.option_none
+    label: "\u8868\u793A\u3057\u306A\u3044"
+  - key: settings_ui.label_damage_display
+    label: "\u30C0\u30E1\u30FC\u30B8\u8868\u793A"
+  - key: settings_ui.label_screen_shake
+    label: "\u753B\u9762\u632F\u52D5"
+  - key: settings_ui.label_tutorial
+    label: "\u30C1\u30E5\u30FC\u30C8\u30EA\u30A2\u30EB"
+  - key: settings_ui.option_once
+    label: "\u4E00\u5EA6\u3060\u3051"
+  - key: settings_ui.label_language
+    label: "\u8A00\u8A9E"
+  - key: settings_ui.button_reset
+    label: "\u521D\u671F\u8A2D\u5B9A\u306B\u623B\u3059"
+  - key: settings_ui.button_apply
+    label: "\u9069\u7528"
+  - key: settings_ui.button_confirm
+    label: "\u78BA\u8A8D"
+  - key: settings_ui.rebind_prompt
+    label: "\u5909\u66F4\u3059\u308B\u30AD\u30FC\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044"
+  - key: settings_ui.desc_resolution
+    label: "\u753B\u9762\u306E\u89E3\u50CF\u5EA6\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_fullscreen
+    label: "\u30D5\u30EB\u30B9\u30AF\u30EA\u30FC\u30F3\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_brightness
+    label: "\u660E\u308B\u3055\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_quality
+    label: "\u753B\u8CEA\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_max_fps
+    label: "\u6700\u5927FPS\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_master_volume
+    label: "\u5168\u4F53\u97F3\u91CF\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_bgm_volume
+    label: "BGM\u97F3\u91CF\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_sfx_volume
+    label: "\u52B9\u679C\u97F3\u3092\u8ABF\u6574\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_mute
+    label: "\u30DF\u30E5\u30FC\u30C8\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_skill_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u30B9\u30AD\u30EB\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_potion_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u6D88\u8017\u54C1\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_dodge_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u56DE\u907F\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.key_open_skill
+    label: "\u30B9\u30AD\u30EB\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_inventory
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA"
+  - key: settings_ui.key_open_status
+    label: "\u30B9\u30C6\u30FC\u30BF\u30B9\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_quest
+    label: "\u30AF\u30A8\u30B9\u30C8\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_buff
+    label: "\u30D0\u30D5\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.desc_menu_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u30E1\u30CB\u30E5\u30FC\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_enemy_health_display
+    label: "\u6575\u4F53\u529B\u8868\u793A\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_damage_display
+    label: "\u30C0\u30E1\u30FC\u30B8\u8868\u793A\u306E\u6709\u7121\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_screen_shake
+    label: "\u30B2\u30FC\u30E0\u4E2D\u306E\u753B\u9762\u632F\u52D5\u306E\u6709\u7121\u306B\u3064\u3044\u3066\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_tutorial
+    label: "\u30C1\u30E5\u30FC\u30C8\u30EA\u30A2\u30EB\u8868\u793A\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.desc_language
+    label: "\u8A00\u8A9E\u8A2D\u5B9A\u3092\u5909\u66F4\u3057\u307E\u3059\u3002"
+  - key: pause_ui.resume
+    label: "\u7D9A\u3051\u308B"
+  - key: pause_ui.settings
+    label: "\u8A2D\u5B9A"
+  - key: pause_ui.giveup
+    label: "\u3042\u304D\u3089\u3081\u308B"
+  - key: pause_ui.save_and_quit
+    label: "\u4FDD\u5B58\u3057\u3066\u7D42\u4E86"
+  - key: skill_ui.evolution_format
+    label: "\u9032\u5316\uFF1A{0}"
+  - key: skill_ui.enhancement_format
+    label: "\u5F37\u5316\uFF1A{0}"
+  - key: skill_ui.cooldown_only
+    label: "\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{0}\u79D2"
+  - key: skill_ui.damage_and_cooldown
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2\u30FBMP{2}"
+  - key: skill_ui.cooldown_mana
+    label: "\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{0}\u79D2\u30FBMP{1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\u30C0\u30E1\u30FC\u30B8\u500D\u7387{0}%\u30FB\u30AF\u30FC\u30EB\u30BF\u30A4\u30E0{1}\u79D2\u30FB1\u30B9\u30BF\u30C3\u30AF\u306B\u3064\u304DMP{2}"
+  - key: skill_ui.arc_laser_name
+    label: "\u30A2\u30FC\u30AF\u30EC\u30FC\u30B6\u30FC"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\u8A73\u7D30\u30B9\u30C6\u30FC\u30BF\u30B9\u8868\u793A"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\u30B7\u30E7\u30C3\u30D7"
+  - key: inventory_ui.header
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA"
+  - key: upgrade_ui.header
+    label: "\u5F37\u5316"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\u8FFD\u52A0\u30AA\u30D7\u30B7\u30E7\u30F3"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\u56FA\u6709\u52B9\u679C"
+  - key: upgrade_ui.current_stat
+    label: "\u73FE\u5728\u30B9\u30C6\u30FC\u30BF\u30B9\uFF1A{0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\u5F37\u5316\u5F8C\u30B9\u30C6\u30FC\u30BF\u30B9\uFF1A{0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\u5F37\u5316\u8CBB\u7528\uFF1A{0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\u5F37\u5316\u8CBB\u7528\uFF1A-"
+  - key: upgrade_ui.unknown_item
+    label: "\u30A2\u30A4\u30C6\u30E0"
+  - key: upgrade_ui.selection_required
+    label: "\u5F37\u5316\u3059\u308B\u30A2\u30A4\u30C6\u30E0\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \u5F37\u5316\u6210\u529F"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8\u304C\u4E0D\u8DB3\u3057\u3066\u3044\u307E\u3059\u3002"
+  - key: upgrade_ui.result_invalid_item
+    label: "\u5F37\u5316\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: upgrade_ui.result_invalid_cost
+    label: "\u5F37\u5316\u8CBB\u7528\u306E\u8A2D\u5B9A\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\u5F37\u5316\u51E6\u7406\u4E2D\u306B\u554F\u984C\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: upgrade_ui.result_failed
+    label: "\u5F37\u5316\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: npc_ui.quest
+    label: "\u4F9D\u983C"
+  - key: npc_ui.rest
+    label: "\u4F11\u61A9"
+  - key: chat_ui.equip_success
+    label: "\u88C5\u5099\u51E6\u7406\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_swapped
+    label: "\u88C5\u5099\u3092\u4EA4\u63DB\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_invalid_item
+    label: "\u88C5\u5099\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.equip_invalid_slot
+    label: "\u305D\u306E\u30B9\u30ED\u30C3\u30C8\u306B\u306F\u88C5\u5099\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_slot_occupied
+    label: "\u3059\u3067\u306B\u88C5\u5099\u304C\u88C5\u7740\u3055\u308C\u3066\u3044\u307E\u3059\u3002"
+  - key: chat_ui.equip_not_equipped
+    label: "\u89E3\u9664\u3059\u308B\u88C5\u5099\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_no_return_space
+    label: "\u65E2\u5B58\u306E\u88C5\u5099\u3092\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u7F6E\u304F\u30B9\u30DA\u30FC\u30B9\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.equip_failed
+    label: "\u88C5\u5099\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.equip_wrong_class
+    label: "\u3053\u306E\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u306F\u88C5\u5099\u3067\u304D\u306A\u3044\u6B66\u5668\u3067\u3059\u3002"
+  - key: chat_ui.equip_unknown
+    label: "\u4E0D\u660E\u306A\u88C5\u5099\u51E6\u7406\u7D50\u679C\u3067\u3059\u3002"
+  - key: chat_ui.inventory_acquisition
+    label: "{0}\u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_acquisition_colored
+    label: "{0}\u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_success_position
+    label: "{0} \u4F4D\u7F6E\uFF1A{1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.inventory_no_space
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u304C\u6E80\u676F\u3067\u3059\uFF01"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_placement_failed
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u30A2\u30A4\u30C6\u30E0\u3092\u914D\u7F6E\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: chat_ui.inventory_add_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u7372\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_success
+    label: "{0}\u3092\u524A\u9664\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_remove_not_player
+    label: "\u81EA\u5206\u306E\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u30A2\u30A4\u30C6\u30E0\u306E\u307F\u524A\u9664\u3067\u304D\u307E\u3059\u3002"
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\u88C5\u5099\u4E2D\u306E\u30A2\u30A4\u30C6\u30E0\u306F\u76F4\u63A5\u524A\u9664\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: chat_ui.inventory_remove_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u524A\u9664\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: chat_ui.shop_buy_success
+    label: "{0}\u3092\u8CFC\u5165\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_sell_success
+    label: "{0}\u3092\u58F2\u5374\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_not_enough_gold
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8\u304C\u4E0D\u8DB3\u3057\u3066\u3044\u308B\u305F\u3081{0}\u306E\u8CFC\u5165\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_no_space_buy
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u7A7A\u304D\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.shop_no_space_sell
+    label: "\u30B7\u30E7\u30C3\u30D7\u306B\u8CA9\u58F2\u30A2\u30A4\u30C6\u30E0\u3092\u7F6E\u304F\u30B9\u30DA\u30FC\u30B9\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.shop_invalid_item
+    label: "\u7121\u52B9\u306A\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.shop_transfer_failed
+    label: "{0}\u306E\u79FB\u52D5\u4E2D\u306B\u53D6\u5F15\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0}\u306E\u5728\u5EAB\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.shop_failed
+    label: "\u53D6\u5F15\u51E6\u7406\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.pickup_default
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.out_of_range
+    label: "\u30A2\u30A4\u30C6\u30E0\u306B\u3082\u3063\u3068\u8FD1\u3065\u3044\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.already_claimed
+    label: "\u3059\u3067\u306B\u7372\u5F97\u6E08\u307F\u306E\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.pickup_unavailable
+    label: "\u3053\u308C\u4EE5\u4E0A\u7372\u5F97\u3067\u304D\u306A\u3044\u30A2\u30A4\u30C6\u30E0\u3067\u3059\u3002"
+  - key: chat_ui.item_unavailable
+    label: "\u5BFE\u8C61\u306E\u30A2\u30A4\u30C6\u30E0\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"
+  - key: chat_ui.stale_revision
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.recovery_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u30C9\u30ED\u30C3\u30D7\u3068\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u5FA9\u5143\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u72B6\u614B\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.upgrade_process_failed
+    label: "\u5F37\u5316\u3092\u51E6\u7406\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.drop_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u30D5\u30A3\u30FC\u30EB\u30C9\u306B\u7F6E\u3051\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.acquisition_failed
+    label: "\u30A2\u30A4\u30C6\u30E0\u3092\u7372\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.shop_state_changed
+    label: "\u30B7\u30E7\u30C3\u30D7\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.inventory_state_changed
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: chat_ui.trade_failed
+    label: "\u53D6\u5F15\u3092\u51E6\u7406\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: loading_ui.tooltip_title
+    label: "\u30C7\u30D6\u30EA\u30B9-9"
+  - key: loading_ui.tooltip_content
+    label: "\u3053\u306E\u5834\u6240\u306F\u6C5A\u67D3\u306B\u3088\u3063\u3066\u4EBA\u9593\u304C\u4F4F\u3081\u306A\u3044\u5EC3\u589F\u306E\u5730\u3067\u3057\u305F\u304C\u3001\u4F55\u767E\u5E74\u3082\u306E\u9593\u7A4D\u307F\u91CD\u306A\u3063\u305F\u30ED\u30DC\u30C3\u30C8\u306E\u6B8B\u9AB8\u304C\u81EA\u3089\u3092\u4FEE\u5FA9\u30FB\u6539\u9020\u3057\u59CB\u3081\u3001\u5947\u602A\u306A\u30E1\u30AB\u751F\u614B\u7CFB\u304C\u751F\u307E\u308C\u307E\u3057\u305F\u3002"
+  - key: common_ui.yes
+    label: "\u306F\u3044"
+  - key: common_ui.confirm
+    label: "\u78BA\u8A8D"
+  - key: chat_ui.panel_title
+    label: "\u30C1\u30E3\u30C3\u30C8"
+  - key: chat_ui.input_placeholder
+    label: "\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u5165\u529B\u2026"
+  - key: chat_ui.connect_hint
+    label: "\u63A5\u7D9A\u5F8C\u306B\u4F1A\u8A71\u3067\u304D\u307E\u3059"
+  - key: chat_ui.unread_indicator
+    label: "\u65B0\u7740\u30E1\u30C3\u30BB\u30FC\u30B8 \u2193"
+  - key: skill_evolution_ui.title
+    label: "\u30B9\u30AD\u30EB\u9032\u5316\u30FB\u5F37\u5316\u8A2D\u5B9A"
+  - key: skill_evolution_ui.hint
+    label: "K\u3067\u958B\u9589 - \u5DE6\u30DC\u30BF\u30F3\uFF1A\u9032\u5316\uFF08\u306A\u3057\u2192\u9032\u53161\u21922\u21923\uFF09\u3001\u53F3\u30DC\u30BF\u30F3\uFF1A\u5F37\u5316\uFF08\u306A\u3057\u2192\u5F37\u53161\u21922\u21923\uFF09"
+  - key: skill_evolution_ui.none
+    label: "\u306A\u3057"
+  - key: passive_skill_ui.title
+    label: "\u30D1\u30C3\u30B7\u30D6\u30A2\u30C3\u30D7\u30B0\u30EC\u30FC\u30C9"
+  - key: passive_skill_ui.skill_clear
+    label: "\u30EA\u30BB\u30C3\u30C8"
+  - key: passive_skill_ui.skill_points
+    label: "\u30B9\u30AD\u30EB\u30DD\u30A4\u30F3\u30C8 -"
+  - key: passive_skill_ui.credit_format
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u6E96\u5099\u4E2D"
+  - key: passive_skill_ui.confirm_ok
+    label: OK
+  - key: passive_skill_ui.detail_current_level
+    label: "\u73FE\u5728\u30EC\u30D9\u30EB: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\u73FE\u5728\u52B9\u679C: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\u6B21\u30EC\u30D9\u30EB: {0}"
+  - key: common_ui.cancel
+    label: "\u30AD\u30E3\u30F3\u30BB\u30EB"
+  - key: rest_ui.header
+    label: "\u4F11\u606F"
+  - key: rest_ui.description
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8\u3092\u652F\u6255\u3063\u3066\n\u4F11\u606F\u3057\u307E\u3059\u304B\uFF1F"
+  - key: rest_ui.health_recovery
+    label: "\u4F53\u529B25%\u56DE\u5FA9"
+  - key: rest_ui.health_recovery_format
+    label: "\u4F53\u529B{0}%\u56DE\u5FA9"
+  - key: rest_ui.potion_recharge
+    label: "\u30DD\u30FC\u30B7\u30E7\u30F3\u88DC\u5145"
+  - key: rest_ui.cost_format
+    label: "\u5FC5\u8981\u30AF\u30EC\u30B8\u30C3\u30C8 : {0}"
+  - key: rest_ui.complete_message
+    label: "{0}\u30AF\u30EC\u30B8\u30C3\u30C8\u3092\u6D88\u8CBB\u3057\u3066\u4F53\u529B{1}\u3001\u30DD\u30FC\u30B7\u30E7\u30F3{2}\u500B\u3092\u88DC\u5145\u3057\u307E\u3057\u305F\u3002"
+  - key: chat_ui.prefix_chat
+    label: "[\u30C1\u30E3\u30C3\u30C8]"
+  - key: chat_ui.prefix_acquisition
+    label: "[\u30A2\u30A4\u30C6\u30E0]"
+  - key: chat_ui.prefix_warning
+    label: "[\u304A\u77E5\u3089\u305B]"
+  - key: chat_ui.prefix_connection
+    label: "[\u63A5\u7D9A]"
+  - key: chat_ui.item_fallback_name
+    label: "\u30A2\u30A4\u30C6\u30E0"
+  - key: shop_ui.reroll_cost_format
+    label: "<color=#FFEB04>{0}</color> \u518D\u62BD\u9078"
+  - key: shop_ui.reroll_free
+    label: "\u7121\u6599 \u518D\u62BD\u9078"
+  - key: shop_ui.reroll_count_format
+    label: '[ {0} ]'
+  - key: settings_ui.reset_confirm
+    label: "\u8A2D\u5B9A\u3092\u521D\u671F\u5024\u306B\u623B\u3057\u307E\u3059\u304B\uFF1F"
+  - key: settings_ui.reset_warning
+    label: "\u73FE\u5728\u306E\u8A2D\u5B9A\u306F\u3059\u3079\u3066\u521D\u671F\u5024\u306B\u623B\u308A\u307E\u3059\u3002"
+  - key: pause_ui.giveup_confirm
+    label: "\u30B2\u30FC\u30E0\u3092\u3042\u304D\u3089\u3081\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.giveup_warning
+    label: "\u8B66\u544A\uFF1A\u73FE\u5728\u306E\u30B2\u30FC\u30E0\u30C7\u30FC\u30BF\u306F\u5931\u308F\u308C\u307E\u3059\u3002"
+  - key: pause_ui.giveup_reconfirm
+    label: "\u672C\u5F53\u306B\u8AE6\u3081\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.giveup_reconfirm_warning
+    label: "\u9032\u884C\u4E2D\u306E\u9060\u5F81\u306F\u30EA\u30BB\u30C3\u30C8\u3055\u308C\u3001\u30AF\u30EC\u30B8\u30C3\u30C8\u306F\u7372\u5F97\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: pause_ui.save_and_quit_confirm
+    label: "\u30B2\u30FC\u30E0\u3092\u4FDD\u5B58\u3057\u3066\u7D42\u4E86\u3057\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.host_end_confirm
+    label: "\u30DB\u30B9\u30C8\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u7D42\u4E86\u3057\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.host_end_warning
+    label: "\u3059\u3079\u3066\u306E\u53C2\u52A0\u8005\u306E\u63A5\u7D9A\u3068\u73FE\u5728\u306E\u30E9\u30F3\u304C\u7D42\u4E86\u3057\u307E\u3059\u3002"
+  - key: pause_ui.leave_confirm
+    label: "\u3053\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u304B\u3089\u9000\u51FA\u3057\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.leave_warning
+    label: "\u53C2\u52A0\u8CC7\u683C\u3092\u653E\u68C4\u3057\u3001\u3053\u306E\u30E9\u30F3\u306B\u306F\u518D\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: pause_ui.temp_leave_confirm
+    label: "\u4E00\u6642\u7684\u306B\u30BB\u30C3\u30B7\u30E7\u30F3\u304B\u3089\u9000\u51FA\u3057\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.temp_leave_warning
+    label: "\u30B5\u30FC\u30D0\u30FC\u304C\u7DAD\u6301\u3055\u308C\u3066\u3044\u308B\u9593\u306F5\u5206\u4EE5\u5185\u306B\u518D\u63A5\u7D9A\u3067\u304D\u307E\u3059\u3002\u30D1\u30FC\u30C6\u30A3\u30FC\u306E\u30B2\u30FC\u30E0\u306F\u7D9A\u884C\u3055\u308C\u307E\u3059\u3002"
+  - key: pause_ui.adjustment
+    label: "\u7CBE\u7B97\u3057\u3066\u7D42\u4E86"
+  - key: pause_ui.settle_confirm
+    label: "\u7CBE\u7B97\u3057\u3066\u30B2\u30FC\u30E0\u3092\u7D42\u4E86\u3057\u307E\u3059\u304B\uFF1F"
+  - key: pause_ui.settle_warning
+    label: "\u6240\u6301\u30AF\u30EC\u30B8\u30C3\u30C8\u3068\u30A2\u30A4\u30C6\u30E0\u539F\u4FA1\u306E50%\u3092\u30A2\u30AB\u30A6\u30F3\u30C8\u30AF\u30EC\u30B8\u30C3\u30C8\u3068\u3057\u3066\u53D7\u3051\u53D6\u308A\u3001\u73FE\u5728\u306E\u9060\u5F81\u306F\u30EA\u30BB\u30C3\u30C8\u3055\u308C\u307E\u3059\u3002"
+  - key: login_ui.title
+    label: "\u30E6\u30FC\u30B6\u30FC\u8A8D\u8A3C"
+  - key: login_ui.subtitle
+    label: "\u30E6\u30FC\u30B6\u30FC\u8A8D\u8A3C\u7AEF\u672B"
+  - key: login_ui.account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8ID"
+  - key: login_ui.email_placeholder
+    label: "\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9"
+  - key: login_ui.password
+    label: "\u30D1\u30B9\u30EF\u30FC\u30C9"
+  - key: login_ui.confirm_password
+    label: "\u30D1\u30B9\u30EF\u30FC\u30C9\u78BA\u8A8D"
+  - key: login_ui.submit
+    label: "\u30ED\u30B0\u30A4\u30F3"
+  - key: login_ui.no_account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u304A\u6301\u3061\u3067\u306A\u3044\u65B9"
+  - key: login_ui.create_account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u4F5C\u6210"
+  - key: login_ui.create
+    label: "\u4F5C\u6210"
+  - key: login_ui.has_account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u304A\u6301\u3061\u306E\u65B9"
+  - key: login_ui.login
+    label: "\u30ED\u30B0\u30A4\u30F3"
+  - key: login_ui.footer
+    label: "\u30BB\u30AD\u30E5\u30A2\u30A2\u30AF\u30BB\u30B9\u7AEF\u672B"
+  - key: login_ui.submitting
+    label: "\u30ED\u30B0\u30A4\u30F3\u4E2D\u2026"
+  - key: login_ui.creating
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u4F5C\u6210\u4E2D\u2026"
+  - key: login_ui.required
+    label: "\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.account_required
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8ID\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.confirm_required
+    label: "\u78BA\u8A8D\u7528\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.password_mismatch
+    label: "\u30D1\u30B9\u30EF\u30FC\u30C9\u304C\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002"
+  - key: login_ui.login_error
+    label: "\u30ED\u30B0\u30A4\u30F3\u51E6\u7406\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: login_ui.profile_incomplete
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u306F\u4F5C\u6210\u3055\u308C\u307E\u3057\u305F\u304C\u3001\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u306E\u6E96\u5099\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u518D\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.created
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F\u3002\u65B0\u3057\u3044\u30A2\u30AB\u30A6\u30F3\u30C8\u3067\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.create_error
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u4F5C\u6210\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: login_ui.loader_missing
+    label: "\u30B7\u30FC\u30F3\u30ED\u30FC\u30C0\u30FC\u304C\u672A\u6E96\u5099\u3067\u3059\u3002Start\u30B7\u30FC\u30F3\u304B\u3089\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.scenes_missing
+    label: "TitleScene\u3068LoadingScene\u306E\u30D3\u30EB\u30C9\u767B\u9332\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.user_missing
+    label: "\u30ED\u30B0\u30A4\u30F3\u7D50\u679C\u304B\u3089\u30E6\u30FC\u30B6\u30FC\u60C5\u5831\u3092\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: login_ui.auth_failed
+    label: "\u30ED\u30B0\u30A4\u30F3\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\n\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u3001\u30D1\u30B9\u30EF\u30FC\u30C9\u3001Firebase\u8A8D\u8A3C\u8A2D\u5B9A\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.firebase_login_error
+    label: "Firebase\u30ED\u30B0\u30A4\u30F3\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: login_ui.created_user_missing
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u4F5C\u6210\u7D50\u679C\u304B\u3089\u30E6\u30FC\u30B6\u30FC\u60C5\u5831\u3092\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: login_ui.firebase_create_error
+    label: "Firebase\u30A2\u30AB\u30A6\u30F3\u30C8\u4F5C\u6210\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"
+  - key: login_ui.email_in_use
+    label: "\u3053\u306E\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u306F\u65E2\u306B\u4F7F\u7528\u3055\u308C\u3066\u3044\u307E\u3059\u3002"
+  - key: login_ui.invalid_email
+    label: "\u6709\u52B9\u306A\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.password_policy
+    label: "\u30D1\u30B9\u30EF\u30FC\u30C9\u306E\u8981\u4EF6\u3092\u6E80\u305F\u3059\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.auth_disabled
+    label: "Firebase Console\u3067\u30E1\u30FC\u30EB\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u306B\u3088\u308B\u30ED\u30B0\u30A4\u30F3\u3092\u6709\u52B9\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.network_error
+    label: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.too_many_requests
+    label: "\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u591A\u3059\u304E\u307E\u3059\u3002\u3057\u3070\u3089\u304F\u3057\u3066\u304B\u3089\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.create_failed
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u5165\u529B\u5185\u5BB9\u3068Firebase\u8A8D\u8A3C\u8A2D\u5B9A\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.config_missing
+    label: "Firebase\u8A2D\u5B9A\u30D5\u30A1\u30A4\u30EB\u304C\u3042\u308A\u307E\u305B\u3093\u3002google-services.json\u307E\u305F\u306FGoogleService-Info.plist\u3092Assets\u306B\u8FFD\u52A0\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.dependencies
+    label: "Firebase\u306E\u4F9D\u5B58\u95A2\u4FC2\u3092\u6E96\u5099\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF1A{0}"
+  - key: login_ui.init_failed
+    label: "Firebase\u306E\u521D\u671F\u5316\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u8A2D\u5B9A\u30D5\u30A1\u30A4\u30EB\u3068\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.title
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u63A5\u7D9A"
+  - key: connection_ui.subtitle
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u63A5\u7D9A\u7AEF\u672B"
+  - key: connection_ui.address
+    label: "\u30B5\u30FC\u30D0\u30FC\u30A2\u30C9\u30EC\u30B9"
+  - key: connection_ui.address_placeholder
+    label: "\u30B5\u30FC\u30D0\u30FCIP\u307E\u305F\u306F\u30DB\u30B9\u30C8\u540D"
+  - key: connection_ui.nickname
+    label: "\u30CB\u30C3\u30AF\u30CD\u30FC\u30E0"
+  - key: connection_ui.host
+    label: "\u30ED\u30FC\u30AB\u30EB\u30C6\u30B9\u30C8 \xB7 \u30DB\u30B9\u30C8"
+  - key: connection_ui.join
+    label: "\u30B5\u30FC\u30D0\u30FC\u306B\u63A5\u7D9A"
+  - key: connection_ui.server
+    label: "\u30ED\u30FC\u30AB\u30EB\u30C6\u30B9\u30C8 \xB7 \u30B5\u30FC\u30D0\u30FC"
+  - key: connection_ui.reconnect
+    label: "\u524D\u56DE\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u306B\u5FA9\u5E30"
+  - key: connection_ui.return_title
+    label: "\u30BF\u30A4\u30C8\u30EB\u306B\u623B\u308B"
+  - key: connection_ui.settings_missing
+    label: "\u30BB\u30C3\u30B7\u30E7\u30F3\u63A5\u7D9A\u8A2D\u5B9A\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"
+  - key: connection_ui.invalid_nickname
+    label: "\u30CB\u30C3\u30AF\u30CD\u30FC\u30E0\u306F1\uFF5E24\u6587\u5B57\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.invalid_nickname
+    label: "\u30CB\u30C3\u30AF\u30CD\u30FC\u30E0\u306F1\uFF5E24\u6587\u5B57\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.invalid_address
+    label: "\u30DD\u30FC\u30C8\u756A\u53F7\u3092\u4ED8\u3051\u305A\u306B\u30B5\u30FC\u30D0\u30FCIP\u307E\u305F\u306F\u30DB\u30B9\u30C8\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.connecting
+    label: "\u63A5\u7D9A\u4E2D\u2026"
+  - key: connection_ui.server_running
+    label: "\u5C02\u7528\u30B5\u30FC\u30D0\u30FC\u7A3C\u50CD\u4E2D \xB7 \u53C2\u52A0\u8005\u5F85\u6A5F"
+  - key: connection_ui.no_session
+    label: "\u3053\u306E\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u306B\u4FDD\u5B58\u3055\u308C\u305F\u30BB\u30C3\u30B7\u30E7\u30F3\u306F\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: connection_ui.profile_large
+    label: "\u518D\u63A5\u7D9A\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u306E\u30C7\u30FC\u30BF\u304C\u5927\u304D\u3059\u304E\u307E\u3059\u3002"
+  - key: connection_ui.profile_invalid
+    label: "\u518D\u63A5\u7D9A\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u306E\u30C7\u30FC\u30BF\u304C\u7121\u52B9\u3067\u3059\u3002"
+  - key: connection_ui.profile_read
+    label: "\u518D\u63A5\u7D9A\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3092\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093\u3002\u5F62\u5F0F\u3068\u30B9\u30C8\u30EC\u30FC\u30B8\u6A29\u9650\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.profile_path
+    label: "\u518D\u63A5\u7D9A\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u306E\u4FDD\u5B58\u5148\u3092\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: connection_ui.run_started
+    label: "\u958B\u59CB\u6E08\u307F\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u306B\u306F\u65B0\u898F\u53C2\u52A0\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: connection_ui.connection_invalid
+    label: "\u767B\u9332\u6E08\u307F\u3001\u307E\u305F\u306F\u7121\u52B9\u306A\u63A5\u7D9A\u3067\u3059\u3002"
+  - key: connection_ui.full
+    label: "\u30BB\u30C3\u30B7\u30E7\u30F3\u304C\u6E80\u54E1\u3067\u3059\u3002"
+  - key: connection_ui.reconnect_denied
+    label: "\u518D\u63A5\u7D9A\u306E\u8CC7\u683C\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: connection_ui.reconnect_expired
+    label: "\u518D\u63A5\u7D9A\u4E88\u7D04\u304C\u5B58\u5728\u3057\u306A\u3044\u304B\u3001\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u3066\u3044\u307E\u3059\u3002"
+  - key: connection_ui.version_mismatch
+    label: "\u30B5\u30FC\u30D0\u30FC\u3068\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u306E\u30D3\u30EB\u30C9\u30D0\u30FC\u30B8\u30E7\u30F3\u304C\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002"
+  - key: connection_ui.passive_profile
+    label: "\u4FDD\u5B58\u3055\u308C\u305F\u30D1\u30C3\u30B7\u30D6\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3092\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: connection_ui.timeout
+    label: "\u30B5\u30FC\u30D0\u30FC\u306E\u53C2\u52A0\u627F\u8A8D\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002"
+  - key: connection_ui.admitted
+    label: "\u53C2\u52A0\u304C\u627F\u8A8D\u3055\u308C\u307E\u3057\u305F"
+  - key: connection_ui.before_connect
+    label: "\u672A\u63A5\u7D9A"
+  - key: connection_ui.waiting
+    label: "\u30B5\u30FC\u30D0\u30FC\u63A5\u7D9A\u5F85\u6A5F\u4E2D"
+  - key: connection_ui.disconnected
+    label: "\u30B5\u30FC\u30D0\u30FC\u3068\u306E\u63A5\u7D9A\u304C\u5207\u308C\u307E\u3057\u305F\u3002"
+  - key: upgrade_ui.request_failed
+    label: "\u5F37\u5316\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u9001\u4FE1\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: upgrade_ui.request_pending
+    label: "\u30A2\u30A4\u30C6\u30E0\u3068\u6240\u6301\u30B4\u30FC\u30EB\u30C9\u3092\u78BA\u8A8D\u3057\u3066\u3044\u307E\u3059\u2026"
+  - key: upgrade_ui.state_changed
+    label: "\u30A2\u30A4\u30C6\u30E0\u306E\u72B6\u614B\u304C\u5909\u308F\u308A\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: upgrade_ui.item_missing
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA\u306B\u5BFE\u8C61\u306E\u30A2\u30A4\u30C6\u30E0\u304C\u3042\u308A\u307E\u305B\u3093\u3002"
+  - key: result_ui.stage
+    label: "\u6700\u7D42\u5230\u9054\u30B9\u30C6\u30FC\u30B8"
+  - key: result_ui.defeated
+    label: "\u5012\u3057\u305F\u6575"
+  - key: result_ui.play_time
+    label: "\u30D7\u30EC\u30A4\u6642\u9593"
+  - key: result_ui.credits
+    label: "\u7372\u5F97\u30AF\u30EC\u30B8\u30C3\u30C8"
+  - key: result_ui.retry
+    label: "\u3082\u3046\u4E00\u5EA6\u30D7\u30EC\u30A4"
+  - key: result_ui.return_lobby
+    label: "\u30ED\u30D3\u30FC\u306B\u623B\u308B"
+  - key: result_ui.leave_session
+    label: "\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u9000\u51FA"
+  - key: result_ui.clear_description
+    label: "\u5168\u30B9\u30C6\u30FC\u30B8\u3092\u30AF\u30EA\u30A2\u3057\u307E\u3057\u305F\uFF01"
+  - key: result_ui.defeat_description
+    label: "\u4ECA\u56DE\u306E\u9060\u5F81\u306F\u7D42\u4E86\u3057\u307E\u3057\u305F\u3002"
+  - key: result_ui.data_waiting
+    label: "\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u7D50\u679C\u3092\u53D7\u4FE1\u3057\u3066\u3044\u307E\u3059\u2026"
+  - key: result_ui.data_missing
+    label: "\u7D50\u679C\u304C\u307E\u3060\u5C4A\u3044\u3066\u3044\u307E\u305B\u3093\u3002\u5F85\u6A5F\u3059\u308B\u304B\u9000\u51FA\u3067\u304D\u307E\u3059\u3002"
+  - key: result_ui.request_pending
+    label: "\u30B5\u30FC\u30D0\u30FC\u306E\u5FDC\u7B54\u3092\u5F85\u3063\u3066\u3044\u307E\u3059\u2026"
+  - key: result_ui.act_clear_description
+    label: "\u30A2\u30AF\u30C8\u3092\u30AF\u30EA\u30A2\u3057\u307E\u3057\u305F\u3002"
+  - key: result_ui.settle_description
+    label: "\u7CBE\u7B97\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002"
+  - key: result_ui.current_stage
+    label: "\u73FE\u5728\u306E\u5230\u9054\u30B9\u30C6\u30FC\u30B8"
+  - key: result_ui.farming_value
+    label: "\u7372\u5F97\u4FA1\u5024"
+  - key: result_ui.continue
+    label: "\u7D9A\u3051\u308B"
+  - key: session_ui.end_host
+    label: "\u30DB\u30B9\u30C8\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u7D42\u4E86"
+  - key: session_ui.leave
+    label: "\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u9000\u51FA"
+  - key: session_ui.leave_temporarily
+    label: "\u4E00\u6642\u7684\u306B\u9000\u51FA"
+  - key: session_ui.confirm_end_host
+    label: "\u30DB\u30B9\u30C8\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u7D42\u4E86\u3057\u307E\u3059\u304B\uFF1F"
+  - key: session_ui.warn_end_host
+    label: "\u5168\u54E1\u306E\u63A5\u7D9A\u3068\u73FE\u5728\u306E\u30D7\u30EC\u30A4\u304C\u7D42\u4E86\u3057\u307E\u3059\u3002"
+  - key: session_ui.confirm_leave
+    label: "\u3053\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u9000\u51FA\u3057\u307E\u3059\u304B\uFF1F"
+  - key: session_ui.warn_leave
+    label: "\u53C2\u52A0\u6A29\u3092\u653E\u68C4\u3059\u308B\u305F\u3081\u3001\u3053\u306E\u30D7\u30EC\u30A4\u306B\u306F\u518D\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: session_ui.confirm_temporary_leave
+    label: "\u30BB\u30C3\u30B7\u30E7\u30F3\u304B\u3089\u4E00\u6642\u7684\u306B\u9000\u51FA\u3057\u307E\u3059\u304B\uFF1F"
+  - key: session_ui.warn_temporary_leave
+    label: "\u30B5\u30FC\u30D0\u30FC\u304C\u7A3C\u50CD\u4E2D\u306A\u30895\u5206\u4EE5\u5185\u306B\u518D\u63A5\u7D9A\u3067\u304D\u307E\u3059\u3002\u30D1\u30FC\u30C6\u30A3\u30FC\u306E\u30B2\u30FC\u30E0\u306F\u7D9A\u884C\u3055\u308C\u307E\u3059\u3002"
+  - key: session_ui.passive_locked
+    label: "\u6E96\u5099\u3092\u89E3\u9664\u3059\u308B\u3068\u30D1\u30C3\u30B7\u30D6\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
+  - key: session_ui.settlement_wait
+    label: "\u7D50\u679C\u3092\u4FDD\u5B58\u3057\u3066\u3044\u307E\u3059\u3002\u5C11\u3057\u5F85\u3063\u3066\u304B\u3089\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: session_ui.settlement_wait_host
+    label: "\u53C2\u52A0\u8005\u306E\u7D50\u679C\u3092\u4FDD\u5B58\u3057\u3066\u3044\u307E\u3059\u3002\u4FDD\u5B58\u5B8C\u4E86\u5F8C\u306B\u30BB\u30C3\u30B7\u30E7\u30F3\u3092\u7D42\u4E86\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: session_ui.settlement_wait_player
+    label: "{0}\u306E\u7D50\u679C\u3092\u4FDD\u5B58\u3057\u3066\u3044\u307E\u3059\u3002\u5C11\u3057\u5F85\u3063\u3066\u304B\u3089\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: session_ui.lobby_loading
+    label: "\u30ED\u30D3\u30FC\u306E\u8AAD\u307F\u8FBC\u307F\u304C\u7D42\u308F\u3063\u3066\u304B\u3089\u51FA\u767A\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: session_ui.player_prefabs_missing
+    label: "\u30D7\u30EC\u30A4\u30E4\u30FC\u306E\u6E96\u5099\u304C\u4E0D\u5B8C\u5168\u3067\u3059\u3002\u518D\u63A5\u7D9A\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: session_ui.session_missing
+    label: "\u53C2\u52A0\u4E2D\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"
+  - key: session_ui.unsupported_request
+    label: "\u3053\u306E\u30ED\u30D3\u30FC\u64CD\u4F5C\u306F\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: session_ui.return_lobby_denied
+    label: "\u7D50\u679C\u78BA\u5B9A\u5F8C\u3001\u30EA\u30FC\u30C0\u30FC\u306E\u307F\u304C\u30D1\u30FC\u30C6\u30A3\u30FC\u3092\u30ED\u30D3\u30FC\u306B\u623B\u305B\u307E\u3059\u3002"
+  - key: session_ui.passive_invalid
+    label: "\u30D1\u30C3\u30B7\u30D6\u306E\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: session_ui.party_not_ready
+    label: "\u5168\u54E1\u304C\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u3092\u9078\u629E\u3057\u3001\u6E96\u5099\u3092\u5B8C\u4E86\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: preparation_ui.waiting
+    label: "\u30B2\u30FC\u30E0\u3092\u6E96\u5099\u3057\u3066\u3044\u307E\u3059\u2026"
+  - key: preparation_ui.timeout
+    label: "\u30B2\u30FC\u30E0\u306E\u6E96\u5099\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002"
+  - key: preparation_ui.timeout_retry
+    label: "\u30B2\u30FC\u30E0\u306E\u6E96\u5099\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002\u5207\u65AD\u3057\u3066\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: preparation_ui.combat_failed
+    label: "\u6226\u95D8\u306E\u6E96\u5099\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u518D\u63A5\u7D9A\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: preparation_ui.disconnected
+    label: "\u63A5\u7D9A\u304C\u7D42\u4E86\u3057\u307E\u3057\u305F\u3002"
+  - key: preparation_ui.exit
+    label: "\u9000\u51FA"
+  - key: settings_ui.label_allied_buff_effects
+    label: "\u5473\u65B9\u30D0\u30D5\u52B9\u679C\u8868\u793A"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\u4ED6\u306E\u30D7\u30EC\u30A4\u30E4\u30FC\u306E\u30D0\u30D5\u7BC4\u56F2\u3068\u30D0\u30D5\u52B9\u679C\u3092\u8868\u793A\u3059\u308B\u304B\u3069\u3046\u304B\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: hud_ui.wave_ready
+    label: "\u6226\u95D8\u6E96\u5099"
+  - key: hud_ui.wave_progress
+    label: "\u30A6\u30A7\u30FC\u30D6 {0}/{1}"
+  - key: hud_ui.wave_cleared
+    label: "\u6575\u3092\u5168\u6EC5\uFF01 \xB7 \u30DD\u30FC\u30BF\u30EB\u3078\u79FB\u52D5\u3057\u3066\u304F\u3060\u3055\u3044"
+  - key: title_ui.logout
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8"
+  - key: title_ui.signed_in
+    label: "\u30ED\u30B0\u30A4\u30F3\u4E2D"
+  - key: title_ui.signed_out
+    label: "\u672A\u30ED\u30B0\u30A4\u30F3"
+  - key: title_ui.checking_account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u78BA\u8A8D\u4E2D..."
+  - key: title_ui.syncing
+    label: "\u540C\u671F\u4E2D..."
+  - key: title_ui.account_changed_retry
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u3092\u3082\u3046\u4E00\u5EA6\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.local_progress_kept
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u3001\u3082\u3046\u4E00\u5EA6\u540C\u671F\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.scene_missing
+    label: "{0}\u3068LoadingScene\u306E\u30D3\u30EB\u30C9\u767B\u9332\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.multiplayer_error
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u7528\u30A2\u30AB\u30A6\u30F3\u30C8\u306E\u6E96\u5099\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.logout_disconnect_first
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u63A5\u7D9A\u3092\u7D42\u4E86\u3057\u3066\u304B\u3089\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.logout_test_account
+    label: "\u958B\u767A\u7528\u30C6\u30B9\u30C8\u30A2\u30AB\u30A6\u30F3\u30C8\u306F\u5B9F\u884C\u4E2D\u306B\u30ED\u30B0\u30A2\u30A6\u30C8\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: title_ui.logout_failed
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.back
+    label: "\u623B\u308B"
+  - key: login_ui.cached_session_failed
+    label: "\u4FDD\u5B58\u3055\u308C\u305F\u30ED\u30B0\u30A4\u30F3\u72B6\u614B\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.multiplayer_login_required
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306B\u5165\u308B\u306B\u306F\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.account_changed
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.login_required
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306B\u306F\u30ED\u30B0\u30A4\u30F3\u304C\u5FC5\u8981\u3067\u3059\u3002\u30E1\u30A4\u30F3\u753B\u9762\u3067\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.syncing_progress
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u3092\u540C\u671F\u4E2D\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\u63A5\u7D9A\u6E96\u5099\u306B\u5931\u6557\u3057\u307E\u3057\u305F: {0}"
+  - key: connection_ui.sync_retry
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u3001\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u540C\u671F\u3092\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.sync_incomplete
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u540C\u671F\u304C\u5B8C\u4E86\u3057\u306A\u304B\u3063\u305F\u305F\u3081\u3001\u5165\u5BA4\u3057\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: connection_ui.account_changed
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002"
+  - key: stage_select_ui.normal_enemy
+    label: "\u901A\u5E38\u306E\u6575"
+  - key: stage_select_ui.elite_enemy
+    label: "\u30A8\u30EA\u30FC\u30C8\u6575"
+  - key: stage_select_ui.camp
+    label: "\u30AD\u30E3\u30F3\u30D7"
+  - key: stage_select_ui.unknown
+    label: "\u672A\u77E5"
+  - key: title_ui.single_play
+    label: "\u30B7\u30F3\u30B0\u30EB\u30D7\u30EC\u30A4"
+  - key: title_ui.multi_play
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4"
+  - key: title_ui.continue
+    label: "\u7D9A\u304D\u304B\u3089"
+  - key: title_ui.passive_skill
+    label: "\u30D1\u30C3\u30B7\u30D6\u30B9\u30AD\u30EB"
+  - key: title_ui.settings
+    label: "\u8A2D\u5B9A"
+  - key: title_ui.quit
+    label: "\u30B2\u30FC\u30E0\u7D42\u4E86"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u307E\u3059\u304B\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3059\u308B\u3068\u30B7\u30F3\u30B0\u30EB\u30D7\u30EC\u30A4\u306F\u30B2\u30B9\u30C8\u306E\u30BB\u30FC\u30D6\u306B\u5207\u308A\u66FF\u308F\u308A\u307E\u3059\u3002\u30A2\u30AB\u30A6\u30F3\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u6B21\u56DE\u30ED\u30B0\u30A4\u30F3\u6642\u306B\u305D\u306E\u307E\u307E\u5F15\u304D\u7D99\u304C\u308C\u307E\u3059\u3002"
+  - key: title_ui.new_game_confirm
+    label: "\u65B0\u3057\u3044\u30B2\u30FC\u30E0\u3092\u59CB\u3081\u307E\u3059\u304B\uFF1F"
+  - key: title_ui.new_game_warning
+    label: "\u9032\u884C\u4E2D\u306E\u9060\u5F81\u306F\u5931\u308F\u308C\u3001\u6700\u521D\u304B\u3089\u59CB\u307E\u308A\u307E\u3059\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u306F\u307E\u3060\u9032\u884C\u72B6\u6CC1\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u30B2\u30B9\u30C8\u3067\u30D7\u30EC\u30A4\u3057\u305F\u9032\u884C\u72B6\u6CC1\u3092\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u5F15\u304D\u7D99\u304E\u307E\u3059\u304B\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u5F15\u304D\u7D99\u304C\u306A\u3044\u5834\u5408\u306F\u65B0\u3057\u3044\u9032\u884C\u72B6\u6CC1\u3067\u59CB\u307E\u308A\u3001\u30B2\u30B9\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u3053\u306E\u7AEF\u672B\u306B\u6B8B\u308A\u307E\u3059\u3002"
+  - key: settings_ui.label_allied_buff_effects
+    label: "\u5473\u65B9\u30D0\u30D5\u52B9\u679C\u8868\u793A"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\u4ED6\u306E\u30D7\u30EC\u30A4\u30E4\u30FC\u306E\u30D0\u30D5\u7BC4\u56F2\u3068\u30D0\u30D5\u52B9\u679C\u3092\u8868\u793A\u3059\u308B\u304B\u3069\u3046\u304B\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: hud_ui.wave_ready
+    label: "\u6226\u95D8\u6E96\u5099"
+  - key: hud_ui.wave_progress
+    label: "\u30A6\u30A7\u30FC\u30D6 {0}/{1}"
+  - key: hud_ui.wave_cleared
+    label: "\u6575\u3092\u5168\u6EC5\uFF01 \xB7 \u30DD\u30FC\u30BF\u30EB\u3078\u79FB\u52D5\u3057\u3066\u304F\u3060\u3055\u3044"
+  - key: title_ui.logout
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8"
+  - key: title_ui.signed_in
+    label: "\u30ED\u30B0\u30A4\u30F3\u4E2D"
+  - key: title_ui.signed_out
+    label: "\u672A\u30ED\u30B0\u30A4\u30F3"
+  - key: title_ui.checking_account
+    label: "\u30A2\u30AB\u30A6\u30F3\u30C8\u3092\u78BA\u8A8D\u4E2D..."
+  - key: title_ui.syncing
+    label: "\u540C\u671F\u4E2D..."
+  - key: title_ui.account_changed_retry
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u3092\u3082\u3046\u4E00\u5EA6\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.local_progress_kept
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u3001\u3082\u3046\u4E00\u5EA6\u540C\u671F\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.scene_missing
+    label: "{0}\u3068LoadingScene\u306E\u30D3\u30EB\u30C9\u767B\u9332\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.multiplayer_error
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u7528\u30A2\u30AB\u30A6\u30F3\u30C8\u306E\u6E96\u5099\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.logout_disconnect_first
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u63A5\u7D9A\u3092\u7D42\u4E86\u3057\u3066\u304B\u3089\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: title_ui.logout_test_account
+    label: "\u958B\u767A\u7528\u30C6\u30B9\u30C8\u30A2\u30AB\u30A6\u30F3\u30C8\u306F\u5B9F\u884C\u4E2D\u306B\u30ED\u30B0\u30A2\u30A6\u30C8\u3067\u304D\u307E\u305B\u3093\u3002"
+  - key: title_ui.logout_failed
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.back
+    label: "\u623B\u308B"
+  - key: login_ui.cached_session_failed
+    label: "\u4FDD\u5B58\u3055\u308C\u305F\u30ED\u30B0\u30A4\u30F3\u72B6\u614B\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.multiplayer_login_required
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306B\u5165\u308B\u306B\u306F\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: login_ui.account_changed
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002\u3082\u3046\u4E00\u5EA6\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.login_required
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306B\u306F\u30ED\u30B0\u30A4\u30F3\u304C\u5FC5\u8981\u3067\u3059\u3002\u30E1\u30A4\u30F3\u753B\u9762\u3067\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.syncing_progress
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u3092\u540C\u671F\u4E2D\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\u63A5\u7D9A\u6E96\u5099\u306B\u5931\u6557\u3057\u307E\u3057\u305F: {0}"
+  - key: connection_ui.sync_retry
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u63A5\u7D9A\u3092\u78BA\u8A8D\u3057\u3066\u3001\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u540C\u671F\u3092\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044\u3002"
+  - key: connection_ui.sync_incomplete
+    label: "\u30ED\u30FC\u30AB\u30EB\u306E\u9032\u884C\u72B6\u6CC1\u306F\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4\u306E\u540C\u671F\u304C\u5B8C\u4E86\u3057\u306A\u304B\u3063\u305F\u305F\u3081\u3001\u5165\u5BA4\u3057\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+  - key: connection_ui.account_changed
+    label: "\u30ED\u30B0\u30A4\u30F3\u30A2\u30AB\u30A6\u30F3\u30C8\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F\u3002"
+  - key: stage_select_ui.normal_enemy
+    label: "\u901A\u5E38\u306E\u6575"
+  - key: stage_select_ui.elite_enemy
+    label: "\u30A8\u30EA\u30FC\u30C8\u6575"
+  - key: stage_select_ui.camp
+    label: "\u30AD\u30E3\u30F3\u30D7"
+  - key: stage_select_ui.unknown
+    label: "\u672A\u77E5"
+  - key: title_ui.single_play
+    label: "\u30B7\u30F3\u30B0\u30EB\u30D7\u30EC\u30A4"
+  - key: title_ui.multi_play
+    label: "\u30DE\u30EB\u30C1\u30D7\u30EC\u30A4"
+  - key: title_ui.continue
+    label: "\u7D9A\u304D\u304B\u3089"
+  - key: title_ui.passive_skill
+    label: "\u30D1\u30C3\u30B7\u30D6\u30B9\u30AD\u30EB"
+  - key: title_ui.settings
+    label: "\u8A2D\u5B9A"
+  - key: title_ui.quit
+    label: "\u30B2\u30FC\u30E0\u7D42\u4E86"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u307E\u3059\u304B\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3059\u308B\u3068\u30B7\u30F3\u30B0\u30EB\u30D7\u30EC\u30A4\u306F\u30B2\u30B9\u30C8\u306E\u30BB\u30FC\u30D6\u306B\u5207\u308A\u66FF\u308F\u308A\u307E\u3059\u3002\u30A2\u30AB\u30A6\u30F3\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u6B21\u56DE\u30ED\u30B0\u30A4\u30F3\u6642\u306B\u305D\u306E\u307E\u307E\u5F15\u304D\u7D99\u304C\u308C\u307E\u3059\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u306F\u307E\u3060\u9032\u884C\u72B6\u6CC1\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u30B2\u30B9\u30C8\u3067\u30D7\u30EC\u30A4\u3057\u305F\u9032\u884C\u72B6\u6CC1\u3092\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u5F15\u304D\u7D99\u304E\u307E\u3059\u304B\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u5F15\u304D\u7D99\u304C\u306A\u3044\u5834\u5408\u306F\u65B0\u3057\u3044\u9032\u884C\u72B6\u6CC1\u3067\u59CB\u307E\u308A\u3001\u30B2\u30B9\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u3053\u306E\u7AEF\u672B\u306B\u6B8B\u308A\u307E\u3059\u3002"
+  chnLabels:
+  - key: settings_ui.tab_display
+    label: "\u663E\u793A"
+  - key: settings_ui.tab_sound
+    label: "\u58F0\u97F3"
+  - key: settings_ui.tab_control
+    label: "\u64CD\u4F5C"
+  - key: settings_ui.tab_gameplay
+    label: "\u6E38\u620F\u73A9\u6CD5"
+  - key: settings_ui.section_screen_size
+    label: "\u5C4F\u5E55\u8BBE\u7F6E"
+  - key: settings_ui.label_resolution
+    label: "\u5206\u8FA8\u7387"
+  - key: settings_ui.label_fullscreen
+    label: "\u5168\u5C4F\u6A21\u5F0F"
+  - key: settings_ui.label_quality
+    label: "\u753B\u8D28"
+  - key: settings_ui.label_brightness
+    label: "\u4EAE\u5EA6"
+  - key: settings_ui.option_low
+    label: "\u4F4E"
+  - key: settings_ui.option_medium
+    label: "\u4E2D"
+  - key: settings_ui.option_high
+    label: "\u9AD8"
+  - key: settings_ui.label_max_fps
+    label: "\u6700\u5927\u5E27\u7387"
+  - key: settings_ui.option_unlimited
+    label: "\u65E0\u9650\u5236"
+  - key: settings_ui.label_master_volume
+    label: "\u4E3B\u97F3\u91CF"
+  - key: settings_ui.label_bgm_volume
+    label: "\u80CC\u666F\u97F3\u4E50"
+  - key: settings_ui.label_sfx_volume
+    label: "\u97F3\u6548"
+  - key: settings_ui.label_mute
+    label: "\u9759\u97F3"
+  - key: settings_ui.section_key_binding
+    label: "\u6309\u952E\u8BBE\u7F6E"
+  - key: settings_ui.skill_slot_1
+    label: "\u6280\u80FD1"
+  - key: settings_ui.skill_slot_2
+    label: "\u6280\u80FD2"
+  - key: settings_ui.skill_slot_3
+    label: "\u6280\u80FD3"
+  - key: settings_ui.skill_slot_4
+    label: "\u6280\u80FD4"
+  - key: settings_ui.skill_slot_potion
+    label: "\u6D88\u8017\u54C1"
+  - key: settings_ui.skill_slot_dodge
+    label: "\u95EA\u907F"
+  - key: settings_ui.label_enemy_health_display
+    label: "\u654C\u4EBA\u8840\u91CF\u663E\u793A"
+  - key: settings_ui.option_always
+    label: "\u603B\u662F"
+  - key: settings_ui.option_on_hit
+    label: "\u53D7\u51FB\u65F6"
+  - key: settings_ui.option_none
+    label: "\u4E0D\u663E\u793A"
+  - key: settings_ui.label_damage_display
+    label: "\u4F24\u5BB3\u663E\u793A"
+  - key: settings_ui.label_screen_shake
+    label: "\u5C4F\u5E55\u9707\u52A8"
+  - key: settings_ui.label_tutorial
+    label: "\u6559\u7A0B"
+  - key: settings_ui.option_once
+    label: "\u4EC5\u4E00\u6B21"
+  - key: settings_ui.label_language
+    label: "\u8BED\u8A00"
+  - key: settings_ui.button_reset
+    label: "\u6062\u590D\u9ED8\u8BA4\u8BBE\u7F6E"
+  - key: settings_ui.button_apply
+    label: "\u5E94\u7528"
+  - key: settings_ui.button_confirm
+    label: "\u786E\u8BA4"
+  - key: settings_ui.rebind_prompt
+    label: "\u8BF7\u8F93\u5165\u8981\u66F4\u6539\u7684\u6309\u952E"
+  - key: settings_ui.desc_resolution
+    label: "\u53EF\u4EE5\u66F4\u6539\u5C4F\u5E55\u5206\u8FA8\u7387\u3002"
+  - key: settings_ui.desc_fullscreen
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F\u3002"
+  - key: settings_ui.desc_brightness
+    label: "\u53EF\u4EE5\u8C03\u8282\u4EAE\u5EA6\u3002"
+  - key: settings_ui.desc_quality
+    label: "\u53EF\u4EE5\u66F4\u6539\u753B\u8D28\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_max_fps
+    label: "\u53EF\u4EE5\u66F4\u6539\u6700\u5927\u5E27\u7387\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_master_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u4E3B\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_bgm_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u80CC\u666F\u97F3\u4E50\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_sfx_volume
+    label: "\u53EF\u4EE5\u8C03\u8282\u97F3\u6548\u97F3\u91CF\u3002"
+  - key: settings_ui.desc_mute
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u9759\u97F3\u3002"
+  - key: settings_ui.desc_skill_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u6280\u80FD\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.desc_potion_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u6D88\u8017\u54C1\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.desc_dodge_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u95EA\u907F\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.key_open_skill
+    label: "\u6280\u80FD\u7A97\u53E3"
+  - key: settings_ui.key_open_inventory
+    label: "\u80CC\u5305"
+  - key: settings_ui.key_open_status
+    label: "\u5C5E\u6027\u7A97\u53E3"
+  - key: settings_ui.key_open_quest
+    label: "\u4EFB\u52A1\u7A97\u53E3"
+  - key: settings_ui.key_open_buff
+    label: "\u589E\u76CA\u7A97\u53E3"
+  - key: settings_ui.desc_menu_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u83DC\u5355\u5FEB\u6377\u952E\u3002"
+  - key: settings_ui.desc_enemy_health_display
+    label: "\u53EF\u4EE5\u66F4\u6539\u654C\u4EBA\u8840\u91CF\u663E\u793A\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_damage_display
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u663E\u793A\u4F24\u5BB3\u6570\u503C\u3002"
+  - key: settings_ui.desc_screen_shake
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u8FC7\u7A0B\u4E2D\u662F\u5426\u5F00\u542F\u5C4F\u5E55\u9707\u52A8\u3002"
+  - key: settings_ui.desc_tutorial
+    label: "\u53EF\u4EE5\u66F4\u6539\u6559\u7A0B\u663E\u793A\u8BBE\u7F6E\u3002"
+  - key: settings_ui.desc_language
+    label: "\u66F4\u6539\u8BED\u8A00\u8BBE\u7F6E\u3002"
+  - key: pause_ui.resume
+    label: "\u7EE7\u7EED"
+  - key: pause_ui.settings
+    label: "\u8BBE\u7F6E"
+  - key: pause_ui.giveup
+    label: "\u653E\u5F03"
+  - key: pause_ui.save_and_quit
+    label: "\u4FDD\u5B58\u540E\u9000\u51FA"
+  - key: skill_ui.evolution_format
+    label: "\u8FDB\u5316\uFF1A{0}"
+  - key: skill_ui.enhancement_format
+    label: "\u5F3A\u5316\uFF1A{0}"
+  - key: skill_ui.cooldown_only
+    label: "\u51B7\u5374\u65F6\u95F4{0}\u79D2"
+  - key: skill_ui.damage_and_cooldown
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2"
+  - key: skill_ui.damage_cooldown_mana
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2\xB7MP{2}"
+  - key: skill_ui.cooldown_mana
+    label: "\u51B7\u5374\u65F6\u95F4{0}\u79D2\xB7MP{1}"
+  - key: skill_ui.damage_cooldown_mana_per_stack
+    label: "\u4F24\u5BB3\u500D\u7387{0}%\xB7\u51B7\u5374\u65F6\u95F4{1}\u79D2\xB7\u6BCF\u5C42MP{2}"
+  - key: skill_ui.arc_laser_name
+    label: "\u7535\u5F27\u6FC0\u5149"
+  - key: status_ui.header
+    label: STATUS
+  - key: status_ui.detail_toggle
+    label: "\u663E\u793A\u8BE6\u7EC6\u5C5E\u6027"
+  - key: status_ui.type_header
+    label: TYPE
+  - key: shop_ui.header
+    label: "\u5546\u5E97"
+  - key: inventory_ui.header
+    label: "\u7269\u54C1\u680F"
+  - key: upgrade_ui.header
+    label: "\u5F3A\u5316"
+  - key: item_tooltip_ui.sub_option_label
+    label: "\u9644\u52A0\u9009\u9879"
+  - key: item_tooltip_ui.unique_effect_label
+    label: "\u56FA\u6709\u6548\u679C"
+  - key: upgrade_ui.current_stat
+    label: "\u5F53\u524D\u5C5E\u6027\uFF1A{0} + {1}"
+  - key: upgrade_ui.next_stat
+    label: "\u5F3A\u5316\u540E\u5C5E\u6027\uFF1A{0} + {1}"
+  - key: upgrade_ui.cost
+    label: "\u5F3A\u5316\u8D39\u7528\uFF1A{0}"
+  - key: upgrade_ui.cost_unavailable
+    label: "\u5F3A\u5316\u8D39\u7528\uFF1A-"
+  - key: upgrade_ui.unknown_item
+    label: "\u7269\u54C1"
+  - key: upgrade_ui.selection_required
+    label: "\u8BF7\u9009\u62E9\u8981\u5F3A\u5316\u7684\u7269\u54C1\u3002"
+  - key: upgrade_ui.result_success
+    label: "{0} +{1} \u5F3A\u5316\u6210\u529F"
+  - key: upgrade_ui.result_not_enough_gold
+    label: "\u4FE1\u7528\u70B9\u4E0D\u8DB3\u3002"
+  - key: upgrade_ui.result_invalid_item
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u5F3A\u5316\u3002"
+  - key: upgrade_ui.result_invalid_cost
+    label: "\u5F3A\u5316\u8D39\u7528\u8BBE\u7F6E\u4E0D\u6B63\u786E\u3002"
+  - key: upgrade_ui.result_wallet_unavailable
+    label: "\u5F3A\u5316\u5904\u7406\u8FC7\u7A0B\u4E2D\u53D1\u751F\u4E86\u95EE\u9898\u3002"
+  - key: upgrade_ui.result_failed
+    label: "\u5F3A\u5316\u5931\u8D25\u3002"
+  - key: npc_ui.quest
+    label: "\u59D4\u6258"
+  - key: npc_ui.rest
+    label: "\u4F11\u606F"
+  - key: chat_ui.equip_success
+    label: "\u88C5\u5907\u5904\u7406\u5DF2\u5B8C\u6210\u3002"
+  - key: chat_ui.equip_swapped
+    label: "\u5DF2\u66F4\u6362\u88C5\u5907\u3002"
+  - key: chat_ui.equip_invalid_item
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u88C5\u5907\u3002"
+  - key: chat_ui.equip_invalid_slot
+    label: "\u65E0\u6CD5\u88C5\u5907\u5230\u8BE5\u680F\u4F4D\u3002"
+  - key: chat_ui.equip_slot_occupied
+    label: "\u8BE5\u4F4D\u7F6E\u5DF2\u88C5\u5907\u7269\u54C1\u3002"
+  - key: chat_ui.equip_not_equipped
+    label: "\u6CA1\u6709\u53EF\u5378\u4E0B\u7684\u88C5\u5907\u3002"
+  - key: chat_ui.equip_no_return_space
+    label: "\u80CC\u5305\u4E2D\u6CA1\u6709\u7A7A\u95F4\u653E\u7F6E\u539F\u6709\u88C5\u5907\u3002"
+  - key: chat_ui.equip_failed
+    label: "\u88C5\u5907\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.equip_wrong_class
+    label: "\u8BE5\u89D2\u8272\u65E0\u6CD5\u88C5\u5907\u6B64\u6B66\u5668\u3002"
+  - key: chat_ui.equip_unknown
+    label: "\u672A\u77E5\u7684\u88C5\u5907\u5904\u7406\u7ED3\u679C\u3002"
+  - key: chat_ui.inventory_acquisition
+    label: "\u83B7\u5F97\u4E86\u7269\u54C1\uFF1A{0}\u3002"
+  - key: chat_ui.inventory_acquisition_colored
+    label: "\u83B7\u5F97\u4E86{0}\u3002"
+  - key: chat_ui.inventory_success_position
+    label: "{0} \u4F4D\u7F6E\uFF1A{1}, {2}"
+  - key: chat_ui.inventory_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_no_space
+    label: "\u80CC\u5305\u5DF2\u6EE1\uFF01"
+  - key: chat_ui.inventory_grid_unavailable
+    label: "\u65E0\u6CD5\u4F7F\u7528\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_placement_failed
+    label: "\u672A\u80FD\u5C06\u7269\u54C1\u653E\u5165\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_add_failed
+    label: "\u83B7\u53D6\u7269\u54C1\u5931\u8D25\u3002"
+  - key: chat_ui.inventory_remove_success
+    label: "\u5DF2\u5220\u9664{0}\u3002"
+  - key: chat_ui.inventory_remove_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_remove_unavailable
+    label: "\u65E0\u6CD5\u4F7F\u7528\u80CC\u5305\u3002"
+  - key: chat_ui.inventory_remove_not_player
+    label: "\u53EA\u80FD\u5220\u9664\u81EA\u5DF1\u80CC\u5305\u4E2D\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.inventory_remove_equipped_not_allowed
+    label: "\u5DF2\u88C5\u5907\u7684\u7269\u54C1\u65E0\u6CD5\u76F4\u63A5\u5220\u9664\u3002"
+  - key: chat_ui.inventory_remove_failed
+    label: "\u5220\u9664\u7269\u54C1\u5931\u8D25\u3002"
+  - key: chat_ui.inventory_remove_default_failed
+    label: "\u65E0\u6CD5\u5220\u9664\u7269\u54C1\u3002"
+  - key: chat_ui.shop_buy_success
+    label: "\u5DF2\u8D2D\u4E70{0}\u3002"
+  - key: chat_ui.shop_sell_success
+    label: "\u5DF2\u51FA\u552E{0}\u3002"
+  - key: chat_ui.shop_not_enough_gold
+    label: "\u4FE1\u7528\u70B9\u4E0D\u8DB3\uFF0C\u8D2D\u4E70{0}\u5931\u8D25\u3002"
+  - key: chat_ui.shop_no_space_buy
+    label: "\u80CC\u5305\u4E2D\u6CA1\u6709\u7A7A\u95F4\u3002"
+  - key: chat_ui.shop_no_space_sell
+    label: "\u5546\u5E97\u4E2D\u6CA1\u6709\u7A7A\u95F4\u653E\u7F6E\u51FA\u552E\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.shop_invalid_item
+    label: "\u65E0\u6548\u7684\u7269\u54C1\u3002"
+  - key: chat_ui.shop_transfer_failed
+    label: "\u79FB\u52A8{0}\u65F6\u4EA4\u6613\u5931\u8D25\u3002"
+  - key: chat_ui.shop_stock_update_failed
+    label: "{0}\u5E93\u5B58\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.shop_failed
+    label: "\u4EA4\u6613\u5904\u7406\u5931\u8D25\u3002"
+  - key: chat_ui.pickup_default
+    label: "\u83B7\u5F97\u4E86\u7269\u54C1\u3002"
+  - key: chat_ui.out_of_range
+    label: "\u8BF7\u9760\u8FD1\u7269\u54C1\u3002"
+  - key: chat_ui.already_claimed
+    label: "\u8BE5\u7269\u54C1\u5DF2\u88AB\u83B7\u53D6\u3002"
+  - key: chat_ui.pickup_unavailable
+    label: "\u8BE5\u7269\u54C1\u65E0\u6CD5\u518D\u83B7\u53D6\u3002"
+  - key: chat_ui.item_unavailable
+    label: "\u627E\u4E0D\u5230\u76EE\u6807\u7269\u54C1\u3002"
+  - key: chat_ui.stale_revision
+    label: "\u7269\u54C1\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.recovery_failed
+    label: "\u7269\u54C1\u6389\u843D\u53CA\u80CC\u5305\u6062\u590D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u80CC\u5305\u72B6\u6001\u3002"
+  - key: chat_ui.upgrade_process_failed
+    label: "\u5F3A\u5316\u5904\u7406\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.drop_failed
+    label: "\u672A\u80FD\u5C06\u7269\u54C1\u653E\u7F6E\u5230\u573A\u5730\u4E0A\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.acquisition_failed
+    label: "\u83B7\u53D6\u7269\u54C1\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.shop_state_changed
+    label: "\u5546\u5E97\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002"
+  - key: chat_ui.inventory_state_changed
+    label: "\u80CC\u5305\u72B6\u6001\u5DF2\u66F4\u6539\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: chat_ui.trade_failed
+    label: "\u4EA4\u6613\u5904\u7406\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002"
+  - key: loading_ui.tooltip_title
+    label: "\u6B8B\u9AB8-9"
+  - key: loading_ui.tooltip_content
+    label: "\u8FD9\u91CC\u539F\u672C\u662F\u56E0\u6C61\u67D3\u800C\u65E0\u6CD5\u5C45\u4F4F\u7684\u5E9F\u5F03\u4E4B\u5730\uFF0C\u4F46\u6570\u767E\u5E74\u95F4\u5806\u79EF\u7684\u673A\u5668\u4EBA\u6B8B\u9AB8\u5F00\u59CB\u81EA\u6211\u4FEE\u590D\u4E0E\u6539\u9020\uFF0C\u5F62\u6210\u4E86\u8BE1\u5F02\u7684\u673A\u7532\u751F\u6001\u7CFB\u7EDF\u3002"
+  - key: common_ui.yes
+    label: "\u662F"
+  - key: common_ui.confirm
+    label: "\u786E\u8BA4"
+  - key: chat_ui.panel_title
+    label: "\u804A\u5929"
+  - key: chat_ui.input_placeholder
+    label: "\u8F93\u5165\u6D88\u606F\u2026"
+  - key: chat_ui.connect_hint
+    label: "\u8FDE\u63A5\u540E\u53EF\u4EE5\u804A\u5929"
+  - key: chat_ui.unread_indicator
+    label: "\u65B0\u6D88\u606F \u2193"
+  - key: skill_evolution_ui.title
+    label: "\u6280\u80FD\u8FDB\u5316\xB7\u5F3A\u5316\u8BBE\u7F6E"
+  - key: skill_evolution_ui.hint
+    label: "\u6309K\u952E\u5F00\u5173 - \u5DE6\u952E\uFF1A\u8FDB\u5316\uFF08\u65E0\u2192\u8FDB\u53161\u21922\u21923\uFF09\uFF0C\u53F3\u952E\uFF1A\u5F3A\u5316\uFF08\u65E0\u2192\u5F3A\u53161\u21922\u21923\uFF09"
+  - key: skill_evolution_ui.none
+    label: "\u65E0"
+  - key: passive_skill_ui.title
+    label: "\u88AB\u52A8\u5347\u7EA7"
+  - key: passive_skill_ui.skill_clear
+    label: "\u91CD\u7F6E"
+  - key: passive_skill_ui.skill_points
+    label: "\u6280\u80FD\u70B9 -"
+  - key: passive_skill_ui.credit_format
+    label: "\u70B9\u6570 | {0}"
+  - key: passive_skill_ui.credit_none
+    label: "\u70B9\u6570 | -"
+  - key: passive_skill_ui.profile_loading
+    label: "\u914D\u7F6E\u51C6\u5907\u4E2D"
+  - key: passive_skill_ui.confirm_ok
+    label: "\u786E\u5B9A"
+  - key: passive_skill_ui.detail_current_level
+    label: "\u5F53\u524D\u7B49\u7EA7: {0} / {1}"
+  - key: passive_skill_ui.detail_current_effect
+    label: "\u5F53\u524D\u6548\u679C: {0}"
+  - key: passive_skill_ui.detail_next_level
+    label: "\u4E0B\u4E00\u7EA7: {0}"
+  - key: common_ui.cancel
+    label: "\u53D6\u6D88"
+  - key: rest_ui.header
+    label: "\u4F11\u606F"
+  - key: rest_ui.description
+    label: "\u652F\u4ED8\u4FE1\u7528\u70B9\n\u8FDB\u884C\u4F11\u606F\u5417\uFF1F"
+  - key: rest_ui.health_recovery
+    label: "\u6062\u590D25%\u751F\u547D"
+  - key: rest_ui.health_recovery_format
+    label: "\u6062\u590D{0}%\u751F\u547D"
+  - key: rest_ui.potion_recharge
+    label: "\u836F\u6C34\u8865\u5145"
+  - key: rest_ui.cost_format
+    label: "\u6240\u9700\u4FE1\u7528\u70B9 : {0}"
+  - key: rest_ui.complete_message
+    label: "\u6D88\u8017{0}\u4FE1\u7528\u70B9\uFF0C\u6062\u590D\u4E86{1}\u70B9\u751F\u547D\u548C{2}\u4E2A\u836F\u6C34\u3002"
+  - key: chat_ui.prefix_chat
+    label: "[\u804A\u5929]"
+  - key: chat_ui.prefix_acquisition
+    label: "[\u7269\u54C1]"
+  - key: chat_ui.prefix_warning
+    label: "[\u63D0\u793A]"
+  - key: chat_ui.prefix_connection
+    label: "[\u8FDE\u63A5]"
+  - key: chat_ui.item_fallback_name
+    label: "\u7269\u54C1"
+  - key: shop_ui.reroll_cost_format
+    label: "<color=#FFEB04>{0}</color> \u5237\u65B0"
+  - key: shop_ui.reroll_free
+    label: "\u514D\u8D39\u5237\u65B0"
+  - key: shop_ui.reroll_count_format
+    label: '[ {0} ]'
+  - key: settings_ui.reset_confirm
+    label: "\u8981\u5C06\u8BBE\u7F6E\u6062\u590D\u4E3A\u9ED8\u8BA4\u503C\u5417\uFF1F"
+  - key: settings_ui.reset_warning
+    label: "\u5F53\u524D\u6240\u6709\u8BBE\u7F6E\u90FD\u5C06\u6062\u590D\u4E3A\u9ED8\u8BA4\u503C\u3002"
+  - key: pause_ui.giveup_confirm
+    label: "\u8981\u653E\u5F03\u6E38\u620F\u5417\uFF1F"
+  - key: pause_ui.giveup_warning
+    label: "\u8B66\u544A\uFF1A\u5F53\u524D\u6E38\u620F\u6570\u636E\u5C06\u4F1A\u4E22\u5931\u3002"
+  - key: pause_ui.giveup_reconfirm
+    label: "\u786E\u5B9A\u8981\u653E\u5F03\u5417\uFF1F"
+  - key: pause_ui.giveup_reconfirm_warning
+    label: "\u5F53\u524D\u8FDC\u5F81\u5C06\u88AB\u91CD\u7F6E\uFF0C\u4E14\u65E0\u6CD5\u83B7\u5F97\u4FE1\u7528\u70B9\u3002"
+  - key: pause_ui.save_and_quit_confirm
+    label: "\u8981\u4FDD\u5B58\u5E76\u9000\u51FA\u6E38\u620F\u5417\uFF1F"
+  - key: pause_ui.host_end_confirm
+    label: "\u8981\u7ED3\u675F\u4E3B\u673A\u4F1A\u8BDD\u5417\uFF1F"
+  - key: pause_ui.host_end_warning
+    label: "\u6240\u6709\u53C2\u4E0E\u8005\u7684\u8FDE\u63A5\u548C\u5F53\u524D\u8F6E\u6B21\u90FD\u5C06\u7ED3\u675F\u3002"
+  - key: pause_ui.leave_confirm
+    label: "\u8981\u79BB\u5F00\u6B64\u4F1A\u8BDD\u5417\uFF1F"
+  - key: pause_ui.leave_warning
+    label: "\u4F60\u5C06\u653E\u5F03\u53C2\u4E0E\u8D44\u683C\uFF0C\u4E14\u65E0\u6CD5\u91CD\u65B0\u52A0\u5165\u672C\u8F6E\u3002"
+  - key: pause_ui.temp_leave_confirm
+    label: "\u8981\u6682\u65F6\u79BB\u5F00\u4F1A\u8BDD\u5417\uFF1F"
+  - key: pause_ui.temp_leave_warning
+    label: "\u670D\u52A1\u5668\u4FDD\u6301\u8FD0\u884C\u671F\u95F4\uFF0C\u53EF\u57285\u5206\u949F\u5185\u91CD\u65B0\u8FDE\u63A5\u3002\u961F\u4F0D\u7684\u6E38\u620F\u5C06\u7EE7\u7EED\u8FDB\u884C\u3002"
+  - key: pause_ui.adjustment
+    label: "\u7ED3\u7B97\u5E76\u7ED3\u675F"
+  - key: pause_ui.settle_confirm
+    label: "\u8981\u7ED3\u7B97\u5E76\u7ED3\u675F\u6E38\u620F\u5417\uFF1F"
+  - key: pause_ui.settle_warning
+    label: "\u5C06\u83B7\u5F97\u6301\u6709\u4FE1\u7528\u70B9\u53CA\u7269\u54C1\u539F\u4EF7\u768450%\u4F5C\u4E3A\u8D26\u53F7\u4FE1\u7528\u70B9\uFF0C\u5F53\u524D\u8FDC\u5F81\u5C06\u88AB\u91CD\u7F6E\u3002"
+  - key: login_ui.title
+    label: "\u7528\u6237\u8BA4\u8BC1"
+  - key: login_ui.subtitle
+    label: "\u7528\u6237\u8BA4\u8BC1\u7EC8\u7AEF"
+  - key: login_ui.account
+    label: "\u8D26\u53F7"
+  - key: login_ui.email_placeholder
+    label: "\u7535\u5B50\u90AE\u7BB1"
+  - key: login_ui.password
+    label: "\u5BC6\u7801"
+  - key: login_ui.confirm_password
+    label: "\u786E\u8BA4\u5BC6\u7801"
+  - key: login_ui.submit
+    label: "\u767B\u5F55"
+  - key: login_ui.no_account
+    label: "\u8FD8\u6CA1\u6709\u8D26\u53F7\uFF1F"
+  - key: login_ui.create_account
+    label: "\u521B\u5EFA\u8D26\u53F7"
+  - key: login_ui.create
+    label: "\u521B\u5EFA"
+  - key: login_ui.has_account
+    label: "\u5DF2\u6709\u8D26\u53F7\uFF1F"
+  - key: login_ui.login
+    label: "\u767B\u5F55"
+  - key: login_ui.footer
+    label: "\u5B89\u5168\u8BBF\u95EE\u7EC8\u7AEF"
+  - key: login_ui.submitting
+    label: "\u6B63\u5728\u767B\u5F55\u2026"
+  - key: login_ui.creating
+    label: "\u6B63\u5728\u521B\u5EFA\u8D26\u53F7\u2026"
+  - key: login_ui.required
+    label: "\u8BF7\u8F93\u5165\u90AE\u7BB1\u548C\u5BC6\u7801\u3002"
+  - key: login_ui.account_required
+    label: "\u8BF7\u8F93\u5165\u8D26\u53F7\u548C\u5BC6\u7801\u3002"
+  - key: login_ui.confirm_required
+    label: "\u8BF7\u518D\u6B21\u8F93\u5165\u5BC6\u7801\u3002"
+  - key: login_ui.password_mismatch
+    label: "\u4E24\u6B21\u8F93\u5165\u7684\u5BC6\u7801\u4E0D\u4E00\u81F4\u3002"
+  - key: login_ui.login_error
+    label: "\u767B\u5F55\u65F6\u53D1\u751F\u9519\u8BEF\u3002"
+  - key: login_ui.profile_incomplete
+    label: "\u8D26\u53F7\u5DF2\u521B\u5EFA\uFF0C\u4F46\u8D44\u6599\u521D\u59CB\u5316\u5931\u8D25\u3002\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+  - key: login_ui.created
+    label: "\u8D26\u53F7\u521B\u5EFA\u6210\u529F\u3002\u8BF7\u4F7F\u7528\u65B0\u8D26\u53F7\u767B\u5F55\u3002"
+  - key: login_ui.create_error
+    label: "\u521B\u5EFA\u8D26\u53F7\u65F6\u53D1\u751F\u9519\u8BEF\u3002"
+  - key: login_ui.loader_missing
+    label: "\u573A\u666F\u52A0\u8F7D\u5668\u5C1A\u672A\u5C31\u7EEA\u3002\u8BF7\u4ECEStart\u573A\u666F\u8FD0\u884C\u3002"
+  - key: login_ui.scenes_missing
+    label: "\u8BF7\u786E\u8BA4TitleScene\u548CLoadingScene\u5DF2\u52A0\u5165\u6784\u5EFA\u3002"
+  - key: login_ui.user_missing
+    label: "\u767B\u5F55\u7ED3\u679C\u4E2D\u672A\u627E\u5230\u7528\u6237\u4FE1\u606F\u3002"
+  - key: login_ui.auth_failed
+    label: "\u767B\u5F55\u5931\u8D25\u3002\n\u8BF7\u68C0\u67E5\u90AE\u7BB1\u3001\u5BC6\u7801\u53CAFirebase\u8BA4\u8BC1\u8BBE\u7F6E\u3002"
+  - key: login_ui.firebase_login_error
+    label: "Firebase\u767B\u5F55\u65F6\u53D1\u751F\u9519\u8BEF\u3002"
+  - key: login_ui.created_user_missing
+    label: "\u8D26\u53F7\u521B\u5EFA\u7ED3\u679C\u4E2D\u672A\u627E\u5230\u7528\u6237\u4FE1\u606F\u3002"
+  - key: login_ui.firebase_create_error
+    label: "\u521B\u5EFAFirebase\u8D26\u53F7\u65F6\u53D1\u751F\u9519\u8BEF\u3002"
+  - key: login_ui.email_in_use
+    label: "\u6B64\u90AE\u7BB1\u5DF2\u88AB\u4F7F\u7528\u3002"
+  - key: login_ui.invalid_email
+    label: "\u8BF7\u8F93\u5165\u6709\u6548\u7684\u90AE\u7BB1\u5730\u5740\u3002"
+  - key: login_ui.password_policy
+    label: "\u8BF7\u8F93\u5165\u7B26\u5408\u5BC6\u7801\u8981\u6C42\u7684\u5BC6\u7801\u3002"
+  - key: login_ui.auth_disabled
+    label: "\u8BF7\u5728Firebase Console\u542F\u7528\u90AE\u7BB1\u548C\u5BC6\u7801\u767B\u5F55\u3002"
+  - key: login_ui.network_error
+    label: "\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u8BD5\u3002"
+  - key: login_ui.too_many_requests
+    label: "\u8BF7\u6C42\u8FC7\u4E8E\u9891\u7E41\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002"
+  - key: login_ui.create_failed
+    label: "\u65E0\u6CD5\u521B\u5EFA\u8D26\u53F7\u3002\u8BF7\u68C0\u67E5\u8F93\u5165\u5185\u5BB9\u53CAFirebase\u8BA4\u8BC1\u8BBE\u7F6E\u3002"
+  - key: login_ui.config_missing
+    label: "\u7F3A\u5C11Firebase\u914D\u7F6E\u6587\u4EF6\u3002\u8BF7\u5C06google-services.json\u6216GoogleService-Info.plist\u6DFB\u52A0\u5230Assets\u3002"
+  - key: login_ui.dependencies
+    label: "\u65E0\u6CD5\u521D\u59CB\u5316Firebase\u4F9D\u8D56\u9879\uFF1A{0}"
+  - key: login_ui.init_failed
+    label: "Firebase\u521D\u59CB\u5316\u5931\u8D25\u3002\u8BF7\u68C0\u67E5\u914D\u7F6E\u6587\u4EF6\u53CA\u9879\u76EE\u8FDE\u63A5\u3002"
+  - key: connection_ui.title
+    label: "\u591A\u4EBA\u6E38\u620F\u8FDE\u63A5"
+  - key: connection_ui.subtitle
+    label: "\u591A\u4EBA\u6E38\u620F\u8FDE\u63A5\u7EC8\u7AEF"
+  - key: connection_ui.address
+    label: "\u670D\u52A1\u5668\u5730\u5740"
+  - key: connection_ui.address_placeholder
+    label: "\u670D\u52A1\u5668IP\u6216\u4E3B\u673A\u540D"
+  - key: connection_ui.nickname
+    label: "\u6635\u79F0"
+  - key: connection_ui.host
+    label: "\u672C\u5730\u6D4B\u8BD5 \xB7 \u4E3B\u673A"
+  - key: connection_ui.join
+    label: "\u8FDE\u63A5\u670D\u52A1\u5668"
+  - key: connection_ui.server
+    label: "\u672C\u5730\u6D4B\u8BD5 \xB7 \u670D\u52A1\u5668"
+  - key: connection_ui.reconnect
+    label: "\u8FD4\u56DE\u4E0A\u6B21\u4F1A\u8BDD"
+  - key: connection_ui.return_title
+    label: "\u8FD4\u56DE\u6807\u9898\u754C\u9762"
+  - key: connection_ui.settings_missing
+    label: "\u672A\u627E\u5230\u4F1A\u8BDD\u8FDE\u63A5\u8BBE\u7F6E\u3002"
+  - key: connection_ui.invalid_nickname
+    label: "\u8BF7\u8F93\u51651\u81F324\u4E2A\u5B57\u7B26\u7684\u6635\u79F0\u3002"
+  - key: connection_ui.invalid_nickname
+    label: "\u8BF7\u8F93\u51651\u81F324\u4E2A\u5B57\u7B26\u7684\u6635\u79F0\u3002"
+  - key: connection_ui.invalid_address
+    label: "\u8BF7\u8F93\u5165\u670D\u52A1\u5668IP\u6216\u4E3B\u673A\u540D\uFF0C\u4E0D\u8981\u9644\u52A0\u7AEF\u53E3\u53F7\u3002"
+  - key: connection_ui.connecting
+    label: "\u6B63\u5728\u8FDE\u63A5\u2026"
+  - key: connection_ui.server_running
+    label: "\u4E13\u7528\u670D\u52A1\u5668\u8FD0\u884C\u4E2D \xB7 \u7B49\u5F85\u73A9\u5BB6"
+  - key: connection_ui.no_session
+    label: "\u6B64\u8D44\u6599\u4E2D\u6CA1\u6709\u4FDD\u5B58\u7684\u6700\u8FD1\u4F1A\u8BDD\u3002"
+  - key: connection_ui.profile_large
+    label: "\u91CD\u8FDE\u8D44\u6599\u6570\u636E\u8FC7\u5927\u3002"
+  - key: connection_ui.profile_invalid
+    label: "\u91CD\u8FDE\u8D44\u6599\u6570\u636E\u65E0\u6548\u3002"
+  - key: connection_ui.profile_read
+    label: "\u65E0\u6CD5\u8BFB\u53D6\u91CD\u8FDE\u8D44\u6599\u3002\u8BF7\u68C0\u67E5\u6587\u4EF6\u683C\u5F0F\u53CA\u5B58\u50A8\u6743\u9650\u3002"
+  - key: connection_ui.profile_path
+    label: "\u65E0\u6CD5\u4F7F\u7528\u91CD\u8FDE\u8D44\u6599\u7684\u5B58\u50A8\u4F4D\u7F6E\u3002"
+  - key: connection_ui.run_started
+    label: "\u65E0\u6CD5\u52A0\u5165\u5DF2\u5F00\u59CB\u7684\u4F1A\u8BDD\u3002"
+  - key: connection_ui.connection_invalid
+    label: "\u8FDE\u63A5\u5DF2\u6CE8\u518C\u6216\u65E0\u6548\u3002"
+  - key: connection_ui.full
+    label: "\u4F1A\u8BDD\u4EBA\u6570\u5DF2\u6EE1\u3002"
+  - key: connection_ui.reconnect_denied
+    label: "\u65E0\u6CD5\u786E\u8BA4\u91CD\u8FDE\u8D44\u683C\u3002"
+  - key: connection_ui.reconnect_expired
+    label: "\u91CD\u8FDE\u9884\u7EA6\u4E0D\u5B58\u5728\u6216\u5DF2\u8FC7\u671F\u3002"
+  - key: connection_ui.version_mismatch
+    label: "\u670D\u52A1\u5668\u4E0E\u5BA2\u6237\u7AEF\u7684\u6784\u5EFA\u7248\u672C\u4E0D\u4E00\u81F4\u3002"
+  - key: connection_ui.passive_profile
+    label: "\u65E0\u6CD5\u8BFB\u53D6\u5DF2\u4FDD\u5B58\u7684\u88AB\u52A8\u6280\u80FD\u8D44\u6599\u3002"
+  - key: connection_ui.timeout
+    label: "\u7B49\u5F85\u670D\u52A1\u5668\u6279\u51C6\u52A0\u5165\u8D85\u65F6\u3002"
+  - key: connection_ui.admitted
+    label: "\u5DF2\u6279\u51C6\u52A0\u5165"
+  - key: connection_ui.before_connect
+    label: "\u5C1A\u672A\u8FDE\u63A5"
+  - key: connection_ui.waiting
+    label: "\u7B49\u5F85\u8FDE\u63A5\u670D\u52A1\u5668"
+  - key: connection_ui.disconnected
+    label: "\u4E0E\u670D\u52A1\u5668\u7684\u8FDE\u63A5\u5DF2\u65AD\u5F00\u3002"
+  - key: upgrade_ui.request_failed
+    label: "\u65E0\u6CD5\u53D1\u9001\u5F3A\u5316\u8BF7\u6C42\u3002"
+  - key: upgrade_ui.request_pending
+    label: "\u6B63\u5728\u786E\u8BA4\u7269\u54C1\u548C\u91D1\u5E01\u2026"
+  - key: upgrade_ui.state_changed
+    label: "\u7269\u54C1\u72B6\u6001\u5DF2\u53D8\u66F4\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002"
+  - key: upgrade_ui.item_missing
+    label: "\u80CC\u5305\u4E2D\u672A\u627E\u5230\u8BE5\u7269\u54C1\u3002"
+  - key: result_ui.stage
+    label: "\u6700\u7EC8\u5230\u8FBE\u5173\u5361"
+  - key: result_ui.defeated
+    label: "\u51FB\u8D25\u654C\u4EBA\u6570"
+  - key: result_ui.play_time
+    label: "\u6E38\u620F\u65F6\u95F4"
+  - key: result_ui.credits
+    label: "\u83B7\u5F97\u4FE1\u7528\u70B9"
+  - key: result_ui.retry
+    label: "\u518D\u73A9\u4E00\u6B21"
+  - key: result_ui.return_lobby
+    label: "\u8FD4\u56DE\u5927\u5385"
+  - key: result_ui.leave_session
+    label: "\u79BB\u5F00\u4F1A\u8BDD"
+  - key: result_ui.clear_description
+    label: "\u5DF2\u901A\u5173\u5168\u90E8\u5173\u5361\uFF01"
+  - key: result_ui.defeat_description
+    label: "\u672C\u6B21\u8FDC\u5F81\u5DF2\u7ED3\u675F\u3002"
+  - key: result_ui.data_waiting
+    label: "\u6B63\u5728\u63A5\u6536\u670D\u52A1\u5668\u7ED3\u679C\u2026"
+  - key: result_ui.data_missing
+    label: "\u5C1A\u672A\u6536\u5230\u7ED3\u679C\u3002\u60A8\u53EF\u4EE5\u7EE7\u7EED\u7B49\u5F85\u6216\u79BB\u5F00\u3002"
+  - key: result_ui.request_pending
+    label: "\u6B63\u5728\u7B49\u5F85\u670D\u52A1\u5668\u54CD\u5E94\u2026"
+  - key: result_ui.act_clear_description
+    label: "\u5DF2\u901A\u5173\u672C\u7AE0\u8282\u3002"
+  - key: result_ui.settle_description
+    label: "\u7ED3\u7B97\u5B8C\u6210\u3002"
+  - key: result_ui.current_stage
+    label: "\u5F53\u524D\u5230\u8FBE\u5173\u5361"
+  - key: result_ui.farming_value
+    label: "\u6536\u83B7\u4EF7\u503C"
+  - key: result_ui.continue
+    label: "\u7EE7\u7EED"
+  - key: session_ui.end_host
+    label: "\u7ED3\u675F\u4E3B\u673A\u4F1A\u8BDD"
+  - key: session_ui.leave
+    label: "\u79BB\u5F00\u4F1A\u8BDD"
+  - key: session_ui.leave_temporarily
+    label: "\u6682\u65F6\u79BB\u5F00"
+  - key: session_ui.confirm_end_host
+    label: "\u8981\u7ED3\u675F\u4E3B\u673A\u4F1A\u8BDD\u5417\uFF1F"
+  - key: session_ui.warn_end_host
+    label: "\u6240\u6709\u73A9\u5BB6\u5C06\u65AD\u5F00\u8FDE\u63A5\uFF0C\u5F53\u524D\u5192\u9669\u5C06\u7ED3\u675F\u3002"
+  - key: session_ui.confirm_leave
+    label: "\u8981\u79BB\u5F00\u6B64\u4F1A\u8BDD\u5417\uFF1F"
+  - key: session_ui.warn_leave
+    label: "\u60A8\u5C06\u653E\u5F03\u53C2\u4E0E\u8D44\u683C\uFF0C\u65E0\u6CD5\u91CD\u65B0\u52A0\u5165\u672C\u6B21\u5192\u9669\u3002"
+  - key: session_ui.confirm_temporary_leave
+    label: "\u8981\u6682\u65F6\u79BB\u5F00\u6B64\u4F1A\u8BDD\u5417\uFF1F"
+  - key: session_ui.warn_temporary_leave
+    label: "\u670D\u52A1\u5668\u5728\u7EBF\u65F6\u53EF\u57285\u5206\u949F\u5185\u91CD\u65B0\u8FDE\u63A5\u3002\u961F\u4F0D\u7684\u6E38\u620F\u4F1A\u7EE7\u7EED\u3002"
+  - key: session_ui.passive_locked
+    label: "\u53D6\u6D88\u51C6\u5907\u540E\u624D\u80FD\u66F4\u6539\u88AB\u52A8\u6280\u80FD\u3002"
+  - key: session_ui.settlement_wait
+    label: "\u6B63\u5728\u4FDD\u5B58\u7ED3\u679C\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002"
+  - key: session_ui.settlement_wait_host
+    label: "\u6B63\u5728\u7B49\u5F85\u73A9\u5BB6\u7ED3\u679C\u4FDD\u5B58\u3002\u8BF7\u5728\u4FDD\u5B58\u5B8C\u6210\u540E\u7ED3\u675F\u4F1A\u8BDD\u3002"
+  - key: session_ui.settlement_wait_player
+    label: "\u6B63\u5728\u7B49\u5F85{0}\u7684\u7ED3\u679C\u4FDD\u5B58\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002"
+  - key: session_ui.lobby_loading
+    label: "\u8BF7\u7B49\u5F85\u5927\u5385\u52A0\u8F7D\u5B8C\u6210\u540E\u518D\u51FA\u53D1\u3002"
+  - key: session_ui.player_prefabs_missing
+    label: "\u73A9\u5BB6\u914D\u7F6E\u4E0D\u5B8C\u6574\uFF0C\u8BF7\u91CD\u65B0\u8FDE\u63A5\u3002"
+  - key: session_ui.session_missing
+    label: "\u672A\u627E\u5230\u5F53\u524D\u4F1A\u8BDD\u3002"
+  - key: session_ui.unsupported_request
+    label: "\u6B64\u5927\u5385\u64CD\u4F5C\u4E0D\u53EF\u7528\u3002"
+  - key: session_ui.return_lobby_denied
+    label: "\u7ED3\u679C\u786E\u8BA4\u540E\uFF0C\u4EC5\u961F\u957F\u80FD\u5E26\u9886\u961F\u4F0D\u8FD4\u56DE\u5927\u5385\u3002"
+  - key: session_ui.passive_invalid
+    label: "\u65E0\u6CD5\u9A8C\u8BC1\u88AB\u52A8\u6280\u80FD\u8D44\u6599\u3002"
+  - key: session_ui.party_not_ready
+    label: "\u6240\u6709\u73A9\u5BB6\u5FC5\u987B\u9009\u62E9\u89D2\u8272\u5E76\u51C6\u5907\u5C31\u7EEA\u3002"
+  - key: preparation_ui.waiting
+    label: "\u6B63\u5728\u51C6\u5907\u6E38\u620F\u2026"
+  - key: preparation_ui.timeout
+    label: "\u6E38\u620F\u51C6\u5907\u8D85\u65F6\u3002"
+  - key: preparation_ui.timeout_retry
+    label: "\u6E38\u620F\u51C6\u5907\u8D85\u65F6\uFF0C\u8BF7\u65AD\u5F00\u8FDE\u63A5\u540E\u91CD\u8BD5\u3002"
+  - key: preparation_ui.combat_failed
+    label: "\u6218\u6597\u51C6\u5907\u5931\u8D25\uFF0C\u8BF7\u91CD\u65B0\u8FDE\u63A5\u3002"
+  - key: preparation_ui.disconnected
+    label: "\u8FDE\u63A5\u5DF2\u7ED3\u675F\u3002"
+  - key: preparation_ui.exit
+    label: "\u79BB\u5F00"
+  - key: settings_ui.label_allied_buff_effects
+    label: "\u53CB\u65B9\u589E\u76CA\u6548\u679C\u663E\u793A"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u663E\u793A\u5176\u4ED6\u73A9\u5BB6\u7684\u589E\u76CA\u8303\u56F4\u548C\u589E\u76CA\u6548\u679C\u3002"
+  - key: hud_ui.wave_ready
+    label: "\u6218\u6597\u51C6\u5907"
+  - key: hud_ui.wave_progress
+    label: "\u7B2C {0}/{1} \u6CE2"
+  - key: hud_ui.wave_cleared
+    label: "\u654C\u4EBA\u5DF2\u5168\u90E8\u51FB\u8D25\uFF01\xB7 \u8BF7\u524D\u5F80\u4F20\u9001\u95E8"
+  - key: title_ui.logout
+    label: "\u9000\u51FA\u767B\u5F55"
+  - key: title_ui.signed_in
+    label: "\u5DF2\u767B\u5F55"
+  - key: title_ui.signed_out
+    label: "\u672A\u767B\u5F55"
+  - key: title_ui.checking_account
+    label: "\u6B63\u5728\u786E\u8BA4\u8D26\u6237..."
+  - key: title_ui.syncing
+    label: "\u6B63\u5728\u540C\u6B65..."
+  - key: title_ui.account_changed_retry
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002\u8BF7\u91CD\u65B0\u9009\u62E9\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: title_ui.local_progress_kept
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u65B0\u540C\u6B65\u3002"
+  - key: title_ui.scene_missing
+    label: "\u8BF7\u786E\u8BA4 {0} \u548C LoadingScene \u5DF2\u52A0\u5165\u6784\u5EFA\u3002"
+  - key: title_ui.multiplayer_error
+    label: "\u51C6\u5907\u591A\u4EBA\u6E38\u620F\u8D26\u6237\u65F6\u51FA\u9519\u3002\u8BF7\u91CD\u8BD5\u3002"
+  - key: title_ui.logout_disconnect_first
+    label: "\u8BF7\u5148\u7ED3\u675F\u591A\u4EBA\u6E38\u620F\u8FDE\u63A5\u518D\u9000\u51FA\u767B\u5F55\u3002"
+  - key: title_ui.logout_test_account
+    label: "\u5F00\u53D1\u6D4B\u8BD5\u8D26\u6237\u5728\u8FD0\u884C\u671F\u95F4\u65E0\u6CD5\u9000\u51FA\u767B\u5F55\u3002"
+  - key: title_ui.logout_failed
+    label: "\u65E0\u6CD5\u9000\u51FA\u767B\u5F55\u3002\u8BF7\u91CD\u8BD5\u3002"
+  - key: login_ui.back
+    label: "\u8FD4\u56DE"
+  - key: login_ui.cached_session_failed
+    label: "\u65E0\u6CD5\u786E\u8BA4\u5DF2\u4FDD\u5B58\u7684\u767B\u5F55\u72B6\u6001\u3002\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+  - key: login_ui.multiplayer_login_required
+    label: "\u8BF7\u767B\u5F55\u4EE5\u8FDB\u5165\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: login_ui.account_changed
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+  - key: connection_ui.login_required
+    label: "\u591A\u4EBA\u6E38\u620F\u9700\u8981\u767B\u5F55\u3002\u8BF7\u5728\u4E3B\u754C\u9762\u9009\u62E9\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: connection_ui.syncing_progress
+    label: "\u6B63\u5728\u540C\u6B65\u672C\u5730\u8FDB\u5EA6\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\u8FDE\u63A5\u51C6\u5907\u5931\u8D25\uFF1A{0}"
+  - key: connection_ui.sync_retry
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u8BD5\u591A\u4EBA\u6E38\u620F\u540C\u6B65\u3002"
+  - key: connection_ui.sync_incomplete
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u591A\u4EBA\u6E38\u620F\u540C\u6B65\u672A\u5B8C\u6210\uFF0C\u56E0\u6B64\u672A\u8FDB\u5165\u3002"
+  - key: connection_ui.account_changed
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002"
+  - key: stage_select_ui.normal_enemy
+    label: "\u666E\u901A\u654C\u4EBA"
+  - key: stage_select_ui.elite_enemy
+    label: "\u7CBE\u82F1\u654C\u4EBA"
+  - key: stage_select_ui.camp
+    label: "\u8425\u5730"
+  - key: stage_select_ui.unknown
+    label: "\u672A\u77E5"
+  - key: title_ui.single_play
+    label: "\u5355\u4EBA\u6E38\u620F"
+  - key: title_ui.multi_play
+    label: "\u591A\u4EBA\u6E38\u620F"
+  - key: title_ui.continue
+    label: "\u7EE7\u7EED\u6E38\u620F"
+  - key: title_ui.passive_skill
+    label: "\u88AB\u52A8\u6280\u80FD"
+  - key: title_ui.settings
+    label: "\u8BBE\u7F6E"
+  - key: title_ui.quit
+    label: "\u9000\u51FA\u6E38\u620F"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u8981\u9000\u51FA\u767B\u5F55\u5417\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u9000\u51FA\u767B\u5F55\u540E\uFF0C\u5355\u4EBA\u6E38\u620F\u5C06\u5207\u6362\u4E3A\u8BBF\u5BA2\u5B58\u6863\u3002\u8D26\u53F7\u8FDB\u5EA6\u5C06\u5728\u4E0B\u6B21\u767B\u5F55\u65F6\u7EE7\u7EED\u3002"
+  - key: title_ui.new_game_confirm
+    label: "\u8981\u5F00\u59CB\u65B0\u6E38\u620F\u5417\uFF1F"
+  - key: title_ui.new_game_warning
+    label: "\u5F53\u524D\u8FDB\u884C\u4E2D\u7684\u8FDC\u5F81\u5C06\u4F1A\u4E22\u5931\uFF0C\u5E76\u4ECE\u5934\u5F00\u59CB\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u6B64\u8D26\u53F7\u5C1A\u65E0\u8FDB\u5EA6\u3002\u8981\u5C06\u8BBF\u5BA2\u6E38\u73A9\u7684\u8FDB\u5EA6\u5BFC\u5165\u6B64\u8D26\u53F7\u5417\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u82E5\u4E0D\u5BFC\u5165\uFF0C\u5C06\u4EE5\u65B0\u8FDB\u5EA6\u5F00\u59CB\uFF0C\u8BBF\u5BA2\u8FDB\u5EA6\u4F1A\u4FDD\u7559\u5728\u672C\u8BBE\u5907\u4E0A\u3002"
+  - key: settings_ui.label_allied_buff_effects
+    label: "\u53CB\u65B9\u589E\u76CA\u6548\u679C\u663E\u793A"
+  - key: settings_ui.desc_allied_buff_effects
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u662F\u5426\u663E\u793A\u5176\u4ED6\u73A9\u5BB6\u7684\u589E\u76CA\u8303\u56F4\u548C\u589E\u76CA\u6548\u679C\u3002"
+  - key: hud_ui.wave_ready
+    label: "\u6218\u6597\u51C6\u5907"
+  - key: hud_ui.wave_progress
+    label: "\u7B2C {0}/{1} \u6CE2"
+  - key: hud_ui.wave_cleared
+    label: "\u654C\u4EBA\u5DF2\u5168\u90E8\u51FB\u8D25\uFF01\xB7 \u8BF7\u524D\u5F80\u4F20\u9001\u95E8"
+  - key: title_ui.logout
+    label: "\u9000\u51FA\u767B\u5F55"
+  - key: title_ui.signed_in
+    label: "\u5DF2\u767B\u5F55"
+  - key: title_ui.signed_out
+    label: "\u672A\u767B\u5F55"
+  - key: title_ui.checking_account
+    label: "\u6B63\u5728\u786E\u8BA4\u8D26\u6237..."
+  - key: title_ui.syncing
+    label: "\u6B63\u5728\u540C\u6B65..."
+  - key: title_ui.account_changed_retry
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002\u8BF7\u91CD\u65B0\u9009\u62E9\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: title_ui.local_progress_kept
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u65B0\u540C\u6B65\u3002"
+  - key: title_ui.scene_missing
+    label: "\u8BF7\u786E\u8BA4 {0} \u548C LoadingScene \u5DF2\u52A0\u5165\u6784\u5EFA\u3002"
+  - key: title_ui.multiplayer_error
+    label: "\u51C6\u5907\u591A\u4EBA\u6E38\u620F\u8D26\u6237\u65F6\u51FA\u9519\u3002\u8BF7\u91CD\u8BD5\u3002"
+  - key: title_ui.logout_disconnect_first
+    label: "\u8BF7\u5148\u7ED3\u675F\u591A\u4EBA\u6E38\u620F\u8FDE\u63A5\u518D\u9000\u51FA\u767B\u5F55\u3002"
+  - key: title_ui.logout_test_account
+    label: "\u5F00\u53D1\u6D4B\u8BD5\u8D26\u6237\u5728\u8FD0\u884C\u671F\u95F4\u65E0\u6CD5\u9000\u51FA\u767B\u5F55\u3002"
+  - key: title_ui.logout_failed
+    label: "\u65E0\u6CD5\u9000\u51FA\u767B\u5F55\u3002\u8BF7\u91CD\u8BD5\u3002"
+  - key: login_ui.back
+    label: "\u8FD4\u56DE"
+  - key: login_ui.cached_session_failed
+    label: "\u65E0\u6CD5\u786E\u8BA4\u5DF2\u4FDD\u5B58\u7684\u767B\u5F55\u72B6\u6001\u3002\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+  - key: login_ui.multiplayer_login_required
+    label: "\u8BF7\u767B\u5F55\u4EE5\u8FDB\u5165\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: login_ui.account_changed
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+  - key: connection_ui.login_required
+    label: "\u591A\u4EBA\u6E38\u620F\u9700\u8981\u767B\u5F55\u3002\u8BF7\u5728\u4E3B\u754C\u9762\u9009\u62E9\u591A\u4EBA\u6E38\u620F\u3002"
+  - key: connection_ui.syncing_progress
+    label: "\u6B63\u5728\u540C\u6B65\u672C\u5730\u8FDB\u5EA6\u2026"
+  - key: connection_ui.prepare_failed
+    label: "\u8FDE\u63A5\u51C6\u5907\u5931\u8D25\uFF1A{0}"
+  - key: connection_ui.sync_retry
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u8BD5\u591A\u4EBA\u6E38\u620F\u540C\u6B65\u3002"
+  - key: connection_ui.sync_incomplete
+    label: "\u672C\u5730\u8FDB\u5EA6\u5DF2\u4FDD\u7559\u3002\u591A\u4EBA\u6E38\u620F\u540C\u6B65\u672A\u5B8C\u6210\uFF0C\u56E0\u6B64\u672A\u8FDB\u5165\u3002"
+  - key: connection_ui.account_changed
+    label: "\u767B\u5F55\u8D26\u6237\u5DF2\u66F4\u6539\u3002"
+  - key: stage_select_ui.normal_enemy
+    label: "\u666E\u901A\u654C\u4EBA"
+  - key: stage_select_ui.elite_enemy
+    label: "\u7CBE\u82F1\u654C\u4EBA"
+  - key: stage_select_ui.camp
+    label: "\u8425\u5730"
+  - key: stage_select_ui.unknown
+    label: "\u672A\u77E5"
+  - key: title_ui.single_play
+    label: "\u5355\u4EBA\u6E38\u620F"
+  - key: title_ui.multi_play
+    label: "\u591A\u4EBA\u6E38\u620F"
+  - key: title_ui.continue
+    label: "\u7EE7\u7EED\u6E38\u620F"
+  - key: title_ui.passive_skill
+    label: "\u88AB\u52A8\u6280\u80FD"
+  - key: title_ui.settings
+    label: "\u8BBE\u7F6E"
+  - key: title_ui.quit
+    label: "\u9000\u51FA\u6E38\u620F"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u8981\u9000\u51FA\u767B\u5F55\u5417\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u9000\u51FA\u767B\u5F55\u540E\uFF0C\u5355\u4EBA\u6E38\u620F\u5C06\u5207\u6362\u4E3A\u8BBF\u5BA2\u5B58\u6863\u3002\u8D26\u53F7\u8FDB\u5EA6\u5C06\u5728\u4E0B\u6B21\u767B\u5F55\u65F6\u7EE7\u7EED\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u6B64\u8D26\u53F7\u5C1A\u65E0\u8FDB\u5EA6\u3002\u8981\u5C06\u8BBF\u5BA2\u6E38\u73A9\u7684\u8FDB\u5EA6\u5BFC\u5165\u6B64\u8D26\u53F7\u5417\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u82E5\u4E0D\u5BFC\u5165\uFF0C\u5C06\u4EE5\u65B0\u8FDB\u5EA6\u5F00\u59CB\uFF0C\u8BBF\u5BA2\u8FDB\u5EA6\u4F1A\u4FDD\u7559\u5728\u672C\u8BBE\u5907\u4E0A\u3002"

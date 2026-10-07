@@ -10,6 +10,10 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     [SerializeField] private Vector3 nameTagWorldOffset = new Vector3(0f, 3f, 0f);
     public string objectName = "";
 
+    [Tooltip("UILabelDatabaseSO 안의 key. 비워두면 objectName을 그대로 쓴다.")]
+    [SerializeField] private string nameKey;
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
     private bool isHovered;
     public bool IsHovered => isHovered;
 
@@ -21,9 +25,14 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
     private void Awake()
     {
         FindHighlightEffect();
+        ResolveActiveNameTag();
 
         if (worldCamera == null)
             worldCamera = Camera.main;
+
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
     }
 
     private void Start()
@@ -57,7 +66,10 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
         if (nameTag != null)
         {
-            nameTag.ChangeText(objectName);
+            string displayName = (uiLabels != null && !string.IsNullOrEmpty(nameKey))
+                ? uiLabels.GetLabel(nameKey)
+                : objectName;
+            nameTag.ChangeText(displayName);
             nameTag.Active(true);
         }
     }
@@ -69,6 +81,26 @@ public class YJ_OutlineOnMouseHover : MonoBehaviour
 
         if (nameTag != null)
             nameTag.Active(false);
+    }
+
+    /// <summary>
+    /// SW 수정: 공유 씬에는 싱글·멀티 UI가 한 벌씩 있다. 연결한 이름표가 꺼진 모드 쪽 UI에 있으면
+    /// 같은 씬에서 이름이 같고 현재 켜진 UI 아래의 이름표를 대신 쓴다. MirrorSceneMode가 먼저 모드를 정한다.
+    /// </summary>
+    private void ResolveActiveNameTag()
+    {
+        if (nameTag == null || nameTag.transform.parent == null || nameTag.transform.parent.gameObject.activeInHierarchy)
+            return;
+
+        foreach (YJ_NameTag candidate in FindObjectsByType<YJ_NameTag>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (candidate != nameTag && candidate.name == nameTag.name && candidate.gameObject.scene == gameObject.scene &&
+                candidate.transform.parent != null && candidate.transform.parent.gameObject.activeInHierarchy)
+            {
+                nameTag = candidate;
+                return;
+            }
+        }
     }
 
     private void FindHighlightEffect()

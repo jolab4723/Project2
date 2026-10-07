@@ -30,6 +30,9 @@ using UnityEngine.AI;
 /// </summary>
 public class FighterSkillController : MonoBehaviour, ISkillController
 {
+    /// <summary>SW 수정: 기존 범위 표시의 위치·방향·반경·각도·색·수명을 알립니다.</summary>
+    public event Action<Vector3, Vector3, float, float, Color, float> SkillRangePresented;
+
     [SerializeField] private PlayerActionInputHandler inputHandler;
     [SerializeField] private T_PlayerCombat combat;
     [SerializeField] private T_PlayerController controller;
@@ -57,11 +60,15 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     [SerializeField] private SkillEnhancementId[] activeEnhancements = new SkillEnhancementId[3];
 
     [Header("범위 표시(피드백용, 판정과 무관)")]
+
+    [SerializeField] private bool visibleSkillArea = false; // 2026.08.07 조용준 추가 - 스킬 범위 볼 것인지 선택가능하게 bool 항목 처리 
     [SerializeField] private Color sectorVisualColor = new Color(1f, 0.5f, 0.1f, 0.35f);
     [SerializeField] private Color lineVisualColor = new Color(1f, 0.15f, 0.1f, 0.35f);
     [SerializeField] private Color dashVisualColor = new Color(0.2f, 0.7f, 1f, 0.35f);
 
-    private readonly float[] cooldownRemaining = new float[3];
+    // 슬롯 수(skills.Length)에 맞춰 Awake에서 다시 잡는다 - 궁극기(Skill4)처럼 슬롯이 늘어나도
+    // 쿨타임 배열만 3칸으로 남아 IndexOutOfRange가 나지 않도록 하기 위함.
+    private float[] cooldownRemaining = new float[3];
 
     // Dash 진화2(2스택화) 전용 상태. -1 = 아직 초기화 안 됨(Start에서 evoDashMaxStacks로 채움).
     private int dashStacks = -1;
@@ -73,18 +80,78 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
     // T_PlayerCombat.CanAttack과 같은 조건 - 그 필드는 private라 직접 재사용할 수 없어 그대로 옮겨왔다.
     private bool CanUseSkill => !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack,
-        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead);
+        PlayerState.Skill, PlayerState.Dodge, PlayerState.Dead) && !SkillPopupController.IsOpen;
 
-    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수
+    // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
     public event Action<int, bool, float> OnSkillAniRequested;
     public event Action<bool> OnChargeAniChanged;
 
+    private WBH_PlayerEffect playerEffect;
+
     private int pendingSkillIndex = -1;
     private SkillEvolutionId pendingEvo; // 스킬 사용 시 스킬 진화 상태를 임시로 저장하는 변수
+    private SkillEnhancementId pendingEnhance; // 스킬 사용 시 스킬 강화 상태를 임시로 저장하는 변수
     private float pendingChargeRatio;
-    private bool pendingSkillExecuted; // 중복 실행 방지 변수
-    private float pendingDashDuration; 
+    private float pendingDashDuration;
+    private Vector3 pendingAimDirection;
+    private PlayerStatManager skillOwnerStats;
+
+    // SW 수정
+    /// <summary>호출자가 검증한 조준과 소유자 스탯으로 스킬을 준비한다. 권한 검증은 호출자가 담당한다.</summary>
+    public bool TryUseSkill(int index, Vector3 aimDirection, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null || !TryNormalizeAim(ref aimDirection))
+            return false;
+        return TryUseSkillInternal(index, aimDirection, ownerStats, true);
+    }
+
+    /// <summary>외부 입력으로 차징을 시작한다. 마나와 쿨다운은 정상 해제 시점에 확정한다.</summary>
+    public bool TryStartCharge(int index, Vector3 aimDirection, PlayerStatManager ownerStats)
+    {
+        if (ownerStats == null || !TryNormalizeAim(ref aimDirection) ||
+            index < 0 || index >= skills.Length || skills[index] == null ||
+            skills[index].shapeType != SkillShapeType.SectorSlash ||
+            GetEvolution(index) != SkillEvolutionId.Evolution3)
+            return false;
+        return StartChargeInternal(index, aimDirection, ownerStats, true);
+    }
+
+    /// <summary>현재 차징 중인 슬롯을 한 번만 해제하고 실제 사용 성공 여부를 반환한다.</summary>
+    public bool TryReleaseCharge(int index)
+    {
+        if (index < 0 || chargingSkillIndex != index || !stateMachine.Is(PlayerState.Skill))
+            return false;
+        return ReleaseCharge();
+    }
+
+    // 로컬 입력은 이동·공격 입력과 같은 조작 차단(포탈 이동·컷씬·상태이상·잡기)을 따른다.
+    // 외부 입력(멀티 권한 경로)은 호출자가 소유자 입력 차단을 따로 검증한다.
+    private bool CanUseSkillFrom(bool externalInput) => stateMachine != null &&
+        !stateMachine.IsAnyState(PlayerState.Hit, PlayerState.Attack, PlayerState.Skill,
+            PlayerState.Dodge, PlayerState.Dead) &&
+        (externalInput || (!SkillPopupController.IsOpen && (controller == null || controller.IsControlEnabled)));
+
+    private static bool TryNormalizeAim(ref Vector3 direction)
+    {
+        if (!float.IsFinite(direction.x) || !float.IsFinite(direction.y) || !float.IsFinite(direction.z))
+            return false;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f || !float.IsFinite(direction.sqrMagnitude))
+            return false;
+        direction.Normalize();
+        return true;
+    }
+
+
     //-------
+
+    private void Awake()
+    {
+        playerEffect = GetComponent<WBH_PlayerEffect>();
+
+        if (cooldownRemaining.Length != skills.Length)
+            cooldownRemaining = new float[skills.Length];
+    }
 
     private void OnEnable()
     {
@@ -141,7 +208,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
 
         dashStacks = Mathf.Min(dashStacks + 1, def.evoDashMaxStacks);
         if (dashStacks < def.evoDashMaxStacks)
-            dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화(쿨감) 반영)
+            dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds); // 아직 최대치 미만이면 다음 스택도 이어서 충전(강화·쿨감 반영)
     }
 
     private void UpdateCharge()
@@ -193,7 +260,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return 0f;
 
         float baseCooldown = IsDashStackSlot(index) ? def.evoDashStackRechargeSeconds : def.cooldownSeconds;
-        return ApplyCooldownEnhancement(def, index, baseCooldown);
+        return ApplyCooldownReduction(def, index, baseCooldown);
     }
 
     /// <summary>슬롯(0~2)이 지금 스택 모드(Dash 진화2)인지, 맞다면 현재/최대 스택 수를 낸다.
@@ -283,18 +350,37 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     //------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 코드
     public bool TryUseSkill(int index)
     {
+        if (Camera.main == null)
+            return false;
+        return TryUseSkillInternal(index, GetCursorDirection(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool TryUseSkillInternal(int index, Vector3 aimDirection, PlayerStatManager ownerStats, bool externalInput)
+    {
         if (index < 0 || index >= skills.Length)
             return false;
 
         SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) ||
+            combat == null || (externalInput && (status == null || status.IsDead)) || !TryNormalizeAim(ref aimDirection))
             return false;
 
-        ConsumeSkillUse(index, def);
-        FaceCursor();
-        combat.CancelChase();
-
         SkillEvolutionId evolution = GetEvolution(index);
+
+        // 쿨타임/스택을 깎기 전에 마나부터 확인한다 - 마나가 부족하면 여기서 조용히 실패하고
+        // 쿨타임/스택/애니메이션 전부 건드리지 않는다(138번 후속 - manaCost 수치는 137/138번에서 이미 반영됨).
+        // 진화별 마나 코스트가 설정돼 있으면 그 값을, 아니면 기본 manaCost를 쓴다(GetManaCost).
+        if (status != null && !status.TryUseMana(def.GetManaCost(evolution)))
+            return false;
+
+        // !! ConsumeSkillUse보다 먼저 대입한다. 쿨타임을 소모 시점에 확정하는데, 그 계산이
+        //    skillOwnerStats의 쿨감 스탯을 읽기 때문이다(순서가 반대면 직전 시전의 스탯을 쓴다).
+        skillOwnerStats = ownerStats;
+        ConsumeSkillUse(index, def);
+        pendingAimDirection = aimDirection;
+        transform.forward = aimDirection;
+        combat.CancelChase();
 
         PreparePendingSkill(index, evolution);
         stateMachine.ChangeState(PlayerState.Skill);
@@ -306,11 +392,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // 기존 WJ님의 TryUseSkill 메서드에서 즉시 데미지가 들어가는 부분 분리. WBH_PlayerAnimation 의 AniEvent_ExecuteSkill 에서 실행.
     public void ExecutePendingSkill()
     {
-        if (pendingSkillIndex < 0 || pendingSkillExecuted || !stateMachine.Is(PlayerState.Skill))
+        //if (pendingSkillIndex < 0 || pendingSkillExecuted || !stateMachine.Is(PlayerState.Skill))
+        //    return;
+
+        if (pendingSkillIndex < 0 || !stateMachine.Is(PlayerState.Skill))
             return;
 
         int index = pendingSkillIndex;
         SkillDefinitionSO def = skills[index];
+
+        transform.forward = pendingAimDirection;
 
         if(def == null)
         {
@@ -318,7 +409,7 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             return;
         }
 
-        pendingSkillExecuted = true;
+        //pendingSkillExecuted = true;
 
         switch (def.shapeType)
         {
@@ -347,7 +438,54 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             case SkillShapeType.Dash:
                 StartCoroutine(ExecuteDash(def, pendingEvo, index, pendingDashDuration));
                 break;
+
+            case SkillShapeType.AwakeningBurst:
+                ExecuteAwakeningBurst(def, index);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 궁극기(각성). 시전 즉시 자기 주변 원형 범위를 한 번 때리고, 이어서 자신에게 강화 버프를 건다.
+    ///
+    /// 판정은 SectorSlash와 같은 부채꼴 질의를 각도 360으로 쓴다(= 원형). 새 도형을 만들지 않고
+    /// 기존 GetSectorTargets/ApplyHit을 그대로 재사용하므로 피해 계산·이펙트 규칙이 다른 스킬과 같다.
+    ///
+    /// 범위 표시는 visibleSkillArea(디버그용 전역 토글)와 무관하게 항상 그린다 - 궁극기는 어디까지
+    /// 맞는지가 플레이어에게 보여야 하는 연출의 일부라서 디버그 옵션에 묶어두지 않는다.
+    /// </summary>
+    /// <summary>
+    /// 각성 - 자기 주변 360도를 즉시 때리고 자신에게 강화 버프를 건다.
+    ///
+    /// 진화는 버프를 갈아끼우는 것으로 갈린다(SkillDefinitionSO.GetAwakeningBuff).
+    ///   진화1(가속 각성) : 공격속도 + 일반공격 피해
+    ///   진화2(연산 각성) : 스킬 쿨타임 감소 + 스킬 피해
+    ///   진화3(과부하 각성) : 버프 지속을 줄이는 대신 시전 폭발의 계수와 반경을 키운다 - 유일하게
+    ///                       이 메서드에서 수치를 바꾼다.
+    ///
+    /// !! ApplyHit과 같은 기준으로 pendingEvo를 읽는다. GetEvolution(index)를 다시 부르면
+    ///    시전 도중 진화가 바뀐 경우 폭발과 이펙트가 서로 다른 진화를 가리킬 수 있다.
+    /// SW 수정: 기존 범위 표시 조건과 수치를 보존해 원격 표시 이벤트에도 전달합니다.
+    /// </summary>
+    private void ExecuteAwakeningBurst(SkillDefinitionSO def, int index)
+    {
+        bool isOverload = pendingEvo == SkillEvolutionId.Evolution3;
+
+        float range = ApplySkillRangeBonus(def, index, def.sectorRange);
+        if (isOverload)
+            range *= def.evoOverloadRangeMultiplier;
+
+        float damageMultiplier = isOverload ? def.evoOverloadDamageMultiplier : def.damageMultiplier;
+
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, AwakeningBurstAngle, sectorVisualColor);
+
+        foreach (Collider target in GetSectorTargets(range, AwakeningBurstAngle))
+            ApplyHit(target, def, damageMultiplier, index);
+
+        var buff = def.GetAwakeningBuff(pendingEvo);
+        if (buff != null && buffManager != null)
+            buffManager.ApplyBuff(buff);
     }
 
     // 스킬 종료 후 Idle 상태로 복귀.
@@ -374,12 +512,14 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         pendingSkillIndex = index;
         pendingEvo = evolution;
+        pendingEnhance = GetEnhancement(index);
         pendingChargeRatio = chargeRatio;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
 
         SkillDefinitionSO def = skills[index];
 
         pendingDashDuration = def != null && def.shapeType == SkillShapeType.Dash ? GetEffectiveDashDuration(def, index) : 0f;
+
     }
 
     // 대쉬시간을 계산하기 위한 메서드
@@ -391,20 +531,145 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return def.dashDuration * (1f - def.enhanceDashSpeedBonusPercent / 100f);
     }
 
-    // 스킬 애니메이션 실행을 위한 이벤트 요청.
+    // 스킬 애니메이션 실행을 위한 이벤트 요청. 
     private void RequestSkillAni(int index, bool isCharging, float targetDuration = 0f)
     {
-        OnSkillAniRequested?.Invoke(index + 1, isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
+        OnSkillAniRequested?.Invoke((index + 1), isCharging, targetDuration); // animator 에서 실수방지를 위해 0 = none, 1 부터 스킬로 설정해둠.
     }
+
+    /// <summary>각성 시전 타격은 자기 주변 전방위라 부채꼴 질의를 360도(=원형)로 쓴다.</summary>
+    private const float AwakeningBurstAngle = 360f;
+
+    /// <summary>궁극기 슬롯. 전용 애니메이션·이펙트가 준비되면 이 보정을 통째로 지운다.</summary>
+    //private const int UltimateSlotIndex = 3; // 0922 WBH : 정식 이관을 위해 필요없는 코드이므로 주석처리
+
+    /// <summary>궁극기가 임시로 빌려 쓰는 스킬 번호(= 데이터를 복사해 온 1번 스킬).</summary>
+    //private const int UltimateBorrowedSkillNumber = 1;
+
+    /// <summary>
+    /// 애니메이터와 이펙트 큐에 보낼 스킬 번호(0=없음, 1부터 스킬).
+    ///
+    /// 궁극기(슬롯 4)는 아직 전용 애니메이션·이펙트가 없어서 1번 스킬 번호를 빌려 쓴다. 애니메이터에
+    /// SkillID 4 전이가 없으면 스킬 클립이 아예 재생되지 않고, 실행 시점을 알리는 애니메이션 이벤트
+    /// (AniEvent_ExecuteSkill)도 오지 않아 ExecutePendingSkill이 호출되지 않는다 - 그러면 피해도 안 들어가고
+    /// 플레이어가 Skill 상태에서 빠져나오지 못해 조작이 멈춘다.
+    ///
+    /// 실제 스킬 로직은 계속 원래 슬롯 인덱스(pendingSkillIndex)로 돌아가므로 궁극기 데이터가 그대로 쓰인다.
+    /// </summary>
+    //private static int GetPresentationSkillNumber(int index) =>
+    //    index == UltimateSlotIndex ? UltimateBorrowedSkillNumber : index + 1;
 
     // 초기화
     private void ClearPendingSkill()
     {
+        playerEffect?.CancelPendingSfx();
         pendingSkillIndex = -1;
         pendingEvo = SkillEvolutionId.None;
+        pendingEnhance = SkillEnhancementId.None;
         pendingChargeRatio = 0f;
-        pendingSkillExecuted = false;
+        //pendingSkillExecuted = false;
         pendingDashDuration = 0f;
+    }
+
+    public void PlayPendingSkillEffect(int partValue)
+    {
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if(!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+        {
+            Log.Warning($"알수 없는 스킬 이펙트 부가정보 : {partValue}");
+            return;
+        }
+
+        SkillDefinitionSO def = skills[pendingSkillIndex];
+
+        if (def == null || playerEffect == null)
+            return;
+
+        SkillEffectPart part = (SkillEffectPart)partValue;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((pendingSkillIndex + 1 ), pendingEvo, part);
+
+        Vector3 scaleMultiplier = GetPendingSkillEffectScale(partValue);
+
+        playerEffect.PlayEffect(cue, scaleMultiplier);
+    }
+
+    /// <summary>시전 중인 원본 이펙트 배율을 반환해 외부 표시에서도 같은 계산을 사용한다.</summary>
+    public Vector3 GetPendingSkillEffectScale(int partValue)
+    {
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue)) return Vector3.one;
+        if (chargingSkillIndex >= 0 && chargingSkillIndex < skills.Length)
+        {
+            SkillDefinitionSO charging = skills[chargingSkillIndex];
+            return charging != null && GetEnhancement(chargingSkillIndex) == SkillEnhancementId.Enhance3
+                ? Vector3.one * (1f + charging.enhanceRangeBonusPercent / 100f) : Vector3.one;
+        }
+        return pendingSkillIndex >= 0 && pendingSkillIndex < skills.Length
+            ? CalculatePendingEnhancementEffectScale(skills[pendingSkillIndex]) : Vector3.one;
+    }
+
+    /// <summary>
+    /// 시전 중인 Enhance3 범위 보너스를 이펙트 크기 배율로 변환한다.
+    /// GetPendingBaseRange에서 각 스킬과 진화의 기본 범위를 선택한다.
+    /// 배율 적용 여부는 각 WBH_EffectData가 결정한다.
+    /// </summary>
+    private Vector3 CalculatePendingEnhancementEffectScale(SkillDefinitionSO def)
+    {
+        if(def == null || pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+        {
+            return Vector3.one;
+        }
+
+        if (pendingEnhance != SkillEnhancementId.Enhance3)
+            return Vector3.one;
+
+        float baseRange = GetPendingBaseRange(def);
+
+        if (baseRange <= Mathf.Epsilon)
+            return Vector3.one;
+
+        float enhancedRange = baseRange * (1f + def.enhanceRangeBonusPercent / 100f);
+        float rangeScale = enhancedRange / baseRange;
+
+        // 스킬 타입에 따라 다른 방향 확대
+        return def.shapeType switch
+        {
+            SkillShapeType.SectorSlash => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.LineSlam => new Vector3(rangeScale, rangeScale, rangeScale),
+            SkillShapeType.Dash => new Vector3(rangeScale, rangeScale, rangeScale),
+
+            _ => Vector3.one
+        };
+    }
+
+    // 기초 스킬 범위
+    private float GetPendingBaseRange(SkillDefinitionSO def)
+    {
+            return def.shapeType switch
+            {
+                SkillShapeType.SectorSlash =>
+                    def.sectorRange,
+
+                SkillShapeType.LineSlam =>
+                    pendingEvo switch
+                    {
+                        SkillEvolutionId.Evolution2 =>
+                            def.evoWideLineLength,
+
+                        SkillEvolutionId.Evolution3 =>
+                            def.evoNarrowLineLength,
+
+                        _ =>
+                            def.lineLength,
+                    },
+
+                SkillShapeType.Dash =>
+                    def.dashDistance,
+
+                _ => 0f,
+            };
     }
     // ------
 
@@ -474,11 +739,11 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         {
             dashStacks--;
             if (dashStackRechargeTimer <= 0f)
-                dashStackRechargeTimer = ApplyCooldownEnhancement(def, index, def.evoDashStackRechargeSeconds);
+                dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds);
             return;
         }
 
-        cooldownRemaining[index] = ApplyCooldownEnhancement(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
     }
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임/스택 충전 시간을 줄인다.</summary>
@@ -490,17 +755,67 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return baseCooldown * (1f - def.enhanceCooldownReductionPercent / 100f);
     }
 
+    /// <summary>
+    /// 최종 쿨타임 - 스킬별 강화(Enhance2)와 플레이어 쿨감 스탯(cdr)을 <b>곱연산</b>으로 겹친다.
+    /// 강화 15% + 쿨감 25%면 0.85 × 0.75 = 0.6375배가 된다.
+    ///
+    /// !! 쿨감 스탯이 원래 쿨타임 계산에 전혀 반영되지 않고 있었다(표시와 집계만 있었다).
+    ///    아이템·패시브·레벨업·버프로 들어오는 cdrFlat이 전부 무효였던 문제를 여기서 잇는다.
+    /// </summary>
+    private float ApplyCooldownReduction(SkillDefinitionSO def, int index, float baseCooldown)
+    {
+        return ApplyCooldownEnhancement(def, index, baseCooldown) * GetCooldownReductionMultiplier();
+    }
+
+    /// <summary>
+    /// 플레이어 쿨감 스탯을 배율로 바꾼다. PlayerStat.cdr은 이미 0~70으로 클램프돼 있지만,
+    /// 외부에서 다른 경로로 들어와도 쿨타임이 0 이하가 되지 않도록 여기서도 한 번 더 막는다.
+    /// </summary>
+    private float GetCooldownReductionMultiplier()
+    {
+        PlayerStatManager stats = skillOwnerStats != null ? skillOwnerStats : PlayerStatManager.Instance;
+        if (stats == null || stats.Stat == null)
+            return 1f;
+
+        return 1f - Mathf.Clamp(stats.Stat.cdr, 0f, MaxCooldownReductionPercent) / 100f;
+    }
+
+    /// <summary>쿨감 상한(%). PlayerStat의 클램프와 같은 값으로 맞춘다.</summary>
+    private const float MaxCooldownReductionPercent = 70f;
+
     private void StartCharge(int index)
     {
-        SkillDefinitionSO def = skills[index];
-        if (def == null || !CanUseSkill || !IsSkillReady(index))
+        if (Camera.main == null)
             return;
+        StartChargeInternal(index, GetCursorDirection(),
+            GetComponentInParent<PlayerStatManager>() ?? PlayerStatManager.Instance, false);
+    }
+
+    private bool StartChargeInternal(int index, Vector3 aimDirection, PlayerStatManager ownerStats, bool externalInput)
+    {
+        SkillDefinitionSO def = skills[index];
+        if (def == null || !CanUseSkillFrom(externalInput) || !IsSkillReady(index) ||
+            combat == null || (externalInput && (status == null || status.IsDead)) || !TryNormalizeAim(ref aimDirection))
+            return false;
+
+        // 즉발 스킬(TryUseSkill)과 동일하게 마나가 부족하면 아예 차징을 시작할 수 없다. 여기선 소모는 안 하고
+        // 확인만 한다(HasEnoughMana에 대응하는 WBH_PlayerStatus API가 없어서 CurrentMp를 직접 비교) -
+        // 실제 소모는 쿨타임/스택과 마찬가지로 릴리즈 시점(ReleaseCharge)에 커밋해서, 차징 중 피격 등으로
+        // 취소(CancelCharge)되면 마나를 그대로 돌려주는 셈이 된다.
+        if (status != null && status.CurrentMp < def.GetManaCost(SkillEvolutionId.Evolution3))
+            return false;
 
         chargingSkillIndex = index;
         chargeElapsed = 0f;
-        FaceCursor();
+        skillOwnerStats = ownerStats;
+        pendingAimDirection = aimDirection;
+        transform.forward = aimDirection;
         combat.CancelChase();
         stateMachine.ChangeState(PlayerState.Skill);
+
+        Vector3 chargeEffectScale = GetPendingSkillEffectScale((int)SkillEffectPart.Main);
+
+        playerEffect?.SetChargeEnhancementScale(chargeEffectScale);
 
         RequestSkillAni(index, true); // 8.24 WBH 추가
 
@@ -510,7 +825,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         // 얇은 선이라 sectorVisualColor의 낮은 알파(플래시 채우기용, 0.35)로는 잘 안 보여서 불투명하게 조정해서 쓴다.
         Color outlineColor = sectorVisualColor;
         outlineColor.a = 1f;
-        activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+        if (visibleSkillArea)
+            activeChargeRangeVisual = SkillRangeVisual.ShowPersistentSectorOutline(transform, ApplySkillRangeBonus(def, index, def.sectorRange), 360f, outlineColor, lineWidth: 0.15f);
+        return true;
     }
 
     /// <summary>PlayerStatManager의 "스킬 범위" 스탯 + 강화(Enhance3: 범위 강화)만큼 기본 판정 거리를 늘린다.
@@ -523,8 +840,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     {
         float flatBonus = 0f;
         float percentBonus = 0f;
-        if (PlayerStatManager.Instance != null)
-            PlayerStatManager.Instance.GetSkillRangeBonus(out flatBonus, out percentBonus);
+        if (skillOwnerStats != null)
+            skillOwnerStats.GetSkillRangeBonus(out flatBonus, out percentBonus);
 
         if (GetEnhancement(index) == SkillEnhancementId.Enhance3)
             percentBonus += def.enhanceRangeBonusPercent;
@@ -547,28 +864,50 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         activeChargeEffect = null;
     }
 
-    private void ReleaseCharge()
+    private bool ReleaseCharge()
     {
         int index = chargingSkillIndex;
         chargingSkillIndex = -1;
         StopChargeEffect();
 
         if (index < 0)
-            return;
+            return false;
 
         SkillDefinitionSO def = skills[index];
         if (def == null)
-            return;
+            return false;
+
+        // StartCharge에서 확인만 하고 소모는 안 했으므로 실제 커밋은 여기서 한다(쿨타임/스택과 같은 시점).
+        // 이 시점에 실패하는 건 이론상 거의 없지만(StartCharge 이후 마나가 줄어들 수단이 현재 없음), 혹시
+        // 실패해도 이미 PlayerState.Skill로 들어와 있으므로 Idle로 되돌려서 멈추지 않게 한다.
+        if (status != null && !status.TryUseMana(def.GetManaCost(SkillEvolutionId.Evolution3)))
+        {
+            if (stateMachine.Is(PlayerState.Skill))
+                stateMachine.ChangeState(PlayerState.Idle);
+            return false;
+        }
 
         ConsumeSkillUse(index, def);
 
         float ratio = def.evoChargeMaxSeconds > 0f ? Mathf.Clamp01(chargeElapsed / def.evoChargeMaxSeconds) : 0f;
 
         PreparePendingSkill(index, SkillEvolutionId.Evolution3, ratio);
+
+        // (140번 최초 수정에서 여기 RequestSkillAni(index, false, ...)를 추가했었는데, 애니메이터
+        // FighterController를 직접 열어보니 원인이 달랐다 - Fighter_Skill_Charging -> Fighter_Skill_ChargeSlash
+        // 전환은 IsCharging 값만 보고(트리거 불필요, hasExitTime=false) 이미 정상 동작하도록 구성돼 있었고,
+        // ChargeSlash 클립에도 AniEvent_ExecuteSkill/AniEvent_EndSkill이 전부 붙어있었다. RequestSkillAni가
+        // 내부적으로 SetTrigger(Skill)까지 다시 쏘는 게 문제였다 - 이 트리거가 Charging->ChargeSlash
+        // 전환(트리거 조건 없음)에서는 소모되지 않고 계속 "켜진" 채로 남아있다가, ChargeSlash가 끝나고
+        // Locomotion으로 돌아가는 순간 Locomotion의 진입 조건(Skill 트리거 + SkillID==1)과 우연히 맞아떨어져서
+        // 반원 베기(Fighter_Skill_HalfSlash)가 한 번 더 재생되는 원인이었다("차징 공격 후 반원베기가 한 번 더
+        // 나온다" 버그 리포트로 발견). 트리거 재발사 없이 이 이벤트(IsCharging=false 설정)만으로도 충분해서
+        // RequestSkillAni 호출을 제거했다.
         OnChargeAniChanged?.Invoke(false);
 
         //ExecuteSectorSlashEvo3(def, ratio, index);
         //StartCoroutine(ReturnToIdleAfter(0.3f));
+        return true;
     }
 
     // 8.24 WBH 수정 : seconds 뒤 전환이 애니메이션 이벤트로 이뤄짐.
@@ -578,6 +917,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     //    if (stateMachine.Is(PlayerState.Skill))
     //        stateMachine.ChangeState(PlayerState.Idle);
     //}
+
+    /// <summary>진행 중인 차징과 이동을 취소하며 이미 소모한 마나·쿨타임·스택은 유지한다.</summary>
+    public void CancelActiveSkill()
+    {
+        StopAllCoroutines();
+        CancelCharge();
+        ClearPendingSkill();
+        if (stateMachine != null && stateMachine.Is(PlayerState.Skill))
+            stateMachine.ChangeState(PlayerState.Idle);
+    }
 
     private void CancelCharge()
     {
@@ -617,21 +966,31 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         return new List<Collider>(candidates);
     }
 
-    /// <summary>기본 반원 베기 - 진화 미선택일 때.</summary>
+    /// <summary>
+    /// 기본 반원 베기 - 진화 미선택일 때.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlash(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
     }
 
-    /// <summary>진화1: 밀치기 + 기절 - 기본 판정에 넉백/기절 상태이상을 추가로 건다.</summary>
+    /// <summary>
+    /// 진화1: 밀치기 + 기절 - 기본 판정에 넉백/기절 상태이상을 추가로 건다.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo1(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
         {
@@ -640,11 +999,16 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
     }
 
-    /// <summary>진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.</summary>
+    /// <summary>
+    /// 진화2: 투사체 제거 - 기본 판정에 더해 부채꼴 범위 안의 적 투사체를 전부 제거한다.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo2(SkillDefinitionSO def, int index)
     {
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
+
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, def.sectorAngle, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, def.sectorAngle))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -656,12 +1020,17 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
     }
 
-    /// <summary>진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.</summary>
+    /// <summary>
+    /// 진화3: 원형(360도) + 차징 - 차징 비율(0~1)에 따라 피해 배율이 evoChargeMinDamageMultiplier~evoChargeMaxDamageMultiplier로 선형 증가.
+    /// SW 수정: 기존 스킬 실행과 범위 표시를 유지하고 표시 정보를 원격 경로에 알립니다.
+    /// </summary>
     private void ExecuteSectorSlashEvo3(SkillDefinitionSO def, float chargeRatio, int index)
     {
         float multiplier = Mathf.Lerp(def.evoChargeMinDamageMultiplier, def.evoChargeMaxDamageMultiplier, chargeRatio);
         float range = ApplySkillRangeBonus(def, index, def.sectorRange);
-        SkillRangeVisual.ShowSector(transform.position, transform.forward, range, 360f, sectorVisualColor);
+
+        if (visibleSkillArea)
+            ShowSkillRange(transform.position, transform.forward, range, 360f, sectorVisualColor);
 
         foreach (Collider target in GetSectorTargets(range, 360f))
             ApplyHit(target, def, multiplier, index);
@@ -700,7 +1069,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlam(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
             ApplyHit(target, def, def.damageMultiplier, index);
@@ -710,7 +1081,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo1(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.lineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.lineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.lineWidth))
         {
@@ -723,7 +1096,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo2(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoWideLineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoWideLineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoWideLineWidth, lineVisualColor);
 
         var airborne = new WBH_StatusEffectData(WBH_StatusEffectType.Airborne, duration: def.evoAirborneDuration, height: def.evoAirborneHeight);
 
@@ -739,7 +1114,9 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     private void ExecuteLineSlamEvo3(SkillDefinitionSO def, int index)
     {
         float length = ApplySkillRangeBonus(def, index, def.evoNarrowLineLength);
-        SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoNarrowLineWidth, lineVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, transform.forward, length, def.evoNarrowLineWidth, lineVisualColor);
 
         foreach (Collider target in GetLineTargets(length, def.evoNarrowLineWidth))
             ApplyHit(target, def, def.evoNarrowDamageMultiplier, index);
@@ -754,7 +1131,23 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (GetEnhancement(index) == SkillEnhancementId.Enhance1)
             damageMultiplier *= 1f + def.enhanceDamageMultiplierBonusPercent / 100f;
 
-        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget, WBH_AttackType.Skill, status.CurrentElement, damageMultiplier);
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((index + 1), pendingEvo, SkillEffectPart.Main);
+
+        playerEffect.TryGetEffectData(cue, out WBH_EffectData effectData);
+
+        Vector3 hitPosition = target.ClosestPoint(transform.position);
+        Vector3 lookDirection = transform.position - hitPosition;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+            lookDirection = -transform.forward;
+
+        WBH_DamageRequest request = combat.CreateDamageRequest(combatTarget,
+                                                               WBH_AttackType.Skill,
+                                                               status.CurrentElement,
+                                                               damageMultiplier,
+                                                               effectData: effectData,
+                                                               hitPosition: hitPosition,
+                                                               hitEffectDirection: lookDirection);
         WBH_CombatManager.ProcessDamage(request);
     }
 
@@ -775,9 +1168,11 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         if (evo == SkillEvolutionId.Evolution1)
             controller.ApplyInvincibility(def.evoInvincibleDuration);
 
-        Vector3 dir = GetCursorDirection();
+        Vector3 dir = pendingAimDirection;
         float distance = ApplySkillRangeBonus(def, index, def.dashDistance);
-        SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
+
+        if (visibleSkillArea)
+            SkillRangeVisual.ShowLine(transform.position, dir, distance, 0.6f, dashVisualColor);
 
         NavMeshAgent agent = controller.agent;
 
@@ -834,5 +1229,32 @@ public class FighterSkillController : MonoBehaviour, ISkillController
         }
 
         return transform.forward;
+    }
+
+    public void PlayPendingSkillSfx(AnimationEvent animationEvent, Animator animator)
+    {
+        int partValue = animationEvent.intParameter;
+
+        if (pendingSkillIndex < 0 || pendingSkillIndex >= skills.Length)
+            return;
+
+        if (!System.Enum.IsDefined(typeof(SkillEffectPart), partValue))
+            return;
+
+        if (skills[pendingSkillIndex] == null || playerEffect == null)
+            return;
+
+        WBH_PlayerEffectCue cue = PlayerEffectCueUtility.CreateFighterSkillCue((pendingSkillIndex + 1),
+                                                                              pendingEvo,
+                                                                              (SkillEffectPart)partValue);
+
+        playerEffect.ScheduleSfx(cue, animator, animationEvent);
+    }
+
+    /// <summary>SW 수정: 싱글이 실제로 표시한 범위와 같은 정보를 원격 표시 경로에 전달합니다.</summary>
+    private void ShowSkillRange(Vector3 position, Vector3 direction, float radius, float angle, Color color, float duration = 0.25f)
+    {
+        SkillRangeVisual.ShowSector(position, direction, radius, angle, color, duration);
+        SkillRangePresented?.Invoke(position, direction, radius, angle, color, duration);
     }
 }

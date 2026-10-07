@@ -6,7 +6,62 @@ public class EquipmentSystem : MonoBehaviour
 {
     public event System.Action<EquippedItemInfo[]> OnEquipmentChanged;
 
+    [Tooltip("저마나 투구 효과를 플레이어별로 처리합니다. 기존 효과 콜백과 중복 실행하지 않습니다.")]
+    [SerializeField] private bool useLowManaHelmetEffect;
+
+    /// <summary>
+    /// 이 아이템을 플레이어별 저마나 투구 효과 처리에 맡길지 확인합니다.
+    /// 현재 마나를 검사하거나 버프를 적용하지는 않습니다.
+    /// </summary>
+    /// <returns>설정이 켜져 있고 지원하는 투구 효과이면 true입니다.</returns>
+    public bool UsesLowManaHelmetEffect(ItemInstance item)
+    {
+        ItemDefinitionSO definition = item?.definition;
+        if (!useLowManaHelmetEffect || definition == null)
+            return false;
+
+        if (definition.category != ItemCategory.Armor ||
+            definition.armorType != ArmorType.Helmet)
+            return false;
+
+        return definition.uniqueEffect is StatThresholdBuffUniqueEffectSO threshold &&
+            threshold.referenceStat == StatReference.CurrentManaPercent &&
+            threshold.comparisonOperator == ComparisonOperator.LessOrEqual;
+    }
+
     private Dictionary<EquipSlotType, InventoryItem> equippedItems = new();
+
+    // 네트워크 장비는 전역 SO 콜백을 호출하지 않는다. 클라이언트도 서버의 버프 동기화만 받는다.
+    // 싱글의 외부 씬 인벤토리는 명시적으로 연결된 PlayerContext를 사용한다.
+    internal bool UsesPlayerEffectRuntime(ItemInstance item)
+    {
+        UniqueEffectSO effect = item?.definition?.uniqueEffect;
+        if (!(effect is PassiveBuffUniqueEffectSO || effect is StatThresholdBuffUniqueEffectSO ||
+              effect is TriggeredBuffUniqueEffectSO || effect is FieldAuraUniqueEffectSO ||
+              effect is DropRarityModifierUniqueEffectSO))
+            return false;
+
+        if (GetComponentInParent<Mirror.NetworkIdentity>() != null)
+            return true;
+        PlayerContext owner = GetComponentInParent<PlayerContext>();
+        if (owner == null)
+            owner = GetComponentInParent<InventoryController>()?.BoundPlayer;
+        return owner != null && owner.Equipment == this &&
+               owner.GetComponent<PlayerRelicEffectRuntime>() != null;
+    }
+
+    /// <summary>
+    /// 지금 이 인벤토리를 쓰고 있는 캐릭터(Fighter/Gunner)의 클래스. 인벤토리/장비 상태는
+    /// 캐릭터와 무관하게 공용이라 이 값을 별도로 기억해야 무기 장착 시 클래스를 검증할 수 있다.
+    /// PlayerWeaponVisualPresenter.OnEnable()이 자기 캐릭터가 활성화될 때마다 알려준다.
+    /// 아직 아무도 알려준 적 없으면(테스트 씬 등) null이고, 그때는 클래스 검증을 건너뛴다.
+    /// </summary>
+    public CharacterClass? CurrentCharacterClass { get; private set; }
+
+    public void SetActiveCharacterClass(CharacterClass characterClass)
+    {
+        CurrentCharacterClass = characterClass;
+    }
 
     internal EquipResult TryEquipState(
         InventoryItem item,
@@ -157,6 +212,15 @@ public class EquipmentSystem : MonoBehaviour
 
         if (!EquipSlotRules.CanEquipTo(item.itemData.definition, slotType))
             return EquipResult.InvalidSlot;
+
+        // 무기는 캐릭터 전용(Fighter/Gunner)이 정해져 있다. 지금 캐릭터를 아직 모르면(테스트 씬 등)
+        // 검증을 건너뛴다 - 실제 플레이 흐름에서는 PlayerWeaponVisualPresenter가 항상 미리 알려준다.
+        if (slotType == EquipSlotType.Weapon &&
+            CurrentCharacterClass.HasValue &&
+            item.itemData.definition.characterClass != CurrentCharacterClass.Value)
+        {
+            return EquipResult.WrongCharacterClass;
+        }
 
         return EquipResult.Success;
     }

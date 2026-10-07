@@ -1,26 +1,29 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Core;
 
 /// <summary>
-/// 패시브 업그레이드 팝업 전체를 제어하는 컨트롤러 (기존 씬에 만들어진 UI 구조에 맞춰 코드로 바인딩).
+/// 패시브 업그레이드 팝업 전체를 제어하는 컨트롤러 (인스펙터에서 직접 연결한 참조 기반).
 ///
-/// 아이콘 12개(Row1~3 x PassiveIcon1~4)는 Core.PassiveSkillId의 enum 선언 순서와 1:1로 대응된다
-/// (4개씩 3그룹: 체력/공격력/방어력/속도, 크리티컬확률/크리티컬피해/쿨감/속성보너스, 부활/캠프/상점강화/미정).
+/// 아이콘 12개(SkillSlot_1~12)는 Core.PassiveSkillId의 enum 선언 순서와 1:1로 대응된다.
 ///
-/// 아이콘 선택 -> -/+ 로 "적용해볼 레벨"(pendingLevel)을 조정 -> btn_Confilm으로 확정.
-/// 이미 해금된 범위 안이면 즉시 무료 적용("OK"), 그 이상이면 골드를 써서 해금 후 적용(비용 숫자 표시,
-/// 골드가 모자라면 빨간색). 다른 아이콘을 선택하면 확정 안 한 변경은 버려진다.
+/// 아이콘 클릭 -> 해당 패시브 선택(펜딩 레벨 = 현재 레벨) -> -/+ 로 "적용해볼 레벨"(pendingLevel)을 조정
+/// -> btn_Confilm으로 확정. 이미 해금된 범위 안이면 즉시 무료 적용("OK"), 그 이상이면 크레딧을 써서
+/// 해금 후 적용(비용 숫자 표시, 크레딧이 모자라면 빨간색). 다른 아이콘을 선택하면 확정 안 한 변경은 버려진다.
 ///
-/// !! 작업 중 Panel이 여러 번 복제돼서 이 컴포넌트가 여러 GameObject에 붙어있을 수 있다.
-///    "MainRow" 자식이 있는 인스턴스만 실제 팝업 루트로 보고 동작하며, 나머지는 아무것도 하지 않는다.
+/// !! 2026-09-10: 원래 transform.Find(...)로 오브젝트를 찾아 썼으나, 계층 구조가 바뀔 때마다
+///    조용히 깨지는 문제가 있어 인스펙터에서 직접 드래그해 연결하는 SerializeField 방식으로 바꿨다.
+///    아이콘 슬롯은 클릭 감지/렌더링만 담당하는 뷰 컴포넌트인 KY_PassiveSkillSlot을 그대로 재사용한다
+///    (좌클릭만 사용 - 원래 버전이 일반 Button.onClick만 썼던 것과 동일하게 맞춤).
 /// </summary>
-public class PassiveSkillPanelUI : MonoBehaviour
+public class PassiveSkillPanelUI : KY_PopupBase
 {
-    // enum 선언 순서가 Row1~3 x PassiveIcon1~4와 1:1로 대응됨 (4개씩 3그룹).
-    private static readonly PassiveSkillId[] IconOrder = (PassiveSkillId[])System.Enum.GetValues(typeof(PassiveSkillId));
+    // enum 선언 순서가 slots 리스트 순서와 1:1로 대응됨.
+    private static readonly PassiveSkillId[] IconOrder = (PassiveSkillId[])Enum.GetValues(typeof(PassiveSkillId));
 
     // 상세 설명 텍스트의 "현재 레벨 / 최대 레벨" 색상 (TMP 리치 텍스트 <color> 태그용).
     private const string DefaultTextColor = "#FFFFFF";
@@ -28,126 +31,139 @@ public class PassiveSkillPanelUI : MonoBehaviour
     private const string LevelDownColor = "#FFA500"; // 주황색 - 설정하려는 값이 현재 레벨보다 작음(내릴 예정)
     private const string MaxLevelReachedColor = "#FFFF00"; // 노란색 - 최대 레벨까지 전부 해금됨
 
-    private struct IconRef
-    {
-        public PassiveSkillId id;
-        public Button button;
-        public TextMeshProUGUI levelBadge;
-    }
+    [Header("헤더")]
+    [FormerlySerializedAs("goldText")]
+    [SerializeField] private TextMeshProUGUI creditText;
+    [SerializeField] private Button skillClearButton;
+    [SerializeField] private Button closeButton;
 
-    private bool isRootController;
+    [Header("상세 패널")]
+    [SerializeField] private TextMeshProUGUI nameText;
+    [Tooltip("현재 레벨 / 현재 효과 / 다음 레벨 등 레벨업 정보 표시")]
+    [SerializeField] private TextMeshProUGUI levelUpText;
+    [Tooltip("패시브 스킬의 설명문(prose). 라벨 DB 우선, 없으면 PassiveSkillDefinition.description")]
+    [SerializeField] private TextMeshProUGUI descriptionText;
+    [SerializeField] private Button levelDownButton;
+    [SerializeField] private Button levelUpButton;
+    [SerializeField] private TextMeshProUGUI pendingLevelText;
+    [SerializeField] private Button confirmButton;
+    [SerializeField] private TextMeshProUGUI confirmButtonText;
 
-    private TextMeshProUGUI goldText;
-    private Button skillClearButton;
-    private Button closeButton;
+    [Header("스킬 아이콘 (Core.PassiveSkillId 선언 순서와 1:1 대응)")]
+    [SerializeField] private List<KY_PassiveSkillSlot> slots = new();
 
-    private TextMeshProUGUI nameText;
-    private TextMeshProUGUI descriptionText;
-    private Button levelDownButton;
-    private Button levelUpButton;
-    private TextMeshProUGUI pendingLevelText;
-    private Button confirmButton;
-    private TextMeshProUGUI confirmButtonText;
+    [Header("번역 (비워두면 Resources에서 공용 DB를 자동으로 찾아 쓴다)")]
+    [Tooltip("패시브 스킬 이름 다국어 DB")]
+    [SerializeField] private PassiveSkillLabelDatabaseSO passiveLabels;
+    [Tooltip("크레딧/레벨 접두사 등 고정 문구 다국어 DB")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
 
-    private readonly List<IconRef> icons = new List<IconRef>();
+    private const string PassiveLabelResourcePath = "DataFiles/PassiveSkillData/3. GeneratedAssets/PassiveSkillLabelDatabase";
+    private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
 
     private PassiveSkillId? selectedId;
     private int pendingLevel;
+    private bool allowChanges = true;
+    private string unavailableReason;
 
-    private void BindReferences()
+    /// <summary>로비 준비 완료 후에는 조회와 닫기는 유지하고 단계 변경만 잠근다.</summary>
+    public void SetChangesAllowed(bool allowed, string reason = null)
     {
-        Transform headerControl = transform.Find("HeaderRow/ControlArea");
-        goldText = headerControl.Find("GoldText").GetComponent<TextMeshProUGUI>();
-        skillClearButton = headerControl.Find("btn_SkillClear").GetComponent<Button>();
-        closeButton = transform.Find("btn_ClosePopup").GetComponent<Button>();
-
-        Transform detailPanel = transform.Find("MainRow/ControlArea/Panel");
-        nameText = detailPanel.Find("PassiveNameText").GetComponent<TextMeshProUGUI>();
-        descriptionText = detailPanel.Find("PassiveDescriptionText").GetComponent<TextMeshProUGUI>();
-
-        Transform detailControl = detailPanel.Find("ControlArea");
-        levelDownButton = detailControl.Find("btn_LevelDown").GetComponent<Button>();
-        levelUpButton = detailControl.Find("btn_LevelUp").GetComponent<Button>();
-        pendingLevelText = detailControl.Find("Divider").GetComponent<TextMeshProUGUI>();
-
-        confirmButton = detailPanel.Find("btn_Confilm").GetComponent<Button>();
-        confirmButtonText = confirmButton.GetComponentInChildren<TextMeshProUGUI>();
-
-        Transform listArea = transform.Find("MainRow/SkillListArea");
-        icons.Clear();
-        int index = 0;
-        for (int row = 1; row <= 3 && index < IconOrder.Length; row++)
-        {
-            Transform rowT = listArea.Find("Row" + row);
-            if (rowT == null)
-                continue;
-
-            for (int col = 1; col <= 4 && index < IconOrder.Length; col++)
-            {
-                Transform iconT = rowT.Find("PassiveIcon" + col);
-                if (iconT == null)
-                    continue;
-
-                icons.Add(new IconRef
-                {
-                    id = IconOrder[index],
-                    button = iconT.GetComponent<Button>(),
-                    levelBadge = iconT.GetComponentInChildren<TextMeshProUGUI>(),
-                });
-                index++;
-            }
-        }
+        allowChanges = allowed;
+        unavailableReason = reason;
+        RefreshAll();
     }
 
     private void OnEnable()
     {
-        // !! isRootController/BindReferences를 Awake가 아니라 여기서 매번 다시 계산한다.
-        // 에디터 도메인 리로드(스크립트 재컴파일)는 이미 씬에 있던 오브젝트의 Awake를 다시 안 불러서,
-        // 유니티 실행 없이 Context Menu 등으로 테스트하면 예전에 캐싱된 값이 최신 계층 구조와 어긋날 수 있다.
-        // OnEnable은 Play 진입/씬 로드/GameObject 재활성화마다 항상 다시 불리므로 여기서 매번 재판정한다.
-        isRootController = transform.Find("MainRow") != null;
-        if (!isRootController)
-            return;
+        if (passiveLabels == null)
+            passiveLabels = Resources.Load<PassiveSkillLabelDatabaseSO>(PassiveLabelResourcePath);
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>(UiLabelResourcePath);
 
-        BindReferences();
-
-        foreach (var icon in icons)
+        foreach (var slot in slots)
         {
-            PassiveSkillId id = icon.id;
-            icon.button.onClick.AddListener(() => SelectSkill(id));
+            if (slot == null) continue;
+            slot.OnSlotClicked += HandleSlotClicked;
         }
 
-        levelDownButton.onClick.AddListener(HandleLevelDownClicked);
-        levelUpButton.onClick.AddListener(HandleLevelUpClicked);
-        confirmButton.onClick.AddListener(HandleConfirmClicked);
-        skillClearButton.onClick.AddListener(HandleSkillClearClicked);
-        closeButton.onClick.AddListener(HandleCloseClicked);
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged += HandleLanguageChanged;
+
+        if (skillClearButton != null) skillClearButton.onClick.AddListener(HandleSkillClearClicked);
+        if (closeButton != null) closeButton.onClick.AddListener(HandleCloseClicked);
+        if (levelDownButton != null) levelDownButton.onClick.AddListener(HandleLevelDownClicked);
+        if (levelUpButton != null) levelUpButton.onClick.AddListener(HandleLevelUpClicked);
+        if (confirmButton != null) confirmButton.onClick.AddListener(HandleConfirmClicked);
 
         if (PassiveSkillManager.Instance != null)
             PassiveSkillManager.Instance.OnProfileChanged += RefreshAll;
 
-        if (selectedId == null && icons.Count > 0)
-            selectedId = icons[0].id;
+        if (selectedId == null && IconOrder.Length > 0)
+            selectedId = IconOrder[0];
 
         RefreshAll();
     }
 
     private void OnDisable()
     {
-        if (!isRootController)
-            return;
+        foreach (var slot in slots)
+        {
+            if (slot == null) continue;
+            slot.OnSlotClicked -= HandleSlotClicked;
+        }
 
-        foreach (var icon in icons)
-            icon.button.onClick.RemoveAllListeners();
-
-        levelDownButton.onClick.RemoveListener(HandleLevelDownClicked);
-        levelUpButton.onClick.RemoveListener(HandleLevelUpClicked);
-        confirmButton.onClick.RemoveListener(HandleConfirmClicked);
-        skillClearButton.onClick.RemoveListener(HandleSkillClearClicked);
-        closeButton.onClick.RemoveListener(HandleCloseClicked);
+        if (skillClearButton != null) skillClearButton.onClick.RemoveListener(HandleSkillClearClicked);
+        if (closeButton != null) closeButton.onClick.RemoveListener(HandleCloseClicked);
+        if (levelDownButton != null) levelDownButton.onClick.RemoveListener(HandleLevelDownClicked);
+        if (levelUpButton != null) levelUpButton.onClick.RemoveListener(HandleLevelUpClicked);
+        if (confirmButton != null) confirmButton.onClick.RemoveListener(HandleConfirmClicked);
 
         if (PassiveSkillManager.Instance != null)
             PassiveSkillManager.Instance.OnProfileChanged -= RefreshAll;
+
+        if (YJ_LanguageManager.Instance != null)
+            YJ_LanguageManager.Instance.LanguageChanged -= HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged(GameLanguage _) => RefreshAll();
+
+    /// <summary>uiLabels에서 key 문구를 가져오되, DB가 없거나 매칭 실패면 한국어 폴백을 쓴다.</summary>
+    private string L(string key, string korFallback)
+    {
+        if (uiLabels == null) return korFallback;
+        string value = uiLabels.GetLabel(key);
+        return string.IsNullOrEmpty(value) || value == key ? korFallback : value;
+    }
+
+    /// <summary>패시브 스킬 이름을 현재 언어로. DB가 없거나 매칭 실패면 디자인 데이터(displayName)로 폴백.</summary>
+    private string ResolvePassiveName(PassiveSkillId id, PassiveSkillDefinition definition)
+    {
+        if (passiveLabels != null)
+        {
+            string localized = passiveLabels.GetName(id);
+            if (!string.IsNullOrEmpty(localized) && localized != id.ToString())
+                return localized;
+        }
+        return definition != null ? definition.displayName : id.ToString();
+    }
+
+    /// <summary>패시브 스킬 설명문을 현재 언어로. 라벨 DB 우선, 없으면 PassiveSkillDefinition.description으로 폴백.</summary>
+    private string ResolvePassiveDescription(PassiveSkillId id, PassiveSkillDefinition definition)
+    {
+        if (passiveLabels != null)
+        {
+            string localized = passiveLabels.GetDescription(id);
+            if (!string.IsNullOrEmpty(localized))
+                return localized;
+        }
+        return definition != null ? definition.description : string.Empty;
+    }
+
+    private void HandleSlotClicked(PassiveSkillData data)
+    {
+        if (data == null) return;
+        SelectSkill(data.id);
     }
 
     private void SelectSkill(PassiveSkillId id)
@@ -159,7 +175,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
 
     private void HandleLevelDownClicked()
     {
-        if (selectedId == null)
+        if (!allowChanges || selectedId == null)
             return;
 
         pendingLevel = Mathf.Max(0, pendingLevel - 1);
@@ -168,7 +184,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
 
     private void HandleLevelUpClicked()
     {
-        if (selectedId == null)
+        if (!allowChanges || selectedId == null || PassiveSkillManager.Instance == null)
             return;
 
         var definition = PassiveSkillManager.Instance.GetDefinition(selectedId.Value);
@@ -179,17 +195,20 @@ public class PassiveSkillPanelUI : MonoBehaviour
 
     private void HandleConfirmClicked()
     {
-        if (selectedId == null || PassiveSkillManager.Instance == null)
+        if (!allowChanges || selectedId == null || PassiveSkillManager.Instance == null)
             return;
 
         // 성공하면 OnProfileChanged -> RefreshAll이 이미 화면을 갱신해준다.
-        // 골드 부족으로 실패해도 pendingLevel은 그대로 둬서 사용자가 다시 시도할 수 있게 한다.
+        // 크레딧 부족으로 실패해도 pendingLevel은 그대로 둬서 사용자가 다시 시도할 수 있게 한다.
         PassiveSkillManager.Instance.TryApplyLevel(selectedId.Value, pendingLevel);
         RefreshDetailPanel();
     }
 
     private void HandleSkillClearClicked()
     {
+        if (!allowChanges)
+            return;
+
         PassiveSkillManager.Instance?.ResetAllCurrentLevels();
         if (selectedId != null)
             SelectSkill(selectedId.Value);
@@ -197,7 +216,7 @@ public class PassiveSkillPanelUI : MonoBehaviour
 
     private void HandleCloseClicked()
     {
-        gameObject.SetActive(false);
+        KY_PopupManager.Instance.Hide();
     }
 
     private void RefreshAll()
@@ -205,22 +224,46 @@ public class PassiveSkillPanelUI : MonoBehaviour
         var manager = PassiveSkillManager.Instance;
         var profile = manager != null ? manager.CurrentProfile : null;
 
-        if (goldText != null)
-            goldText.text = profile != null ? $"골드 {profile.gold}" : "골드 -";
+        if (creditText != null)
+            creditText.text = profile != null
+                ? string.Format(L("passive_skill_ui.credit_format", "크레딧 | {0}"), profile.credit.ToString("N0"))
+                : L("passive_skill_ui.credit_none", "크레딧 | -");
 
-        foreach (var icon in icons)
+        if (skillClearButton != null)
+            skillClearButton.interactable = allowChanges && profile != null;
+
+        for (int i = 0; i < slots.Count && i < IconOrder.Length; i++)
         {
-            int level = manager != null ? manager.GetCurrentLevel(icon.id) : 0;
-            if (icon.levelBadge != null)
-                icon.levelBadge.text = level.ToString();
+            if (slots[i] == null) continue;
+
+            var id = IconOrder[i];
+            slots[i].Render(new PassiveSkillData
+            {
+                id = id,
+                definition = manager != null ? manager.GetDefinition(id) : null,
+                unlockedLevel = manager != null ? manager.GetUnlockedLevel(id) : 0,
+                currentLevel = manager != null ? manager.GetCurrentLevel(id) : 0
+            });
         }
 
         RefreshDetailPanel();
     }
 
+    /// <summary>현재 선택된 슬롯의 OutLine만 켜고 나머지는 끈다.</summary>
+    private void UpdateSlotHighlights()
+    {
+        for (int i = 0; i < slots.Count && i < IconOrder.Length; i++)
+        {
+            if (slots[i] == null || slots[i].activeHighlight == null) continue;
+            slots[i].activeHighlight.SetActive(selectedId.HasValue && IconOrder[i] == selectedId.Value);
+        }
+    }
+
     private void RefreshDetailPanel()
     {
-        if (selectedId == null)
+        UpdateSlotHighlights();
+
+        if (selectedId == null || PassiveSkillManager.Instance == null)
             return;
 
         PassiveSkillId id = selectedId.Value;
@@ -229,13 +272,18 @@ public class PassiveSkillPanelUI : MonoBehaviour
             return;
 
         var manager = PassiveSkillManager.Instance;
-        int currentLevel = manager != null ? manager.GetCurrentLevel(id) : 0;
-        int unlockedLevel = manager != null ? manager.GetUnlockedLevel(id) : 0;
+        int currentLevel = manager.GetCurrentLevel(id);
+        int unlockedLevel = manager.GetUnlockedLevel(id);
 
         if (nameText != null)
-            nameText.text = definition.displayName;
+            nameText.text = ResolvePassiveName(id, definition);
 
         if (descriptionText != null)
+            descriptionText.text = allowChanges
+                ? ResolvePassiveDescription(id, definition)
+                : unavailableReason ?? "현재는 패시브를 변경할 수 없습니다.";
+
+        if (levelUpText != null)
         {
             // "현재 효과"/"다음 레벨"은 확정된 currentLevel이 아니라 지금 -/+로 미리보는 pendingLevel 기준으로 표시.
             float previewEffect = definition.GetValue(pendingLevel);
@@ -248,35 +296,46 @@ public class PassiveSkillPanelUI : MonoBehaviour
             // 최대 레벨까지 전부 해금했으면 MaxLevel 표시를 노란색으로.
             string maxLevelColor = unlockedLevel >= definition.maxLevel ? MaxLevelReachedColor : DefaultTextColor;
 
+            // 접두사만 다국어 DB에서 가져오고 <color>/숫자 포맷은 코드가 유지한다({0}/{1}로 값을 끼워넣는다).
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"현재 레벨: <color={currentLevelColor}>{pendingLevel}</color> / <color={maxLevelColor}>{definition.maxLevel}</color>");
-            sb.AppendLine($"현재 효과: <color={currentLevelColor}>+{previewEffect:0.#}%</color>");
+            sb.AppendLine(string.Format(
+                L("passive_skill_ui.detail_current_level", "현재 레벨: {0} / {1}"),
+                $"<color={currentLevelColor}>{pendingLevel}</color>",
+                $"<color={maxLevelColor}>{definition.maxLevel}</color>"));
+            sb.AppendLine(string.Format(
+                L("passive_skill_ui.detail_current_effect", "현재 효과: {0}"),
+                $"<color={currentLevelColor}>+{previewEffect:0.#}%</color>"));
             if (pendingLevel < definition.maxLevel)
-                sb.Append($"다음 레벨: +{nextEffect:0.#}%");
+                sb.Append(string.Format(
+                    L("passive_skill_ui.detail_next_level", "다음 레벨: {0}"),
+                    $"+{nextEffect:0.#}%"));
 
-            descriptionText.text = sb.ToString();
+            levelUpText.text = sb.ToString();
         }
 
         if (pendingLevelText != null)
             pendingLevelText.text = pendingLevel.ToString();
 
         if (levelDownButton != null)
-            levelDownButton.interactable = pendingLevel > 0;
+            levelDownButton.interactable = allowChanges && pendingLevel > 0;
 
         if (levelUpButton != null)
-            levelUpButton.interactable = pendingLevel < definition.maxLevel;
+            levelUpButton.interactable = allowChanges && pendingLevel < definition.maxLevel;
+
+        if (confirmButton != null)
+            confirmButton.interactable = allowChanges;
 
         if (confirmButtonText != null)
         {
             if (pendingLevel <= unlockedLevel)
             {
-                confirmButtonText.text = "OK";
+                confirmButtonText.text = L("passive_skill_ui.confirm_ok", "OK");
                 confirmButtonText.color = Color.white;
             }
             else
             {
-                int cost = manager != null ? manager.GetUnlockCostToLevel(id, pendingLevel) : 0;
-                bool canAfford = manager != null && manager.CurrentProfile != null && manager.CurrentProfile.gold >= cost;
+                int cost = manager.GetUnlockCostToLevel(id, pendingLevel);
+                bool canAfford = manager.CurrentProfile != null && manager.CurrentProfile.credit >= cost;
                 confirmButtonText.text = cost.ToString();
                 confirmButtonText.color = canAfford ? Color.white : Color.red;
             }

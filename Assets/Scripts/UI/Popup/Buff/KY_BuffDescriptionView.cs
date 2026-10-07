@@ -10,18 +10,14 @@ public class KY_BuffDescriptionView : MonoBehaviour
 
     public void Render(BuffInstance data)
     {
-        nameText.text = data.source.BuffDisplayName;
-        descriptionText.text = GetDescription(data.source);
-    }
-
-    string GetDescription(IBuffSource source)
-    {
-        // BuffDefinitionSO는 description 필드를 갖고 있지만, IBuffSource 인터페이스 자체엔 없음.
-        // 다른 IBuffSource 구현체(UniqueEffectSO 계열 등)는 description이 없을 수 있어 안전하게 캐스팅.
-        if (source is BuffDefinitionSO def)
-            return def.description;
-
-        return ""; // 설명이 없는 소스는 빈 텍스트로 (에러 없이)
+        // 이름/설명 모두 HUD 버프 아이콘 툴팁과 같은 조립기를 쓴다. SO에 적힌 원문(BuffDisplayName,
+        // description)은 한국어 고정이라 언어를 따라가지 않는다.
+        //
+        // WJ 이우진 수정(2026-10-01): 증감 스탯량은 HUD 아이콘 툴팁이 보여주고, 팝업은 상세 효과 문장만 보여준다.
+        //    문장은 고유효과면 UniqueEffectLabelDatabase, 그 외는 BuffLabelDatabase의 description(다국어)에서 온다.
+        //    상세 문장이 없는 버프만 스탯 줄로 대신한다.
+        nameText.text = BuffTextComposer.BuildBaseName(data.source);
+        descriptionText.text = BuffTextComposer.BuildDetailDescription(data.source, data.stackCount);
     }
 
     public void Clear()

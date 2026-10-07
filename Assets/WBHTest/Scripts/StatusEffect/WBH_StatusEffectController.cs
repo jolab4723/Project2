@@ -5,7 +5,7 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
 {
     // 현재 적용 중인 상태이상 및 (활성화된 상태이상 이펙트)
     protected readonly Dictionary<WBH_StatusEffectType, WBH_IStatusEffect> effects = new();
-    //protected readonly Dictionary<WBH_StatusEffectType, WBH_Effect> activeEffects = new();
+    private readonly List<WBH_IStatusEffect> tickEffects = new();
 
     // 능력치 조정치
     private readonly Dictionary<WBH_IStatusEffect, float> moveSpeedModifiers = new();
@@ -21,8 +21,10 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     }
 
     // 상태이상 추가
-    public void AddStatusEffect(WBH_StatusEffectData data)
+    public virtual void AddStatusEffect(WBH_StatusEffectData data)
     {
+        if (!CanApplyStatusEffect(data))
+            return;
         if(effects.TryGetValue(data.Type, out var effect))
         {
             effect.Refresh(data);
@@ -35,6 +37,15 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
 
         effects.Add(data.Type, effect);
         effect.Apply();
+    }
+
+    /// <summary>SW 수정: 화상은 최소 0.01초 간격만 허용해 극소 값의 무한 반복과 NaN 피해를 막습니다.</summary>
+    public virtual bool CanApplyStatusEffect(WBH_StatusEffectData data)
+    {
+        return data.Type != WBH_StatusEffectType.Burn ||
+            (float.IsFinite(data.Duration) && data.Duration > 0f &&
+             float.IsFinite(data.Value) && data.Value > 0f &&
+             float.IsFinite(data.Interval) && data.Interval >= 0.01f);
     }
 
     // 상태이상 제거
@@ -53,6 +64,16 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
         return effects.ContainsKey(type);
     }
 
+    /// <summary>SW 수정: 마지막 프레임의 보유 여부가 아닌 현재 살아 있는 Burn 인스턴스의 실제 출처를 읽는다.</summary>
+    public bool TryGetBurnSource(out WBH_StatusEffectData source)
+    {
+        source = default;
+        if (!effects.TryGetValue(WBH_StatusEffectType.Burn, out var effect) ||
+            effect is not WBH_BurnEffect burn || burn.IsFinished) return false;
+        source = burn.Source;
+        return true;
+    }
+
     // 남은 시간
     public float GetRemainingTime(WBH_StatusEffectType type)
     {
@@ -65,27 +86,24 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     // 상태이상 갱신 (상태이상 면역 같은 확장을 위해 virtual 사용)
     protected virtual void UpdateEffects(float deltaTime)
     {
-        List<WBH_StatusEffectType> removeList = null;
-
-        foreach(var pair in effects)
+        // SW 수정: 틱으로 사망·풀 반환이 일어나도 순회 중인 Dictionary를 훼손하지 않습니다.
+        tickEffects.Clear();
+        tickEffects.AddRange(effects.Values);
+        foreach (WBH_IStatusEffect effect in tickEffects)
         {
-            pair.Value.Tick(deltaTime);
-            
-            if(pair.Value.IsFinished)
-            {
-                removeList ??= new List<WBH_StatusEffectType>(); // removeList 이 null 일 경우 new 삽입
-                removeList.Add(pair.Key);
-            }
+            if (!effects.TryGetValue(effect.EffectType, out WBH_IStatusEffect current) ||
+                !ReferenceEquals(current, effect))
+                continue;
+            effect.Tick(deltaTime);
+            if (effect.IsFinished && effects.TryGetValue(effect.EffectType, out current) &&
+                ReferenceEquals(current, effect))
+                RemoveStatusEffect(effect.EffectType);
         }
-
-        if (removeList == null)
-            return;
-
-        foreach(var type in removeList)
-        {
-            RemoveStatusEffect(type);
-        }
+        tickEffects.Clear();
     }
+
+    /// <summary>SW 수정: 풀에 반환되거나 비활성화되면 상태와 상태가 만든 조정치를 해제합니다.</summary>
+    protected virtual void OnDisable() => ClearAllStatusEffects();
 
     // 모든 상태이상 제거
     public void ClearAllStatusEffects()
@@ -97,7 +115,6 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
             RemoveStatusEffect(type);
         }
     }
-
 
     // 조정치 계산. 동일 상태이상이면 지속시간 갱신. 다른 상태이상이면 효과 곱연산.
     private float CalculateModifier(Dictionary<WBH_IStatusEffect, float> modifiers)
@@ -209,8 +226,8 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
     public abstract void ApplyDefenseModifier(float modifier);
     public abstract void ApplyDamageTakenModifier(float modifier);
 
-    // 제어 및 입력
-    public abstract void SetControlEnable(bool enabled);
+    // 제어 및 입력. 상태이상 종류별 행동제어 차단. 넉백, 에어본, 스턴 3가지중 하나라도 걸려있다면 행동불가.
+    public abstract void SetStatusControlBlock(WBH_StatusEffectType source, bool block);
 
     // 피격 이동
     public abstract void ApplyKnockback(Vector3 direction, float force, float duration);
@@ -225,6 +242,9 @@ public abstract class WBH_StatusEffectController : MonoBehaviour
 
     // 도트 데미지
     public abstract void ApplyDotDamage(float damage);
+
+    /// <summary>SW 수정: 출처를 사용하는 적은 이 경로를 구현하고, 기존 플레이어 처리는 그대로 유지합니다.</summary>
+    public virtual void ApplyDotDamage(float damage, WBH_StatusEffectData data) => ApplyDotDamage(damage);
 
 
     //---------- 상태이상 적용을 위해 능력치의 일부를 가져오는 메서드

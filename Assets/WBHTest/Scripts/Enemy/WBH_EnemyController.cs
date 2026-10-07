@@ -24,11 +24,15 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
     private WBHEnemyDestructionAdapter destructionAdapter;
     private WBH_EnemyBossDeathView bossDeathView;
     private WBH_EnemyGradeVisual gradeVisual;
-
+    private WBH_EffectSpawner effectSpawner;
     private WBH_EnemyInfo info;
+    private WBH_EnemyEffect effect;
 
     public static event Action OnEnemyDead; // 사망 시, 현재 남은 적 숫자를 WBH_EnemySpawnManager 에 반영
     private bool isDying;
+    private bool isCutSceneDamageBlocked;
+    private bool isPatternDamageBlocked;
+
 
     public WBH_EnemyInfo Info => info;
     public WBH_ICombatStatus Status => status;
@@ -44,6 +48,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         destructionAdapter = GetComponent<WBHEnemyDestructionAdapter>();
         bossDeathView = GetComponent<WBH_EnemyBossDeathView>();
         gradeVisual = GetComponent<WBH_EnemyGradeVisual>();
+        effect = GetComponent<WBH_EnemyEffect>();
     }
 
     private void OnEnable()
@@ -56,10 +61,15 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         status.OnDead -= Dead;
     }
 
-    public void Initialize(WBH_EnemyInfo info, WBH_EnemyPoolManager poolManager)
+    public void Initialize(WBH_EnemyInfo info,
+                           WBH_EnemyPoolManager poolManager,
+                           WBH_EffectSpawner effectSpawner,
+                           WBH_ProjectileSpawner projectileSpawner,
+                           YJ_SfxPlayer sfxPlayer)
     {
         this.info = info;
         this.poolManager = poolManager;
+        this.effectSpawner = effectSpawner;
 
         status ??= GetComponent<WBH_EnemyStatus>();
         movement ??= GetComponent<WBH_EnemyMovement>();
@@ -70,10 +80,14 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         status.Initialize(info);
         movement.Initialize(info);
-        combat.Initialize(info);
+        effect.Initialize(effectSpawner, sfxPlayer);
+        combat.Initialize(info, projectileSpawner);
         enemyAnimation.Initialize();
-        pattern.Initialize(this);
+        pattern.Initialize(this, effectSpawner, projectileSpawner);
         gradeVisual?.ApplyGrade(info.enemyGrade);
+        statusEffectController?.Initialize(effectSpawner);
+
+        GetComponent<WBH_IndicatorSpawner>()?.Initialize(effectSpawner);
         
         bossDeathView?.ResetVisual();
 
@@ -83,10 +97,23 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
     public void TakeDamage(WBH_DamageResult result)
     {
+        if (isCutSceneDamageBlocked || isPatternDamageBlocked || status.IsDead)
+            return;
+
+        Vector3 hitPosition = result.HitPosition ?? transform.position;
+
+        Vector3 direction = result.HitEffectDirection ?? Vector3.zero;
+
+        Quaternion hitRotation = direction.sqrMagnitude > 0.0001f
+                                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
+                                 : Quaternion.identity;
+
+        if (result.EffectData != null && result.EffectData.hitEffectPrefab != null)
+        {
+            effectSpawner?.SpawnHitEffect(result.EffectData, hitPosition, hitRotation);
+        }
+
         status.TakeDamage(result);
-
-        // 애니메이션 피격 !@
-
     }
 
     private void Dead()
@@ -96,11 +123,12 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         isDying = true;
 
-        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
-
+        combat.CancelCurrentAction(); // 기존 패턴 취소
         movement.Stop();
         movement.SetControlEnable(false);
 
+        OnEnemyDead?.Invoke(); // 웨이브 카운트 감소 등 사망처리
+        
         enemyAnimation.PlayDie();
 
         if(!enemyAnimation.UseDieAni)
@@ -134,6 +162,7 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
 
         OnEnemyDead?.Invoke();
 
+        combat.CancelCurrentAction();
         movement.Stop();
         movement.SetControlEnable(false);
 
@@ -145,9 +174,41 @@ public class WBH_EnemyController : MonoBehaviour, WBH_ICombat
         pattern.SetTarget(target);
     }
 
+    /// <summary>
+    /// SW 수정: 살아 있는 활성 적에게 전달합니다. Mirror는 원본 AI만 끄므로
+    /// 이 컨트롤러의 enabled 대신 실제 상태이상 컴포넌트를 확인합니다.
+    /// </summary>
     public void AddStatusEffect(WBH_StatusEffectData data)
     {
+        if (!gameObject.activeInHierarchy || isDying || status == null || status.IsDead ||
+            statusEffectController == null || !statusEffectController.isActiveAndEnabled)
+            return;
+
         statusEffectController.AddStatusEffect(data);
+    }
+
+    /// <summary>SW 수정: 풀에 돌려줄 때 이전 상태이상도 즉시 해제합니다.</summary>
+    public void ResetForPool()
+    {
+        statusEffectController?.ClearAllStatusEffects();
+        gradeVisual?.ResetForPool();
+    }
+
+    // 컷씬 진행시 행동 방지 (차후 피격 시 무적 등도 이 메서드 안에서 호출하고 외부에서는 이 메서드만 호출)
+    public void SetCutSceneControlBlock(bool blocked)
+    {
+        movement.SetCutSceneControlBlock(blocked);
+    }
+
+    public void SetCutSceneDamageBlock(bool block)
+    {
+        isCutSceneDamageBlocked = block;
+    }
+
+
+    public void SetPatternDamageBlock(bool blocked)
+    {
+        isPatternDamageBlocked = blocked;
     }
 
     // 보스 전용 사망연출(애니메이션 이벤트). 사망 후 n초 뒤에 디졸브 걸고 사라짐.

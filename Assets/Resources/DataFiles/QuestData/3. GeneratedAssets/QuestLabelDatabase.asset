@@ -1,0 +1,425 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19b9d182c1695bf4aa1652e87d0ca2c0, type: 3}
+  m_Name: QuestLabelDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::QuestLabelDatabaseSO
+  korLabels:
+  - key: quest.sample.collect01.name
+    label: "\uBB3C\uC57D \uBC30\uB2EC"
+  - key: quest.sample.collect01.description
+    label: "\uBE68\uAC04 \uBB3C\uC57D 3\uAC1C\uB97C \uBAA8\uC544\uC11C \uAC00\uC838\uB2E4\uC8FC\uC138\uC694."
+  - key: quest.sample.collect01.condition.0
+    label: "\uBE68\uAC04 \uBB3C\uC57D 3\uAC1C \uC218\uC9D1"
+  - key: quest.sample.collect02.name
+    label: "\uC7AC\uB8CC \uC218\uC9D1"
+  - key: quest.sample.collect02.description
+    label: "\uD654\uC5FC \uBB3C\uC57D\uACFC \uB0C9\uAE30 \uBB3C\uC57D\uC744 \uAC01\uAC01
+      \uD558\uB098\uC529 \uBAA8\uC544\uC8FC\uC138\uC694."
+  - key: quest.sample.collect02.condition.0
+    label: "\uD654\uC5FC \uBB3C\uC57D 1\uAC1C \uC218\uC9D1"
+  - key: quest.sample.collect02.condition.1
+    label: "\uB0C9\uAE30 \uBB3C\uC57D 1\uAC1C \uC218\uC9D1"
+  - key: quest.sample.collect03.name
+    label: "\uC815\uBE44 \uBD80\uD488 \uC870\uB2EC"
+  - key: quest.sample.collect03.description
+    label: "\uC804\uACA9 \uBB3C\uC57D 2\uAC1C\uB97C \uBAA8\uC544 \uC815\uBE44\uBC18\uC5D0
+      \uC804\uB2EC\uD574 \uC8FC\uC138\uC694."
+  - key: quest.sample.collect03.condition.0
+    label: "\uC804\uACA9 \uBB3C\uC57D 2\uAC1C \uC218\uC9D1"
+  - key: quest.sample.combo01.name
+    label: "\uAD6C\uC870\uC640 \uC815\uB9AC"
+  - key: quest.sample.combo01.description
+    label: "\uC801\uC744 \uCC98\uCE58\uD558\uBA74\uC11C \uD758\uB9B0 \uBB3C\uC57D\uB3C4
+      \uD568\uAED8 \uD68C\uC218\uD574 \uC8FC\uC138\uC694."
+  - key: quest.sample.combo01.condition.0
+    label: "\uC801 5\uB9C8\uB9AC \uCC98\uCE58"
+  - key: quest.sample.combo01.condition.1
+    label: "\uD30C\uB780 \uBB3C\uC57D 2\uAC1C \uC218\uC9D1"
+  - key: quest.sample.combo02.name
+    label: "3\uC911 \uC784\uBB34"
+  - key: quest.sample.combo02.description
+    label: "\uC801\uC744 \uCC98\uCE58\uD558\uACE0, \uBE68\uAC04 \uBB3C\uC57D\uACFC
+      \uD654\uC5FC \uBB3C\uC57D\uC744 \uAC01\uAC01 \uBAA8\uC544\uC8FC\uC138\uC694."
+  - key: quest.sample.combo02.condition.0
+    label: "\uC801 3\uB9C8\uB9AC \uCC98\uCE58"
+  - key: quest.sample.combo02.condition.1
+    label: "\uBE68\uAC04 \uBB3C\uC57D 1\uAC1C \uC218\uC9D1"
+  - key: quest.sample.combo02.condition.2
+    label: "\uD654\uC5FC \uBB3C\uC57D 1\uAC1C \uC218\uC9D1"
+  - key: quest.sample.hunt02.name
+    label: "\uC815\uC608 \uC18C\uD0D5"
+  - key: quest.sample.hunt02.description
+    label: "\uC774 \uAD6C\uC5ED\uC758 \uC801 10\uB9C8\uB9AC\uB97C \uCC98\uCE58\uD574
+      \uC8FC\uC138\uC694."
+  - key: quest.sample.hunt02.condition.0
+    label: "\uC801 10\uB9C8\uB9AC \uCC98\uCE58"
+  - key: quest.sample.hunt03.name
+    label: "\uAE34\uAE09 \uC18C\uD0D5"
+  - key: quest.sample.hunt03.description
+    label: "\uC704\uD5D8 \uB4F1\uAE09\uC774 \uC0C1\uC2B9\uD588\uC2B5\uB2C8\uB2E4.
+      \uC801 15\uB9C8\uB9AC\uB97C \uCC98\uCE58\uD574 \uC8FC\uC138\uC694."
+  - key: quest.sample.hunt03.condition.0
+    label: "\uC801 15\uB9C8\uB9AC \uCC98\uCE58"
+  - key: quest.sample.cleanup01.name
+    label: "\uAD6C\uC5ED \uC815\uB9AC \uC758\uB8B0"
+  - key: quest.sample.cleanup01.description
+    label: "\uC774 \uAD6C\uC5ED\uC5D0 \uCD9C\uBAB0\uD558\uB294 \uC801\uB4E4\uC744
+      \uCC98\uB9AC\uD574 \uC8FC\uC138\uC694."
+  - key: quest.sample.cleanup01.condition.0
+    label: "\uC801 5\uB9C8\uB9AC \uCC98\uCE58"
+  - key: quest_ui.header
+    label: "\uC758\uB8B0 \uC694\uCCAD"
+  - key: quest_ui.section_content
+    label: "\uD018\uC2A4\uD2B8 \uB0B4\uC6A9"
+  - key: quest_ui.section_condition
+    label: "\uD018\uC2A4\uD2B8 \uB2EC\uC131 \uC870\uAC74"
+  - key: quest_ui.section_reward
+    label: "\uD018\uC2A4\uD2B8 \uBCF4\uC0C1"
+  - key: quest_ui.reroll
+    label: "\uB9AC\uB864"
+  - key: quest_ui.reroll_used
+    label: "\uB9AC\uB864(\uC0AC\uC6A9\uD568)"
+  - key: quest_ui.accept
+    label: "\uC218\uB77D"
+  - key: quest_ui.deny
+    label: "\uAC70\uC808"
+  - key: quest_ui.condition_goal
+    label: "(\uBAA9\uD45C {0})"
+  - key: quest_ui.reward_credit
+    label: "\uBCF4\uC0C1: \uD06C\uB808\uB527 {0}"
+  - key: quest_ui.reward_item_suffix
+    label: ', {0} x{1}'
+  - key: quest_ui.completed_message
+    label: "'{0}' \uC758\uB8B0\uB97C \uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4! \uBCF4\uC0C1:
+      {1}"
+  - key: quest_ui.already_accepted_message
+    label: "\uC774\uBC88 \uCEA0\uD504\uC5D0\uC11C\uB294 \uC758\uB8B0\uB97C \uC774\uBBF8
+      \uC218\uB77D\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uCEA0\uD504\uC5D0 \uB4E4\uC5B4\uC624\uBA74
+      \uC0C8\uB85C \uC218\uB77D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: quest_ui.reward_credit_plain
+    label: "\uD06C\uB808\uB527 {0}"
+  - key: quest_ui.objective_kill
+    label: "\uC801 \uCC98\uCE58"
+  - key: quest_ui.objective_collect
+    label: "\uBB3C\uAC74 \uC218\uC9D1"
+  - key: quest_ui.objective_completed
+    label: "\uBAA9\uD45C \uB2EC\uC131"
+  - key: quest_ui.reward_pending
+    label: "\uBCF4\uC0C1 \uB300\uAE30"
+  - key: quest_ui.reward_received
+    label: "\uC218\uB839 \uC644\uB8CC"
+  - key: quest_ui.credit_name
+    label: "\uD06C\uB808\uB527"
+  - key: quest_ui.reward_received_message
+    label: "'{0}' \uC758\uB8B0 \uBCF4\uC0C1\uC744 \uC218\uB839\uD588\uC2B5\uB2C8\uB2E4:
+      {1}"
+  engLabels:
+  - key: quest.sample.collect01.name
+    label: Potion Delivery
+  - key: quest.sample.collect01.description
+    label: Please gather 3 red potions and bring them to me.
+  - key: quest.sample.collect01.condition.0
+    label: Collect 3 Red Potions
+  - key: quest.sample.collect02.name
+    label: Material Collection
+  - key: quest.sample.collect02.description
+    label: Please gather one Fire Potion and one Ice Potion each.
+  - key: quest.sample.collect02.condition.0
+    label: Collect 1 Fire Potion
+  - key: quest.sample.collect02.condition.1
+    label: Collect 1 Ice Potion
+  - key: quest.sample.collect03.name
+    label: Maintenance Parts Procurement
+  - key: quest.sample.collect03.description
+    label: Please gather 2 Lightning Potions and deliver them to the maintenance
+      team.
+  - key: quest.sample.collect03.condition.0
+    label: Collect 2 Lightning Potions
+  - key: quest.sample.combo01.name
+    label: Rescue and Cleanup
+  - key: quest.sample.combo01.description
+    label: Defeat enemies and recover the potions they drop.
+  - key: quest.sample.combo01.condition.0
+    label: Defeat 5 Enemies
+  - key: quest.sample.combo01.condition.1
+    label: Collect 2 Blue Potions
+  - key: quest.sample.combo02.name
+    label: Triple Mission
+  - key: quest.sample.combo02.description
+    label: Defeat enemies and gather one Red Potion and one Fire Potion each.
+  - key: quest.sample.combo02.condition.0
+    label: Defeat 3 Enemies
+  - key: quest.sample.combo02.condition.1
+    label: Collect 1 Red Potion
+  - key: quest.sample.combo02.condition.2
+    label: Collect 1 Fire Potion
+  - key: quest.sample.hunt02.name
+    label: Elite Sweep
+  - key: quest.sample.hunt02.description
+    label: Defeat 10 enemies in this area.
+  - key: quest.sample.hunt02.condition.0
+    label: Defeat 10 Enemies
+  - key: quest.sample.hunt03.name
+    label: Emergency Sweep
+  - key: quest.sample.hunt03.description
+    label: The danger level has risen. Defeat 15 enemies.
+  - key: quest.sample.hunt03.condition.0
+    label: Defeat 15 Enemies
+  - key: quest.sample.cleanup01.name
+    label: Area Cleanup Request
+  - key: quest.sample.cleanup01.description
+    label: Please deal with the enemies appearing in this area.
+  - key: quest.sample.cleanup01.condition.0
+    label: Defeat 5 Enemies
+  - key: quest_ui.header
+    label: Quest Request
+  - key: quest_ui.section_content
+    label: Quest Details
+  - key: quest_ui.section_condition
+    label: Completion Conditions
+  - key: quest_ui.section_reward
+    label: Quest Reward
+  - key: quest_ui.reroll
+    label: Reroll
+  - key: quest_ui.reroll_used
+    label: Reroll (Used)
+  - key: quest_ui.accept
+    label: Accept
+  - key: quest_ui.deny
+    label: Decline
+  - key: quest_ui.condition_goal
+    label: (Goal {0})
+  - key: quest_ui.reward_credit
+    label: 'Reward: {0} Credits'
+  - key: quest_ui.reward_item_suffix
+    label: ', {0} x{1}'
+  - key: quest_ui.completed_message
+    label: 'Completed the ''{0}'' request! Reward: {1}'
+  - key: quest_ui.already_accepted_message
+    label: You have already accepted a request during this camp visit. You can accept
+      a new one the next time you enter the camp.
+  - key: quest_ui.reward_credit_plain
+    label: '{0} Credits'
+  - key: quest_ui.objective_kill
+    label: Defeat Enemies
+  - key: quest_ui.objective_collect
+    label: Collect Items
+  - key: quest_ui.objective_completed
+    label: Objective Complete
+  - key: quest_ui.reward_pending
+    label: Reward Pending
+  - key: quest_ui.reward_received
+    label: Reward Received
+  - key: quest_ui.credit_name
+    label: Credits
+  - key: quest_ui.reward_received_message
+    label: 'Received the reward for the ''{0}'' request: {1}'
+  jpnLabels:
+  - key: quest.sample.collect01.name
+    label: "\u30DD\u30FC\u30B7\u30E7\u30F3\u914D\u9054"
+  - key: quest.sample.collect01.description
+    label: "\u8D64\u3044\u30DD\u30FC\u30B7\u30E7\u30F3\u30923\u500B\u96C6\u3081\u3066\u6301\u3063\u3066\u304D\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.collect01.condition.0
+    label: "\u8D64\u3044\u30DD\u30FC\u30B7\u30E7\u30F3\u30923\u500B\u53CE\u96C6"
+  - key: quest.sample.collect02.name
+    label: "\u7D20\u6750\u53CE\u96C6"
+  - key: quest.sample.collect02.description
+    label: "\u706B\u708E\u30DD\u30FC\u30B7\u30E7\u30F3\u3068\u6C37\u7D50\u30DD\u30FC\u30B7\u30E7\u30F3\u3092\u305D\u308C\u305E\u308C1\u500B\u96C6\u3081\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.collect02.condition.0
+    label: "\u706B\u708E\u30DD\u30FC\u30B7\u30E7\u30F3\u30921\u500B\u53CE\u96C6"
+  - key: quest.sample.collect02.condition.1
+    label: "\u6C37\u7D50\u30DD\u30FC\u30B7\u30E7\u30F3\u30921\u500B\u53CE\u96C6"
+  - key: quest.sample.collect03.name
+    label: "\u6574\u5099\u90E8\u54C1\u306E\u8ABF\u9054"
+  - key: quest.sample.collect03.description
+    label: "\u96FB\u6483\u30DD\u30FC\u30B7\u30E7\u30F3\u30922\u500B\u96C6\u3081\u3066\u6574\u5099\u73ED\u306B\u5C4A\u3051\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.collect03.condition.0
+    label: "\u96FB\u6483\u30DD\u30FC\u30B7\u30E7\u30F3\u30922\u500B\u53CE\u96C6"
+  - key: quest.sample.combo01.name
+    label: "\u6551\u52A9\u3068\u6574\u7406"
+  - key: quest.sample.combo01.description
+    label: "\u6575\u3092\u5012\u3057\u306A\u304C\u3089\u3001\u843D\u3068\u3055\u308C\u305F\u30DD\u30FC\u30B7\u30E7\u30F3\u3082\u56DE\u53CE\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.combo01.condition.0
+    label: "\u6575\u30925\u4F53\u6483\u7834"
+  - key: quest.sample.combo01.condition.1
+    label: "\u9752\u3044\u30DD\u30FC\u30B7\u30E7\u30F3\u30922\u500B\u53CE\u96C6"
+  - key: quest.sample.combo02.name
+    label: "\u4E09\u91CD\u4EFB\u52D9"
+  - key: quest.sample.combo02.description
+    label: "\u6575\u3092\u5012\u3057\u3001\u8D64\u3044\u30DD\u30FC\u30B7\u30E7\u30F3\u3068\u706B\u708E\u30DD\u30FC\u30B7\u30E7\u30F3\u3092\u305D\u308C\u305E\u308C\u96C6\u3081\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.combo02.condition.0
+    label: "\u6575\u30923\u4F53\u6483\u7834"
+  - key: quest.sample.combo02.condition.1
+    label: "\u8D64\u3044\u30DD\u30FC\u30B7\u30E7\u30F3\u30921\u500B\u53CE\u96C6"
+  - key: quest.sample.combo02.condition.2
+    label: "\u706B\u708E\u30DD\u30FC\u30B7\u30E7\u30F3\u30921\u500B\u53CE\u96C6"
+  - key: quest.sample.hunt02.name
+    label: "\u7CBE\u92ED\u6383\u8A0E"
+  - key: quest.sample.hunt02.description
+    label: "\u3053\u306E\u30A8\u30EA\u30A2\u306E\u6575\u309210\u4F53\u5012\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.hunt02.condition.0
+    label: "\u6575\u309210\u4F53\u6483\u7834"
+  - key: quest.sample.hunt03.name
+    label: "\u7DCA\u6025\u6383\u8A0E"
+  - key: quest.sample.hunt03.description
+    label: "\u5371\u967A\u5EA6\u304C\u4E0A\u6607\u3057\u307E\u3057\u305F\u3002\u6575\u309215\u4F53\u5012\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.hunt03.condition.0
+    label: "\u6575\u309215\u4F53\u6483\u7834"
+  - key: quest.sample.cleanup01.name
+    label: "\u533A\u57DF\u6574\u7406\u4F9D\u983C"
+  - key: quest.sample.cleanup01.description
+    label: "\u3053\u306E\u30A8\u30EA\u30A2\u306B\u51FA\u6CA1\u3059\u308B\u6575\u3092\u51E6\u7406\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+  - key: quest.sample.cleanup01.condition.0
+    label: "\u6575\u30925\u4F53\u6483\u7834"
+  - key: quest_ui.header
+    label: "\u4F9D\u983C\u30EA\u30AF\u30A8\u30B9\u30C8"
+  - key: quest_ui.section_content
+    label: "\u30AF\u30A8\u30B9\u30C8\u5185\u5BB9"
+  - key: quest_ui.section_condition
+    label: "\u30AF\u30A8\u30B9\u30C8\u9054\u6210\u6761\u4EF6"
+  - key: quest_ui.section_reward
+    label: "\u30AF\u30A8\u30B9\u30C8\u5831\u916C"
+  - key: quest_ui.reroll
+    label: "\u30EA\u30ED\u30FC\u30EB"
+  - key: quest_ui.reroll_used
+    label: "\u30EA\u30ED\u30FC\u30EB\uFF08\u4F7F\u7528\u6E08\u307F\uFF09"
+  - key: quest_ui.accept
+    label: "\u627F\u8AFE"
+  - key: quest_ui.deny
+    label: "\u62D2\u5426"
+  - key: quest_ui.condition_goal
+    label: "\uFF08\u76EE\u6A19 {0}\uFF09"
+  - key: quest_ui.reward_credit
+    label: "\u5831\u916C: \u30AF\u30EC\u30B8\u30C3\u30C8 {0}"
+  - key: quest_ui.reward_item_suffix
+    label: "\u3001{0} x{1}"
+  - key: quest_ui.completed_message
+    label: "\u300C{0}\u300D\u4F9D\u983C\u3092\u5B8C\u4E86\u3057\u307E\u3057\u305F\uFF01\u5831\u916C:
+      {1}"
+  - key: quest_ui.already_accepted_message
+    label: "\u4ECA\u56DE\u306E\u30AD\u30E3\u30F3\u30D7\u6EDE\u5728\u3067\u306F\u65E2\u306B\u4F9D\u983C\u3092\u53D7\u6CE8\u3057\u3066\u3044\u307E\u3059\u3002\u6B21\u306B\u30AD\u30E3\u30F3\u30D7\u306B\u5165\u308B\u3068\u65B0\u3057\u304F\u53D7\u6CE8\u3067\u304D\u307E\u3059\u3002"
+  - key: quest_ui.reward_credit_plain
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8 {0}"
+  - key: quest_ui.objective_kill
+    label: "\u6575\u6483\u7834"
+  - key: quest_ui.objective_collect
+    label: "\u30A2\u30A4\u30C6\u30E0\u53CE\u96C6"
+  - key: quest_ui.objective_completed
+    label: "\u76EE\u6A19\u9054\u6210"
+  - key: quest_ui.reward_pending
+    label: "\u5831\u916C\u5F85\u3061"
+  - key: quest_ui.reward_received
+    label: "\u53D7\u53D6\u6E08\u307F"
+  - key: quest_ui.credit_name
+    label: "\u30AF\u30EC\u30B8\u30C3\u30C8"
+  - key: quest_ui.reward_received_message
+    label: "\u300C{0}\u300D\u4F9D\u983C\u306E\u5831\u916C\u3092\u53D7\u3051\u53D6\u308A\u307E\u3057\u305F:
+      {1}"
+  chnLabels:
+  - key: quest.sample.collect01.name
+    label: "\u836F\u6C34\u914D\u9001"
+  - key: quest.sample.collect01.description
+    label: "\u8BF7\u6536\u96C63\u74F6\u7EA2\u8272\u836F\u6C34\u5E76\u9001\u6765\u3002"
+  - key: quest.sample.collect01.condition.0
+    label: "\u6536\u96C63\u74F6\u7EA2\u8272\u836F\u6C34"
+  - key: quest.sample.collect02.name
+    label: "\u6536\u96C6\u6750\u6599"
+  - key: quest.sample.collect02.description
+    label: "\u8BF7\u5206\u522B\u6536\u96C61\u74F6\u706B\u7130\u836F\u6C34\u548C1\u74F6\u51B0\u971C\u836F\u6C34\u3002"
+  - key: quest.sample.collect02.condition.0
+    label: "\u6536\u96C61\u74F6\u706B\u7130\u836F\u6C34"
+  - key: quest.sample.collect02.condition.1
+    label: "\u6536\u96C61\u74F6\u51B0\u971C\u836F\u6C34"
+  - key: quest.sample.collect03.name
+    label: "\u7EF4\u4FEE\u96F6\u4EF6\u91C7\u8D2D"
+  - key: quest.sample.collect03.description
+    label: "\u8BF7\u6536\u96C62\u74F6\u7535\u51FB\u836F\u6C34\u5E76\u4EA4\u7ED9\u7EF4\u4FEE\u961F\u3002"
+  - key: quest.sample.collect03.condition.0
+    label: "\u6536\u96C62\u74F6\u7535\u51FB\u836F\u6C34"
+  - key: quest.sample.combo01.name
+    label: "\u6551\u63F4\u4E0E\u6E05\u7406"
+  - key: quest.sample.combo01.description
+    label: "\u51FB\u8D25\u654C\u4EBA\u7684\u540C\u65F6\uFF0C\u8BF7\u4E00\u5E76\u56DE\u6536\u6389\u843D\u7684\u836F\u6C34\u3002"
+  - key: quest.sample.combo01.condition.0
+    label: "\u51FB\u8D255\u4E2A\u654C\u4EBA"
+  - key: quest.sample.combo01.condition.1
+    label: "\u6536\u96C62\u74F6\u84DD\u8272\u836F\u6C34"
+  - key: quest.sample.combo02.name
+    label: "\u4E09\u91CD\u4EFB\u52A1"
+  - key: quest.sample.combo02.description
+    label: "\u51FB\u8D25\u654C\u4EBA\uFF0C\u5E76\u5206\u522B\u6536\u96C6\u7EA2\u8272\u836F\u6C34\u548C\u706B\u7130\u836F\u6C34\u3002"
+  - key: quest.sample.combo02.condition.0
+    label: "\u51FB\u8D253\u4E2A\u654C\u4EBA"
+  - key: quest.sample.combo02.condition.1
+    label: "\u6536\u96C61\u74F6\u7EA2\u8272\u836F\u6C34"
+  - key: quest.sample.combo02.condition.2
+    label: "\u6536\u96C61\u74F6\u706B\u7130\u836F\u6C34"
+  - key: quest.sample.hunt02.name
+    label: "\u7CBE\u82F1\u626B\u8361"
+  - key: quest.sample.hunt02.description
+    label: "\u8BF7\u51FB\u8D25\u8BE5\u533A\u57DF\u768410\u4E2A\u654C\u4EBA\u3002"
+  - key: quest.sample.hunt02.condition.0
+    label: "\u51FB\u8D2510\u4E2A\u654C\u4EBA"
+  - key: quest.sample.hunt03.name
+    label: "\u7D27\u6025\u626B\u8361"
+  - key: quest.sample.hunt03.description
+    label: "\u5371\u9669\u7B49\u7EA7\u5DF2\u4E0A\u5347\u3002\u8BF7\u51FB\u8D2515\u4E2A\u654C\u4EBA\u3002"
+  - key: quest.sample.hunt03.condition.0
+    label: "\u51FB\u8D2515\u4E2A\u654C\u4EBA"
+  - key: quest.sample.cleanup01.name
+    label: "\u533A\u57DF\u6E05\u7406\u59D4\u6258"
+  - key: quest.sample.cleanup01.description
+    label: "\u8BF7\u5904\u7406\u8BE5\u533A\u57DF\u51FA\u6CA1\u7684\u654C\u4EBA\u3002"
+  - key: quest.sample.cleanup01.condition.0
+    label: "\u51FB\u8D255\u4E2A\u654C\u4EBA"
+  - key: quest_ui.header
+    label: "\u59D4\u6258\u8BF7\u6C42"
+  - key: quest_ui.section_content
+    label: "\u4EFB\u52A1\u5185\u5BB9"
+  - key: quest_ui.section_condition
+    label: "\u4EFB\u52A1\u8FBE\u6210\u6761\u4EF6"
+  - key: quest_ui.section_reward
+    label: "\u4EFB\u52A1\u5956\u52B1"
+  - key: quest_ui.reroll
+    label: "\u91CD\u63B7"
+  - key: quest_ui.reroll_used
+    label: "\u91CD\u63B7\uFF08\u5DF2\u4F7F\u7528\uFF09"
+  - key: quest_ui.accept
+    label: "\u63A5\u53D7"
+  - key: quest_ui.deny
+    label: "\u62D2\u7EDD"
+  - key: quest_ui.condition_goal
+    label: "\uFF08\u76EE\u6807 {0}\uFF09"
+  - key: quest_ui.reward_credit
+    label: "\u5956\u52B1\uFF1A\u4FE1\u7528\u70B9 {0}"
+  - key: quest_ui.reward_item_suffix
+    label: "\uFF0C{0} x{1}"
+  - key: quest_ui.completed_message
+    label: "\u5DF2\u5B8C\u6210\u300C{0}\u300D\u59D4\u6258\uFF01\u5956\u52B1\uFF1A{1}"
+  - key: quest_ui.already_accepted_message
+    label: "\u672C\u6B21\u8425\u5730\u505C\u7559\u671F\u95F4\u5DF2\u7ECF\u63A5\u53D6\u8FC7\u59D4\u6258\u3002\u4E0B\u6B21\u8FDB\u5165\u8425\u5730\u540E\u53EF\u4EE5\u91CD\u65B0\u63A5\u53D6\u3002"
+  - key: quest_ui.reward_credit_plain
+    label: "\u4FE1\u7528\u70B9 {0}"
+  - key: quest_ui.objective_kill
+    label: "\u51FB\u8D25\u654C\u4EBA"
+  - key: quest_ui.objective_collect
+    label: "\u6536\u96C6\u7269\u54C1"
+  - key: quest_ui.objective_completed
+    label: "\u76EE\u6807\u8FBE\u6210"
+  - key: quest_ui.reward_pending
+    label: "\u5F85\u9886\u53D6\u5956\u52B1"
+  - key: quest_ui.reward_received
+    label: "\u5DF2\u9886\u53D6"
+  - key: quest_ui.credit_name
+    label: "\u4FE1\u7528\u70B9"
+  - key: quest_ui.reward_received_message
+    label: "\u5DF2\u9886\u53D6\u300C{0}\u300D\u59D4\u6258\u7684\u5956\u52B1\uFF1A{1}"

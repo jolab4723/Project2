@@ -1,0 +1,703 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+/// <summary>서버가 확정한 고유효과 구간을 로컬에서 표시하고 생성 자원의 수명을 관리한다.</summary>
+[DisallowMultipleComponent]
+public sealed class UniqueEffectPresentation : MonoBehaviour
+{
+    [SerializeField] private ParticleSystem infernoHitPrefab;
+    [SerializeField, Min(0.05f)] private float infernoHitLifetime = 2f;
+    private readonly List<GameObject> activeInfernoHits = new();
+    private bool missingInfernoPrefabReported;
+    public uint PresentedInfernoHitCount { get; private set; }
+
+    private readonly List<GameObject> activeBolts = new();
+    private Material chainLightningMaterial;
+    private GameObject preparedAttackRing;
+    private Material preparedAttackMaterial;
+    private PlayerItemEffectState singleEffects;
+    private Coroutine wasteHeatFlash;
+    private readonly List<(Renderer renderer, int materialIndex, MaterialPropertyBlock original)> heatFlashBlocks = new();
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+    private GameObject wasteHeatReadyAura;
+    private GameObject chargedWarheadVisual;
+    private GunnerWeaponVfxBinding chargedWarheadWeapon;
+    private Transform chargedWarheadMuzzle;
+    private bool worldEnderReady;
+    private float nextWorldEnderBindAt;
+    private const float WorldEnderBindInterval = 0.2f;
+    // SW 수정: 범위형 아군 버프(헬로 월드 등)를 실제로 받은 이 플레이어 주위에 오라를 표시한다.
+    // 버프 목록은 싱글에서는 로컬 판정, 멀티에서는 서버 스냅샷이 원본이므로 판정 범위를 표시 쪽에서 다시 계산하지 않는다.
+    private PlayerBuffManager auraBuffs;
+    private bool buffAurasDirty;
+    private readonly Dictionary<ItemSystem.FieldAuraUniqueEffectSO, GameObject> buffAuras = new();
+    private readonly HashSet<ItemSystem.FieldAuraUniqueEffectSO> activeAuraBuffs = new();
+    private readonly List<ItemSystem.FieldAuraUniqueEffectSO> expiredAuraBuffs = new();
+    // 아이템 시한·조건부 능력치 버프가 켜지거나 스택이 오르는 순간 스탯 카테고리별 발동 연출을 재생한다.
+    private readonly StatBuffBurstPresenter statBuffBursts = new();
+
+    // SW 수정: 고유효과 전용 VFX 프리팹(Assets/SW/Resources/UniqueEffectVFX). 런타임 AddComponent된 Presenter도
+    // 같은 자원을 쓰도록 직렬화 참조 대신 Resources에서 한 번만 찾고, 없으면 기존 선 표시로 돌아간다.
+    private const string VfxFolder = "UniqueEffectVFX/";
+    private static readonly Dictionary<string, GameObject> vfxPrefabs = new();
+    // 프리팹은 +Z 전방 기준 길이 6m·폭 2m(A1), 반경 2.5m(A2), 길이 4m·전체 70°(A3)로 제작되어 루트 스케일로 판정 범위에 맞춘다.
+    private const float AuthoredWaveLength = 6f, AuthoredWaveWidth = 2f, AuthoredBurstRadius = 2.5f;
+    private const float AuthoredHeatLength = 4f, AuthoredHeatHalfAngle = 35f;
+
+    /// <summary>SW 수정: 네트워크 객체는 RPC만 사용하고 싱글 플레이어만 확정된 효과 표시 사건을 구독해 Host 중복 표시를 방지한다.</summary>
+    private void OnEnable()
+    {
+        if (auraBuffs == null && TryGetComponent(out auraBuffs))
+        {
+            auraBuffs.OnBuffsChanged += MarkBuffAurasDirty;
+            buffAurasDirty = true;
+        }
+        if (singleEffects != null) return;
+        if (GetComponent<Mirror.NetworkIdentity>() != null) return;
+        singleEffects = GetComponent<PlayerContext>()?.Effects;
+        if (singleEffects == null) return;
+        singleEffects.ChainPresented += PresentChainLightning;
+        singleEffects.InfernoPresented += PresentInfernoHit;
+        singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
+        singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
+        singleEffects.WasteHeatPresented += PresentWasteHeatDischarge;
+        singleEffects.WasteHeatReadyChanged += SetWasteHeatReady;
+        singleEffects.EchoReplayPresented += PresentEchoReplay;
+        singleEffects.WorldEnderBlastPresented += PresentWorldEnderBlast;
+        singleEffects.WorldEnderReadyChanged += SetWorldEnderReady;
+        singleEffects.WildfirePresented += PresentWildfire;
+        singleEffects.SupportMarkConsumed += PresentSupportLink;
+        SetWorldEnderReady(singleEffects.WorldEnderReady);
+        singleEffects.PreparedChanged += SetPreparedAttack;
+        SetPreparedAttack(singleEffects.PreparedAttackReady);
+    }
+
+    private void Start() => OnEnable();
+
+    /// <summary>SW 수정: 준비 표시가 늦게 로드되거나 외형 교체로 사라지면 싱글·클라이언트에서 제한된 간격으로 실제 총구에 다시 연결한다.</summary>
+    private void LateUpdate()
+    {
+        if (buffAurasDirty || buffAuras.Count > 0) RefreshBuffAuras();
+        RefreshStatBuffBursts();
+        if (!worldEnderReady) return;
+        if (!CanPresent)
+        {
+            SetWorldEnderReady(false);
+            return;
+        }
+        if (Time.unscaledTime < nextWorldEnderBindAt) return;
+        nextWorldEnderBindAt = Time.unscaledTime + WorldEnderBindInterval;
+        TryBindWorldEnderReady();
+    }
+
+    /// <summary>SW 수정: 밤의 칼날 준비 상태를 발밑을 도는 초승달 칼날 VFX로 표시하고, 전용 프리팹이 없을 때만 기존 보라 링을 만든다.</summary>
+    public void SetPreparedAttack(bool ready)
+    {
+        if (!ready)
+        {
+            if (preparedAttackRing != null) preparedAttackRing.SetActive(false);
+            return;
+        }
+        if (!isActiveAndEnabled) return;
+        if (preparedAttackRing == null && TryGetVfx("UEVFX_NightBladeReady", out GameObject nightBlade))
+        {
+            preparedAttackRing = Instantiate(nightBlade, transform, false);
+            preparedAttackRing.name = "NightSwordPreparedAttack";
+            preparedAttackRing.hideFlags = HideFlags.DontSave;
+        }
+        if (preparedAttackRing == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) return;
+            preparedAttackMaterial = new Material(shader)
+            {
+                name = "Prepared Attack Runtime Material",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            preparedAttackRing = new GameObject("NightSwordPreparedAttack")
+            {
+                hideFlags = HideFlags.DontSave,
+            };
+            preparedAttackRing.transform.SetParent(transform, false);
+            preparedAttackRing.transform.localPosition = new Vector3(0f, 0.18f, 0f);
+            LineRenderer line = preparedAttackRing.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = 32;
+            line.widthMultiplier = 0.045f;
+            line.numCornerVertices = 2;
+            line.startColor = new Color(0.48f, 0.12f, 0.85f, 0.9f);
+            line.endColor = line.startColor;
+            line.sharedMaterial = preparedAttackMaterial;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            for (int i = 0; i < line.positionCount; i++)
+            {
+                float radians = i * Mathf.PI * 2f / line.positionCount;
+                line.SetPosition(i, new Vector3(Mathf.Cos(radians) * 0.72f, 0f, Mathf.Sin(radians) * 0.72f));
+            }
+        }
+        preparedAttackRing.SetActive(true);
+    }
+
+    /// <summary>SW 수정: 확정된 연쇄 구간마다 전용 번개 줄기(외곽·코어 두 가닥)와 착탄 섬광을 표시하고, 프리팹이 없으면 기존 선 표시를 쓴다.</summary>
+    public void PresentChainLightning(Vector3 start, Vector3 end)
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        if (TryGetVfx("UEVFX_ArcBolt", out GameObject boltPrefab))
+        {
+            GameObject bolt = SpawnVfx(boltPrefab, Vector3.zero, Quaternion.identity, Vector3.one, 0.16f);
+            Vector3 boltDirection = end - start;
+            Vector3 boltSide = Vector3.Cross(boltDirection.normalized, Vector3.up);
+            if (boltSide.sqrMagnitude < 0.001f) boltSide = Vector3.right;
+            float boltAmplitude = Mathf.Min(0.3f, boltDirection.magnitude * 0.07f);
+            foreach (LineRenderer strand in bolt.GetComponentsInChildren<LineRenderer>())
+            {
+                // 가닥마다 다른 꺾임을 주어 한 줄짜리 선이 아닌 갈라지는 방전으로 보이게 한다.
+                strand.positionCount = 9;
+                for (int i = 0; i < strand.positionCount; i++)
+                {
+                    float t = i / (strand.positionCount - 1f);
+                    float offset = i == 0 || i == strand.positionCount - 1 ? 0f : Random.Range(-boltAmplitude, boltAmplitude);
+                    strand.SetPosition(i, Vector3.Lerp(start, end, t) + boltSide * offset + Vector3.up * Random.Range(-0.5f, 0.5f) * boltAmplitude);
+                }
+            }
+            if (TryGetVfx("UEVFX_ArcImpact", out GameObject arcImpact))
+                SpawnVfx(arcImpact, end, Quaternion.identity, Vector3.one, 0.5f);
+            return;
+        }
+
+        LineRenderer line = CreateFallbackLine("Chain Lightning Presentation", Quaternion.identity, 0.14f);
+        if (line == null)
+            return;
+        line.alignment = LineAlignment.View;
+        line.textureMode = LineTextureMode.Stretch;
+        line.positionCount = 7;
+        line.widthMultiplier = 0.08f;
+        line.numCapVertices = 2;
+        line.startColor = new Color(0.25f, 0.95f, 1f, 0.95f);
+        line.endColor = new Color(0.25f, 0.55f, 1f, 0.2f);
+
+        Vector3 direction = end - start;
+        Vector3 sideways = Vector3.Cross(direction.normalized, Vector3.up);
+        if (sideways.sqrMagnitude < 0.001f)
+            sideways = Vector3.right;
+        float amplitude = Mathf.Min(0.22f, direction.magnitude * 0.06f);
+        for (int i = 0; i < line.positionCount; i++)
+        {
+            float t = i / (line.positionCount - 1f);
+            float offset = i == 0 || i == line.positionCount - 1 ? 0f : (i % 2 == 0 ? -amplitude : amplitude);
+            line.SetPosition(i, Vector3.Lerp(start, end, t) + sideways * offset);
+        }
+    }
+
+    /// <summary>
+    /// SW 수정: 전용 VFX가 없을 때 연쇄·파동·폭발·폐열이 함께 쓰는 표시 전용 월드 선이다.
+    /// 공용 런타임 머터리얼과 기존 표시 목록·수명 정리를 그대로 사용하며 Collider나 피해 판정은 만들지 않는다.
+    /// </summary>
+    private LineRenderer CreateFallbackLine(string objectName, Quaternion rotation, float lifetime)
+    {
+        if (!EnsureFallbackMaterial()) return null;
+        GameObject lineObject = new(objectName) { hideFlags = HideFlags.DontSave };
+        lineObject.transform.SetParent(transform, true);
+        lineObject.transform.rotation = rotation;
+        activeBolts.Add(lineObject);
+        LineRenderer line = lineObject.AddComponent<LineRenderer>();
+        line.useWorldSpace = true;
+        line.alignment = LineAlignment.TransformZ;
+        line.sharedMaterial = chainLightningMaterial;
+        line.shadowCastingMode = ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        StartCoroutine(ReleaseBoltAfter(lineObject, lifetime));
+        return line;
+    }
+
+    /// <summary>SW 수정: 대체 선과 월드 엔더 총구 입자가 표시용 런타임 머터리얼 하나를 재사용하며 임시 선을 만들지 않는다.</summary>
+    private bool EnsureFallbackMaterial()
+    {
+        if (chainLightningMaterial != null) return true;
+        Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null) return false;
+        chainLightningMaterial = new Material(shader)
+        {
+            name = "Unique Effect Runtime Material",
+            hideFlags = HideFlags.HideAndDontSave,
+        };
+        return true;
+    }
+
+    /// <summary>SW 수정: 싱글·클라이언트만 표시하고 전용 서버에서는 표시 자원을 만들지 않는다.</summary>
+    private bool CanPresent => Application.isPlaying && isActiveAndEnabled &&
+        !(Mirror.NetworkServer.active && !Mirror.NetworkClient.active);
+
+    public void PresentEchoReplay(Vector3 origin, Vector3 forward, float range, float angle)
+    {
+        if (!CanPresent) return;
+        SkillRangeVisual.ShowSector(origin, forward, range, angle, new Color(0.1f, 0.65f, 1f, 0.55f), 0.3f);
+        var line = CreateFallbackLine("Echo Muzzle Afterimage", Quaternion.identity, 0.3f);
+        if (line == null) return;
+        line.alignment = LineAlignment.View;
+        line.positionCount = 2;
+        line.SetPosition(0, origin);
+        line.SetPosition(1, origin + forward * 0.65f);
+        line.widthMultiplier = 0.2f;
+        line.startColor = line.endColor = Color.cyan;
+    }
+
+    public void PresentWildfire(Vector3 start, Vector3 end) => PresentColoredLink(start, end, new Color(1f, 0.3f, 0.05f), "Wildfire Ember");
+    public void PresentSupportLink(Vector3 start, Vector3 end) => PresentColoredLink(start, end, new Color(1f, 0.95f, 0.3f), "Support Signal");
+    private void PresentColoredLink(Vector3 start, Vector3 end, Color color, string effectName)
+    {
+        if (!CanPresent) return;
+        var line = CreateFallbackLine(effectName, Quaternion.identity, 0.2f);
+        if (line == null) return;
+        line.alignment = LineAlignment.View;
+        line.positionCount = 3;
+        line.SetPosition(0, start);
+        line.SetPosition(1, (start + end) * 0.5f + Vector3.up * 0.3f);
+        line.SetPosition(2, end);
+        line.widthMultiplier = 0.08f;
+        line.startColor = line.endColor = color;
+    }
+
+    public void PresentWorldEnderBlast(Vector3 position, float radius)
+    {
+        if (!CanPresent) return;
+        SkillRangeVisual.ShowSector(position, Vector3.forward, radius, 360f,
+            new Color(1f, 0.65f, 0.15f, 0.65f), 0.4f);
+        PresentInfernoHit(position);
+    }
+
+    /// <summary>SW 수정: 확정된 월드 엔더 준비 표시 상태를 유지하고 실제 총구가 늦게 나타나면 재시도하며 해제 때 자원을 제거한다.</summary>
+    public void SetWorldEnderReady(bool ready)
+    {
+        worldEnderReady = ready && CanPresent;
+        if (!worldEnderReady)
+        {
+            ClearWorldEnderReadyVisual();
+            nextWorldEnderBindAt = 0f;
+            return;
+        }
+        nextWorldEnderBindAt = Time.unscaledTime + WorldEnderBindInterval;
+        TryBindWorldEnderReady();
+    }
+
+    /// <summary>SW 수정: 기존 활성 총구 연결은 재사용하고 파괴·교체·늦은 외형 생성 후에는 실제 Muzzle 아래에만 준비 발광을 만든다.</summary>
+    private void TryBindWorldEnderReady()
+    {
+        if (chargedWarheadVisual != null && chargedWarheadWeapon != null && chargedWarheadWeapon.isActiveAndEnabled &&
+            chargedWarheadMuzzle != null && chargedWarheadMuzzle.gameObject.activeInHierarchy &&
+            chargedWarheadMuzzle.IsChildOf(chargedWarheadWeapon.transform) &&
+            chargedWarheadVisual.transform.parent == chargedWarheadMuzzle &&
+            (chargedWarheadWeapon.Muzzle == null || chargedWarheadWeapon.Muzzle == chargedWarheadMuzzle))
+            return;
+        ClearWorldEnderReadyVisual();
+        var weapon = GetComponentInChildren<GunnerWeaponVfxBinding>();
+        if (weapon == null || !weapon.isActiveAndEnabled) return;
+        Transform muzzle = weapon.Muzzle;
+        if (muzzle == null)
+        {
+            foreach (Transform child in weapon.GetComponentsInChildren<Transform>())
+            {
+                if (child.name == "Muzzle")
+                {
+                    muzzle = child;
+                    break;
+                }
+            }
+        }
+
+        if (muzzle == null || !muzzle.gameObject.activeInHierarchy || !muzzle.IsChildOf(weapon.transform) ||
+            !EnsureFallbackMaterial()) return;
+        chargedWarheadVisual = new GameObject("Charged Warhead Glow") { hideFlags = HideFlags.DontSave };
+        chargedWarheadVisual.transform.SetParent(muzzle, false);
+        chargedWarheadWeapon = weapon;
+        chargedWarheadMuzzle = muzzle;
+        var particles = chargedWarheadVisual.AddComponent<ParticleSystem>();
+        var main = particles.main;
+        main.startColor = new Color(1f, 0.7f, 0.1f, 0.85f);
+        main.startSize = 0.12f;
+        main.startLifetime = 0.3f;
+        main.startSpeed = 0.05f;
+        main.maxParticles = 16;
+        var emission = particles.emission;
+        emission.rateOverTime = 18f;
+        var shape = particles.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.08f;
+        particles.GetComponent<ParticleSystemRenderer>().sharedMaterial = chainLightningMaterial;
+    }
+
+    /// <summary>SW 수정: 준비 해제·외형 교체·표시 비활성화 때 총구 발광을 즉시 숨기고 소유한 객체와 연결 참조를 정리한다.</summary>
+    private void ClearWorldEnderReadyVisual()
+    {
+        if (chargedWarheadVisual != null)
+        {
+            chargedWarheadVisual.SetActive(false);
+            DestroyOwnedObject(chargedWarheadVisual);
+        }
+        chargedWarheadVisual = null;
+        chargedWarheadWeapon = null;
+        chargedWarheadMuzzle = null;
+    }
+
+    private IEnumerator ReleaseBoltAfter(GameObject boltObject, float seconds)
+    {
+        yield return new WaitForSecondsRealtime(seconds);
+        activeBolts.Remove(boltObject);
+        if (boltObject != null)
+            Destroy(boltObject);
+    }
+
+    /// <summary>SW 수정: 싱글 확정 또는 서버의 신뢰 RPC로 받은 파동 통로를 클라이언트에서 즉시 표시하고 기존 표시 자원 수명으로 제거한다.</summary>
+    public void PresentPhaseHarvesterWave(Vector3 start, Vector3 end, float width)
+    {
+        if (!CanPresent)
+            return;
+        Vector3 waveDirection = Vector3.ProjectOnPlane(end - start, Vector3.up);
+        if (TryGetVfx("UEVFX_PhaseHarvesterWave", out GameObject wavePrefab) && waveDirection.sqrMagnitude > 0.0001f)
+        {
+            // SW 수정: 보라 어둠의 공기포 절단파를 서버 확정 통로(시작점·수평 방향·길이·폭)에 맞춰 늘려 한 번 재생한다.
+            SpawnVfx(wavePrefab, start, Quaternion.LookRotation(waveDirection.normalized, Vector3.up),
+                new Vector3(width / AuthoredWaveWidth, 1f, waveDirection.magnitude / AuthoredWaveLength), 1.3f);
+            return;
+        }
+        // SW 수정: 표시만 담당하는 즉시 절단면이며 Collider·피해·이동 파동 객체는 만들지 않는다.
+        LineRenderer line = CreateFallbackLine("Phase Harvester Wave Presentation",
+            Quaternion.LookRotation(Vector3.up, (end - start).normalized), 0.14f);
+        if (line == null) return;
+        line.positionCount = 2;
+        line.SetPosition(0, start);
+        line.SetPosition(1, end);
+        line.widthMultiplier = width;
+        line.startColor = new Color(0.65f, 0.2f, 1f, 0.65f);
+        line.endColor = new Color(0.35f, 0.1f, 0.85f, 0.1f);
+    }
+
+    /// <summary>SW 수정: 싱글 확정 또는 서버 Reliable RPC로 받은 실제 피격점에서 폭발 반경에 맞춘 별빛 제련로 폭발 VFX를 재생하며 Collider·피해·이동 객체는 만들지 않는다.</summary>
+    public void PresentStarBreacherExplosion(Vector3 position, float radius)
+    {
+        if (!CanPresent)
+            return;
+        if (TryGetVfx("UEVFX_StarBreacherBurst", out GameObject burstPrefab))
+        {
+            SpawnVfx(burstPrefab, position, Quaternion.identity, Vector3.one * (Mathf.Max(0.1f, radius) / AuthoredBurstRadius), 1.4f);
+            return;
+        }
+        // SW 수정: 기존 표시 자원·수명으로 원형 절단면을 제거하고 설정된 화염 임팩트도 재사용한다.
+        LineRenderer line = CreateFallbackLine("Star Breacher Explosion Presentation", Quaternion.LookRotation(Vector3.up), 0.2f);
+        if (line == null) return;
+        line.loop = true;
+        line.positionCount = 32;
+        for (int index = 0; index < line.positionCount; index++)
+        {
+            float angle = index * Mathf.PI * 2f / line.positionCount;
+            line.SetPosition(index, position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius);
+        }
+        line.widthMultiplier = 0.25f;
+        line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
+        if (infernoHitPrefab != null) PresentInfernoHit(position);
+    }
+
+    /// <summary>SW 수정: 싱글 또는 서버 Reliable RPC가 확정한 폐열 방출의 전체 각도와 길이에 맞춘 전방 열파 VFX를 클라이언트에 짧게 재생한다.</summary>
+    public void PresentWasteHeatDischarge(Vector3 origin, Vector3 forward, float length, float angleDegrees)
+    {
+        if (!CanPresent) return;
+        Vector3 heatForward = Vector3.ProjectOnPlane(forward, Vector3.up);
+        if (TryGetVfx("UEVFX_WasteHeatDischarge", out GameObject heatPrefab) && heatForward.sqrMagnitude > 0.0001f)
+        {
+            // 길이는 균일 배율, 부채꼴 폭은 반각의 탄젠트 비율로만 가로를 늘려 실제 판정 각도와 맞춘다.
+            float scale = Mathf.Max(0.1f, length) / AuthoredHeatLength;
+            float halfAngle = Mathf.Clamp(angleDegrees * 0.5f, 5f, 80f);
+            float widthRatio = Mathf.Tan(halfAngle * Mathf.Deg2Rad) / Mathf.Tan(AuthoredHeatHalfAngle * Mathf.Deg2Rad);
+            SpawnVfx(heatPrefab, origin, Quaternion.LookRotation(heatForward.normalized, Vector3.up),
+                new Vector3(scale * widthRatio, scale, scale), 1.3f);
+            return;
+        }
+        // SW 수정: 서버 확정 영역의 표시만 만들며 피해 판정이나 이동하는 공격 객체는 생성하지 않는다.
+        LineRenderer line = CreateFallbackLine("Waste Heat Discharge Presentation", Quaternion.LookRotation(Vector3.up), 0.18f);
+        if (line == null) return;
+        line.positionCount = 34;
+        line.SetPosition(0, origin);
+        for (int index = 1; index <= 32; index++)
+        {
+            float angle = -angleDegrees * 0.5f + (index - 1) * angleDegrees / 31f;
+            line.SetPosition(index, origin + Quaternion.AngleAxis(angle, Vector3.up) * forward * length);
+        }
+        line.SetPosition(33, origin);
+        line.widthMultiplier = 0.16f;
+        line.startColor = line.endColor = new Color(1f, 0.3f, 0.04f, 0.9f);
+    }
+
+    /// <summary>SW 수정: 싱글 또는 서버가 확정한 열 충전 완료 때 실제 장착 무기의 발광을 짧게 강조하고 준비 유지 중 발밑 열기 VFX를 붙이며, 해제 시 원래 PropertyBlock 복원과 VFX 제거를 함께 한다.</summary>
+    public void SetWasteHeatReady(bool ready)
+    {
+        RestoreWasteHeatFlash();
+        ClearWasteHeatAura();
+        if (!ready || !CanPresent) return;
+        // SW 수정: 준비가 유지되는 동안 발밑 열기·불티를 플레이어에 붙여 다음 타격이 방출된다는 것을 보인다.
+        if (TryGetVfx("UEVFX_WasteHeatReady", out GameObject auraPrefab))
+        {
+            wasteHeatReadyAura = Instantiate(auraPrefab, transform, false);
+            wasteHeatReadyAura.transform.localPosition = Vector3.up;
+            wasteHeatReadyAura.hideFlags = HideFlags.DontSave;
+        }
+        GameObject visual = TryGetComponent(out PlayerWeaponVisualPresenter weaponVisual) ? weaponVisual.CurrentVisual : null;
+        if (visual == null) return;
+        foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
+        {
+            Material[] materials = renderer.sharedMaterials;
+            for (int index = 0; index < materials.Length; index++)
+            {
+                Material material = materials[index];
+                if (material == null || !material.HasProperty(EmissionColorId) || !material.IsKeywordEnabled("_EMISSION")) continue;
+                var original = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(original, index);
+                var flash = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(flash, index);
+                Color emission = flash.HasColor(EmissionColorId) ? flash.GetColor(EmissionColorId) : material.GetColor(EmissionColorId);
+                Color highlighted = emission * 2f + new Color(2f, 0.4f, 0.03f, 0f);
+                highlighted.a = 1f;
+                flash.SetColor(EmissionColorId, highlighted);
+                heatFlashBlocks.Add((renderer, index, original));
+                renderer.SetPropertyBlock(flash, index);
+            }
+        }
+        if (heatFlashBlocks.Count > 0) wasteHeatFlash = StartCoroutine(ReleaseWasteHeatFlashAfter());
+    }
+
+    /// <summary>SW 수정: 충전 완료 발광의 짧은 표시가 끝나면 실제 무기의 기존 재질별 PropertyBlock을 복원한다.</summary>
+    private IEnumerator ReleaseWasteHeatFlashAfter()
+    {
+        yield return new WaitForSecondsRealtime(0.12f);
+        wasteHeatFlash = null;
+        RestoreWasteHeatFlash();
+    }
+
+    /// <summary>SW 수정: 열 준비 해제·비활성화 시 플레이어에 붙인 발밑 열기 VFX를 제거한다.</summary>
+    private void ClearWasteHeatAura()
+    {
+        if (wasteHeatReadyAura == null) return;
+        DestroyOwnedObject(wasteHeatReadyAura);
+        wasteHeatReadyAura = null;
+    }
+
+    // 클라이언트 스냅샷은 버프를 비운 뒤 다시 채우므로, 변경 알림마다 바로 지우지 않고 프레임 끝에 한 번 맞춘다.
+    private void MarkBuffAurasDirty() => buffAurasDirty = true;
+
+    /// <summary>SW 수정: 이 플레이어가 실제 보유한 아군 범위 버프마다 UEVFX_{효과ID}Buff 오라를 붙이고, 버프가 사라지면 제거한다.</summary>
+    private void RefreshBuffAuras()
+    {
+        buffAurasDirty = false;
+        activeAuraBuffs.Clear();
+        if (CanPresent && auraBuffs != null)
+            foreach (ItemSystem.BuffInstance buff in auraBuffs.ActiveBuffs)
+                if (buff?.source is ItemSystem.FieldAuraUniqueEffectSO aura && aura.showAreaVisual && !aura.targetEnemies)
+                    activeAuraBuffs.Add(aura);
+
+        // 오라가 유지되는 동안 매 프레임 호출되므로 제거 대상 목록은 재사용해 할당을 만들지 않는다.
+        expiredAuraBuffs.Clear();
+        foreach (var aura in buffAuras.Keys)
+            if (!activeAuraBuffs.Contains(aura)) expiredAuraBuffs.Add(aura);
+        foreach (var aura in expiredAuraBuffs)
+        {
+            if (buffAuras[aura] != null) DestroyOwnedObject(buffAuras[aura]);
+            buffAuras.Remove(aura);
+        }
+
+        foreach (var aura in activeAuraBuffs)
+        {
+            if (buffAuras.ContainsKey(aura)) continue;
+            string id = aura.name.StartsWith("UE_") ? aura.name.Substring(3) : aura.name;
+            if (!TryGetVfx("UEVFX_" + id + "Buff", out GameObject prefab)) continue;
+            GameObject instance = Instantiate(prefab, transform, false);
+            instance.name = prefab.name;
+            instance.hideFlags = HideFlags.DontSave;
+            buffAuras.Add(aura, instance);
+        }
+
+        bool visible = AlliedBuffVisualsVisible(out _);
+        foreach (GameObject instance in buffAuras.Values)
+            if (instance != null && instance.activeSelf != visible) instance.SetActive(visible);
+    }
+
+    // 본인의 버프 표시는 항상 보이고, 다른 플레이어의 버프 표시는 기기별 아군 버프 범위 설정만 따른다.
+    private bool AlliedBuffVisualsVisible(out bool remote)
+    {
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        remote = identity != null && !identity.isLocalPlayer;
+        return !remote || Core.SettingManager.Instance == null || Core.SettingManager.Instance.GetData().showAlliedBuffRanges;
+    }
+
+    /// <summary>스택 증가는 목록 변경 알림이 오지 않으므로 능력치 버프 발동 연출은 매 프레임 버프 목록과 비교한다.</summary>
+    private void RefreshStatBuffBursts()
+    {
+        if (!CanPresent || auraBuffs == null)
+        {
+            statBuffBursts.Clear();
+            return;
+        }
+        bool visible = AlliedBuffVisualsVisible(out bool remote);
+        statBuffBursts.Refresh(transform, auraBuffs.ActiveBuffs, visible, remote);
+    }
+
+    private void ClearBuffAuras()
+    {
+        foreach (GameObject instance in buffAuras.Values)
+            if (instance != null) DestroyOwnedObject(instance);
+        buffAuras.Clear();
+    }
+
+    /// <summary>SW 수정: Resources의 고유효과 VFX 프리팹을 이름으로 한 번만 찾아 두며, 없는 이름도 기억해 매 발동마다 다시 찾지 않는다.</summary>
+    internal static bool TryGetVfx(string prefabName, out GameObject prefab)
+    {
+        if (!vfxPrefabs.TryGetValue(prefabName, out prefab))
+        {
+            prefab = Resources.Load<GameObject>(VfxFolder + prefabName);
+            vfxPrefabs[prefabName] = prefab;
+        }
+        return prefab != null;
+    }
+
+    /// <summary>SW 수정: 표시 전용 VFX를 월드에 독립 생성해 소유자 이동을 따라가지 않게 하고, 기존 표시 목록과 수명으로 정리한다.</summary>
+    private GameObject SpawnVfx(GameObject prefab, Vector3 position, Quaternion rotation, Vector3 scale, float lifetime)
+    {
+        GameObject instance = Instantiate(prefab, position, rotation);
+        instance.hideFlags = HideFlags.DontSave;
+        instance.transform.localScale = Vector3.Scale(prefab.transform.localScale, scale);
+        activeBolts.Add(instance);
+        StartCoroutine(ReleaseBoltAfter(instance, lifetime));
+        return instance;
+    }
+
+    /// <summary>SW 수정: 열 해제·비활성화·표시 종료 시 공유 Material을 변경하지 않고 장착 무기의 임시 발광을 복원한다.</summary>
+    private void RestoreWasteHeatFlash()
+    {
+        if (wasteHeatFlash != null) StopCoroutine(wasteHeatFlash);
+        wasteHeatFlash = null;
+        foreach (var entry in heatFlashBlocks)
+            if (entry.renderer != null) entry.renderer.SetPropertyBlock(entry.original, entry.materialIndex);
+        heatFlashBlocks.Clear();
+    }
+
+    public void PresentInfernoHit(Vector3 position)
+    {
+        if (!CanPresent)
+            return;
+
+        if (infernoHitPrefab == null)
+        {
+            if (!missingInfernoPrefabReported)
+            {
+                missingInfernoPrefabReported = true;
+                Debug.LogWarning("[UniqueEffectPresentation] 화염 임팩트 프리팹이 없습니다.", this);
+            }
+            return;
+        }
+
+        ParticleSystem hit = Instantiate(infernoHitPrefab, position, Quaternion.identity);
+        GameObject instance = hit.gameObject;
+        instance.hideFlags = HideFlags.DontSave;
+        activeInfernoHits.Add(instance);
+        float lifetime = float.IsFinite(infernoHitLifetime)
+            ? Mathf.Max(0.05f, infernoHitLifetime) : 2f;
+        StartCoroutine(ReleaseInfernoHitAfter(instance, lifetime));
+        hit.Play(true);
+        if (hit.TryGetComponent(out AudioSource audio) && audio.clip != null)
+            audio.Play();
+        PresentedInfernoHitCount++;
+    }
+
+    private IEnumerator ReleaseInfernoHitAfter(GameObject instance, float lifetime)
+    {
+        yield return new WaitForSecondsRealtime(lifetime);
+        activeInfernoHits.Remove(instance);
+        if (instance != null)
+            DestroyOwnedObject(instance);
+    }
+
+    /// <summary>SW 수정: 싱글 구독과 싱글·클라이언트 표시 자원을 해제해 비활성화 뒤 파동이나 잔여 연출을 남기지 않는다.</summary>
+    private void OnDisable()
+    {
+        if (singleEffects != null)
+        {
+            singleEffects.ChainPresented -= PresentChainLightning;
+            singleEffects.InfernoPresented -= PresentInfernoHit;
+            singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
+            singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
+            singleEffects.WasteHeatPresented -= PresentWasteHeatDischarge;
+            singleEffects.WasteHeatReadyChanged -= SetWasteHeatReady;
+            singleEffects.EchoReplayPresented -= PresentEchoReplay;
+            singleEffects.WorldEnderBlastPresented -= PresentWorldEnderBlast;
+            singleEffects.WorldEnderReadyChanged -= SetWorldEnderReady;
+            singleEffects.WildfirePresented -= PresentWildfire;
+            singleEffects.SupportMarkConsumed -= PresentSupportLink;
+            singleEffects.PreparedChanged -= SetPreparedAttack;
+            singleEffects = null;
+        }
+        if (auraBuffs != null)
+        {
+            auraBuffs.OnBuffsChanged -= MarkBuffAurasDirty;
+            auraBuffs = null;
+        }
+        ReleaseOwnedResources();
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseOwnedResources();
+    }
+
+    /// <summary>SW 수정: 싱글·클라이언트 표시 자원(고유효과 VFX 포함), 월드 엔더 준비 표시 상태와 실제 무기의 임시 폐열 발광을 비활성화·파괴 시 정리한다.</summary>
+    private void ReleaseOwnedResources()
+    {
+        RestoreWasteHeatFlash();
+        ClearWasteHeatAura();
+        ClearBuffAuras();
+        statBuffBursts.Clear();
+        SetWorldEnderReady(false);
+        StopAllCoroutines();
+        foreach (GameObject bolt in activeBolts)
+        {
+            if (bolt != null)
+                DestroyOwnedObject(bolt);
+        }
+        activeBolts.Clear();
+
+        foreach (GameObject hit in activeInfernoHits)
+        {
+            if (hit != null)
+                DestroyOwnedObject(hit);
+        }
+        activeInfernoHits.Clear();
+
+        if (preparedAttackRing != null)
+        {
+            DestroyOwnedObject(preparedAttackRing);
+            preparedAttackRing = null;
+        }
+        if (preparedAttackMaterial != null)
+        {
+            DestroyOwnedObject(preparedAttackMaterial);
+            preparedAttackMaterial = null;
+        }
+
+        if (chainLightningMaterial != null)
+        {
+            DestroyOwnedObject(chainLightningMaterial);
+            chainLightningMaterial = null;
+        }
+    }
+
+    private static void DestroyOwnedObject(Object ownedObject)
+    {
+        if (Application.isPlaying)
+            Destroy(ownedObject);
+        else
+            DestroyImmediate(ownedObject);
+    }
+}

@@ -23,6 +23,7 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
     [SerializeField] private ParticleSystem advancedEffect;
 
     private MaterialPropertyBlock propertyBlock;
+    private EnemyGrade currentGrade = EnemyGrade.Normal;
 
     private Vector3 originalScale;
     private bool initialized;
@@ -31,29 +32,6 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
     private void Awake()
     {
         propertyBlock = new MaterialPropertyBlock();
-    }
-
-    public void ApplyGrade(EnemyGrade grade)
-    {
-        CacheOriginalState();
-
-        switch(grade)
-        {
-            case EnemyGrade.Advanced:
-                ApplyAdvanced();
-                break;
-
-            default:
-                ApplyNormal();
-                break;
-        }
-    }
-
-    // 기존 scale 저장
-    private void CacheOriginalState()
-    {
-        if (initialized)
-            return;
 
         if(scaleTarget == null)
         {
@@ -62,38 +40,62 @@ public class WBH_EnemyGradeVisual : MonoBehaviour
 
         originalScale = scaleTarget.localScale;
 
-        if(targetRenderers == null || targetRenderers.Length == 0)
+        if (targetRenderers == null || targetRenderers.Length == 0)
         {
             targetRenderers = scaleTarget.GetComponentsInChildren<Renderer>(includeInactive: true);
         }
-
-        initialized = true;
     }
 
-    private void ApplyAdvanced()
+    private void OnEnable()
     {
+        RefreshAdvancedEffect();
+    }
+
+    public void ApplyGrade(EnemyGrade grade)
+    {
+        ResetForPool();
+
+        currentGrade = grade;
+
+        if (grade != EnemyGrade.Advanced)
+            return;
+
         scaleTarget.localScale = originalScale * advancedScaleMul;
 
         Color tintMultiplier = Color.Lerp(Color.white, advancedTint, tintStrength);
 
         ApplyMaterialProperties(tintMultiplier, metallicBoost, smoothnessBoost);
 
+        RefreshAdvancedEffect();
+    }
+
+    public void ResetForPool()
+    {
+        currentGrade = EnemyGrade.Normal;
+
+        scaleTarget.localScale = originalScale;
+
+        ApplyMaterialProperties(Color.white, 0f, 0f);
+
+        StopAdvancedEffect();
+    }
+
+    private void RefreshAdvancedEffect()
+    {
+        StopAdvancedEffect();
+
+        if (currentGrade != EnemyGrade.Advanced || advancedEffect == null || !gameObject.activeInHierarchy)
+            return;
+
+        advancedEffect.Play(withChildren: true);
+    }
+
+    private void StopAdvancedEffect()
+    {
         if (advancedEffect == null)
             return;
 
         advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        advancedEffect.Play(withChildren: true);
-    }
-
-    private void ApplyNormal()
-    {
-        scaleTarget.localScale = originalScale;
-
-        ApplyMaterialProperties(Color.white, metalicBoost: 0f, smoothnessBoost: 0f);
-
-        if (advancedEffect == null)
-
-        advancedEffect.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
     }
 
     // 색상, 메탈릭, 부드러움 변환 및 적용.

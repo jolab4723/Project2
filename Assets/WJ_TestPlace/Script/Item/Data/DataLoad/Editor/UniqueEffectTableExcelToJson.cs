@@ -55,9 +55,8 @@ namespace DataSystem
                 AssetPathToAbsolutePath(DefaultJsonFolder),
                 Path.GetFileNameWithoutExtension(DefaultExcelPath) + ".json");
 
-            Convert(excelAbsolutePath, jsonAbsolutePath);
-
-            return File.Exists(jsonAbsolutePath) ? jsonAbsolutePath : null;
+            // SW 수정: 예전 JSON이 남아 있어도 이번 Excel 변환이 실패했다면 이어서 가져오지 않는다.
+            return Convert(excelAbsolutePath, jsonAbsolutePath) ? jsonAbsolutePath : null;
         }
 
         /// <summary>사전 설정된 경로에 파일이 있으면 그것을, 없으면 파일 선택 대화상자를 띄우고 결과를 반환한다.</summary>
@@ -73,42 +72,52 @@ namespace DataSystem
             return EditorUtility.OpenFilePanel("Select unique effect table", Application.dataPath, "xlsx");
         }
 
-        public static void Convert(string excelAbsolutePath, string jsonAbsolutePath)
+        /// <summary>SW 수정: 기존·신규 효과의 공통 검증을 통과한 표만 JSON으로 저장하고 읽기·저장 실패는 false로 반환한다.</summary>
+        public static bool Convert(string excelAbsolutePath, string jsonAbsolutePath)
         {
             if (!File.Exists(excelAbsolutePath))
             {
                 Debug.LogError($"[UniqueEffect] Excel file not found: {excelAbsolutePath}");
-                return;
+                return false;
             }
 
-            List<UniqueEffectTableRow> rows;
-
-            using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
+            try
             {
-                // 첫 번째 시트(UniqueEffectDefinitions)만 사용한다. ComboBox 시트는 읽지 않는다.
-                List<Dictionary<string, string>> sheetRows = ExcelSheetReader.ReadSheetRows(reader);
-                rows = ExcelSheetReader.MapRows<UniqueEffectTableRow>(sheetRows);
-            }
+                List<UniqueEffectTableRow> rows;
 
-            if (rows.Count == 0)
+                using (FileStream stream = File.Open(excelAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (IExcelDataReader reader = ExcelReaderFactory.CreateReader(stream))
+                {
+                    // 첫 번째 시트(UniqueEffectDefinitions)만 사용한다. ComboBox 시트는 읽지 않는다.
+                    List<Dictionary<string, string>> sheetRows = ExcelSheetReader.ReadSheetRows(reader);
+                    rows = ExcelSheetReader.MapRows<UniqueEffectTableRow>(sheetRows);
+                }
+
+                if (rows.Count == 0)
+                {
+                    Debug.LogError("[UniqueEffect] 변환할 데이터 행이 없습니다. 시트 구조(1행 헤더 / 2행 타입 힌트 / 3행부터 데이터)를 확인해주세요.");
+                    return false;
+                }
+
+                if (!Validate(rows) || !UniqueEffectTableSOImporter.ValidateRows(rows))
+                    return false;
+
+                string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
+                string directory = Path.GetDirectoryName(jsonAbsolutePath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(jsonAbsolutePath, json);
+                AssetDatabase.Refresh();
+
+                Debug.Log($"[UniqueEffect] JSON generated: {jsonAbsolutePath}\n고유 효과 {rows.Count}개");
+                return true;
+            }
+            catch (System.Exception exception)
             {
-                Debug.LogError("[UniqueEffect] 변환할 데이터 행이 없습니다. 시트 구조(1행 헤더 / 2행 타입 힌트 / 3행부터 데이터)를 확인해주세요.");
-                return;
+                Debug.LogError($"[UniqueEffect] Excel 읽기 또는 JSON 저장에 실패해 중단했습니다: {exception.Message}");
+                return false;
             }
-
-            if (!Validate(rows))
-                return;
-
-            string json = JsonConvert.SerializeObject(rows, Formatting.Indented);
-            string directory = Path.GetDirectoryName(jsonAbsolutePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            File.WriteAllText(jsonAbsolutePath, json);
-            AssetDatabase.Refresh();
-
-            Debug.Log($"[UniqueEffect] JSON generated: {jsonAbsolutePath}\n고유 효과 {rows.Count}개");
         }
 
         /// <summary>
@@ -138,7 +147,7 @@ namespace DataSystem
                 }
 
                 if (string.IsNullOrWhiteSpace(row.effectType))
-                    Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 비어있습니다. SO 생성 단계에서 건너뛰게 됩니다.");
+                    Debug.LogWarning($"[UniqueEffect] '{id}'의 effectType이 비어있습니다. 공통 행 검증에서 전체 변환을 중단합니다.");
 
                 // 버프 기반 종류는 statEffects가 없으면 실제로 아무 효과가 없다.
                 bool needsBuff = row.effectType == nameof(ItemSystem.PassiveBuffUniqueEffectSO)

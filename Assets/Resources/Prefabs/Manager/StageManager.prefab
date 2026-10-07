@@ -47,6 +47,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::YJ_StageManager
   bootScene: 0
   isBossStage: 0
+  enemySpawnManager: {fileID: 0}
+  playerSpawner: {fileID: 0}
+  stageSaveService: {fileID: 0}
+  directSceneNodeType: 1
+  useDirectSceneNodeType: 0
+  waveCount: 5
+  totalEnemyCount: 50
+  waveRanges:
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  - minPercent: 15
+    maxPercent: 25
+  directSceneWaveSeed: 1234
 --- !u!114 &3251599353313151942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59,9 +78,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b96bf8e5713e21041b1c64b8d1953b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::YJ_ClickEffect
-  uiLayer:
-    serializedVersion: 2
-    m_Bits: 0
+  targetCamera: {fileID: 0}
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
+  targetCanvas: {fileID: 0}
+  leftClickEffectRoot: {fileID: 0}
+  leftClickEffect: {fileID: 0}
+  rightClickEffect: {fileID: 0}
+  sfxPlayer: {fileID: 0}
+  clickSound: {fileID: 8300000, guid: 2842a97c1a176446cb3688fe1fbf4bce, type: 3}
+  clickVolume: 0.3

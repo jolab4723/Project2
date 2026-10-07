@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(WBH_Effect))]
@@ -17,7 +18,10 @@ public class WBH_IndicatorView : MonoBehaviour
 
     private WBH_Effect effect;
     private Coroutine playCoroutine;
+    private WBH_EnemyStatus deathOwner;
     private Vector3 baseLocalScale;
+
+    private readonly List<Mesh> generatedMeshes = new();
 
     private void Awake()
     {
@@ -25,6 +29,21 @@ public class WBH_IndicatorView : MonoBehaviour
 
         if(visualRoot != null)
             baseLocalScale = visualRoot.localScale;
+
+        foreach(ProceduralMeshGenerator generator in GetComponentsInChildren<ProceduralMeshGenerator>(true))
+        {
+            if(!generator.TryGetComponent(out ParticleSystemRenderer renderer))
+            {
+                Log.Error($"{generator.name}: ParticleSystemRenderer 가 없습니다.");
+                continue;
+            }
+
+            generator.GenerateMesh();
+            if(renderer.mesh != null)
+            {
+                generatedMeshes.Add(renderer.mesh);
+            }
+        }
     }
 
     // 비활성화 시 확장 코루틴 및 확장된 크기 초기화
@@ -39,6 +58,19 @@ public class WBH_IndicatorView : MonoBehaviour
         if(visualRoot != null)
         {
             visualRoot.localScale = baseLocalScale;
+        }
+
+        UnbindDeathOwner();
+    }
+
+    private void OnDestroy()
+    {
+        foreach(Mesh mesh in generatedMeshes)
+        {
+            if(mesh != null)
+            {
+                Destroy(mesh);
+            }
         }
     }
 
@@ -57,6 +89,11 @@ public class WBH_IndicatorView : MonoBehaviour
         length = Mathf.Max(0.01f, length);
 
         Play(GetRectangleScale(width, length), duration, growOverTime);
+    }
+
+    public void PlayCone(float radius, float duration, bool growOverTime)
+    {
+        Play(GetCircleScale(Mathf.Max(0.01f, radius)), duration, growOverTime);
     }
 
     private void Play(Vector3 fullScale, float duration, bool growOverTime)
@@ -124,7 +161,7 @@ public class WBH_IndicatorView : MonoBehaviour
 
         return new Vector3(baseLocalScale.x * width / (sourceWidth * parentScale.x), 
                            baseLocalScale.y,
-                           baseLocalScale.z * length / (sourceWidth * parentScale.z));
+                           baseLocalScale.z * length / (sourceLength * parentScale.z));
     }
     // 기존 부모 월드스케일 적용
     private Vector3 GetParentLossyScale()
@@ -139,5 +176,33 @@ public class WBH_IndicatorView : MonoBehaviour
         return new Vector3(Mathf.Max(0.0001f, Mathf.Abs(scale.x)),
                            Mathf.Max(0.0001f, Mathf.Abs(scale.y)),
                            Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
+    }
+
+    public void BindDeathOwner(WBH_EnemyStatus owner)
+    {
+        UnbindDeathOwner();
+        deathOwner = owner;
+
+        if (deathOwner == null)
+            return;
+
+        deathOwner.OnDead += StopOnOwnerDeath;
+
+        if(deathOwner.IsDead)
+        {
+            StopOnOwnerDeath();
+        }
+    }
+
+    private void StopOnOwnerDeath()
+    {
+        effect.StopEffect();
+    }
+
+    private void UnbindDeathOwner()
+    {
+        if (deathOwner != null)
+            deathOwner.OnDead -= StopOnOwnerDeath;
+        deathOwner = null;
     }
 }

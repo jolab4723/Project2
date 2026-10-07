@@ -1,7 +1,7 @@
+using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.GameCenter;
 
 [RequireComponent(typeof(WBH_EnemyController))]
 [RequireComponent(typeof(WBH_EnemyStatus))]
@@ -9,6 +9,9 @@ using UnityEngine.SocialPlatforms.GameCenter;
 
 public class WBH_EnemyCombat : MonoBehaviour
 {
+    [SerializeField] private WBH_EffectData missileEffect;
+    [SerializeField] private Transform grabPoint;
+
     private WBH_EnemyController controller;
     private WBH_EnemyStatus status;
     private WBH_EnemyAnimation enemyAnimation;
@@ -20,9 +23,45 @@ public class WBH_EnemyCombat : MonoBehaviour
     private float missileMaxDistance = 100f;
     private float minMissileFlightTime = 1f;
 
+    private bool isGrabDash;
+    private float grabCollisionRadius;
+    private float grabReleaseRadius = 1.5f;
+    private float SkillRangeFlashDuration = 0.3f;
+
+    private readonly Color DefaultRangeColor = new Color(1f, 0.15f, 0.1f, 0.35f);
+
     private readonly HashSet<WBH_ICombat> dashHitTargets = new(); // 대쉬 피해 시, 플레이어가 여러 번 충돌하더라도 데미지 1번만 받도록 하기 위한 변수
     private readonly HashSet<WBH_ICombat> areaHitTargets = new(); // 범위 피해 시, 플레이어가 여러 컬라이더 가져도 데미지 1번만
-    public bool IsActionInProgress { get; private set; }
+    private readonly HashSet<T_PlayerController> grabbedPlayers = new();
+
+    private bool actionInProgress;
+    public bool IsActionInProgress
+    {
+        get => actionInProgress || externalActionInProgress?.Invoke() == true;
+        private set => actionInProgress = value;
+    }
+    private System.Func<bool> externalAttack;
+    private System.Func<bool> externalActionInProgress;
+    private System.Action<Vector3, float> externalProjectile;
+    private System.Action<int> externalSkill;
+    /// <summary>SW 수정: 착탄 위치·비행 시간·폭발 반경을 받아 외부 서버 권한으로 미사일을 생성하는 콜백이다.</summary>
+    private System.Action<Vector3, float, float> externalMissile;
+    public System.Func<T_PlayerController, bool> ExternalBeginGrab { get; set; }
+    public System.Action<T_PlayerController, Vector3> ExternalHoldGrab { get; set; }
+    public System.Action<T_PlayerController, Vector3> ExternalEndGrab { get; set; }
+
+    /// <summary>SW 수정: 패턴과 돌진 판정은 재사용하고 공격·투사체·애니메이션의 권한 경계만 연결합니다.</summary>
+    public void BindExternalActions(System.Func<bool> attack, System.Func<bool> actionInProgress,
+        System.Action<Vector3, float> projectile, System.Action<int> skill)
+    {
+        externalAttack = attack;
+        externalActionInProgress = actionInProgress;
+        externalProjectile = projectile;
+        externalSkill = skill;
+    }
+
+    /// <summary>SW 수정: 착탄 경고와 발사 시점은 원본에서 계산하고 생성만 외부 서버 권한에 전달한다.</summary>
+    public void BindExternalMissile(System.Action<Vector3, float, float> missile) => externalMissile = missile;
 
 
     private void Awake()
@@ -32,8 +71,6 @@ public class WBH_EnemyCombat : MonoBehaviour
         enemyAnimation = GetComponent<WBH_EnemyAnimation>();
         pattern = GetComponent<WBH_EnemyPattern>();
         movement = GetComponent<WBH_EnemyMovement>();
-        projectileSpawner = GetComponent<WBH_ProjectileSpawner>();
-
     }
 
     private void OnEnable()
@@ -43,9 +80,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     private void OnDisable()
     {
         movement.OnDashUpdate -= CheckDashHit;
-        
-        dashHitTargets.Clear();
-        IsActionInProgress = false;
+
+        CancelCurrentAction();
     }
 
     private void Update()
@@ -57,8 +93,10 @@ public class WBH_EnemyCombat : MonoBehaviour
         attackTimer = Mathf.Max(attackTimer, 0f);
     }
 
-    public void Initialize(WBH_EnemyInfo info)
+    public void Initialize(WBH_EnemyInfo info, WBH_ProjectileSpawner projectileSpawner)
     {
+        this.projectileSpawner = projectileSpawner;
+
         attackTimer = 0f;
         dashHitTargets.Clear();
         IsActionInProgress = false;
@@ -74,6 +112,8 @@ public class WBH_EnemyCombat : MonoBehaviour
         // 현재 다른 행동 중이 아니거나 움직일 수 없는 상태가 아니거나 공격 쿨타임이 돌지 않았다면 return
         if (IsActionInProgress || !CanAttack() || !movement.CanControl)
             return false;
+
+        if (externalAttack != null) return externalAttack();
 
         BeginAction();
         ResetAttackCoolTime();
@@ -109,7 +149,23 @@ public class WBH_EnemyCombat : MonoBehaviour
         IsActionInProgress = false;
     }
 
-    //------- 엘리트 등 특수 패턴용 메서드
+    #region 엘리트 등 특수 패턴용 메서드
+    // 패턴 취소
+    public void CancelCurrentAction()
+    {
+        StopAllCoroutines();
+
+        movement.CancelForcedMovement();
+
+        isGrabDash = false;
+
+        ReleaseGrabbedPlayers();
+
+        dashHitTargets.Clear();
+        areaHitTargets.Clear();
+
+        IsActionInProgress = false;
+    }
 
     // 돌진
     public bool TryDashAttack(float distance, float duration, WBH_IndicatorSpawner indicator, float indicatorWidth, float readyDuration)
@@ -132,15 +188,57 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitForSeconds(readyDuration);
 
-        enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
+        if (externalSkill != null) externalSkill(1);
+        else enemyAnimation.PlaySkill(1); // 돌진 스킬 번호
+
+        ShowDebugLine(transform.position, transform.forward, distance, indicatorWidth);
 
         movement.Dash(transform.forward, distance, duration, EndAction);
+    }
+
+    public bool TryDashAttackWithRangeVisual(float distance, float duration, float indicatorWidth, float readyDuration, Color indicatorColor)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        dashHitTargets.Clear();
+
+        FaceTarget(pattern.Target);
+
+        Vector3 dashDir = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+
+        if(dashDir.sqrMagnitude < 0.001f)
+        {
+            EndAction();
+            return false;
+        }
+
+        pattern.IndicatorSpawner?.ShowRect(transform.position, dashDir, indicatorWidth, distance, readyDuration, growOverTime: true);
+
+        StartCoroutine(CoDashAttackWithRangeVisual(dashDir, distance, indicatorWidth, duration, readyDuration));
+        return true;
+    }
+
+    private IEnumerator CoDashAttackWithRangeVisual(Vector3 dashDir, float distance, float indicatorWidth ,float duration, float readyDuration)
+    {
+        yield return new WaitForSeconds(readyDuration);
+
+        ShowDebugLine(transform.position, dashDir, distance, indicatorWidth);
+        movement.Dash(dashDir, distance, duration, EndAction);
     }
 
     // 돌진 중 플레이어 충돌 체크
     private void CheckDashHit()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer);
+        if(isGrabDash) // 잡기 전용 돌진일 경우
+        {
+            CheckGrabHit();
+            HoldGrabbedPlayers();
+            return;
+        }
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, pattern.DashHitRadius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
 
         foreach (Collider hit in hits)
         {
@@ -156,25 +254,200 @@ public class WBH_EnemyCombat : MonoBehaviour
         }
     }
 
-    // 연발 사격
-    public bool TryShootBurst(int count)
+    // 돌진 도중 부딪히는 플레이어를 감지해서 grabbedPlayers 에 추가
+    private void CheckGrabHit()
     {
-        if (IsActionInProgress)
+        Collider[] hits = Physics.OverlapSphere(transform.position, grabCollisionRadius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
+
+        foreach (Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponentInParent<T_PlayerController>();
+
+            if (player == null || grabbedPlayers.Contains(player))
+                continue;
+
+            if (!(ExternalBeginGrab != null ? ExternalBeginGrab(player) : player.TryBeginGrab()))
+                continue;
+
+            grabbedPlayers.Add(player);
+        }
+    }
+
+    // 돌진 잡기 패턴
+    public bool TryGrabAndSlam(Transform dashTarget,
+                               float roarDuration,
+                               float maxDashDistance,
+                               float dashDuration,
+                               float slamHitDelay,
+                               float slamRecoveryDuration,
+                               float collisionRadius,
+                               float damageMul,
+                               Color indicatorColor)
+    {
+        if (IsActionInProgress || dashTarget == null || !movement.CanControl)
             return false;
 
         BeginAction();
-        transform.LookAt(pattern.Target);
 
-        enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
-        StartCoroutine(CoShootBurst(count));
+        grabbedPlayers.Clear();
+        grabCollisionRadius = collisionRadius;
+
+        FaceTarget(dashTarget);
+
+        Vector3 toTarget = Vector3.ProjectOnPlane(dashTarget.position - transform.position, Vector3.up);
+
+        Vector3 dashDir;
+        
+        if(toTarget.sqrMagnitude < 0.001f)
+        { 
+            dashDir = transform.forward; 
+        }
+        else
+            dashDir = toTarget.normalized;
+
+        float dashDistance = Mathf.Min(toTarget.magnitude + 1.5f, maxDashDistance);
+
+        transform.rotation = Quaternion.LookRotation(dashDir);
+
+        pattern.IndicatorSpawner?.ShowRect(transform.position, dashDir, collisionRadius * 2f, dashDistance, roarDuration, growOverTime : true);
+
+        StartCoroutine(CoGrabAndSlam(dashTarget, dashDir, dashDistance, roarDuration, dashDuration, slamHitDelay, slamRecoveryDuration, damageMul));
         return true;
     }
 
-    private IEnumerator CoShootBurst(int count)
+    // 돌진 잡기 패턴 코루틴. 애니메이션 종료까지의 타이밍을 float 으로 직접 받음
+    private IEnumerator CoGrabAndSlam(Transform dashTarget,
+                                      Vector3 dashDir,
+                                      float dashDistance,
+                                      float roarDuration,
+                                      float dashDuration,
+                                      float slamHitDelay,
+                                      float slamRecoveryDuration,
+                                      float damageMul)
+    {
+        // 1. 포효
+        yield return new WaitForSeconds(roarDuration);
+
+        if(dashTarget == null || !dashTarget.gameObject.activeInHierarchy)
+        {
+            ReleaseGrabbedPlayers();
+            EndAction();
+            yield break;
+        }
+
+        transform.rotation = Quaternion.LookRotation(dashDir);
+
+        // 2. 돌진 및 충돌 플레이어 잡기
+        isGrabDash = true;
+
+        bool dashFinished = false;
+
+        ShowDebugLine(transform.position, dashDir, dashDistance, grabCollisionRadius * 2);
+
+        movement.Dash(dashDir, dashDistance, dashDuration, () => dashFinished = true);
+
+        while(!dashFinished)
+        {
+            HoldGrabbedPlayers();
+            yield return null;
+        }
+
+        isGrabDash = false;
+        HoldGrabbedPlayers();
+
+        //3. 내려찍기
+        float elapsed = 0f;
+
+        while(elapsed < slamHitDelay)
+        {
+            elapsed += Time.deltaTime;
+            HoldGrabbedPlayers();
+            yield return null;
+        }
+
+        // 4. 피해 후 포획 해제
+        DamageGrabbedPlayers(damageMul);
+        ReleaseGrabbedPlayers();
+
+        yield return new WaitForSeconds(slamRecoveryDuration);
+
+        EndAction();
+    }
+
+    // 플레이어에게 잡힘 상태 부여
+    private void HoldGrabbedPlayers()
+    {
+        Vector3 holdPos = grabPoint != null ? grabPoint.position : transform.position + Vector3.up;
+
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null || !player.gameObject.activeInHierarchy)
+                continue;
+
+            if (ExternalHoldGrab != null) ExternalHoldGrab(player, holdPos);
+            else player.SetGrabPosition(holdPos);
+        }
+    }
+
+    private void DamageGrabbedPlayers(float damageMul)
+    {
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null || !player.gameObject.activeInHierarchy)
+                continue;
+
+            WBH_DamageRequest request = CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul);
+
+            WBH_CombatManager.ProcessDamage(request);
+        }
+    }
+
+    // 잡기 해제
+    private void ReleaseGrabbedPlayers()
+    {
+        int count = grabbedPlayers.Count;
+        int index = 0;
+
+        foreach (T_PlayerController player in grabbedPlayers)
+        {
+            if (player == null)
+                continue;
+
+            float angle = count > 0 ? 360f * index / count : 0f;
+
+            Vector3 dir = Quaternion.Euler(0f, angle, 0f) * transform.forward;
+            Vector3 releasPos = transform.position + dir * grabReleaseRadius;
+
+            if (ExternalEndGrab != null) ExternalEndGrab(player, releasPos);
+            else player.EndGrab(releasPos);
+            index++;
+        }
+        grabbedPlayers.Clear();
+    }
+
+    // 연발 사격
+    public bool TryShootBurst(int count, WBH_EnemyEffectCue soundCue = WBH_EnemyEffectCue.None)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        FaceTarget(pattern.Target);
+
+        if (externalSkill != null) externalSkill(2);
+        else enemyAnimation.PlaySkill(2); // 연발 사격 스킬번호
+        StartCoroutine(CoShootBurst(count, soundCue));
+        return true;
+    }
+
+    private IEnumerator CoShootBurst(int count, WBH_EnemyEffectCue soundCue)
     {
         for(int i = 0; i < count; i++)
         {
             FireProjectile();
+
+            if (soundCue != WBH_EnemyEffectCue.None)
+                pattern.EnemyEffect?.PlaySfx(soundCue);
 
             if(i < count -1)
                 yield return new WaitForSeconds(0.15f);
@@ -184,13 +457,20 @@ public class WBH_EnemyCombat : MonoBehaviour
 
     private void FireProjectile()
     {
-        Vector3 dir = (pattern.Target.position - pattern.FirePoint.position).normalized;
+        Vector3 dir = GetFlatFireDirection();
+        if (externalProjectile != null)
+        {
+            externalProjectile(dir, 12f);
+            return;
+        }
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1);
 
         projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, 12f, pattern.PlayerLayer);
     }    
 
+    // 일제사격 탄막
+    /// <summary>SW 수정: 탄막의 발사 방향을 원본에서 계산하고, 외부 콜백이 있으면 각 투사체 생성을 서버 권한에 전달한다.</summary>
     public bool TryBarrage(int projectileCount, float spreadAngle, float maxDistance, float actionDuration)
     {
         if (IsActionInProgress || pattern.Target == null)
@@ -203,7 +483,18 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireMultipleProjectile(ProjectileType.NormalEnemy, 
+        if (externalProjectile != null)
+        {
+            int projectileTotal = Mathf.Max(1, projectileCount);
+            for (int projectileIndex = 0; projectileIndex < projectileTotal; projectileIndex++)
+            {
+                float spreadRotationDegrees = projectileTotal > 1
+                    ? -spreadAngle * 0.5f + spreadAngle * projectileIndex / (projectileTotal - 1)
+                    : 0f;
+                externalProjectile(Quaternion.Euler(0f, spreadRotationDegrees, 0f) * dir, maxDistance);
+            }
+        }
+        else projectileSpawner.FireMultipleProjectile(ProjectileType.NormalEnemy,
                                                  pattern.FirePoint.position, 
                                                  dir, 
                                                  request, 
@@ -221,7 +512,8 @@ public class WBH_EnemyCombat : MonoBehaviour
                            float explosionRadius, 
                            float warningDuration, 
                            float recoveryDuration, 
-                           WBH_IndicatorSpawner indicatorSpawner, 
+                           WBH_IndicatorSpawner indicatorSpawner,
+                           WBH_EnemyEffectCue impactEffectCue,
                            System.Action onCompleted = null)
     {
         if (IsActionInProgress || impactPoints == null || impactPoints.Count == 0 || indicatorSpawner == null)
@@ -229,7 +521,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         BeginAction();
 
-        StartCoroutine(CoMissile(impactPoints, explosionRadius, warningDuration, recoveryDuration, indicatorSpawner, onCompleted));
+        StartCoroutine(CoMissile(impactPoints, explosionRadius, warningDuration, recoveryDuration, indicatorSpawner, impactEffectCue, onCompleted));
 
         return true;
     }
@@ -239,7 +531,8 @@ public class WBH_EnemyCombat : MonoBehaviour
                                   float explosionRadius, 
                                   float warningDuration, 
                                   float recoveryDuration, 
-                                  WBH_IndicatorSpawner indicatorSpawner, 
+                                  WBH_IndicatorSpawner indicatorSpawner,
+                                  WBH_EnemyEffectCue impactEffectCue,
                                   System.Action onCompleted = null)
     {
         Vector3 spawnPos = pattern.GrenadePoint.position;
@@ -264,7 +557,7 @@ public class WBH_EnemyCombat : MonoBehaviour
 
             float launchDelay = impactTime - flightTimes[i];
 
-            StartCoroutine(CoLaunchMissileAfter(launchDelay, spawnPos, impactPoints[i], explosionRadius));
+            StartCoroutine(CoLaunchMissileAfter(launchDelay, spawnPos, impactPoints[i], explosionRadius, impactEffectCue));
         }
 
         yield return new WaitForSeconds(impactTime + recoveryDuration);
@@ -273,13 +566,22 @@ public class WBH_EnemyCombat : MonoBehaviour
     }
 
     // 미사일 실제 발사 메서드
-    private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius)
+    /// <summary>SW 수정: 예정된 발사 시점에 외부 콜백으로 미사일 생성을 전달하고, 콜백이 없으면 기존 투사체 생성기를 사용한다.</summary>
+    private IEnumerator CoLaunchMissileAfter(float delay, Vector3 spawnPos, Vector3 impactPos, float explosionRadius, WBH_EnemyEffectCue impactEffectCue)
     {
         yield return new WaitForSeconds(delay);
 
+        if (externalMissile != null)
+        {
+            float travelDistance = Mathf.Min(Vector3.Distance(spawnPos, impactPos), missileMaxDistance);
+            float flightTime = Mathf.Max(minMissileFlightTime, travelDistance / Mathf.Max(0.01f, status.ProjectileSpeed));
+            externalMissile(impactPos, flightTime, explosionRadius);
+            yield break;
+        }
+
         WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
 
-        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer);
+        projectileSpawner.FireGrenade(ProjectileType.Missile, spawnPos, impactPos, request, status.ProjectileSpeed, missileMaxDistance, explosionRadius, pattern.PlayerLayer, enemyEffect: pattern.EnemyEffect, impactEffectCue: impactEffectCue);
     }
 
 
@@ -305,6 +607,8 @@ public class WBH_EnemyCombat : MonoBehaviour
 
         yield return new WaitUntil(() => landed);
 
+        // 애니메이션 전환 시점과 무관하게 실제 착지 후 한 번 재생한다.
+        pattern.EnemyEffect?.PlayEffect(WBH_EnemyEffectCue.Boss_Act1_JumpAttack, Vector3.one);
         ApplyAreaDamage(landingPos, damageRadius);
 
         yield return new WaitForSeconds(recoveryDuration);
@@ -337,6 +641,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         areaHitTargets.Clear();
 
+        ShowDebugSector(center, Vector3.forward, radius, 360f);
+
         Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer);
 
         foreach (Collider hit in hits)
@@ -353,5 +659,307 @@ public class WBH_EnemyCombat : MonoBehaviour
 
             WBH_CombatManager.ProcessDamage(request);
         }
+    }
+
+    // 적 방향으로 회전하면서 일정 간격으로 사격
+    public bool TryTrackingFire(int count, float interval, float turnSpeed, float maxDistance)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        StartCoroutine(CoTrackingFire(count, interval, turnSpeed, maxDistance));
+        return true;
+    }
+
+    private IEnumerator CoTrackingFire(int count, float interval, float turnSpeed,float maxDistance)
+    {
+        for(int i = 0; i < count; i ++)
+        {
+            if (pattern.Target == null)
+                break;
+
+            if(i > 0)
+            {
+                float elapsed = 0f;
+
+                while(elapsed < interval)
+                {
+                    elapsed += Time.deltaTime;
+                    RotateTowardsTarget(turnSpeed);
+                    yield return null;
+                }
+            }
+
+            RotateTowardsTarget(turnSpeed);
+
+            Vector3 dir = (pattern.Target.position + Vector3.up - pattern.FirePoint.position).normalized;
+            WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
+
+            if (externalProjectile != null) externalProjectile(dir, maxDistance);
+            else projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, dir, request, status.ProjectileSpeed, maxDistance, pattern.PlayerLayer);
+        }
+        yield return new WaitForSeconds(0.25f);
+        EndAction();
+    }
+
+    // 타겟 방향으로 회전
+    private void RotateTowardsTarget(float turnSpeed)
+    {
+        if (pattern.Target == null)
+            return;
+
+        Vector3 dir = pattern.Target.position - transform.position;
+        dir.y = 0;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
+    }
+
+    // 부채꼴 단발 공격
+    public bool TrySectorAttack(float range, float angle, float damageMul, float hitDelay = 0.35f, float recoveryDuration = 0.4f)
+    {
+        if (IsActionInProgress || pattern.Target == null)
+            return false;
+
+        BeginAction();
+        FaceTarget(pattern.Target);
+
+        StartCoroutine(CoSectorAttack(range, angle, damageMul, hitDelay, recoveryDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoSectorAttack(float range, float angle, float damageMul, float hitDelay, float recoverDuration)
+    {
+        yield return new WaitForSeconds(hitDelay);
+
+        ShowDebugSector(transform.position, transform.forward, range, angle);
+        ApplySectorDamage(range, angle, damageMul);
+
+        yield return new WaitForSeconds(recoverDuration);
+        EndAction();
+    }
+
+    private void ApplySectorDamage(float range, float angle, float damageMul)
+    {
+        areaHitTargets.Clear();
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, range, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+
+        foreach(Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponent<T_PlayerController>();
+
+            if (player == null || !areaHitTargets.Add(player))
+                continue;
+
+            Vector3 dir = player.transform.position - transform.position;
+            dir.y = 0f;
+
+            if (dir.sqrMagnitude < 0.001f)
+                continue;
+
+            if (Vector3.Angle(transform.forward, dir) > angle * 0.5f)
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul));
+        }
+    }
+
+    // rotationCount 바퀴 회전하며 투사체 발사
+    public bool TrySpinBarrage(int rotationCount, float duration, int bulletCount, float bulletRange, System.Action onCompleted)
+    {
+        if(IsActionInProgress || bulletCount <= 0 )
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoSpinBarrage(rotationCount, duration, bulletCount, bulletRange, onCompleted));
+
+        return true;
+    }
+
+    private IEnumerator CoSpinBarrage(int rotationCount, float duration, int bulletCount, float bulletRange, System.Action onCompleted)
+    {
+        Quaternion startRotation = transform.rotation;
+        float shotInterval = duration / bulletCount;
+
+        float elapsed = 0f;
+        int firedCount = 0;
+
+        while(elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            float progress = Mathf.Clamp01(elapsed / duration);
+            float angle = 360f * rotationCount * progress;
+
+            transform.rotation = startRotation * Quaternion.Euler(0f, angle, 0f);
+
+            while(firedCount < bulletCount && elapsed >= firedCount * shotInterval)
+            {
+                WBH_DamageRequest request = CreateDamageRequest(WBH_AttackType.Normal, ItemSystem.ElementType.None, 1f);
+
+                if (externalProjectile != null) externalProjectile(transform.forward, bulletRange);
+                else projectileSpawner.FireProjectile(ProjectileType.NormalEnemy, pattern.FirePoint.position, transform.forward, request, status.ProjectileSpeed, bulletRange, pattern.PlayerLayer);
+
+                firedCount++;
+            }
+            yield return null;
+        }
+        onCompleted?.Invoke();
+        EndAction();
+    }
+
+    // 부채꼴 범위 틱데미지
+    public bool TryFlameThrow(float range, float angle, float duration, float damageInterval, float readyDuration, WBH_IndicatorSpawner indicatorSpawner, float damageMul = 0.25f)
+    {
+        if (IsActionInProgress || pattern.Target == null || indicatorSpawner == null ||readyDuration <= 0f)
+            return false;
+        
+        BeginAction();
+        FaceTarget(pattern.Target);
+
+        WBH_Effect warning = indicatorSpawner.ShowCone(transform.position, transform.forward, range, angle, readyDuration, growOverTime: true);
+
+        if (externalProjectile == null && (warning == null || !warning.IsPlaying))
+        {
+            EndAction();
+            return false;
+        }
+
+        StartCoroutine(CoFlameThrow(range, angle, duration, damageInterval, damageMul, readyDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoFlameThrow(float range, float angle, float duration, float damageInterval, float damageMul, float readyDuration)
+    {
+        yield return new WaitForSeconds(readyDuration);
+
+        float elapsed = 0f;
+        float damageTimer = 0f;
+        float interval = Mathf.Max(0.01f, damageInterval);
+
+        while(elapsed < duration)
+        {
+            elapsed += Time.deltaTime; ;
+            damageTimer -= Time.deltaTime;
+
+            if(damageTimer <= 0f)
+            {
+                ShowDebugSector(transform.position, transform.forward, range, angle);
+
+                damageTimer = interval;
+                ApplySectorDamage(range, angle, damageMul);
+            }
+            yield return null;
+        }
+        EndAction();
+    }
+
+    // 원형 범위 데미지 + 상태이상
+    public bool TryAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float startDelay, float hitDelay = 0.5f, float recoveryDuration = 0.4f, System.Action onStarted = null)
+    {
+        if(IsActionInProgress)
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoAreaDamageAndStatus(center, radius, damageMul, statusEffect, startDelay, hitDelay, recoveryDuration, onStarted));
+
+        return true;
+    }
+
+    private IEnumerator CoAreaDamageAndStatus(Vector3 center, float radius, float damageMul, WBH_StatusEffectData statusEffect, float startDelay, float hitDelay = 0.5f, float recoveryDuration = 0.4f, System.Action onStarted = null)
+    {
+        if(startDelay > 0f)
+            yield return new WaitForSeconds(startDelay);
+
+        onStarted?.Invoke(); // 포효 후 Attack3 가 시작되는 시점에 인디케이터 표시
+
+        if (hitDelay > 0f)
+            yield return new WaitForSeconds(hitDelay);
+
+        ShowDebugSector(center, Vector3.forward, radius, 360f);
+
+        areaHitTargets.Clear();
+
+        Collider[] hits = Physics.OverlapSphere(center, radius, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
+
+        foreach(Collider hit in hits)
+        {
+            T_PlayerController player = hit.GetComponentInParent<T_PlayerController>();
+
+            if (player == null || !areaHitTargets.Add(player))
+                continue;
+
+            WBH_CombatManager.ProcessDamage(CreateDamageRequest(player, WBH_AttackType.Normal, ItemSystem.ElementType.None, damageMul));
+
+            player.AddStatusEffect(statusEffect);
+        }
+
+        if(recoveryDuration > 0f)
+            yield return new WaitForSeconds(recoveryDuration);
+
+        EndAction();
+    }
+
+    public bool TrySummonSelfDestruct(WBH_BossMinionSpawner spawner, int count, Transform initialTarget, float spawnDelay = 0.8f, float recoveryDuration = 0.5f)
+    {
+        if (IsActionInProgress || spawner == null || count <= 0)
+            return false;
+
+        BeginAction();
+
+        StartCoroutine(CoSummonSelfDestruct(spawner, count, initialTarget, spawnDelay, recoveryDuration));
+
+        return true;
+    }
+
+    private IEnumerator CoSummonSelfDestruct(WBH_BossMinionSpawner spawner, int count, Transform initialTarget, float spawnDelay, float recoveryDuration)
+    {
+        yield return new WaitForSeconds(spawnDelay);
+
+        int spawnedCount = spawner.Spawn(count, initialTarget);
+
+        yield return new WaitForSeconds(recoveryDuration);
+        EndAction();
+    }
+
+    private Vector3 GetFlatFireDirection()
+    {
+        Vector3 dir = pattern.Target != null ? pattern.Target.position - pattern.FirePoint.position
+                                             : transform.forward;
+        dir.y = 0;
+
+        if(dir.sqrMagnitude < 0.0001f)
+        {
+            dir = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        }
+
+        return dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.forward;
+    }
+    #endregion
+
+    // 이펙트 및 디버그용 스킬 범위 표시 메서드.
+    private void ShowDebugSector(Vector3 center, Vector3 forward, float range, float angle)
+    {
+        if (pattern == null || !pattern.isShowSkillRange)
+            return;
+
+        SkillRangeVisual.ShowSector(center, forward, range, angle, DefaultRangeColor, SkillRangeFlashDuration);
+    }
+    private void ShowDebugLine(Vector3 origin, Vector3 forward, float length, float width)
+    {
+        if (pattern == null || !pattern.isShowSkillRange)
+            return;
+
+        SkillRangeVisual.ShowLine(origin, forward, length, width, DefaultRangeColor, SkillRangeFlashDuration);
     }
 }

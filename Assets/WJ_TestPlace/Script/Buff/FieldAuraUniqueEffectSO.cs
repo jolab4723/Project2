@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ItemSystem
 {
@@ -43,6 +43,13 @@ namespace ItemSystem
 
         public override void OnEquip(ItemInstance ownerItem)
         {
+            // !! 존은 DontDestroyOnLoad가 아니라 씬 전환 때 파괴된다. 존이 없다는 건 이 효과가 꺼져
+            //    있다는 뜻이므로 장부도 비어 있어야 한다.
+            if (zoneObject == null)
+                UniqueEffectOwners.Clear(this);
+
+            UniqueEffectOwners.AddOwner(this, ownerItem);
+
             if (zoneObject != null)
                 return; // 이미 만들어져 있으면 중복 생성 방지
 
@@ -84,6 +91,11 @@ namespace ItemSystem
 
         public override void OnUnequip(ItemInstance ownerItem)
         {
+            // 같은 유물을 2개 들고 하나만 잃었을 때 오라가 사라지던 문제 때문에,
+            // 마지막 소유자가 빠질 때만 존을 없앤다.
+            if (!UniqueEffectOwners.RemoveOwner(this, ownerItem))
+                return;
+
             if (zoneObject == null)
                 return;
 
@@ -108,5 +120,6 @@ namespace ItemSystem
         public BuffStackBehavior StackBehavior => buffSpec != null ? buffSpec.stackBehavior : BuffStackBehavior.Ignore;
         public int MaxStack => buffSpec != null ? buffSpec.maxStack : 0;
         public bool IsPermanent => buffSpec == null || buffSpec.IsPermanent;
+        public BuffDisplayKind DisplayKind => buffSpec != null ? buffSpec.displayKind : BuffDisplayKind.Auto;
     }
 }

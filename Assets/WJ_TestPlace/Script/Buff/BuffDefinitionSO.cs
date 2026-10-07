@@ -16,6 +16,25 @@ namespace ItemSystem
     }
 
     /// <summary>
+    /// 버프 HUD에서 이 버프를 어떤 성격으로 보여줄지.
+    ///
+    /// 예전엔 스탯 값에 음수가 하나라도 있으면 무조건 디버프(빨강)로 칠했는데, 오버클럭 코어처럼
+    /// 장점과 대가를 함께 주는 효과가 순수 디버프와 똑같이 보이는 문제가 있었다. 표시 성격은
+    /// 수치에서 추정할 게 아니라 기획이 정하는 값이라 여기서 직접 지정한다.
+    /// </summary>
+    public enum BuffDisplayKind
+    {
+        /// <summary>미지정. 스탯 값의 부호로 추정한다(음수가 하나라도 있으면 디버프). 기존 동작.</summary>
+        Auto,
+        /// <summary>이로운 효과.</summary>
+        Buff,
+        /// <summary>해로운 효과.</summary>
+        Debuff,
+        /// <summary>장점과 대가를 함께 주는 효과.</summary>
+        Tradeoff,
+    }
+
+    /// <summary>
     /// 버프 하나의 정의. ItemDefinitionSO와 같은 역할(설계 데이터)을 하고,
     /// 실제 적용 상태는 BuffInstance(런타임)가 따로 들고 있다.
     ///
@@ -45,6 +64,10 @@ namespace ItemSystem
         [Tooltip("디버프는 여기 음수 값을 넣으면 됨. 스택 시 이 값 * 스택 수만큼 적용됨.")]
         public FixedStatValue[] statEffects;
 
+        [Header("표시")]
+        [Tooltip("버프 HUD 색 구분용. Auto면 스탯 값의 부호로 추정한다(음수가 하나라도 있으면 디버프).")]
+        public BuffDisplayKind displayKind = BuffDisplayKind.Auto;
+
         public bool IsPermanent => duration <= 0f;
 
         // ----- IBuffSource -----
@@ -57,5 +80,6 @@ namespace ItemSystem
         BuffStackBehavior IBuffSource.StackBehavior => stackBehavior;
         int IBuffSource.MaxStack => maxStack;
         bool IBuffSource.IsPermanent => IsPermanent;
+        BuffDisplayKind IBuffSource.DisplayKind => displayKind;
     }
 }

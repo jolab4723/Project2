@@ -1,5 +1,7 @@
 /Assets/Resources_GoogleDrive/
 /Assets/Firebase/
+# Firebase Admin SDK 서비스 계정 키는 클라이언트 설정과 달리 비밀 파일이다.
+*-firebase-adminsdk-*.json
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -8,6 +10,13 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
+
+# Local Unity validation captures, logs and one-off runners.
+/RunValidation/
+/Assets/Resources/PerformanceTestRunInfo.json
+/Assets/Resources/PerformanceTestRunInfo.json.meta
+/Assets/Resources/PerformanceTestRunSettings.json
+/Assets/Resources/PerformanceTestRunSettings.json.meta
 
 /[Aa]ssets/AssetStoreTools*
 
@@ -31,6 +40,10 @@ ExportedObj/
 *.svd
 *.pdb
 *.mdb
+# .mdb 본체가 무시 대상이라 짝이 되는 .meta도 함께 무시한다.
+# (추적된 .meta만 남으면 Unity가 원본 없는 고아 meta로 보고 지우고, 체크아웃 때 다시 살아나는 일이 반복된다)
+# *.pdb.meta는 넣지 않는다 - ExternalDependencyManager의 .pdb는 실제로 추적 중이라 짝 meta가 있어야 한다.
+*.mdb.meta
 *.opendb
 *.VC.db
 *.DotSettings.user
@@ -45,6 +58,9 @@ Thumbs.db
 
 sysinfo.txt
 Assets/AddressableAssetsData/*/*.bin*
+
+# Source-production files live beside the Unity repository.
+/ArtSource/
 
 # git mergetool(Meld/UnityYAMLMerge) 충돌 백업 파일
 *.orig

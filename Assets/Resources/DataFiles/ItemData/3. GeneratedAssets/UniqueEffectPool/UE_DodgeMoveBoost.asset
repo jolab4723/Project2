@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d9d70e2393e904391557d856986167, type: 3}
+  m_Name: UE_DodgeMoveBoost
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSystem.TriggeredBuffUniqueEffectSO
+  effectName: "\uC794\uC5EC \uCD94\uB825"
+  icon: {fileID: 21300000, guid: e74414d3ffc19274bb377e5c399ece63, type: 3}
+  effectDescription: "\uD68C\uD53C \uC0AC\uC6A9 \uD6C4 {0}\uCD08\uAC04 \uC77C\uBC18
+    \uC774\uB3D9 \uC18D\uB3C4\uAC00 {1}% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCFE8\uD0C0\uC784
+    {2}\uCD08)"
+  coefficients:
+  - 2
+  - 20
+  - 6
+  triggerCondition: 5
+  cooldownSeconds: 6
+  duplicatePolicy: 0
+  buffSpec:
+    statEffects:
+    - statType: 7
+      value: 20
+    duration: 2
+    stackBehavior: 0
+    maxStack: 1
+    displayKind: 0
+  persistStackOnItem: 0

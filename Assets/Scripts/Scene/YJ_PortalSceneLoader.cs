@@ -5,16 +5,21 @@ using Core;
 public class YJ_PortalSceneLoader : MonoBehaviour
 {
     public string loadSceneName = "StageSelect";
-    [SerializeField] private string clearSceneName = "ClearScene";
+    // 기존 포탈 프리팹에 남은 ClearScene 직렬화값 대신 실제 공용 결과 씬을 사용한다.
+    private const string ResultSceneName = "ClearResultScene";
     [SerializeField] private bool completePendingStage = true;
     [SerializeField] private YJ_StageManager stageManager;
     [SerializeField] private YJ_PortalEffect portalEffect;
 
     // Trigger가 여러 번 호출되어 저장 및 씬 전환이 중복 실행되는 것을 막습니다.
     private bool transitionRequested;
+    private bool clearResultRecorded;
+    private bool runCreditsSettled;
 
     private void Awake()
     {
+        // SW 수정: 세션 모드에서는 로컬 진행 관리자를 초기화하거나 검색하지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (stageManager == null)
             stageManager = FindFirstObjectByType<YJ_StageManager>();
 
@@ -27,32 +32,85 @@ public class YJ_PortalSceneLoader : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // SW 수정: 멀티 포탈의 소유권·클리어·전환은 세션의 서버 포탈이 확인합니다.
+        if (MirrorNetworkManager.OwnsGameplay) return;
         if (transitionRequested || ! other.CompareTag("Player"))
+            return;
+
+        var controller = other.GetComponentInParent<T_PlayerController>();
+        var loader = SceneLoader.Instance;
+        if (controller == null || !controller.IsControlEnabled || stageManager == null ||
+            loader == null || loader.IsLoading)
             return;
 
         transitionRequested = true;
 
         string destinationSceneName = loadSceneName;
-        if (completePendingStage &&
-            ! CompletePendingStage(out destinationSceneName))
+        if (completePendingStage && ! CompletePendingStage(out destinationSceneName))
         {
             transitionRequested = false;
             return;
         }
 
-        StartCoroutine(PlayEffectAndLoadScene(
-            other.gameObject,
-            destinationSceneName));
+        StartCoroutine(PlayEffectAndLoadScene(other.gameObject, destinationSceneName));
     }
 
-    private IEnumerator PlayEffectAndLoadScene(
-        GameObject player,
-        string destinationSceneName)
+    private IEnumerator PlayEffectAndLoadScene(GameObject player, string destinationSceneName)
     {
-        if (portalEffect != null)
-            yield return portalEffect.PlayOnce(player);
+        var controller = player.GetComponentInParent<T_PlayerController>();
+        SceneLoader sceneLoader = SceneLoader.Instance;
+        if (controller == null || !controller.IsControlEnabled ||
+            stageManager == null || sceneLoader == null || sceneLoader.IsLoading ||
+            string.IsNullOrWhiteSpace(destinationSceneName) ||
+            destinationSceneName == "LoadingScene" ||
+            !Application.CanStreamedLevelBeLoaded(destinationSceneName) ||
+            !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+        {
+            Log.Error("포탈 이동을 시작할 수 없습니다. 플레이어 조작 상태와 StageManager, 로딩 씬 및 목적 씬 등록을 확인하세요.");
+            transitionRequested = false;
+            yield break;
+        }
 
-        LoadScene(destinationSceneName);
+        player = controller.gameObject;
+        Renderer[] renderers = player.GetComponentsInChildren<Renderer>(true);
+        bool[] rendererStates = new bool[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+            rendererStates[i] = renderers[i].enabled;
+
+        // Renderer가 숨겨지기 전에 입력 및 기존 NavMesh 경로를 함께 차단합니다.
+        // 상태이상/사망에 사용하는 조작 플래그와 구분된 기존 API를 사용합니다.
+        controller.SetCutSceneControlBlock(true);
+        try
+        {
+            if (portalEffect != null)
+                yield return portalEffect.PlayOnce(player);
+
+            LoadScene(destinationSceneName);
+
+            // 이펙트 종료 후 실제 씬 전환이 끝날 때까지 차단을 유지합니다.
+            while (sceneLoader != null && sceneLoader.IsLoading)
+                yield return null;
+        }
+        finally
+        {
+            // 성공 시 이전 씬의 플레이어는 파괴됩니다.
+            // 실패/중단으로 남아 있는 경우에만 이전 표시 상태와 조작을 복구합니다.
+            if (controller != null)
+            {
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] != null)
+                        renderers[i].enabled = rendererStates[i];
+                }
+                controller.SetCutSceneControlBlock(false);
+            }
+            transitionRequested = false;
+        }
+    }
+
+    private void OnDisable()
+    {
+        StopAllCoroutines();
     }
 
     /// <summary>
@@ -63,8 +121,7 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     {
         destinationSceneName = loadSceneName;
 
-        YJ_StageSaveService saveService =
-            FindFirstObjectByType<YJ_StageSaveService>();
+        YJ_StageSaveService saveService = FindFirstObjectByType<YJ_StageSaveService>();
         if (saveService == null)
             saveService = gameObject.AddComponent<YJ_StageSaveService>();
 
@@ -74,9 +131,78 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
         }
 
-        if (!saveService.CompletePendingNode(
-                out StageNodeSaveData completedNode,
-                out StageActType completedAct))
+        // 최종 노드를 완료하기 전에 목적 씬과 결과 전달을 확인한다.
+        // 실패한 상태에서 pending을 지우면 재시도 때 일반 StageSelect로 이동할 수 있다.
+        if (!saveService.TryLoadSaveData(out StageMapSaveData map))
+            return false;
+        StageNodeSaveData pending = map.nodes?.Find(node => node != null && node.id == map.pendingNodeId);
+        // 노드 완료 저장 후 씬 이동만 실패한 경우 결과 씬으로 다시 시도한다.
+        if (clearResultRecorded && string.IsNullOrEmpty(map.pendingNodeId) && map.act == StageActType.Act3)
+        {
+            destinationSceneName = ResultSceneName;
+            return true;
+        }
+        bool bossClear = pending != null && pending.type == StageNodeType.Boss;
+        bool finalBoss = map.act == StageActType.Act3 && bossClear;
+        if (finalBoss)
+        {
+            var loader = SceneLoader.Instance;
+            if (loader == null || loader.IsLoading ||
+                !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                Log.Error("Act3 클리어 결과 씬 또는 SceneLoader 설정을 확인하세요.");
+                return false;
+            }
+            if (!clearResultRecorded)
+            {
+                var tracker = KY_RunStatsTracker.Instance;
+                // 결과 화면에는 실제로 계정에 적립되는 금액(보유 크레딧 + 아이템 원가 50%)을 표시한다.
+                int clearCredits = DataManager.Instance != null
+                    ? DataManager.Instance.CalculateRunEndCredits(RunEndReason.Clear)
+                    : 0;
+                if (tracker == null || !tracker.FinishRun(true, clearCredits))
+                {
+                    Log.Error("클리어 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
+                    return false;
+                }
+                clearResultRecorded = true;
+            }
+        }
+
+        // 다음 Act가 있는 보스는 원정을 끝내지 않고, 현재 기록을 중간 정산으로 복사한다.
+        // (크레딧은 이 시점에 계정으로 옮기지 않는다 - 아래 최종 클리어 정산 참고)
+        bool hasNextAct = bossClear && TryGetNextAct(map.act, out _);
+        if (hasNextAct)
+        {
+            var loader = SceneLoader.Instance;
+            if (loader == null || loader.IsLoading ||
+                !Application.CanStreamedLevelBeLoaded(ResultSceneName) ||
+                !Application.CanStreamedLevelBeLoaded("LoadingScene"))
+            {
+                Log.Error("액트 중간 정산 결과 씬 또는 SceneLoader 설정을 확인하세요.");
+                return false;
+            }
+
+            var tracker = KY_RunStatsTracker.Instance;
+            if (tracker == null || !tracker.PublishActClearSnapshot())
+            {
+                Log.Error("액트 중간 정산 결과 기록에 실패했습니다. Start 씬의 KY_RunStatsTracker와 ResultPayload를 확인하세요.");
+                return false;
+            }
+        }
+
+        // 크레딧은 액트 중간 보스가 아니라 최종 클리어에서만 계정으로 옮긴다.
+        // (중간에 옮기면 지갑이 0이 되어 다음 액트 상점에서 쓸 수 없고, 아이템 원가가 여러 번 계산된다.)
+        // 노드 완료 저장만 실패해 재시도하는 경우 아이템을 다시 더하지 않도록 한 번만 정산한다.
+        if (finalBoss && !runCreditsSettled)
+        {
+            if (!TransferRunCreditsToProfile())
+                return false;
+            runCreditsSettled = true;
+        }
+
+        if ( ! saveService.CompletePendingNode(out StageNodeSaveData completedNode, out StageActType completedAct))
         {
             return false;
         }
@@ -85,11 +211,17 @@ public class YJ_PortalSceneLoader : MonoBehaviour
             return true;
 
         if (TryGetNextAct(completedAct, out StageActType nextAct))
-            return saveService.PrepareNewAct(nextAct);
+        {
+            if (!saveService.PrepareNewAct(nextAct))
+                return false;
+
+            destinationSceneName = ResultSceneName;
+            return true;
+        }
 
         if (completedAct == StageActType.Act3)
         {
-            destinationSceneName = clearSceneName;
+            destinationSceneName = ResultSceneName;
             return true;
         }
 
@@ -98,20 +230,34 @@ public class YJ_PortalSceneLoader : MonoBehaviour
     }
 
     /// <summary>
+    /// 최종 보스 클리어 시 현재 런 크레딧(보유 크레딧 + 아이템 원가 50%)을 영구 프로필로 옮기고
+    /// 로컬 및 Firebase 저장을 요청합니다.
+    /// </summary>
+    private static bool TransferRunCreditsToProfile()
+    {
+        DataManager dataManager = DataManager.Instance;
+        if (dataManager != null && dataManager.SettleRunCredits(RunEndReason.Clear))
+            return true;
+
+        Log.Error("게임 클리어 크레딧을 프로필에 저장하지 못했습니다.");
+        return false;
+    }
+
+    /// <summary>
     /// Act1과 Act2의 다음 Act를 반환합니다. Act3은 클리어 씬으로 이동하므로 false입니다.
     /// </summary>
-    private static bool TryGetNextAct(
-        StageActType completedAct,
-        out StageActType nextAct)
+    private static bool TryGetNextAct(StageActType completedAct, out StageActType nextAct)
     {
         switch (completedAct)
         {
             case StageActType.Act1:
                 nextAct = StageActType.Act2;
                 return true;
+
             case StageActType.Act2:
                 nextAct = StageActType.Act3;
                 return true;
+
             default:
                 nextAct = default;
                 return false;

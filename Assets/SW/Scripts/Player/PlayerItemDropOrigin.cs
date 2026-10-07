@@ -10,16 +10,20 @@ public sealed class PlayerItemDropOrigin : MonoBehaviour
         out Vector3 position,
         out Quaternion rotation)
     {
-        if (dropPoint == null)
+        Transform origin = dropPoint;
+        if (origin == null && PlayerHealthManager.Instance != null)
+            origin = PlayerHealthManager.Instance.transform;
+
+        if (origin == null)
         {
             position = default;
             rotation = Quaternion.identity;
             return false;
         }
 
-        position = dropPoint.position;
-        position.y = dropPoint.position.y + heightOffset;
-        rotation = dropPoint.rotation;
+        position = origin.position;
+        position.y += heightOffset;
+        rotation = origin.rotation;
         return true;
     }
 }

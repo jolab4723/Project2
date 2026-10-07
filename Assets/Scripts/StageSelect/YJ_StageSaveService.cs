@@ -6,11 +6,37 @@ using UnityEngine;
 
 /// <summary>
 /// 스테이지 선택 맵 상태를 JSON 파일로 저장하고 다시 불러옵니다.
+///
+/// WJ 이우진 수정(2026-10-06): 디스크 모드의 맵은 더 이상 별도 파일(stage_map_save.json)이 아니라
+/// DataManager의 gamesave.json 안(GameSaveData.stage)에 저장한다. 캐릭터 저장과 같은 저장 주인(계정/게스트)·
+/// 클라우드 업로드·실패 시 되돌리기를 따르고, 노드 완료와 캐릭터 저장이 한 파일에서 함께 확정된다.
+/// 메모리 모드(IsSessionOnly, Start 씬 정식 흐름)와 멀티(서버 스냅샷)는 기존과 같다. 공개 함수는 그대로라 호출부는 바뀌지 않는다.
 /// </summary>
 [DisallowMultipleComponent]
 public class YJ_StageSaveService : MonoBehaviour
 {
     private const string DefaultFileName = "stage_map_save.json";
+
+    // 임시 통합 테스트: Start에서 시작한 런은 디스크 대신 메모리로만 진행을 전달한다.
+    public static bool IsSessionOnly { get; private set; }
+    private static string sessionJson;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSession()
+    {
+        IsSessionOnly = false;
+        sessionJson = null;
+    }
+
+    public static void BeginTemporaryRun()
+    {
+        IsSessionOnly = true;
+        sessionJson = JsonConvert.SerializeObject(new StageMapSaveData
+        {
+            act = StageActType.Act1,
+            startNewAct = true
+        }, SerializerSettings);
+    }
 
     // 저장 파일에 CLR 타입 정보가 기록되지 않도록 제한하고 컬렉션을 JSON 값으로 교체합니다.
     private static readonly JsonSerializerSettings SerializerSettings = new()
@@ -26,21 +52,28 @@ public class YJ_StageSaveService : MonoBehaviour
 
     [Header("File")]
     // Application.persistentDataPath 아래에 생성할 JSON 파일 이름입니다.
+    // WJ 이우진 수정(2026-10-06): 지금은 쓰지 않는다(맵은 gamesave.json 안에 저장). 씬 직렬화 값 보존을 위해 필드만 남긴다.
+    // 예전 파일은 DataManager가 게스트 저장일 때 한 번 gamesave.json으로 옮긴다.
     [SerializeField] private string fileName = DefaultFileName;
     // 사람이 직접 내용을 확인하기 쉽도록 JSON 들여쓰기를 적용할지 결정합니다.
+    // WJ 이우진 수정(2026-10-06): 지금은 쓰지 않는다(gamesave.json은 DataManager가 들여쓰기로 저장).
     [SerializeField] private bool prettyPrint = true;
 
     /// <summary>
     /// json 파일 저장 경로
+    /// WJ 이우진 수정(2026-10-06): 맵이 들어 있는 현재 저장 주인의 gamesave.json 경로.
     /// </summary>
-    public string SavePath => Path.Combine(
-        Application.persistentDataPath,
-        GetSafeFileName());
+    public string SavePath => Core.DataManager.GameplaySavePath;
 
     /// <summary>
     /// 현재 저장 경로에 JSON 파일이 존재하는지 반환합니다.
+    /// WJ 이우진 수정(2026-10-06): 디스크 모드는 gamesave.json에 맵이 저장돼 있는지로 판단한다.
     /// </summary>
-    public bool HasSaveFile => File.Exists(SavePath);
+    public bool HasSaveFile => MirrorNetworkManager.OwnsGameplay
+        ? ((MirrorNetworkManager)Mirror.NetworkManager.singleton).HasRunSnapshot
+        : IsSessionOnly
+        ? sessionJson != null
+        : Core.DataManager.Instance?.HasStageMap == true;
 
     /// <summary>
     /// 런타임 시작 시 Inspector 참조가 비어 있으면 같은 씬의 매니저를 찾습니다.
@@ -136,6 +169,131 @@ public class YJ_StageSaveService : MonoBehaviour
         return WriteSaveData(saveData);
     }
 
+    /// <summary>보상을 지급하기 전에 목적 씬을 검증한다. 저장/노드 완료는 하지 않는다.</summary>
+    public bool TryResolveUnknownDestination(string nodeKey, string stageId, YJ_UnknownStageDestination destination,
+        out string sceneName, out string error)
+    {
+        sceneName = null;
+        error = null;
+        if (!TryLoadSaveData(out var map))
+        {
+            error = "스테이지 진행 데이터를 읽지 못했습니다.";
+            return false;
+        }
+
+        return TryResolveUnknownDestinationData(map, nodeKey, stageId, destination, out sceneName, out _, out error);
+    }
+
+    // SW 수정: 서버도 동일한 목적지 규칙만 조회하고 싱글 저장은 호출하지 않습니다.
+    /// <summary>맵 스냅샷에서 이벤트 목적지를 계산하며 파일이나 진행 상태는 변경하지 않습니다.</summary>
+    public static bool TryResolveUnknownDestinationData(StageMapSaveData map, string nodeKey, string stageId,
+        YJ_UnknownStageDestination destination, out string sceneName, out StageNodeType type, out string error)
+    {
+        sceneName = null;
+        error = null;
+        type = StageNodeType.Event;
+        switch (destination)
+        {
+            case YJ_UnknownStageDestination.Battle:
+                type = StageNodeType.Battle;
+                break;
+            case YJ_UnknownStageDestination.Elite:
+                type = StageNodeType.Elite;
+                break;
+            case YJ_UnknownStageDestination.Camp:
+                type = StageNodeType.Camp;
+                break;
+            default:
+                error = "Unknown의 후속 목적지가 잘못되었습니다.";
+                return false;
+        }
+
+        var node = map?.nodes?.Find(n => n != null && n.id == map.pendingNodeId);
+        if (node == null || string.IsNullOrWhiteSpace(stageId) || node.unknownStageId != stageId ||
+            nodeKey != $"{(int)map.act}:{map.mapSeed}:{node.id}" || map.clearedNodeIds?.Contains(node.id) == true)
+        {
+            error = "이동 요청과 진행 중인 Unknown 노드가 일치하지 않습니다.";
+            return false;
+        }
+
+        if (node.type != StageNodeType.Event)
+        {
+            if (node.type != type || string.IsNullOrWhiteSpace(node.sceneName))
+            {
+                error = "이미 다른 목적지로 이동 처리된 노드입니다.";
+                return false;
+            }
+
+            sceneName = node.sceneName;
+            return true; // 이동 저장 이후 씬 로드만 재시도.
+        }
+        if (type == StageNodeType.Camp)
+            sceneName = map.unknownCampSceneName;
+        else
+        {
+            var candidates = new System.Collections.Generic.List<string>();
+            foreach (var scene in map.unknownCombatSceneNames ?? new System.Collections.Generic.List<string>())
+            {
+                if (!string.IsNullOrWhiteSpace(scene) && !candidates.Contains(scene.Trim()))
+                    candidates.Add(scene.Trim());
+            }
+            candidates.Sort(StringComparer.Ordinal);
+            var unused = candidates.FindAll(scene => map.usedStageSceneNames?.Contains(scene) != true);
+            if (unused.Count > 0)
+                candidates = unused;
+            if (candidates.Count > 0)
+            {
+                int seed = unchecked((map.mapSeed * 397 ^ node.floor) * 397 ^ node.nodeIndex);
+                sceneName = candidates[new System.Random(seed).Next(candidates.Count)];
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(sceneName))
+        {
+            sceneName = sceneName.Trim();
+            return true;
+        }
+
+        error = "현재 Act의 목적 씬 정보가 없습니다. StageSelect를 거쳐 진입하고 Act별 씬 설정을 확인하세요.";
+        return false;
+    }
+
+    /// <summary>보상 저장 성공 뒤 호출. 같은 노드를 후속 스테이지로 전환하며 완료/층 진행은 포탈에 맡긴다.</summary>
+    public bool TryRedirectUnknownNode(string nodeKey, string stageId, YJ_UnknownStageDestination destination,
+        string expectedSceneName, out string error)
+    {
+        error = null;
+        if (!TryLoadSaveData(out var map))
+        {
+            error = "이동할 진행 데이터를 읽지 못했습니다.";
+            return false;
+        }
+        if (!TryResolveUnknownDestinationData(map, nodeKey, stageId, destination, out string scene, out var type, out error))
+            return false;
+        if (scene != expectedSceneName)
+        {
+            error = "보상 처리 중 목적 씬이 변경되었습니다. 다시 시도하세요.";
+            return false;
+        }
+
+        var node = map.nodes.Find(n => n != null && n.id == map.pendingNodeId);
+        if (node.type == type && node.sceneName == scene)
+            return true;
+
+        node.type = type;
+        node.sceneName = scene;
+        // unknownStageId는 보상/이동 실패 재시도용 출처로 유지한다.
+        if (type == StageNodeType.Battle || type == StageNodeType.Elite)
+        {
+            map.usedStageSceneNames ??= new System.Collections.Generic.List<string>();
+            AddUnique(map.usedStageSceneNames, scene);
+        }
+        if (WriteSaveData(map))
+            return true;
+
+        error = "보상은 저장되었지만 목적지 저장에 실패했습니다. 같은 선택으로 재시도하세요.";
+        return false;
+    }
+
     /// <summary>
     /// 다음 StageSelect 진입 시 지정한 Act의 새 맵을 생성하도록 저장 상태를 교체합니다.
     /// </summary>
@@ -161,42 +319,30 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     private bool WriteSaveData(StageMapSaveData saveData)
     {
+        // SW 수정: 서버 스냅샷은 세션만 갱신하며 싱글 파일/임시 런에 쓰지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return false;
         if (saveData == null)
         {
             Log.Error("저장할 스테이지 맵 데이터가 없습니다.");
             return false;
         }
 
-        string path = SavePath;
-        string temporaryPath = path + ".tmp";
-
-        try
+        if (IsSessionOnly)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            Formatting formatting = prettyPrint
-                ? Formatting.Indented
-                : Formatting.None;
-            string json = JsonConvert.SerializeObject(
-                saveData,
-                formatting,
-                SerializerSettings);
-            File.WriteAllText(temporaryPath, json, new UTF8Encoding(false));
-            File.Copy(temporaryPath, path, true);
-            File.Delete(temporaryPath);
-
-            Log.Print($"스테이지 맵 저장 완료: {path}");
+            sessionJson = JsonConvert.SerializeObject(saveData, SerializerSettings);
             return true;
         }
-        catch (Exception exception)
+
+        // WJ 이우진 수정(2026-10-06): 별도 파일 대신 gamesave.json의 stage에 기록한다(파일 교체·업로드 대기는 DataManager 공용 경계).
+        Core.DataManager dataManager = Core.DataManager.Instance;
+        if (dataManager == null || !dataManager.TrySaveStageMap(saveData))
         {
-            Log.Error($"스테이지 맵 저장 실패\n{exception}");
+            Log.Error("스테이지 맵 저장 실패: 게임 저장(gamesave.json)에 기록하지 못했습니다.");
             return false;
         }
-        finally
-        {
-            if (File.Exists(temporaryPath))
-                File.Delete(temporaryPath);
-        }
+
+        Log.Print($"스테이지 맵 저장 완료: {SavePath}");
+        return true;
     }
 
     /// <summary>
@@ -273,9 +419,12 @@ public class YJ_StageSaveService : MonoBehaviour
     public bool TryLoadSaveData(out StageMapSaveData saveData)
     {
         saveData = null;
+        // SW 수정: 멀티 조회는 독립 복사된 서버 스냅샷을 사용합니다.
+        if (MirrorNetworkManager.OwnsGameplay)
+            return ((MirrorNetworkManager)Mirror.NetworkManager.singleton).TryGetRunSnapshot(out saveData);
         string path = SavePath;
 
-        if (!File.Exists(path))
+        if (!HasSaveFile)
         {
             Log.Warning($"스테이지 맵 저장 파일이 없습니다: {path}");
             return false;
@@ -283,10 +432,12 @@ public class YJ_StageSaveService : MonoBehaviour
 
         try
         {
-            string json = File.ReadAllText(path, Encoding.UTF8);
-            saveData = JsonConvert.DeserializeObject<StageMapSaveData>(
-                json,
-                SerializerSettings);
+            // 임시 런에서는 기존 저장 파일을 읽지 않는다. 역직렬화로 독립 복사본을 반환한다.
+            // WJ 이우진 수정(2026-10-06): 디스크 모드는 gamesave.json 안의 맵을 DataManager에서 복사본으로 받는다.
+            if (IsSessionOnly)
+                saveData = JsonConvert.DeserializeObject<StageMapSaveData>(sessionJson, SerializerSettings);
+            else if (Core.DataManager.Instance == null || !Core.DataManager.Instance.TryLoadStageMap(out saveData))
+                saveData = null;
 
             if (saveData == null)
             {
@@ -349,24 +500,24 @@ public class YJ_StageSaveService : MonoBehaviour
     /// </summary>
     public bool DeleteSaveFile()
     {
-        string path = SavePath;
-        if (!File.Exists(path))
+        // SW 수정: 멀티 종료/재시작은 오프라인 진행을 삭제하지 않습니다.
+        if (MirrorNetworkManager.OwnsGameplay) return false;
+        if (IsSessionOnly)
         {
-            Log.Print($"삭제할 스테이지 맵 저장 파일이 없습니다: {path}");
+            sessionJson = null;
             return true;
         }
 
-        try
+        // WJ 이우진 수정(2026-10-06): 게임 저장 안의 맵만 비운다(gamesave.json 자체는 지우지 않는다).
+        Core.DataManager dataManager = Core.DataManager.Instance;
+        if (dataManager == null || !dataManager.TryClearStageMap())
         {
-            File.Delete(path);
-            Log.Print($"스테이지 맵 저장 파일 삭제 완료: {path}");
-            return true;
-        }
-        catch (Exception exception)
-        {
-            Log.Error($"스테이지 맵 저장 파일 삭제 실패\n{exception}");
+            Log.Error("스테이지 맵 삭제 실패: 게임 저장(gamesave.json)의 맵을 비우지 못했습니다.");
             return false;
         }
+
+        Log.Print($"스테이지 맵 삭제 완료: {SavePath}");
+        return true;
     }
 
     /// <summary>
@@ -375,21 +526,6 @@ public class YJ_StageSaveService : MonoBehaviour
     public void DeleteFromButton()
     {
         DeleteSaveFile();
-    }
-
-    /// <summary>
-    /// 저장 파일 이름에서 디렉터리 문자를 제거해 persistentDataPath 밖으로 나가지 않게 합니다.
-    /// </summary>
-    private string GetSafeFileName()
-    {
-        string safeName = Path.GetFileName(fileName);
-        if (string.IsNullOrWhiteSpace(safeName))
-            safeName = DefaultFileName;
-
-        if (!safeName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-            safeName += ".json";
-
-        return safeName;
     }
 
     /// <summary>

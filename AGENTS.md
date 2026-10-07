@@ -20,6 +20,8 @@
 
 ### 1-1. 간결한 구현 원칙
 
+- 수정할 때 기존 팀원이 작성한 주석은 변경 내용과 직접 충돌하지 않는 한 삭제하지 않는다. 코드 이동·공통화 시에도 설명과 작성 의도를 적합한 위치에 보존하고, 실제 동작과 충돌하는 부분만 필요한 범위로 수정한다.
+
 - 요청된 기능은 구현한다. 더 간단한 대안이 있더라도 작업을 임의로 축소하거나 중단하지 말고, 구현 후 선택 가능한 대안을 한 줄로 알린다.
 - 코드를 추가하기 전에 관련 호출 흐름과 공통 진입점을 확인한다. 조사 범위는 이 문서의 담당 영역과 도구 사용 기준을 따른다.
 - 구현 방법은 기존 코드와 API 재사용, Unity 기본 기능, 이미 설치된 패키지, 필요한 최소 신규 코드 순서로 검토한다.
@@ -37,10 +39,16 @@
 ### 1-2. Codex 서브에이전트 운영 원칙
 
 - Codex의 주 에이전트는 Sol 사용을 전제로 하며, 작업 계획, 요구사항 해석, 구조 결정, 담당 영역 조정, 중요 구현의 채택 여부, Unity 최종 검증과 완료 판단을 직접 소유한다.
-- 호출 흐름, 파일·직렬화 참조, 변경 영향, 로그·테스트 결과처럼 범위가 명확하고 독립된 읽기 중심 조사가 필요하면 `.codex/agents/unity-scout.toml`의 `unity_scout`에 위임한다. 단일 검색이나 몇 개 파일 확인으로 끝나는 조사는 직접 처리한다. 주 에이전트는 조사 질문, 허용 경로와 필요한 출력 근거를 먼저 지정하고 결과를 구현 전에 독립적으로 확인한다.
-- 코드 구현은 기본적으로 주 에이전트가 직접 수행한다. Luna에 구현을 맡길 때는 주 에이전트가 먼저 구현 방법, 대상 파일, 동작 경계와 검증 기준을 확정한 뒤 `.codex/agents/unity-supervised-worker.toml`의 `unity_supervised_worker`에 명시적으로 위임한다.
+- `codex/unity-6000-3-22-test`와 `unity-6000-3-22-test`에서는 **단일 영역이나 많지 않은 관련 영역의 자료조사·코드/호출 흐름·파일/직렬화 참조·변경 영향 확인, 로그/테스트 결과 조사는 모두 주 에이전트가 직접 처리한다.** 단일 검색이나 소수 파일 확인, 일반적인 컴파일·Console·테스트 결과 확인을 위해 서브에이전트를 호출하지 않는다.
+- 이 브랜치의 조사 위임은 여러 영역에 걸친 큰 조사를 서로 독립된 범위로 나눠 병렬 수행하면 실제 작업 시간을 줄일 수 있는 경우 또는 사용자가 명시적으로 위임을 요청한 경우에만 사용한다. 단순히 조사·로그·테스트 작업이라는 이유로 위임하지 않으며, 주 에이전트가 바로 처리할 수 있는 작업을 서브에이전트에 순차적으로 넘기지 않는다.
+- 이 브랜치에서 조사를 위임할 때만 `.codex/agents/unity-scout.toml`에 정의한 `unity_scout`을 사용한다. 조사 서브에이전트는 GPT-6.1 Sol (`model = "gpt-6.1-sol"`), xhigh 추론 (`model_reasoning_effort = "xhigh"`)을 사용하며, 기존 Fast 모드와 읽기 전용 경계는 유지한다. Luna 조사 에이전트는 새로 호출하지 않는다. 이 브랜치의 조사 정책을 다른 담당 브랜치로 자동 확대하지 않는다.
+- 위임 시 주 에이전트는 조사 질문, 허용 경로와 필요한 출력 근거를 먼저 지정하고, 조사 결과의 채택·요구사항 해석·구조 결정·최종 검증을 직접 책임진다.
+- 위 테스트 브랜치에서 현재 세션에 로드된 `unity_scout` 또는 `unity_supervised_worker`가 GPT-6.1 Sol/xhigh로 표시되지 않으면 그 역할을 호출하거나 모델 변경이 반영됐다고 가정하지 않는다. 갱신된 역할을 다시 로드하거나, 허용된 일반 서브에이전트에 `gpt-6.1-sol`과 `xhigh`를 명시하고 각 역할의 조사·구현 권한 경계를 그대로 전달한다. 해당 모델 실행이 불가능하면 다른 모델로 자동 대체하지 않고 주 에이전트가 직접 처리하며 제한을 알린다.
+- 코드 구현은 기본적으로 주 에이전트가 직접 수행한다. 다만 위 테스트 브랜치에서는 **아주 단순한 구현·수정과 복잡한 구현은 주 에이전트가 직접 수행하고, 그 사이의 중간 규모 구현은 `unity_supervised_worker`에 위임한다.** 즉시 끝낼 수 있는 작은 수정, 구조 결정이나 여러 시스템의 긴밀한 조율이 필요한 구현은 메인이 맡는다. 방법과 파일·동작 경계가 명확하고 위임으로 시간을 줄일 수 있는 구현은 서브에 맡기며, 호출·인계 비용이 더 크면 메인이 직접 처리한다.
+- 위 테스트 브랜치의 `.codex/agents/unity-supervised-worker.toml`에 정의한 구현 서브에이전트도 GPT-6.1 Sol (`model = "gpt-6.1-sol"`), xhigh 추론 (`model_reasoning_effort = "xhigh"`)을 사용한다. 이 구현 배정 기준과 모델 변경을 다른 담당 브랜치나 Blender Luna 작업에 자동 확대하지 않는다.
+- 구현을 위임할 때는 주 에이전트가 먼저 구현 방법, 대상 파일, 동작 경계와 검증 기준을 확정한 뒤 `unity_supervised_worker`에 명시적으로 위임한다.
 - `unity_supervised_worker`는 지정된 코드 파일만 수정한다. Scene, Prefab, `ProjectSettings/**`, `Packages/**`, 외부 에셋, Unity Editor 상태 변경과 개인 구현 로그 갱신은 위임하지 않는다.
-- 주 에이전트는 Luna가 만든 변경을 원본 코드와 Diff로 직접 검토하고, 컴파일, Console, Edit/Play Mode, 실제 플레이 흐름 등 필요한 Unity 검증을 직접 수행한 뒤에만 채택한다. Luna의 완료 주장만으로 구현이나 검증 완료를 선언하지 않는다.
+- 주 에이전트는 구현 서브에이전트가 만든 변경을 원본 코드와 Diff로 직접 검토하고, 컴파일, Console, Edit/Play Mode, 실제 플레이 흐름 등 필요한 Unity 검증을 직접 수행한 뒤에만 채택한다. 서브에이전트의 완료 주장만으로 구현이나 검증 완료를 선언하지 않는다.
 - 동시에 쓰기 작업을 수행하는 서브에이전트는 하나만 둔다. 다만 아래 `Blender Luna 병렬 작업 규칙`에 따라 실제로 쓰는 파일이 서로 다른 Blender 작업은 예외로 하며 최대 10개의 Luna를 동시에 운용할 수 있다. 읽기 전용 조사도 서로 독립된 범위일 때만 병렬화하며, 같은 파일과 흐름을 중복 조사하지 않는다.
 - Luna의 사용 가능한 컨텍스트가 80% 이상 소진되어 압축 없이 작업을 이어가기 어려운 경우에는 컨텍스트 압축으로 계속 진행하지 않고, 현재 작업 범위·결정 사항·수정 파일·검증 상태·남은 작업을 인계 요약으로 정리해 다른 세션으로 이관한다. 커스텀 에이전트 Luna의 경우에는 같은 역할의 새 에이전트를 생성한 뒤 해당 인계 내용을 전달해 작업을 이어간다.
 - Luna 모델을 사용할 수 없거나 서브에이전트 실행이 실패하면 중요 계획이나 구현을 다른 보조 모델에 자동으로 넘기지 않고 주 에이전트가 직접 처리한다.
@@ -53,11 +61,11 @@
 | 김성우 (SeongWoo/SW, Unity 6000.3.22 테스트) | `codex/unity-6000-3-22-test` | `Assets/SW/**` |
 | 이우진 (WJ) | `feature/WJ` | `Assets/WJ_TestPlace/**` |
 | 우병헌 (BH) | `feature/BH` | `Assets/WBHTest/**` |
-| 조용준 (JYJ) | `feature/JYJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
+| 조용준 (JYJ) | `feature/YJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
 | 김관영 (KY) | `feature/KY` | `Assets/Scripts/UI/**` |
 
 - 표의 경로는 탐색 시작점이지 영구적인 소유권 장벽은 아니다. 정확한 주간 담당 내용은 일정표를 우선한다.
-- `codex/unity-6000-3-22-test`는 김성우의 Codex·Unity 6000.3.22 테스트 작업 공간이다. 담당 영역, 다른 담당자 파일 수정 승인, 개인 구현 로그 규칙은 `feature/Seongwoo`와 동일하게 적용한다.
+- `codex/unity-6000-3-22-test`와 `unity-6000-3-22-test`는 같은 김성우(SW) 테스트 작업 브랜치의 이름으로 취급한다. 접두사 차이만으로 담당자를 다시 묻거나 브랜치를 전환하지 않는다. 담당 영역, 다른 담당자 파일 수정 승인, 개인 구현 로그(`Docs/Architecture/ImplementationLogs/김성우.md`) 규칙은 두 이름 모두 `feature/Seongwoo`와 동일하게 적용한다.
 - 자기 담당 작업은 우선 자기 영역만 조사한다.
 - 공통 시스템 통합처럼 경계를 넘는 작업은 관련된 담당 영역만 추가로 읽고, 수정 전에 영향 파일과 연결 지점을 정리한다.
 - 다른 담당자의 우선 탐색·작업 영역에 속한 스크립트를 수정해야 하면, 해당 수정이 기존 사용자 요청에 포함되어 있더라도 수정 전에 대상 파일과 수정 이유를 밝히고 사용자에게 반드시 `이 스크립트를 수정할까요?`라고 명시적으로 되묻는다. 사용자가 그 질문에 승인하기 전에는 해당 스크립트를 수정하지 않는다.
@@ -184,9 +192,12 @@
 - Scene과 Prefab은 가능한 Unity Editor/MCP를 통해 수정하고 YAML을 직접 편집하지 않는다.
 - 사용자가 열어 둔 Dirty Scene이나 Prefab Stage를 관련 작업 없이 저장하지 않는다.
 - 스크립트 수정 후 컴파일 완료를 기다린 뒤 Console을 확인한다. 불필요한 연속 Refresh를 호출하지 않는다.
+- Editor에서 확인할 수 있는 규칙·호출·수명·참조 검증은 Editor에서 먼저 수행한다. 매 수정마다 Player를 다시 빌드하지 않으며, 원격 동기화·Player 전용 동작은 유효한 기존 빌드를 재사용하고 해당 검증에 필요한 코드·자산이 바뀐 경우에만 빌드한다.
+- Mirror 정식 전환 이후 자동 검증은 Assets 밖의 Editor `run_script`와 개발 Player의 Pipeline 명령으로 실행한다. 런타임 스크립트에 `RuntimeInitializeOnLoadMethod`, 시험 명령행 진입점, 임시 네트워크 메시지·러너를 추가하지 않는다. 검증 때문에 운영 저장이나 게임 규칙을 우회하는 코드를 배포 후보에 넣지 않는다.
 - 기존 경고·오류가 있으면 기준 상태와 비교해 새 오류가 생기지 않았는지 구분한다.
 - 시각 변경은 Game/Scene 화면 또는 캡처로 확인하고, Scene/Prefab의 Missing Script와 끊어진 참조를 검증한다.
 - `ProjectSettings/**`, `Packages/**`, Build Settings는 팀 공용 영향 범위로 보고 변경 이유와 영향을 명확히 알린다.
+- Mirror 단계별 검증에 필요한 테스트 씬과 빌더의 씬 목록, 승인된 Build Settings 씬 등록은 정식 Mirror 전환 완료 전까지 유지한다. 매 단계 종료 때 검증용이라는 이유만으로 삭제하거나 원복하지 않는다. 빌드가 자동 생성한 무관한 플랫폼 설정·내부 캐시는 씬 목록과 구분해 정리한다.
 - 관련 없는 Scene/Prefab 재직렬화나 대량 변경을 만들지 않는다.
 
 ## 7. Git 협업 기준
@@ -220,7 +231,7 @@
 | `codex/unity-6000-3-22-test` | `Docs/Architecture/ImplementationLogs/김성우.md` |
 | `feature/WJ` | `Docs/Architecture/ImplementationLogs/이우진.md` |
 | `feature/BH` | `Docs/Architecture/ImplementationLogs/우병헌.md` |
-| `feature/JYJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |
+| `feature/YJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |
 | `feature/KY` | `Docs/Architecture/ImplementationLogs/김관영.md` |
 
 - 개인 로그가 아직 없으면 `Docs/Architecture/ImplementationLogs/TEMPLATE.md` 형식을 사용해 해당 담당자의 파일만 만든다.

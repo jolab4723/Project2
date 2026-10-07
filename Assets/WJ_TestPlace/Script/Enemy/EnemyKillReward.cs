@@ -7,7 +7,7 @@ using UnityEngine;
 /// 전혀 수정하지 않고 WBH_EnemyStatus.OnDead(공개 이벤트)만 구독한다.
 /// 풀에서 재사용되는 적이라도 OnEnable/OnDisable에서 매번 구독/해제하므로 중복 지급 걱정은 없다.
 /// 8/21 WBH 수정. OnDead 이벤트 대신 OnDamaged 구독을 통해 피해를 받았을 때 hp 가 0이 되는지 검사. (사망이벤트 구독 시, 풀 반환으로 크레딧 텍스트 비활성화 우려.)
-/// 로컬 환경에서는 SpawnManager 부터 Initialize()를 통해 주입받은 단일 PlayerWallet 에 골드 지급.
+/// 로컬 환경에서는 SpawnManager 부터 Initialize()를 통해 주입받은 단일 PlayerWallet 에 크레딧 지급.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(WBH_EnemyStatus))]
@@ -45,6 +45,7 @@ public sealed class EnemyKillReward : MonoBehaviour
         this.wallet = wallet;
     }
 
+    /// <summary>SW 수정: 처치 집계와 중복 지급 방지를 유지하고 공통 보상 지급을 호출한다.</summary>
     private void HandleDamaged(WBH_DamageResult result)
     {
         if (hasGrantedReward || status.CurrentHp > 0f)
@@ -59,23 +60,40 @@ public sealed class EnemyKillReward : MonoBehaviour
         }
 
         hasGrantedReward = true;
+        KY_RunStatsTracker.Instance?.RecordEnemyDefeated(); // 결과창 데이터 집계용으로 추가
 
-        GrantExp(enemyInfo.exp);
-        GrantCredit(enemyInfo.credit);
+        GrantReward(enemyInfo, PlayerStatManager.Instance, GrantCredit);
     }
 
-    private void GrantExp(int amount)
+    /// <summary>SW 수정: 싱글과 서버에서 전달한 적 정보로 플레이어 경험치와 크레딧을 지급한다.</summary>
+    public static void GrantReward(WBH_EnemyInfo enemyInfo, PlayerStatManager playerStats, Action<int> grantCredit)
     {
-        if (amount <= 0)
+        if (enemyInfo == null)
             return;
 
-        PlayerStatManager.Instance?.GainExp(controller.Info.exp);
+        if (enemyInfo.exp > 0)
+            playerStats?.GainExp(enemyInfo.exp);
+
+        if (enemyInfo.credit > 0)
+            grantCredit?.Invoke(enemyInfo.credit);
     }
 
+    /// <summary>
+    /// !! 지갑은 스포너가 Initialize로 주입한다(WBH_EnemySpawner). 주입이 빠진 적이 죽으면 예전엔 여기서
+    ///    NullReferenceException이 났는데, 이 호출이 WBH_EnemyStatus.OnDamaged 구독 체인 한가운데라
+    ///    예외가 나면 뒤에 등록된 구독자들의 사망 처리까지 통째로 끊겼다(실제로 수동 생성한 적에서 발생).
+    ///    보상만 건너뛰고 나머지 흐름은 살리도록 경고만 남기고 빠진다.
+    /// </summary>
     private void GrantCredit(int amount)
     {
         if (amount <= 0)
             return;
+
+        if (wallet == null)
+        {
+            Log.Warning($"[EnemyKillReward] 지갑이 연결되지 않아 크레딧 {amount} 지급을 건너뜁니다. {name}");
+            return;
+        }
 
         wallet.AddGold(amount);
         OnCreditGranted?.Invoke(amount);

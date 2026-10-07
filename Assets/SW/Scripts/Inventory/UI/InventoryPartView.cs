@@ -5,18 +5,21 @@ public class InventoryPartView : MonoBehaviour
     [SerializeField] private KY_PopupBase inventory;
     [SerializeField] private KY_PopupBase shop;
     [SerializeField] private KY_PopupBase upgrade;
+    [SerializeField] private KY_PopupBase quest;
 
     private void Awake()
     {
         SetClosedImmediately(inventory);
         SetClosedImmediately(shop);
         SetClosedImmediately(upgrade);
+        SetClosedImmediately(quest);
     }
 
     public bool HasOpenWindow =>
         IsOpen(inventory) ||
         IsOpen(shop) ||
-        IsOpen(upgrade);
+        IsOpen(upgrade) ||
+        IsOpen(quest);
 
     public void ToggleInventory()
     {
@@ -31,6 +34,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenInventory()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         OpenIfClosed(inventory);
         NotifyOpened(hadOpenWindow);
@@ -38,6 +43,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenShop()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(upgrade);
         OpenIfClosed(inventory);
@@ -47,6 +54,8 @@ public class InventoryPartView : MonoBehaviour
 
     public void OpenUpgrade()
     {
+        KY_PopupManager.Instance?.HideSidePopup(); // 사이드 팝업이 안 닫히는 문제로 추가
+
         bool hadOpenWindow = HasOpenWindow;
         CloseIfOpen(shop);
         OpenIfClosed(inventory);

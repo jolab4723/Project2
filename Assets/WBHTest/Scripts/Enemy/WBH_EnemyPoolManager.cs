@@ -1,3 +1,4 @@
+using EnemySystem;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,76 +8,154 @@ public class WBH_EnemyPoolManager : MonoBehaviour
     [Serializable]
     private class EnemyPool
     {
-        public int enemyID;
+        public EnemyDefinitionSO enemyDef;
         public WBH_EnemyController prefab;
         public int poolSize = 10;
     }
 
     [SerializeField] private EnemyPool[] enemyPools;
 
-    private Dictionary<int, Queue<WBH_EnemyController>> pools;
-    private Dictionary<int, EnemyPool> poolDatas;
+    private Dictionary<string, Queue<WBH_EnemyController>> pools;
+    private Dictionary<string, EnemyPool> poolDatas;
+    private Dictionary<WBH_EnemyController, string> poolKeys; // 풀에서 생성된 적이 어느 풀 소속인지 기억.
+    private bool poolsCreated;
 
     private void Awake()
     {
-        pools = new();
-        poolDatas = new Dictionary<int, EnemyPool>();
+        pools = new Dictionary<string, Queue<WBH_EnemyController>>(StringComparer.Ordinal);
+        poolDatas = new Dictionary<string, EnemyPool>(StringComparer.Ordinal);
+        poolKeys = new Dictionary<WBH_EnemyController, string>();
 
-        CreatePools();
+        // SW 수정: 공유 멀티 씬은 원본 데이터만 사용하고 로컬 적 풀을 쓰지 않으므로 미리 만들지 않는다
+        // (불필요한 Agent 초기화 방지). 싱글은 기존처럼 전투 전에 미리 만들어 첫 생성 끊김을 막는다.
+        if (!MirrorNetworkManager.OwnsGameplay)
+        {
+            CreatePools();
+            poolsCreated = true;
+        }
     }
 
     private void CreatePools()
     {
+        if (enemyPools == null)
+            return;
+
         foreach(EnemyPool data in enemyPools)
         {
-            Queue<WBH_EnemyController> pool = new ();
+            if (data == null)
+                return;
+            if (data.enemyDef == null)
+            {
+                Log.Error($"{name} : EnemyPool 의 EnemyDefSo 가 비어 있습니다.");
+                continue;
+            }
+            if (data.prefab == null)
+            {
+                Log.Error($"{name} : {data.enemyDef.name} 의 적 프리팹이 비어 있습니다.");
+                continue;
+            }
+
+            string enemyId = data.enemyDef.enemyId;
+
+            if (string.IsNullOrWhiteSpace(enemyId))
+            {
+                Log.Error($"{name}: EnemyDefinitionSO의 enemyId가 비어 있습니다.");
+                continue;
+            }
+
+            if (pools.ContainsKey(enemyId))
+            {
+                Log.Error( $"{name}: 중복된 EnemyPool enemyId입니다. enemyId = {enemyId}");
+                continue;
+            }
+
+            var pool = new Queue<WBH_EnemyController>();
 
             for (int i = 0; i < data.poolSize; i++)
             {
-                pool.Enqueue(CreateEnemy(data));
+                WBH_EnemyController enemy = CreateEnemy(data, enemyId);
+
+                if(enemy != null)
+                    pool.Enqueue(enemy);
             }
-            pools.Add(data.enemyID, pool);
-            poolDatas.Add(data.enemyID, data);
+            pools.Add(enemyId, pool);
+            poolDatas.Add(enemyId, data);
         }
     }
 
-    public WBH_EnemyController Get(int enemyID)
+    public WBH_EnemyController Get(string enemyId)
     {
-        if(!pools.TryGetValue(enemyID, out Queue<WBH_EnemyController> pool))
+        if (string.IsNullOrWhiteSpace(enemyId))
         {
-            Debug.LogWarning($"Enemy Pool 없음 : {enemyID}");
+            Log.Error("EnemyPool.Get()에 빈 enemyId가 전달됐습니다.");
+            return null;
+        }
+
+        if (!poolsCreated)
+        {
+            CreatePools();
+            poolsCreated = true;
+        }
+
+        if (!pools.TryGetValue(enemyId, out Queue<WBH_EnemyController> pool))
+        {
+            Log.Warning($"EnemyPool이 없습니다. enemyId={enemyId}");
             return null;
         }
 
         WBH_EnemyController enemy;
 
-        if (pool.Count == 0)
-        {
-            Debug.Log($"Enemy Pool 자동 확장 : {enemyID}");
-
-            enemy = CreateEnemy(poolDatas[enemyID]);
-        }
-        else
+        if (pool.Count > 0)
         {
             enemy = pool.Dequeue();
         }
-        //enemy.gameObject.SetActive(true);
+        else
+        {
+            Log.Print($"Enemy Pool 자동 확장 : {enemyId}");
+
+            enemy = CreateEnemy(poolDatas[enemyId], enemyId);
+        }
+
+        if (enemy == null)
+            return null;
+
+        enemy.ResetForPool();
 
         return enemy;
     }
 
     public void Return(WBH_EnemyController enemy)
     {
+        if (enemy == null)
+            return;
+
+        if(!poolKeys.TryGetValue(enemy, out string enemyId))
+        {
+            Log.Error($"{enemy.name} : 풀 소속 정보를 찾지 못했습니다.");
+            enemy.gameObject.SetActive(false);
+            return;
+        }
+
+        if(!pools.TryGetValue(enemyId, out Queue<WBH_EnemyController> pool))
+        {
+            Log.Error($"{enemy.name}: 반환할 EnemyPool이 없습니다. enemyId={enemyId}");
+
+            enemy.gameObject.SetActive(false);
+            return;
+        }
+
+        enemy.ResetForPool();
         enemy.gameObject.SetActive(false);
 
-        pools[enemy.Info.id].Enqueue(enemy);
+        pool.Enqueue(enemy);
     }
 
-    private WBH_EnemyController CreateEnemy(EnemyPool data)
+    private WBH_EnemyController CreateEnemy(EnemyPool data, string enemyId)
     {
         WBH_EnemyController enemy = Instantiate(data.prefab, transform);
 
         enemy.gameObject.SetActive(false);
+        poolKeys.Add(enemy, enemyId);
 
         return enemy;
     }

@@ -1,3 +1,4 @@
+using EnemySystem;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,11 +8,11 @@ using UnityEngine;
 [RequireComponent(typeof(WBH_EnemySpawner))]
 public class WBH_EnemySpawnArea : MonoBehaviour
 {
-    [System.Serializable]
+    [Serializable]
     public class EnemyGradeSpawnData
     {
         public EnemyGrade grade;
-        public int[] enemyIDs;
+        public EnemyDefinitionSO[] enemies;
     }
 
     [Header("Spawn Setting")]
@@ -26,60 +27,105 @@ public class WBH_EnemySpawnArea : MonoBehaviour
         enemySpawner = GetComponent<WBH_EnemySpawner>();
     }
 
-    public void Initialize(WBH_EnemyPoolManager enemyPool, 
-                           WBH_EffectPoolManager effectPool, 
-                           WBH_ProjectilePoolManager projectilePool, 
+    public void Initialize(WBH_EnemySpawnManager spawnManager,
+                           WBH_EnemyPoolManager enemyPool, 
+                           WBH_EnemyDataProvider enemyDataProvider,
+                           WBH_EffectSpawner effectSpawner, 
+                           WBH_ProjectileSpawner projectileSpawner, 
                            Transform localPlayer, 
                            Func<Vector3, Transform> findClosestPlayer,
                            WBH_FloatTextPoolManager damagePool,
                            WBH_HighEnemyHpbarView eliteView,
-                           PlayerWallet playerWallet)
+                           PlayerWallet playerWallet,
+                           YJ_SfxPlayer sfxPlayer)
     {
         this.findClosestPlayer = findClosestPlayer;
-        enemySpawner.Initialize(enemyPool, effectPool, projectilePool, localPlayer, damagePool, eliteView, playerWallet);
-        //view.Initialize(damagePool);
+        enemySpawner.Initialize(spawnManager, enemyPool, enemyDataProvider, effectSpawner, projectileSpawner, localPlayer, damagePool, eliteView, playerWallet, sfxPlayer);
     }
 
-    public int Spawn(EnemyGrade grade, int count)
+    public bool TryGetSpawnPoint(int index, out Transform point)
     {
-        EnemyGradeSpawnData spawnData = System.Array.Find(spawnDatas, data => data.grade == grade);
+        point = null;
+        if(spawnPoints == null || index < 0 || index >= spawnPoints.Length)
+            return false;
 
-        if(spawnData == null || spawnData.enemyIDs == null || spawnData.enemyIDs.Length == 0)
+        point = spawnPoints[index];
+        return point != null && point != transform && point.IsChildOf(transform) && point.gameObject.activeInHierarchy;
+    }
+
+    public bool ValidateSpawnPoints(int waveCount, out string error)
+    {
+        error = null;
+        if(waveCount <= 0 || spawnPoints == null || spawnPoints.Length < waveCount)
         {
-            Log.Warning($"{name} : {grade} 등급의 스폰 ID가 설정되지 않았습니다.");
-            return 0;
+            error = $"{name} : 스폰포인트가 최소 {waveCount} 개 필요합니다.";
+            return false;
         }
-        return SpawnEnemies(spawnData.enemyIDs, count);
-    }
 
-    private int SpawnEnemies(int[] enemyIDs, int count)
-    {
-        if (spawnPoints.Length == 0 || enemyIDs.Length == 0)
-            return 0;
-
-        int spawnCount = 0;
-        List<Transform> availablePoints = new List<Transform>(spawnPoints);
-
-        for(int i = 0; i < count; i++)
+        var usedPoints = new HashSet<Transform>();
+        for(int i = 0; i < waveCount; i ++)
         {
-            // 스폰 지점 중복방지
-            if(availablePoints.Count == 0)
+            if(!TryGetSpawnPoint(i, out Transform point) || !usedPoints.Add(point))
             {
-                availablePoints = new List<Transform>(spawnPoints);
+                error = $"{name} : SpawnPoints[{i}] 의 누락, 비활성, 중복, 자식 관계를 확인하세요.";
+                return false;
             }
-
-            int pointIndex = UnityEngine.Random.Range(0, availablePoints.Count);
-            Transform spawnPoint = availablePoints[pointIndex];
-            availablePoints.RemoveAt(pointIndex);
-
-            int enemyID = enemyIDs[UnityEngine.Random.Range(0, enemyIDs.Length)];
-
-            Transform target = findClosestPlayer?.Invoke(spawnPoint.position); // 스폰포인트가 결정된 뒤 타겟 탐색
-
-            if (enemySpawner.Spawn(enemyID, spawnPoint, target) != null)
-                spawnCount++;
         }
-        return spawnCount;
+        return true;
     }
 
+    public bool CanSpawn(EnemyGrade grade)
+    {
+        if (spawnDatas == null)
+            return false;
+
+        EnemyGradeSpawnData selected = null;
+        foreach(EnemyGradeSpawnData data in spawnDatas)
+        {
+            if(data == null || data.grade != grade)
+                continue;
+            if (selected != null)
+                return false;
+            selected = data;
+        }
+
+        if(selected?.enemies == null || selected.enemies.Length == 0)
+            return false;
+
+        foreach(EnemyDefinitionSO def in selected.enemies)
+        {
+            if (def == null || string.IsNullOrWhiteSpace(def.enemyId) || def.enemyGrade != grade)
+                return false;
+        }
+        return true;
+    }
+
+    public int Spawn(EnemyGrade grade, int count, WBH_EnemyStatContext context, int spawnPointIndex)
+    {
+        if(count <= 0 || enemySpawner == null || !TryGetSpawnPoint(spawnPointIndex, out Transform point) || !CanSpawn(grade))
+            return 0;
+
+        int spawnedCount = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            EnemyDefinitionSO def = ChooseEnemy(grade);
+            Transform target = findClosestPlayer?.Invoke(point.position);
+
+            WBH_EnemyController enemy = enemySpawner.Spawn(def.enemyId, point, target, context);
+
+            if (enemy == null)
+                break;
+            spawnedCount++;
+        }
+        return spawnedCount;
+    }
+
+    /// <summary>SW 수정: 원본 SpawnData와 같은 무작위 선택을 네트워크 생성 경계에서도 사용합니다.</summary>
+    public EnemyDefinitionSO ChooseEnemy(EnemyGrade grade)
+    {
+        if (!CanSpawn(grade)) return null;
+        EnemyGradeSpawnData data = Array.Find(spawnDatas, entry => entry != null && entry.grade == grade);
+        return data.enemies[UnityEngine.Random.Range(0, data.enemies.Length)];
+    }
 }

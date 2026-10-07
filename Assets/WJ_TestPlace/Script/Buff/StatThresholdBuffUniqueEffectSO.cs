@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ItemSystem
 {
@@ -69,6 +69,13 @@ namespace ItemSystem
 
         public override void OnEquip(ItemInstance ownerItem)
         {
+            // 러너가 없다는 건 이 효과가 꺼져 있다는 뜻이므로 장부도 비어 있어야 한다.
+            // (세이브/로드로 ItemInstance가 재구성되면 옛 항목이 남을 수 있어 여기서 맞춰준다)
+            if (runnerObject == null)
+                UniqueEffectOwners.Clear(this);
+
+            UniqueEffectOwners.AddOwner(this, ownerItem);
+
             if (runnerObject != null)
                 return; // 이미 실행 중이면 중복 생성 방지
 
@@ -81,6 +88,11 @@ namespace ItemSystem
 
         public override void OnUnequip(ItemInstance ownerItem)
         {
+            // 같은 효과를 2개 보유하다 하나만 잃었을 때 러너가 파괴돼 남은 쪽의 조건부 버프가
+            // 영영 안 켜지던 문제 때문에, 마지막 소유자가 빠질 때만 정리한다.
+            if (!UniqueEffectOwners.RemoveOwner(this, ownerItem))
+                return;
+
             if (runnerObject == null)
                 return;
 
@@ -96,5 +108,6 @@ namespace ItemSystem
         public BuffStackBehavior StackBehavior => buffSpec != null ? buffSpec.stackBehavior : BuffStackBehavior.Ignore;
         public int MaxStack => buffSpec != null ? buffSpec.maxStack : 0;
         public bool IsPermanent => buffSpec == null || buffSpec.IsPermanent;
+        public BuffDisplayKind DisplayKind => buffSpec != null ? buffSpec.displayKind : BuffDisplayKind.Auto;
     }
 }

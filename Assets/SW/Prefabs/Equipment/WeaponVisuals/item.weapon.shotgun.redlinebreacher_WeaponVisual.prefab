@@ -24,8 +24,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2866725084422432205}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.033646688, z: 0.285}
+  m_LocalRotation: {x: 0.6830127, y: -0.18301271, z: -0.18301271, w: 0.6830127}
+  m_LocalPosition: {x: -0.015826605, y: 0.0326734, z: 0.2402}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -62,6 +62,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1423324400341377654}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6802722517235833457
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7071457008310820113}
+  m_Layer: 0
+  m_Name: RightHandGrip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7071457008310820113
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6802722517235833457}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.6239197, y: 0.40253597, z: 0.5039134, w: 0.44131652}
+  m_LocalPosition: {x: 0, y: 0.005, z: -0.036}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1423324400341377654}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8725533486975165491
 GameObject:
   m_ObjectHideFlags: 0
@@ -71,6 +102,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1423324400341377654}
+  - component: {fileID: 425656810991124028}
   m_Layer: 0
   m_Name: item.weapon.shotgun.redlinebreacher_WeaponVisual
   m_TagString: Untagged
@@ -86,16 +118,34 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8725533486975165491}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.03129, y: -0.012951, z: 0.053416}
+  m_LocalRotation: {x: -0.6239197, y: -0.40253597, z: -0.5039134, w: 0.44131652}
+  m_LocalPosition: {x: -0.015988942, y: 0.013861679, z: 0.0009306336}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8359236572168851515}
   - {fileID: 3953687492694717003}
   - {fileID: 1328078987061513121}
+  - {fileID: 7071457008310820113}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &425656810991124028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8725533486975165491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99269d643d9637c4e838a187115a2325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GunnerWeaponVfxBinding
+  weaponType: 1
+  muzzle: {fileID: 1328078987061513121}
+  muzzleVisualPrefab: {fileID: 3894317842930663769, guid: bdad67df599dba0448a97b49dd600596, type: 3}
+  projectileVisualPrefab: {fileID: 0}
+  impactVisualPrefab: {fileID: 565323864006178601, guid: 8911848bc0e9613408f65327165149b3, type: 3}
 --- !u!1001 &8325818854977140688
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -156,6 +206,38 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2376af1199a02f14c8902d1d1ef30dbe, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1ac024964b597824a85c58119e374536, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 21fe623c9623d3b4a8a8635bde893f75, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d21143ef4bfd9134d9d68bd30bffe65e, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[4]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e86480ba67e24fb4ba23e22ad653dcac, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: 'm_Materials.Array.data[5]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 30d35398ee307214299876d7eab4254d, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: ac2df30efe984c74e819f4ae1c86393e, type: 2}
     - target: {fileID: 919132149155446097, guid: 90e76c0c3daedc742bf6d3176fbd71e5, type: 3}
       propertyPath: m_Name
       value: Model

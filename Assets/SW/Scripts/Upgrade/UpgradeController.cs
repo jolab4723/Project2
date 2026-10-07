@@ -1,13 +1,12 @@
+using System;
 using ItemSystem;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class UpgradeController : MonoBehaviour
 {
     [SerializeField] private PlayerWallet playerWallet;
-    [SerializeField] private float upgradeCostMultiplier = 1.15f;
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private TextMeshProUGUI upgradeLevelText;
     [SerializeField] private TextMeshProUGUI costText;
@@ -18,20 +17,64 @@ public class UpgradeController : MonoBehaviour
     [SerializeField] private Image rarityBackground;
     [SerializeField] private Image rarityFrame;
 
+    [Tooltip("고정 UI 문구(스탯 표기, 강화 결과 메시지 등) 다국어 테이블. 비워두면 하드코딩된 한국어 문구를 그대로 쓴다.")]
+    [SerializeField] private UILabelDatabaseSO uiLabels;
+
+    [Tooltip("아이템 이름 다국어 테이블. 비워두면 ItemDefinitionSO.itemName(한국어 스냅샷)을 그대로 쓴다.")]
+    [SerializeField] private ItemLabelDatabaseSO itemLabels;
+
+    private const string ItemLabelResourcePath = "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
+
     private ItemInstance selectedItem;
     private UpgradeService upgradeService;
+    private Action upgradeRequest;
+    private YJ_LanguageManager languageManager;
+    private UpgradeResult? displayedResult;
+    private string displayedMessageKey;
+    private string displayedMessageFallback;
 
     public PlayerWallet BoundPlayerWallet => playerWallet;
     public EquipmentSystem BoundEquipment => equipmentSystem;
 
+    /// <summary>현재 강화 화면에서 선택한 아이템을 읽기 전용으로 제공한다.</summary>
+    public ItemInstance SelectedItem => selectedItem;
+
     private void Awake()
     {
+        // 씬에서 직접 안 배선해도(다른 맵/스테이지 씬 등) Resources의 공용 DB를 자동으로 찾아 쓴다.
+        if (uiLabels == null)
+            uiLabels = Resources.Load<UILabelDatabaseSO>("DataFiles/UIData/3. GeneratedAssets/UILabelDatabase");
+
+        if (itemLabels == null)
+            itemLabels = Resources.Load<ItemLabelDatabaseSO>(ItemLabelResourcePath);
+
         upgradeService = new UpgradeService(playerWallet);
+    }
+
+    // 팝업이 열릴 때마다 현재 상태(선택 아이템 유무)와 현재 언어로 화면을 다시 채운다.
+    // 싱글 플레이는 BindPlayer가 호출되지 않아서, 씬 시작 후 첫 열림에는 초기화가 한 번도 돌지 않고
+    // 오브젝트에 들어 있던 한국어 기본 문구가 그대로 보였다(일본어·중국어 폰트에서는 □로 깨짐).
+    private void OnEnable()
+    {
+        languageManager = YJ_LanguageManager.Instance;
+        if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        RefreshUI();
     }
 
     private void OnDisable()
     {
+        if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
         ClearItem();
+    }
+
+    private void RefreshLanguage(GameLanguage _)
+    {
+        var result = displayedResult;
+        string key = displayedMessageKey;
+        string fallback = displayedMessageFallback;
+        RefreshUI();
+        if (result.HasValue) ShowUpgradeMessage(result.Value, false);
+        else if (key != null) ShowLocalizedMessage(key, fallback);
     }
 
     public bool BindPlayer(PlayerWallet wallet, EquipmentSystem equipment)
@@ -57,6 +100,20 @@ public class UpgradeController : MonoBehaviour
         upgradeService = new UpgradeService(null);
     }
 
+    /// <summary>강화 입력을 외부 요청에 연결한다. 연결된 동안 로컬 비용과 강화 수치를 변경하지 않는다.</summary>
+    public void BindUpgradeRequest(Action request)
+    {
+        if (request != null)
+            upgradeRequest = request;
+    }
+
+    /// <summary>현재 연결된 요청이 지정한 요청과 같을 때만 해제한다.</summary>
+    public void UnbindUpgradeRequest(Action request)
+    {
+        if (upgradeRequest == request)
+            upgradeRequest = null;
+    }
+
     /// <summary>
     /// 강화 가능한 아이템을 현재 선택 항목으로 지정하고 표시를 갱신한다.
     /// </summary>
@@ -65,6 +122,7 @@ public class UpgradeController : MonoBehaviour
         if (!UpgradeService.CanUpgrade(item))
         {
             Debug.LogWarning("[UpgradeController] 강화할 수 없는 아이템입니다.");
+            ReportRejection(UpgradeMessageMapper.GetMessage(UpgradeResult.InvalidItem, GetUILabel("upgrade_ui.unknown_item", "아이템"), 0, uiLabels));
 
             return false;
         }
@@ -91,21 +149,28 @@ public class UpgradeController : MonoBehaviour
     }
 
     /// <summary>
-    /// 선택된 아이템의 비용 결제와 강화 수치 변경을 UpgradeService에 요청한다.
+    /// 외부 요청이 연결되어 있으면 그 요청을 전달한다.
+    /// 그 외에는 선택된 아이템의 비용 결제와 강화 수치 변경을 UpgradeService에 요청하고,
     /// 장착 중인 아이템이면 성공 후 장비 변경 이벤트도 알린다.
     /// </summary>
     public void TryUpgrade()
     {
-        if (selectedItem == null)
+        if (upgradeRequest != null)
         {
-            ShowMessage(UpgradeMessageMapper.SelectionRequired);
+            upgradeRequest();
             return;
         }
 
-        int cost = GetUpgradeCost(selectedItem);
+        if (selectedItem == null)
+        {
+            string selectionRequired = UpgradeMessageMapper.GetSelectionRequired(uiLabels);
+            ShowMessage(selectionRequired);
+            ReportRejection(selectionRequired);
+            return;
+        }
 
         UpgradeResult result =
-            upgradeService.TryUpgrade(selectedItem, cost);
+            upgradeService.TryUpgrade(selectedItem);
 
         if (result == UpgradeResult.Success)
         {
@@ -121,37 +186,70 @@ public class UpgradeController : MonoBehaviour
 
         ShowUpgradeMessage(result);
     }
-    private void ShowUpgradeMessage(UpgradeResult result)
+    /// <summary>
+    /// 강화 결과 메시지에 넣을 아이템 이름을 현재 언어로 가져온다.
+    ///
+    /// !! ItemDefinitionSO.itemName은 한국어 스냅샷이라 그대로 쓰면 다른 언어에서도 한국어로 나온다.
+    ///    (메시지 틀은 upgrade_ui.result_success로 번역되는데 이름만 한국어로 남던 문제)
+    ///    TooltipUI.GetItemName과 같은 방식으로 ItemLabelDatabaseSO를 먼저 보고, 없으면 원본으로 폴백한다.
+    /// </summary>
+    private string ResolveItemName(ItemDefinitionSO definition)
     {
-        string itemName =
-            selectedItem?.definition != null
-                ? selectedItem.definition.itemName
-                : "아이템";
+        if (definition == null)
+            return GetUILabel("upgrade_ui.unknown_item", "아이템");
+
+        if (itemLabels != null &&
+            itemLabels.TryGetName(definition.itemId, out string localized) &&
+            !string.IsNullOrEmpty(localized))
+        {
+            return localized;
+        }
+
+        return definition.itemName;
+    }
+
+    public void ShowUpgradeMessage(UpgradeResult result, bool reportRejection = true)
+    {
+        string itemName = ResolveItemName(selectedItem?.definition);
 
         int upgradeLevel =
             selectedItem != null
                 ? selectedItem.upgradeLevel
                 : 0;
 
-        ShowMessage(
-            UpgradeMessageMapper.GetMessage(
+        string message = UpgradeMessageMapper.GetMessage(
                 result,
                 itemName,
-                upgradeLevel));
+                upgradeLevel,
+                uiLabels);
+        ShowMessage(message);
+        displayedResult = result;
+        if (reportRejection && result != UpgradeResult.Success) ReportRejection(message);
     }
 
-    private void ShowMessage(string message)
+    private void ReportRejection(string message)
     {
+        InventoryController owner = InventoryController.Instance;
+        if (owner != null && owner.PlayerWallet == playerWallet)
+            owner.ReportSinglePlayerMessage(ChatKind.Warning, message);
+    }
+
+    /// <summary>강화 화면의 결과 메시지를 갱신한다.</summary>
+    public void ShowMessage(string message)
+    {
+        displayedResult = null;
+        displayedMessageKey = null;
         if (logText != null)
         {
             logText.text = message;
         }
     }
-    private int GetUpgradeCost(ItemInstance item)
+
+    public void ShowLocalizedMessage(string key, string fallback)
     {
-        // 추후 연동
-        int upgradeCost = Mathf.CeilToInt(500 * Mathf.Pow(upgradeCostMultiplier, item.upgradeLevel) / 10)  * 10;
-        return upgradeCost;
+        ShowMessage(GetUILabel(key, fallback));
+        displayedMessageKey = key;
+        displayedMessageFallback = fallback;
     }
 
     private float GetMainOptionValue(ItemInstance item, int previewUpgradeLevel)
@@ -170,6 +268,11 @@ public class UpgradeController : MonoBehaviour
 
     private void RefreshUI()
     {
+        TMP_FontAsset font = YJ_LanguageManager.Instance?.GetCurrentFont();
+        if (font != null)
+            foreach (TMP_Text text in new TMP_Text[] { upgradeLevelText, costText, logText, currentStatText, nextStatText })
+                if (text != null) text.font = font;
+
         if (selectedItem?.definition == null)
         {
             ShowEmptyState();
@@ -188,11 +291,30 @@ public class UpgradeController : MonoBehaviour
         float nextValue = GetMainOptionValue(selectedItem, selectedItem.upgradeLevel + 1);
         FixedStatValue mainOption = selectedItem.definition.mainOptions[0];
 
+        string statName = ItemDisplayNames.StatNames[mainOption.statType];
+        // 퍼센트 스탯은 이름이 아니라 수치 뒤에 %를 붙인다.
+        string statUnit = ItemDisplayNames.StatUnit(mainOption.statType);
+
+        string currentStatLabel = GetUILabel("upgrade_ui.current_stat", "현재 스탯 : {0} + {1}")
+            .Replace("{0}", "\n{0}");
+        string nextStatLabel = GetUILabel("upgrade_ui.next_stat", "강화 후 스탯 : {0} + {1}")
+            .Replace("{0}", "\n{0}");
+
         upgradeLevelText.text = $"+{selectedItem.upgradeLevel}";
-        currentStatText.text = $"현재 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {currentValue:0.#}";
-        nextStatText.text = $"강화 후 스탯 : {ItemDisplayNames.StatNames[mainOption.statType]} + {nextValue:0.#}";
-        costText.text = $"강화비용 : {GetUpgradeCost(selectedItem)}";
+        currentStatText.text = string.Format(
+            currentStatLabel,
+            statName, $"{currentValue:0.#}{statUnit}");
+        nextStatText.text = string.Format(
+            nextStatLabel,
+            statName, $"{nextValue:0.#}{statUnit}");
+        costText.text = UpgradeService.TryGetUpgradeCost(selectedItem, out int cost)
+            ? string.Format(GetUILabel("upgrade_ui.cost", "강화비용 : {0}"), cost)
+            : GetUILabel("upgrade_ui.cost_unavailable", "강화비용 : -");
     }
+
+    /// <summary>다국어 DB가 배선돼 있으면 그 문구를, 없으면 기존 하드코딩 한국어 문구를 반환한다.</summary>
+    private string GetUILabel(string key, string fallback) =>
+        uiLabels != null ? uiLabels.GetLabel(key) : fallback;
 
     private void ShowEmptyState()
     {
@@ -208,15 +330,15 @@ public class UpgradeController : MonoBehaviour
             upgradeLevelText.text = "";
 
         if (currentStatText != null)
-        {
-            currentStatText.text = UpgradeMessageMapper.SelectionRequired;
-        }
+            currentStatText.text = string.Empty;
 
         if (nextStatText != null)
             nextStatText.text = string.Empty;
 
         if (costText != null)
             costText.text = string.Empty;
+
+        ShowMessage(UpgradeMessageMapper.GetSelectionRequired(uiLabels));
     }
 
     private void ApplyRarityVisuals(ItemRarity rarity)
@@ -253,9 +375,4 @@ public class UpgradeController : MonoBehaviour
             rarityFrame.enabled = isEnabled;
     }
 
-    private void Update()
-    {
-        if (Keyboard.current?.cKey.wasPressedThisFrame == true && playerWallet != null)
-            playerWallet.AddGold(999999999);
-    }
 }

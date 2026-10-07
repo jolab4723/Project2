@@ -20,6 +20,35 @@ public class KY_PopupManager : MonoBehaviour
     private Stack<KY_PopupBase> popupStack = new Stack<KY_PopupBase>();
     private KY_PopupBase currentSidePopup;
 
+    // 닫기를 요청했지만 닫힘 애니메이션(SlideOut/커튼)이 끝나지 않아 아직 활성 상태인 팝업과 요청 시각.
+    // 스택/사이드 참조에서는 즉시 빠지므로, 이 동안 ESC가 오면 "열린 팝업 없음"으로 보고 일시정지를 열어버렸다.
+    private readonly Dictionary<KY_PopupBase, float> closingPopups = new Dictionary<KY_PopupBase, float>();
+    // 닫힘 애니메이션이 비정상적으로 끝나지 않아도 ESC가 영원히 막히지 않게 하는 상한(실제 시간, 초).
+    private const float ClosingEscBlockSeconds = 1.5f;
+
+    [SerializeField] private InventoryPartView inventoryPartView;
+
+    private InventoryPartView InventoryPartViewRef
+    {
+        get
+        {
+            if (inventoryPartView == null)
+                inventoryPartView = FindFirstObjectByType<InventoryPartView>();
+            return inventoryPartView;
+        }
+    }
+
+    /// <summary>일반 팝업이 열려 있는지 알려준다. 멀티플레이 입력은 게임 시간을 멈추지 않고 이 상태로 차단한다.</summary>
+    public bool HasOpenModalPopup => popupStack.Count > 0; // SW 수정
+
+    [Header("일반 팝업 뒤 입력 차단 대상")]
+    [SerializeField] private CanvasGroup[] modalInputTargets;
+
+    [Header("Dialog")]
+    [SerializeField] private KY_ConfirmDialog confirmDialog;
+    [SerializeField] private KY_AlertDialog alertDialog;
+    [SerializeField] private KY_ToastDialog toastDialog;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,6 +73,7 @@ public class KY_PopupManager : MonoBehaviour
         KY_GameEvents.OnSkillRequested += OnSkillRequested;
         KY_GameEvents.OnInventoryRequested += OnInventoryRequested;
         KY_GameEvents.OnQuestRequested += OnQuestRequested;
+        KY_GameEvents.OnBuffRequested += OnBuffRequested;
     }
 
     void OnDisable()
@@ -53,27 +83,71 @@ public class KY_PopupManager : MonoBehaviour
         KY_GameEvents.OnSkillRequested -= OnSkillRequested;
         KY_GameEvents.OnInventoryRequested -= OnInventoryRequested;
         KY_GameEvents.OnQuestRequested -= OnQuestRequested;
+        KY_GameEvents.OnBuffRequested -= OnBuffRequested;
     }
 
+    /// <summary>
+    /// 팝업을 스택에 올려 연다. 화면에는 **항상 최상단 하나만** 보이게 아래 팝업을 가린다.
+    ///
+    /// 스택 자체는 유지한다 - 일시정지 → 설정처럼 뒤로 가면 부모로 돌아와야 하는 흐름이 있어서,
+    /// 새 팝업을 열 때 아래를 닫아버리면 그 흐름이 끊긴다(설정에서 뒤로 = 게임 화면으로 나가버림).
+    /// 그래서 "닫기"가 아니라 "가리기"(SetCovered)로 처리한다.
+    /// </summary>
     public void Show(PopupType type)
     {
-        KY_PopupBase popup = popupDict[type];
+        if (!popupDict.TryGetValue(type, out KY_PopupBase popup) || popup == null)
+            return;
+        if (popupStack.Contains(popup))
+            return;
+
+        if (popupStack.Count > 0)
+            popupStack.Peek().SetCovered(true);
+
+        popup.transform.SetAsLastSibling(); // SW 수정
         popup.Open();
+        popup.SetCovered(false);
         popupStack.Push(popup);
+        SetBackgroundInput(false);
     }
 
+    /// <summary>최상단 팝업을 닫고, 그 아래에 가려져 있던 팝업이 있으면 다시 드러낸다.</summary>
     public void Hide()
     {
         if (popupStack.Count == 0) return;
 
         KY_PopupBase top = popupStack.Pop();
         top.Close();
+        MarkClosing(top);
+
+        if (popupStack.Count == 0)
+        {
+            SetBackgroundInput(true);
+            return;
+        }
+
+        KY_PopupBase below = popupStack.Peek();
+        below.transform.SetAsLastSibling();
+        below.SetCovered(false);
+    }
+
+    private void SetBackgroundInput(bool enabled)
+    {
+        if (modalInputTargets == null) return;
+        foreach (CanvasGroup target in modalInputTargets)
+        {
+            if (target == null) continue;
+            target.interactable = enabled;
+            target.blocksRaycasts = enabled;
+        }
     }
 
     public void ShowSidePopup(PopupType type)
     {
-        KY_PopupBase popup = popupDict[type];
+        if (!popupDict.TryGetValue(type, out KY_PopupBase popup) || popup == null)
+            return;
         Debug.Log("ShowSidePopup 호출됨: " + type);
+
+        InventoryPartViewRef?.CloseAll(); // [추가] Inventory/Shop/Upgrade/Quest 그룹 닫기
 
         if (currentSidePopup == popup)
         {
@@ -94,12 +168,51 @@ public class KY_PopupManager : MonoBehaviour
         if (currentSidePopup == null) return;
 
         currentSidePopup.Close();
+        MarkClosing(currentSidePopup);
         currentSidePopup = null;
         KY_GameEvents.SidePopupClosed();
     }
 
+    /// <summary>닫힘 애니메이션이 끝날 때까지(비활성화될 때까지) ESC 판정에서 "닫히는 중"으로 본다.</summary>
+    private void MarkClosing(KY_PopupBase popup)
+    {
+        if (popup != null && popup.gameObject.activeSelf)
+            closingPopups[popup] = Time.unscaledTime;
+    }
+
+    /// <summary>
+    /// 닫기를 요청한 팝업 중 아직 닫힘 애니메이션이 진행 중인 것이 있는지 확인한다.
+    /// 이미 비활성화됐거나, 다시 열렸거나(스택/사이드에 복귀), 상한 시간이 지난 항목은 정리한다.
+    /// </summary>
+    private bool IsAnyPopupClosing()
+    {
+        if (closingPopups.Count == 0) return false;
+
+        bool closing = false;
+        var finished = new List<KY_PopupBase>();
+        foreach (var pair in closingPopups)
+        {
+            KY_PopupBase popup = pair.Key;
+            bool done = popup == null || !popup.gameObject.activeSelf ||
+                        popupStack.Contains(popup) || popup == currentSidePopup ||
+                        Time.unscaledTime - pair.Value > ClosingEscBlockSeconds;
+            if (done) finished.Add(popup);
+            else closing = true;
+        }
+
+        foreach (KY_PopupBase popup in finished)
+            closingPopups.Remove(popup);
+
+        return closing;
+    }
+
     void OnEscPressed()
     {
+        // 직전 ESC로 닫은 팝업이 아직 들어가는 중이면 이 입력은 무시한다 - 연속 ESC가 닫힘 도중에
+        // 일시정지를 여는(또는 방금 닫은 일시정지를 다시 여는) 것을 막는다.
+        if (IsAnyPopupClosing())
+            return;
+
         if (popupStack.Count > 0)
         {
             Hide();
@@ -135,10 +248,64 @@ public class KY_PopupManager : MonoBehaviour
         ShowSidePopup(PopupType.Quest);
     }
 
+    void OnBuffRequested()
+    {
+        ShowSidePopup(PopupType.Buff);
+    }
+
+    private KY_QuestData displayedQuestData;
+
+    /// <summary>열려 있는 같은 의뢰의 내용만 갱신하며 팝업을 다시 열지 않는다.</summary>
+    public void RefreshQuestDetail(KY_QuestData previous, KY_QuestData updated)
+    {
+        if (previous == null || !ReferenceEquals(displayedQuestData, previous)) return;
+        displayedQuestData = updated;
+        if (popupDict.TryGetValue(PopupType.QuestDetail, out var popup) &&
+            popup is KY_QuestDetailPopup detail && detail.gameObject.activeInHierarchy)
+            detail.SetData(updated);
+    }
+
     public void ShowQuestDetail(KY_QuestData data)
     {
+        displayedQuestData = data;
         KY_QuestDetailPopup detailPopup = popupDict[PopupType.QuestDetail] as KY_QuestDetailPopup;
         detailPopup.SetData(data);
         Show(PopupType.QuestDetail);
+    }
+
+    public void ShowConfirm(KY_DialogData data)
+    {
+        RemoveClosedPopups();
+        if (confirmDialog == null || popupStack.Contains(confirmDialog))
+            return;
+
+        confirmDialog.Show(data);
+        popupStack.Push(confirmDialog);
+    }
+
+    private void RemoveClosedPopups()
+    {
+        if (popupStack.Count == 0) return;
+
+        var activeEntries = new List<KY_PopupBase>();
+        while (popupStack.Count > 0)
+        {
+            KY_PopupBase popup = popupStack.Pop();
+            if (popup != null && popup.gameObject.activeSelf)
+                activeEntries.Add(popup);
+        }
+
+        for (int i = activeEntries.Count - 1; i >= 0; i--)
+            popupStack.Push(activeEntries[i]);
+    }
+
+    public void ShowAlert(KY_AlertData data)
+    {
+        alertDialog.Show(data);
+    }
+
+    public void ShowToast(string message)
+    {
+        toastDialog.Show(message);
     }
 }

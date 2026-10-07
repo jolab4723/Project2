@@ -1,5 +1,6 @@
 using UnityEngine;
 
+/// <summary>게임 이벤트를 구독해 체력·마나·경험치 HUD 표시를 갱신한다.</summary>
 public class KY_HUDManager : MonoBehaviour
 {
     public KY_StatusView statusView;
