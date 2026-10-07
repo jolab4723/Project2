@@ -23,6 +23,8 @@ public class KY_SettingsData
     public bool showDamage = true;      // 데미지 표시
     public bool screenShake = true;     // 화면 흔들림
     public bool showAlliedBuffRanges = true; // SW 수정 : 타인 버프 범위의 로컬 표시만 제어한다.
-    public int tutorialDisplay = 0;     // 튜토리얼 (0=항상, 1=한번만, 2=표시안함)(기본값 1)
+    public int tutorialDisplay = 1;     // 튜토리얼 (0=항상, 1=한번만, 2=표시안함)
+    // "한번만" 표시 설정에서 이미 안내를 끝냈는지 저장한다. 표시 방식과 완료 여부는 분리한다.
+    public bool tutorialCompleted;
     public int language = 0;            // 언어 (GameLanguage 순서: 0=KOR, 1=ENG, 2=JPN, 3=CHN)
 }
