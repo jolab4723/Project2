@@ -21,6 +21,8 @@ public class EnemyBuffManager : MonoBehaviour, IBuffTarget
     private IStatBuffTarget status;
 
     public System.Collections.Generic.IReadOnlyList<BuffInstance> ActiveBuffs => tracker.ActiveBuffs;
+    // SW 수정: 풀 반환에서 TriggerExit가 생략돼도 오라가 이전 생명의 진입 기록을 지울 수 있다.
+    public event System.Action<EnemyBuffManager> Disabled;
 
     private void Awake()
     {
@@ -34,6 +36,12 @@ public class EnemyBuffManager : MonoBehaviour, IBuffTarget
     {
         if (tracker.Tick(Time.deltaTime))
             Recalculate();
+    }
+
+    private void OnDisable()
+    {
+        Disabled?.Invoke(this);
+        ClearAllBuffs();
     }
 
     public void ApplyBuff(IBuffSource source)
