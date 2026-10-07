@@ -56,6 +56,8 @@ public sealed class TitleNicknameEditor : MonoBehaviour
         TMP_FontAsset font = YJ_LanguageManager.Instance != null ? YJ_LanguageManager.Instance.GetCurrentFont() : null;
         if (font != null && input.textComponent != null)
             input.textComponent.font = font;
+        // 로그아웃·로그인으로 저장 소유가 바뀌면 이름도 그 저장의 닉네임이므로 편집 직전에 다시 읽는다.
+        currentName = PlayerNicknameProfile.Load();
         input.SetTextWithoutNotify(currentName);
         if (nameText != null) nameText.enabled = false;
         input.gameObject.SetActive(true);

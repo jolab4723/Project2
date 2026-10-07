@@ -569,6 +569,12 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         if (!ServerPublishRunSnapshot(snapshot))
             return false;
 
+        if (currentRoute == MirrorSessionRoute.Combat)
+        {
+            // SW 수정: 전투 클리어 부활을 체크포인트와 Scene 이동 전에 반영한다.
+            foreach (PlayerContext context in ServerPlayerContexts)
+                context?.RuntimeState?.ServerReviveForStageClear();
+        }
         pendingSessionRoute = MirrorSessionRoute.StageSelect;
         sessionSceneChangeRequested = true;
         CompleteUnknownBattle(snapshot, completedNode);
@@ -615,6 +621,9 @@ public sealed partial class MirrorNetworkManager : NetworkManager
         if (!ServerPublishRunSnapshot(snapshot))
             return false;
 
+        // SW 수정: 보스 클리어도 같은 부활 규칙을 다음 Act 이동·최종 결과 전에 반영한다.
+        foreach (PlayerContext context in ServerPlayerContexts)
+            context?.RuntimeState?.ServerReviveForStageClear();
         CompleteUnknownBattle(snapshot, completedNode);
         // Act1 체크포인트는 정산 ACK로 지갑을 비운 뒤 다음 Act 전환 시 발행한다.
         if (snapshot.act != StageActType.Act1)

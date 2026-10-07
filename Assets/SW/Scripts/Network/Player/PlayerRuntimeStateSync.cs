@@ -161,6 +161,20 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         return true;
     }
 
+    /// <summary>SW 수정: 클리어 부활 상태를 체크포인트·Scene 이동 전에 즉시 발행합니다.</summary>
+    [Server]
+    public void ServerReviveForStageClear()
+    {
+        if (!IsDead || context?.Controller == null)
+            return;
+        context.Controller.ReviveForStageClear();
+        // SW 수정: 스테이지 클리어 부활도 기존 EndRevive 완료 이벤트를 공유한다.
+        passiveReviving = true;
+        reviveSequence++;
+        ApplyDeadState(false, true);
+        PublishServerSnapshot();
+    }
+
     [Server]
     public void ServerCompletePassiveRevive()
     {
@@ -331,6 +345,20 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         if (context?.Buffs == null)
             return;
 
+        IReadOnlyList<BuffInstance> activeBuffs = context.Buffs.ActiveBuffs;
+        int count = snapshots?.Length ?? 0;
+        bool unchanged = activeBuffs.Count == count;
+        for (int i = 0; unchanged && i < count; i++)
+            unchanged = snapshots[i].Matches(activeBuffs[i]);
+
+        if (unchanged)
+        {
+            // 기존 UI는 BuffInstance의 시간/스택을 직접 읽는다. 시간만 바뀌면 목록을 재생성하지 않는다.
+            for (int i = 0; i < count; i++)
+                activeBuffs[i].remainingTime = Mathf.Max(0f, snapshots[i].remainingTime);
+            return;
+        }
+
         context.Buffs.ClearAllBuffs();
         if (snapshots == null)
             return;
@@ -341,9 +369,8 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
             if (source == null)
                 continue;
 
-            int applications = Mathf.Max(1, snapshot.stackCount);
-            for (int i = 0; i < applications; i++)
-                context.Buffs.ApplyBuff(source);
+            // 바로 아래에서 서버 스택을 지정하므로 스택 수만큼 같은 버프를 재적용할 필요가 없다.
+            context.Buffs.ApplyBuff(source);
 
             foreach (BuffInstance active in context.Buffs.ActiveBuffs)
             {
@@ -658,11 +685,37 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
         public bool isPermanent;
         public FixedStatSnapshot[] statEffects;
 
-        public static BuffSnapshot Capture(BuffInstance active)
+        public bool Matches(BuffInstance active)
         {
-            IBuffSource source = active.source;
-            byte kind = RuntimeKind;
-            string id = source.BuffDisplayName;
+            IBuffSource source = active?.source;
+            if (source == null)
+                return false;
+
+            GetSourceIdentity(source, out byte kind, out string id);
+            if (kind != sourceKind || id != sourceId ||
+                source.BuffDisplayName != displayName || source.BuffDescription != description ||
+                source.Duration != duration || source.StackBehavior != stackBehavior ||
+                source.MaxStack != maxStack || source.IsPermanent != isPermanent ||
+                active.stackCount != Mathf.Max(source is WasteHeatDischargeUniqueEffectSO ? 0 : 1, stackCount))
+            {
+                return false;
+            }
+
+            FixedStatValue[] effects = source.StatEffects;
+            if ((effects?.Length ?? 0) != (statEffects?.Length ?? 0))
+                return false;
+            for (int i = 0; i < (effects?.Length ?? 0); i++)
+            {
+                if (effects[i].statType != statEffects[i].statType || effects[i].value != statEffects[i].value)
+                    return false;
+            }
+            return true;
+        }
+
+        private static void GetSourceIdentity(IBuffSource source, out byte kind, out string id)
+        {
+            kind = RuntimeKind;
+            id = source.BuffDisplayName;
 
             if (source is BuffDefinitionSO definition)
             {
@@ -674,7 +727,17 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
                 kind = UniqueEffectKind;
                 id = effect.name;
             }
+            else if (source is SnapshotBuffSource fallback)
+            {
+                kind = fallback.SourceKind;
+                id = fallback.SourceId;
+            }
+        }
 
+        public static BuffSnapshot Capture(BuffInstance active)
+        {
+            IBuffSource source = active.source;
+            GetSourceIdentity(source, out byte kind, out string id);
             FixedStatValue[] effects = source.StatEffects;
             FixedStatSnapshot[] snapshots = new FixedStatSnapshot[effects?.Length ?? 0];
             for (int i = 0; i < snapshots.Length; i++)
@@ -712,6 +775,8 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
 
     private sealed class SnapshotBuffSource : IBuffSource
     {
+        public byte SourceKind { get; }
+        public string SourceId { get; }
         private readonly string displayName;
         private readonly string description;
         private readonly FixedStatValue[] statEffects;
@@ -735,6 +800,8 @@ public sealed class PlayerRuntimeStateSync : NetworkBehaviour
 
         public SnapshotBuffSource(BuffSnapshot snapshot)
         {
+            SourceKind = snapshot.sourceKind;
+            SourceId = snapshot.sourceId;
             displayName = snapshot.displayName;
             description = snapshot.description;
             duration = snapshot.duration;

@@ -120,6 +120,19 @@ MonoBehaviour:
   - key: settings_ui.desc_dodge_keybind
     label: "\uAC8C\uC784\uC758 \uD68C\uD53C \uC785\uB825\uD0A4\uB97C \uC124\uC815\uD560
       \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - key: settings_ui.key_open_skill
+    label: "\uC2A4\uD0AC \uCC3D"
+  - key: settings_ui.key_open_inventory
+    label: "\uC778\uBCA4\uD1A0\uB9AC"
+  - key: settings_ui.key_open_status
+    label: "\uC2A4\uD0EF \uCC3D"
+  - key: settings_ui.key_open_quest
+    label: "\uD018\uC2A4\uD2B8 \uCC3D"
+  - key: settings_ui.key_open_buff
+    label: "\uBC84\uD504 \uCC3D"
+  - key: settings_ui.desc_menu_keybind
+    label: "\uAC8C\uC784\uC758 \uBA54\uB274 \uB2E8\uCD95\uD0A4\uB97C \uC124\uC815\uD560
+      \uC218 \uC788\uC2B5\uB2C8\uB2E4."
   - key: settings_ui.desc_enemy_health_display
     label: "\uC801 \uCCB4\uB825 \uD45C\uC2DC\uC5D0 \uB300\uD55C \uC124\uC815\uC744
       \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
@@ -827,6 +840,28 @@ MonoBehaviour:
     label: "\uD658\uACBD \uC124\uC815"
   - key: title_ui.quit
     label: "\uAC8C\uC784 \uC885\uB8CC"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\uB85C\uADF8\uC544\uC6C3\uD560\uAE4C\uC694?"
+  - key: title_ui.logout_guest_notice
+    label: "\uB85C\uADF8\uC544\uC6C3\uD558\uBA74 \uC2F1\uAE00 \uD50C\uB808\uC774\uB294
+      \uAC8C\uC2A4\uD2B8 \uC800\uC7A5\uC73C\uB85C \uC804\uD658\uB429\uB2C8\uB2E4.
+      \uACC4\uC815 \uC9C4\uD589\uB3C4\uB294 \uB2E4\uC74C \uB85C\uADF8\uC778 \uB54C
+      \uADF8\uB300\uB85C \uC774\uC5B4\uC9D1\uB2C8\uB2E4."
+  - key: title_ui.new_game_confirm
+    label: "\uC0C8 \uAC8C\uC784\uC744 \uC2DC\uC791\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+  - key: title_ui.new_game_warning
+    label: "\uC9C4\uD589 \uC911\uC778 \uC6D0\uC815\uC774 \uC0AC\uB77C\uC9C0\uACE0
+      \uCC98\uC74C\uBD80\uD130 \uC2DC\uC791\uD569\uB2C8\uB2E4."
+  - key: login_ui.guest_import_question
+    label: "\uC774 \uACC4\uC815\uC5D0\uB294 \uC544\uC9C1 \uC9C4\uD589\uB3C4\uAC00
+      \uC5C6\uC2B5\uB2C8\uB2E4. \uAC8C\uC2A4\uD2B8\uB85C \uD50C\uB808\uC774\uD55C
+      \uC9C4\uD589\uB3C4\uB97C \uC774 \uACC4\uC815\uC73C\uB85C \uAC00\uC838\uC62C\uAE4C\uC694?"
+  - key: login_ui.guest_import_notice
+    label: "\uAC00\uC838\uC624\uC9C0 \uC54A\uC73C\uBA74 \uC0C8 \uC9C4\uD589\uB3C4\uB85C
+      \uC2DC\uC791\uD558\uACE0, \uAC8C\uC2A4\uD2B8 \uC9C4\uD589\uB3C4\uB294 \uC774
+      \uAE30\uAE30\uC5D0 \uADF8\uB300\uB85C \uB0A8\uC2B5\uB2C8\uB2E4."
   engLabels:
   - key: settings_ui.tab_display
     label: Display
@@ -928,6 +963,18 @@ MonoBehaviour:
     label: You can set the consumable item input key.
   - key: settings_ui.desc_dodge_keybind
     label: You can set the dodge input key.
+  - key: settings_ui.key_open_skill
+    label: Skill Window
+  - key: settings_ui.key_open_inventory
+    label: Inventory
+  - key: settings_ui.key_open_status
+    label: Status Window
+  - key: settings_ui.key_open_quest
+    label: Quest Window
+  - key: settings_ui.key_open_buff
+    label: Buff Window
+  - key: settings_ui.desc_menu_keybind
+    label: You can set the menu shortcut key.
   - key: settings_ui.desc_enemy_health_display
     label: You can change the enemy health display setting.
   - key: settings_ui.desc_damage_display
@@ -1536,6 +1583,23 @@ MonoBehaviour:
     label: Settings
   - key: title_ui.quit
     label: Quit Game
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: Log out?
+  - key: title_ui.logout_guest_notice
+    label: After logging out, Single Play switches to the guest save. Your account
+      progress continues the next time you log in.
+  - key: title_ui.new_game_confirm
+    label: Start a new game?
+  - key: title_ui.new_game_warning
+    label: Your current expedition will be lost and you will start from the beginning.
+  - key: login_ui.guest_import_question
+    label: This account has no progress yet. Bring your guest progress into this
+      account?
+  - key: login_ui.guest_import_notice
+    label: If you skip this, the account starts fresh and your guest progress stays
+      on this device.
   jpnLabels:
   - key: settings_ui.tab_display
     label: "\u753B\u9762"
@@ -1637,6 +1701,18 @@ MonoBehaviour:
     label: "\u30B2\u30FC\u30E0\u306E\u6D88\u8017\u54C1\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
   - key: settings_ui.desc_dodge_keybind
     label: "\u30B2\u30FC\u30E0\u306E\u56DE\u907F\u5165\u529B\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
+  - key: settings_ui.key_open_skill
+    label: "\u30B9\u30AD\u30EB\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_inventory
+    label: "\u30A4\u30F3\u30D9\u30F3\u30C8\u30EA"
+  - key: settings_ui.key_open_status
+    label: "\u30B9\u30C6\u30FC\u30BF\u30B9\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_quest
+    label: "\u30AF\u30A8\u30B9\u30C8\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.key_open_buff
+    label: "\u30D0\u30D5\u30A6\u30A3\u30F3\u30C9\u30A6"
+  - key: settings_ui.desc_menu_keybind
+    label: "\u30B2\u30FC\u30E0\u306E\u30E1\u30CB\u30E5\u30FC\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8\u30AD\u30FC\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u3059\u3002"
   - key: settings_ui.desc_enemy_health_display
     label: "\u6575\u4F53\u529B\u8868\u793A\u306B\u95A2\u3059\u308B\u8A2D\u5B9A\u3092\u5909\u66F4\u3067\u304D\u307E\u3059\u3002"
   - key: settings_ui.desc_damage_display
@@ -2227,6 +2303,20 @@ MonoBehaviour:
     label: "\u8A2D\u5B9A"
   - key: title_ui.quit
     label: "\u30B2\u30FC\u30E0\u7D42\u4E86"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u307E\u3059\u304B\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u30ED\u30B0\u30A2\u30A6\u30C8\u3059\u308B\u3068\u30B7\u30F3\u30B0\u30EB\u30D7\u30EC\u30A4\u306F\u30B2\u30B9\u30C8\u306E\u30BB\u30FC\u30D6\u306B\u5207\u308A\u66FF\u308F\u308A\u307E\u3059\u3002\u30A2\u30AB\u30A6\u30F3\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u6B21\u56DE\u30ED\u30B0\u30A4\u30F3\u6642\u306B\u305D\u306E\u307E\u307E\u5F15\u304D\u7D99\u304C\u308C\u307E\u3059\u3002"
+  - key: title_ui.new_game_confirm
+    label: "\u65B0\u3057\u3044\u30B2\u30FC\u30E0\u3092\u59CB\u3081\u307E\u3059\u304B\uFF1F"
+  - key: title_ui.new_game_warning
+    label: "\u9032\u884C\u4E2D\u306E\u9060\u5F81\u306F\u5931\u308F\u308C\u3001\u6700\u521D\u304B\u3089\u59CB\u307E\u308A\u307E\u3059\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u306F\u307E\u3060\u9032\u884C\u72B6\u6CC1\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u30B2\u30B9\u30C8\u3067\u30D7\u30EC\u30A4\u3057\u305F\u9032\u884C\u72B6\u6CC1\u3092\u3053\u306E\u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u5F15\u304D\u7D99\u304E\u307E\u3059\u304B\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u5F15\u304D\u7D99\u304C\u306A\u3044\u5834\u5408\u306F\u65B0\u3057\u3044\u9032\u884C\u72B6\u6CC1\u3067\u59CB\u307E\u308A\u3001\u30B2\u30B9\u30C8\u306E\u9032\u884C\u72B6\u6CC1\u306F\u3053\u306E\u7AEF\u672B\u306B\u6B8B\u308A\u307E\u3059\u3002"
   chnLabels:
   - key: settings_ui.tab_display
     label: "\u663E\u793A"
@@ -2328,6 +2418,18 @@ MonoBehaviour:
     label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u6D88\u8017\u54C1\u8F93\u5165\u952E\u3002"
   - key: settings_ui.desc_dodge_keybind
     label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u95EA\u907F\u8F93\u5165\u952E\u3002"
+  - key: settings_ui.key_open_skill
+    label: "\u6280\u80FD\u7A97\u53E3"
+  - key: settings_ui.key_open_inventory
+    label: "\u80CC\u5305"
+  - key: settings_ui.key_open_status
+    label: "\u5C5E\u6027\u7A97\u53E3"
+  - key: settings_ui.key_open_quest
+    label: "\u4EFB\u52A1\u7A97\u53E3"
+  - key: settings_ui.key_open_buff
+    label: "\u589E\u76CA\u7A97\u53E3"
+  - key: settings_ui.desc_menu_keybind
+    label: "\u53EF\u4EE5\u8BBE\u7F6E\u6E38\u620F\u7684\u83DC\u5355\u5FEB\u6377\u952E\u3002"
   - key: settings_ui.desc_enemy_health_display
     label: "\u53EF\u4EE5\u66F4\u6539\u654C\u4EBA\u8840\u91CF\u663E\u793A\u8BBE\u7F6E\u3002"
   - key: settings_ui.desc_damage_display
@@ -2918,3 +3020,17 @@ MonoBehaviour:
     label: "\u8BBE\u7F6E"
   - key: title_ui.quit
     label: "\u9000\u51FA\u6E38\u620F"
+  - key: title_ui.guest
+    label: Guest
+  - key: title_ui.logout_confirm
+    label: "\u8981\u9000\u51FA\u767B\u5F55\u5417\uFF1F"
+  - key: title_ui.logout_guest_notice
+    label: "\u9000\u51FA\u767B\u5F55\u540E\uFF0C\u5355\u4EBA\u6E38\u620F\u5C06\u5207\u6362\u4E3A\u8BBF\u5BA2\u5B58\u6863\u3002\u8D26\u53F7\u8FDB\u5EA6\u5C06\u5728\u4E0B\u6B21\u767B\u5F55\u65F6\u7EE7\u7EED\u3002"
+  - key: title_ui.new_game_confirm
+    label: "\u8981\u5F00\u59CB\u65B0\u6E38\u620F\u5417\uFF1F"
+  - key: title_ui.new_game_warning
+    label: "\u5F53\u524D\u8FDB\u884C\u4E2D\u7684\u8FDC\u5F81\u5C06\u4F1A\u4E22\u5931\uFF0C\u5E76\u4ECE\u5934\u5F00\u59CB\u3002"
+  - key: login_ui.guest_import_question
+    label: "\u6B64\u8D26\u53F7\u5C1A\u65E0\u8FDB\u5EA6\u3002\u8981\u5C06\u8BBF\u5BA2\u6E38\u73A9\u7684\u8FDB\u5EA6\u5BFC\u5165\u6B64\u8D26\u53F7\u5417\uFF1F"
+  - key: login_ui.guest_import_notice
+    label: "\u82E5\u4E0D\u5BFC\u5165\uFF0C\u5C06\u4EE5\u65B0\u8FDB\u5EA6\u5F00\u59CB\uFF0C\u8BBF\u5BA2\u8FDB\u5EA6\u4F1A\u4FDD\u7559\u5728\u672C\u8BBE\u5907\u4E0A\u3002"

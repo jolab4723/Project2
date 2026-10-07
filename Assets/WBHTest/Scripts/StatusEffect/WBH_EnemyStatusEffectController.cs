@@ -303,8 +303,14 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
             return;
 
         float scale = GetEffectScale(grade);
-
-        effect.transform.localScale *= scale;
+        // SW 수정: 등급 배율은 월드 크기 기준이다. 확대된 보스의 부착점 배율까지
+        // 중복 상속하면 둔화/빙결 등이 화면을 덮으므로 풀에서 복원한 원본 크기에만 적용한다.
+        // AttachOnce도 분리 직전에 부착점 배율을 상속하므로 같은 기준으로 상쇄한다.
+        Vector3 parentScale = statusEffectRoot.lossyScale;
+        effect.transform.localScale = Vector3.Scale(effect.transform.localScale, new Vector3(
+            scale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
+            scale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
+            scale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z))));
         activeEffects.Add(type, effect);
     }
 

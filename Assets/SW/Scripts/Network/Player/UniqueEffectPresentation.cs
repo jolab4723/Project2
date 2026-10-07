@@ -35,6 +35,8 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private readonly Dictionary<ItemSystem.FieldAuraUniqueEffectSO, GameObject> buffAuras = new();
     private readonly HashSet<ItemSystem.FieldAuraUniqueEffectSO> activeAuraBuffs = new();
     private readonly List<ItemSystem.FieldAuraUniqueEffectSO> expiredAuraBuffs = new();
+    // 아이템 시한·조건부 능력치 버프가 켜지거나 스택이 오르는 순간 스탯 카테고리별 발동 연출을 재생한다.
+    private readonly StatBuffBurstPresenter statBuffBursts = new();
 
     // SW 수정: 고유효과 전용 VFX 프리팹(Assets/SW/Resources/UniqueEffectVFX). 런타임 AddComponent된 Presenter도
     // 같은 자원을 쓰도록 직렬화 참조 대신 Resources에서 한 번만 찾고, 없으면 기존 선 표시로 돌아간다.
@@ -78,6 +80,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private void LateUpdate()
     {
         if (buffAurasDirty || buffAuras.Count > 0) RefreshBuffAuras();
+        RefreshStatBuffBursts();
         if (!worldEnderReady) return;
         if (!CanPresent)
         {
@@ -517,12 +520,29 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             buffAuras.Add(aura, instance);
         }
 
-        // 본인의 버프 표시는 항상 보이고, 다른 플레이어의 버프 표시는 기기별 아군 버프 범위 설정만 따른다.
-        var identity = GetComponent<Mirror.NetworkIdentity>();
-        bool visible = identity == null || identity.isLocalPlayer || Core.SettingManager.Instance == null ||
-                       Core.SettingManager.Instance.GetData().showAlliedBuffRanges;
+        bool visible = AlliedBuffVisualsVisible(out _);
         foreach (GameObject instance in buffAuras.Values)
             if (instance != null && instance.activeSelf != visible) instance.SetActive(visible);
+    }
+
+    // 본인의 버프 표시는 항상 보이고, 다른 플레이어의 버프 표시는 기기별 아군 버프 범위 설정만 따른다.
+    private bool AlliedBuffVisualsVisible(out bool remote)
+    {
+        var identity = GetComponent<Mirror.NetworkIdentity>();
+        remote = identity != null && !identity.isLocalPlayer;
+        return !remote || Core.SettingManager.Instance == null || Core.SettingManager.Instance.GetData().showAlliedBuffRanges;
+    }
+
+    /// <summary>스택 증가는 목록 변경 알림이 오지 않으므로 능력치 버프 발동 연출은 매 프레임 버프 목록과 비교한다.</summary>
+    private void RefreshStatBuffBursts()
+    {
+        if (!CanPresent || auraBuffs == null)
+        {
+            statBuffBursts.Clear();
+            return;
+        }
+        bool visible = AlliedBuffVisualsVisible(out bool remote);
+        statBuffBursts.Refresh(transform, auraBuffs.ActiveBuffs, visible, remote);
     }
 
     private void ClearBuffAuras()
@@ -638,6 +658,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         RestoreWasteHeatFlash();
         ClearWasteHeatAura();
         ClearBuffAuras();
+        statBuffBursts.Clear();
         SetWorldEnderReady(false);
         StopAllCoroutines();
         foreach (GameObject bolt in activeBolts)

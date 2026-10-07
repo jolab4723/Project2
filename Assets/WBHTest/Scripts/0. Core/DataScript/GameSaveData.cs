@@ -24,6 +24,8 @@ namespace Core
         public List<UnknownStageChoiceRecord> unknownStageChoices = new();
         public List<UnknownStageBuffRecord> unknownStageBuffs = new();
         public string lastCompletedUnknownBattleKey; // 클리어 저장 후 포탈 이동 전 재로드를 구분한다.
+        // WJ 이우진 추가(2026-10-06): 이어하기용 결과 화면 기록(처치 수·경과 시간·스테이지). 새 게임은 비어 있다.
+        public KY_RunStats runStats;
     }
 
     [Serializable]

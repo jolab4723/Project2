@@ -40,6 +40,7 @@ public sealed partial class PlayerItemEffectState
     public event Action<bool> WasteHeatReadyChanged;
     public event Action<bool> PreparedChanged;
     public event Action<ItemInstance> StackChanged;
+    internal event Action<string, double> CooldownChanged;
     public PlayerItemEffectState(PlayerContext context) => this.context = context;
     public IReadOnlyDictionary<string, double> Cooldowns => cooldownEndTimes;
     public uint ChainLightningTriggerCount => chainLightningTriggerCount;
@@ -161,7 +162,7 @@ public sealed partial class PlayerItemEffectState
             !float.IsFinite(effect.cooldownSeconds) || effect.cooldownSeconds < 0f)
             return;
 
-        cooldownEndTimes[key] = now + effect.cooldownSeconds;
+        SetCooldownEnd(key, now + effect.cooldownSeconds);
         Vector3 start = deathPosition + Vector3.up;
         Vector3 right = Vector3.Cross(Vector3.up, forward);
         List<WBH_ICombat> targets = CollectLivingBodies(Physics.OverlapBox(start + forward * (effect.length * 0.5f),
@@ -315,7 +316,7 @@ public sealed partial class PlayerItemEffectState
             !float.IsFinite(effect.cooldownSeconds) || effect.cooldownSeconds < 0f)
             return;
 
-        cooldownEndTimes[key] = now + effect.cooldownSeconds;
+        SetCooldownEnd(key, now + effect.cooldownSeconds);
         var candidates = new Dictionary<WBH_ICombat, Vector3>();
         int obstacles = ObstacleLayerMask;
         foreach (Collider hit in Physics.OverlapSphere(hitPosition, effect.radius, EnemyLayerMask, QueryTriggerInteraction.Collide))
@@ -452,6 +453,14 @@ public sealed partial class PlayerItemEffectState
     private bool IsCoolingDown(string key, double now)
         => cooldownEndTimes.TryGetValue(key, out double cooldownEnd) && now < cooldownEnd;
 
+    private void SetCooldownEnd(string key, double end)
+    {
+        if (cooldownEndTimes.TryGetValue(key, out double previous) && previous == end)
+            return;
+        cooldownEndTimes[key] = end;
+        CooldownChanged?.Invoke(key, end);
+    }
+
     /// <summary>SW 수정: 싱글·서버에서 실제 장착 생애를 재조정하고 무적중 5초 등 설정된 시간이 지나면 폐열 스택과 준비 표시를 0으로 돌린다.</summary>
     internal void Tick()
     {
@@ -584,7 +593,7 @@ public sealed partial class PlayerItemEffectState
             return;
 
         chainLightningTriggerCount++;
-        cooldownEndTimes[cooldownKey] = now + Mathf.Max(0f, effect.cooldownSeconds);
+        SetCooldownEnd(cooldownKey, now + Mathf.Max(0f, effect.cooldownSeconds));
     }
 
     /// <summary>실제 Fighter 근접 기본 공격의 살아 있는 직접 대상에게 화염 후속 피해를 한 번 등록한다.</summary>
@@ -776,7 +785,7 @@ public sealed partial class PlayerItemEffectState
             return;
         }
 
-        cooldownEndTimes[key] = now + Mathf.Max(0f, effect.cooldownSeconds);
+        SetCooldownEnd(key, now + Mathf.Max(0f, effect.cooldownSeconds));
         if (effect.persistStackOnItem)
         {
             int next = (int)System.Math.Min((long)Mathf.Max(0, item.persistedStackCount) + 1, int.MaxValue);
@@ -810,5 +819,5 @@ public sealed partial class PlayerItemEffectState
     }
 
     internal void BeginGuardianCooldown(GuardiansJusticeShieldUniqueEffectSO effect)
-        => cooldownEndTimes[GetCooldownKey(effect, null)] = Now + effect.cooldownSeconds;
+        => SetCooldownEnd(GetCooldownKey(effect, null), Now + effect.cooldownSeconds);
 }
