@@ -229,11 +229,15 @@ public class YJ_StageNodeHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
     /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!isActiveAndEnabled || !isInteractable || isSelected || eventData.button != PointerEventData.InputButton.Left)
+        if (!isActiveAndEnabled || !isInteractable || eventData.button != PointerEventData.InputButton.Left)
             return;
 
         if (stageSelectManager == null)
             stageSelectManager = YJ_StageSelectManager.Instance;
+
+        // 이미 선택된 노드의 재클릭은 매니저가 판단합니다(이어하기로 복원된 pending 노드만 진입).
+        if (isSelected && (stageSelectManager == null || stageSelectManager.IsExternallyControlled))
+            return;
 
         bool selected = stageSelectManager != null
             ? stageSelectManager.SelectNode(this)

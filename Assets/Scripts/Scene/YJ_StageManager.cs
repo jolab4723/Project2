@@ -114,11 +114,11 @@ public class YJ_StageManager : MonoBehaviour
         if (!TryGetDataManager())
             return;
 
-        // 런(게임플레이) 데이터는 새로 시작하지만, 영구 프로필(골드/패시브 스킬트리)은 런과 무관하게
+        // 영구 프로필(골드/패시브 스킬트리)은 런과 무관하게
         // 항상 이어져야 하므로 리셋하지 않고 그대로 불러온다.
         dataManager.LoadPassiveData();
-        dataManager.ResetGameplayData();
-        Log.Print("ResetGameplayData");
+        // WJ 이우진 수정(2026-10-07): 이어하기를 위해 부팅 시 런 초기화를 하지 않는다.
+        // 런 초기화는 새 게임(캐릭터 선택의 BeginNewGame)과 런 종료(클리어·사망·포기의 ResetGameplayData)가 담당한다.
     }
 
     public void StartScene()

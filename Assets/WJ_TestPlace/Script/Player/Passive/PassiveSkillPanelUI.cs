@@ -99,6 +99,12 @@ public class PassiveSkillPanelUI : KY_PopupBase
         if (PassiveSkillManager.Instance != null)
             PassiveSkillManager.Instance.OnProfileChanged += RefreshAll;
 
+        // WJ 이우진 추가(2026-10-07): 싱글이 로그인 없이 시작하게 된 뒤(10/5 SW 변경) 타이틀·로비에서는 패널을 열기 전에
+        // 프로필을 불러오는 곳이 없어, 확정 시 "CurrentProfile이 없어 패시브 레벨을 적용할 수 없습니다"가 났다.
+        // 예전 KY_PassiveSkillPopup처럼 열릴 때 비어 있으면 현재 저장 주인의 프로필을 불러온다.
+        if (PassiveSkillManager.Instance != null && PassiveSkillManager.Instance.CurrentProfile == null)
+            Core.DataManager.Instance?.LoadPassiveData();
+
         if (selectedId == null && IconOrder.Length > 0)
             selectedId = IconOrder[0];
 

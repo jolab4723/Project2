@@ -147,6 +147,14 @@ public class PotionUseManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 저장된 남은 충전량을 그대로 적용한다(0~최대치로 맞춤). 스테이지 이동 시 Start의 최대치 충전을 덮어쓰는 용도.
+    /// </summary>
+    public void SetCharges(int charges)
+    {
+        useState.ApplyCharges(charges, MaxCharges);
+    }
+
+    /// <summary>
     /// 현재 장착된 포션 인스턴스를 가져온다. 장착된 게 없거나 포션이 아니면 false.
     /// SW 수정: 기존 장비 연결을 유지하고 공통 규칙으로 장착 포션을 찾습니다.
     /// </summary>
