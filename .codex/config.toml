@@ -16,10 +16,3 @@ DISABLE_TELEMETRY = "true"
 BLENDER_HOST = "localhost"
 BLENDER_PORT = "9876"
 
-[mcp_servers.3dsmax-mcp]
-command = 'C:\Users\user\.local\bin\uv.exe'
-args = ["run", "--directory", 'C:\Users\user\.local\share\3dsmax-mcp', "3dsmax-mcp"]
-startup_timeout_sec = 60
-tool_timeout_sec = 120
-default_tools_approval_mode = "writes"
-
