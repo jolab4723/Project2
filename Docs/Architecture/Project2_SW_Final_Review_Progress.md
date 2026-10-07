@@ -40,16 +40,15 @@
 | R09 | 소유권 잃은 아이템을 싱글 강화창이 계속 참조 | `UpgradeController` (SW) | 완료(싱글·Host) | T08 | 소유권 상실 이벤트로 선택 해제 + 결제 직전 가방·장착 소유 확인 |
 | R10 | 엘리베이터 서버 착지 실패 시 영구 대기 | `MirrorFourPlayerElevator` (SW) | 완료(싱글·Host) | T09 | 실패 승객을 착지 대기 중 매 프레임 재배치, 3초 후 `safeLandingPoint` 주변 8m까지 확장 탐색. 출발층(발판 하강 경로)·허공 해제는 사용 안 함 |
 | R11 | 결과 플레이 시간에 로비 대기 포함 | `MirrorSessionLifecycle` (SW) | 완료(싱글·Host) | T10 | 서버 Start 승인 시점에 `runStartedAt` 설정. 전원 부재 일시정지 시간은 포함(기존 유지) |
-| R12 | 효과 0인 ‘미정’ 패시브(ID 11) 500 크레딧 구매 가능 | `PassiveSkillManager` (WJ, 승인) | 완료(싱글·Host) | T11 | 효과 값이 모두 0인 정의는 해금 거부(`IsAvailable`). 슬롯 표시 숨김(KY)과 기존 해금 데이터 환급은 미처리 |
+| R12 | 효과 0인 ‘미정’ 패시브(ID 11) 500 크레딧 구매 가능 | `PassiveSkillManager` (WJ, 승인), `KY_PassiveSkillSlot` (KY, 승인) | 완료(싱글·Host) | T11 | 효과 값이 모두 0인 정의는 해금 거부(`IsAvailable`). 후속으로 미정 슬롯 숨김과 정식 TitleScene 11개 슬롯 표시 확인. 저장 레벨 유지, 환급은 사용자 요청으로 제외 |
 | R13 | 스킬·고유 효과 설명 불일치 (기존 5건 + 강화1 수치) | 원본 표와 라벨 DB, 고유 효과 SO | 완료(설명 수정) | T11 | 2026-10-07 싱글 Play 실측에 맞춰 4개 언어 설명 수정. 강화1 +15%, 강화2 쿨다운 −15%, 강화3 지정 거리와 산탄 폭발 반경 각각 +15%, 산탄 0.35초, 처치 상한과 연타 초기화 명시. 상세 10절 |
 
 ## 3. 검증 후보 (확정 버그 아님)
 
 | ID | 내용 | 상태 | 검증 | 비고 |
 |---|---|---|---|---|
-| C01 | 활성 스킬의 Collider 대상 기준이 고유 효과와 다름 | 대기 | T07 | 필요 시 기존 전투 본체 탐색 경계 재사용 |
-| C02 | 버프 영역 안에서 풀 반환된 적의 기록 잔존 가능성 | 대기 | T15 | |
-| C03 | 광역 공격 중 앞 대상 처치가 뒤 대상 피해량 변경 | 대기 | T15 | 스냅샷 정책 결정 필요 |
+| C02 | 버프 영역 안에서 풀 반환된 적의 기록 잔존 가능성 | 완료(Editor Play) | T15 | 적 비활성화 시 버프·오라 기록과 구독 정리. 복수 Collider, 겹친 오라, 같은 프레임 반환·재진입 검증. 원격 통신 미검증 |
+| C03 | 광역 공격 중 앞 대상 처치가 뒤 대상 피해량 변경 | 제외(현상 유지) | T15 | 사용자 결정으로 순차 현재 스탯 계산 유지. 정식 Gunner·적의 같은 차수와 다음 차수 피해 변화 실측 |
 
 ## 4. 밸런스 확인 (측정 후 조정)
 
@@ -66,13 +65,13 @@
 
 | 후보 | 상태 | 비고 |
 |---|---|---|
-| `NetworkEnemyProjectile.RpcPlayerImpact`와 전용 필드 | 대기 | GunnerProjectile 등 프리팹 직렬화 필드 함께 정리 |
-| `WeaponEquipGeneration` (항상 `1u`) | 대기 | |
-| `PlayerCombatAuthority.BeginGunnerHitScope` 래퍼 | 대기 | `PlayerItemEffectState` 쪽 동명 메서드는 유지 |
-| `TryGetGunnerHitSource` 추가 bool 출력 오버로드 | 대기 | |
-| `DropItemVFXController.GradeVisualData` 미사용 인자 | 대기 | |
-| `Assets/SW/Scripts/Potion.cs` 시험 코드 | 대기 | 씬/프리팹 GUID 참조 확인 후 |
-| Editor `SW/Mirror Test/...` 메뉴 이름 | 대기 | |
+| `NetworkEnemyProjectile.RpcPlayerImpact`와 전용 필드 | 완료 | 호출 없는 RPC와 전용 필드 제거, 투사체 프리팹 3개 직렬화 필드 정리 |
+| `WeaponEquipGeneration` (항상 `1u`) | 완료 | 미사용 확인 후 제거 |
+| `PlayerCombatAuthority.BeginGunnerHitScope` 래퍼 | 완료 | `PlayerItemEffectState` 쪽 동명 메서드는 유지 |
+| `TryGetGunnerHitSource` 추가 bool 출력 오버로드 | 완료 | 미사용 확인 후 제거 |
+| `DropItemVFXController.GradeVisualData` 미사용 인자 | 완료 | 사용하지 않는 2인자만 제거 |
+| `Assets/SW/Scripts/Potion.cs` 시험 코드 | 제외(유지) | `Assets/SW/Scenes/Itemscene.unity` 직렬화 참조 확인 |
+| Editor `SW/Mirror Test/...` 메뉴 이름 | 완료 | Stage2/4를 `SW/Mirror/검증/`으로 통일 |
 
 ## 6. 검증표 (리뷰 10.2)
 
@@ -87,7 +86,7 @@
 | T04 | R04 보상 보류 중 드래그·저장/로드 | 통과(싱글) | 2026-10-07 | 실제 ItemDragHandler 드래그 중 저장 포함1회·원래 좌표, 같은 크기 보상 거부, 취소 복귀·분리기록 해제. 회전·창 닫기·재로드 미실행 |
 | T05 | R05 유물 20/0스택 순서·제거·재접속 | 통과(싱글) | 2026-10-07 | 우주 괴물 심장 B0→A20, A20→B0 양 순서·처치 후 20 유지, 높은 사본 제거→1, 재획득→20. 저장/로드·재접속 미실행 |
 | T06 | R06 최대 HP만 증감 시 효과 갱신 | 통과(싱글) | 2026-10-07 | 현재 HP 150 고정, 최대 HP 283↔397에서 50% 조건 즉시 ON/OFF |
-| T07 | R07·C01 Slow 영역, Collider 구성별 타격 수 | 통과(Host) | 2026-10-07 | Rigidbody 없는 정식 적 4기 이동속도 1→0.6, 구역 종료 후 0.5초 내 복구. C01 Collider 구성별 검사 미실행 |
+| T07 | R07 Slow 영역 | 통과(Host) | 2026-10-07 | Rigidbody 없는 정식 적 4기 이동속도 1→0.6, 구역 종료 후 0.5초 내 복구 |
 | T08 | R08·R09 리롤 원자성, 소유권 상실 후 강화 | 통과(싱글) | 2026-10-07 | 공간 부족 리롤 실패40회 불변·성공3회 6개 교체·UI 일치. 강화: 소유/장착 정상, 삭제·이벤트 없는 이탈 결제0 |
 | T09 | R10 엘리베이터 착지 실패·이탈 | 통과(Host) | 2026-10-07 | Act1_Stage5에서 착지 일시 실패 후 재시도 착지, 3초 후 safeLandingPoint 8m 확장 탐색 착지, 잠금·Agent 복구. 중간 이탈 미실행 |
 | T10 | R11 로비 대기 대 즉시 출발 시간 | 통과(Host) | 2026-10-07 | 로비 22초 대기 후 runStartedAt=출발 승인 시각(대기 미포함). Dedicated 미실행 |
@@ -95,7 +94,7 @@
 | T12 | 오라·필드·스택·쿨다운 늦은 관찰/재접속 회귀 | 미실행 | | |
 | T13 | 이전 네 P1(저장 롤백 등) 회귀 | 미실행 | | |
 | T14 | Host+원격3, Dedicated+4 Act1/Act2 전체 흐름 | 미실행 | | |
-| T15 | C02·C03 풀 재사용, 광역 스냅샷 | 미실행 | | |
+| T15 | C02·C03 풀 재사용, 광역 스탯 적용 | 통과(Editor Play·싱글) | 2026-10-07 | C02 비활성화 후 버프/오라 기록 1→0, 겹친 오라와 재진입 통과. C03 처치 시 검증용 공격력 +100으로 72→172, 동일 차수 피해 44.0816→105.3061·다음 차수 105.3061. 기존 순차 정책 유지 |
 | T16 | B01–B04 동일 조건 수치 비교 | 미실행 | | |
 
 ## 7. 진행 기록

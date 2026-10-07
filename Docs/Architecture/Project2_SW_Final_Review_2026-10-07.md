@@ -123,7 +123,7 @@ Mirror의 Host 로컬 클라이언트는 서버와 씬 상태를 공유한다. �
 
 **통과 기준.** 같은 조건의 싱글·Host·원격·Dedicated에서 기본 150%와 후속 75%에 해당하는 두 피해가 일관되게 발생해야 한다. 후속 피해량은 실제 방어·속성 등 공통 계산을 반영해 비교한다. 원 안쪽 적과 2차 원에만 있는 적을 함께 배치한다.
 
-융단폭격은 매 웨이브/포탄에서 새 요청을 생성하므로 이와 같은 ‘요청 하나를 재사용한 후속 타격 누락’으로 분류하지 않았다. 다중 Collider 문제는 별도의 C01 항목이다. [GunnerSkillController.cs:492–496](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L492-L496) [GunnerSkillController.cs:533–548](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L533-L548) [GunnerSkillController.cs:623–639](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L623-L639)
+융단폭격은 매 웨이브/포탄에서 새 요청을 생성하므로 이와 같은 ‘요청 하나를 재사용한 후속 타격 누락’으로 분류하지 않았다. [GunnerSkillController.cs:492–496](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L492-L496) [GunnerSkillController.cs:533–548](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L533-L548) [GunnerSkillController.cs:623–639](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L623-L639)
 
 ### R03. 할인 구매·판매·재구매로 골드를 계속 늘릴 수 있다
 
@@ -181,7 +181,7 @@ HP 비율 러너는 `OnHealthChanged`만 구독한다. 최대 HP가 변해도 �
 
 Unity는 트리거 쌍 중 하나에 Rigidbody가 있어야 트리거 이벤트를 보낸다. 따라서 해당 구성에서 구역 내부 적에 Slow가 적용되지 않는 조건이 성립한다. 프로젝트의 기존 FieldAura는 이 이유를 주석으로 남기고 구역에 kinematic Rigidbody를 추가해 두었다. **코드·프리팹 조합으로 확인한 결함이며 실제 씬에서 Slow 상태를 이번에 관찰한 것은 아니다.** [Unity OnTriggerStay](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Collider.OnTriggerStay.html), [FieldAuraUniqueEffectSO.cs:70–82](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Buff/FieldAuraUniqueEffectSO.cs#L70-L82)
 
-**수정·검증:** 기존 오라와 같은 구역 측 Rigidbody 설정을 적용하거나 기존 서버 공간 조회 경계를 사용한다. 정식 일반 적·보스가 반경 4 안에서 40% 둔화를 받는지, 밖으로 나간 뒤 0.5초 내 풀리는지 검사한다. 자식 Collider의 전투 본체 조회도 C01과 함께 확인한다.
+**수정·검증:** 기존 오라와 같은 구역 측 Rigidbody 설정을 적용하거나 기존 서버 공간 조회 경계를 사용한다. 정식 일반 적·보스가 반경 4 안에서 40% 둔화를 받는지, 밖으로 나간 뒤 0.5초 내 풀리는지 검사한다.
 
 ### R08 · P2 — 싱글 리롤이 실패로 반환돼도 재고 일부를 바꾼다
 
@@ -242,14 +242,6 @@ ID 11은 최대 레벨 1, 효과 0, 비용 500으로 정의되어 있다. 구매
 **후속 수정 완료:** 사용자 결정으로 실제 동작에 맞춰 4개 언어 설명을 정정했다. 강화1은 피해 +15%, 강화2는 쿨다운 −15%, 강화3은 지정 거리와 산탄 폭발 반경 각각 +15%, 산탄은 0.35초 간격으로 명시했다. 고철 압축기 100스택과 +50% 상한, 두 무기의 다른 적 적중 시 연타 초기화 조건도 추가했다. 원본 Excel, JSON, 라벨 DB와 한국어 폴백 SO를 반영하고 검증했다. [진행 문서 10절](Project2_SW_Final_Review_Progress.md#10-r13-설명-수정-완료-2026-10-07) 기준으로 R13은 완료다.
 
 ## 6. 아직 확정 버그로 세지 않은 검증 후보
-
-### C01. 활성 스킬의 전투 대상 기준이 고유 효과와 다르다
-
-활성 스킬 일부는 Overlap 결과 Collider를 그대로 순회하고 그 오브젝트에서 `WBH_ICombat`를 찾는다. 자식 Collider에서 부모 전투 본체를 찾지 못하거나, 같은 몸체의 Collider 둘이 각각 피해를 받는 조건이 가능하다. 융단폭격의 Marked 지속시간 가산도 Collider 수의 영향을 받을 수 있다. [FighterSkillController.cs:940–967](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/FighterSkillController.cs#L940-L967) [FighterSkillController.cs:1126–1152](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/FighterSkillController.cs#L1126-L1152) [GunnerSkillController.cs:623–654](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L623-L654) [GunnerSkillController.cs:996–1023](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L996-L1023) [GunnerSkillController.cs:1316–1339](https://github.com/jolab4723/Project2/blob/8ded80dcd8701bfdac3afc43594707c64428fe99/Assets/WJ_TestPlace/Script/Player/Skill/GunnerSkillController.cs#L1316-L1339)
-
-현재 검토한 적 루트에는 대표 전투 Collider가 있고, 시각 프리팹의 Collider는 다른 레이어·비활성 상태일 수 있다. 따라서 **현재 모든 적에게 스킬이 중복 피해를 준다고 단정하지 않는다.** 다만 새 SW 공간 효과는 부모 전투 몸체 조회와 몸체별 중복 제거를 사용하므로 같은 게임 안에서 기준이 다른 것은 확인됐다.
-
-**표적 검사:** 전투 본체에 Collider 1개, 자식에만 Collider 1개, 본체에 Collider 2개를 각각 구성한다. 한 웨이브당 몸체 피해 1회, 마커 시간 추가 1회가 기준이다. 의도한 다음 폭발·다음 웨이브는 별도 타격으로 허용한다. 수정이 필요하면 새 시스템 대신 기존 전투 본체 탐색 경계를 재사용한다.
 
 ### C02. 적이 버프 영역 안에서 풀로 돌아갈 때 기록이 남을 가능성
 
@@ -636,7 +628,7 @@ Burn1은 5초 동안 1초마다 대상 최대 HP의1%를 직접 피해로 준다
 | T04 | 보상 보류 가방에서 드래그1초 이상, 회전/취소/창 닫기/재로드 | 모든 소유 instanceId 보존, 보상 중복 없음 | R04 |
 | T05 | 영구 유물20/0스택 양 순서, 제거·재획득·저장·재접속 | 효과별 최종 수치가 순서와 무관 | R05 |
 | T06 | 현재 HP 고정, 최대 HP만 증감해 조건 경계 통과 | 피격·회복 없이 효과 ON/OFF 갱신 | R06 |
-| T07 | 정식 드론·보스의 Slow 영역, 루트/자식/복수 Collider | 둔화 정상 적용·해제, 한 몸체당 한 타격 | R07·C01 |
+| T07 | 정식 드론·보스의 Slow 영역 | 둔화 정상 적용·해제 | R07 |
 | T08 | 재고6/일부/0칸 가능 리롤, 선택 장비 삭제·드롭 후 강화 | 실패 시 재고/비용 불변, 소유하지 않는 장비에 결제 없음 | R08·R09, 싱글 |
 | T09 | 엘리베이터 착지점 일시 실패·영구 실패·중간 이탈 | 재시도 또는 안전 취소, 살아 있는 승객 영구 잠금 없음 | R10 |
 | T10 | 로비60초 대기 대 즉시 출발, 같은 전투 시간 | 결과 시간의 정책 일치, Host/Dedicated 차이 없음 | R11 |
@@ -658,7 +650,7 @@ Burn1은 5초 동안 1초마다 대상 최대 HP의1%를 직접 피해로 준다
 | 소스 SHA, Unity 버전, 플랫폼, 빌드 시각/파일 해시 | 어떤 소스와 실행 파일을 검증했는지 고정 |
 | 서버 방식, 플레이어 수, 각 프로세스 역할 | Host만 확인한 것인지 원격도 확인했는지 구분 |
 | 시작 장비·강화·랜덤 옵션·패시브·레벨·적 DEF/HP | 밸런스 비교 재현 |
-| AttackId·타격 차수·대상 ID·실제 HP 감소 | R01/R02/C01을 눈으로 보는 VFX와 분리해 확인 |
+| AttackId·타격 차수·대상 ID·실제 HP 감소 | R01/R02를 눈으로 보는 VFX와 분리해 확인 |
 | 거래 전후 골드·재고 revision·소유 instanceId | 정상 거래·롤백·저장 보존 확인 |
 | 효과 스택·최종 스탯·남은 시간 | 표시만 맞고 실제 수치가 다른 상황 검출 |
 | 평균과 p95 프레임 시간, GC 할당, 서버/클라이언트 분리 | 짧은 멈춤과 실제 부하를 평균 FPS가 숨기지 않게 함 |
