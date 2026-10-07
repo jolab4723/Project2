@@ -47,7 +47,8 @@ internal sealed class ShopTradeService
         }
 
         // 상점 강화 패시브 할인을 적용한 값. 툴팁 표시도 같은 ShopPricing을 쓴다.
-        int price = ShopPricing.GetBuyPrice(item.itemData.definition);
+        // 플레이어 판매 재고는 지급했던 매입가보다 싸게 되팔지 않는다.
+        int price = ShopPricing.GetStockBuyPrice(stockEntry);
 
         if (!playerWallet.TrySpendGold(price))
             return TradeResult.NotEnoughGold;
@@ -116,7 +117,8 @@ internal sealed class ShopTradeService
             return TradeResult.StockUpdateFailed;
         }
 
-        int price = item.itemData.definition.sellPrice;
+        // 구매와 같은 할인율을 적용해 할인 구매 → 판매 왕복으로 골드가 늘지 않게 한다.
+        int price = ShopPricing.GetSellPrice(item.itemData.definition);
 
         if (!TryTransferItem(
                 item,

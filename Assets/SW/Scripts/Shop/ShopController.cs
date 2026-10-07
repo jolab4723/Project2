@@ -107,6 +107,13 @@ public class ShopController : MonoBehaviour
                stockService.TryGetEntry(instanceId, out _);
     }
 
+    /// <summary>재고 출처와 매입가가 필요한 가격 표시용 조회.</summary>
+    public bool TryGetStockEntry(string instanceId, out ShopStockEntry entry)
+    {
+        entry = null;
+        return stockService != null && stockService.TryGetEntry(instanceId, out entry);
+    }
+
     public void UnbindPlayer(InventoryController owner)
     {
         if (inventoryController != owner)
