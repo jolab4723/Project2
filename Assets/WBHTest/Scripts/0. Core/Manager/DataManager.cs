@@ -2268,6 +2268,12 @@ namespace Core
             if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || IsRestoringGameplay)
                 return;
 
+            // WJ 이우진 수정(2026-10-07): 전투 스테이지 안에서는 디스크 저장을 미룬다. 진행도·보상은 메모리에 남고
+            // 포탈의 클리어 저장(YJ_StageManager.EndScene)에 함께 기록된다. 전투 중 종료되면 입장 시점으로 되돌아가
+            // 중간 상태(체력·획득물·퀘스트 진행)를 저장한 뒤 이어하기로 같은 전투를 반복하는 일을 막는다.
+            if (IsInCombatStage())
+                return;
+
             // SW 수정 : 실제 플레이어가 준비되면 보상과 지급 기록을 하나의 저장으로 남긴다.
             if (IsGameplayReady)
             {
@@ -2286,6 +2292,23 @@ namespace Core
             {
                 WriteJson(GetSavePath(QuestSaveFileName), QuestManager.Instance.GetSaveData());
             }
+        }
+
+        /// <summary>
+        /// WJ 이우진 추가(2026-10-07): 진행 중 노드가 전투·엘리트·보스이고 스테이지 선택 화면이 아니면 전투 스테이지 안이다.
+        /// 일시정지의 저장 후 종료 차단(KY_PausePopup.CanSaveAndExit)과 같은 기준. 맵 저장이 없는 직접 실행은 false.
+        /// </summary>
+        private bool IsInCombatStage()
+        {
+            if (FindFirstObjectByType<YJ_StageSelectManager>() != null)
+                return false;
+
+            if (!TryLoadStageMap(out StageMapSaveData map) || map == null || string.IsNullOrEmpty(map.pendingNodeId))
+                return false;
+
+            StageNodeSaveData pending = map.nodes?.Find(node => node != null && node.id == map.pendingNodeId);
+            return pending != null &&
+                   (pending.type == StageNodeType.Battle || pending.type == StageNodeType.Elite || pending.type == StageNodeType.Boss);
         }
 
         [ContextMenu("퀘스트 불러오기")]
