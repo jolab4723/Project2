@@ -244,7 +244,9 @@ public sealed class NetworkShopState : NetworkBehaviour
             return MirrorShopRequestResult.InventoryFull;
         }
 
-        int price = ShopPricing.GetBuyPrice(itemData.definition.sellPrice, requester.DiscountPercent);
+        // 싱글과 같은 규칙: 플레이어 판매 재고는 지급했던 매입가가 하한이다.
+        int price = ShopPricing.GetStockBuyPrice(
+            itemData.definition.sellPrice, requester.DiscountPercent, stock.source, stock.pricePaidToPlayer);
         if (!requester.ServerTrySpendGold(price))
             return MirrorShopRequestResult.NotEnoughGold;
 
@@ -322,7 +324,8 @@ public sealed class NetworkShopState : NetworkBehaviour
             return MirrorShopRequestResult.StateApplyFailed;
         }
 
-        int sellPrice = Mathf.Max(0, itemData.definition.sellPrice);
+        // 판매자 본인의 할인율을 구매와 같은 계산으로 적용해 할인 구매 → 판매 왕복 차익을 막는다.
+        int sellPrice = ShopPricing.GetSellPrice(itemData.definition.sellPrice, requester.DiscountPercent);
         MirrorShopItemSnapshot soldStock = new()
         {
             itemSnapshotJson = ownedSnapshotJson,

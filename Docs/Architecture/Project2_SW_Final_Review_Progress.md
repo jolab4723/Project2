@@ -13,6 +13,7 @@
 | 대기 | 아직 착수하지 않음 |
 | 진행 | 수정 또는 조사 중 |
 | 수정됨 | 코드 수정 완료, 대상 검증(T) 미통과 |
+| 완료(싱글·Host) | 싱글과 Editor Host 검증 통과, 원격 클라이언트·전용서버 미검증 |
 | 완료 | 수정과 대상 검증(T) 모두 통과 |
 | 보류 | 팀 결정·수치 확인 등으로 대기 |
 | 제외 | 검증 결과 결함 아님 또는 수정하지 않기로 결정 |
@@ -23,23 +24,23 @@
 
 | ID | 내용 | 주요 파일 (영역) | 상태 | 검증 | 비고 |
 |---|---|---|---|---|---|
-| R01 | 평타·스킬 AttackId 충돌로 정상 피해 거절 | `PlayerCombatAuthority` (SW), `T_PlayerCombat` (BH) | 대기 | T01 | 번호 발급 경계 통일. 상수 오프셋 방식 금지 |
-| R02 | 집속 폭탄 2차 폭발이 1차 AttackId 재사용 | `GunnerBomb`, `GunnerSkillController` (WJ) | 대기 | T02 | R01 수정만으로 해결되지 않음. 폭발 차수별 번호 |
-| R03 | 할인 구매→판매→재구매 골드 차익 | `ShopPricing`, `ShopTradeService`, `NetworkShopState` (SW) | 대기 | T03 | 싱글·서버·UI 동일 계산 |
-| R04 | 드래그 중 아이템이 퀘스트 자동 저장에서 누락 | `ItemDragHandler`, `ItemUI` (SW), `QuestManager` (WJ), `DataManager` (BH) | 대기 | T04 | 저장 호출부마다 예외 추가 금지 |
-| R05 | 같은 영구 유물 사본이 효과 스택을 덮어씀 | `PlayerItemEffectState`, `PlayerRelicEffectRuntime` (SW), `BuffTracker` (WJ) | 대기 | T05 | 중복 효과 규칙 결정 후 한 번에 계산 |
+| R01 | 평타·스킬 AttackId 충돌로 정상 피해 거절 | `PlayerCombatAuthority` (SW) | 완료(싱글·Host) | T01 | 서버 평타 타격 번호를 스킬과 같은 `T_PlayerCombat.CreateAttackId()`에서 발급(BH 파일은 호출만). 요청 번호는 재전송 검증 전용 |
+| R02 | 집속 폭탄 2차 폭발이 1차 AttackId 재사용 | `GunnerBomb` (WJ, 승인) | 완료(싱글·Host) | T02 | 2차 폭발만 공격자 발급기에서 새 번호. 1차는 기존 번호 유지 |
+| R03 | 할인 구매→판매→재구매 골드 차익 | `ShopPricing`, `ShopTradeService`, `ShopController`, `NetworkShopState`, `TooltipUI` (SW) | 완료(싱글·Host) | T03 | 팀 결정: 판매 지급액에도 판매자 할인율 적용. 플레이어 판매 재고는 지급 매입가 하한. 툴팁은 실제 판매가·출처별 구매가 표시 |
+| R04 | 드래그 중 아이템이 퀘스트 자동 저장에서 누락 | `InventoryController`, `ItemDragHandler`, `ItemDropHandler` (SW), `DataManager` (BH, 승인) | 완료(싱글·Host) | T04 | 드래그로 분리된 아이템을 원래 좌표로 저장에 포함, 원래 칸은 `TryAddItemData` 추가로부터 예약(겹치면 보상 재시도로 미룸) |
+| R05 | 같은 영구 유물 사본이 효과 스택을 덮어씀 | `PlayerItemEffectState`, `PlayerRelicEffectRuntime` (SW) | 완료(싱글·Host) | T05 | 중복 사본은 비중첩: 소유 사본 중 최대 저장 스택만 반영. 처치·획득·제거·로드 같은 규칙. `BuffTracker`는 수정 안 함 |
 
 ## 2. P2·P3 기능 보완
 
 | ID | 내용 | 주요 파일 (영역) | 상태 | 검증 | 비고 |
 |---|---|---|---|---|---|
-| R06 | 최대 HP 변경만으로 HP 비율 효과 미갱신 | `StatThresholdRunner`, `PlayerHealthManager` (WJ) | 대기 | T06 | |
-| R07 | 에너지 폭발 둔화 구역에 Rigidbody 없음 → Trigger 미발생 | `GunnerBomb`, `GunnerSlowZone` (WJ) | 대기 | T07 | FieldAura의 kinematic Rigidbody 방식 참고 |
-| R08 | 싱글 리롤 실패 시 재고 일부만 교체 | `ShopStockInitializer`, `ShopRerollButton` (SW) | 대기 | T08 | |
-| R09 | 소유권 잃은 아이템을 싱글 강화창이 계속 참조 | `UpgradeController`, `UpgradeService` (SW) | 대기 | T08 | |
-| R10 | 엘리베이터 서버 착지 실패 시 영구 대기 | `MirrorFourPlayerElevator` (SW) | 대기 | T09 | 조건부. 잠금만 해제하는 수정 금지 |
-| R11 | 결과 플레이 시간에 로비 대기 포함 | `MirrorRunResult`, `MirrorSessionLifecycle` (SW) | 대기 | T10 | |
-| R12 | 효과 0인 ‘미정’ 패시브(ID 11) 500 크레딧 구매 가능 | `PassiveSkillManager`, `PassiveSkillPanelUI` (WJ), `KY_PassiveSkillSlot` (KY) | 대기 | T11 | 기존 해금 데이터 환급 여부 결정 필요 |
+| R06 | 최대 HP 변경만으로 HP 비율 효과 미갱신 | `StatThresholdRunner` (WJ, 승인) | 완료(싱글·Host) | T06 | HP 비율도 스탯 변경 구독 → 최대 HP 갱신 후 재판정, 재진입 방지 |
+| R07 | 에너지 폭발 둔화 구역에 Rigidbody 없음 → Trigger 미발생 | `GunnerSlowZone` (WJ, 승인) | 완료(싱글·Host) | T07 | 구역에 kinematic Rigidbody 추가(FieldAura와 동일) |
+| R08 | 싱글 리롤 실패 시 재고 일부만 교체 | `ShopStockInitializer`, `ShopController` (SW) | 완료(싱글·Host) | T08 | 새 상품을 먼저 모두 만든 뒤 `TryReplaceGeneratedStock`으로 일괄 교체, 실패 시 기존 재고·위치 복구 |
+| R09 | 소유권 잃은 아이템을 싱글 강화창이 계속 참조 | `UpgradeController` (SW) | 완료(싱글·Host) | T08 | 소유권 상실 이벤트로 선택 해제 + 결제 직전 가방·장착 소유 확인 |
+| R10 | 엘리베이터 서버 착지 실패 시 영구 대기 | `MirrorFourPlayerElevator` (SW) | 완료(싱글·Host) | T09 | 실패 승객을 착지 대기 중 매 프레임 재배치, 3초 후 `safeLandingPoint` 주변 8m까지 확장 탐색. 출발층(발판 하강 경로)·허공 해제는 사용 안 함 |
+| R11 | 결과 플레이 시간에 로비 대기 포함 | `MirrorSessionLifecycle` (SW) | 완료(싱글·Host) | T10 | 서버 Start 승인 시점에 `runStartedAt` 설정. 전원 부재 일시정지 시간은 포함(기존 유지) |
+| R12 | 효과 0인 ‘미정’ 패시브(ID 11) 500 크레딧 구매 가능 | `PassiveSkillManager` (WJ, 승인) | 완료(싱글·Host) | T11 | 효과 값이 모두 0인 정의는 해금 거부(`IsAvailable`). 슬롯 표시 숨김(KY)과 기존 해금 데이터 환급은 미처리 |
 | R13 | 스킬·고유 효과 설명과 실제 동작 불일치 (5건) | 원본 표·`SkillDataLabel.json`·`UniqueEffectTable` | 대기 | T11 | 생성 SO가 아닌 원본 기준으로 수정 |
 
 ## 3. 검증 후보 (확정 버그 아님)
@@ -79,18 +80,18 @@
 
 | ID | 범위 | 결과 | 날짜 | 비고 |
 |---|---|---|---|---|
-| T00 | 최종 Unity 버전 컴파일, 새 Client/Dedicated 빌드 | 미실행 | | 2026-10-07 현재 6000.3.8f1 라이브러리 임포트 중 |
-| T01 | R01 평타↔스킬 순서 (Host/원격/Dedicated) | 미실행 | | |
-| T02 | R02 집속 폭탄 1·2차 피해 | 미실행 | | |
-| T03 | R03 거래 왕복 차익·동시 구매 | 미실행 | | |
-| T04 | R04 보상 보류 중 드래그·저장/로드 | 미실행 | | |
-| T05 | R05 유물 20/0스택 순서·제거·재접속 | 미실행 | | |
-| T06 | R06 최대 HP만 증감 시 효과 갱신 | 미실행 | | |
-| T07 | R07·C01 Slow 영역, Collider 구성별 타격 수 | 미실행 | | |
-| T08 | R08·R09 리롤 원자성, 소유권 상실 후 강화 | 미실행 | | |
-| T09 | R10 엘리베이터 착지 실패·이탈 | 미실행 | | |
-| T10 | R11 로비 대기 대 즉시 출발 시간 | 미실행 | | |
-| T11 | R12·R13 미정 패시브 구매 차단, 설명 일치 | 미실행 | | |
+| T00 | 최종 Unity 버전 컴파일, 새 Client/Dedicated 빌드 | 통과 | 2026-10-07 | Unity 6000.3.8f1 컴파일 오류0, Stage2 규칙·Stage4 효과 경계 PASS. 새 Client/Dedicated 빌드는 미생성 |
+| T01 | R01 평타↔스킬 순서 (Host/원격/Dedicated) | 통과(Host) | 2026-10-07 | 첫 평타 ID1·첫 스킬 ID2(요청 번호와 분리), 평타→스킬·스킬→평타 모두 피해 적용. 원격·Dedicated 미실행 |
+| T02 | R02 집속 폭탄 1·2차 피해 | 통과(Host) | 2026-10-07 | 다른 공격 없이 안쪽 적 4기 1차 -71.4(ID34)·2차 -35.7(ID35). 싱글·원격 미실행 |
+| T03 | R03 거래 왕복 차익·동시 구매 | 통과(싱글·Host) | 2026-10-07 | 할인 0/10% 왕복 순변화0, 툴팁=실결제, 서버 경로 동일, 할인없음 판매→할인 재구매 500(하한). 가격1~5000×할인4종 차익0. 원격 동시 구매 미실행 |
+| T04 | R04 보상 보류 중 드래그·저장/로드 | 통과(싱글) | 2026-10-07 | 실제 ItemDragHandler 드래그 중 저장 포함1회·원래 좌표, 같은 크기 보상 거부, 취소 복귀·분리기록 해제. 회전·창 닫기·재로드 미실행 |
+| T05 | R05 유물 20/0스택 순서·제거·재접속 | 통과(싱글) | 2026-10-07 | 우주 괴물 심장 B0→A20, A20→B0 양 순서·처치 후 20 유지, 높은 사본 제거→1, 재획득→20. 저장/로드·재접속 미실행 |
+| T06 | R06 최대 HP만 증감 시 효과 갱신 | 통과(싱글) | 2026-10-07 | 현재 HP 150 고정, 최대 HP 283↔397에서 50% 조건 즉시 ON/OFF |
+| T07 | R07·C01 Slow 영역, Collider 구성별 타격 수 | 통과(Host) | 2026-10-07 | Rigidbody 없는 정식 적 4기 이동속도 1→0.6, 구역 종료 후 0.5초 내 복구. C01 Collider 구성별 검사 미실행 |
+| T08 | R08·R09 리롤 원자성, 소유권 상실 후 강화 | 통과(싱글) | 2026-10-07 | 공간 부족 리롤 실패40회 불변·성공3회 6개 교체·UI 일치. 강화: 소유/장착 정상, 삭제·이벤트 없는 이탈 결제0 |
+| T09 | R10 엘리베이터 착지 실패·이탈 | 통과(Host) | 2026-10-07 | Act1_Stage5에서 착지 일시 실패 후 재시도 착지, 3초 후 safeLandingPoint 8m 확장 탐색 착지, 잠금·Agent 복구. 중간 이탈 미실행 |
+| T10 | R11 로비 대기 대 즉시 출발 시간 | 통과(Host) | 2026-10-07 | 로비 22초 대기 후 runStartedAt=출발 승인 시각(대기 미포함). Dedicated 미실행 |
+| T11 | R12·R13 미정 패시브 구매 차단, 설명 일치 | 부분 통과 | 2026-10-07 | R12: 미정 구매 거부·크레딧 불변, 나머지 11종 구매 가능 판정. R13 미처리 |
 | T12 | 오라·필드·스택·쿨다운 늦은 관찰/재접속 회귀 | 미실행 | | |
 | T13 | 이전 네 P1(저장 롤백 등) 회귀 | 미실행 | | |
 | T14 | Host+원격3, Dedicated+4 Act1/Act2 전체 흐름 | 미실행 | | |
@@ -101,4 +102,6 @@
 
 | 날짜 | 내용 |
 |---|---|
+| 2026-10-07 | Unity 열린 뒤 R01–R12 싱글·Editor Host 검증 통과(T00–T11, R13 제외). 원격 클라이언트·전용서버·4인은 새 빌드가 없어 미검증. 개인 로그 351 기록 |
+| 2026-10-07 | R01–R12 코드 수정(20개 파일, 미커밋). WJ 4개·BH 1개 파일은 사용자 승인 후 수정. Unity 미실행으로 T 검증 전부 미실행 |
 | 2026-10-07 | 진행 문서 작성. `Docs` 정리: AGENTS.md 참조 문서·Artificer 문서·이우진 작성 문서·팀 공유 PDF(아키텍처 리뷰·팀 통합 계획·장비 설계 검토)·최종 리뷰만 남기고 과거 인계·Closeout·Validation·계획·QA 문서와 이미지 삭제. 삭제 문서는 `git show 8ded80dcd:<경로>`로 복구 가능 |
