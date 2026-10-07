@@ -43,22 +43,22 @@ public class DropItemVFXController : MonoBehaviour
         switch (grade)
         {
             case ItemGrade.Common:
-                return new GradeVisualData(Color.white, 1.1f, 3, 0.04f, 0.8f);
+                return new GradeVisualData(Color.white, 1.1f, 3);
 
             case ItemGrade.Uncommon:
-                return new GradeVisualData(new Color32(0xB7, 0xE1, 0xCD, 255), 1.1f, 6, 0.05f, 1f);
+                return new GradeVisualData(new Color32(0xB7, 0xE1, 0xCD, 255), 1.1f, 6);
 
             case ItemGrade.Rare:
-                return new GradeVisualData(new Color32(0x9F, 0xC5, 0xE8, 255), 1.2f, 10, 0.06f, 1.1f);
+                return new GradeVisualData(new Color32(0x9F, 0xC5, 0xE8, 255), 1.2f, 10);
 
             case ItemGrade.Epic:
-                return new GradeVisualData(new Color32(0xC2, 0x7B, 0xA0, 255), 1.3f, 16, 0.08f, 1f);
+                return new GradeVisualData(new Color32(0xC2, 0x7B, 0xA0, 255), 1.3f, 16);
 
             case ItemGrade.Legendary:
-                return new GradeVisualData(new Color32(0xFF, 0xE5, 0x99, 255), 1.3f, 24, 0.1f, 1f);
+                return new GradeVisualData(new Color32(0xFF, 0xE5, 0x99, 255), 1.3f, 24);
 
             default:
-                return new GradeVisualData(Color.white, 1.5f, 5, 0.05f, 1f);
+                return new GradeVisualData(Color.white, 1.5f, 5);
         }
     }
 
@@ -68,7 +68,7 @@ public class DropItemVFXController : MonoBehaviour
         public float beamIntensity;
         public int sparkleRate;
 
-        public GradeVisualData(Color color, float beamIntensity, int sparkleRate, float sparkleSize, float ringSize)
+        public GradeVisualData(Color color, float beamIntensity, int sparkleRate)
         {
             this.color = color;
             this.beamIntensity = beamIntensity;

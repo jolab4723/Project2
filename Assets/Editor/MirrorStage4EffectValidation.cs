@@ -6,7 +6,7 @@ using UnityEngine;
 /// <summary>실제 플레이어에서 공통 상태 소유권과 후속 피해의 직접 공격 재발동 금지를 검사한다.</summary>
 public static class MirrorStage4EffectValidation
 {
-    [MenuItem("SW/Mirror Test/Validate Stage4 Effect Boundaries (Play Mode)")]
+    [MenuItem("SW/Mirror/검증/Validate Stage4 Effect Boundaries (Play Mode)")]
     public static void Validate()
     {
         if (!Application.isPlaying) throw new InvalidOperationException("플레이 중 실제 플레이어가 필요합니다.");

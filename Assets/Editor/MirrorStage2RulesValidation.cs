@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 /// <summary>2단계 공통 규칙의 실패·소유 분리·쿨타임을 검사합니다. 실제 네트워크 검증은 별도입니다.</summary>
 public static class MirrorStage2RulesValidation
 {
-    [MenuItem("SW/Mirror Test/Validate Stage2 Rules")]
+    [MenuItem("SW/Mirror/검증/Validate Stage2 Rules")]
     public static void ValidateRules()
     {
         Require(!Application.isPlaying, "Edit Mode에서 실행하세요.");

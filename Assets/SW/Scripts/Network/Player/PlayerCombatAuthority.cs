@@ -882,12 +882,6 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         GunnerCombatPresentation.PlayImpact(gameObject, itemId, weaponType, position, direction);
     }
 
-    /// <summary>
-    /// 투사체 귀속 정책 도입으로 장착 세대 추적이 불필요해졌다. 검증기·호출부의 호환을 위해 상수 1을 유지한다.
-    /// </summary>
-    [System.Obsolete("투사체 귀속 정책으로 장착 세대 추적 불필요. 호환 유지 목적의 상수값이며 실제 세대를 반영하지 않는다.")]
-    public uint WeaponEquipGeneration => 1u;
-
     private uint activeHitAttackId;
     private GunnerWeaponType activeHitWeaponType;
     private UniqueEffectSO activeHitUniqueEffect;
@@ -909,11 +903,6 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         activeHitUniqueEffect = effect;
         scope = new HitScopeDisposable(this, attackId);
         return true;
-    }
-
-    public System.IDisposable BeginGunnerHitScope(uint attackId, GunnerWeaponType weaponType, UniqueEffectSO effect)
-    {
-        return TryBeginGunnerHitScope(attackId, weaponType, effect, out System.IDisposable scope) ? scope : null;
     }
 
     private sealed class HitScopeDisposable : System.IDisposable
@@ -953,16 +942,6 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         sourceEffect = null;
         sourceWeapon = GunnerWeaponType.Rifle;
         return false;
-    }
-
-    /// <summary>
-    /// <para>투사체 귀속 정책에서 장착 상태는 추가타 자격 판단에 사용되지 않는다.</para>
-    /// <para><c>sourceStillEquipped</c>는 항상 false를 반환하며 호환 목적으로만 남아 있다.</para>
-    /// </summary>
-    public bool TryGetGunnerHitSource(uint attackId, out UniqueEffectSO sourceEffect, out GunnerWeaponType sourceWeapon, out bool sourceStillEquipped)
-    {
-        sourceStillEquipped = false; // 투사체 귀속 정책: 장착 상태와 무관하게 발사 시점 효과로 판단
-        return TryGetGunnerHitSource(attackId, out sourceEffect, out sourceWeapon);
     }
 
     [Server]
