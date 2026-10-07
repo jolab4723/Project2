@@ -93,6 +93,14 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
         }
 
         targetLevel = Mathf.Clamp(targetLevel, 0, definition.maxLevel);
+
+        // SW 수정: 효과가 정의되지 않은 패시브('미정')는 크레딧을 받고 해금하지 않는다. 적용 해제(0)는 허용한다.
+        if (targetLevel > 0 && !IsAvailable(definition))
+        {
+            Debug.LogWarning($"[PassiveSkillManager] {id}는 효과가 정해지지 않아 해금할 수 없습니다.");
+            return false;
+        }
+
         var entry = FindOrCreateEntry(id);
 
         if (targetLevel <= entry.unlockedLevel)
@@ -113,6 +121,28 @@ public class PassiveSkillManager : Singleton<PassiveSkillManager>, IStatSetProvi
         OnProfileChanged?.Invoke();
         DataManager.Instance?.SavePassiveData();
         return true;
+    }
+
+    /// <summary>
+    /// SW 수정: 실제 효과 값이 하나라도 있는 패시브만 해금할 수 있다. 표시 쪽도 같은 기준을 쓰도록 공개한다.
+    /// </summary>
+    public bool IsAvailable(PassiveSkillId id) => IsAvailable(GetDefinition(id));
+
+    private static bool IsAvailable(PassiveSkillDefinition definition)
+    {
+        if (definition == null || definition.maxLevel <= 0)
+            return false;
+        if (definition.extraRerollCount > 0)
+            return true;
+        if (definition.valuesPerLevel == null)
+            return false;
+
+        foreach (float value in definition.valuesPerLevel)
+        {
+            if (value != 0f)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>btn_SkillClear - 모든 패시브의 적용 레벨을 0으로 되돌린다. 해금 진행도(unlockedLevel)는 유지됨.</summary>

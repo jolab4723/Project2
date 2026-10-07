@@ -39,13 +39,13 @@
 ### 1-2. Codex 서브에이전트 운영 원칙
 
 - Codex의 주 에이전트는 Sol 사용을 전제로 하며, 작업 계획, 요구사항 해석, 구조 결정, 담당 영역 조정, 중요 구현의 채택 여부, Unity 최종 검증과 완료 판단을 직접 소유한다.
-- `codex/unity-6000-3-22-test`와 `unity-6000-3-22-test`에서는 **단일 영역이나 많지 않은 관련 영역의 자료조사·코드/호출 흐름·파일/직렬화 참조·변경 영향 확인, 로그/테스트 결과 조사는 모두 주 에이전트가 직접 처리한다.** 단일 검색이나 소수 파일 확인, 일반적인 컴파일·Console·테스트 결과 확인을 위해 서브에이전트를 호출하지 않는다.
+- 김성우(SW) 브랜치 `feature/Seongwoo`에서는 **단일 영역이나 많지 않은 관련 영역의 자료조사·코드/호출 흐름·파일/직렬화 참조·변경 영향 확인, 로그/테스트 결과 조사는 모두 주 에이전트가 직접 처리한다.** 단일 검색이나 소수 파일 확인, 일반적인 컴파일·Console·테스트 결과 확인을 위해 서브에이전트를 호출하지 않는다.
 - 이 브랜치의 조사 위임은 여러 영역에 걸친 큰 조사를 서로 독립된 범위로 나눠 병렬 수행하면 실제 작업 시간을 줄일 수 있는 경우 또는 사용자가 명시적으로 위임을 요청한 경우에만 사용한다. 단순히 조사·로그·테스트 작업이라는 이유로 위임하지 않으며, 주 에이전트가 바로 처리할 수 있는 작업을 서브에이전트에 순차적으로 넘기지 않는다.
 - 이 브랜치에서 조사를 위임할 때만 `.codex/agents/unity-scout.toml`에 정의한 `unity_scout`을 사용한다. 조사 서브에이전트는 GPT-6.1 Sol (`model = "gpt-6.1-sol"`), xhigh 추론 (`model_reasoning_effort = "xhigh"`)을 사용하며, 기존 Fast 모드와 읽기 전용 경계는 유지한다. Luna 조사 에이전트는 새로 호출하지 않는다. 이 브랜치의 조사 정책을 다른 담당 브랜치로 자동 확대하지 않는다.
 - 위임 시 주 에이전트는 조사 질문, 허용 경로와 필요한 출력 근거를 먼저 지정하고, 조사 결과의 채택·요구사항 해석·구조 결정·최종 검증을 직접 책임진다.
-- 위 테스트 브랜치에서 현재 세션에 로드된 `unity_scout` 또는 `unity_supervised_worker`가 GPT-6.1 Sol/xhigh로 표시되지 않으면 그 역할을 호출하거나 모델 변경이 반영됐다고 가정하지 않는다. 갱신된 역할을 다시 로드하거나, 허용된 일반 서브에이전트에 `gpt-6.1-sol`과 `xhigh`를 명시하고 각 역할의 조사·구현 권한 경계를 그대로 전달한다. 해당 모델 실행이 불가능하면 다른 모델로 자동 대체하지 않고 주 에이전트가 직접 처리하며 제한을 알린다.
-- 코드 구현은 기본적으로 주 에이전트가 직접 수행한다. 다만 위 테스트 브랜치에서는 **아주 단순한 구현·수정과 복잡한 구현은 주 에이전트가 직접 수행하고, 그 사이의 중간 규모 구현은 `unity_supervised_worker`에 위임한다.** 즉시 끝낼 수 있는 작은 수정, 구조 결정이나 여러 시스템의 긴밀한 조율이 필요한 구현은 메인이 맡는다. 방법과 파일·동작 경계가 명확하고 위임으로 시간을 줄일 수 있는 구현은 서브에 맡기며, 호출·인계 비용이 더 크면 메인이 직접 처리한다.
-- 위 테스트 브랜치의 `.codex/agents/unity-supervised-worker.toml`에 정의한 구현 서브에이전트도 GPT-6.1 Sol (`model = "gpt-6.1-sol"`), xhigh 추론 (`model_reasoning_effort = "xhigh"`)을 사용한다. 이 구현 배정 기준과 모델 변경을 다른 담당 브랜치나 Blender Luna 작업에 자동 확대하지 않는다.
+- 위 SW 브랜치에서 현재 세션에 로드된 `unity_scout` 또는 `unity_supervised_worker`가 GPT-6.1 Sol/xhigh로 표시되지 않으면 그 역할을 호출하거나 모델 변경이 반영됐다고 가정하지 않는다. 갱신된 역할을 다시 로드하거나, 허용된 일반 서브에이전트에 `gpt-6.1-sol`과 `xhigh`를 명시하고 각 역할의 조사·구현 권한 경계를 그대로 전달한다. 해당 모델 실행이 불가능하면 다른 모델로 자동 대체하지 않고 주 에이전트가 직접 처리하며 제한을 알린다.
+- 코드 구현은 기본적으로 주 에이전트가 직접 수행한다. 다만 위 SW 브랜치에서는 **아주 단순한 구현·수정과 복잡한 구현은 주 에이전트가 직접 수행하고, 그 사이의 중간 규모 구현은 `unity_supervised_worker`에 위임한다.** 즉시 끝낼 수 있는 작은 수정, 구조 결정이나 여러 시스템의 긴밀한 조율이 필요한 구현은 메인이 맡는다. 방법과 파일·동작 경계가 명확하고 위임으로 시간을 줄일 수 있는 구현은 서브에 맡기며, 호출·인계 비용이 더 크면 메인이 직접 처리한다.
+- 위 SW 브랜치의 `.codex/agents/unity-supervised-worker.toml`에 정의한 구현 서브에이전트도 GPT-6.1 Sol (`model = "gpt-6.1-sol"`), xhigh 추론 (`model_reasoning_effort = "xhigh"`)을 사용한다. 이 구현 배정 기준과 모델 변경을 다른 담당 브랜치나 Blender Luna 작업에 자동 확대하지 않는다.
 - 구현을 위임할 때는 주 에이전트가 먼저 구현 방법, 대상 파일, 동작 경계와 검증 기준을 확정한 뒤 `unity_supervised_worker`에 명시적으로 위임한다.
 - `unity_supervised_worker`는 지정된 코드 파일만 수정한다. Scene, Prefab, `ProjectSettings/**`, `Packages/**`, 외부 에셋, Unity Editor 상태 변경과 개인 구현 로그 갱신은 위임하지 않는다.
 - 주 에이전트는 구현 서브에이전트가 만든 변경을 원본 코드와 Diff로 직접 검토하고, 컴파일, Console, Edit/Play Mode, 실제 플레이 흐름 등 필요한 Unity 검증을 직접 수행한 뒤에만 채택한다. 서브에이전트의 완료 주장만으로 구현이나 검증 완료를 선언하지 않는다.
@@ -58,14 +58,12 @@
 | 담당자 | 브랜치 | 우선 탐색·작업 영역 |
 | --- | --- | --- |
 | 김성우 (SeongWoo/SW) | `feature/Seongwoo` | `Assets/SW/**` |
-| 김성우 (SeongWoo/SW, Unity 6000.3.22 테스트) | `codex/unity-6000-3-22-test` | `Assets/SW/**` |
 | 이우진 (WJ) | `feature/WJ` | `Assets/WJ_TestPlace/**` |
 | 우병헌 (BH) | `feature/BH` | `Assets/WBHTest/**` |
 | 조용준 (JYJ) | `feature/YJ` | `Assets/Scenes/Maps/**`, `Assets/Scripts/StageSelect/**`, `Assets/Scripts/Scene/**`, `Assets/Scripts/NPC/**`, `Assets/Scripts/Environment/**` |
 | 김관영 (KY) | `feature/KY` | `Assets/Scripts/UI/**` |
 
 - 표의 경로는 탐색 시작점이지 영구적인 소유권 장벽은 아니다. 정확한 주간 담당 내용은 일정표를 우선한다.
-- `codex/unity-6000-3-22-test`와 `unity-6000-3-22-test`는 같은 김성우(SW) 테스트 작업 브랜치의 이름으로 취급한다. 접두사 차이만으로 담당자를 다시 묻거나 브랜치를 전환하지 않는다. 담당 영역, 다른 담당자 파일 수정 승인, 개인 구현 로그(`Docs/Architecture/ImplementationLogs/김성우.md`) 규칙은 두 이름 모두 `feature/Seongwoo`와 동일하게 적용한다.
 - 자기 담당 작업은 우선 자기 영역만 조사한다.
 - 공통 시스템 통합처럼 경계를 넘는 작업은 관련된 담당 영역만 추가로 읽고, 수정 전에 영향 파일과 연결 지점을 정리한다.
 - 다른 담당자의 우선 탐색·작업 영역에 속한 스크립트를 수정해야 하면, 해당 수정이 기존 사용자 요청에 포함되어 있더라도 수정 전에 대상 파일과 수정 이유를 밝히고 사용자에게 반드시 `이 스크립트를 수정할까요?`라고 명시적으로 되묻는다. 사용자가 그 질문에 승인하기 전에는 해당 스크립트를 수정하지 않는다.
@@ -228,7 +226,6 @@
 | 브랜치 | 로그 파일 |
 | --- | --- |
 | `feature/Seongwoo` | `Docs/Architecture/ImplementationLogs/김성우.md` |
-| `codex/unity-6000-3-22-test` | `Docs/Architecture/ImplementationLogs/김성우.md` |
 | `feature/WJ` | `Docs/Architecture/ImplementationLogs/이우진.md` |
 | `feature/BH` | `Docs/Architecture/ImplementationLogs/우병헌.md` |
 | `feature/YJ` | `Docs/Architecture/ImplementationLogs/조용준.md` |

@@ -284,7 +284,9 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
         if (NetworkTime.time < impactAt)
             return;
 
-        uint attackId = pendingServerRequestId;
+        // 요청 번호는 재전송 검증에만 쓰고, 피해 중복 판정용 번호는 스킬과 같은 발급기에서 받는다.
+        // 두 번호 체계가 따로 1부터 시작해 평타와 첫 스킬이 같은 번호로 정상 피해를 거절하던 문제를 막는다.
+        uint attackId = combat != null ? combat.CreateAttackId() : pendingServerRequestId;
         ClearServerAttackReservation();
         ResolveServerAttack(attackId);
     }

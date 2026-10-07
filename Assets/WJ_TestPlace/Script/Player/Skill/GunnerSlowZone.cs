@@ -24,6 +24,12 @@ public class GunnerSlowZone : MonoBehaviour
         col.isTrigger = true;
         col.radius = radius;
 
+        // SW 수정: 정식 적 루트에는 Rigidbody가 없어 구역 쪽에도 없으면 OnTriggerStay가 오지 않는다.
+        // FieldAura 구역과 같이 판정용 kinematic Rigidbody를 둔다.
+        var body = gameObject.AddComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+
         Destroy(gameObject, zoneDuration);
     }
 

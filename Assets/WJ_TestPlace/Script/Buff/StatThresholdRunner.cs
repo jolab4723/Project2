@@ -8,7 +8,7 @@ namespace ItemSystem
     /// 버프를 켜고 끈다.
     ///
     /// 구독 대상은 referenceStat에 따라 다르다.
-    ///   CurrentHealthPercent -> PlayerHealthManager.OnHealthChanged
+    ///   CurrentHealthPercent -> PlayerHealthManager.OnHealthChanged (+ SW 수정: 최대 HP 변경용 Stat.OnStatChanged)
     ///   CurrentManaPercent   -> PlayerManaManager.OnManaChanged
     ///   그 외(최종 스탯)      -> PlayerStatManager.Stat.OnStatChanged (장비/버프/레벨/패시브 재계산마다 발행)
     ///
@@ -30,6 +30,7 @@ namespace ItemSystem
         private PlayerManaManager mana;
         private PlayerBuffManager buffs;
         private PlayerStat subscribedStat;
+        private bool checkingHealthStat;
 
         /// <summary>SW 수정: 같은 조건 계산기를 지정된 플레이어 참조로 실행합니다.</summary>
         public void Bind(PlayerStatManager stats, PlayerHealthManager health, PlayerManaManager mana,
@@ -56,6 +57,7 @@ namespace ItemSystem
             {
                 subscribedStat.OnStatChanged -= CheckCondition;
                 subscribedStat.OnStatChanged -= HandleManaStatChanged;
+                subscribedStat.OnStatChanged -= HandleHealthStatChanged;
             }
             bool wasBuffActive = isActive;
             isActive = false;
@@ -71,6 +73,27 @@ namespace ItemSystem
         {
             mana?.RefreshMaxMana();
             CheckCondition();
+        }
+
+        /// <summary>
+        /// SW 수정: 최대 HP를 먼저 갱신한 뒤 비율을 다시 판정한다. 이 버프가 최대 HP를 바꿔
+        /// 다시 스탯 변경이 오더라도 같은 호출 안에서 켜고 끄기를 반복하지 않게 재진입을 막는다.
+        /// </summary>
+        private void HandleHealthStatChanged()
+        {
+            if (checkingHealthStat)
+                return;
+
+            checkingHealthStat = true;
+            try
+            {
+                health?.RefreshMaxHealth();
+                CheckCondition();
+            }
+            finally
+            {
+                checkingHealthStat = false;
+            }
         }
 
         public void Begin(StatReference reference, ComparisonOperator op, float threshold, IBuffSource source)
@@ -128,7 +151,10 @@ namespace ItemSystem
                 subscribedStat.OnStatChanged += HandleManaStatChanged;
                 mana.RefreshMaxMana();
             }
-            else if (referenceStat != StatReference.CurrentHealthPercent)
+            else if (referenceStat == StatReference.CurrentHealthPercent)
+                // SW 수정: 최대 HP만 바뀌고 현재 HP가 그대로면 OnHealthChanged가 오지 않아 비율 조건이 낡았다.
+                subscribedStat.OnStatChanged += HandleHealthStatChanged;
+            else
                 subscribedStat.OnStatChanged += CheckCondition;
             subscribed = true;
         }

@@ -141,8 +141,13 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
         switch (effect)
         {
             case TriggeredBuffUniqueEffectSO triggered:
-                if (wasServer && triggered.persistStackOnItem && ownerItem.persistedStackCount > 0)
-                    buffs.SetBuffStack(triggered, ownerItem.persistedStackCount);
+                // 사본별 값으로 덮어쓰면 획득·복원 순서가 최종 스택을 정했다. 소유 사본 중 최댓값만 반영한다.
+                if (wasServer && triggered.persistStackOnItem)
+                {
+                    int highest = GetHighestPersistedStack(triggered);
+                    if (highest > 0)
+                        buffs.SetBuffStack(triggered, highest);
+                }
                 break;
 
             case PassiveBuffUniqueEffectSO passive:
@@ -172,8 +177,17 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
         bool sameEffectRemains = false;
         foreach (ItemInstance item in ownedItems)
             if (item.definition.uniqueEffect == effect) sameEffectRemains = true;
-        if (wasServer && !sameEffectRemains && effect is TriggeredBuffUniqueEffectSO triggered)
-            buffs?.RemoveBuff(triggered);
+        if (wasServer && effect is TriggeredBuffUniqueEffectSO triggered)
+        {
+            // 남은 사본이 있으면 제거된 사본의 스택이 아니라 남은 사본 기준으로 다시 맞춘다.
+            int remainingStack = sameEffectRemains && triggered.persistStackOnItem
+                ? GetHighestPersistedStack(triggered)
+                : 0;
+            if (!sameEffectRemains || (triggered.persistStackOnItem && remainingStack <= 0))
+                buffs?.RemoveBuff(triggered);
+            else if (triggered.persistStackOnItem)
+                buffs?.SetBuffStack(triggered, remainingStack);
+        }
 
         if (effect is PassiveBuffUniqueEffectSO passive && passiveCounts.TryGetValue(passive, out int count))
         {
@@ -227,6 +241,15 @@ public class PlayerRelicEffectRuntime : MonoBehaviour
                 auras.Add(aura);
         }
         network.SetActiveAuras(auras);
+    }
+
+    private int GetHighestPersistedStack(UniqueEffectSO effect)
+    {
+        int highest = 0;
+        foreach (ItemInstance item in ownedItems)
+            if (item.definition.uniqueEffect == effect)
+                highest = Mathf.Max(highest, item.persistedStackCount);
+        return highest;
     }
 
     private bool HasRuntimeForEffect(UniqueEffectSO effect)
