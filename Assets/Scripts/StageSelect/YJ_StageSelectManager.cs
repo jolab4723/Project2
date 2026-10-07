@@ -120,6 +120,8 @@ public class YJ_StageSelectManager : MonoBehaviour
     private Coroutine floorCenterRoutine;
     // 테스트 모드에서 Reticle 종료 후 노드 완료를 지연하는 코루틴입니다.
     private Coroutine testCompletionRoutine;
+    // 이어하기로 선택 상태가 복원되어 다시 클릭하면 진입해야 하는 pending 노드입니다.
+    private YJ_StageNodeHover restoredPendingNode;
 
     // 노드 UI가 현재 씬의 스테이지 선택 매니저를 찾을 때 사용하는 Singleton 참조입니다.
     public static YJ_StageSelectManager Instance { get; private set; }
@@ -550,6 +552,14 @@ public class YJ_StageSelectManager : MonoBehaviour
         // SW 수정: 투표는 선택 가능한 다른 노드를 잠그거나 pending 진행을 생성하지 않습니다.
         if (IsExternallyControlled)
         {
+            NodeSelected?.Invoke(data);
+            return true;
+        }
+
+        // 이어하기로 복원된 pending 노드는 이미 선택 상태이므로, 다시 클릭하면 한 번만 진입 연출을 시작합니다.
+        if (SelectedNode == node && restoredPendingNode == node)
+        {
+            restoredPendingNode = null;
             NodeSelected?.Invoke(data);
             return true;
         }
@@ -1007,6 +1017,7 @@ public class YJ_StageSelectManager : MonoBehaviour
 
             SelectedNode = node;
             SelectedNode.SetSelected(true);
+            restoredPendingNode = node;
             DisableAlternativeNodesOnFloor(node.NodeData.floor, node);
             RefreshPathStateForSelectedNode(node.NodeData);
             return;
