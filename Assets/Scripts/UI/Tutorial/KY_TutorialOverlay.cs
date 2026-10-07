@@ -11,6 +11,14 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class KY_TutorialOverlay : MonoBehaviour
 {
+    public enum HighlightTarget
+    {
+        None,
+        BottomHud,
+        TopLeftHud,
+        TopRightHud
+    }
+
     [Serializable]
     public sealed class TutorialStep
     {
@@ -18,6 +26,12 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
         public bool showDim = true;
         public GameObject illustration;
         public RectTransform highlightTarget;
+        [Tooltip("런타임에 현재 전투 씬 HUD에서 찾아 연결할 강조 대상입니다.")]
+        public HighlightTarget runtimeHighlightTarget;
+        [Tooltip("켜면 안내를 표시한 상태에서도 게임 입력과 시간이 계속 진행됩니다.")]
+        public bool allowGameplayInput;
+        [Tooltip("켜면 다음 버튼을 숨기며, 외부 컨트롤러가 ShowNextStep을 호출해 단계를 진행합니다.")]
+        public bool advanceAutomatically;
     }
 
     [Header("레이어")]
@@ -56,6 +70,29 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
 
     public event Action Completed;
     public event Action Skipped;
+
+    /// <summary>
+    /// 씬 참조를 프리팹에 저장하지 않고, 소환된 뒤 현재 HUD의 위치를 단계에 연결한다.
+    /// </summary>
+    public void SetRuntimeHighlightTarget(HighlightTarget targetType, RectTransform target)
+    {
+        foreach (TutorialStep step in steps)
+        {
+            if (step.runtimeHighlightTarget == targetType)
+                step.highlightTarget = target;
+        }
+    }
+
+    /// <summary>독립 Canvas가 HUD 위에서 표시되도록 런타임 정렬 순서를 지정한다.</summary>
+    public void SetSortingOrder(int sortingOrder)
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null)
+            return;
+
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = sortingOrder;
+    }
 
     private void Awake()
     {
@@ -146,17 +183,15 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     /// <summary>첫 안내부터 오버레이를 표시한다.</summary>
     public void Open()
     {
+        // 재사용 프리팹은 처음에 비활성 상태로 둘 수 있다. Bootstrap이 소환한 뒤 이 호출만으로
+        // Awake와 버튼 연결까지 완료되도록 먼저 활성화한다.
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+
         if (steps.Count == 0)
         {
             Debug.LogWarning("[KY_TutorialOverlay] 표시할 튜토리얼 단계가 없습니다.", this);
             return;
-        }
-
-        if (pauseGameWhileOpen && !isOpen)
-        {
-            previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f;
-            isTimeScaleOverridden = true;
         }
 
         isOpen = true;
@@ -207,9 +242,13 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     {
         currentStepIndex = stepIndex;
         TutorialStep step = steps[stepIndex];
+        SetGameplayPause(pauseGameWhileOpen && !step.allowGameplayInput);
 
         if (guideText != null)
             guideText.text = step.message;
+
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(!step.advanceAutomatically);
 
         if (dimLayer != null)
             dimLayer.SetActive(step.showDim);
@@ -252,5 +291,21 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
             Time.timeScale = previousTimeScale;
             isTimeScaleOverridden = false;
         }
+    }
+
+    private void SetGameplayPause(bool shouldPause)
+    {
+        if (!shouldPause)
+        {
+            RestoreTimeScale();
+            return;
+        }
+
+        if (isTimeScaleOverridden)
+            return;
+
+        previousTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+        isTimeScaleOverridden = true;
     }
 }
