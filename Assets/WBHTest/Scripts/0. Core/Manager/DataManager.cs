@@ -732,7 +732,10 @@ namespace Core
                 // 저장값 복원에 실패했으면 인벤토리·크레딧은 저장값을 유지한다. 예전에는 빈 인벤토리·크레딧 0으로 덮어써
                 // 장비와 크레딧이 사라질 수 있었다(2026-10-06 재현, 원인 미확정). 다음 발생 시 추적하도록 호출 경로를 남긴다.
                 int savedGold = data.status != null ? data.status.gold : 0;
+                int savedPotionCharges = data.status != null ? data.status.potionCharges : -1;
                 data.status = BuildPlayerStatusData();
+                if (PotionUseManager.Instance == null)
+                    data.status.potionCharges = savedPotionCharges; // 포션 매니저가 없는 씬은 저장값 유지
                 if (IsLiveInventoryReadyForSave(out string inventoryProblem))
                 {
                     data.inventory = BuildInventorySaveData();
@@ -1545,6 +1548,11 @@ namespace Core
                 // (저장된 currentMana는 참고용으로 계속 기록만 하고 복원에는 쓰지 않는다.)
                 health.SetCurrentHealth(data.status.currentHealth);
                 mana.FillMana();
+
+                // WJ 이우진 추가(2026-10-07): PotionUseManager.Start가 채운 최대치를 저장된 남은 횟수로 덮어쓴다.
+                PotionUseManager potions = health.GetComponent<PotionUseManager>();
+                if (potions != null && data.status.potionCharges >= 0)
+                    potions.SetCharges(data.status.potionCharges);
             }
 
             return true;
@@ -1929,6 +1937,10 @@ namespace Core
 
             if (PlayerManaManager.Instance != null)
                 data.currentMana = PlayerManaManager.Instance.CurrentMana;
+
+            // WJ 이우진 추가(2026-10-07): 스테이지 이동 후에도 남은 포션 횟수를 이어간다.
+            if (PotionUseManager.Instance != null)
+                data.potionCharges = PotionUseManager.Instance.CurrentCharges;
 
             if (InventoryController.Instance != null && InventoryController.Instance.PlayerWallet != null)
                 data.gold = InventoryController.Instance.PlayerWallet.Gold;
