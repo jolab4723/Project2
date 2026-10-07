@@ -85,14 +85,30 @@ public class KY_TitleSceneManager : MonoBehaviour
         if (continueButton == null)
             return;
 
+        // WJ 이우진 수정(2026-10-07): TitleScene에 Continue 오브젝트가 꺼진 채 저장돼 있어 이어하기가 보이지 않았다.
+        // 버튼은 항상 보이게 켜고, 이어할 런이 없으면 아래의 입력 불가(회색) 상태로만 구분한다.
+        if (!continueButton.gameObject.activeSelf)
+        {
+            continueButton.gameObject.SetActive(true);
+            // 꺼진 채 저장돼 있던 버튼이라 호버 장식(Sidebar)이 보이는 상태로 깨어난다.
+            // 다른 버튼과 같은 숨김 상태로 맞추고, 호버하면 KY_ButtonSideDecorEffect가 다시 나타나게 한다.
+            foreach (KY_FadeEffect decorFade in continueButton.GetComponentsInChildren<KY_FadeEffect>(true))
+                decorFade.SetAlphaImmediate(0f);
+        }
+
         continueButton.interactable = isAvailable;
 
         if (continueButton.TryGetComponent(out CanvasGroup canvasGroup))
         {
             canvasGroup.interactable = isAvailable;
             canvasGroup.blocksRaycasts = isAvailable;
+            // WJ 이우진 추가(2026-10-07): 버튼의 색 전환(Transition)이 None이라 비활성이어도 모양이 같아, 흐리게 표시해 구분한다.
+            canvasGroup.alpha = isAvailable ? 1f : DisabledContinueAlpha;
         }
     }
+
+    // WJ 이우진 추가(2026-10-07): 이어할 런이 없을 때 이어하기 버튼의 투명도.
+    private const float DisabledContinueAlpha = 0.4f;
 
     void OnSettingsClicked()
     {

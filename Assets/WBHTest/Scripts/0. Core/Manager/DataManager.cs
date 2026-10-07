@@ -728,8 +728,20 @@ namespace Core
                     Debug.LogError("[DataManager] 기존 런을 확인하지 못해 저장을 중단합니다.");
                     return false;
                 }
+                // WJ 이우진 수정(2026-10-07): 실행 중 인벤토리가 없거나(InventoryController.Instance 없음) 이 씬에서
+                // 저장값 복원에 실패했으면 인벤토리·크레딧은 저장값을 유지한다. 예전에는 빈 인벤토리·크레딧 0으로 덮어써
+                // 장비와 크레딧이 사라질 수 있었다(2026-10-06 재현, 원인 미확정). 다음 발생 시 추적하도록 호출 경로를 남긴다.
+                int savedGold = data.status != null ? data.status.gold : 0;
                 data.status = BuildPlayerStatusData();
-                data.inventory = BuildInventorySaveData();
+                if (IsLiveInventoryReadyForSave(out string inventoryProblem))
+                {
+                    data.inventory = BuildInventorySaveData();
+                }
+                else
+                {
+                    data.status.gold = savedGold;
+                    Debug.LogWarning($"[DataManager] {inventoryProblem} 저장된 인벤토리·크레딧을 유지하고 나머지만 저장합니다.\n{System.Environment.StackTrace}");
+                }
                 data.activeSkill = BuildActiveSkillSaveData();
                 data.quests = QuestManager.Instance.GetSaveData();
                 data.needsPlayerInitialization = false;
@@ -752,6 +764,28 @@ namespace Core
                 Debug.LogError($"[DataManager] 게임플레이 저장 실패: {exception.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// WJ 이우진 추가(2026-10-07): 이 씬의 RestoreGameplayData가 인벤토리·크레딧을 실제로 복원했는지(새 게임 포함).
+        /// 씬마다 복원 시작 시 false로 되돌린다. 복원 없이 저장만 하는 경우(직접 실행 테스트 등)도 false라 저장값을 지킨다.
+        /// </summary>
+        private bool liveInventoryMatchesSave;
+
+        /// <summary>WJ 이우진 추가(2026-10-07): 실행 중 인벤토리·지갑을 저장해도 되는지. 아니면 그 이유를 돌려준다.</summary>
+        private bool IsLiveInventoryReadyForSave(out string problem)
+        {
+            InventoryController controller = InventoryController.Instance;
+            if (controller == null)
+                problem = "InventoryController.Instance가 없습니다.";
+            else if (controller.PlayerGrid == null || controller.EquipmentSystem == null || controller.PlayerWallet == null)
+                problem = "InventoryController의 가방·장비·지갑 중 연결되지 않은 것이 있습니다.";
+            else if (!IsGameplayReady || !liveInventoryMatchesSave)
+                // IsGameplayReady: 지금 씬에서 TryLoadGameplayData가 끝났는지(이전 씬의 복원 결과가 남아 있지 않게).
+                problem = "이 씬에서 저장된 인벤토리·크레딧 복원이 완료되지 않았습니다.";
+            else
+                problem = null;
+            return problem == null;
         }
 
         public bool TryPrepareUnknownBattle(string battleKey, out bool completed)
@@ -1365,6 +1399,10 @@ namespace Core
 
         private bool RestoreGameplayData(string unknownBattleKey)
         {
+            // WJ 이우진 추가(2026-10-07): 이 씬의 인벤토리·크레딧이 저장과 일치하는지. 복원에 성공해야 true가 되고,
+            // false인 동안 TrySaveGameplayData는 빈 실행 상태로 저장된 인벤토리·크레딧을 덮어쓰지 않는다.
+            liveInventoryMatchesSave = false;
+
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out var mana))
             {
                 Debug.LogWarning("[DataManager] 활성 플레이어가 없어 로드를 보류합니다.");
@@ -1406,6 +1444,11 @@ namespace Core
                     return false;
                 }
 
+                // WJ 이우진 수정(2026-10-07): 새 게임 첫 진입도 스테이지 선택에서 이미 저장한 맵과 런 기록은 이어받는다.
+                // 예전에는 여기서 통째로 새로 만들어 저장해, 맵을 gamesave에 통합한 뒤 첫 스테이지에서 맵이 지워졌다.
+                StageSaveData keptStage = data?.stage;
+                KY_RunStats keptRunStats = data?.runStats;
+
                 data = new GameSaveData
                 {
                     selectedCharacter = character,
@@ -1415,6 +1458,9 @@ namespace Core
 
                 data.status.playerLevel = 1;
                 data.status.playerExp = 0f;
+                if (keptStage != null)
+                    data.stage = keptStage;
+                data.runStats = keptRunStats;
             }
 
             // 1. 레벨과 경험치 적용
@@ -1438,17 +1484,25 @@ namespace Core
 
             // 2. 이어하기일 때 저장된 장비·스킬 복원
             // 새 게임은 새로 생성된 씬/프리팹의 초기 상태를 사용합니다.
+            bool inventoryRestored = true;
             if ( ! isNewGame)
             {
-                ApplyInventorySaveData(data.inventory);
+                inventoryRestored = ApplyInventorySaveData(data.inventory);
                 ApplyActiveSkillSaveData(data.activeSkill);
             }
 
+            bool goldRestored = false;
             if (InventoryController.Instance != null &&
                 InventoryController.Instance.PlayerWallet != null)
             {
                 InventoryController.Instance.PlayerWallet.SetGold(isNewGame ? 0 : data.status.gold);
+                goldRestored = true;
             }
+
+            // WJ 이우진 추가(2026-10-07): 인벤토리와 크레딧이 모두 실제로 복원됐을 때만 이후 저장이 실행 상태로 덮어쓴다.
+            liveInventoryMatchesSave = inventoryRestored && goldRestored;
+            if (!liveInventoryMatchesSave)
+                Debug.LogWarning("[DataManager] 인벤토리 또는 크레딧을 복원하지 못해, 이 씬에서는 저장된 인벤토리·크레딧을 덮어쓰지 않습니다.");
 
             // 3. 장비·스킬 적용 후 최종 최대치 갱신
             stats.Recalculate();
@@ -1643,11 +1697,12 @@ namespace Core
         /// 일반 아이템은 InventoryController.TryAddItemAt을 통해
         /// 저장된 좌표에 배치하고 Item UI 생성 이벤트를 발행한다.
         /// 장착 아이템은 EquipmentTransaction을 통해 장비 상태로 복원한다.
+        /// WJ 이우진 수정(2026-10-07): 복원을 시작조차 못 했으면 false를 돌려준다(개별 아이템 실패는 기존처럼 경고 후 계속, true).
         /// </summary>
-        private void ApplyInventorySaveData(InventorySaveData data)
+        private bool ApplyInventorySaveData(InventorySaveData data)
         {
             if (data == null)
-                return;
+                return true;
 
             InventoryController controller = InventoryController.Instance;
             ItemDatabaseSO itemDatabase = ItemManager.Instance != null ? ItemManager.Instance.ItemDatabase : null;
@@ -1655,7 +1710,7 @@ namespace Core
             if (controller == null || itemDatabase == null || controller.PlayerGrid == null || controller.EquipmentSystem == null)
             {
                 Debug.LogWarning("[DataManager] 인벤토리를 복원하지 못했습니다 (InventoryController 또는 ItemManager.ItemDatabase, EquipmentSystem이 없음).");
-                return;
+                return false;
             }
 
             InventoryItemUISpawner itemUISpawner = controller.GetComponent<InventoryItemUISpawner>();
@@ -1666,7 +1721,7 @@ namespace Core
                     "[DataManager] InventoryItemUISpawner가 없어 " +
                     "인벤토리 UI를 불러올 수 없습니다.");
 
-                return;
+                return false;
             }
             EquipmentTransaction equipmentTransaction = new EquipmentTransaction(controller.EquipmentSystem);
 
@@ -1714,6 +1769,7 @@ namespace Core
             }
 
             Debug.Log("[DataManager] 인벤토리 복원 완료 (" + data.items.Count + "개 아이템, 장착 " + equippedRestoredCount + "개)");
+            return true;
         }
 
         /// <summary>
