@@ -26,6 +26,7 @@ public class UpgradeController : MonoBehaviour
     private const string ItemLabelResourcePath = "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
 
     private ItemInstance selectedItem;
+    private InventoryController ownershipSource;
     private UpgradeService upgradeService;
     private Action upgradeRequest;
     private YJ_LanguageManager languageManager;
@@ -58,13 +59,77 @@ public class UpgradeController : MonoBehaviour
     {
         languageManager = YJ_LanguageManager.Instance;
         if (languageManager != null) languageManager.LanguageChanged += RefreshLanguage;
+        SubscribeOwnership();
         RefreshUI();
     }
 
     private void OnDisable()
     {
         if (languageManager != null) languageManager.LanguageChanged -= RefreshLanguage;
+        UnsubscribeOwnership();
         ClearItem();
+    }
+
+    /// <summary>
+    /// 지갑 주인의 소유권 상실(삭제·월드 드롭·판매)을 구독해 선택을 해제한다.
+    /// 선택 참조가 남으면 소유하지 않는 아이템에 골드를 내고 강화할 수 있었다.
+    /// </summary>
+    private void SubscribeOwnership()
+    {
+        UnsubscribeOwnership();
+        ownershipSource = ResolveOwnerInventory();
+        if (ownershipSource != null)
+            ownershipSource.OnItemOwnershipLost += HandleItemOwnershipLost;
+    }
+
+    private void UnsubscribeOwnership()
+    {
+        if (ownershipSource != null)
+            ownershipSource.OnItemOwnershipLost -= HandleItemOwnershipLost;
+        ownershipSource = null;
+    }
+
+    private void HandleItemOwnershipLost(InventoryItem item)
+    {
+        if (selectedItem != null && ReferenceEquals(item?.itemData, selectedItem))
+            ClearItem();
+    }
+
+    /// <summary>ReportRejection과 같은 기준으로 현재 지갑의 주인 인벤토리를 찾는다.</summary>
+    private InventoryController ResolveOwnerInventory()
+    {
+        InventoryController owner = InventoryController.Instance;
+        return owner != null && playerWallet != null && owner.PlayerWallet == playerWallet ? owner : null;
+    }
+
+    /// <summary>결제 직전 선택 아이템이 아직 주인의 가방이나 장착 슬롯에 있는지 확인한다.</summary>
+    private bool IsSelectedItemOwned()
+    {
+        InventoryController owner = ResolveOwnerInventory();
+
+        // 주인을 찾지 못하는 배선(별도 테스트 씬 등)은 기존 동작을 유지한다.
+        if (owner == null)
+            return true;
+
+        if (owner.PlayerGrid != null)
+        {
+            foreach (InventoryItem item in owner.PlayerGrid.GetAllItems())
+            {
+                if (ReferenceEquals(item?.itemData, selectedItem))
+                    return true;
+            }
+        }
+
+        if (owner.EquipmentSystem != null)
+        {
+            foreach (var pair in owner.EquipmentSystem.GetEquippedItems())
+            {
+                if (ReferenceEquals(pair.Value?.itemData, selectedItem))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private void RefreshLanguage(GameLanguage _)
@@ -86,6 +151,8 @@ public class UpgradeController : MonoBehaviour
         playerWallet = wallet;
         equipmentSystem = equipment;
         upgradeService = new UpgradeService(playerWallet);
+        if (isActiveAndEnabled)
+            SubscribeOwnership();
         return true;
     }
 
@@ -95,6 +162,7 @@ public class UpgradeController : MonoBehaviour
             return;
 
         ClearItem();
+        UnsubscribeOwnership();
         playerWallet = null;
         equipmentSystem = null;
         upgradeService = new UpgradeService(null);
@@ -166,6 +234,13 @@ public class UpgradeController : MonoBehaviour
             string selectionRequired = UpgradeMessageMapper.GetSelectionRequired(uiLabels);
             ShowMessage(selectionRequired);
             ReportRejection(selectionRequired);
+            return;
+        }
+
+        if (!IsSelectedItemOwned())
+        {
+            ClearItem();
+            ShowUpgradeMessage(UpgradeResult.InvalidItem);
             return;
         }
 

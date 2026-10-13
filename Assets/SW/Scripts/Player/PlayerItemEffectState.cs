@@ -790,10 +790,40 @@ public sealed partial class PlayerItemEffectState
         {
             int next = (int)System.Math.Min((long)Mathf.Max(0, item.persistedStackCount) + 1, int.MaxValue);
             item.persistedStackCount = effect.buffSpec.maxStack > 0 ? Mathf.Min(next, effect.buffSpec.maxStack) : next;
-            buffs.SetBuffStack(effect, item.persistedStackCount);
+            // 같은 효과의 사본이 각자 자기 스택으로 덮어쓰면 처리 순서에 따라 20스택이 1스택으로 줄었다.
+            buffs.SetBuffStack(effect, GetHighestPersistedStack(effect));
             StackChanged?.Invoke(item);
         }
         else buffs.ApplyBuff(effect);
+    }
+
+    /// <summary>
+    /// 같은 영구 스택 효과를 가진 소유 사본 중 가장 높은 저장 스택이다. 중복 사본은 효과를 합산하지 않고
+    /// (같은 효과 쿨다운·패시브 1회 적용과 같은 비중첩 규칙) 이 값만 버프에 반영한다.
+    /// </summary>
+    private int GetHighestPersistedStack(TriggeredBuffUniqueEffectSO effect)
+    {
+        int highest = 0;
+        if (inventory.EquipmentSystem != null)
+        {
+            foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in inventory.EquipmentSystem.GetEquippedItems())
+            {
+                if (pair.Value?.itemData?.definition?.uniqueEffect == effect)
+                    highest = Mathf.Max(highest, pair.Value.itemData.persistedStackCount);
+            }
+        }
+
+        if (inventory.PlayerGrid != null)
+        {
+            foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
+            {
+                if (item?.itemData?.definition?.category == ItemCategory.Relic &&
+                    item.itemData.definition.uniqueEffect == effect)
+                    highest = Mathf.Max(highest, item.itemData.persistedStackCount);
+            }
+        }
+
+        return highest;
     }
 
     /// <summary>SW 수정: 같은 소유자의 동일 효과는 PerItem 발동 버프를 제외하고 장비 개체와 무관하게 공유하며, 싱글·서버·HUD가 같은 키로 조회한다.</summary>

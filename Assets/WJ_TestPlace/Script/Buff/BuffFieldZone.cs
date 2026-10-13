@@ -101,6 +101,8 @@ public class BuffFieldZone : MonoBehaviour
             return;
 
         insideColliderCounts.TryGetValue(target, out int colliderCount);
+        if (colliderCount == 0 && !appliedTargets.Contains(target) && target is EnemyBuffManager enemy)
+            enemy.Disabled += ForgetEnemy;
         insideColliderCounts[target] = colliderCount + 1;
         RefreshTarget(target);
     }
@@ -130,6 +132,11 @@ public class BuffFieldZone : MonoBehaviour
             PlayerHealthManager health = player.GetComponent<PlayerHealthManager>();
             alive = player.isActiveAndEnabled && health != null && health.CurrentHealth > 0f;
         }
+        else if (alive && target is EnemyBuffManager enemy)
+        {
+            var status = enemy.GetComponent<WBH_ICombatStatus>();
+            alive = enemy.isActiveAndEnabled && status != null && !status.IsDead;
+        }
         if (alive && appliedTargets.Add(target))
             RegisterZone(target, ActiveBuff);
         else if (!alive && appliedTargets.Remove(target))
@@ -151,19 +158,29 @@ public class BuffFieldZone : MonoBehaviour
         insideColliderCounts.Remove(target);
         if (removeOnExit && ActiveBuff != null && appliedTargets.Remove(target))
             UnregisterZone(target, ActiveBuff);
+        if (!appliedTargets.Contains(target) && target is EnemyBuffManager enemy)
+            enemy.Disabled -= ForgetEnemy;
+    }
+
+    // SW 수정: 같은 프레임에 풀 반환·재사용돼도 이전 오라의 카운트와 버프는 승계하지 않는다.
+    private void ForgetEnemy(EnemyBuffManager enemy)
+    {
+        enemy.Disabled -= ForgetEnemy;
+        insideColliderCounts.Remove(enemy);
+        if (appliedTargets.Remove(enemy))
+            UnregisterZone(enemy, ActiveBuff);
     }
 
     private void OnDisable()
     {
-        if (!removeWhenZoneDisabled || ActiveBuff == null)
-        {
-            insideColliderCounts.Clear();
-            appliedTargets.Clear();
-            return;
-        }
-
+        foreach (IBuffTarget target in insideColliderCounts.Keys)
+            if (target is EnemyBuffManager enemy) enemy.Disabled -= ForgetEnemy;
         foreach (IBuffTarget target in appliedTargets)
-            UnregisterZone(target, ActiveBuff);
+        {
+            if (target is EnemyBuffManager enemy) enemy.Disabled -= ForgetEnemy;
+            if (ActiveBuff != null)
+                UnregisterZone(target, ActiveBuff, removeWhenZoneDisabled);
+        }
 
         insideColliderCounts.Clear();
         appliedTargets.Clear();
@@ -215,7 +232,7 @@ public class BuffFieldZone : MonoBehaviour
             target.ApplyBuff(source);
     }
 
-    private static void UnregisterZone(IBuffTarget target, IBuffSource source)
+    private static void UnregisterZone(IBuffTarget target, IBuffSource source, bool removeBuff = true)
     {
         if (!ActiveZoneCounts.TryGetValue(target, out Dictionary<IBuffSource, int> sourceCounts) ||
             !sourceCounts.TryGetValue(source, out int zoneCount))
@@ -233,7 +250,7 @@ public class BuffFieldZone : MonoBehaviour
         if (sourceCounts.Count == 0)
             ActiveZoneCounts.Remove(target);
 
-        if (TargetExists(target))
+        if (removeBuff && TargetExists(target))
             target.RemoveBuff(source);
     }
 

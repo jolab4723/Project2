@@ -46,6 +46,9 @@ public sealed class NetworkShopState : NetworkBehaviour
     [SyncVar] private int partyExtraRerollCount;
     [SyncVar] private uint highestBenefitPlayerNetId;
     [SyncVar] private string lastServerEvent = "상점 서버 준비 중";
+    // WJ 이우진 추가(2026-10-07): 파티가 이 상점에서 성공한 유료 리롤 횟수. 횟수마다 다음 비용이 2배가 된다.
+    // stateRevision 훅이 먼저 불려도 비용 표시가 갱신되도록 자체 훅에서 다시 알린다.
+    [SyncVar(hook = nameof(HandlePaidRerollCountChanged))] private int paidRerollCount;
 
     private PlayerContext localContext;
     private ShopController localShopController;
@@ -60,7 +63,8 @@ public sealed class NetworkShopState : NetworkBehaviour
     public int UsedFreeRerollCount => usedFreeRerollCount;
     public int TotalFreeRerollCount => Mathf.Max(0, baseFreeRerollCount + partyExtraRerollCount);
     public int RemainingFreeRerollCount => Mathf.Max(0, TotalFreeRerollCount - usedFreeRerollCount);
-    public int PaidRerollGoldCost => paidRerollGoldCost;
+    /// <summary>다음 유료 리롤 비용(기본 비용 × 2^유료 리롤 횟수).</summary>
+    public int PaidRerollGoldCost => ShopRerollButton.GetDoubledRerollCost(paidRerollGoldCost, paidRerollCount);
     public int HighestShopEnhanceLevel => highestShopEnhanceLevel;
     public uint HighestBenefitPlayerNetId => highestBenefitPlayerNetId;
     public string LastServerEvent => lastServerEvent;
@@ -244,7 +248,9 @@ public sealed class NetworkShopState : NetworkBehaviour
             return MirrorShopRequestResult.InventoryFull;
         }
 
-        int price = ShopPricing.GetBuyPrice(itemData.definition.sellPrice, requester.DiscountPercent);
+        // 싱글과 같은 규칙: 플레이어 판매 재고는 지급했던 매입가가 하한이다.
+        int price = ShopPricing.GetStockBuyPrice(
+            itemData.definition.sellPrice, requester.DiscountPercent, stock.source, stock.pricePaidToPlayer);
         if (!requester.ServerTrySpendGold(price))
             return MirrorShopRequestResult.NotEnoughGold;
 
@@ -322,7 +328,8 @@ public sealed class NetworkShopState : NetworkBehaviour
             return MirrorShopRequestResult.StateApplyFailed;
         }
 
-        int sellPrice = Mathf.Max(0, itemData.definition.sellPrice);
+        // 판매자 본인의 할인율을 구매와 같은 계산으로 적용해 할인 구매 → 판매 왕복 차익을 막는다.
+        int sellPrice = ShopPricing.GetSellPrice(itemData.definition.sellPrice, requester.DiscountPercent);
         MirrorShopItemSnapshot soldStock = new()
         {
             itemSnapshotJson = ownedSnapshotJson,
@@ -356,10 +363,11 @@ public sealed class NetworkShopState : NetworkBehaviour
             return MirrorShopRequestResult.ShopFull;
 
         bool usesFreeReroll = usedFreeRerollCount < TotalFreeRerollCount;
+        int paidCost = PaidRerollGoldCost;
         if (!usesFreeReroll)
         {
             requester.ServerSetGold(requester.Gold);
-            if (!requester.ServerTrySpendGold(paidRerollGoldCost))
+            if (!requester.ServerTrySpendGold(paidCost))
                 return MirrorShopRequestResult.NotEnoughGold;
         }
 
@@ -371,11 +379,13 @@ public sealed class NetworkShopState : NetworkBehaviour
 
         if (usesFreeReroll)
             usedFreeRerollCount++;
+        else
+            paidRerollCount++;
 
         rerollSequence++;
         lastServerEvent = usesFreeReroll
             ? $"netId={requester.netId} 무료 리롤"
-            : $"netId={requester.netId} 유료 리롤 / {paidRerollGoldCost}골드";
+            : $"netId={requester.netId} 유료 리롤 / {paidCost}골드";
         AdvanceStateRevision();
         return MirrorShopRequestResult.Success;
     }
@@ -732,6 +742,11 @@ public sealed class NetworkShopState : NetworkBehaviour
     private void HandleStateRevisionChanged(uint oldRevision, uint newRevision)
     {
         QueueLocalViewRebuild();
+        StateChanged?.Invoke();
+    }
+
+    private void HandlePaidRerollCountChanged(int oldCount, int newCount)
+    {
         StateChanged?.Invoke();
     }
 

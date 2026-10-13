@@ -29,13 +29,27 @@ public sealed class ShopRerollButton : MonoBehaviour
     private const string UiLabelResourcePath = "DataFiles/UIData/3. GeneratedAssets/UILabelDatabase";
 
     private int usedFreeRerollCount;
+    // WJ 이우진 추가(2026-10-07): 이 상점에서 성공한 유료 리롤 횟수. 횟수마다 다음 비용이 2배가 된다.
+    private int paidRerollCount;
     private System.Action rerollRequest;
     private System.Func<int> remainingFreeRerolls;
     private System.Func<int> rerollCost;
 
     public int BaseFreeRerollCount => baseFreeRerollCount;
-    public int PaidRerollCost => paidRerollCost;
+    /// <summary>다음 유료 리롤 비용(기본 비용 × 2^유료 리롤 횟수).</summary>
+    public int PaidRerollCost => GetDoubledRerollCost(paidRerollCost, paidRerollCount);
     public int UsedFreeRerollCount => usedFreeRerollCount;
+
+    /// <summary>
+    /// WJ 이우진 추가(2026-10-07): 유료 리롤 비용을 횟수마다 2배로 계산한다(싱글·멀티 공용, int 최대치에서 멈춤).
+    /// </summary>
+    public static int GetDoubledRerollCost(int baseCost, int paidCount)
+    {
+        long cost = Mathf.Max(0, baseCost);
+        for (int i = 0; i < paidCount && cost > 0 && cost < int.MaxValue; i++)
+            cost *= 2;
+        return (int)System.Math.Min(cost, int.MaxValue);
+    }
 
     public int ExtraFreeRerollCount
     {
@@ -129,7 +143,7 @@ public sealed class ShopRerollButton : MonoBehaviour
         {
             costText.text = IsFree
                 ? GetLabel("shop_ui.reroll_free", "무료 리롤")
-                : string.Format(GetLabel("shop_ui.reroll_cost_format", "<color=#FFEB04>{0}</color> 리롤"), rerollCost != null ? rerollCost() : paidRerollCost);
+                : string.Format(GetLabel("shop_ui.reroll_cost_format", "<color=#FFEB04>{0}</color> 리롤"), rerollCost != null ? rerollCost() : PaidRerollCost);
         }
 
         if (countText != null)
@@ -190,22 +204,24 @@ public sealed class ShopRerollButton : MonoBehaviour
             return;
         }
 
-        if (!wallet.TrySpendGold(paidRerollCost))
+        int cost = PaidRerollCost;
+        if (!wallet.TrySpendGold(cost))
         {
-            string msg = $"골드가 부족하여 새로고침할 수 없습니다. (필요: {paidRerollCost}G / 보유: {wallet.Gold}G)";
+            string msg = $"골드가 부족하여 새로고침할 수 없습니다. (필요: {cost}G / 보유: {wallet.Gold}G)";
             shopController?.SetLogMessage(msg, isWarning: true);
             return;
         }
 
         if (!stockInitializer.TryRerollStock())
         {
-            wallet.AddGold(paidRerollCost);
+            wallet.AddGold(cost);
             shopController?.SetLogMessage("상점 새로고침에 실패하여 골드가 환불되었습니다.", isWarning: true);
             return;
         }
 
+        paidRerollCount++;
         RefreshView();
-        string paidMsg = $"{paidRerollCost}골드를 지불하고 상점 상품을 새로고침했습니다.";
+        string paidMsg = $"{cost}골드를 지불하고 상점 상품을 새로고침했습니다.";
         shopController?.SetLogMessage(paidMsg);
     }
 

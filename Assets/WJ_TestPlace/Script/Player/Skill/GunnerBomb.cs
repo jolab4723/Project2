@@ -163,7 +163,8 @@ public class GunnerBomb : MonoBehaviour
         {
             DealDamage(hit,
                        damageRequest.DamageMultiplier,
-                       explosionEffectData ?? damageRequest.EffectData);
+                       explosionEffectData ?? damageRequest.EffectData,
+                       damageRequest.AttackId);
 
             if (!hit.TryGetComponent<WBH_ICombat>(out var effectTarget))
                 continue;
@@ -197,10 +198,12 @@ public class GunnerBomb : MonoBehaviour
     {
         yield return new WaitForSeconds(secondExplosionDelay);
 
+        uint secondAttackId = CreateFollowUpAttackId();
         foreach (Collider hit in Physics.OverlapSphere(transform.position, secondExplosionRadius, targetLayer))
             DealDamage(hit,
-                       damageRequest.DamageMultiplier * secondExplosionDamageMultiplier, 
-                       secondExplosionEffectData ?? damageRequest.EffectData);
+                       damageRequest.DamageMultiplier * secondExplosionDamageMultiplier,
+                       secondExplosionEffectData ?? damageRequest.EffectData,
+                       secondAttackId);
 
         PlayExplosionEffect(secondExplosionEffectCue, secondExplosionEffectScale);
 
@@ -208,9 +211,21 @@ public class GunnerBomb : MonoBehaviour
     }
 
     /// <summary>
-    /// SW 수정: 폭탄의 각 폭발 명중 요청에 원본 피해 원인과 공격 식별자를 전달합니다.
+    /// SW 수정: 2차 폭발은 별도 타격이므로 공격자의 발급기에서 새 공격 식별자를 받습니다.
+    /// 1차와 같은 식별자를 쓰면 1차에 맞은 적의 2차 피해가 중복 타격으로 거절됐습니다.
     /// </summary>
-    private void DealDamage(Collider target, float damageMultiplier, WBH_EffectData effectData)
+    private uint CreateFollowUpAttackId()
+    {
+        T_PlayerCombat attackerCombat = damageRequest.Attacker is Component attacker && attacker != null
+            ? attacker.GetComponent<T_PlayerCombat>()
+            : null;
+        return attackerCombat != null ? attackerCombat.CreateAttackId() : damageRequest.AttackId;
+    }
+
+    /// <summary>
+    /// SW 수정: 폭탄의 각 폭발 명중 요청에 원본 피해 원인과 폭발 차수별 공격 식별자를 전달합니다.
+    /// </summary>
+    private void DealDamage(Collider target, float damageMultiplier, WBH_EffectData effectData, uint attackId)
     {
         if (!target.TryGetComponent<WBH_ICombat>(out var combatTarget))
             return;
@@ -231,7 +246,7 @@ public class GunnerBomb : MonoBehaviour
                                                              hitPosition,
                                                              lookDirection,
                                                              damageRequest.DamageCause,
-                                                             damageRequest.AttackId);
+                                                             attackId);
         WBH_CombatManager.ProcessDamage(hitRequest);
     }
 

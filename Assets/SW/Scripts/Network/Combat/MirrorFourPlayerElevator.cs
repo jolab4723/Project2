@@ -54,6 +54,10 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
     private readonly HashSet<NetworkIdentity> expectedReadyPassengers = new();
     private readonly HashSet<NetworkIdentity> pendingLandingPassengers = new();
     private readonly List<NetworkIdentity> invalidPassengers = new();
+    // 서버 착지 배치에 실패해 아직 TargetEndRide를 받지 못한 승객. 착지 대기 중 다시 배치한다.
+    private readonly List<PassengerRideState> unplacedLandingPassengers = new();
+    private const float LandingRetrySeconds = 3f;
+    private const float WideSafeLandingSearchDistance = 8f;
     private readonly WaitForFixedUpdate waitForFixedUpdate = new();
     private readonly WaitForSeconds topOccupancyPoll = new(0.2f);
 
@@ -215,9 +219,20 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
         {
             state = ElevatorState.Landing;
             BeginServerLanding(destination);
+            float landingStartedAt = Time.time;
+            bool fallbackLogged = false;
             while (passengerStates.Count > 0 && pendingLandingPassengers.Count > 0)
             {
                 PruneInvalidPassengers(true);
+                bool widenSafeSearch = Time.time - landingStartedAt >= LandingRetrySeconds;
+                RetryUnplacedLanding(destination, widenSafeSearch);
+                if (widenSafeSearch && !fallbackLogged && unplacedLandingPassengers.Count > 0)
+                {
+                    fallbackLogged = true;
+                    Debug.LogError(
+                        $"[MirrorFourPlayerElevator] 안전 착지점 주변까지 찾지 못한 승객 {unplacedLandingPassengers.Count}명이 남아 재시도를 계속합니다. safeLandingPoint 주변 NavMesh를 확인하세요.",
+                        this);
+                }
                 yield return null;
             }
         }
@@ -338,6 +353,7 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
     private void BeginServerLanding(Vector3 destination)
     {
         pendingLandingPassengers.Clear();
+        unplacedLandingPassengers.Clear();
         List<PassengerRideState> landingPassengers = new(passengerStates.Values);
         foreach (PassengerRideState passenger in landingPassengers)
         {
@@ -346,13 +362,65 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
             if (!TryFindUpperLanding(passenger, destination, out Vector3 landingPosition) ||
                 !TryPlaceServerPassenger(passenger, landingPosition))
             {
-                Debug.LogError(
-                    $"[MirrorFourPlayerElevator] netId={player.netId}의 2층 NavMesh 착지점을 찾지 못해 조작 잠금을 유지합니다.",
+                // 실패한 승객은 TargetEndRide를 받지 못해 영구 대기했다. 착지 대기 루프에서 다시 배치한다.
+                Debug.LogWarning(
+                    $"[MirrorFourPlayerElevator] netId={player.netId}의 2층 NavMesh 착지점을 찾지 못해 재시도합니다.",
                     player);
+                unplacedLandingPassengers.Add(passenger);
                 continue;
             }
             TargetEndRide(player.connectionToClient, currentRideId, landingPosition);
         }
+    }
+
+    /// <summary>
+    /// 착지 배치에 실패한 승객을 다시 배치한다. 제한 시간이 지나면 2층 안전 착지점 주변을 넓게 찾아
+    /// 같은 TargetEndRide 착지 완료 흐름을 타게 한다. 잠금만 풀어 발판 위 허공에 남기지 않고,
+    /// 다시 내려갈 발판 아래(출발층)에도 내려놓지 않는다.
+    /// </summary>
+    [Server]
+    private void RetryUnplacedLanding(Vector3 destination, bool widenSafeSearch)
+    {
+        for (int i = unplacedLandingPassengers.Count - 1; i >= 0; i--)
+        {
+            PassengerRideState passenger = unplacedLandingPassengers[i];
+
+            // 사망·이탈로 정리된 승객은 CleanupPassenger가 이미 취소 처리했다.
+            if (passenger.Identity == null || !pendingLandingPassengers.Contains(passenger.Identity))
+            {
+                unplacedLandingPassengers.RemoveAt(i);
+                continue;
+            }
+
+            bool placed = TryFindUpperLanding(passenger, destination, out Vector3 landingPosition) &&
+                          TryPlaceServerPassenger(passenger, landingPosition);
+            if (!placed && widenSafeSearch)
+            {
+                placed = TryFindWideSafeLanding(passenger, out landingPosition) &&
+                         TryPlaceServerPassenger(passenger, landingPosition);
+            }
+
+            if (!placed)
+                continue;
+
+            unplacedLandingPassengers.RemoveAt(i);
+            TargetEndRide(passenger.Identity.connectionToClient, currentRideId, landingPosition);
+        }
+    }
+
+    [Server]
+    private bool TryFindWideSafeLanding(PassengerRideState passenger, out Vector3 position)
+    {
+        int areaMask = passenger.Agent != null ? passenger.Agent.areaMask : NavMesh.AllAreas;
+        if (safeLandingPoint != null && NavMesh.SamplePosition(
+                safeLandingPoint.position, out NavMeshHit hit, WideSafeLandingSearchDistance, areaMask))
+        {
+            position = hit.position;
+            return true;
+        }
+
+        position = default;
+        return false;
     }
 
     [Server]
@@ -773,6 +841,7 @@ public sealed class MirrorFourPlayerElevator : NetworkBehaviour
         passengerStates.Clear();
         expectedReadyPassengers.Clear();
         pendingLandingPassengers.Clear();
+        unplacedLandingPassengers.Clear();
         invalidPassengers.Clear();
     }
 

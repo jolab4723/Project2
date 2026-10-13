@@ -380,12 +380,63 @@ public class InventoryController : MonoBehaviour, IItemReceiver
                 InventoryAddResult.NoSpace);
         }
 
+        // 드래그로 잠시 빠진 아이템의 원래 칸은 예약한다. 보상·획득이 그 칸을 차지하면 드래그 복귀가 실패해
+        // 아이템이 저장에서 계속 빠질 수 있었다. 겹치면 이번 추가를 미루고 호출부의 재시도에 맡긴다.
+        if (detachedDragItem != null && detachedDragPlacement.Rect.Overlaps(placement.Rect))
+            return InventoryAddResultData.Failed(InventoryAddResult.NoSpace);
+
         item.isRotated = placement.IsRotated;
 
         return TryAddItemAt(
             item,
             placement.Rect.X,
             placement.Rect.Y);
+    }
+
+    // 싱글 드래그가 플레이어 Grid에서 잠시 분리한 소유 아이템과 원래 배치. 드래그 중 저장이 이 아이템을
+    // 빠뜨리지 않도록 저장 수집에 원래 위치로 제공하고, 원래 칸을 다른 추가로부터 예약한다.
+    private InventoryItem detachedDragItem;
+    private InventoryPlacementSnapshot detachedDragPlacement;
+
+    internal void SetDetachedDragItem(InventoryItem item, InventoryPlacementSnapshot originalPlacement)
+    {
+        if (item?.itemData == null || !originalPlacement.IsValid)
+            return;
+
+        detachedDragItem = item;
+        detachedDragPlacement = originalPlacement;
+    }
+
+    internal void ClearDetachedDragItem(InventoryItem item)
+    {
+        if (item == null || !ReferenceEquals(detachedDragItem, item))
+            return;
+
+        detachedDragItem = null;
+        detachedDragPlacement = default;
+    }
+
+    /// <summary>
+    /// 저장 수집용: 드래그로 Grid에서 빠져 아직 어디에도 배치되지 않은 소유 아이템을 원래 배치와 함께 돌려준다.
+    /// 다시 Grid에 놓였거나 장착된 아이템은 기존 수집 경로가 저장하므로 false다.
+    /// </summary>
+    public bool TryGetDetachedDragItem(out InventoryItem item, out InventoryPlacementSnapshot originalPlacement)
+    {
+        item = detachedDragItem;
+        originalPlacement = detachedDragPlacement;
+        if (item == null || playerGrid == null || playerGrid.ContainsItem(item))
+            return false;
+
+        if (equipmentSystem != null)
+        {
+            foreach (var pair in equipmentSystem.GetEquippedItems())
+            {
+                if (ReferenceEquals(pair.Value, item))
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     internal void NotifyItemOwnershipGained(InventoryItem item)
@@ -401,6 +452,7 @@ public class InventoryController : MonoBehaviour, IItemReceiver
         if (item == null)
             return;
 
+        ClearDetachedDragItem(item);
         OnItemOwnershipLost?.Invoke(item);
     }
 }

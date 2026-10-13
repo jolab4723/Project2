@@ -16,6 +16,77 @@ public static class WeekendItemEffectsValidation
     private const string NormalEnemyId = "enemy.normal.melee.working_machine";
     private static bool running;
 
+    public static async Task<string> RunAreaSnapshotProbe()
+    {
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            var context = scope.Context;
+            var skill = context.GetComponent<GunnerSkillController>();
+            var def = ScriptableObject.CreateInstance<SkillDefinitionSO>();
+            def.evoMarkerDamageMultiplier = 1f;
+            var noCrit = ScriptableObject.CreateInstance<BuffDefinitionSO>();
+            noCrit.duration = 0;
+            noCrit.statEffects = new[] { new FixedStatValue { statType = StatType.critRateFlat, value = -100f } };
+            var killBuff = ScriptableObject.CreateInstance<BuffDefinitionSO>();
+            killBuff.duration = 0;
+            killBuff.statEffects = new[] { new FixedStatValue { statType = StatType.attackPowerFlat, value = 100f } };
+            var buffs = context.GetComponent<PlayerBuffManager>();
+            var a = scope.Spawn(0);
+            var b = scope.Spawn(1);
+            var originalAgents = new List<(UnityEngine.AI.NavMeshAgent agent, bool enabled)>();
+            var results = new List<(WBH_EnemyController enemy, WBH_DamageResult result)>();
+            Action<WBH_DamageResult> onA = r => results.Add((a, r));
+            Action<WBH_DamageResult> onB = r => results.Add((b, r));
+            var ast = a.GetComponent<WBH_EnemyStatus>();
+            var bst = b.GetComponent<WBH_EnemyStatus>();
+            ast.OnDamaged += onA; bst.OnDamaged += onB;
+            Action onKill = () => buffs.ApplyBuff(killBuff);
+            WBH_EnemyStatus firstStatus = null;
+            try
+            {
+                buffs.ApplyBuff(noCrit);
+                Vector3 center = context.transform.position + context.transform.forward * 15;
+                foreach (var enemy in new[] { a, b })
+                {
+                    var agent = enemy.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                    if (agent != null) { originalAgents.Add((agent, agent.enabled)); agent.enabled = false; }
+                    enemy.transform.position = center + Vector3.right * (enemy == a ? -0.6f : 0.6f);
+                }
+                Physics.SyncTransforms();
+                var wave = typeof(GunnerSkillController).GetMethod("ApplyCarpetWaveDamage", BindingFlags.Instance | BindingFlags.NonPublic);
+                wave.Invoke(skill, new object[] { def, 0, center, 2f, 1f, null, 0f });
+                Require(results.Count == 2, "C03 baseline wave targets missing");
+                float baseline = results[0].result.FinalDamage;
+                results.Clear();
+                var first = Physics.OverlapSphere(center, 2f, 1 << a.gameObject.layer).Select(c => c.GetComponentInParent<WBH_EnemyController>()).First(e => e == a || e == b);
+                firstStatus = first.GetComponent<WBH_EnemyStatus>();
+                firstStatus.TakeDamage(firstStatus.CurrentHp - 1f);
+                results.Clear();
+                firstStatus.OnDead += onKill;
+                float attackBefore = context.Controller.Status.AttackPower;
+                wave.Invoke(skill, new object[] { def, 0, center, 2f, 1f, null, 0f });
+                Require(results.Count == 2 && results[0].enemy == first, "C03 first target/order fixture failed");
+                float damageBeforeKillBuff = results[0].result.FinalDamage;
+                float damageAfterKillBuff = results[1].result.FinalDamage;
+                float attackAfter = context.Controller.Status.AttackPower;
+                Require(attackAfter > attackBefore && damageAfterKillBuff > baseline, "C03 same-wave subsequent target did not observe kill buff");
+                results.Clear();
+                wave.Invoke(skill, new object[] { def, 0, center, 2f, 1f, null, 0f });
+                Require(results.Count == 1, "C03 next wave did not damage remaining target once");
+                Near(results[0].result.FinalDamage, damageAfterKillBuff, "C03 next wave did not keep current stats");
+                return JsonConvert.SerializeObject(new { baseline, damageBeforeKillBuff, damageAfterKillBuff, attackBefore, attackAfter, nextWaveDamage = results[0].result.FinalDamage, tests = "actual Gunner carpet wave on original enemy colliders; OnDead attack buff visible inside same wave and next wave; existing sequential policy retained" });
+            }
+            finally
+            {
+                ast.OnDamaged -= onA; bst.OnDamaged -= onB;
+                if (firstStatus != null) firstStatus.OnDead -= onKill;
+                buffs.RemoveBuff(killBuff); buffs.RemoveBuff(noCrit);
+                foreach (var state in originalAgents) if (state.agent != null) state.agent.enabled = state.enabled;
+                Object.DestroyImmediate(def); Object.DestroyImmediate(noCrit); Object.DestroyImmediate(killBuff);
+            }
+        }
+    }
+
     public static async Task<string> RunSmileSignal()
     {
         using (var scope = await PreparePlayer(CharacterClass.Gunner))

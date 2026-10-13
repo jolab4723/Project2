@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ItemSystem;
 using UnityEngine;
 
@@ -60,20 +61,53 @@ public sealed class ShopStockInitializer : MonoBehaviour
         if (!ValidateConfiguration())
             return false;
 
-        if (!initialized)
-        {
-            initialized = true;
-            return GenerateStock() == initialStockCount;
-        }
+        initialized = true;
 
-        if (!shopController.TryClearGeneratedStock())
+        // 새 상품을 먼저 모두 만든 뒤 한 번에 교체한다. 실패하면 기존 재고가 그대로 남는다.
+        if (!TryRollItems(out List<InventoryItem> items))
+            return false;
+
+        if (!shopController.TryReplaceGeneratedStock(items))
         {
-            Debug.LogError(
-                "[ShopStockInitializer] 기존 Generated 재고를 제거하지 못해 리롤을 중단했습니다.");
+            Debug.LogWarning(
+                "[ShopStockInitializer] 새 상품을 모두 배치하지 못해 기존 재고를 유지했습니다.");
             return false;
         }
 
-        return GenerateStock() == initialStockCount;
+        return true;
+    }
+
+    private bool TryRollItems(out List<InventoryItem> items)
+    {
+        items = new List<InventoryItem>(initialStockCount);
+
+        for (int i = 0; i < initialStockCount; i++)
+        {
+            if (!rollService.TryRoll(
+                    itemDatabase,
+                    rarityChances,
+                    out ItemDefinitionSO selectedDefinition))
+            {
+                Debug.LogError(
+                    "[ShopStockInitializer] 판매 상품 추첨에 실패했습니다.");
+                return false;
+            }
+
+            ItemInstance itemData =
+                ItemDataCreator.CreateItemData(selectedDefinition);
+
+            if (itemData == null)
+            {
+                Debug.LogError(
+                    $"[ShopStockInitializer] " +
+                    $"{selectedDefinition.itemName} 인스턴스 생성에 실패했습니다.");
+                return false;
+            }
+
+            items.Add(new InventoryItem(itemData));
+        }
+
+        return true;
     }
 
     private int GenerateStock()

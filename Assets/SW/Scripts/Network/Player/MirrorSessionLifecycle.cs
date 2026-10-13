@@ -191,6 +191,8 @@ public sealed partial class MirrorNetworkManager
                 accepted = ServerRoster.TryStartRun(connection.connectionId, out reason);
                 if (accepted)
                 {
+                    // 결과 플레이 시간은 로비 대기를 빼고 서버가 출발을 승인한 시각부터 잽니다.
+                    runStartedAt = NetworkTime.time;
                     sessionSceneChangeRequested = true;
                     pendingSessionRoute = MirrorSessionRoute.StageSelect;
                     BroadcastLobby();

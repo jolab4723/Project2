@@ -10,6 +10,9 @@ using UnityEngine.UI;
 public class TooltipUI : MonoBehaviour
 {
     private const float FadeDuration = 0.1f;
+
+    // 상점·강화·확인창(1~2)과 드래그 중 아이템(ItemDragVisual 1000)보다 위에 그린다.
+    private const int TooltipSortingOrder = 1001;
     private const string ItemLabelResourcePath =
         "DataFiles/ItemData/3. GeneratedAssets/LabelData/ItemLabelDatabase";
     private const string UniqueEffectLabelResourcePath =
@@ -197,6 +200,7 @@ public class TooltipUI : MonoBehaviour
         StopFade();
         SetFadeAlpha(0f);
         gameObject.SetActive(true);
+        ApplyTopSorting();
 
         ItemDefinitionSO definition =
             itemData.definition;
@@ -282,6 +286,20 @@ public class TooltipUI : MonoBehaviour
 
         EnsureInitialized();
         FadeTo(0f, () => gameObject.SetActive(false));
+    }
+
+    /// <summary>
+    /// 툴팁 Canvas를 다른 게임 UI보다 위로 고정한다.
+    /// 씬 인스턴스가 프리팹의 정렬값을 덮어써도 상점 NPC Canvas 등과 같은 순서가 되어 뒤로 가려지지 않게 한다.
+    /// 비활성 Canvas는 루트로 취급되어 overrideSorting 설정이 무시되므로 활성화한 뒤 호출한다.
+    /// </summary>
+    private void ApplyTopSorting()
+    {
+        if (!TryGetComponent(out Canvas canvas))
+            return;
+
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = TooltipSortingOrder;
     }
 
     /// <summary>
@@ -421,15 +439,17 @@ public class TooltipUI : MonoBehaviour
     /// "정가(취소선) 할인가" 두 값을 함께 보여주고, 그 외에는 정가 하나만 보여준다.
     ///
     /// !! 인벤토리에 이미 들어온 아이템에는 할인가를 쓰지 않는다 - 그 값에 다시 살 수 있는 것처럼 오해된다.
+    /// 인벤토리 아이템은 실제 판매 지급액(판매에도 할인 적용) 하나만 보여 준다.
     /// </summary>
     private static string BuildPriceText(ItemInstance itemData, ItemDefinitionSO definition)
     {
         int original = definition.sellPrice;
 
-        if (!ShopPricing.IsShopItem(itemData))
-            return original.ToString("N0");
+        if (!ShopPricing.TryGetShopEntry(itemData, out ShopStockEntry entry))
+            return ShopPricing.GetSellPrice(definition).ToString("N0");
 
-        int discounted = ShopPricing.GetBuyPrice(definition);
+        // 플레이어 판매 재고는 매입가 하한이 걸려 정가보다 비쌀 수 있으므로 실제 결제가와 같은 계산을 쓴다.
+        int discounted = ShopPricing.GetStockBuyPrice(entry);
 
         // 할인이 없거나(패시브 미해금) 올림 때문에 값이 같아지면 굳이 두 번 보여주지 않는다.
         if (discounted >= original)

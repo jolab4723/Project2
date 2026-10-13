@@ -21,6 +21,16 @@ public class KY_PassiveSkillSlot : MonoBehaviour, IPointerClickHandler, IPointer
 
     public void Render(PassiveSkillData data)
     {
+        // SW 수정(R12 임시 숨김): 아래 블록을 삭제하면 미정 슬롯도 즉시 다시 표시된다.
+        // 구매 차단은 PassiveSkillManager의 별도 규칙이며, 여기서는 저장 데이터나 해금 상태를 바꾸지 않는다.
+        bool visible = data != null && PassiveSkillManager.IsAvailable(data.definition);
+        gameObject.SetActive(visible);
+        if (!visible)
+        {
+            myData = null;
+            return;
+        }
+
         myData = data;
         iconImage.sprite = data.icon;
         iconImage.enabled = data.icon != null;

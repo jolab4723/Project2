@@ -48,7 +48,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "잔해 압축",
-      "effectDescription": "적을 처치할 때마다 공격력이 {0}% 증가합니다."
+      "effectDescription": "적을 처치할 때마다 공격력이 {0}% 증가합니다. 최대 100회 중첩되며 공격력은 최대 50% 증가합니다."
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -483,12 +483,12 @@
     {
       "uniqueEffectId": "UE_CoreBreakerArmorBreak",
       "effectName": "코어 노출",
-      "effectDescription": "{1}초 내 같은 적에게 기본 공격을 {0}회 적중시키면 {2}초간 방어력을 {3}% 낮춥니다. 보스는 {4}% 감소하며 중첩되지 않습니다."
+      "effectDescription": "{1}초 내 같은 적에게 기본 공격을 {0}회 적중시키면 {2}초간 방어력을 {3}% 낮춥니다. 보스는 {4}% 감소하며 중첩되지 않습니다. 다른 적을 적중시키면 누적 적중 횟수가 초기화됩니다."
     },
     {
       "uniqueEffectId": "UE_SuperRefrigerantFreeze",
       "effectName": "열 강탈",
-      "effectDescription": "기본 공격 시 {2}초간 적의 이동 속도를 {3}%로 낮춥니다. {1}초 내 같은 적에게 {0}회 적중하면 {4}초간 빙결합니다. 대상별 빙결 쿨타임은 {5}초이며 보스는 감속만 적용합니다."
+      "effectDescription": "기본 공격 시 {2}초간 적의 이동 속도를 {3}%로 낮춥니다. {1}초 내 같은 적에게 {0}회 적중하면 {4}초간 빙결합니다. 대상별 빙결 쿨타임은 {5}초이며 보스는 감속만 적용합니다. 다른 적을 적중시키면 누적 적중 횟수가 초기화됩니다."
     },
     {
       "uniqueEffectId": "UE_WildfireSpread",
@@ -550,7 +550,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "Scrap Compression",
-      "effectDescription": "Each time you defeat an enemy, Attack increases by {0}%."
+      "effectDescription": "Each time you defeat an enemy, Attack increases by {0}%. Stacks up to 100 times, for a maximum Attack increase of 50%."
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -985,12 +985,12 @@
     {
       "uniqueEffectId": "UE_CoreBreakerArmorBreak",
       "effectName": "Core Exposure",
-      "effectDescription": "Hit the same enemy with {0} distinct basic attacks within {1} seconds to reduce its defense by {3}% for {2} seconds, or {4}% against bosses. Does not stack."
+      "effectDescription": "Hit the same enemy with {0} distinct basic attacks within {1} seconds to reduce its defense by {3}% for {2} seconds, or {4}% against bosses. Does not stack. Hitting a different enemy resets the accumulated hit count."
     },
     {
       "uniqueEffectId": "UE_SuperRefrigerantFreeze",
       "effectName": "Heat Theft",
-      "effectDescription": "Basic hits reduce movement speed to {3}% for {2} seconds. Hit the same enemy {0} times within {1} seconds to freeze it for {4} seconds. Each target has a {5}-second freeze lockout. Bosses are only slowed."
+      "effectDescription": "Basic hits reduce movement speed to {3}% for {2} seconds. Hit the same enemy {0} times within {1} seconds to freeze it for {4} seconds. Each target has a {5}-second freeze lockout. Bosses are only slowed. Hitting a different enemy resets the accumulated hit count."
     },
     {
       "uniqueEffectId": "UE_WildfireSpread",
@@ -1052,7 +1052,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "残骸圧縮",
-      "effectDescription": "敵を倒すたびに、攻撃力が{0}%増加します。"
+      "effectDescription": "敵を倒すたびに、攻撃力が{0}%増加します。 最大100回まで重複し、攻撃力は最大50%増加します。"
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -1487,12 +1487,12 @@
     {
       "uniqueEffectId": "UE_CoreBreakerArmorBreak",
       "effectName": "コア露出",
-      "effectDescription": "{1}秒以内に同じ敵へ異なる通常攻撃を{0}回命中させると、{2}秒間防御力を{3}%低下させます。ボスは{4}%低下し、重複しません。"
+      "effectDescription": "{1}秒以内に同じ敵へ異なる通常攻撃を{0}回命中させると、{2}秒間防御力を{3}%低下させます。ボスは{4}%低下し、重複しません。 別の敵に命中すると、累積命中回数がリセットされます。"
     },
     {
       "uniqueEffectId": "UE_SuperRefrigerantFreeze",
       "effectName": "熱の強奪",
-      "effectDescription": "通常攻撃で{2}秒間移動速度を元の{3}%にします。同じ敵に{1}秒以内に{0}回命中すると{4}秒間凍結します。対象ごとの凍結制限は{5}秒。ボスには減速のみ適用します。"
+      "effectDescription": "通常攻撃で{2}秒間移動速度を元の{3}%にします。同じ敵に{1}秒以内に{0}回命中すると{4}秒間凍結します。対象ごとの凍結制限は{5}秒。ボスには減速のみ適用します。 別の敵に命中すると、累積命中回数がリセットされます。"
     },
     {
       "uniqueEffectId": "UE_WildfireSpread",
@@ -1554,7 +1554,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "残骸压缩",
-      "effectDescription": "每击败一个敌人，攻击力提高{0}%。"
+      "effectDescription": "每击败一个敌人，攻击力提高{0}%。 最多叠加100层，攻击力最多提高50%。"
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -1989,12 +1989,12 @@
     {
       "uniqueEffectId": "UE_CoreBreakerArmorBreak",
       "effectName": "核心暴露",
-      "effectDescription": "{1}秒内以{0}次不同普通攻击命中同一敌人，使其防御降低{3}%，持续{2}秒。对首领降低{4}%，不可叠加。"
+      "effectDescription": "{1}秒内以{0}次不同普通攻击命中同一敌人，使其防御降低{3}%，持续{2}秒。对首领降低{4}%，不可叠加。 命中其他敌人时，累计命中次数会重置。"
     },
     {
       "uniqueEffectId": "UE_SuperRefrigerantFreeze",
       "effectName": "热量掠夺",
-      "effectDescription": "普通攻击使移动速度降至原本的{3}%，持续{2}秒。{1}秒内命中同一敌人{0}次可冻结{4}秒。每个目标的冻结间隔为{5}秒。首领仅受减速影响。"
+      "effectDescription": "普通攻击使移动速度降至原本的{3}%，持续{2}秒。{1}秒内命中同一敌人{0}次可冻结{4}秒。每个目标的冻结间隔为{5}秒。首领仅受减速影响。 命中其他敌人时，累计命中次数会重置。"
     },
     {
       "uniqueEffectId": "UE_WildfireSpread",
