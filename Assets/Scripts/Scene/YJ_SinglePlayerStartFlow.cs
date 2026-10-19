@@ -28,6 +28,9 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
     {
         if (lobbyController != null)
             lobbyController.StartGameRequested -= HandleStartGame;
+        // SW 수정: 튜토리얼 요청은 이번 캐릭터 선택 화면에서만 유효하다. 뒤로 나간 뒤 결과창의 다시 시작 등으로
+        // 이 화면에 다시 와도 새 게임으로 시작하게 한다.
+        TutorialEntry.ReplayRequested = false;
     }
 
     private void HandleStartGame(KY_CharacterId characterId)
@@ -73,6 +76,17 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
                 return;
         }
 
+        // SW 수정: 타이틀의 튜토리얼 메뉴에서 왔으면 새 게임을 만들지 않고 튜토리얼만 진행한 뒤 타이틀로 돌아간다.
+        if (TutorialEntry.ReplayRequested)
+        {
+            if (!TutorialEntry.TryEnter(dataManager, loader, character, "TitleScene"))
+                Debug.LogError("[YJ_SinglePlayerStartFlow] 튜토리얼을 시작하지 못했습니다. Tutorial 씬의 Build Settings 등록을 확인하세요.", this);
+            return;
+        }
+
+        // SW 수정: 최초 실행 판정은 새 게임이 이어할 런을 만들기 전에 한다.
+        bool firstRun = TutorialEntry.IsFirstRun(dataManager);
+
         // 저장 실패 시 씬을 이동하지 않습니다.
         if ( ! dataManager.BeginNewGame(character))
             return;
@@ -84,6 +98,11 @@ public class YJ_SinglePlayerStartFlow : MonoBehaviour
         Debug.Log($"[YJ_SinglePlayerStartFlow] 새 게임 캐릭터: {character}", this);
 
         KY_RunStatsTracker.Instance?.BeginRun(); // 결과창 데이터 집계용으로 추가
+
+        // SW 수정: 최초 실행이면 새 게임을 만든 뒤 튜토리얼을 거쳐 스테이지 선택으로 간다. 열지 못하면 바로 스테이지 선택으로 간다.
+        if (firstRun && TutorialEntry.TryEnter(dataManager, loader, character, stageSelectSceneName))
+            return;
+
         loader.LoadScene(stageSelectSceneName);
     }
 }

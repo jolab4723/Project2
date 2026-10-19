@@ -56,6 +56,12 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
 
     public event Action Completed;
     public event Action Skipped;
+    /// <summary>SW 수정: 외부 진행기가 표시한 단계에서 다음 버튼을 눌렀을 때 발행한다.</summary>
+    public event Action NextRequested;
+
+    // SW 수정: 외부 진행기(튜토리얼 러너)가 단계 목록 대신 문구를 직접 지정하는 중인지와 현재 하이라이트 대상.
+    private bool externalMode;
+    private RectTransform currentHighlight;
 
     private void Awake()
     {
@@ -119,8 +125,8 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (isOpen && currentStepIndex >= 0 && currentStepIndex < steps.Count)
-            UpdateSpotlight(steps[currentStepIndex].highlightTarget);
+        if (isOpen)
+            UpdateSpotlight(currentHighlight);
     }
 
     private void UpdateSpotlight(RectTransform target)
@@ -159,6 +165,7 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
             isTimeScaleOverridden = true;
         }
 
+        externalMode = false; // SW 수정: 단계 목록으로 다시 열면 외부 진행 상태를 해제한다.
         isOpen = true;
         SetVisible(true);
         ShowStep(0);
@@ -169,6 +176,12 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
     {
         if (!isOpen)
             return;
+
+        if (externalMode)
+        {
+            NextRequested?.Invoke();
+            return;
+        }
 
         int nextIndex = currentStepIndex + 1;
         if (nextIndex >= steps.Count)
@@ -198,9 +211,45 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
             return;
 
         isOpen = false;
+        externalMode = false;
+        currentHighlight = null;
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(true);
         currentStepIndex = -1;
         SetVisible(false);
         RestoreTimeScale();
+    }
+
+    /// <summary>
+    /// SW 수정: 외부 진행기가 문구·딤·하이라이트를 지정해 한 단계를 표시한다. 단계 목록은 쓰지 않으며,
+    /// 다음 버튼은 waitForNext일 때만 보이고 누르면 NextRequested를 발행한다.
+    /// 시간 정지는 pause인 단계에만 걸고, 행동을 기다리는 단계에서는 풀어 둔다.
+    /// </summary>
+    public void ShowExternalStep(string message, bool showDim, RectTransform highlightTarget, bool waitForNext, bool pause)
+    {
+        if (pause && !isTimeScaleOverridden)
+        {
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            isTimeScaleOverridden = true;
+        }
+        else if (!pause)
+        {
+            RestoreTimeScale();
+        }
+
+        externalMode = true;
+        isOpen = true;
+        currentStepIndex = -1;
+        SetVisible(true);
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(waitForNext);
+        ApplyStep(message, showDim, highlightTarget);
+        foreach (TutorialStep tutorialStep in steps)
+        {
+            if (tutorialStep.illustration != null)
+                tutorialStep.illustration.SetActive(false);
+        }
     }
 
     private void ShowStep(int stepIndex)
@@ -208,24 +257,31 @@ public sealed class KY_TutorialOverlay : MonoBehaviour
         currentStepIndex = stepIndex;
         TutorialStep step = steps[stepIndex];
 
-        if (guideText != null)
-            guideText.text = step.message;
-
-        if (dimLayer != null)
-            dimLayer.SetActive(step.showDim);
-
-        bool showHighlight = runtimeSpotlight == null && step.highlightTarget != null && circleHighlight != null;
-        if (highlightLayer != null)
-            highlightLayer.SetActive(showHighlight);
-        if (showHighlight)
-            PositionCircleHighlight(step.highlightTarget);
-        UpdateSpotlight(step.highlightTarget);
+        ApplyStep(step.message, step.showDim, step.highlightTarget);
 
         foreach (TutorialStep tutorialStep in steps)
         {
             if (tutorialStep.illustration != null)
                 tutorialStep.illustration.SetActive(tutorialStep == step);
         }
+    }
+
+    // SW 수정: 단계 목록과 외부 진행기가 함께 쓰는 문구·딤·하이라이트 표시.
+    private void ApplyStep(string message, bool showDim, RectTransform highlightTarget)
+    {
+        currentHighlight = highlightTarget;
+        if (guideText != null)
+            guideText.text = message;
+
+        if (dimLayer != null)
+            dimLayer.SetActive(showDim);
+
+        bool showHighlight = runtimeSpotlight == null && highlightTarget != null && circleHighlight != null;
+        if (highlightLayer != null)
+            highlightLayer.SetActive(showHighlight);
+        if (showHighlight)
+            PositionCircleHighlight(highlightTarget);
+        UpdateSpotlight(highlightTarget);
     }
 
     private void PositionCircleHighlight(RectTransform target)

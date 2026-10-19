@@ -14,6 +14,8 @@ public class KY_TitleSceneManager : MonoBehaviour
     [SerializeField] Button passiveSkillButton;
     [SerializeField] Button settingsButton;
     [SerializeField] Button quitButton;
+    // SW 수정: 튜토리얼 다시 하기. 캐릭터 선택 뒤 튜토리얼만 진행하고 타이틀로 돌아온다.
+    [SerializeField] Button tutorialButton;
     // SW 수정 : 로그인된 계정의 로그아웃은 타이틀에서 제공한다.
     [SerializeField] UnityEngine.UI.Button logoutButton;
 
@@ -45,6 +47,8 @@ public class KY_TitleSceneManager : MonoBehaviour
         passiveSkillButton.onClick.AddListener(OnPassiveSkillClicked);
         settingsButton.onClick.AddListener(OnSettingsClicked);
         quitButton.onClick.AddListener(OnQuitClicked);
+        if (tutorialButton != null)
+            tutorialButton.onClick.AddListener(OnTutorialClicked);
         if (logoutButton != null)
             logoutButton.onClick.AddListener(OnLogoutClicked);
 
@@ -73,6 +77,8 @@ public class KY_TitleSceneManager : MonoBehaviour
             settingsButton.onClick.RemoveListener(OnSettingsClicked);
         if (quitButton != null)
             quitButton.onClick.RemoveListener(OnQuitClicked);
+        if (tutorialButton != null)
+            tutorialButton.onClick.RemoveListener(OnTutorialClicked);
         if (logoutButton != null)
             logoutButton.onClick.RemoveListener(OnLogoutClicked);
         if (YJ_LanguageManager.Instance != null)
@@ -188,6 +194,9 @@ public class KY_TitleSceneManager : MonoBehaviour
         if (isMultiplayerEntryInProgress || loader == null || loader.IsLoading)
             return;
 
+        // SW 수정: 앞서 튜토리얼 메뉴로 캐릭터 선택에 갔다가 돌아왔어도 싱글 플레이는 새 게임으로 시작한다.
+        TutorialEntry.ReplayRequested = false;
+
         // WJ 이우진 추가(2026-10-06): 이어할 원정이 있으면 새 게임이 덮어쓰므로 먼저 확인한다(실제 덮어쓰기는 캐릭터 선택의 BeginNewGame).
         if (popupManager != null && HasContinuableRun())
         {
@@ -200,6 +209,16 @@ public class KY_TitleSceneManager : MonoBehaviour
             return;
         }
 
+        LoadSinglePlayerLobby();
+    }
+
+    /// <summary>SW 수정: 튜토리얼은 진행 중인 원정을 건드리지 않으므로 새 게임 확인 없이 캐릭터 선택으로 간다.</summary>
+    void OnTutorialClicked()
+    {
+        if (isMultiplayerEntryInProgress)
+            return;
+
+        TutorialEntry.ReplayRequested = true;
         LoadSinglePlayerLobby();
     }
 
@@ -373,6 +392,8 @@ public class KY_TitleSceneManager : MonoBehaviour
             settingsButton.interactable = !inProgress;
         if (quitButton != null)
             quitButton.interactable = !inProgress;
+        if (tutorialButton != null)
+            tutorialButton.interactable = !inProgress;
         if (logoutButton != null)
             logoutButton.interactable = !inProgress;
         RefreshContinueButton(); // WJ 이우진 추가(2026-10-06): 연결 중에는 이어하기도 막는다.

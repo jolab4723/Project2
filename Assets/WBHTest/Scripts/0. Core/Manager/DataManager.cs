@@ -25,6 +25,34 @@ namespace Core
         public bool IsGameplayReady =>
             loadedGameplaySceneHandle == UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
 
+        // SW 수정: 튜토리얼처럼 저장에 남기지 않는 격리 런. 켜져 있는 동안 선택 캐릭터는 이 값을 쓰고,
+        // 새 게임 초기화를 디스크에 쓰지 않으며, 런·퀘스트 저장과 크레딧 정산, 런 초기화를 건너뛴다.
+        private CharacterClass? isolatedRunCharacter;
+        private QuestSaveData questsBeforeIsolatedRun;
+        public bool IsIsolatedRun => isolatedRunCharacter.HasValue;
+
+        /// <summary>SW 수정: 격리 런을 시작하고 진행 중인 퀘스트 메모리 상태를 보관합니다.</summary>
+        public bool BeginIsolatedRun(CharacterClass character)
+        {
+            if (IsIsolatedRun || (character != CharacterClass.Fighter && character != CharacterClass.Gunner))
+                return false;
+            questsBeforeIsolatedRun = QuestManager.Instance != null ? QuestManager.Instance.GetSaveData() : null;
+            isolatedRunCharacter = character;
+            return true;
+        }
+
+        /// <summary>SW 수정: 격리 런을 끝내고 시작 전 퀘스트 메모리 상태로 되돌립니다.</summary>
+        public void EndIsolatedRun()
+        {
+            if (!IsIsolatedRun)
+                return;
+            isolatedRunCharacter = null;
+            loadedGameplaySceneHandle = -1;
+            if (QuestManager.Instance != null && questsBeforeIsolatedRun != null)
+                QuestManager.Instance.ApplySaveData(questsBeforeIsolatedRun);
+            questsBeforeIsolatedRun = null;
+        }
+
         private const string GameplaySaveFileName = "gamesave.json";
         private const string InventorySaveFileName = "inventory.json";
         private const string PlayerStatusSaveFileName = "playerstatus.json";
@@ -626,6 +654,11 @@ namespace Core
         /// </summary>
         public bool SettleRunCredits(RunEndReason reason)
         {
+            if (IsIsolatedRun)
+            {
+                Debug.LogWarning("[DataManager] 격리 런은 크레딧을 정산하지 않습니다.");
+                return false;
+            }
             PlayerProfileData profile = PassiveSkillManager.Instance?.CurrentProfile ?? LoadSinglePlayerSlot()?.profile;
             if (profile == null)
             {
@@ -703,6 +736,8 @@ namespace Core
 
         private bool TrySaveGameplayData(string completedUnknownBattleKey = null)
         {
+            if (IsIsolatedRun)
+                return false;
             if ( ! TryGetGameplayPlayer(out var stats, out var health, out _) || stats.Stat == null
                                                                               || stats.Stat.currentLevel < 1
                                                                               || health.MaxHealth <= 0f)
@@ -1418,7 +1453,8 @@ namespace Core
             GameSaveData data;
             try
             {
-                data = ReadJson<GameSaveData>(path);
+                // SW 수정: 격리 런은 저장을 읽지 않고 항상 새 게임 상태로 시작한다.
+                data = IsIsolatedRun ? null : ReadJson<GameSaveData>(path);
             }
             catch (System.Exception exception)
             {
@@ -1426,7 +1462,7 @@ namespace Core
                 return false;
             }
 
-            if (data == null && File.Exists(path))
+            if (data == null && File.Exists(path) && !IsIsolatedRun)
             {
                 Debug.LogError("[DataManager] 저장 파일의 내용이 유효하지 않습니다.");
                 return false;
@@ -1439,7 +1475,7 @@ namespace Core
 
             if (isNewGame)
             {
-                CharacterClass character = data != null ? data.selectedCharacter : CharacterClass.Fighter;
+                CharacterClass character = isolatedRunCharacter ?? (data != null ? data.selectedCharacter : CharacterClass.Fighter);
 
                 if (character != CharacterClass.Fighter && character != CharacterClass.Gunner)
                 {
@@ -1534,7 +1570,8 @@ namespace Core
 
                 try
                 {
-                    WriteJson(path, data);
+                    if (!IsIsolatedRun)
+                        WriteJson(path, data);
                 }
                 catch (System.Exception exception)
                 {
@@ -1561,6 +1598,12 @@ namespace Core
         [ContextMenu("선택 캐릭터로 새 게임을 생성하는 메서드")]
         public bool BeginNewGame(CharacterClass character)
         {
+            // SW 수정: 격리 런 중에는 진행 중인 실제 런을 새 게임으로 덮어쓰지 않는다.
+            if (IsIsolatedRun)
+            {
+                Debug.LogWarning("[DataManager] 격리 런 중에는 새 게임을 만들지 않습니다.");
+                return false;
+            }
             if (character != CharacterClass.Fighter && character != CharacterClass.Gunner)
             {
                 Debug.LogError($"[DataManager] 지원하지 않는 캐릭터입니다: {character}");
@@ -1604,6 +1647,11 @@ namespace Core
         public bool TryGetSavedCharacter(out CharacterClass character)
         {
             character = CharacterClass.Fighter;
+            if (isolatedRunCharacter.HasValue)
+            {
+                character = isolatedRunCharacter.Value;
+                return true;
+            }
             string path = GetSavePath(GameplaySaveFileName);
 
             // 전투 씬 직접 실행 테스트: 저장 파일이 없으면 Fighter 사용
@@ -2265,7 +2313,7 @@ namespace Core
                 return;
             }
 
-            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || IsRestoringGameplay)
+            if (Mirror.NetworkClient.active || Mirror.NetworkServer.active || IsRestoringGameplay || IsIsolatedRun)
                 return;
 
             // WJ 이우진 수정(2026-10-07): 전투 스테이지 안에서는 디스크 저장을 미룬다. 진행도·보상은 메모리에 남고

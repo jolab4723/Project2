@@ -72,7 +72,8 @@ public class KY_HUDAnimator : MonoBehaviour
 
     IEnumerator DelayedSlideIn()
     {
-        yield return new WaitForSeconds(delay);
+        // SW 수정: 시간이 멈춘 화면(튜토리얼 안내, 일시정지)에서도 등장 연출이 끝나도록 실제 시간을 쓴다.
+        yield return new WaitForSecondsRealtime(delay);
         SlideIn();
     }
 
@@ -95,7 +96,7 @@ public class KY_HUDAnimator : MonoBehaviour
             rectTransform.anchoredPosition = Vector2.Lerp(
                 rectTransform.anchoredPosition,
                 target,
-                Time.deltaTime * slideSpeed
+                Time.unscaledDeltaTime * slideSpeed
             );
             yield return null;
         }

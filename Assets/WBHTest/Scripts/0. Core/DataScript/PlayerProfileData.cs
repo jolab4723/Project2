@@ -25,6 +25,8 @@ namespace Core
         public string lastPlayedUtc; // DateTime.UtcNow.ToString("O") 형태로 저장
         /// <summary>SW 수정: 마지막 런 정산을 재전송받아도 크레딧을 한 번만 반영합니다.</summary>
         public string lastRunSettlementId;
+        /// <summary>SW 수정: 튜토리얼을 완료하거나 건너뛰었는지. 최초 실행 자동 진입 판정에만 사용합니다.</summary>
+        public bool tutorialCompleted;
 
         /// <summary>
         /// 양수 크레딧을 영구 보유량에 더합니다. 음수와 int 범위를 넘는 값은 적용하지 않습니다.
