@@ -69,8 +69,9 @@ public class WBH_EffectSpawner : MonoBehaviour
     public void SpawnEffect(WBH_EffectData data,
                             Vector3 position, 
                             Quaternion rotation,
-                            Vector3 scaleMultiplier, 
-                            float playbackSpeed = 1f)
+                            Vector3 scaleMultiplier,
+                            float playbackSpeed = 1f,
+                            Transform owner = null)
     {
         if (!ValidateRequest(data))
             return;
@@ -86,14 +87,15 @@ public class WBH_EffectSpawner : MonoBehaviour
         effect.transform.SetPositionAndRotation(position, rotation);
         effectTransform.localScale = Vector3.Scale(effectTransform.localScale, scaleMultiplier);
 
-        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera);
+        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera, owner: owner);
     }
 
     // 부착형 이펙트 스케일 조정을 위한 오버로딩
     public void SpawnEffect(WBH_EffectData data, 
                             Transform attachTarget,
-                            Vector3 scaleMultiplier, 
-                            float playbackSpeed = 1f)
+                            Vector3 scaleMultiplier,
+                            float playbackSpeed = 1f,
+                            Transform owner = null)
     {
         if (!ValidateRequest(data))
             return;
@@ -115,7 +117,7 @@ public class WBH_EffectSpawner : MonoBehaviour
             effect.transform.SetParent(null, true);
         }
 
-        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera);
+        effect.Play(data, autoReturn: true, attackSpeed: playbackSpeed, viewCamera: billboardCamera, owner: owner);
     }
 
     // 상태이상 같은 일정시간 동안 지속형 이펙트

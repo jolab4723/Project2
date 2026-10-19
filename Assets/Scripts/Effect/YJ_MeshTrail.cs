@@ -9,41 +9,36 @@ public class YJ_MeshTrail : MonoBehaviour
     [SerializeField] private float meshRefreshRate = 0.1f;
     [SerializeField] private float meshDestroyDelay = 0.5f;
 
-    private bool hasStarted;
+    private bool pendingPlay;
 
-    private void Awake()
-    {
-        FindPlayer();
-    }
-
-    private void Start()
-    {
-        hasStarted = true;
-        PlayTrail();
-    }
-
+    // SW 수정: 이펙트 풀은 켠 뒤에 시전자를 넘겨 Play하므로, 같은 프레임의 LateUpdate에서 대상을 정하고 재생한다.
     private void OnEnable()
     {
-        if (hasStarted)
-            PlayTrail();
+        pendingPlay = true;
+    }
+
+    private void LateUpdate()
+    {
+        if (!pendingPlay)
+            return;
+
+        pendingPlay = false;
+        PlayTrail();
     }
 
     private void PlayTrail()
     {
-        if (meshTrailTut == null)
-            FindPlayer();
+        FindPlayer();
 
         meshTrailTut?.Trail(mat, activeTime, meshRefreshRate, meshDestroyDelay);
     }
 
+    // SW 수정: 첫 번째 T_PlayerController는 멀티에서 원격 플레이어일 수 있고 풀링된 이펙트에 계속 남으므로,
+    // 재생할 때마다 이 이펙트를 재생한 시전자(WBH_Effect.Owner)에게 잔상을 붙인다. 시전자가 없으면 재생하지 않는다.
     private void FindPlayer()
     {
-        T_PlayerController playerController = FindFirstObjectByType<T_PlayerController>();
-
-        if (playerController == null)
-            return;
-
-        player = playerController.gameObject;
-        meshTrailTut = player.GetComponentInChildren<YJ_MeshTrailTut>(true);
+        Transform owner = GetComponentInParent<WBH_Effect>()?.Owner;
+        player = owner != null ? owner.gameObject : null;
+        meshTrailTut = owner != null ? owner.GetComponentInChildren<YJ_MeshTrailTut>(true) : null;
     }
 }

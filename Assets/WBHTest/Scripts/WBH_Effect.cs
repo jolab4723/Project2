@@ -4,6 +4,8 @@ using UnityEngine;
 public class WBH_Effect : MonoBehaviour
 {
     public bool IsPlaying { get; private set;}
+    // SW 수정: 이 이펙트를 재생한 시전자. 잔상처럼 시전자에게 붙는 연출이 첫 번째 플레이어 대신 이 값을 쓴다.
+    public Transform Owner { get; private set; }
     private Camera billboardCamera;
     public WBH_EffectData Data => effectData;
     private WBH_EffectPoolManager poolManager;
@@ -38,11 +40,13 @@ public class WBH_Effect : MonoBehaviour
         this.poolManager = poolManager;
     }
 
-    public void Play(WBH_EffectData data, bool autoReturn = true, float attackSpeed = 1f, Camera viewCamera = null) 
+    public void Play(WBH_EffectData data, bool autoReturn = true, float attackSpeed = 1f, Camera viewCamera = null, Transform owner = null)
     {
         if (data == null)
             return;
 
+        // 풀에서 재사용될 때 이전 시전자가 남지 않도록 재생마다 갱신한다.
+        Owner = owner;
         effectData = data;
         IsPlaying = true;
 

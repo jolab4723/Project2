@@ -129,15 +129,16 @@ public class WBH_PlayerEffect : MonoBehaviour
                     Vector3 position = binding.anchor.TransformPoint(binding.data.localPos);
                     Quaternion rotation = binding.anchor.rotation * Quaternion.Euler(binding.data.localRot);
 
-                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale, PlaybackSpeed);
-                    
+                    // SW 수정: 시전자를 함께 넘겨 잔상 등 시전자 대상 연출이 다른 플레이어에 붙지 않게 한다.
+                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale, PlaybackSpeed, transform);
+
                     break;
                 }
 
             case EffectAttachType.AttachOnce:
 
             case EffectAttachType.Follow:
-                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed);
+                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed, transform);
                 break;
         }
     }
@@ -203,7 +204,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         Vector3 spawnPos = position + rotation * binding.data.localPos;
         Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
 
-        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed);
+        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed, transform);
     }
 
     // --- 애니메이션 이벤트 연결용

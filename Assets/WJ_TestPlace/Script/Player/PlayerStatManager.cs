@@ -365,6 +365,11 @@ public class PlayerStatManager : MonoBehaviour
             manaManager?.FillMana();
         }
 
+        // SW 수정: 전역 HUD 이벤트는 로컬 플레이어(Instance)만 발행한다. Host 서버가 원격 플레이어에게
+        // 경험치를 줄 때 Host HUD에 섞이지 않게 하기 위함이며, 멀티 로컬 HUD는 PlayerHudEventBridge가 OnStatChanged로 갱신한다.
+        if (Instance != this)
+            return;
+
         // expToNext가 0이면 더 올릴 레벨이 없는 만렙 상태 - 0으로 나누기를 피하려고 바를 꽉 찬 것으로 표시.
         if (expToNext > 0f)
             KY_GameEvents.ExpChanged(Stat.currentExp, expToNext);

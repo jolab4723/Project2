@@ -749,7 +749,8 @@ public class WBH_EnemyCombat : MonoBehaviour
     {
         areaHitTargets.Clear();
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, range, pattern.PlayerLayer, QueryTriggerInteraction.Ignore);
+        // SW 수정: 플레이어 루트 콜라이더가 트리거라 Ignore로는 부채꼴·화염 공격이 맞지 않았다. 다른 범위 공격처럼 트리거를 포함한다.
+        Collider[] hits = Physics.OverlapSphere(transform.position, range, pattern.PlayerLayer, QueryTriggerInteraction.Collide);
 
         foreach(Collider hit in hits)
         {
