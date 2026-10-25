@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -117,6 +118,315 @@ public static class SkillLinkBuildValidation
             log.Add("regression: Basic-only trigger ignores Skill, fires on Direct");
         }
         return JsonConvert.SerializeObject(log);
+    }
+
+    /// <summary>SW 수정: 실제 스킬 적중으로 빙결·감전이 새로 걸릴 때만 시작 연출이 한 번 나오는지 보고, 전투 카메라 화면을 저장한다.</summary>
+    public static async Task<string> RunStatusOnsetCombat(string captureFolder = @"I:\git\Project2-test\ArtSource\VFX_StatusOnset_20261025")
+    {
+        var log = new List<string>();
+        using (var scope = await PreparePlayer(CharacterClass.Fighter))
+        {
+            foreach (var (element, status, vfx) in new[]
+            {
+                (ElementType.Ice, WBH_StatusEffectType.Freeze, "UEVFX_FreezeOnset"),
+                (ElementType.Electric, WBH_StatusEffectType.Electric, "UEVFX_ElectricOnset"),
+            })
+            {
+                PlayerContext context = scope.Context;
+                scope.Equip(Definition("item.weapon.blunt.hydraulicpiledriver"), EquipSlotType.Weapon, element);
+                var enemy = scope.Spawn(context.transform.position + context.transform.forward * 2f);
+                var statuses = enemy.GetComponent<WBH_StatusEffectController>();
+                await Cast(context, 0, enemy);
+                Require(statuses.HasStatusEffect(status), $"{element} 무기 스킬 적중이 {status}를 걸지 않음");
+                int first = CountVfx(vfx);
+                Require(first == 1, $"{vfx} 시작 연출 수={first}");
+                for (int i = 0; i < 4; i++)
+                {
+                    Capture(Path.Combine(captureFolder, $"{vfx}_{i}.png"));
+                    await Task.Delay(180);
+                }
+
+                // 스킬 쿨타임 동안 상태가 끝나므로, 걸려 있는 동안 원격 상태 재동기화와 같은 재생 요청을 다시 보내 중복이 없는지 본다.
+                string refresh = "expired before recheck";
+                if (statuses.HasStatusEffect(status))
+                {
+                    refresh = "resync no repeat";
+                    int before = CountVfx(vfx);
+                    ((WBH_EnemyStatusEffectController)statuses).PlayStatusEffect(status, EnemyGrade.Normal);
+                    Require(CountVfx(vfx) == before, $"{vfx} 이미 걸린 상태의 재생 요청에서 시작 연출이 중복됨");
+                }
+                log.Add($"{element} skill hit -> {status}, onset {vfx} x{first}, {refresh}, hp {enemy.Status.CurrentHp:F0}/{enemy.Status.MaxHealth:F0}");
+                await scope.Reset();
+            }
+        }
+        return JsonConvert.SerializeObject(log);
+    }
+
+    /// <summary>
+    /// SW 추가: 거너 무기 3종을 같은 공격력(24, 고급, 무속성·고유효과 없음)과 치명타 없음으로 비교한다.
+    /// 1) 정지 표적 1기·5기 무리에 8초 사격 2) 무적 플레이어가 실제 AI 적 8기를 처치하는 시간 3) 소총 공속 버프별 실제 발사 수.
+    /// </summary>
+    public static Task<string> MeasureRifle() => MeasureGunnerWeapons("rifle");
+
+    public static async Task<string> MeasureGunnerWeapons(string only = null)
+    {
+        var log = new List<string>();
+        var weapons = new[] { "item.weapon.rifle.railcarbine", "item.weapon.shotgun.thermobarrel", "item.weapon.grenadelauncher.pulsecask" };
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            foreach (string id in weapons.Where(w => only == null || w.Contains(only)))
+            {
+                foreach (int pack in new[] { 1, 5 })
+                {
+                    var (context, combat) = await PrepareGunnerWeapon(scope, id);
+                    Vector3 f = context.transform.forward, r = context.transform.right, c = context.transform.position + f * 6f;
+                    Vector3[] offsets = pack == 1 ? new[] { Vector3.zero }
+                        : new[] { Vector3.zero, r * 1.2f, -r * 1.2f, f * 1.2f + r * 0.6f, f * 1.2f - r * 0.6f };
+                    var records = offsets.Select(o => Record(scope.Spawn(c + o))).ToList();
+                    float t0 = Time.time;
+                    while (Time.time - t0 < 8f) { combat.RequestAttack(c); await Task.Yield(); }
+                    await Task.Delay(1500);   // 마지막 유탄·탄환 도착 대기
+                    var hits = records.SelectMany(l => l).Where(x => x.DamageCause == DamageCause.Direct).ToList();
+                    float total = hits.Sum(x => x.FinalDamage);
+                    int shots = hits.Select(x => x.AttackId).Distinct().Count();
+                    log.Add($"{Short(id)} targets={pack}: shots={shots} ({shots / 8f:F2}/s), hits={hits.Count}, total={total:F0}, DPS={total / 8f:F1}, dmg/hit={total / Math.Max(1, hits.Count):F1}, AS={context.GetComponent<WBH_PlayerStatus>().AttackSpeed:F2}, range={context.GetComponent<WBH_PlayerStatus>().GunnerAttackRange:F1}");
+                }
+
+                // 실제 AI 적 8기(실제 체력)를 둘러 세우고 무적 상태로 가장 가까운 적을 계속 쏜다.
+                {
+                    var (context, combat) = await PrepareGunnerWeapon(scope, id);
+                    var health = context.Health;
+                    float taken = 0f;
+                    Action<float> onTaken = a => taken += a;
+                    health.OnDamageTaken += onTaken;
+                    var foes = new List<WBH_EnemyController>();
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float angle = (i / 8f) * Mathf.PI * 2f;
+                        float radius = 8f + (i % 2) * 2f;
+                        var foe = scope.Spawn(context.transform.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius, 0f);
+                        foe.enabled = true;
+                        foe.GetComponent<WBH_EnemyMovement>().SetControlEnable(true);
+                        foes.Add(foe);
+                    }
+                    float hpEach = foes[0].Status.MaxHealth;
+                    var recs = foes.Select(Record).ToList();
+                    float t0 = Time.time, killed = -1f;
+                    while (Time.time - t0 < 45f)
+                    {
+                        health.SetCurrentHealth(health.MaxHealth);   // 무적: 피해는 기록하되 죽지 않게 매 프레임 채운다
+                        var alive = foes.Where(e => e != null && e.gameObject.activeInHierarchy && !e.Status.IsDead).ToList();
+                        if (alive.Count == 0) { killed = Time.time - t0; break; }
+                        var nearest = alive.OrderBy(e => (e.transform.position - context.transform.position).sqrMagnitude).First();
+                        combat.RequestAttack(nearest.transform.position);
+                        await Task.Yield();
+                    }
+                    health.OnDamageTaken -= onTaken;
+                    int shots = recs.SelectMany(l => l).Where(x => x.DamageCause == DamageCause.Direct).Select(x => x.AttackId).Distinct().Count();
+                    int dead = foes.Count(e => e == null || !e.gameObject.activeInHierarchy || e.Status.IsDead);
+                    log.Add($"{Short(id)} live 8 foes (hp {hpEach:F0} each): killed {dead}/8 in {(killed < 0f ? ">45" : killed.ToString("F1"))}s, shots={shots}, damage taken={taken:F0}");
+                }
+            }
+
+            // 소총 공속 버프별 실제 초당 발사 수(애니메이션 한 번에 한 발인 현재 구조의 한계 확인)
+            foreach (float bonus in new[] { 0f, 100f, 200f, 300f })
+            {
+                var (context, combat) = await PrepareGunnerWeapon(scope, weapons[0]);
+                if (bonus > 0f)
+                {
+                    var haste = ScriptableObject.CreateInstance<BuffDefinitionSO>();
+                    haste.name = "Measure haste"; haste.duration = 0f;
+                    haste.statEffects = new[] { new FixedStatValue { statType = StatType.attackSpeedPercent, value = bonus } };
+                    context.GetComponent<PlayerBuffManager>().ApplyBuff(haste);
+                    await Task.Delay(100);
+                }
+                Vector3 c = context.transform.position + context.transform.forward * 6f;
+                var rec = Record(scope.Spawn(c));
+                float t0 = Time.time;
+                while (Time.time - t0 < 4f) { combat.RequestAttack(c); await Task.Yield(); }
+                await Task.Delay(800);
+                int shots = rec.Where(x => x.DamageCause == DamageCause.Direct).Select(x => x.AttackId).Distinct().Count();
+                log.Add($"rifle haste +{bonus:F0}%: AS={context.GetComponent<WBH_PlayerStatus>().AttackSpeed:F2}, {shots / 4f:F2} shots/s");
+            }
+        }
+        return JsonConvert.SerializeObject(log);
+    }
+
+    /// <summary>SW 추가: 라이플을 누르고 있는 동안 발마다 공격 클립이 다시 재생되는지 기록하고 전투 카메라 연속 화면을 저장한다.</summary>
+    public static async Task<string> RunRifleFireCapture(string captureFolder = @"I:\git\Project2-test\ArtSource\RifleAutoFire_20261025")
+    {
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            var (context, combat) = await PrepareGunnerWeapon(scope, "item.weapon.rifle.railcarbine");
+            Vector3 c = context.transform.position + context.transform.forward * 6f;
+            var rec = Record(scope.Spawn(c));
+            var animator = context.GetComponent<Animator>();
+            var weapon = context.GetComponentInChildren<GunnerWeaponVfxBinding>().transform;
+            Vector3 weaponBase = weapon.localPosition;
+            int restarts = 0, frozenFrames = 0, holdFrames = 0; float lastTime = -1f, maxKick = 0f;
+            float t0 = Time.time; int frame = 0; float nextCapture = 0.5f;
+            while (Time.time - t0 < 1.5f)
+            {
+                combat.RequestAttack(c);
+                await Task.Yield();
+                var info = animator.GetCurrentAnimatorStateInfo(0);
+                if (Time.time - t0 > 0.3f && info.IsName("Attack"))
+                {
+                    holdFrames++;
+                    if (animator.GetFloat("AttackSpeed") == 0f) frozenFrames++;
+                    if (info.normalizedTime < lastTime - 0.01f) restarts++;
+                    maxKick = Mathf.Max(maxKick, (weapon.localPosition - weaponBase).magnitude);
+                }
+                lastTime = info.IsName("Attack") ? info.normalizedTime : -1f;
+                if (Time.time - t0 >= nextCapture && frame < 6) { Capture(Path.Combine(captureFolder, $"hold_{frame++}.png")); nextCapture += 0.04f; }
+            }
+            float pose = animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+            await Task.Delay(700);
+            int shots = rec.Where(x => x.DamageCause == DamageCause.Direct).Select(x => x.AttackId).Distinct().Count();
+            return $"1.5s hold: shots={shots} ({shots / 1.5f:F1}/s), frozen {frozenFrames}/{holdFrames} frames at pose {pose:F2}, clip restarts={restarts}, max weapon kick={maxKick * 100f:F1}cm(local), " +
+                $"after release: state={context.GetComponent<WBH_PlayerStateMachine>().CurrentState}, AttackSpeed={animator.GetFloat("AttackSpeed"):F2}, weapon back={(weapon.localPosition - weaponBase).magnitude < 0.0001f}";
+        }
+    }
+
+    /// <summary>SW 추가: 연사 중 취소(Idle 전환)·짧은 멈춤 뒤 다시 누를 때 두 발이 붙어 나가지 않는지 발사 시각 간격으로 본다.</summary>
+    public static async Task<string> RunRifleCancelSpacing()
+    {
+        var log = new List<string>();
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            foreach (float pause in new[] { 0.02f, 0.05f, 0.08f, 0.11f, 0.2f })
+            {
+                var (context, combat) = await PrepareGunnerWeapon(scope, "item.weapon.rifle.railcarbine");
+                var state = context.GetComponent<WBH_PlayerStateMachine>();
+                Vector3 c = context.transform.position + context.transform.forward * 6f;
+                var times = new List<float>();
+                var fired = new List<float>();
+                scope.Spawn(c).GetComponent<WBH_EnemyStatus>().OnDamaged += r => { if (r.DamageCause == DamageCause.Direct) times.Add(Time.time); };
+                for (int burst = 0; burst < 4; burst++)
+                {
+                    float t0 = Time.time;
+                    while (Time.time - t0 < 0.35f)
+                    {
+                        float before = Read<float>(combat, "nextRifleShotAt");
+                        combat.RequestAttack(c);
+                        if (Read<float>(combat, "nextRifleShotAt") != before) fired.Add(Time.time);   // 실제 발사 시각
+                        await Task.Yield();
+                    }
+                    if (state.Is(PlayerState.Attack)) state.ChangeState(PlayerState.Idle);   // 이동 등으로 공격 취소
+                    float p0 = Time.time;
+                    while (Time.time - p0 < pause) await Task.Yield();
+                }
+                await Task.Delay(800);
+                var gaps = times.Zip(times.Skip(1), (a, b) => b - a).ToList();
+                float interval = T_PlayerCombat.RifleShotInterval(context.GetComponent<WBH_PlayerStatus>().AttackSpeed);
+                var fireGaps = fired.Zip(fired.Skip(1), (a, b) => b - a).ToList();
+                log.Add($"pause {pause:F2}s: fired={fired.Count}, hits={times.Count}, fire min gap={fireGaps.Min():F3}s, hit min gap={gaps.Min():F3}s (interval {interval:F3}), fire gaps<half={fireGaps.Count(g => g < interval * 0.5f)}");
+            }
+        }
+        return JsonConvert.SerializeObject(log);
+    }
+
+    /// <summary>SW 추가: 연사 중 조준 회전이 매 프레임 따라가는지, 발마다 발사음이 나는지, 손을 뗀 뒤 기본 모션 복귀 시간을 잰다.</summary>
+    public static async Task<string> RunRifleFeelCheck()
+    {
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            var (context, combat) = await PrepareGunnerWeapon(scope, "item.weapon.rifle.railcarbine");
+            var animator = context.GetComponent<Animator>();
+            var state = context.GetComponent<WBH_PlayerStateMachine>();
+            var sfx = Object.FindFirstObjectByType<YJ_SfxPlayer>();
+            var sources = Read<AudioSource[]>(sfx, "sources");
+            Vector3 center = context.transform.position;
+            scope.Spawn(center + context.transform.forward * 6f);
+            int shots = 0, sounds = 0, rotatedFrames = 0, aimFrames = 0;
+            float maxStep = 0f, lastYaw = context.transform.eulerAngles.y;
+            var wasPlaying = new HashSet<AudioSource>(sources.Where(a => a.isPlaying));
+            float t0 = Time.time;
+            while (Time.time - t0 < 2f)
+            {
+                // 2초에 반 바퀴, 마우스를 계속 돌리는 조준
+                float angle = (Time.time - t0) * 90f;
+                Vector3 aim = center + Quaternion.Euler(0f, angle, 0f) * Vector3.forward * 6f;
+                float before = Read<float>(combat, "nextRifleShotAt");
+                combat.RequestAttack(aim);
+                if (Read<float>(combat, "nextRifleShotAt") != before) shots++;
+                await Task.Yield();
+                float yaw = context.transform.eulerAngles.y;
+                float step = Mathf.Abs(Mathf.DeltaAngle(lastYaw, yaw));
+                lastYaw = yaw; aimFrames++;
+                if (step > 0.01f) rotatedFrames++;
+                maxStep = Mathf.Max(maxStep, step);
+                foreach (var a in sources)
+                {
+                    if (a.isPlaying && !wasPlaying.Contains(a)) { sounds++; wasPlaying.Add(a); }
+                    else if (!a.isPlaying) wasPlaying.Remove(a);
+                    else if (a.time < 0.03f && wasPlaying.Contains(a) && a.timeSamples > 0 && a.time < Time.deltaTime) sounds++;   // 같은 소스 재사용
+                }
+            }
+            float released = Time.time;
+            float idleAt = -1f, locomotionAt = -1f;
+            while (Time.time - released < 1.5f && (idleAt < 0f || locomotionAt < 0f))
+            {
+                await Task.Yield();
+                if (idleAt < 0f && state.Is(PlayerState.Idle)) idleAt = Time.time - released;
+                var info = animator.GetCurrentAnimatorStateInfo(0);
+                if (locomotionAt < 0f && !animator.IsInTransition(0) && info.IsName("Locomotion")) locomotionAt = Time.time - released;
+            }
+            return $"rotate: {rotatedFrames}/{aimFrames} frames turned, max step {maxStep:F1}deg; shots={shots}, new sfx plays={sounds} (voices {sources.Length}); release: Idle after {idleAt:F2}s, Locomotion pose after {locomotionAt:F2}s, AttackSpeed={animator.GetFloat("AttackSpeed"):F2}";
+        }
+    }
+
+    private static async Task<(PlayerContext, T_PlayerCombat)> PrepareGunnerWeapon(PlayerScope scope, string itemId)
+    {
+        await scope.Reset();
+        scope.NoCritical();
+        var item = scope.Equip(Definition(itemId), EquipSlotType.Weapon);
+        await scope.WaitVisual(item);
+        return (scope.Context, scope.Context.GetComponent<T_PlayerCombat>());
+    }
+
+    private static string Short(string itemId) => itemId.Substring("item.weapon.".Length);
+
+    /// <summary>SW 추가: 실제 회복 포션 사용이 체력을 채우고 회복 연출을 한 번 재생하는지 보고 전투 카메라 화면을 저장한다.</summary>
+    public static async Task<string> RunPotionHeal(string captureFolder = @"I:\git\Project2-test\ArtSource\VFX_StatusOnset_20261025")
+    {
+        using (var scope = await PreparePlayer(CharacterClass.Gunner))
+        {
+            PlayerContext context = scope.Context;
+            scope.Equip(Definition("item.potion.red"), EquipSlotType.Potion);
+            var potions = context.GetComponent<PotionUseManager>();
+            var presentation = context.GetComponent<UniqueEffectPresentation>();
+            Require(potions != null && presentation != null, "포션 매니저 또는 연출 컴포넌트 없음");
+            potions.RechargeAllPotions();
+            context.Health.TakeDamage(context.Health.MaxHealth * 0.6f);
+            float before = context.Health.CurrentHealth;
+            int presented = presentation.PresentedHealCount;
+            Require(potions.TryUsePotion(), "회복 포션 사용 실패");
+            Require(context.Health.CurrentHealth > before, "포션을 써도 체력이 오르지 않음");
+            Require(presentation.PresentedHealCount == presented + 1 && CountVfxChildren(context.transform, "UEVFX_PotionHeal") == 1, "회복 연출이 한 번 재생되지 않음");
+            for (int i = 0; i < 4; i++) { Capture(Path.Combine(captureFolder, $"UEVFX_PotionHeal_{i}.png")); await Task.Delay(300); }
+            return $"potion heal {before:F0}->{context.Health.CurrentHealth:F0}/{context.Health.MaxHealth:F0}, heal vfx x1 attached to player";
+        }
+    }
+
+    private static int CountVfxChildren(Transform root, string prefabName) =>
+        root.GetComponentsInChildren<Transform>(true).Count(t => t.name == prefabName + "(Clone)");
+
+    private static int CountVfx(string prefabName) =>
+        // 표시 전용 연출은 DontSave라 FindObjectsByType에 잡히지 않으므로 씬에 있는 전체 오브젝트에서 센다.
+        Resources.FindObjectsOfTypeAll<GameObject>().Count(g => g.scene.IsValid() && g.transform.parent == null && g.name == prefabName + "(Clone)");
+
+    private static void Capture(string path)
+    {
+        Camera cam = Camera.main;
+        var rt = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
+        var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+        RenderTexture old = cam.targetTexture;
+        cam.targetTexture = rt; cam.Render(); cam.targetTexture = old;
+        RenderTexture.active = rt; tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); tex.Apply(); RenderTexture.active = null;
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        UnityEngine.Object.Destroy(rt); UnityEngine.Object.Destroy(tex);
     }
 
     /// <summary>SW 수정: 처치 시 쿨타임 감소, 표식 추가 피해, 원소 공명을 실제 피해 경계로 검사한다.</summary>
@@ -459,7 +769,7 @@ public static class SkillLinkBuildValidation
             var provider = Object.FindFirstObjectByType<WBH_EnemyDataProvider>();
             var pool = Object.FindFirstObjectByType<WBH_EnemyPoolManager>();
             Require(provider.TryCreateEnemyInfo(EnemyId, new WBH_EnemyStatContext(1, "normal", 1), out WBH_EnemyInfo info), "적 데이터 없음");
-            info = info.Clone(); info.maxHP = hp;
+            info = info.Clone(); if (hp > 0f) info.maxHP = hp;   // hp<=0이면 실제 적 체력 유지
             var enemy = pool.Get(EnemyId);
             enemies.Add(enemy);
             enemy.transform.SetPositionAndRotation(position, Quaternion.identity);
