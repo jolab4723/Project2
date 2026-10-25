@@ -312,6 +312,9 @@ public class WBH_EnemyStatusEffectController : WBH_StatusEffectController
             scale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
             scale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z))));
         activeEffects.Add(type, effect);
+
+        // SW 수정: 지속 이펙트가 새로 생길 때만 빙결·감전 시작 연출을 한 번 재생한다(원격 표시도 이 경로를 지난다).
+        EnemyStatusOnsetVfx.Play(type, transform.position, scale);
     }
 
     public override void StopStatusEffect(WBH_StatusEffectType type)
