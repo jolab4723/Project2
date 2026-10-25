@@ -64,6 +64,12 @@ namespace DataSystem
         /// </summary>
         public string duplicatePolicy;
 
+        /// <summary>SW 추가: OnDamageDealt·OnCrit이 반응할 피해 출처. Basic(빈 칸 기본) / Skill / Any. TriggeredBuff에서만 쓴다.</summary>
+        public string hitSource;
+
+        /// <summary>SW 추가: OnSkillCast가 반응할 스킬 슬롯(1~4). 0(빈 칸)은 모든 슬롯. TriggeredBuff에서만 쓴다.</summary>
+        public int skillSlot;
+
         /// <summary>장비 해제 후 다시 장착해도 스택을 아이템에 보존할지 여부. TriggeredBuff에서만 쓴다.</summary>
         public bool persistStackOnItem;
 

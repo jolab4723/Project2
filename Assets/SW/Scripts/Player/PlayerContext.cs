@@ -51,6 +51,17 @@ public sealed class PlayerContext : MonoBehaviour
     public T_PlayerCombat Combat => combat;
     public WBH_PlayerStateMachine StateMachine => stateMachine;
 
+    /// <summary>SW 추가: 이 플레이어의 스킬 컨트롤러. 멀티는 권한 래퍼, 싱글은 원본 컨트롤러이며 둘 다 같은 인터페이스다.</summary>
+    public ISkillController Skills
+    {
+        get
+        {
+            if (TryGetComponent(out FighterSkillAuthority authority)) return authority;
+            if (TryGetComponent(out FighterSkillController fighter)) return fighter;
+            return TryGetComponent(out GunnerSkillController gunner) ? gunner : null;
+        }
+    }
+
     public bool HasInventoryRuntime =>
         inventory != null &&
         equipment != null && equipment == inventory.EquipmentSystem &&

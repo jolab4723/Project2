@@ -77,11 +77,35 @@ public class ItemTriggerManager : MonoBehaviour
         subscribedStateMachine = GetComponent<WBH_PlayerStateMachine>();
         if (subscribedStateMachine != null)
             subscribedStateMachine.OnEnterState += HandleStateEntered;
+
+        // SW 추가: 스킬 시전 확정을 받아 OnSkillCast와 대시·백스탭의 회피 판정을 발동한다.
+        SubscribeSkills();
         SubscribeEquipment();
     }
 
+    /// <summary>스킬 시전 이벤트를 구독 중인 컨트롤러. 중복 구독/해제 누락을 막으려고 들고 있는다.</summary>
+    private ISkillController subscribedSkills;
+
     // 씬 인벤토리는 Instantiate 직후 연결되므로 Start에서 구독을 마무리한다.
-    private void Start() => SubscribeEquipment();
+    // SW 수정: PlayerContext도 스포너가 Instantiate 뒤에 붙이므로 스킬 구독도 Start에서 한 번 더 시도한다.
+    private void Start()
+    {
+        SubscribeSkills();
+        SubscribeEquipment();
+    }
+
+    /// <summary>SW 추가: PlayerContext가 늦게 붙어도 스킬 시전 이벤트를 한 번만 구독한다.</summary>
+    private void SubscribeSkills()
+    {
+        context ??= GetComponent<PlayerContext>();
+        ISkillController skills = context != null ? context.Skills : null;
+        if (Instance != this || skills == null || ReferenceEquals(subscribedSkills, skills))
+            return;
+        if (subscribedSkills != null)
+            subscribedSkills.SkillCast -= HandleSkillCast;
+        subscribedSkills = skills;
+        subscribedSkills.SkillCast += HandleSkillCast;
+    }
 
     private void SubscribeEquipment()
     {
@@ -114,6 +138,12 @@ public class ItemTriggerManager : MonoBehaviour
             subscribedStateMachine = null;
         }
 
+        if (subscribedSkills != null)
+        {
+            subscribedSkills.SkillCast -= HandleSkillCast;
+            subscribedSkills = null;
+        }
+
         // 기존엔 OnDestroy에서만 Instance를 비워서, SetActive(false)로 비활성화만 해도(파괴 아님)
         // Instance가 계속 이 캐릭터를 가리키고 있었다 - 이후 다른 캐릭터가 Awake될 때 "이미 인스턴스가
         // 있다"고 오판해서 새 캐릭터를 통째로 Destroy하는 문제가 있었다(PlayerStatManager에서 실측 확인, 125번).
@@ -135,6 +165,19 @@ public class ItemTriggerManager : MonoBehaviour
         }
         else if (state == PlayerState.Dead)
             HandleDeath();
+    }
+
+    /// <summary>SW 추가: 대시·백스탭(CountsAsDodge)은 Dodge 상태를 거치지 않으므로 여기서 회피와 같은 처리를 한다.</summary>
+    private void HandleSkillCast(SkillCastInfo info)
+    {
+        if (Instance != this || context == null)
+            return;
+        context.Effects.FireSkillCast(info);
+        if (info.Definition != null && info.Definition.CountsAsDodge)
+        {
+            Fire(TriggerCondition.OnDodge);
+            context.Effects.PrepareDodgeAttack();
+        }
     }
 
     /// <summary>

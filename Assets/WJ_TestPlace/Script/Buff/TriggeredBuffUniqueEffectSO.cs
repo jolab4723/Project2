@@ -37,6 +37,12 @@ namespace ItemSystem
         [Tooltip("이 효과가 반응하는 발동 조건. ItemTriggerManager가 이 값과 일치하는 실제 게임 이벤트가 발생했을 때 OnTrigger를 불러준다.")]
         public TriggerCondition triggerCondition = TriggerCondition.None;
 
+        [Tooltip("SW 추가: OnDamageDealt·OnCrit이 반응할 피해 출처. Basic(기본 공격), Skill(스킬), Any(둘 다).")]
+        public HitSourceFilter hitSource = HitSourceFilter.Basic;
+
+        [Tooltip("SW 추가: OnSkillCast가 반응할 스킬 슬롯(1~4). 0이면 모든 슬롯.")]
+        [Range(0, 4)] public int skillSlot = 0;
+
         [Tooltip("발동 후 다시 발동할 수 있게 되기까지의 시간(초). 0이면 쿨타임 없음.")]
         public float cooldownSeconds = 0f;
 
@@ -69,6 +75,24 @@ namespace ItemSystem
 
         /// <summary>소유자 장부가 어느 캐릭터의 버프 매니저 기준인지. PassiveBuffUniqueEffectSO와 같은 이유.</summary>
         [System.NonSerialized] private PlayerBuffManager appliedManager;
+
+        /// <summary>SW 추가: 조건과 피해 출처·스킬 슬롯이 이 효과에 맞는지 효과 자신이 판정한다. 실행기는 필터를 몰라도 된다.</summary>
+        public bool Matches(TriggerCondition condition, in TriggerContext context)
+        {
+            if (triggerCondition != condition)
+                return false;
+            return condition switch
+            {
+                TriggerCondition.OnDamageDealt or TriggerCondition.OnCrit => hitSource switch
+                {
+                    HitSourceFilter.Skill => context.IsSkillHit,
+                    HitSourceFilter.Any => true,
+                    _ => !context.IsSkillHit,
+                },
+                TriggerCondition.OnSkillCast => skillSlot <= 0 || skillSlot == context.SkillSlot,
+                _ => true,
+            };
+        }
 
         /// <summary>이 소유 아이템 기준으로 지금 발동 가능한지(쿨타임이 끝났는지).</summary>
         public bool IsReadyFor(ItemInstance ownerItem) =>

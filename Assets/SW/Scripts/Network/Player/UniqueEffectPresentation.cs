@@ -44,6 +44,8 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
     private static readonly Dictionary<string, GameObject> vfxPrefabs = new();
     // 프리팹은 +Z 전방 기준 길이 6m·폭 2m(A1), 반경 2.5m(A2), 길이 4m·전체 70°(A3)로 제작되어 루트 스케일로 판정 범위에 맞춘다.
     private const float AuthoredWaveLength = 6f, AuthoredWaveWidth = 2f, AuthoredBurstRadius = 2.5f;
+    // SW 추가: VFXTest에서 들여온 폭발류의 제작 반경(m). 표시 크기는 실제 반경에 맞추되 화면을 덮지 않게 1~2.5배로 제한한다.
+    private const float AuthoredVortexRadius = 1.2f, AuthoredExplosionRadius = 1.2f;
     private const float AuthoredHeatLength = 4f, AuthoredHeatHalfAngle = 35f;
 
     /// <summary>SW 수정: 네트워크 객체는 RPC만 사용하고 싱글 플레이어만 확정된 효과 표시 사건을 구독해 Host 중복 표시를 방지한다.</summary>
@@ -62,6 +64,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         singleEffects.InfernoPresented += PresentInfernoHit;
         singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
         singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
+        singleEffects.ElementResonatorPresented += PresentElementResonator;
         singleEffects.WasteHeatPresented += PresentWasteHeatDischarge;
         singleEffects.WasteHeatReadyChanged += SetWasteHeatReady;
         singleEffects.EchoReplayPresented += PresentEchoReplay;
@@ -269,8 +272,26 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (!CanPresent) return;
         SkillRangeVisual.ShowSector(position, Vector3.forward, radius, 360f,
             new Color(1f, 0.65f, 0.15f, 0.65f), 0.4f);
-        PresentInfernoHit(position);
+        // SW 수정: 전용 폭발이 있으면 쓰고, 없으면 기존 화염 임팩트로 돌아간다.
+        if (TryGetVfx("UEVFX_WorldEnderExplosion", out GameObject explosion))
+            SpawnVfx(explosion, position, Quaternion.identity, Vector3.one * RadiusScale(radius, AuthoredExplosionRadius), 2.9f);
+        else
+            PresentInfernoHit(position);
     }
+
+    /// <summary>SW 추가: 원소 공명기 폭발을 실제 반경 원과 공허 소용돌이로 표시한다. 피해·Collider는 만들지 않는다.</summary>
+    public void PresentElementResonator(Vector3 position, float radius)
+    {
+        if (!CanPresent) return;
+        SkillRangeVisual.ShowSector(position, Vector3.forward, radius, 360f, new Color(0.75f, 0.3f, 1f, 0.55f), 0.35f);
+        if (TryGetVfx("UEVFX_ElementResonatorVortex", out GameObject vortex))
+            SpawnVfx(vortex, position, Quaternion.identity, Vector3.one * RadiusScale(radius, AuthoredVortexRadius), 2.9f);
+        else
+            PresentStarBreacherExplosion(position + Vector3.up, radius);
+    }
+
+    private static float RadiusScale(float radius, float authored) =>
+        Mathf.Clamp(Mathf.Max(0.1f, radius) / authored, 1f, 2.5f);
 
     /// <summary>SW 수정: 확정된 월드 엔더 준비 표시 상태를 유지하고 실제 총구가 늦게 나타나면 재시도하며 해제 때 자원을 제거한다.</summary>
     public void SetWorldEnderReady(bool ready)
@@ -589,6 +610,14 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         if (!CanPresent)
             return;
 
+        // SW 수정: 전용 화염 베기가 있으면 쓰고, 없으면 아래 기존 화염 임팩트를 재생한다.
+        if (TryGetVfx("UEVFX_InfernoSlash", out GameObject slash))
+        {
+            SpawnVfx(slash, position, slash.transform.rotation, Vector3.one, 1.8f);
+            PresentedInfernoHitCount++;
+            return;
+        }
+
         if (infernoHitPrefab == null)
         {
             if (!missingInfernoPrefabReported)
@@ -629,6 +658,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.InfernoPresented -= PresentInfernoHit;
             singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
             singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
+            singleEffects.ElementResonatorPresented -= PresentElementResonator;
             singleEffects.WasteHeatPresented -= PresentWasteHeatDischarge;
             singleEffects.WasteHeatReadyChanged -= SetWasteHeatReady;
             singleEffects.EchoReplayPresented -= PresentEchoReplay;

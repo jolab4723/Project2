@@ -499,6 +499,86 @@
       "uniqueEffectId": "UE_SmileSignalMark",
       "effectName": "기분 전환",
       "effectDescription": "기본 사격 시 {0}초간 표식을 남깁니다. 아군의 다음 기본 공격이 표식을 소모해 공격자 공격력의 {1}% 추가 피해를 줍니다. 치명타는 없으며 혼자면 직접 소모합니다. 최대 {2}개, 재부여 대기시간은 {3}초입니다."
+    },
+    {
+      "uniqueEffectId": "UE_RailSweep",
+      "effectName": "레일 소인",
+      "effectDescription": "1번 스킬 시전 시 {0}초간 일반 공격 피해가 {1}%, 공격 속도가 {2}% 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_PileDriverQuake",
+      "effectName": "진동 누적",
+      "effectDescription": "스킬 적중 시 {0}초간 스킬 피해가 {1}% 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_DampingCore",
+      "effectName": "감쇠 증폭",
+      "effectDescription": "스킬 피해가 {0}% 증가하지만 마나 재생이 {1}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_IceRush",
+      "effectName": "빙결 돌입",
+      "effectDescription": "회피(대시 포함) 후 다음 기본 공격의 피해가 {0}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_OverloadHeart",
+      "effectName": "과부하 순환",
+      "effectDescription": "적 처치 시 {0}번 스킬의 남은 쿨타임이 {1}초 감소합니다. (내부 쿨타임 0.5초)"
+    },
+    {
+      "uniqueEffectId": "UE_AdrenalineInjector",
+      "effectName": "과잉 분비",
+      "effectDescription": "스킬 쿨타임이 {0}% 감소하지만 최대 체력이 {1}% 감소합니다."
+    },
+    {
+      "uniqueEffectId": "UE_NovaCapacitor",
+      "effectName": "대용량 축전",
+      "effectDescription": "최대 마나가 {0}, 마나 재생이 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_ChargeCircuit",
+      "effectName": "회로 재충전",
+      "effectDescription": "적 처치 시 {0}번 스킬의 충전이 {1}초 진행됩니다. (내부 쿨타임 1초)"
+    },
+    {
+      "uniqueEffectId": "UE_HaloShrapnel",
+      "effectName": "냉각 파편",
+      "effectDescription": "스킬 적중 시 {0}초간 빙결 피해 보너스가 {1} 증가합니다. 기본 공격에도 적용됩니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_RecoilStep",
+      "effectName": "반동 회피",
+      "effectDescription": "회피(백스탭 포함) 시 {0}초간 공격 속도가 {1}%, 일반 공격 피해가 {2}% 증가합니다. (쿨타임 {3}초)"
+    },
+    {
+      "uniqueEffectId": "UE_TargetLens",
+      "effectName": "약점 분석",
+      "effectDescription": "표식이 걸린 적에게 주는 피해가 {0}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_ManaConverter",
+      "effectName": "변환 출력",
+      "effectDescription": "스킬 시전 시 {0}초간 일반 공격 피해가 {1}% 증가합니다. (최대 {2}스택)"
+    },
+    {
+      "uniqueEffectId": "UE_SpareBattery",
+      "effectName": "예비 전력",
+      "effectDescription": "최대 마나가 {0} 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_CoolantArmor",
+      "effectName": "냉각 순환",
+      "effectDescription": "스킬 적중 시 {0}초간 마나 재생이 {1}% 증가합니다. (쿨타임 {2}초)"
+    },
+    {
+      "uniqueEffectId": "UE_HeatExchanger",
+      "effectName": "열교환",
+      "effectDescription": "화염·빙결·전기 피해 보너스가 각각 {0}, 스킬 피해가 {1}% 증가합니다."
+    },
+    {
+      "uniqueEffectId": "UE_ElementResonator",
+      "effectName": "과부하",
+      "effectDescription": "화상·빙결·감전 중 서로 다른 두 가지가 걸린 적을 적중하면 반경 {0}m에 공격력 {1}%의 무속성 폭발을 일으킵니다. (대상별 {2}초, 최대 {3}명)"
     }
   ],
   "engLabels": [
@@ -1001,6 +1081,86 @@
       "uniqueEffectId": "UE_SmileSignalMark",
       "effectName": "Mood Boost",
       "effectDescription": "Basic shots mark surviving enemies for {0} seconds. An ally's next basic hit consumes the mark for {1}% of that ally's attack power as noncritical extra damage. Up to {2} marks per owner; {3}-second target re-mark lockout. When alone, your next attack can consume it."
+    },
+    {
+      "uniqueEffectId": "UE_RailSweep",
+      "effectName": "Rail Sweep",
+      "effectDescription": "Casting skill 1 increases basic attack damage by {1}% and Attack Speed by {2}% for {0} seconds. (Cooldown {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_PileDriverQuake",
+      "effectName": "Tremor Buildup",
+      "effectDescription": "Skill hits increase skill damage by {1}% for {0} seconds. (Up to {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_DampingCore",
+      "effectName": "Damping Amplifier",
+      "effectDescription": "Skill damage increases by {0}%, but Mana Regen decreases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_IceRush",
+      "effectName": "Frost Rush",
+      "effectDescription": "After a dodge (including dash), your next basic attack deals {0}% more damage."
+    },
+    {
+      "uniqueEffectId": "UE_OverloadHeart",
+      "effectName": "Overload Cycle",
+      "effectDescription": "Defeating an enemy reduces skill {0}'s remaining cooldown by {1}s. (Internal cooldown 0.5s)"
+    },
+    {
+      "uniqueEffectId": "UE_AdrenalineInjector",
+      "effectName": "Overflow Secretion",
+      "effectDescription": "Skill cooldowns are reduced by {0}%, but Max HP decreases by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_NovaCapacitor",
+      "effectName": "Mass Capacitor",
+      "effectDescription": "Max Mana increases by {0} and Mana Regen by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_ChargeCircuit",
+      "effectName": "Circuit Recharge",
+      "effectDescription": "Defeating an enemy advances skill {0}'s charge by {1}s. (Internal cooldown 1s)"
+    },
+    {
+      "uniqueEffectId": "UE_HaloShrapnel",
+      "effectName": "Chilled Shrapnel",
+      "effectDescription": "Skill hits increase Ice damage bonus by {1} for {0} seconds. Also applies to basic attacks. (Up to {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_RecoilStep",
+      "effectName": "Recoil Step",
+      "effectDescription": "Dodging (including backstep) increases Attack Speed by {1}% and basic attack damage by {2}% for {0} seconds. (Cooldown {3}s)"
+    },
+    {
+      "uniqueEffectId": "UE_TargetLens",
+      "effectName": "Weakpoint Analysis",
+      "effectDescription": "Damage dealt to Marked enemies increases by {0}%."
+    },
+    {
+      "uniqueEffectId": "UE_ManaConverter",
+      "effectName": "Converted Output",
+      "effectDescription": "Casting a skill increases basic attack damage by {1}% for {0} seconds. (Up to {2} stacks)"
+    },
+    {
+      "uniqueEffectId": "UE_SpareBattery",
+      "effectName": "Reserve Power",
+      "effectDescription": "Max Mana increases by {0}."
+    },
+    {
+      "uniqueEffectId": "UE_CoolantArmor",
+      "effectName": "Coolant Cycle",
+      "effectDescription": "Skill hits increase Mana Regen by {1}% for {0} seconds. (Cooldown {2}s)"
+    },
+    {
+      "uniqueEffectId": "UE_HeatExchanger",
+      "effectName": "Heat Exchange",
+      "effectDescription": "Fire, Ice and Electric damage bonuses each increase by {0}, and skill damage by {1}%."
+    },
+    {
+      "uniqueEffectId": "UE_ElementResonator",
+      "effectName": "Overload",
+      "effectDescription": "Hitting an enemy afflicted by two different elements (Burn, Freeze, Shock) triggers a non-elemental explosion dealing {1}% Attack within {0}m. ({2}s per target, up to {3} enemies)"
     }
   ],
   "jpnLabels": [
@@ -1503,6 +1663,86 @@
       "uniqueEffectId": "UE_SmileSignalMark",
       "effectName": "気分転換",
       "effectDescription": "通常射撃で生き残った敵に{0}秒の印を付けます。味方の次の通常攻撃が印を消費し、その味方の攻撃力の{1}%の非クリティカル追加ダメージを与えます。所有者ごとに最大{2}個、対象の再付与制限は{3}秒。単独時は自分の次の攻撃で消費できます。"
+    },
+    {
+      "uniqueEffectId": "UE_RailSweep",
+      "effectName": "レールスイープ",
+      "effectDescription": "スキル1の発動時、{0}秒間通常攻撃ダメージが{1}%、攻撃速度が{2}%増加します。（クールタイム{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_PileDriverQuake",
+      "effectName": "振動蓄積",
+      "effectDescription": "スキル命中時、{0}秒間スキルダメージが{1}%増加します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_DampingCore",
+      "effectName": "減衰増幅",
+      "effectDescription": "スキルダメージが{0}%増加しますが、マナ回復が{1}%減少します。"
+    },
+    {
+      "uniqueEffectId": "UE_IceRush",
+      "effectName": "氷結突入",
+      "effectDescription": "回避（ダッシュ含む）後、次の通常攻撃のダメージが{0}%増加します。"
+    },
+    {
+      "uniqueEffectId": "UE_OverloadHeart",
+      "effectName": "過負荷循環",
+      "effectDescription": "敵を倒すとスキル{0}の残りクールタイムが{1}秒短縮されます。（内部クールタイム0.5秒）"
+    },
+    {
+      "uniqueEffectId": "UE_AdrenalineInjector",
+      "effectName": "過剰分泌",
+      "effectDescription": "スキルクールタイムが{0}%短縮されますが、最大HPが{1}%減少します。"
+    },
+    {
+      "uniqueEffectId": "UE_NovaCapacitor",
+      "effectName": "大容量蓄電",
+      "effectDescription": "最大マナが{0}、マナ回復が{1}%増加します。"
+    },
+    {
+      "uniqueEffectId": "UE_ChargeCircuit",
+      "effectName": "回路再充電",
+      "effectDescription": "敵を倒すとスキル{0}のチャージが{1}秒進みます。（内部クールタイム1秒）"
+    },
+    {
+      "uniqueEffectId": "UE_HaloShrapnel",
+      "effectName": "冷却破片",
+      "effectDescription": "スキル命中時、{0}秒間氷結ダメージボーナスが{1}上昇します。通常攻撃にも適用されます。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_RecoilStep",
+      "effectName": "反動回避",
+      "effectDescription": "回避（バックステップ含む）時、{0}秒間攻撃速度が{1}%、通常攻撃ダメージが{2}%増加します。（クールタイム{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_TargetLens",
+      "effectName": "弱点分析",
+      "effectDescription": "マーキングされた敵へのダメージが{0}%増加します。"
+    },
+    {
+      "uniqueEffectId": "UE_ManaConverter",
+      "effectName": "変換出力",
+      "effectDescription": "スキル発動時、{0}秒間通常攻撃ダメージが{1}%増加します。（最大{2}スタック）"
+    },
+    {
+      "uniqueEffectId": "UE_SpareBattery",
+      "effectName": "予備電力",
+      "effectDescription": "最大マナが{0}増加します。"
+    },
+    {
+      "uniqueEffectId": "UE_CoolantArmor",
+      "effectName": "冷却循環",
+      "effectDescription": "スキル命中時、{0}秒間マナ回復が{1}%増加します。（クールタイム{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_HeatExchanger",
+      "effectName": "熱交換",
+      "effectDescription": "火炎・氷結・電気ダメージボーナスがそれぞれ{0}、スキルダメージが{1}%上昇します。"
+    },
+    {
+      "uniqueEffectId": "UE_ElementResonator",
+      "effectName": "過負荷",
+      "effectDescription": "火傷・凍結・感電のうち異なる2種類がかかった敵に命中すると、半径{0}mに攻撃力{1}%の無属性爆発を起こします。（対象ごと{2}秒、最大{3}体）"
     }
   ],
   "chnLabels": [
@@ -2005,6 +2245,86 @@
       "uniqueEffectId": "UE_SmileSignalMark",
       "effectName": "转换心情",
       "effectDescription": "普通射击为存活敌人留下{0}秒标记。队友下一次普通攻击消耗标记，造成该队友攻击力{1}%的非暴击额外伤害。每名拥有者最多{2}个标记，目标重新标记间隔为{3}秒。独自作战时可由自己的下一次攻击消耗。"
+    },
+    {
+      "uniqueEffectId": "UE_RailSweep",
+      "effectName": "磁轨横扫",
+      "effectDescription": "施放1号技能时，{0}秒内普通攻击伤害提高{1}%，攻击速度提高{2}%。（冷却{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_PileDriverQuake",
+      "effectName": "震动累积",
+      "effectDescription": "技能命中时，{0}秒内技能伤害提高{1}%。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_DampingCore",
+      "effectName": "阻尼增幅",
+      "effectDescription": "技能伤害提高{0}%，但法力恢复降低{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_IceRush",
+      "effectName": "冰结突进",
+      "effectDescription": "闪避（含冲刺）后，下一次普通攻击伤害提高{0}%。"
+    },
+    {
+      "uniqueEffectId": "UE_OverloadHeart",
+      "effectName": "过载循环",
+      "effectDescription": "击败敌人时，{0}号技能的剩余冷却减少{1}秒。（内部冷却0.5秒）"
+    },
+    {
+      "uniqueEffectId": "UE_AdrenalineInjector",
+      "effectName": "过量分泌",
+      "effectDescription": "技能冷却缩短{0}%，但最大生命值降低{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_NovaCapacitor",
+      "effectName": "大容量蓄电",
+      "effectDescription": "最大法力提高{0}，法力恢复提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_ChargeCircuit",
+      "effectName": "回路充能",
+      "effectDescription": "击败敌人时，{0}号技能的充能推进{1}秒。（内部冷却1秒）"
+    },
+    {
+      "uniqueEffectId": "UE_HaloShrapnel",
+      "effectName": "冷却碎片",
+      "effectDescription": "技能命中时，{0}秒内冰结伤害加成提高{1}，普通攻击同样适用。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_RecoilStep",
+      "effectName": "后坐闪避",
+      "effectDescription": "闪避（含后撤步）时，{0}秒内攻击速度提高{1}%，普通攻击伤害提高{2}%。（冷却{3}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_TargetLens",
+      "effectName": "弱点分析",
+      "effectDescription": "对带有标记的敌人造成的伤害提高{0}%。"
+    },
+    {
+      "uniqueEffectId": "UE_ManaConverter",
+      "effectName": "转换输出",
+      "effectDescription": "施放技能时，{0}秒内普通攻击伤害提高{1}%。（最多{2}层）"
+    },
+    {
+      "uniqueEffectId": "UE_SpareBattery",
+      "effectName": "备用电力",
+      "effectDescription": "最大法力提高{0}。"
+    },
+    {
+      "uniqueEffectId": "UE_CoolantArmor",
+      "effectName": "冷却循环",
+      "effectDescription": "技能命中时，{0}秒内法力恢复提高{1}%。（冷却{2}秒）"
+    },
+    {
+      "uniqueEffectId": "UE_HeatExchanger",
+      "effectName": "热交换",
+      "effectDescription": "火焰、冰结、电击伤害加成各提高{0}，技能伤害提高{1}%。"
+    },
+    {
+      "uniqueEffectId": "UE_ElementResonator",
+      "effectName": "过载",
+      "effectDescription": "命中同时处于灼烧、冰冻、感电中任意两种不同状态的敌人时，在半径{0}米内引发攻击力{1}%的无属性爆炸。（每个目标{2}秒，最多{3}名）"
     }
   ]
 }

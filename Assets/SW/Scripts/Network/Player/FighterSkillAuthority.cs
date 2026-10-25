@@ -222,6 +222,21 @@ public sealed class FighterSkillAuthority : NetworkBehaviour, ISkillController
     public float GetEffectiveCooldown(int index) => isServer && Original != null ? Original.GetEffectiveCooldown(index) :
         index >= 0 && index < skillStates.Count ? skillStates[index].cooldown : 0f;
 
+    /// <summary>SW 추가: 시전 확정은 서버의 원본 컨트롤러에서 일어나므로 구독을 원본에 그대로 위임한다.</summary>
+    public event Action<SkillCastInfo> SkillCast
+    {
+        add { ResolveReferences(); if (Original != null) Original.SkillCast += value; }
+        remove { if (Original != null) Original.SkillCast -= value; }
+    }
+
+    /// <summary>SW 추가: 서버만 원본 쿨타임을 줄이고, 클라이언트 HUD는 기존 0.2초 상태 복제를 따른다.</summary>
+    public void ReduceCooldown(int index, float seconds)
+    {
+        if (!isServer || Original == null) return;
+        Original.ReduceCooldown(index, seconds);
+        PublishSkillStates();
+    }
+
     public bool TryGetStackInfo(int index, out int current, out int max)
     {
         if (isServer && Original != null) return Original.TryGetStackInfo(index, out current, out max);

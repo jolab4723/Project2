@@ -14,8 +14,9 @@ using UnityEngine.AI;
 /// 정상 동작하지만 시각적으로는 애니메이션 없이 즉시 판정된다. > 8.25 WBH 애니메이션 연결 완료.
 ///
 /// 피해 적용은 T_PlayerCombat.CreateDamageRequest + WBH_CombatManager.ProcessDamage를 그대로
-/// 재사용한다 - Attacker가 T_PlayerController여야 OnDamageDealt/OnCrit 아이템 트리거가 제대로
-/// 발동하기 때문에(이번 세션에서 이미 확인한 부분) 직접 WBH_DamageRequest를 새로 만들지 않는다.
+/// 재사용한다 - Attacker가 T_PlayerController여야 플레이어 피해 경계(PlayerDamageResolver)를 지나기
+/// 때문에 직접 WBH_DamageRequest를 새로 만들지 않는다. (SW 정정: 스킬 피해는 hitSource가 Skill/Any인
+/// 고유효과에만 OnDamageDealt/OnCrit으로 반응한다. 기본값 Basic 행은 스킬에 반응하지 않는다.)
 ///
 /// 진화(evolutions)는 스킬 슬롯별로 3가지 형태 중 하나를 선택한다(인스펙터 기본값 + K키
 /// SkillEvolutionSelectUI로 런타임 변경 가능). 9개 전부 구현 완료됐다 - 다른 팀원 파일(BH)
@@ -85,6 +86,8 @@ public class FighterSkillController : MonoBehaviour, ISkillController
     // ------ 8.24 WBH 추가. 애니메이션 연결 및 타격시점 전환(코드 > 애니메이션 이벤트)을 위한 변수 + 이펙트 실행을 위한 변수
     public event Action<int, bool, float> OnSkillAniRequested;
     public event Action<bool> OnChargeAniChanged;
+    // SW 추가: 일반 시전과 차징 해제가 모두 지나는 ConsumeSkillUse 끝에서 한 번 발행한다.
+    public event Action<SkillCastInfo> SkillCast;
 
     private WBH_PlayerEffect playerEffect;
 
@@ -740,10 +743,25 @@ public class FighterSkillController : MonoBehaviour, ISkillController
             dashStacks--;
             if (dashStackRechargeTimer <= 0f)
                 dashStackRechargeTimer = ApplyCooldownReduction(def, index, def.evoDashStackRechargeSeconds);
+        }
+        else
+            cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
+
+        SkillCast?.Invoke(new SkillCastInfo(index, def, GetEvolution(index)));
+    }
+
+    /// <summary>SW 추가: 남은 쿨타임을 줄이고, 대시 2스택이면 다음 스택 충전을 진행한다(충전 완료는 기존 Update가 처리).</summary>
+    public void ReduceCooldown(int index, float seconds)
+    {
+        if (index < 0 || index >= cooldownRemaining.Length || !float.IsFinite(seconds) || seconds <= 0f)
+            return;
+        if (IsDashStackSlot(index))
+        {
+            if (dashStackRechargeTimer > 0f)
+                dashStackRechargeTimer = Mathf.Max(0.0001f, dashStackRechargeTimer - seconds);
             return;
         }
-
-        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = Mathf.Max(0f, cooldownRemaining[index] - seconds);
     }
 
     /// <summary>강화(Enhance2: 쿨타임 감소)가 선택돼 있으면 쿨타임/스택 충전 시간을 줄인다.</summary>

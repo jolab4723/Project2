@@ -132,6 +132,21 @@ public class WBH_PlayerInputHandler : MonoBehaviour
     /// <summary>SW 수정: 빈 지점 공격도 외부 권한에 연결할 수 있는 공격 요청 경로로 전달한다.</summary>
     private void HandleAttackInput()
     {
+        // SW 추가: 연사 무기(라이플)는 공격으로 시작한 좌클릭을 누르고 있는 동안 커서 지점으로 계속 요청한다.
+        // 발사 간격은 싱글(공격 상태)과 멀티(서버 다음 공격 시각)가 기존대로 제한하므로 매 프레임 요청해도 된다.
+        if (!Input.GetMouseButton(0))
+            autoFireHeld = false;
+        else if (!Input.GetMouseButtonDown(0))
+        {
+            if (!autoFireHeld || IsPointerOverUI() || !combat.IsAutoFireWeapon)
+                return;
+            Ray heldRay = mainCamera.ScreenPointToRay(Input.mousePosition);
+            if (new Plane(Vector3.up, transform.position).Raycast(heldRay, out float heldDistance))
+                combat.RequestAttack(heldRay.GetPoint(heldDistance));
+            return;
+        }
+
+        autoFireHeld = false;
         if ( ! Input.GetMouseButtonDown(0) || IsPointerOverUI())
             return;
 
@@ -168,6 +183,7 @@ public class WBH_PlayerInputHandler : MonoBehaviour
             {
                 CancelItemChase();
                 combat.TryAtkTarget(enemy);
+                autoFireHeld = true;
                 return;
             }
         }
@@ -179,8 +195,12 @@ public class WBH_PlayerInputHandler : MonoBehaviour
         {
             CancelItemChase();
             combat.RequestAttack(ray.GetPoint(distance));
+            autoFireHeld = true;
         }
     }
+
+    /// <summary>SW 추가: 이번 좌클릭이 공격으로 시작했는지. 아이템 획득·핑·UI 클릭을 누르고 있어도 연사하지 않게 한다.</summary>
+    private bool autoFireHeld;
 
     // 회피
     /// <summary>SW 수정: 지정된 회피 입력을 사용하고 회피 성공 후 공격과 추적을 취소한다.</summary>

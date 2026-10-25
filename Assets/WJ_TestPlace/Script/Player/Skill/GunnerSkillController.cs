@@ -80,6 +80,9 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
     /// <summary>초기화가 끝난 스킬 생성물과 원본 프리팹을 알려 외부에서 시각 표현을 연결할 수 있게 한다.</summary>
     public event Action<GameObject, GameObject> SkillObjectSpawned;
 
+    // SW 추가: 쿨타임·스택 소모가 확정되는 ConsumeSkillUse 끝에서 한 번 발행한다.
+    public event Action<SkillCastInfo> SkillCast;
+
     private WBH_PlayerEffect playerEffect;
 
     private int pendingSkillIndex = -1;
@@ -940,10 +943,27 @@ public class GunnerSkillController : MonoBehaviour, ISkillController
             cooldownRemaining[index] = evo == SkillEvolutionId.Evolution1 ? ArcLaserFireInterval : ArcBusterFireInterval;
             if (arcBusterStackTimer <= 0f)
                 arcBusterStackTimer = ApplyCooldownReduction(def, index, def.stackRechargeSeconds);
+        }
+        else
+            cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
+
+        SkillCast?.Invoke(new SkillCastInfo(index, def, GetEvolution(index)));
+    }
+
+    /// <summary>
+    /// SW 추가: 남은 쿨타임을 줄인다. 아크 버스터는 연사 제한이 아니라 다음 스택 충전을 진행한다(충전 완료는 기존 Update가 처리).
+    /// </summary>
+    public void ReduceCooldown(int index, float seconds)
+    {
+        if (index < 0 || index >= cooldownRemaining.Length || !float.IsFinite(seconds) || seconds <= 0f)
+            return;
+        if (IsArcBusterSlot(index))
+        {
+            if (arcBusterStackTimer > 0f)
+                arcBusterStackTimer = Mathf.Max(0.0001f, arcBusterStackTimer - seconds);
             return;
         }
-
-        cooldownRemaining[index] = ApplyCooldownReduction(def, index, def.cooldownSeconds);
+        cooldownRemaining[index] = Mathf.Max(0f, cooldownRemaining[index] - seconds);
     }
 
     /// <summary>

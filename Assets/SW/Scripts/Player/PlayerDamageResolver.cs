@@ -177,6 +177,12 @@ public static class PlayerDamageResolver
         if (attackerStatus == null || targetStatus == null || attackerStatus.IsDead || targetStatus.IsDead)
             return false;
 
+        // SW 추가: 표식 대상 추가 피해는 기본 공격·스킬·후속 피해가 모두 지나는 이 경계에서 공격자 배율로 한 번만 곱한다.
+        float markedMultiplier = attacker.Effects.GetMarkedDamageMultiplier(target);
+        if (markedMultiplier > 1f)
+            request = new WBH_DamageRequest(request.Attacker, target, request.AttackType, request.ElementType,
+                request.DamageMultiplier * markedMultiplier, request.StatusEffect, request.EffectData, request.HitPosition,
+                request.HitEffectDirection, request.DamageCause, request.AttackId);
         result = WBH_CombatManager.CalculateDamage(request, sourceSnapshot, canCrit);
         WBH_StatusEffectData? statusEffect = result.StatusEffect;
         if (statusEffect?.Type == WBH_StatusEffectType.Freeze && attacker.Effects.UsesRepeatedCooling(request))

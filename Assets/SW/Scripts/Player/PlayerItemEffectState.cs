@@ -36,6 +36,8 @@ public sealed partial class PlayerItemEffectState
     public event Action<Vector3> InfernoPresented;
     public event Action<Vector3, Vector3, float> PhaseHarvesterPresented;
     public event Action<Vector3, float> StarBreacherPresented;
+    // SW 추가: 원소 공명기 폭발 표시(위치, 반경). 싱글 Presenter와 서버 RPC가 구독한다.
+    public event Action<Vector3, float> ElementResonatorPresented;
     public event Action<Vector3, Vector3, float, float> WasteHeatPresented;
     public event Action<bool> WasteHeatReadyChanged;
     public event Action<bool> PreparedChanged;
@@ -379,29 +381,39 @@ public sealed partial class PlayerItemEffectState
         }
     }
 
-    /// <summary>공격 적중 피해의 Direct 전용 고유효과 진입점이다.</summary>
+    /// <summary>
+    /// 공격 적중 피해의 고유효과 진입점이다.
+    /// SW 수정: 기본 공격(Direct)과 스킬(Skill) 적중이 hitSource 필터로 적중·치명타 트리거를 발동한다.
+    /// Effect·DoT는 추가타가 다시 추가타를 부르지 않도록 계속 제외하고, 기계형 무기 효과는 기본 공격 전용으로 유지한다.
+    /// </summary>
     public void FireDamageDealt(in WBH_DamageResult result, WBH_ICombat firstTarget = null)
     {
-        if (result.DamageCause != DamageCause.Direct)
+        if (result.DamageCause is not (DamageCause.Direct or DamageCause.Skill))
             return;
         if (!CanExecute || inventory == null || buffs == null)
             return;
 
-        Fire(TriggerCondition.OnDamageDealt);
+        var trigger = new TriggerContext(result.DamageCause == DamageCause.Skill, 0);
+        Fire(TriggerCondition.OnDamageDealt, trigger);
         if (result.IsCritical)
-            Fire(TriggerCondition.OnCrit);
+            Fire(TriggerCondition.OnCrit, trigger);
 
-        if (firstTarget != null)
-        {
-            TryFireChainLightning(result, firstTarget);
-            TryFireInfernoExtraHit(result, firstTarget);
-            TryFireGlassRailExtraHit(result, firstTarget);
-            ResolveRepeatedHitEffects(result, firstTarget);
-        }
+        if (firstTarget == null)
+            return;
+        TryFireElementResonator(result, firstTarget);
+        if (result.DamageCause != DamageCause.Direct)
+            return;
+        TryFireChainLightning(result, firstTarget);
+        TryFireInfernoExtraHit(result, firstTarget);
+        TryFireGlassRailExtraHit(result, firstTarget);
+        ResolveRepeatedHitEffects(result, firstTarget);
     }
 
     /// <summary>장비와 인벤토리의 유물 중 조건이 일치하는 발동형 고유효과를 발동시킨다.</summary>
-    public void Fire(TriggerCondition condition)
+    public void Fire(TriggerCondition condition) => Fire(condition, TriggerContext.BasicHit);
+
+    /// <summary>SW 추가: 피해 출처·스킬 슬롯을 함께 받아 각 효과가 스스로 일치 여부를 판정한다.</summary>
+    public void Fire(TriggerCondition condition, in TriggerContext trigger)
     {
         if (!CanExecute || inventory == null || buffs == null)
             return;
@@ -409,7 +421,7 @@ public sealed partial class PlayerItemEffectState
         if (inventory.EquipmentSystem != null)
         {
             foreach (KeyValuePair<EquipSlotType, InventoryItem> pair in inventory.EquipmentSystem.GetEquippedItems())
-                FireIfReady(pair.Value?.itemData, condition);
+                FireIfReady(pair.Value?.itemData, condition, trigger);
         }
 
         if (inventory.PlayerGrid == null)
@@ -418,7 +430,7 @@ public sealed partial class PlayerItemEffectState
         foreach (InventoryItem item in inventory.PlayerGrid.GetAllItems())
         {
             if (item?.itemData?.definition?.category == ItemCategory.Relic)
-                FireIfReady(item.itemData, condition);
+                FireIfReady(item.itemData, condition, trigger);
         }
     }
 
@@ -447,6 +459,7 @@ public sealed partial class PlayerItemEffectState
         NinjaDodgeAttackUniqueEffectSO ninja => ninja.cooldownSeconds,
         WildfireSpreadUniqueEffectSO wildfire => wildfire.cooldownSeconds,
         GuardiansJusticeShieldUniqueEffectSO guardian => guardian.cooldownSeconds,
+        SkillCooldownOnKillUniqueEffectSO skillCooldown => skillCooldown.cooldownSeconds,
         _ => 0f,
     };
 
@@ -770,10 +783,16 @@ public sealed partial class PlayerItemEffectState
             ? Mathf.Max(1f, effect.damageMultiplier)
             : 1f;
 
-    private void FireIfReady(ItemInstance item, TriggerCondition condition)
+    private void FireIfReady(ItemInstance item, TriggerCondition condition, in TriggerContext trigger)
     {
+        // SW 추가: 처치 시 스킬 쿨타임 감소는 버프가 아니라 스킬 컨트롤러를 호출한다.
+        if (condition == TriggerCondition.OnKill && item?.definition?.uniqueEffect is SkillCooldownOnKillUniqueEffectSO cooldownOnKill)
+        {
+            FireSkillCooldownOnKill(cooldownOnKill);
+            return;
+        }
         if (item?.definition?.uniqueEffect is not TriggeredBuffUniqueEffectSO effect ||
-            effect.triggerCondition != condition)
+            !effect.Matches(condition, trigger))
         {
             return;
         }
@@ -844,6 +863,7 @@ public sealed partial class PlayerItemEffectState
             case NinjaDodgeAttackUniqueEffectSO: return effect.name + ":ninja";
             case WildfireSpreadUniqueEffectSO: return effect.name + ":wildfire";
             case GuardiansJusticeShieldUniqueEffectSO: return effect.name + ":guardian";
+            case SkillCooldownOnKillUniqueEffectSO: return effect.name + ":skill-cooldown";
             default: return null;
         }
     }

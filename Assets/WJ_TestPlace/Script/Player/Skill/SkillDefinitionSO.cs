@@ -160,6 +160,9 @@ public class SkillDefinitionSO : ScriptableObject
     }
     public SkillShapeType shapeType;
 
+    /// <summary>SW 추가: 회피 트리거 아이템과 회피 후 강화 공격이 이 스킬 시전도 회피로 친다. 다른 스킬도 필요해지면 직렬화 필드로 올린다.</summary>
+    public bool CountsAsDodge => shapeType is SkillShapeType.Dash or SkillShapeType.BackstepShot;
+
     [Header("SectorSlash일 때만 사용 (부채꼴 범위)")]
     public float sectorRange = 4f;
     [Tooltip("전체 각도. 180이면 정반원.")]

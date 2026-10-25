@@ -484,7 +484,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             pendingGunnerAim = aimPoint;
             pendingGunnerElement = status.CurrentElement;
             pendingGunnerRange = Mathf.Max(0.1f, status.GunnerAttackRange);
-            pendingGunnerSpeed = Mathf.Max(0.1f, status.GunnerBulletSpeed);
+            pendingGunnerSpeed = Mathf.Max(0.1f, status.GunnerBulletSpeed * T_PlayerCombat.GunnerBulletSpeedMultiplier(pendingGunnerWeapon));
         }
 
         transform.forward = lookDirection.normalized;

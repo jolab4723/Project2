@@ -7,9 +7,15 @@ public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 public class T_PlayerCombat : MonoBehaviour
 {
     // SW 수정 : 같은 조건에서 세 총기의 발사 누락이 없음을 확인한 뒤 라이플만 낮은 발당 피해·고연사로 조정한다.
-    public const float RifleAttackSpeedMultiplier = 1.5f;
-    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon)
-        => weapon == GunnerWeaponType.Rifle ? 0.8f : 1f;
+    // SW 수정 : 누르고 있으면 연사하는 방식으로 바꾸며 공속 1.5→2.2, 발당 피해 0.8→1.0(기본 DPS 약 +83%), 탄속 ×1.5로 상향한다.
+    public const float RifleAttackSpeedMultiplier = 2.2f;
+    // 라이플의 발당 피해 감소(0.8)를 없앴다. 무기별 차등이 다시 필요해지면 이 한 곳에서 분기한다(싱글·서버 공용).
+    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon) => 1f;
+    /// <summary>SW 추가: 라이플 탄만 빠르게 날아가도록 기본 탄속에 곱한다. 싱글·서버가 같은 값을 쓴다.</summary>
+    public static float GunnerBulletSpeedMultiplier(GunnerWeaponType weapon)
+        => weapon == GunnerWeaponType.Rifle ? 1.5f : 1f;
+    /// <summary>SW 추가: 누르고 있으면 연사하는 무기인지. 입력 처리(싱글·멀티 공통)가 이 값만 본다.</summary>
+    public bool IsAutoFireWeapon => playerClass == PlayerClass.gunner && ResolveGunnerWeapon() == GunnerWeaponType.Rifle;
 
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private Transform firePoint;
@@ -133,9 +139,7 @@ public class T_PlayerCombat : MonoBehaviour
         // SW 추가:
         // 장착 외형마다 저장된 Rifle/Shotgun/GrenadeLauncher 값을 사용하면 Inspector의 currentWeapon을 매 장비 교체마다
         // 별도로 맞춰 주지 않아도 됩니다. 예전 테스트 프리팹에는 이 정보가 없을 수 있으므로 currentWeapon을 대신 사용합니다.
-        GunnerWeaponType resolvedWeapon = vfxBinding != null
-            ? vfxBinding.WeaponType
-            : currentWeapon;
+        GunnerWeaponType resolvedWeapon = ResolveGunnerWeapon(vfxBinding);
 
         // SW 추가:
         // 무기 VFX 연결 정보에는 같은 아이템의 비행/명중 프리팹이 들어 있습니다. 값이 비어 있으면 예전 무기라는 뜻이며,
@@ -195,7 +199,7 @@ public class T_PlayerCombat : MonoBehaviour
                                                  spawnPosition,
                                                  direction,
                                                  request,
-                                                 status.GunnerBulletSpeed,
+                                                 status.GunnerBulletSpeed * GunnerBulletSpeedMultiplier(resolvedWeapon),
                                                  status.GunnerAttackRange,
                                                  enemyLayer,
                                                  projectileVisual,
@@ -389,6 +393,21 @@ public class T_PlayerCombat : MonoBehaviour
         }
     }
 
+    /// <summary>SW 추가: 현재 손에 든 총의 종류. 장착 외형의 값이 우선이고 예전 테스트 프리팹은 currentWeapon을 쓴다.</summary>
+    private GunnerWeaponType ResolveGunnerWeapon(GunnerWeaponVfxBinding vfxBinding = null)
+    {
+        vfxBinding ??= GetComponentInChildren<GunnerWeaponVfxBinding>();
+        return vfxBinding != null ? vfxBinding.WeaponType : currentWeapon;
+    }
+
+    /// <summary>
+    /// SW 추가: 스킬 요청이 자기 상태이상(기절·표식 등)을 넘기지 않았으면 무기 속성 상태이상을 채운다.
+    /// 스킬 피해는 모두 아래 두 오버로드로 만들어지므로 이 한 곳에서 같은 규칙이 적용된다.
+    /// </summary>
+    private static WBH_StatusEffectData? ResolveStatusEffect(WBH_AttackType atkType, ItemSystem.ElementType elementType,
+        WBH_StatusEffectData? statusEffect)
+        => statusEffect ?? (atkType == WBH_AttackType.Skill ? GetElementStatusEffect(elementType) : null);
+
     // 투사체 외
     public WBH_DamageRequest CreateDamageRequest(WBH_ICombat target,
                                                  WBH_AttackType atkType,
@@ -409,7 +428,7 @@ public class T_PlayerCombat : MonoBehaviour
                                      atkType, 
                                      elementType,
                                      damageMult, 
-                                     statusEffect, 
+                                     ResolveStatusEffect(atkType, elementType, statusEffect), 
                                      effectData, 
                                      hitPosition, 
                                      hitEffectDirection,
@@ -432,11 +451,11 @@ public class T_PlayerCombat : MonoBehaviour
             attackId = CreateAttackId();
 
         return new WBH_DamageRequest(controller,
-                                     null, 
+                                     null,
                                      atkType,
-                                     elementType, 
-                                     damageMult, 
-                                     statusEffect, 
+                                     elementType,
+                                     damageMult,
+                                     ResolveStatusEffect(atkType, elementType, statusEffect),
                                      effectData, 
                                      hitPosition, 
                                      hitEffectDirection,

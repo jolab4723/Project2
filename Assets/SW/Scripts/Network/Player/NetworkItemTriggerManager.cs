@@ -120,6 +120,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.InfernoPresented += RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
+        context.Effects.ElementResonatorPresented += RpcPresentElementResonator;
         context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
         context.Effects.EchoReplayPresented += RpcPresentEchoReplay;
@@ -137,6 +138,30 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
             context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
             context.Equipment.OnEquipmentChanged += HandleEquipmentChanged;
         }
+        // SW 추가: 시전 확정은 서버의 원본 컨트롤러에서 일어나므로 서버만 구독한다.
+        serverSkills = context.Skills;
+        if (serverSkills != null)
+        {
+            serverSkills.SkillCast -= HandleSkillCast;
+            serverSkills.SkillCast += HandleSkillCast;
+        }
+    }
+
+    private ISkillController serverSkills;
+
+    /// <summary>SW 추가: 서버가 검증한 스킬 시전에서 OnSkillCast를 발동하고, 대시·백스탭은 회피 대기시간 없이 회피로 친다(스킬 쿨타임이 이미 서버에서 검증됨).</summary>
+    [Server]
+    private void HandleSkillCast(SkillCastInfo info)
+    {
+        if (health == null || health.CurrentHealth <= 0f)
+            return;
+        context.Effects.FireSkillCast(info);
+        if (info.Definition != null && info.Definition.CountsAsDodge)
+        {
+            context.Effects.Fire(TriggerCondition.OnDodge);
+            context.Effects.PrepareDodgeAttack();
+        }
+        PublishState();
     }
 
     /// <summary>SW 수정: 늦게 참여한 관찰자도 서버가 복제한 준비 상태와 폐열 충전 완료 표시를 적용한다.</summary>
@@ -207,11 +232,17 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     {
         if (context?.Equipment != null)
             context.Equipment.OnEquipmentChanged -= HandleEquipmentChanged;
+        if (serverSkills != null)
+        {
+            serverSkills.SkillCast -= HandleSkillCast;
+            serverSkills = null;
+        }
         ClearPreparedAttack();
         context.Effects.ChainPresented -= RpcPresentChainLightning;
         context.Effects.InfernoPresented -= RpcPresentInfernoHit;
         context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
+        context.Effects.ElementResonatorPresented -= RpcPresentElementResonator;
         context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
         context.Effects.EchoReplayPresented -= RpcPresentEchoReplay;
@@ -285,6 +316,13 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     private void RpcPresentStarBreacherExplosion(Vector3 position, float radius)
     {
         Presentation.PresentStarBreacherExplosion(position, radius);
+    }
+
+    /// <summary>SW 추가: 서버가 확정한 원소 공명기 폭발 위치를 Reliable RPC로 한 번 표시한다. 피해는 서버 FIFO에서만 처리한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentElementResonator(Vector3 position, float radius)
+    {
+        Presentation.PresentElementResonator(position, radius);
     }
 
     /// <summary>SW 수정: 서버가 확정한 폐열 방출 영역을 Reliable RPC로 관찰자에게 한 번 표시하며 피해는 서버 FIFO에서만 처리한다.</summary>

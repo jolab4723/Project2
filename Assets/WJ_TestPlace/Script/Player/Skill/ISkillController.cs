@@ -34,4 +34,34 @@ public interface ISkillController
 
     /// <summary>슬롯이 스택 기반(예: 대시 2스택)이면 현재/최대 스택 수를 낸다. 스택 기반이 아니면 false.</summary>
     bool TryGetStackInfo(int index, out int current, out int max);
+
+    /// <summary>
+    /// SW 추가: 스킬 시전이 확정된 순간(쿨타임·스택 소모 직후) 한 번 발행한다. 아이템 고유효과가 이 사실만 구독하며
+    /// 컨트롤러는 아이템을 모른다. 멀티에서는 서버의 원본 컨트롤러에서만 의미가 있다.
+    /// </summary>
+    event System.Action<SkillCastInfo> SkillCast;
+
+    /// <summary>
+    /// SW 추가: 슬롯의 남은 쿨타임을 줄인다. 스택형 슬롯(대시, 아크 버스터)은 다음 스택 충전을 그만큼 진행한다.
+    /// 처치 시 쿨타임 감소 고유효과가 사용한다.
+    /// </summary>
+    void ReduceCooldown(int index, float seconds);
+}
+
+/// <summary>SW 추가: 확정된 스킬 시전 한 번의 슬롯(0부터)과 데이터, 진화 단계.</summary>
+public readonly struct SkillCastInfo
+{
+    public readonly int Index;
+    public readonly SkillDefinitionSO Definition;
+    public readonly SkillEvolutionId Evolution;
+
+    public SkillCastInfo(int index, SkillDefinitionSO definition, SkillEvolutionId evolution)
+    {
+        Index = index;
+        Definition = definition;
+        Evolution = evolution;
+    }
+
+    /// <summary>고유효과 표의 skillSlot과 같은 1부터 세는 번호.</summary>
+    public int Slot => Index + 1;
 }

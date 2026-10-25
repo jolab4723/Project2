@@ -274,6 +274,25 @@ namespace DataSystem
                     triggered.cooldownSeconds = row.cooldownSeconds;
                     triggered.duplicatePolicy = ParseEnumOrDefault(row.duplicatePolicy, DuplicateTriggerPolicy.ShareCooldown, row.uniqueEffectId);
                     triggered.persistStackOnItem = row.persistStackOnItem;
+                    // SW 추가: 빈 칸은 Basic·전체 슬롯이라 기존 행의 동작은 바뀌지 않는다.
+                    triggered.hitSource = ParseEnumOrDefault(row.hitSource, HitSourceFilter.Basic, row.uniqueEffectId);
+                    triggered.skillSlot = row.skillSlot;
+                    break;
+
+                // SW 추가: 스킬 연계 신규 유형. 계수 순서는 ValidateRows의 설명과 같다.
+                case SkillCooldownOnKillUniqueEffectSO skillCooldown:
+                    skillCooldown.skillSlot = (int)asset.coefficients[0];
+                    skillCooldown.reduceSeconds = asset.coefficients[1];
+                    skillCooldown.cooldownSeconds = row.cooldownSeconds;
+                    break;
+                case MarkedDamageBonusUniqueEffectSO marked:
+                    marked.bonusFraction = asset.coefficients[0] / 100f;
+                    break;
+                case ElementResonatorUniqueEffectSO resonator:
+                    resonator.radius = asset.coefficients[0];
+                    resonator.damageMultiplier = asset.coefficients[1] / 100f;
+                    resonator.perTargetCooldownSeconds = asset.coefficients[2];
+                    resonator.maxTargets = (int)asset.coefficients[3];
                     break;
 
                 case StatThresholdBuffUniqueEffectSO threshold:
@@ -410,6 +429,10 @@ namespace DataSystem
                 case nameof(SuperRefrigerantFreezeUniqueEffectSO): return typeof(SuperRefrigerantFreezeUniqueEffectSO);
                 case nameof(WildfireSpreadUniqueEffectSO): return typeof(WildfireSpreadUniqueEffectSO);
                 case nameof(SmileSignalMarkUniqueEffectSO): return typeof(SmileSignalMarkUniqueEffectSO);
+                // SW 추가: 스킬 연계 아이템 기획안(T4)의 신규 유형.
+                case nameof(SkillCooldownOnKillUniqueEffectSO): return typeof(SkillCooldownOnKillUniqueEffectSO);
+                case nameof(MarkedDamageBonusUniqueEffectSO): return typeof(MarkedDamageBonusUniqueEffectSO);
+                case nameof(ElementResonatorUniqueEffectSO): return typeof(ElementResonatorUniqueEffectSO);
             }
 
             Debug.LogError($"[UniqueEffect] '{id}'의 effectType '{name}'을 알 수 없어 변환을 중단합니다. " +
@@ -445,9 +468,33 @@ namespace DataSystem
                     Debug.LogError($"[UniqueEffect] '{id}'의 triggerCondition을 확인해주세요. OnCrit는 치명 전용 연쇄를 설정하며 유효한 TriggerCondition 이름이 필요합니다.");
                     valid = false;
                 }
+                // SW 추가: 스킬 적중 트리거는 광역 스킬 한 번에 연타되므로 쿨타임이나 최대 스택이 반드시 있어야 한다.
+                if (type == typeof(TriggeredBuffUniqueEffectSO))
+                {
+                    TriggerCondition trigger = ParseEnumOrDefault(row.triggerCondition, TriggerCondition.None, id);
+                    bool sourceValid = string.IsNullOrWhiteSpace(row.hitSource) ||
+                        (Enum.TryParse(row.hitSource.Trim(), true, out HitSourceFilter source) && Enum.IsDefined(typeof(HitSourceFilter), source));
+                    HitSourceFilter hitSource = ParseEnumOrDefault(row.hitSource, HitSourceFilter.Basic, id);
+                    bool stacked = string.Equals(row.stackBehavior?.Trim(), nameof(BuffStackBehavior.Stack), StringComparison.OrdinalIgnoreCase) &&
+                        row.maxStack > 0;
+                    bool skillLimited = hitSource == HitSourceFilter.Basic ||
+                        (float.IsFinite(row.cooldownSeconds) && row.cooldownSeconds > 0f) || stacked;
+                    bool slotValid = row.skillSlot >= 0 && row.skillSlot <= 4 &&
+                        (row.skillSlot == 0 || trigger == TriggerCondition.OnSkillCast);
+                    if (!sourceValid || !skillLimited || !slotValid)
+                    {
+                        Debug.LogError($"[UniqueEffect] '{id}'의 hitSource는 Basic/Skill/Any이며 Skill·Any 행은 cooldownSeconds>0 또는 Stack+maxStack이 필요합니다. " +
+                            "skillSlot은 0~4이고 OnSkillCast에서만 0이 아닌 값을 쓸 수 있습니다.");
+                        valid = false;
+                    }
+                    continue;
+                }
                 // SW 수정 : 신규 타입은 계수 개수와 유한값을 검사해 누락·빈 칸이 다른 필드로 밀리지 않게 한다.
                 int coefficientCount = type.Name switch
                 {
+                    nameof(SkillCooldownOnKillUniqueEffectSO) => 2,
+                    nameof(MarkedDamageBonusUniqueEffectSO) => 1,
+                    nameof(ElementResonatorUniqueEffectSO) => 4,
                     nameof(SunfallBurnFieldUniqueEffectSO) => 4,
                     nameof(GuardiansJusticeShieldUniqueEffectSO) => 5,
                     nameof(NinjaDodgeAttackUniqueEffectSO) => 3,
@@ -526,6 +573,19 @@ namespace DataSystem
                             coefficientOrder = "전파 반경;최대 대상(정수 1~16);쿨다운";
                             effectValid &= effectValues[0] > 0f && IsIntegerCoefficient(effectValues[1], 16) && effectValues[2] >= 0f &&
                                 Mathf.Approximately(effectValues[2], row.cooldownSeconds);
+                            break;
+                        case nameof(SkillCooldownOnKillUniqueEffectSO):
+                            coefficientOrder = "스킬 슬롯(정수 1~4);감소 초";
+                            effectValid &= IsIntegerCoefficient(effectValues[0], 4) && effectValues[1] > 0f;
+                            break;
+                        case nameof(MarkedDamageBonusUniqueEffectSO):
+                            coefficientOrder = "표식 대상 추가 피해%";
+                            effectValid &= effectValues[0] > 0f && effectValues[0] <= 100f;
+                            break;
+                        case nameof(ElementResonatorUniqueEffectSO):
+                            coefficientOrder = "폭발 반경;피해%;대상별 재발동 초;최대 대상(정수 1~16)";
+                            effectValid &= effectValues[0] > 0f && effectValues[1] > 0f && effectValues[2] >= 0f &&
+                                IsIntegerCoefficient(effectValues[3], 16);
                             break;
                         default: // SmileSignalMarkUniqueEffectSO
                             coefficientOrder = "표식 유지 초;후속 피해%;최대 대상(정수 1~16);대상 재준비 초(0 이상)";
