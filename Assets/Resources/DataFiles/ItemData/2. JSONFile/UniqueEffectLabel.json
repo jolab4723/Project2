@@ -48,7 +48,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "잔해 압축",
-      "effectDescription": "적을 처치할 때마다 공격력이 {0}% 증가합니다. 최대 100회 중첩되며 공격력은 최대 50% 증가합니다."
+      "effectDescription": "적을 처치할 때마다 공격력이 {0}% 증가합니다. 최대 40회 중첩되며 공격력은 최대 20% 증가합니다."
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -578,7 +578,7 @@
     {
       "uniqueEffectId": "UE_ElementResonator",
       "effectName": "과부하",
-      "effectDescription": "화상·빙결·감전 중 서로 다른 두 가지가 걸린 적을 적중하면 반경 {0}m에 공격력 {1}%의 무속성 폭발을 일으킵니다. (대상별 {2}초, 최대 {3}명)"
+      "effectDescription": "화상·빙결·감전 중 하나라도 걸린 적을 적중하면 반경 {0}m에 공격력 {1}%의 무속성 폭발을 일으킵니다. 서로 다른 두 가지가 걸려 있으면 폭발 피해가 50% 증가합니다. (대상별 {2}초, 최대 {3}명)"
     }
   ],
   "engLabels": [
@@ -630,7 +630,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "Scrap Compression",
-      "effectDescription": "Each time you defeat an enemy, Attack increases by {0}%. Stacks up to 100 times, for a maximum Attack increase of 50%."
+      "effectDescription": "Each time you defeat an enemy, Attack increases by {0}%. Stacks up to 40 times, for a maximum Attack increase of 20%."
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -1160,7 +1160,7 @@
     {
       "uniqueEffectId": "UE_ElementResonator",
       "effectName": "Overload",
-      "effectDescription": "Hitting an enemy afflicted by two different elements (Burn, Freeze, Shock) triggers a non-elemental explosion dealing {1}% Attack within {0}m. ({2}s per target, up to {3} enemies)"
+      "effectDescription": "Hitting an enemy afflicted by Burn, Freeze, or Shock triggers a non-elemental explosion dealing {1}% Attack within {0}m. The explosion deals 50% more damage if the enemy has two different elements. ({2}s per target, up to {3} enemies)"
     }
   ],
   "jpnLabels": [
@@ -1212,7 +1212,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "残骸圧縮",
-      "effectDescription": "敵を倒すたびに、攻撃力が{0}%増加します。 最大100回まで重複し、攻撃力は最大50%増加します。"
+      "effectDescription": "敵を倒すたびに、攻撃力が{0}%増加します。 最大40回まで重複し、攻撃力は最大20%増加します。"
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -1742,7 +1742,7 @@
     {
       "uniqueEffectId": "UE_ElementResonator",
       "effectName": "過負荷",
-      "effectDescription": "火傷・凍結・感電のうち異なる2種類がかかった敵に命中すると、半径{0}mに攻撃力{1}%の無属性爆発を起こします。（対象ごと{2}秒、最大{3}体）"
+      "effectDescription": "火傷・凍結・感電のいずれかがかかった敵に命中すると、半径{0}mに攻撃力{1}%の無属性爆発を起こします。異なる2種類がかかっている場合、爆発ダメージが50%増加します。（対象ごと{2}秒、最大{3}体）"
     }
   ],
   "chnLabels": [
@@ -1794,7 +1794,7 @@
     {
       "uniqueEffectId": "UE_ScrapCompactor",
       "effectName": "残骸压缩",
-      "effectDescription": "每击败一个敌人，攻击力提高{0}%。 最多叠加100层，攻击力最多提高50%。"
+      "effectDescription": "每击败一个敌人，攻击力提高{0}%。 最多叠加40层，攻击力最多提高20%。"
     },
     {
       "uniqueEffectId": "UE_SimonsLastContract",
@@ -2324,7 +2324,7 @@
     {
       "uniqueEffectId": "UE_ElementResonator",
       "effectName": "过载",
-      "effectDescription": "命中同时处于灼烧、冰冻、感电中任意两种不同状态的敌人时，在半径{0}米内引发攻击力{1}%的无属性爆炸。（每个目标{2}秒，最多{3}名）"
+      "effectDescription": "命中处于灼烧、冰冻、感电中任意一种状态的敌人时，在半径{0}米内引发攻击力{1}%的无属性爆炸。若同时处于两种不同状态，爆炸伤害提高50%。（每个目标{2}秒，最多{3}名）"
     }
   ]
 }

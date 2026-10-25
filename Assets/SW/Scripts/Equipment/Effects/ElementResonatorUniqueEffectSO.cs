@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ItemSystem
 {
-    /// <summary>SW 추가: 화상·빙결·감전 중 서로 다른 두 가지 이상이 걸린 적을 적중하면 그 자리에 무속성 비치명 폭발을 일으킨다. 대상마다 재발동 대기시간이 있다.</summary>
+    /// <summary>SW 추가: 화상·빙결·감전 중 하나 이상이 걸린 적을 적중하면 그 자리에 무속성 비치명 폭발을 일으킨다. 서로 다른 두 가지 이상이면 피해가 커진다. 대상마다 재발동 대기시간이 있다.</summary>
     [CreateAssetMenu(menuName = "Item/Unique Effect/Element Resonator")]
     public sealed class ElementResonatorUniqueEffectSO : UniqueEffectSO
     {

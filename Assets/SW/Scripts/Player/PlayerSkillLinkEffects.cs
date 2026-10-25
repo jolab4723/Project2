@@ -5,6 +5,8 @@ using UnityEngine;
 /// <summary>SW 추가: 스킬 연계 고유효과(시전 트리거, 처치 시 쿨타임 감소, 표식 추가 피해, 원소 과부하)의 싱글·서버 공통 규칙이다.</summary>
 public sealed partial class PlayerItemEffectState
 {
+    // 서로 다른 원소 두 종 이상이 겹친 대상의 공명 폭발 피해 배율. 협동 원소 조합 보상이다.
+    private const float ResonatorDualElementMultiplier = 1.5f;
     private readonly Dictionary<WBH_ICombat, double> resonatorReadyAt = new();
 
     /// <summary>스킬 시전 확정 한 번에 OnSkillCast 효과를 슬롯 필터로 발동한다. 트리거 관리자(싱글·서버)가 호출한다.</summary>
@@ -44,13 +46,14 @@ public sealed partial class PlayerItemEffectState
         return 1f + effect.bonusFraction;
     }
 
-    /// <summary>화상·빙결·감전 중 서로 다른 두 가지 이상이 걸린 적을 적중하면 그 위치에 무속성 폭발을 후속 피해 큐에 등록한다. 대상마다 재발동 대기시간을 둔다.</summary>
+    /// <summary>화상·빙결·감전 중 하나 이상이 걸린 적을 적중하면 그 위치에 무속성 폭발을 후속 피해 큐에 등록한다. 서로 다른 두 가지 이상이면 피해를 키운다. 대상마다 재발동 대기시간을 둔다.</summary>
     private void TryFireElementResonator(in WBH_DamageResult result, WBH_ICombat firstTarget)
     {
-        // 무기 속성은 하나뿐이라 특정 두 원소 조합은 거의 나오지 않는다. 어떤 원소든 두 종이 겹치면 발동한다.
+        // 무기 속성은 하나뿐이라 두 원소 조건만 두면 혼자서는 발동하지 않는다. 한 종으로 발동하고, 동료 원소가 겹치면 강화한다.
+        int elementCount;
         if (firstTarget is not Component component || component == null || firstTarget.Status == null ||
             component.GetComponentInParent<WBH_StatusEffectController>() is not { } statuses ||
-            CountElementStatuses(statuses) < 2 ||
+            (elementCount = CountElementStatuses(statuses)) < 1 ||
             !TryFindOwnedEffect(out ElementResonatorUniqueEffectSO effect) ||
             !float.IsFinite(effect.radius) || effect.radius <= 0f ||
             !float.IsFinite(effect.damageMultiplier) || effect.damageMultiplier <= 0f)
@@ -73,10 +76,11 @@ public sealed partial class PlayerItemEffectState
                 return Mathf.Abs(offset.y) <= 0.5f && offset.sqrMagnitude <= effect.radius * effect.radius;
             });
         targets.Sort((left, right) => CompareBodyDistance(left, right, center));
+        float multiplier = effect.damageMultiplier * (elementCount >= 2 ? ResonatorDualElementMultiplier : 1f);
         // 기점 대상은 직접 피해를 받은 뒤라 사망했을 수 있어 CollectLivingBodies가 이미 거른다.
         for (int index = 0; index < Mathf.Min(targets.Count, Mathf.Clamp(effect.maxTargets, 1, 16)); index++)
             PlayerDamageResolver.EnqueueFollowUpDamage(context, targets[index], ElementType.None,
-                effect.damageMultiplier, null, DamageCause.Effect, result.AttackId, canCrit: false,
+                multiplier, null, DamageCause.Effect, result.AttackId, canCrit: false,
                 effectKey: "element-resonator");
         ElementResonatorPresented?.Invoke(center, effect.radius);
     }
