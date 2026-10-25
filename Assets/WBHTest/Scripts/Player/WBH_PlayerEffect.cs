@@ -130,7 +130,7 @@ public class WBH_PlayerEffect : MonoBehaviour
                     Quaternion rotation = binding.anchor.rotation * Quaternion.Euler(binding.data.localRot);
 
                     // SW 수정: 시전자를 함께 넘겨 잔상 등 시전자 대상 연출이 다른 플레이어에 붙지 않게 한다.
-                    spawner.SpawnEffect(binding.data, position, rotation, appliedScale, PlaybackSpeed, transform);
+                    spawner.SpawnEffect(ResolveData(binding), position, rotation, appliedScale, PlaybackSpeed, transform);
 
                     break;
                 }
@@ -138,10 +138,16 @@ public class WBH_PlayerEffect : MonoBehaviour
             case EffectAttachType.AttachOnce:
 
             case EffectAttachType.Follow:
-                spawner.SpawnEffect(binding.data, binding.anchor, appliedScale, PlaybackSpeed, transform);
+                spawner.SpawnEffect(ResolveData(binding), binding.anchor, appliedScale, PlaybackSpeed, transform);
                 break;
         }
     }
+
+    // SW 추가: 파이터 기본 공격은 장착 무기 속성(불·얼음·전기)에 맞는 색 변형 데이터로 바꿔 재생한다.
+    // 변형은 원본과 위치·부착 방식이 같은 복사본이라 재생 방식은 그대로이고, 무속성이면 원본을 쓴다.
+    private WBH_EffectData ResolveData(EffectBinding binding) =>
+        FighterElementSlashVfx.Resolve(binding.cue, binding.data,
+            playerStatus != null ? playerStatus.CurrentElement : ItemSystem.ElementType.None);
 
     // 플레이어 위치에 조작없을 때까지 유지할 이펙트 재생방식
     private void PlayLocalEffect(WBH_EffectData effectData, Vector3 scaleMultiplier)
@@ -204,7 +210,7 @@ public class WBH_PlayerEffect : MonoBehaviour
         Vector3 spawnPos = position + rotation * binding.data.localPos;
         Quaternion spawnRot = rotation * Quaternion.Euler(binding.data.localRot);
 
-        spawner.SpawnEffect(binding.data, spawnPos, spawnRot, appliedScale, PlaybackSpeed, transform);
+        spawner.SpawnEffect(ResolveData(binding), spawnPos, spawnRot, appliedScale, PlaybackSpeed, transform);
     }
 
     // --- 애니메이션 이벤트 연결용
@@ -232,7 +238,8 @@ public class WBH_PlayerEffect : MonoBehaviour
         if ( ! bindingMap.TryGetValue(cue, out EffectBinding binding))
             return false;
 
-        data = binding.data;
+        // SW 수정: 피격 이펙트와 네트워크 피격 전송도 휘두름 궤적과 같은 속성 변형을 받게 한다.
+        data = ResolveData(binding);
         return data != null;
     }
 
