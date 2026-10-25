@@ -50,6 +50,8 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
     private const double CooldownBoundaryToleranceSeconds = 0.05d;
     private const double MinimumImpactConfirmationGraceSeconds = 0.5d;
     private const double MaximumImpactConfirmationGraceSeconds = 2d;
+    // SW 추가: 라이플 연사 Command의 프레임 반올림·시계 오차 허용(발사 간격 0.125초의 약 1/4).
+    private const double RifleCadenceToleranceSeconds = 0.03d;
 
     [SerializeField] private PlayerContext context;
     [SerializeField] private T_PlayerCombat combat;
@@ -88,6 +90,7 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
     private double expectedClientImpactAt;
     private double impactConfirmationExpiresAt;
     [SyncVar] private double nextAttackAt;
+    private double nextRifleShotAt;
     private double localImpactAt;
     private double localImpactConfirmationExpiresAt;
     private double localNextAttackAt;
@@ -304,6 +307,10 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
             return false;
         }
 
+        // SW 추가: 라이플은 공격 클립 예약 대신 발사 타이머로 연사하고, 서버가 같은 간격으로 각 발을 검증한다.
+        if (IsGunner && combat != null && combat.IsAutoFireWeapon)
+            return TryBeginLocalRifleShot(aimPoint);
+
         double localAttackStartedAt = NetworkTime.time;
         if (localAttackStartedAt < localNextAttackAt)
             return false;
@@ -343,6 +350,88 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
 
         CmdRequestAttack(nextLocalRequestId, aimPoint, localAttackStartedAt);
         return true;
+    }
+
+    /// <summary>
+    /// SW 추가: 소유자 라이플 한 발. 간격·조준·사격 모션과 총구 연출은 로컬에서 바로 보여 주고,
+    /// 탄 생성과 피해는 서버가 같은 간격 검증을 통과한 발에만 만든다. 평타 예약(요청 번호·타격 확인)은 쓰지 않는다.
+    /// </summary>
+    private bool TryBeginLocalRifleShot(Vector3 aimPoint)
+    {
+        if (activeLocalRequestId != 0 || !TryGetGunnerWeapon(out GunnerWeaponType weapon, out string itemId) ||
+            weapon != GunnerWeaponType.Rifle || !combat.TryBeginRifleShot(aimPoint))
+            return false;
+
+        Vector3 origin = gunnerFirePoint != null ? gunnerFirePoint.position : transform.position;
+        Vector3 direction = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+        GunnerCombatPresentation.PlayShot(gameObject, itemId, weapon, origin, direction, status.GunnerAttackRange);
+        CmdRequestRifleShot(aimPoint, NetworkTime.time);
+        return true;
+    }
+
+    /// <summary>
+    /// SW 추가: 라이플 연사 한 발을 서버가 검증하고 바로 발사한다. 간격은 싱글과 같은 공속 기준이며,
+    /// 지연으로 몰려 도착한 Command도 클라이언트 발사 시각(허용 범위로 제한)으로 판정해 연사 리듬을 유지한다.
+    /// </summary>
+    [Command]
+    private void CmdRequestRifleShot(Vector3 aimPoint, double clientShotAt)
+    {
+        if (IsUnavailable)
+        {
+            Reject(MirrorCombatRequestResult.Dead);
+            return;
+        }
+        if (!MirrorNetworkManager.CanStartNewAction(netIdentity))
+        {
+            Reject(MirrorCombatRequestResult.ActionHeld);
+            return;
+        }
+        Vector3 lookDirection = aimPoint - transform.position;
+        lookDirection.y = 0f;
+        if (!IsFinite(aimPoint) || lookDirection.sqrMagnitude < 0.001f ||
+            lookDirection.sqrMagnitude > MaxAimDistance * MaxAimDistance)
+        {
+            Reject(MirrorCombatRequestResult.InvalidAim);
+            return;
+        }
+        if (!TryResolveAuthoritativeClientTime(clientShotAt, out _, out double shotAt))
+        {
+            Reject(MirrorCombatRequestResult.InvalidTiming);
+            return;
+        }
+        if (!TryGetGunnerWeapon(out GunnerWeaponType weapon, out string itemId) || weapon != GunnerWeaponType.Rifle)
+        {
+            Reject(MirrorCombatRequestResult.UnsupportedCharacter);
+            return;
+        }
+        if (gunnerProjectilePrefab == null)
+        {
+            Reject(MirrorCombatRequestResult.ProjectileUnavailable);
+            return;
+        }
+        // 평타 Command와 같은 서버 잠금(평타 예약·스킬 모션)을 쓰고, 상태 모션 판정은 소유자 쪽 CanRifleFire가 맡는다.
+        if (attackPending || GetComponent<FighterSkillAuthority>()?.ServerMotionLocked == true ||
+            shotAt + RifleCadenceToleranceSeconds < nextRifleShotAt)
+        {
+            Reject(MirrorCombatRequestResult.AttackOnCooldown);
+            return;
+        }
+
+        float interval = T_PlayerCombat.RifleShotInterval(status.AttackSpeed);
+        // 싱글과 같이 허용 오차 이내의 늦음만 메운다. 멈췄다 다시 쏜 첫 발 뒤에 둘째 발이 붙어 허용되지 않게 한다.
+        nextRifleShotAt = System.Math.Max(nextRifleShotAt + interval, shotAt + interval - RifleCadenceToleranceSeconds);
+        // 무기를 바꿔 평타로 이어 쏠 때도 마지막 라이플 발사 간격은 지킨다.
+        nextAttackAt = System.Math.Max(nextAttackAt, shotAt + interval);
+        transform.forward = lookDirection.normalized;
+
+        pendingGunnerWeapon = weapon;
+        pendingGunnerItemId = itemId;
+        pendingGunnerAim = aimPoint;
+        pendingGunnerElement = status.CurrentElement;
+        pendingGunnerRange = Mathf.Max(0.1f, status.GunnerAttackRange);
+        pendingGunnerSpeed = Mathf.Max(0.1f, status.GunnerBulletSpeed * T_PlayerCombat.GunnerBulletSpeedMultiplier(weapon));
+        acceptedRequestCount++;
+        ResolveServerGunnerAttack(combat != null ? combat.CreateAttackId() : 0u);
     }
 
     /// <summary>
@@ -868,6 +957,8 @@ public sealed class PlayerCombatAuthority : NetworkBehaviour
     {
         if (isLocalPlayer) return; // 실제 타격 이벤트에서 이미 표시한 소유자 연출을 중복 재생하지 않는다.
         GunnerCombatPresentation.PlayShot(gameObject, itemId, weaponType, origin, direction, range);
+        // SW 추가: 관찰자도 연사 중에는 발사 자세를 유지한다. 관찰자는 상대 공속을 모르므로 간격 0(해제 대기 시간만)으로 알린다.
+        if (weaponType == GunnerWeaponType.Rifle) GetComponent<WBH_PlayerAnimation>()?.NotifyRifleShot(0f);
     }
 
     [Server]

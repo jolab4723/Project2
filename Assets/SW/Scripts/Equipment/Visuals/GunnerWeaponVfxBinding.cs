@@ -62,6 +62,45 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     public GameObject ProjectileVisualPrefab => projectileVisualPrefab;
     public GameObject ImpactVisualPrefab => impactVisualPrefab;
 
+    // SW 추가: 라이플 반동 흔들림. 총구 +Z의 반대로 순간 밀렸다가 짧게 제자리로 돌아온다(표시 전용, 판정·발사 위치 무관).
+    private const float RecoilKickDistance = 0.035f;
+    private const float RecoilKickSeconds = 0.07f;
+    private bool recoilKicking;
+    private float recoilKickStartedAt;
+    private Vector3 recoilBaseLocalPosition;
+
+    private void StartRecoilKick()
+    {
+        // 반동 중 다음 발이 와도 원래 자리를 다시 기록하지 않아 위치가 조금씩 밀려나지 않게 한다.
+        if (!recoilKicking)
+            recoilBaseLocalPosition = transform.localPosition;
+        recoilKicking = true;
+        recoilKickStartedAt = Time.time;
+    }
+
+    // 애니메이션이 손 위치를 정한 뒤 무기 외형에만 오프셋을 더한다.
+    private void LateUpdate()
+    {
+        if (!recoilKicking)
+            return;
+        float progress = (Time.time - recoilKickStartedAt) / RecoilKickSeconds;
+        if (progress >= 1f || transform.parent == null)
+        {
+            StopRecoilKick();
+            return;
+        }
+        float push = RecoilKickDistance * (1f - progress) * (1f - progress);
+        transform.localPosition = recoilBaseLocalPosition + transform.parent.InverseTransformVector(-transform.forward * push);
+    }
+
+    private void StopRecoilKick()
+    {
+        if (!recoilKicking)
+            return;
+        transform.localPosition = recoilBaseLocalPosition;
+        recoilKicking = false;
+    }
+
     /// <summary>
     /// 현재 무기의 총구 VFX를 플레이어 공통 FirePoint 위치와 정면 방향에서 처음부터 재생합니다.
     /// 무기와 손의 애니메이션으로 총열이 기울어져도 총구 VFX, 실제 투사체와 공격 판정이 같은 위치·방향을 사용합니다.
@@ -70,6 +109,10 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
     /// </summary>
     public void PlayMuzzle(Vector3 attackOrigin, Vector3 attackForward, float attackRange)
     {
+        // SW 추가: 라이플은 연사 중 몸 모션을 멈춰 두므로 발마다 무기 외형만 짧게 뒤로 튕겨 반동을 보여 준다.
+        if (weaponType == GunnerWeaponType.Rifle)
+            StartRecoilKick();
+
         if (muzzleVisualPrefab == null)
             return;
 
@@ -166,6 +209,8 @@ public sealed class GunnerWeaponVfxBinding : MonoBehaviour
         // 장비를 교체하거나 캐릭터가 비활성화될 때 화면에 이전 발사의 잔상이 남지 않게 정리합니다.
         GunnerVfxPlayback.StopAndClear(muzzleVisualInstance);
         GunnerVfxPlayback.StopAndClear(shotgunAttackVisualInstance);
+        // SW 추가: 무기 교체로 외형이 풀에 돌아가도 반동 중 위치가 남지 않게 한다.
+        StopRecoilKick();
     }
 
     private void OnDestroy()

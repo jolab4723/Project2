@@ -7,10 +7,17 @@ public enum GunnerWeaponType {Rifle, Shotgun, GrenadeLauncher}
 public class T_PlayerCombat : MonoBehaviour
 {
     // SW 수정 : 같은 조건에서 세 총기의 발사 누락이 없음을 확인한 뒤 라이플만 낮은 발당 피해·고연사로 조정한다.
-    // SW 수정 : 누르고 있으면 연사하는 방식으로 바꾸며 공속 1.5→2.2, 발당 피해 0.8→1.0(기본 DPS 약 +83%), 탄속 ×1.5로 상향한다.
+    // SW 수정 : 누르고 있으면 연사하는 방식으로 바꾸며 공속 1.5→2.2, 탄속 ×1.5로 상향한다(공속 배율은 애니메이션 속도와 아래 발사 간격에 함께 쓴다).
     public const float RifleAttackSpeedMultiplier = 2.2f;
-    // 라이플의 발당 피해 감소(0.8)를 없앴다. 무기별 차등이 다시 필요해지면 이 한 곳에서 분기한다(싱글·서버 공용).
-    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon) => 1f;
+    // SW 수정 : 라이플은 공격 클립 1회(종료 이벤트·전이 대기)에 묶이면 공속을 올려도 초당 3.5발에서 멈춰서,
+    // 누르는 동안 발사 타이머로 연사한다. 기본 공속(0.85×2.2=1.87)에서 초당 약 8발, 공속 버프에 비례해 빨라진다.
+    public const float RifleShotsPerAttackSpeed = 4.3f;
+    // 공속 버프가 크게 쌓여도 초당 15발을 넘지 않게 해, 발마다 터지는 효과가 폭증하거나 프레임 수에 묶이지 않게 한다.
+    public const float RifleMaxShotsPerSecond = 15f;
+    public static float RifleShotInterval(float attackSpeed) =>
+        1f / Mathf.Clamp(attackSpeed * RifleShotsPerAttackSpeed, 0.01f, RifleMaxShotsPerSecond);
+    // 발당 피해: 초당 2.25발×1.0 → 초당 8발×0.36으로 단일 대상 DPS 약 +30%(0.42는 무리 처치까지 유탄보다 빨라 낮춤). 싱글·서버 공용.
+    public static float GunnerBasicDamageMultiplier(GunnerWeaponType weapon) => weapon == GunnerWeaponType.Rifle ? 0.36f : 1f;
     /// <summary>SW 추가: 라이플 탄만 빠르게 날아가도록 기본 탄속에 곱한다. 싱글·서버가 같은 값을 쓴다.</summary>
     public static float GunnerBulletSpeedMultiplier(GunnerWeaponType weapon)
         => weapon == GunnerWeaponType.Rifle ? 1.5f : 1f;
@@ -51,6 +58,17 @@ public class T_PlayerCombat : MonoBehaviour
 
     public bool IsDead => stateMachine.CurrentState == PlayerState.Dead;
     public float AttackRange => playerClass == PlayerClass.Fighter ? status.FighterAttackRange : status.GunnerAttackRange;
+    // SW 추가 : 라이플 연사는 이미 Attack 상태여도 계속 쏜다. 다음 발사 가능 시각은 발사 타이머가 관리한다.
+    private bool CanRifleFire => !stateMachine.IsAnyState(PlayerState.Hit,
+                                                          PlayerState.Skill,
+                                                          PlayerState.Dodge,
+                                                          PlayerState.Dead,
+                                                          PlayerState.Revive);
+    private float nextRifleShotAt;
+    private int rifleHeldFrame;
+    private bool rifleHeld;
+    private WBH_PlayerAnimation playerAnimation;
+
     private bool CanAttack => !stateMachine.IsAnyState(PlayerState.Hit,
                                                        PlayerState.Attack,
                                                        PlayerState.Skill,
@@ -65,6 +83,7 @@ public class T_PlayerCombat : MonoBehaviour
         stateMachine = GetComponent<WBH_PlayerStateMachine>();
         effect = GetComponent<WBH_PlayerEffect>();
         status = GetComponent<WBH_PlayerStatus>();
+        playerAnimation = GetComponent<WBH_PlayerAnimation>();
     }
 
     private void Update()
@@ -76,6 +95,7 @@ public class T_PlayerCombat : MonoBehaviour
         }
 
         UpdateChase();
+        ReleaseRifleIfInputStopped();
         // SW 수정: TestMultiple 본문은 모두 주석이라 매 프레임 호출하지 않는다. 테스트 코드는 메서드에 보존한다.
         //TestMultiple();
     }
@@ -573,7 +593,15 @@ public class T_PlayerCombat : MonoBehaviour
 
     public void TryAttack(Vector3 targetPos)
     {
-        if (!CanAttack) 
+        // SW 수정 : 라이플은 공격 클립 타격 이벤트가 아니라 발사 타이머로 즉시 쏜다.
+        if (IsAutoFireWeapon)
+        {
+            if (TryBeginRifleShot(targetPos))
+                GunnerAttack();
+            return;
+        }
+
+        if (!CanAttack)
             return;
 
         grenadePoint = targetPos;
@@ -591,10 +619,68 @@ public class T_PlayerCombat : MonoBehaviour
         NormalAttack();
     }
 
+    /// <summary>
+    /// SW 추가 : 라이플 한 발의 발사 간격·조준·사격 모션만 처리한다. 실제 발사는 호출자가 한다
+    /// (싱글은 GunnerAttack, 멀티 소유자는 표시만 하고 서버가 탄을 만든다).
+    /// 첫 발은 Attack 상태로 들어가며, 연사 중에는 공격 클립을 발사 자세에서 멈춰 둔다.
+    /// </summary>
+    public bool TryBeginRifleShot(Vector3 targetPos)
+    {
+        if (status.IsDead || !CanRifleFire)
+            return false;
+
+        Vector3 lookDir = targetPos - transform.position;
+        lookDir.y = 0f;
+        if (lookDir.sqrMagnitude < 0.001f)
+            return false;
+
+        // 누르고 있는 동안은 매 프레임 불리므로, 발사 사이에도 조준을 따라 돌아 발사 간격마다 끊겨 돌지 않게 한다.
+        // 손을 뗀 프레임도 여기서 판단한다(Update에서 한 프레임 이상 호출이 끊기면 사격 자세를 바로 푼다).
+        rifleHeldFrame = Time.frameCount;
+        rifleHeld = true;
+        if (chaseTarget == null)
+            transform.forward = lookDir.normalized;
+        if (Time.time < nextRifleShotAt)
+            return false;
+
+        CancelChase();
+        transform.forward = lookDir.normalized;
+        grenadePoint = targetPos;
+
+        // 프레임 반올림으로 늦어진 만큼(한 프레임 이내)만 다음 간격에서 메워 초당 발사 수를 유지한다.
+        // 취소·짧은 멈춤으로 더 늦어진 시간까지 메우면 다음 프레임에 한 발이 바로 붙어 나가므로 그 이상은 지금부터 센다.
+        float interval = RifleShotInterval(status.AttackSpeed);
+        nextRifleShotAt = Mathf.Max(nextRifleShotAt + interval, Time.time + interval - Time.deltaTime);
+
+        if (!stateMachine.Is(PlayerState.Attack))
+            stateMachine.ChangeState(PlayerState.Attack);
+        // 연사 중에는 공격 클립을 발사 자세에서 멈춰 두고, 반동은 무기 외형 흔들림과 총구 섬광이 맡는다.
+        playerAnimation?.NotifyRifleShot(interval);
+        return true;
+    }
+
+    /// <summary>
+    /// SW 추가 : 연사 요청이 한 프레임 이상 끊기면(마우스를 뗌) 다음 발을 기다리지 않고 바로 기본 모션으로 돌아간다.
+    /// 남은 공격 클립과 종료 전이(약 0.4초)를 기다리면 손을 뗀 뒤에도 사격 자세가 남아 보인다.
+    /// </summary>
+    private void ReleaseRifleIfInputStopped()
+    {
+        if (!rifleHeld || Time.frameCount <= rifleHeldFrame + 1)
+            return;
+        rifleHeld = false;
+        bool attacking = stateMachine.Is(PlayerState.Attack);
+        playerAnimation?.ReleaseRifleFirePose(attacking);
+        if (attacking)
+            stateMachine.ChangeState(PlayerState.Idle);
+    }
+
     // -- 애니메이터 호출용 메서드
     public void ExecuteAttack()
     {
         if (!stateMachine.Is(PlayerState.Attack))
+            return;
+        // SW 수정 : 라이플 탄은 발사 타이머가 이미 쐈으므로 클립 타격 이벤트로 한 번 더 쏘지 않는다.
+        if (IsAutoFireWeapon)
             return;
 
         switch (playerClass)

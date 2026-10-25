@@ -154,6 +154,7 @@ public class WBH_PlayerAnimation : MonoBehaviour
     void Update()
     {
         UpdateMoveAnimation();
+        UpdateRifleFirePose();
     }
 
     // 스킬은 별도 이벤트로 제어.
@@ -202,6 +203,97 @@ public class WBH_PlayerAnimation : MonoBehaviour
 
     /// <summary>SW 수정: 현재 스탯의 공격 속도를 권한 확인을 거쳐 애니메이션에 다시 반영합니다.</summary>
     public void RefreshAnimation() => SetAtkAnimationSpeed(1f);
+
+    // SW 추가: 라이플 연사 중에는 공격 클립을 발사 순간의 자세에서 멈춰 둔다(발마다 클립을 다시 시작하면 움찔거린다).
+    // 다음 발이 이 시간 안에 오지 않으면 손을 뗀 것으로 보고 남은 클립을 재생해 자세를 내린다.
+    private const float RifleFirePoseReleaseSeconds = 0.18f;
+    private const string AttackExecuteEventName = "AniEvent_ExecuteAttack";
+    private float rifleFirePoseUntil;
+    private bool rifleFirePoseFrozen;
+    private float rifleFrozenAttackSpeed;
+    private AnimationClip firePoseClip;
+    private float firePoseNormalizedTime;
+
+    /// <summary>SW 추가: 라이플 한 발이 나갔음을 알린다. 표시 전용이며 상태나 판정은 바꾸지 않는다(소유자·관찰자·싱글 공통).</summary>
+    public void NotifyRifleShot(float shotInterval)
+    {
+        rifleFirePoseUntil = Time.time + Mathf.Max(shotInterval, 0f) + RifleFirePoseReleaseSeconds;
+        // 발사음은 공격 클립 이벤트로 예약되는데 연사 중에는 클립이 멈춰 있어 첫 발만 울린다. 그래서 발마다 여기서 재생한다.
+        if (CanPresent)
+            effect?.PlaySfx(WBH_PlayerEffectCue.G_normal0_evo0_etc0);
+        // 자세를 내리던 중 다시 쏘면 내리는 동작에서 멈추지 않게 발사 자세로 되돌린다.
+        if (animator == null || rifleFirePoseFrozen || animator.IsInTransition(0))
+            return;
+        AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
+        float pose = GetFirePoseNormalizedTime();
+        if (current.IsName("Attack") && current.normalizedTime > pose + 0.05f)
+            animator.Play(current.fullPathHash, 0, pose);
+    }
+
+    /// <summary>
+    /// SW 추가: 소유자가 마우스를 뗀 순간 사격 자세를 풀고, 공격 상태였다면 남은 클립 대신 짧게 기본 모션으로 넘어간다.
+    /// 관찰자는 이 호출 없이 마지막 발 뒤 해제 대기 시간으로 푼다.
+    /// </summary>
+    public void ReleaseRifleFirePose(bool returnToLocomotion)
+    {
+        rifleFirePoseUntil = 0f;
+        UpdateRifleFirePose();
+        if (returnToLocomotion && animator != null)
+            animator.CrossFadeInFixedTime("Locomotion", RifleReleaseCrossFadeSeconds, 0);
+    }
+
+    private const float RifleReleaseCrossFadeSeconds = 0.08f;
+
+    private void UpdateRifleFirePose()
+    {
+        if (animator == null)
+            return;
+
+        bool freeze = false;
+        if (Time.time < rifleFirePoseUntil && !animator.IsInTransition(0))
+        {
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
+            freeze = current.IsName("Attack") && current.normalizedTime >= GetFirePoseNormalizedTime();
+        }
+        if (freeze == rifleFirePoseFrozen)
+            return;
+
+        rifleFirePoseFrozen = freeze;
+        if (freeze)
+        {
+            // 공격 상태의 재생 속도만 0으로 둔다. 다른 상태로 나가면 아래에서 즉시 원래 값으로 돌린다.
+            rifleFrozenAttackSpeed = animator.GetFloat("AttackSpeed");
+            animator.SetFloat("AttackSpeed", 0f);
+        }
+        else if (rifleFrozenAttackSpeed > 0.01f)
+        {
+            // 관찰자는 동기화로 이미 0을 받았을 수 있다. 그때는 소유자가 되돌린 값의 동기화를 기다린다.
+            animator.SetFloat("AttackSpeed", rifleFrozenAttackSpeed);
+        }
+    }
+
+    // 공격 클립의 발사 이벤트 시각을 자세 기준으로 쓴다. 이벤트가 없는 클립은 처음 20% 지점을 쓴다.
+    private float GetFirePoseNormalizedTime()
+    {
+        AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
+        if (clips.Length == 0 || clips[0].clip == null)
+            return 0.2f;
+        AnimationClip clip = clips[0].clip;
+        if (clip == firePoseClip)
+            return firePoseNormalizedTime;
+
+        firePoseClip = clip;
+        firePoseNormalizedTime = 0.2f;
+        foreach (AnimationEvent clipEvent in clip.events)
+        {
+            if (clipEvent.functionName == AttackExecuteEventName && clip.length > 0f)
+            {
+                firePoseNormalizedTime = clipEvent.time / clip.length;
+                break;
+            }
+        }
+        return firePoseNormalizedTime;
+    }
 
     /// <summary>SW 수정: 로컬 상태를 읽을 권한이 있을 때 이동 상태와 실제 속도로 애니메이션을 갱신합니다.</summary>
     private void UpdateMoveAnimation()
@@ -494,6 +586,10 @@ public class WBH_PlayerAnimation : MonoBehaviour
         GunnerWeaponType weaponType = binding != null
             ? binding.WeaponType
             : combat.currentWeapon;
+
+        // SW 수정: 라이플 발사음은 발마다 NotifyRifleShot에서 재생하므로 클립 이벤트로 한 번 더 울리지 않는다.
+        if (weaponType == GunnerWeaponType.Rifle)
+            return;
 
         WBH_PlayerEffectCue cue = weaponType switch
         {
