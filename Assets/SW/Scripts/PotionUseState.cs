@@ -48,6 +48,8 @@ public sealed class PotionUseState
         {
             case PotionEffectType.Heal:
                 health.Heal(definition.potionEffectValue);
+                // SW 추가: 판정은 그대로 두고 회복 표시만 같은 플레이어의 효과 상태로 알린다.
+                health.GetComponent<PlayerContext>()?.Effects?.NotifyHealed();
                 break;
             case PotionEffectType.StatBoost:
                 if (buffs == null || definition.potionBuff == null)

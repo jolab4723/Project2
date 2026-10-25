@@ -38,6 +38,9 @@ public sealed partial class PlayerItemEffectState
     public event Action<Vector3, float> StarBreacherPresented;
     // SW 추가: 원소 공명기 폭발 표시(위치, 반경). 싱글 Presenter와 서버 RPC가 구독한다.
     public event Action<Vector3, float> ElementResonatorPresented;
+    // SW 추가: 회복 포션이 실제로 체력을 채운 순간. 싱글 Presenter와 서버 RPC가 구독한다.
+    public event Action HealPresented;
+    internal void NotifyHealed() => HealPresented?.Invoke();
     public event Action<Vector3, Vector3, float, float> WasteHeatPresented;
     public event Action<bool> WasteHeatReadyChanged;
     public event Action<bool> PreparedChanged;

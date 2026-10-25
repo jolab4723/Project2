@@ -65,6 +65,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         singleEffects.PhaseHarvesterPresented += PresentPhaseHarvesterWave;
         singleEffects.StarBreacherPresented += PresentStarBreacherExplosion;
         singleEffects.ElementResonatorPresented += PresentElementResonator;
+        singleEffects.HealPresented += PresentHeal;
         singleEffects.WasteHeatPresented += PresentWasteHeatDischarge;
         singleEffects.WasteHeatReadyChanged += SetWasteHeatReady;
         singleEffects.EchoReplayPresented += PresentEchoReplay;
@@ -289,6 +290,20 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
         else
             PresentStarBreacherExplosion(position + Vector3.up, radius);
     }
+
+    /// <summary>SW 추가: 회복 포션 연출을 플레이어 발밑에 붙여 이동 중에도 따라가게 한 번 재생한다.</summary>
+    public void PresentHeal()
+    {
+        if (!CanPresent || !TryGetVfx("UEVFX_PotionHeal", out GameObject heal))
+            return;
+        GameObject instance = SpawnVfx(heal, transform.position, heal.transform.rotation, Vector3.one * HealScale, 2.2f);
+        instance.transform.SetParent(transform, true);
+        PresentedHealCount++;
+    }
+
+    // 원본 치유 이펙트는 전투 카메라에서 작고 어두워 캐릭터를 감쌀 만큼 키운다.
+    private const float HealScale = 1.6f;
+    public int PresentedHealCount { get; private set; }
 
     private static float RadiusScale(float radius, float authored) =>
         Mathf.Clamp(Mathf.Max(0.1f, radius) / authored, 1f, 2.5f);
@@ -659,6 +674,7 @@ public sealed class UniqueEffectPresentation : MonoBehaviour
             singleEffects.PhaseHarvesterPresented -= PresentPhaseHarvesterWave;
             singleEffects.StarBreacherPresented -= PresentStarBreacherExplosion;
             singleEffects.ElementResonatorPresented -= PresentElementResonator;
+            singleEffects.HealPresented -= PresentHeal;
             singleEffects.WasteHeatPresented -= PresentWasteHeatDischarge;
             singleEffects.WasteHeatReadyChanged -= SetWasteHeatReady;
             singleEffects.EchoReplayPresented -= PresentEchoReplay;

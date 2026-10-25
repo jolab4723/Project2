@@ -121,6 +121,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.PhaseHarvesterPresented += RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented += RpcPresentStarBreacherExplosion;
         context.Effects.ElementResonatorPresented += RpcPresentElementResonator;
+        context.Effects.HealPresented += RpcPresentHeal;
         context.Effects.WasteHeatPresented += RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged += SetWasteHeatReady;
         context.Effects.EchoReplayPresented += RpcPresentEchoReplay;
@@ -243,6 +244,7 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
         context.Effects.PhaseHarvesterPresented -= RpcPresentPhaseHarvesterWave;
         context.Effects.StarBreacherPresented -= RpcPresentStarBreacherExplosion;
         context.Effects.ElementResonatorPresented -= RpcPresentElementResonator;
+        context.Effects.HealPresented -= RpcPresentHeal;
         context.Effects.WasteHeatPresented -= RpcPresentWasteHeatDischarge;
         context.Effects.WasteHeatReadyChanged -= SetWasteHeatReady;
         context.Effects.EchoReplayPresented -= RpcPresentEchoReplay;
@@ -323,6 +325,13 @@ public sealed class NetworkItemTriggerManager : NetworkBehaviour
     private void RpcPresentElementResonator(Vector3 position, float radius)
     {
         Presentation.PresentElementResonator(position, radius);
+    }
+
+    /// <summary>SW 추가: 서버가 회복 포션을 적용한 순간을 Reliable RPC로 한 번 표시한다.</summary>
+    [ClientRpc(channel = Channels.Reliable)]
+    private void RpcPresentHeal()
+    {
+        Presentation.PresentHeal();
     }
 
     /// <summary>SW 수정: 서버가 확정한 폐열 방출 영역을 Reliable RPC로 관찰자에게 한 번 표시하며 피해는 서버 FIFO에서만 처리한다.</summary>
